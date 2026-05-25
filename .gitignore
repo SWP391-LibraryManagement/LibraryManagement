@@ -1,0 +1,29 @@
+# Environment
+.env
+.env.*
+*.secret
+secrets/
+credentials/
+
+# Dependencies
+node_modules/
+vendor/
+target/
+bin/
+obj/
+
+# Build outputs
+dist/
+build/
+out/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
