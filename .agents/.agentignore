@@ -1,0 +1,36 @@
+# .agentignore — Library Management System
+# Patterns listed here must be skipped by AI/agent tooling when scanning,
+# indexing, or modifying the repository. Mirrors common ignore semantics.
+
+# Build outputs
+target/
+dist/
+build/
+out/
+bin/
+obj/
+
+# Dependencies
+node_modules/
+vendor/
+
+# IDE / editor
+.idea/
+.vscode/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Secrets and environment
+.env
+.env.*
+*.secret
+secrets/
+credentials/
+
+# Logs
+*.log
+
+# Local agent scratch space
+_commit_msg.txt
