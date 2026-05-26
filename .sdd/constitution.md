@@ -21,7 +21,7 @@ The team follows Hybrid Spec-Driven & Agent-Driven Development.
 
 The source of truth for each feature is:
 
-.sdd/specs/{feature-name}/SPEC.md
+.sdd/specs/feat-{name}/SPEC.md
 
 Implementation must follow:
 

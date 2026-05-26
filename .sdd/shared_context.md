@@ -121,15 +121,15 @@ This list is not final. Database design must be confirmed in ADR and related fea
 
 The current planned features are:
 
-| Feature Folder            | Feature Name                   | Spec Level    |
-| ------------------------- | ------------------------------ | ------------- |
-| feature-auth              | Authentication & Authorization | Full Spec     |
-| feature-book-management   | Book Management                | Standard Spec |
-| feature-member-management | Member Management              | Standard Spec |
-| feature-borrow-book       | Borrow Book                    | Full Spec     |
-| feature-return-book       | Return Book                    | Full Spec     |
-| feature-fine-management   | Fine Management                | Full Spec     |
-| feature-report            | Report Management              | Standard Spec |
+| Feature Folder         | Feature Name                   | Spec Level    |
+| ---------------------- | ------------------------------ | ------------- |
+| feat-auth              | Authentication & Authorization | Full Spec     |
+| feat-book-management   | Book Management                | Standard Spec |
+| feat-member-management | Member Management              | Standard Spec |
+| feat-borrow-book       | Borrow Book                    | Full Spec     |
+| feat-return-book       | Return Book                    | Full Spec     |
+| feat-fine-management   | Fine Management                | Full Spec     |
+| feat-report            | Report Management              | Standard Spec |
 
 ---
 
@@ -141,15 +141,21 @@ The project uses the following structure:
 .sdd/
 ├── constitution.md
 ├── shared_context.md
+├── constraints/
+│   ├── global.md
+│   ├── business.md
+│   └── safety.md
 ├── specs/
 │   ├── _template.md
-│   ├── feature-auth/
-│   ├── feature-book-management/
-│   ├── feature-member-management/
-│   ├── feature-borrow-book/
-│   ├── feature-return-book/
-│   ├── feature-fine-management/
-│   └── feature-report/
+│   ├── feat-auth/
+│   ├── feat-book-management/
+│   ├── feat-member-management/
+│   ├── feat-borrow-book/
+│   ├── feat-return-book/
+│   ├── feat-fine-management/
+│   └── feat-report/
+├── skills/
+├── rfcs/
 ├── reviews/
 └── metrics/
 
@@ -262,7 +268,7 @@ If a required file is missing or empty, mention it before continuing.
 For each feature, the source of truth is:
 
 ```text
-.sdd/specs/{feature-name}/SPEC.md
+.sdd/specs/feat-{name}/SPEC.md
 
 Implementation must follow:
 

@@ -8,7 +8,7 @@
 
 # Last Updated: YYYY-MM-DD
 
-> Use this template for every core feature in `.sdd/specs/feature-{name}/SPEC.md`.
+> Use this template for every core feature in `.sdd/specs/feat-{name}/SPEC.md`.
 > SPEC.md is the source of truth for the feature. Implementation, tests, API contracts, and UI behavior must follow this file.
 
 ---
