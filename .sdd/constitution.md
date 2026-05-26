@@ -28,8 +28,8 @@ Implementation must follow:
 1. SPEC.md
 2. PLAN.md
 3. TASKS.md
-4. AGENTS.md
-5. CLAUDE.md
+4. `.agents/AGENTS.md`
+5. `.agents/CLAUDE.md`
 
 If code conflicts with SPEC.md, the code is considered wrong unless the spec is updated and approved.
 

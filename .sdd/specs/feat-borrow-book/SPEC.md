@@ -57,6 +57,8 @@ If any precondition fails, the system must reject the borrow attempt with a clea
 
 ## 4. Main Flow
 
+> **Week 3 assumption:** This flow models a borrow as a single transaction that may contain multiple book lines (one transaction, many books). This is an assumption for Week 3 and must be confirmed via [`Q-BB-005`](CONTEXT.md#6-open-questions-for-teacher--team) before this SPEC leaves DRAFT. If the team decides on "one transaction per book" instead, sections 4, 5, 6, and 8 must be revised.
+
 1. Librarian opens the "Borrow Book" screen and selects a member by member code.
 2. System loads the member, their current borrowed-count, and any active block reasons.
 3. System validates the member is eligible to borrow (BR-001..BR-003).
@@ -129,6 +131,7 @@ Given / When / Then.
 - AC-004: Given a book whose `available_quantity` is 0, when the librarian adds it to the basket, then the system rejects that line and does not let the borrow be confirmed with that book.
 - AC-005: Given a successful borrow of N books, when the system commits, then exactly one transaction is created, exactly N book quantities are decreased by 1 each, and the audit log contains exactly one entry referencing the new transaction.
 - AC-006: Given any failure during commit (validation, concurrency, database error), when the system aborts, then no transaction record exists and no available-quantity values are changed.
+- AC-007: Given a borrow attempt that is rejected for any reason (ineligible member, unavailable book, validation error, role denied), when the system rejects the request, then an audit log entry is created that records the actor, the target member, the attempted books, the rejection reason, and the timestamp; no borrow transaction is created and no available-quantity is changed.
 
 ---
 
@@ -183,7 +186,20 @@ Mirrors [`CONTEXT.md` section 6](CONTEXT.md#6-open-questions-for-teacher--team).
 
 ---
 
-## 13. Traceability Placeholder
+## 13. Non-functional Requirements (Draft)
+
+These are initial NFR targets for the Borrow Book feature. Concrete numbers will be confirmed once the tech stack is chosen.
+
+- NFR-001 (Performance): A single borrow request with up to 5 book lines should complete within a reasonable interactive time at the librarian desk (target TBD, e.g. < 2 seconds at p95 under normal load).
+- NFR-002 (Consistency): The borrow transaction, the available-quantity decrement, and the audit log entry must be committed atomically. The system must never leave any of these three in a partial state.
+- NFR-003 (Concurrency): When two librarians try to borrow the last copy of a book at the same time, only one must succeed; the other must receive a clear "no longer available" rejection (see EC-001).
+- NFR-004 (Auditability): Every borrow attempt, successful or rejected, must produce exactly one audit log entry that is sufficient for after-the-fact review (see BR-006, AC-005, AC-007).
+- NFR-005 (Security): The borrow endpoint must require authentication and the `Librarian` or `Admin` role. All input must be validated server-side; client-side validation alone is not sufficient.
+- NFR-006 (Usability): Rejection messages shown to the librarian must be specific and non-technical (for example, "borrowing limit reached" rather than a stack trace or error code).
+
+---
+
+## 14. Traceability Placeholder
 
 To be filled in once `PLAN.md` and `TASKS.md` are written.
 
@@ -202,7 +218,7 @@ To be filled in once `PLAN.md` and `TASKS.md` are written.
 
 ---
 
-## 14. Review Checklist
+## 15. Review Checklist
 
 This SPEC.md is **not** ready for approval until:
 
