@@ -2,61 +2,16 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: DRAFT (Week 3)
 
-> Cross-cutting technical constraints that apply to every feature in this project. Specific business rules belong in [`business.md`](business.md). Safety, security, and compliance rules belong in [`safety.md`](safety.md).
+> High-level engineering rules every feature in this project must follow. See [`business.md`](business.md) for domain rules and [`safety.md`](safety.md) for security rules.
 
-## 1. Tech Stack
+## High-Level Engineering Rules
 
-- Backend: Java + Maven web application located in [`backend/LibraryManagement/`](../../backend/LibraryManagement).
-- Frontend: to be defined; placeholder folder [`frontend/`](../../frontend).
-- Database scripts and migrations live in [`database/`](../../database).
-- Shared and integration tests live in [`tests/`](../../tests).
-- Architecture diagrams, ADRs, and API docs live in [`docs/`](../../docs).
+- GLB-001: Spec-first development. No core feature is built without an approved [`.sdd/specs/feat-{name}/SPEC.md`](../specs).
+- GLB-002: Keep code simple and maintainable. Choose the smallest design that satisfies the spec.
+- GLB-003: No feature creep. Implement only what the current `SPEC.md` and `TASKS.md` require.
+- GLB-004: Code must follow the approved `SPEC.md`. If code conflicts with the spec, the code is wrong unless the spec is updated and re-approved.
+- GLB-005: Any change in observable business behavior must update the related `SPEC.md` (and `CHANGELOG.md`) before or alongside the code change.
 
-## 2. Coding Standards
-
-- Follow the conventions already in use in the existing source tree before introducing new ones.
-- Names of packages, classes, and files must reflect the feature they belong to (for example, code for `feat-borrow-book` lives under a package whose name aligns with that feature).
-- No commented-out code in committed files.
-- No TODOs without an owner and a referenced task ID from the corresponding `TASKS.md`.
-
-## 3. Configuration and Environment
-
-- No secrets, API keys, tokens, or credentials in source code.
-- Local development settings live in `.env` files which must remain ignored by Git.
-- Environment-specific values must be injected through configuration, not hardcoded.
-
-## 4. Logging
-
-- Use the project's standard logger; no `System.out.println` or equivalent in committed code.
-- Log levels: ERROR for failures, WARN for recoverable issues, INFO for business events, DEBUG for development only.
-- Never log secrets, tokens, passwords, or full request bodies that may contain PII.
-
-## 5. Error Handling
-
-- Catch exceptions at the layer that can act on them; do not swallow exceptions silently.
-- Return meaningful error responses to API clients without exposing internal stack traces.
-
-## 6. Testing
-
-- Each feature must have at least unit tests for its business rules.
-- Integration tests for cross-feature flows live in [`tests/`](../../tests).
-- Tests must be deterministic; no reliance on real time, network, or random seeds without isolation.
-
-## 7. Documentation
-
-- Every core feature has a `SPEC.md`, `CONTEXT.md`, `PLAN.md`, `TASKS.md`, and `CHANGELOG.md` inside [`.sdd/specs/feat-{name}/`](../specs).
-- ADRs for major architectural decisions live in [`docs/adr/`](../../docs/adr).
-- API contracts live in [`docs/api/`](../../docs/api).
-
-## 8. Branching and Commits
-
-- Branch names: `feat/{feature-name}`, `fix/{bug-name}`, `docs/{name}`, `chore/{name}`.
-- Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
-- No direct commits to `main` or `master`.
-
-## 9. Dependencies
-
-- Pin dependency versions; no open ranges.
-- Justify any new dependency in the relevant feature `PLAN.md` or in an ADR.
+> Concrete tooling rules (logging library, formatter, dependency policy, branching scheme) will be locked in later weeks once the stack is finalized.

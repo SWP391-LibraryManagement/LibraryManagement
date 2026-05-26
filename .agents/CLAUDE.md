@@ -2,13 +2,22 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: DRAFT (Week 3)
 
 # Project: SWP391 Library Management System
 
 # Audience: Anthropic Claude (and Claude-compatible tooling) acting as a coding agent in this repository.
 
 > This file extends [`AGENTS.md`](AGENTS.md). When the two disagree, AGENTS.md wins. Use this file for Claude-specific behavior, prompting hints, and context-window strategy.
+
+---
+
+## 0. Project Summary And Current Phase
+
+- **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
+- **Current phase**: Foundation + SDD Sprint, Week 3.
+- **Week 3 scope**: finish the SDD foundation (constitution, shared context, constraints, agent rules, spec template) and produce one strong DRAFT `SPEC.md` for the core business feature `feat-borrow-book`. No application code yet.
+- **Out of scope this week**: implementing controllers, services, repositories, entities, DTOs, UI, database migrations, or full `PLAN.md` / `TASKS.md` content.
 
 ---
 
