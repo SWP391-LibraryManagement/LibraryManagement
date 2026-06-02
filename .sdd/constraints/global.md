@@ -13,5 +13,6 @@
 - GLB-003: No feature creep. Implement only what the current `SPEC.md` and `TASKS.md` require.
 - GLB-004: Code must follow the approved `SPEC.md`. If code conflicts with the spec, the code is wrong unless the spec is updated and re-approved.
 - GLB-005: Any change in observable business behavior must update the related `SPEC.md` (and `CHANGELOG.md`) before or alongside the code change.
+- GLB-006: The approved stack is Node.js + Express.js for backend, React + Bootstrap for frontend, SQL Server for database, and RESTful API for client-server communication.
 
-> Concrete tooling rules (logging library, formatter, dependency policy, branching scheme) will be locked in later weeks once the stack is finalized.
+> Concrete tooling rules such as logging library, formatter, dependency policy, and branching scheme may still be refined later. The main application stack is now fixed.

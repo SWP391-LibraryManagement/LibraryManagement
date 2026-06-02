@@ -9,6 +9,13 @@
 This project is a Library Management System for SWP391.  
 The system helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 
+## 1.1 Approved Technical Stack
+
+- Backend: Node.js with Express.js.
+- Frontend: React with Bootstrap.
+- Database: SQL Server.
+- API style: RESTful API.
+
 ## 2. Development Method
 
 The team follows Hybrid Spec-Driven & Agent-Driven Development.

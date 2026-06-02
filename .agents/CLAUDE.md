@@ -16,7 +16,8 @@
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 - **Current phase**: Foundation + SDD Sprint, Week 3.
-- **Week 3 scope**: finish the SDD foundation (constitution, shared context, constraints, agent rules, spec template) and produce one strong DRAFT `SPEC.md` for the core business feature `feat-borrow-book`. No application code yet.
+- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server database, RESTful API.
+- **Current SDD scope**: finish draft specs for active core/workflow features. FE07 Borrowing Management and FE08 Reservation Management are currently drafted. No application code yet.
 - **Out of scope this week**: implementing controllers, services, repositories, entities, DTOs, UI, database migrations, or full `PLAN.md` / `TASKS.md` content.
 
 ---
@@ -123,9 +124,10 @@ Anything less is a draft, and Claude should label it as such.
 ## 9. Pointers
 
 - Spec template: [`.sdd/specs/_template.md`](../.sdd/specs/_template.md)
-- Per-feature folders: [`.sdd/specs/feat-auth/`](../.sdd/specs/feat-auth), [`feat-book-management/`](../.sdd/specs/feat-book-management), [`feat-borrow-book/`](../.sdd/specs/feat-borrow-book), [`feat-fine-management/`](../.sdd/specs/feat-fine-management), [`feat-member-management/`](../.sdd/specs/feat-member-management), [`feat-report/`](../.sdd/specs/feat-report), [`feat-return-book/`](../.sdd/specs/feat-return-book)
-- Backend project: [`backend/LibraryManagement/`](../backend/LibraryManagement)
-- ADRs: [`docs/adr/`](../docs/adr)
+- Active feature folders: [`.sdd/specs/feat-borrowing-management/`](../.sdd/specs/feat-borrowing-management), [`.sdd/specs/feat-reservation-management/`](../.sdd/specs/feat-reservation-management)
+- Create new feature folders only when drafting a real `SPEC.md`, using the pattern `.sdd/specs/feat-{name}/`.
+- Backend project: [`backend/`](../backend)
+- ADRs/RFCs: [`.sdd/rfcs/`](../.sdd/rfcs)
 - API contract: [`docs/api/api-contract.md`](../docs/api/api-contract.md)
-- Diagrams: [`docs/diagrams/`](../docs/diagrams)
+- Architecture docs: [`docs/architecture/`](../docs/architecture)
 - Ignore patterns: [`.agents/.agentignore`](.agentignore)

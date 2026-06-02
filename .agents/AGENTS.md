@@ -100,6 +100,17 @@ Core library rules include:
 - Fine calculation must be traceable and testable.
 - Protected actions require proper role-based authorization.
 
+## 5.1 Approved Technical Stack
+
+Agents must follow this stack unless the Constitution and related specs are explicitly updated:
+
+- Backend: Node.js with Express.js.
+- Frontend: React with Bootstrap.
+- Database: SQL Server.
+- API style: RESTful API.
+
+Do not introduce a different backend framework, frontend framework, database, or API style without human approval and a spec/ADR update.
+
 ---
 
 ## 6. Specification Rules
@@ -274,8 +285,7 @@ Reference paths used by agents:
 - Reviews: [`.sdd/reviews/`](../.sdd/reviews)
 - RFCs: [`.sdd/rfcs/`](../.sdd/rfcs)
 - Skills: [`.sdd/skills/`](../.sdd/skills)
-- Metrics: [`.sdd/metrics/`](../.sdd/metrics)
-- Backend: [`backend/LibraryManagement/`](../backend/LibraryManagement)
+- Backend: [`backend/`](../backend)
 - Frontend: [`frontend/`](../frontend)
 - Database: [`database/`](../database)
 - Tests: [`tests/`](../tests)
