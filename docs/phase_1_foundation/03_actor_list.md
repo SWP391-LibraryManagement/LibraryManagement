@@ -4,15 +4,17 @@
 
 This document identifies the actors that interact with the Library Management System. Each actor represents a user role or an external system that exchanges information with the system.
 
+Actor responsibilities must stay consistent with the Master Feature List in [`07_master_feature_list.md`](07_master_feature_list.md).
+
 ## 2. Actor List
 
-| Actor                | Type            | Role / Responsibility                                                                                                                                                                            |
-| -------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Guest                | Human actor     | A visitor who can search and view public book information and register for a member account.                                                                                                     |
-| Member               | Human actor     | A registered library user who can borrow books, reserve unavailable books, renew loans, view borrowing history, view fines, and reserve study seats.                                             |
-| Librarian            | Human actor     | A library staff member who manages books, book copies, members, borrowing, returning, book reservations, fines, and seat booking requests.                                                       |
-| Admin                | Human actor     | A system administrator who manages users, roles, loan policies, fine policies, seat booking policies, reports, and audit logs.                                                                   |
-| Notification Service | External system | An external service that sends email or system notifications such as email verification, password reset, due date reminders, overdue alerts, book reservation updates, and seat booking results. |
+| Actor                | Type            | Role / Responsibility |
+| -------------------- | --------------- | --------------------- |
+| Guest                | Human actor     | A visitor who can search and view public book information and register for an account. |
+| Member               | Human actor     | A registered library user who can borrow books, reserve unavailable books, renew loans, view borrowing history, and view fines. |
+| Librarian            | Human actor     | A library staff member who manages books, book copies, members, borrowing, returning, book reservations, and fines. |
+| Admin                | Human actor     | A system administrator who manages users, roles, loan policies, fine policies, reports, and audit logs. |
+| Notification Service | External system | An external service that sends account verification, password reset, due date, overdue, book reservation, and fine notifications. |
 
 ## 3. Actor Details
 
@@ -25,14 +27,13 @@ Main interactions:
 - Search books
 - Filter and browse books
 - View book details
-- Register for a member account
+- Register for an account
 
 Limitations:
 
 - Cannot borrow books
 - Cannot reserve books
 - Cannot renew loans
-- Cannot reserve study seats
 - Cannot view borrowing history or fines
 
 ### 3.2 Member
@@ -43,16 +44,16 @@ Main interactions:
 
 - Login
 - Update personal profile
+- Apply for membership
+- View membership status
 - Search, filter, and browse books
 - View book details
 - Request to borrow books
 - Reserve unavailable books
+- Cancel own reservations when allowed
 - Renew borrowed books
 - View borrowing history
 - View fine information
-- Submit study seat booking request
-- View seat booking status
-- Cancel seat booking request if allowed
 - Receive notifications
 
 ### 3.3 Librarian
@@ -62,16 +63,18 @@ A Librarian is responsible for daily library operations.
 Main interactions:
 
 - Login
+- Update personal profile
 - Manage book information
 - Manage book copies
-- Manage categories and authors
+- Manage categories, authors, and publishers when needed by book management
 - Manage member information
+- Approve or reject membership applications
 - Process borrow requests
 - Confirm book returns
 - Handle overdue, lost, or damaged books
 - Manage fines
+- Record fine collection
 - Manage book reservation queue
-- Manage seat booking requests
 - View member borrowing records
 
 ### 3.4 Admin
@@ -82,12 +85,12 @@ Main interactions:
 
 - Login
 - Manage users
+- Manage librarian accounts
 - Manage roles and permissions
 - Configure loan policies
 - Configure fine policies
-- Configure seat booking policies
 - View reports and statistics
-- Export report data
+- Export report data if supported
 - View audit logs
 
 ### 3.5 Notification Service
@@ -97,13 +100,13 @@ Notification Service is an external system used by the Library Management System
 Main interactions:
 
 - Receive notification requests from the system
-- Send email verification notifications
+- Send account verification notifications
 - Send password reset notifications
 - Send due date reminders
 - Send overdue notifications
 - Send borrow request results
 - Send book reservation updates
-- Send seat booking results
+- Send fine notifications
 - Return delivery status to the system
 
 ## 4. Notes
@@ -113,15 +116,15 @@ The following items are not actors:
 - Book
 - Book Copy
 - Loan
+- Reservation
 - Fine
-- Study Area
-- Seat
 - Category
 - Author
+- Publisher
 - Report
 
 These are system entities or data objects, not external users or external systems.
 
 The system does not need a separate "Manager" actor because Admin and Librarian already cover management responsibilities.
 
-Study seat reservation does not require a new actor unless the project specifically has a separate seat or area manager role. In this project, Librarian handles seat booking requests and Admin configures seat booking policies.
+Study seat reservation is out of scope for the current project version and is not represented as an actor responsibility.

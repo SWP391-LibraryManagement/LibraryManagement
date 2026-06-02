@@ -27,6 +27,19 @@ The main goal is to reduce manual work, improve data accuracy, and help libraria
 
 ---
 
+## 1.1 Approved Technical Stack
+
+| Layer    | Decision              |
+| -------- | --------------------- |
+| Backend  | Node.js + Express.js  |
+| Frontend | React + Bootstrap     |
+| Database | SQL Server            |
+| API      | RESTful API           |
+
+These stack choices are locked for the current project phase. Any change must update the Constitution, shared context, and related ADR/spec files.
+
+---
+
 ## 2. Development Approach
 
 The team follows Hybrid Spec-Driven & Agent-Driven Development.
@@ -68,15 +81,20 @@ AI/agent output must always be reviewed by a human before commit or merge.
 
 ## 4. Core Modules
 
-| Module                         | Description                                                           |
-| ------------------------------ | --------------------------------------------------------------------- |
-| Authentication & Authorization | Login, logout, role-based access control                              |
-| Book Management                | Manage books, categories, authors, publishers, quantity, and status   |
-| Member Management              | Manage library members/readers and their borrowing eligibility        |
-| Borrow Book                    | Create borrowing transactions and update available quantity           |
-| Return Book                    | Record returned books, update transaction status, and update quantity |
-| Fine Management                | Calculate and manage overdue fines                                    |
-| Report Management              | Generate reports for books, members, borrowing, returning, and fines  |
+| Module                         | Description |
+| ------------------------------ | ----------- |
+| Public / Browse                | Search, browse, and view public book information. |
+| Authentication                 | Register, login, logout, forgot password, and reset password. |
+| User Profile                   | View and update personal profile information. |
+| Membership Management          | Apply for membership and manage membership approval/status. |
+| Book Management                | Manage book information. |
+| Inventory / Book Copy          | Manage physical book copies, barcode, location, status, and availability. |
+| Borrowing Management           | Manage borrowing, returning, renewal, and borrowing history. |
+| Reservation Management         | Manage book reservations and reservation queue. |
+| Fine Management                | Calculate fines and record fine collection/paid status. |
+| Notification Management        | Send account, reservation, due date, and fine notifications. |
+| User & Role Management         | Manage users, librarians, roles, and permissions. |
+| Reporting & Statistics         | Generate basic reports and statistics. |
 
 ---
 
@@ -113,23 +131,30 @@ Initial entities may include:
 | Fine              | Stores overdue fine information                   |
 | AuditLog          | Stores important actions                          |
 
-This list is not final. Database design must be confirmed in ADR and related feature specs.
+This list is not final. Database design must be confirmed in ADR/RFC files under [`.sdd/rfcs/`](rfcs) and related feature specs.
 
 ---
 
 ## 7. Feature List
 
-The current planned features are:
+The official source of truth for the project feature list is [`docs/phase_1_foundation/07_master_feature_list.md`](../docs/phase_1_foundation/07_master_feature_list.md).
 
-| Feature Folder         | Feature Name                   | Spec Level    |
-| ---------------------- | ------------------------------ | ------------- |
-| feat-auth              | Authentication & Authorization | Full Spec     |
-| feat-book-management   | Book Management                | Standard Spec |
-| feat-member-management | Member Management              | Standard Spec |
-| feat-borrow-book       | Borrow Book                    | Full Spec     |
-| feat-return-book       | Return Book                    | Full Spec     |
-| feat-fine-management   | Fine Management                | Full Spec     |
-| feat-report            | Report Management              | Standard Spec |
+| Feature ID | Feature Name                     | Feature Folder               | Spec Level |
+| ---------- | -------------------------------- | ---------------------------- | ---------- |
+| FE01       | Public / Browse                  | feat-public-browse           | Standard   |
+| FE02       | Authentication                   | feat-auth                    | Full       |
+| FE03       | User Profile                     | feat-user-profile            | Standard   |
+| FE04       | Membership Management            | feat-membership-management   | Standard   |
+| FE05       | Book Management                  | feat-book-management         | Standard   |
+| FE06       | Inventory / Book Copy Management | feat-inventory-book-copy     | Full       |
+| FE07       | Borrowing Management             | feat-borrowing-management    | Full       |
+| FE08       | Reservation Management           | feat-reservation-management  | Standard   |
+| FE09       | Fine Management                  | feat-fine-management         | Full       |
+| FE10       | Notification Management          | feat-notification-management | Standard   |
+| FE11       | User & Role Management           | feat-user-role-management    | Full       |
+| FE12       | Reporting & Statistics           | feat-reporting-statistics    | Standard   |
+
+Feature folders should be created only when the team starts drafting the related `SPEC.md`. Empty feature folders should not be kept.
 
 ---
 
@@ -147,7 +172,7 @@ The project uses the following structure:
 │   └── safety.md
 └── specs/
     ├── _template.md
-    └── feat-borrow-book/
+    └── feat-{name}/
 ```
 
 Each feature folder must contain:
@@ -158,7 +183,22 @@ Each feature folder must contain:
 - TASKS.md
 - CHANGELOG.md
 
-Agent-facing memory lives under [`.agents/`](../.agents/) (see `.agents/AGENTS.md` and `.agents/CLAUDE.md`).
+Agent-facing memory lives under [`.agents/`](../.agents/) (see `.agents/AGENTS.md` and `.agents/CLAUDE.md`). Root-level `AGENTS.md` and `CLAUDE.md` point agents to those files.
+
+Current repository structure also includes the remaining Hybrid Project folders from the playbook:
+
+```text
+.sdd/skills/
+.sdd/rfcs/
+.sdd/reviews/
+backend/
+frontend/
+tests/unit/
+tests/integration/
+tests/e2e/
+database/
+.github/workflows/
+```
 
 ---
 
@@ -198,7 +238,7 @@ Before a feature is considered complete:
 
 | ID    | Question                                                          | Owner          | Status |
 | ----- | ----------------------------------------------------------------- | -------------- | ------ |
-| Q-001 | What technology stack will the team use for backend and frontend? | Team           | Open   |
+| Q-001 | What technology stack will the team use for backend and frontend? | Team           | Resolved: Node.js + Express.js, React + Bootstrap, SQL Server, RESTful API |
 | Q-002 | What is the maximum number of books a member can borrow?          | Team / Teacher | Open   |
 | Q-003 | How many days can a member keep a borrowed book?                  | Team / Teacher | Open   |
 | Q-004 | How is overdue fine calculated?                                   | Team / Teacher | Open   |
