@@ -32,10 +32,10 @@ The typical small/medium library administration workflow:
 
 1. An admin needs to add a new member to the system.
 2. The admin accesses the user management interface.
-3. The admin creates a new user account with email, password, and member details.
-4. The system validates the email is unique and password meets requirements.
-5. The system assigns the Member role to the new user.
-6. The system sends a welcome email or displays temporary password to the admin.
+3. The admin creates a new user account with email and member details, without entering a password.
+4. The system validates the email is unique and assigns the Member role.
+5. The system keeps the account inactive until password setup is completed.
+6. The system sends a one-time password setup link to the user's email; the admin never sees a password or token.
 7. Later, a librarian needs more privileges; admin changes their role from Librarian to Librarian+Admin.
 8. The admin updates the user's information when they provide new contact details.
 9. When a user leaves, the admin deactivates the account (does not delete).
@@ -58,7 +58,7 @@ FE11 includes:
 - Reactivate user accounts.
 - Manage user role assignments (assign/revoke roles).
 - Unlock locked user accounts.
-- Reset user passwords (admin action).
+- Initiate password setup/reset emails for users without exposing passwords or tokens to admins.
 
 FE11 does not include:
 
@@ -87,11 +87,13 @@ Potential issues to review:
 - `Users.Status` field must support values: `ACTIVE`, `INACTIVE`, `LOCKED`, `DELETED`.
 - `Users` table needs `LastLoginAt` for tracking active users.
 - `Users` table needs `FailedLoginCount` and `LockedUntil` fields for account lockout management.
+- Admin-created users must use the FE02 password setup flow. If the SQL schema keeps `PasswordHash NOT NULL`, the system must store an unusable placeholder hash until the user completes setup.
 - `UserRoles` table allows multiple roles per user; system must ensure at least one role per user.
 - `AuditLogs` must capture what changed and by whom; simple action text is insufficient.
 - Need to prevent removal of Admin role if only one admin remains.
 - Email uniqueness constraint should be case-insensitive.
 - Need `Department` and `Specialization` fields for librarian accounts.
+- Shared passwords must not be displayed to admins.
 
 These are not blockers for drafting, but they must be resolved before implementation.
 
@@ -164,9 +166,9 @@ These are not blockers for drafting, but they must be resolved before implementa
 | -- | -------- | ----- | ------ |
 | Q-FE11-001 | Can an admin deactivate their own account? | Team/Teacher | Open |
 | Q-FE11-002 | Should system prevent deactivation of users with active borrowings, or just warn? | Team/Teacher | Open |
-| Q-FE11-003 | What is the minimum password length and complexity requirement for user creation? | Team/Teacher | Open |
+| Q-FE11-003 | What is the minimum password length and complexity requirement when the user completes password setup through FE02? | Team/Teacher | Open |
 | Q-FE11-004 | Should email login be case-sensitive or case-insensitive? | Team/Teacher | Open |
-| Q-FE11-005 | Should new user creation automatically send welcome email with temporary password? | Team/Teacher | Open |
+| Q-FE11-005 | Should new user creation automatically send a password setup email with a one-time link? | Team/Teacher | Open |
 | Q-FE11-006 | How long should deactivated user data be retained (1 year, 5 years, forever)? | Team/Teacher | Open |
 | Q-FE11-007 | Should admin be able to unlock locked accounts, or only auto-unlock after timeout? | Team/Teacher | Open |
 | Q-FE11-008 | Should system support role hierarchy (Admin > Librarian > Member)? | Team/Teacher | Open |
