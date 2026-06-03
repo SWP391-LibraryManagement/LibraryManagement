@@ -8,7 +8,7 @@
 
 # Last Updated: 2026-06-03
 
-# Feature folder: `.sdd/specs/feat-authentication/`
+# Feature folder: `.sdd/specs/feat-auth/`
 
 ---
 
