@@ -158,9 +158,10 @@ The feature can only start when:
 5. The system validates new password meets complexity requirements.
 6. The system hashes the new password.
 7. The system updates the user's password.
-8. The system invalidates the reset token.
-9. The system writes an audit log: password reset.
-10. The system shows success message and redirects to login.
+8. If the token purpose is password setup for an admin-created inactive account, the system sets the user status to `ACTIVE`.
+9. The system invalidates the reset/setup token.
+10. The system writes an audit log: password reset or password setup completed.
+11. The system shows success message and redirects to login.
 
 ### MF-FE02-009: Validate Session/Token (Per-Request)
 
@@ -237,8 +238,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-010: A session/token must have an expiration time (e.g., 8 hours for web, 30 days for mobile with refresh).
 - BR-FE02-011: A session/token must be invalidated on logout.
 - BR-FE02-012: Every protected request must validate the session/token before processing.
-- BR-FE02-013: Password reset must require email verification to prevent reset attacks.
-- BR-FE02-014: Password reset tokens must expire quickly (e.g., 1 hour).
+- BR-FE02-013: Password reset/setup must require email verification to prevent reset attacks.
+- BR-FE02-014: Password reset/setup tokens must expire quickly (e.g., reset: 1 hour, admin-created account setup: 24 hours).
 - BR-FE02-015: A user's role(s) are determined by `UserRoles` table and may be cached but must be verified on sensitive operations.
 - BR-FE02-016: Every authentication event (login attempt, success, failure, logout, password change/reset) must be auditable.
 - BR-FE02-017: HTTPS must be enforced for login/password/token transmission; plain HTTP is forbidden.
@@ -260,7 +261,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE02-009: When a session/token expires, the system shall return 401 Unauthorized for subsequent requests using that token.
 - FR-FE02-010: When an authenticated user submits change password form, the system shall verify current password and update to new password.
 - FR-FE02-011: When a guest submits forgot password form, the system shall send a password reset email with a time-limited token.
-- FR-FE02-012: When a user clicks a valid password reset link and submits new password, the system shall update the password and invalidate the token.
+- FR-FE02-012: When a user clicks a valid password reset/setup link and submits new password, the system shall update the password, activate admin-created setup accounts if applicable, and invalidate the token.
 - FR-FE02-013: When a user's account is created, the system shall assign default role(s) based on user type (member, librarian, admin).
 - FR-FE02-014: When checking user permissions, the system shall retrieve roles from `UserRoles` table.
 
@@ -283,7 +284,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE02-013: Given authenticated user with incorrect current password, when user changes password, then the system rejects the change.
 - AC-FE02-014: Given valid registered email, when user requests password reset, then the system sends reset email.
 - AC-FE02-015: Given invalid registered email, when user requests password reset, then the system returns success message (no user enumeration).
-- AC-FE02-016: Given valid reset token, when user submits new password, then the system updates password and invalidates token.
+- AC-FE02-016: Given valid reset/setup token, when user submits new password, then the system updates password, activates admin-created setup accounts if applicable, and invalidates token.
 - AC-FE02-017: Given expired reset token, when user submits new password, then the system rejects the request.
 - AC-FE02-018: Given reset token used once, when same token is reused, then the system rejects the request.
 
@@ -322,7 +323,7 @@ Use these stable IDs for tasks and tests.
 | UserRoles | Maps users to roles. |
 | Sessions (optional) | Stores active session records if using session cookies. |
 | VerificationTokens (optional) | Stores email verification tokens with expiration. |
-| PasswordResetTokens (optional) | Stores password reset tokens with expiration. |
+| PasswordResetTokens (optional) | Stores password reset/setup tokens with expiration and purpose. |
 | LoginAttempts (optional) | Tracks failed login attempts for rate limiting. |
 | AuditLogs | Records all authentication events. |
 
@@ -333,7 +334,7 @@ Use these stable IDs for tasks and tests.
 | userId | integer | Yes | Primary key. |
 | email | string | Yes | Unique, valid email format, max 255 chars. |
 | username | string | No | Optional alternative login field. |
-| passwordHash | string | Yes | bcrypt hash, never store plaintext. |
+| passwordHash | string | Yes | bcrypt hash, never store plaintext. Admin-created accounts from FE11 may store an unusable placeholder hash until password setup is completed. |
 | fullName | string | No | User's display name. |
 | phoneNumber | string | No | User's phone number. |
 | address | string | No | User's address. |
@@ -347,8 +348,8 @@ Use these stable IDs for tasks and tests.
 | tokenExpiresAt | datetime | No | Session/token expiration timestamp. |
 | verificationToken | string | No | Email verification token. |
 | verificationTokenExpiresAt | datetime | No | Verification token expiration. |
-| resetToken | string | No | Password reset token. |
-| resetTokenExpiresAt | datetime | No | Password reset token expiration. |
+| resetToken | string | No | Password reset/setup token. Token purpose must distinguish normal reset from admin-created account setup. |
+| resetTokenExpiresAt | datetime | No | Password reset/setup token expiration. |
 
 ---
 
@@ -366,7 +367,7 @@ Use these stable IDs for tasks and tests.
 | POST | `/api/auth/refresh-token` | Authenticated | `{ token: string }` | `{ token: string, expiresIn: number }` | Refreshes expired token (if using JWT). |
 | POST | `/api/auth/change-password` | Authenticated | `{ currentPassword: string, newPassword: string }` | `{ message: "Password changed" }` | Requires current password verification. |
 | POST | `/api/auth/forgot-password` | Guest | `{ email: string }` | `{ message: "Password reset email sent" }` | Sends reset email; no user enumeration. |
-| POST | `/api/auth/reset-password` | Guest | `{ token: string, newPassword: string }` | `{ message: "Password reset. You can now login." }` | Validates token and updates password. |
+| POST | `/api/auth/reset-password` | Guest | `{ token: string, newPassword: string }` | `{ message: "Password reset. You can now login." }` | Validates token and updates password. Also completes FE11 admin-created account setup when token purpose is password setup. |
 | POST | `/api/auth/verify-session` | Authenticated | `{}` | `{ valid: boolean, userId: number, roles: string[] }` | Checks if session/token is still valid. |
 
 ---
@@ -481,7 +482,7 @@ The following Open Questions have been **PROPOSED** as decided in this spec. The
 | Q-FE02-003 | Email verification MANDATORY during registration | Account must be verified via email before activation | BR-FE02-004, FR-FE02-001, FR-FE02-003, AC-FE02-001, AC-FE02-002 | **PROPOSED** - Needs approval |
 | Q-FE02-004 | Multiple concurrent sessions: Allow (refresh old token periodically) | BR-FE02-010 and BR-FE02-011 don't restrict concurrent sessions | BR-FE02-010, BR-FE02-011 | **PROPOSED** - Needs approval |
 | Q-FE02-005 | Rate limiting: Max 5 failed attempts → account locked | Failed attempts trigger rate limiting and lock | BR-FE02-008, BR-FE02-009, FR-FE02-006, AC-FE02-008 | **PROPOSED** - Needs approval |
-| Q-FE02-006 | Password reset token expiration: 1 hour | BR-FE02-014 specifies "(e.g., 1 hour)" expiration | BR-FE02-014, FR-FE02-012, AC-FE02-017 | **PROPOSED** - Needs approval |
+| Q-FE02-006 | Password reset token expiration: 1 hour for normal reset, 24 hours for admin-created account setup | BR-FE02-014 specifies reset/setup token expiration | BR-FE02-014, FR-FE02-012, AC-FE02-017 | **PROPOSED** - Needs approval |
 | Q-FE02-007 | Audit logging: Yes, log password change and failed login attempts, retain indefinitely | BR-FE02-016 requires audit of all authentication events | BR-FE02-016, AF-FE02-001, AF-FE02-002 | **PROPOSED** - Needs approval |
 | Q-FE02-008 | Auto-lock inactive users: Not specified (scope for future phase) | Not implemented in this spec | (None) | **OPEN** - Out of scope Phase 1 |
 | Q-FE02-009 | Session strategy: JWT tokens with optional refresh token support | API returns "session/token" generically; implementation chooses JWT/refresh strategy | All Bearer token references in BR/FR/API | **PROPOSED** - Needs approval |
@@ -510,7 +511,7 @@ The following Open Questions have been **PROPOSED** as decided in this spec. The
 | AC-FE02-013 | Authenticated user changes password with incorrect current password → system rejects change | FR-FE02-010 | BR-FE02-018, BR-FE02-019 | FT06 | Not Started |
 | AC-FE02-014 | Guest requests password reset with valid registered email → system sends reset email | FR-FE02-011 | BR-FE02-013, BR-FE02-014, BR-FE02-016 | FT07 | Not Started |
 | AC-FE02-015 | Guest requests password reset with invalid email → system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT07 | Not Started |
-| AC-FE02-016 | Valid reset token + new password submitted → system updates password, invalidates token | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014 | FT08 | Not Started |
+| AC-FE02-016 | Valid reset/setup token + new password submitted -> system updates password, activates setup account if applicable, invalidates token | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014 | FT08 | Not Started |
 | AC-FE02-017 | Expired reset token + new password submitted → system rejects request | FR-FE02-012 | BR-FE02-014 | FT08 | Not Started |
 | AC-FE02-018 | Already-used reset token reused → system rejects request | FR-FE02-012 | BR-FE02-014 | FT08 | Not Started |
 

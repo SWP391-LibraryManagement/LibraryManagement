@@ -57,6 +57,7 @@ FE02 includes:
 - Password change (authenticated user).
 - Forgot password request.
 - Password reset via email link.
+- Password setup via email link for admin-created FE11 accounts.
 - Session/token validation for subsequent requests.
 - Session timeout management.
 
@@ -83,9 +84,10 @@ Potential issues to review:
 
 - Password storage must use bcrypt or similar hashing, not plain text or simple MD5.
 - Session/token strategy must be defined: JWT, session cookies, or both?
-- Reset token should have expiration time (e.g., 1 hour).
+- Reset/setup token should have expiration time (e.g., reset: 1 hour, admin-created account setup: 24 hours).
 - Login attempt rate limiting to prevent brute force attacks.
 - Email verification mechanism for registration and password reset.
+- Admin-created accounts from FE11 should remain unable to login until password setup is completed.
 - User status field (active/inactive/locked) needed to block suspended accounts.
 - Password history to prevent reuse of recent passwords.
 - AuditLogs should capture login success/failure, logout, password reset attempts.

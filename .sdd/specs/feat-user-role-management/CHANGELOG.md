@@ -7,3 +7,4 @@
 - Expanded scope to include user list viewing, account creation (members/librarians), user information updates, account deactivation/reactivation, role management, and account unlocking.
 - Added stable requirement IDs for business rules, functional requirements, acceptance criteria, edge cases, and open questions.
 - Identified key risks related to access control, account lockout, and audit logging.
+- Clarified secure admin-created account setup: no admin-entered passwords, inactive before setup, setup completed through FE02.
