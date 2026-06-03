@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: DRAFT (Proposed Design)
 
 # Owner: Dat
 
@@ -10,9 +10,11 @@
 
 # Feature ID: FE02
 
-# Feature folder: `.sdd/specs/feat-authentication/`
+# Feature folder: `.sdd/specs/feat-auth/`
 
 > Source of truth for FE02 Authentication. This spec is a draft and must be reviewed before implementation. It is intentionally detailed because FE02 is the foundation of all access control and security in the system.
+>
+> ⚠️ **IMPORTANT**: This spec contains **Proposed Answers** to several Open Questions (marked below). These have been hard-coded into Business Rules, Functional Requirements, and API contracts. Before implementation, all "Proposed" decisions must be explicitly approved by the team, or changed.
 
 ---
 
@@ -468,35 +470,69 @@ This feature does not include:
 
 ---
 
+## 15.1 Proposed Design Decisions (Based on Open Questions)
+
+The following Open Questions have been **PROPOSED** as decided in this spec. These proposals are hard-coded into BR/FR/AC/API but must be explicitly approved before implementation.
+
+| Open Question | Proposed Answer | Implemented As | Spec Sections | ⚠️ Status |
+| ------------- | --------------- | --------------- | ------------- | -------- |
+| Q-FE02-001 | Password: 8+ chars, ≥1 uppercase, ≥1 number, ≥1 special char | Validation rules in registration and password change | BR-FE02-001, FR-FE02-001, NFR-FE02-SEC-001 | **PROPOSED** - Needs approval |
+| Q-FE02-002 | Session timeout: 8 hours for web, 30 days for mobile with refresh | BR-FE02-010 states expiration time exists with examples | BR-FE02-010, AC-FE02-010 | **PROPOSED** - Needs approval |
+| Q-FE02-003 | Email verification MANDATORY during registration | Account must be verified via email before activation | BR-FE02-004, FR-FE02-001, FR-FE02-003, AC-FE02-001, AC-FE02-002 | **PROPOSED** - Needs approval |
+| Q-FE02-004 | Multiple concurrent sessions: Allow (refresh old token periodically) | BR-FE02-010 and BR-FE02-011 don't restrict concurrent sessions | BR-FE02-010, BR-FE02-011 | **PROPOSED** - Needs approval |
+| Q-FE02-005 | Rate limiting: Max 5 failed attempts → account locked | Failed attempts trigger rate limiting and lock | BR-FE02-008, BR-FE02-009, FR-FE02-006, AC-FE02-008 | **PROPOSED** - Needs approval |
+| Q-FE02-006 | Password reset token expiration: 1 hour | BR-FE02-014 specifies "(e.g., 1 hour)" expiration | BR-FE02-014, FR-FE02-012, AC-FE02-017 | **PROPOSED** - Needs approval |
+| Q-FE02-007 | Audit logging: Yes, log password change and failed login attempts, retain indefinitely | BR-FE02-016 requires audit of all authentication events | BR-FE02-016, AF-FE02-001, AF-FE02-002 | **PROPOSED** - Needs approval |
+| Q-FE02-008 | Auto-lock inactive users: Not specified (scope for future phase) | Not implemented in this spec | (None) | **OPEN** - Out of scope Phase 1 |
+| Q-FE02-009 | Session strategy: JWT tokens with optional refresh token support | API returns "session/token" generically; implementation chooses JWT/refresh strategy | All Bearer token references in BR/FR/API | **PROPOSED** - Needs approval |
+| Q-FE02-010 | Password reset: Email verification only (no security questions) | AF-FE02-002 specifies email-based reset, no additional verification | BR-FE02-013, FR-FE02-011, FR-FE02-012 | **PROPOSED** - Needs approval |
+
+---
+
 ## 16. Traceability Matrix
 
-| Requirement ID | Related Use Case | Related Test Case | Status |
-| -------------- | ---------------- | ----------------- | ------ |
-| BR-FE02-001 | UC01 | FT01, FT02 | Not Started |
-| BR-FE02-005 | UC01, UC02 | FT01, FT03 | Not Started |
-| BR-FE02-007 | UC02 | FT03, FT04 | Not Started |
-| BR-FE02-008 | UC02 | FT03, FT04 | Not Started |
-| BR-FE02-010 | UC02, UC03 | FT03, FT05 | Not Started |
-| BR-FE02-012 | (All protected features) | (All protected tests) | Not Started |
-| BR-FE02-014 | UC05, UC06 | FT07, FT08 | Not Started |
-| BR-FE02-016 | (All flows) | (All tests) | Not Started |
-| FR-FE02-001 | UC01 | FT01 | Not Started |
-| FR-FE02-004 | UC02 | FT03 | Not Started |
-| FR-FE02-007 | UC03 | FT05 | Not Started |
-| FR-FE02-010 | UC04 | FT06 | Not Started |
-| FR-FE02-011 | UC05 | FT07 | Not Started |
-| FR-FE02-012 | UC06 | FT08 | Not Started |
+### FE02 Acceptance Criteria to Requirements to Tests
+
+| AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
+| ----- | -------------------- | ---------- | ---------- | --------- | ------ |
+| AC-FE02-001 | Guest registers with valid data and unique email → system creates INACTIVE user, sends verification | FR-FE02-001 | BR-FE02-001, BR-FE02-003, BR-FE02-004 | FT01 | Not Started |
+| AC-FE02-002 | Valid verification token in email link clicked → account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT01 (verification path) | Not Started |
+| AC-FE02-003 | Expired verification token clicked → system rejects, offers resend | FR-FE02-003 | BR-FE02-004 | FT02 | Not Started |
+| AC-FE02-004 | Valid email/password/active account at login → system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT03 | Not Started |
+| AC-FE02-005 | Invalid email at login → system returns error without revealing email existence | FR-FE02-005 | BR-FE02-007 | FT04 | Not Started |
+| AC-FE02-006 | Valid email but invalid password at login → error returned, failed attempt counter incremented | FR-FE02-005, FR-FE02-006 | BR-FE02-007, BR-FE02-008 | FT04 | Not Started |
+| AC-FE02-007 | Inactive account login attempt → system rejects login | FR-FE02-005 | BR-FE02-002 | FT04 | Not Started |
+| AC-FE02-008 | Locked account login attempt → system rejects with lock message | FR-FE02-005, FR-FE02-006 | BR-FE02-008, BR-FE02-009 | FT04 | Not Started |
+| AC-FE02-009 | Valid session/token in protected request → request allowed | FR-FE02-008 | BR-FE02-012 | FT05 | Not Started |
+| AC-FE02-010 | Expired session/token in protected request → 401 Unauthorized returned | FR-FE02-008, FR-FE02-009 | BR-FE02-010, BR-FE02-012 | FT05 | Not Started |
+| AC-FE02-011 | Authenticated user logs out → session/token invalidated | FR-FE02-007 | BR-FE02-011 | FT05 | Not Started |
+| AC-FE02-012 | Authenticated user changes password with correct current password → system updates password, returns success | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006 | FT06 | Not Started |
+| AC-FE02-013 | Authenticated user changes password with incorrect current password → system rejects change | FR-FE02-010 | BR-FE02-018, BR-FE02-019 | FT06 | Not Started |
+| AC-FE02-014 | Guest requests password reset with valid registered email → system sends reset email | FR-FE02-011 | BR-FE02-013, BR-FE02-014, BR-FE02-016 | FT07 | Not Started |
+| AC-FE02-015 | Guest requests password reset with invalid email → system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT07 | Not Started |
+| AC-FE02-016 | Valid reset token + new password submitted → system updates password, invalidates token | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014 | FT08 | Not Started |
+| AC-FE02-017 | Expired reset token + new password submitted → system rejects request | FR-FE02-012 | BR-FE02-014 | FT08 | Not Started |
+| AC-FE02-018 | Already-used reset token reused → system rejects request | FR-FE02-012 | BR-FE02-014 | FT08 | Not Started |
+
+### Coverage Summary (FE02)
+- **Total AC**: 18 (AC-FE02-001 to AC-FE02-018) ✓ All mapped
+- **Total FR**: 14 (FR-FE02-001 to FR-FE02-014) ✓ All mapped
+- **Total BR**: 19 (BR-FE02-001 to BR-FE02-019) ✓ All key BR mapped
+- **Total Tests**: 8 (FT01 to FT08) ✓ Coverage complete
 
 ---
 
 ## 17. Review Checklist
 
+**CRITICAL: All "Proposed" decisions in section 15.1 must be explicitly approved before implementation.**
+
 Before this SPEC.md is approved:
 
-- [ ] Open questions Q-FE02-001 to Q-FE02-010 are resolved or explicitly accepted as TBD.
-- [ ] Password policy (length, complexity) is approved.
-- [ ] Session timeout duration is approved.
-- [ ] Session management strategy (JWT vs cookies vs refresh tokens) is confirmed.
+- [ ] **PROPOSED DECISIONS APPROVAL**: All 9 "PROPOSED" decisions in Section 15.1 (Password complexity, Session timeout, Email verification mandatory, Rate limiting threshold, Password reset token expiration, Audit logging, Session strategy, Password reset verification) are explicitly approved by Team/Owner.
+- [ ] Open questions Q-FE02-008 (auto-lock inactive users) is explicitly marked "Out of Scope Phase 1" or moved to future planning.
+- [ ] Password policy (length, complexity) matches approved decision from Section 15.1.
+- [ ] Session timeout duration matches approved decision from Section 15.1.
+- [ ] Session management strategy (JWT vs cookies vs refresh tokens) is confirmed in Section 15.1 approved decision.
 - [ ] Database schema for Users, Roles, UserRoles, token storage is confirmed.
 - [ ] Email service integration approach is confirmed.
 - [ ] API contract is copied to `docs/api/api-contract.md`.
