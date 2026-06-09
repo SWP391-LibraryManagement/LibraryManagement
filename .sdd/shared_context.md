@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Last Updated: 2026-05-26
+# Last Updated: 2026-06-09
 
 ---
 
@@ -104,12 +104,25 @@ AI/agent output must always be reviewed by a human before commit or merge.
 - BR-GEN-002: A member must have a unique identifier.
 - BR-GEN-003: Only authorized users can manage books, members, borrowing, returning, and fines.
 - BR-GEN-004: A book cannot be borrowed if its available quantity is 0.
-- BR-GEN-005: A member cannot borrow more than the configured borrowing limit.
+- BR-GEN-005: A member cannot borrow more than 5 active borrowed copies at the same time.
 - BR-GEN-006: A member with overdue books or unpaid fines may be restricted from borrowing.
-- BR-GEN-007: Every borrow transaction must store member, book, borrow date, due date, status, and creator.
+- BR-GEN-007: Every borrow transaction must store member, book, borrow date, due date, status, and creator. The default loan duration is 14 calendar days.
 - BR-GEN-008: Every return transaction must update the related borrowing transaction.
-- BR-GEN-009: Fine calculation must be traceable and testable.
+- BR-GEN-009: Fine calculation must be traceable and testable. For Phase 1, overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date.
 - BR-GEN-010: Important administrative actions must be logged.
+
+---
+
+## 5.1 Phase 1 Baseline Business Decisions
+
+These decisions close the shared Phase 0 business questions so that feature specs can use the same assumptions. If the teacher or team lead changes any decision, update this file first, then update the affected feature specs.
+
+| Decision ID | Decision | Applies To |
+| ----------- | -------- | ---------- |
+| DEC-GEN-001 | A member may have at most 5 active borrowed copies at the same time. | FE07 Borrowing, FE08 Reservation, FE09 Fine, FE12 Reporting |
+| DEC-GEN-002 | The default loan duration is 14 calendar days from the borrow approval date. | FE07 Borrowing, FE10 Notification, FE12 Reporting |
+| DEC-GEN-003 | Overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date. | FE07 Borrowing, FE09 Fine, FE10 Notification, FE12 Reporting |
+| DEC-GEN-004 | Final user roles for Phase 1 are Guest, Member, Librarian, and Admin. System/Scheduler is an internal actor, not a login role. | FE02 Authentication, FE10 Notification, FE11 User & Role |
 
 ---
 
@@ -234,15 +247,17 @@ Before a feature is considered complete:
 
 ---
 
-## 11. Current Open Questions
+## 11. Phase 1 Baseline Decisions
 
 | ID    | Question                                                          | Owner          | Status |
 | ----- | ----------------------------------------------------------------- | -------------- | ------ |
 | Q-001 | What technology stack will the team use for backend and frontend? | Team           | Resolved: Node.js + Express.js, React + Bootstrap, SQL Server, RESTful API |
-| Q-002 | What is the maximum number of books a member can borrow?          | Team / Teacher | Open   |
-| Q-003 | How many days can a member keep a borrowed book?                  | Team / Teacher | Open   |
-| Q-004 | How is overdue fine calculated?                                   | Team / Teacher | Open   |
-| Q-005 | Which roles are required in the final system?                     | Team           | Open   |
+| Q-002 | What is the maximum number of books a member can borrow?          | Team / Teacher | Resolved for Phase 1: 5 active borrowed copies per member |
+| Q-003 | How many days can a member keep a borrowed book?                  | Team / Teacher | Resolved for Phase 1: 14 calendar days |
+| Q-004 | How is overdue fine calculated?                                   | Team / Teacher | Resolved for Phase 1: 5,000 VND per overdue day per copy, starting the day after due date |
+| Q-005 | Which roles are required in the final system?                     | Team           | Resolved for Phase 1: Guest, Member, Librarian, Admin. System/Scheduler is internal actor only |
+
+These are Phase 1 baseline decisions. They may be revised only after team/teacher approval and must be propagated to all affected feature specs.
 
 ---
 
