@@ -1,32 +1,23 @@
 import { useState } from 'react';
-import { TextField, InputAdornment, IconButton } from '@mui/material';
+import { TextField, IconButton, InputAdornment } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-export default function FormField({
+export default function PasswordInput({
   label,
   placeholder,
   value,
   onChange,
-  type = 'text',
   required = false,
-  icon,
   error = false,
   helperText = '',
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
-  const isPasswordField = type === 'password';
-  const displayType = isPasswordField
-    ? showPassword
-      ? 'text'
-      : 'password'
-    : type;
-
   return (
     <TextField
       fullWidth
       required={required}
-      type={displayType}
+      type={showPassword ? 'text' : 'password'}
       label={label}
       placeholder={placeholder}
       value={value}
@@ -36,12 +27,7 @@ export default function FormField({
       error={error}
       helperText={helperText}
       InputProps={{
-        startAdornment: icon ? (
-          <InputAdornment position="start">
-            {icon}
-          </InputAdornment>
-        ) : undefined,
-        endAdornment: isPasswordField ? (
+        endAdornment: (
           <InputAdornment position="end">
             <IconButton
               onClick={() => setShowPassword(!showPassword)}
@@ -55,7 +41,7 @@ export default function FormField({
               )}
             </IconButton>
           </InputAdornment>
-        ) : undefined,
+        ),
       }}
     />
   );

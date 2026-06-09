@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react';
-import './login.css';
 import {
   TextField,
   IconButton,
@@ -34,7 +33,6 @@ export default function LoginForm({
     if (onSubmit) {
       onSubmit(username, password, rememberMe);
     }
-    // In real application, handle login logic here
     console.log('Login attempt:', { username, password, rememberMe });
   };
 
@@ -116,7 +114,7 @@ export default function LoginForm({
             />
           }
           label={
-            <span style={{ color: '#c6ac8f', fontSize: '0.875rem' }}>
+            <span style={{ color: '#6d4c41', fontSize: '0.875rem' }}>
               Remember me
             </span>
           }

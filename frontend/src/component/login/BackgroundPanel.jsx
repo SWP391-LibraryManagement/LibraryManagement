@@ -1,23 +1,26 @@
-import React from 'react';
-import { Box } from '@mui/material';
-import './login.css';
-
 /**
  * BackgroundPanel Component
- * Provides a premium, warm library-themed background with abstract glassmorphism elements
+ * Displays the left side background image with overlay and branding
  */
-export default function BackgroundPanel({ children }) {
+
+export default function BackgroundPanel({
+  imageUrl,
+  title = 'Library Management System',
+  subtitle = 'Empowering knowledge, one book at a time'
+}) {
   return (
-    <Box className="auth-background">
-      {/* Decorative background glass/glow shapes */}
-      <Box className="bg-shape bg-shape-1" />
-      <Box className="bg-shape bg-shape-2" />
-      <Box className="bg-shape bg-shape-3" />
-      
-      {/* Container for centering the login card */}
-      <Box className="auth-container">
-        {children}
-      </Box>
-    </Box>
+    <div
+      className="background-panel"
+      style={{ backgroundImage: `url(${imageUrl})` }}
+    >
+      {/* Warm overlay for better contrast */}
+      <div className="background-overlay"></div>
+
+      {/* Content at the bottom */}
+      <div className="background-content">
+        <h1 className="background-title">{title}</h1>
+        <p className="background-subtitle">{subtitle}</p>
+      </div>
+    </div>
   );
 }
