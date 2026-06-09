@@ -6,40 +6,46 @@
 import { Card } from '@mui/material';
 import { LocalLibrary } from '@mui/icons-material';
 import LoginForm from './LoginForm';
-import './login.css';
 
-export default function AuthCard({
+export default function AuthCard(props) {
+  const {
     onSubmit,
     onForgotPassword,
     onRegister
-}) {
-    return (
-        <div className="login-card-wrapper">
-            <Card className="auth-card" elevation={0}>
-                {/* Header Section */}
-                <div className="login-header">
-                    {/* Icon */}
-                    <div className="login-icon-wrapper">
-                        <LocalLibrary
-                            sx={{
-                                fontSize: 40,
-                                color: '#fff'
-                            }}
-                        />
-                    </div>
+  } = props;
 
-                    {/* Title and Subtitle */}
-                    <h2 className="login-title">Library Management System</h2>
-                    <p className="login-subtitle">Welcome back, sign in to continue.</p>
-                </div>
+  return (
+    <div className="login-card-wrapper">
+      <Card className="auth-card" elevation={0}>
+        {/* Header Section */}
+        <div className="login-header">
+          {/* Icon */}
+          <div className="login-icon-wrapper">
+            <LocalLibrary
+              sx={{
+                fontSize: 40,
+                color: '#fff'
+              }}
+            />
+          </div>
 
-                {/* Login Form */}
-                <LoginForm
-                    onSubmit={onSubmit}
-                    onForgotPassword={onForgotPassword}
-                    onRegister={onRegister}
-                />
-            </Card>
+          {/* Title and Subtitle */}
+          <h2 className="login-title">
+            Library Management System
+          </h2>
+
+          <p className="login-subtitle">
+            Welcome back, sign in to continue.
+          </p>
         </div>
-    );
+
+        {/* Login Form */}
+        <LoginForm
+          onSubmit={onSubmit}
+          onForgotPassword={onForgotPassword}
+          onRegister={onRegister}
+        />
+      </Card>
+    </div>
+  );
 }
