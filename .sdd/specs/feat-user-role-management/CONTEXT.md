@@ -4,9 +4,9 @@
 
 # Status: DRAFT
 
-# Owner: Dat
+# Owner: Dung
 
-# Last Updated: 2026-06-03
+# Last Updated: 2026-06-09
 
 # Feature folder: `.sdd/specs/feat-user-role-management/`
 
@@ -39,9 +39,8 @@ The typical small/medium library administration workflow:
 7. Later, a librarian needs more privileges; admin changes their role from Librarian to Librarian+Admin.
 8. The admin updates the user's information when they provide new contact details.
 9. When a user leaves, the admin deactivates the account (does not delete).
-10. The admin can reactivate the account if the user returns.
-11. The admin can unlock locked accounts caused by too many failed login attempts.
-12. The admin can view audit logs of all user management actions.
+10. The admin can create, update, and deactivate librarian accounts.
+11. The admin can view audit logs of all user management actions.
 
 ---
 
@@ -55,16 +54,19 @@ FE11 includes:
 - Create librarian accounts.
 - Update user information (name, phone, address, department, specialization).
 - Deactivate user accounts.
-- Reactivate user accounts.
+- Update librarian accounts.
+- Deactivate librarian accounts.
 - Manage user role assignments (assign/revoke roles).
-- Unlock locked user accounts.
-- Initiate password setup/reset emails for users without exposing passwords or tokens to admins.
+- Initiate password setup emails for newly created users without exposing passwords or tokens to admins.
 
 FE11 does not include:
 
 - User profile editing by non-admins. That belongs to FE03.
 - User registration/signup by self-service. That belongs to FE02 Authentication.
 - Password reset by users themselves. That belongs to FE02 Authentication.
+- Unlocking accounts after failed login lockout unless explicitly added by FE02/FE11 later.
+- Reactivating deactivated accounts unless explicitly approved as a separate flow later.
+- Admin-initiated password reset for existing users unless explicitly added by FE02/FE11 later.
 - Permanent user deletion. Only deactivation is supported.
 - User import/export or bulk operations.
 - Role-based activity reports or analytics.
@@ -103,14 +105,15 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC36 | View user list | Dat |
-| UC37 | View user information | Dat |
-| UC38 | Create member account | Dat |
-| UC39 | Create librarian account | Dat |
-| UC40 | Update user information | Dat |
-| UC41 | Deactivate user account | Dat |
-| UC42 | Manage user roles | Dat |
-| UC43 | Unlock user account | Dat |
+| UC49 | View User List | Dung |
+| UC50 | View User Information | Dung |
+| UC51 | Create User Account | Dung |
+| UC52 | Update User Information | Dung |
+| UC53 | Deactivate User Account | Dung |
+| UC54 | Create Librarian Account | Dung |
+| UC55 | Update Librarian Account | Dung |
+| UC56 | Deactivate Librarian Account | Dung |
+| UC57 | Manage Roles | Dung |
 
 ---
 
@@ -118,19 +121,15 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT37 | View user list with filtering | Dat |
-| FT38 | View user details | Dat |
-| FT39 | Create member account | Dat |
-| FT40 | Create member with duplicate email | Dat |
-| FT41 | Create librarian account | Dat |
-| FT42 | Update user information | Dat |
-| FT43 | Update user with duplicate email | Dat |
-| FT44 | Deactivate user account | Dat |
-| FT45 | Reactivate user account | Dat |
-| FT46 | Assign role to user | Dat |
-| FT47 | Revoke role from user | Dat |
-| FT48 | Prevent removal of last admin | Dat |
-| FT49 | Unlock locked account | Dat |
+| FT50 | View user list | Dung |
+| FT51 | View user information | Dung |
+| FT52 | Create user account | Dung |
+| FT53 | Update user information | Dung |
+| FT54 | Deactivate user account | Dung |
+| FT55 | Create librarian account | Dung |
+| FT56 | Update librarian account | Dung |
+| FT57 | Deactivate librarian account | Dung |
+| FT58 | Manage roles | Dung |
 
 ---
 
@@ -139,13 +138,12 @@ These are not blockers for drafting, but they must be resolved before implementa
 - User data corruption if account creation is not transactional (user created but role assignment fails).
 - Access control breach if a user is not properly deactivated or role is not properly revoked.
 - Privilege escalation if admin role cannot be revoked from the last admin.
-- Data integrity loss if all admins are accidentally locked/deactivated without recovery path.
-- Account lockout without unlock mechanism traps users indefinitely.
+- Data integrity loss if all admins are accidentally deactivated without recovery path.
 - Email uniqueness not enforced allows duplicate accounts with same email.
 - Concurrent role assignment/revocation can create inconsistent state.
 - Deactivation without invalidating active sessions allows deactivated user to continue accessing system.
 - Audit logs can be incomplete if user management actions are not fully logged.
-- Password reset without proper validation allows unauthorized account takeover.
+- Password setup without proper validation allows unauthorized account takeover.
 
 ---
 
@@ -170,10 +168,9 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE11-004 | Should email login be case-sensitive or case-insensitive? | Team/Teacher | Open |
 | Q-FE11-005 | Should new user creation automatically send a password setup email with a one-time link? | Team/Teacher | Open |
 | Q-FE11-006 | How long should deactivated user data be retained (1 year, 5 years, forever)? | Team/Teacher | Open |
-| Q-FE11-007 | Should admin be able to unlock locked accounts, or only auto-unlock after timeout? | Team/Teacher | Open |
-| Q-FE11-008 | Should system support role hierarchy (Admin > Librarian > Member)? | Team/Teacher | Open |
-| Q-FE11-009 | Can one admin view or reset another admin's password? | Team/Teacher | Open |
-| Q-FE11-010 | Should user deactivation send notification email to the user? | Team/Teacher | Open |
+| Q-FE11-007 | Should system support role hierarchy (Admin > Librarian > Member)? | Team/Teacher | Open |
+| Q-FE11-008 | Can one admin view another admin's sensitive account fields? | Team/Teacher | Open |
+| Q-FE11-009 | Should user deactivation send notification email to the user? | Team/Teacher | Open |
 
 ---
 
