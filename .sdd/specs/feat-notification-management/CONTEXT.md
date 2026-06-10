@@ -4,9 +4,9 @@
 
 # Status: DRAFT
 
-# Owner: FE10 Assignee
+# Owner: Nhat
 
-# Last Updated: 2026-06-09
+# Last Updated: 2026-06-10
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
@@ -21,7 +21,7 @@ This feature must keep four things consistent:
 - Notification requests created by other features.
 - Notification content rendered from approved templates.
 - Delivery status for email and in-app notifications.
-- Retry and audit information for failed delivery attempts.
+- Safe delivery records for failed or skipped delivery attempts.
 
 FE10 is a Standard Spec feature because it supports many workflows, but it should not own the business decision of when an account, reservation, loan, or fine changes state.
 
@@ -37,10 +37,8 @@ The typical library notification workflow:
 4. FE10 renders the message from an approved template.
 5. FE10 creates a notification record with status `PENDING`.
 6. FE10 sends the email or creates an in-app notification.
-7. FE10 updates status to `SENT`, `DELIVERED`, `READ`, or `FAILED` depending on the channel and result.
-8. If sending fails, FE10 records the failure reason and retries according to policy.
-9. Users can view and mark in-app notifications as read.
-10. Librarians/admins can view notification logs for troubleshooting.
+7. FE10 updates status to `SENT`, `DELIVERED`, `FAILED`, or `SKIPPED` depending on the channel and result.
+8. If sending fails, FE10 records a safe failure reason.
 
 ---
 
@@ -49,24 +47,26 @@ The typical library notification workflow:
 FE10 includes:
 
 - Receiving notification requests from approved internal features.
-- Sending account verification, password setup, password reset, reservation, due date, overdue, and fine notifications.
+- Sending account verification, password reset, reservation, due date, overdue, and fine notifications.
 - Creating in-app notifications.
 - Sending email notifications through a configured provider or mock provider.
-- Managing notification templates and required template variables.
+- Using approved notification templates and required template variables.
 - Tracking notification status and failed delivery reasons.
-- Retrying failed notifications according to approved retry policy.
-- Allowing users to view and mark their own in-app notifications as read.
-- Allowing librarians/admins to view notification logs.
 
 FE10 does not include:
 
 - Creating authentication tokens. That belongs to FE02 Authentication.
-- Validating password reset/setup tokens. That belongs to FE02 Authentication.
+- Validating password reset tokens. That belongs to FE02 Authentication.
 - Deciding reservation queue eligibility. That belongs to FE08 Reservation Management.
 - Calculating overdue fines. That belongs to FE09 Fine Management.
 - Approving borrow/return workflows. That belongs to FE07 Borrowing Management.
 - SMS, push notification, or marketing campaign delivery.
 - Online payment notifications.
+- User notification inbox/list UI.
+- Marking in-app notifications as read.
+- Admin/librarian notification log screens.
+- Manual retry management screens.
+- Template editor UI.
 - Real external email-provider credentials in source code.
 
 ---
@@ -76,7 +76,7 @@ FE10 does not include:
 The current SQL script does not yet define notification tables. Before implementation, the team should confirm whether to add:
 
 - `NotificationTemplates(TemplateId, TemplateKey, Channel, SubjectTemplate, BodyTemplate, IsActive, CreatedAt, UpdatedAt)`
-- `Notifications(NotificationId, UserId, Type, Channel, Title, Body, Status, SourceFeature, SourceEntityType, SourceEntityId, CreatedAt, SentAt, ReadAt)`
+- `Notifications(NotificationId, UserId, Type, Channel, Title, Body, Status, SourceFeature, SourceEntityType, SourceEntityId, CreatedAt, SentAt)`
 - `NotificationAttempts(AttemptId, NotificationId, AttemptNo, Status, ErrorMessage, AttemptedAt)`
 - `UserNotificationPreferences(UserId, EmailEnabled, InAppEnabled, DueReminderEnabled, FineNotificationEnabled)`
 
@@ -87,7 +87,7 @@ Potential issues to review:
 - FE02 owns token generation; FE10 only receives links or safe template data to deliver.
 - FE10 should be idempotent enough to avoid duplicate messages for the same source event.
 - Failed sends should not roll back already-completed business transactions in FE02/FE07/FE08/FE09.
-- In-app notifications require a read/unread state.
+- In-app notification read/unread state is out of the current assignment scope unless the team adds it later.
 
 These are not blockers for drafting, but they must be resolved before implementation.
 
@@ -97,15 +97,10 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC44 | Send account verification notification | FE10 Assignee |
-| UC45 | Send password setup/reset notification | FE10 Assignee |
-| UC46 | Send reservation available notification | FE10 Assignee |
-| UC47 | Send due date reminder notification | FE10 Assignee |
-| UC48 | Send overdue/fine notification | FE10 Assignee |
-| UC49 | View user notifications | FE10 Assignee |
-| UC50 | Mark notification as read | FE10 Assignee |
-| UC51 | View notification delivery log | FE10 Assignee |
-| UC52 | Retry failed notification | FE10 Assignee |
+| UC45 | Send Account Verification Notification | Nhat |
+| UC46 | Send Password Reset Notification | Nhat |
+| UC47 | Send Book Reservation Notification | Nhat |
+| UC48 | Send Due Date Or Fine Notification | Nhat |
 
 ---
 
@@ -113,16 +108,10 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT50 | Create notification request with valid data | FE10 Assignee |
-| FT51 | Reject notification request with missing recipient | FE10 Assignee |
-| FT52 | Send account verification email request | FE10 Assignee |
-| FT53 | Send reservation available notification | FE10 Assignee |
-| FT54 | Send due date reminder notification | FE10 Assignee |
-| FT55 | Send overdue/fine notification | FE10 Assignee |
-| FT56 | View own in-app notifications | FE10 Assignee |
-| FT57 | Mark notification as read | FE10 Assignee |
-| FT58 | Retry failed notification | FE10 Assignee |
-| FT59 | Prevent unauthorized access to another user's notifications | FE10 Assignee |
+| FT46 | Account verification notification sent | Nhat |
+| FT47 | Password reset notification sent | Nhat |
+| FT48 | Book reservation notification sent | Nhat |
+| FT49 | Due date or fine notification sent | Nhat |
 
 ---
 
@@ -131,10 +120,9 @@ These are not blockers for drafting, but they must be resolved before implementa
 - Duplicate notifications confuse members and create support work.
 - Failed email delivery may hide important account, reservation, due date, or fine events.
 - Notification content may expose sensitive tokens or internal error details if templates are not controlled.
-- Missing retry/audit records makes delivery issues hard to troubleshoot.
+- Missing delivery records makes delivery issues hard to troubleshoot.
 - FE10 may accidentally take over business decisions that belong to FE02, FE07, FE08, or FE09.
 - Email provider credentials may be leaked if hardcoded.
-- In-app notification access control bugs may expose another user's messages.
 
 ---
 
@@ -142,12 +130,11 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | Dependency | Why It Matters |
 | ---------- | -------------- |
-| FE02 Authentication | Provides account verification, password reset/setup links and auth for protected notification APIs. |
+| FE02 Authentication | Provides account verification and password reset links and auth for protected notification APIs. |
 | FE07 Borrowing Management | May request due date reminders and borrow/return status notifications. |
 | FE08 Reservation Management | Requests book available and reservation status notifications. |
 | FE09 Fine Management | Requests overdue and fine notifications. |
-| FE11 User & Role Management | May request admin-created account setup emails and uses roles for admin log access. |
-| SQL Server database | Stores notification templates, records, attempts, and read states. |
+| SQL Server database | Stores notification templates, records, and attempts. |
 | Email provider or mock provider | Delivers email notifications. |
 
 ---
@@ -159,11 +146,10 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE10-001 | Which channels are required for Phase 1: email only, in-app only, or both? | Team/Teacher | Open |
 | Q-FE10-002 | Which email provider or mock strategy will be used in development? | Team/Tech Lead | Open |
 | Q-FE10-003 | Should members be able to disable optional reminders, or are all notifications mandatory? | Team/Teacher | Open |
-| Q-FE10-004 | How many retry attempts should failed email notifications receive? | Team/Teacher | Open |
-| Q-FE10-005 | How long should notification logs be retained? | Team/Teacher | Open |
-| Q-FE10-006 | Should due date reminders be scheduled automatically, and how many days before due date? | Team/Teacher | Open |
-| Q-FE10-007 | Should notification templates be editable by Admin, or fixed in code/database seed? | Team/Teacher | Open |
-| Q-FE10-008 | Should failed notification delivery block the source business flow? | Team/Teacher | Open |
+| Q-FE10-004 | How long should delivery records be retained? | Team/Teacher | Open |
+| Q-FE10-005 | Should due date reminders be scheduled automatically, and how many days before due date? | Team/Teacher | Open |
+| Q-FE10-006 | Should notification templates be fixed in seed/static configuration for Phase 1? | Team/Teacher | Open |
+| Q-FE10-007 | Should failed notification delivery block the source business flow? | Team/Teacher | Open |
 
 ---
 
