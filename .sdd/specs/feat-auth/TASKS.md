@@ -1,6 +1,6 @@
-# TASKS.md - FE02 Authentication
+﻿# TASKS.md - FE02 Authentication
 
-Status: APPROVED FOR SPRINT 1 IMPLEMENTATION
+Status: READY FOR REVIEW
 Date: 2026-06-10
 Owner: Dat
 

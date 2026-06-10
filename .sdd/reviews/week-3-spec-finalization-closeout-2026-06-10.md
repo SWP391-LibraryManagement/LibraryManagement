@@ -22,8 +22,8 @@ Close the Week 3 roadmap gate from the Spec-Driven & Agent-Driven Development pl
 | FE02 | Dat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
 | FE05 | Dung | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
 | FE07 | Nhat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
-| FE09 | Dat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
-| FE06 | Dung | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
+| FE09 | Dung | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
+| FE06 | Dat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
 | FE04 | Dat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
 | FE10 | Nhat | APPROVED | Yes | Yes | Yes | Ready for Week 4 |
 | FE01 | Dung | APPROVED | Yes | Yes | Yes | Ready for Week 4 |

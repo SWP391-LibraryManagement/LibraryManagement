@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Card, Button, Stack } from '@mui/material';
+import { Alert, Card, Button, Stack } from '@mui/material';
 import { LocalLibrary } from '@mui/icons-material';
 import RegisterFormHeader from './RegisterFormHeader';
 import FormInput from './FormInput';
 import PasswordInput from './PasswordInput';
+import { registerAccount } from '../../api/authApi';
 
 export default function AuthCard() {
   const [formData, setFormData] = useState({
@@ -12,10 +13,33 @@ export default function AuthCard() {
     password: '',
     confirmPassword: '',
   });
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log('Register submitted:', formData);
+    setFeedback(null);
+
+    if (formData.password !== formData.confirmPassword) {
+      setFeedback({ severity: 'error', message: 'Password confirmation must match password.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await registerAccount(formData);
+      setFeedback({ severity: 'success', message: result.message || 'Verification email sent.' });
+      setFormData((current) => ({
+        ...current,
+        password: '',
+        confirmPassword: '',
+      }));
+    } catch (error) {
+      setFeedback({ severity: 'error', message: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,8 +84,13 @@ export default function AuthCard() {
               onChange={(value) => setFormData((current) => ({ ...current, confirmPassword: value }))}
               required
             />
-            <Button type="submit" variant="contained" className="register-submit-btn">
-              Create account
+            {feedback?.message && (
+              <Alert severity={feedback.severity || 'info'}>
+                {feedback.message}
+              </Alert>
+            )}
+            <Button type="submit" variant="contained" className="register-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create account'}
             </Button>
           </Stack>
         </form>

@@ -2,25 +2,30 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import EmailIcon from '@mui/icons-material/Email';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormInput from './FormInput';
 import AuthCard from './AuthCard';
 import '../../styles/forgot-password.css';
+import { forgotPassword } from '../../api/authApi';
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [emailError, setEmailError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setFeedback(null);
 
     if (!email || !validateEmail(email)) {
       setEmailError(true);
@@ -28,7 +33,16 @@ const ForgotPasswordForm = () => {
     }
 
     setEmailError(false);
-    setIsSubmitted(true);
+    setIsSubmitting(true);
+
+    try {
+      await forgotPassword(email);
+      setIsSubmitted(true);
+    } catch (error) {
+      setFeedback({ severity: 'error', message: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEmailChange = (e) => {
@@ -159,11 +173,18 @@ const ForgotPasswordForm = () => {
             />
           </Box>
 
+          {feedback?.message && (
+            <Alert severity={feedback.severity || 'info'} sx={{ mb: 3 }}>
+              {feedback.message}
+            </Alert>
+          )}
+
           <Button
             type="submit"
             variant="contained"
             fullWidth
             className="reset-button"
+            disabled={isSubmitting}
             sx={{
               background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
               color: '#fff',
@@ -182,7 +203,7 @@ const ForgotPasswordForm = () => {
               },
             }}
           >
-            Reset Password
+            {isSubmitting ? 'Sending...' : 'Reset Password'}
           </Button>
 
           <Box sx={{ textAlign: 'center' }}>

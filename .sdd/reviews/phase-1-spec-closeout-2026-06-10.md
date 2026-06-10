@@ -33,10 +33,10 @@ Phase 1 Specification is now closed for the current baseline.
 | FE03 User Profile | Dat | APPROVED | Complete | Phase 2 PLAN.md |
 | FE04 Membership Management | Dat | APPROVED | Complete | Phase 2 PLAN.md |
 | FE05 Book Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
-| FE06 Inventory / Book Copy Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
+| FE06 Inventory / Book Copy Management | Dat | APPROVED | Complete | Phase 2 PLAN.md |
 | FE07 Borrowing Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
 | FE08 Reservation Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
-| FE09 Fine Management | Dat | APPROVED | Complete | Phase 2 PLAN.md |
+| FE09 Fine Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
 | FE10 Notification Management | Nhat | APPROVED | Complete | Phase 2 PLAN.md |
 | FE11 User & Role Management | Dung | APPROVED | Complete | Phase 2 PLAN.md |
 | FE12 Reporting & Statistics | Nhat | APPROVED | Complete | Phase 2 PLAN.md |

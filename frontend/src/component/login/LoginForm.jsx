@@ -9,7 +9,8 @@ import {
   IconButton,
   InputAdornment,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Alert
 } from '@mui/material';
 import {
   Visibility,
@@ -21,9 +22,11 @@ import {
 export default function LoginForm({
   onSubmit,
   onForgotPassword,
-  onRegister
+  onRegister,
+  feedback,
+  isSubmitting = false
 }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +34,8 @@ export default function LoginForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSubmit) {
-      onSubmit(username, password, rememberMe);
+      onSubmit(email, password, rememberMe);
     }
-    console.log('Login attempt:', { username, password, rememberMe });
   };
 
   const handleTogglePasswordVisibility = () => {
@@ -42,14 +44,14 @@ export default function LoginForm({
 
   return (
     <form className="login-form" onSubmit={handleSubmit}>
-      {/* Username Field */}
+      {/* Email Field */}
       <TextField
         fullWidth
-        label="Username"
-        placeholder="Enter your username"
+        label="Email"
+        placeholder="Enter your email"
         variant="outlined"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         required
         slotProps={{
           input: {
@@ -98,6 +100,12 @@ export default function LoginForm({
         }}
       />
 
+      {feedback?.message && (
+        <Alert severity={feedback.severity || 'info'}>
+          {feedback.message}
+        </Alert>
+      )}
+
       {/* Remember Me & Forgot Password Row */}
       <div className="form-options-row">
         <FormControlLabel
@@ -127,7 +135,6 @@ export default function LoginForm({
             if (onForgotPassword) {
               onForgotPassword();
             }
-            console.log('Forgot password clicked');
           }}
         >
           Forgot password?
@@ -138,8 +145,9 @@ export default function LoginForm({
       <button
         type="submit"
         className="login-button"
+        disabled={isSubmitting}
       >
-        Sign In
+        {isSubmitting ? 'Signing in...' : 'Sign In'}
       </button>
 
       {/* Register Section */}
@@ -154,7 +162,6 @@ export default function LoginForm({
               if (onRegister) {
                 onRegister();
               }
-              console.log('Register clicked');
             }}
           >
             Register

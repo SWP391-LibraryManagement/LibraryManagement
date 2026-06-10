@@ -1,4 +1,4 @@
-# SPEC.md - FE02 Authentication
+﻿# SPEC.md - FE02 Authentication
 
 # Version: 0.1.0
 
@@ -230,7 +230,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-002: A guest cannot access member/librarian/admin features without logging in.
 - BR-FE02-003: A user can only be created in the registration flow; users cannot be created by other actors in this feature.
 - BR-FE02-004: A registered user account must be verified via email before being activated.
-- BR-FE02-005: A user password must be hashed with bcrypt (cost ≥ 10) before storage.
+- BR-FE02-005: A user password must be hashed with bcrypt (cost â‰¥ 10) before storage.
 - BR-FE02-006: A user password verification must compare plaintext input against the stored hash, not store or transmit plaintext.
 - BR-FE02-007: Login must not reveal whether a user email is registered (prevent user enumeration).
 - BR-FE02-008: Failed login attempts must be tracked and rate-limited (e.g., max 5 attempts before account lock).
@@ -376,7 +376,7 @@ Use these stable IDs for tasks and tests.
 
 ### 12.1 Security
 
-- NFR-FE02-SEC-001: All passwords must be hashed using bcrypt with cost factor ≥ 10.
+- NFR-FE02-SEC-001: All passwords must be hashed using bcrypt with cost factor â‰¥ 10.
 - NFR-FE02-SEC-002: Plaintext passwords must never be logged, stored, or transmitted except over HTTPS.
 - NFR-FE02-SEC-003: HTTPS must be enforced for all authentication endpoints; HTTP requests must be redirected or rejected.
 - NFR-FE02-SEC-004: Session/token must expire after configured timeout (e.g., 8 hours for web, 30 days for mobile with refresh).
@@ -496,29 +496,29 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, sends verification | FR-FE02-001 | BR-FE02-001, BR-FE02-003, BR-FE02-004 | FT05 | Not Started |
-| AC-FE02-002 | Valid verification token in email link clicked -> account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT05 | Not Started |
-| AC-FE02-003 | Expired verification token clicked -> system rejects, offers resend | FR-FE02-003 | BR-FE02-004 | FT05 | Not Started |
-| AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Not Started |
-| AC-FE02-005 | Invalid email at login -> system returns error without revealing email existence | FR-FE02-005 | BR-FE02-007 | FT07 | Not Started |
-| AC-FE02-006 | Valid email but invalid password at login -> error returned, failed attempt counter incremented | FR-FE02-005, FR-FE02-006 | BR-FE02-007, BR-FE02-008 | FT07 | Not Started |
-| AC-FE02-007 | Inactive account login attempt -> system rejects login | FR-FE02-005 | BR-FE02-002 | FT07 | Not Started |
-| AC-FE02-008 | Locked account login attempt -> system rejects with lock message | FR-FE02-005, FR-FE02-006 | BR-FE02-008, BR-FE02-009 | FT07 | Not Started |
-| AC-FE02-009 | Valid session/token in protected request -> request allowed | FR-FE02-008 | BR-FE02-012 | FT06 | Not Started |
-| AC-FE02-010 | Expired session/token in protected request -> 401 Unauthorized returned | FR-FE02-008, FR-FE02-009 | BR-FE02-010, BR-FE02-012 | FT07 | Not Started |
-| AC-FE02-011 | Authenticated user logs out -> session/token invalidated | FR-FE02-007 | BR-FE02-011 | FT08 | Not Started |
-| AC-FE02-012 | Authenticated user changes password with correct current password -> system updates password, returns success | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006 | FT09 | Not Started |
-| AC-FE02-013 | Authenticated user changes password with incorrect current password -> system rejects change | FR-FE02-010 | BR-FE02-018, BR-FE02-019 | FT09 | Not Started |
-| AC-FE02-014 | Guest requests password reset with valid registered email -> system sends reset email | FR-FE02-011 | BR-FE02-013, BR-FE02-014, BR-FE02-016 | FT10 | Not Started |
-| AC-FE02-015 | Guest requests password reset with invalid email -> system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT10 | Not Started |
-| AC-FE02-016 | Valid reset/setup token + new password submitted -> system updates password, activates setup account if applicable, invalidates token | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014 | FT11 | Not Started |
-| AC-FE02-017 | Expired reset token + new password submitted -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Not Started |
-| AC-FE02-018 | Already-used reset token reused -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Not Started |
+| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, sends verification | FR-FE02-001 | BR-FE02-001, BR-FE02-003, BR-FE02-004 | FT05 | Ready for review |
+| AC-FE02-002 | Valid verification token in email link clicked -> account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT05 | Ready for review |
+| AC-FE02-003 | Expired verification token clicked -> system rejects, offers resend | FR-FE02-003 | BR-FE02-004 | FT05 | Ready for review |
+| AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Ready for review |
+| AC-FE02-005 | Invalid email at login -> system returns error without revealing email existence | FR-FE02-005 | BR-FE02-007 | FT07 | Ready for review |
+| AC-FE02-006 | Valid email but invalid password at login -> error returned, failed attempt counter incremented | FR-FE02-005, FR-FE02-006 | BR-FE02-007, BR-FE02-008 | FT07 | Ready for review |
+| AC-FE02-007 | Inactive account login attempt -> system rejects login | FR-FE02-005 | BR-FE02-002 | FT07 | Ready for review |
+| AC-FE02-008 | Locked account login attempt -> system rejects with lock message | FR-FE02-005, FR-FE02-006 | BR-FE02-008, BR-FE02-009 | FT07 | Ready for review |
+| AC-FE02-009 | Valid session/token in protected request -> request allowed | FR-FE02-008 | BR-FE02-012 | FT06 | Ready for review |
+| AC-FE02-010 | Expired session/token in protected request -> 401 Unauthorized returned | FR-FE02-008, FR-FE02-009 | BR-FE02-010, BR-FE02-012 | FT07 | Ready for review |
+| AC-FE02-011 | Authenticated user logs out -> session/token invalidated | FR-FE02-007 | BR-FE02-011 | FT08 | Ready for review |
+| AC-FE02-012 | Authenticated user changes password with correct current password -> system updates password, returns success | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006 | FT09 | Ready for review |
+| AC-FE02-013 | Authenticated user changes password with incorrect current password -> system rejects change | FR-FE02-010 | BR-FE02-018, BR-FE02-019 | FT09 | Ready for review |
+| AC-FE02-014 | Guest requests password reset with valid registered email -> system sends reset email | FR-FE02-011 | BR-FE02-013, BR-FE02-014, BR-FE02-016 | FT10 | Ready for review |
+| AC-FE02-015 | Guest requests password reset with invalid email -> system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT10 | Ready for review |
+| AC-FE02-016 | Valid reset/setup token + new password submitted -> system updates password, activates setup account if applicable, invalidates token | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014 | FT11 | Ready for review |
+| AC-FE02-017 | Expired reset token + new password submitted -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Ready for review |
+| AC-FE02-018 | Already-used reset token reused -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Ready for review |
 
 ### Coverage Summary (FE02)
-- **Total AC**: 18 (AC-FE02-001 to AC-FE02-018) ✓ All mapped
-- **Total FR**: 14 (FR-FE02-001 to FR-FE02-014) ✓ All mapped
-- **Total BR**: 19 (BR-FE02-001 to BR-FE02-019) ✓ All key BR mapped
+- **Total AC**: 18 (AC-FE02-001 to AC-FE02-018) âœ“ All mapped
+- **Total FR**: 14 (FR-FE02-001 to FR-FE02-014) âœ“ All mapped
+- **Total BR**: 19 (BR-FE02-001 to BR-FE02-019) âœ“ All key BR mapped
 - **Total Tests**: 7 (FT05 to FT11) - aligned with assignment sheet
 
 

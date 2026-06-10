@@ -31,3 +31,10 @@
 - Added SQL Server repository scaffolding with parameterized queries for users, auth tokens, audit logs, and notifications.
 - Added in-memory test repositories so the FE02 slice can run in CI without a live database.
 - Updated CI to run backend tests and frontend lint before build.
+
+## 2026-06-10 - FE02 Ready For Review
+
+- Finished the remaining auth endpoints: resend verification, refresh token, logout, change password, forgot password, and reset password.
+- Added tests for the FE02 cases from FT05 to FT11.
+- Connected the current login, register, and forgot-password screens to the auth API.
+- Marked FE02 `PLAN.md`, `TASKS.md`, and traceability as ready for review.

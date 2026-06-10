@@ -74,6 +74,66 @@ function createAuthService({
     });
   }
 
+  async function createStoredToken(userId, tokenType, expiresAt, context = {}) {
+    const token = generateRandomToken();
+
+    const record = await authTokenRepository.createToken({
+      userId,
+      tokenType,
+      tokenHash: hashToken(token),
+      expiresAt,
+      createdByIp: context.ip || null,
+    });
+
+    return { token, record };
+  }
+
+  async function createNotification({ userId, recipientEmail, templateCode, safePayload }) {
+    if (!notificationRepository || typeof notificationRepository.createNotification !== 'function') {
+      return;
+    }
+
+    await notificationRepository.createNotification({
+      userId,
+      recipientEmail,
+      templateCode,
+      sourceFeature: 'FE02',
+      safePayload,
+    });
+  }
+
+  async function issueAccessTokenForUser(user, sessionId) {
+    const roles = await userRepository.getRolesByUserId(user.userId);
+    const accessToken = signAccessToken({
+      userId: user.userId,
+      email: user.email,
+      username: user.username,
+      roles,
+      sessionId,
+    });
+
+    return {
+      roles,
+      accessToken,
+      expiresIn: env.accessTokenTtlSeconds,
+    };
+  }
+
+  async function findUsableToken(tokenType, token, invalidCode, expiredCode, invalidMessage) {
+    const tokenHash = hashToken(String(token || '').trim());
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash(tokenType, tokenHash);
+
+    if (!tokenRecord) {
+      throw errors.badRequest(invalidCode, invalidMessage);
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest(expiredCode, invalidMessage);
+    }
+
+    return tokenRecord;
+  }
+
   async function register(input, context = {}) {
     const email = normalizeEmail(input.email);
     const username = normalizeUsername(input.username) || deriveUsername(email);
@@ -117,24 +177,19 @@ function createAuthService({
       fullName,
     });
 
-    const verificationToken = generateRandomToken();
-    await authTokenRepository.createToken({
-      userId: createdUser.userId,
-      tokenType: 'EMAIL_VERIFY',
-      tokenHash: hashToken(verificationToken),
-      expiresAt: addHours(clock(), env.emailVerificationTtlHours),
-      createdByIp: context.ip || null,
-    });
+    const { token: verificationToken } = await createStoredToken(
+      createdUser.userId,
+      'EMAIL_VERIFY',
+      addHours(clock(), env.emailVerificationTtlHours),
+      context
+    );
 
-    if (notificationRepository.createNotification) {
-      await notificationRepository.createNotification({
-        userId: createdUser.userId,
-        recipientEmail: email,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        sourceFeature: 'FE02',
-        safePayload: { purpose: 'EMAIL_VERIFY' },
-      });
-    }
+    await createNotification({
+      userId: createdUser.userId,
+      recipientEmail: email,
+      templateCode: 'ACCOUNT_VERIFICATION',
+      safePayload: { purpose: 'EMAIL_VERIFY' },
+    });
 
     await writeAudit(context, 'AUTH_REGISTER', {
       userId: createdUser.userId,
@@ -157,22 +212,13 @@ function createAuthService({
 
   async function verifyEmail(input, context = {}) {
     const token = String(input.token || '').trim();
-    const tokenHash = hashToken(token);
-    const tokenRecord = await authTokenRepository.findActiveTokenByHash('EMAIL_VERIFY', tokenHash);
-
-    if (!tokenRecord) {
-      throw errors.badRequest(
-        'INVALID_VERIFICATION_TOKEN',
-        'This verification link is no longer valid. Request a new one.'
-      );
-    }
-
-    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
-      throw errors.badRequest(
-        'EXPIRED_VERIFICATION_TOKEN',
-        'This verification link is no longer valid. Request a new one.'
-      );
-    }
+    const tokenRecord = await findUsableToken(
+      'EMAIL_VERIFY',
+      token,
+      'INVALID_VERIFICATION_TOKEN',
+      'EXPIRED_VERIFICATION_TOKEN',
+      'This verification link is no longer valid. Request a new one.'
+    );
 
     await userRepository.markEmailVerified(tokenRecord.userId);
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
@@ -184,6 +230,46 @@ function createAuthService({
     return {
       message: 'Account verified. You can now login.',
     };
+  }
+
+  async function resendVerification(input, context = {}) {
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
+    let verificationToken = null;
+
+    if (user && user.status !== 'ACTIVE') {
+      await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'EMAIL_VERIFY');
+      const storedVerification = await createStoredToken(
+        user.userId,
+        'EMAIL_VERIFY',
+        addHours(clock(), env.emailVerificationTtlHours),
+        context
+      );
+      verificationToken = storedVerification.token;
+
+      await createNotification({
+        userId: user.userId,
+        recipientEmail: user.email,
+        templateCode: 'ACCOUNT_VERIFICATION',
+        safePayload: { purpose: 'EMAIL_VERIFY' },
+      });
+    }
+
+    await writeAudit(context, 'AUTH_RESEND_VERIFICATION', {
+      userId: user?.userId || null,
+      targetId: user?.userId || null,
+      metadata: { email },
+    });
+
+    const response = {
+      message: 'Verification email sent',
+    };
+
+    if (exposeDebugTokens && verificationToken) {
+      response.debugVerificationToken = verificationToken;
+    }
+
+    return response;
   }
 
   async function login(input, context = {}) {
@@ -234,22 +320,17 @@ function createAuthService({
     }
 
     await userRepository.resetFailedLoginsAndSetLastLogin(user.userId);
-    const roles = await userRepository.getRolesByUserId(user.userId);
-    const accessToken = signAccessToken({
-      userId: user.userId,
-      email: user.email,
-      username: user.username,
-      roles,
-    });
-    const refreshToken = generateRandomToken();
-
-    await authTokenRepository.createToken({
-      userId: user.userId,
-      tokenType: 'REFRESH',
-      tokenHash: hashToken(refreshToken),
-      expiresAt: addDays(clock(), env.refreshTokenTtlDays),
-      createdByIp: context.ip || null,
-    });
+    const storedRefreshToken = await createStoredToken(
+      user.userId,
+      'REFRESH',
+      addDays(clock(), env.refreshTokenTtlDays),
+      context
+    );
+    const { roles, accessToken, expiresIn } = await issueAccessTokenForUser(
+      user,
+      storedRefreshToken.record.tokenId
+    );
+    const refreshToken = storedRefreshToken.token;
 
     await writeAudit(context, 'AUTH_LOGIN_SUCCESS', {
       userId: user.userId,
@@ -262,7 +343,183 @@ function createAuthService({
       roles,
       accessToken,
       refreshToken,
-      expiresIn: env.accessTokenTtlSeconds,
+      expiresIn,
+    };
+  }
+
+  async function refreshToken(input, context = {}) {
+    const tokenHash = hashToken(String(input.refreshToken || '').trim());
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', tokenHash);
+
+    if (!tokenRecord) {
+      throw errors.unauthorized('INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token.');
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.unauthorized('EXPIRED_REFRESH_TOKEN', 'Invalid or expired refresh token.');
+    }
+
+    const user = await userRepository.findById(tokenRecord.userId);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.unauthorized('INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token.');
+    }
+
+    const { accessToken, expiresIn } = await issueAccessTokenForUser(user, tokenRecord.tokenId);
+
+    await writeAudit(context, 'AUTH_REFRESH_TOKEN', {
+      userId: user.userId,
+      targetId: user.userId,
+    });
+
+    return {
+      accessToken,
+      expiresIn,
+    };
+  }
+
+  async function logout(input, context = {}) {
+    const refreshTokenHash = hashToken(String(input.refreshToken || '').trim());
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', refreshTokenHash);
+
+    if (tokenRecord) {
+      if (typeof authTokenRepository.revokeToken === 'function') {
+        await authTokenRepository.revokeToken(tokenRecord.tokenId);
+      } else {
+        await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
+      }
+    }
+
+    await writeAudit(context, 'AUTH_LOGOUT', {
+      userId: context.userId || tokenRecord?.userId || null,
+      targetId: context.userId || tokenRecord?.userId || null,
+    });
+
+    return {
+      message: 'Logged out',
+    };
+  }
+
+  async function changePassword(input, context = {}) {
+    const user = await userRepository.findById(context.userId);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    const currentPasswordValid = await verifyPassword(input.currentPassword || '', user.passwordHash);
+
+    if (!currentPasswordValid) {
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_FAILURE', {
+        userId: user.userId,
+        targetId: user.userId,
+      });
+      throw errors.unauthorized('INVALID_CURRENT_PASSWORD', 'Current password is incorrect.');
+    }
+
+    const passwordCheck = validatePasswordPolicy(input.newPassword);
+    if (!passwordCheck.valid) {
+      throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
+    }
+
+    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
+    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', {
+      userId: user.userId,
+      targetId: user.userId,
+    });
+
+    return {
+      message: 'Password changed',
+    };
+  }
+
+  async function forgotPassword(input, context = {}) {
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
+    let resetToken = null;
+
+    if (user && user.status === 'ACTIVE' && user.emailVerifiedAt) {
+      await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'PASSWORD_RESET');
+      const storedResetToken = await createStoredToken(
+        user.userId,
+        'PASSWORD_RESET',
+        addMinutes(clock(), env.passwordResetTtlMinutes),
+        context
+      );
+      resetToken = storedResetToken.token;
+
+      await createNotification({
+        userId: user.userId,
+        recipientEmail: user.email,
+        templateCode: 'PASSWORD_RESET',
+        safePayload: { purpose: 'PASSWORD_RESET' },
+      });
+    }
+
+    await writeAudit(context, 'AUTH_PASSWORD_RESET_REQUEST', {
+      userId: user?.userId || null,
+      targetId: user?.userId || null,
+      metadata: { email },
+    });
+
+    const response = {
+      message: 'Password reset email sent',
+    };
+
+    if (exposeDebugTokens && resetToken) {
+      response.debugResetToken = resetToken;
+    }
+
+    return response;
+  }
+
+  async function findResetOrSetupToken(token) {
+    const tokenHash = hashToken(String(token || '').trim());
+    const tokenRecord =
+      (await authTokenRepository.findActiveTokenByHash('PASSWORD_RESET', tokenHash)) ||
+      (await authTokenRepository.findActiveTokenByHash('ACCOUNT_SETUP', tokenHash));
+
+    if (!tokenRecord) {
+      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest('EXPIRED_RESET_TOKEN', 'This password reset link is no longer valid.');
+    }
+
+    return tokenRecord;
+  }
+
+  async function resetPassword(input, context = {}) {
+    const passwordCheck = validatePasswordPolicy(input.newPassword);
+    if (!passwordCheck.valid) {
+      throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
+    }
+
+    const tokenRecord = await findResetOrSetupToken(input.token);
+    const user = await userRepository.findById(tokenRecord.userId);
+
+    if (!user) {
+      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+
+    if (tokenRecord.tokenType === 'ACCOUNT_SETUP' && typeof userRepository.updatePasswordAndActivate === 'function') {
+      await userRepository.updatePasswordAndActivate(user.userId, passwordHash);
+    } else {
+      await userRepository.updatePassword(user.userId, passwordHash);
+    }
+
+    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
+    await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', {
+      userId: user.userId,
+      targetId: user.userId,
+      metadata: { tokenType: tokenRecord.tokenType },
+    });
+
+    return {
+      message: 'Password reset successful',
     };
   }
 
@@ -273,7 +530,13 @@ function createAuthService({
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
-    return user;
+    return {
+      userId: user.userId,
+      email: user.email,
+      username: user.username,
+      roles: user.roles || [],
+      status: user.status,
+    };
   }
 
   async function authenticateToken(token) {
@@ -282,6 +545,22 @@ function createAuthService({
     const user = await userRepository.getSafeUserById(userId);
 
     if (!user) {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    const sessionId = Number(payload.sid);
+
+    if (!Number.isFinite(sessionId)) {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    const sessionRecord = await authTokenRepository.findActiveTokenById(sessionId, 'REFRESH');
+
+    if (
+      !sessionRecord ||
+      sessionRecord.userId !== userId ||
+      new Date(sessionRecord.expiresAt).getTime() <= clock().getTime()
+    ) {
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
@@ -296,7 +575,13 @@ function createAuthService({
   return {
     register,
     verifyEmail,
+    resendVerification,
     login,
+    refreshToken,
+    logout,
+    changePassword,
+    forgotPassword,
+    resetPassword,
     me,
     authenticateToken,
   };
