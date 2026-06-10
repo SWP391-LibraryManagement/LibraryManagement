@@ -1,6 +1,6 @@
 # Reviews
 
-This folder stores AI and human review outputs for specs, plans, tasks, and generated code.
+This folder stores review outputs for specs, plans, tasks, and generated code.
 
 Recommended naming:
 

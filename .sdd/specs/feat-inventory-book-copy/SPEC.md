@@ -2,9 +2,9 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
-# Owner: Long
+# Owner: Dung
 
 # Last Updated: 2026-06-10
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-inventory-book-copy/`
 
-> Source of truth for FE06 Inventory / Book Copy Management. This spec is a draft and must be reviewed before implementation. It is intentionally detailed because FE06 controls physical copy availability used by borrowing and reservation.
+> Source of truth for FE06 Inventory / Book Copy Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE06 controls physical copy availability used by borrowing and reservation.
 
 ---
 
@@ -242,7 +242,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -313,16 +313,16 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE06-001 | What are the final allowed `BookCopies.Status` values for Phase 1? | Team/Teacher | Open |
-| Q-FE06-002 | Can staff manually set `BORROWED` or `RESERVED`, or must those only come from FE07/FE08? | Team/Teacher | Open |
-| Q-FE06-003 | Should `DELETE /api/book-copies/{id}` deactivate instead of physical delete? | Team/Teacher | Open |
-| Q-FE06-004 | Is `Location` required for every copy? | Team/Teacher | Open |
-| Q-FE06-005 | Should copy condition be separate from copy status? | Team/DB owner | Open |
-| Q-FE06-006 | Which copy actions must write `AuditLogs`? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE06-001 | Allowed copy statuses: AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-002 | Staff cannot manually set BORROWED or RESERVED; those come only from FE07/FE08 flows. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-003 | DELETE /api/book-copies/{id} deactivates instead of physical delete. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-004 | Location is optional in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-005 | Copy condition is not separate from status in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-006 | Create/update/deactivate/status-change actions write AuditLogs. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -345,12 +345,12 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Copy status values are approved across FE06, FE07, and FE08.
-- [ ] Manual status transition rules are approved.
-- [ ] Barcode and location validation are approved.
-- [ ] Soft deactivation policy is approved.
-- [ ] Audit requirements for copy actions are confirmed.
-- [ ] API contract is copied to `docs/api/api-contract.md` if the team uses a shared API contract.
-- [ ] Every acceptance criterion can become a test.
+- [x] Copy status values are approved across FE06, FE07, and FE08.
+- [x] Manual status transition rules are approved.
+- [x] Barcode and location validation are approved.
+- [x] Soft deactivation policy is approved.
+- [x] Audit requirements for copy actions are confirmed.
+- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: [Member Name]
+# Owner: TBD
 
 # Last Updated: YYYY-MM-DD
 

@@ -2,19 +2,19 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT (Proposed Design)
+# Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-09
+# Last Updated: 2026-06-10
 
 # Feature ID: FE11
 
 # Feature folder: `.sdd/specs/feat-user-role-management/`
 
-> Source of truth for FE11 User & Role Management. This spec is a draft and must be reviewed before implementation. It is intentionally detailed because FE11 is critical to system access control and administration.
+> Source of truth for FE11 User & Role Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE11 is critical to system access control and administration.
 >
-> ⚠️ **IMPORTANT**: This spec contains **Proposed Answers** to several Open Questions (marked below). These have been hard-coded into Business Rules, Functional Requirements, and API contracts. Before implementation, all "Proposed" decisions must be explicitly approved by the team, or changed.
+> Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 
 ---
 
@@ -122,7 +122,7 @@ The feature can only start when:
 
 1. Admin opens user detail page.
 2. Admin clicks "Deactivate Account" button.
-3. The system may show a confirmation dialog with warnings (active borrowings, pending requests).
+3. The system checks active borrowings and blocks deactivation when active borrowings exist.
 4. Admin confirms deactivation.
 5. The system sets user status to `INACTIVE`.
 6. The system keeps user data intact (does not delete).
@@ -323,7 +323,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -402,37 +402,37 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE11-001 | Should admins be able to deactivate themselves? | Team/Teacher | Open |
-| Q-FE11-002 | Should system prevent deactivation of users with active borrowings, or just warn? | Team/Teacher | Open |
-| Q-FE11-003 | What is the password complexity requirement when the user completes password setup through FE02? (length, uppercase, number, symbol) | Team/Teacher | Open |
-| Q-FE11-004 | Should email be case-sensitive or case-insensitive for login and uniqueness checks? | Team/Teacher | Open |
-| Q-FE11-005 | Should user creation automatically send a password setup email with a one-time link? | Team/Teacher | Open |
-| Q-FE11-006 | How long should deactivated user data be retained before permanent deletion? (e.g., 1 year, never) | Team/Teacher | Open |
-| Q-FE11-007 | Should system support role hierarchy (e.g., Admin > Librarian > Member)? | Team/Teacher | Open |
-| Q-FE11-008 | Should admin be able to view another admin's sensitive account fields? | Team/Teacher | Open |
-| Q-FE11-009 | Should user deactivation notify the user via email? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE11-001 | Admins cannot deactivate themselves. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
-## 15.1 Proposed Design Decisions (Based on Open Questions)
+## 15.1 Approved Design Decisions
 
-The following Open Questions have been **PROPOSED** as decided in this spec. These proposals are hard-coded into BR/FR/AC/API but must be explicitly approved before implementation.
+The following decisions were approved in the Phase 1 review packet on 2026-06-10 and are now part of this spec.
 
-| Open Question | Proposed Answer | Implemented As | Spec Sections | ⚠️ Status |
-| ------------- | --------------- | --------------- | ------------- | -------- |
-| Q-FE11-001 | Admin deactivation: Allow with warning (decision deferred to team) | Spec allows but doesn't enforce prevention | EC-FE11-006 (warning, no block) | **PROPOSED** - Needs approval |
-| Q-FE11-002 | Active borrowings: Show warning, allow deactivation (prevent only if team decides) | AF-FE11-002 shows warning but allows proceed | AF-FE11-002, MF-FE11-006 | **PROPOSED** - Needs approval |
-| Q-FE11-003 | Password complexity is enforced by FE02 when the user completes the setup link | Admin-created users do not receive admin-entered passwords; FE02 validates the final user-entered password | BR-FE11-005, BR-FE11-013, MF-FE11-003, MF-FE11-004 | **PROPOSED** - Needs approval |
-| Q-FE11-004 | Email case-insensitivity: Case-insensitive for uniqueness checks | BR-FE11-004 and EC-FE11-004 imply strict RFC validation (case-insensitive) | BR-FE11-004, EC-FE11-004, NFR-FE11-SEC-004 | **PROPOSED** - Needs approval |
-| Q-FE11-005 | User creation: no shared password; one-time setup link sent via email (SECURITY DECISION) | Replaces old password-sharing approach with secure token-based setup | BR-FE11-005, BR-FE11-013, MF-FE11-003, MF-FE11-006 | **PROPOSED** - Already decided for security |
-| Q-FE11-006 | Deactivated data retention: Never delete (only deactivate, status stays INACTIVE) | BR-FE11-003 states users are never permanently deleted | BR-FE11-003, MF-FE11-006 | **PROPOSED** - Needs approval |
-| Q-FE11-007 | Role hierarchy: NO role hierarchy (flat roles: Member, Librarian, Admin) | BR-FE11-008 allows multiple roles per user without hierarchy | BR-FE11-007, BR-FE11-008, FR-FE11-012, FR-FE11-013 | **PROPOSED** - Needs approval |
-| Q-FE11-008 | Admin sensitive fields: Admin can manage account metadata but must never see password hash or reset token values | Sensitive fields are excluded from admin responses | NFR-FE11-SEC-006, BR-FE11-013 | **PROPOSED** - Already decided for security |
-| Q-FE11-009 | Deactivation notification: Not implemented in this phase (email sent by FE10, optional) | Spec allows FE10 to send notification but does not mandate it | (Dependency note: FE10) | **OPEN** - Out of scope Phase 1 |
+| Decision | Approved Answer | Status |
+| -------- | --------------- | ------ |
+| Q-FE11-001 | Admins cannot deactivate themselves. | APPROVED |
+| Q-FE11-002 | Prevent deactivation of users with active borrowings. | APPROVED |
+| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | APPROVED |
+| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | APPROVED |
+| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | APPROVED |
+| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | APPROVED |
+| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | APPROVED |
+| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | APPROVED |
+| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | APPROVED |
 
 ---
 
@@ -464,24 +464,39 @@ The following Open Questions have been **PROPOSED** as decided in this spec. The
 - **Total BR**: 15 (BR-FE11-001 to BR-FE11-015) ✓ All mapped
 - **Total Tests**: 9 (FT50 to FT58) - aligned with assignment sheet
 
+
+### External Assignment Traceability (Excel UC IDs)
+
+| Assignment UC ID | Excel Use Case | Related Main Flow / Requirement | Related Test |
+| ---------------- | -------------- | ------------------------------- | ------------ |
+| UC49 | View User List | MF-FE11-001; FR-FE11-001 | FT50 |
+| UC50 | View User Information | MF-FE11-002; FR-FE11-002 | FT51 |
+| UC51 | Create User Account | MF-FE11-003; FR-FE11-003, FR-FE11-005, FR-FE11-006 | FT52 |
+| UC52 | Update User Information | MF-FE11-004; FR-FE11-004, FR-FE11-007 | FT53 |
+| UC53 | Deactivate User Account | MF-FE11-005; FR-FE11-008 | FT54 |
+| UC54 | Create Librarian Account | MF-FE11-006; FR-FE11-009 | FT55 |
+| UC55 | Update Librarian Account | MF-FE11-007; FR-FE11-010 | FT56 |
+| UC56 | Deactivate Librarian Account | MF-FE11-008; FR-FE11-011 | FT57 |
+| UC57 | Manage Roles | MF-FE11-009; FR-FE11-012 to FR-FE11-014 | FT58 |
+
 ---
 
 ## 17. Review Checklist
 
-**CRITICAL: All "Proposed" decisions in section 15.1 must be explicitly approved before implementation.**
+All decisions in section 15.1 were approved in the Phase 1 review packet on 2026-06-10.
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] **PROPOSED DECISIONS APPROVAL**: All proposed decisions in Section 15.1 (admin self-deactivation, active borrowings handling, email case-insensitivity, deactivated data retention, role hierarchy, deactivation notification) are explicitly approved by Team/Owner.
-- [ ] Security decisions (Q-FE11-005: token-based password setup, Q-FE11-008: admin never sees password hashes or tokens) are reviewed and approved by Security/Architect.
-- [ ] Open question Q-FE11-009 (deactivation notification) is explicitly marked "Out of Scope Phase 1" or moved to future planning.
-- [ ] Password complexity requirements are approved.
-- [ ] Admin deactivation policy is clarified.
-- [ ] Email case-sensitivity for uniqueness is decided.
-- [ ] Role hierarchy and multiple role support are confirmed.
-- [ ] User data retention policy after deactivation is defined.
-- [ ] Database schema for Users, Roles, UserRoles is confirmed.
-- [ ] API contract is copied to `docs/api/api-contract.md`.
-- [ ] FE02, FE03 dependencies are checked for conflicts.
-- [ ] Every acceptance criterion can become a test.
-- [ ] Security requirements (bcrypt cost, SQL injection prevention) are reviewed.
+- [x] Approved decisions recorded: All proposed decisions in Section 15.1 (admin self-deactivation, active borrowings handling, email case-insensitivity, deactivated data retention, role hierarchy, deactivation notification) are explicitly approved by Team/Owner.
+- [x] Security decisions (Q-FE11-005: token-based password setup, Q-FE11-008: admin never sees password hashes or tokens) are reviewed and approved by Security/Architect.
+- [x] Q-FE11-009 (deactivation notification) is explicitly marked "Out of Scope Phase 1" or moved to future planning.
+- [x] Password complexity requirements are approved.
+- [x] Admin deactivation policy is clarified.
+- [x] Email case-sensitivity for uniqueness is decided.
+- [x] Role hierarchy and multiple role support are confirmed.
+- [x] User data retention policy after deactivation is defined.
+- [x] Database schema for Users, Roles, UserRoles is confirmed.
+- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] FE02, FE03 dependencies are checked for conflicts.
+- [x] Every acceptance criterion can become a test.
+- [x] Security requirements (bcrypt cost, SQL injection prevention) are reviewed.

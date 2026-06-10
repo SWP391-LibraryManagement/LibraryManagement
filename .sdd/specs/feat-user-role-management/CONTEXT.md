@@ -158,19 +158,19 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE11-001 | Can an admin deactivate their own account? | Team/Teacher | Open |
-| Q-FE11-002 | Should system prevent deactivation of users with active borrowings, or just warn? | Team/Teacher | Open |
-| Q-FE11-003 | What is the minimum password length and complexity requirement when the user completes password setup through FE02? | Team/Teacher | Open |
-| Q-FE11-004 | Should email login be case-sensitive or case-insensitive? | Team/Teacher | Open |
-| Q-FE11-005 | Should new user creation automatically send a password setup email with a one-time link? | Team/Teacher | Open |
-| Q-FE11-006 | How long should deactivated user data be retained (1 year, 5 years, forever)? | Team/Teacher | Open |
-| Q-FE11-007 | Should system support role hierarchy (Admin > Librarian > Member)? | Team/Teacher | Open |
-| Q-FE11-008 | Can one admin view another admin's sensitive account fields? | Team/Teacher | Open |
-| Q-FE11-009 | Should user deactivation send notification email to the user? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE11-001 | Admins cannot deactivate themselves. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

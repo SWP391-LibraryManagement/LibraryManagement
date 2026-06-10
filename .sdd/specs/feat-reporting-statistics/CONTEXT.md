@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: Long
+# Owner: Nhat
 
 # Last Updated: 2026-06-10
 
@@ -84,21 +84,25 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 5. Main Use Cases From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC58 | View Borrowing Report | Long |
-| UC59 | View Inventory Report | Long |
-| UC60 | View User Statistics | Long |
+| UC58 | View Borrowing Report | Nhat |
+| UC59 | View Inventory Report | Nhat |
+| UC60 | View User Statistics | Nhat |
 
 ---
 
 ## 6. Feature Tests From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT59 | View borrowing report | Long |
-| FT60 | View inventory report | Long |
-| FT61 | View user statistics | Long |
+| FT59 | View borrowing report | Nhat |
+| FT60 | View inventory report | Nhat |
+| FT61 | View user statistics | Nhat |
 
 ---
 
@@ -125,16 +129,16 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE12-001 | Which roles can view each report: Librarian, Admin, or both? | Team/Teacher | Open |
-| Q-FE12-002 | Which borrowing metrics are required in Phase 1? | Team/Teacher | Open |
-| Q-FE12-003 | Which inventory metrics are required in Phase 1? | Team/Teacher | Open |
-| Q-FE12-004 | Which user statistics are required in Phase 1? | Team/Teacher | Open |
-| Q-FE12-005 | Is CSV/PDF export required, or only on-screen reports? | Team/Teacher | Open |
-| Q-FE12-006 | What date range defaults should reports use? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE12-001 | Librarian and Admin can view reports; Member/Guest cannot. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-005 | CSV/PDF export is out of scope unless teacher requires it. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

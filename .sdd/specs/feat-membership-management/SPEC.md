@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Dat
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-membership-management/`
 
-> Source of truth for FE04 Membership Management. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE04 Membership Management. This spec is approved for Phase 2 planning.
 
 ---
 
@@ -230,7 +230,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -298,16 +298,16 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE04-001 | Can rejected users re-apply? If yes, when? | Team/Teacher | Open |
-| Q-FE04-002 | Is rejection reason required? | Team/Teacher | Open |
-| Q-FE04-003 | Does membership expire or require renewal? | Team/Teacher | Open |
-| Q-FE04-004 | Does approved membership change a user role, or only application status? | Team/Teacher | Open |
-| Q-FE04-005 | Should both Librarian and Admin approve/reject, or Admin only? | Team/Teacher | Open |
-| Q-FE04-006 | Should approval/rejection trigger FE10 notification? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE04-001 | Rejected users can re-apply after correcting information. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-002 | Rejection reason is required. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-003 | Membership does not expire in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-004 | Approved membership changes application/member status only, not user role. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-005 | Librarian and Admin can approve/reject membership applications. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-006 | Approval/rejection triggers FE10 notification when notification provider is available; notification failure does not roll back the decision. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -329,11 +329,11 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Re-application policy is approved.
-- [ ] Reviewer roles are approved with FE11.
-- [ ] Rejection reason and schema needs are confirmed.
-- [ ] Membership status source for FE07/FE08 is confirmed.
-- [ ] API contract is copied to `docs/api/api-contract.md` if the team uses a shared API contract.
-- [ ] Every acceptance criterion can become a test.
+- [x] Re-application policy is approved.
+- [x] Reviewer roles are approved with FE11.
+- [x] Rejection reason and schema needs are confirmed.
+- [x] Membership status source for FE07/FE08 is confirmed.
+- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

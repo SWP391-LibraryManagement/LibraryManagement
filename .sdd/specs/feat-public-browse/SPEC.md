@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Dung
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
-> Source of truth for FE01 Public / Browse. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE01 Public / Browse. This spec is approved for Phase 2 planning.
 
 ---
 
@@ -225,7 +225,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -288,15 +288,15 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE01-001 | Should inactive/deactivated books be hidden from all public search/detail views? | Team/Teacher | Open |
-| Q-FE01-002 | Should guests see exact available copy count, simple available/unavailable, or no availability? | Team/Teacher | Open |
-| Q-FE01-003 | Which search filters are required in Phase 1? | Team/Teacher | Open |
-| Q-FE01-004 | Should ISBN be visible to guests? | Team/Teacher | Open |
-| Q-FE01-005 | Should home page display featured/recent books or only navigation and search? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-002 | Guests see simple availability only: Available/Unavailable, not exact copy count. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-004 | ISBN is visible to guests when available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -317,11 +317,11 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Public-visible fields are approved.
-- [ ] Search filters and pagination behavior are approved.
-- [ ] Availability display policy is approved with FE06.
-- [ ] Hidden/deactivated book behavior is approved with FE05.
-- [ ] API contract is copied to `docs/api/api-contract.md` if the team uses a shared API contract.
-- [ ] Every acceptance criterion can become a test.
+- [x] Public-visible fields are approved.
+- [x] Search filters and pagination behavior are approved.
+- [x] Availability display policy is approved with FE06.
+- [x] Hidden/deactivated book behavior is approved with FE05.
+- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

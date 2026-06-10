@@ -2,11 +2,11 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-02
+# Last Updated: 2026-06-10
 
 # Feature folder: `.sdd/specs/feat-borrowing-management/`
 
@@ -139,18 +139,20 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 | ID | Question | Owner | Status |
 | -- | -------- | ----- | ------ |
-| Q-FE07-001 | Maximum active borrowed copies per member? | Team/Teacher | Open |
-| Q-FE07-002 | Default loan duration in days? | Team/Teacher | Open |
-| Q-FE07-003 | Renewal limit per borrowed copy? | Team/Teacher | Open |
-| Q-FE07-004 | Does unpaid fine block borrowing? | Team/Teacher | Open |
-| Q-FE07-005 | Does member create request directly, or librarian creates request at desk? | Team/Teacher | Open |
-| Q-FE07-006 | Should pending request details use `REQUESTED` status or another table? | Team/DB owner | Open |
+| Q-FE07-001 | Maximum active borrowed copies per member? | Team/Teacher | Resolved: 5 active borrowed copies per member (DEC-GEN-001). |
+| Q-FE07-002 | Default loan duration in days? | Team/Teacher | Resolved: 14 calendar days from borrow approval date (DEC-GEN-002). |
+| Q-FE07-003 | Renewal limit per borrowed copy? | Team/Teacher | Resolved: 1 renewal per `BorrowDetail`, adding 14 calendar days from the current due date. |
+| Q-FE07-004 | Does unpaid fine block borrowing? | Team/Teacher | Resolved: any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal. |
+| Q-FE07-005 | Does member create request directly, or librarian creates request at desk? | Team/Teacher | Resolved: member creates own borrow request; librarian/admin approves, rejects, returns, renews, and views history. |
+| Q-FE07-006 | Should pending request details use `REQUESTED` status or another table? | Team/DB owner | Resolved: use `BorrowDetails.Status = REQUESTED`; no extra request-detail table in Phase 1. |
+| Q-FE07-007 | Should request status become `COMPLETED` automatically when all details are returned/lost/damaged? | Team | Resolved: yes, mark `BorrowRequests.Status = COMPLETED` when all details are terminal. |
+| Q-FE07-008 | Should damaged/lost returns immediately create a fine record, or only expose data for FE09? | Team/Teacher | Resolved: FE07 records damaged/lost return data only; FE09 owns fine creation. |
 
 ---
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- FE07 `SPEC.md` is approved for Phase 2 planning.
+- `PLAN.md` and `TASKS.md` may now be updated from the approved spec before implementation.
 - Use database transactions for approve and return flows.
 - Every API endpoint must validate role and input on the server.

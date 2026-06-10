@@ -15,10 +15,11 @@
 ## 0. Project Summary And Current Phase
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
-- **Current phase**: Foundation + SDD Sprint, Week 3.
+- **Current phase**: Foundation + SDD Sprint, end of Week 3 / entering Week 4 scaffolding.
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server database, RESTful API.
-- **Current SDD scope**: finish draft specs for active core/workflow features. FE07 Borrowing Management and FE08 Reservation Management are currently drafted. No application code yet.
-- **Out of scope this week**: implementing controllers, services, repositories, entities, DTOs, UI, database migrations, or full `PLAN.md` / `TASKS.md` content.
+- **Current SDD scope**: all 12 Phase 1 feature SPEC.md files are marked approved. PLAN.md and TASKS.md are still not started for each feature, so implementation must not be treated as complete or source-of-truth-driven yet.
+- **Current code state**: backend has an Express skeleton with `/` and `/health`; frontend has prototype login/register/forgot-password screens. Backend auth controller/service/model files are placeholders. Treat existing UI as prototype until FE02 PLAN.md and TASKS.md are approved.
+- **Out of scope before Week 4 passes**: core feature implementation beyond approved specs, reviewed execution plans, task decomposition, API contracts, and test setup.
 
 ---
 
