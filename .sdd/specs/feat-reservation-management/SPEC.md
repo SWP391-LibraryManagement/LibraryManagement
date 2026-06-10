@@ -321,14 +321,14 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE08-005 | UC36 | FT37 | Not Started |
-| BR-FE08-006 | UC36 | FT37 | Not Started |
-| BR-FE08-008 | UC39 | FT40 | Not Started |
-| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Not Started |
-| BR-FE08-014 | UC39 | FT40 | Not Started |
-| FR-FE08-004 | UC37 | FT38 | Not Started |
-| FR-FE08-005 | UC38 | FT39 | Not Started |
-| FR-FE08-008 | UC40 | FT41 | Not Started |
+| BR-FE08-005 | UC36 | FT37 | Ready for review |
+| BR-FE08-006 | UC36 | FT37 | Ready for review |
+| BR-FE08-008 | UC39 | FT40 | Ready for review |
+| BR-FE08-009 | UC37, UC39 | FT38, FT40 | Ready for review |
+| BR-FE08-014 | UC39 | FT40 | Ready for review |
+| FR-FE08-004 | UC37 | FT38 | Ready for review |
+| FR-FE08-005 | UC38 | FT39 | Ready for review |
+| FR-FE08-008 | UC40 | FT41 | Ready for review |
 
 ---
 

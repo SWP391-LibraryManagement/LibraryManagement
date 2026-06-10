@@ -13,3 +13,10 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+
+## 2026-06-10 - Backend Slice Ready For Review
+
+- Added the FE12 plan and task checklist for Nhat's reporting scope.
+- Added read-only borrowing, inventory, and user statistics report endpoints.
+- Added filter validation, zero-result handling, role protection, and audit logs for successful report access.
+- Added backend tests for report metrics, zero-result behavior, personal-data suppression, invalid ranges, and access control.

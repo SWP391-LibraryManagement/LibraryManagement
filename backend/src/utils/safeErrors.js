@@ -12,6 +12,10 @@ function forbidden(code = 'FORBIDDEN', message = 'You are not allowed to perform
   return new AppException(403, code, message);
 }
 
+function notFound(code = 'NOT_FOUND', message = 'Resource not found.') {
+  return new AppException(404, code, message);
+}
+
 function conflict(code, message) {
   return new AppException(409, code, message);
 }
@@ -28,6 +32,7 @@ module.exports = {
   badRequest,
   unauthorized,
   forbidden,
+  notFound,
   conflict,
   tooManyRequests,
   internal,

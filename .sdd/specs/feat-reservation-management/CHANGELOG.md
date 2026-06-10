@@ -15,3 +15,9 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+
+## 2026-06-10 - Backend Slice Ready For Review
+
+- Added the FE08 backend plan and task checklist for Nhat's reservation scope.
+- Added member reservation APIs, staff queue processing, audit logging, and FE10 notification request handoff.
+- Added backend tests for reservation rules, cancellation ownership, queue order, notifications, and role guards.

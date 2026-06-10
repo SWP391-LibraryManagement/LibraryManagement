@@ -315,15 +315,15 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Not Started |
-| FR-FE12-001 | UC58 | FT59 | Not Started |
-| BR-FE12-004 | UC58 | FT59 | Not Started |
-| FR-FE12-002 | UC59 | FT60 | Not Started |
-| BR-FE12-005 | UC59 | FT60 | Not Started |
-| FR-FE12-003 | UC60 | FT61 | Not Started |
-| BR-FE12-006 | UC60 | FT61 | Not Started |
-| FR-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Not Started |
-| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Not Started |
+| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| FR-FE12-001 | UC58 | FT59 | Ready for review |
+| BR-FE12-004 | UC58 | FT59 | Ready for review |
+| FR-FE12-002 | UC59 | FT60 | Ready for review |
+| BR-FE12-005 | UC59 | FT60 | Ready for review |
+| FR-FE12-003 | UC60 | FT61 | Ready for review |
+| BR-FE12-006 | UC60 | FT61 | Ready for review |
+| FR-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 
 ---
 

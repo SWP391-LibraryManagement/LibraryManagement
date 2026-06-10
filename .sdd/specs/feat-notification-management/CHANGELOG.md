@@ -20,3 +20,11 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+
+## 2026-06-10 - Backend Slice Ready For Review
+
+- Added FE10 plan and task checklist for Nhat's notification scope.
+- Added protected notification request and process-pending APIs with email mock provider behavior.
+- Added idempotency handling, template rendering, safe payload redaction, status updates, and attempt logging.
+- Aligned the SQL script with FE10 fields, statuses, idempotency index, and required templates.
+- Added backend tests for request creation, duplicate events, reset-token redaction, template validation, delivery attempts, and access control.

@@ -161,7 +161,7 @@ CREATE TABLE BorrowRequests (
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (CreatedBy) REFERENCES Users(UserId),
     FOREIGN KEY (ApprovedBy) REFERENCES Users(UserId),
-    CONSTRAINT CK_BorrowRequests_Status CHECK (Status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'))
+    CONSTRAINT CK_BorrowRequests_Status CHECK (Status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'CANCELLED'))
 );
 
 CREATE TABLE BorrowDetails (
@@ -169,15 +169,15 @@ CREATE TABLE BorrowDetails (
     RequestId INT NOT NULL,
     CopyId INT NOT NULL,
     BorrowDate DATE NULL,
-    DueDate DATE NOT NULL,
+    DueDate DATE NULL,
     ReturnDate DATE NULL,
     RenewalCount INT NOT NULL DEFAULT 0,
-    Status NVARCHAR(20) NOT NULL DEFAULT 'BORROWED',
+    Status NVARCHAR(20) NOT NULL DEFAULT 'REQUESTED',
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
     FOREIGN KEY (RequestId) REFERENCES BorrowRequests(RequestId),
     FOREIGN KEY (CopyId) REFERENCES BookCopies(CopyId),
-    CONSTRAINT CK_BorrowDetails_Status CHECK (Status IN ('BORROWED', 'RETURNED', 'OVERDUE', 'LOST'))
+    CONSTRAINT CK_BorrowDetails_Status CHECK (Status IN ('REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'))
 );
 
 CREATE TABLE Reservations (
@@ -194,7 +194,7 @@ CREATE TABLE Reservations (
     UpdatedAt DATETIME NULL,
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (CopyId) REFERENCES BookCopies(CopyId),
-    CONSTRAINT CK_Reservations_Status CHECK (Status IN ('ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED'))
+    CONSTRAINT CK_Reservations_Status CHECK (Status IN ('ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED', 'NOTIFIED'))
 );
 
 CREATE TABLE Fines (
@@ -234,22 +234,33 @@ CREATE TABLE NotificationTemplates (
 
 CREATE TABLE Notifications (
     NotificationId INT IDENTITY PRIMARY KEY,
+    NotificationType NVARCHAR(50) NULL,
     TemplateId INT NULL,
+    TemplateKey NVARCHAR(100) NULL,
     UserId INT NULL,
     RecipientEmail NVARCHAR(100) NOT NULL,
     Channel NVARCHAR(20) NOT NULL DEFAULT 'EMAIL',
     Status NVARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    Title NVARCHAR(255) NULL,
+    Body NVARCHAR(MAX) NULL,
     SourceFeature NVARCHAR(20) NULL,
     SourceEntityType NVARCHAR(50) NULL,
     SourceEntityId INT NULL,
+    IdempotencyKey NVARCHAR(100) NULL,
     SafePayload NVARCHAR(MAX) NULL,
+    AttemptCount INT NOT NULL DEFAULT 0,
+    LastErrorMessage NVARCHAR(500) NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     SentAt DATETIME NULL,
     FOREIGN KEY (TemplateId) REFERENCES NotificationTemplates(TemplateId),
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
     CONSTRAINT CK_Notifications_Channel CHECK (Channel IN ('EMAIL')),
-    CONSTRAINT CK_Notifications_Status CHECK (Status IN ('PENDING', 'SENT', 'FAILED', 'CANCELLED'))
+    CONSTRAINT CK_Notifications_Status CHECK (Status IN ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'))
 );
+
+CREATE UNIQUE INDEX UX_Notifications_IdempotencyKey_NotNull
+ON Notifications(IdempotencyKey)
+WHERE IdempotencyKey IS NOT NULL;
 
 CREATE TABLE NotificationAttempts (
     AttemptId INT IDENTITY PRIMARY KEY,
@@ -348,6 +359,10 @@ VALUES
 ('ACCOUNT_VERIFICATION','Verify your account','Please verify your library account.'),
 ('PASSWORD_RESET','Reset your password','Please reset your library account password.'),
 ('RESERVATION_READY','Book reservation ready','Your reserved book is ready.'),
+('DUE_DATE_REMINDER','Library due date reminder','Please review your borrowing due date.'),
+('OVERDUE_NOTICE','Library overdue notice','Please review your overdue borrowing item.'),
+('FINE_NOTICE','Library fine notice','Please review your library fine notice.'),
+('MEMBERSHIP_RESULT','Membership result','Please review your membership result.'),
 ('DUE_OR_FINE_NOTICE','Library due date or fine notice','Please review your borrowing or fine notice.');
 
 INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)

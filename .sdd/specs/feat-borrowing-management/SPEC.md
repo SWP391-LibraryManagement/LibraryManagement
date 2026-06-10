@@ -387,20 +387,20 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Not Started |
-| BR-FE07-005 | UC29, UC32 | FT30, FT33 | Not Started |
-| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Not Started |
-| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Not Started |
-| BR-FE07-011 | UC33 | FT34 | Not Started |
-| BR-FE07-014 | UC33 | FT34 | Not Started |
-| BR-FE07-015 | UC31 | FT32 | Not Started |
-| BR-FE07-018 | UC31 | FT32 | Not Started |
-| BR-FE07-019 | UC29 | FT30 | Not Started |
-| BR-FE07-020 | UC33 | FT34 | Not Started |
-| BR-FE07-021 | UC33 | FT34 | Not Started |
-| FR-FE07-010 | UC30 | FT31 | Not Started |
-| FR-FE07-011 | UC34 | FT35 | Not Started |
-| FR-FE07-013 | UC33 | FT34 | Not Started |
+| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Ready for review |
+| BR-FE07-005 | UC29, UC32 | FT30, FT33 | Ready for review |
+| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Ready for review |
+| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Ready for review |
+| BR-FE07-011 | UC33 | FT34 | Ready for review |
+| BR-FE07-014 | UC33 | FT34 | Ready for review |
+| BR-FE07-015 | UC31 | FT32 | Ready for review |
+| BR-FE07-018 | UC31 | FT32 | Ready for review |
+| BR-FE07-019 | UC29 | FT30 | Ready for review |
+| BR-FE07-020 | UC33 | FT34 | Ready for review |
+| BR-FE07-021 | UC33 | FT34 | Ready for review |
+| FR-FE07-010 | UC30 | FT31 | Ready for review |
+| FR-FE07-011 | UC34 | FT35 | Ready for review |
+| FR-FE07-013 | UC33 | FT34 | Ready for review |
 
 ---
 

@@ -21,7 +21,24 @@ function createAuthenticate(authService = defaultAuthService) {
 
 const authenticate = createAuthenticate();
 
+function requireAnyRole(...allowedRoles) {
+  const normalizedAllowedRoles = allowedRoles.map((role) => String(role).toUpperCase());
+
+  return function authorizeRole(req, res, next) {
+    const roles = Array.isArray(req.user?.roles)
+      ? req.user.roles.map((role) => String(role).toUpperCase())
+      : [];
+
+    if (!normalizedAllowedRoles.some((role) => roles.includes(role))) {
+      return next(errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.'));
+    }
+
+    return next();
+  };
+}
+
 module.exports = {
   authenticate,
   createAuthenticate,
+  requireAnyRole,
 };

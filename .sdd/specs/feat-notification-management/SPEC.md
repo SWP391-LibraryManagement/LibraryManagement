@@ -368,15 +368,15 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE10-001 | FE02 account verification notification is sent/created without FE10 owning token generation | FR-FE10-001 | BR-FE10-001, BR-FE10-002, BR-FE10-003, BR-FE10-007 | FT46 | Not Started |
-| AC-FE10-002 | FE02 password reset notification is sent/created without exposing raw token values | FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-007 | FT47 | Not Started |
-| AC-FE10-003 | FE08 book reservation notification is sent/created without FE10 deciding queue eligibility | FR-FE10-003 | BR-FE10-001, BR-FE10-007 | FT48 | Not Started |
-| AC-FE10-004 | FE07 due date notification is sent/created without FE10 changing borrowing state | FR-FE10-004 | BR-FE10-001, BR-FE10-007, BR-FE10-012 | FT49 | Not Started |
-| AC-FE10-005 | FE09 fine/overdue notification is sent/created without FE10 calculating fines | FR-FE10-004 | BR-FE10-001, BR-FE10-007, BR-FE10-012 | FT49 | Not Started |
-| AC-FE10-006 | Missing recipient or template data fails safely | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-010 | FT46, FT47, FT48, FT49 | Not Started |
-| AC-FE10-007 | Password reset token/link values are not logged or exposed by FE10 | FR-FE10-002 | BR-FE10-003, BR-FE10-004 | FT47 | Not Started |
-| AC-FE10-008 | Duplicate source event does not create duplicate active notification | FR-FE10-008 | BR-FE10-006 | FT46, FT47, FT48, FT49 | Not Started |
-| AC-FE10-009 | Delivery failure records safe failure reason and does not roll back source business flow | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | FT46, FT47, FT48, FT49 | Not Started |
+| AC-FE10-001 | FE02 account verification notification is sent/created without FE10 owning token generation | FR-FE10-001 | BR-FE10-001, BR-FE10-002, BR-FE10-003, BR-FE10-007 | FT46 | Ready for review |
+| AC-FE10-002 | FE02 password reset notification is sent/created without exposing raw token values | FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-007 | FT47 | Ready for review |
+| AC-FE10-003 | FE08 book reservation notification is sent/created without FE10 deciding queue eligibility | FR-FE10-003 | BR-FE10-001, BR-FE10-007 | FT48 | Ready for review |
+| AC-FE10-004 | FE07 due date notification is sent/created without FE10 changing borrowing state | FR-FE10-004 | BR-FE10-001, BR-FE10-007, BR-FE10-012 | FT49 | Ready for review |
+| AC-FE10-005 | FE09 fine/overdue notification is sent/created without FE10 calculating fines | FR-FE10-004 | BR-FE10-001, BR-FE10-007, BR-FE10-012 | FT49 | Ready for review |
+| AC-FE10-006 | Missing recipient or template data fails safely | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-010 | FT46, FT47, FT48, FT49 | Ready for review |
+| AC-FE10-007 | Password reset token/link values are not logged or exposed by FE10 | FR-FE10-002 | BR-FE10-003, BR-FE10-004 | FT47 | Ready for review |
+| AC-FE10-008 | Duplicate source event does not create duplicate active notification | FR-FE10-008 | BR-FE10-006 | FT46, FT47, FT48, FT49 | Ready for review |
+| AC-FE10-009 | Delivery failure records safe failure reason and does not roll back source business flow | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | FT46, FT47, FT48, FT49 | Ready for review |
 
 ### Coverage Summary
 
