@@ -2,9 +2,9 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
-# Owner: Long
+# Owner: Dat
 
 # Last Updated: 2026-06-10
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-fine-management/`
 
-> Source of truth for FE09 Fine Management. This spec is a draft and must be reviewed before implementation. It is intentionally detailed because fine calculation is a core business rule.
+> Source of truth for FE09 Fine Management. This spec is approved for Phase 2 planning. It is intentionally detailed because fine calculation is a core business rule.
 
 ---
 
@@ -155,7 +155,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE09-011: Unpaid fines must remain visible until paid, waived, or otherwise resolved by approved policy.
 - BR-FE09-012: Marking a fine as paid must set status `PAID` and record `PaidAt`.
 - BR-FE09-013: Paid fines must not block borrowing.
-- BR-FE09-014: Unpaid fines may block borrowing according to approved FE07 policy.
+- BR-FE09-014: Any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal according to approved FE07 policy.
 - BR-FE09-015: Fine calculation and payment state changes must be traceable.
 - BR-FE09-016: Online payment gateway is out of scope; FE09 records offline collection/payment status only.
 
@@ -187,6 +187,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-007: Given an unpaid fine, when a librarian/admin marks it paid, then status becomes `PAID` and `PaidAt` is recorded.
 - AC-FE09-008: Given a member, when the member attempts to mark a fine paid, then access is denied.
 - AC-FE09-009: Given a paid fine, when borrowing eligibility checks unpaid fines, then the paid fine does not block borrowing.
+- AC-FE09-010: Given a member has any `UNPAID` fine with amount greater than 0, when FE07 checks borrowing or renewal eligibility, then the member is considered blocked.
 
 ---
 
@@ -240,7 +241,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -302,7 +303,7 @@ This feature does not include:
 
 | Dependency | Type | Notes |
 | ---------- | ---- | ----- |
-| FE07 Borrowing Management | Internal | Provides borrow detail due/return data and may call fine calculation. |
+| FE07 Borrowing Management | Internal | Provides borrow detail due/return data and may call fine calculation. Checked on 2026-06-10: FE07 treats any `UNPAID` fine with amount greater than 0 as blocking new borrowing and renewal. |
 | FE06 Inventory / Book Copy Management | Internal | Provides copy condition/status for lost/damaged cases. |
 | FE10 Notification Management | Internal | Sends fine/overdue notifications. |
 | FE11 User & Role Management | Internal | Provides staff permissions. |
@@ -311,16 +312,16 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE09-001 | Are lost/damaged fines required in Phase 1, or only overdue fines? | Team/Teacher | Open |
-| Q-FE09-002 | Does any unpaid fine block borrowing, or only fines above a threshold? | Team/Teacher | Open |
-| Q-FE09-003 | Should fine collection support partial payments? | Team/Teacher | Open |
-| Q-FE09-004 | Should collection store collector ID and note in a separate table? | Team/DB owner | Open |
-| Q-FE09-005 | Can Admin waive or cancel fines? | Team/Teacher | Open |
-| Q-FE09-006 | Should calculation run automatically on return, manually by librarian, scheduled daily, or all? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE09-001 | Phase 1 supports overdue fines only; lost/damaged fines are out of scope. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-002 | Any UNPAID fine with amount greater than 0 blocks new borrowing and renewal. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-003 | No partial payments in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -338,17 +339,18 @@ This feature does not include:
 | FR-FE09-007 | UC43 | FT44 | Not Started |
 | BR-FE09-012 | UC44 | FT45 | Not Started |
 | FR-FE09-008 | UC44 | FT45 | Not Started |
+| BR-FE09-014 | UC42 | FT43 | Not Started |
 
 ---
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Overdue fine policy is confirmed as 5,000 VND/day/copy or updated in shared context.
-- [ ] Borrowing-block rule for unpaid fines is approved with FE07.
-- [ ] Lost/damaged fine policy is approved or marked out of scope.
-- [ ] Collection/paid schema is confirmed.
-- [ ] Duplicate fine prevention rule is approved.
-- [ ] API contract is copied to `docs/api/api-contract.md` if the team uses a shared API contract.
-- [ ] Every acceptance criterion can become a test.
+- [x] Overdue fine policy is confirmed as 5,000 VND/day/copy or updated in shared context.
+- [x] Borrowing-block rule for unpaid fines is approved with FE07.
+- [x] Lost/damaged fine policy is approved or marked out of scope.
+- [x] Collection/paid schema is confirmed.
+- [x] Duplicate fine prevention rule is approved.
+- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

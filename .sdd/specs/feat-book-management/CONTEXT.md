@@ -6,7 +6,7 @@
 
 # Owner: Dung
 
-# Last Updated: 2026-06-02
+# Last Updated: 2026-06-10
 
 # Feature folder: `.sdd/specs/feat-book-management/`
 
@@ -22,7 +22,7 @@ This feature must keep three things consistent:
 - Book availability for members and guests.
 - Relationships between books, authors, categories, publishers, and physical copies.
 
-Because books are the core asset of the library system, this feature is treated as a Full Spec feature.
+FE05 is a Standard Spec feature in the Master Feature List. It still needs clear business rules because catalog data is used by inventory, borrowing, reservation, and reporting features.
 
 ---
 
@@ -67,9 +67,8 @@ FE05 does not include:
 
 The current SQL design includes:
 
-- `Books(BookId, ISBN, Title, Description, PublishYear, CategoryId, PublisherId, Status)`
+- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl)`
 - `Authors(AuthorId, AuthorName)`
-- `BookAuthors(BookId, AuthorId)`
 - `Categories(CategoryId, CategoryName)`
 - `Publishers(PublisherId, PublisherName)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
@@ -77,9 +76,9 @@ The current SQL design includes:
 Potential issues to review:
 
 - ISBN uniqueness constraints must be enforced.
-- Multiple authors per book require many-to-many relationships.
+- The current SQL supports one author per book; multiple authors would require a later schema change.
 - Soft delete should be used instead of physical deletion.
-- Book status values should be standardized (ACTIVE, INACTIVE).
+- The current SQL does not yet include a `Books.Status` field; status-based deactivation requires a schema decision.
 - Search performance may require indexing on ISBN, Title, and Author.
 
 These are not blockers for drafting but must be validated before implementation.
@@ -138,16 +137,17 @@ These are not blockers for drafting but must be validated before implementation.
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE05-001 | Is ISBN mandatory for every book? | Team/Teacher | Open |
-| Q-FE05-002 | Can multiple books share the same title? | Team/Teacher | Open |
-| Q-FE05-003 | Should deactivated books remain searchable? | Team/Teacher | Open |
-| Q-FE05-004 | Is soft delete required for books? | Team/Teacher | Open |
-| Q-FE05-005 | Can a book belong to multiple categories? | Team/Teacher | Open |
-| Q-FE05-006 | Should book cover images be stored in database or file storage? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE05-001 | ISBN is optional but must be unique when provided. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-002 | Multiple books can share the same title. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

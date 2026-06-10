@@ -2,9 +2,9 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
-# Owner: Long
+# Owner: Nhat
 
 # Last Updated: 2026-06-10
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-reporting-statistics/`
 
-> Source of truth for FE12 Reporting & Statistics. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE12 Reporting & Statistics. This spec is approved for Phase 2 planning.
 
 ---
 
@@ -228,7 +228,7 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -298,16 +298,16 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE12-001 | Which roles can view borrowing, inventory, and user reports? | Team/Teacher | Open |
-| Q-FE12-002 | Which borrowing metrics are required: total requests, borrowed count, returned count, overdue count, by date? | Team/Teacher | Open |
-| Q-FE12-003 | Which inventory metrics are required: total copies, available, borrowed, reserved, damaged/lost, by category? | Team/Teacher | Open |
-| Q-FE12-004 | Which user statistics are required: total users, by role, active/inactive, membership status? | Team/Teacher | Open |
-| Q-FE12-005 | Is export to CSV/PDF required in Phase 1? | Team/Teacher | Open |
-| Q-FE12-006 | Should report access be audited? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE12-001 | Librarian and Admin can view reports; Member/Guest cannot. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-005 | CSV/PDF export is out of scope unless teacher requires it. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -329,12 +329,12 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Report viewer roles are approved.
-- [ ] Required borrowing metrics are approved.
-- [ ] Required inventory metrics are approved.
-- [ ] Required user statistics are approved.
-- [ ] Export scope is approved or explicitly out of scope.
-- [ ] API contract is copied to `docs/api/api-contract.md` if the team uses a shared API contract.
-- [ ] Every acceptance criterion can become a test.
+- [x] Report viewer roles are approved.
+- [x] Required borrowing metrics are approved.
+- [x] Required inventory metrics are approved.
+- [x] Required user statistics are approved.
+- [x] Export scope is approved or explicitly out of scope.
+- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Dat
 
@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-user-profile/`
 
-> Source of truth for FE03 User Profile. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE03 User Profile. Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 
 ---
 
@@ -206,12 +206,12 @@ Use these stable IDs for tasks and tests.
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation if the team keeps a dedicated API document.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/profile/me` | Member/Librarian/Admin | - | Safe profile DTO | Current user's profile only. |
-| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, avatarUrl?, phone? }` | Updated safe profile DTO | Phone included only if approved. |
+| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, avatarUrl?, phone? }` | Updated safe profile DTO | Phone is included as an approved editable field in Phase 1. |
 
 ---
 
@@ -269,15 +269,15 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE03-001 | Can FE03 update `Users.Phone`, or is phone managed elsewhere? | Team/Teacher | Open |
-| Q-FE03-002 | Can FE03 update email, or must all email changes go through FE02 verification? | Team/Teacher | Open |
-| Q-FE03-003 | Should missing profile records be auto-created on first view? | Team/DB owner | Open |
-| Q-FE03-004 | Are avatar uploads required, or only avatar URL text? | Team/Teacher | Open |
-| Q-FE03-005 | Should profile updates write audit logs? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-002 | FE03 cannot update email; email changes must go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-004 | Phase 1 supports avatar URL text only, not file upload. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-005 | Profile updates write audit logs for changed fields, actor, and timestamp. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -298,11 +298,11 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Editable profile fields are approved.
-- [ ] Phone and email ownership is confirmed with FE02/FE11.
-- [ ] Missing profile behavior is approved.
-- [ ] Avatar storage policy is approved.
-- [ ] Privacy and response DTO rules are reviewed.
-- [ ] Every acceptance criterion can become a test.
+- [x] Editable profile fields are approved.
+- [x] Phone and email ownership is confirmed with FE02/FE11.
+- [x] Missing profile behavior is approved.
+- [x] Avatar storage policy is approved.
+- [x] Privacy and response DTO rules are reviewed.
+- [x] Every acceptance criterion can become a test.

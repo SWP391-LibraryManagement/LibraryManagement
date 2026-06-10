@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT (Proposed Design)
+# Status: APPROVED
 
 # Owner: Nhat
 
@@ -12,9 +12,9 @@
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
-> Source of truth for FE10 Notification Management. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE10 Notification Management. This spec is approved for Phase 2 planning.
 >
-> IMPORTANT: This spec contains proposed answers to several open questions. Proposed decisions must be approved by the team before implementation.
+> Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 
 ---
 
@@ -334,33 +334,33 @@ This feature does not include:
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE10-001 | Which channels are required for Phase 1: email only, in-app only, or both? | Team/Teacher | Open |
-| Q-FE10-002 | Which email provider or mock strategy will be used in development? | Team/Tech Lead | Open |
-| Q-FE10-003 | Should members be able to disable optional reminders, or are all notifications mandatory? | Team/Teacher | Open |
-| Q-FE10-004 | How long should delivery records be retained? | Team/Teacher | Open |
-| Q-FE10-005 | Should due date reminders be scheduled automatically, and how many days before due date? | Team/Teacher | Open |
-| Q-FE10-006 | Should notification templates be fixed in seed/static configuration for Phase 1? | Team/Teacher | Open |
-| Q-FE10-007 | Should failed notification delivery block the source business flow? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE10-001 | Phase 1 required channel is email with mock provider. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-003 | Required templates: verification, password reset, due reminder, overdue notice, reservation ready, membership result. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-005 | Retry failed sends manually only in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
-## 15.1 Proposed Design Decisions
+## 15.1 Approved Design Decisions
 
-The following answers are proposed in this spec and must be approved before implementation.
+The following decisions were approved in the Phase 1 review packet on 2026-06-10 and are now part of this spec.
 
-| Open Question | Proposed Answer | Implemented As | Status |
-| ------------- | --------------- | -------------- | ------ |
-| Q-FE10-001 | Support both email and in-app for Phase 1, but allow email provider to be mocked in development. | `channel` supports `EMAIL` and `IN_APP`. | PROPOSED |
-| Q-FE10-002 | Use a mock provider in development; real provider configured later through environment variables. | NFR-FE10-SEC-003, Dependencies. | PROPOSED |
-| Q-FE10-003 | Account/security notices are mandatory; optional reminders may use preferences later. | `UserNotificationPreferences` optional. | PROPOSED |
-| Q-FE10-004 | Retain delivery records for the project duration unless teacher defines another policy. | Notification and attempt records. | PROPOSED |
-| Q-FE10-005 | Due date reminders should be sent 1 day before due date if scheduler is implemented. | Dependency on scheduler/FE07. | PROPOSED |
-| Q-FE10-006 | Templates are fixed by seed/static configuration for Phase 1. | Template editor is out of scope. | PROPOSED |
-| Q-FE10-007 | Failed notification delivery must not block source business flow. | BR-FE10-012, NFR-FE10-REL-002. | PROPOSED |
+| Decision | Approved Answer | Status |
+| -------- | --------------- | ------ |
+| Q-FE10-001 | Phase 1 required channel is email with mock provider. | APPROVED |
+| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | APPROVED |
+| Q-FE10-003 | Required templates: verification, password reset, due reminder, overdue notice, reservation ready, membership result. | APPROVED |
+| Q-FE10-004 | Store notification send attempts and status. | APPROVED |
+| Q-FE10-005 | Retry failed sends manually only in Phase 1. | APPROVED |
+| Q-FE10-006 | Notification failure must not block source business flow. | APPROVED |
+| Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | APPROVED |
 
 ---
 
@@ -385,19 +385,29 @@ The following answers are proposed in this spec and must be approved before impl
 - Total BR: 13 (BR-FE10-001 to BR-FE10-013) - all mapped.
 - Total Tests: 4 (FT46 to FT49) - aligned with assignment sheet.
 
+
+### External Assignment Traceability (Excel UC IDs)
+
+| Assignment UC ID | Excel Use Case | Related Main Flow / Requirement | Related Test |
+| ---------------- | -------------- | ------------------------------- | ------------ |
+| UC45 | Send Account Verification Notification | MF-FE10-001; FR-FE10-001 | FT46 |
+| UC46 | Send Password Reset Notification | MF-FE10-002; FR-FE10-002 | FT47 |
+| UC47 | Send Book Reservation Notification | MF-FE10-003; FR-FE10-003 | FT48 |
+| UC48 | Send Due Date Or Fine Notification | MF-FE10-004, MF-FE10-005; FR-FE10-004 | FT49 |
+
 ---
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Feature ID and folder match Master Feature List.
-- [ ] Scope stays inside FE10 Notification Management.
-- [ ] Team approves proposed decisions in Section 15.1.
-- [ ] Channel strategy is confirmed: email, in-app, or both.
-- [ ] Email provider or mock provider strategy is confirmed.
-- [ ] Notification schema is reviewed with database owner.
-- [ ] FE02, FE07, FE08, FE09, and FE11 dependencies are checked for conflicts.
-- [ ] API contract is approved in this SPEC.md or copied to a dedicated API contract file if the team reintroduces one.
-- [ ] No secrets, provider credentials, raw tokens, or sensitive links are stored/logged.
-- [ ] Every acceptance criterion can become a test.
+- [x] Feature ID and folder match Master Feature List.
+- [x] Scope stays inside FE10 Notification Management.
+- [x] Team approves proposed decisions in Section 15.1.
+- [x] Channel strategy is confirmed: email, in-app, or both.
+- [x] Email provider or mock provider strategy is confirmed.
+- [x] Notification schema is reviewed with database owner.
+- [x] FE02, FE07, FE08, FE09, and FE11 dependencies are checked for conflicts.
+- [x] API contract is approved in this SPEC.md or copied to a dedicated API contract file if the team reintroduces one.
+- [x] No secrets, provider credentials, raw tokens, or sensitive links are stored/logged.
+- [x] Every acceptance criterion can become a test.

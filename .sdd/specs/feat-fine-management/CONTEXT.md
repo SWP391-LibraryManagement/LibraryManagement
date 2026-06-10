@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: Long
+# Owner: Dat
 
 # Last Updated: 2026-06-10
 
@@ -76,7 +76,7 @@ Project baseline decisions include:
 - Overdue fine is 5,000 VND per overdue day per copy.
 - Fine starts the day after the due date.
 - The default loan duration is 14 calendar days, owned by FE07.
-- A member with unpaid fines may be restricted from borrowing.
+- A member with any `UNPAID` fine whose amount is greater than 0 is restricted from new borrowing and renewal in FE07.
 
 Potential issues to review:
 
@@ -92,23 +92,27 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 5. Main Use Cases From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC41 | View Fine Information | Long |
-| UC42 | Calculate Fine | Long |
-| UC43 | Record Fine Collection | Long |
-| UC44 | Mark Fine As Paid | Long |
+| UC41 | View Fine Information | Dat |
+| UC42 | Calculate Fine | Dat |
+| UC43 | Record Fine Collection | Dat |
+| UC44 | Mark Fine As Paid | Dat |
 
 ---
 
 ## 6. Feature Tests From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT42 | View fine information | Long |
-| FT43 | Calculate fine | Long |
-| FT44 | Record fine collection | Long |
-| FT45 | Mark fine as paid | Long |
+| FT42 | View fine information | Dat |
+| FT43 | Calculate fine | Dat |
+| FT44 | Record fine collection | Dat |
+| FT45 | Mark fine as paid | Dat |
 
 ---
 
@@ -136,15 +140,16 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE09-001 | Are damaged/lost fines in Phase 1, or only overdue fines? | Team/Teacher | Open |
-| Q-FE09-002 | Does any unpaid fine block new borrowing, or only fines above a threshold? | Team/Teacher | Open |
-| Q-FE09-003 | Should fine collection store collected amount, collector, and note? | Team/Teacher | Open |
-| Q-FE09-004 | Can fines be waived/cancelled by Admin? | Team/Teacher | Open |
-| Q-FE09-005 | Should fine calculation run on return only, scheduled daily, or both? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE09-001 | Phase 1 supports overdue fines only; lost/damaged fines are out of scope. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-002 | Any UNPAID fine with amount greater than 0 blocks new borrowing and renewal. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-003 | No partial payments in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

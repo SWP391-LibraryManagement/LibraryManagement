@@ -13,5 +13,5 @@ Before planning, the team must:
 - Confirm user data retention policy after deactivation.
 - Confirm database schema for Users, Roles, UserRoles with all required fields.
 - Confirm admin-created account setup lifecycle with FE02, including inactive status before setup and current SQL `PasswordHash NOT NULL` handling.
-- Confirm API contract in `docs/api/api-contract.md`.
+- Confirm API contract in `SPEC.md` or a dedicated shared API contract file if the team reintroduces one.
 - Review dependencies with FE02 Authentication, FE03 User Profile, and FE09 Fine Management (if blocking deactivation).

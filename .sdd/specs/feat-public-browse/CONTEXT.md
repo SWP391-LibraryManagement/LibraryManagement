@@ -128,15 +128,15 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE01-001 | Should inactive/deactivated books be hidden from public search? | Team/Teacher | Open |
-| Q-FE01-002 | Which fields are visible to guests on public book details? | Team/Teacher | Open |
-| Q-FE01-003 | Should guests see exact available copy count or only available/unavailable? | Team/Teacher | Open |
-| Q-FE01-004 | Which search filters are required for Phase 1: title, author, category, publisher, ISBN? | Team/Teacher | Open |
-| Q-FE01-005 | Should home page show featured/recent books or only navigation/search? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-002 | Guests see simple availability only: Available/Unavailable, not exact copy count. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-004 | ISBN is visible to guests when available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

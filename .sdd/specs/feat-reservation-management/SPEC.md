@@ -2,17 +2,17 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-02
+# Last Updated: 2026-06-10
 
 # Feature ID: FE08
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
-> Source of truth for FE08 Reservation Management. This spec is a draft and must be reviewed before implementation.
+> Source of truth for FE08 Reservation Management. This spec is approved for Phase 2 planning.
 
 ---
 
@@ -155,6 +155,7 @@ The feature can only start when:
 - BR-FE08-011: When a reserved copy is held for a member, it must not be available for normal borrowing by another member.
 - BR-FE08-012: Queue processing must trigger a notification requirement for FE10.
 - BR-FE08-013: Reservation status changes must be traceable.
+- BR-FE08-014: An active reservation or held copy for another member must block FE07 loan renewal for the same copy/reservation target.
 
 ---
 
@@ -235,7 +236,7 @@ The feature can only start when:
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract must be copied into `docs/api/api-contract.md` before implementation.
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
@@ -297,23 +298,22 @@ This feature does not include:
 | FE02 Authentication | Internal | Identifies actor. |
 | FE04 Membership Management | Internal | Confirms member eligibility. |
 | FE06 Inventory / Book Copy Management | Internal | Provides copy availability/status. |
-| FE07 Borrowing Management | Internal | Return flow may release copy into reservation queue. |
+| FE07 Borrowing Management | Internal | Return flow may release copy into reservation queue. Checked on 2026-06-10: active reservation/held copy for another member blocks FE07 renewal. |
 | FE10 Notification Management | Internal | Sends book available notification. |
 | FE11 User & Role Management | Internal | Provides roles and permissions. |
 | SQL Server database | Technical | Current SQL script has `Reservations(UserId, CopyId, ReservedAt, Status)`. |
 
 ---
 
-## 15. Open Questions
+## 15. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE08-001 | Is reservation at book level (`BookId`) or physical copy level (`CopyId`)? Current SQL uses `CopyId`. | Team/DB owner | Open |
-| Q-FE08-002 | Can a member reserve a book if one copy is currently available? | Team/Teacher | Open |
-| Q-FE08-003 | Maximum active reservations per member? | Team/Teacher | Open |
-| Q-FE08-004 | How long does a notified reservation stay valid before expiration? | Team/Teacher | Open |
-| Q-FE08-005 | Should queue processing be automatic after return, manual by librarian, or both? | Team/Teacher | Open |
-| Q-FE08-006 | Should reservations block loan renewal in FE07? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE08-001 | Reservation targets physical copy CopyId in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-002 | Member cannot reserve when a copy is currently available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-003 | Maximum 3 active reservations per member. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
@@ -325,6 +325,7 @@ This feature does not include:
 | BR-FE08-006 | UC36 | FT37 | Not Started |
 | BR-FE08-008 | UC39 | FT40 | Not Started |
 | BR-FE08-009 | UC37, UC39 | FT38, FT40 | Not Started |
+| BR-FE08-014 | UC39 | FT40 | Not Started |
 | FR-FE08-004 | UC37 | FT38 | Not Started |
 | FR-FE08-005 | UC38 | FT39 | Not Started |
 | FR-FE08-008 | UC40 | FT41 | Not Started |
@@ -333,12 +334,12 @@ This feature does not include:
 
 ## 17. Review Checklist
 
-Before this SPEC.md is approved:
+Phase 1 approval checklist (completed on 2026-06-10):
 
-- [ ] Reservation target is confirmed: book-level or copy-level.
-- [ ] Maximum active reservations is approved.
-- [ ] Reservation expiry/hold period is approved.
-- [ ] Queue processing behavior is approved.
-- [ ] API contract is copied to `docs/api/api-contract.md`.
-- [ ] FE07 dependency is checked, especially return and renewal behavior.
-- [ ] Every acceptance criterion can become a test.
+- [x] Reservation target is confirmed: book-level or copy-level.
+- [x] Maximum active reservations is approved.
+- [x] Reservation expiry/hold period is approved.
+- [x] Queue processing behavior is approved.
+- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] FE07 dependency is checked, especially return and renewal behavior.
+- [x] Every acceptance criterion can become a test.

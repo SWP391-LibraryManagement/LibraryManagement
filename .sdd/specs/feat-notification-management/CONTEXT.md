@@ -139,17 +139,17 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE10-001 | Which channels are required for Phase 1: email only, in-app only, or both? | Team/Teacher | Open |
-| Q-FE10-002 | Which email provider or mock strategy will be used in development? | Team/Tech Lead | Open |
-| Q-FE10-003 | Should members be able to disable optional reminders, or are all notifications mandatory? | Team/Teacher | Open |
-| Q-FE10-004 | How long should delivery records be retained? | Team/Teacher | Open |
-| Q-FE10-005 | Should due date reminders be scheduled automatically, and how many days before due date? | Team/Teacher | Open |
-| Q-FE10-006 | Should notification templates be fixed in seed/static configuration for Phase 1? | Team/Teacher | Open |
-| Q-FE10-007 | Should failed notification delivery block the source business flow? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE10-001 | Phase 1 required channel is email with mock provider. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-003 | Required templates: verification, password reset, due reminder, overdue notice, reservation ready, membership result. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-005 | Retry failed sends manually only in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

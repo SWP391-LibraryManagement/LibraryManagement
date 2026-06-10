@@ -4,5 +4,12 @@
 
 - Created FE12 Reporting & Statistics feature specification structure.
 - Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Aligned owner and assignment scope with the latest assignment sheet: UC58-UC60 and FT59-FT61 owned by Long.
+- Updated current owner and assignment scope after team redistribution: UC58-UC60 and FT59-FT61 owned by Nhat.
 - Defined FE12 as a read-only reporting feature for borrowing reports, inventory reports, and user statistics.
+- Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
+
+## 2026-06-10 - Phase 1 Review Decisions Approved
+
+- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
+- Preserved Phase 1 scope controls and deferred future-work items explicitly.

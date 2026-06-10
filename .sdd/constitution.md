@@ -106,6 +106,20 @@ Commit convention:
 - test:
 - chore:
 
+
+## 8.1 Branch And Review Gates
+
+- Work should happen on feature, fix, docs, refactor, test, or chore branches.
+- Pull requests must identify the related SPEC.md, PLAN.md, and TASKS.md item when changing core feature behavior.
+- Do not merge core feature work when PLAN.md or TASKS.md is missing or marked NOT STARTED.
+- Every pull request must pass the available automated checks before human review.
+
+## 8.2 Continuous Integration
+
+The repository must keep a basic CI workflow that checks install, lint/build where available, and backend startup health.
+
+CI is a foundation gate from the Hybrid roadmap. Failing CI blocks merge until fixed or explicitly accepted by the team lead with a documented reason.
+
 ## 9. AI Usage Rules
 
 AI/agent may assist with:

@@ -2,17 +2,17 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-02
+# Last Updated: 2026-06-10
 
 # Feature ID: FE05
 
 # Feature folder: `.sdd/specs/feat-book-management/`
 
-> Source of truth for FE05 Book Management. This spec is a draft and must be reviewed before implementation. It is intentionally detailed because FE05 is a core business feature that provides the library catalog used by borrowing, reservation, reporting, and inventory features.
+> Source of truth for FE05 Book Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE05 is a core business feature that provides the library catalog used by borrowing, reservation, reporting, and inventory features.
 
 ---
 
@@ -43,8 +43,8 @@ The system shall:
 
 ### 1.4 Scope Level
 
-- [x] Full Spec - core business logic, high risk, must be correct from the beginning
-- [ ] Standard Spec - normal feature with business rules and validations
+- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
+- [x] Standard Spec - normal feature with business rules and validations
 - [ ] Light Spec - simple UI, documentation, or low-risk feature
 
 ---
@@ -162,7 +162,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-004: Only librarians and admins may deactivate books.
 - BR-FE05-005: ISBN must be unique across all books.
 - BR-FE05-006: Book title is required.
-- BR-FE05-007: A book must belong to at least one category.
+- BR-FE05-007: A book belongs to exactly one category in Phase 1.
 - BR-FE05-008: Deactivated books cannot be borrowed.
 - BR-FE05-009: Deactivated books should not appear in public search results.
 - BR-FE05-010: Every create, update, and deactivate action must be auditable.
@@ -181,3 +181,205 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-008: The system shall deactivate books using status-based deactivation.
 - FR-FE05-009: The system shall support pagination in book searches.
 - FR-FE05-010: The system shall support filtering by category, author, and status.
+
+---
+
+## 8. Acceptance Criteria
+
+- AC-FE05-001: Given public-visible books exist, when a guest searches books, then matching active books are returned.
+- AC-FE05-002: Given public-visible books exist, when a member searches books, then matching active books are returned.
+- AC-FE05-003: Given a valid active book, when a guest or member opens book details, then book metadata and safe availability information are displayed.
+- AC-FE05-004: Given a librarian/admin opens the book list, when filters are applied, then the system returns a paginated list of books.
+- AC-FE05-005: Given valid required book data and a unique ISBN when provided, when a librarian/admin adds a book, then the system creates the book record.
+- AC-FE05-006: Given a duplicate ISBN, when a librarian/admin adds or updates a book, then the system rejects the request.
+- AC-FE05-007: Given an existing book and valid updates, when a librarian/admin updates book information, then the system saves the changes.
+- AC-FE05-008: Given an active book, when a librarian/admin deactivates it, then the book becomes inactive and is excluded from public search.
+- AC-FE05-009: Given a guest or member attempts to add, update, or deactivate a book, when the request is processed, then access is denied.
+- AC-FE05-010: Given a create, update, or deactivate action succeeds, when the action completes, then an audit record is written if audit logging is approved.
+
+---
+
+## 9. Edge Cases and Error Handling
+
+| ID | Edge Case / Error | Expected System Behavior |
+| -- | ----------------- | ------------------------ |
+| EC-FE05-001 | Book ID does not exist | Return not found. |
+| EC-FE05-002 | Book title is missing | Reject create/update request. |
+| EC-FE05-003 | ISBN is duplicate | Reject create/update request. |
+| EC-FE05-004 | ISBN is empty | Allow empty ISBN; when provided, ISBN must be unique. |
+| EC-FE05-005 | Category ID does not exist | Reject request. |
+| EC-FE05-006 | Author ID does not exist | Reject request. |
+| EC-FE05-007 | Publisher ID does not exist | Reject request. |
+| EC-FE05-008 | Publish year is invalid or in the future | Reject request. |
+| EC-FE05-009 | Guest/member attempts protected book management | Return forbidden response. |
+| EC-FE05-010 | Deactivate book with active borrowed/reserved copies | Block deactivation when active copies are borrowed or reserved. |
+| EC-FE05-011 | Search keyword too long | Reject with validation message. |
+| EC-FE05-012 | Database update partially fails | Roll back book update and audit log. |
+
+---
+
+## 10. Data Requirements
+
+### 10.1 Entities Involved
+
+| Entity | Purpose in this feature |
+| ------ | ----------------------- |
+| Books | Stores book catalog metadata. |
+| Categories | Provides book category classification. |
+| Authors | Provides author information. |
+| Publishers | Provides publisher information. |
+| BookCopies | Provides availability summary through FE06. |
+| UserRoles | Checks librarian/admin permissions. |
+| AuditLogs | Records create, update, and deactivate actions if approved. |
+
+### 10.2 Data Fields
+
+| Field | Type | Required | Validation / Notes |
+| ----- | ---- | -------- | ------------------ |
+| bookId | integer | Yes for updates | Must exist in `Books`. |
+| title | string | Yes | Required, trimmed, max length according to schema. |
+| isbn | string | No/Recommended | Unique when provided; mandatory only if Q-FE05-001 is approved. |
+| categoryId | integer | Yes | Must reference `Categories`. |
+| authorId | integer | Yes | Must reference `Authors` in current SQL. |
+| publisherId | integer | No/Recommended | Must reference `Publishers` when provided. |
+| publishYear | integer | No | Must be a valid year and not in the future. |
+| description | string | No | Must be sanitized before display. |
+| coverUrl | string | No | Must be a safe URL/path according to approved storage policy. |
+| status | string | Recommended | Add `ACTIVE`/`INACTIVE` if status-based deactivation is approved. |
+
+---
+
+## 11. API / Interface Contract
+
+> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
+
+| Method | Endpoint | Actor | Request | Response | Notes |
+| ------ | -------- | ----- | ------- | -------- | ----- |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, status?, page?, limit?` | Paginated book summaries | Public callers receive only active/public-safe books. |
+| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public-safe detail for guest/member; staff may see management fields if approved. |
+| GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?` | Paginated management list | Protected endpoint. |
+| POST | `/api/books` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, description?, coverUrl? }` | Created book | Validates required fields and unique ISBN. |
+| PUT | `/api/books/{bookId}` | Librarian/Admin | Book update fields | Updated book | Validates references and unique ISBN. |
+| PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | `{ reason?: string }` | Deactivated book | Prefer status-based deactivation. |
+
+---
+
+## 12. Non-functional Requirements
+
+### 12.1 Security
+
+- NFR-FE05-SEC-001: Book management endpoints must require authentication and Librarian/Admin role.
+- NFR-FE05-SEC-002: Public book endpoints must return only public-safe fields.
+- NFR-FE05-SEC-003: All inputs such as title, ISBN, IDs, year, and URLs must be validated server-side.
+- NFR-FE05-SEC-004: SQL injection must be prevented using parameterized queries or approved ORM patterns.
+- NFR-FE05-SEC-005: Description and cover URL must be sanitized or escaped before display.
+
+### 12.2 Transaction Integrity
+
+- NFR-FE05-TXN-001: Create/update/deactivate and audit log should succeed or roll back together when audit logging is used.
+- NFR-FE05-TXN-002: Book deactivation must not leave FE06 copy availability in an inconsistent state.
+
+### 12.3 Performance
+
+- NFR-FE05-PERF-001: Book search and management list must support pagination.
+- NFR-FE05-PERF-002: Search should use indexed/filterable fields where practical: title, ISBN, category, author, publisher.
+
+### 12.4 Logging and Audit
+
+- NFR-FE05-LOG-001: Add, update, and deactivate book actions should be traceable with actor, timestamp, book ID, and result.
+
+### 12.5 Usability
+
+- NFR-FE05-UX-001: Validation errors must clearly identify invalid book fields.
+- NFR-FE05-UX-002: Deactivation should require confirmation in the UI before submission.
+
+---
+
+## 13. Out of Scope
+
+This feature does not include:
+
+- Physical copy/barcode/location management.
+- Borrow request, return, or renewal workflow.
+- Reservation queue workflow.
+- Fine calculation or payment.
+- Public home page design and navigation.
+- User, role, or membership management.
+- Bulk import/export unless approved later.
+
+---
+
+## 14. Dependencies
+
+| Dependency | Type | Notes |
+| ---------- | ---- | ----- |
+| FE01 Public / Browse | Internal | Uses public-safe catalog data for home/search/detail pages. |
+| FE02 Authentication | Internal | Identifies staff actors for protected actions. |
+| FE06 Inventory / Book Copy Management | Internal | Owns physical copies and availability counts. |
+| FE07 Borrowing Management | Internal | Uses book data during borrowing. |
+| FE08 Reservation Management | Internal | Uses book data during reservation. |
+| FE11 User & Role Management | Internal | Provides librarian/admin permissions. |
+| SQL Server database | Technical | Current SQL script has `Books`, `Categories`, `Authors`, and `Publishers`. |
+
+---
+
+## 15. Resolved Questions
+
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE05-001 | ISBN is optional but must be unique when provided. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-002 | Multiple books can share the same title. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | Review packet 2026-06-10 | APPROVED |
+
+---
+
+## 15.1 Approved Design Decisions
+
+The following decisions were approved in the Phase 1 review packet on 2026-06-10 and are now part of this spec.
+
+| Decision | Approved Answer | Status |
+| -------- | --------------- | ------ |
+| Q-FE05-001 | ISBN is optional but must be unique when provided. | APPROVED |
+| Q-FE05-002 | Multiple books can share the same title. | APPROVED |
+| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | APPROVED |
+| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | APPROVED |
+| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | APPROVED |
+| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | APPROVED |
+| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | APPROVED |
+
+---
+
+## 16. Traceability Matrix
+
+| Requirement ID | Related Use Case | Related Test Case | Status |
+| -------------- | ---------------- | ----------------- | ------ |
+| BR-FE05-001 | UC17, UC18, UC19, UC20 | FT18, FT19, FT20, FT21 | Not Started |
+| FR-FE05-001 | UC18 | FT18 | Not Started |
+| FR-FE05-002 | UC19 | FT20 | Not Started |
+| FR-FE05-003 | UC17, UC20 | FT19, FT21 | Not Started |
+| FR-FE05-004 | UC21 | FT22 | Not Started |
+| BR-FE05-002 | UC22 | FT23 | Not Started |
+| FR-FE05-006 | UC22 | FT23 | Not Started |
+| BR-FE05-003 | UC23 | FT24 | Not Started |
+| FR-FE05-007 | UC23 | FT24 | Not Started |
+| BR-FE05-004 | UC24 | FT25 | Not Started |
+| FR-FE05-008 | UC24 | FT25 | Not Started |
+| BR-FE05-010 | UC22, UC23, UC24 | FT23, FT24, FT25 | Not Started |
+
+---
+
+## 17. Review Checklist
+
+Phase 1 approval checklist (completed on 2026-06-10):
+
+- [x] Proposed decisions in Section 15.1 are approved or changed.
+- [x] ISBN mandatory/optional rule is approved.
+- [x] Book status/deactivation schema is confirmed with database owner.
+- [x] Public search/detail boundary with FE01 is confirmed.
+- [x] Physical copy boundary with FE06 is confirmed.
+- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
+- [x] Every acceptance criterion can become a test.

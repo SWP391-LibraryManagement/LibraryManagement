@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: Long
+# Owner: Dung
 
 # Last Updated: 2026-06-10
 
@@ -82,23 +82,27 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 5. Main Use Cases From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC25 | View Inventory | Long |
-| UC26 | Check Book Copy Status | Long |
-| UC27 | Update Book Copy Availability | Long |
-| UC28 | Manage Book Copies | Long |
+| UC25 | View Inventory | Dung |
+| UC26 | Check Book Copy Status | Dung |
+| UC27 | Update Book Copy Availability | Dung |
+| UC28 | Manage Book Copies | Dung |
 
 ---
 
 ## 6. Feature Tests From Assignment Sheet
 
+Owner column reflects the current team redistribution.
+
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT26 | View inventory | Long |
-| FT27 | Check book copy status | Long |
-| FT28 | Update book copy availability | Long |
-| FT29 | Manage book copies | Long |
+| FT26 | View inventory | Dung |
+| FT27 | Check book copy status | Dung |
+| FT28 | Update book copy availability | Dung |
+| FT29 | Manage book copies | Dung |
 
 ---
 
@@ -125,15 +129,16 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE06-001 | Final copy status values for Phase 1? | Team/Teacher | Open |
-| Q-FE06-002 | Can librarians manually change a copy from `BORROWED` or `RESERVED`, or only FE07/FE08 can? | Team/Teacher | Open |
-| Q-FE06-003 | Is soft deactivation required for copies instead of physical deletion? | Team/Teacher | Open |
-| Q-FE06-004 | Should damaged/lost copies be borrow-blocking immediately? | Team/Teacher | Open |
-| Q-FE06-005 | Should location be mandatory for every physical copy? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE06-001 | Allowed copy statuses: AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-002 | Staff cannot manually set BORROWED or RESERVED; those come only from FE07/FE08 flows. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-003 | DELETE /api/book-copies/{id} deactivates instead of physical delete. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-004 | Location is optional in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-005 | Copy condition is not separate from status in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE06-006 | Create/update/deactivate/status-change actions write AuditLogs. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

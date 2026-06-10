@@ -118,17 +118,15 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE03-001 | Can users update phone in FE03 even though it lives in `Users`? | Team/Teacher | Open |
-| Q-FE03-002 | Can users update email in FE03, or must email changes go through FE02 verification? | Team/Teacher | Open |
-| Q-FE03-003 | Are avatar uploads required, or only avatar URL text? | Team/Teacher | Open |
-| Q-FE03-004 | Which profile fields are mandatory? | Team/Teacher | Open |
-| Q-FE03-005 | Should Admin/Librarian be able to view another user's profile here, or only in FE11? | Team/Teacher | Open |
-
----
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-002 | FE03 cannot update email; email changes go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-004 | Phase 1 supports avatar URL text only. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-005 | Profile updates write audit logs. | Review packet 2026-06-10 | APPROVED |
 
 ## 10. Notes For Implementation Later
 

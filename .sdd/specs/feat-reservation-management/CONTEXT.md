@@ -6,7 +6,7 @@
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-02
+# Last Updated: 2026-06-10
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
@@ -111,15 +111,15 @@ Potential issue to review:
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE08-001 | Reservation should target `BookId` or `CopyId`? | Team/DB owner | Open |
-| Q-FE08-002 | Maximum active reservations per member? | Team/Teacher | Open |
-| Q-FE08-003 | Reservation hold/expiry time after notification? | Team/Teacher | Open |
-| Q-FE08-004 | Queue processing automatic, manual, or both? | Team/Teacher | Open |
-| Q-FE08-005 | Can an active reservation block renewal in FE07? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE08-001 | Reservation targets physical copy CopyId in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-002 | Member cannot reserve when a copy is currently available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-003 | Maximum 3 active reservations per member. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

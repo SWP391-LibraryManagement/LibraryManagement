@@ -126,15 +126,16 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE04-001 | Can a user submit a new application after rejection? | Team/Teacher | Open |
-| Q-FE04-002 | Should rejection reason be required? | Team/Teacher | Open |
-| Q-FE04-003 | Should membership have expiry date or renewal? | Team/Teacher | Open |
-| Q-FE04-004 | Does approved membership change user role, or only application status? | Team/Teacher | Open |
-| Q-FE04-005 | Should librarians and admins both approve/reject membership applications? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE04-001 | Rejected users can re-apply after correcting information. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-002 | Rejection reason is required. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-003 | Membership does not expire in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-004 | Approved membership changes application/member status only, not user role. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-005 | Librarian and Admin can approve/reject membership applications. | Review packet 2026-06-10 | APPROVED |
+| Q-FE04-006 | Approval/rejection triggers FE10 notification when notification provider is available; notification failure does not roll back the decision. | Review packet 2026-06-10 | APPROVED |
 
 ---
 

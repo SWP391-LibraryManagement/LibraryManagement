@@ -4,9 +4,9 @@
 
 # Status: DRAFT
 
-# Owner: [Member Name]
+# Owner: Dat
 
-# Last Updated: 2026-06-03
+# Last Updated: 2026-06-10
 
 # Feature folder: `.sdd/specs/feat-auth/`
 
@@ -73,12 +73,13 @@ FE02 does not include:
 
 ## 4. Current Data Model Notes
 
-The current SQL script should include:
+The current SQL script currently includes:
 
-- `Users(UserId, Email, Username, PasswordHash, FullName, PhoneNumber, Address, CreatedAt, UpdatedAt)`
-- `Roles(RoleId, RoleName, Description)`
+- `Users(UserId, Username, Email, PasswordHash, Phone, Status, CreatedAt)`
+- `Roles(RoleId, RoleName)`
 - `UserRoles(UserId, RoleId)`
 - `AuditLogs(LogId, UserId, Action, CreatedAt)`
+- `UserProfiles(ProfileId, UserId, FullName, Address, DateOfBirth, AvatarUrl)` for profile data owned by FE03.
 
 Potential issues to review:
 
@@ -89,7 +90,7 @@ Potential issues to review:
 - Email verification mechanism for registration and password reset.
 - Admin-created accounts from FE11 should remain unable to login until password setup is completed.
 - User status field (active/inactive/locked) needed to block suspended accounts.
-- Password history to prevent reuse of recent passwords.
+- Password history is not currently supported by the SQL script and should remain out of scope unless the team extends the schema.
 - AuditLogs should capture login success/failure, logout, password reset attempts.
 
 These must be resolved before implementation.
@@ -100,12 +101,12 @@ These must be resolved before implementation.
 
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC01 | Register Account | Dat |
-| UC02 | Login | Dat |
-| UC03 | Logout | Dat |
-| UC04 | Change Password | Dat |
-| UC05 | Forgot Password | Dat |
-| UC06 | Reset Password | Dat |
+| UC05 | Register Account | Dat |
+| UC06 | Login | Dat |
+| UC07 | Logout | Dat |
+| UC08 | Change Password | Dat |
+| UC09 | Forgot Password | Dat |
+| UC10 | Reset Password | Dat |
 
 ---
 
@@ -113,14 +114,13 @@ These must be resolved before implementation.
 
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT01 | Register account with valid data | Dat |
-| FT02 | Register account with duplicate email | Dat |
-| FT03 | Login with valid credentials | Dat |
-| FT04 | Login with invalid credentials | Dat |
-| FT05 | Logout and session termination | Dat |
-| FT06 | Change password | Dat |
-| FT07 | Forgot password and reset link | Dat |
-| FT08 | Reset password with expired token | Dat |
+| FT05 | Register success | Dat |
+| FT06 | Login success | Dat |
+| FT07 | Login fail | Dat |
+| FT08 | Logout success | Dat |
+| FT09 | Change password success | Dat |
+| FT10 | Forgot password request | Dat |
+| FT11 | Reset password success | Dat |
 
 ---
 
@@ -151,20 +151,20 @@ These must be resolved before implementation.
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
-| ID | Question | Owner | Status |
-| -- | -------- | ----- | ------ |
-| Q-FE02-001 | What is the minimum password length and complexity requirement? | Team/Teacher | Open |
-| Q-FE02-002 | Session timeout duration (e.g., 30 minutes, 8 hours)? | Team/Teacher | Open |
-| Q-FE02-003 | Should system enforce email verification during registration? | Team/Teacher | Open |
-| Q-FE02-004 | Should system allow multiple concurrent sessions per user? | Team/Teacher | Open |
-| Q-FE02-005 | Should failed login attempts be rate-limited? If yes, how many attempts? | Team/Teacher | Open |
-| Q-FE02-006 | Should password reset tokens expire? If yes, how long (e.g., 1 hour)? | Team/Teacher | Open |
-| Q-FE02-007 | Should system log password change attempts and login failures for audit? | Team/Teacher | Open |
-| Q-FE02-008 | Should inactive users (no login for N days) be auto-locked? | Team/Teacher | Open |
-| Q-FE02-009 | Session management strategy: JWT tokens, session cookies, or both? | Team/DB owner | Open |
-| Q-FE02-010 | Should password reset require email verification or only old password verification? | Team/Teacher | Open |
+| ID | Approved Decision | Source | Status |
+| -- | ----------------- | ------ | ------ |
+| Q-FE02-001 | Password requires at least 8 chars, 1 uppercase, 1 number, and 1 special char. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-002 | Access token expires after 15 minutes; refresh token expires after 7 days. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-003 | Email verification is required if email/mock provider is available; otherwise it is marked as mock/planned for Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-004 | Multiple concurrent sessions are allowed in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-005 | Failed login attempts are rate-limited with a simple measurable server-side rule. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-006 | Password reset token expires after 15 minutes. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-007 | Password change attempts and failed login attempts are logged. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-008 | Inactive users cannot log in; inactive-user auto-lock job is out of scope for Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-009 | Use JWT access token plus refresh token. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-010 | Password reset requires verified email ownership through reset token only; no extra recovery checks in Phase 1. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
