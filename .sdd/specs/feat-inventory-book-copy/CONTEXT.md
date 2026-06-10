@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: Dung
+# Owner: Dat
 
 # Last Updated: 2026-06-10
 
@@ -86,10 +86,10 @@ Owner column reflects the current team redistribution.
 
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC25 | View Inventory | Dung |
-| UC26 | Check Book Copy Status | Dung |
-| UC27 | Update Book Copy Availability | Dung |
-| UC28 | Manage Book Copies | Dung |
+| UC25 | View Inventory | Dat |
+| UC26 | Check Book Copy Status | Dat |
+| UC27 | Update Book Copy Availability | Dat |
+| UC28 | Manage Book Copies | Dat |
 
 ---
 
@@ -99,10 +99,10 @@ Owner column reflects the current team redistribution.
 
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT26 | View inventory | Dung |
-| FT27 | Check book copy status | Dung |
-| FT28 | Update book copy availability | Dung |
-| FT29 | Manage book copies | Dung |
+| FT26 | View inventory | Dat |
+| FT27 | Check book copy status | Dat |
+| FT28 | Update book copy availability | Dat |
+| FT29 | Manage book copies | Dat |
 
 ---
 

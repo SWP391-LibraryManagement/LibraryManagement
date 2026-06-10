@@ -96,6 +96,24 @@ function makeInMemoryAuthDependencies() {
       user.lastLoginAt = new Date();
       user.updatedAt = new Date();
     },
+
+    async updatePassword(userId, passwordHash) {
+      const user = users.find((item) => item.userId === Number(userId));
+      user.passwordHash = passwordHash;
+      user.failedLoginCount = 0;
+      user.lockedUntil = null;
+      user.updatedAt = new Date();
+    },
+
+    async updatePasswordAndActivate(userId, passwordHash) {
+      const user = users.find((item) => item.userId === Number(userId));
+      user.passwordHash = passwordHash;
+      user.status = 'ACTIVE';
+      user.emailVerifiedAt = user.emailVerifiedAt || new Date();
+      user.failedLoginCount = 0;
+      user.lockedUntil = null;
+      user.updatedAt = new Date();
+    },
   };
 
   const authTokenRepository = {
@@ -129,14 +147,37 @@ function makeInMemoryAuthDependencies() {
       );
     },
 
+    async findActiveTokenById(tokenId, tokenType) {
+      return clone(
+        tokens.find(
+          (token) =>
+            token.tokenId === Number(tokenId) &&
+            token.tokenType === tokenType &&
+            !token.usedAt &&
+            !token.revokedAt
+        ) || null
+      );
+    },
+
     async markTokenUsed(tokenId) {
       const token = tokens.find((item) => item.tokenId === Number(tokenId));
       token.usedAt = new Date();
     },
 
+    async revokeToken(tokenId) {
+      const token = tokens.find((item) => item.tokenId === Number(tokenId));
+      token.revokedAt = new Date();
+    },
+
     async revokeActiveTokensForUserType(userId, tokenType) {
       tokens
-        .filter((token) => token.userId === Number(userId) && token.tokenType === tokenType && !token.usedAt)
+        .filter(
+          (token) =>
+            token.userId === Number(userId) &&
+            token.tokenType === tokenType &&
+            !token.usedAt &&
+            !token.revokedAt
+        )
         .forEach((token) => {
           token.revokedAt = new Date();
         });

@@ -20,18 +20,20 @@ function getJwtSecret() {
 }
 
 function signAccessToken(user) {
-  return jwt.sign(
-    {
-      sub: String(user.userId),
-      email: user.email,
-      username: user.username,
-      roles: user.roles || [],
-    },
-    getJwtSecret(),
-    {
-      expiresIn: env.accessTokenTtlSeconds,
-    }
-  );
+  const payload = {
+    sub: String(user.userId),
+    email: user.email,
+    username: user.username,
+    roles: user.roles || [],
+  };
+
+  if (user.sessionId) {
+    payload.sid = String(user.sessionId);
+  }
+
+  return jwt.sign(payload, getJwtSecret(), {
+    expiresIn: env.accessTokenTtlSeconds,
+  });
 }
 
 function verifyAccessToken(token) {

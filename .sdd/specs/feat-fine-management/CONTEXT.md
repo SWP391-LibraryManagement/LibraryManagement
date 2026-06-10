@@ -4,7 +4,7 @@
 
 # Status: DRAFT
 
-# Owner: Dat
+# Owner: Dung
 
 # Last Updated: 2026-06-10
 
@@ -96,10 +96,10 @@ Owner column reflects the current team redistribution.
 
 | Use Case ID | Use Case Name | Owner |
 | ----------- | ------------- | ----- |
-| UC41 | View Fine Information | Dat |
-| UC42 | Calculate Fine | Dat |
-| UC43 | Record Fine Collection | Dat |
-| UC44 | Mark Fine As Paid | Dat |
+| UC41 | View Fine Information | Dung |
+| UC42 | Calculate Fine | Dung |
+| UC43 | Record Fine Collection | Dung |
+| UC44 | Mark Fine As Paid | Dung |
 
 ---
 
@@ -109,10 +109,10 @@ Owner column reflects the current team redistribution.
 
 | Test ID | Test Name | Owner |
 | ------- | --------- | ----- |
-| FT42 | View fine information | Dat |
-| FT43 | Calculate fine | Dat |
-| FT44 | Record fine collection | Dat |
-| FT45 | Mark fine as paid | Dat |
+| FT42 | View fine information | Dung |
+| FT43 | Calculate fine | Dung |
+| FT44 | Record fine collection | Dung |
+| FT45 | Mark fine as paid | Dung |
 
 ---
 

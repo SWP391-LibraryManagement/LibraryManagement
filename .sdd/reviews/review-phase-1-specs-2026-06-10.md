@@ -55,10 +55,10 @@ Recommended next action:
 | FE03 User Profile | Dat | DRAFT | OK | OK | 5 | Not ready |
 | FE04 Membership Management | Dat | DRAFT | OK | OK | 6 | Not ready |
 | FE05 Book Management | Dung | DRAFT | OK | OK | 7 | Not ready |
-| FE06 Inventory / Book Copy Management | Dung | DRAFT | OK | OK | 6 | Not ready |
+| FE06 Inventory / Book Copy Management | Dat | DRAFT | OK | OK | 6 | Not ready |
 | FE07 Borrowing Management | Nhat | APPROVED | OK | OK | 0 | Ready for Phase 2 |
 | FE08 Reservation Management | Nhat | DRAFT | OK | OK | 5 | Not ready |
-| FE09 Fine Management | Dat | DRAFT | OK | OK | 5 | Not ready |
+| FE09 Fine Management | Dung | DRAFT | OK | OK | 5 | Not ready |
 | FE10 Notification Management | Nhat | DRAFT (Proposed Design) | OK | OK | 7 | Not ready |
 | FE11 User & Role Management | Dung | DRAFT (Proposed Design) | OK | OK | 9 | Not ready |
 | FE12 Reporting & Statistics | Nhat | DRAFT | OK | OK | 6 | Not ready |
@@ -366,7 +366,7 @@ This list contains the questions that block approval unless the team explicitly 
 - Q-FE05-006: Should book cover images be stored in database or file storage?
 - Q-FE05-007: Should deactivation be blocked when active copies are borrowed or reserved?
 
-### FE06 Inventory / Book Copy Management - Dung
+### FE06 Inventory / Book Copy Management - Dat
 
 - Q-FE06-001: What are the final allowed `BookCopies.Status` values for Phase 1?
 - Q-FE06-002: Can staff manually set `BORROWED` or `RESERVED`, or must those only come from FE07/FE08?
@@ -396,7 +396,7 @@ Note:
 
 - Q-FE08-006 is resolved with FE07: active reservation/held copy for another member blocks renewal.
 
-### FE09 Fine Management - Dat
+### FE09 Fine Management - Dung
 
 - Q-FE09-001: Are lost/damaged fines required in Phase 1, or only overdue fines?
 - Q-FE09-003: Should fine collection support partial payments?

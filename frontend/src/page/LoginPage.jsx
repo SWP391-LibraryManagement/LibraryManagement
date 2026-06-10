@@ -5,31 +5,47 @@
  * Right: Login form with glassmorphism effect
  */
 
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BackgroundPanel from '../component/login/BackgroundPanel';
 import AuthCard from '../component/login/AuthCard';
+import { loginAccount } from '../api/authApi';
 
 export default function LoginPage() {
-  // Background image URL from Unsplash - Modern library with warm lighting
+  const navigate = useNavigate();
+  const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const backgroundImageUrl =
     './wwwroot/login/loginimage.jpg';
 
-  // Handler functions (for demo purposes - would connect to actual auth in production)
-  const handleLogin = (username, password, rememberMe) => {
-    console.log('Login submitted:', { username, password, rememberMe });
-    alert(`Login attempt with username: ${username}`);
-    // In production: call authentication API here
+  const handleLogin = async (email, password, rememberMe) => {
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    try {
+      const result = await loginAccount({ email, password });
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('accessToken', result.accessToken);
+      storage.setItem('refreshToken', result.refreshToken);
+      storage.setItem('authUser', JSON.stringify({
+        userId: result.userId,
+        email: result.email,
+        roles: result.roles,
+      }));
+      setFeedback({ severity: 'success', message: 'Login successful.' });
+    } catch (error) {
+      setFeedback({ severity: 'error', message: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleForgotPassword = () => {
-    console.log('Forgot password clicked');
-    alert('Forgot password functionality would redirect to password recovery page');
-    // In production: redirect to password recovery flow
+    navigate('/forgot-password');
   };
 
   const handleRegister = () => {
-    console.log('Register clicked');
-    alert('Register functionality would redirect to registration page');
-    // In production: redirect to registration page
+    navigate('/register');
   };
 
   return (
@@ -47,6 +63,8 @@ export default function LoginPage() {
           onSubmit={handleLogin}
           onForgotPassword={handleForgotPassword}
           onRegister={handleRegister}
+          feedback={feedback}
+          isSubmitting={isSubmitting}
         />
       </div>
     </div>

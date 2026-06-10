@@ -214,6 +214,40 @@ async function resetFailedLoginsAndSetLastLogin(userId) {
     `);
 }
 
+async function updatePassword(userId, passwordHash) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('PasswordHash', sql.NVarChar(255), passwordHash)
+    .query(`
+      UPDATE Users
+      SET PasswordHash = @PasswordHash,
+          FailedLoginCount = 0,
+          LockedUntil = NULL,
+          UpdatedAt = GETDATE()
+      WHERE UserId = @UserId
+    `);
+}
+
+async function updatePasswordAndActivate(userId, passwordHash) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('PasswordHash', sql.NVarChar(255), passwordHash)
+    .query(`
+      UPDATE Users
+      SET PasswordHash = @PasswordHash,
+          Status = 'ACTIVE',
+          EmailVerifiedAt = COALESCE(EmailVerifiedAt, GETDATE()),
+          FailedLoginCount = 0,
+          LockedUntil = NULL,
+          UpdatedAt = GETDATE()
+      WHERE UserId = @UserId
+    `);
+}
+
 module.exports = {
   findByEmail,
   findByUsername,
@@ -225,4 +259,6 @@ module.exports = {
   markEmailVerified,
   updateFailedLogin,
   resetFailedLoginsAndSetLastLogin,
+  updatePassword,
+  updatePasswordAndActivate,
 };

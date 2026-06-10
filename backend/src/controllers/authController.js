@@ -26,9 +26,83 @@ function createAuthController(authService = defaultAuthService) {
       }
     },
 
+    resendVerification: async (req, res, next) => {
+      try {
+        const result = await authService.resendVerification(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     login: async (req, res, next) => {
       try {
         const result = await authService.login(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    refreshToken: async (req, res, next) => {
+      try {
+        const result = await authService.refreshToken(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    logout: async (req, res, next) => {
+      try {
+        const result = await authService.logout(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          userId: req.user.userId,
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    changePassword: async (req, res, next) => {
+      try {
+        const result = await authService.changePassword(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          userId: req.user.userId,
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    forgotPassword: async (req, res, next) => {
+      try {
+        const result = await authService.forgotPassword(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    resetPassword: async (req, res, next) => {
+      try {
+        const result = await authService.resetPassword(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
         });

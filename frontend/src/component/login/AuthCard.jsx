@@ -11,7 +11,9 @@ export default function AuthCard(props) {
   const {
     onSubmit,
     onForgotPassword,
-    onRegister
+    onRegister,
+    feedback,
+    isSubmitting
   } = props;
 
   return (
@@ -44,6 +46,8 @@ export default function AuthCard(props) {
           onSubmit={onSubmit}
           onForgotPassword={onForgotPassword}
           onRegister={onRegister}
+          feedback={feedback}
+          isSubmitting={isSubmitting}
         />
       </Card>
     </div>

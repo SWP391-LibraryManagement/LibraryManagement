@@ -4,7 +4,8 @@
 
 - Created FE06 Inventory / Book Copy Management feature specification structure.
 - Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Updated current owner and assignment scope after team redistribution: UC25-UC28 and FT26-FT29 owned by Dung.
+- Updated current owner and assignment scope after team redistribution: UC25-UC28 and FT26-FT29 owned by Dat.
+- Re-aligned FE06 owner with `Library Management (5).xlsx`.
 - Defined FE06 as copy-level inventory management separate from FE05 catalog metadata, FE07 borrowing, and FE08 reservation workflows.
 - Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
 

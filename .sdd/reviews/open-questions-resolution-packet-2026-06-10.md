@@ -96,7 +96,7 @@ Do not change any feature `SPEC.md` status to `APPROVED` until its questions bel
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | APPROVED |  |
 | Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | APPROVED |  |
 
-### FE06 Inventory / Book Copy Management - Owner: Dung
+### FE06 Inventory / Book Copy Management - Owner: Dat
 
 | Question | Proposed Decision | Outcome | Notes |
 | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ Do not change any feature `SPEC.md` status to `APPROVED` until its questions bel
 | Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | APPROVED | APPROVED - simple Phase 1 hold window; add expiration rule. |
 | Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | APPROVED |  |
 
-### FE09 Fine Management - Owner: Dat
+### FE09 Fine Management - Owner: Dung
 
 | Question | Proposed Decision | Outcome | Notes |
 | --- | --- | --- | --- |

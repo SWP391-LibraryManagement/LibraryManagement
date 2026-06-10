@@ -53,15 +53,61 @@ const verifyEmailValidators = [
   handleValidationErrors,
 ];
 
+const resendVerificationValidators = [
+  body('email').isEmail().withMessage('A valid email is required.').normalizeEmail(),
+  handleValidationErrors,
+];
+
 const loginValidators = [
   body('email').isString().trim().notEmpty().withMessage('Email or username is required.').isLength({ max: 100 }),
   body('password').isString().notEmpty().withMessage('Password is required.').isLength({ max: 255 }),
   handleValidationErrors,
 ];
 
+const refreshTokenValidators = [
+  body('refreshToken').isString().trim().notEmpty().withMessage('Refresh token is required.').isLength({ max: 512 }),
+  handleValidationErrors,
+];
+
+const logoutValidators = [
+  body('refreshToken').isString().trim().notEmpty().withMessage('Refresh token is required.').isLength({ max: 512 }),
+  handleValidationErrors,
+];
+
+const changePasswordValidators = [
+  body('currentPassword').isString().notEmpty().withMessage('Current password is required.').isLength({ max: 255 }),
+  body('newPassword')
+    .isString()
+    .withMessage('New password is required.')
+    .isLength({ min: 8, max: 255 })
+    .withMessage('New password must be between 8 and 255 characters.'),
+  handleValidationErrors,
+];
+
+const forgotPasswordValidators = [
+  body('email').isEmail().withMessage('A valid email is required.').normalizeEmail(),
+  handleValidationErrors,
+];
+
+const resetPasswordValidators = [
+  body('token').isString().trim().notEmpty().withMessage('Token is required.').isLength({ max: 512 }),
+  body('newPassword')
+    .isString()
+    .withMessage('New password is required.')
+    .isLength({ min: 8, max: 255 })
+    .withMessage('New password must be between 8 and 255 characters.'),
+  handleValidationErrors,
+];
+
 module.exports = {
   registerValidators,
   verifyEmailValidators,
+  resendVerificationValidators,
   loginValidators,
+  refreshTokenValidators,
+  logoutValidators,
+  changePasswordValidators,
+  forgotPasswordValidators,
+  resetPasswordValidators,
   handleValidationErrors,
 };

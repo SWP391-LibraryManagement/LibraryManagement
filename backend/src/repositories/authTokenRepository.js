@@ -55,6 +55,24 @@ async function findActiveTokenByHash(tokenType, tokenHash) {
   return mapToken(result.recordset[0]);
 }
 
+async function findActiveTokenById(tokenId, tokenType) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('TokenId', sql.Int, tokenId)
+    .input('TokenType', sql.NVarChar(30), tokenType)
+    .query(`
+      SELECT TOP 1 *
+      FROM AuthTokens
+      WHERE TokenId = @TokenId
+        AND TokenType = @TokenType
+        AND UsedAt IS NULL
+        AND RevokedAt IS NULL
+    `);
+
+  return mapToken(result.recordset[0]);
+}
+
 async function markTokenUsed(tokenId) {
   const pool = await getPool();
   await pool
@@ -63,6 +81,18 @@ async function markTokenUsed(tokenId) {
     .query(`
       UPDATE AuthTokens
       SET UsedAt = COALESCE(UsedAt, GETDATE())
+      WHERE TokenId = @TokenId
+    `);
+}
+
+async function revokeToken(tokenId) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('TokenId', sql.Int, tokenId)
+    .query(`
+      UPDATE AuthTokens
+      SET RevokedAt = COALESCE(RevokedAt, GETDATE())
       WHERE TokenId = @TokenId
     `);
 }
@@ -86,6 +116,8 @@ async function revokeActiveTokensForUserType(userId, tokenType) {
 module.exports = {
   createToken,
   findActiveTokenByHash,
+  findActiveTokenById,
   markTokenUsed,
+  revokeToken,
   revokeActiveTokensForUserType,
 };
