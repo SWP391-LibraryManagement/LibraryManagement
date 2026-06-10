@@ -1,0 +1,146 @@
+# CONTEXT.md - FE06 Inventory / Book Copy Management
+
+# Version: 0.1.0
+
+# Status: DRAFT
+
+# Owner: Long
+
+# Last Updated: 2026-06-10
+
+# Feature folder: `.sdd/specs/feat-inventory-book-copy/`
+
+---
+
+## 1. Feature Purpose
+
+Inventory / Book Copy Management exists to track the physical copies of each book and their availability for borrowing and reservation.
+
+This feature must keep three levels separate:
+
+- FE05 owns book-level catalog metadata such as title, ISBN, author, category, publisher, and description.
+- FE06 owns copy-level inventory data such as barcode, location, physical status, and availability.
+- FE07/FE08 consume and update copy status through borrowing and reservation workflows.
+
+FE06 is a Full Spec feature because wrong copy status can directly break borrowing, reservation, fines, and reporting.
+
+---
+
+## 2. Real-World Workflow
+
+The typical inventory workflow:
+
+1. A librarian views inventory for a book or the whole library.
+2. The system shows physical copies, barcodes, locations, and statuses.
+3. A librarian checks the status of one copy.
+4. A librarian updates copy availability or condition when the copy changes state outside normal borrow/return flow.
+5. A librarian/admin adds, updates, or deactivates physical copies.
+6. FE07 and FE08 use the copy status to decide whether the copy can be borrowed or reserved.
+
+---
+
+## 3. Feature Boundary
+
+FE06 includes:
+
+- View inventory.
+- Check book copy status.
+- Update book copy availability/status.
+- Manage physical book copies.
+- Track barcode and shelf/location for each copy.
+
+FE06 does not include:
+
+- Creating or editing book metadata. That belongs to FE05.
+- Borrow request approval or return processing. That belongs to FE07.
+- Reservation queue processing. That belongs to FE08.
+- Fine calculation for damaged/lost/overdue copies. That belongs to FE09.
+- Public catalog browsing. That belongs to FE01.
+
+---
+
+## 4. Current Data Model Notes
+
+The current SQL script includes:
+
+- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl)`
+- `BookCopies(CopyId, BookId, Barcode, Status, Location)`
+- `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
+- `Reservations(ReservationId, UserId, CopyId, ReservedAt, Status)`
+
+Potential issues to review:
+
+- Copy status values need to be standardized across FE06, FE07, and FE08.
+- Current SQL has no `Condition`, `CreatedAt`, `UpdatedAt`, or `DeactivatedAt` fields for copies.
+- Barcode uniqueness is defined in SQL and must be preserved.
+- Direct manual status updates must not conflict with active borrow/reservation records.
+- Availability counts should be derived from copies rather than manually stored.
+
+These are not blockers for drafting, but they must be resolved before implementation.
+
+---
+
+## 5. Main Use Cases From Assignment Sheet
+
+| Use Case ID | Use Case Name | Owner |
+| ----------- | ------------- | ----- |
+| UC25 | View Inventory | Long |
+| UC26 | Check Book Copy Status | Long |
+| UC27 | Update Book Copy Availability | Long |
+| UC28 | Manage Book Copies | Long |
+
+---
+
+## 6. Feature Tests From Assignment Sheet
+
+| Test ID | Test Name | Owner |
+| ------- | --------- | ----- |
+| FT26 | View inventory | Long |
+| FT27 | Check book copy status | Long |
+| FT28 | Update book copy availability | Long |
+| FT29 | Manage book copies | Long |
+
+---
+
+## 7. Key Risks
+
+- Incorrect copy status may allow the same copy to be borrowed twice.
+- Manual availability updates may override active borrowing or reservation state.
+- Duplicate barcode values may break copy identification.
+- Lost/damaged/deactivated copies may still appear as available if status rules are unclear.
+- Inventory totals may become inconsistent with book-level reporting if derived counts are wrong.
+
+---
+
+## 8. Dependencies
+
+| Dependency | Why It Matters |
+| ---------- | -------------- |
+| FE05 Book Management | Provides book records that copies belong to. |
+| FE07 Borrowing Management | Updates copy status during borrow and return workflows. |
+| FE08 Reservation Management | Uses/reserves copies and may set reserved state. |
+| FE09 Fine Management | May use damaged/lost/overdue copy data to create fines. |
+| FE11 User & Role Management | Provides librarian/admin permissions. |
+| SQL Server database | Stores book copies and related copy transactions. |
+
+---
+
+## 9. Open Questions For Team / Teacher
+
+| ID | Question | Owner | Status |
+| -- | -------- | ----- | ------ |
+| Q-FE06-001 | Final copy status values for Phase 1? | Team/Teacher | Open |
+| Q-FE06-002 | Can librarians manually change a copy from `BORROWED` or `RESERVED`, or only FE07/FE08 can? | Team/Teacher | Open |
+| Q-FE06-003 | Is soft deactivation required for copies instead of physical deletion? | Team/Teacher | Open |
+| Q-FE06-004 | Should damaged/lost copies be borrow-blocking immediately? | Team/Teacher | Open |
+| Q-FE06-005 | Should location be mandatory for every physical copy? | Team/Teacher | Open |
+
+---
+
+## 10. Notes For Implementation Later
+
+- Do not implement until `SPEC.md` is reviewed and approved.
+- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- Barcode uniqueness must be enforced.
+- Status transitions must be checked against FE07 and FE08 active records.
+- Availability should be derived from copy statuses, not guessed in UI.
