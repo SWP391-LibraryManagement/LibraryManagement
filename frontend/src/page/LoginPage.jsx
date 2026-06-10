@@ -7,11 +7,10 @@
 
 import BackgroundPanel from '../component/login/BackgroundPanel';
 import AuthCard from '../component/login/AuthCard';
+import '../styles/login.css';
 
 export default function LoginPage() {
-  // Background image URL from Unsplash - Modern library with warm lighting
-  const backgroundImageUrl =
-    './wwwroot/login/loginimage.jpg';
+  const backgroundImageUrl = '/images/login/loginimage.jpg';
 
   // Handler functions (for demo purposes - would connect to actual auth in production)
   const handleLogin = (username, password, rememberMe) => {

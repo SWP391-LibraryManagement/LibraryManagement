@@ -22,7 +22,10 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "mssql": "^12.5.5",
+    "sequelize": "^6.37.8",
+    "sequelize-cli": "^6.6.5",
     "swagger-ui-express": "^5.0.1",
+    "tedious": "^19.2.1",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
