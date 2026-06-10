@@ -12,9 +12,11 @@ Expected task groups later:
 - Template rendering tasks
 - Email provider/mock provider tasks
 - In-app notification tasks
-- Delivery attempt and retry tasks
-- User notification list/read-state tasks
-- Admin/librarian notification log tasks
+- Delivery attempt recording tasks
+- Account verification notification tasks
+- Password reset notification tasks
+- Book reservation notification tasks
+- Due date/fine notification tasks
 - Security and access-control tasks
 - Unit/integration test tasks
 - End-to-end test tasks
