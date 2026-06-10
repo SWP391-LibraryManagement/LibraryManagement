@@ -1,29 +1,8 @@
-const express = require('express');
-const cors = require('cors');
-const compression = require('compression');
-const helmet = require('helmet');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
-const app = express();
+const { createApp } = require('./app');
 
-app.use(helmet());
-app.use(cors());
-app.use(compression());
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Library Management backend is running',
-    status: 'ok',
-  });
-});
-
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    uptime: process.uptime(),
-  });
-});
+const app = createApp();
 
 const port = Number(process.env.PORT || 3000);
 
