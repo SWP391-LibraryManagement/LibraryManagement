@@ -3,10 +3,24 @@ const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
 const { createAuthRoutes } = require('./routes/authRoutes');
+const { createBorrowingRoutes } = require('./routes/borrowingRoutes');
+const { createNotificationRoutes } = require('./routes/notificationRoutes');
+const { createReportRoutes } = require('./routes/reportRoutes');
+const { createReservationRoutes } = require('./routes/reservationRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
+const { defaultBorrowingService } = require('./services/borrowingService');
+const { defaultNotificationService } = require('./services/notificationService');
+const { defaultReportService } = require('./services/reportService');
+const { defaultReservationService } = require('./services/reservationService');
 
-function createApp({ authService = defaultAuthService } = {}) {
+function createApp({
+  authService = defaultAuthService,
+  borrowingService = defaultBorrowingService,
+  notificationService = defaultNotificationService,
+  reportService = defaultReportService,
+  reservationService = defaultReservationService,
+} = {}) {
   const app = express();
 
   app.use(helmet());
@@ -29,6 +43,10 @@ function createApp({ authService = defaultAuthService } = {}) {
   });
 
   app.use('/api/auth', createAuthRoutes(authService));
+  app.use('/api', createBorrowingRoutes({ authService, borrowingService }));
+  app.use('/api/notifications', createNotificationRoutes({ authService, notificationService }));
+  app.use('/api/reports', createReportRoutes({ authService, reportService }));
+  app.use('/api/reservations', createReservationRoutes({ authService, reservationService }));
 
   app.use((req, res) => {
     res.status(404).json({
