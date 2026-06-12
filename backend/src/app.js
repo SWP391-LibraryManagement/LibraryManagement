@@ -2,7 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+
 const { createAuthRoutes } = require('./routes/authRoutes');
+const bookRoutes = require('./routes/bookRoutes');
+
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
 
@@ -29,6 +32,9 @@ function createApp({ authService = defaultAuthService } = {}) {
   });
 
   app.use('/api/auth', createAuthRoutes(authService));
+
+  // API lấy dữ liệu sách thật từ database
+  app.use('/api/books', bookRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
