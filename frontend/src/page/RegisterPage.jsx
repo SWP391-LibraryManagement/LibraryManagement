@@ -1,5 +1,6 @@
 import BackgroundPanel from '../component/register/BackgroundPanel';
 import AuthCard from '../component/register/AuthCard';
+import '../styles/login.css';
 
 export default function RegisterPage() {
   return (

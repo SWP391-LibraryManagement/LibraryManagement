@@ -5,8 +5,8 @@
 
 export default function BackgroundPanel({
   imageUrl,
-  title = 'Library Management System',
-  subtitle = 'Empowering knowledge, one book at a time'
+  title = 'Hệ thống Quản lý Thư viện',
+  subtitle = 'Lan tỏa tri thức, kết nối tương lai'
 }) {
   return (
     <div

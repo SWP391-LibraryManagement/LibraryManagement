@@ -10,13 +10,14 @@ import { useNavigate } from 'react-router-dom';
 import BackgroundPanel from '../component/login/BackgroundPanel';
 import AuthCard from '../component/login/AuthCard';
 import { loginAccount } from '../api/authApi';
+import '../styles/login.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const backgroundImageUrl =
-    './wwwroot/login/loginimage.jpg';
+    '/images/login/loginimage.jpg';
 
   const handleLogin = async (email, password, rememberMe) => {
     setIsSubmitting(true);
@@ -32,7 +33,7 @@ export default function LoginPage() {
         email: result.email,
         roles: result.roles,
       }));
-      setFeedback({ severity: 'success', message: 'Login successful.' });
+      setFeedback({ severity: 'success', message: 'Đăng nhập thành công.' });
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
@@ -53,8 +54,8 @@ export default function LoginPage() {
       {/* Left Side - Background Panel */}
       <BackgroundPanel
         imageUrl={backgroundImageUrl}
-        title="Library Management System"
-        subtitle="Empowering knowledge, one book at a time"
+        title="Hệ thống Quản lý Thư viện"
+        subtitle="Lan tỏa tri thức, kết nối tương lai"
       />
 
       {/* Right Side - Login Form Section */}

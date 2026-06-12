@@ -48,7 +48,7 @@ export default function LoginForm({
       <TextField
         fullWidth
         label="Email"
-        placeholder="Enter your email"
+        placeholder="Nhập email của bạn"
         variant="outlined"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -67,8 +67,8 @@ export default function LoginForm({
       {/* Password Field */}
       <TextField
         fullWidth
-        label="Password"
-        placeholder="Enter your password"
+        label="Mật khẩu"
+        placeholder="Nhập mật khẩu của bạn"
         type={showPassword ? 'text' : 'password'}
         variant="outlined"
         value={password}
@@ -123,7 +123,7 @@ export default function LoginForm({
           }
           label={
             <span style={{ color: '#6d4c41', fontSize: '0.875rem' }}>
-              Remember me
+              Ghi nhớ đăng nhập
             </span>
           }
         />
@@ -137,7 +137,7 @@ export default function LoginForm({
             }
           }}
         >
-          Forgot password?
+          Quên mật khẩu?
         </a>
       </div>
 
@@ -147,13 +147,13 @@ export default function LoginForm({
         className="login-button"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Signing in...' : 'Sign In'}
+        {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>
 
       {/* Register Section */}
       <div className="register-section">
         <span className="register-text">
-          Don't have an account?
+          Chưa có tài khoản?{' '}
           <a
             href="#"
             className="register-link"
@@ -164,7 +164,7 @@ export default function LoginForm({
               }
             }}
           >
-            Register
+            Đăng ký
           </a>
         </span>
       </div>
