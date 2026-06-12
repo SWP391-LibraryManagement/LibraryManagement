@@ -119,6 +119,8 @@ CREATE TABLE Books (
     PublishYear INT,
     Description NVARCHAR(MAX),
     CoverUrl NVARCHAR(255),
+    Rating DECIMAL(2,1) NULL,
+    Pages INT NULL,
     Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     CreatedBy INT NULL,
     UpdatedBy INT NULL,
@@ -307,25 +309,243 @@ INSERT INTO Categories (CategoryName) VALUES
 ('Programming'),('Database'),('AI'),('Novel');
 
 INSERT INTO Authors (AuthorName) VALUES
-('Robert Martin'),('Andrew Tanenbaum'),('Yuval Harari'),('J.K. Rowling');
+(N'Robert Martin'),(N'Andrew Tanenbaum'),(N'Yuval Harari'),(N'J.K. Rowling'),(N'Stuart Russell'),(N'Ian Goodfellow'),(N'Aurélien Géron'),(N'Martin Fowler'),(N'Kent Beck'),(N'George Orwell'),(N'Dan Brown'),(N'Paulo Coelho'),(N'Abraham Silberschatz'),(N'Elmasri Navathe'),(N'Donald Knuth');
 
 INSERT INTO Publishers (PublisherName) VALUES
-('OReilly'),('Pearson'),('Penguin');
+(N'OReilly'),(N'Pearson'),(N'Penguin'),(N'MIT Press'),(N'Addison-Wesley'),(N'HarperCollins'),(N'McGraw-Hill'),(N'No Starch Press');
 
-INSERT INTO Books (Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, Status, CreatedBy)
+INSERT INTO Books 
+(Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Rating, Pages, Status, CreatedBy)
 VALUES
-('Clean Code','B1',1,1,1,2008,'Coding rules','ACTIVE',1),
-('Database System','B2',2,2,2,2015,'DB theory','ACTIVE',1),
-('Sapiens','B3',4,3,3,2011,'History book','ACTIVE',1),
-('Harry Potter','B4',4,4,3,2001,'Magic story','ACTIVE',1);
+(
+    N'Clean Code',
+    'B1',
+    1,
+    1,
+    1,
+    2008,
+    N'Sách hướng dẫn viết code sạch, dễ đọc, dễ bảo trì và phù hợp cho lập trình viên.',
+    N'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=300&h=420&fit=crop&auto=format',
+    4.8,
+    464,
+    'ACTIVE',
+    1
+),
+(
+    N'Database System',
+    'B2',
+    2,
+    2,
+    2,
+    2015,
+    N'Tài liệu nền tảng về cơ sở dữ liệu, mô hình dữ liệu, SQL và hệ quản trị cơ sở dữ liệu.',
+    N'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&h=420&fit=crop&auto=format',
+    4.4,
+    520,
+    'ACTIVE',
+    1
+),
+(
+    N'Sapiens',
+    'B3',
+    4,
+    3,
+    3,
+    2011,
+    N'Cuốn sách kể về lịch sử phát triển của loài người qua góc nhìn sinh học, xã hội và văn minh.',
+    N'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=300&h=420&fit=crop&auto=format',
+    4.7,
+    443,
+    'ACTIVE',
+    1
+),
+(
+    N'Harry Potter',
+    'B4',
+    4,
+    4,
+    3,
+    2001,
+    N'Câu chuyện phép thuật nổi tiếng về Harry Potter và hành trình trưởng thành tại trường Hogwarts.',
+    N'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=420&fit=crop&auto=format',
+    4.9,
+    350,
+    'ACTIVE',
+    1
+),
+(
+    N'Artificial Intelligence: A Modern Approach',
+    'B5',
+    3,
+    5,
+    2,
+    2021,
+    N'Cuốn sách nền tảng về trí tuệ nhân tạo, bao gồm tìm kiếm, suy luận, học máy và tác tử thông minh.',
+    N'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=420&fit=crop&auto=format',
+    4.6,
+    1152,
+    'ACTIVE',
+    1
+),
+(
+    N'Deep Learning',
+    'B6',
+    3,
+    6,
+    4,
+    2016,
+    N'Sách chuyên sâu về deep learning, mạng nơ-ron và các kỹ thuật học sâu hiện đại.',
+    N'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=300&h=420&fit=crop&auto=format',
+    4.5,
+    800,
+    'ACTIVE',
+    1
+),
+(
+    N'Hands-On Machine Learning',
+    'B7',
+    3,
+    7,
+    1,
+    2019,
+    N'Sách thực hành machine learning với ví dụ trực quan, phù hợp cho người học lập trình AI.',
+    N'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=300&h=420&fit=crop&auto=format',
+    4.7,
+    856,
+    'ACTIVE',
+    1
+),
+(
+    N'Refactoring',
+    'B8',
+    1,
+    8,
+    5,
+    2018,
+    N'Hướng dẫn cải tiến cấu trúc code, giúp phần mềm dễ hiểu, dễ mở rộng và dễ bảo trì hơn.',
+    N'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&h=420&fit=crop&auto=format',
+    4.6,
+    448,
+    'ACTIVE',
+    1
+),
+(
+    N'Test Driven Development',
+    'B9',
+    1,
+    9,
+    5,
+    2003,
+    N'Sách giới thiệu phương pháp phát triển phần mềm dựa trên kiểm thử, giúp code ổn định hơn.',
+    N'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=300&h=420&fit=crop&auto=format',
+    4.3,
+    240,
+    'ACTIVE',
+    1
+),
+(
+    N'Database System Concepts',
+    'B10',
+    2,
+    13,
+    7,
+    2019,
+    N'Sách trình bày các khái niệm quan trọng của hệ quản trị cơ sở dữ liệu, giao dịch và tối ưu truy vấn.',
+    N'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=300&h=420&fit=crop&auto=format',
+    4.4,
+    1376,
+    'ACTIVE',
+    1
+),
+(
+    N'Fundamentals of Database Systems',
+    'B11',
+    2,
+    14,
+    2,
+    2016,
+    N'Tài liệu nền tảng về thiết kế cơ sở dữ liệu, ERD, chuẩn hóa dữ liệu và kiến trúc hệ quản trị dữ liệu.',
+    N'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=420&fit=crop&auto=format',
+    4.2,
+    1272,
+    'ACTIVE',
+    1
+),
+(
+    N'The Art of Computer Programming',
+    'B12',
+    1,
+    15,
+    5,
+    1997,
+    N'Bộ sách nổi tiếng về thuật toán, cấu trúc dữ liệu và nền tảng khoa học máy tính.',
+    N'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=300&h=420&fit=crop&auto=format',
+    4.8,
+    672,
+    'ACTIVE',
+    1
+),
+(
+    N'1984',
+    'B13',
+    4,
+    10,
+    3,
+    1949,
+    N'Tiểu thuyết phản địa đàng nổi tiếng về xã hội toàn trị, giám sát và kiểm soát tư tưởng.',
+    N'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=300&h=420&fit=crop&auto=format',
+    4.7,
+    328,
+    'ACTIVE',
+    1
+),
+(
+    N'The Da Vinci Code',
+    'B14',
+    4,
+    11,
+    6,
+    2003,
+    N'Tiểu thuyết trinh thám xoay quanh bí mật lịch sử, nghệ thuật và các cuộc truy tìm căng thẳng.',
+    N'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300&h=420&fit=crop&auto=format',
+    4.1,
+    489,
+    'ACTIVE',
+    1
+),
+(
+    N'The Alchemist',
+    'B15',
+    4,
+    12,
+    6,
+    1988,
+    N'Câu chuyện biểu tượng về hành trình theo đuổi ước mơ, khám phá bản thân và ý nghĩa cuộc sống.',
+    N'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=420&fit=crop&auto=format',
+    4.6,
+    208,
+    'ACTIVE',
+    1
+);
 
 INSERT INTO BookCopies (BookId, Barcode, Status, Location)
 VALUES
-(1,'BC1','AVAILABLE','A1'),
-(1,'BC2','BORROWED','A1'),
-(2,'BC3','AVAILABLE','A2'),
-(3,'BC4','AVAILABLE','B1'),
-(4,'BC5','RESERVED','B2');
+(1, 'BC1', 'AVAILABLE', N'A1'),
+(1, 'BC2', 'BORROWED', N'A1'),
+(2, 'BC3', 'AVAILABLE', N'A2'),
+(3, 'BC4', 'AVAILABLE', N'B1'),
+(4, 'BC5', 'RESERVED', N'B2'),
+(5, 'BC6', 'AVAILABLE', N'AI-01'),
+(6, 'BC7', 'AVAILABLE', N'AI-02'),
+(7, 'BC8', 'BORROWED', N'AI-03'),
+(8, 'BC9', 'AVAILABLE', N'PR-01'),
+(9, 'BC10', 'AVAILABLE', N'PR-02'),
+(10, 'BC11', 'AVAILABLE', N'DB-01'),
+(11, 'BC12', 'BORROWED', N'DB-02'),
+(12, 'BC13', 'RESERVED', N'PR-03'),
+(13, 'BC14', 'AVAILABLE', N'NV-01'),
+(14, 'BC15', 'AVAILABLE', N'NV-02'),
+(15, 'BC16', 'RESERVED', N'NV-03');
 
 INSERT INTO BorrowRequests (UserId, Status, CreatedBy, ApprovedBy, ApprovedAt, ProcessedAt)
 VALUES
@@ -337,7 +557,9 @@ VALUES
 
 INSERT INTO Reservations (UserId, CopyId, QueuePosition, Status)
 VALUES
-(3,5,1,'ACTIVE');
+(3, 5, 1, 'ACTIVE'),
+(3, 13, 2, 'ACTIVE'),
+(3, 16, 3, 'ACTIVE');
 
 INSERT INTO Fines (UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, Reason, Status, CreatedBy)
 VALUES
