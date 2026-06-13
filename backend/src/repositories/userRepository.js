@@ -34,6 +34,176 @@ function mapSafeUser(row, roles = []) {
   return user;
 }
 
+function mapManagedUser(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    userId: row.UserId,
+    username: row.Username,
+    email: row.Email,
+    phone: row.Phone,
+    status: row.Status,
+    fullName: row.FullName,
+    address: row.Address,
+    lastLoginAt: row.LastLoginAt,
+    createdAt: row.CreatedAt,
+    updatedAt: row.UpdatedAt,
+    roles: row.Roles ? String(row.Roles).split(',').filter(Boolean) : [],
+  };
+}
+
+async function listManagedUsers({ page = 1, limit = 20, status, role, search } = {}) {
+  const pool = await getPool();
+  const offset = (page - 1) * limit;
+  const request = pool
+    .request()
+    .input('Offset', sql.Int, offset)
+    .input('Limit', sql.Int, limit);
+
+  const where = [];
+
+  if (status) {
+    request.input('Status', sql.NVarChar(20), status);
+    where.push('UPPER(u.Status) = @Status');
+  }
+
+  if (role) {
+    request.input('Role', sql.NVarChar(50), role);
+    where.push(`
+      EXISTS (
+        SELECT 1
+        FROM UserRoles roleFilterUr
+        INNER JOIN Roles roleFilterR ON roleFilterUr.RoleId = roleFilterR.RoleId
+        WHERE roleFilterUr.UserId = u.UserId
+          AND UPPER(roleFilterR.RoleName) = @Role
+      )
+    `);
+  }
+
+  if (search) {
+    request.input('Search', sql.NVarChar(150), `%${search}%`);
+    where.push(`(
+      LOWER(u.Email) LIKE LOWER(@Search)
+      OR LOWER(u.Username) LIKE LOWER(@Search)
+      OR LOWER(up.FullName) LIKE LOWER(@Search)
+      OR u.Phone LIKE @Search
+      OR LOWER(up.Address) LIKE LOWER(@Search)
+      OR LOWER(roleList.Roles) LIKE LOWER(@Search)
+      OR CONVERT(NVARCHAR(20), u.UserId) LIKE @Search
+    )`);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const result = await request.query(`
+    WITH ManagedUsers AS (
+      SELECT
+        u.UserId,
+        u.Username,
+        u.Email,
+        u.Phone,
+        u.Status,
+        u.LastLoginAt,
+        u.CreatedAt,
+        u.UpdatedAt,
+        up.FullName,
+        up.Address,
+        roleList.Roles,
+        COUNT(*) OVER() AS TotalCount
+      FROM Users u
+      LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+      OUTER APPLY (
+        SELECT STUFF((
+          SELECT ',' + r.RoleName
+          FROM UserRoles ur
+          INNER JOIN Roles r ON ur.RoleId = r.RoleId
+          WHERE ur.UserId = u.UserId
+          ORDER BY r.RoleName
+          FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS Roles
+      ) roleList
+      ${whereClause}
+      GROUP BY
+        u.UserId,
+        u.Username,
+        u.Email,
+        u.Phone,
+        u.Status,
+        u.LastLoginAt,
+        u.CreatedAt,
+        u.UpdatedAt,
+        up.FullName,
+        up.Address,
+        roleList.Roles
+    )
+    SELECT *
+    FROM ManagedUsers
+    ORDER BY CreatedAt DESC, UserId DESC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+  `);
+
+  const total = result.recordset[0]?.TotalCount || 0;
+
+  return {
+    data: result.recordset.map(mapManagedUser),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+async function getManagedUserById(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      SELECT
+        u.UserId,
+        u.Username,
+        u.Email,
+        u.Phone,
+        u.Status,
+        u.LastLoginAt,
+        u.CreatedAt,
+        u.UpdatedAt,
+        up.FullName,
+        up.Address,
+        roleList.Roles
+      FROM Users u
+      LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+      OUTER APPLY (
+        SELECT STUFF((
+          SELECT ',' + r.RoleName
+          FROM UserRoles ur
+          INNER JOIN Roles r ON ur.RoleId = r.RoleId
+          WHERE ur.UserId = u.UserId
+          ORDER BY r.RoleName
+          FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS Roles
+      ) roleList
+      WHERE u.UserId = @UserId
+      GROUP BY
+        u.UserId,
+        u.Username,
+        u.Email,
+        u.Phone,
+        u.Status,
+        u.LastLoginAt,
+        u.CreatedAt,
+        u.UpdatedAt,
+        up.FullName,
+        up.Address,
+        roleList.Roles
+    `);
+
+  return mapManagedUser(result.recordset[0]);
+}
+
 async function findByEmail(email) {
   const pool = await getPool();
   const result = await pool
@@ -169,6 +339,239 @@ async function createRegisteredUser({ username, email, passwordHash, phoneNumber
   }
 }
 
+async function createAdminManagedUser({ username, email, passwordHash, phone, fullName, address, roleName }) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const userResult = await new sql.Request(transaction)
+      .input('Username', sql.NVarChar(50), username)
+      .input('Email', sql.NVarChar(100), email)
+      .input('PasswordHash', sql.NVarChar(255), passwordHash)
+      .input('Phone', sql.NVarChar(20), phone || null)
+      .query(`
+        INSERT INTO Users (Username, Email, PasswordHash, Phone, Status)
+        OUTPUT INSERTED.*
+        VALUES (@Username, @Email, @PasswordHash, @Phone, 'INACTIVE')
+      `);
+
+    const user = mapUser(userResult.recordset[0]);
+
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, user.userId)
+      .input('FullName', sql.NVarChar(100), fullName)
+      .input('Address', sql.NVarChar(255), address || null)
+      .query(`
+        INSERT INTO UserProfiles (UserId, FullName, Address)
+        VALUES (@UserId, @FullName, @Address)
+      `);
+
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, user.userId)
+      .input('RoleName', sql.NVarChar(50), roleName)
+      .query(`
+        INSERT INTO UserRoles (UserId, RoleId)
+        SELECT @UserId, RoleId
+        FROM Roles
+        WHERE RoleName = @RoleName
+      `);
+
+    await transaction.commit();
+    return user;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
+async function updateManagedUser(userId, updates) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    if (updates.email !== undefined || updates.phone !== undefined) {
+      const existing = await findById(userId);
+      await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .input('Email', sql.NVarChar(100), updates.email === undefined ? existing.email : updates.email)
+        .input('Phone', sql.NVarChar(20), updates.phone === undefined ? existing.phone : updates.phone)
+        .query(`
+          UPDATE Users
+          SET Email = @Email,
+              Phone = @Phone,
+              UpdatedAt = GETDATE()
+          WHERE UserId = @UserId
+        `);
+    } else {
+      await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .query(`
+          UPDATE Users
+          SET UpdatedAt = GETDATE()
+          WHERE UserId = @UserId
+        `);
+    }
+
+    if (updates.fullName !== undefined || updates.address !== undefined) {
+      const existingProfile = await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .query('SELECT TOP 1 * FROM UserProfiles WHERE UserId = @UserId');
+
+      const currentProfile = existingProfile.recordset[0] || {};
+      await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .input(
+          'FullName',
+          sql.NVarChar(100),
+          updates.fullName === undefined ? currentProfile.FullName || null : updates.fullName
+        )
+        .input(
+          'Address',
+          sql.NVarChar(255),
+          updates.address === undefined ? currentProfile.Address || null : updates.address
+        )
+        .query(`
+          MERGE UserProfiles AS target
+          USING (SELECT @UserId AS UserId) AS source
+          ON target.UserId = source.UserId
+          WHEN MATCHED THEN
+            UPDATE SET FullName = @FullName, Address = @Address, UpdatedAt = GETDATE()
+          WHEN NOT MATCHED THEN
+            INSERT (UserId, FullName, Address)
+            VALUES (@UserId, @FullName, @Address);
+        `);
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
+async function updateManagedUserStatus(userId, status) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('Status', sql.NVarChar(20), status)
+    .query(`
+      UPDATE Users
+      SET Status = @Status,
+          UpdatedAt = GETDATE()
+      WHERE UserId = @UserId
+    `);
+}
+
+async function findRoleById(roleId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('RoleId', sql.Int, roleId)
+    .query('SELECT TOP 1 RoleId, RoleName FROM Roles WHERE RoleId = @RoleId');
+
+  const row = result.recordset[0];
+  return row ? { roleId: row.RoleId, roleName: row.RoleName } : null;
+}
+
+async function findRoleByName(roleName) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('RoleName', sql.NVarChar(50), roleName)
+    .query('SELECT TOP 1 RoleId, RoleName FROM Roles WHERE UPPER(RoleName) = UPPER(@RoleName)');
+
+  const row = result.recordset[0];
+  return row ? { roleId: row.RoleId, roleName: row.RoleName } : null;
+}
+
+async function listRoles() {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .query('SELECT RoleId, RoleName FROM Roles ORDER BY RoleName');
+
+  return result.recordset.map((row) => ({
+    roleId: row.RoleId,
+    roleName: row.RoleName,
+  }));
+}
+
+async function assignRole(userId, roleId) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('RoleId', sql.Int, roleId)
+    .query(`
+      IF EXISTS (SELECT 1 FROM Roles WHERE RoleId = @RoleId)
+      BEGIN
+        INSERT INTO UserRoles (UserId, RoleId)
+        SELECT @UserId, @RoleId
+        WHERE NOT EXISTS (
+          SELECT 1 FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId
+        )
+      END
+    `);
+}
+
+async function revokeRole(userId, roleId) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('RoleId', sql.Int, roleId)
+    .query('DELETE FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId');
+}
+
+async function countUsersByRole(roleName) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('RoleName', sql.NVarChar(50), roleName)
+    .query(`
+      SELECT COUNT(DISTINCT ur.UserId) AS RoleCount
+      FROM UserRoles ur
+      INNER JOIN Roles r ON ur.RoleId = r.RoleId
+      INNER JOIN Users u ON ur.UserId = u.UserId
+      WHERE r.RoleName = @RoleName
+        AND u.Status = 'ACTIVE'
+    `);
+
+  return result.recordset[0]?.RoleCount || 0;
+}
+
+async function countRolesByUserId(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query('SELECT COUNT(*) AS RoleCount FROM UserRoles WHERE UserId = @UserId');
+
+  return result.recordset[0]?.RoleCount || 0;
+}
+
+async function countActiveBorrowingsByUserId(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      SELECT COUNT(*) AS ActiveBorrowingCount
+      FROM BorrowRequests br
+      INNER JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
+      WHERE br.UserId = @UserId
+        AND br.Status = 'APPROVED'
+        AND bd.Status IN ('BORROWED', 'OVERDUE')
+    `);
+
+  return result.recordset[0]?.ActiveBorrowingCount || 0;
+}
+
 async function markEmailVerified(userId) {
   const pool = await getPool();
   await pool
@@ -249,6 +652,8 @@ async function updatePasswordAndActivate(userId, passwordHash) {
 }
 
 module.exports = {
+  listManagedUsers,
+  getManagedUserById,
   findByEmail,
   findByUsername,
   findByEmailOrUsername,
@@ -256,6 +661,17 @@ module.exports = {
   getRolesByUserId,
   getSafeUserById,
   createRegisteredUser,
+  createAdminManagedUser,
+  updateManagedUser,
+  updateManagedUserStatus,
+  findRoleById,
+  findRoleByName,
+  listRoles,
+  assignRole,
+  revokeRole,
+  countUsersByRole,
+  countRolesByUserId,
+  countActiveBorrowingsByUserId,
   markEmailVerified,
   updateFailedLogin,
   resetFailedLoginsAndSetLastLogin,

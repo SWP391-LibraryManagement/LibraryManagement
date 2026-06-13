@@ -3,7 +3,7 @@ import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash,
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const CATEGORY_LABELS = {
   Programming: 'Lập trình',
@@ -23,14 +23,70 @@ const getCategoryLabel = (category) => CATEGORY_LABELS[category] || category || 
 const getCategoryIcon = (category) => CATEGORY_ICONS[category] || '📚';
 
 
-const StarRating = ({ rating, size = 12 }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-    {[1, 2, 3, 4, 5].map((s) => (
-      <Star key={s} size={size} style={{ fill: s <= Math.round(rating) ? '#C78A3B' : 'transparent', color: '#C78A3B' }} />
-    ))}
-    <span style={{ fontSize: size - 1, color: '#7A5C44', marginLeft: 4 }}>{rating}</span>
-  </div>
-);
+const StarRating = ({ rating, size = 12 }) => {
+  const score = Number(rating) || 0;
+
+  return (
+    <div
+      aria-label={`Đánh giá ${score.toFixed(1)} trên 5`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: size + 8 }}
+    >
+      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: '#C78A3B' }}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star
+              key={s}
+              size={size}
+              strokeWidth={2.2}
+              style={{ flexShrink: 0, fill: 'transparent' }}
+            />
+          ))}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: `${Math.min(Math.max(score, 0), 5) * 20}%`,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            color: '#C78A3B',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Star
+            key={s}
+            size={size}
+            strokeWidth={2.2}
+            style={{
+              flexShrink: 0,
+              fill: '#C78A3B',
+            }}
+          />
+        ))}
+        </div>
+      </div>
+      <span
+        style={{
+          minWidth: 28,
+          padding: '2px 6px',
+          borderRadius: 5,
+          background: '#F5EFE6',
+          color: '#6F4D2D',
+          fontSize: Math.max(size - 2, 10),
+          fontWeight: 700,
+          lineHeight: 1.2,
+          textAlign: 'center',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {score.toFixed(1)}
+      </span>
+    </div>
+  );
+};
 
 // ── Trang đăng ký mượn sách ──
 const textClamp = (lines) => ({
