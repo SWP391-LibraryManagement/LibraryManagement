@@ -113,6 +113,20 @@ async function revokeActiveTokensForUserType(userId, tokenType) {
     `);
 }
 
+async function revokeActiveTokensForUser(userId) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      UPDATE AuthTokens
+      SET RevokedAt = COALESCE(RevokedAt, GETDATE())
+      WHERE UserId = @UserId
+        AND UsedAt IS NULL
+        AND RevokedAt IS NULL
+    `);
+}
+
 module.exports = {
   createToken,
   findActiveTokenByHash,
@@ -120,4 +134,5 @@ module.exports = {
   markTokenUsed,
   revokeToken,
   revokeActiveTokensForUserType,
+  revokeActiveTokensForUser,
 };
