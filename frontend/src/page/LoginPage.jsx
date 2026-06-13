@@ -33,6 +33,7 @@ export default function LoginPage() {
         roles: result.roles,
       }));
       setFeedback({ severity: 'success', message: 'Login successful.' });
+      navigate(result.roles?.includes('ADMIN') ? '/admin/users' : '/home');
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
