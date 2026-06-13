@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash, Clock, ChevronLeft } from 'lucide-react';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
@@ -112,9 +112,21 @@ const BorrowModal = ({ book, onClose, onConfirm }) => {
   const stepOrder = ['book', 'borrower', 'options'];
   const stepLabels = ['Thông tin sách', 'Thông tin người mượn', 'Tùy chọn mượn'];
   const currentStepIndex = Math.max(stepOrder.indexOf(step), 0);
-  const todayValue = new Date().toISOString().slice(0, 10);
-  const canConfirm = step === 'options' && agreed && pickupDate >= todayValue && borrowNote.trim().length <= 500;
-  const dueDate = new Date(pickupDate ? new Date(pickupDate).getTime() + duration * 86400000 : Date.now() + duration * 86400000);
+
+  const todayValue = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+const dueDate = useMemo(() => {
+  const baseDate = pickupDate || todayValue;
+  const due = new Date(`${baseDate}T00:00:00`);
+  due.setDate(due.getDate() + duration);
+  return due;
+}, [pickupDate, duration, todayValue]);
+
+const canConfirm =
+  step === 'options' &&
+  agreed &&
+  pickupDate >= todayValue &&
+  borrowNote.trim().length <= 500;
 
   const validateBorrowerInfo = () => {
     const errors = {};
