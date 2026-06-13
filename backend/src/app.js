@@ -4,12 +4,13 @@ const compression = require('compression');
 const helmet = require('helmet');
 
 const { createAuthRoutes } = require('./routes/authRoutes');
+const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
 
-function createApp({ authService = defaultAuthService } = {}) {
+function createApp({ authService = defaultAuthService, userManagementService } = {}) {
   const app = express();
 
   app.use(helmet());
@@ -32,8 +33,8 @@ function createApp({ authService = defaultAuthService } = {}) {
   });
 
   app.use('/api/auth', createAuthRoutes(authService));
+  app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
 
-  // API lấy dữ liệu sách thật từ database
   app.use('/api/books', bookRoutes);
 
   app.use((req, res) => {

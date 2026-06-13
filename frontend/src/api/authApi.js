@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -16,7 +16,9 @@ export async function registerAccount(payload) {
     const response = await api.post('/auth/register', payload);
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Registration failed. Please check your information.'));
+    throw new Error(getErrorMessage(error, 'Registration failed. Please check your information.'), {
+      cause: error,
+    });
   }
 }
 
@@ -25,7 +27,9 @@ export async function loginAccount({ email, password }) {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Login failed. Please check your credentials.'));
+    throw new Error(getErrorMessage(error, 'Login failed. Please check your credentials.'), {
+      cause: error,
+    });
   }
 }
 
@@ -34,7 +38,9 @@ export async function forgotPassword(email) {
     const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not send password reset email.'));
+    throw new Error(getErrorMessage(error, 'Could not send password reset email.'), {
+      cause: error,
+    });
   }
 }
 
@@ -43,7 +49,9 @@ export async function refreshAccessToken(refreshToken) {
     const response = await api.post('/auth/refresh-token', { refreshToken });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Session refresh failed.'));
+    throw new Error(getErrorMessage(error, 'Session refresh failed.'), {
+      cause: error,
+    });
   }
 }
 
@@ -60,7 +68,9 @@ export async function logoutAccount({ accessToken, refreshToken }) {
     );
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Logout failed.'));
+    throw new Error(getErrorMessage(error, 'Logout failed.'), {
+      cause: error,
+    });
   }
 }
 
@@ -77,7 +87,9 @@ export async function changePassword({ accessToken, currentPassword, newPassword
     );
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Password change failed.'));
+    throw new Error(getErrorMessage(error, 'Password change failed.'), {
+      cause: error,
+    });
   }
 }
 
@@ -86,7 +98,9 @@ export async function resetPassword({ token, newPassword }) {
     const response = await api.post('/auth/reset-password', { token, newPassword });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Password reset failed.'));
+    throw new Error(getErrorMessage(error, 'Password reset failed.'), {
+      cause: error,
+    });
   }
 }
 
@@ -99,6 +113,8 @@ export async function getCurrentUser(accessToken) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load current user.'));
+    throw new Error(getErrorMessage(error, 'Could not load current user.'), {
+      cause: error,
+    });
   }
 }

@@ -4,6 +4,8 @@ import LoginPage from './page/LoginPage';
 import RegisterPage from './page/RegisterPage';
 import ForgotPasswordPage from './page/ForgotPasswordPage';
 import HomePage from './page/HomePage';
+import UserManagement from './page/UserManagement';
+
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route path="/home" element={<HomePage />} />
+      
+      <Route path="/admin/users" element={<UserManagement />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
