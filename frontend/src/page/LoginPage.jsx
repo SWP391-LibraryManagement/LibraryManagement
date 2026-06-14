@@ -38,7 +38,13 @@ export default function LoginPage() {
         roles: result.roles,
       }));
       setFeedback({ severity: 'success', message: 'Đăng nhập thành công.' });
-      navigate(result.roles?.includes('ADMIN') ? '/admin/users' : '/home');
+      if (result.roles?.includes('ADMIN')) {
+        navigate('/admin/users');
+      } else if (result.roles?.includes('LIBRARIAN')) {
+        navigate('/librarian/fines');
+      } else {
+        navigate('/home');
+      }
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
