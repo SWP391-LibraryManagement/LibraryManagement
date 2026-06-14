@@ -53,14 +53,12 @@ export default function LoginForm({
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <Person sx={{ color: '#8b5a2b' }} />
-              </InputAdornment>
-            ),
-          },
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Person sx={{ color: '#8b5a2b' }} />
+            </InputAdornment>
+          ),
         }}
       />
 
@@ -74,29 +72,27 @@ export default function LoginForm({
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock sx={{ color: '#8b5a2b' }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={handleTogglePasswordVisibility}
-                  edge="end"
-                  aria-label="toggle password visibility"
-                >
-                  {showPassword ? (
-                    <VisibilityOff sx={{ color: '#8b5a2b' }} />
-                  ) : (
-                    <Visibility sx={{ color: '#8b5a2b' }} />
-                  )}
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Lock sx={{ color: '#8b5a2b' }} />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={handleTogglePasswordVisibility}
+                edge="end"
+                aria-label="toggle password visibility"
+              >
+                {showPassword ? (
+                  <VisibilityOff sx={{ color: '#8b5a2b' }} />
+                ) : (
+                  <Visibility sx={{ color: '#8b5a2b' }} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
         }}
       />
 

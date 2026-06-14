@@ -1,54 +1,21 @@
-// models/user.model.js
+const defineModel = require('./defineModel');
 
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-
-const User = sequelize.define('User', {
-    UserId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    Username: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-        unique: true
-    },
-    Email: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: true
-    },
-    PasswordHash: {
-        type: DataTypes.STRING(255),
-        allowNull: false
-    },
-    Phone: {
-        type: DataTypes.STRING(20)
-    },
-    Status: {
-        type: DataTypes.ENUM(
-            'ACTIVE',
-            'INACTIVE',
-            'LOCKED'
-        ),
-        defaultValue: 'ACTIVE'
-    },
-    EmailVerifiedAt: DataTypes.DATE,
-    FailedLoginCount: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
-    },
-    LockedUntil: DataTypes.DATE,
-    LastLoginAt: DataTypes.DATE,
-    CreatedAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    },
-    UpdatedAt: DataTypes.DATE
-}, {
-    tableName: 'Users',
-    timestamps: false
+module.exports = defineModel({
+  name: 'User',
+  tableName: 'Users',
+  primaryKey: 'userId',
+  columns: [
+    { attribute: 'userId', name: 'UserId', type: 'INT', primaryKey: true, identity: true },
+    { attribute: 'username', name: 'Username', type: 'NVARCHAR(50)', required: true, unique: true },
+    { attribute: 'email', name: 'Email', type: 'NVARCHAR(100)', required: true, unique: true },
+    { attribute: 'passwordHash', name: 'PasswordHash', type: 'NVARCHAR(255)', required: true },
+    { attribute: 'phone', name: 'Phone', type: 'NVARCHAR(20)', nullable: true },
+    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'ACTIVE', allowedValues: ['ACTIVE', 'INACTIVE', 'LOCKED'] },
+    { attribute: 'emailVerifiedAt', name: 'EmailVerifiedAt', type: 'DATETIME', nullable: true },
+    { attribute: 'failedLoginCount', name: 'FailedLoginCount', type: 'INT', required: true, default: 0 },
+    { attribute: 'lockedUntil', name: 'LockedUntil', type: 'DATETIME', nullable: true },
+    { attribute: 'lastLoginAt', name: 'LastLoginAt', type: 'DATETIME', nullable: true },
+    { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
+    { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
+  ],
 });
-
-module.exports = User;

@@ -2,7 +2,7 @@ const { sql, getPool } = require('../config/db');
 
 async function createNotification({ userId, recipientEmail, templateCode, sourceFeature, safePayload }) {
   const pool = await getPool();
-  await pool
+  const result = await pool
     .request()
     .input('UserId', sql.Int, userId || null)
     .input('RecipientEmail', sql.NVarChar(100), recipientEmail)
@@ -15,6 +15,8 @@ async function createNotification({ userId, recipientEmail, templateCode, source
       FROM NotificationTemplates
       WHERE TemplateCode = @TemplateCode
     `);
+
+  return result.rowsAffected?.[0] || 0;
 }
 
 module.exports = {

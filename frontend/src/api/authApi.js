@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,6 +40,7 @@ export async function loginAccount({ email, password }) {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   } catch (error) {
+    console.error('Login API error:', error);
     throw new Error(getErrorMessage(error, 'Login failed. Please check your credentials.'), {
       cause: error,
     });
