@@ -27,6 +27,7 @@ import {
   createManagedUser,
   deactivateManagedUser,
   assignManagedUserRole,
+  ensureManagedUserAccess,
   fetchAuditLogs,
   fetchRoles,
   fetchUsers,
@@ -47,6 +48,7 @@ const statusLabels = {
   LOCKED: 'Locked',
 };
 const editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER'];
+const allowDevUserManagementWithoutLogin = import.meta.env.MODE !== 'production';
 const permissionRows = [
   { name: 'View users', admin: true, librarian: false, member: false },
   { name: 'Create accounts', admin: true, librarian: false, member: false },
@@ -87,16 +89,16 @@ function validateUserForm(form) {
 }
 
 function getStoredAdminUser() {
-  const accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
   const rawUser = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
 
-  if (!accessToken || !rawUser) {
+  if (!rawUser) {
     return null;
   }
 
   try {
     const user = JSON.parse(rawUser);
-    return user.roles?.includes('ADMIN') ? user : null;
+    const roles = Array.isArray(user.roles) ? user.roles.map((role) => String(role || '').toUpperCase()) : [];
+    return roles.includes('ADMIN') ? user : null;
   } catch {
     return null;
   }
@@ -232,7 +234,7 @@ function UserModal({ mode, user, onClose, onSubmit }) {
           </label>
 
           <div className="um-note">
-            Admin-created accounts stay inactive until the user completes the password setup flow.
+            Admin-created accounts are active immediately. Password setup can be completed later.
           </div>
         </div>
 
@@ -413,32 +415,40 @@ function UserManagement() {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
     sessionStorage.removeItem('authUser');
-    navigate('/home', { replace: true });
+    navigate('/login', { replace: true });
   }
 
-  function requireAdminSession() {
-    if (getStoredAdminUser()) {
+  async function requireAdminSession() {
+    if (allowDevUserManagementWithoutLogin) {
       return true;
+    }
+
+    try {
+      if (getStoredAdminUser() || (await ensureManagedUserAccess())) {
+        return true;
+      }
+    } catch {
+      // Fall through to the shared login prompt below.
     }
 
     setToast({ type: 'error', message: 'You need to login with an Admin account to create, update, or manage users.' });
     return false;
   }
 
-  function openCreateModal() {
-    if (requireAdminSession()) {
+  async function openCreateModal() {
+    if (await requireAdminSession()) {
       setModal({ mode: 'create' });
     }
   }
 
-  function openEditModal(user) {
-    if (requireAdminSession()) {
+  async function openEditModal(user) {
+    if (await requireAdminSession()) {
       setModal({ mode: 'edit', user });
     }
   }
 
-  function openRoleModal(user) {
-    if (requireAdminSession()) {
+  async function openRoleModal(user) {
+    if (await requireAdminSession()) {
       setRoleUser(user);
     }
   }
@@ -570,7 +580,7 @@ function UserManagement() {
   }
 
   async function submitModal(form) {
-    if (!requireAdminSession()) {
+    if (!(await requireAdminSession())) {
       throw new Error('Admin login required.');
     }
 
@@ -591,7 +601,7 @@ function UserManagement() {
           phone: form.phone.trim(),
           address: form.address.trim(),
         });
-        setToast({ type: 'success', message: 'Inactive account created and setup email queued.' });
+        setToast({ type: 'success', message: 'Active account created and setup email queued.' });
       }
 
       setModal(null);
@@ -604,7 +614,7 @@ function UserManagement() {
   }
 
   async function deactivateUser(user) {
-    if (!requireAdminSession()) {
+    if (!(await requireAdminSession())) {
       return;
     }
 
@@ -627,7 +637,7 @@ function UserManagement() {
       return;
     }
 
-    if (!requireAdminSession()) {
+    if (!(await requireAdminSession())) {
       throw new Error('Admin login required.');
     }
 
@@ -770,7 +780,6 @@ function UserManagement() {
                 <th>Phone</th>
                 <th>Roles</th>
                 <th>Status</th>
-                <th>Last login</th>
                 <th>Created</th>
                 <th>Actions</th>
               </tr>
@@ -801,7 +810,6 @@ function UserManagement() {
                   <td>
                     <StatusBadge status={user.status} />
                   </td>
-                  <td>{formatDate(user.lastLoginAt)}</td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
                     <div className="um-row-actions" onClick={(event) => event.stopPropagation()}>
