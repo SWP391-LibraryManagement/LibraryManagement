@@ -1,0 +1,35 @@
+{
+  "development": {
+    "username": "library_user",
+    "password": "123",
+    "database": "LibraryDB",
+    "host": "127.0.0.1",
+    "dialect": "mssql",
+    "dialectOptions": {
+      "options": {
+        "encrypt": false,
+        "trustServerCertificate": true
+      }
+    }
+  },
+  "test": {
+    "username": "library_user",
+    "password": "123",
+    "database": "LibraryDBTest",
+    "host": "127.0.0.1",
+    "dialect": "mssql",
+    "dialectOptions": {
+      "options": {
+        "encrypt": false,
+        "trustServerCertificate": true
+      }
+    }
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
