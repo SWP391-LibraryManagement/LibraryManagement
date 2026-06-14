@@ -8,7 +8,20 @@ const api = axios.create({
 });
 
 function getErrorMessage(error, fallback = 'Request failed. Please try again.') {
-  return error.response?.data?.error?.message || fallback;
+  if (!error.response) {
+    return 'Không kết nối được backend. Hãy kiểm tra server API đang chạy ở http://localhost:3000.';
+  }
+
+  const apiError = error.response?.data?.error;
+  const details = Array.isArray(apiError?.details)
+    ? apiError.details.map((item) => item.message).filter(Boolean)
+    : [];
+
+  if (details.length > 0) {
+    return details.join('\n');
+  }
+
+  return apiError?.message || fallback;
 }
 
 export async function registerAccount(payload) {
