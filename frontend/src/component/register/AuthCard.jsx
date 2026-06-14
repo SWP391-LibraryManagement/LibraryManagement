@@ -14,6 +14,7 @@ export default function AuthCard({
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -55,6 +56,13 @@ export default function AuthCard({
               placeholder="Nhập họ và tên của bạn"
               value={formData.fullName}
               onChange={(value) => setFormData((current) => ({ ...current, fullName: value }))}
+              required
+            />
+            <FormInput
+              label="Tên đăng nhập"
+              placeholder="Nhập tên đăng nhập của bạn"
+              value={formData.username}
+              onChange={(value) => setFormData((current) => ({ ...current, username: value }))}
               required
             />
             <FormInput

@@ -97,13 +97,17 @@ function createAuthService({
       return;
     }
 
-    await notificationRepository.createNotification({
+    const insertedCount = await notificationRepository.createNotification({
       userId,
       recipientEmail,
       templateCode,
       sourceFeature: 'FE02',
       safePayload,
     });
+
+    if (insertedCount === 0) {
+      console.warn(`[auth notification] Template ${templateCode} was not found; notification was not queued.`);
+    }
   }
 
   async function issueAccessTokenForUser(user, sessionId) {
@@ -188,12 +192,16 @@ function createAuthService({
       context
     );
 
-    await createNotification({
-      userId: createdUser.userId,
-      recipientEmail: email,
-      templateCode: 'ACCOUNT_VERIFICATION',
-      safePayload: { purpose: 'EMAIL_VERIFY' },
-    });
+    try {
+      await createNotification({
+        userId: createdUser.userId,
+        recipientEmail: email,
+        templateCode: 'ACCOUNT_VERIFICATION',
+        safePayload: { purpose: 'EMAIL_VERIFY' },
+      });
+    } catch (notifyError) {
+      console.error('[auth register] Failed to queue verification notification:', notifyError.message);
+    }
 
     await writeAudit(context, 'AUTH_REGISTER', {
       userId: createdUser.userId,
