@@ -354,7 +354,7 @@ async function createAdminManagedUser({ username, email, passwordHash, phone, fu
       .query(`
         INSERT INTO Users (Username, Email, PasswordHash, Phone, Status)
         OUTPUT INSERTED.*
-        VALUES (@Username, @Email, @PasswordHash, @Phone, 'INACTIVE')
+        VALUES (@Username, @Email, @PasswordHash, @Phone, 'ACTIVE')
       `);
 
     const user = mapUser(userResult.recordset[0]);
