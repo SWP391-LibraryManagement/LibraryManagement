@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -6,11 +6,12 @@ import {
   BookOpen,
   Calculator,
   Check,
+  ChevronRight,
   ClipboardCheck,
   CreditCard,
   FileText,
   Filter,
-  LayoutDashboard,
+  ListChecks,
   LogOut,
   ReceiptText,
   Search,
@@ -19,6 +20,13 @@ import {
 } from 'lucide-react';
 
 const DAILY_FINE_RATE = 5000;
+const BANK_TRANSFER_METHOD = 'Chuyển khoản';
+
+const libraryBankAccount = {
+  bankName: 'Vietcombank',
+  accountNumber: '0123456789',
+  accountName: 'LIBRARY MANAGEMENT SYSTEM',
+};
 
 const sampleBorrowDetails = [
   {
@@ -141,6 +149,33 @@ const statusLabels = {
   WAIVED: 'Đã miễn',
 };
 
+const fineSections = [
+  {
+    key: 'list',
+    label: 'Danh sách phiếu phạt',
+    description: 'Tra cứu, lọc và xem chi tiết phiếu phạt.',
+    icon: ListChecks,
+  },
+  {
+    key: 'calculate',
+    label: 'Tính tiền phạt',
+    description: 'Tạo hoặc cập nhật phiếu phạt quá hạn.',
+    icon: Calculator,
+  },
+  {
+    key: 'collection',
+    label: 'Ghi nhận thu tiền',
+    description: 'Lưu thông tin thu tiền tại quầy.',
+    icon: CreditCard,
+  },
+  {
+    key: 'paid',
+    label: 'Đánh dấu đã thanh toán',
+    description: 'Hoàn tất trạng thái phiếu phạt.',
+    icon: Check,
+  },
+];
+
 function formatCurrency(value) {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -176,6 +211,14 @@ function calculateOverdueDays(dueDate, returnDate) {
   return Math.max(diff, 0);
 }
 
+function getTransferContent(fine) {
+  if (!fine) {
+    return 'FINE';
+  }
+
+  return `FINE-${fine.fineId}-${fine.memberCode}`;
+}
+
 function getStoredStaffUser() {
   const rawUser = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
 
@@ -204,9 +247,19 @@ function Toast({ toast, onClose }) {
   );
 }
 
+function EmptyState({ message }) {
+  return (
+    <div className="fine-empty">
+      <ReceiptText size={28} />
+      <span>{message}</span>
+    </div>
+  );
+}
+
 export default function FineManagement() {
   const navigate = useNavigate();
   const staffUser = getStoredStaffUser();
+  const [activeSection, setActiveSection] = useState('list');
   const [fines, setFines] = useState(initialFines);
   const [selectedFineId, setSelectedFineId] = useState(initialFines[0].fineId);
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -216,15 +269,19 @@ export default function FineManagement() {
   });
   const [collectionForm, setCollectionForm] = useState({
     paymentMethod: 'Tiền mặt',
+    transferBank: '',
+    transferCode: '',
     note: '',
   });
   const [toast, setToast] = useState(null);
-  const [activeAction, setActiveAction] = useState('calculate');
-  const calculateActionRef = useRef(null);
-  const collectionActionRef = useRef(null);
-  const paidActionRef = useRef(null);
 
   const selectedFine = fines.find((fine) => fine.fineId === selectedFineId) || fines[0];
+  const selectedBorrowDetail = sampleBorrowDetails.find(
+    (item) => item.borrowDetailId === Number(calculateForm.borrowDetailId)
+  );
+  const calculatedPreviewDays = selectedBorrowDetail
+    ? calculateOverdueDays(selectedBorrowDetail.dueDate, selectedBorrowDetail.returnDate)
+    : 0;
 
   const filteredFines = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -242,8 +299,9 @@ export default function FineManagement() {
     });
   }, [fines, query, statusFilter]);
 
+  const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
+
   const stats = useMemo(() => {
-    const unpaidFines = fines.filter((fine) => fine.status === 'UNPAID');
     const paidFines = fines.filter((fine) => fine.status === 'PAID');
 
     return [
@@ -272,7 +330,11 @@ export default function FineManagement() {
         tone: 'neutral',
       },
     ];
-  }, [fines]);
+  }, [fines, unpaidFines]);
+
+  const activeMeta = fineSections.find((item) => item.key === activeSection) || fineSections[0];
+  const isBankTransfer = collectionForm.paymentMethod === BANK_TRANSFER_METHOD;
+  const transferContent = getTransferContent(selectedFine);
 
   function showToast(message, type = 'success') {
     setToast({ message, type });
@@ -280,9 +342,9 @@ export default function FineManagement() {
     showToast.timer = window.setTimeout(() => setToast(null), 3200);
   }
 
-  function handleActionNav(actionKey, actionRef) {
-    setActiveAction(actionKey);
-    actionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  function chooseFine(fineId, nextSection = activeSection) {
+    setSelectedFineId(fineId);
+    setActiveSection(nextSection);
   }
 
   function handleCalculateFine(event) {
@@ -320,7 +382,7 @@ export default function FineManagement() {
             : fine
         )
       );
-      setSelectedFineId(existingFine.fineId);
+      chooseFine(existingFine.fineId, 'list');
       showToast('Đã cập nhật phiếu phạt chưa thanh toán hiện có, không tạo trùng.');
       return;
     }
@@ -351,8 +413,8 @@ export default function FineManagement() {
     };
 
     setFines((current) => [newFine, ...current]);
-    setSelectedFineId(newFine.fineId);
-    showToast('Đã tính tiền phạt quá hạn và thêm vào danh sách xử lý.');
+    chooseFine(newFine.fineId, 'list');
+    showToast('Đã tính tiền phạt quá hạn và thêm vào danh sách phiếu phạt.');
   }
 
   function handleRecordCollection(event) {
@@ -363,13 +425,50 @@ export default function FineManagement() {
       return;
     }
 
+    if (isBankTransfer) {
+      const transferBank = collectionForm.transferBank.trim();
+      const transferCode = collectionForm.transferCode.trim();
+
+      if (!transferBank) {
+        showToast('Vui lòng nhập ngân hàng chuyển khoản của khách.', 'error');
+        return;
+      }
+
+      if (transferCode.length < 6) {
+        showToast('Vui lòng nhập mã giao dịch chuyển khoản tối thiểu 6 ký tự.', 'error');
+        return;
+      }
+
+      const duplicateTransfer = fines.some(
+        (fine) =>
+          fine.fineId !== selectedFine.fineId &&
+          fine.paymentMethod === BANK_TRANSFER_METHOD &&
+          fine.collectionNote?.includes(`Mã giao dịch: ${transferCode}`)
+      );
+
+      if (duplicateTransfer) {
+        showToast('Mã giao dịch này đã được ghi nhận cho phiếu phạt khác.', 'error');
+        return;
+      }
+    }
+
+    const transferNote = isBankTransfer
+      ? [
+          `Chuyển khoản ${formatCurrency(selectedFine.amount)} vào ${libraryBankAccount.bankName} - ${libraryBankAccount.accountNumber}.`,
+          `Nội dung: ${transferContent}.`,
+          `Ngân hàng khách: ${collectionForm.transferBank.trim()}.`,
+          `Mã giao dịch: ${collectionForm.transferCode.trim()}.`,
+        ].join(' ')
+      : 'Đã thu trực tiếp tại quầy lưu thông.';
+    const collectionNote = [collectionForm.note.trim(), transferNote].filter(Boolean).join(' ');
+
     setFines((current) =>
       current.map((fine) =>
         fine.fineId === selectedFine.fineId
           ? {
               ...fine,
               paidAmount: fine.amount,
-              collectionNote: collectionForm.note.trim() || 'Đã thu trực tiếp tại quầy lưu thông.',
+              collectionNote,
               paymentMethod: collectionForm.paymentMethod,
               collectedAt: new Date().toISOString(),
               collectedBy: staffUser?.email || 'Thủ thư demo',
@@ -377,7 +476,7 @@ export default function FineManagement() {
           : fine
       )
     );
-    showToast('Đã ghi nhận thông tin thu tiền phạt.');
+    showToast(isBankTransfer ? 'Đã ghi nhận giao dịch chuyển khoản cho phiếu phạt.' : 'Đã ghi nhận thông tin thu tiền phạt.');
   }
 
   function handleMarkPaid() {
@@ -402,7 +501,7 @@ export default function FineManagement() {
           : fine
       )
     );
-    showToast('Đã đánh dấu phiếu phạt là ĐÃ THANH TOÁN và ghi nhận thời điểm thanh toán.');
+    showToast('Đã đánh dấu phiếu phạt là đã thanh toán.');
   }
 
   function handleLogout() {
@@ -426,33 +525,29 @@ export default function FineManagement() {
           </div>
         </div>
 
-        <nav className="fine-nav">
-          <button className="active"><LayoutDashboard size={18} />Quản lý tiền phạt</button>
+        <nav className="fine-workflow-nav" aria-label="Nghiệp vụ tiền phạt">
+          <span>Nghiệp vụ tiền phạt</span>
+          {fineSections.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                className={activeSection === item.key ? 'active' : ''}
+                onClick={() => setActiveSection(item.key)}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+                <ChevronRight size={15} />
+              </button>
+            );
+          })}
+        </nav>
+
+        <nav className="fine-app-nav" aria-label="Điều hướng hệ thống">
+          <span>Điều hướng</span>
           <button onClick={() => navigate('/home')}><BookOpen size={18} />Danh mục công khai</button>
           <button onClick={() => navigate('/admin/users')}><UserRound size={18} />Danh sách người dùng</button>
         </nav>
-
-        <div className="fine-nav-section">
-          <span>Nghiệp vụ tiền phạt</span>
-          <button
-            className={activeAction === 'calculate' ? 'active' : ''}
-            onClick={() => handleActionNav('calculate', calculateActionRef)}
-          >
-            <Calculator size={18} />Tính tiền phạt
-          </button>
-          <button
-            className={activeAction === 'collection' ? 'active' : ''}
-            onClick={() => handleActionNav('collection', collectionActionRef)}
-          >
-            <CreditCard size={18} />Ghi nhận thu tiền
-          </button>
-          <button
-            className={activeAction === 'paid' ? 'active' : ''}
-            onClick={() => handleActionNav('paid', paidActionRef)}
-          >
-            <Check size={18} />Đánh dấu đã thanh toán
-          </button>
-        </div>
 
         <div className="fine-session">
           <span>Đang đăng nhập với</span>
@@ -465,14 +560,14 @@ export default function FineManagement() {
         <header className="fine-header">
           <div>
             <p>FE09 Quản lý tiền phạt</p>
-            <h1>Nghiệp vụ tiền phạt</h1>
-            <span>Xem thông tin phạt, tính phạt quá hạn, ghi nhận thu tiền trực tiếp và đánh dấu đã thanh toán.</span>
+            <h1>{activeMeta.label}</h1>
+            <span>{activeMeta.description}</span>
           </div>
           <div className="fine-policy">
             <ShieldCheck size={20} />
             <div>
               <strong>Chính sách giai đoạn 1</strong>
-              <span>Chỉ xử lý phạt quá hạn, không thanh toán một phần, bản chính thức phải tính tiền phạt ở máy chủ.</span>
+              <span>Chỉ xử lý phạt quá hạn. Bản chính thức phải tính tiền phạt và phân quyền ở máy chủ.</span>
             </div>
           </div>
         </header>
@@ -490,232 +585,325 @@ export default function FineManagement() {
           })}
         </section>
 
-        <section className="fine-grid">
-          <div className="fine-panel fine-list-panel">
-            <div className="fine-panel-head">
-              <div>
-                <p>Thông tin tiền phạt</p>
-                <h2>Danh sách phiếu phạt</h2>
+        {activeSection === 'list' && (
+          <section className="fine-grid">
+            <div className="fine-panel fine-list-panel">
+              <div className="fine-panel-head">
+                <div>
+                  <p>Theo dõi phiếu phạt</p>
+                  <h2>Danh sách phiếu phạt</h2>
+                </div>
+                <StatusBadge status={selectedFine?.status || 'UNPAID'} />
               </div>
-              <StatusBadge status={selectedFine?.status || 'UNPAID'} />
+
+              <div className="fine-toolbar">
+                <label className="fine-search">
+                  <Search size={18} />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Tìm thành viên, sách, mã mượn..."
+                  />
+                </label>
+                <label className="fine-select">
+                  <Filter size={17} />
+                  <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="fine-table-wrap">
+                <table className="fine-table">
+                  <thead>
+                    <tr>
+                      <th>Phiếu phạt</th>
+                      <th>Thành viên</th>
+                      <th>Sách</th>
+                      <th>Quá hạn</th>
+                      <th>Số tiền</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredFines.map((fine) => (
+                      <tr
+                        key={fine.fineId}
+                        className={fine.fineId === selectedFine?.fineId ? 'selected' : ''}
+                        onClick={() => chooseFine(fine.fineId)}
+                      >
+                        <td>#{fine.fineId}</td>
+                        <td>
+                          <strong>{fine.memberName}</strong>
+                          <span>{fine.memberCode}</span>
+                        </td>
+                        <td>
+                          <strong>{fine.bookTitle}</strong>
+                          <span>{fine.barcode}</span>
+                        </td>
+                        <td>{fine.overdueDays} ngày</td>
+                        <td>{formatCurrency(fine.amount)}</td>
+                        <td><StatusBadge status={fine.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredFines.length === 0 && <EmptyState message="Không có phiếu phạt phù hợp với bộ lọc." />}
             </div>
 
-            <div className="fine-toolbar">
-              <label className="fine-search">
-                <Search size={18} />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Tìm thành viên, sách, mã mượn..."
-                />
-              </label>
-              <label className="fine-select">
-                <Filter size={17} />
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+            <FineDetailPanel selectedFine={selectedFine} />
+          </section>
+        )}
+
+        {activeSection === 'calculate' && (
+          <section className="fine-section-layout">
+            <form className="fine-panel fine-form-panel" onSubmit={handleCalculateFine}>
+              <div className="fine-panel-head">
+                <div>
+                  <p>Tạo phiếu từ mượn trả</p>
+                  <h2>Tính tiền phạt</h2>
+                </div>
+                <Calculator size={24} />
+              </div>
+
+              <label>
+                Chi tiết mượn
+                <select
+                  value={calculateForm.borrowDetailId}
+                  onChange={(event) => setCalculateForm({ borrowDetailId: event.target.value })}
+                >
+                  {sampleBorrowDetails.map((item) => (
+                    <option key={item.borrowDetailId} value={item.borrowDetailId}>
+                      #{item.borrowDetailId} - {item.memberName} - {item.bookTitle}
+                    </option>
                   ))}
                 </select>
               </label>
-            </div>
 
-            <div className="fine-table-wrap">
-              <table className="fine-table">
-                <thead>
-                  <tr>
-                    <th>Phiếu phạt</th>
-                    <th>Thành viên</th>
-                    <th>Sách</th>
-                    <th>Quá hạn</th>
-                    <th>Số tiền</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFines.map((fine) => (
-                    <tr
-                      key={fine.fineId}
-                      className={fine.fineId === selectedFine?.fineId ? 'selected' : ''}
-                      onClick={() => setSelectedFineId(fine.fineId)}
-                    >
-                      <td>#{fine.fineId}</td>
-                      <td>
-                        <strong>{fine.memberName}</strong>
-                        <span>{fine.memberCode}</span>
-                      </td>
-                      <td>
-                        <strong>{fine.bookTitle}</strong>
-                        <span>{fine.barcode}</span>
-                      </td>
-                      <td>{fine.overdueDays} ngày</td>
-                      <td>{formatCurrency(fine.amount)}</td>
-                      <td><StatusBadge status={fine.status} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <aside className="fine-panel fine-detail-panel">
-            <div className="fine-panel-head">
-              <div>
-                <p>Phiếu đang chọn</p>
-                <h2>Phiếu phạt #{selectedFine?.fineId}</h2>
-              </div>
-              <ReceiptText size={22} />
-            </div>
-
-            {selectedFine && (
-              <>
-                <div className="fine-detail-card">
-                  <div>
-                    <span>Thành viên</span>
-                    <strong>{selectedFine.memberName}</strong>
-                    <small>{selectedFine.email}</small>
-                  </div>
-                  <div>
-                    <span>Tổng tiền phạt</span>
-                    <strong>{formatCurrency(selectedFine.amount)}</strong>
-                    <small>{selectedFine.overdueDays} ngày x {formatCurrency(selectedFine.ratePerDay)}</small>
-                  </div>
+              <div className="fine-preview-grid">
+                <div>
+                  <span>Ngày đến hạn</span>
+                  <strong>{formatDate(selectedBorrowDetail?.dueDate)}</strong>
                 </div>
-
-                <dl className="fine-details">
-                  <div><dt>Mã chi tiết mượn</dt><dd>#{selectedFine.borrowDetailId}</dd></div>
-                  <div><dt>Sách</dt><dd>{selectedFine.bookTitle}</dd></div>
-                  <div><dt>Lý do</dt><dd>{selectedFine.reason === 'OVERDUE' ? 'Quá hạn' : selectedFine.reason}</dd></div>
-                  <div><dt>Ngày đến hạn</dt><dd>{formatDate(selectedFine.dueDate)}</dd></div>
-                  <div><dt>Ngày trả/hiện tại</dt><dd>{formatDate(selectedFine.returnDate || getTodayValue())}</dd></div>
-                  <div><dt>Ngày tính phạt</dt><dd>{formatDate(selectedFine.calculatedAt)}</dd></div>
-                  <div><dt>Người thu</dt><dd>{selectedFine.collectedBy || '-'}</dd></div>
-                  <div><dt>Ngày thanh toán</dt><dd>{formatDate(selectedFine.paidAt)}</dd></div>
-                </dl>
-              </>
-            )}
-          </aside>
-        </section>
-
-        <section className="fine-actions">
-          <form
-            ref={calculateActionRef}
-            className="fine-panel fine-action-card"
-            onFocusCapture={() => setActiveAction('calculate')}
-            onSubmit={handleCalculateFine}
-          >
-            <div className="fine-action-title">
-              <Calculator size={21} />
-              <div>
-                <h2>Tính tiền phạt</h2>
-                <p>Tạo mới hoặc cập nhật một phiếu phạt quá hạn cho mỗi chi tiết mượn.</p>
+                <div>
+                  <span>Ngày trả/hiện tại</span>
+                  <strong>{formatDate(selectedBorrowDetail?.returnDate || getTodayValue())}</strong>
+                </div>
+                <div>
+                  <span>Số ngày quá hạn</span>
+                  <strong>{calculatedPreviewDays} ngày</strong>
+                </div>
+                <div>
+                  <span>Tiền phạt dự kiến</span>
+                  <strong>{formatCurrency(calculatedPreviewDays * DAILY_FINE_RATE)}</strong>
+                </div>
               </div>
-            </div>
-            <label>
-              Chi tiết mượn
-              <select
-                value={calculateForm.borrowDetailId}
-                onChange={(event) => setCalculateForm({ borrowDetailId: event.target.value })}
-              >
-                {sampleBorrowDetails.map((item) => (
-                  <option key={item.borrowDetailId} value={item.borrowDetailId}>
-                    #{item.borrowDetailId} - {item.memberName} - {item.bookTitle}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="fine-note">
-              Số tiền phạt trên màn hình này chỉ phục vụ demo quy trình cho thủ thư. Bản chính thức phải tính ở máy chủ.
-            </div>
-            <button type="submit"><Calculator size={17} />Tính phạt quá hạn</button>
-          </form>
 
-          <form
-            ref={collectionActionRef}
-            className="fine-panel fine-action-card"
-            onFocusCapture={() => setActiveAction('collection')}
-            onSubmit={handleRecordCollection}
-          >
-            <div className="fine-action-title">
-              <CreditCard size={21} />
-              <div>
-                <h2>Ghi nhận thu tiền</h2>
-                <p>Ghi nhận khoản thu trực tiếp cho phiếu phạt chưa thanh toán đang chọn.</p>
+              <div className="fine-note">
+                Màn hình này mô phỏng thao tác nghiệp vụ cho thủ thư. Khi nối API thật, tiền phạt phải được tính lại ở backend để đảm bảo traceability.
               </div>
-            </div>
-            <label>
-              Phương thức thanh toán
-              <select
-                value={collectionForm.paymentMethod}
-                onChange={(event) => setCollectionForm((current) => ({ ...current, paymentMethod: event.target.value }))}
-              >
-                <option>Tiền mặt</option>
-                <option>Chuyển khoản</option>
-                <option>Quẹt thẻ tại quầy</option>
-              </select>
-            </label>
-            <label>
-              Ghi chú thu tiền
-              <textarea
-                value={collectionForm.note}
-                onChange={(event) => setCollectionForm((current) => ({ ...current, note: event.target.value }))}
-                maxLength={180}
-                placeholder="Mã biên nhận, ghi chú tại quầy hoặc ghi chú của thủ thư..."
-              />
-            </label>
-            <button type="submit" disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
-              <ClipboardCheck size={17} />Ghi nhận thu tiền
-            </button>
-          </form>
 
-          <div
-            ref={paidActionRef}
-            className="fine-panel fine-action-card"
-            onFocusCapture={() => setActiveAction('paid')}
-          >
-            <div className="fine-action-title">
-              <FileText size={21} />
-              <div>
-                <h2>Đánh dấu đã thanh toán</h2>
-                <p>Hoàn tất phiếu phạt đang chọn và chuyển trạng thái sang đã thanh toán.</p>
+              <button type="submit"><Calculator size={17} />Tính phạt quá hạn</button>
+            </form>
+
+            <div className="fine-panel fine-guide-panel">
+              <h2>Quy trình đề xuất</h2>
+              <ol>
+                <li>Chọn chi tiết mượn đã quá hạn.</li>
+                <li>Kiểm tra ngày đến hạn, ngày trả và số ngày quá hạn.</li>
+                <li>Tạo phiếu phạt rồi quay về danh sách để xử lý thu tiền.</li>
+              </ol>
+            </div>
+          </section>
+        )}
+
+        {activeSection === 'collection' && (
+          <section className="fine-section-layout">
+            <form className="fine-panel fine-form-panel" onSubmit={handleRecordCollection}>
+              <div className="fine-panel-head">
+                <div>
+                  <p>Thu tiền tại quầy</p>
+                  <h2>Ghi nhận thu tiền</h2>
+                </div>
+                <CreditCard size={24} />
               </div>
+
+              <label>
+                Phiếu phạt cần thu
+                <select value={selectedFine?.fineId || ''} onChange={(event) => setSelectedFineId(Number(event.target.value))}>
+                  {unpaidFines.map((fine) => (
+                    <option key={fine.fineId} value={fine.fineId}>
+                      #{fine.fineId} - {fine.memberName} - {formatCurrency(fine.amount)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {unpaidFines.length === 0 && <EmptyState message="Không còn phiếu phạt chưa thanh toán để ghi nhận thu tiền." />}
+
+              <label>
+                Phương thức thanh toán
+                <select
+                  value={collectionForm.paymentMethod}
+                  onChange={(event) => setCollectionForm((current) => ({ ...current, paymentMethod: event.target.value }))}
+                >
+                  <option>Tiền mặt</option>
+                  <option>{BANK_TRANSFER_METHOD}</option>
+                  <option>Quẹt thẻ tại quầy</option>
+                </select>
+              </label>
+
+              {isBankTransfer && (
+                <div className="fine-transfer-card">
+                  <div className="fine-transfer-head">
+                    <Banknote size={20} />
+                    <div>
+                      <strong>Thông tin chuyển khoản</strong>
+                      <span>Yêu cầu khách chuyển đúng số tiền và nội dung để thủ thư đối soát.</span>
+                    </div>
+                  </div>
+
+                  <div className="fine-transfer-grid">
+                    <div>
+                      <span>Ngân hàng nhận</span>
+                      <strong>{libraryBankAccount.bankName}</strong>
+                    </div>
+                    <div>
+                      <span>Số tài khoản</span>
+                      <strong>{libraryBankAccount.accountNumber}</strong>
+                    </div>
+                    <div>
+                      <span>Chủ tài khoản</span>
+                      <strong>{libraryBankAccount.accountName}</strong>
+                    </div>
+                    <div>
+                      <span>Số tiền</span>
+                      <strong>{selectedFine ? formatCurrency(selectedFine.amount) : '-'}</strong>
+                    </div>
+                  </div>
+
+                  <div className="fine-copy-line">
+                    <span>Nội dung chuyển khoản</span>
+                    <strong>{transferContent}</strong>
+                  </div>
+
+                  <label>
+                    Ngân hàng khách đã chuyển
+                    <input
+                      value={collectionForm.transferBank}
+                      onChange={(event) => setCollectionForm((current) => ({ ...current, transferBank: event.target.value }))}
+                      placeholder="Ví dụ: VietinBank, MB Bank, Techcombank..."
+                    />
+                  </label>
+
+                  <label>
+                    Mã giao dịch chuyển khoản
+                    <input
+                      value={collectionForm.transferCode}
+                      onChange={(event) => setCollectionForm((current) => ({ ...current, transferCode: event.target.value.trim().toUpperCase() }))}
+                      placeholder="Ví dụ: FT2523456789"
+                    />
+                  </label>
+                </div>
+              )}
+
+              <label>
+                Ghi chú thu tiền
+                <textarea
+                  value={collectionForm.note}
+                  onChange={(event) => setCollectionForm((current) => ({ ...current, note: event.target.value }))}
+                  maxLength={180}
+                  placeholder="Mã biên nhận, ghi chú tại quầy hoặc ghi chú của thủ thư..."
+                />
+              </label>
+
+              <button type="submit" disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
+                <ClipboardCheck size={17} />Ghi nhận thu tiền
+              </button>
+            </form>
+
+            <FineDetailPanel selectedFine={selectedFine} compact />
+          </section>
+        )}
+
+        {activeSection === 'paid' && (
+          <section className="fine-section-layout">
+            <div className="fine-panel fine-form-panel">
+              <div className="fine-panel-head">
+                <div>
+                  <p>Hoàn tất phiếu phạt</p>
+                  <h2>Đánh dấu đã thanh toán</h2>
+                </div>
+                <FileText size={24} />
+              </div>
+
+              <label>
+                Phiếu phạt cần tất toán
+                <select value={selectedFine?.fineId || ''} onChange={(event) => setSelectedFineId(Number(event.target.value))}>
+                  {fines.map((fine) => (
+                    <option key={fine.fineId} value={fine.fineId}>
+                      #{fine.fineId} - {fine.memberName} - {statusLabels[fine.status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="fine-paid-preview">
+                <span>Phiếu đang chọn</span>
+                <strong>{selectedFine ? `#${selectedFine.fineId}` : '-'}</strong>
+                <span>Số tiền cần tất toán</span>
+                <strong>{selectedFine ? formatCurrency(selectedFine.amount) : '-'}</strong>
+                <span>Trạng thái hiện tại</span>
+                <strong>{selectedFine ? statusLabels[selectedFine.status] : '-'}</strong>
+              </div>
+
+              <button onClick={handleMarkPaid} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
+                <Check size={17} />Đánh dấu đã thanh toán
+              </button>
             </div>
-            <div className="fine-paid-preview">
-              <span>Phiếu đang chọn</span>
-              <strong>{selectedFine ? `#${selectedFine.fineId}` : '-'}</strong>
-              <span>Số tiền cần tất toán</span>
-              <strong>{selectedFine ? formatCurrency(selectedFine.amount) : '-'}</strong>
+
+            <div className="fine-panel fine-guide-panel">
+              <h2>Lưu ý trước khi tất toán</h2>
+              <ol>
+                <li>Chỉ tất toán phiếu đã thu đủ tiền hoặc được xác nhận thanh toán.</li>
+                <li>Nếu chưa ghi nhận thu tiền, hệ thống sẽ tự ghi nhận theo phương thức đang chọn.</li>
+                <li>Phiếu đã thanh toán không thể bấm lại trong giao diện này.</li>
+              </ol>
             </div>
-            <button onClick={handleMarkPaid} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
-              <Check size={17} />Đánh dấu đã thanh toán
-            </button>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
 
       <style>{`
         .fine-shell { min-height: 100vh; background: #f6f7fb; color: #17202a; display: flex; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .fine-sidebar { width: 260px; background: #17202a; color: #edf2f7; padding: 22px 16px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; }
+        .fine-sidebar { width: 284px; background: #17202a; color: #edf2f7; padding: 22px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; }
         .fine-brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px; }
         .fine-brand-mark { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; background: #0f766e; color: #fff; }
         .fine-brand strong, .fine-brand span { display: block; }
         .fine-brand strong { font-size: 17px; }
         .fine-brand span { color: #94a3b8; font-size: 12px; margin-top: 3px; }
-        .fine-nav, .fine-nav-section, .fine-session { display: flex; flex-direction: column; gap: 8px; }
-        .fine-nav-section { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .fine-nav-section > span { color: #94a3b8; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px 2px; }
-        .fine-nav button, .fine-nav-section button, .fine-session button { min-height: 42px; border-radius: 8px; border: 0; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-size: 15px; text-align: left; }
-        .fine-nav button:hover, .fine-nav-section button:hover, .fine-session button:hover, .fine-nav button.active, .fine-nav-section button.active { background: #243244; color: #fff; }
+        .fine-workflow-nav, .fine-app-nav, .fine-session { display: flex; flex-direction: column; gap: 8px; }
+        .fine-workflow-nav > span, .fine-app-nav > span { color: #94a3b8; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px 2px; }
+        .fine-workflow-nav button, .fine-app-nav button, .fine-session button { min-height: 44px; border-radius: 8px; border: 0; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-size: 14px; text-align: left; }
+        .fine-workflow-nav button span { flex: 1; }
+        .fine-workflow-nav button:hover, .fine-app-nav button:hover, .fine-session button:hover, .fine-workflow-nav button.active { background: #243244; color: #fff; }
+        .fine-workflow-nav button.active { box-shadow: inset 3px 0 0 #2dd4bf; }
+        .fine-app-nav { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session span { color: #94a3b8; font-size: 12px; }
         .fine-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
         .fine-main { flex: 1; padding: 28px; min-width: 0; }
         .fine-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
         .fine-header p, .fine-panel-head p { color: #0f766e; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
-        .fine-header h1, .fine-panel-head h2, .fine-action-title h2 { margin: 0; color: #111827; letter-spacing: 0; }
+        .fine-header h1, .fine-panel-head h2, .fine-guide-panel h2 { margin: 0; color: #111827; letter-spacing: 0; }
         .fine-header h1 { font-size: 32px; line-height: 1.1; }
-        .fine-header span, .fine-action-title p { color: #64748b; font-size: 14px; line-height: 1.55; }
+        .fine-header span { color: #64748b; font-size: 14px; line-height: 1.55; }
         .fine-policy { max-width: 420px; display: flex; gap: 12px; padding: 14px 16px; border: 1px solid #ccfbf1; border-radius: 8px; background: #f0fdfa; color: #0f766e; }
         .fine-policy strong, .fine-policy span { display: block; }
         .fine-policy span { color: #475569; font-size: 13px; margin-top: 3px; }
@@ -729,12 +917,12 @@ export default function FineManagement() {
         .fine-stat.warning div { background: #fef3c7; color: #b45309; }
         .fine-stat.success div { background: #dcfce7; color: #15803d; }
         .fine-stat.neutral div { background: #e0f2fe; color: #0369a1; }
-        .fine-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+        .fine-grid, .fine-section-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
         .fine-panel { padding: 18px; }
         .fine-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
-        .fine-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 12px; margin-bottom: 14px; }
+        .fine-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 12px; margin-bottom: 14px; }
         .fine-search, .fine-select { min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; gap: 9px; padding: 0 12px; color: #64748b; background: #fff; }
-        .fine-search input, .fine-select select, .fine-action-card select, .fine-action-card textarea { width: 100%; border: 0; outline: 0; color: #111827; background: transparent; font: inherit; }
+        .fine-search input, .fine-select select, .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { width: 100%; border: 0; outline: 0; color: #111827; background: transparent; font: inherit; }
         .fine-table-wrap { overflow-x: auto; }
         .fine-table { width: 100%; border-collapse: collapse; min-width: 780px; }
         .fine-table th { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 11px 10px; border-bottom: 1px solid #e2e8f0; }
@@ -743,52 +931,108 @@ export default function FineManagement() {
         .fine-table tr:hover, .fine-table tr.selected { background: #f8fafc; }
         .fine-table td strong, .fine-table td span { display: block; }
         .fine-table td span { color: #64748b; font-size: 12px; margin-top: 3px; }
-        .fine-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+        .fine-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
         .status-unpaid { background: #fee2e2; color: #b91c1c; }
         .status-paid { background: #dcfce7; color: #15803d; }
         .status-waived { background: #e0e7ff; color: #3730a3; }
         .fine-detail-panel { position: sticky; top: 20px; }
         .fine-detail-card { display: grid; gap: 12px; margin-bottom: 16px; }
         .fine-detail-card > div { border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; }
-        .fine-detail-card span, .fine-details dt, .fine-paid-preview span { color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
+        .fine-detail-card span, .fine-details dt, .fine-paid-preview span, .fine-preview-grid span { color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
         .fine-detail-card strong { display: block; margin-top: 5px; color: #111827; font-size: 18px; }
         .fine-detail-card small { color: #64748b; display: block; margin-top: 4px; }
         .fine-details { display: grid; gap: 10px; margin: 0; }
         .fine-details div { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 9px; }
         .fine-details dd { margin: 0; color: #111827; text-align: right; }
-        .fine-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
-        .fine-action-card { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 20px; }
-        .fine-action-title { display: flex; align-items: flex-start; gap: 11px; }
-        .fine-action-title svg { color: #0f766e; margin-top: 3px; }
-        .fine-action-title h2 { font-size: 18px; }
-        .fine-action-title p { margin: 4px 0 0; }
-        .fine-action-card label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 800; }
-        .fine-action-card select, .fine-action-card textarea { border: 1px solid #cbd5e1; border-radius: 8px; padding: 11px 12px; resize: vertical; min-height: 42px; }
-        .fine-action-card textarea { min-height: 78px; }
-        .fine-action-card button { min-height: 42px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .fine-action-card button:hover { background: #115e59; }
-        .fine-action-card button:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .fine-form-panel { display: flex; flex-direction: column; gap: 15px; }
+        .fine-form-panel label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 800; }
+        .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 11px 12px; resize: vertical; min-height: 42px; }
+        .fine-form-panel textarea { min-height: 90px; }
+        .fine-form-panel button { min-height: 44px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .fine-form-panel button:hover { background: #115e59; }
+        .fine-form-panel button:disabled { background: #cbd5e1; cursor: not-allowed; }
         .fine-note { border-radius: 8px; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
-        .fine-paid-preview { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; padding: 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
-        .fine-paid-preview strong { color: #111827; text-align: right; }
-        .fine-toast { position: fixed; right: 24px; bottom: 24px; border: 0; border-radius: 8px; padding: 13px 16px; color: #fff; background: #0f766e; display: flex; align-items: center; gap: 10px; box-shadow: 0 18px 40px rgba(15, 23, 42, .18); cursor: pointer; }
+        .fine-transfer-card { display: grid; gap: 14px; padding: 14px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff; }
+        .fine-transfer-head { display: flex; align-items: flex-start; gap: 10px; color: #1d4ed8; }
+        .fine-transfer-head strong, .fine-transfer-head span { display: block; }
+        .fine-transfer-head span { color: #475569; font-size: 13px; margin-top: 3px; line-height: 1.45; }
+        .fine-transfer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .fine-transfer-grid div, .fine-copy-line { background: #fff; border: 1px solid #dbeafe; border-radius: 8px; padding: 11px 12px; }
+        .fine-transfer-grid span, .fine-copy-line span { display: block; color: #64748b; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+        .fine-transfer-grid strong, .fine-copy-line strong { color: #111827; overflow-wrap: anywhere; }
+        .fine-copy-line strong { color: #1d4ed8; font-size: 16px; }
+        .fine-preview-grid, .fine-paid-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .fine-preview-grid div, .fine-paid-preview { padding: 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
+        .fine-preview-grid strong, .fine-paid-preview strong { display: block; margin-top: 5px; color: #111827; }
+        .fine-paid-preview { grid-template-columns: 1fr auto; }
+        .fine-paid-preview strong { text-align: right; margin-top: 0; }
+        .fine-guide-panel h2 { font-size: 20px; margin-bottom: 14px; }
+        .fine-guide-panel ol { margin: 0; padding-left: 20px; color: #475569; line-height: 1.7; }
+        .fine-empty { min-height: 120px; display: grid; place-items: center; gap: 8px; color: #64748b; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 18px; }
+        .fine-toast { position: fixed; right: 24px; bottom: 24px; border: 0; border-radius: 8px; padding: 13px 16px; color: #fff; background: #0f766e; display: flex; align-items: center; gap: 10px; box-shadow: 0 18px 40px rgba(15, 23, 42, .18); cursor: pointer; z-index: 50; }
         .fine-toast.error { background: #b91c1c; }
         @media (max-width: 1180px) {
-          .fine-stats, .fine-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .fine-grid { grid-template-columns: 1fr; }
+          .fine-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .fine-grid, .fine-section-layout { grid-template-columns: 1fr; }
           .fine-detail-panel { position: static; }
         }
         @media (max-width: 820px) {
           .fine-shell { flex-direction: column; }
           .fine-sidebar { width: 100%; height: auto; position: static; }
-          .fine-nav, .fine-nav-section, .fine-session { flex-direction: row; flex-wrap: wrap; }
-          .fine-nav-section { width: 100%; }
-          .fine-nav-section > span { width: 100%; }
+          .fine-workflow-nav, .fine-app-nav, .fine-session { flex-direction: row; flex-wrap: wrap; }
+          .fine-workflow-nav > span, .fine-app-nav > span { width: 100%; }
           .fine-main { padding: 18px; }
           .fine-header { flex-direction: column; }
-          .fine-stats, .fine-actions, .fine-toolbar { grid-template-columns: 1fr; }
+          .fine-stats, .fine-toolbar, .fine-preview-grid, .fine-transfer-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>
+  );
+}
+
+function FineDetailPanel({ selectedFine, compact = false }) {
+  return (
+    <aside className={`fine-panel fine-detail-panel ${compact ? 'compact' : ''}`}>
+      <div className="fine-panel-head">
+        <div>
+          <p>Phiếu đang chọn</p>
+          <h2>{selectedFine ? `Phiếu phạt #${selectedFine.fineId}` : 'Chưa chọn phiếu'}</h2>
+        </div>
+        <ReceiptText size={22} />
+      </div>
+
+      {!selectedFine ? (
+        <EmptyState message="Chọn một phiếu phạt để xem chi tiết." />
+      ) : (
+        <>
+          <div className="fine-detail-card">
+            <div>
+              <span>Thành viên</span>
+              <strong>{selectedFine.memberName}</strong>
+              <small>{selectedFine.email}</small>
+            </div>
+            <div>
+              <span>Tổng tiền phạt</span>
+              <strong>{formatCurrency(selectedFine.amount)}</strong>
+              <small>{selectedFine.overdueDays} ngày x {formatCurrency(selectedFine.ratePerDay)}</small>
+            </div>
+          </div>
+
+          <dl className="fine-details">
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={selectedFine.status} /></dd></div>
+            <div><dt>Mã chi tiết mượn</dt><dd>#{selectedFine.borrowDetailId}</dd></div>
+            <div><dt>Sách</dt><dd>{selectedFine.bookTitle}</dd></div>
+            <div><dt>Lý do</dt><dd>{selectedFine.reason === 'OVERDUE' ? 'Quá hạn' : selectedFine.reason}</dd></div>
+            <div><dt>Ngày đến hạn</dt><dd>{formatDate(selectedFine.dueDate)}</dd></div>
+            <div><dt>Ngày trả/hiện tại</dt><dd>{formatDate(selectedFine.returnDate || getTodayValue())}</dd></div>
+            <div><dt>Ngày tính phạt</dt><dd>{formatDate(selectedFine.calculatedAt)}</dd></div>
+            <div><dt>Phương thức thu</dt><dd>{selectedFine.paymentMethod || '-'}</dd></div>
+            <div><dt>Người thu</dt><dd>{selectedFine.collectedBy || '-'}</dd></div>
+            <div><dt>Ngày thanh toán</dt><dd>{formatDate(selectedFine.paidAt)}</dd></div>
+            <div><dt>Ghi chú thu tiền</dt><dd>{selectedFine.collectionNote || '-'}</dd></div>
+          </dl>
+        </>
+      )}
+    </aside>
   );
 }
