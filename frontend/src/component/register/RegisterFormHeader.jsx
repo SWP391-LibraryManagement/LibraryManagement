@@ -7,11 +7,11 @@ export default function RegisterFormHeader() {
       <div className="icon-wrapper">
         <MenuBook sx={{ fontSize: 48, color: '#8B4513' }} />
       </div>
-      <Typography variant="h4" component="h1" className="register-title">
-        Create Your Library Account
+      <Typography variant="h4" component="h1" className="register-title" sx={{ color: '#5d3a1a' }}>
+        Tạo Tài Khoản Thư Viện
       </Typography>
       <Typography variant="body1" className="register-subtitle">
-        Join the Library Management System
+        Tham gia Hệ thống Quản lý Thư viện
       </Typography>
     </Box>
   );

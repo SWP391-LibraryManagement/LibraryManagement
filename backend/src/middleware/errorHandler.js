@@ -10,6 +10,16 @@ function errorHandler(error, req, res, next) {
   const code = isSafeError ? error.code : 'INTERNAL_ERROR';
   const message = statusCode >= 500 ? 'Internal server error.' : error.message;
 
+  if (statusCode >= 500) {
+    console.error('[api error]', {
+      code,
+      method: req.method,
+      path: req.originalUrl,
+      message: error.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
+    });
+  }
+
   const payload = {
     error: {
       code,

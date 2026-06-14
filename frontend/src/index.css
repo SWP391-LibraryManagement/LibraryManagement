@@ -53,26 +53,11 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  margin: 0;
+  text-align: initial;
+  border: 0;
   display: block;
-}
-
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-button {
-  transition: 0.2s ease;
-}
-
-button:hover {
-  opacity: 0.92;
-}
-
-img {
-  max-width: 100%;
+  box-sizing: border-box;
 }
 
 h1,
