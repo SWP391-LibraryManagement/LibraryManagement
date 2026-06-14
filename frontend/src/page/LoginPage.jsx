@@ -26,6 +26,10 @@ export default function LoginPage() {
     try {
       const result = await loginAccount({ email, password });
       const storage = rememberMe ? localStorage : sessionStorage;
+      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      otherStorage.removeItem('accessToken');
+      otherStorage.removeItem('refreshToken');
+      otherStorage.removeItem('authUser');
       storage.setItem('accessToken', result.accessToken);
       storage.setItem('refreshToken', result.refreshToken);
       storage.setItem('authUser', JSON.stringify({

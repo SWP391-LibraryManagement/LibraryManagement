@@ -63,15 +63,19 @@ function createAuthService({
       return;
     }
 
-    await auditLogRepository.create({
-      userId: extra.userId ?? context?.userId ?? null,
-      action,
-      targetType: extra.targetType || 'USER',
-      targetId: extra.targetId ?? null,
-      metadata: extra.metadata || null,
-      ipAddress: context?.ip || null,
-      userAgent: context?.userAgent || null,
-    });
+    try {
+      await auditLogRepository.create({
+        userId: extra.userId ?? context?.userId ?? null,
+        action,
+        targetType: extra.targetType || 'USER',
+        targetId: extra.targetId ?? null,
+        metadata: extra.metadata || null,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+      });
+    } catch (error) {
+      console.error(`[auth audit] Failed to write ${action}:`, error.message);
+    }
   }
 
   async function createStoredToken(userId, tokenType, expiresAt, context = {}) {

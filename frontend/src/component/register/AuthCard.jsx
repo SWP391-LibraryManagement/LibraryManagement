@@ -5,9 +5,12 @@ import { LocalLibrary } from '@mui/icons-material';
 import RegisterFormHeader from './RegisterFormHeader';
 import FormInput from './FormInput';
 import PasswordInput from './PasswordInput';
-import { registerAccount } from '../../api/authApi';
 
-export default function AuthCard() {
+export default function AuthCard({
+  onSubmit,
+  feedback,
+  isSubmitting = false,
+}) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,32 +18,22 @@ export default function AuthCard() {
     password: '',
     confirmPassword: '',
   });
-  const [feedback, setFeedback] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setFeedback(null);
 
-    if (formData.password !== formData.confirmPassword) {
-      setFeedback({ severity: 'error', message: 'Xác nhận mật khẩu phải trùng khớp với mật khẩu.' });
+    if (!onSubmit) {
       return;
     }
 
-    setIsSubmitting(true);
+    const success = await onSubmit(formData);
 
-    try {
-      const result = await registerAccount(formData);
-      setFeedback({ severity: 'success', message: result.message || 'Thư xác thực đã được gửi.' });
+    if (success) {
       setFormData((current) => ({
         ...current,
         password: '',
         confirmPassword: '',
       }));
-    } catch (error) {
-      setFeedback({ severity: 'error', message: error.message });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -95,14 +88,16 @@ export default function AuthCard() {
               {isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
             </Button>
 
-            {/* Link back to Login */}
             <div className="register-section">
               <span className="register-text">
                 Đã có tài khoản?{' '}
                 <a
                   href="#"
                   className="register-link"
-                  onClick={(e) => { e.preventDefault(); navigate('/login'); }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate('/login');
+                  }}
                 >
                   Đăng nhập
                 </a>
