@@ -26,3 +26,8 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+
+## 2026-06-15
+
+- Updated FE11 create-account behavior so admin-created member and librarian accounts are created with `ACTIVE` status immediately.
+- Kept password setup as a separate FE02 flow; admin still does not enter or view user passwords.

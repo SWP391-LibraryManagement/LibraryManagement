@@ -245,7 +245,7 @@ function createUserManagementService({
     });
 
     const response = await userRepository.getManagedUserById(createdUser.userId);
-    response.message = 'Account created. Password setup email queued.';
+    response.message = 'Active account created. Password setup email queued.';
 
     if (exposeDebugTokens) {
       response.debugSetupToken = setupToken;
