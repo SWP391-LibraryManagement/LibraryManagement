@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash, Clock, ChevronLeft } from 'lucide-react';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
@@ -853,6 +854,7 @@ const BookDetailsModal = ({ book, isLoggedIn, onClose, onBack, onBorrow, onSignI
 );
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
@@ -881,6 +883,15 @@ const HomePage = () => {
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const goToLogin = () => {
+    navigate('/login');
+  };
+
+  const goToRegister = () => {
+    navigate('/register');
+  };
+
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
@@ -1055,7 +1066,7 @@ const HomePage = () => {
             </div>
           ) : (
             <>
-              <button style={{
+              <button onClick={goToLogin} style={{
                 padding: '7px 18px', borderRadius: 6, border: '1.5px solid #8B6B4A',
                 background: 'transparent', color: '#8B6B4A', cursor: 'pointer', fontWeight: 600, fontSize: 13,
                 transition: 'all 0.2s',
@@ -1063,7 +1074,7 @@ const HomePage = () => {
                 onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
               >Đăng nhập</button>
-              <button style={{
+              <button onClick={goToRegister} style={{
                 padding: '7px 18px', borderRadius: 6, border: 'none',
                 background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 600, fontSize: 13,
                 transition: 'background 0.2s',
@@ -1165,7 +1176,7 @@ const HomePage = () => {
               <span style={{ fontSize: 13, color: '#7A5C44' }}>
                 👋 Bạn đang duyệt với tư cách <strong>khách</strong>. Hãy đăng nhập để mượn sách.
               </span>
-              <button onClick={() => setIsLoggedIn(true)} style={{
+              <button onClick={goToLogin} style={{
                 padding: '7px 18px', borderRadius: 6, border: 'none', background: '#C78A3B',
                 color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'Lato, sans-serif',
               }}>Đăng nhập</button>
@@ -1245,7 +1256,7 @@ const HomePage = () => {
                         </button>
                       )
                     ) : (
-                      <button onClick={e => { e.stopPropagation(); setIsLoggedIn(true); }}
+                      <button onClick={e => { e.stopPropagation(); goToLogin(); }}
                         style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: 'transparent', color: '#C78A3B', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#C78A3B'; e.currentTarget.style.color = '#FFF'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C78A3B'; }}
@@ -1365,7 +1376,7 @@ const HomePage = () => {
               Tham gia cùng cộng đồng độc giả để mượn, khám phá và kết nối với những tác phẩm giá trị trong cùng một hệ thống.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button style={{
+              <button onClick={goToRegister} style={{
                 padding: '13px 28px', borderRadius: 8, border: 'none',
                 background: '#4E342E', color: '#FAF7F2', cursor: 'pointer',
                 fontWeight: 700, fontSize: 14, transition: 'background 0.2s',
@@ -1429,10 +1440,10 @@ const HomePage = () => {
                 { label: 'Bộ sưu tập số', action: () => showToast('Bộ sưu tập số sẽ sớm ra mắt!') },
               ]},
               { title: 'Tài khoản', links: [
-                { label: 'Đăng nhập', action: () => {} },
-                { label: 'Đăng ký', action: () => {} },
-                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : setIsLoggedIn(true) },
-                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : setIsLoggedIn(true) },
+                { label: 'Đăng nhập', action: goToLogin },
+                { label: 'Đăng ký', action: goToRegister },
+                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : goToLogin() },
+                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : goToLogin() },
               ]},
               { title: 'Hỗ trợ', links: [
                 { label: 'Trung tâm trợ giúp', action: () => showToast('Trung tâm trợ giúp sẽ sớm ra mắt!') },
@@ -1481,7 +1492,7 @@ const HomePage = () => {
           onClose={() => setSelectedBook(null)}
           onViewDetails={() => setShowDetails(true)}
           onBorrow={() => setShowBorrow(true)}
-          onSignIn={() => setIsLoggedIn(true)}
+          onSignIn={goToLogin}
         />
       )}
 
@@ -1502,7 +1513,7 @@ const HomePage = () => {
           onClose={() => { setSelectedBook(null); setShowDetails(false); }}
           onBack={() => setShowDetails(false)}
           onBorrow={() => { setShowDetails(false); setShowBorrow(true); }}
-          onSignIn={() => { setIsLoggedIn(true); showToast('Đã đăng nhập! Bạn có thể mượn sách ngay bây giờ.'); }}
+          onSignIn={goToLogin}
           onReadingList={() => showToast(`Đã thêm "${selectedBook.title}" vào danh sách đọc!`)}
         />
       )}
