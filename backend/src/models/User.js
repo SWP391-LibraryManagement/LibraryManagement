@@ -1,54 +1,56 @@
-// models/user.model.js
+const defineModel = require('./defineModel');
 
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-
-const User = sequelize.define('User', {
-    UserId: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+module.exports = defineModel({
+  tableName: 'Users',
+  primaryKey: 'userId',
+  columns: [
+    {
+      attribute: 'userId',
+      name: 'UserId',
     },
-    Username: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-        unique: true
+    {
+      attribute: 'username',
+      name: 'Username',
     },
-    Email: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: true
+    {
+      attribute: 'email',
+      name: 'Email',
     },
-    PasswordHash: {
-        type: DataTypes.STRING(255),
-        allowNull: false
+    {
+      attribute: 'passwordHash',
+      name: 'PasswordHash',
     },
-    Phone: {
-        type: DataTypes.STRING(20)
+    {
+      attribute: 'phone',
+      name: 'Phone',
     },
-    Status: {
-        type: DataTypes.ENUM(
-            'ACTIVE',
-            'INACTIVE',
-            'LOCKED'
-        ),
-        defaultValue: 'ACTIVE'
+    {
+      attribute: 'status',
+      name: 'Status',
     },
-    EmailVerifiedAt: DataTypes.DATE,
-    FailedLoginCount: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+    {
+      attribute: 'emailVerifiedAt',
+      name: 'EmailVerifiedAt',
     },
-    LockedUntil: DataTypes.DATE,
-    LastLoginAt: DataTypes.DATE,
-    CreatedAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+    {
+      attribute: 'failedLoginCount',
+      name: 'FailedLoginCount',
     },
-    UpdatedAt: DataTypes.DATE
-}, {
-    tableName: 'Users',
-    timestamps: false
+    {
+      attribute: 'lockedUntil',
+      name: 'LockedUntil',
+    },
+    {
+      attribute: 'lastLoginAt',
+      name: 'LastLoginAt',
+    },
+    {
+      attribute: 'createdAt',
+      name: 'CreatedAt',
+    },
+    {
+      attribute: 'updatedAt',
+      name: 'UpdatedAt',
+    },
+  ],
 });
-
-module.exports = User;
