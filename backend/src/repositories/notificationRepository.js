@@ -151,7 +151,7 @@ async function createNotification({
   const template = await findTemplateByCode(templateCode);
 
   if (!template) {
-    return null;
+    return 0;
   }
 
   const pool = await getPool();

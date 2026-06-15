@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "create-admin": "node scripts/createAdmin.js",
     "test": "jest --runInBand"
   },
   "keywords": [],
