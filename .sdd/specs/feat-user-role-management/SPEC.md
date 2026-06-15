@@ -101,10 +101,10 @@ The feature can only start when:
 2. Admin selects user type: Member or another non-librarian user type approved by the team.
 3. Admin enters required fields: email, full name, phone (optional), address (optional).
 4. The system validates email format and checks for duplicate email.
-5. The system creates a new user record with status `INACTIVE`, assigns Member role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
+5. The system creates a new user record with status `ACTIVE`, assigns Member role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
 6. The system generates a one-time password setup token (valid for 24 hours).
 7. The system sends a password setup link to the user's email via the notification system (FE02/FE10).
-8. The user cannot login until the password setup link is completed through FE02.
+8. The user account is visible as active immediately; password-based login requires the user to complete password setup through FE02.
 9. The system writes an audit log entry.
 10. The system shows success message and displays the new user ID.
 
@@ -136,10 +136,10 @@ The feature can only start when:
 2. Admin selects user type: Librarian.
 3. Admin enters required fields: email, full name, department (optional), specialization (optional).
 4. The system validates email format and checks for duplicate email.
-5. The system creates a new user record with status `INACTIVE`, assigns Librarian role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
+5. The system creates a new user record with status `ACTIVE`, assigns Librarian role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
 6. The system generates a one-time password setup token (valid for 24 hours).
 7. The system sends a password setup link to the user's email via the notification system (FE02/FE10).
-8. The user cannot login until the password setup link is completed through FE02.
+8. The librarian account is visible as active immediately; password-based login requires the user to complete password setup through FE02.
 9. The system writes an audit log entry.
 10. The system shows success message.
 
@@ -210,7 +210,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-002: Only authenticated Admin users can create new users.
 - BR-FE11-003: Users cannot be permanently deleted; only deactivated (set to INACTIVE status).
 - BR-FE11-004: Each user must have a unique email address in the system.
-- BR-FE11-005: When an admin creates a user, the account must start in `INACTIVE` setup state and must not be login-capable until the user completes password setup through FE02.
+- BR-FE11-005: When an admin creates a user, the account must start with `ACTIVE` status while password-based login remains unavailable until the user completes password setup through FE02.
 - BR-FE11-006: When a user account is deactivated, all active sessions/tokens for that user must be invalidated.
 - BR-FE11-007: Every user must have at least one role assigned (Member, Librarian, or Admin).
 - BR-FE11-008: A user can have multiple roles assigned simultaneously (e.g., Librarian and Admin).
@@ -228,13 +228,13 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE11-001: When admin opens user list, the system shall display all users with pagination and support for filtering/searching.
 - FR-FE11-002: When admin views user details, the system shall display all user information and related data.
-- FR-FE11-003: When admin creates a new user account with valid data, the system shall create an `INACTIVE` user record with the selected approved role and send a password setup link.
+- FR-FE11-003: When admin creates a new user account with valid data, the system shall create an `ACTIVE` user record with the selected approved role and send a password setup link.
 - FR-FE11-004: When admin updates user information, the system shall validate email uniqueness before updating.
 - FR-FE11-005: When admin submits a create user form with duplicate email, the system shall reject the request with clear error message.
 - FR-FE11-006: The system shall never require admin to enter a password when creating users; password setup must happen through a one-time FE02 token flow.
 - FR-FE11-007: When admin updates user information, the system shall update the UpdatedAt timestamp.
 - FR-FE11-008: When admin deactivates a user account, the system shall set status to INACTIVE and invalidate active sessions.
-- FR-FE11-009: When admin creates a new librarian account with valid data, the system shall create an `INACTIVE` user record with Librarian role and send a password setup link.
+- FR-FE11-009: When admin creates a new librarian account with valid data, the system shall create an `ACTIVE` user record with Librarian role and send a password setup link.
 - FR-FE11-010: When admin updates librarian account information, the system shall validate and save librarian-specific fields such as department and specialization.
 - FR-FE11-011: When admin deactivates a librarian account, the system shall set status to INACTIVE and invalidate active sessions.
 - FR-FE11-012: When admin assigns a role to a user, the system shall create an entry in UserRoles table.
@@ -247,14 +247,14 @@ Use these stable IDs for tasks and tests.
 
 - AC-FE11-001: Given admin access, when viewing user list, then system displays paginated list with filtering and search.
 - AC-FE11-002: Given admin access, when viewing a user detail page, then all user information is displayed.
-- AC-FE11-003: Given valid user data, when admin creates new user account, then an inactive user record is created with an approved role and setup link is sent.
+- AC-FE11-003: Given valid user data, when admin creates new user account, then an active user record is created with an approved role and setup link is sent.
 - AC-FE11-004: Given existing user, when admin updates user information, then changes are saved and UpdatedAt is updated.
 - AC-FE11-005: Given duplicate email, when admin creates new user, then system rejects with error message.
-- AC-FE11-006: Given admin creates new member or librarian, then NO password field is required or shown and the account cannot login until setup is completed.
+- AC-FE11-006: Given admin creates new member or librarian, then NO password field is required or shown and password-based login is unavailable until setup is completed.
 - AC-FE11-007: Given active user, when admin deactivates account, then status changes to INACTIVE.
 - AC-FE11-008: Given duplicate email in update, when admin updates user, then system rejects the update.
 - AC-FE11-009: Given user with active session, when admin deactivates account, then session is invalidated.
-- AC-FE11-010: Given valid librarian data, when admin creates new librarian account, then an inactive user record is created with Librarian role and setup link is sent.
+- AC-FE11-010: Given valid librarian data, when admin creates new librarian account, then an active user record is created with Librarian role and setup link is sent.
 - AC-FE11-011: Given existing librarian account, when admin updates librarian information, then changes are saved and UpdatedAt is updated.
 - AC-FE11-012: Given active librarian account, when admin deactivates librarian account, then status changes to INACTIVE and active sessions are invalidated.
 - AC-FE11-013: Given user without Admin role, when admin assigns Admin role, then UserRoles table is updated.
@@ -329,7 +329,7 @@ Use these stable IDs for tasks and tests.
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/users` | Admin | Query: page, limit, status, role, search | List of users with pagination | Supports filtering and search. |
 | GET | `/api/users/{userId}` | Admin | - | User detail information | Includes roles and related data. |
-| POST | `/api/users` | Admin | `{ email: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | Created inactive user with ID and setup link sent to email | Creates new user without admin-entered password; sends password setup link to email via FE02/FE10. |
+| POST | `/api/users` | Admin | `{ email: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | Created active user with ID and setup link sent to email | Creates new user without admin-entered password; sends password setup link to email via FE02/FE10. |
 | PUT | `/api/users/{userId}` | Admin | `{ fullName?: string, phone?: string, address?: string, department?: string }` | Updated user | Updates user information. |
 | PATCH | `/api/users/{userId}/status` | Admin | `{ status: "INACTIVE" }` | Updated user status | Deactivate user or librarian account. |
 | POST | `/api/users/{userId}/roles` | Admin | `{ roleId: number }` | User with updated roles | Assign role to user. |
@@ -444,14 +444,14 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
 | AC-FE11-001 | Admin accesses user list -> system displays paginated list with filtering and search | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FT50 | Not Started |
 | AC-FE11-002 | Admin accesses user detail page -> all user information displayed | FR-FE11-002 | BR-FE11-001, BR-FE11-010 | FT51 | Not Started |
-| AC-FE11-003 | Valid user data submitted by admin -> inactive user record created with approved role and setup link sent | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007 | FT52 | Not Started |
+| AC-FE11-003 | Valid user data submitted by admin -> active user record created with approved role and setup link sent | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007 | FT52 | Not Started |
 | AC-FE11-004 | Admin updates user information -> changes saved, UpdatedAt timestamp updated | FR-FE11-004, FR-FE11-007 | BR-FE11-010, BR-FE11-014 | FT53 | Not Started |
 | AC-FE11-005 | Duplicate email submitted when creating user -> system rejects with error message | FR-FE11-005 | BR-FE11-004 | FT52 | Not Started |
-| AC-FE11-006 | Admin creates new user -> no password field required or shown; account cannot login until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013 | FT52, FT55 | Not Started |
+| AC-FE11-006 | Admin creates new user -> no password field required or shown; password-based login unavailable until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013 | FT52, FT55 | Not Started |
 | AC-FE11-007 | Active user deactivated by admin -> status changes to INACTIVE | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | FT54 | Not Started |
 | AC-FE11-008 | Admin updates user email to duplicate -> system rejects the update | FR-FE11-004 | BR-FE11-004 | FT53 | Not Started |
 | AC-FE11-009 | User with active session deactivated by admin -> session invalidated | FR-FE11-008 | BR-FE11-006 | FT54 | Not Started |
-| AC-FE11-010 | Valid librarian data submitted by admin -> inactive user record created with Librarian role and setup link sent | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015 | FT55 | Not Started |
+| AC-FE11-010 | Valid librarian data submitted by admin -> active user record created with Librarian role and setup link sent | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015 | FT55 | Not Started |
 | AC-FE11-011 | Admin updates librarian information -> changes saved, UpdatedAt timestamp updated | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015 | FT56 | Not Started |
 | AC-FE11-012 | Active librarian account deactivated by admin -> status changes to INACTIVE and sessions are invalidated | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | FT57 | Not Started |
 | AC-FE11-013 | User without Admin role receives Admin role assignment -> UserRoles updated | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FT58 | Not Started |

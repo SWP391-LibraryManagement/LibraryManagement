@@ -33,11 +33,11 @@ export default function AuthCard(props) {
 
           {/* Title and Subtitle */}
           <h2 className="login-title">
-            Library Management System
+            Hệ thống Quản lý Thư viện
           </h2>
 
           <p className="login-subtitle">
-            Welcome back, sign in to continue.
+            Chào mừng quay trở lại, hãy đăng nhập để tiếp tục.
           </p>
         </div>
 

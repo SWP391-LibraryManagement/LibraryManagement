@@ -48,55 +48,51 @@ export default function LoginForm({
       <TextField
         fullWidth
         label="Email"
-        placeholder="Enter your email"
+        placeholder="Nhập email của bạn"
         variant="outlined"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <Person sx={{ color: '#8b5a2b' }} />
-              </InputAdornment>
-            ),
-          },
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Person sx={{ color: '#8b5a2b' }} />
+            </InputAdornment>
+          ),
         }}
       />
 
       {/* Password Field */}
       <TextField
         fullWidth
-        label="Password"
-        placeholder="Enter your password"
+        label="Mật khẩu"
+        placeholder="Nhập mật khẩu của bạn"
         type={showPassword ? 'text' : 'password'}
         variant="outlined"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <Lock sx={{ color: '#8b5a2b' }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={handleTogglePasswordVisibility}
-                  edge="end"
-                  aria-label="toggle password visibility"
-                >
-                  {showPassword ? (
-                    <VisibilityOff sx={{ color: '#8b5a2b' }} />
-                  ) : (
-                    <Visibility sx={{ color: '#8b5a2b' }} />
-                  )}
-                </IconButton>
-              </InputAdornment>
-            ),
-          },
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Lock sx={{ color: '#8b5a2b' }} />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={handleTogglePasswordVisibility}
+                edge="end"
+                aria-label="toggle password visibility"
+              >
+                {showPassword ? (
+                  <VisibilityOff sx={{ color: '#8b5a2b' }} />
+                ) : (
+                  <Visibility sx={{ color: '#8b5a2b' }} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
         }}
       />
 
@@ -123,7 +119,7 @@ export default function LoginForm({
           }
           label={
             <span style={{ color: '#6d4c41', fontSize: '0.875rem' }}>
-              Remember me
+              Ghi nhớ đăng nhập
             </span>
           }
         />
@@ -137,7 +133,7 @@ export default function LoginForm({
             }
           }}
         >
-          Forgot password?
+          Quên mật khẩu?
         </a>
       </div>
 
@@ -147,13 +143,13 @@ export default function LoginForm({
         className="login-button"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Signing in...' : 'Sign In'}
+        {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>
 
       {/* Register Section */}
       <div className="register-section">
         <span className="register-text">
-          Don't have an account?
+          Chưa có tài khoản?{' '}
           <a
             href="#"
             className="register-link"
@@ -164,7 +160,7 @@ export default function LoginForm({
               }
             }}
           >
-            Register
+            Đăng ký
           </a>
         </span>
       </div>
