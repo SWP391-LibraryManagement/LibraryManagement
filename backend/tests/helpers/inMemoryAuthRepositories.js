@@ -86,6 +86,9 @@ function makeInMemoryAuthDependencies() {
       const user = users.find((item) => item.userId === Number(userId));
       user.failedLoginCount = failedLoginCount;
       user.lockedUntil = lockedUntil;
+      if (lockedUntil) {
+        user.status = 'LOCKED';
+      }
       user.updatedAt = new Date();
     },
 
@@ -93,6 +96,9 @@ function makeInMemoryAuthDependencies() {
       const user = users.find((item) => item.userId === Number(userId));
       user.failedLoginCount = 0;
       user.lockedUntil = null;
+      if (user.status === 'LOCKED') {
+        user.status = 'ACTIVE';
+      }
       user.lastLoginAt = new Date();
       user.updatedAt = new Date();
     },
@@ -102,6 +108,9 @@ function makeInMemoryAuthDependencies() {
       user.passwordHash = passwordHash;
       user.failedLoginCount = 0;
       user.lockedUntil = null;
+      if (user.status === 'LOCKED') {
+        user.status = 'ACTIVE';
+      }
       user.updatedAt = new Date();
     },
 

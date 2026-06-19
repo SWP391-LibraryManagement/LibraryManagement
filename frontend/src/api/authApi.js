@@ -35,6 +35,17 @@ export async function registerAccount(payload) {
   }
 }
 
+export async function verifyEmail(token) {
+  try {
+    const response = await api.post('/auth/verify-email', { token });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Email verification failed. Please check your code.'), {
+      cause: error,
+    });
+  }
+}
+
 export async function loginAccount({ email, password }) {
   try {
     const response = await api.post('/auth/login', { email, password });

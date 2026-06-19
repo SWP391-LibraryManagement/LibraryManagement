@@ -67,7 +67,7 @@ function createAuthController(authService = defaultAuthService) {
         const result = await authService.logout(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
-          userId: req.user.userId,
+          userId: req.user?.userId,
         });
         return res.status(200).json(result);
       } catch (error) {

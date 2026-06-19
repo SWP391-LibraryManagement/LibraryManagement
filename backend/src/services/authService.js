@@ -34,11 +34,21 @@ function deriveUsername(email) {
   return `${base}_${suffix}`;
 }
 
+function maskEmail(email) {
+  const [localPart = '', domain = ''] = String(email || '').split('@');
+  const maskedLocal = localPart
+    ? `${localPart.slice(0, 1)}***${localPart.slice(-1)}`
+    : '***';
+
+  return domain ? `${maskedLocal}@${domain}` : maskedLocal;
+}
+
 function createAuthService({
   userRepository,
   authTokenRepository,
   auditLogRepository,
   notificationRepository,
+  emailService,
   clock = () => new Date(),
   exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
@@ -56,6 +66,10 @@ function createAuthService({
 
   if (!notificationRepository) {
     notificationRepository = require('../repositories/notificationRepository');
+  }
+
+  if (!emailService) {
+    emailService = require('./emailService');
   }
 
   async function writeAudit(context, action, extra = {}) {
@@ -107,6 +121,76 @@ function createAuthService({
 
     if (insertedCount === 0) {
       console.warn(`[auth notification] Template ${templateCode} was not found; notification was not queued.`);
+    }
+  }
+
+  async function sendVerificationMessage({ userId, recipientEmail, token }) {
+    try {
+      await createNotification({
+        userId,
+        recipientEmail,
+        templateCode: 'ACCOUNT_VERIFICATION',
+        safePayload: { purpose: 'EMAIL_VERIFY' },
+      });
+    } catch (notifyError) {
+      console.error('[auth notification] Failed to queue verification notification:', notifyError.message);
+    }
+
+    if (!emailService || typeof emailService.sendVerificationEmail !== 'function') {
+      return;
+    }
+
+    try {
+      const result = await emailService.sendVerificationEmail({
+        to: recipientEmail,
+        token,
+        expiresInHours: env.emailVerificationTtlHours,
+      });
+
+      if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
+        console.warn('[auth email] SMTP is not configured; verification email was not sent.');
+      } else if (result && result.sent === true) {
+        console.info(
+          `[auth email] Verification email sent to ${maskEmail(recipientEmail)} (${result.providerMessageId || 'no provider id'}).`
+        );
+      }
+    } catch (emailError) {
+      console.error('[auth email] Failed to send verification email:', emailError.message);
+    }
+  }
+
+  async function sendPasswordResetMessage({ userId, recipientEmail, token }) {
+    try {
+      await createNotification({
+        userId,
+        recipientEmail,
+        templateCode: 'PASSWORD_RESET',
+        safePayload: { purpose: 'PASSWORD_RESET' },
+      });
+    } catch (notifyError) {
+      console.error('[auth notification] Failed to queue password reset notification:', notifyError.message);
+    }
+
+    if (!emailService || typeof emailService.sendPasswordResetEmail !== 'function') {
+      return;
+    }
+
+    try {
+      const result = await emailService.sendPasswordResetEmail({
+        to: recipientEmail,
+        token,
+        expiresInMinutes: env.passwordResetTtlMinutes,
+      });
+
+      if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
+        console.warn('[auth email] SMTP is not configured; password reset email was not sent.');
+      } else if (result && result.sent === true) {
+        console.info(
+          `[auth email] Password reset email sent to ${maskEmail(recipientEmail)} (${result.providerMessageId || 'no provider id'}).`
+        );
+      }
+    } catch (emailError) {
+      console.error('[auth email] Failed to send password reset email:', emailError.message);
     }
   }
 
@@ -192,16 +276,11 @@ function createAuthService({
       context
     );
 
-    try {
-      await createNotification({
-        userId: createdUser.userId,
-        recipientEmail: email,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        safePayload: { purpose: 'EMAIL_VERIFY' },
-      });
-    } catch (notifyError) {
-      console.error('[auth register] Failed to queue verification notification:', notifyError.message);
-    }
+    await sendVerificationMessage({
+      userId: createdUser.userId,
+      recipientEmail: email,
+      token: verificationToken,
+    });
 
     await writeAudit(context, 'AUTH_REGISTER', {
       userId: createdUser.userId,
@@ -259,11 +338,10 @@ function createAuthService({
       );
       verificationToken = storedVerification.token;
 
-      await createNotification({
+      await sendVerificationMessage({
         userId: user.userId,
         recipientEmail: user.email,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        safePayload: { purpose: 'EMAIL_VERIFY' },
+        token: verificationToken,
       });
     }
 
@@ -299,7 +377,19 @@ function createAuthService({
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
-    if (user.lockedUntil && new Date(user.lockedUntil).getTime() > clock().getTime()) {
+    const lockedUntilTime = user.lockedUntil ? new Date(user.lockedUntil).getTime() : null;
+    if (lockedUntilTime && lockedUntilTime > clock().getTime()) {
+      await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
+        userId: user.userId,
+        targetId: user.userId,
+      });
+      throw errors.tooManyRequests(
+        'ACCOUNT_LOCKED',
+        'Account is locked due to too many failed attempts. Please reset your password or contact support.'
+      );
+    }
+
+    if (user.status === 'LOCKED') {
       await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
         userId: user.userId,
         targetId: user.userId,
@@ -460,11 +550,10 @@ function createAuthService({
       );
       resetToken = storedResetToken.token;
 
-      await createNotification({
+      await sendPasswordResetMessage({
         userId: user.userId,
         recipientEmail: user.email,
-        templateCode: 'PASSWORD_RESET',
-        safePayload: { purpose: 'PASSWORD_RESET' },
+        token: resetToken,
       });
     }
 
