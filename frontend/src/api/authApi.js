@@ -35,6 +35,28 @@ export async function registerAccount(payload) {
   }
 }
 
+export async function verifyEmailToken(token) {
+  try {
+    const response = await api.post('/auth/verify-email', { token });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Email verification failed. Please check your OTP.'), {
+      cause: error,
+    });
+  }
+}
+
+export async function resendVerificationEmail(email) {
+  try {
+    const response = await api.post('/auth/resend-verification', { email });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not resend verification email.'), {
+      cause: error,
+    });
+  }
+}
+
 export async function loginAccount({ email, password }) {
   try {
     const response = await api.post('/auth/login', { email, password });
@@ -64,6 +86,25 @@ export async function refreshAccessToken(refreshToken) {
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Session refresh failed.'), {
+      cause: error,
+    });
+  }
+}
+
+export async function verifySession(accessToken) {
+  try {
+    const response = await api.post(
+      '/auth/verify-session',
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Session verification failed.'), {
       cause: error,
     });
   }

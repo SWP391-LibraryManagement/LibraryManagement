@@ -27,6 +27,7 @@ function createAuthRoutes(authService) {
   router.post('/change-password', authenticate, changePasswordValidators, controller.changePassword);
   router.post('/forgot-password', forgotPasswordValidators, controller.forgotPassword);
   router.post('/reset-password', resetPasswordValidators, controller.resetPassword);
+  router.post('/verify-session', authenticate, controller.verifySession);
   router.get('/me', authenticate, controller.me);
 
   return router;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Card, Button, Stack } from '@mui/material';
+import { Alert, Box, Button, Card, Stack, Typography } from '@mui/material';
 import { LocalLibrary } from '@mui/icons-material';
 import RegisterFormHeader from './RegisterFormHeader';
 import FormInput from './FormInput';
@@ -8,10 +8,17 @@ import PasswordInput from './PasswordInput';
 
 export default function AuthCard({
   onSubmit,
+  onVerifyOtp,
+  onResendOtp,
   feedback,
   isSubmitting = false,
+  isVerifying = false,
+  isResending = false,
+  registeredEmail = '',
 }) {
   const navigate = useNavigate();
+  const [step, setStep] = useState('register');
+  const [otp, setOtp] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -35,7 +42,30 @@ export default function AuthCard({
         password: '',
         confirmPassword: '',
       }));
+      setStep('verify');
     }
+  };
+
+  const handleOtpSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!onVerifyOtp) {
+      return;
+    }
+
+    const success = await onVerifyOtp(otp);
+
+    if (success) {
+      setOtp('');
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!onResendOtp) {
+      return;
+    }
+
+    await onResendOtp();
   };
 
   return (
@@ -49,7 +79,8 @@ export default function AuthCard({
           <RegisterFormHeader />
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {step === 'register' ? (
+          <form onSubmit={handleSubmit}>
           <Stack spacing={2.25}>
             <FormInput
               label="Họ và tên"
@@ -112,7 +143,64 @@ export default function AuthCard({
               </span>
             </div>
           </Stack>
-        </form>
+          </form>
+        ) : (
+          <form onSubmit={handleOtpSubmit}>
+            <Stack spacing={2.25}>
+              <Box className="otp-verification-box">
+                <Typography variant="h6" className="otp-title">
+                  Xác thực email
+                </Typography>
+                <Typography variant="body2" className="otp-description">
+                  Nhập mã OTP đã được gửi đến email {registeredEmail ? <strong>{registeredEmail}</strong> : 'của bạn'} để kích hoạt tài khoản.
+                </Typography>
+                <FormInput
+                  label="Mã OTP"
+                  placeholder="Nhập mã OTP từ email"
+                  value={otp}
+                  onChange={setOtp}
+                  required
+                />
+              </Box>
+
+              {feedback?.message && (
+                <Alert severity={feedback.severity || 'info'}>
+                  {feedback.message}
+                </Alert>
+              )}
+
+              <Button type="submit" variant="contained" className="register-submit-btn" disabled={isVerifying}>
+                {isVerifying ? 'Đang xác thực...' : 'Xác thực email'}
+              </Button>
+
+              <Button
+                type="button"
+                variant="text"
+                className="resend-otp-btn"
+                disabled={isResending || isVerifying}
+                onClick={handleResendOtp}
+              >
+                {isResending ? 'Đang gửi lại...' : 'Gửi lại mã OTP'}
+              </Button>
+
+              <div className="register-section">
+                <span className="register-text">
+                  Đã xác thực?{' '}
+                  <a
+                    href="#"
+                    className="register-link"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate('/login');
+                    }}
+                  >
+                    Đăng nhập
+                  </a>
+                </span>
+              </div>
+            </Stack>
+          </form>
+        )}
       </Card>
     </div>
   );

@@ -32,5 +32,12 @@ module.exports = {
   passwordResetTtlMinutes: numberFromEnv('PASSWORD_RESET_TTL_MINUTES', 15),
   maxFailedLoginAttempts: numberFromEnv('MAX_FAILED_LOGIN_ATTEMPTS', 5),
   lockoutMinutes: numberFromEnv('LOGIN_LOCKOUT_MINUTES', 15),
+  appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:5173',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: numberFromEnv('SMTP_PORT', 587),
+  smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPassword: process.env.SMTP_PASSWORD || '',
+  mailFrom: process.env.MAIL_FROM || '',
   requiredEnv,
 };

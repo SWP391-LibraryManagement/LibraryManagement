@@ -7,6 +7,15 @@ function generateRandomToken(byteLength = 32) {
   return crypto.randomBytes(byteLength).toString('base64url');
 }
 
+function generateOtpCode(length = 6) {
+  if (!Number.isInteger(length) || length < 4) {
+    throw new Error('OTP length must be an integer of at least 4 digits.');
+  }
+
+  const max = 10 ** length;
+  return String(crypto.randomInt(0, max)).padStart(length, '0');
+}
+
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -58,6 +67,7 @@ function addDays(date, days) {
 
 module.exports = {
   generateRandomToken,
+  generateOtpCode,
   hashToken,
   signAccessToken,
   verifyAccessToken,

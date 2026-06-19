@@ -181,6 +181,31 @@
   color: #6f5b4a;
 }
 
+.otp-verification-box {
+  padding: 1rem;
+  border: 1px solid rgba(139, 90, 43, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 248, 239, 0.82);
+}
+
+.otp-title {
+  color: #5d3a1a;
+  font-weight: 700 !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.otp-description {
+  color: #6f5b4a;
+  line-height: 1.6 !important;
+  margin-bottom: 1rem !important;
+}
+
+.resend-otp-btn {
+  color: #8b5a2b !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+}
+
 @media (max-width: 960px) {
   .login-page,
   .register-container {

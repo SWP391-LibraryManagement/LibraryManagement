@@ -65,12 +65,36 @@ const loginValidators = [
 ];
 
 const refreshTokenValidators = [
-  body('refreshToken').isString().trim().notEmpty().withMessage('Refresh token is required.').isLength({ max: 512 }),
+  body().custom((value, { req }) => {
+    const token = req.body.refreshToken || req.body.token;
+
+    if (typeof token !== 'string' || token.trim() === '') {
+      throw new Error('Refresh token is required.');
+    }
+
+    if (token.length > 512) {
+      throw new Error('Refresh token must be at most 512 characters.');
+    }
+
+    req.body.refreshToken = token.trim();
+    return true;
+  }),
   handleValidationErrors,
 ];
 
 const logoutValidators = [
-  body('refreshToken').isString().trim().notEmpty().withMessage('Refresh token is required.').isLength({ max: 512 }),
+  body('refreshToken')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .trim()
+    .isLength({ max: 512 })
+    .withMessage('Refresh token must be at most 512 characters.'),
+  body('token')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .trim()
+    .isLength({ max: 512 })
+    .withMessage('Refresh token must be at most 512 characters.'),
   handleValidationErrors,
 ];
 

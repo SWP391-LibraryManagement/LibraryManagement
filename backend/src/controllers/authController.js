@@ -1,13 +1,18 @@
 const { defaultAuthService } = require('../services/authService');
 
+function requestContext(req) {
+  return {
+    userId: req.user?.userId || null,
+    ip: req.ip || '',
+    userAgent: req.get('user-agent'),
+  };
+}
+
 function createAuthController(authService = defaultAuthService) {
   return {
     register: async (req, res, next) => {
       try {
-        const result = await authService.register(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
+        const result = await authService.register(req.body, requestContext(req));
         return res.status(201).json(result);
       } catch (error) {
         return next(error);
@@ -16,11 +21,8 @@ function createAuthController(authService = defaultAuthService) {
 
     verifyEmail: async (req, res, next) => {
       try {
-        const result = await authService.verifyEmail(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
-        return res.status(200).json(result);
+        await authService.verifyEmail(req.body.token, requestContext(req));
+        return res.status(200).json({ message: 'Account verified. You can now login.' });
       } catch (error) {
         return next(error);
       }
@@ -28,10 +30,7 @@ function createAuthController(authService = defaultAuthService) {
 
     resendVerification: async (req, res, next) => {
       try {
-        const result = await authService.resendVerification(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
+        const result = await authService.resendVerification(req.body.email, requestContext(req));
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -40,10 +39,7 @@ function createAuthController(authService = defaultAuthService) {
 
     login: async (req, res, next) => {
       try {
-        const result = await authService.login(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
+        const result = await authService.login(req.body, requestContext(req));
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -52,10 +48,7 @@ function createAuthController(authService = defaultAuthService) {
 
     refreshToken: async (req, res, next) => {
       try {
-        const result = await authService.refreshToken(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
+        const result = await authService.refreshToken(req.body.refreshToken || req.body.token, requestContext(req));
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -64,12 +57,8 @@ function createAuthController(authService = defaultAuthService) {
 
     logout: async (req, res, next) => {
       try {
-        const result = await authService.logout(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-          userId: req.user.userId,
-        });
-        return res.status(200).json(result);
+        await authService.logout(req.user?.userId, req.body.refreshToken || req.body.token, requestContext(req), req.user?.sessionId);
+        return res.status(200).json({ message: 'Logged out' });
       } catch (error) {
         return next(error);
       }
@@ -77,12 +66,8 @@ function createAuthController(authService = defaultAuthService) {
 
     changePassword: async (req, res, next) => {
       try {
-        const result = await authService.changePassword(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-          userId: req.user.userId,
-        });
-        return res.status(200).json(result);
+        await authService.changePassword(req.user.userId, req.body, requestContext(req));
+        return res.status(200).json({ message: 'Password changed' });
       } catch (error) {
         return next(error);
       }
@@ -90,10 +75,7 @@ function createAuthController(authService = defaultAuthService) {
 
     forgotPassword: async (req, res, next) => {
       try {
-        const result = await authService.forgotPassword(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
+        const result = await authService.forgotPassword(req.body.email, requestContext(req));
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -102,11 +84,8 @@ function createAuthController(authService = defaultAuthService) {
 
     resetPassword: async (req, res, next) => {
       try {
-        const result = await authService.resetPassword(req.body, {
-          ip: req.ip,
-          userAgent: req.get('user-agent'),
-        });
-        return res.status(200).json(result);
+        const result = await authService.resetPassword(req.body, requestContext(req));
+        return res.status(200).json({ message: result.message });
       } catch (error) {
         return next(error);
       }
@@ -116,6 +95,18 @@ function createAuthController(authService = defaultAuthService) {
       try {
         const result = await authService.me(req.user.userId);
         return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    verifySession: async (req, res, next) => {
+      try {
+        return res.status(200).json({
+          valid: true,
+          userId: req.user.userId,
+          roles: req.user.roles || [],
+        });
       } catch (error) {
         return next(error);
       }

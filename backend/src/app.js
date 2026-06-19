@@ -8,6 +8,7 @@ const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
+
 const { defaultAuthService } = require('./services/authService');
 
 function createApp({ authService = defaultAuthService, userManagementService } = {}) {

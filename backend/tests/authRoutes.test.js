@@ -67,6 +67,11 @@ describe('FE02 auth vertical slice', () => {
     });
     expect(registerResponse.body.debugVerificationToken).toEqual(expect.any(String));
     expect(dependencies.state.users[0].status).toBe('INACTIVE');
+    expect(dependencies.state.notifications[0].safePayload).toMatchObject({
+      purpose: 'EMAIL_VERIFY',
+      otp: registerResponse.body.debugVerificationToken,
+      expiresInHours: expect.any(Number),
+    });
 
     const verifyResponse = await request(app)
       .post('/api/auth/verify-email')
@@ -144,6 +149,38 @@ describe('FE02 auth vertical slice', () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  test('verify-session returns current token status and logout can revoke current session', async () => {
+    const { app } = makeTestApp();
+    await registerAndVerify(app, 'verify-session@example.test');
+    const loginResponse = await login(app, 'verify-session@example.test');
+
+    const verifyResponse = await request(app)
+      .post('/api/auth/verify-session')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({});
+
+    expect(verifyResponse.status).toBe(200);
+    expect(verifyResponse.body).toMatchObject({
+      valid: true,
+      userId: 1,
+      roles: ['MEMBER'],
+    });
+
+    const logoutResponse = await request(app)
+      .post('/api/auth/logout')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({});
+
+    expect(logoutResponse.status).toBe(200);
+
+    const verifyAfterLogout = await request(app)
+      .post('/api/auth/verify-session')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({});
+
+    expect(verifyAfterLogout.status).toBe(401);
   });
 
   test('resend verification invalidates previous verification token', async () => {

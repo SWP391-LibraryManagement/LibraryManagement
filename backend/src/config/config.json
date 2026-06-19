@@ -1,8 +1,8 @@
 {
   "development": {
-    "username": "library_user",
+    "username": "sa",
     "password": "123",
-    "database": "LibraryDB",
+    "database": "LibraryManagementDB",
     "host": "127.0.0.1",
     "dialect": "mssql",
     "dialectOptions": {
@@ -13,9 +13,9 @@
     }
   },
   "test": {
-    "username": "library_user",
+    "username": "sa",
     "password": "123",
-    "database": "LibraryDBTest",
+    "database": "LibraryManagementDBTest",
     "host": "127.0.0.1",
     "dialect": "mssql",
     "dialectOptions": {
