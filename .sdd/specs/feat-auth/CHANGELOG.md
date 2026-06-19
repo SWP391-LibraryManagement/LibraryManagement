@@ -38,3 +38,9 @@
 - Added tests for the FE02 cases from FT05 to FT11.
 - Connected the current login, register, and forgot-password screens to the auth API.
 - Marked FE02 `PLAN.md`, `TASKS.md`, and traceability as ready for review.
+
+## 2026-06-19 - FE02 Auth Fix Review
+
+- Fixed failed-login lock handling so accounts are marked `LOCKED` when the configured threshold is reached.
+- Adjusted logout so a valid refresh token can be revoked without requiring a still-valid access token.
+- Updated auth route tests and in-memory repository behavior for the lock/logout fixes.
