@@ -6,6 +6,7 @@ import ForgotPasswordPage from './page/ForgotPasswordPage';
 import HomePage from './page/HomePage';
 import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
+import UserProfilePage from './page/UserProfilePage';
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
+      <Route path="/profile" element={<UserProfilePage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
