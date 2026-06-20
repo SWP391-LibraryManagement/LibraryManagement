@@ -35,6 +35,7 @@ function App() {
       
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
+      <Route path="/librarian/books" element={<Navigate to="/librarian/fines" replace />} />
 
       {/* FE07 · Borrowing Management */}
       <Route path="/borrowing/new" element={<BorrowRequestPage />} />

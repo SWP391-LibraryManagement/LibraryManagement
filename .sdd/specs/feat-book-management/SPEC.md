@@ -212,7 +212,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE05-007 | Publisher ID does not exist | Reject request. |
 | EC-FE05-008 | Publish year is invalid or in the future | Reject request. |
 | EC-FE05-009 | Guest/member attempts protected book management | Return forbidden response. |
-| EC-FE05-010 | Deactivate book with active borrowed/reserved copies | Block deactivation when active copies are borrowed or reserved. |
+| EC-FE05-010 | Deactivate book with active borrowed/reserved copies | Allow status-based catalog deactivation; keep borrow/reservation history and copy records unchanged. |
 | EC-FE05-011 | Search keyword too long | Reject with validation message. |
 | EC-FE05-012 | Database update partially fails | Roll back book update and audit log. |
 
@@ -333,7 +333,7 @@ This feature does not include:
 | Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
 
 ---
 
@@ -349,7 +349,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | APPROVED |
 | Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | APPROVED |
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | APPROVED |
-| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | APPROVED |
+| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | APPROVED |
 
 ---
 
