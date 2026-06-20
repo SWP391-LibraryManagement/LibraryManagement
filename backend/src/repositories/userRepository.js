@@ -597,6 +597,7 @@ async function updateFailedLogin(userId, failedLoginCount, lockedUntil) {
       UPDATE Users
       SET FailedLoginCount = @FailedLoginCount,
           LockedUntil = @LockedUntil,
+          Status = CASE WHEN @LockedUntil IS NOT NULL THEN 'LOCKED' ELSE Status END,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
     `);
@@ -611,6 +612,7 @@ async function resetFailedLoginsAndSetLastLogin(userId) {
       UPDATE Users
       SET FailedLoginCount = 0,
           LockedUntil = NULL,
+          Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
           LastLoginAt = GETDATE(),
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
@@ -628,6 +630,7 @@ async function updatePassword(userId, passwordHash) {
       SET PasswordHash = @PasswordHash,
           FailedLoginCount = 0,
           LockedUntil = NULL,
+          Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
     `);

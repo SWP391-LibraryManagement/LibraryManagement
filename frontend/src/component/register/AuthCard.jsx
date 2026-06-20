@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Card, Button, Stack } from '@mui/material';
+import { Alert, Button, Card, Stack } from '@mui/material';
 import { LocalLibrary } from '@mui/icons-material';
 import RegisterFormHeader from './RegisterFormHeader';
 import FormInput from './FormInput';
@@ -8,8 +8,14 @@ import PasswordInput from './PasswordInput';
 
 export default function AuthCard({
   onSubmit,
+  onVerifyEmail,
   feedback,
   isSubmitting = false,
+  isVerifying = false,
+  verificationStep = false,
+  registeredEmail = '',
+  maskedEmail = '',
+  onBackToRegister,
 }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -19,6 +25,7 @@ export default function AuthCard({
     password: '',
     confirmPassword: '',
   });
+  const [otp, setOtp] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -38,6 +45,22 @@ export default function AuthCard({
     }
   };
 
+  const handleVerifySubmit = async (event) => {
+    event.preventDefault();
+
+    if (!onVerifyEmail) {
+      return;
+    }
+
+    const success = await onVerifyEmail({ otp });
+
+    if (success) {
+      setOtp('');
+    }
+  };
+
+  const isBusy = verificationStep ? isVerifying : isSubmitting;
+
   return (
     <div className="register-card-wrapper">
       <Card className="auth-card" elevation={0}>
@@ -49,52 +72,85 @@ export default function AuthCard({
           <RegisterFormHeader />
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={verificationStep ? handleVerifySubmit : handleSubmit}>
           <Stack spacing={2.25}>
-            <FormInput
-              label="Họ và tên"
-              placeholder="Nhập họ và tên của bạn"
-              value={formData.fullName}
-              onChange={(value) => setFormData((current) => ({ ...current, fullName: value }))}
-              required
-            />
-            <FormInput
-              label="Tên đăng nhập"
-              placeholder="Nhập tên đăng nhập của bạn"
-              value={formData.username}
-              onChange={(value) => setFormData((current) => ({ ...current, username: value }))}
-              required
-            />
-            <FormInput
-              label="Email"
-              placeholder="Nhập địa chỉ email của bạn"
-              type="email"
-              value={formData.email}
-              onChange={(value) => setFormData((current) => ({ ...current, email: value }))}
-              required
-            />
-            <PasswordInput
-              label="Mật khẩu"
-              placeholder="Tạo mật khẩu của bạn"
-              value={formData.password}
-              onChange={(value) => setFormData((current) => ({ ...current, password: value }))}
-              required
-            />
-            <PasswordInput
-              label="Xác nhận mật khẩu"
-              placeholder="Nhập lại mật khẩu của bạn"
-              value={formData.confirmPassword}
-              onChange={(value) => setFormData((current) => ({ ...current, confirmPassword: value }))}
-              required
-            />
+            {verificationStep ? (
+              <>
+                <Alert severity="info">
+                  Mã xác thực đã được gửi tới {maskedEmail || registeredEmail || formData.email}.
+                </Alert>
+                <FormInput
+                  label="OTP xác thực email"
+                  placeholder="Nhập mã xác thực"
+                  value={otp}
+                  onChange={setOtp}
+                  required
+                />
+              </>
+            ) : (
+              <>
+                <FormInput
+                  label="Họ và tên"
+                  placeholder="Nhập họ và tên của bạn"
+                  value={formData.fullName}
+                  onChange={(value) => setFormData((current) => ({ ...current, fullName: value }))}
+                  required
+                />
+                <FormInput
+                  label="Tên đăng nhập"
+                  placeholder="Nhập tên đăng nhập của bạn"
+                  value={formData.username}
+                  onChange={(value) => setFormData((current) => ({ ...current, username: value }))}
+                  required
+                />
+                <FormInput
+                  label="Email"
+                  placeholder="Nhập địa chỉ email của bạn"
+                  type="email"
+                  value={formData.email}
+                  onChange={(value) => setFormData((current) => ({ ...current, email: value }))}
+                  required
+                />
+                <PasswordInput
+                  label="Mật khẩu"
+                  placeholder="Tạo mật khẩu của bạn"
+                  value={formData.password}
+                  onChange={(value) => setFormData((current) => ({ ...current, password: value }))}
+                  required
+                />
+                <PasswordInput
+                  label="Xác nhận mật khẩu"
+                  placeholder="Nhập lại mật khẩu của bạn"
+                  value={formData.confirmPassword}
+                  onChange={(value) => setFormData((current) => ({ ...current, confirmPassword: value }))}
+                  required
+                />
+              </>
+            )}
+
             {feedback?.message && (
               <Alert severity={feedback.severity || 'info'}>
                 {feedback.message}
               </Alert>
             )}
-            <Button type="submit" variant="contained" className="register-submit-btn" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+
+            <Button type="submit" variant="contained" className="register-submit-btn" disabled={isBusy}>
+              {verificationStep
+                ? (isVerifying ? 'Đang xác thực...' : 'Xác thực email')
+                : (isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản')}
             </Button>
+
+            {verificationStep && (
+              <Button
+                type="button"
+                variant="text"
+                className="register-link"
+                onClick={onBackToRegister}
+                disabled={isVerifying}
+              >
+                Quay lại thông tin đăng ký
+              </Button>
+            )}
 
             <div className="register-section">
               <span className="register-text">

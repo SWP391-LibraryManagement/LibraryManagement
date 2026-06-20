@@ -23,7 +23,7 @@ function createAuthRoutes(authService) {
   router.post('/resend-verification', resendVerificationValidators, controller.resendVerification);
   router.post('/login', loginValidators, controller.login);
   router.post('/refresh-token', refreshTokenValidators, controller.refreshToken);
-  router.post('/logout', authenticate, logoutValidators, controller.logout);
+  router.post('/logout', logoutValidators, controller.logout);
   router.post('/change-password', authenticate, changePasswordValidators, controller.changePassword);
   router.post('/forgot-password', forgotPasswordValidators, controller.forgotPassword);
   router.post('/reset-password', resetPasswordValidators, controller.resetPassword);
