@@ -1,5 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BookManagement from './BookManagement';
+import {
+  DAILY_FINE_RATE,
+  calculateOverdueDays,
+  getBorrowRecords,
+  getFineRecords,
+  saveFineRecords,
+} from '../utils/libraryWorkflow';
 import {
   AlertTriangle,
   Banknote,
@@ -13,14 +21,16 @@ import {
   Filter,
   ListChecks,
   LogOut,
+  Plus,
   ReceiptText,
   Search,
   ShieldCheck,
-  UserRound,
+  Trash2,
 } from 'lucide-react';
 
-const DAILY_FINE_RATE = 5000;
 const BANK_TRANSFER_METHOD = 'Chuyển khoản';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const libraryBankAccount = {
   bankName: 'Vietcombank',
@@ -200,17 +210,6 @@ function getTodayValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function calculateOverdueDays(dueDate, returnDate) {
-  if (!dueDate) {
-    return 0;
-  }
-
-  const due = new Date(`${dueDate}T00:00:00`);
-  const end = new Date(`${returnDate || getTodayValue()}T00:00:00`);
-  const diff = Math.floor((end - due) / 86400000);
-  return Math.max(diff, 0);
-}
-
 function getTransferContent(fine) {
   if (!fine) {
     return 'FINE';
@@ -256,16 +255,148 @@ function EmptyState({ message }) {
   );
 }
 
+const DEFAULT_FINE_FORM = {
+  fineId: '',
+  userId: '',
+  memberName: '',
+  memberCode: '',
+  email: '',
+  borrowDetailId: '',
+  bookTitle: '',
+  barcode: '',
+  dueDate: '',
+  returnDate: '',
+  overdueDays: '',
+  amount: '',
+  status: 'UNPAID',
+};
+
+async function fineApiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || result.success === false) {
+    throw new Error(result.error?.message || result.message || 'Unable to process fine request.');
+  }
+
+  return result;
+}
+
+function fineToForm(fine) {
+  if (!fine) {
+    return DEFAULT_FINE_FORM;
+  }
+
+  return {
+    fineId: String(fine.fineId || ''),
+    userId: String(fine.userId || ''),
+    memberName: fine.memberName || '',
+    memberCode: fine.memberCode || '',
+    email: fine.email || '',
+    borrowDetailId: String(fine.borrowDetailId || ''),
+    bookTitle: fine.bookTitle || '',
+    barcode: fine.barcode || '',
+    dueDate: fine.dueDate ? String(fine.dueDate).slice(0, 10) : '',
+    returnDate: fine.returnDate ? String(fine.returnDate).slice(0, 10) : '',
+    overdueDays: String(fine.overdueDays ?? ''),
+    amount: String(fine.amount ?? ''),
+    status: fine.status || 'UNPAID',
+  };
+}
+
+function validateFineForm(form) {
+  const errors = {};
+  const requiredFields = [
+    'userId',
+    'memberName',
+    'memberCode',
+    'email',
+    'borrowDetailId',
+    'bookTitle',
+    'barcode',
+    'dueDate',
+    'overdueDays',
+    'amount',
+    'status',
+  ];
+
+  requiredFields.forEach((field) => {
+    if (!String(form[field] || '').trim()) {
+      errors[field] = 'Required.';
+    }
+  });
+
+  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    errors.email = 'Invalid email.';
+  }
+
+  ['userId', 'borrowDetailId'].forEach((field) => {
+    const value = Number(form[field]);
+    if (!Number.isInteger(value) || value <= 0) {
+      errors[field] = 'Must be a positive integer.';
+    }
+  });
+
+  const overdueDays = Number(form.overdueDays);
+  if (!Number.isInteger(overdueDays) || overdueDays <= 0) {
+    errors.overdueDays = 'Must be a positive integer.';
+  }
+
+  if (!Number.isFinite(Number(form.amount)) || Number(form.amount) <= 0) {
+    errors.amount = 'Must be greater than zero.';
+  }
+
+  if (!['UNPAID', 'PAID', 'WAIVED'].includes(form.status)) {
+    errors.status = 'Invalid status.';
+  }
+
+  return errors;
+}
+
+function makeFinePayload(form) {
+  const overdueDays = Number(form.overdueDays || 0);
+  return {
+    userId: Number(form.userId),
+    memberName: form.memberName.trim(),
+    memberCode: form.memberCode.trim(),
+    email: form.email.trim(),
+    borrowDetailId: Number(form.borrowDetailId),
+    bookTitle: form.bookTitle.trim(),
+    barcode: form.barcode.trim(),
+    dueDate: form.dueDate,
+    returnDate: form.returnDate,
+    overdueDays,
+    ratePerDay: DAILY_FINE_RATE,
+    amount: form.amount === '' ? overdueDays * DAILY_FINE_RATE : Number(form.amount),
+    status: form.status,
+    reason: 'OVERDUE',
+  };
+}
+
 export default function FineManagement() {
   const navigate = useNavigate();
   const staffUser = getStoredStaffUser();
+  const [workspace, setWorkspace] = useState('fines');
   const [activeSection, setActiveSection] = useState('list');
-  const [fines, setFines] = useState(initialFines);
-  const [selectedFineId, setSelectedFineId] = useState(initialFines[0].fineId);
+  const [borrowDetails, setBorrowDetails] = useState(() => [...getBorrowRecords(), ...sampleBorrowDetails]);
+  const [fines, setFines] = useState(() => {
+    const storedFines = getFineRecords();
+    return storedFines.length ? storedFines : initialFines;
+  });
+  const [selectedFineId, setSelectedFineId] = useState(() => {
+    const storedFines = getFineRecords();
+    return (storedFines[0] || initialFines[0]).fineId;
+  });
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [query, setQuery] = useState('');
   const [calculateForm, setCalculateForm] = useState({
-    borrowDetailId: String(sampleBorrowDetails[0].borrowDetailId),
+    borrowDetailId: String((getBorrowRecords()[0] || sampleBorrowDetails[0]).borrowDetailId),
   });
   const [collectionForm, setCollectionForm] = useState({
     paymentMethod: 'Tiền mặt',
@@ -273,10 +404,83 @@ export default function FineManagement() {
     transferCode: '',
     note: '',
   });
+  const [fineForm, setFineForm] = useState(DEFAULT_FINE_FORM);
+  const [fineFormErrors, setFineFormErrors] = useState({});
+  const [fineFormMode, setFineFormMode] = useState('create');
+  const [fineSaving, setFineSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const selectedFine = fines.find((fine) => fine.fineId === selectedFineId) || fines[0];
-  const selectedBorrowDetail = sampleBorrowDetails.find(
+  const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
+  const isPaymentWorkflow = activeSection === 'collection' || activeSection === 'paid';
+  const selectedFine = isPaymentWorkflow
+    ? unpaidFines.find((fine) => fine.fineId === selectedFineId) || unpaidFines[0] || null
+    : fines.find((fine) => fine.fineId === selectedFineId) || fines[0] || null;
+  useEffect(() => {
+    saveFineRecords(fines);
+  }, [fines]);
+
+  useEffect(() => {
+    loadFinesFromApi().catch((error) => showToast(error.message, 'error'));
+  }, []);
+
+  useEffect(() => {
+    const refreshBorrowDetails = () => setBorrowDetails([...getBorrowRecords(), ...sampleBorrowDetails]);
+    window.addEventListener('storage', refreshBorrowDetails);
+    return () => window.removeEventListener('storage', refreshBorrowDetails);
+  }, []);
+
+  const fineBorrowDetails = useMemo(() => (
+    fines.map((fine) => {
+      const sourceBorrow = borrowDetails.find((item) => item.borrowDetailId === fine.borrowDetailId) || {};
+
+      return {
+        ...sourceBorrow,
+        borrowDetailId: fine.borrowDetailId,
+        memberId: fine.userId,
+        memberName: fine.memberName,
+        memberCode: fine.memberCode,
+        email: fine.email,
+        bookTitle: fine.bookTitle,
+        barcode: fine.barcode,
+        dueDate: fine.dueDate,
+        returnDate: fine.returnDate,
+        status: sourceBorrow.status || (fine.status === 'PAID' ? 'FINE_PAID' : 'FINE_UNPAID'),
+      };
+    })
+  ), [borrowDetails, fines]);
+
+  useEffect(() => {
+    if (!fineBorrowDetails.length) {
+      setCalculateForm({ borrowDetailId: '' });
+      return;
+    }
+
+    const currentStillAvailable = fineBorrowDetails.some(
+      (item) => String(item.borrowDetailId) === String(calculateForm.borrowDetailId)
+    );
+
+    if (!currentStillAvailable) {
+      setCalculateForm({ borrowDetailId: String(fineBorrowDetails[0].borrowDetailId) });
+    }
+  }, [fineBorrowDetails, calculateForm.borrowDetailId]);
+
+  useEffect(() => {
+    if (!isPaymentWorkflow) {
+      return;
+    }
+
+    if (!unpaidFines.length) {
+      setSelectedFineId('');
+      return;
+    }
+
+    const currentFine = fines.find((fine) => fine.fineId === selectedFineId);
+    if (!currentFine || currentFine.status !== 'UNPAID') {
+      setSelectedFineId(unpaidFines[0].fineId);
+    }
+  }, [activeSection, fines, isPaymentWorkflow, selectedFineId, unpaidFines]);
+
+  const selectedBorrowDetail = fineBorrowDetails.find(
     (item) => item.borrowDetailId === Number(calculateForm.borrowDetailId)
   );
   const calculatedPreviewDays = selectedBorrowDetail
@@ -298,8 +502,6 @@ export default function FineManagement() {
       return matchesStatus && matchesQuery;
     });
   }, [fines, query, statusFilter]);
-
-  const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
 
   const stats = useMemo(() => {
     const paidFines = fines.filter((fine) => fine.status === 'PAID');
@@ -342,18 +544,106 @@ export default function FineManagement() {
     showToast.timer = window.setTimeout(() => setToast(null), 3200);
   }
 
+  async function loadFinesFromApi() {
+    const result = await fineApiRequest('/fines');
+    setFines(result.data || []);
+    if (result.data?.length) {
+      const firstFine = result.data[0];
+      setSelectedFineId((current) => current || firstFine.fineId);
+      setFineForm((current) => (current.fineId ? current : fineToForm(firstFine)));
+      setFineFormMode((current) => (current === 'edit' ? current : 'edit'));
+    }
+  }
+
+  function resetFineForm() {
+    setFineForm(DEFAULT_FINE_FORM);
+    setFineFormErrors({});
+    setFineFormMode('create');
+  }
+
   function chooseFine(fineId, nextSection = activeSection) {
     setSelectedFineId(fineId);
     setActiveSection(nextSection);
+    const fine = fines.find((item) => item.fineId === fineId);
+    if (fine) {
+      setFineForm(fineToForm(fine));
+      setFineFormErrors({});
+      setFineFormMode('edit');
+    }
+  }
+
+  async function handleSaveFine(event) {
+    event.preventDefault();
+    const errors = validateFineForm(fineForm);
+    setFineFormErrors(errors);
+
+    if (Object.keys(errors).length) {
+      showToast('Please fix the highlighted fine fields.', 'error');
+      return;
+    }
+
+    try {
+      setFineSaving(true);
+      const payload = makeFinePayload(fineForm);
+      const isEdit = fineFormMode === 'edit' && fineForm.fineId;
+      const result = await fineApiRequest(isEdit ? `/fines/${fineForm.fineId}` : '/fines', {
+        method: isEdit ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      await loadFinesFromApi();
+      setSelectedFineId(result.data.fineId);
+      setFineForm(fineToForm(result.data));
+      setFineFormMode('edit');
+      showToast(isEdit ? 'Fine updated successfully.' : 'Fine created successfully.');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setFineSaving(false);
+    }
+  }
+
+  async function handleDeleteFine() {
+    if (!selectedFine) {
+      showToast('Please select a fine first.', 'error');
+      return;
+    }
+
+    try {
+      setFineSaving(true);
+      await fineApiRequest(`/fines/${selectedFine.fineId}`, { method: 'DELETE' });
+      await loadFinesFromApi();
+      resetFineForm();
+      showToast('Fine deleted successfully.');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setFineSaving(false);
+    }
   }
 
   function handleCalculateFine(event) {
     event.preventDefault();
     const borrowDetailId = Number(calculateForm.borrowDetailId);
-    const borrowDetail = sampleBorrowDetails.find((item) => item.borrowDetailId === borrowDetailId);
+    const borrowDetail = fineBorrowDetails.find((item) => item.borrowDetailId === borrowDetailId);
+
+    if (!borrowDetailId) {
+      showToast('No overdue borrow detail is available for fine calculation.', 'error');
+      return;
+    }
 
     if (!borrowDetail) {
       showToast('Không tìm thấy chi tiết mượn.', 'error');
+      return;
+    }
+
+    const paidFine = fines.find(
+      (fine) => fine.borrowDetailId === borrowDetailId && fine.reason === 'OVERDUE' && fine.status === 'PAID'
+    );
+
+    if (paidFine) {
+      chooseFine(paidFine.fineId, 'list');
+      showToast('Phiếu phạt này đã thanh toán, không thể tính lại.', 'error');
       return;
     }
 
@@ -532,8 +822,11 @@ export default function FineManagement() {
             return (
               <button
                 key={item.key}
-                className={activeSection === item.key ? 'active' : ''}
-                onClick={() => setActiveSection(item.key)}
+                className={workspace === 'fines' && activeSection === item.key ? 'active' : ''}
+                onClick={() => {
+                  setWorkspace('fines');
+                  setActiveSection(item.key);
+                }}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
@@ -543,10 +836,14 @@ export default function FineManagement() {
           })}
         </nav>
 
-        <nav className="fine-app-nav" aria-label="Điều hướng hệ thống">
-          <span>Điều hướng</span>
-          <button onClick={() => navigate('/home')}><BookOpen size={18} />Danh mục công khai</button>
-          <button onClick={() => navigate('/admin/users')}><UserRound size={18} />Danh sách người dùng</button>
+        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
+          <span>Quản lý thư viện</span>
+          <button
+            className={workspace === 'books' ? 'active' : ''}
+            onClick={() => setWorkspace('books')}
+          >
+            <BookOpen size={18} />Book Management
+          </button>
         </nav>
 
         <div className="fine-session">
@@ -557,6 +854,10 @@ export default function FineManagement() {
       </aside>
 
       <main className="fine-main">
+        {workspace === 'books' ? (
+          <BookManagement />
+        ) : (
+          <>
         <header className="fine-header">
           <div>
             <p>FE09 Quản lý tiền phạt</p>
@@ -614,6 +915,65 @@ export default function FineManagement() {
                   </select>
                 </label>
               </div>
+
+              <form className="fine-crud-form" onSubmit={handleSaveFine}>
+                <div className="fine-crud-head">
+                  <strong>{fineFormMode === 'edit' ? `Edit fine #${fineForm.fineId}` : 'Add fine'}</strong>
+                  <div>
+                    <button type="button" className="fine-light-button" onClick={resetFineForm} disabled={fineSaving}>
+                      <Plus size={15} />New
+                    </button>
+                    <button type="button" className="fine-danger-button" onClick={handleDeleteFine} disabled={fineSaving || !selectedFine}>
+                      <Trash2 size={15} />Delete
+                    </button>
+                  </div>
+                </div>
+
+                <div className="fine-crud-grid">
+                  {[
+                    ['userId', 'User ID', 'number'],
+                    ['memberName', 'Member name', 'text'],
+                    ['memberCode', 'Member code', 'text'],
+                    ['email', 'Email', 'email'],
+                    ['borrowDetailId', 'Borrow detail ID', 'number'],
+                    ['bookTitle', 'Book title', 'text'],
+                    ['barcode', 'Barcode', 'text'],
+                    ['dueDate', 'Due date', 'date'],
+                    ['returnDate', 'Return date', 'date'],
+                    ['overdueDays', 'Overdue days', 'number'],
+                    ['amount', 'Amount', 'number'],
+                  ].map(([field, label, type]) => (
+                    <label key={field}>
+                      {label}
+                      <input
+                        type={type}
+                        value={fineForm[field]}
+                        min={type === 'number' ? 1 : undefined}
+                        step={type === 'number' ? 1 : undefined}
+                        onChange={(event) => setFineForm((current) => ({ ...current, [field]: event.target.value }))}
+                      />
+                      {fineFormErrors[field] && <span>{fineFormErrors[field]}</span>}
+                    </label>
+                  ))}
+
+                  <label>
+                    Status
+                    <select
+                      value={fineForm.status}
+                      onChange={(event) => setFineForm((current) => ({ ...current, status: event.target.value }))}
+                    >
+                      <option value="UNPAID">Chưa thanh toán</option>
+                      <option value="PAID">Đã thanh toán</option>
+                      <option value="WAIVED">Đã miễn</option>
+                    </select>
+                    {fineFormErrors.status && <span>{fineFormErrors.status}</span>}
+                  </label>
+                </div>
+
+                <button type="submit" className="fine-save-button" disabled={fineSaving}>
+                  <Check size={16} />{fineFormMode === 'edit' ? 'Save fine changes' : 'Add fine'}
+                </button>
+              </form>
 
               <div className="fine-table-wrap">
                 <table className="fine-table">
@@ -676,13 +1036,15 @@ export default function FineManagement() {
                   value={calculateForm.borrowDetailId}
                   onChange={(event) => setCalculateForm({ borrowDetailId: event.target.value })}
                 >
-                  {sampleBorrowDetails.map((item) => (
+                  {fineBorrowDetails.map((item) => (
                     <option key={item.borrowDetailId} value={item.borrowDetailId}>
                       #{item.borrowDetailId} - {item.memberName} - {item.bookTitle}
                     </option>
                   ))}
                 </select>
               </label>
+
+              {fineBorrowDetails.length === 0 && <EmptyState message="Không có chi tiết mượn trong danh sách phiếu phạt." />}
 
               <div className="fine-preview-grid">
                 <div>
@@ -701,10 +1063,6 @@ export default function FineManagement() {
                   <span>Tiền phạt dự kiến</span>
                   <strong>{formatCurrency(calculatedPreviewDays * DAILY_FINE_RATE)}</strong>
                 </div>
-              </div>
-
-              <div className="fine-note">
-                Màn hình này mô phỏng thao tác nghiệp vụ cho thủ thư. Khi nối API thật, tiền phạt phải được tính lại ở backend để đảm bảo traceability.
               </div>
 
               <button type="submit"><Calculator size={17} />Tính phạt quá hạn</button>
@@ -841,29 +1199,35 @@ export default function FineManagement() {
                 <FileText size={24} />
               </div>
 
-              <label>
-                Phiếu phạt cần tất toán
-                <select value={selectedFine?.fineId || ''} onChange={(event) => setSelectedFineId(Number(event.target.value))}>
-                  {fines.map((fine) => (
-                    <option key={fine.fineId} value={fine.fineId}>
-                      #{fine.fineId} - {fine.memberName} - {statusLabels[fine.status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {unpaidFines.length === 0 ? (
+                <EmptyState message="Không còn phiếu phạt chưa thanh toán để tất toán." />
+              ) : (
+                <>
+                  <label>
+                    Phiếu phạt cần tất toán
+                    <select value={selectedFine?.fineId || ''} onChange={(event) => setSelectedFineId(Number(event.target.value))}>
+                      {unpaidFines.map((fine) => (
+                        <option key={fine.fineId} value={fine.fineId}>
+                          #{fine.fineId} - {fine.memberName} - {formatCurrency(fine.amount)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <div className="fine-paid-preview">
-                <span>Phiếu đang chọn</span>
-                <strong>{selectedFine ? `#${selectedFine.fineId}` : '-'}</strong>
-                <span>Số tiền cần tất toán</span>
-                <strong>{selectedFine ? formatCurrency(selectedFine.amount) : '-'}</strong>
-                <span>Trạng thái hiện tại</span>
-                <strong>{selectedFine ? statusLabels[selectedFine.status] : '-'}</strong>
-              </div>
+                  <div className="fine-paid-preview">
+                    <span>Phiếu đang chọn</span>
+                    <strong>{selectedFine ? `#${selectedFine.fineId}` : '-'}</strong>
+                    <span>Số tiền cần tất toán</span>
+                    <strong>{selectedFine ? formatCurrency(selectedFine.amount) : '-'}</strong>
+                    <span>Trạng thái hiện tại</span>
+                    <strong>{selectedFine ? statusLabels[selectedFine.status] : '-'}</strong>
+                  </div>
 
-              <button onClick={handleMarkPaid} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
-                <Check size={17} />Đánh dấu đã thanh toán
-              </button>
+                  <button onClick={handleMarkPaid} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
+                    <Check size={17} />Đánh dấu đã thanh toán
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="fine-panel fine-guide-panel">
@@ -875,6 +1239,8 @@ export default function FineManagement() {
               </ol>
             </div>
           </section>
+        )}
+          </>
         )}
       </main>
 
@@ -892,8 +1258,8 @@ export default function FineManagement() {
         .fine-workflow-nav > span, .fine-app-nav > span { color: #94a3b8; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px 2px; }
         .fine-workflow-nav button, .fine-app-nav button, .fine-session button { min-height: 44px; border-radius: 8px; border: 0; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-size: 14px; text-align: left; }
         .fine-workflow-nav button span { flex: 1; }
-        .fine-workflow-nav button:hover, .fine-app-nav button:hover, .fine-session button:hover, .fine-workflow-nav button.active { background: #243244; color: #fff; }
-        .fine-workflow-nav button.active { box-shadow: inset 3px 0 0 #2dd4bf; }
+        .fine-workflow-nav button:hover, .fine-app-nav button:hover, .fine-session button:hover, .fine-workflow-nav button.active, .fine-app-nav button.active { background: #243244; color: #fff; }
+        .fine-workflow-nav button.active, .fine-app-nav button.active { box-shadow: inset 3px 0 0 #2dd4bf; }
         .fine-app-nav { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session span { color: #94a3b8; font-size: 12px; }
@@ -924,6 +1290,18 @@ export default function FineManagement() {
         .fine-search, .fine-select { min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; gap: 9px; padding: 0 12px; color: #64748b; background: #fff; }
         .fine-search input, .fine-select select, .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { width: 100%; border: 0; outline: 0; color: #111827; background: transparent; font: inherit; }
         .fine-table-wrap { overflow-x: auto; }
+        .fine-crud-form { border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; padding: 14px; margin-bottom: 14px; display: grid; gap: 12px; }
+        .fine-crud-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .fine-crud-head strong { color: #111827; font-size: 15px; }
+        .fine-crud-head div { display: flex; gap: 8px; }
+        .fine-crud-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+        .fine-crud-grid label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; }
+        .fine-crud-grid input, .fine-crud-grid select { min-height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; font: inherit; color: #111827; background: #fff; }
+        .fine-crud-grid label span { color: #b91c1c; font-size: 11px; }
+        .fine-light-button, .fine-danger-button, .fine-save-button { min-height: 36px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-weight: 800; padding: 0 11px; }
+        .fine-danger-button { border-color: #fecaca; color: #b91c1c; background: #fff5f5; }
+        .fine-save-button { justify-self: start; background: #0f766e; border-color: #0f766e; color: #fff; }
+        .fine-light-button:disabled, .fine-danger-button:disabled, .fine-save-button:disabled { opacity: .6; cursor: not-allowed; }
         .fine-table { width: 100%; border-collapse: collapse; min-width: 780px; }
         .fine-table th { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 11px 10px; border-bottom: 1px solid #e2e8f0; }
         .fine-table td { padding: 13px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: 14px; }
@@ -983,7 +1361,7 @@ export default function FineManagement() {
           .fine-workflow-nav > span, .fine-app-nav > span { width: 100%; }
           .fine-main { padding: 18px; }
           .fine-header { flex-direction: column; }
-          .fine-stats, .fine-toolbar, .fine-preview-grid, .fine-transfer-grid { grid-template-columns: 1fr; }
+          .fine-stats, .fine-toolbar, .fine-preview-grid, .fine-transfer-grid, .fine-crud-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>

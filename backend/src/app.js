@@ -10,6 +10,7 @@ const { createReportRoutes } = require('./routes/reportRoutes');
 const { createReservationRoutes } = require('./routes/reservationRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
 const bookRoutes = require('./routes/bookRoutes');
+const fineRoutes = require('./routes/fineRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
 const { defaultBorrowingService } = require('./services/borrowingService');
@@ -53,6 +54,7 @@ function createApp({
   app.use('/api/reservations', createReservationRoutes({ authService, reservationService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/books', bookRoutes);
+  app.use('/api/fines', fineRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
@@ -71,3 +73,4 @@ function createApp({
 module.exports = {
   createApp,
 };
+
