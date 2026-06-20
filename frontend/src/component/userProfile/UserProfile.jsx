@@ -1,3 +1,4 @@
+import "../../styles/user-profile.css";
 import ProfileHeader from "./ProfileHeader";
 import ProfileInfoCard from "./ProfileInfoCard";
 import ProfileActions from "./ProfileActions";
@@ -20,7 +21,8 @@ const mockUserData = {
   fullName: "Nguyễn Thị Minh Châu",
   address: "45 Phố Huế, Hai Bà Trưng, Hà Nội",
   dateOfBirth: "2001-06-15",
-  avatarUrl: "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&h=200&fit=crop&auto=format",
+  avatarUrl:
+    "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&h=200&fit=crop&auto=format",
 
   /* --- Members table --- */
   memberId: "LIB-2024-00847",
@@ -32,90 +34,89 @@ const mockUserData = {
   returnedOnTime: 36,
 };
 
-/** Một thẻ thống kê nhỏ hiển thị con số và mô tả */
+/** Thẻ thống kê nhỏ */
 function StatCard({ icon, value, label }) {
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border p-4 flex items-center gap-4">
-      <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-primary shrink-0">
-        {icon}
-      </div>
+    <div className="up-stat-card">
+      <div className="up-stat-icon">{icon}</div>
       <div>
-        <p className="text-2xl font-bold text-foreground leading-none"
-           style={{ fontFamily: "'DM Serif Display', serif" }}>
-          {value}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+        <p className="up-stat-value">{value}</p>
+        <p className="up-stat-label">{label}</p>
       </div>
     </div>
   );
 }
 
-/** Trang chính User Profile — kết hợp tất cả các sub-component */
+/** Trang chính User Profile */
 export default function UserProfile() {
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6">
+    <div className="up-page">
       {/* Page header */}
-      <header className="max-w-5xl mx-auto mb-6 flex items-center gap-3">
-        <LocalLibraryIcon className="text-accent" />
-        <span className="text-sm font-medium text-muted-foreground tracking-wide uppercase">
-          Hệ thống Quản lý Thư viện
+      <header className="up-page-header">
+        <span className="up-icon">
+          <LocalLibraryIcon fontSize="small" />
         </span>
-        <span className="ml-auto text-xs text-muted-foreground font-mono hidden sm:block">
-          {mockUserData.memberId}
-        </span>
+        <span>Hệ thống Quản lý Thư viện</span>
+        <span className="up-member-id">{mockUserData.memberId}</span>
       </header>
 
-      {/* Main layout — 2-column on desktop, single on mobile */}
-      <main className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Profile header — full width */}
-        <section className="lg:col-span-3">
-          <ProfileHeader
-            fullName={mockUserData.fullName}
-            username={mockUserData.username}
-            avatarUrl={mockUserData.avatarUrl}
-            status={mockUserData.status}
-            membershipStatus={mockUserData.membershipStatus}
-          />
-        </section>
+      {/* Main layout dùng Bootstrap grid */}
+      <main className="up-main">
+        <div className="row g-4">
+          {/* Profile header – full width */}
+          <div className="col-12">
+            <ProfileHeader
+              fullName={mockUserData.fullName}
+              username={mockUserData.username}
+              avatarUrl={mockUserData.avatarUrl}
+              status={mockUserData.status}
+              membershipStatus={mockUserData.membershipStatus}
+            />
+          </div>
 
-        {/* Stats row */}
-        <section className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard
-            icon={<AutoStoriesIcon fontSize="small" />}
-            value={mockUserData.totalBorrowed}
-            label="Tổng sách đã mượn"
-          />
-          <StatCard
-            icon={<LocalLibraryIcon fontSize="small" />}
-            value={mockUserData.currentlyBorrowing}
-            label="Đang mượn"
-          />
-          <StatCard
-            icon={<BookmarkAddedIcon fontSize="small" />}
-            value={mockUserData.returnedOnTime}
-            label="Trả đúng hạn"
-          />
-        </section>
+          {/* Stats row – 3 equal columns */}
+          <div className="col-12 col-sm-4">
+            <StatCard
+              icon={<AutoStoriesIcon fontSize="small" />}
+              value={mockUserData.totalBorrowed}
+              label="Tổng sách đã mượn"
+            />
+          </div>
+          <div className="col-12 col-sm-4">
+            <StatCard
+              icon={<LocalLibraryIcon fontSize="small" />}
+              value={mockUserData.currentlyBorrowing}
+              label="Đang mượn"
+            />
+          </div>
+          <div className="col-12 col-sm-4">
+            <StatCard
+              icon={<BookmarkAddedIcon fontSize="small" />}
+              value={mockUserData.returnedOnTime}
+              label="Trả đúng hạn"
+            />
+          </div>
 
-        {/* Info card — takes 2 of 3 columns */}
-        <section className="lg:col-span-2">
-          <ProfileInfoCard
-            email={mockUserData.email}
-            phone={mockUserData.phone}
-            dateOfBirth={mockUserData.dateOfBirth}
-            address={mockUserData.address}
-            memberId={mockUserData.memberId}
-          />
-        </section>
+          {/* Info card – 8/12 cols on large */}
+          <div className="col-12 col-lg-8">
+            <ProfileInfoCard
+              email={mockUserData.email}
+              phone={mockUserData.phone}
+              dateOfBirth={mockUserData.dateOfBirth}
+              address={mockUserData.address}
+              memberId={mockUserData.memberId}
+            />
+          </div>
 
-        {/* Actions sidebar — takes 1 of 3 columns */}
-        <section className="lg:col-span-1">
-          <ProfileActions username={mockUserData.username} />
-        </section>
+          {/* Actions sidebar – 4/12 cols on large */}
+          <div className="col-12 col-lg-4">
+            <ProfileActions username={mockUserData.username} />
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="max-w-5xl mx-auto mt-10 text-center text-xs text-muted-foreground">
+      <footer className="up-footer">
         © {new Date().getFullYear()} Hệ thống Quản Lý Thư viện
       </footer>
     </div>
