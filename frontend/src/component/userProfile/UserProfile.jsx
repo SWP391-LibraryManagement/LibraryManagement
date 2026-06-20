@@ -4,6 +4,7 @@ import ProfileInfoCard from "./ProfileInfoCard";
 import ProfileActions from "./ProfileActions";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import { fetchMyProfile } from "../../api/profileApi";
+import "../../styles/UserProfile.css";
 
 /** Trang User Profile — kết hợp tất cả sub-component */
 export default function UserProfile() {
@@ -41,37 +42,33 @@ export default function UserProfile() {
   }, []);
 
   return (
-    <div className="lms-page">
+    <div className="up-page">
       {/* ---- Breadcrumb-style page header ---- */}
-      <header className="lms-page-header">
+      <header className="up-page-header">
         <LocalLibraryIcon className="accent-icon" fontSize="small" />
         <span>Hệ thống Quản lý Thư viện</span>
       </header>
 
       {isLoading && (
-        <main className="lms-main">
-          <section className="lms-col-3">
-            <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
-              Đang tải hồ sơ...
-            </div>
+        <main className="up-main">
+          <section className="up-col-full">
+            <div className="up-status-card">Đang tải hồ sơ...</div>
           </section>
         </main>
       )}
 
       {!isLoading && errorMessage && (
-        <main className="lms-main">
-          <section className="lms-col-3">
-            <div className="bg-card rounded-2xl shadow-sm border border-border p-6 text-red-600">
-              {errorMessage}
-            </div>
+        <main className="up-main">
+          <section className="up-col-full">
+            <div className="up-status-card is-error">{errorMessage}</div>
           </section>
         </main>
       )}
 
       {!isLoading && !errorMessage && profile && (
-        <main className="lms-main">
+        <main className="up-main">
           {/* Profile header — chiếm toàn bộ chiều rộng */}
-          <section className="lms-col-3">
+          <section className="up-col-full">
             <ProfileHeader
               fullName={profile.fullName}
               username={profile.username}
@@ -81,7 +78,7 @@ export default function UserProfile() {
           </section>
 
           {/* Info card — 2/3 chiều rộng (desktop) */}
-          <section className="lms-col-2">
+          <section className="up-col-2">
             <ProfileInfoCard
               email={profile.email}
               phone={profile.phone}
@@ -92,14 +89,14 @@ export default function UserProfile() {
           </section>
 
           {/* Actions sidebar — 1/3 chiều rộng (desktop) */}
-          <section className="lms-col-1">
+          <section className="up-col-1">
             <ProfileActions username={profile.username} />
           </section>
         </main>
       )}
 
       {/* ---- Footer ---- */}
-      <footer className="lms-footer">
+      <footer className="up-footer">
         © {new Date().getFullYear()} Hệ thống Thư viện · Phiên bản 2.4.1
       </footer>
     </div>

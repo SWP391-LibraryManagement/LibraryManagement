@@ -1,74 +1,44 @@
 import PersonIcon from "@mui/icons-material/Person";
 
 const statusConfig = {
-  ACTIVE: { label: "Hoạt động", className: "bg-emerald-100 text-emerald-800 border border-emerald-200" },
-  INACTIVE: { label: "Ngừng hoạt động", className: "bg-gray-100 text-gray-600 border border-gray-200" },
-  LOCKED: { label: "Bị khóa", className: "bg-red-100 text-red-700 border border-red-200" },
+  ACTIVE:   { label: "Hoạt động",        className: "ph-badge-active" },
+  INACTIVE: { label: "Ngừng hoạt động",  className: "ph-badge-inactive" },
+  LOCKED:   { label: "Bị khóa",          className: "ph-badge-locked" },
 };
 
 /** Dữ liệu cần thiết để render phần header của profile */
-export default function ProfileHeader({
-  fullName,
-  username,
-  avatarUrl,
-  status,
-}) {
+export default function ProfileHeader({ fullName, username, avatarUrl, status }) {
   const { label: statusLabel, className: statusClass } =
     statusConfig[status] || statusConfig.INACTIVE;
   const displayName = fullName || username || "Người dùng";
 
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-      {/* Banner gradient — navy to navy-dark */}
-      <div
-        className="h-36 w-full"
-        style={{
-          background: "linear-gradient(135deg, #1B3A6B 0%, #0D2247 60%, #C9752A 100%)",
-        }}
-      />
+    <div className="ph-card">
+      {/* Banner gradient */}
+      <div className="ph-banner" />
 
       {/* Avatar + identity row */}
-      <div className="px-8 pb-8 -mt-14">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+      <div className="ph-body">
+        <div className="ph-identity-row">
           {/* Avatar */}
-          <div className="relative shrink-0">
-            <div className="w-24 h-24 rounded-2xl ring-4 ring-card shadow-lg overflow-hidden bg-secondary">
+          <div className="ph-avatar-wrap">
+            <div className="ph-avatar">
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="w-full h-full object-cover"
-                />
+                <img src={avatarUrl} alt={displayName} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-secondary">
-                  <PersonIcon className="text-primary" style={{ fontSize: 48 }} />
-                </div>
+                <PersonIcon className="ph-avatar-icon" />
               )}
             </div>
-            {/* Online dot */}
-            {status === "ACTIVE" && (
-              <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-card rounded-full" />
-            )}
+            {status === "ACTIVE" && <span className="ph-online-dot" />}
           </div>
 
           {/* Name + badges */}
-          <div className="flex-1 min-w-0 mb-1">
-            <h1
-              className="text-2xl text-foreground leading-tight truncate"
-              style={{ fontFamily: "'DM Serif Display', serif" }}
-            >
-              {displayName}
-            </h1>
-
-            {username && (
-              <p className="text-sm text-muted-foreground font-mono mt-0.5">@{username}</p>
-            )}
-
-            {/* Badges row */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              {/* Account status */}
-              <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+          <div className="ph-info">
+            <h1 className="ph-name">{displayName}</h1>
+            {username && <p className="ph-username">@{username}</p>}
+            <div className="ph-badges">
+              <span className={`ph-badge ${statusClass}`}>
+                <span className="ph-badge-dot" />
                 {statusLabel}
               </span>
             </div>
