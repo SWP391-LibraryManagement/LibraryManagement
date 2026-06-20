@@ -69,9 +69,9 @@ export default function BorrowingReportPage() {
       <div className="toolbar">
         <div className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Calendar size={16} className="muted" />
-          <input type="date" className="input" style={{ width: 160 }} value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input type="date" className="input" style={{ width: 160 }} value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
           <span className="muted">-</span>
-          <input type="date" className="input" style={{ width: 160 }} value={to} onChange={(e) => setTo(e.target.value)} />
+          <input type="date" className="input" style={{ width: 160 }} value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
           <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
         </div>
       </div>
@@ -107,8 +107,8 @@ export default function BorrowingReportPage() {
           <div className="lib-card">
             <h3 className="lib-card-title">Chi tiết top sách</h3>
             <div className="lib-table-wrap">
-              <table className="lib-table">
-                <thead><tr><th>#</th><th>Sách</th><th>Tác giả</th><th>Nhóm</th><th>Lượt mượn</th></tr></thead>
+              <table className="lib-table"><caption className="sr-only">Top borrowed books table</caption>
+                <thead><tr><th scope="col">#</th><th scope="col">Sách</th><th scope="col">Tác giả</th><th scope="col">Nhóm</th><th scope="col">Lượt mượn</th></tr></thead>
                 <tbody>
                   {topBooks.map((book, index) => (
                     <tr key={`${book.bookId || book.title}-${index}`}>
