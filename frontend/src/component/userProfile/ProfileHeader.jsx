@@ -1,5 +1,3 @@
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import PersonIcon from "@mui/icons-material/Person";
 
 const statusConfig = {
@@ -14,10 +12,10 @@ export default function ProfileHeader({
   username,
   avatarUrl,
   status,
-  membershipStatus,
 }) {
-  const { label: statusLabel, className: statusClass } = statusConfig[status];
-  const isMember = membershipStatus === "APPROVED";
+  const { label: statusLabel, className: statusClass } =
+    statusConfig[status] || statusConfig.INACTIVE;
+  const displayName = fullName || username || "Người dùng";
 
   return (
     <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
@@ -38,7 +36,7 @@ export default function ProfileHeader({
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
-                  alt={fullName}
+                  alt={displayName}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -59,10 +57,12 @@ export default function ProfileHeader({
               className="text-2xl text-foreground leading-tight truncate"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
-              {fullName}
+              {displayName}
             </h1>
 
-            <p className="text-sm text-muted-foreground font-mono mt-0.5">@{username}</p>
+            {username && (
+              <p className="text-sm text-muted-foreground font-mono mt-0.5">@{username}</p>
+            )}
 
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -70,21 +70,6 @@ export default function ProfileHeader({
               <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
                 {statusLabel}
-              </span>
-
-              {/* Membership badge */}
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isMember
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground border border-border"
-                  }`}
-              >
-                {isMember ? (
-                  <VerifiedUserIcon style={{ fontSize: 13 }} />
-                ) : (
-                  <HourglassEmptyIcon style={{ fontSize: 13 }} />
-                )}
-                {isMember ? "Hội viên" : "Chờ duyệt"}
               </span>
             </div>
           </div>

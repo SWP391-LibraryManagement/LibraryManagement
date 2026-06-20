@@ -25,7 +25,7 @@ export default function ProfileInfoCard({
   phone,
   dateOfBirth,
   address,
-  memberId,
+  userId,
 }) {
   const formattedDob = dateOfBirth
     ? new Date(dateOfBirth).toLocaleDateString("vi-VN", {
@@ -68,8 +68,8 @@ export default function ProfileInfoCard({
         />
         <InfoRow
           icon={<BadgeIcon fontSize="small" />}
-          label="Mã hội viên"
-          value={memberId}
+          label="Mã người dùng"
+          value={userId}
         />
       </div>
     </div>
