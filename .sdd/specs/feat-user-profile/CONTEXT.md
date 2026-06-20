@@ -1,12 +1,12 @@
 # CONTEXT.md - FE03 User Profile
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: DRAFT - AVATAR UPLOAD REVISION
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-20
 
 # Feature folder: `.sdd/specs/feat-user-profile/`
 
@@ -46,7 +46,8 @@ FE03 includes:
 
 - Viewing own profile.
 - Updating own allowed profile fields.
-- Maintaining profile fields such as full name, address, date of birth, avatar URL, and phone when approved.
+- Maintaining profile fields such as full name, address, date of birth, avatar, and phone when approved.
+- Uploading an avatar image from the user's local device when avatar upload is approved.
 - Server-side validation of profile input.
 
 FE03 does not include:
@@ -71,7 +72,7 @@ Potential issues to review:
 
 - `Phone` currently lives in `Users`, while most profile fields live in `UserProfiles`; the team must decide whether FE03 can update phone.
 - Email may be an account identity field and may require FE02 verification before changes.
-- Avatar upload/storage is not defined; Phase 1 may only support avatar URL.
+- Avatar upload/storage is now proposed for Phase 1 revision. The preferred approach is storing the uploaded file on the backend as a static asset and saving the generated public path in `UserProfiles.AvatarUrl`.
 - Members and librarians should only edit their own profile unless FE11 explicitly gives admin profile management.
 - Profile data is personal information and must not be exposed to other users.
 
@@ -102,6 +103,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 - A user may access another user's personal profile if authorization checks are missing.
 - Updating profile may accidentally change account credentials, roles, or membership state.
 - Invalid phone, date of birth, or avatar URL data may be stored without validation.
+- Uploaded avatar files may create security risk if file type, size, path, or executable content is not validated.
 - Email change behavior may conflict with FE02 verification.
 - Profile responses may expose password hash or role data if DTOs are not controlled.
 
@@ -125,8 +127,17 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-002 | FE03 cannot update email; email changes go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-004 | Phase 1 supports avatar URL text only. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-004 | Phase 1 originally supported avatar URL text only. This revision proposes local avatar file upload with backend-generated `avatarUrl`. | User request 2026-06-20 | DRAFT REVISION |
 | Q-FE03-005 | Profile updates write audit logs. | Review packet 2026-06-10 | APPROVED |
+
+## 9.1 Avatar Upload Revision Notes
+
+- Users may upload their own avatar image from their local machine.
+- The upload must be authenticated and scoped to the current user only.
+- The frontend sends a multipart form-data request containing one image file.
+- The backend validates the file before storage.
+- The backend stores only a generated path/URL in `UserProfiles.AvatarUrl`; the original local machine path must never be stored.
+- Existing profile response DTOs continue returning `avatarUrl` for display.
 
 ## 10. Notes For Implementation Later
 

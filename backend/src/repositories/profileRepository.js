@@ -167,8 +167,31 @@ async function updateByUserId(userId, updates) {
   return findByUserId(userId);
 }
 
+async function updateAvatarByUserId(userId, avatarUrl) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('AvatarUrl', sql.NVarChar(255), avatarUrl)
+    .query(`
+      MERGE UserProfiles AS target
+      USING (SELECT @UserId AS UserId) AS source
+      ON target.UserId = source.UserId
+      WHEN MATCHED THEN
+        UPDATE SET
+          AvatarUrl = @AvatarUrl,
+          UpdatedAt = GETDATE()
+      WHEN NOT MATCHED THEN
+        INSERT (UserId, AvatarUrl)
+        VALUES (@UserId, @AvatarUrl);
+    `);
+
+  return findByUserId(userId);
+}
+
 module.exports = {
   findByUserId,
   createBlankProfile,
   updateByUserId,
+  updateAvatarByUserId,
 };

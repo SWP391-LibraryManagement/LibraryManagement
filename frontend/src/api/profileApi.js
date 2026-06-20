@@ -7,6 +7,31 @@ const api = axios.create({
   },
 });
 
+function getApiOrigin() {
+  return api.defaults.baseURL.replace(/\/api\/?$/, '');
+}
+
+function normalizeProfile(profile) {
+  if (!profile?.avatarUrl || /^https?:\/\//i.test(profile.avatarUrl)) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    avatarUrl: `${getApiOrigin()}${profile.avatarUrl}`,
+  };
+}
+
+function denormalizeAvatarUrl(avatarUrl) {
+  const apiOrigin = getApiOrigin();
+
+  if (avatarUrl?.startsWith(`${apiOrigin}/uploads/avatars/`)) {
+    return avatarUrl.slice(apiOrigin.length);
+  }
+
+  return avatarUrl;
+}
+
 function getStoredAccessToken() {
   return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
 }
@@ -28,13 +53,51 @@ function getErrorMessage(error, fallback = 'Could not load profile.') {
   return error.response?.data?.error?.message || fallback;
 }
 
+function buildProfileUpdatePayload(profile) {
+  return {
+    fullName: profile.fullName?.trim() || null,
+    address: profile.address?.trim() || null,
+    dateOfBirth: profile.dateOfBirth || null,
+    avatarUrl: denormalizeAvatarUrl(profile.avatarUrl?.trim()) || null,
+    phone: profile.phone?.trim() || null,
+  };
+}
+
 export async function fetchMyProfile() {
   try {
     const response = await api.get('/profile/me', {
       headers: authHeaders(),
     });
-    return response.data;
+    return normalizeProfile(response.data);
   } catch (error) {
     throw new Error(getErrorMessage(error), { cause: error });
+  }
+}
+
+export async function updateMyProfile(profile) {
+  try {
+    const response = await api.put('/profile/me', buildProfileUpdatePayload(profile), {
+      headers: authHeaders(),
+    });
+    return normalizeProfile(response.data);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not update profile.'), { cause: error });
+  }
+}
+
+export async function uploadMyAvatar(file) {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await api.post('/profile/me/avatar', formData, {
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return normalizeProfile(response.data);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not upload avatar.'), { cause: error });
   }
 }

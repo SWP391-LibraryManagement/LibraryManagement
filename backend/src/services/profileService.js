@@ -1,4 +1,12 @@
 const errors = require('../utils/safeErrors');
+const path = require('path');
+
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+};
 
 const PROTECTED_FIELDS = new Set([
   'password',
@@ -72,6 +80,10 @@ function validateLength(value, max, field, label, details) {
 
 function validateAvatarUrl(value, details) {
   if (!value) {
+    return;
+  }
+
+  if (/^\/uploads\/avatars\/[A-Za-z0-9._-]+$/.test(value)) {
     return;
   }
 
@@ -151,6 +163,47 @@ function validateProfileUpdate(input = {}, clock = () => new Date()) {
   return updates;
 }
 
+function hasValidImageSignature(file) {
+  const buffer = file?.buffer;
+
+  if (!Buffer.isBuffer(buffer)) {
+    return false;
+  }
+
+  if (file.mimeType === 'image/jpeg') {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  if (file.mimeType === 'image/png') {
+    return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  }
+
+  if (file.mimeType === 'image/webp') {
+    return buffer.length >= 12
+      && buffer.subarray(0, 4).toString('ascii') === 'RIFF'
+      && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+  }
+
+  return false;
+}
+
+function validateAvatarUpload(file) {
+  if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
+    throw errors.badRequest('AVATAR_FILE_REQUIRED', 'Avatar file is required.');
+  }
+
+  if (file.size > MAX_AVATAR_BYTES || file.buffer.length > MAX_AVATAR_BYTES) {
+    throw errors.badRequest('AVATAR_FILE_TOO_LARGE', 'Avatar file must be at most 2 MB.');
+  }
+
+  const allowedExtensions = ALLOWED_AVATAR_TYPES[file.mimeType];
+  const extension = path.extname(file.originalName || '').toLowerCase();
+
+  if (!allowedExtensions || !allowedExtensions.includes(extension) || !hasValidImageSignature(file)) {
+    throw errors.badRequest('INVALID_AVATAR_FILE_TYPE', 'Avatar must be a JPG, JPEG, PNG, or WebP image.');
+  }
+}
+
 function toSafeProfileDto(record) {
   if (!record) {
     return null;
@@ -178,6 +231,7 @@ function changedFields(before, updates) {
 function createProfileService({
   profileRepository,
   auditLogRepository,
+  avatarStorage,
   clock = () => new Date(),
 } = {}) {
   if (!profileRepository) {
@@ -186,6 +240,10 @@ function createProfileService({
 
   if (!auditLogRepository) {
     auditLogRepository = require('../repositories/auditLogRepository');
+  }
+
+  if (!avatarStorage) {
+    avatarStorage = require('../utils/avatarStorage');
   }
 
   async function getExistingProfile(userId) {
@@ -245,9 +303,28 @@ function createProfileService({
     return toSafeProfileDto(updated);
   }
 
+  async function updateMyAvatar(userId, file, context = {}) {
+    const existing = await getExistingProfile(userId);
+    validateAvatarUpload(file);
+
+    const avatarUrl = await avatarStorage.saveAvatarFile({
+      userId: existing.userId,
+      buffer: file.buffer,
+      mimeType: file.mimeType,
+    });
+    const updated = await profileRepository.updateAvatarByUserId(existing.userId, avatarUrl);
+
+    if (avatarUrl !== existing.avatarUrl) {
+      await writeAudit(existing.userId, context, ['avatarUrl']);
+    }
+
+    return toSafeProfileDto(updated);
+  }
+
   return {
     getMyProfile,
     updateMyProfile,
+    updateMyAvatar,
   };
 }
 
@@ -257,5 +334,6 @@ module.exports = {
   createProfileService,
   defaultProfileService,
   validateProfileUpdate,
+  validateAvatarUpload,
   toSafeProfileDto,
 };

@@ -1,8 +1,8 @@
 # TASKS.md - FE03 User Profile
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: APPROVED
+# Status: DRAFT - AVATAR UPLOAD REVISION IMPLEMENTED, MANUAL VERIFY PENDING
 
 # Owner: Dat
 
@@ -105,6 +105,74 @@ Traceability: FT13, AC-FE03-005, AC-FE03-006, AC-FE03-007, BR-FE03-008
 - [x] Run backend tests with `npm --prefix backend test`.
 - [x] Checked package scripts; no backend lint/build command is configured.
 - [x] Record any environment-related test failures in the final implementation note.
+
+Traceability: Definition of Done, `.agents/AGENTS.md` Testing Rules
+
+---
+
+## Avatar Upload Revision Tasks
+
+### T-FE03-010 - Update Avatar Upload Contract
+
+- [x] Confirm final avatar upload endpoint: `POST /api/profile/me/avatar`.
+- [x] Confirm multipart field name: `avatar`.
+- [x] Confirm accepted file extensions: JPG, JPEG, PNG, WebP.
+- [x] Confirm maximum file size: 2 MB.
+- [x] Confirm generated public path is stored in `UserProfiles.AvatarUrl`.
+
+Traceability: PRE-FE03-006, BR-FE03-012, BR-FE03-013, BR-FE03-014
+
+### T-FE03-011 - Add Backend Avatar Upload Handling
+
+- [x] Add multipart upload middleware for the avatar endpoint.
+- [x] Validate authentication before accepting avatar upload.
+- [x] Validate file type and extension.
+- [x] Validate maximum file size.
+- [x] Generate a safe server-side filename.
+- [x] Store the file in a backend-controlled uploads directory.
+- [x] Serve uploaded avatar files through a safe static path.
+- [x] Reject invalid uploads without changing the existing `avatarUrl`.
+
+Traceability: BR-FE03-011, BR-FE03-012, BR-FE03-013, BR-FE03-014, FR-FE03-008, FR-FE03-009, NFR-FE03-SEC-005, NFR-FE03-SEC-006
+
+### T-FE03-012 - Add Backend Avatar Service And Repository Updates
+
+- [x] Add service function to update the current user's avatar after successful upload.
+- [x] Reuse own-profile-only lookup by authenticated `userId`.
+- [x] Save only the generated avatar URL/path to `UserProfiles.AvatarUrl`.
+- [x] Return the updated safe profile DTO.
+- [x] Write audit log entry for avatar update when audit logging is available.
+
+Traceability: FR-FE03-008, AC-FE03-009, Q-FE03-005
+
+### T-FE03-013 - Add Backend Tests For Avatar Upload
+
+- [x] Test authenticated user can upload a valid avatar.
+- [x] Test guest avatar upload is unauthorized.
+- [x] Test missing avatar file is rejected.
+- [x] Test unsupported avatar file type is rejected.
+- [x] Test oversized avatar file is rejected.
+- [x] Test invalid avatar upload keeps the existing `avatarUrl`.
+- [x] Test original local file path/name is not persisted.
+
+Traceability: AC-FE03-009, AC-FE03-010, AC-FE03-011, EC-FE03-012, EC-FE03-013, EC-FE03-014, EC-FE03-015, EC-FE03-016
+
+### T-FE03-014 - Add Frontend Avatar Upload UI
+
+- [x] Add avatar file picker to the profile edit flow.
+- [x] Submit selected avatar as multipart form-data to `POST /api/profile/me/avatar`.
+- [x] Show upload progress/loading state.
+- [x] Show clear file type and file size validation errors.
+- [x] Refresh profile state with the returned safe profile DTO.
+
+Traceability: MF-FE03-003, NFR-FE03-UX-003
+
+### T-FE03-015 - Run Avatar Upload Verification
+
+- [x] Run backend tests.
+- [x] Run frontend lint/build.
+- [ ] Manually verify upload from the profile screen with a valid image.
+- [ ] Manually verify invalid file type and oversized file errors.
 
 Traceability: Definition of Done, `.agents/AGENTS.md` Testing Rules
 

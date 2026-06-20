@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+const path = require('path');
 
 const { createAuthRoutes } = require('./routes/authRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
@@ -18,6 +19,7 @@ function createApp({ authService = defaultAuthService, userManagementService, pr
   app.use(cors());
   app.use(compression());
   app.use(express.json());
+  app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
 
   app.get('/', (req, res) => {
     res.json({
