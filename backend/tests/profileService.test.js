@@ -1,4 +1,9 @@
-const { createProfileService, validateProfileUpdate, toSafeProfileDto } = require('../src/services/profileService');
+const {
+  createProfileService,
+  validateAvatarUpload,
+  validateProfileUpdate,
+  toSafeProfileDto,
+} = require('../src/services/profileService');
 
 function makeProfile(overrides = {}) {
   return {
@@ -50,7 +55,24 @@ function makeRepository(initialProfile = makeProfile()) {
         };
         return state.profile;
       }),
+      updateAvatarByUserId: jest.fn(async (userId, avatarUrl) => {
+        state.profile = {
+          ...state.profile,
+          avatarUrl,
+        };
+        return state.profile;
+      }),
     },
+  };
+}
+
+function validPngFile(overrides = {}) {
+  return {
+    originalName: 'avatar.png',
+    mimeType: 'image/png',
+    size: 9,
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]),
+    ...overrides,
   };
 }
 
@@ -192,5 +214,89 @@ describe('FE03 profile service', () => {
       avatarUrl: null,
       phone: null,
     });
+  });
+
+  test('updateMyAvatar stores generated avatar URL and writes audit', async () => {
+    const { repository } = makeRepository();
+    const auditLogRepository = {
+      create: jest.fn(async () => undefined),
+    };
+    const avatarStorage = {
+      saveAvatarFile: jest.fn(async () => '/uploads/avatars/1-generated.png'),
+    };
+    const service = createProfileService({
+      profileRepository: repository,
+      auditLogRepository,
+      avatarStorage,
+    });
+
+    const result = await service.updateMyAvatar(
+      1,
+      validPngFile({ originalName: 'C:\\fakepath\\my-avatar.png' }),
+      { ip: '127.0.0.1', userAgent: 'jest-avatar' }
+    );
+
+    expect(avatarStorage.saveAvatarFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 1,
+        mimeType: 'image/png',
+        buffer: expect.any(Buffer),
+      })
+    );
+    expect(repository.updateAvatarByUserId).toHaveBeenCalledWith(1, '/uploads/avatars/1-generated.png');
+    expect(repository.updateAvatarByUserId).not.toHaveBeenCalledWith(
+      1,
+      expect.stringContaining('fakepath')
+    );
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PROFILE_UPDATE',
+        metadata: expect.objectContaining({ fields: ['avatarUrl'] }),
+      })
+    );
+    expect(result.avatarUrl).toBe('/uploads/avatars/1-generated.png');
+  });
+
+  test('updateMyAvatar rejects invalid upload without changing avatar', async () => {
+    const { repository, state } = makeRepository();
+    const avatarStorage = {
+      saveAvatarFile: jest.fn(async () => '/uploads/avatars/1-generated.png'),
+    };
+    const service = createProfileService({ profileRepository: repository, avatarStorage });
+
+    await expect(
+      service.updateMyAvatar(
+        1,
+        validPngFile({
+          originalName: 'avatar.txt',
+          mimeType: 'text/plain',
+        })
+      )
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_AVATAR_FILE_TYPE',
+    });
+
+    expect(avatarStorage.saveAvatarFile).not.toHaveBeenCalled();
+    expect(repository.updateAvatarByUserId).not.toHaveBeenCalled();
+    expect(state.profile.avatarUrl).toBe('https://example.test/avatar.png');
+  });
+
+  test('validateAvatarUpload rejects oversized avatar files', () => {
+    expect(() => validateAvatarUpload(validPngFile({
+      size: 2 * 1024 * 1024 + 1,
+    }))).toThrow(expect.objectContaining({
+      statusCode: 400,
+      code: 'AVATAR_FILE_TOO_LARGE',
+    }));
+  });
+
+  test('validateAvatarUpload accepts jpg extension with jpeg content type', () => {
+    expect(() => validateAvatarUpload({
+      originalName: 'avatar.jpg',
+      mimeType: 'image/jpeg',
+      size: 4,
+      buffer: Buffer.from([0xff, 0xd8, 0xff, 0x00]),
+    })).not.toThrow();
   });
 });

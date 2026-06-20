@@ -26,6 +26,15 @@ function createProfileController(profileService = defaultProfileService) {
         return next(error);
       }
     },
+
+    updateAvatar: async (req, res, next) => {
+      try {
+        const result = await profileService.updateMyAvatar(req.user.userId, req.avatarFile, requestContext(req));
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
   };
 }
 
