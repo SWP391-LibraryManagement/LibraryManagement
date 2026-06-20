@@ -27,7 +27,7 @@ function LogoutDialog({ onClose }) {
           <LogoutIcon />
         </div>
         <h3 className="text-center text-lg font-semibold text-foreground mb-1"
-            style={{ fontFamily: "'DM Serif Display', serif" }}>
+          style={{ fontFamily: "'DM Serif Display', serif" }}>
           Đăng xuất?
         </h3>
         <p className="text-center text-sm text-muted-foreground mb-6">

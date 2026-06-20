@@ -74,11 +74,10 @@ export default function ProfileHeader({
 
               {/* Membership badge */}
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
-                  isMember
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isMember
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground border border-border"
-                }`}
+                  }`}
               >
                 {isMember ? (
                   <VerifiedUserIcon style={{ fontSize: 13 }} />
