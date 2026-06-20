@@ -7,6 +7,20 @@ import HomePage from './page/HomePage';
 import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
 
+// FE07 · Borrowing Management
+import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
+import BorrowingHistoryPage from './page/borrowing/BorrowingHistoryPage';
+import BorrowRequestsAdminPage from './page/borrowing/BorrowRequestsAdminPage';
+import ProcessReturnsPage from './page/borrowing/ProcessReturnsPage';
+import MemberBorrowingDetailsPage from './page/borrowing/MemberBorrowingDetailsPage';
+// FE08 · Reservation Management
+import MyReservationsPage from './page/reservation/MyReservationsPage';
+import ReservationsLibrarianPage from './page/reservation/ReservationsLibrarianPage';
+// FE12 · Reporting & Statistics
+import BorrowingReportPage from './page/report/BorrowingReportPage';
+import InventoryReportPage from './page/report/InventoryReportPage';
+import UserStatisticsPage from './page/report/UserStatisticsPage';
+
 
 function App() {
   return (
@@ -21,6 +35,22 @@ function App() {
       
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
+
+      {/* FE07 · Borrowing Management */}
+      <Route path="/borrowing/new" element={<BorrowRequestPage />} />
+      <Route path="/borrowing/history" element={<BorrowingHistoryPage />} />
+      <Route path="/librarian/borrow-requests" element={<BorrowRequestsAdminPage />} />
+      <Route path="/librarian/returns" element={<ProcessReturnsPage />} />
+      <Route path="/librarian/members" element={<MemberBorrowingDetailsPage />} />
+
+      {/* FE08 · Reservation Management */}
+      <Route path="/reservations/mine" element={<MyReservationsPage />} />
+      <Route path="/librarian/reservations" element={<ReservationsLibrarianPage />} />
+
+      {/* FE12 · Reporting & Statistics */}
+      <Route path="/reports/borrowing" element={<BorrowingReportPage />} />
+      <Route path="/reports/inventory" element={<InventoryReportPage />} />
+      <Route path="/reports/users" element={<UserStatisticsPage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
