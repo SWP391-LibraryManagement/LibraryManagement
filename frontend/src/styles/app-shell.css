@@ -200,6 +200,7 @@
 .lib-table tbody td { padding: 14px 16px; border-bottom: 1px solid var(--lib-line); color: var(--lib-ink); vertical-align: middle; }
 .lib-table tbody tr:last-child td { border-bottom: 0; }
 .lib-table tbody tr:hover { background: var(--lib-cream); }
+.lib-table tr[tabindex]:focus-visible { outline: 3px solid rgba(47, 111, 95, 0.35); outline-offset: -3px; }
 .lib-table tr.row-overdue { background: var(--st-red-bg); }
 .lib-table tr.row-overdue:hover { background: #f7e0dc; }
 
