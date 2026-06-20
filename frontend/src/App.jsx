@@ -19,7 +19,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route path="/home" element={<HomePage />} />
-      
+
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
       <Route path="/profile" element={<UserProfilePage />} />
