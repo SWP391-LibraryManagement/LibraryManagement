@@ -200,7 +200,6 @@ describe('FE02 auth vertical slice', () => {
 
     const logoutResponse = await request(app)
       .post('/api/auth/logout')
-      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
       .send({ refreshToken: loginResponse.body.refreshToken });
 
     expect(logoutResponse.status).toBe(200);
@@ -319,12 +318,14 @@ describe('FE02 auth vertical slice', () => {
   });
 
   test('locked account is rejected after too many failed attempts', async () => {
-    const { app } = makeTestApp();
+    const { app, dependencies } = makeTestApp();
     await registerAndVerify(app, 'locked@example.test');
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       await login(app, 'locked@example.test', 'WrongPassword1!');
     }
+
+    expect(dependencies.state.users[0].status).toBe('LOCKED');
 
     const lockedResponse = await login(app, 'locked@example.test', 'Password1!');
     expect(lockedResponse.status).toBe(429);
