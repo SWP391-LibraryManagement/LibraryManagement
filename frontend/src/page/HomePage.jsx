@@ -1,6 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash, Clock, ChevronLeft } from 'lucide-react';
+import {
+  addBorrowRecord,
+  getMemberUnpaidFineSummary,
+} from '../utils/libraryWorkflow';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
 
@@ -90,6 +94,61 @@ const StarRating = ({ rating, size = 12 }) => {
 };
 
 // -- Trang đăng ký mượn sách --
+const REVIEW_NAMES = ['Minh Anh', 'Bao Long', 'Thao Vy', 'Gia Han', 'Quoc Huy'];
+const REVIEW_COMMENTS = [
+  'Noi dung de theo doi, phu hop de doc va tra cuu.',
+  'Sach co nhieu y hay, minh se gioi thieu cho ban be.',
+  'Ban in sach ro, thong tin huu ich cho viec hoc tap.',
+  'Tac gia trinh bay mach lac, diem tru nho la mot vai phan hoi dai.',
+  'Trai nghiem doc tot, rat dang muon lai lan sau.',
+];
+
+function getBookReviews(book) {
+  const baseScore = Number(book?.rating) || 4;
+  const seed = Number(book?.id) || 1;
+
+  return [0, 1, 2].map((index) => {
+    const score = Math.max(3.5, Math.min(5, baseScore + ((seed + index) % 3 - 1) * 0.2));
+    return {
+      id: `${book?.id || 'book'}-${index}`,
+      name: REVIEW_NAMES[(seed + index) % REVIEW_NAMES.length],
+      rating: Number(score.toFixed(1)),
+      comment: REVIEW_COMMENTS[(seed + index) % REVIEW_COMMENTS.length],
+    };
+  });
+}
+
+const ReviewModal = ({ book, onClose }) => {
+  if (!book) return null;
+
+  const reviews = getBookReviews(book);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 850, background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={onClose}>
+      <div style={{ width: '100%', maxWidth: 520, background: '#FFF', borderRadius: 14, boxShadow: '0 24px 80px rgba(44,26,14,0.3)', overflow: 'hidden' }} onClick={event => event.stopPropagation()}>
+        <div style={{ background: '#4E342E', color: '#FAF7F2', padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', color: '#C78A3B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Danh gia doc gia</p>
+            <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: 20 }}>{book.title}</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 0, color: '#C4A882', borderRadius: 8, padding: 8, cursor: 'pointer' }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: 22, display: 'grid', gap: 14 }}>
+          {reviews.map((review) => (
+            <div key={review.id} style={{ border: '1px solid rgba(78,52,46,0.12)', borderRadius: 10, padding: 14, background: '#FAF7F2' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                <strong style={{ color: '#2C1A0E', fontSize: 14 }}>{review.name}</strong>
+                <StarRating rating={review.rating} size={12} />
+              </div>
+              <p style={{ margin: 0, color: '#5A3E36', fontSize: 13, lineHeight: 1.6 }}>{review.comment}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const textClamp = (lines) => ({
   display: '-webkit-box',
   WebkitLineClamp: lines,
@@ -191,8 +250,39 @@ const canConfirm =
       return;
     }
 
+    const unpaidFineSummary = getMemberUnpaidFineSummary(borrowerInfo.memberId);
+    if (unpaidFineSummary.count > 0) {
+      setFieldErrors({
+        agreed: `Thanh vien ${borrowerInfo.memberId} dang co ${unpaidFineSummary.count} phieu phat chua thanh toan.`,
+      });
+      return;
+    }
+
+    const loanInfo = {
+      borrowerInfo,
+      pickupDate,
+      dueDate: dueDate.toISOString().slice(0, 10),
+      duration,
+      note: borrowNote.trim(),
+    };
+
+    addBorrowRecord({
+      memberId: Number(String(borrowerInfo.memberId).replace(/\D/g, '')) || Date.now(),
+      memberName: borrowerInfo.name.trim(),
+      memberCode: borrowerInfo.memberId.trim().toUpperCase(),
+      email: borrowerInfo.email.trim(),
+      bookId: book.id,
+      bookTitle: book.title,
+      barcode: `HOME-${book.id}-${Date.now().toString().slice(-5)}`,
+      borrowDate: pickupDate,
+      dueDate: loanInfo.dueDate,
+      returnDate: '',
+      status: 'BORROWED',
+      note: loanInfo.note,
+    });
+
     setStep('success');
-    setTimeout(onConfirm, 3000);
+    setTimeout(() => onConfirm(loanInfo), 3000);
   };
 
   const goNextStep = () => {
@@ -874,6 +964,7 @@ const HomePage = () => {
 
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState(null);
+  const [selectedReviewBook, setSelectedReviewBook] = useState(null);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -891,6 +982,12 @@ const HomePage = () => {
   const goToRegister = () => {
     navigate('/register');
   };
+
+  const openReviews = (event, book) => {
+    event.stopPropagation();
+    setSelectedReviewBook(book);
+  };
+
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -1242,7 +1339,13 @@ const HomePage = () => {
                     <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.category)}</p>
                     <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
-                    <StarRating rating={book.rating} />
+                    <button
+                      type="button"
+                      onClick={(event) => openReviews(event, book)}
+                      style={{ background: 'transparent', border: 0, padding: 0, alignSelf: 'flex-start', cursor: 'pointer' }}
+                    >
+                      <StarRating rating={book.rating} />
+                    </button>
                     {isLoggedIn ? (
                       book.available ? (
                         <button onClick={e => { e.stopPropagation(); setSelectedBook(book); setShowBorrow(true); }}
@@ -1338,7 +1441,13 @@ const HomePage = () => {
                   {book.title}
                 </h3>
                 <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
-                <StarRating rating={book.rating} />
+                <button
+                  type="button"
+                  onClick={(event) => openReviews(event, book)}
+                  style={{ background: 'transparent', border: 0, padding: 0, alignSelf: 'flex-start', cursor: 'pointer' }}
+                >
+                  <StarRating rating={book.rating} />
+                </button>
                 <button
                   onClick={e => { e.stopPropagation(); setSelectedBook(book); setShowDetails(false); }}
                   style={{
@@ -1517,6 +1626,8 @@ const HomePage = () => {
           onReadingList={() => showToast(`Đã thêm "${selectedBook.title}" vào danh sách đọc!`)}
         />
       )}
+
+      <ReviewModal book={selectedReviewBook} onClose={() => setSelectedReviewBook(null)} />
 
       {/* -- TOAST -- */}
       {toast && (
