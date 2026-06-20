@@ -5,12 +5,13 @@ const helmet = require('helmet');
 
 const { createAuthRoutes } = require('./routes/authRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
+const { createProfileRoutes } = require('./routes/profileRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
 
-function createApp({ authService = defaultAuthService, userManagementService } = {}) {
+function createApp({ authService = defaultAuthService, userManagementService, profileService } = {}) {
   const app = express();
 
   app.use(helmet());
@@ -33,6 +34,7 @@ function createApp({ authService = defaultAuthService, userManagementService } =
   });
 
   app.use('/api/auth', createAuthRoutes(authService));
+  app.use('/api/profile', createProfileRoutes({ authService, profileService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
 
   app.use('/api/books', bookRoutes);
