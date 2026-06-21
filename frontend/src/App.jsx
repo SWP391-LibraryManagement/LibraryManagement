@@ -6,6 +6,7 @@ import ForgotPasswordPage from './page/ForgotPasswordPage';
 import HomePage from './page/HomePage';
 import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
+import UserProfilePage from './page/UserProfilePage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -32,6 +33,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route path="/home" element={<HomePage />} />
+      <Route path="/profile" element={<UserProfilePage />} />
       
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
