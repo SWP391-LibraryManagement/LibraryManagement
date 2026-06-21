@@ -6,7 +6,7 @@
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-21
 
 # Feature ID: FE05
 
@@ -259,7 +259,7 @@ Use these stable IDs for tasks and tests.
 | GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public-safe detail for guest/member; staff may see management fields if approved. |
 | GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?` | Paginated management list | Protected endpoint. |
 | POST | `/api/books` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, description?, coverUrl? }` | Created book | Validates required fields and unique ISBN. |
-| PUT | `/api/books/{bookId}` | Librarian/Admin | Book update fields | Updated book | Validates references and unique ISBN. |
+| PUT | `/api/books/{bookId}` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl?, status?: "ACTIVE"\|"INACTIVE" }` | Updated book | Validates references, unique ISBN, and optional status update. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | `{ reason?: string }` | Deactivated book | Prefer status-based deactivation. |
 
 ---
@@ -334,6 +334,7 @@ This feature does not include:
 | Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
+| Q-FE05-008 | Staff update form may set book status directly to `ACTIVE` or `INACTIVE`; public browse must hide `INACTIVE` books. | User request 2026-06-21 | APPROVED |
 
 ---
 

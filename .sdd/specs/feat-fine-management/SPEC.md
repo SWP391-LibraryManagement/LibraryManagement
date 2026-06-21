@@ -6,7 +6,7 @@
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-21
 
 # Feature ID: FE09
 
@@ -252,6 +252,10 @@ Use these stable IDs for tasks and tests.
 | POST | `/api/fines/{fineId}/collections` | Librarian/Admin | `{ collectedAmount?, note? }` | Collection record/status | Optional if schema supports collection records. |
 | PATCH | `/api/fines/{fineId}/paid` | Librarian/Admin | `{ note? }` | Paid fine | Sets status `PAID`, `PaidAt`. |
 
+### 11.1 Prototype Alignment Note
+
+The current FE09 React prototype may keep fine records in browser storage for classroom/demo workflows. This is acceptable only as a temporary prototype behavior. The production-aligned implementation must move fine calculation, duplicate prevention, collection recording, and paid marking to the server-side FE09 API so BR-FE09-007, BR-FE09-008, NFR-FE09-SEC-003, and NFR-FE09-TXN-001 remain enforceable.
+
 ---
 
 ## 12. Non-functional Requirements
@@ -322,6 +326,7 @@ This feature does not include:
 | Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-007 | Prototype UI may store fine records locally for demo continuity, but final FE09 behavior must use server-side calculation and persistence. | User correction 2026-06-21 | APPROVED |
 
 ---
 

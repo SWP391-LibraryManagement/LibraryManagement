@@ -6,7 +6,7 @@
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-21
 
 # Feature ID: FE11
 
@@ -354,6 +354,7 @@ Use these stable IDs for tasks and tests.
 - NFR-FE11-TXN-001: Creating a user must be atomic: user record, default role assignment, and audit log must succeed together or roll back.
 - NFR-FE11-TXN-002: Deactivating a user must be atomic: user status, session invalidation, and audit log must succeed together or roll back.
 - NFR-FE11-TXN-003: Role assignment must be atomic: UserRoles update and audit log must succeed together or roll back.
+- NFR-FE11-TXN-004: Password setup notification queuing must not convert an otherwise valid admin-created account into an internal server error when optional notification content columns or templates are unavailable; the account creation response must remain safe and traceable.
 
 ### 12.3 Performance
 
@@ -415,6 +416,7 @@ This feature does not include:
 | Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-010 | Admin-created account notification queuing must tolerate notification schema/template differences in the Phase 1 prototype; account creation still creates the active account and setup token. | User correction 2026-06-21 | APPROVED |
 
 ---
 

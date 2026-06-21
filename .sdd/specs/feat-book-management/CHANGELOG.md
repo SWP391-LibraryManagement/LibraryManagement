@@ -26,3 +26,5 @@
 
 - Updated FE05 deactivation behavior so `Delete Book` performs status-based catalog removal even when copies are currently borrowed or reserved.
 - Clarified that borrow/reservation history and copy records remain unchanged when a book is hidden from the public catalog.
+- Added staff update support for changing book `status` directly between `ACTIVE` and `INACTIVE`.
+- Updated FE05 API contract and context notes to align with the implemented `/api/books/{bookId}` update payload.
