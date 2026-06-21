@@ -92,8 +92,8 @@ export default function InventoryReportPage() {
           <div className="lib-card">
             <h3 className="lib-card-title">Đầu sách cần theo dõi tồn kho</h3>
             <div className="lib-table-wrap">
-              <table className="lib-table">
-                <thead><tr><th>Sách</th><th>Thể loại</th><th>Tổng bản</th><th>Khả dụng</th><th>Trạng thái</th></tr></thead>
+              <table className="lib-table"><caption className="sr-only">Low inventory books table</caption>
+                <thead><tr><th scope="col">Sách</th><th scope="col">Thể loại</th><th scope="col">Tổng bản</th><th scope="col">Khả dụng</th><th scope="col">Trạng thái</th></tr></thead>
                 <tbody>
                   {lowBooks.map((book, index) => {
                     const available = Number(book.availableCopies ?? book.availableCount ?? 0);

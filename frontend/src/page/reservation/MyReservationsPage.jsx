@@ -134,8 +134,8 @@ export default function MyReservationsPage() {
         <h3 className="lib-card-title">Đặt chỗ của tôi</h3>
         {loading ? <LoadingBlock rows={3} /> : (
           <div className="lib-table-wrap">
-            <table className="lib-table">
-              <thead><tr><th>Sách</th><th>Ngày đặt</th><th>Vị trí hàng đợi</th><th>Trạng thái</th><th style={{ textAlign: 'right' }}>Thao tác</th></tr></thead>
+            <table className="lib-table"><caption className="sr-only">My reservations table</caption>
+              <thead><tr><th scope="col">Sách</th><th scope="col">Ngày đặt</th><th scope="col">Vị trí hàng đợi</th><th scope="col">Trạng thái</th><th scope="col" style={{ textAlign: 'right' }}>Thao tác</th></tr></thead>
               <tbody>
                 {reservations.map((item) => (
                   <tr key={item.id}>
