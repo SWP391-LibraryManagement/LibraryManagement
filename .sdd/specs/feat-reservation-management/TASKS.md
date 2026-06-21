@@ -29,9 +29,21 @@ Updated: 2026-06-10
 - [x] FE08-T14 Test notification request creation when a copy is held.
 - [x] FE08-T15 Test authentication and role guards.
 
-## 3. Validation
+## 3. Frontend Tasks
+
+- [x] FE08-T16 Implement member my reservations screen.
+- [x] FE08-T17 Implement librarian reservation management screen.
+- [x] FE08-T18 Implement librarian reservation queue processing screen.
+- [x] FE08-T19 Wire frontend screens to backend APIs.
+- [x] FE08-T20 Add accessibility: table captions, header scopes, form labels, keyboard support.
+- [x] FE08-T21 Add loading, empty, and error states on all screens.
+
+## 4. Validation
 
 - [x] `npm test` in `backend`.
+- [x] `npm.cmd --prefix frontend run lint` passed.
+- [x] `npm.cmd --prefix frontend run build` passed.
+- [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
 
 ## 4. Traceability
 
@@ -53,7 +65,6 @@ Updated: 2026-06-10
 
 ## 5. Still Outside This Slice
 
-- Frontend reservation pages.
 - FE07 return integration.
 - FE10 delivery worker.
 - Automatic expiration job.

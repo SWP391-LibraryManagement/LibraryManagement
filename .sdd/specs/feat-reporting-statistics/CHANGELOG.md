@@ -20,3 +20,12 @@
 - Added read-only borrowing, inventory, and user statistics report endpoints.
 - Added filter validation, zero-result handling, role protection, and audit logs for successful report access.
 - Added backend tests for report metrics, zero-result behavior, personal-data suppression, invalid ranges, and access control.
+
+## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+
+- Implemented borrowing report, inventory report, and user statistics screens with date filters, category filters, and chart components.
+- Wired all frontend screens to backend APIs using axios and React hooks.
+- Added table captions, column header scopes, accessible labels for date inputs, selects, and pagination buttons.
+- Added loading, empty, and error states on all reviewed screens.
+- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.

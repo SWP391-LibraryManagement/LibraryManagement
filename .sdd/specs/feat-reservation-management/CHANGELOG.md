@@ -21,3 +21,12 @@
 - Added the FE08 backend plan and task checklist for Nhat's reservation scope.
 - Added member reservation APIs, staff queue processing, audit logging, and FE10 notification request handoff.
 - Added backend tests for reservation rules, cancellation ownership, queue order, notifications, and role guards.
+
+## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+
+- Implemented member my reservations, librarian reservation management, and librarian reservation queue processing screens.
+- Wired all frontend screens to backend APIs using axios and React hooks.
+- Added table captions, column header scopes, accessible labels for search inputs, selects, pagination buttons, and icon controls.
+- Added loading, empty, and error states on all reviewed screens.
+- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
