@@ -4,8 +4,6 @@ import ProfileInfoCard from "./ProfileInfoCard";
 import ProfileActions from "./ProfileActions";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import LockResetIcon from "@mui/icons-material/LockReset";
-import { changePassword } from "../../api/authApi";
 import { fetchMyProfile, updateMyProfile, uploadMyAvatar } from "../../api/profileApi";
 import "../../styles/UserProfile.css";
 
@@ -140,83 +138,6 @@ function EditProfileDialog({
   );
 }
 
-function getStoredAccessToken() {
-  return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-}
-
-function ChangePasswordDialog({
-  form,
-  isSaving,
-  errorMessage,
-  successMessage,
-  onChange,
-  onClose,
-  onSubmit,
-}) {
-  return (
-    <div className="cp-overlay">
-      <div className="cp-backdrop" onClick={onClose} />
-      <form className="cp-dialog" onSubmit={onSubmit}>
-        <div className="cp-icon-wrap">
-          <LockResetIcon />
-        </div>
-
-        <h3 className="cp-heading">Đổi mật khẩu</h3>
-        <p className="cp-desc">Nhập mật khẩu hiện tại và mật khẩu mới để cập nhật tài khoản.</p>
-
-        {errorMessage && <div className="cp-error">{errorMessage}</div>}
-        {successMessage && <div className="cp-success">{successMessage}</div>}
-
-        <label className="cp-field">
-          <span>Mật khẩu cũ</span>
-          <input
-            type="password"
-            name="currentPassword"
-            value={form.currentPassword}
-            onChange={onChange}
-            autoComplete="current-password"
-          />
-        </label>
-
-        <label className="cp-field">
-          <span>Mật khẩu mới</span>
-          <input
-            type="password"
-            name="newPassword"
-            value={form.newPassword}
-            onChange={onChange}
-            autoComplete="new-password"
-          />
-        </label>
-
-        <label className="cp-field">
-          <span>Xác nhận mật khẩu mới</span>
-          <input
-            type="password"
-            name="confirmNewPassword"
-            value={form.confirmNewPassword}
-            onChange={onChange}
-            autoComplete="new-password"
-          />
-        </label>
-
-        <p className="cp-note">
-          Xác thực OTP cho đổi mật khẩu chưa có API backend trong FE02 hiện tại.
-        </p>
-
-        <div className="cp-actions">
-          <button type="button" className="cp-btn cp-btn-cancel" onClick={onClose} disabled={isSaving}>
-            Hủy
-          </button>
-          <button type="submit" className="cp-btn cp-btn-save" disabled={isSaving || Boolean(successMessage)}>
-            {isSaving ? "Đang đổi..." : "Đổi mật khẩu"}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 /** Trang User Profile — kết hợp tất cả sub-component */
 export default function UserProfile() {
   const [profile, setProfile] = useState(null);
@@ -227,10 +148,6 @@ export default function UserProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [editErrorMessage, setEditErrorMessage] = useState("");
-  const [changePasswordForm, setChangePasswordForm] = useState(null);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState("");
-  const [changePasswordSuccess, setChangePasswordSuccess] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -341,70 +258,6 @@ export default function UserProfile() {
     }
   };
 
-  const openChangePassword = () => {
-    setChangePasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmNewPassword: "",
-    });
-    setChangePasswordError("");
-    setChangePasswordSuccess("");
-  };
-
-  const closeChangePassword = () => {
-    if (!isChangingPassword) {
-      setChangePasswordForm(null);
-      setChangePasswordError("");
-      setChangePasswordSuccess("");
-    }
-  };
-
-  const handleChangePasswordFormChange = (event) => {
-    const { name, value } = event.target;
-    setChangePasswordForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const handleChangePasswordSubmit = async (event) => {
-    event.preventDefault();
-    setChangePasswordError("");
-    setChangePasswordSuccess("");
-
-    if (changePasswordForm.newPassword !== changePasswordForm.confirmNewPassword) {
-      setChangePasswordError("Mật khẩu xác nhận không khớp.");
-      return;
-    }
-
-    const accessToken = getStoredAccessToken();
-
-    if (!accessToken) {
-      setChangePasswordError("Vui lòng đăng nhập lại trước khi đổi mật khẩu.");
-      return;
-    }
-
-    setIsChangingPassword(true);
-
-    try {
-      await changePassword({
-        accessToken,
-        currentPassword: changePasswordForm.currentPassword,
-        newPassword: changePasswordForm.newPassword,
-      });
-      setChangePasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmNewPassword: "",
-      });
-      setChangePasswordSuccess("Đổi mật khẩu thành công.");
-    } catch (error) {
-      setChangePasswordError(error.message);
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
   const handleEditProfileSubmit = async (event) => {
     event.preventDefault();
     setIsSaving(true);
@@ -470,7 +323,7 @@ export default function UserProfile() {
 
           {/* Actions sidebar — 1/3 chiều rộng (desktop) */}
           <section className="up-col-1">
-            <ProfileActions onEditProfile={openEditProfile} onChangePassword={openChangePassword} />
+            <ProfileActions onEditProfile={openEditProfile} />
           </section>
         </main>
       )}
@@ -487,18 +340,6 @@ export default function UserProfile() {
           onChange={handleEditFormChange}
           onClose={closeEditProfile}
           onSubmit={handleEditProfileSubmit}
-        />
-      )}
-
-      {changePasswordForm && (
-        <ChangePasswordDialog
-          form={changePasswordForm}
-          isSaving={isChangingPassword}
-          errorMessage={changePasswordError}
-          successMessage={changePasswordSuccess}
-          onChange={handleChangePasswordFormChange}
-          onClose={closeChangePassword}
-          onSubmit={handleChangePasswordSubmit}
         />
       )}
 
