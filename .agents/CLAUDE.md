@@ -1,8 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT (Week 3)
+# Status: ACTIVE (Phase 2 — Core Development)
+
+# Last Updated: 2026-06-22
 
 # Project: SWP391 Library Management System
 
@@ -15,11 +17,14 @@
 ## 0. Project Summary And Current Phase
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
-- **Current phase**: Foundation + SDD Sprint, end of Week 3 / entering Week 4 scaffolding.
-- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server database, RESTful API.
-- **Current SDD scope**: all 12 Phase 1 feature SPEC.md files are marked approved. PLAN.md and TASKS.md are still not started for each feature, so implementation must not be treated as complete or source-of-truth-driven yet.
-- **Current code state**: backend has an Express skeleton with `/` and `/health`; frontend has prototype login/register/forgot-password screens. Backend auth controller/service/model files are placeholders. Treat existing UI as prototype until FE02 PLAN.md and TASKS.md are approved.
-- **Out of scope before Week 4 passes**: core feature implementation beyond approved specs, reviewed execution plans, task decomposition, API contracts, and test setup.
+- **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
+- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server (Sequelize ORM) database, RESTful API.
+- **Current SDD scope**: all 12 Phase 1 feature `SPEC.md` files are **APPROVED**. `PLAN.md` + `TASKS.md` are **READY FOR REVIEW** (implemented vertical slice) for 5 features:
+  - FE02 `feat-auth`, FE07 `feat-borrowing-management`, FE08 `feat-reservation-management`, FE10 `feat-notification-management`, FE12 `feat-reporting-statistics`.
+  - The other 7 features (FE01 `feat-public-browse`, FE03 `feat-user-profile`, FE04 `feat-membership-management`, FE05 `feat-book-management`, FE06 `feat-inventory-book-copy`, FE09 `feat-fine-management`, FE11 `feat-user-role-management`) still have `PLAN.md` / `TASKS.md` marked **NOT STARTED**.
+- **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories → Sequelize models`) with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, and report pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
+- **Known drift to reconcile**: some features (e.g. FE05 book) have prototype code while their `PLAN.md` / `TASKS.md` are still `NOT STARTED`. Do not treat such code as spec-driven/source-of-truth until the matching PLAN/TASKS are decomposed and approved. See [`.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`](../.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md).
+- **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---
 

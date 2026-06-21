@@ -2,6 +2,7 @@ const { defaultNotificationService } = require('../services/notificationService'
 
 function createNotificationController(notificationService = defaultNotificationService) {
   return {
+    // @spec FR-FE10-001, FR-FE10-002, FR-FE10-003, FR-FE10-004, FR-FE10-005, FR-FE10-008, FR-FE10-009
     createRequest: async (req, res, next) => {
       try {
         const result = await notificationService.createNotificationRequest(req.body, req.user, {
@@ -14,6 +15,7 @@ function createNotificationController(notificationService = defaultNotificationS
       }
     },
 
+    // @spec FR-FE10-006, FR-FE10-007
     processPending: async (req, res, next) => {
       try {
         const result = await notificationService.processPendingNotifications(req.body, req.user, {
