@@ -27,9 +27,21 @@ Updated: 2026-06-10
 - [x] FE12-T12 Test user statistics and personal-data suppression.
 - [x] FE12-T13 Test invalid range and role protection.
 
-## 3. Validation
+## 3. Frontend Tasks
+
+- [x] FE12-T14 Implement borrowing report screen with date filters and charts.
+- [x] FE12-T15 Implement inventory report screen with category filters and charts.
+- [x] FE12-T16 Implement user statistics screen with date filters and charts.
+- [x] FE12-T17 Wire frontend screens to backend APIs.
+- [x] FE12-T18 Add accessibility: table captions, header scopes, form labels, keyboard support.
+- [x] FE12-T19 Add loading, empty, and error states on all screens.
+
+## 4. Validation
 
 - [x] `npm test` in `backend`.
+- [x] `npm.cmd --prefix frontend run lint` passed.
+- [x] `npm.cmd --prefix frontend run build` passed.
+- [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
 
 ## 4. Traceability
 

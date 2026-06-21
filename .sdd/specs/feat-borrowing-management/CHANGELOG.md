@@ -19,3 +19,13 @@
 - Added borrow request, approval, rejection, return, renewal, history, audit, and notification handoff logic.
 - Aligned the SQL script with approved borrow request/detail statuses.
 - Added backend tests for borrowing rules, return/fine-review data, renewal, and role guards.
+
+## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
+
+- Implemented member borrow request, borrowing history, librarian borrow request approval/rejection, return processing, and member borrowing details screens.
+- Wired all frontend screens to backend APIs using axios and React hooks.
+- Added table captions, column header scopes, accessible labels for date inputs, selects, pagination buttons, and icon controls.
+- Added keyboard support for selectable table rows (Enter/Space).
+- Added loading, empty, and error states on all reviewed screens.
+- Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
+- Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.

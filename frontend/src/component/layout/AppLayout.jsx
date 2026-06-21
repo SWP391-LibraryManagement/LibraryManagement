@@ -63,7 +63,19 @@ export default function AppLayout({ active, title, subtitle, actions, children }
   return (
     <div className="app-shell">
       <aside className="app-sidebar">
-        <div className="app-brand" onClick={() => navigate('/home')} role="button" tabIndex={0}>
+        <div
+          className="app-brand"
+          onClick={() => navigate('/home')}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              navigate('/home');
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Go home"
+        >
           <span className="app-brand-mark"><BookOpen size={20} /></span>
           <span className="app-brand-text">Library<br />Management</span>
         </div>
@@ -73,6 +85,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
             type="button"
             className="app-nav-item"
             onClick={() => navigate('/home')}
+            aria-label="Home"
           >
             <LayoutDashboard size={18} />
             <span>Home</span>
@@ -90,6 +103,8 @@ export default function AppLayout({ active, title, subtitle, actions, children }
                     type="button"
                     className={`app-nav-item${isActive ? ' active' : ''}`}
                     onClick={() => navigate(item.path)}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon size={18} />
                     <span>{item.label}</span>
@@ -101,7 +116,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
         </nav>
 
         <div className="app-sidebar-footer">
-          <button type="button" className="app-nav-item" onClick={() => navigate('/login')}>
+          <button type="button" className="app-nav-item" onClick={() => navigate('/login')} aria-label="Logout">
             <LogOut size={18} />
             <span>Logout</span>
           </button>

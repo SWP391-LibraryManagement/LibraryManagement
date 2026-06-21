@@ -33,9 +33,23 @@ Updated: 2026-06-10
 - [x] FE07-T18 Test renewal success, renewal limit, and reservation conflict.
 - [x] FE07-T19 Test authentication and role guards.
 
-## 3. Validation
+## 3. Frontend Tasks
+
+- [x] FE07-T20 Implement member borrow request creation screen.
+- [x] FE07-T21 Implement member borrowing history screen.
+- [x] FE07-T22 Implement librarian borrow request approval/rejection screen.
+- [x] FE07-T23 Implement librarian return processing screen.
+- [x] FE07-T24 Implement librarian member borrowing details screen.
+- [x] FE07-T25 Wire frontend screens to backend APIs.
+- [x] FE07-T26 Add accessibility: table captions, header scopes, form labels, keyboard support.
+- [x] FE07-T27 Add loading, empty, and error states on all screens.
+
+## 4. Validation
 
 - [x] `npm test` in `backend`.
+- [x] `npm.cmd --prefix frontend run lint` passed.
+- [x] `npm.cmd --prefix frontend run build` passed.
+- [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
 
 ## 4. Traceability
 
@@ -58,6 +72,5 @@ Updated: 2026-06-10
 
 ## 5. Still Outside This Slice
 
-- Frontend borrowing screens.
 - FE09 fine creation.
 - FE10 delivery worker.
