@@ -19,6 +19,7 @@ const DEFAULT_FORM = {
   publishYear: '',
   pages: '',
   rating: '0',
+  status: 'ACTIVE',
   coverUrl: '',
   description: '',
 };
@@ -58,12 +59,13 @@ function toForm(book) {
     publishYear: book.year ? String(book.year) : '',
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
+    status: book.status || 'ACTIVE',
     coverUrl: book.cover || '',
     description: book.description || '',
   };
 }
 
-function validateBookForm(form, currentBooks = [], editingBookId = null) {
+function validateBookForm(form, currentBooks = [], editingBookId = null, { allowStatus = false } = {}) {
   const errors = {};
   const currentYear = new Date().getFullYear();
   const title = form.title.trim();
@@ -86,6 +88,9 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
   }
   if (pages && (!Number.isInteger(pages) || pages < 1)) errors.pages = 'Pages must be a positive number.';
   if (!Number.isFinite(rating) || rating < 0 || rating > 5) errors.rating = 'Rating must be between 0 and 5.';
+  if (allowStatus && !['ACTIVE', 'INACTIVE'].includes(form.status)) {
+    errors.status = 'Status must be ACTIVE or INACTIVE.';
+  }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'Cover URL must start with http(s) or /.';
   }
@@ -104,6 +109,7 @@ function makePayload(form) {
     publishYear: form.publishYear ? Number(form.publishYear) : null,
     pages: form.pages ? Number(form.pages) : null,
     rating: form.rating === '' ? 0 : Number(form.rating),
+    status: form.status || 'ACTIVE',
     coverUrl: form.coverUrl.trim(),
     description: form.description.trim(),
   };
@@ -134,7 +140,7 @@ function FieldError({ message }) {
   return message ? <span className="bm-field-error">{message}</span> : null;
 }
 
-function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disabled }) {
+function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disabled, showStatus = false }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
   return (
@@ -188,6 +194,17 @@ function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disa
         <input type="number" value={form.pages} onChange={(event) => update('pages', event.target.value)} />
         <FieldError message={errors.pages} />
       </label>
+
+      {showStatus && (
+        <label>
+          <span>Status</span>
+          <select value={form.status} onChange={(event) => update('status', event.target.value)}>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+          <FieldError message={errors.status} />
+        </label>
+      )}
 
       <label className="bm-wide">
         <span>Cover URL</span>
@@ -277,9 +294,13 @@ export default function BookManagement() {
 
   useEffect(() => {
     if (selectedBook) {
-      setUpdateForm(toForm(selectedBook));
-      setDetailBook(selectedBook);
-      setDeleteConfirmed(false);
+      const timer = window.setTimeout(() => {
+        setUpdateForm(toForm(selectedBook));
+        setDetailBook(selectedBook);
+        setDeleteConfirmed(false);
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [selectedBook]);
 
@@ -379,7 +400,7 @@ export default function BookManagement() {
       return;
     }
 
-    const errors = validateBookForm(updateForm, books, selectedBookId);
+    const errors = validateBookForm(updateForm, books, selectedBookId, { allowStatus: true });
     setUpdateErrors(errors);
 
     if (Object.keys(errors).length) return;
@@ -600,6 +621,7 @@ export default function BookManagement() {
                 submitLabel="Save Changes"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
+                showStatus
               />
             ) : (
               <div className="bm-empty">Select a book before updating.</div>

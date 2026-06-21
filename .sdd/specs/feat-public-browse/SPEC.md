@@ -6,7 +6,7 @@
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-21
 
 # Feature ID: FE01
 
@@ -230,8 +230,10 @@ Use these stable IDs for tasks and tests.
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/public/home` | Guest/Member | - | Public home data | Optional if home page needs dynamic highlights. |
-| GET | `/api/public/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page?, limit?` | Paginated public book summaries | Read-only. |
-| GET | `/api/public/books/{bookId}` | Guest/Member | - | Public book detail | Must return only public-safe fields. |
+| GET | `/api/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page?, limit?` | Public book summaries | Implemented public browse endpoint; returns active/public-safe books only. |
+| GET | `/api/books/{bookId}` | Guest/Member | - | Public book detail | Implemented public detail endpoint; must return only public-safe fields. |
+| GET | `/api/public/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page?, limit?` | Paginated public book summaries | Optional alias if a dedicated public namespace is reintroduced later. |
+| GET | `/api/public/books/{bookId}` | Guest/Member | - | Public book detail | Optional alias if a dedicated public namespace is reintroduced later. |
 | GET | `/api/public/categories` | Guest/Member | - | Category list | Optional browse filter endpoint. |
 
 ---
@@ -297,6 +299,7 @@ This feature does not include:
 | Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-004 | ISBN is visible to guests when available. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-006 | Current prototype uses `/api/books` and `/api/books/{bookId}` as the public browse endpoints; `/api/public/*` remains an optional future namespace. | User correction 2026-06-21 | APPROVED |
 
 ---
 
