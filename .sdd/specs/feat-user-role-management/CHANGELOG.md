@@ -31,3 +31,8 @@
 
 - Updated FE11 create-account behavior so admin-created member and librarian accounts are created with `ACTIVE` status immediately.
 - Kept password setup as a separate FE02 flow; admin still does not enter or view user passwords.
+
+## 2026-06-21
+
+- Clarified that admin-created account setup notification queuing must tolerate Phase 1 notification schema/template differences.
+- Documented that a valid create-user flow must not return an internal server error solely because optional notification content columns are unavailable.

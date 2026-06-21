@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BookManagement from './BookManagement';
 import {
   DAILY_FINE_RATE,
+  FINE_RECORDS_KEY,
   calculateOverdueDays,
   getBorrowRecords,
   getFineRecords,
@@ -29,8 +30,6 @@ import {
 } from 'lucide-react';
 
 const BANK_TRANSFER_METHOD = 'Chuyển khoản';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const libraryBankAccount = {
   bankName: 'Vietcombank',
@@ -271,23 +270,6 @@ const DEFAULT_FINE_FORM = {
   status: 'UNPAID',
 };
 
-async function fineApiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok || result.success === false) {
-    throw new Error(result.error?.message || result.message || 'Unable to process fine request.');
-  }
-
-  return result;
-}
-
 function fineToForm(fine) {
   if (!fine) {
     return DEFAULT_FINE_FORM;
@@ -379,6 +361,10 @@ function makeFinePayload(form) {
   };
 }
 
+function getNextFineId(records) {
+  return records.reduce((max, fine) => Math.max(max, Number(fine.fineId) || 0), 9000) + 1;
+}
+
 export default function FineManagement() {
   const navigate = useNavigate();
   const staffUser = getStoredStaffUser();
@@ -386,12 +372,16 @@ export default function FineManagement() {
   const [activeSection, setActiveSection] = useState('list');
   const [borrowDetails, setBorrowDetails] = useState(() => [...getBorrowRecords(), ...sampleBorrowDetails]);
   const [fines, setFines] = useState(() => {
+    if (localStorage.getItem(FINE_RECORDS_KEY) !== null) {
+      return getFineRecords();
+    }
+
     const storedFines = getFineRecords();
     return storedFines.length ? storedFines : initialFines;
   });
   const [selectedFineId, setSelectedFineId] = useState(() => {
-    const storedFines = getFineRecords();
-    return (storedFines[0] || initialFines[0]).fineId;
+    const storedFines = localStorage.getItem(FINE_RECORDS_KEY) !== null ? getFineRecords() : initialFines;
+    return storedFines[0]?.fineId || '';
   });
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [query, setQuery] = useState('');
@@ -407,21 +397,16 @@ export default function FineManagement() {
   const [fineForm, setFineForm] = useState(DEFAULT_FINE_FORM);
   const [fineFormErrors, setFineFormErrors] = useState({});
   const [fineFormMode, setFineFormMode] = useState('create');
-  const [fineSaving, setFineSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
   const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
   const isPaymentWorkflow = activeSection === 'collection' || activeSection === 'paid';
   const selectedFine = isPaymentWorkflow
     ? unpaidFines.find((fine) => fine.fineId === selectedFineId) || unpaidFines[0] || null
-    : fines.find((fine) => fine.fineId === selectedFineId) || fines[0] || null;
+    : fines.find((fine) => fine.fineId === selectedFineId) || null;
   useEffect(() => {
     saveFineRecords(fines);
   }, [fines]);
-
-  useEffect(() => {
-    loadFinesFromApi().catch((error) => showToast(error.message, 'error'));
-  }, []);
 
   useEffect(() => {
     const refreshBorrowDetails = () => setBorrowDetails([...getBorrowRecords(), ...sampleBorrowDetails]);
@@ -444,48 +429,28 @@ export default function FineManagement() {
         barcode: fine.barcode,
         dueDate: fine.dueDate,
         returnDate: fine.returnDate,
+        overdueDays: fine.overdueDays,
+        ratePerDay: fine.ratePerDay,
+        amount: fine.amount,
+        calculatedAt: fine.calculatedAt,
+        reason: fine.reason,
+        fineStatus: fine.status,
         status: sourceBorrow.status || (fine.status === 'PAID' ? 'FINE_PAID' : 'FINE_UNPAID'),
       };
     })
   ), [borrowDetails, fines]);
 
-  useEffect(() => {
-    if (!fineBorrowDetails.length) {
-      setCalculateForm({ borrowDetailId: '' });
-      return;
-    }
-
-    const currentStillAvailable = fineBorrowDetails.some(
-      (item) => String(item.borrowDetailId) === String(calculateForm.borrowDetailId)
-    );
-
-    if (!currentStillAvailable) {
-      setCalculateForm({ borrowDetailId: String(fineBorrowDetails[0].borrowDetailId) });
-    }
-  }, [fineBorrowDetails, calculateForm.borrowDetailId]);
-
-  useEffect(() => {
-    if (!isPaymentWorkflow) {
-      return;
-    }
-
-    if (!unpaidFines.length) {
-      setSelectedFineId('');
-      return;
-    }
-
-    const currentFine = fines.find((fine) => fine.fineId === selectedFineId);
-    if (!currentFine || currentFine.status !== 'UNPAID') {
-      setSelectedFineId(unpaidFines[0].fineId);
-    }
-  }, [activeSection, fines, isPaymentWorkflow, selectedFineId, unpaidFines]);
-
-  const selectedBorrowDetail = fineBorrowDetails.find(
-    (item) => item.borrowDetailId === Number(calculateForm.borrowDetailId)
-  );
+  const selectedBorrowDetail =
+    fineBorrowDetails.find((item) => item.borrowDetailId === Number(calculateForm.borrowDetailId)) ||
+    fineBorrowDetails[0] ||
+    null;
+  const calculateBorrowDetailId = selectedBorrowDetail ? String(selectedBorrowDetail.borrowDetailId) : '';
   const calculatedPreviewDays = selectedBorrowDetail
-    ? calculateOverdueDays(selectedBorrowDetail.dueDate, selectedBorrowDetail.returnDate)
+    ? Number(selectedBorrowDetail.overdueDays) || calculateOverdueDays(selectedBorrowDetail.dueDate, selectedBorrowDetail.returnDate)
     : 0;
+  const calculatedPreviewAmount = selectedBorrowDetail?.amount !== undefined
+    ? Number(selectedBorrowDetail.amount) || 0
+    : calculatedPreviewDays * DAILY_FINE_RATE;
 
   const filteredFines = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -544,35 +509,29 @@ export default function FineManagement() {
     showToast.timer = window.setTimeout(() => setToast(null), 3200);
   }
 
-  async function loadFinesFromApi() {
-    const result = await fineApiRequest('/fines');
-    setFines(result.data || []);
-    if (result.data?.length) {
-      const firstFine = result.data[0];
-      setSelectedFineId((current) => current || firstFine.fineId);
-      setFineForm((current) => (current.fineId ? current : fineToForm(firstFine)));
-      setFineFormMode((current) => (current === 'edit' ? current : 'edit'));
-    }
-  }
-
   function resetFineForm() {
     setFineForm(DEFAULT_FINE_FORM);
     setFineFormErrors({});
     setFineFormMode('create');
   }
 
-  function chooseFine(fineId, nextSection = activeSection) {
-    setSelectedFineId(fineId);
-    setActiveSection(nextSection);
-    const fine = fines.find((item) => item.fineId === fineId);
-    if (fine) {
-      setFineForm(fineToForm(fine));
-      setFineFormErrors({});
-      setFineFormMode('edit');
+  function chooseFine(fineOrId, nextSection = activeSection) {
+    const fine = typeof fineOrId === 'object'
+      ? fineOrId
+      : fines.find((item) => item.fineId === fineOrId);
+
+    if (!fine) {
+      return;
     }
+
+    setSelectedFineId(fine.fineId);
+    setActiveSection(nextSection);
+    setFineForm(fineToForm(fine));
+    setFineFormErrors({});
+    setFineFormMode('edit');
   }
 
-  async function handleSaveFine(event) {
+  function handleSaveFine(event) {
     event.preventDefault();
     const errors = validateFineForm(fineForm);
     setFineFormErrors(errors);
@@ -582,49 +541,57 @@ export default function FineManagement() {
       return;
     }
 
-    try {
-      setFineSaving(true);
-      const payload = makeFinePayload(fineForm);
-      const isEdit = fineFormMode === 'edit' && fineForm.fineId;
-      const result = await fineApiRequest(isEdit ? `/fines/${fineForm.fineId}` : '/fines', {
-        method: isEdit ? 'PUT' : 'POST',
-        body: JSON.stringify(payload),
-      });
+    const payload = makeFinePayload(fineForm);
+    const isEdit = fineFormMode === 'edit' && fineForm.fineId;
+    const duplicateFine = fines.find(
+      (fine) =>
+        fine.borrowDetailId === payload.borrowDetailId &&
+        fine.reason === 'OVERDUE' &&
+        (!isEdit || Number(fine.fineId) !== Number(fineForm.fineId))
+    );
 
-      await loadFinesFromApi();
-      setSelectedFineId(result.data.fineId);
-      setFineForm(fineToForm(result.data));
-      setFineFormMode('edit');
-      showToast(isEdit ? 'Fine updated successfully.' : 'Fine created successfully.');
-    } catch (error) {
-      showToast(error.message, 'error');
-    } finally {
-      setFineSaving(false);
+    if (duplicateFine) {
+      showToast('Chi tiết mượn này đã có phiếu phạt quá hạn.', 'error');
+      return;
     }
+
+    const previousFine = isEdit
+      ? fines.find((fine) => Number(fine.fineId) === Number(fineForm.fineId)) || {}
+      : {};
+    const savedFine = {
+      ...previousFine,
+      fineId: isEdit ? Number(fineForm.fineId) : getNextFineId(fines),
+      ...payload,
+      paidAmount: payload.status === 'PAID' ? payload.amount : 0,
+      calculatedAt: previousFine.calculatedAt || new Date().toISOString(),
+      paidAt: payload.status === 'PAID' ? previousFine.paidAt || new Date().toISOString() : '',
+    };
+
+    setFines((current) =>
+      isEdit
+        ? current.map((fine) => (fine.fineId === savedFine.fineId ? savedFine : fine))
+        : [savedFine, ...current]
+    );
+    chooseFine(savedFine);
+    showToast(isEdit ? 'Đã lưu thay đổi phiếu phạt.' : 'Đã thêm phiếu phạt vào danh sách.');
   }
 
-  async function handleDeleteFine() {
+  function handleDeleteFine() {
     if (!selectedFine) {
       showToast('Please select a fine first.', 'error');
       return;
     }
 
-    try {
-      setFineSaving(true);
-      await fineApiRequest(`/fines/${selectedFine.fineId}`, { method: 'DELETE' });
-      await loadFinesFromApi();
-      resetFineForm();
-      showToast('Fine deleted successfully.');
-    } catch (error) {
-      showToast(error.message, 'error');
-    } finally {
-      setFineSaving(false);
-    }
+    const remainingFines = fines.filter((fine) => fine.fineId !== selectedFine.fineId);
+    setFines(remainingFines);
+    setSelectedFineId(remainingFines[0]?.fineId || '');
+    resetFineForm();
+    showToast('Đã xóa phiếu phạt khỏi danh sách.');
   }
 
   function handleCalculateFine(event) {
     event.preventDefault();
-    const borrowDetailId = Number(calculateForm.borrowDetailId);
+    const borrowDetailId = Number(calculateBorrowDetailId);
     const borrowDetail = fineBorrowDetails.find((item) => item.borrowDetailId === borrowDetailId);
 
     if (!borrowDetailId) {
@@ -647,7 +614,7 @@ export default function FineManagement() {
       return;
     }
 
-    const overdueDays = calculateOverdueDays(borrowDetail.dueDate, borrowDetail.returnDate);
+    const overdueDays = Number(borrowDetail.overdueDays) || calculateOverdueDays(borrowDetail.dueDate, borrowDetail.returnDate);
 
     if (overdueDays <= 0) {
       showToast('Không tạo phiếu phạt vì sách chưa quá hạn.', 'success');
@@ -657,28 +624,28 @@ export default function FineManagement() {
     const existingFine = fines.find(
       (fine) => fine.borrowDetailId === borrowDetailId && fine.reason === 'OVERDUE' && fine.status === 'UNPAID'
     );
-    const amount = overdueDays * DAILY_FINE_RATE;
+    const amount = Number(borrowDetail.amount) || overdueDays * DAILY_FINE_RATE;
 
     if (existingFine) {
+      const updatedFine = {
+        ...existingFine,
+        overdueDays,
+        amount,
+        calculatedAt: new Date().toISOString(),
+      };
+
       setFines((current) =>
         current.map((fine) =>
-          fine.fineId === existingFine.fineId
-            ? {
-                ...fine,
-                overdueDays,
-                amount,
-                calculatedAt: new Date().toISOString(),
-              }
-            : fine
+          fine.fineId === existingFine.fineId ? updatedFine : fine
         )
       );
-      chooseFine(existingFine.fineId, 'list');
+      chooseFine(updatedFine, 'list');
       showToast('Đã cập nhật phiếu phạt chưa thanh toán hiện có, không tạo trùng.');
       return;
     }
 
     const newFine = {
-      fineId: Math.max(...fines.map((fine) => fine.fineId)) + 1,
+      fineId: getNextFineId(fines),
       userId: borrowDetail.memberId,
       memberName: borrowDetail.memberName,
       memberCode: borrowDetail.memberCode,
@@ -703,7 +670,7 @@ export default function FineManagement() {
     };
 
     setFines((current) => [newFine, ...current]);
-    chooseFine(newFine.fineId, 'list');
+    chooseFine(newFine, 'list');
     showToast('Đã tính tiền phạt quá hạn và thêm vào danh sách phiếu phạt.');
   }
 
@@ -920,10 +887,10 @@ export default function FineManagement() {
                 <div className="fine-crud-head">
                   <strong>{fineFormMode === 'edit' ? `Edit fine #${fineForm.fineId}` : 'Add fine'}</strong>
                   <div>
-                    <button type="button" className="fine-light-button" onClick={resetFineForm} disabled={fineSaving}>
+                    <button type="button" className="fine-light-button" onClick={resetFineForm}>
                       <Plus size={15} />New
                     </button>
-                    <button type="button" className="fine-danger-button" onClick={handleDeleteFine} disabled={fineSaving || !selectedFine}>
+                    <button type="button" className="fine-danger-button" onClick={handleDeleteFine} disabled={!selectedFine}>
                       <Trash2 size={15} />Delete
                     </button>
                   </div>
@@ -970,7 +937,7 @@ export default function FineManagement() {
                   </label>
                 </div>
 
-                <button type="submit" className="fine-save-button" disabled={fineSaving}>
+                <button type="submit" className="fine-save-button">
                   <Check size={16} />{fineFormMode === 'edit' ? 'Save fine changes' : 'Add fine'}
                 </button>
               </form>
@@ -1033,7 +1000,7 @@ export default function FineManagement() {
               <label>
                 Chi tiết mượn
                 <select
-                  value={calculateForm.borrowDetailId}
+                  value={calculateBorrowDetailId}
                   onChange={(event) => setCalculateForm({ borrowDetailId: event.target.value })}
                 >
                   {fineBorrowDetails.map((item) => (
@@ -1061,7 +1028,7 @@ export default function FineManagement() {
                 </div>
                 <div>
                   <span>Tiền phạt dự kiến</span>
-                  <strong>{formatCurrency(calculatedPreviewDays * DAILY_FINE_RATE)}</strong>
+                  <strong>{formatCurrency(calculatedPreviewAmount)}</strong>
                 </div>
               </div>
 

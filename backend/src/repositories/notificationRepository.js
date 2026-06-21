@@ -1,5 +1,7 @@
 const { sql, getPool } = require('../config/db');
 
+let notificationColumnsPromise;
+
 function mapTemplate(row) {
   if (!row) {
     return null;
@@ -39,6 +41,43 @@ function mapNotification(row) {
     createdAt: row.CreatedAt,
     sentAt: row.SentAt,
   };
+}
+
+async function getNotificationColumns(pool) {
+  if (!notificationColumnsPromise) {
+    notificationColumnsPromise = pool
+      .request()
+      .query(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = 'Notifications'
+      `)
+      .then((result) => new Set(result.recordset.map((row) => row.COLUMN_NAME)));
+  }
+
+  return notificationColumnsPromise;
+}
+
+async function insertNotification(pool, fieldDefinitions) {
+  const columns = await getNotificationColumns(pool);
+  const includedFields = fieldDefinitions.filter((field) => columns.has(field.column));
+  const request = pool.request();
+
+  includedFields.forEach((field) => {
+    request.input(field.param, field.type, field.value);
+  });
+
+  const result = await request.query(`
+    INSERT INTO Notifications (
+      ${includedFields.map((field) => field.column).join(',\n      ')}
+    )
+    OUTPUT INSERTED.*
+    VALUES (
+      ${includedFields.map((field) => `@${field.param}`).join(',\n      ')}
+    )
+  `);
+
+  return mapNotification(result.recordset[0]);
 }
 
 async function findTemplateByCode(templateCode) {
@@ -87,56 +126,26 @@ async function createRequest({
   safePayload,
 }) {
   const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('NotificationType', sql.NVarChar(50), type)
-    .input('Channel', sql.NVarChar(20), channel)
-    .input('UserId', sql.Int, userId || null)
-    .input('RecipientEmail', sql.NVarChar(100), recipientEmail)
-    .input('TemplateId', sql.Int, templateId)
-    .input('TemplateKey', sql.NVarChar(100), templateKey)
-    .input('Title', sql.NVarChar(255), title || null)
-    .input('Body', sql.NVarChar(sql.MAX), body || null)
-    .input('SourceFeature', sql.NVarChar(20), sourceFeature || null)
-    .input('SourceEntityType', sql.NVarChar(50), sourceEntityType || null)
-    .input('SourceEntityId', sql.Int, sourceEntityId || null)
-    .input('IdempotencyKey', sql.NVarChar(100), idempotencyKey || null)
-    .input('SafePayload', sql.NVarChar(sql.MAX), safePayload ? JSON.stringify(safePayload) : null)
-    .query(`
-      INSERT INTO Notifications (
-        NotificationType,
-        Channel,
-        UserId,
-        RecipientEmail,
-        TemplateId,
-        TemplateKey,
-        Title,
-        Body,
-        SourceFeature,
-        SourceEntityType,
-        SourceEntityId,
-        IdempotencyKey,
-        SafePayload
-      )
-      OUTPUT INSERTED.*
-      VALUES (
-        @NotificationType,
-        @Channel,
-        @UserId,
-        @RecipientEmail,
-        @TemplateId,
-        @TemplateKey,
-        @Title,
-        @Body,
-        @SourceFeature,
-        @SourceEntityType,
-        @SourceEntityId,
-        @IdempotencyKey,
-        @SafePayload
-      )
-    `);
-
-  return mapNotification(result.recordset[0]);
+  return insertNotification(pool, [
+    { column: 'NotificationType', param: 'NotificationType', type: sql.NVarChar(50), value: type },
+    { column: 'Channel', param: 'Channel', type: sql.NVarChar(20), value: channel },
+    { column: 'UserId', param: 'UserId', type: sql.Int, value: userId || null },
+    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(100), value: recipientEmail },
+    { column: 'TemplateId', param: 'TemplateId', type: sql.Int, value: templateId },
+    { column: 'TemplateKey', param: 'TemplateKey', type: sql.NVarChar(100), value: templateKey },
+    { column: 'Title', param: 'Title', type: sql.NVarChar(255), value: title || null },
+    { column: 'Body', param: 'Body', type: sql.NVarChar(sql.MAX), value: body || null },
+    { column: 'SourceFeature', param: 'SourceFeature', type: sql.NVarChar(20), value: sourceFeature || null },
+    { column: 'SourceEntityType', param: 'SourceEntityType', type: sql.NVarChar(50), value: sourceEntityType || null },
+    { column: 'SourceEntityId', param: 'SourceEntityId', type: sql.Int, value: sourceEntityId || null },
+    { column: 'IdempotencyKey', param: 'IdempotencyKey', type: sql.NVarChar(100), value: idempotencyKey || null },
+    {
+      column: 'SafePayload',
+      param: 'SafePayload',
+      type: sql.NVarChar(sql.MAX),
+      value: safePayload ? JSON.stringify(safePayload) : null,
+    },
+  ]);
 }
 
 async function createNotification({
@@ -155,47 +164,23 @@ async function createNotification({
   }
 
   const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('UserId', sql.Int, userId || null)
-    .input('RecipientEmail', sql.NVarChar(100), recipientEmail)
-    .input('TemplateId', sql.Int, template.templateId)
-    .input('TemplateKey', sql.NVarChar(100), templateCode)
-    .input('Title', sql.NVarChar(255), template.subject)
-    .input('Body', sql.NVarChar(sql.MAX), template.body)
-    .input('SourceFeature', sql.NVarChar(20), sourceFeature || null)
-    .input('SourceEntityType', sql.NVarChar(50), sourceEntityType || null)
-    .input('SourceEntityId', sql.Int, sourceEntityId || null)
-    .input('SafePayload', sql.NVarChar(sql.MAX), safePayload ? JSON.stringify(safePayload) : null)
-    .query(`
-      INSERT INTO Notifications (
-        TemplateId,
-        UserId,
-        RecipientEmail,
-        TemplateKey,
-        Title,
-        Body,
-        SourceFeature,
-        SourceEntityType,
-        SourceEntityId,
-        SafePayload
-      )
-      OUTPUT INSERTED.*
-      VALUES (
-        @TemplateId,
-        @UserId,
-        @RecipientEmail,
-        @TemplateKey,
-        @Title,
-        @Body,
-        @SourceFeature,
-        @SourceEntityType,
-        @SourceEntityId,
-        @SafePayload
-      )
-    `);
-
-  return mapNotification(result.recordset[0]);
+  return insertNotification(pool, [
+    { column: 'TemplateId', param: 'TemplateId', type: sql.Int, value: template.templateId },
+    { column: 'UserId', param: 'UserId', type: sql.Int, value: userId || null },
+    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(100), value: recipientEmail },
+    { column: 'TemplateKey', param: 'TemplateKey', type: sql.NVarChar(100), value: templateCode },
+    { column: 'Title', param: 'Title', type: sql.NVarChar(255), value: template.subject },
+    { column: 'Body', param: 'Body', type: sql.NVarChar(sql.MAX), value: template.body },
+    { column: 'SourceFeature', param: 'SourceFeature', type: sql.NVarChar(20), value: sourceFeature || null },
+    { column: 'SourceEntityType', param: 'SourceEntityType', type: sql.NVarChar(50), value: sourceEntityType || null },
+    { column: 'SourceEntityId', param: 'SourceEntityId', type: sql.Int, value: sourceEntityId || null },
+    {
+      column: 'SafePayload',
+      param: 'SafePayload',
+      type: sql.NVarChar(sql.MAX),
+      value: safePayload ? JSON.stringify(safePayload) : null,
+    },
+  ]);
 }
 
 async function listPending(limit = 20) {

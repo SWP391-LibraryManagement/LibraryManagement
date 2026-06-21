@@ -293,13 +293,14 @@ async function createBook(payload, actorUserId = null) {
     .input('coverUrl', sql.NVarChar(255), payload.coverUrl || null)
     .input('rating', sql.Decimal(2, 1), payload.rating)
     .input('pages', sql.Int, payload.pages || null)
+    .input('status', sql.NVarChar(20), payload.status || 'ACTIVE')
     .input('createdBy', sql.Int, actorUserId || null)
     .query(`
       INSERT INTO Books
         (Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Rating, Pages, Status, CreatedBy)
       OUTPUT INSERTED.BookId AS id
       VALUES
-        (@title, @isbn, @categoryId, @authorId, @publisherId, @publishYear, @description, @coverUrl, @rating, @pages, 'ACTIVE', @createdBy);
+        (@title, @isbn, @categoryId, @authorId, @publisherId, @publishYear, @description, @coverUrl, @rating, @pages, @status, @createdBy);
     `);
 
   return getBookById(result.recordset[0].id);
@@ -319,6 +320,7 @@ async function updateBook(bookId, payload, actorUserId = null) {
     .input('coverUrl', sql.NVarChar(255), payload.coverUrl || null)
     .input('rating', sql.Decimal(2, 1), payload.rating)
     .input('pages', sql.Int, payload.pages || null)
+    .input('status', sql.NVarChar(20), payload.status || 'ACTIVE')
     .input('updatedBy', sql.Int, actorUserId || null)
     .query(`
       UPDATE Books
@@ -333,6 +335,7 @@ async function updateBook(bookId, payload, actorUserId = null) {
         CoverUrl = @coverUrl,
         Rating = @rating,
         Pages = @pages,
+        Status = @status,
         UpdatedBy = @updatedBy,
         UpdatedAt = GETDATE()
       WHERE BookId = @bookId;

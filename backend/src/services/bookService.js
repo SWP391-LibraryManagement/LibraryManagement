@@ -219,6 +219,7 @@ async function normalizeBookPayload(body = {}, existingBookId = null) {
   const rating = normalizeDecimal(body.rating, 'Đánh giá');
   const description = normalizeOptionalText(body.description, 'Mô tả', 2000);
   const coverUrl = normalizeCoverUrl(body.coverUrl || body.cover);
+  const status = trimString(body.status).toUpperCase() || 'ACTIVE';
   const currentYear = new Date().getFullYear();
 
   if (!title) {
@@ -233,6 +234,10 @@ async function normalizeBookPayload(body = {}, existingBookId = null) {
     throw new AppException(400, 'DUPLICATE_ISBN', 'ISBN đã tồn tại.');
   }
 
+  if (!VALID_STATUSES.has(status)) {
+    throw new AppException(400, 'INVALID_BOOK_STATUS', 'Invalid book status.');
+  }
+
   const payload = {
     title,
     isbn,
@@ -244,6 +249,7 @@ async function normalizeBookPayload(body = {}, existingBookId = null) {
     rating,
     description,
     coverUrl,
+    status,
   };
 
   await validateReferences(payload);

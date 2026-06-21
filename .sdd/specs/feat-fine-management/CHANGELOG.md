@@ -16,3 +16,8 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+
+## 2026-06-21
+
+- Added prototype alignment note: current FE09 UI may keep fine records locally for demo continuity, while the final implementation must use server-side calculation and persistence.
+- Clarified that duplicate prevention, collection recording, and paid marking remain server-side responsibilities for the completed FE09 feature.
