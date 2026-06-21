@@ -119,7 +119,7 @@ These are not blockers for drafting but must be validated before implementation.
 
 - Duplicate ISBN records may create catalog inconsistencies.
 - Incorrect book metadata may affect searching and reporting.
-- Deactivating books without checking related inventory may impact borrowing operations.
+- Deactivating books hides the catalog record from public browse while keeping copy, borrowing, reservation, and history records unchanged.
 - Search performance may degrade with large numbers of books.
 - Concurrent updates may overwrite book information if version control is not considered.
 
@@ -147,7 +147,8 @@ These are not blockers for drafting but must be validated before implementation.
 | Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | Review packet 2026-06-10 | APPROVED |
+| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
+| Q-FE05-008 | Staff update form may set book status directly to `ACTIVE` or `INACTIVE`; public browse must hide `INACTIVE` books. | User request 2026-06-21 | APPROVED |
 
 ---
 
