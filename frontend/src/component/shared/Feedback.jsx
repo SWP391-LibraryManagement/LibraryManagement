@@ -1,7 +1,7 @@
 /**
  * Shared UI primitives cho FE07/FE08/FE10/FE12.
  * Dùng class trong src/styles/app-shell.css (theme thư viện kem/be).
- * Không phụ thuộc MUI/Bootstrap — chỉ React + lucide-react.
+ * Không phụ thuộc MUI/Bootstrap - phù hợp React + lucide-react.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -75,4 +75,39 @@ export function Modal({ title, eyebrow, onClose, children, actions, width }) {
 export function Badge({ status, children }) {
   const key = String(status || 'default').toLowerCase().replace(/\s+/g, '-');
   return <span className={`badge badge-${key}`}>{children || status}</span>;
+}
+
+/* -------- Data state primitives -------- */
+export function DataNotice({ type = 'info', title, children }) {
+  const Icon = type === 'error' ? AlertTriangle : type === 'success' ? CheckCircle2 : Info;
+  return (
+    <div className={`data-notice ${type}`} role={type === 'error' ? 'alert' : 'status'}>
+      <Icon size={17} />
+      <div>
+        {title && <strong>{title}</strong>}
+        {children && <p>{children}</p>}
+      </div>
+    </div>
+  );
+}
+
+export function LoadingBlock({ rows = 3, label = 'Đang tải dữ liệu...' }) {
+  return (
+    <div className="loading-block" aria-busy="true" aria-label={label}>
+      <span className="muted">{label}</span>
+      {Array.from({ length: rows }, (_, index) => (
+        <i key={index} style={{ width: `${92 - index * 10}%` }} />
+      ))}
+    </div>
+  );
+}
+
+export function EmptyState({ icon: Icon = Info, title = 'Chưa có dữ liệu', children }) {
+  return (
+    <div className="empty">
+      <Icon size={36} />
+      <h3>{title}</h3>
+      {children && <p>{children}</p>}
+    </div>
+  );
 }
