@@ -1,213 +1,164 @@
 const errors = require('../utils/safeErrors');
 const path = require('path');
 
+// --- Constants ---
+
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
   'image/webp': ['.webp'],
 };
-
 const PROTECTED_FIELDS = new Set([
-  'password',
-  'passwordHash',
-  'role',
-  'roles',
-  'roleId',
-  'status',
-  'email',
-  'membershipStatus',
-  'membershipApproval',
-  'userId',
-  'profileId',
+  'password', 'passwordHash', 'role', 'roles', 'roleId',
+  'status', 'email', 'membershipStatus', 'membershipApproval',
+  'userId', 'profileId',
 ]);
 
+// Byte signatures cho từng loại ảnh
+const IMAGE_SIGNATURES = {
+  'image/jpeg': (buf) => buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff,
+  'image/png': (buf) => buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  'image/webp': (buf) => buf.length >= 12 && buf.subarray(0, 4).toString('ascii') === 'RIFF' && buf.subarray(8, 12).toString('ascii') === 'WEBP',
+};
+
+// --- Pure helpers ---
+
+/** Trim chuỗi, trả về null nếu rỗng/null/undefined */
 function cleanString(value) {
-  if (value === null || value === '') {
-    return null;
-  }
-
-  if (value === undefined) {
-    return undefined;
-  }
-
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
   return String(value).trim() || null;
 }
 
+/** Chuẩn hoá ngày về dạng 'YYYY-MM-DD', trả về { invalid: true } nếu sai định dạng */
 function normalizeDateOnly(value) {
-  if (value === null || value === '') {
-    return null;
-  }
-
-  if (value === undefined) {
-    return undefined;
-  }
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
 
   const raw = String(value).trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    return { invalid: true };
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return { invalid: true };
 
   const parsed = new Date(`${raw}T00:00:00.000Z`);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== raw) {
-    return { invalid: true };
-  }
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== raw) return { invalid: true };
 
   return raw;
 }
 
+/** Chuyển Date hoặc string thành 'YYYY-MM-DD' */
 function toDateOnly(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-
+  if (!value) return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
   return String(value).slice(0, 10);
 }
 
+/** Thêm lỗi vào details nếu chuỗi vượt quá độ dài tối đa */
 function validateLength(value, max, field, label, details) {
   if (value && value.length > max) {
-    details.push({
-      field,
-      code: `${field.toUpperCase()}_TOO_LONG`,
-      message: `${label} must be at most ${max} characters.`,
-    });
+    details.push({ field, code: `${field.toUpperCase()}_TOO_LONG`, message: `${label} không được vượt quá ${max} ký tự.` });
   }
 }
 
+/** Kiểm tra avatarUrl là đường dẫn nội bộ hoặc URL http/https hợp lệ */
 function validateAvatarUrl(value, details) {
-  if (!value) {
-    return;
-  }
-
-  if (/^\/uploads\/avatars\/[A-Za-z0-9._-]+$/.test(value)) {
-    return;
-  }
+  if (!value) return;
+  if (/^\/uploads\/avatars\/[A-Za-z0-9._-]+$/.test(value)) return;
 
   try {
     const parsed = new URL(value);
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      throw new Error('Unsupported protocol');
-    }
-  } catch (error) {
-    details.push({
-      field: 'avatarUrl',
-      code: 'INVALID_AVATAR_URL',
-      message: 'Avatar URL must be a valid http or https URL.',
-    });
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported protocol');
+  } catch {
+    details.push({ field: 'avatarUrl', code: 'INVALID_AVATAR_URL', message: 'URL ảnh đại diện phải là đường dẫn http hoặc https hợp lệ.' });
   }
 }
 
+/** Kiểm tra số điện thoại hợp lệ */
 function validatePhone(value, details) {
-  if (!value) {
+  if (!value) return;
+  if (!/^\+?\d{10,15}$/.test(value)) {
+    details.push({ field: 'phone', code: 'INVALID_PHONE', message: 'Số điện thoại phải có 10-15 chữ số và có thể bắt đầu bằng +.' });
+  }
+}
+
+/** Kiểm tra ngày sinh hợp lệ và không phải tương lai */
+function validateDateOfBirth(value, clock, details) {
+  if (!value) return;
+
+  if (value.invalid) {
+    details.push({ field: 'dateOfBirth', code: 'INVALID_DATE_OF_BIRTH', message: 'Ngày sinh phải đúng định dạng YYYY-MM-DD.' });
     return;
   }
 
-  if (!/^\+?\d{10,15}$/.test(value)) {
-    details.push({
-      field: 'phone',
-      code: 'INVALID_PHONE',
-      message: 'Phone must be 10-15 digits and may start with +.',
-    });
+  const today = clock().toISOString().slice(0, 10);
+  if (value > today) {
+    details.push({ field: 'dateOfBirth', code: 'FUTURE_DATE_OF_BIRTH', message: 'Ngày sinh không được là ngày trong tương lai.' });
   }
 }
 
+/** Validate và chuẩn hoá dữ liệu cập nhật profile, ném lỗi nếu có field không hợp lệ */
 function validateProfileUpdate(input = {}, clock = () => new Date()) {
-  const protectedFields = Object.keys(input).filter((field) => PROTECTED_FIELDS.has(field));
-
+  const protectedFields = Object.keys(input).filter((f) => PROTECTED_FIELDS.has(f));
   if (protectedFields.length > 0) {
-    throw errors.badRequest('PROTECTED_FIELD_SUBMITTED', 'Protected profile fields cannot be updated here.', {
-      fields: protectedFields,
-    });
+    throw errors.badRequest('PROTECTED_FIELD_SUBMITTED', 'Không thể cập nhật các trường được bảo vệ tại đây.', { fields: protectedFields });
   }
 
   const updates = {
-    fullName: input.fullName === undefined ? undefined : cleanString(input.fullName),
-    address: input.address === undefined ? undefined : cleanString(input.address),
+    fullName: cleanString(input.fullName),
+    address: cleanString(input.address),
     dateOfBirth: normalizeDateOnly(input.dateOfBirth),
-    avatarUrl: input.avatarUrl === undefined ? undefined : cleanString(input.avatarUrl),
-    phone: input.phone === undefined ? undefined : cleanString(input.phone),
+    avatarUrl: cleanString(input.avatarUrl),
+    phone: cleanString(input.phone),
   };
-  const details = [];
 
+  // Giữ undefined cho field không được gửi lên
+  for (const key of Object.keys(updates)) {
+    if (input[key] === undefined) updates[key] = undefined;
+  }
+
+  const details = [];
   validateLength(updates.fullName, 100, 'fullName', 'Full name', details);
   validateLength(updates.address, 255, 'address', 'Address', details);
   validateLength(updates.avatarUrl, 255, 'avatarUrl', 'Avatar URL', details);
   validateAvatarUrl(updates.avatarUrl, details);
   validatePhone(updates.phone, details);
-
-  if (updates.dateOfBirth && updates.dateOfBirth.invalid) {
-    details.push({
-      field: 'dateOfBirth',
-      code: 'INVALID_DATE_OF_BIRTH',
-      message: 'Date of birth must be a valid ISO date in YYYY-MM-DD format.',
-    });
-  } else if (updates.dateOfBirth) {
-    const today = clock().toISOString().slice(0, 10);
-    if (updates.dateOfBirth > today) {
-      details.push({
-        field: 'dateOfBirth',
-        code: 'FUTURE_DATE_OF_BIRTH',
-        message: 'Date of birth cannot be in the future.',
-      });
-    }
-  }
+  validateDateOfBirth(updates.dateOfBirth, clock, details);
 
   if (details.length > 0) {
-    throw errors.badRequest('INVALID_PROFILE_DATA', 'Profile update contains invalid fields.', details);
+    throw errors.badRequest('INVALID_PROFILE_DATA', 'Dữ liệu cập nhật hồ sơ không hợp lệ.', details);
   }
 
   return updates;
 }
 
+/** Kiểm tra byte signature của file ảnh khớp với mimeType */
 function hasValidImageSignature(file) {
   const buffer = file?.buffer;
-
-  if (!Buffer.isBuffer(buffer)) {
-    return false;
-  }
-
-  if (file.mimeType === 'image/jpeg') {
-    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-  }
-
-  if (file.mimeType === 'image/png') {
-    return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-  }
-
-  if (file.mimeType === 'image/webp') {
-    return buffer.length >= 12
-      && buffer.subarray(0, 4).toString('ascii') === 'RIFF'
-      && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
-  }
-
-  return false;
+  if (!Buffer.isBuffer(buffer)) return false;
+  const check = IMAGE_SIGNATURES[file.mimeType];
+  return check ? check(buffer) : false;
 }
 
+/** Validate file avatar: kích thước, loại file, byte signature */
 function validateAvatarUpload(file) {
   if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
-    throw errors.badRequest('AVATAR_FILE_REQUIRED', 'Avatar file is required.');
+    throw errors.badRequest('AVATAR_FILE_REQUIRED', 'Vui lòng cung cấp file ảnh đại diện.');
   }
 
   if (file.size > MAX_AVATAR_BYTES || file.buffer.length > MAX_AVATAR_BYTES) {
-    throw errors.badRequest('AVATAR_FILE_TOO_LARGE', 'Avatar file must be at most 2 MB.');
+    throw errors.badRequest('AVATAR_FILE_TOO_LARGE', 'File ảnh đại diện không được vượt quá 2 MB.');
   }
 
   const allowedExtensions = ALLOWED_AVATAR_TYPES[file.mimeType];
   const extension = path.extname(file.originalName || '').toLowerCase();
 
   if (!allowedExtensions || !allowedExtensions.includes(extension) || !hasValidImageSignature(file)) {
-    throw errors.badRequest('INVALID_AVATAR_FILE_TYPE', 'Avatar must be a JPG, JPEG, PNG, or WebP image.');
+    throw errors.badRequest('INVALID_AVATAR_FILE_TYPE', 'Ảnh đại diện phải là file JPG, JPEG, PNG hoặc WebP.');
   }
 }
 
+/** Chuyển record DB thành DTO an toàn để trả về client */
 function toSafeProfileDto(record) {
-  if (!record) {
-    return null;
-  }
+  if (!record) return null;
 
   return {
     userId: record.userId,
@@ -224,9 +175,12 @@ function toSafeProfileDto(record) {
   };
 }
 
+/** Lấy danh sách field thực sự thay đổi so với dữ liệu cũ */
 function changedFields(before, updates) {
-  return Object.keys(updates).filter((field) => updates[field] !== undefined && updates[field] !== before?.[field]);
+  return Object.keys(updates).filter((f) => updates[f] !== undefined && updates[f] !== before?.[f]);
 }
+
+// --- Factory ---
 
 function createProfileService({
   profileRepository,
@@ -234,27 +188,20 @@ function createProfileService({
   avatarStorage,
   clock = () => new Date(),
 } = {}) {
-  if (!profileRepository) {
-    profileRepository = require('../repositories/profileRepository');
-  }
+  if (!profileRepository) profileRepository = require('../repositories/profileRepository');
+  if (!auditLogRepository) auditLogRepository = require('../repositories/auditLogRepository');
+  if (!avatarStorage) avatarStorage = require('../utils/avatarStorage');
 
-  if (!auditLogRepository) {
-    auditLogRepository = require('../repositories/auditLogRepository');
-  }
+  // --- Internal helpers ---
 
-  if (!avatarStorage) {
-    avatarStorage = require('../utils/avatarStorage');
-  }
-
+  /** Load profile theo userId, tạo blank nếu chưa có, ném lỗi nếu user không tồn tại */
   async function getExistingProfile(userId) {
     const parsedUserId = Number(userId);
-
     if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
     let profile = await profileRepository.findByUserId(parsedUserId);
-
     if (!profile) {
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
@@ -266,10 +213,9 @@ function createProfileService({
     return profile;
   }
 
+  /** Ghi audit log, bỏ qua lỗi để không làm gián đoạn luồng chính */
   async function writeAudit(userId, context, fields) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
-      return;
-    }
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') return;
 
     try {
       await auditLogRepository.create({
@@ -286,6 +232,8 @@ function createProfileService({
     }
   }
 
+  // --- Public methods ---
+
   async function getMyProfile(userId) {
     return toSafeProfileDto(await getExistingProfile(userId));
   }
@@ -296,9 +244,7 @@ function createProfileService({
     const updated = await profileRepository.updateByUserId(existing.userId, updates);
     const fields = changedFields(existing, updates);
 
-    if (fields.length > 0) {
-      await writeAudit(existing.userId, context, fields);
-    }
+    if (fields.length > 0) await writeAudit(existing.userId, context, fields);
 
     return toSafeProfileDto(updated);
   }
@@ -314,18 +260,12 @@ function createProfileService({
     });
     const updated = await profileRepository.updateAvatarByUserId(existing.userId, avatarUrl);
 
-    if (avatarUrl !== existing.avatarUrl) {
-      await writeAudit(existing.userId, context, ['avatarUrl']);
-    }
+    if (avatarUrl !== existing.avatarUrl) await writeAudit(existing.userId, context, ['avatarUrl']);
 
     return toSafeProfileDto(updated);
   }
 
-  return {
-    getMyProfile,
-    updateMyProfile,
-    updateMyAvatar,
-  };
+  return { getMyProfile, updateMyProfile, updateMyAvatar };
 }
 
 const defaultProfileService = createProfileService();
