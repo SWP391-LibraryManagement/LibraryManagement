@@ -57,25 +57,25 @@ async function sendMail({ to, subject, text, html }) {
   };
 }
 
-async function sendVerificationEmail({ to, token, expiresInHours }) {
-  const safeToken = escapeHtml(token);
-  const safeHours = escapeHtml(expiresInHours);
+async function sendVerificationOtpEmail({ to, otp, expiresInMinutes }) {
+  const safeOtp = escapeHtml(otp);
+  const safeMinutes = escapeHtml(expiresInMinutes);
 
   return sendMail({
     to,
-    subject: 'Library account verification',
+    subject: 'Mã OTP xác thực tài khoản - Hệ thống Thư viện',
     text: [
-      'Your Library Management verification code is:',
-      token,
+      'Mã OTP xác thực tài khoản của bạn là:',
+      otp,
       '',
-      `This code expires in ${expiresInHours} hour(s).`,
-      'If you did not create this account, you can ignore this email.',
+      `Mã này có hiệu lực trong ${expiresInMinutes} phút.`,
+      'Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.',
     ].join('\n'),
     html: `
-      <p>Your Library Management verification code is:</p>
-      <p style="font-size:20px;font-weight:700;letter-spacing:1px;">${safeToken}</p>
-      <p>This code expires in ${safeHours} hour(s).</p>
-      <p>If you did not create this account, you can ignore this email.</p>
+      <p style="margin:0 0 8px;">Mã OTP xác thực tài khoản của bạn là:</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#8B6B4A;margin:12px 0;">${safeOtp}</p>
+      <p style="color:#6b6375;font-size:13px;margin:0 0 8px;">Mã này có hiệu lực trong <strong>${safeMinutes} phút</strong>.</p>
+      <p style="color:#6b6375;font-size:13px;margin:0;">Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.</p>
     `,
   });
 }
@@ -104,13 +104,61 @@ async function sendPasswordResetEmail({ to, token, expiresInMinutes }) {
   });
 }
 
+async function sendPasswordResetOtpEmail({ to, otp, expiresInMinutes }) {
+  const safeOtp = escapeHtml(otp);
+  const safeMinutes = escapeHtml(expiresInMinutes);
+
+  return sendMail({
+    to,
+    subject: 'Mã OTP khôi phục mật khẩu - Hệ thống Thư viện',
+    text: [
+      'Mã OTP để khôi phục mật khẩu của bạn là:',
+      otp,
+      '',
+      `Mã này có hiệu lực trong ${expiresInMinutes} phút.`,
+      'Nếu bạn không yêu cầu khôi phục mật khẩu, hãy bỏ qua email này.',
+    ].join('\n'),
+    html: `
+      <p style="margin:0 0 8px;">Mã OTP để khôi phục mật khẩu của bạn là:</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#8B6B4A;margin:12px 0;">${safeOtp}</p>
+      <p style="color:#6b6375;font-size:13px;margin:0 0 8px;">Mã này có hiệu lực trong <strong>${safeMinutes} phút</strong>.</p>
+      <p style="color:#6b6375;font-size:13px;margin:0;">Nếu bạn không yêu cầu khôi phục mật khẩu, hãy bỏ qua email này.</p>
+    `,
+  });
+}
+
 function resetEmailServiceForTests() {
   transporter = undefined;
 }
 
+async function sendChangePasswordOtpEmail({ to, otp, expiresInMinutes }) {
+  const safeOtp = escapeHtml(otp);
+  const safeMinutes = escapeHtml(expiresInMinutes);
+
+  return sendMail({
+    to,
+    subject: 'Mã OTP đổi mật khẩu - Hệ thống Thư viện',
+    text: [
+      'Mã OTP xác nhận đổi mật khẩu của bạn là:',
+      otp,
+      '',
+      `Mã này có hiệu lực trong ${expiresInMinutes} phút.`,
+      'Nếu bạn không yêu cầu đổi mật khẩu, hãy bỏ qua email này.',
+    ].join('\n'),
+    html: `
+      <p style="margin:0 0 8px;">Mã OTP xác nhận đổi mật khẩu của bạn là:</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#1B3A6B;margin:12px 0;">${safeOtp}</p>
+      <p style="color:#6b6375;font-size:13px;margin:0 0 8px;">Mã này có hiệu lực trong <strong>${safeMinutes} phút</strong>.</p>
+      <p style="color:#6b6375;font-size:13px;margin:0;">Nếu bạn không yêu cầu đổi mật khẩu, hãy bỏ qua email này.</p>
+    `,
+  });
+}
+
 module.exports = {
   isSmtpConfigured,
-  sendVerificationEmail,
+  sendVerificationOtpEmail,
   sendPasswordResetEmail,
+  sendPasswordResetOtpEmail,
+  sendChangePasswordOtpEmail,
   resetEmailServiceForTests,
 };

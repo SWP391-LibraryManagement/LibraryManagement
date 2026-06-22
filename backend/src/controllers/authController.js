@@ -88,6 +88,32 @@ function createAuthController(authService = defaultAuthService) {
       }
     },
 
+    requestChangePasswordOtp: async (req, res, next) => {
+      try {
+        const result = await authService.requestChangePasswordOtp(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          userId: req.user.userId,
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
+    confirmChangePassword: async (req, res, next) => {
+      try {
+        const result = await authService.confirmChangePassword(req.body, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+          userId: req.user.userId,
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     forgotPassword: async (req, res, next) => {
       try {
         const result = await authService.forgotPassword(req.body, {

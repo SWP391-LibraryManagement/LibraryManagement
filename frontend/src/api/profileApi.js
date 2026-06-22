@@ -101,3 +101,35 @@ export async function uploadMyAvatar(file) {
     throw new Error(getErrorMessage(error, 'Could not upload avatar.'), { cause: error });
   }
 }
+
+export async function requestChangePasswordOtp({ currentPassword, newPassword, confirmNewPassword }) {
+  try {
+    const response = await api.post(
+      '/auth/change-password/request-otp',
+      { currentPassword, newPassword, confirmNewPassword },
+      { headers: authHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, 'Không thể gửi mã OTP. Vui lòng thử lại.'),
+      { cause: error }
+    );
+  }
+}
+
+export async function confirmChangePassword({ otp, newPassword }) {
+  try {
+    const response = await api.post(
+      '/auth/change-password/confirm',
+      { otp, newPassword },
+      { headers: authHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, 'Không thể đổi mật khẩu. Vui lòng kiểm tra mã OTP.'),
+      { cause: error }
+    );
+  }
+}

@@ -3,9 +3,9 @@ import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import PersonIcon from "@mui/icons-material/Person";
 
 const statusConfig = {
-  ACTIVE:   { label: "Hoạt động",       cls: "badge-active"   },
-  INACTIVE: { label: "Ngừng hoạt động", cls: "badge-inactive" },
-  LOCKED:   { label: "Bị khóa",         cls: "badge-locked"   },
+  ACTIVE:   { label: "Hoạt động",       cls: "ph-badge-active"   },
+  INACTIVE: { label: "Ngừng hoạt động", cls: "ph-badge-inactive" },
+  LOCKED:   { label: "Bị khóa",         cls: "ph-badge-locked"   },
 };
 
 /** Component hiển thị phần header của profile */
@@ -16,47 +16,49 @@ export default function ProfileHeader({
   status,
   membershipStatus,
 }) {
-  const { label: statusLabel, cls: statusCls } = statusConfig[status];
+  const { label: statusLabel, cls: statusCls } = statusConfig[status] ?? statusConfig.INACTIVE;
   const isMember = membershipStatus === "APPROVED";
 
   return (
-    <div className="lms-card">
-      {/* Hero banner — bo góc trên bằng CSS riêng */}
-      <div className="profile-banner" />
+    <div className="ph-card">
+      {/* Hero banner */}
+      <div className="ph-banner" />
 
       {/* Avatar + thông tin định danh */}
-      <div className="profile-identity">
-        {/* Avatar với online dot */}
-        <div className="profile-avatar-wrap">
-          <div className="profile-avatar">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName} />
-            ) : (
-              <PersonIcon style={{ fontSize: 48, color: "#1b3a6b" }} />
-            )}
+      <div className="ph-body">
+        <div className="ph-identity-row">
+          {/* Avatar với online dot */}
+          <div className="ph-avatar-wrap">
+            <div className="ph-avatar">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={fullName} />
+              ) : (
+                <PersonIcon className="ph-avatar-icon" />
+              )}
+            </div>
+            {status === "ACTIVE" && <span className="ph-online-dot" />}
           </div>
-          {status === "ACTIVE" && <span className="profile-online-dot" />}
-        </div>
 
-        {/* Tên, username, badges */}
-        <div className="profile-identity-info">
-          <h1 className="profile-name">{fullName}</h1>
-          <p className="profile-username">@{username}</p>
+          {/* Tên, username, badges */}
+          <div className="ph-info">
+            <h1 className="ph-name">{fullName}</h1>
+            <p className="ph-username">@{username}</p>
 
-          <div className="profile-badges">
-            {/* Trạng thái tài khoản */}
-            <span className={`badge-status ${statusCls}`}>
-              <span className="dot" />
-              {statusLabel}
-            </span>
+            <div className="ph-badges">
+              {/* Trạng thái tài khoản */}
+              <span className={`ph-badge ${statusCls}`}>
+                <span className="ph-badge-dot" />
+                {statusLabel}
+              </span>
 
-            {/* Trạng thái hội viên */}
-            <span className={`badge-member ${isMember ? "badge-member-approved" : "badge-member-pending"}`}>
-              {isMember
-                ? <VerifiedUserIcon style={{ fontSize: 13 }} />
-                : <HourglassEmptyIcon style={{ fontSize: 13 }} />}
-              {isMember ? "Hội viên" : "Chờ duyệt"}
-            </span>
+              {/* Trạng thái hội viên */}
+              <span className={`ph-badge ${isMember ? "ph-badge-active" : "ph-badge-inactive"}`}>
+                {isMember
+                  ? <VerifiedUserIcon style={{ fontSize: 13 }} />
+                  : <HourglassEmptyIcon style={{ fontSize: 13 }} />}
+                {isMember ? "Hội viên" : "Chờ duyệt"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
