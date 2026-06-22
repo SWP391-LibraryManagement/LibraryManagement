@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "trace": "node scripts/check-traceability.js",
+    "trace:enforce": "node scripts/check-traceability.js --enforce --min=70"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
