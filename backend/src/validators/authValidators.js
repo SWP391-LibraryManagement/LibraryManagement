@@ -49,7 +49,14 @@ const registerValidators = [
 ];
 
 const verifyEmailValidators = [
-  body('token').isString().trim().notEmpty().withMessage('Token is required.').isLength({ max: 512 }),
+  body('email').isEmail().withMessage('Email hợp lệ là bắt buộc.').normalizeEmail(),
+  body('otp')
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('Mã OTP là bắt buộc.')
+    .matches(/^\d{6}$/)
+    .withMessage('Mã OTP phải gồm đúng 6 chữ số.'),
   handleValidationErrors,
 ];
 
@@ -84,18 +91,54 @@ const changePasswordValidators = [
   handleValidationErrors,
 ];
 
+const requestChangePasswordOtpValidators = [
+  body('currentPassword').isString().notEmpty().withMessage('Mật khẩu hiện tại là bắt buộc.').isLength({ max: 255 }),
+  body('newPassword')
+    .isString()
+    .withMessage('Mật khẩu mới là bắt buộc.')
+    .isLength({ min: 8, max: 255 })
+    .withMessage('Mật khẩu mới phải từ 8 đến 255 ký tự.'),
+  body('confirmNewPassword')
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('Xác nhận mật khẩu không khớp.'),
+  handleValidationErrors,
+];
+
+const confirmChangePasswordValidators = [
+  body('otp')
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('Mã OTP là bắt buộc.')
+    .matches(/^\d{6}$/)
+    .withMessage('Mã OTP phải gồm đúng 6 chữ số.'),
+  body('newPassword')
+    .isString()
+    .withMessage('Mật khẩu mới là bắt buộc.')
+    .isLength({ min: 8, max: 255 })
+    .withMessage('Mật khẩu mới phải từ 8 đến 255 ký tự.'),
+  handleValidationErrors,
+];
+
 const forgotPasswordValidators = [
   body('email').isEmail().withMessage('A valid email is required.').normalizeEmail(),
   handleValidationErrors,
 ];
 
 const resetPasswordValidators = [
-  body('token').isString().trim().notEmpty().withMessage('Token is required.').isLength({ max: 512 }),
+  body('email').isEmail().withMessage('Email hợp lệ là bắt buộc.').normalizeEmail(),
+  body('otp')
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage('Mã OTP là bắt buộc.')
+    .matches(/^\d{6}$/)
+    .withMessage('Mã OTP phải gồm đúng 6 chữ số.'),
   body('newPassword')
     .isString()
-    .withMessage('New password is required.')
+    .withMessage('Mật khẩu mới là bắt buộc.')
     .isLength({ min: 8, max: 255 })
-    .withMessage('New password must be between 8 and 255 characters.'),
+    .withMessage('Mật khẩu mới phải từ 8 đến 255 ký tự.'),
   handleValidationErrors,
 ];
 
@@ -107,6 +150,8 @@ module.exports = {
   refreshTokenValidators,
   logoutValidators,
   changePasswordValidators,
+  requestChangePasswordOtpValidators,
+  confirmChangePasswordValidators,
   forgotPasswordValidators,
   resetPasswordValidators,
   handleValidationErrors,

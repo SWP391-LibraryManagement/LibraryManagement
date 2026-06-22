@@ -5,17 +5,34 @@ import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import EmailIcon from '@mui/icons-material/Email';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import LockIcon from '@mui/icons-material/Lock';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FormInput from './FormInput';
 import AuthCard from './AuthCard';
 import '../../styles/forgot-password.css';
-import { forgotPassword } from '../../api/authApi';
+import { forgotPassword, resetPassword } from '../../api/authApi';
+
+const STEP_EMAIL = "email";
+const STEP_OTP = "otp";
+const STEP_DONE = "done";
 
 const ForgotPasswordForm = () => {
+  const [step, setStep] = useState(STEP_EMAIL);
+  
+  // Step 1 state
   const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  
+  // Step 2 state
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpError, setOtpError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+
   const [feedback, setFeedback] = useState(null);
 
   const validateEmail = (email) => {
@@ -23,7 +40,7 @@ const ForgotPasswordForm = () => {
     return re.test(email);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -33,26 +50,53 @@ const ForgotPasswordForm = () => {
     }
 
     setEmailError(false);
-    setIsSubmitting(true);
+    setIsSendingOtp(true);
 
     try {
       await forgotPassword(email);
-      setIsSubmitted(true);
+      setStep(STEP_OTP);
+      setFeedback({ severity: 'success', message: 'Mã OTP đã được gửi đến email của bạn.' });
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
-      setIsSubmitting(false);
+      setIsSendingOtp(false);
     }
   };
 
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    if (emailError) {
-      setEmailError(false);
+  const handleConfirmOtp = async (e) => {
+    e.preventDefault();
+    setFeedback(null);
+    let hasError = false;
+
+    if (!otp || otp.length !== 6) {
+      setOtpError(true);
+      hasError = true;
+    } else {
+      setOtpError(false);
+    }
+
+    if (!newPassword || newPassword.length < 8 || newPassword !== confirmPassword) {
+      setPasswordError(true);
+      hasError = true;
+    } else {
+      setPasswordError(false);
+    }
+
+    if (hasError) return;
+
+    setIsConfirming(true);
+
+    try {
+      await resetPassword({ email, otp, newPassword });
+      setStep(STEP_DONE);
+    } catch (error) {
+      setFeedback({ severity: 'error', message: error.message });
+    } finally {
+      setIsConfirming(false);
     }
   };
 
-  if (isSubmitted) {
+  if (step === STEP_DONE) {
     return (
       <AuthCard>
         <Box className="success-state fade-in">
@@ -77,7 +121,7 @@ const ForgotPasswordForm = () => {
               mb: 2,
             }}
           >
-            Email Sent Successfully
+            Đổi Mật Khẩu Thành Công
           </Typography>
 
           <Typography
@@ -89,7 +133,7 @@ const ForgotPasswordForm = () => {
               lineHeight: 1.6,
             }}
           >
-            Please check your inbox and follow the instructions to reset your password.
+            Mật khẩu của bạn đã được thay đổi thành công. Bây giờ bạn có thể sử dụng mật khẩu mới để đăng nhập.
           </Typography>
 
           <Button
@@ -113,7 +157,7 @@ const ForgotPasswordForm = () => {
               },
             }}
           >
-            Back to Login
+            Quay lại Đăng nhập
           </Button>
         </Box>
       </AuthCard>
@@ -143,7 +187,7 @@ const ForgotPasswordForm = () => {
             mb: 1,
           }}
         >
-          Forgot Your Password?
+          {step === STEP_EMAIL ? 'Quên Mật Khẩu?' : 'Khôi phục Mật Khẩu'}
         </Typography>
 
         <Typography
@@ -155,78 +199,184 @@ const ForgotPasswordForm = () => {
             lineHeight: 1.6,
           }}
         >
-          Enter your email address and we'll send you instructions to reset your password.
+          {step === STEP_EMAIL 
+            ? "Nhập địa chỉ email của bạn và chúng tôi sẽ gửi mã OTP để khôi phục mật khẩu."
+            : `Nhập mã OTP 6 chữ số được gửi tới ${email} cùng mật khẩu mới của bạn.`}
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Box sx={{ mb: 3 }}>
-            <FormInput
-              label="Email Address"
-              type="email"
-              placeholder="Enter your email address"
-              icon={EmailIcon}
-              required
-              value={email}
-              onChange={handleEmailChange}
-              error={emailError}
-              helperText="Please enter a valid email address"
-            />
-          </Box>
+        {feedback?.message && (
+          <Alert severity={feedback.severity || 'info'} sx={{ mb: 3 }}>
+            {feedback.message}
+          </Alert>
+        )}
 
-          {feedback?.message && (
-            <Alert severity={feedback.severity || 'info'} sx={{ mb: 3 }}>
-              {feedback.message}
-            </Alert>
-          )}
+        {step === STEP_EMAIL && (
+          <Box component="form" onSubmit={handleSendOtp} noValidate>
+            <Box sx={{ mb: 3 }}>
+              <FormInput
+                label="Địa chỉ Email"
+                type="email"
+                placeholder="Nhập địa chỉ email của bạn"
+                icon={EmailIcon}
+                required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError(false);
+                }}
+                error={emailError}
+                helperText={emailError ? "Vui lòng nhập địa chỉ email hợp lệ" : ""}
+                disabled={isSendingOtp}
+              />
+            </Box>
 
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            className="reset-button"
-            disabled={isSubmitting}
-            sx={{
-              background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
-              color: '#fff',
-              padding: '14px',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              boxShadow: '0 4px 12px rgba(139, 107, 74, 0.3)',
-              transition: 'all 0.3s ease',
-              mb: 3,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #6d5239, #a86f30)',
-                boxShadow: '0 6px 20px rgba(139, 107, 74, 0.4)',
-                transform: 'translateY(-2px)',
-              },
-            }}
-          >
-            {isSubmitting ? 'Sending...' : 'Reset Password'}
-          </Button>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="body2"
-              sx={{ color: '#7A7A7A', display: 'inline' }}
-            >
-              Remember your password?{' '}
-            </Typography>
-
-            <a
-              href="/login"
-              style={{
-                color: '#8B6B4A',
-                textDecoration: 'none',
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              className="reset-button"
+              disabled={isSendingOtp}
+              sx={{
+                background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
+                color: '#fff',
+                padding: '14px',
+                borderRadius: '12px',
+                fontSize: '1rem',
                 fontWeight: 600,
-                cursor: 'pointer',
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(139, 107, 74, 0.3)',
+                transition: 'all 0.3s ease',
+                mb: 3,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #6d5239, #a86f30)',
+                  boxShadow: '0 6px 20px rgba(139, 107, 74, 0.4)',
+                  transform: 'translateY(-2px)',
+                },
               }}
-              className="login-link"
             >
-              Login
-            </a>
+              {isSendingOtp ? 'Đang gửi OTP...' : 'Gửi mã OTP'}
+            </Button>
           </Box>
+        )}
+
+        {step === STEP_OTP && (
+          <Box component="form" onSubmit={handleConfirmOtp} noValidate>
+            <Box sx={{ mb: 3 }}>
+              <FormInput
+                label="Mã OTP 6 chữ số"
+                type="text"
+                placeholder="123456"
+                icon={VpnKeyIcon}
+                required
+                value={otp}
+                onChange={(e) => {
+                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setOtpError(false);
+                }}
+                error={otpError}
+                helperText={otpError ? "Vui lòng nhập đúng mã OTP 6 chữ số" : ""}
+                disabled={isConfirming}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <FormInput
+                label="Mật khẩu mới"
+                type="password"
+                placeholder="Tối thiểu 8 ký tự"
+                icon={LockIcon}
+                required
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPasswordError(false);
+                }}
+                error={passwordError}
+                disabled={isConfirming}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <FormInput
+                label="Xác nhận Mật khẩu mới"
+                type="password"
+                placeholder="Phải khớp với mật khẩu mới"
+                icon={LockIcon}
+                required
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPasswordError(false);
+                }}
+                error={passwordError}
+                helperText={passwordError ? "Mật khẩu không khớp hoặc chưa đủ 8 ký tự" : ""}
+                disabled={isConfirming}
+              />
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              className="reset-button"
+              disabled={isConfirming || otp.length !== 6}
+              sx={{
+                background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
+                color: '#fff',
+                padding: '14px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(139, 107, 74, 0.3)',
+                transition: 'all 0.3s ease',
+                mb: 3,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #6d5239, #a86f30)',
+                  boxShadow: '0 6px 20px rgba(139, 107, 74, 0.4)',
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              {isConfirming ? 'Đang đổi mật khẩu...' : 'Khôi phục Mật khẩu'}
+            </Button>
+            
+            <Box sx={{ textAlign: 'center', mb: 1 }}>
+              <Button 
+                variant="text" 
+                onClick={() => {
+                  setStep(STEP_EMAIL);
+                  setFeedback(null);
+                }}
+                disabled={isConfirming}
+                sx={{ color: '#8B6B4A', textTransform: 'none', fontWeight: 600 }}
+              >
+                Quay lại bước nhập Email
+              </Button>
+            </Box>
+          </Box>
+        )}
+
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: '#7A7A7A', display: 'inline' }}
+          >
+            Bạn đã nhớ mật khẩu?{' '}
+          </Typography>
+
+          <a
+            href="/login"
+            style={{
+              color: '#8B6B4A',
+              textDecoration: 'none',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            className="login-link"
+          >
+            Đăng nhập
+          </a>
         </Box>
       </Box>
     </AuthCard>

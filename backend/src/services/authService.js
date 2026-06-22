@@ -16,6 +16,8 @@ const {
   verifyPassword,
 } = require('../utils/passwordPolicy');
 
+// --- Pure helpers ---
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -42,6 +44,13 @@ function maskEmail(email) {
 
   return domain ? `${maskedLocal}@${domain}` : maskedLocal;
 }
+
+/** Tạo mã OTP 6 chữ số ngẫu nhiên */
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// --- Factory ---
 
 function createAuthService({
   userRepository,
@@ -72,6 +81,9 @@ function createAuthService({
     emailService = require('./emailService');
   }
 
+  // --- Internal helpers ---
+
+  /** Ghi audit log, bỏ qua lỗi để không ảnh hưởng luồng chính */
   async function writeAudit(context, action, extra = {}) {
     if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
       return;
@@ -92,20 +104,7 @@ function createAuthService({
     }
   }
 
-  async function createStoredToken(userId, tokenType, expiresAt, context = {}) {
-    const token = generateRandomToken();
-
-    const record = await authTokenRepository.createToken({
-      userId,
-      tokenType,
-      tokenHash: hashToken(token),
-      expiresAt,
-      createdByIp: context.ip || null,
-    });
-
-    return { token, record };
-  }
-
+  /** Tạo notification trong DB, bỏ qua lỗi */
   async function createNotification({ userId, recipientEmail, templateCode, safePayload }) {
     if (!notificationRepository || typeof notificationRepository.createNotification !== 'function') {
       return;
@@ -124,76 +123,91 @@ function createAuthService({
     }
   }
 
-  async function sendVerificationMessage({ userId, recipientEmail, token }) {
-    try {
-      await createNotification({
-        userId,
-        recipientEmail,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        safePayload: { purpose: 'EMAIL_VERIFY' },
-      });
-    } catch (notifyError) {
-      console.error('[auth notification] Failed to queue verification notification:', notifyError.message);
-    }
-
-    if (!emailService || typeof emailService.sendVerificationEmail !== 'function') {
+  /** Gửi email qua emailService, bỏ qua lỗi để không làm gián đoạn luồng chính */
+  async function sendEmail(emailFnName, params, label) {
+    if (!emailService || typeof emailService[emailFnName] !== 'function') {
       return;
     }
 
     try {
-      const result = await emailService.sendVerificationEmail({
-        to: recipientEmail,
-        token,
-        expiresInHours: env.emailVerificationTtlHours,
-      });
+      const result = await emailService[emailFnName](params);
 
       if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
-        console.warn('[auth email] SMTP is not configured; verification email was not sent.');
+        console.warn(`[auth email] SMTP not configured; ${label} email was not sent.`);
       } else if (result && result.sent === true) {
-        console.info(
-          `[auth email] Verification email sent to ${maskEmail(recipientEmail)} (${result.providerMessageId || 'no provider id'}).`
-        );
+        console.info(`[auth email] ${label} email sent to ${maskEmail(params.to)} (${result.providerMessageId || 'no id'}).`);
       }
     } catch (emailError) {
-      console.error('[auth email] Failed to send verification email:', emailError.message);
+      console.error(`[auth email] Failed to send ${label} email:`, emailError.message);
     }
   }
 
-  async function sendPasswordResetMessage({ userId, recipientEmail, token }) {
-    try {
-      await createNotification({
-        userId,
-        recipientEmail,
-        templateCode: 'PASSWORD_RESET',
-        safePayload: { purpose: 'PASSWORD_RESET' },
-      });
-    } catch (notifyError) {
-      console.error('[auth notification] Failed to queue password reset notification:', notifyError.message);
+  /** Tạo OTP token mới (thu hồi token cũ cùng loại trước) */
+  async function createOtpToken(userId, tokenType, ttlMinutes, ip = null) {
+    const otp = generateOtp();
+    const expiresAt = addMinutes(clock(), ttlMinutes);
+
+    await authTokenRepository.revokeActiveTokensForUserType(userId, tokenType);
+    await authTokenRepository.createToken({
+      userId,
+      tokenType,
+      tokenHash: hashToken(otp),
+      expiresAt,
+      createdByIp: ip,
+    });
+
+    return { otp, expiresAt };
+  }
+
+  /** Xác thực OTP token, ném lỗi nếu không hợp lệ hoặc hết hạn */
+  async function validateOtpToken(tokenType, otp, userId) {
+    const tokenHash = hashToken(String(otp || '').trim());
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash(tokenType, tokenHash);
+
+    if (!tokenRecord || tokenRecord.userId !== userId) {
+      throw errors.badRequest('INVALID_OTP', 'Mã OTP không hợp lệ hoặc đã được sử dụng.');
     }
 
-    if (!emailService || typeof emailService.sendPasswordResetEmail !== 'function') {
-      return;
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest('EXPIRED_OTP', 'Mã OTP đã hết hiệu lực. Vui lòng yêu cầu mã mới.');
     }
 
-    try {
-      const result = await emailService.sendPasswordResetEmail({
-        to: recipientEmail,
-        token,
-        expiresInMinutes: env.passwordResetTtlMinutes,
-      });
+    return tokenRecord;
+  }
 
-      if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
-        console.warn('[auth email] SMTP is not configured; password reset email was not sent.');
-      } else if (result && result.sent === true) {
-        console.info(
-          `[auth email] Password reset email sent to ${maskEmail(recipientEmail)} (${result.providerMessageId || 'no provider id'}).`
-        );
-      }
-    } catch (emailError) {
-      console.error('[auth email] Failed to send password reset email:', emailError.message);
+  /** Load user và đảm bảo đang ACTIVE, ném lỗi nếu không */
+  async function requireActiveUser(userId) {
+    const user = await userRepository.findById(userId);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    return user;
+  }
+
+  /** Xác minh mật khẩu hiện tại, ghi audit và ném lỗi nếu sai */
+  async function verifyCurrentPassword(user, password, context) {
+    const valid = await verifyPassword(password || '', user.passwordHash);
+
+    if (!valid) {
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_FAILURE', {
+        userId: user.userId,
+        targetId: user.userId,
+      });
+      throw errors.unauthorized('INVALID_CURRENT_PASSWORD', 'Mật khẩu hiện tại không đúng.');
     }
   }
 
+  /** Kiểm tra policy mật khẩu, ném lỗi nếu không đạt */
+  function validateNewPassword(password) {
+    const check = validatePasswordPolicy(password);
+    if (!check.valid) {
+      throw errors.badRequest('WEAK_PASSWORD', 'Mật khẩu mới không đủ độ phức tạp.', check.errors);
+    }
+  }
+
+  /** Cấp access token cho user dựa vào sessionId */
   async function issueAccessTokenForUser(user, sessionId) {
     const roles = await userRepository.getRolesByUserId(user.userId);
     const accessToken = signAccessToken({
@@ -211,37 +225,57 @@ function createAuthService({
     };
   }
 
-  async function findUsableToken(tokenType, token, invalidCode, expiredCode, invalidMessage) {
-    const tokenHash = hashToken(String(token || '').trim());
-    const tokenRecord = await authTokenRepository.findActiveTokenByHash(tokenType, tokenHash);
+  /** Tạo refresh token ngẫu nhiên và lưu vào DB */
+  async function createStoredToken(userId, tokenType, expiresAt, context = {}) {
+    const token = generateRandomToken();
 
-    if (!tokenRecord) {
-      throw errors.badRequest(invalidCode, invalidMessage);
-    }
+    const record = await authTokenRepository.createToken({
+      userId,
+      tokenType,
+      tokenHash: hashToken(token),
+      expiresAt,
+      createdByIp: context.ip || null,
+    });
 
-    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
-      throw errors.badRequest(expiredCode, invalidMessage);
-    }
-
-    return tokenRecord;
+    return { token, record };
   }
+
+  /** Gửi email xác thực kèm OTP */
+  async function sendVerificationMessage({ userId, recipientEmail, otp }) {
+    try {
+      await createNotification({
+        userId,
+        recipientEmail,
+        templateCode: 'EMAIL_VERIFY',
+        safePayload: { purpose: 'EMAIL_VERIFY' },
+      });
+    } catch (notifyError) {
+      console.error('[auth notification] Failed to queue verification notification:', notifyError.message);
+    }
+
+    await sendEmail('sendVerificationOtpEmail', {
+      to: recipientEmail,
+      otp,
+      expiresInMinutes: env.emailVerificationTtlHours * 60,
+    }, 'verification');
+  }
+
+  // -------------------------------------------------------------------------
+  // Public service methods
+  // -------------------------------------------------------------------------
 
   async function register(input, context = {}) {
     const email = normalizeEmail(input.email);
     const username = normalizeUsername(input.username) || deriveUsername(email);
     const fullName = input.fullName ? String(input.fullName).trim() : null;
     const phoneNumber = input.phoneNumber ? String(input.phoneNumber).trim() : null;
-    const password = input.password;
-    const confirmPassword = input.confirmPassword;
+    const { password, confirmPassword } = input;
 
     if (!email) {
       throw errors.badRequest('EMAIL_REQUIRED', 'Email is required.');
     }
 
-    const passwordCheck = validatePasswordPolicy(password);
-    if (!passwordCheck.valid) {
-      throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
-    }
+    validateNewPassword(password);
 
     if (password !== confirmPassword) {
       throw errors.badRequest('PASSWORD_MISMATCH', 'Password confirmation must match password.');
@@ -249,10 +283,7 @@ function createAuthService({
 
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
-      throw errors.conflict(
-        'EMAIL_ALREADY_REGISTERED',
-        'Email is already registered. Please login or use forgot password.'
-      );
+      throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
     }
 
     const existingByUsername = await userRepository.findByUsername(username);
@@ -261,26 +292,19 @@ function createAuthService({
     }
 
     const passwordHash = await hashPassword(password);
-    const createdUser = await userRepository.createRegisteredUser({
-      username,
-      email,
-      passwordHash,
-      phoneNumber,
-      fullName,
-    });
+    const createdUser = await userRepository.createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName });
 
-    const { token: verificationToken } = await createStoredToken(
-      createdUser.userId,
-      'EMAIL_VERIFY',
-      addHours(clock(), env.emailVerificationTtlHours),
-      context
-    );
-
-    await sendVerificationMessage({
+    const expiresAt = addHours(clock(), env.emailVerificationTtlHours);
+    const otp = generateOtp();
+    await authTokenRepository.createToken({
       userId: createdUser.userId,
-      recipientEmail: email,
-      token: verificationToken,
+      tokenType: 'EMAIL_VERIFY',
+      tokenHash: hashToken(otp),
+      expiresAt,
+      createdByIp: context.ip || null,
     });
+
+    await sendVerificationMessage({ userId: createdUser.userId, recipientEmail: email, otp });
 
     await writeAudit(context, 'AUTH_REGISTER', {
       userId: createdUser.userId,
@@ -288,28 +312,25 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = {
-      userId: createdUser.userId,
-      email,
-      message: 'Verification email sent',
-    };
-
-    if (exposeDebugTokens) {
-      response.debugVerificationToken = verificationToken;
-    }
+    const response = { userId: createdUser.userId, email, message: 'Verification email sent' };
+    if (exposeDebugTokens) response.debugOtp = otp;
 
     return response;
   }
 
   async function verifyEmail(input, context = {}) {
-    const token = String(input.token || '').trim();
-    const tokenRecord = await findUsableToken(
-      'EMAIL_VERIFY',
-      token,
-      'INVALID_VERIFICATION_TOKEN',
-      'EXPIRED_VERIFICATION_TOKEN',
-      'This verification link is no longer valid. Request a new one.'
-    );
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
+
+    if (!user) {
+      throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Email hoặc mã OTP không hợp lệ.');
+    }
+
+    if (user.status === 'ACTIVE' && user.emailVerifiedAt) {
+      return { message: 'Tài khoản đã được xác thực trước đó.' };
+    }
+
+    const tokenRecord = await validateOtpToken('EMAIL_VERIFY', input.otp, user.userId);
 
     await userRepository.markEmailVerified(tokenRecord.userId);
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
@@ -318,31 +339,18 @@ function createAuthService({
       targetId: tokenRecord.userId,
     });
 
-    return {
-      message: 'Account verified. You can now login.',
-    };
+    return { message: 'Account verified. You can now login.' };
   }
 
   async function resendVerification(input, context = {}) {
     const email = normalizeEmail(input.email);
     const user = await userRepository.findByEmail(email);
-    let verificationToken = null;
+    let otp = null;
 
     if (user && user.status !== 'ACTIVE') {
-      await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'EMAIL_VERIFY');
-      const storedVerification = await createStoredToken(
-        user.userId,
-        'EMAIL_VERIFY',
-        addHours(clock(), env.emailVerificationTtlHours),
-        context
-      );
-      verificationToken = storedVerification.token;
-
-      await sendVerificationMessage({
-        userId: user.userId,
-        recipientEmail: user.email,
-        token: verificationToken,
-      });
+      const result = await createOtpToken(user.userId, 'EMAIL_VERIFY', env.emailVerificationTtlHours * 60, context.ip);
+      otp = result.otp;
+      await sendVerificationMessage({ userId: user.userId, recipientEmail: user.email, otp });
     }
 
     await writeAudit(context, 'AUTH_RESEND_VERIFICATION', {
@@ -351,13 +359,8 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = {
-      message: 'Verification email sent',
-    };
-
-    if (exposeDebugTokens && verificationToken) {
-      response.debugVerificationToken = verificationToken;
-    }
+    const response = { message: 'If the email is valid and unverified, a new verification link was sent.' };
+    if (exposeDebugTokens && otp) response.debugOtp = otp;
 
     return response;
   }
@@ -377,34 +380,14 @@ function createAuthService({
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
-    const lockedUntilTime = user.lockedUntil ? new Date(user.lockedUntil).getTime() : null;
-    if (lockedUntilTime && lockedUntilTime > clock().getTime()) {
-      await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
-        userId: user.userId,
-        targetId: user.userId,
-      });
-      throw errors.tooManyRequests(
-        'ACCOUNT_LOCKED',
-        'Account is locked due to too many failed attempts. Please reset your password or contact support.'
-      );
-    }
-
-    if (user.status === 'LOCKED') {
-      await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
-        userId: user.userId,
-        targetId: user.userId,
-      });
-      throw errors.tooManyRequests(
-        'ACCOUNT_LOCKED',
-        'Account is locked due to too many failed attempts. Please reset your password or contact support.'
-      );
+    const isLockedByTime = user.lockedUntil && new Date(user.lockedUntil).getTime() > clock().getTime();
+    if (isLockedByTime || user.status === 'LOCKED') {
+      await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
+      throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
     }
 
     if (user.status !== 'ACTIVE') {
-      await writeAudit(context, 'AUTH_LOGIN_INACTIVE', {
-        userId: user.userId,
-        targetId: user.userId,
-      });
+      await writeAudit(context, 'AUTH_LOGIN_INACTIVE', { userId: user.userId, targetId: user.userId });
       throw errors.forbidden('ACCOUNT_INACTIVE', 'Account is not active.');
     }
 
@@ -414,37 +397,22 @@ function createAuthService({
       const shouldLock = failedCount >= env.maxFailedLoginAttempts;
       const lockedUntil = shouldLock ? addMinutes(clock(), env.lockoutMinutes) : null;
       await userRepository.updateFailedLogin(user.userId, failedCount, lockedUntil);
-      await writeAudit(context, 'AUTH_LOGIN_FAILURE', {
-        userId: user.userId,
-        targetId: user.userId,
-      });
+      await writeAudit(context, 'AUTH_LOGIN_FAILURE', { userId: user.userId, targetId: user.userId });
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
     await userRepository.resetFailedLoginsAndSetLastLogin(user.userId);
-    const storedRefreshToken = await createStoredToken(
-      user.userId,
-      'REFRESH',
-      addDays(clock(), env.refreshTokenTtlDays),
-      context
-    );
-    const { roles, accessToken, expiresIn } = await issueAccessTokenForUser(
-      user,
-      storedRefreshToken.record.tokenId
-    );
-    const refreshToken = storedRefreshToken.token;
+    const storedRefreshToken = await createStoredToken(user.userId, 'REFRESH', addDays(clock(), env.refreshTokenTtlDays), context);
+    const { roles, accessToken, expiresIn } = await issueAccessTokenForUser(user, storedRefreshToken.record.tokenId);
 
-    await writeAudit(context, 'AUTH_LOGIN_SUCCESS', {
-      userId: user.userId,
-      targetId: user.userId,
-    });
+    await writeAudit(context, 'AUTH_LOGIN_SUCCESS', { userId: user.userId, targetId: user.userId });
 
     return {
       userId: user.userId,
       email: user.email,
       roles,
       accessToken,
-      refreshToken,
+      refreshToken: storedRefreshToken.token,
       expiresIn,
     };
   }
@@ -453,31 +421,19 @@ function createAuthService({
     const tokenHash = hashToken(String(input.refreshToken || '').trim());
     const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', tokenHash);
 
-    if (!tokenRecord) {
+    if (!tokenRecord || new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
       throw errors.unauthorized('INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token.');
     }
 
-    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
-      throw errors.unauthorized('EXPIRED_REFRESH_TOKEN', 'Invalid or expired refresh token.');
-    }
-
     const user = await userRepository.findById(tokenRecord.userId);
-
     if (!user || user.status !== 'ACTIVE') {
       throw errors.unauthorized('INVALID_REFRESH_TOKEN', 'Invalid or expired refresh token.');
     }
 
     const { accessToken, expiresIn } = await issueAccessTokenForUser(user, tokenRecord.tokenId);
+    await writeAudit(context, 'AUTH_REFRESH_TOKEN', { userId: user.userId, targetId: user.userId });
 
-    await writeAudit(context, 'AUTH_REFRESH_TOKEN', {
-      userId: user.userId,
-      targetId: user.userId,
-    });
-
-    return {
-      accessToken,
-      expiresIn,
-    };
+    return { accessToken, expiresIn };
   }
 
   async function logout(input, context = {}) {
@@ -485,11 +441,10 @@ function createAuthService({
     const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', refreshTokenHash);
 
     if (tokenRecord) {
-      if (typeof authTokenRepository.revokeToken === 'function') {
-        await authTokenRepository.revokeToken(tokenRecord.tokenId);
-      } else {
-        await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-      }
+      const revoke = typeof authTokenRepository.revokeToken === 'function'
+        ? authTokenRepository.revokeToken
+        : authTokenRepository.markTokenUsed;
+      await revoke(tokenRecord.tokenId);
     }
 
     await writeAudit(context, 'AUTH_LOGOUT', {
@@ -497,64 +452,67 @@ function createAuthService({
       targetId: context.userId || tokenRecord?.userId || null,
     });
 
-    return {
-      message: 'Logged out',
-    };
+    return { message: 'Logged out' };
   }
 
   async function changePassword(input, context = {}) {
-    const user = await userRepository.findById(context.userId);
-
-    if (!user || user.status !== 'ACTIVE') {
-      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
-    }
-
-    const currentPasswordValid = await verifyPassword(input.currentPassword || '', user.passwordHash);
-
-    if (!currentPasswordValid) {
-      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_FAILURE', {
-        userId: user.userId,
-        targetId: user.userId,
-      });
-      throw errors.unauthorized('INVALID_CURRENT_PASSWORD', 'Current password is incorrect.');
-    }
-
-    const passwordCheck = validatePasswordPolicy(input.newPassword);
-    if (!passwordCheck.valid) {
-      throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
-    }
+    const user = await requireActiveUser(context.userId);
+    await verifyCurrentPassword(user, input.currentPassword, context);
+    validateNewPassword(input.newPassword);
 
     await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
-    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', {
-      userId: user.userId,
-      targetId: user.userId,
-    });
+    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', { userId: user.userId, targetId: user.userId });
 
-    return {
-      message: 'Password changed',
-    };
+    return { message: 'Password changed' };
+  }
+
+  async function requestChangePasswordOtp(input, context = {}) {
+    const user = await requireActiveUser(context.userId);
+    await verifyCurrentPassword(user, input.currentPassword, context);
+    validateNewPassword(input.newPassword);
+
+    const { otp } = await createOtpToken(user.userId, 'CHANGE_PASSWORD_OTP', env.changePasswordOtpTtlMinutes, context.ip);
+
+    await sendEmail('sendChangePasswordOtpEmail', {
+      to: user.email,
+      otp,
+      expiresInMinutes: env.changePasswordOtpTtlMinutes,
+    }, 'change-password OTP');
+
+    await writeAudit(context, 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED', { userId: user.userId, targetId: user.userId });
+
+    const response = { message: 'OTP đã được gửi đến email của bạn.', maskedEmail: maskEmail(user.email) };
+    if (exposeDebugTokens) response.debugOtp = otp;
+
+    return response;
+  }
+
+  async function confirmChangePassword(input, context = {}) {
+    const user = await requireActiveUser(context.userId);
+    const tokenRecord = await validateOtpToken('CHANGE_PASSWORD_OTP', input.otp, user.userId);
+    validateNewPassword(input.newPassword);
+
+    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
+    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
+    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', { userId: user.userId, targetId: user.userId });
+
+    return { message: 'Đổi mật khẩu thành công.' };
   }
 
   async function forgotPassword(input, context = {}) {
     const email = normalizeEmail(input.email);
     const user = await userRepository.findByEmail(email);
-    let resetToken = null;
+    let otp = null;
 
     if (user && user.status === 'ACTIVE' && user.emailVerifiedAt) {
-      await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'PASSWORD_RESET');
-      const storedResetToken = await createStoredToken(
-        user.userId,
-        'PASSWORD_RESET',
-        addMinutes(clock(), env.passwordResetTtlMinutes),
-        context
-      );
-      resetToken = storedResetToken.token;
+      const result = await createOtpToken(user.userId, 'PASSWORD_RESET', env.passwordResetTtlMinutes, context.ip);
+      otp = result.otp;
 
-      await sendPasswordResetMessage({
-        userId: user.userId,
-        recipientEmail: user.email,
-        token: resetToken,
-      });
+      await sendEmail('sendPasswordResetOtpEmail', {
+        to: user.email,
+        otp,
+        expiresInMinutes: env.passwordResetTtlMinutes,
+      }, 'password reset OTP');
     }
 
     await writeAudit(context, 'AUTH_PASSWORD_RESET_REQUEST', {
@@ -563,65 +521,29 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = {
-      message: 'Password reset email sent',
-    };
-
-    if (exposeDebugTokens && resetToken) {
-      response.debugResetToken = resetToken;
-    }
+    const response = { message: 'Password reset email sent' };
+    if (exposeDebugTokens && otp) response.debugOtp = otp;
 
     return response;
   }
 
-  async function findResetOrSetupToken(token) {
-    const tokenHash = hashToken(String(token || '').trim());
-    const tokenRecord =
-      (await authTokenRepository.findActiveTokenByHash('PASSWORD_RESET', tokenHash)) ||
-      (await authTokenRepository.findActiveTokenByHash('ACCOUNT_SETUP', tokenHash));
-
-    if (!tokenRecord) {
-      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
-    }
-
-    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
-      throw errors.badRequest('EXPIRED_RESET_TOKEN', 'This password reset link is no longer valid.');
-    }
-
-    return tokenRecord;
-  }
-
   async function resetPassword(input, context = {}) {
-    const passwordCheck = validatePasswordPolicy(input.newPassword);
-    if (!passwordCheck.valid) {
-      throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
+    validateNewPassword(input.newPassword);
+
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.badRequest('INVALID_RESET_TOKEN', 'Email hoặc mã OTP không hợp lệ.');
     }
 
-    const tokenRecord = await findResetOrSetupToken(input.token);
-    const user = await userRepository.findById(tokenRecord.userId);
+    const tokenRecord = await validateOtpToken('PASSWORD_RESET', input.otp, user.userId);
 
-    if (!user) {
-      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
-    }
-
-    const passwordHash = await hashPassword(input.newPassword);
-
-    if (tokenRecord.tokenType === 'ACCOUNT_SETUP' && typeof userRepository.updatePasswordAndActivate === 'function') {
-      await userRepository.updatePasswordAndActivate(user.userId, passwordHash);
-    } else {
-      await userRepository.updatePassword(user.userId, passwordHash);
-    }
-
+    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-    await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', {
-      userId: user.userId,
-      targetId: user.userId,
-      metadata: { tokenType: tokenRecord.tokenType },
-    });
+    await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', { userId: user.userId, targetId: user.userId });
 
-    return {
-      message: 'Password reset successful',
-    };
+    return { message: 'Password reset successfully.' };
   }
 
   async function me(userId) {
@@ -650,13 +572,11 @@ function createAuthService({
     }
 
     const sessionId = Number(payload.sid);
-
     if (!Number.isFinite(sessionId)) {
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
     const sessionRecord = await authTokenRepository.findActiveTokenById(sessionId, 'REFRESH');
-
     if (
       !sessionRecord ||
       sessionRecord.userId !== userId ||
@@ -681,6 +601,8 @@ function createAuthService({
     refreshToken,
     logout,
     changePassword,
+    requestChangePasswordOtp,
+    confirmChangePassword,
     forgotPassword,
     resetPassword,
     me,

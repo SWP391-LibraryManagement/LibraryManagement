@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import BackgroundPanel from '../component/register/BackgroundPanel';
 import AuthCard from '../component/register/AuthCard';
-import { registerAccount, verifyEmail } from '../api/authApi';
+import { registerAccount, verifyEmail, resendVerification } from '../api/authApi';
 import '../styles/login.css';
 
 function maskEmailForOtp(email) {
@@ -19,13 +19,14 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStep, setVerificationStep] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
 
   const handleRegister = async (formData) => {
     setFeedback(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setFeedback({ severity: 'error', message: 'Xac nhan mat khau phai trung khop voi mat khau.' });
+      setFeedback({ severity: 'error', message: 'Xác nhận mật khẩu phải trùng khớp với mật khẩu.' });
       return false;
     }
 
@@ -35,7 +36,7 @@ export default function RegisterPage() {
       const result = await registerAccount(formData);
       setRegisteredEmail(result.email || formData.email);
       setVerificationStep(true);
-      setFeedback({ severity: 'success', message: result.message || 'Ma xac thuc da duoc gui.' });
+      setFeedback({ severity: 'success', message: result.message || 'Mã xác thực đã được gửi.' });
       return true;
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
@@ -45,19 +46,30 @@ export default function RegisterPage() {
     }
   };
 
+  const handleResendEmail = async () => {
+    setFeedback(null);
+    try {
+      const result = await resendVerification(registeredEmail);
+      setFeedback({ severity: 'success', message: result.message || 'Mã xác thực mới đã được gửi.' });
+    } catch (error) {
+      setFeedback({ severity: 'error', message: error.message });
+    }
+  };
+
   const handleVerifyEmail = async ({ otp }) => {
     setFeedback(null);
 
     if (!otp?.trim()) {
-      setFeedback({ severity: 'error', message: 'Vui long nhap ma xac thuc email.' });
+      setFeedback({ severity: 'error', message: 'Vui lòng nhập mã xác thực email.' });
       return false;
     }
 
     setIsVerifying(true);
 
     try {
-      const result = await verifyEmail(otp.trim());
-      setFeedback({ severity: 'success', message: result.message || 'Email da duoc xac thuc.' });
+      const result = await verifyEmail(registeredEmail, otp.trim());
+      setFeedback({ severity: 'success', message: result.message || 'Email đã được xác thực.' });
+      setVerificationSuccess(true);
       return true;
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
@@ -80,12 +92,15 @@ export default function RegisterPage() {
             isSubmitting={isSubmitting}
             isVerifying={isVerifying}
             verificationStep={verificationStep}
+            verificationSuccess={verificationSuccess}
             registeredEmail={registeredEmail}
             maskedEmail={maskEmailForOtp(registeredEmail)}
             onBackToRegister={() => {
               setVerificationStep(false);
+              setVerificationSuccess(false);
               setFeedback(null);
             }}
+            onResendEmail={handleResendEmail}
           />
         </div>
       </div>

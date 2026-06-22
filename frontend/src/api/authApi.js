@@ -7,7 +7,7 @@ const api = axios.create({
   },
 });
 
-function getErrorMessage(error, fallback = 'Request failed. Please try again.') {
+function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng thử lại.') {
   if (!error.response) {
     return 'Không kết nối được backend. Hãy kiểm tra server API đang chạy ở http://localhost:3000.';
   }
@@ -29,18 +29,18 @@ export async function registerAccount(payload) {
     const response = await api.post('/auth/register', payload);
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Registration failed. Please check your information.'), {
+    throw new Error(getErrorMessage(error, 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.'), {
       cause: error,
     });
   }
 }
 
-export async function verifyEmail(token) {
+export async function verifyEmail(email, otp) {
   try {
-    const response = await api.post('/auth/verify-email', { token });
+    const response = await api.post('/auth/verify-email', { email, otp });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Email verification failed. Please check your code.'), {
+    throw new Error(getErrorMessage(error, 'Xác thực email thất bại. Vui lòng kiểm tra lại mã OTP.'), {
       cause: error,
     });
   }
@@ -52,7 +52,7 @@ export async function loginAccount({ email, password }) {
     return response.data;
   } catch (error) {
     console.error('Login API error:', error);
-    throw new Error(getErrorMessage(error, 'Login failed. Please check your credentials.'), {
+    throw new Error(getErrorMessage(error, 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'), {
       cause: error,
     });
   }
@@ -63,7 +63,7 @@ export async function forgotPassword(email) {
     const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not send password reset email.'), {
+    throw new Error(getErrorMessage(error, 'Không thể gửi email đặt lại mật khẩu.'), {
       cause: error,
     });
   }
@@ -74,7 +74,7 @@ export async function refreshAccessToken(refreshToken) {
     const response = await api.post('/auth/refresh-token', { refreshToken });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Session refresh failed.'), {
+    throw new Error(getErrorMessage(error, 'Làm mới phiên đăng nhập thất bại.'), {
       cause: error,
     });
   }
@@ -93,7 +93,7 @@ export async function logoutAccount({ accessToken, refreshToken }) {
     );
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Logout failed.'), {
+    throw new Error(getErrorMessage(error, 'Đăng xuất thất bại.'), {
       cause: error,
     });
   }
@@ -112,18 +112,18 @@ export async function changePassword({ accessToken, currentPassword, newPassword
     );
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Password change failed.'), {
+    throw new Error(getErrorMessage(error, 'Đổi mật khẩu thất bại.'), {
       cause: error,
     });
   }
 }
 
-export async function resetPassword({ token, newPassword }) {
+export async function resetPassword({ email, otp, newPassword }) {
   try {
-    const response = await api.post('/auth/reset-password', { token, newPassword });
+    const response = await api.post('/auth/reset-password', { email, otp, newPassword });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Password reset failed.'), {
+    throw new Error(getErrorMessage(error, 'Đặt lại mật khẩu thất bại.'), {
       cause: error,
     });
   }
@@ -138,7 +138,18 @@ export async function getCurrentUser(accessToken) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load current user.'), {
+    throw new Error(getErrorMessage(error, 'Không thể tải thông tin người dùng hiện tại.'), {
+      cause: error,
+    });
+  }
+}
+
+export async function resendVerification(email) {
+  try {
+    const response = await api.post('/auth/resend-verification', { email });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Gửi lại email xác thực thất bại.'), {
       cause: error,
     });
   }

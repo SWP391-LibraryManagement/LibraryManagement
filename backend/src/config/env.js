@@ -40,6 +40,7 @@ module.exports = {
   refreshTokenTtlDays: numberFromEnv('REFRESH_TOKEN_TTL_DAYS', 7),
   emailVerificationTtlHours: numberFromEnv('EMAIL_VERIFICATION_TTL_HOURS', 24),
   passwordResetTtlMinutes: numberFromEnv('PASSWORD_RESET_TTL_MINUTES', 15),
+  changePasswordOtpTtlMinutes: numberFromEnv('CHANGE_PASSWORD_OTP_TTL_MINUTES', 10),
   maxFailedLoginAttempts: numberFromEnv('MAX_FAILED_LOGIN_ATTEMPTS', 5),
   lockoutMinutes: numberFromEnv('LOGIN_LOCKOUT_MINUTES', 15),
   smtpHost: process.env.SMTP_HOST || '',

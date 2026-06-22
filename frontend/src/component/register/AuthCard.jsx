@@ -13,9 +13,11 @@ export default function AuthCard({
   isSubmitting = false,
   isVerifying = false,
   verificationStep = false,
+  verificationSuccess = false,
   registeredEmail = '',
   maskedEmail = '',
   onBackToRegister,
+  onResendEmail,
 }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -75,18 +77,44 @@ export default function AuthCard({
         <form onSubmit={verificationStep ? handleVerifySubmit : handleSubmit}>
           <Stack spacing={2.25}>
             {verificationStep ? (
-              <>
-                <Alert severity="info">
-                  Mã xác thực đã được gửi tới {maskedEmail || registeredEmail || formData.email}.
-                </Alert>
-                <FormInput
-                  label="OTP xác thực email"
-                  placeholder="Nhập mã xác thực"
-                  value={otp}
-                  onChange={setOtp}
-                  required
-                />
-              </>
+              verificationSuccess ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    className="register-submit-btn"
+                    onClick={() => navigate('/login')}
+                  >
+                    Chuyển về trang Login
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Alert severity="info">
+                    Mã xác thực đã được gửi tới {maskedEmail || registeredEmail || formData.email}.
+                  </Alert>
+                  <FormInput
+                    label="OTP xác thực email"
+                    placeholder="Nhập mã xác thực"
+                    value={otp}
+                    onChange={setOtp}
+                    required
+                  />
+                  <div className="register-text" style={{ textAlign: 'right', marginTop: '4px' }}>
+                    Không nhận được email?{' '}
+                    <a
+                      href="#"
+                      className="register-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (onResendEmail) onResendEmail();
+                      }}
+                    >
+                      Gửi lại.
+                    </a>
+                  </div>
+                </>
+              )
             ) : (
               <>
                 <FormInput
@@ -134,13 +162,15 @@ export default function AuthCard({
               </Alert>
             )}
 
-            <Button type="submit" variant="contained" className="register-submit-btn" disabled={isBusy}>
-              {verificationStep
-                ? (isVerifying ? 'Đang xác thực...' : 'Xác thực email')
-                : (isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản')}
-            </Button>
+            {!(verificationStep && verificationSuccess) && (
+              <Button type="submit" variant="contained" className="register-submit-btn" disabled={isBusy}>
+                {verificationStep
+                  ? (isVerifying ? 'Đang xác thực...' : 'Xác thực email')
+                  : (isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản')}
+              </Button>
+            )}
 
-            {verificationStep && (
+            {(verificationStep && !verificationSuccess) && (
               <Button
                 type="button"
                 variant="text"
