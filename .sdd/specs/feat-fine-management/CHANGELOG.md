@@ -21,3 +21,8 @@
 
 - Added prototype alignment note: current FE09 UI may keep fine records locally for demo continuity, while the final implementation must use server-side calculation and persistence.
 - Clarified that duplicate prevention, collection recording, and paid marking remain server-side responsibilities for the completed FE09 feature.
+
+## 2026-06-22
+
+- Added prototype drift notes to `PLAN.md` and `TASKS.md`.
+- Clarified that existing FE09 backend/frontend code remains prototype/demo code until reconciled against approved tasks, server-side fine calculation/persistence, borrowing-block integration, authorization, traceability tags, and tests.
