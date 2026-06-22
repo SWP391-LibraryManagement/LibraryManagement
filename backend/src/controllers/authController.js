@@ -4,6 +4,7 @@ function createAuthController(authService = defaultAuthService) {
   return {
     register: async (req, res, next) => {
       try {
+        // @spec FR-FE02-001, FR-FE02-002, FR-FE02-013
         const result = await authService.register(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -16,6 +17,7 @@ function createAuthController(authService = defaultAuthService) {
 
     verifyEmail: async (req, res, next) => {
       try {
+        // @spec FR-FE02-003
         const result = await authService.verifyEmail(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -28,6 +30,7 @@ function createAuthController(authService = defaultAuthService) {
 
     resendVerification: async (req, res, next) => {
       try {
+        // @spec FR-FE02-002
         const result = await authService.resendVerification(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -40,6 +43,7 @@ function createAuthController(authService = defaultAuthService) {
 
     login: async (req, res, next) => {
       try {
+        // @spec FR-FE02-004, FR-FE02-005, FR-FE02-006, FR-FE02-014
         const result = await authService.login(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -52,6 +56,7 @@ function createAuthController(authService = defaultAuthService) {
 
     refreshToken: async (req, res, next) => {
       try {
+        // @spec FR-FE02-004, FR-FE02-008, FR-FE02-009
         const result = await authService.refreshToken(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -64,6 +69,7 @@ function createAuthController(authService = defaultAuthService) {
 
     logout: async (req, res, next) => {
       try {
+        // @spec FR-FE02-007
         const result = await authService.logout(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -77,6 +83,7 @@ function createAuthController(authService = defaultAuthService) {
 
     changePassword: async (req, res, next) => {
       try {
+        // @spec FR-FE02-010
         const result = await authService.changePassword(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -116,6 +123,7 @@ function createAuthController(authService = defaultAuthService) {
 
     forgotPassword: async (req, res, next) => {
       try {
+        // @spec FR-FE02-011
         const result = await authService.forgotPassword(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -128,6 +136,7 @@ function createAuthController(authService = defaultAuthService) {
 
     resetPassword: async (req, res, next) => {
       try {
+        // @spec FR-FE02-012
         const result = await authService.resetPassword(req.body, {
           ip: req.ip,
           userAgent: req.get('user-agent'),
@@ -140,6 +149,7 @@ function createAuthController(authService = defaultAuthService) {
 
     me: async (req, res, next) => {
       try {
+        // @spec FR-FE02-008, FR-FE02-009, FR-FE02-014
         const result = await authService.me(req.user.userId);
         return res.status(200).json(result);
       } catch (error) {
