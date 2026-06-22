@@ -1,12 +1,12 @@
 # SPEC.md - FE03 User Profile
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: APPROVED
+# Status: DRAFT - AVATAR UPLOAD REVISION
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-20
 
 # Feature ID: FE03
 
@@ -34,7 +34,9 @@ The system shall:
 
 - Allow authenticated members and librarians to view their own profile.
 - Allow authenticated members and librarians to update approved profile fields.
+- Allow authenticated users to upload their own avatar image from their local device.
 - Validate profile data on the server.
+- Validate uploaded avatar files on the server.
 - Prevent users from viewing or editing another user's profile.
 - Prevent profile updates from changing credentials, roles, status, or membership approval.
 
@@ -66,6 +68,7 @@ The feature can only start when:
 - PRE-FE03-003: The profile record exists in `UserProfiles`, or the system has an approved rule to create it on first access.
 - PRE-FE03-004: The actor is requesting their own profile.
 - PRE-FE03-005: Allowed editable fields are approved by the team.
+- PRE-FE03-006: Avatar upload storage policy, allowed file types, and maximum file size are approved by the team.
 
 ---
 
@@ -87,6 +90,16 @@ The feature can only start when:
 4. The system rejects protected fields such as role, status, password hash, and membership approval.
 5. The system saves valid profile changes.
 6. The system returns the updated safe profile view.
+
+### MF-FE03-003: Upload Avatar
+
+1. Authenticated user selects an avatar image from their local device.
+2. The frontend submits the image as multipart form-data to the avatar upload endpoint.
+3. The system verifies the request belongs to the current authenticated user.
+4. The system validates file type, file size, and safe storage rules.
+5. The system stores the image using a server-generated safe filename.
+6. The system saves the generated public avatar URL/path in `UserProfiles.AvatarUrl`.
+7. The system returns the updated safe profile view.
 
 ---
 
@@ -116,6 +129,12 @@ The feature can only start when:
 2. The system ignores or rejects those fields.
 3. The protected account data remains unchanged.
 
+### AF-FE03-005: Invalid Avatar Upload
+
+1. User submits a missing file, unsupported file type, oversized file, or unsafe file.
+2. The system rejects the upload.
+3. The existing avatar remains unchanged.
+
 ---
 
 ## 6. Business Rules
@@ -132,6 +151,10 @@ Use these stable IDs for tasks and tests.
 - BR-FE03-008: Invalid update requests must not partially change profile data.
 - BR-FE03-009: Email changes are out of FE03 scope unless FE02 verification behavior is approved.
 - BR-FE03-010: Profile data must be treated as personal information and returned only to authorized actors.
+- BR-FE03-011: Avatar file upload must be authenticated and may update only the current user's profile.
+- BR-FE03-012: Avatar uploads must accept only approved image file types and reject executable or unsupported content.
+- BR-FE03-013: Avatar uploads must enforce the approved maximum file size.
+- BR-FE03-014: Avatar storage must use server-generated filenames and must not trust or persist the user's local file path.
 
 ---
 
@@ -144,6 +167,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE03-005: If submitted profile fields are invalid, then the system shall reject the update and keep existing data unchanged.
 - FR-FE03-006: If protected account fields are submitted, then the system shall reject or ignore them without changing protected data.
 - FR-FE03-007: When a profile response is returned, the system shall exclude password hash, credential tokens, and internal role-management data.
+- FR-FE03-008: When an authenticated user uploads a valid avatar image, the system shall store it and update that user's `avatarUrl`.
+- FR-FE03-009: If an avatar upload is invalid, then the system shall reject it and keep the existing avatar unchanged.
 
 ---
 
@@ -157,6 +182,9 @@ Use these stable IDs for tasks and tests.
 - AC-FE03-006: Given invalid profile data, when the user submits changes, then the system rejects the update.
 - AC-FE03-007: Given protected fields in the update payload, when the system processes it, then password, role, status, and membership approval remain unchanged.
 - AC-FE03-008: Given a profile response, when it is returned, then it does not include `PasswordHash`.
+- AC-FE03-009: Given an authenticated user and a valid avatar image, when the user uploads it, then the response includes the updated `avatarUrl`.
+- AC-FE03-010: Given an invalid avatar upload, when the request is processed, then the upload is rejected and the old `avatarUrl` remains unchanged.
+- AC-FE03-011: Given a guest, when the guest uploads an avatar, then the system denies access.
 
 ---
 
@@ -175,6 +203,11 @@ Use these stable IDs for tasks and tests.
 | EC-FE03-009 | Invalid avatar URL | Reject update or store null according to policy. |
 | EC-FE03-010 | Payload includes password/role/status | Reject or ignore protected fields; do not change them. |
 | EC-FE03-011 | Database update fails | Keep previous profile state and return safe error. |
+| EC-FE03-012 | Avatar upload has no file | Reject upload. |
+| EC-FE03-013 | Avatar upload is not an approved image type | Reject upload. |
+| EC-FE03-014 | Avatar upload exceeds maximum size | Reject upload. |
+| EC-FE03-015 | Avatar upload uses unsafe file name or path | Ignore original path/name and use a server-generated safe filename. |
+| EC-FE03-016 | Avatar storage fails | Keep previous avatar state and return safe error. |
 
 ---
 
@@ -199,7 +232,8 @@ Use these stable IDs for tasks and tests.
 | fullName | string | No | Trimmed; max length must be approved. |
 | address | string | No | Trimmed; max length must be approved. |
 | dateOfBirth | date | No | Must not be in the future. |
-| avatarUrl | string | No | Must be valid URL/path according to approved storage policy. |
+| avatarUrl | string | No | Must be valid URL/path according to approved storage policy. May be generated by avatar upload. |
+| avatarFile | file | No | Upload-only field. Accepted extensions: JPG, JPEG, PNG, WebP. Maximum size: 2 MB. Stored using a server-generated filename. |
 | status | string | No | Display only if approved; not editable by FE03. |
 
 ---
@@ -212,6 +246,7 @@ Use these stable IDs for tasks and tests.
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/profile/me` | Member/Librarian/Admin | - | Safe profile DTO | Current user's profile only. |
 | PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, avatarUrl?, phone? }` | Updated safe profile DTO | Phone is included as an approved editable field in Phase 1. |
+| POST | `/api/profile/me/avatar` | Member/Librarian/Admin | multipart form-data with `avatar` file | Updated safe profile DTO | Uploads an avatar image from the user's local device and stores the generated URL/path in `avatarUrl`. |
 
 ---
 
@@ -223,10 +258,13 @@ Use these stable IDs for tasks and tests.
 - NFR-FE03-SEC-002: Users must not access another user's profile through FE03.
 - NFR-FE03-SEC-003: Responses must not include password hash, tokens, internal authorization data, or secrets.
 - NFR-FE03-SEC-004: All profile input must be validated server-side.
+- NFR-FE03-SEC-005: Avatar upload must validate MIME type, file extension, file size, and safe storage path server-side.
+- NFR-FE03-SEC-006: Avatar upload must not store client local file paths or trust original filenames.
 
 ### 12.2 Transaction Integrity
 
 - NFR-FE03-TXN-001: Profile update must be atomic; invalid fields must not cause partial profile changes.
+- NFR-FE03-TXN-002: Invalid avatar uploads must not change the current stored `avatarUrl`.
 
 ### 12.3 Performance
 
@@ -241,6 +279,7 @@ Use these stable IDs for tasks and tests.
 
 - NFR-FE03-UX-001: Validation errors must identify the invalid field clearly.
 - NFR-FE03-UX-002: Profile view should clearly separate editable profile fields from account fields managed elsewhere.
+- NFR-FE03-UX-003: Avatar upload errors should clearly identify file size or file type problems.
 
 ---
 
@@ -276,7 +315,7 @@ This feature does not include:
 | Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-002 | FE03 cannot update email; email changes must go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-004 | Phase 1 supports avatar URL text only, not file upload. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-004 | Phase 1 supports avatar upload from the user's local device. Store the generated public path in `UserProfiles.AvatarUrl`. | User request 2026-06-20 | DRAFT REVISION |
 | Q-FE03-005 | Profile updates write audit logs for changed fields, actor, and timestamp. | Review packet 2026-06-10 | APPROVED |
 
 ---
@@ -293,6 +332,12 @@ This feature does not include:
 | BR-FE03-005 | UC12 | FT13 | Not Started |
 | AC-FE03-004 | UC11 | FT12 | Not Started |
 | AC-FE03-007 | UC12 | FT13 | Not Started |
+| BR-FE03-011 | UC12 | FT13 | Not Started |
+| BR-FE03-012 | UC12 | FT13 | Not Started |
+| BR-FE03-013 | UC12 | FT13 | Not Started |
+| BR-FE03-014 | UC12 | FT13 | Not Started |
+| FR-FE03-008 | UC12 | FT13 | Not Started |
+| FR-FE03-009 | UC12 | FT13 | Not Started |
 
 ---
 
@@ -303,6 +348,6 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Editable profile fields are approved.
 - [x] Phone and email ownership is confirmed with FE02/FE11.
 - [x] Missing profile behavior is approved.
-- [x] Avatar storage policy is approved.
+- [ ] Avatar upload storage policy revision is reviewed and approved.
 - [x] Privacy and response DTO rules are reviewed.
 - [x] Every acceptance criterion can become a test.

@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+const path = require('path');
 
 const { createAuthRoutes } = require('./routes/authRoutes');
 const { createBorrowingRoutes } = require('./routes/borrowingRoutes');
@@ -11,6 +12,9 @@ const { createReservationRoutes } = require('./routes/reservationRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
 const { createBookRoutes } = require('./routes/bookRoutes');
 const { createFineRoutes } = require('./routes/fineRoutes');
+const { createProfileRoutes } = require('./routes/profileRoutes');
+const bookRoutes = require('./routes/bookRoutes');
+
 const errorHandler = require('./middleware/errorHandler');
 const { defaultAuthService } = require('./services/authService');
 const { defaultBorrowingService } = require('./services/borrowingService');
@@ -32,6 +36,7 @@ function createApp({
   app.use(cors());
   app.use(compression());
   app.use(express.json());
+  app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
 
   app.get('/', (req, res) => {
     res.json({
@@ -52,6 +57,7 @@ function createApp({
   app.use('/api/notifications', createNotificationRoutes({ authService, notificationService }));
   app.use('/api/reports', createReportRoutes({ authService, reportService }));
   app.use('/api/reservations', createReservationRoutes({ authService, reservationService }));
+  app.use('/api/profile', createProfileRoutes({ authService, profileService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/books', createBookRoutes());
   app.use('/api/fines', createFineRoutes());

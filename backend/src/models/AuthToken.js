@@ -12,7 +12,7 @@ module.exports = defineModel({
       name: 'TokenType',
       type: 'NVARCHAR(30)',
       required: true,
-      allowedValues: ['REFRESH', 'PASSWORD_RESET', 'EMAIL_VERIFY', 'ACCOUNT_SETUP'],
+      allowedValues: ['REFRESH', 'PASSWORD_RESET', 'EMAIL_VERIFY', 'ACCOUNT_SETUP', 'CHANGE_PASSWORD_OTP'],
     },
     { attribute: 'tokenHash', name: 'TokenHash', type: 'NVARCHAR(255)', required: true },
     { attribute: 'expiresAt', name: 'ExpiresAt', type: 'DATETIME', required: true },
