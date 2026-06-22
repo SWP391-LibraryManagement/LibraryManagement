@@ -9,13 +9,13 @@ import { vi } from "date-fns/locale";
 /** Một hàng thông tin: icon + nhãn + giá trị */
 function InfoRow({ icon, label, value }) {
   return (
-    <li className="info-row">
-      <div className="info-icon-wrap">{icon}</div>
-      <div>
-        <p className="info-label">{label}</p>
-        <p className="info-value">{value}</p>
+    <div className="pic-row">
+      <div className="pic-row-icon">{icon}</div>
+      <div className="pic-row-content">
+        <p className="pic-row-label">{label}</p>
+        <p className="pic-row-value">{value ?? "—"}</p>
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -25,19 +25,24 @@ export default function ProfileInfoCard({
   phone,
   dateOfBirth,
   address,
-  memberId,
+  userId,
 }) {
-  const formattedDob = format(new Date(dateOfBirth), "dd MMMM, yyyy", { locale: vi });
+  const formattedDob = dateOfBirth
+    ? format(new Date(dateOfBirth), "dd MMMM, yyyy", { locale: vi })
+    : "—";
 
   return (
-    <div className="lms-card info-card">
-      <h2 className="info-card-title">Thông tin cá nhân</h2>
+    <div className="pic-card">
+      <h2 className="pic-title">
+        <span className="pic-title-bar" />
+        Thông tin cá nhân
+      </h2>
 
-      <ul className="info-list">
+      <div className="pic-rows">
         <InfoRow
           icon={<BadgeIcon fontSize="small" />}
-          label="Mã hội viên"
-          value={memberId}
+          label="Mã người dùng"
+          value={userId}
         />
         <InfoRow
           icon={<EmailIcon fontSize="small" />}
@@ -59,7 +64,7 @@ export default function ProfileInfoCard({
           label="Địa chỉ"
           value={address}
         />
-      </ul>
+      </div>
     </div>
   );
 }

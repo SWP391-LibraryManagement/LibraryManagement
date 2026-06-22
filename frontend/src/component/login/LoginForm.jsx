@@ -47,8 +47,8 @@ export default function LoginForm({
       {/* Email Field */}
       <TextField
         fullWidth
-        label="Email"
-        placeholder="Nhập email của bạn"
+        label="Tài khoản của bạn"
+        placeholder="Nhập tài khoản của bạn"
         variant="outlined"
         value={email}
         onChange={(e) => setEmail(e.target.value)}

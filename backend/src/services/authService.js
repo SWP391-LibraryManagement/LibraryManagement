@@ -124,27 +124,27 @@ function createAuthService({
     }
   }
 
-  async function sendVerificationMessage({ userId, recipientEmail, token }) {
+  async function sendVerificationMessage({ userId, recipientEmail, otp }) {
     try {
       await createNotification({
         userId,
         recipientEmail,
-        templateCode: 'ACCOUNT_VERIFICATION',
+        templateCode: 'EMAIL_VERIFY',
         safePayload: { purpose: 'EMAIL_VERIFY' },
       });
     } catch (notifyError) {
       console.error('[auth notification] Failed to queue verification notification:', notifyError.message);
     }
 
-    if (!emailService || typeof emailService.sendVerificationEmail !== 'function') {
+    if (!emailService || typeof emailService.sendVerificationOtpEmail !== 'function') {
       return;
     }
 
     try {
-      const result = await emailService.sendVerificationEmail({
+      const result = await emailService.sendVerificationOtpEmail({
         to: recipientEmail,
-        token,
-        expiresInHours: env.emailVerificationTtlHours,
+        otp,
+        expiresInMinutes: env.emailVerificationTtlHours * 60,
       });
 
       if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
@@ -269,17 +269,21 @@ function createAuthService({
       fullName,
     });
 
-    const { token: verificationToken } = await createStoredToken(
-      createdUser.userId,
-      'EMAIL_VERIFY',
-      addHours(clock(), env.emailVerificationTtlHours),
-      context
-    );
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = addHours(clock(), env.emailVerificationTtlHours);
+    
+    await authTokenRepository.createToken({
+      userId: createdUser.userId,
+      tokenType: 'EMAIL_VERIFY',
+      tokenHash: hashToken(otp),
+      expiresAt,
+      createdByIp: context.ip || null,
+    });
 
     await sendVerificationMessage({
       userId: createdUser.userId,
       recipientEmail: email,
-      token: verificationToken,
+      otp,
     });
 
     await writeAudit(context, 'AUTH_REGISTER', {
@@ -295,21 +299,36 @@ function createAuthService({
     };
 
     if (exposeDebugTokens) {
-      response.debugVerificationToken = verificationToken;
+      response.debugOtp = otp;
     }
 
     return response;
   }
 
   async function verifyEmail(input, context = {}) {
-    const token = String(input.token || '').trim();
-    const tokenRecord = await findUsableToken(
-      'EMAIL_VERIFY',
-      token,
-      'INVALID_VERIFICATION_TOKEN',
-      'EXPIRED_VERIFICATION_TOKEN',
-      'This verification link is no longer valid. Request a new one.'
-    );
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
+
+    if (!user) {
+      throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Email hoặc mã OTP không hợp lệ.');
+    }
+
+    if (user.status === 'ACTIVE' && user.emailVerifiedAt) {
+      return { message: 'Tài khoản đã được xác thực trước đó.' };
+    }
+
+    const otp = String(input.otp || '').trim();
+    const tokenHash = hashToken(otp);
+    
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash('EMAIL_VERIFY', tokenHash);
+
+    if (!tokenRecord || tokenRecord.userId !== user.userId) {
+      throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest('EXPIRED_VERIFICATION_TOKEN', 'Mã OTP đã hết hiệu lực. Vui lòng yêu cầu mã mới.');
+    }
 
     await userRepository.markEmailVerified(tokenRecord.userId);
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
@@ -326,22 +345,26 @@ function createAuthService({
   async function resendVerification(input, context = {}) {
     const email = normalizeEmail(input.email);
     const user = await userRepository.findByEmail(email);
-    let verificationToken = null;
+    let otp = null;
 
     if (user && user.status !== 'ACTIVE') {
       await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'EMAIL_VERIFY');
-      const storedVerification = await createStoredToken(
-        user.userId,
-        'EMAIL_VERIFY',
-        addHours(clock(), env.emailVerificationTtlHours),
-        context
-      );
-      verificationToken = storedVerification.token;
+      
+      otp = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = addHours(clock(), env.emailVerificationTtlHours);
+      
+      await authTokenRepository.createToken({
+        userId: user.userId,
+        tokenType: 'EMAIL_VERIFY',
+        tokenHash: hashToken(otp),
+        expiresAt,
+        createdByIp: context.ip || null,
+      });
 
       await sendVerificationMessage({
         userId: user.userId,
         recipientEmail: user.email,
-        token: verificationToken,
+        otp,
       });
     }
 
@@ -352,11 +375,11 @@ function createAuthService({
     });
 
     const response = {
-      message: 'Verification email sent',
+      message: 'If the email is valid and unverified, a new verification link was sent.',
     };
 
-    if (exposeDebugTokens && verificationToken) {
-      response.debugVerificationToken = verificationToken;
+    if (exposeDebugTokens && otp) {
+      response.debugOtp = otp;
     }
 
     return response;
@@ -535,26 +558,152 @@ function createAuthService({
     };
   }
 
+  async function requestChangePasswordOtp(input, context = {}) {
+    const user = await userRepository.findById(context.userId);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    const currentPasswordValid = await verifyPassword(input.currentPassword || '', user.passwordHash);
+    if (!currentPasswordValid) {
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_FAILURE', {
+        userId: user.userId,
+        targetId: user.userId,
+      });
+      throw errors.unauthorized('INVALID_CURRENT_PASSWORD', 'Mật khẩu hiện tại không đúng.');
+    }
+
+    const passwordCheck = validatePasswordPolicy(input.newPassword);
+    if (!passwordCheck.valid) {
+      throw errors.badRequest('WEAK_PASSWORD', 'Mật khẩu mới không đủ độ phức tạp.', passwordCheck.errors);
+    }
+
+    // Tạo OTP 6 chữ số
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Thu hồi OTP cũ chưa dùng (nếu có)
+    await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'CHANGE_PASSWORD_OTP');
+
+    // Lưu hash của OTP vào DB
+    const expiresAt = addMinutes(clock(), env.changePasswordOtpTtlMinutes);
+    await authTokenRepository.createToken({
+      userId: user.userId,
+      tokenType: 'CHANGE_PASSWORD_OTP',
+      tokenHash: hashToken(otp),
+      expiresAt,
+      createdByIp: context.ip || null,
+    });
+
+    // Gửi email OTP
+    if (emailService && typeof emailService.sendChangePasswordOtpEmail === 'function') {
+      try {
+        const result = await emailService.sendChangePasswordOtpEmail({
+          to: user.email,
+          otp,
+          expiresInMinutes: env.changePasswordOtpTtlMinutes,
+        });
+        if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
+          console.warn('[auth email] SMTP is not configured; change-password OTP email was not sent.');
+        } else if (result && result.sent === true) {
+          console.info(`[auth email] Change-password OTP sent to ${maskEmail(user.email)}.`);
+        }
+      } catch (emailError) {
+        console.error('[auth email] Failed to send change-password OTP email:', emailError.message);
+      }
+    }
+
+    await writeAudit(context, 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED', {
+      userId: user.userId,
+      targetId: user.userId,
+    });
+
+    const response = {
+      message: 'OTP đã được gửi đến email của bạn.',
+      maskedEmail: maskEmail(user.email),
+    };
+
+    if (exposeDebugTokens) {
+      response.debugOtp = otp;
+    }
+
+    return response;
+  }
+
+  async function confirmChangePassword(input, context = {}) {
+    const user = await userRepository.findById(context.userId);
+
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+    }
+
+    const otp = String(input.otp || '').trim();
+    const tokenHash = hashToken(otp);
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash('CHANGE_PASSWORD_OTP', tokenHash);
+
+    if (!tokenRecord || tokenRecord.userId !== user.userId) {
+      throw errors.badRequest('INVALID_OTP', 'Mã OTP không hợp lệ hoặc đã được sử dụng.');
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest('EXPIRED_OTP', 'Mã OTP đã hết hiệu lực. Vui lòng yêu cầu mã mới.');
+    }
+
+    const passwordCheck = validatePasswordPolicy(input.newPassword);
+    if (!passwordCheck.valid) {
+      throw errors.badRequest('WEAK_PASSWORD', 'Mật khẩu mới không đủ độ phức tạp.', passwordCheck.errors);
+    }
+
+    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
+    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
+
+    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', {
+      userId: user.userId,
+      targetId: user.userId,
+    });
+
+    return {
+      message: 'Đổi mật khẩu thành công.',
+    };
+  }
+
   async function forgotPassword(input, context = {}) {
     const email = normalizeEmail(input.email);
     const user = await userRepository.findByEmail(email);
     let resetToken = null;
+    let otp = null;
 
     if (user && user.status === 'ACTIVE' && user.emailVerifiedAt) {
+      // Thu hồi các token reset trước đó
       await authTokenRepository.revokeActiveTokensForUserType(user.userId, 'PASSWORD_RESET');
-      const storedResetToken = await createStoredToken(
-        user.userId,
-        'PASSWORD_RESET',
-        addMinutes(clock(), env.passwordResetTtlMinutes),
-        context
-      );
-      resetToken = storedResetToken.token;
-
-      await sendPasswordResetMessage({
+      
+      // Tạo OTP 6 số
+      otp = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = addMinutes(clock(), env.passwordResetTtlMinutes);
+      
+      const storedResetToken = await authTokenRepository.createToken({
         userId: user.userId,
-        recipientEmail: user.email,
-        token: resetToken,
+        tokenType: 'PASSWORD_RESET',
+        tokenHash: hashToken(otp),
+        expiresAt,
+        createdByIp: context.ip || null,
       });
+      resetToken = storedResetToken.tokenId;
+
+      if (emailService && typeof emailService.sendPasswordResetOtpEmail === 'function') {
+        try {
+          const result = await emailService.sendPasswordResetOtpEmail({
+            to: user.email,
+            otp,
+            expiresInMinutes: env.passwordResetTtlMinutes,
+          });
+          if (result && result.sent === false && result.reason === 'SMTP_NOT_CONFIGURED') {
+            console.warn('[auth email] SMTP is not configured; password reset OTP email was not sent.');
+          }
+        } catch (emailError) {
+          console.error('[auth email] Failed to send password reset OTP email:', emailError.message);
+        }
+      }
     }
 
     await writeAudit(context, 'AUTH_PASSWORD_RESET_REQUEST', {
@@ -567,28 +716,11 @@ function createAuthService({
       message: 'Password reset email sent',
     };
 
-    if (exposeDebugTokens && resetToken) {
-      response.debugResetToken = resetToken;
+    if (exposeDebugTokens && otp) {
+      response.debugOtp = otp;
     }
 
     return response;
-  }
-
-  async function findResetOrSetupToken(token) {
-    const tokenHash = hashToken(String(token || '').trim());
-    const tokenRecord =
-      (await authTokenRepository.findActiveTokenByHash('PASSWORD_RESET', tokenHash)) ||
-      (await authTokenRepository.findActiveTokenByHash('ACCOUNT_SETUP', tokenHash));
-
-    if (!tokenRecord) {
-      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
-    }
-
-    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
-      throw errors.badRequest('EXPIRED_RESET_TOKEN', 'This password reset link is no longer valid.');
-    }
-
-    return tokenRecord;
   }
 
   async function resetPassword(input, context = {}) {
@@ -597,30 +729,36 @@ function createAuthService({
       throw errors.badRequest('WEAK_PASSWORD', 'Password does not meet complexity requirements.', passwordCheck.errors);
     }
 
-    const tokenRecord = await findResetOrSetupToken(input.token);
-    const user = await userRepository.findById(tokenRecord.userId);
+    const email = normalizeEmail(input.email);
+    const user = await userRepository.findByEmail(email);
 
-    if (!user) {
-      throw errors.badRequest('INVALID_RESET_TOKEN', 'This password reset link is no longer valid.');
+    if (!user || user.status !== 'ACTIVE') {
+      throw errors.badRequest('INVALID_RESET_TOKEN', 'Email hoặc mã OTP không hợp lệ.');
+    }
+
+    const otp = String(input.otp || '').trim();
+    const tokenHash = hashToken(otp);
+    const tokenRecord = await authTokenRepository.findActiveTokenByHash('PASSWORD_RESET', tokenHash);
+
+    if (!tokenRecord || tokenRecord.userId !== user.userId) {
+      throw errors.badRequest('INVALID_RESET_TOKEN', 'Mã OTP không hợp lệ hoặc đã được sử dụng.');
+    }
+
+    if (new Date(tokenRecord.expiresAt).getTime() <= clock().getTime()) {
+      throw errors.badRequest('EXPIRED_RESET_TOKEN', 'Mã OTP đã hết hiệu lực. Vui lòng yêu cầu mã mới.');
     }
 
     const passwordHash = await hashPassword(input.newPassword);
-
-    if (tokenRecord.tokenType === 'ACCOUNT_SETUP' && typeof userRepository.updatePasswordAndActivate === 'function') {
-      await userRepository.updatePasswordAndActivate(user.userId, passwordHash);
-    } else {
-      await userRepository.updatePassword(user.userId, passwordHash);
-    }
-
+    await userRepository.updatePassword(user.userId, passwordHash);
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
+
     await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', {
       userId: user.userId,
       targetId: user.userId,
-      metadata: { tokenType: tokenRecord.tokenType },
     });
 
     return {
-      message: 'Password reset successful',
+      message: 'Password reset successfully.',
     };
   }
 
@@ -681,6 +819,8 @@ function createAuthService({
     refreshToken,
     logout,
     changePassword,
+    requestChangePasswordOtp,
+    confirmChangePassword,
     forgotPassword,
     resetPassword,
     me,
