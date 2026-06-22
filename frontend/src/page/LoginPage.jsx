@@ -43,7 +43,8 @@ export default function LoginPage() {
       } else if (result.roles?.includes('LIBRARIAN')) {
         navigate('/librarian/fines');
       } else {
-        navigate('/home');
+        // Member: vào thẳng khu vực có sidebar để truy cập mượn/đặt trước (FE07/FE08)
+        navigate('/borrowing/history');
       }
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });

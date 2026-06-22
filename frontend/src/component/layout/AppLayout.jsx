@@ -32,6 +32,7 @@ import {
 const NAV_GROUPS = [
   {
     label: 'Member',
+    roles: ['MEMBER'],
     items: [
       { key: 'borrow-request', label: 'My Borrows', icon: BookMarked, path: '/borrowing/new' },
       { key: 'borrowing-history', label: 'Borrowing History', icon: History, path: '/borrowing/history' },
@@ -40,6 +41,7 @@ const NAV_GROUPS = [
   },
   {
     label: 'Librarian',
+    roles: ['LIBRARIAN', 'ADMIN'],
     items: [
       { key: 'borrow-requests-admin', label: 'Borrow Requests', icon: ClipboardList, path: '/librarian/borrow-requests' },
       { key: 'process-returns', label: 'Process Returns', icon: PackageCheck, path: '/librarian/returns' },
@@ -49,6 +51,7 @@ const NAV_GROUPS = [
   },
   {
     label: 'Reports',
+    roles: ['LIBRARIAN', 'ADMIN'],
     items: [
       { key: 'borrowing-report', label: 'Borrowing Report', icon: BarChart2, path: '/reports/borrowing' },
       { key: 'inventory-report', label: 'Inventory Report', icon: Boxes, path: '/reports/inventory' },
@@ -57,8 +60,24 @@ const NAV_GROUPS = [
   },
 ];
 
+// Vai trò của người dùng hiện tại, đọc từ token đã lưu khi đăng nhập.
+function getCurrentRoles() {
+  try {
+    const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+    const roles = raw ? JSON.parse(raw).roles : null;
+    return Array.isArray(roles) ? roles : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function AppLayout({ active, title, subtitle, actions, children }) {
   const navigate = useNavigate();
+  const roles = getCurrentRoles();
+  // Chỉ hiển thị nhóm menu mà vai trò hiện tại được phép xem (khớp RBAC backend).
+  const visibleGroups = NAV_GROUPS.filter((group) =>
+    group.roles.some((role) => roles.includes(role))
+  );
 
   return (
     <div className="app-shell">
@@ -91,7 +110,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
             <span>Home</span>
           </button>
 
-          {NAV_GROUPS.map((group) => (
+          {visibleGroups.map((group) => (
             <div className="app-nav-group" key={group.label}>
               <div className="app-nav-label">{group.label}</div>
               {group.items.map((item) => {
