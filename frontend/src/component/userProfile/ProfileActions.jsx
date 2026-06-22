@@ -17,7 +17,6 @@ const STEP_OTP = "otp";    // bước 2: nhập OTP
 const STEP_DONE = "done";   // thành công
 
 function StepIndicator({ step }) {
-  const step1Done = step === STEP_OTP || step === STEP_DONE;
   const step2Done = step === STEP_DONE;
   const step2Active = step === STEP_OTP;
 

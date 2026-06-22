@@ -49,14 +49,38 @@ const registerValidators = [
 ];
 
 const verifyEmailValidators = [
-  body('email').isEmail().withMessage('Email hợp lệ là bắt buộc.').normalizeEmail(),
+  body('token')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .withMessage('Verification token must be a string.')
+    .trim()
+    .isLength({ max: 512 })
+    .withMessage('Verification token is too long.'),
+  body('email')
+    .optional({ nullable: true, checkFalsy: true })
+    .isEmail()
+    .withMessage('Email hợp lệ là bắt buộc khi xác thực bằng OTP.')
+    .normalizeEmail(),
   body('otp')
+    .optional({ nullable: true, checkFalsy: true })
     .isString()
     .trim()
-    .notEmpty()
-    .withMessage('Mã OTP là bắt buộc.')
     .matches(/^\d{6}$/)
     .withMessage('Mã OTP phải gồm đúng 6 chữ số.'),
+  body().custom((_, { req }) => {
+    const hasToken = typeof req.body.token === 'string' && req.body.token.trim().length > 0;
+    const hasOtpFlow =
+      typeof req.body.email === 'string' &&
+      req.body.email.trim().length > 0 &&
+      typeof req.body.otp === 'string' &&
+      req.body.otp.trim().length > 0;
+
+    if (hasToken || hasOtpFlow) {
+      return true;
+    }
+
+    throw new Error('Verification token or email and OTP are required.');
+  }),
   handleValidationErrors,
 ];
 
@@ -126,12 +150,22 @@ const forgotPasswordValidators = [
 ];
 
 const resetPasswordValidators = [
-  body('email').isEmail().withMessage('Email hợp lệ là bắt buộc.').normalizeEmail(),
+  body('token')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .withMessage('Reset token must be a string.')
+    .trim()
+    .isLength({ max: 512 })
+    .withMessage('Reset token is too long.'),
+  body('email')
+    .optional({ nullable: true, checkFalsy: true })
+    .isEmail()
+    .withMessage('Email hợp lệ là bắt buộc khi đặt lại mật khẩu bằng OTP.')
+    .normalizeEmail(),
   body('otp')
+    .optional({ nullable: true, checkFalsy: true })
     .isString()
     .trim()
-    .notEmpty()
-    .withMessage('Mã OTP là bắt buộc.')
     .matches(/^\d{6}$/)
     .withMessage('Mã OTP phải gồm đúng 6 chữ số.'),
   body('newPassword')
@@ -139,6 +173,20 @@ const resetPasswordValidators = [
     .withMessage('Mật khẩu mới là bắt buộc.')
     .isLength({ min: 8, max: 255 })
     .withMessage('Mật khẩu mới phải từ 8 đến 255 ký tự.'),
+  body().custom((_, { req }) => {
+    const hasToken = typeof req.body.token === 'string' && req.body.token.trim().length > 0;
+    const hasOtpFlow =
+      typeof req.body.email === 'string' &&
+      req.body.email.trim().length > 0 &&
+      typeof req.body.otp === 'string' &&
+      req.body.otp.trim().length > 0;
+
+    if (hasToken || hasOtpFlow) {
+      return true;
+    }
+
+    throw new Error('Reset token or email and OTP are required.');
+  }),
   handleValidationErrors,
 ];
 
