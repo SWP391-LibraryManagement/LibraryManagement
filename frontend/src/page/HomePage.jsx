@@ -954,6 +954,7 @@ const HomePage = () => {
   const [showMembership, setShowMembership] = useState(false);
   const [showBorrow, setShowBorrow] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(true);
@@ -981,6 +982,33 @@ const HomePage = () => {
 
   const goToRegister = () => {
     navigate('/register');
+  };
+
+  // Nhận biết trạng thái đã đăng nhập từ token đã lưu (login lưu vào local/sessionStorage)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      if (raw && token) {
+        setAuthUser(JSON.parse(raw));
+        setIsLoggedIn(true);
+      }
+    } catch {
+      // bỏ qua dữ liệu hỏng
+    }
+  }, []);
+
+  const handleLogout = () => {
+    for (const key of ['accessToken', 'refreshToken', 'authUser']) {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    }
+    setIsLoggedIn(false);
+    setAuthUser(null);
+  };
+
+  const goToMemberArea = () => {
+    navigate('/borrowing/history');
   };
 
   const openReviews = (event, book) => {
@@ -1155,9 +1183,21 @@ const HomePage = () => {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>TV</div>
-              <span style={{ fontSize: 13, color: '#4E342E', fontWeight: 600 }}>Thành viên</span>
-              <button onClick={() => setIsLoggedIn(false)} style={{ padding: '5px 12px', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 12, fontFamily: 'Lato, sans-serif' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#7A5C44' }}>
+                {(authUser?.email || 'TV').charAt(0).toUpperCase()}
+              </div>
+              <span style={{ fontSize: 13, color: '#4E342E', fontWeight: 600, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {authUser?.email || 'Thành viên'}
+              </span>
+              <button onClick={goToMemberArea} style={{
+                padding: '7px 16px', borderRadius: 6, border: 'none',
+                background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                transition: 'background 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
+              >Khu vực của tôi</button>
+              <button onClick={handleLogout} style={{ padding: '5px 12px', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 12, fontFamily: 'Lato, sans-serif' }}>
                 Đăng xuất
               </button>
             </div>
