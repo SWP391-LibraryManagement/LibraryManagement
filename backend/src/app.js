@@ -21,6 +21,7 @@ const { defaultBorrowingService } = require('./services/borrowingService');
 const { defaultNotificationService } = require('./services/notificationService');
 const { defaultReportService } = require('./services/reportService');
 const { defaultReservationService } = require('./services/reservationService');
+const { defaultProfileService } = require('./services/profileService');
 
 function createApp({
   authService = defaultAuthService,
@@ -28,6 +29,7 @@ function createApp({
   notificationService = defaultNotificationService,
   reportService = defaultReportService,
   reservationService = defaultReservationService,
+  profileService = defaultProfileService,
   userManagementService,
 } = {}) {
   const app = express();
