@@ -4,6 +4,7 @@ const errors = require('../utils/safeErrors');
 function createAuthenticate(authService = defaultAuthService) {
   return async function authenticate(req, res, next) {
     try {
+      // @spec FR-FE02-008, FR-FE02-009
       const authorization = req.headers.authorization || '';
       const [scheme, token] = authorization.split(' ');
 

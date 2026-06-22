@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -263,19 +263,21 @@ export default function BookManagement() {
     });
   };
 
-  const loadBooks = async () => {
+  const loadBooks = useCallback(async () => {
     const params = new URLSearchParams({ limit: '100' });
     if (statusFilter) params.set('status', statusFilter);
     if (categoryFilter) params.set('categoryId', categoryFilter);
     const result = await apiRequest(`/books/management?${params.toString()}`);
     const nextBooks = result.data || [];
     setBooks(nextBooks);
-    if (nextBooks.length && !nextBooks.some((book) => Number(book.id) === Number(selectedBookId))) {
-      setSelectedBookId(String(nextBooks[0].id));
-    } else if (!nextBooks.length) {
-      setSelectedBookId('');
-    }
-  };
+    setSelectedBookId((currentSelectedBookId) => {
+      if (nextBooks.length && !nextBooks.some((book) => Number(book.id) === Number(currentSelectedBookId))) {
+        return String(nextBooks[0].id);
+      }
+
+      return nextBooks.length ? currentSelectedBookId : '';
+    });
+  }, [categoryFilter, statusFilter]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -290,7 +292,7 @@ export default function BookManagement() {
     };
 
     loadInitialData();
-  }, []);
+  }, [loadBooks]);
 
   useEffect(() => {
     if (selectedBook) {

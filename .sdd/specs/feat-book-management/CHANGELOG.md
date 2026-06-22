@@ -28,3 +28,8 @@
 - Clarified that borrow/reservation history and copy records remain unchanged when a book is hidden from the public catalog.
 - Added staff update support for changing book `status` directly between `ACTIVE` and `INACTIVE`.
 - Updated FE05 API contract and context notes to align with the implemented `/api/books/{bookId}` update payload.
+
+## 2026-06-22
+
+- Added prototype drift notes to `PLAN.md` and `TASKS.md`.
+- Clarified that existing FE05 backend/frontend code is prototype/demo code until reconciled against approved tasks, traceability tags, role checks, audit logging, and tests.

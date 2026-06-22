@@ -27,6 +27,27 @@ const CATEGORY_ICONS = {
 const getCategoryLabel = (category) => CATEGORY_LABELS[category] || category || 'Chưa phân loại';
 const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'Book';
 
+const getStoredAuthState = () => {
+  try {
+    const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+
+    if (raw && token) {
+      return {
+        isLoggedIn: true,
+        authUser: JSON.parse(raw),
+      };
+    }
+  } catch {
+    // Ignore corrupted stored auth data.
+  }
+
+  return {
+    isLoggedIn: false,
+    authUser: null,
+  };
+};
+
 
 const StarRating = ({ rating, size = 12 }) => {
   const score = Number(rating) || 0;
@@ -953,8 +974,9 @@ const HomePage = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showMembership, setShowMembership] = useState(false);
   const [showBorrow, setShowBorrow] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authUser, setAuthUser] = useState(null);
+  const [authState, setAuthState] = useState(getStoredAuthState);
+  const isLoggedIn = authState.isLoggedIn;
+  const authUser = authState.authUser;
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(true);
@@ -984,27 +1006,16 @@ const HomePage = () => {
     navigate('/register');
   };
 
-  // Nhận biết trạng thái đã đăng nhập từ token đã lưu (login lưu vào local/sessionStorage)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      if (raw && token) {
-        setAuthUser(JSON.parse(raw));
-        setIsLoggedIn(true);
-      }
-    } catch {
-      // bỏ qua dữ liệu hỏng
-    }
-  }, []);
-
   const handleLogout = () => {
     for (const key of ['accessToken', 'refreshToken', 'authUser']) {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     }
-    setIsLoggedIn(false);
-    setAuthUser(null);
+    setAuthState({ isLoggedIn: false, authUser: null });
+  };
+
+  const markDemoLoggedIn = () => {
+    setAuthState((current) => ({ ...current, isLoggedIn: true }));
   };
 
   const goToMemberArea = () => {
@@ -1591,8 +1602,8 @@ const HomePage = () => {
               { title: 'Tài khoản', links: [
                 { label: 'Đăng nhập', action: () => {} },
                 { label: 'Đăng ký', action: () => {} },
-                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : setIsLoggedIn(true) },
-                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : setIsLoggedIn(true) },
+                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : markDemoLoggedIn() },
+                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : markDemoLoggedIn() },
               ]},
               { title: 'Hỗ trợ', links: [
                 { label: 'Trung tâm trợ giúp', action: () => showToast('Trung tâm trợ giúp sẽ sớm ra mắt!') },
@@ -1662,7 +1673,7 @@ const HomePage = () => {
           onClose={() => { setSelectedBook(null); setShowDetails(false); }}
           onBack={() => setShowDetails(false)}
           onBorrow={() => { setShowDetails(false); setShowBorrow(true); }}
-          onSignIn={() => { setIsLoggedIn(true); showToast('Đã đăng nhập! Bạn có thể mượn sách ngay bây giờ.'); }}
+          onSignIn={() => { markDemoLoggedIn(); showToast('Đã đăng nhập! Bạn có thể mượn sách ngay bây giờ.'); }}
           onReadingList={() => showToast(`Đã thêm "${selectedBook.title}" vào danh sách đọc!`)}
         />
       )}
