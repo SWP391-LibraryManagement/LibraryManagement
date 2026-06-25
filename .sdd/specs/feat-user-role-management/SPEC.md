@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-21
+# Last Updated: 2026-06-25
 
 # Feature ID: FE11
 
@@ -241,6 +241,26 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-013: When admin revokes a role from a user, the system shall remove the entry from UserRoles table.
 - FR-FE11-014: When admin revokes the last Admin role, the system shall reject the action.
 
+### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
+
+These EARS Unwanted-behavior requirements promote existing error/abnormal branches (Alternative Flows, Business Rules, Edge Cases, Resolved Questions) into traceable functional requirements.
+
+- FR-FE11-015: IF a non-admin user (Member, Librarian, or Guest) attempts to access any user management feature, the system shall reject the request with an authorization error. (Source: BR-FE11-001, BR-FE11-011, BR-FE11-012)
+- FR-FE11-016: IF admin requests details, update, deactivation, or role change for a user ID that does not exist, the system shall return a not-found error. (Source: EC-FE11-002)
+- FR-FE11-017: IF the acting admin ID does not exist, the system shall return a not-found error and shall not perform the action. (Source: EC-FE11-001)
+- FR-FE11-018: IF admin attempts to deactivate their own account, the system shall reject the action. (Source: Q-FE11-001, EC-FE11-006)
+- FR-FE11-019: IF admin attempts to deactivate a user who has active borrowings, the system shall block the deactivation and report the number of active borrowed items. (Source: AF-FE11-002, Q-FE11-002, MF-FE11-005 step 3)
+- FR-FE11-020: IF admin updates a user's email to an address already used by another user, the system shall reject the update with a clear error message. (Source: AF-FE11-004, BR-FE11-004)
+- FR-FE11-021: IF the submitted email is malformed, contains an SQL injection payload, or exceeds 255 characters, the system shall sanitize the input, reject the request, and return a validation error. (Source: EC-FE11-003, EC-FE11-004, EC-FE11-005)
+- FR-FE11-022: IF a database error occurs during user creation, the system shall roll back the transaction and return an error without creating a partial user record. (Source: EC-FE11-008, NFR-FE11-TXN-001)
+- FR-FE11-023: WHERE concurrent updates target the same user record, the system shall preserve data integrity using last-write-wins or optimistic locking on a version field. (Source: EC-FE11-007)
+- FR-FE11-024: IF admin assigns a role that does not exist, the system shall return a not-found error and shall not modify the UserRoles mapping. (Source: EC-FE11-010)
+- FR-FE11-025: IF admin assigns a role the user already holds, the system shall reject the request with the message "User already has this role." (Source: EC-FE11-011)
+- FR-FE11-026: IF admin attempts to revoke a role the user does not hold, the system shall return a not-found error. (Source: EC-FE11-012)
+- FR-FE11-027: IF revoking a role would leave the user with no role at all, the system shall reject the action because every user must retain at least one role. (Source: EC-FE11-013, BR-FE11-007)
+- FR-FE11-028: IF admin submits a librarian-specific field (department, specialization) that is too long or invalid, the system shall reject the update and return a validation error. (Source: EC-FE11-015, BR-FE11-015)
+- FR-FE11-029: IF a user attempts to complete password setup with a token that is expired or already used, the system shall reject the request and shall not activate password-based login. (Source: data field `passwordSetupToken` / `passwordSetupTokenExpiresAt` in section 10.2, BR-FE11-013)
+
 ---
 
 ## 8. Acceptance Criteria
@@ -460,11 +480,32 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-014 | User with Admin role has role revoked (not last admin) -> UserRoles updated | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FT58 | Not Started |
 | AC-FE11-015 | Last remaining admin attempts to revoke Admin role -> system rejects action | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FT58 | Not Started |
 
+### FE11 Unwanted-Behavior Requirements to Sources to Tests
+
+| FR ID | Unwanted Behavior | Related BR | Related EC / AF / Q | Test Case | Status |
+| ----- | ----------------- | ---------- | ------------------- | --------- | ------ |
+| FR-FE11-015 | Non-admin attempts to access user management -> rejected with authorization error | BR-FE11-001, BR-FE11-011, BR-FE11-012 | - | TBD | Not Started |
+| FR-FE11-016 | Action targets a non-existent user ID -> not-found error | BR-FE11-010 | EC-FE11-002 | TBD | Not Started |
+| FR-FE11-017 | Acting admin ID does not exist -> not-found error, no action | BR-FE11-001 | EC-FE11-001 | TBD | Not Started |
+| FR-FE11-018 | Admin attempts to deactivate own account -> rejected | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | TBD | Not Started |
+| FR-FE11-019 | Deactivate user with active borrowings -> blocked, reports count | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | TBD | Not Started |
+| FR-FE11-020 | Update email to a duplicate address -> rejected | BR-FE11-004 | AF-FE11-004 | FT53 | Not Started |
+| FR-FE11-021 | Malformed / injection / oversized email -> sanitized and rejected | BR-FE11-004 | EC-FE11-003, EC-FE11-004, EC-FE11-005 | TBD | Not Started |
+| FR-FE11-022 | DB error during user creation -> rollback, no partial record | BR-FE11-010 | EC-FE11-008 | TBD | Not Started |
+| FR-FE11-023 | Concurrent updates to same user -> integrity preserved (last-write-wins/optimistic lock) | BR-FE11-014 | EC-FE11-007 | TBD | Not Started |
+| FR-FE11-024 | Assign a non-existent role -> not-found error, mapping unchanged | BR-FE11-007 | EC-FE11-010 | TBD | Not Started |
+| FR-FE11-025 | Assign a role the user already holds -> rejected | BR-FE11-008 | EC-FE11-011 | TBD | Not Started |
+| FR-FE11-026 | Revoke a role the user does not hold -> not-found error | BR-FE11-007 | EC-FE11-012 | TBD | Not Started |
+| FR-FE11-027 | Revocation would leave user with no role -> rejected | BR-FE11-007 | EC-FE11-013 | TBD | Not Started |
+| FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FT56 | Not Started |
+| FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | TBD | Not Started |
+
 ### Coverage Summary (FE11)
 - **Total AC**: 15 (AC-FE11-001 to AC-FE11-015) ✓ All mapped
-- **Total FR**: 14 (FR-FE11-001 to FR-FE11-014) ✓ All mapped
+- **Total FR**: 29 (FR-FE11-001 to FR-FE11-029) ✓ All mapped
+- **Unwanted FR**: 18 of 29 (~62%) — FR-FE11-005, 006, 014, 015-029
 - **Total BR**: 15 (BR-FE11-001 to BR-FE11-015) ✓ All mapped
-- **Total Tests**: 9 (FT50 to FT58) - aligned with assignment sheet
+- **Total Tests**: 9 (FT50 to FT58) - aligned with assignment sheet; new Unwanted FRs marked TBD pending test allocation
 
 
 ### External Assignment Traceability (Excel UC IDs)

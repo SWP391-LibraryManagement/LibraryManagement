@@ -36,3 +36,11 @@
 
 - Clarified that admin-created account setup notification queuing must tolerate Phase 1 notification schema/template differences.
 - Documented that a valid create-user flow must not return an internal server error solely because optional notification content columns are unavailable.
+
+## 2026-06-25
+
+- Bumped version 0.1.0 -> 0.2.0 (MINOR). Status unchanged (APPROVED).
+- Added section 7.1 with 15 new EARS Unwanted-behavior functional requirements (FR-FE11-015 to FR-FE11-029) promoting existing Alternative Flows, Business Rules, Edge Cases, and Resolved Questions into traceable error/abnormal-condition requirements.
+- Coverage of Unwanted-behavior FRs raised from ~21% (3 of 14) to ~62% (18 of 29), exceeding the >=30% target per Spec-Driven Development EARS guidance.
+- Each new FR traces back to its source EC/BR/AF/Q; no new logic invented.
+- Updated section 16 Traceability Matrix: added a dedicated Unwanted-Behavior table mapping each new FR to its source BR/EC/AF/Q and test case (TBD where no test is allocated yet), and refreshed the Coverage Summary totals.

@@ -1,12 +1,12 @@
 # SPEC.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.1.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE06
 
@@ -178,6 +178,22 @@ Use these stable IDs for tasks and tests.
 - FR-FE06-009: When inventory data is returned, the system shall not expose unrelated user, fine, or protected audit data.
 - FR-FE06-010: When copy management changes data, the system shall record traceable action information if audit is approved.
 
+### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
+
+> EARS Unwanted-behavior requirements derived from approved Alternative Flows, Business Rules, and Edge Cases. No new logic is introduced; each requirement traces to an existing source.
+
+- FR-FE06-011: IF a copy create/update request targets a book that does not exist in `Books`, the system shall reject the request and create no copy. (Source: AF-FE06-002, BR-FE06-002, EC-FE06-001)
+- FR-FE06-012: IF a copy create/update request has an empty or missing barcode, the system shall reject the request. (Source: BR-FE06-003, EC-FE06-002)
+- FR-FE06-013: IF a requested copy status is not one of the approved status values, the system shall reject the request. (Source: BR-FE06-004, EC-FE06-004)
+- FR-FE06-014: IF a manual status change attempts to set `BORROWED` or `RESERVED` directly, the system shall reject the change and require the FE07/FE08 workflow. (Source: Q-FE06-002, BR-FE06-014)
+- FR-FE06-015: IF staff attempts to manually mark a borrowed copy as available, the system shall reject the change and direct staff to the FE07 return flow. (Source: AF-FE06-003, BR-FE06-007, EC-FE06-006)
+- FR-FE06-016: IF staff attempts to manually mark a reserved copy as available, the system shall reject the change or require reservation handling through FE08. (Source: AF-FE06-004, BR-FE06-008, EC-FE06-007)
+- FR-FE06-017: IF a copy is already `INACTIVE` and a duplicate deactivation is requested, the system shall return the current state or reject the duplicate deactivation without altering data. (Source: AF-FE06-005, BR-FE06-010, EC-FE06-008)
+- FR-FE06-018: IF a concurrent status update is detected (the underlying copy state changed since it was read), the system shall allow only one update to succeed and require the later update to re-read the current state before retrying. (Source: EC-FE06-009, NFR-FE06-TXN-002)
+- FR-FE06-019: IF the copy update and its audit-log write cannot both complete, the system shall roll back the copy update and the audit-log entry together. (Source: EC-FE06-010, NFR-FE06-TXN-001)
+- FR-FE06-020: IF an actor without the Librarian/Admin role attempts direct copy management, the system shall deny access. (Source: BR-FE06-001, AC-FE06-010, NFR-FE06-SEC-002)
+- FR-FE06-021: WHERE a location value is provided that exceeds the approved length or violates the approved format, the system shall reject the value or normalize it according to the approved policy. (Source: BR-FE06-011, EC-FE06-005)
+
 ---
 
 ## 8. Acceptance Criteria
@@ -237,6 +253,96 @@ Use these stable IDs for tasks and tests.
 | condition | string | Optional | Add only if team extends schema beyond `Status`. |
 | createdAt | datetime | Recommended | Add if audit/history is required. |
 | updatedAt | datetime | Recommended | Add if update tracking is required. |
+
+### 10.3 State Model & Transition Rules (Book Copy)
+
+> Defines the formal lifecycle of `BookCopy.status`. State set is fixed by Q-FE06-001 and section 10.2: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`. Some transitions are **not** performed manually via FE06; they are driven by FE07 (Borrowing) or FE08 (Reservation). This model is the single source of truth for allowed status changes referenced by FR-FE06-006/007/013/014/015/016/017 and BR-FE06-004..008.
+
+#### a) State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE: create copy (FE06)
+
+    AVAILABLE --> BORROWED: checkout (FE07)
+    AVAILABLE --> RESERVED: hold placed (FE08)
+    AVAILABLE --> DAMAGED: mark damaged (FE06)
+    AVAILABLE --> LOST: mark lost (FE06)
+    AVAILABLE --> INACTIVE: deactivate (FE06)
+
+    BORROWED --> AVAILABLE: return (FE07)
+    BORROWED --> LOST: report lost (FE07)
+    BORROWED --> DAMAGED: return damaged (FE07)
+
+    RESERVED --> BORROWED: fulfill hold (FE07/FE08)
+    RESERVED --> AVAILABLE: hold released/expired (FE08)
+
+    DAMAGED --> AVAILABLE: repaired (FE06)
+    DAMAGED --> INACTIVE: retire (FE06)
+
+    LOST --> AVAILABLE: found (FE06)
+    LOST --> INACTIVE: retire (FE06)
+
+    INACTIVE --> AVAILABLE: reactivate (FE06)
+
+    INACTIVE --> [*]: hard delete (admin-approved, exceptional)
+```
+
+#### b) States
+
+| State | Ý nghĩa |
+| ----- | ------- |
+| `AVAILABLE` | Copy vật lý sẵn sàng, là trạng thái duy nhất cho phép mượn. Được tính vào số lượng available. |
+| `BORROWED` | Copy đang được một thành viên mượn (đang có `BorrowDetails` active). Không tính available. |
+| `RESERVED` | Copy đang bị giữ chỗ cho một reservation active. Không tính available. |
+| `DAMAGED` | Copy hư hỏng, không cho mượn cho tới khi được sửa hoặc loại bỏ. Không tính available. |
+| `LOST` | Copy bị mất/thất lạc. Không tính available. |
+| `INACTIVE` | Copy bị vô hiệu hóa (soft-deactivation theo Q-FE06-003), loại khỏi vòng lưu thông và khỏi số đếm available. |
+
+#### c) Valid Transitions
+
+| From | To | Trigger | Điều kiện | Ai điều khiển | FR/BR liên quan |
+| ---- | -- | ------- | --------- | ------------- | --------------- |
+| (none) | `AVAILABLE` | Create copy | Book tồn tại + barcode unique | FE06 (manual) | FR-FE06-004, BR-FE06-002/003 |
+| `AVAILABLE` | `BORROWED` | Checkout | Không cho set thủ công | FE07 | FR-FE06-014, BR-FE06-014, Q-FE06-002 |
+| `AVAILABLE` | `RESERVED` | Hold placed | Không cho set thủ công | FE08 | FR-FE06-014, BR-FE06-014, Q-FE06-002 |
+| `AVAILABLE` | `DAMAGED` | Mark damaged | Không có borrow/reservation active | FE06 (manual) | FR-FE06-006, BR-FE06-006 |
+| `AVAILABLE` | `LOST` | Mark lost | Không có borrow/reservation active | FE06 (manual) | FR-FE06-006, BR-FE06-006 |
+| `AVAILABLE` | `INACTIVE` | Deactivate | Không borrowed/reserved | FE06 (manual) | FR-FE06-008, BR-FE06-010, AF-FE06-005 |
+| `BORROWED` | `AVAILABLE` | Return | Phải qua return flow, KHÔNG thủ công FE06 | FE07 | FR-FE06-015, BR-FE06-007, AF-FE06-003, EC-FE06-006 |
+| `BORROWED` | `LOST` | Report lost (during loan) | Thuộc xử lý mượn/trả | FE07 | BR-FE06-007, BR-FE06-014 |
+| `BORROWED` | `DAMAGED` | Return damaged | Thuộc xử lý trả | FE07 | BR-FE06-007, BR-FE06-014 |
+| `RESERVED` | `BORROWED` | Fulfill hold | Reservation chuyển sang mượn | FE07/FE08 | BR-FE06-008, BR-FE06-014 |
+| `RESERVED` | `AVAILABLE` | Hold released/expired | KHÔNG thủ công FE06; qua FE08 | FE08 | FR-FE06-016, BR-FE06-008, AF-FE06-004, EC-FE06-007 |
+| `DAMAGED` | `AVAILABLE` | Repaired | Copy đã sửa xong | FE06 (manual) | FR-FE06-006 |
+| `DAMAGED` | `INACTIVE` | Retire | Loại bỏ copy hỏng nặng | FE06 (manual) | BR-FE06-010 |
+| `LOST` | `AVAILABLE` | Found | Tìm lại được copy | FE06 (manual) | FR-FE06-006 |
+| `LOST` | `INACTIVE` | Retire | Loại bỏ copy đã mất | FE06 (manual) | BR-FE06-010 |
+| `INACTIVE` | `AVAILABLE` | Reactivate | Đưa copy trở lại lưu thông | FE06 (manual) | FR-FE06-006, BR-FE06-010 |
+| `INACTIVE` | (none) | Hard delete | Chỉ khi team/admin duyệt (ngoại lệ) | FE06 (admin) | BR-FE06-010, Q-FE06-003 |
+
+#### d) Invalid Transitions (cấm tường minh)
+
+| From | To | Lý do cấm | Nguồn |
+| ---- | -- | --------- | ----- |
+| any | `BORROWED` (manual) | Staff không được set `BORROWED` thủ công; chỉ FE07. | FR-FE06-014, BR-FE06-014, Q-FE06-002 |
+| any | `RESERVED` (manual) | Staff không được set `RESERVED` thủ công; chỉ FE08. | FR-FE06-014, BR-FE06-014, Q-FE06-002 |
+| `BORROWED` | `AVAILABLE` (manual FE06) | Không được tự đánh dấu available khi đang có `BorrowDetails` active; phải qua FE07 return. | FR-FE06-015, BR-FE06-007, AF-FE06-003, EC-FE06-006 |
+| `RESERVED` | `AVAILABLE` (manual FE06) | Không được tự đánh dấu available khi đang có `Reservations` active; phải qua FE08. | FR-FE06-016, BR-FE06-008, AF-FE06-004, EC-FE06-007 |
+| `BORROWED` | `INACTIVE` | Không được deactivate copy đang được mượn. | BR-FE06-007, AF-FE06-005 |
+| `RESERVED` | `INACTIVE` | Không được deactivate copy đang bị giữ chỗ. | BR-FE06-008, AF-FE06-005 |
+| `INACTIVE` | `BORROWED` / `RESERVED` | Copy `INACTIVE` không thể được mượn/giữ chỗ; phải reactivate về `AVAILABLE` trước. | BR-FE06-005/006, FR-FE06-008 |
+| any | (unsupported value) | Trạng thái phải thuộc tập đã duyệt. | FR-FE06-013, BR-FE06-004, EC-FE06-004 |
+| `INACTIVE` | `INACTIVE` (duplicate) | Deactivate trùng lặp không đổi dữ liệu; trả current state hoặc reject. | FR-FE06-017, EC-FE06-008 |
+
+#### e) Invariants
+
+- INV-FE06-ST-001: Một copy tại mọi thời điểm có đúng MỘT `status` thuộc tập `{AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE}`. (BR-FE06-004)
+- INV-FE06-ST-002: Chỉ copy ở `AVAILABLE` mới borrow-available và được tính vào số lượng available. (BR-FE06-005/006, FR-FE06-008)
+- INV-FE06-ST-003: Các chuyển vào/ra `BORROWED` và `RESERVED` chỉ do FE07/FE08 điều khiển, không do thao tác thủ công FE06. (FR-FE06-014, BR-FE06-014, Q-FE06-002)
+- INV-FE06-ST-004: Một thao tác thủ công FE06 không bao giờ ghi đè `BorrowDetails`/`Reservations` đang active; transition bị chặn nếu có conflict. (FR-FE06-007, BR-FE06-007/008)
+- INV-FE06-ST-005: Mọi đổi trạng thái phải ghi AuditLog (actor, copy, old status, new status, timestamp, kết quả); copy update và audit-log cùng commit hoặc cùng rollback. (BR-FE06-012, Q-FE06-006, FR-FE06-019, NFR-FE06-TXN-001, NFR-FE06-LOG-001)
+- INV-FE06-ST-006: Cập nhật trạng thái dựa trên state đã đọc; nếu state nền đã đổi (concurrent), chỉ một update thành công, update sau phải re-read trước khi thử lại. (FR-FE06-018, EC-FE06-009, NFR-FE06-TXN-002)
 
 ---
 
@@ -337,6 +443,20 @@ This feature does not include:
 | FR-FE06-005 | UC28 | FT29 | Not Started |
 | FR-FE06-006 | UC27 | FT28 | Not Started |
 | FR-FE06-007 | UC27 | FT28 | Not Started |
+| FR-FE06-008 | UC25, UC27 | FT26, FT28 | Not Started |
+| FR-FE06-009 | UC25, UC26 | FT26, FT27 | Not Started |
+| FR-FE06-010 | UC27, UC28 | FT28, FT29 | Not Started |
+| FR-FE06-011 | UC28 | TBD | Not Started |
+| FR-FE06-012 | UC28 | TBD | Not Started |
+| FR-FE06-013 | UC27, UC28 | TBD | Not Started |
+| FR-FE06-014 | UC27 | TBD | Not Started |
+| FR-FE06-015 | UC27 | FT28 | Not Started |
+| FR-FE06-016 | UC27 | FT28 | Not Started |
+| FR-FE06-017 | UC27, UC28 | TBD | Not Started |
+| FR-FE06-018 | UC27 | TBD | Not Started |
+| FR-FE06-019 | UC27, UC28 | TBD | Not Started |
+| FR-FE06-020 | UC25, UC26, UC27, UC28 | TBD | Not Started |
+| FR-FE06-021 | UC28 | TBD | Not Started |
 | BR-FE06-005 | UC25, UC26, UC27 | FT26, FT27, FT28 | Not Started |
 | BR-FE06-007 | UC27 | FT28 | Not Started |
 | BR-FE06-008 | UC27 | FT28 | Not Started |

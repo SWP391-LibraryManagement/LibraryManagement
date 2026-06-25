@@ -27,3 +27,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Scratch / temporary working files (not part of the project)
+tmp/
