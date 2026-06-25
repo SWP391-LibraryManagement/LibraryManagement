@@ -332,6 +332,41 @@ describe('FE02 auth vertical slice', () => {
     expect(lockedResponse.body.error.code).toBe('ACCOUNT_LOCKED');
   });
 
+  test('locked account auto-unlocks after the lock window expires (AF-FE02-003)', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'autounlock@example.test');
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await login(app, 'autounlock@example.test', 'WrongPassword1!');
+    }
+    expect(dependencies.state.users[0].status).toBe('LOCKED');
+
+    // Giả lập cửa sổ khóa do đăng nhập sai đã hết hạn
+    dependencies.state.users[0].lockedUntil = new Date(Date.now() - 60 * 1000);
+
+    const response = await login(app, 'autounlock@example.test', 'Password1!');
+    expect(response.status).toBe(200);
+    expect(dependencies.state.users[0].status).toBe('ACTIVE');
+    expect(dependencies.state.users[0].failedLoginCount).toBe(0);
+  });
+
+  test('change password rejects reusing the current password (FR-FE02-020)', async () => {
+    const { app } = makeTestApp();
+    await registerAndVerify(app, 'reuse@example.test');
+    const loginResponse = await login(app, 'reuse@example.test');
+
+    const response = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({
+        currentPassword: 'Password1!',
+        newPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('PASSWORD_REUSED');
+  });
+
   test('expired verification token is rejected', async () => {
     const { app, dependencies } = makeTestApp();
     const registerResponse = await request(app)
