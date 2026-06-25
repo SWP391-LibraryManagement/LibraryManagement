@@ -1,6 +1,6 @@
 # SPEC.md - FE03 User Profile
 
-# Version: 0.3.0
+# Version: 0.3.1
 
 # Status: APPROVED
 
@@ -340,6 +340,26 @@ This feature does not include:
 | BR-FE03-015 | UC12 | FT13 | Not Started |
 | FR-FE03-008 | UC12 | FT13 | Not Started |
 | FR-FE03-009 | UC12 | FT13 | Not Started |
+| BR-FE03-001 | UC11 | FT12 | Not Started |
+| BR-FE03-006 | UC12 | FT13 | Not Started |
+| BR-FE03-007 | UC12 | FT13 | Not Started |
+| BR-FE03-008 | UC12 | FT13 | Not Started |
+| BR-FE03-009 | UC12 | FT13 | Not Started |
+| BR-FE03-010 | UC11 | FT12 | Not Started |
+| FR-FE03-002 | UC11 | FT12 | Not Started |
+| FR-FE03-003 | UC11 | FT12 | Not Started |
+| FR-FE03-005 | UC12 | FT13 | Not Started |
+| FR-FE03-006 | UC12 | FT13 | Not Started |
+| FR-FE03-007 | UC11 | FT12 | Not Started |
+| AC-FE03-001 | UC11 | FT12 | Not Started |
+| AC-FE03-002 | UC11 | FT12 | Not Started |
+| AC-FE03-003 | UC11 | FT12 | Not Started |
+| AC-FE03-005 | UC12 | FT13 | Not Started |
+| AC-FE03-006 | UC12 | FT13 | Not Started |
+| AC-FE03-008 | UC11 | FT12 | Not Started |
+| AC-FE03-009 | UC12 | FT13 | Not Started |
+| AC-FE03-010 | UC12 | FT13 | Not Started |
+| AC-FE03-011 | UC12 | FT13 | Not Started |
 
 ---
 
