@@ -62,7 +62,7 @@ function createApp({
   app.use('/api/profile', createProfileRoutes({ authService, profileService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/books', createBookRoutes());
-  app.use('/api/fines', createFineRoutes());
+  app.use('/api/fines', createFineRoutes({ authService }));
 
   app.use((req, res) => {
     res.status(404).json({

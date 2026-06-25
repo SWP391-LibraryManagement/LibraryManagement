@@ -13,7 +13,7 @@ module.exports = defineModel({
     { attribute: 'amount', name: 'Amount', type: 'DECIMAL(10,2)', required: true },
     { attribute: 'paidAmount', name: 'PaidAmount', type: 'DECIMAL(10,2)', required: true, default: 0 },
     { attribute: 'reason', name: 'Reason', type: 'NVARCHAR(255)', nullable: true },
-    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'UNPAID', allowedValues: ['UNPAID', 'PAID', 'WAIVED'] },
+    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'UNPAID', allowedValues: ['UNPAID', 'PAID', 'WAIVED', 'CANCELLED'] },
     { attribute: 'calculatedAt', name: 'CalculatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'paidAt', name: 'PaidAt', type: 'DATETIME', nullable: true },
     { attribute: 'createdBy', name: 'CreatedBy', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },
