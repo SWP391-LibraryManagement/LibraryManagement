@@ -33,3 +33,20 @@
 
 - Added prototype drift notes to `PLAN.md` and `TASKS.md`.
 - Clarified that existing FE05 backend/frontend code is prototype/demo code until reconciled against approved tasks, traceability tags, role checks, audit logging, and tests.
+
+## 2026-06-25
+
+- Bumped `SPEC.md` version to 0.2.0 (MINOR) and updated Last Updated to 2026-06-25; Status unchanged (APPROVED).
+- Increased the share of "Unwanted" (error/abnormal-condition) Functional Requirements to meet the EARS coverage target of >=30%.
+- Added 9 new EARS Unwanted FRs (IF/WHERE form), each traceable to an existing Alternative Flow, Edge Case, or Business Rule — no new logic introduced:
+  - FR-FE05-011: Reject duplicate ISBN on create/update (AF-FE05-001, EC-FE05-003, BR-FE05-005).
+  - FR-FE05-012: Reject missing/empty title (EC-FE05-002, BR-FE05-006).
+  - FR-FE05-013: Reject non-existent category/author/publisher reference (AF-FE05-002, EC-FE05-005/006/007).
+  - FR-FE05-014: Return not-found for non-existent book on view/update/deactivate (AF-FE05-003, EC-FE05-001).
+  - FR-FE05-015: Deny guest/member access to protected book management (AF-FE05-004, EC-FE05-009, BR-FE05-002/003/004).
+  - FR-FE05-016: Reject invalid or future publish year (EC-FE05-008).
+  - FR-FE05-017: Reject over-length search keyword (EC-FE05-011).
+  - FR-FE05-018: Roll back book update and audit log on partial failure (EC-FE05-012, NFR-FE05-TXN-001).
+  - FR-FE05-019: Prevent borrowing and hide INACTIVE books from public search while preserving history (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
+- Updated Section 16 Traceability Matrix with the 9 new FRs (Test Case marked TBD).
+- Result: total FRs 10 -> 19; Unwanted FRs 0 -> 9 (~47.4%).

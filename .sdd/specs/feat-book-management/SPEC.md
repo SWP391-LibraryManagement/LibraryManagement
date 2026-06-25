@@ -1,12 +1,12 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-21
+# Last Updated: 2026-06-25
 
 # Feature ID: FE05
 
@@ -181,6 +181,18 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-008: The system shall deactivate books using status-based deactivation.
 - FR-FE05-009: The system shall support pagination in book searches.
 - FR-FE05-010: The system shall support filtering by category, author, and status.
+
+### Unwanted Behaviour Requirements (Error / Abnormal Conditions)
+
+- FR-FE05-011: IF an ISBN is provided that already exists on another book during create or update, the system shall reject the request and return a validation error without modifying any record. (Source: AF-FE05-001, EC-FE05-003, BR-FE05-005)
+- FR-FE05-012: IF book title is missing or empty during create or update, the system shall reject the request and return a validation error identifying the title field. (Source: EC-FE05-002, BR-FE05-006, NFR-FE05-UX-001)
+- FR-FE05-013: IF a referenced category, author, or publisher does not exist during create or update, the system shall reject the request and return an error message. (Source: AF-FE05-002, EC-FE05-005, EC-FE05-006, EC-FE05-007)
+- FR-FE05-014: IF a requested book ID does not exist when viewing, updating, or deactivating a book, the system shall return a not-found response and shall not create a new record. (Source: AF-FE05-003, EC-FE05-001)
+- FR-FE05-015: IF a guest or member attempts to add, update, or deactivate a book, the system shall deny access and return a forbidden response. (Source: AF-FE05-004, EC-FE05-009, BR-FE05-002, BR-FE05-003, BR-FE05-004)
+- FR-FE05-016: IF a provided publish year is invalid or set in the future during create or update, the system shall reject the request and return a validation error. (Source: EC-FE05-008)
+- FR-FE05-017: IF a search keyword exceeds the allowed maximum length, the system shall reject the search and return a validation message. (Source: EC-FE05-011)
+- FR-FE05-018: IF a book update or its audit log entry fails partway through, the system shall roll back both the book update and the audit log so no partial change persists. (Source: EC-FE05-012, NFR-FE05-TXN-001)
+- FR-FE05-019: WHERE a book has status `INACTIVE`, the system shall prevent it from being borrowed and shall exclude it from public search results while keeping borrow/reservation history and copy records unchanged. (Source: BR-FE05-008, BR-FE05-009, EC-FE05-010, Q-FE05-007)
 
 ---
 
@@ -370,6 +382,15 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | BR-FE05-004 | UC24 | FT25 | Not Started |
 | FR-FE05-008 | UC24 | FT25 | Not Started |
 | BR-FE05-010 | UC22, UC23, UC24 | FT23, FT24, FT25 | Not Started |
+| FR-FE05-011 | UC22, UC23 | TBD | Not Started |
+| FR-FE05-012 | UC22, UC23 | TBD | Not Started |
+| FR-FE05-013 | UC22, UC23 | TBD | Not Started |
+| FR-FE05-014 | UC17, UC20, UC23, UC24 | TBD | Not Started |
+| FR-FE05-015 | UC22, UC23, UC24 | TBD | Not Started |
+| FR-FE05-016 | UC22, UC23 | TBD | Not Started |
+| FR-FE05-017 | UC18, UC19 | TBD | Not Started |
+| FR-FE05-018 | UC23 | TBD | Not Started |
+| FR-FE05-019 | UC24 | TBD | Not Started |
 
 ---
 
