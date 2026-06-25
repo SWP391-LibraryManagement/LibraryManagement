@@ -240,7 +240,18 @@ function createReservationService({
       throw errors.conflict('COPY_NOT_AVAILABLE', 'Copy is not available for reservation queue processing.');
     }
 
-    await createNotification(processedReservation);
+    // FR-FE08-021: a notification failure must not undo the hold; keep the held
+    // state and record the failure so it can be retried later.
+    try {
+      await createNotification(processedReservation);
+    } catch (notifyError) {
+      await writeAudit(context, 'RESERVATION_NOTIFY_FAILED', {
+        userId: processedReservation.userId,
+        targetId: processedReservation.reservationId,
+        metadata: { copyId: processedReservation.copyId, error: notifyError.message },
+      });
+    }
+
     await writeAudit(context, 'RESERVATION_PROCESS', {
       userId: actor.userId,
       targetId: processedReservation.reservationId,
@@ -305,6 +316,30 @@ function createReservationService({
     };
   }
 
+  async function expireHolds(actor, context = {}) {
+    requireStaff(actor);
+
+    const expired = await reservationRepository.expireOverdueHolds(clock());
+    const promoted = [];
+
+    for (const item of expired) {
+      await writeAudit(context, 'RESERVATION_EXPIRE', {
+        userId: actor.userId,
+        targetId: item.reservationId,
+        metadata: { copyId: item.copyId },
+      });
+
+      // FR-FE08-019: offer the freed copy to the next eligible reservation in the queue.
+      const next = await reservationRepository.findNextActiveReservationForCopy(item.copyId);
+      if (next) {
+        const held = await holdReservation(next, actor, context);
+        promoted.push(held);
+      }
+    }
+
+    return { expiredCount: expired.length, expired, promoted };
+  }
+
   return {
     createReservation,
     listMyReservations,
@@ -312,6 +347,7 @@ function createReservationService({
     listReservations,
     processReservation,
     processQueue,
+    expireHolds,
   };
 }
 
