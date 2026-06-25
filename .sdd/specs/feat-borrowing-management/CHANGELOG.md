@@ -29,3 +29,20 @@
 - Added loading, empty, and error states on all reviewed screens.
 - Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
 - Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
+
+## 2026-06-25 - Raised Unwanted (Error-Handling) Requirement Coverage
+
+- Bumped version to 0.2.0 (MINOR); status unchanged (APPROVED).
+- Added new sub-section "7.1 Unwanted Behaviour Requirements" with 9 EARS unwanted requirements (FR-FE07-014 to FR-FE07-022) covering borrow-limit overrun, ineligible/inactive member, unpaid fine/overdue blocking, invalid/duplicate/empty request items, copy unavailable at approval, concurrent approval race, disallowed renewal, invalid state/date transitions, and transaction rollback.
+- Each new FR is written as `IF`/`WHERE [condition], the system shall ...` and traces to existing EC-*, BR-*, and AF-* sources (no new logic invented).
+- Unwanted FR share raised from ~15% (2/13) to ~50% (11/22), meeting the ≥30% target.
+- Extended Traceability Matrix (Section 16) with rows for FR-FE07-014 to FR-FE07-022 (Test Case = TBD).
+
+## 2026-06-25 - Added Formal State Model (State Diagrams) for Both Lifecycles
+
+- Bumped version to 0.3.0 (MINOR); status unchanged (APPROVED).
+- Added new sub-section "10.3 State Model & Transition Rules" at the end of Section 10 Data Requirements, modeling FE07's two lifecycles separately.
+- (A) BorrowRequest lifecycle: states PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED — with Mermaid `stateDiagram-v2`, state descriptions, valid transitions (From/To/Trigger/Condition/FR-BR), forbidden transitions, and invariants INV-FE07-A1..A6.
+- (B) BorrowDetail lifecycle: states REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE — with Mermaid `stateDiagram-v2`, descriptions, valid transitions, forbidden transitions, and invariants INV-FE07-B1..B8.
+- All state values reuse the enums declared in Section 10.2 (no new status invented). Transitions trace to existing MF-*, FR-*, BR-*, AF-*, and EC-* sources.
+- Documented enum-declared states without an explicit flow (request `CANCELLED`, detail `OVERDUE`) as modeled per the declared enum with their dependency on FE09 / Phase 2 confirmation noted.

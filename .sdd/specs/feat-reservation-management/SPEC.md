@@ -1,12 +1,12 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.1.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE08
 
@@ -172,6 +172,25 @@ The feature can only start when:
 - FR-FE08-009: While a reservation is cancelled or expired, the system shall exclude it from active queue processing.
 - FR-FE08-010: When a member views reservations, the system shall return only that member's records.
 
+### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
+
+> The following requirements use EARS Unwanted syntax (`IF ...` / `WHERE ...`). Each one promotes an existing error branch (Edge Case `EC-*`, Business Rule `BR-*`, Alternative Flow `AF-*`, or approved decision `Q-*`) into a testable functional requirement. No new logic is introduced.
+
+- FR-FE08-011: IF the supplied member ID does not exist when a reservation is requested, the system shall reject the request and return a not-found error. (Source: EC-FE08-001)
+- FR-FE08-012: IF the member account status is inactive when a reservation is requested, the system shall reject the reservation. (Source: EC-FE08-002, BR-FE08-005)
+- FR-FE08-013: IF the member's membership status is not approved when a reservation is requested, the system shall reject the reservation. (Source: EC-FE08-003, BR-FE08-005, PRE-FE08-003)
+- FR-FE08-014: IF the requested book or book copy does not exist when a reservation is requested, the system shall reject the request and return a not-found error. (Source: EC-FE08-004, PRE-FE08-004)
+- FR-FE08-015: IF a member already holds the approved maximum number of active reservations when a new reservation is requested, the system shall reject the request and report that the reservation limit is reached. (Source: Q-FE08-003, MF-FE08-001 step 3)
+- FR-FE08-016: IF a member attempts to cancel a reservation that they do not own, the system shall deny the action and return a forbidden error. (Source: EC-FE08-006, BR-FE08-003)
+- FR-FE08-017: IF a member attempts to cancel a reservation that is already cancelled or expired, the system shall reject the repeated cancellation and return the current reservation state. (Source: EC-FE08-007)
+- FR-FE08-018: WHERE a member becomes ineligible before queue processing reaches their active reservation, the system shall skip or hold that reservation according to the approved policy instead of selecting it. (Source: AF-FE08-003)
+- FR-FE08-019: IF a notified member does not borrow within the approved reservation hold period, the system shall mark the reservation `EXPIRED` and continue with the next eligible reservation in the queue. (Source: AF-FE08-004, Q-FE08-004)
+- FR-FE08-020: WHERE queue processing finds no eligible active reservation, the system shall leave the item available or follow the approved policy without selecting any reservation. (Source: EC-FE08-008)
+- FR-FE08-021: IF the notification service is unavailable when a book-available notification is triggered, the system shall preserve the reservation state and record the notification failure for later retry. (Source: EC-FE08-009, BR-FE08-012)
+- FR-FE08-022: IF concurrent queue processing attempts to select the same reservation, the system shall allow only one selection to succeed and require the later attempt to re-read the current state. (Source: EC-FE08-010, NFR-FE08-TXN-001)
+- FR-FE08-023: WHERE a copy is held for a member from the reservation queue, the system shall prevent that held copy from being borrowed by any other member. (Source: BR-FE08-011, AC-FE08-008)
+- FR-FE08-024: WHERE an active reservation or a copy held for another member exists for a reservation target, the system shall block FE07 loan renewal for that copy/reservation target. (Source: BR-FE08-014)
+
 ---
 
 ## 8. Acceptance Criteria
@@ -231,6 +250,70 @@ The feature can only start when:
 | reservedAt | datetime | Yes | Used for queue order. |
 | status | string | Yes | Proposed values: `ACTIVE`, `CANCELLED`, `NOTIFIED`, `FULFILLED`, `EXPIRED`. |
 | expiresAt | datetime | Recommended | Needed if reservation hold period is supported. |
+
+### 10.3 State Model & Transition Rules (Reservation)
+
+This subsection formalizes the lifecycle of `Reservations.status`. The state set is taken directly from the declared enum in section 10.2 Data Fields: `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, `EXPIRED`. No new states are introduced.
+
+#### 10.3.1 State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE: reserve unavailable target
+    ACTIVE --> NOTIFIED: queue selects + copy held + notify
+    ACTIVE --> CANCELLED: member cancels
+    ACTIVE --> EXPIRED: skipped/voided by policy
+    NOTIFIED --> FULFILLED: borrowed within hold period
+    NOTIFIED --> EXPIRED: hold period elapsed (2 days)
+    NOTIFIED --> CANCELLED: member cancels
+    FULFILLED --> [*]
+    CANCELLED --> [*]
+    EXPIRED --> [*]
+```
+
+#### 10.3.2 State Descriptions
+
+| State | Meaning | In queue? | Terminal? |
+| ----- | ------- | --------- | --------- |
+| `ACTIVE` | Reservation created and waiting in the queue; not yet selected. Holds `ReservedAt` order for fairness. | Yes | No |
+| `NOTIFIED` | Reservation reached the front of the queue; a copy is held for the member and the FE10 book-available notification has been triggered. Awaiting borrow within the hold period. | No (already selected) | No |
+| `FULFILLED` | The member borrowed the held copy within the hold period; the reservation is satisfied. | No | Yes |
+| `CANCELLED` | The member voluntarily cancelled the reservation before it was fulfilled. | No | Yes |
+| `EXPIRED` | The hold period elapsed without borrowing, or the reservation was voided by approved policy; the queue moves to the next member. | No | Yes |
+
+#### 10.3.3 Valid Transitions
+
+| From | To | Trigger | Condition / Guard | Related FR / BR / AF / Q |
+| ---- | -- | ------- | ----------------- | ------------------------ |
+| `[*]` | `ACTIVE` | Eligible member reserves an unavailable target | Member eligible, within reservation limit, target not available for immediate borrow, no duplicate active reservation | FR-FE08-001, FR-FE08-002, FR-FE08-003, FR-FE08-015, BR-FE08-005, BR-FE08-006, MF-FE08-001 |
+| `ACTIVE` | `NOTIFIED` | Queue processing selects earliest eligible reservation, holds a copy, and triggers notification | Reservation is the earliest eligible active record; copy held atomically; FE10 notification request triggered | FR-FE08-006, FR-FE08-007, FR-FE08-008, FR-FE08-023, BR-FE08-008, BR-FE08-011, BR-FE08-012, MF-FE08-004, MF-FE08-005 |
+| `ACTIVE` | `CANCELLED` | Owning member cancels their active reservation | Reservation owned by member and currently `ACTIVE` | FR-FE08-004, BR-FE08-003, MF-FE08-002, AC-FE08-004 |
+| `ACTIVE` | `EXPIRED` | Reservation skipped/voided by approved policy at queue time | Member became ineligible before processing and policy voids the reservation | FR-FE08-018, AF-FE08-003 |
+| `NOTIFIED` | `FULFILLED` | Member borrows the held copy within the hold period | Borrow occurs within the 2-day hold period | NFR-FE08-LOG-001, MF-FE08-005, Q-FE08-004 |
+| `NOTIFIED` | `EXPIRED` | Hold period elapses without borrowing | Member did not borrow within the approved hold period (2 calendar days); queue advances to next eligible reservation | FR-FE08-019, AF-FE08-004, Q-FE08-004 |
+| `NOTIFIED` | `CANCELLED` | Owning member cancels while a copy is held | Reservation owned by member and currently `NOTIFIED`; held copy released by FE07 flow | FR-FE08-004, BR-FE08-003, MF-FE08-002 |
+
+#### 10.3.4 Invalid Transitions (Explicitly Forbidden)
+
+| Forbidden Transition | Reason | Related FR / BR / EC |
+| -------------------- | ------ | -------------------- |
+| `CANCELLED` -> any state | Terminal; a cancelled reservation cannot be reactivated, re-cancelled, notified, or fulfilled. | FR-FE08-017, EC-FE08-007 |
+| `EXPIRED` -> any state | Terminal; an expired reservation cannot be revived or re-entered into the queue. | FR-FE08-009, FR-FE08-017, BR-FE08-010, EC-FE08-007 |
+| `FULFILLED` -> any state | Terminal; once fulfilled the lifecycle ends. | NFR-FE08-LOG-001 |
+| `ACTIVE` -> `FULFILLED` | A reservation cannot be fulfilled before reaching `NOTIFIED` (i.e. before a copy is held and the member is notified). | FR-FE08-007, FR-FE08-008 |
+| `NOTIFIED` -> `ACTIVE` | A selected/held reservation cannot return to the waiting queue. | BR-FE08-008, NFR-FE08-TXN-001 |
+| `NOTIFIED` -> `NOTIFIED` (re-select) by concurrent processing | Concurrent queue processing must not select the same reservation twice; only one selection succeeds. | FR-FE08-022, EC-FE08-010, NFR-FE08-TXN-001 |
+| Queue selection of any `CANCELLED` / `EXPIRED` reservation | Cancelled and expired reservations are excluded from queue processing. | FR-FE08-009, BR-FE08-009, BR-FE08-010, AC-FE08-007 |
+
+#### 10.3.5 Invariants
+
+- INV-FE08-001: A reservation always holds exactly one `status` value from the declared enum `{ACTIVE, NOTIFIED, FULFILLED, CANCELLED, EXPIRED}`.
+- INV-FE08-002: `CANCELLED`, `EXPIRED`, and `FULFILLED` are terminal; no transition may leave them.
+- INV-FE08-003: Only `ACTIVE` reservations participate in queue selection; `CANCELLED` and `EXPIRED` are never selected. (FR-FE08-009, BR-FE08-009, BR-FE08-010)
+- INV-FE08-004: At any moment, for a given reservation target (CopyId in Phase 1, Q-FE08-001), at most one reservation may be in the held/selected `NOTIFIED` state. (NFR-FE08-TXN-001, BR-FE08-011)
+- INV-FE08-005: While a copy is held for a `NOTIFIED` reservation, that copy must not be borrowable by any other member nor allow FE07 renewal for the same target. (FR-FE08-023, FR-FE08-024, BR-FE08-011, BR-FE08-014)
+- INV-FE08-006: Every status change (create, notify, fulfill, cancel, expire) must be written to the audit log and be traceable. (BR-FE08-013, NFR-FE08-LOG-001)
+- INV-FE08-007: State transitions caused by queue processing or cancellation must be applied atomically so the reservation and copy never rest in an inconsistent intermediate state. (NFR-FE08-TXN-001, NFR-FE08-TXN-002)
 
 ---
 
@@ -326,9 +409,30 @@ This feature does not include:
 | BR-FE08-008 | UC39 | FT40 | Ready for review |
 | BR-FE08-009 | UC37, UC39 | FT38, FT40 | Ready for review |
 | BR-FE08-014 | UC39 | FT40 | Ready for review |
+| FR-FE08-001 | UC36 | FT37 | Ready for review |
+| FR-FE08-002 | UC36 | FT37 | Ready for review |
+| FR-FE08-003 | UC36 | FT37 | Ready for review |
 | FR-FE08-004 | UC37 | FT38 | Ready for review |
 | FR-FE08-005 | UC38 | FT39 | Ready for review |
+| FR-FE08-006 | UC39 | FT40 | Ready for review |
+| FR-FE08-007 | UC39 | FT40 | Ready for review |
 | FR-FE08-008 | UC40 | FT41 | Ready for review |
+| FR-FE08-009 | UC39 | FT40 | Ready for review |
+| FR-FE08-010 | UC38 | FT39 | Ready for review |
+| FR-FE08-011 | UC36 (EC-FE08-001) | TBD | Ready for review |
+| FR-FE08-012 | UC36 (EC-FE08-002) | TBD | Ready for review |
+| FR-FE08-013 | UC36 (EC-FE08-003) | FT37 | Ready for review |
+| FR-FE08-014 | UC36 (EC-FE08-004) | TBD | Ready for review |
+| FR-FE08-015 | UC36 (Q-FE08-003) | TBD | Ready for review |
+| FR-FE08-016 | UC37 (EC-FE08-006) | TBD | Ready for review |
+| FR-FE08-017 | UC37 (EC-FE08-007) | TBD | Ready for review |
+| FR-FE08-018 | UC39 (AF-FE08-003) | TBD | Ready for review |
+| FR-FE08-019 | UC39 (AF-FE08-004) | TBD | Ready for review |
+| FR-FE08-020 | UC39 (EC-FE08-008) | TBD | Ready for review |
+| FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Ready for review |
+| FR-FE08-022 | UC39 (EC-FE08-010) | TBD | Ready for review |
+| FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Ready for review |
+| FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Ready for review |
 
 ---
 

@@ -1,5 +1,20 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-06-25 - Add Book Copy State Model & Transition Rules
+
+- Bumped `SPEC.md` version 0.2.0 -> 0.3.0; Last Updated 2026-06-25; Status unchanged (APPROVED).
+- Added section "10.3 State Model & Transition Rules (Book Copy)" formalizing the lifecycle of `BookCopy.status` over the approved state set (`AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE` per Q-FE06-001 / section 10.2). No new states introduced.
+- Section gồm 5 phần: (a) sơ đồ Mermaid `stateDiagram-v2` với start/end; (b) bảng mô tả states; (c) bảng Valid Transitions kèm trigger/điều kiện/ai điều khiển (FE06 manual / FE07 / FE08) và truy vết FR/BR; (d) Invalid Transitions cấm tường minh; (e) Invariants (INV-FE06-ST-001..006).
+- Phản ánh ranh giới feature: chuyển vào/ra `BORROWED`/`RESERVED` do FE07/FE08 điều khiển, không thao tác thủ công FE06 (FR-FE06-014, BR-FE06-014, Q-FE06-002); manual borrowed/reserved -> available bị chặn, phải qua FE07/FE08 (FR-FE06-015/016); không deactivate copy đang BORROWED/RESERVED; mọi đổi trạng thái ghi AuditLog và cùng commit/rollback.
+
+## 2026-06-25 - Increase Unwanted-Behavior Requirement Coverage
+
+- Bumped `SPEC.md` version 0.1.0 -> 0.2.0; updated Last Updated to 2026-06-25; Status unchanged (APPROVED).
+- Added section "7.1 Unwanted Behavior Requirements" with 11 EARS Unwanted-behavior requirements (FR-FE06-011 through FR-FE06-021) derived from existing Alternative Flows, Business Rules, and Edge Cases. No new logic introduced; each new FR traces to its source (AF/BR/EC/NFR/Q).
+- Covered abnormal/error branches: missing parent book, empty barcode, unsupported status, manual BORROWED/RESERVED setting, manual availability change on borrowed/reserved copies, duplicate deactivation, concurrent update (optimistic locking), copy+audit transaction rollback, unauthorized access, and invalid location format.
+- Raised the share of Unwanted FRs from 3/10 (30%) to 14/21 (~67%).
+- Expanded "16. Traceability Matrix" to add missing rows for FR-FE06-008/009/010 and one row per new FR (FR-FE06-011..021), mapping source use cases and test cases ("TBD" where no test case exists yet).
+
 ## 2026-06-10
 
 - Created FE06 Inventory / Book Copy Management feature specification structure.

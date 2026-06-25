@@ -1,12 +1,12 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-21
+# Last Updated: 2026-06-25
 
 # Feature ID: FE09
 
@@ -236,6 +236,65 @@ Use these stable IDs for tasks and tests.
 | collectedAmount | decimal | Recommended | Add if partial collection is required. |
 | collectedBy | integer | Recommended | Staff user ID if collection history is required. |
 | collectionNote | string | Optional | Safe staff note if approved. |
+
+### 10.3 State Model & Transition Rules (Fine)
+
+This subsection formalizes the lifecycle of `Fine.status`. The state set is taken directly from the approved values in section 10.2 (`UNPAID`, `PAID`, `WAIVED`, `CANCELLED`). Phase 1 has **no partial payment** (Q-FE09-003), so there is no `PARTIALLY_PAID` state: a single mark-paid action moves an `UNPAID` fine straight to `PAID`. The `amount` field is immutable after creation; `collectedAmount` only records how much was physically collected and never alters `amount`.
+
+#### a) State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> UNPAID: overdue > 0 calculated
+    UNPAID --> PAID: mark paid (full)
+    UNPAID --> WAIVED: admin waive (+reason)
+    UNPAID --> CANCELLED: admin cancel (+reason)
+    PAID --> [*]
+    WAIVED --> [*]
+    CANCELLED --> [*]
+```
+
+Note: when calculated overdue days are zero or negative, **no fine record is created** (FR-FE09-004, AF-FE09-001, EC-FE09-004/007); the lifecycle starts only when `amount > 0`.
+
+#### b) State Descriptions
+
+| State | Description |
+| ----- | ----------- |
+| `UNPAID` | A fine has been created with `amount > 0` and is awaiting collection. Blocks new borrowing/renewal in FE07 (BR-FE09-014). This is the only entry state. |
+| `PAID` | Full amount has been collected; `PaidAt` is recorded. Terminal state. Does not block borrowing (BR-FE09-013). |
+| `WAIVED` | Admin forgave the fine with a required reason and audit log (Q-FE09-005). Terminal state. No collection expected. |
+| `CANCELLED` | Fine was cancelled/voided by admin with a required reason and audit log (e.g. created in error). Terminal state. |
+
+#### c) Valid Transitions
+
+| From | To | Trigger | Condition | Related FR/BR/AF/EC |
+| ---- | -- | ------- | --------- | ------------------- |
+| `[*]` | `UNPAID` | Fine calculated (on return or manual run) | Overdue days > 0 and computed `amount > 0`; no existing active fine for same borrow detail + reason | MF-FE09-002, FR-FE09-005, FR-FE09-006, BR-FE09-005, BR-FE09-006, BR-FE09-009 |
+| `UNPAID` | `PAID` | Librarian/admin marks fine paid | Actor is librarian/admin; fine exists and is `UNPAID`; full amount collected; sets `PaidAt` | MF-FE09-004, FR-FE09-008, BR-FE09-004, BR-FE09-012 |
+| `UNPAID` | `WAIVED` | Admin waives fine | Actor is admin; required reason provided; audit log written | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
+| `UNPAID` | `CANCELLED` | Admin cancels/voids fine | Actor is admin; required reason provided; audit log written | Q-FE09-005, BR-FE09-011, BR-FE09-015 |
+
+#### d) Invalid Transitions (explicitly forbidden)
+
+| Forbidden | Reason | Related |
+| --------- | ------ | ------- |
+| `PAID` → `UNPAID` | A collected fine must not be reverted to unpaid; terminal state. | BR-FE09-012, AF-FE09-004 |
+| `WAIVED` / `CANCELLED` → any state | Terminal states cannot be reactivated. | Q-FE09-005, BR-FE09-011 |
+| `PAID` → `PAID` (re-collect) | No collection or paid action on a fine already `PAID`; return current state or reject. `PaidAt` is not overwritten unless an approved correction policy applies. | AF-FE09-004, EC-FE09-009, FR-FE09-008 |
+| Any collection on `PAID` / `WAIVED` / `CANCELLED` | No money may be collected against a resolved fine. | BR-FE09-004, NFR-FE09-TXN-002 |
+| Change `amount` after creation | `amount` is immutable; recalculation must not mutate the stored amount of an existing active fine (duplicate prevention only). | BR-FE09-008, BR-FE09-009, AF-FE09-002, EC-FE09-006 |
+| Direct `[*]` → `PAID` / `WAIVED` / `CANCELLED` | A fine must first exist as `UNPAID`; it cannot be born resolved. | MF-FE09-002 |
+
+#### e) Invariants
+
+- INV-1: A fine always has exactly one `status` from {`UNPAID`, `PAID`, `WAIVED`, `CANCELLED`} at any time.
+- INV-2: `amount > 0` for any persisted fine; if computed overdue amount is ≤ 0, no fine is created (FR-FE09-004, EC-FE09-007).
+- INV-3: `amount` is immutable after creation; only `status`, `PaidAt`, and collection metadata may change.
+- INV-4: `collectedAmount`, when used, must satisfy `0 ≤ collectedAmount ≤ amount` and never exceed `amount`.
+- INV-5: `status = PAID` **if and only if** the full amount has been collected and `PaidAt` is set (no partial-paid state in Phase 1, per Q-FE09-003).
+- INV-6: A fine in `PAID`, `WAIVED`, or `CANCELLED` is terminal and accepts no further state change or collection.
+- INV-7: Only `UNPAID` fines with `amount > 0` block borrowing/renewal in FE07 (BR-FE09-013, BR-FE09-014).
+- INV-8: Every state transition (calculate, collect, mark paid, waive, cancel) is traceable via audit log; idempotent retries must not produce duplicate active fines or double-collect (BR-FE09-009, BR-FE09-015, NFR-FE09-TXN-001, NFR-FE09-TXN-002, EC-FE09-006).
 
 ---
 

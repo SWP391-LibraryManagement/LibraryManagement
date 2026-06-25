@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.1.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE07
 
@@ -207,6 +207,20 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-012: While a borrow detail is `BORROWED`, the related copy shall not be available for another borrow approval.
 - FR-FE07-013: When all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, the system shall update the request status to `COMPLETED`.
 
+### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
+
+These EARS requirements cover error and abnormal conditions. Each traces back to an existing Edge Case (EC-*), Business Rule (BR-*), or Alternative Flow (AF-*).
+
+- FR-FE07-014: IF a member submits a borrow request while already holding 5 active borrowed copies, the system shall reject the request and return a borrow-limit error without creating any `BorrowRequests` or `BorrowDetails` record. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
+- FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive or the membership is not approved, the system shall reject the action and return an eligibility error explaining the blocking reason. (Source: BR-FE07-004, EC-FE07-002, EC-FE07-003, AF-FE07-001)
+- FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
+- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or zero valid items after validation, the system shall reject the affected items and shall not create a request when no valid item remains. (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
+- FR-FE07-018: IF a copy is no longer `AVAILABLE` at the moment of approval, the system shall reject approval for that copy, keep all data unchanged, and ask the librarian to update the request. (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
+- FR-FE07-019: WHERE two approval actions target the same copy concurrently, the system shall allow at most one approval to succeed and shall fail the later action safely without double-borrowing the copy. (Source: EC-FE07-011, FR-FE07-012)
+- FR-FE07-020: IF a renewal is requested for a borrow detail that is overdue, already renewed once, blocked by an unpaid fine, or reserved by another member, the system shall reject the renewal and keep the existing due date unchanged. (Source: BR-FE07-015, BR-FE07-018, AF-FE07-004, EC-FE07-010, AC-FE07-010)
+- FR-FE07-021: IF a return or renewal action targets a borrow detail in an invalid state (already returned/lost/damaged) or supplies a return date earlier than the borrow/request date, the system shall reject the action as an invalid state or date transition. (Source: EC-FE07-008, EC-FE07-009, EC-FE07-010)
+- FR-FE07-022: IF any step of an approve or return transaction fails, the system shall roll back the whole transaction so that request status, detail status, due date, copy status, and audit log remain consistent. (Source: EC-FE07-012, NFR-FE07-TXN-001, NFR-FE07-TXN-002)
+
 ---
 
 ## 8. Acceptance Criteria
@@ -279,6 +293,147 @@ Use these stable IDs for tasks and tests.
 | detailStatus | string | Yes | Proposed values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, `OVERDUE`. |
 | copyStatus | string | Yes | Existing values include `AVAILABLE`, `BORROWED`, `RESERVED`; add `LOST`, `DAMAGED` if approved. |
 | actionReason | string | No | Required for reject/lost/damaged when supported. |
+
+### 10.3 State Model & Transition Rules
+
+FE07 has two lifecycles that must be modeled separately but kept consistent: the request-level lifecycle (`BorrowRequests.Status`) and the copy-level lifecycle (`BorrowDetails.Status`). Both use only the enum values declared in Section 10.2. No new status value is introduced here.
+
+The two lifecycles are linked: a request aggregates one or more details, and the request reaches a terminal `COMPLETED` state only when every detail it owns has reached a terminal copy-level state (BR-FE07-020, FR-FE07-013).
+
+#### (A) BorrowRequest Lifecycle (`BorrowRequests.Status`)
+
+State values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`.
+
+##### A.1 State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : member submits request
+    PENDING --> APPROVED : librarian approves (revalidate OK)
+    PENDING --> REJECTED : librarian rejects (reason)
+    PENDING --> CANCELLED : request cancelled before approval
+    APPROVED --> COMPLETED : all details terminal
+    REJECTED --> [*]
+    CANCELLED --> [*]
+    COMPLETED --> [*]
+```
+
+##### A.2 State Descriptions
+
+| State | Description |
+| ----- | ----------- |
+| `PENDING` | Request created by the member; requested copies stored as `BorrowDetails.Status = REQUESTED`. Awaiting librarian/admin decision. |
+| `APPROVED` | Librarian/admin approved the request; each approved detail moved to `BORROWED`, due dates set, related copies set to `BORROWED`. Request is active until all details are returned/lost/damaged. |
+| `REJECTED` | Librarian/admin rejected the request; all copies stay available, no detail becomes `BORROWED`. Terminal. |
+| `COMPLETED` | Every detail of the request has reached a terminal copy-level state (`RETURNED`, `LOST`, or `DAMAGED`). Terminal. |
+| `CANCELLED` | Request withdrawn before approval (no copy ever set to `BORROWED`). Terminal. Declared in the enum (Section 10.2); cancellation trigger ownership is to be confirmed during Phase 2 planning. |
+
+##### A.3 Valid Transitions
+
+| From | To | Trigger | Condition | FR/BR |
+| ---- | -- | ------- | --------- | ----- |
+| `[*]` | `PENDING` | Member submits a valid borrow request | Member eligible; at least one valid available copy | MF-FE07-001, FR-FE07-001, FR-FE07-002, BR-FE07-004, BR-FE07-005 |
+| `PENDING` | `APPROVED` | Librarian/admin approves | Revalidation of eligibility and copy availability passes | MF-FE07-002, FR-FE07-004, FR-FE07-005, BR-FE07-008, BR-FE07-009 |
+| `PENDING` | `REJECTED` | Librarian/admin rejects | Rejection reason provided; copies left unchanged | MF-FE07-003, FR-FE07-006, BR-FE07-001 |
+| `PENDING` | `CANCELLED` | Request withdrawn before approval | No detail has become `BORROWED` | Section 10.2 enum (CANCELLED) |
+| `APPROVED` | `COMPLETED` | Return processing finishes | All owned details are `RETURNED`, `LOST`, or `DAMAGED` | MF-FE07-004, FR-FE07-013, BR-FE07-020 |
+
+##### A.4 Invalid Transitions (Explicitly Forbidden)
+
+| Forbidden | Reason |
+| --------- | ------ |
+| `REJECTED` → `APPROVED` | A rejected request is terminal; it cannot be approved without a new request. |
+| `REJECTED` → any state | `REJECTED` is terminal. |
+| `CANCELLED` → any state | `CANCELLED` is terminal. |
+| `COMPLETED` → `APPROVED` / `PENDING` | A completed request cannot reopen; a returned loan does not re-borrow. |
+| `PENDING` → `COMPLETED` | A request cannot complete without being approved first (no detail can be terminal before `BORROWED`). |
+| `APPROVED` → `PENDING` / `REJECTED` | Once approved (copies set to `BORROWED`), the request cannot revert to pending or be rejected. |
+
+##### A.5 Invariants
+
+| ID | Invariant |
+| -- | --------- |
+| INV-FE07-A1 | A `BorrowRequests` record always holds exactly one `Status` value from the declared enum. |
+| INV-FE07-A2 | A request may move to `APPROVED` only after eligibility and copy availability are revalidated (BR-FE07-008). |
+| INV-FE07-A3 | Only an `APPROVED` request can own `BORROWED` details; `PENDING`/`REJECTED`/`CANCELLED` requests never own a `BORROWED` detail. |
+| INV-FE07-A4 | A request becomes `COMPLETED` if and only if all of its details are in a terminal copy-level state (`RETURNED`/`LOST`/`DAMAGED`) (BR-FE07-020, FR-FE07-013). |
+| INV-FE07-A5 | Every request-level transition writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
+| INV-FE07-A6 | `REJECTED`, `CANCELLED`, and `COMPLETED` are terminal and cannot transition further. |
+
+#### (B) BorrowDetail Lifecycle (`BorrowDetails.Status`)
+
+State values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, `OVERDUE`.
+
+##### B.1 State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> REQUESTED : request created
+    REQUESTED --> BORROWED : request approved (copy AVAILABLE)
+    REQUESTED --> [*] : request rejected/cancelled
+    BORROWED --> RETURNED : normal return
+    BORROWED --> DAMAGED : returned damaged
+    BORROWED --> LOST : returned lost / reported lost
+    BORROWED --> OVERDUE : due date passed, not returned
+    BORROWED --> BORROWED : renewal (renewalCount 0 to 1)
+    OVERDUE --> RETURNED : late return (normal)
+    OVERDUE --> DAMAGED : late return damaged
+    OVERDUE --> LOST : late return lost
+    RETURNED --> [*]
+    DAMAGED --> [*]
+    LOST --> [*]
+```
+
+##### B.2 State Descriptions
+
+| State | Description |
+| ----- | ----------- |
+| `REQUESTED` | Copy requested inside a `PENDING` request; copy not yet handed over, no due date. |
+| `BORROWED` | Copy approved and handed over; has a due date (approval date + 14 calendar days). May be renewed once. Related `BookCopies.Status = BORROWED`. |
+| `OVERDUE` | Copy still held past its due date and not yet returned. Declared in the enum (Section 10.2); overdue must be detectable/traceable for FE09 (BR-FE07-014). Not a terminal state — a return still follows. |
+| `RETURNED` | Copy returned in normal condition; related `BookCopies.Status = AVAILABLE`. Terminal. |
+| `DAMAGED` | Copy returned damaged; related `BookCopies.Status = DAMAGED`; not auto-available. Terminal. |
+| `LOST` | Copy reported lost; related `BookCopies.Status = LOST`; not auto-available. Terminal. |
+
+##### B.3 Valid Transitions
+
+| From | To | Trigger | Condition | FR/BR |
+| ---- | -- | ------- | --------- | ----- |
+| `[*]` | `REQUESTED` | Borrow request created | Owning request is `PENDING` | MF-FE07-001, FR-FE07-002, BR-FE07-019 |
+| `REQUESTED` | `BORROWED` | Request approved | Copy is `AVAILABLE` at approval; due date assigned | MF-FE07-002, FR-FE07-005, BR-FE07-007, BR-FE07-009, BR-FE07-010 |
+| `REQUESTED` | `[*]` | Owning request rejected/cancelled | Copy stays available, never handed over | MF-FE07-003, BR-FE07-019 |
+| `BORROWED` | `BORROWED` | Renewal | Not overdue, no unpaid fine, renewalCount = 0, no reservation conflict; due date +14 days, renewalCount → 1 | MF-FE07-005, FR-FE07-009, BR-FE07-015, BR-FE07-018 |
+| `BORROWED` | `OVERDUE` | Due date passed without return | Detected by system; exposed to FE09 | BR-FE07-014, FR-FE07-008 |
+| `BORROWED` | `RETURNED` | Normal return | Return date stored; copy → `AVAILABLE` | MF-FE07-004, FR-FE07-007, BR-FE07-011, BR-FE07-012 |
+| `BORROWED` | `DAMAGED` | Return reported damaged | Return date stored; copy → `DAMAGED`; not auto-available | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+| `BORROWED` | `LOST` | Return/report lost | Return date stored; copy → `LOST`; not auto-available | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+| `OVERDUE` | `RETURNED` | Late normal return | Return date stored; copy → `AVAILABLE`; overdue data exposed to FE09 | MF-FE07-004, FR-FE07-007, FR-FE07-008, BR-FE07-014 |
+| `OVERDUE` | `DAMAGED` | Late return damaged | Return date stored; copy → `DAMAGED` | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+| `OVERDUE` | `LOST` | Late return / report lost | Return date stored; copy → `LOST` | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+
+##### B.4 Invalid Transitions (Explicitly Forbidden)
+
+| Forbidden | Reason |
+| --------- | ------ |
+| `RETURNED` / `DAMAGED` / `LOST` → `BORROWED` | Terminal copy-level states cannot reopen; a returned copy cannot become borrowed again on the same detail (FR-FE07-021, EC-FE07-008, EC-FE07-010). |
+| `RETURNED` / `DAMAGED` / `LOST` → any state | Terminal states cannot transition further. |
+| `OVERDUE` → `BORROWED` (renewal) | Renewal is not allowed when the item is overdue (BR-FE07-018, FR-FE07-020, AF-FE07-004). |
+| `REQUESTED` → `RETURNED` / `LOST` / `DAMAGED` / `OVERDUE` | A copy that was never handed over (`BORROWED`) cannot be returned, lost, damaged, or overdue. |
+| `BORROWED` → `BORROWED` second renewal | At most 1 renewal per detail; second renewal forbidden (BR-FE07-015, FR-FE07-009, FR-FE07-020). |
+| Any return with date before borrow/request date | Invalid date transition (FR-FE07-021, EC-FE07-009). |
+
+##### B.5 Invariants
+
+| ID | Invariant |
+| -- | --------- |
+| INV-FE07-B1 | A `BorrowDetails` record always holds exactly one `Status` value from the declared enum. |
+| INV-FE07-B2 | A detail can be `BORROWED` only if its owning request is `APPROVED` (mirrors INV-FE07-A3). |
+| INV-FE07-B3 | Every `BORROWED` detail has a non-null due date = approval date + 14 calendar days (BR-FE07-010). |
+| INV-FE07-B4 | `renewalCount` is in {0, 1}; a renewal is allowed only from `BORROWED` with `renewalCount = 0` and no blocking condition (BR-FE07-015, BR-FE07-018). |
+| INV-FE07-B5 | Reaching `RETURNED`, `LOST`, or `DAMAGED` requires a stored return date (BR-FE07-011); the date must not precede the borrow/request date (FR-FE07-021). |
+| INV-FE07-B6 | The related `BookCopies.Status` is kept consistent with the detail status: `BORROWED`→`BORROWED`, `RETURNED`→`AVAILABLE`, `DAMAGED`→`DAMAGED`, `LOST`→`LOST` (BR-FE07-007, BR-FE07-012, BR-FE07-013, FR-FE07-012). |
+| INV-FE07-B7 | Every detail-level transition (approve/return/renew/lost/damaged) writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
+| INV-FE07-B8 | Approve and return transitions are atomic with their related updates; partial failure rolls back the whole transaction (FR-FE07-022, NFR-FE07-TXN-001, NFR-FE07-TXN-002). |
 
 ---
 
@@ -401,6 +556,15 @@ This feature does not include:
 | FR-FE07-010 | UC30 | FT31 | Ready for review |
 | FR-FE07-011 | UC34 | FT35 | Ready for review |
 | FR-FE07-013 | UC33 | FT34 | Ready for review |
+| FR-FE07-014 | UC29, UC32 | TBD | Ready for review |
+| FR-FE07-015 | UC29, UC31 | TBD | Ready for review |
+| FR-FE07-016 | UC29, UC31 | TBD | Ready for review |
+| FR-FE07-017 | UC29 | TBD | Ready for review |
+| FR-FE07-018 | UC32 | TBD | Ready for review |
+| FR-FE07-019 | UC32 | TBD | Ready for review |
+| FR-FE07-020 | UC31 | TBD | Ready for review |
+| FR-FE07-021 | UC31, UC33 | TBD | Ready for review |
+| FR-FE07-022 | UC32, UC33 | TBD | Ready for review |
 
 ---
 
