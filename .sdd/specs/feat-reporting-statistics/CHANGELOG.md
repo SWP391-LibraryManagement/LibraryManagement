@@ -21,6 +21,10 @@
 - Added filter validation, zero-result handling, role protection, and audit logs for successful report access.
 - Added backend tests for report metrics, zero-result behavior, personal-data suppression, invalid ranges, and access control.
 
+## 2026-06-25 - Traceability Matrix Completed
+
+- Completed Traceability Matrix to cover all BR/FR/AC IDs (added AC mapping).
+
 ## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
 
 - Implemented borrowing report, inventory report, and user statistics screens with date filters, category filters, and chart components.

@@ -1,12 +1,12 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.1.0
+# Version: 0.1.1
 
 # Status: APPROVED
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE04
 
@@ -315,15 +315,44 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
+| BR-FE04-001 | UC13 | FT14 | Not Started |
 | BR-FE04-002 | UC13 | FT14 | Not Started |
 | BR-FE04-003 | UC13 | FT14 | Not Started |
-| FR-FE04-001 | UC13 | FT14 | Not Started |
+| BR-FE04-004 | UC13 | FT14 | Not Started |
+| BR-FE04-005 | UC13 | FT14 | Not Started |
 | BR-FE04-006 | UC14 | FT15 | Not Started |
-| FR-FE04-004 | UC14 | FT15 | Not Started |
 | BR-FE04-007 | UC15 | FT16 | Not Started |
-| FR-FE04-005 | UC15 | FT16 | Not Started |
+| BR-FE04-008 | UC14, UC15 | FT15, FT16 | Not Started |
+| BR-FE04-009 | UC14 | FT15 | Not Started |
+| BR-FE04-010 | UC15 | FT16 | Not Started |
 | BR-FE04-011 | UC16 | FT17 | Not Started |
+| BR-FE04-012 | TBD | TBD | Not Started |
+| BR-FE04-013 | UC14, UC15 | FT15, FT16 | Not Started |
+| FR-FE04-001 | UC13 | FT14 | Not Started |
+| FR-FE04-002 | UC13 | FT14 | Not Started |
+| FR-FE04-003 | UC13 | FT14 | Not Started |
+| FR-FE04-004 | UC14 | FT15 | Not Started |
+| FR-FE04-005 | UC15 | FT16 | Not Started |
+| FR-FE04-006 | UC14, UC15 | FT15, FT16 | Not Started |
 | FR-FE04-007 | UC16 | FT17 | Not Started |
+| FR-FE04-008 | UC14, UC15 | FT15, FT16 | Not Started |
+| AC-FE04-001 | UC13 | FT14 | Not Started |
+| AC-FE04-002 | UC13 | FT14 | Not Started |
+| AC-FE04-003 | UC14 | FT15 | Not Started |
+| AC-FE04-004 | UC15 | FT16 | Not Started |
+| AC-FE04-005 | UC14, UC15 | FT15, FT16 | Not Started |
+| AC-FE04-006 | UC14, UC15 | FT15, FT16 | Not Started |
+| AC-FE04-007 | UC16 | FT17 | Not Started |
+| AC-FE04-008 | UC13, UC16 | FT14, FT17 | Not Started |
+
+### 16.1 Coverage Summary
+
+| Requirement Type | Total IDs | Mapped IDs | Coverage |
+| ---------------- | --------- | ---------- | -------- |
+| Business Rules (BR-FE04) | 13 | 13 | 100% |
+| Functional Requirements (FR-FE04) | 8 | 8 | 100% |
+| Acceptance Criteria (AC-FE04) | 8 | 8 | 100% |
+| **Total** | **29** | **29** | **100%** |
 
 ---
 
