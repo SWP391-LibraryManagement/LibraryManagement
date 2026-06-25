@@ -1,8 +1,10 @@
 # SPEC.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.3.0
+# Version: 0.3.1
 
 # Status: APPROVED
+
+# Implementation Status: NOT IMPLEMENTED (deferred)
 
 # Owner: Dat
 
@@ -13,6 +15,14 @@
 # Feature folder: `.sdd/specs/feat-inventory-book-copy/`
 
 > Source of truth for FE06 Inventory / Book Copy Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE06 controls physical copy availability used by borrowing and reservation.
+>
+> **Implementation status (2026-06-25): NOT IMPLEMENTED — deferred.** The spec is approved, but no
+> backend implementation exists yet beyond the `BookCopies` data model. There are no FE06 routes,
+> service, repository, validators, or tests, so the API endpoints in Section 11 and the transition
+> guards/invariants in Section 10.3 are **not enforced in code**. Today, copy status is changed only
+> indirectly by FE07 (borrow/return) and FE08 (reservation hold/expire). A dedicated FE06 management
+> layer is deferred to a later iteration; the Traceability Matrix (Section 16) reflects this with all
+> items NOT STARTED.
 
 ---
 

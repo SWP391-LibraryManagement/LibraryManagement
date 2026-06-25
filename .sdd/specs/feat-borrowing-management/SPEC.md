@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.3.0
+# Version: 0.3.1
 
 # Status: APPROVED
 
@@ -364,6 +364,13 @@ stateDiagram-v2
 
 State values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, `OVERDUE`.
 
+> **Phase 1 implementation note (OVERDUE is derived):** In Phase 1 the system does **not** persist
+> `BorrowDetails.Status = 'OVERDUE'`. "Overdue" is computed at query time as a `BORROWED` detail whose
+> `dueDate` is earlier than the current date, and this derived value is what FE09 consumes (BR-FE07-014).
+> The `OVERDUE` transitions below describe the conceptual lifecycle; returns are processed from
+> `BORROWED` regardless of whether the item is past due. A persisted `OVERDUE` status plus a scheduled
+> job to set it is deferred to a later phase.
+
 ##### B.1 State Diagram
 
 ```mermaid
@@ -390,7 +397,7 @@ stateDiagram-v2
 | ----- | ----------- |
 | `REQUESTED` | Copy requested inside a `PENDING` request; copy not yet handed over, no due date. |
 | `BORROWED` | Copy approved and handed over; has a due date (approval date + 14 calendar days). May be renewed once. Related `BookCopies.Status = BORROWED`. |
-| `OVERDUE` | Copy still held past its due date and not yet returned. Declared in the enum (Section 10.2); overdue must be detectable/traceable for FE09 (BR-FE07-014). Not a terminal state — a return still follows. |
+| `OVERDUE` | Copy still held past its due date and not yet returned. **Derived in Phase 1 (not persisted)** — computed from a `BORROWED` detail with `dueDate < today`; must be detectable/traceable for FE09 (BR-FE07-014). Not a terminal state — a return still follows. |
 | `RETURNED` | Copy returned in normal condition; related `BookCopies.Status = AVAILABLE`. Terminal. |
 | `DAMAGED` | Copy returned damaged; related `BookCopies.Status = DAMAGED`; not auto-available. Terminal. |
 | `LOST` | Copy reported lost; related `BookCopies.Status = LOST`; not auto-available. Terminal. |
