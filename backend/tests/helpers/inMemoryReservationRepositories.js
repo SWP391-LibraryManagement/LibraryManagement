@@ -187,7 +187,9 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
     async cancelReservation(reservationId) {
       const reservation = reservations.find(
-        (item) => item.reservationId === Number(reservationId) && item.status === 'ACTIVE'
+        (item) =>
+          item.reservationId === Number(reservationId) &&
+          (item.status === 'ACTIVE' || item.status === 'NOTIFIED')
       );
 
       if (!reservation) {
@@ -250,6 +252,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         return null;
       }
 
+      reservation.status = 'NOTIFIED';
       reservation.notifiedAt = notifiedAt;
       reservation.expiresAt = expiresAt;
       reservation.queuePosition = 1;

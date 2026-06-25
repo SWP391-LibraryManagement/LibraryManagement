@@ -13,7 +13,7 @@ module.exports = defineModel({
     { attribute: 'expiresAt', name: 'ExpiresAt', type: 'DATETIME', nullable: true },
     { attribute: 'notifiedAt', name: 'NotifiedAt', type: 'DATETIME', nullable: true },
     { attribute: 'cancelledAt', name: 'CancelledAt', type: 'DATETIME', nullable: true },
-    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'ACTIVE', allowedValues: ['ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED'] },
+    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'ACTIVE', allowedValues: ['ACTIVE', 'NOTIFIED', 'FULFILLED', 'CANCELLED', 'EXPIRED'] },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
   ],

@@ -238,7 +238,7 @@ describe('FE08 reservation management', () => {
     expect(processResponse.body.selectedReservation).toMatchObject({
       userId: firstMember.userId,
       copyId: 1,
-      status: 'ACTIVE',
+      status: 'NOTIFIED',
     });
     expect(processResponse.body.selectedReservation.notifiedAt).toBeTruthy();
     expect(processResponse.body.selectedReservation.expiresAt).toBeTruthy();
