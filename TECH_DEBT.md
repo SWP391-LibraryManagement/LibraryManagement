@@ -25,8 +25,6 @@ Last Updated: 2026-06-25
 | -- | ------- | -------- | ----------- | ------ | ------ |
 | TD-004 | FE09 Fine | P2 | Align the **frontend** `FineManagement.jsx` to the new server-side API (`/calculate`, `/me`, `/{id}/collections`, `PATCH /{id}/paid`) and add pagination. Backend endpoints now exist (TD-001..003 resolved); the prototype CRUD routes are kept until the UI is migrated. | VG FE09 P1-5/P2-1 | OPEN |
 | TD-005 | FE06 Inventory | P1 (deferred) | Implement the whole FE06 layer: routes + controller + service + repository + validators, with transition guards (FR-FE06-014/015/016), conflict checks, optimistic locking (FR-FE06-018), audit (FR-FE06-010) and tests. Currently only the `BookCopies` model exists. | VG FE06 (spec marked NOT IMPLEMENTED) | DEFERRED |
-| TD-007 | FE07 Borrowing | P2 (decision) | Clarify policy: borrow request is currently all-or-nothing when any copy is unavailable, while FR-FE07-003/017/AF-002 imply per-item reject. Decide and align spec or code. | VG FE07 P1-1 | OPEN |
-| TD-011 | FE08 Reservation | P2 | Cross-feature checks FR-FE08-023/024 (held copy blocks other members borrowing/renewal) are enforced in FE07; add an integration test proving it end-to-end. | VG FE08 P1-4 | OPEN |
 | TD-012 | FE11 User & Role | P1 | Persist & validate librarian fields `department`/`specialization` (FR-FE11-010/028, API §11). Currently dropped by `updateUser`/repo; AC-011 cannot pass. | VG FE11 P1-3 | OPEN |
 | TD-013 | FE11 User & Role | P1 | Assign-existing-role is a silent no-op and remove-missing-role returns success. Should reject with a clear error (FR-FE11-025/026, EC-FE11-011). | VG FE11 P1-4/5 | OPEN |
 | TD-014 | FE11 User & Role | P1 | Use 404 (not 400) for not-found user/role (FR-FE11-016/017/024) and verify `adminUserId` exists before acting. | VG FE11 P1-6/7 | OPEN |
@@ -49,6 +47,8 @@ Last Updated: 2026-06-25
 | FE08 | TD-010: `cancelReservation` now returns the current reservation state (`{reservationId, status}`) alongside the 409 (`safeErrors.conflict` + errorHandler carry `details`) | (pending) |
 | FE10 | Added error/edge tests (unsupported type/channel, unknown template, recipient errors, sanitize, audit, empty pending) → 10 tests | (pending) |
 | FE12 | Added error/edge tests (RBAC 401/403 ×3, invalid filter/range, empty inventory, audit) → 7 tests | (pending) |
+| FE07 | TD-007: decided Phase 1 = all-or-nothing borrow policy; aligned SPEC (FR-FE07-003/017/018, AF-FE07-002, new BR-FE07-022) to the existing code; per-item deferred | (pending) |
+| FE08 | TD-011: added cross-feature integration tests proving a held (RESERVED) copy blocks another member's borrow (FR-FE08-023) and an active reservation blocks renewal (FR-FE08-024) | (pending) |
 | FE08 | TD-009: added test for FR-FE08-022 (concurrent queue holds copy once); tagged FR-FE08-011..024 (incl. cross-feature 023/024 in FE07) with `@spec` → 100% traceability | (pending) |
 | FE02 | AI-001: tagged FR-FE02-015..021 with `@spec` → 100% traceability; CI `trace:enforce` gate enabled | (pending) |
 | FE09 | TD-001/002/003: server-side fine calculation from `BorrowDetails` (repo + DB transactions, locked dedupe), collection flow (PAID iff fully collected), and audit logs for calculate/collect/paid/waive/cancel. New SPEC §11 endpoints added alongside kept prototype; 11 tests; `@spec` → 100%. | (pending) |
