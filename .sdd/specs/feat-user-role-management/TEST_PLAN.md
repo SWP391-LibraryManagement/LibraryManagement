@@ -1,11 +1,12 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.1.0
-Status: DRAFT - prototype/spec reconciliation required
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - prototype/spec reconciliation required (open debt TD-012..015)
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -48,6 +49,7 @@ User administration, role listing, role assignment/revocation, account status ma
 
 - FE11 `PLAN.md` and `TASKS.md` are `NOT STARTED`.
 - Tests should be reconciled with approved spec and role/audit edge cases.
+- Open debt (Validation Gate): TD-012 (department/specialization persistence), TD-013 (assign-existing / remove-missing role no-op), TD-014 (404 vs 400 for not-found), TD-015 (no service-level tests — `userManagementService.test.js` missing), TD-017 (dev-bypass guard).
 
 ## 7. Required Commands / Evidence Before Merge
 
@@ -55,5 +57,5 @@ User administration, role listing, role assignment/revocation, account status ma
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

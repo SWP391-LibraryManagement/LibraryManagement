@@ -1,11 +1,12 @@
 ﻿# FE04 Test Plan - Membership Management
 
-Version: 0.1.0
-Status: DRAFT - pending implementation planning
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - not started (planned targets)
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-membership-management/SPEC.md`
 Feature IDs: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -52,5 +53,5 @@ Membership application, approval/rejection, membership status, and integration w
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

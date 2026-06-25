@@ -290,6 +290,8 @@ async function cancelReservation(reservationId) {
   }
 }
 
+// @spec FR-FE08-018 — the queue only returns the earliest ACTIVE reservation whose member is still
+// active and approved, so an ineligible member is skipped (not held) at processing time (AF-FE08-003).
 async function findNextActiveReservationForCopy(copyId) {
   const pool = await getPool();
   const result = await pool
@@ -309,6 +311,9 @@ async function findNextActiveReservationForCopy(copyId) {
   return mapReservation(result.recordset[0]);
 }
 
+// @spec FR-FE08-022 — the hold runs in a transaction and locks the copy (UPDLOCK/HOLDLOCK), updating
+// the reservation to NOTIFIED only WHERE it is still ACTIVE; a concurrent second attempt re-reads the
+// state and gets null, so at most one selection succeeds (EC-FE08-010, NFR-FE08-TXN-001, INV-FE08-004).
 async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);

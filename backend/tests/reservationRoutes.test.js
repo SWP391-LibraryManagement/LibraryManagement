@@ -357,6 +357,220 @@ describe('FE08 reservation management', () => {
     );
   });
 
+  test('rejects reservation when member account is inactive (FR-FE08-012)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'inactive.member@example.test',
+    });
+
+    // Tài khoản member bị vô hiệu hoá sau khi đăng nhập.
+    authDependencies.state.users.find((user) => user.userId === member.userId).status = 'INACTIVE';
+
+    const response = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('MEMBER_ACCOUNT_INACTIVE');
+  });
+
+  test('rejects reservation when membership is not approved (FR-FE08-013)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'unapproved.member@example.test',
+      approveMember: false,
+    });
+
+    const response = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('MEMBERSHIP_NOT_APPROVED');
+  });
+
+  test('rejects reservation when the copy does not exist (FR-FE08-014)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'missing.copy@example.test',
+    });
+
+    const response = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 999 });
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe('COPY_NOT_FOUND');
+  });
+
+  test('rejects cancelling a reservation that is already expired (FR-FE08-017)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'expired.cancel@example.test',
+    });
+
+    const createResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 });
+    const reservationId = createResponse.body.reservation.reservationId;
+
+    // Đẩy reservation về trạng thái EXPIRED trực tiếp trong state.
+    reservationDependencies.state.reservations.find(
+      (r) => r.reservationId === reservationId
+    ).status = 'EXPIRED';
+
+    const response = await request(app)
+      .patch(`/api/reservations/${reservationId}/cancel`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ reason: 'too late' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
+  });
+
+  test('process-queue skips an ineligible member instead of holding (FR-FE08-018)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.ineligible@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.skip.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    // Member trở nên không đủ điều kiện trước khi xử lý hàng đợi và copy đã sẵn sàng.
+    authDependencies.state.users.find((user) => user.userId === member.userId).status = 'INACTIVE';
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.selectedReservation).toBeNull();
+    // Reservation vẫn ACTIVE (không bị hold) và copy không bị chuyển sang RESERVED.
+    expect(
+      reservationDependencies.state.reservations.find(
+        (r) => r.userId === member.userId && r.copyId === 1
+      ).status
+    ).toBe('ACTIVE');
+    expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'AVAILABLE'
+    );
+  });
+
+  test('process-queue selects nothing when no eligible reservation exists (FR-FE08-020)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.empty.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    // Copy tồn tại và sẵn sàng nhưng không có reservation nào trong hàng đợi.
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.selectedReservation).toBeNull();
+  });
+
+  test('concurrent queue processing holds the copy only once (FR-FE08-022)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'race.queue.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'race.queue.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'race.queue.lib@example.test',
+      role: 'LIBRARIAN', approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    // First processing wins and holds the copy for the earliest reservation.
+    const firstProcess = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(firstProcess.status).toBe(200);
+    expect(firstProcess.body.selectedReservation).toMatchObject({
+      userId: firstMember.userId,
+      status: 'NOTIFIED',
+    });
+
+    // A second processing attempt re-reads the now-RESERVED copy and selects nothing.
+    const secondProcess = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(secondProcess.status).toBe(200);
+    expect(secondProcess.body.selectedReservation).toBeNull();
+
+    // INV-FE08-004: at most one reservation may be NOTIFIED for the same copy.
+    const notifiedForCopyOne = reservationDependencies.state.reservations.filter(
+      (reservation) => reservation.copyId === 1 && reservation.status === 'NOTIFIED'
+    );
+    expect(notifiedForCopyOne).toHaveLength(1);
+    expect(
+      reservationDependencies.state.reservations.find(
+        (reservation) => reservation.userId === secondMember.userId && reservation.copyId === 1
+      ).status
+    ).toBe('ACTIVE');
+  });
+
   test('reservation endpoints enforce authentication and staff/member roles', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
     const member = await createVerifiedUser({

@@ -1,48 +1,56 @@
-﻿# FE09 Test Plan - Fine Management
+# FE09 Test Plan - Fine Management
 
-Version: 0.1.0
-Status: DRAFT - prototype reconciliation required
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: READY FOR REVIEW
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-fine-management/SPEC.md`
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
 ## 1. Test Scope
 
-Overdue fine calculation, fine listing, fine creation/update/delete behavior where allowed by spec, and payment/status handling.
+Server-side overdue fine calculation, duplicate prevention, collection recording, mark-paid, admin
+waive/cancel, audit logging, and fine visibility. The legacy prototype CRUD (`fineService.js`) is kept
+for the demo UI and covered separately by `fineRoutes.test.js`.
 
-## 2. Unit Test Targets
+## 2. Unit / Service Test Targets
 
-- Overdue fine calculation: 5,000 VND per overdue day per copy.
-- Fine starts the day after due date.
-- Zero fine when returned on or before due date.
-- Boundary dates and timezone-safe deterministic dates.
-- Paid/unpaid/status transition rules.
-- Traceability from fine to borrowing/return transaction.
+- Overdue fine calculation: 5,000 VND per overdue day per copy, starting the day after the due date.
+- Zero fine when returned on or before the due date (no record created).
+- Amount derived from stored dates only; client-supplied `amount`/`overdueDays` ignored.
+- Duplicate prevention: re-calculate returns the existing active fine.
+- Collection: `0 ≤ collectedAmount ≤ amount`; PAID iff fully collected.
+- Mark paid sets status PAID + PaidAt; terminal-state guards (no re-collect/re-pay).
+- Admin-only waive/cancel with required reason; audit log on every state change.
 
-## 3. API / Integration Test Targets
+## 3. API / Integration Test Targets (SPEC §11)
 
-- `GET /fines`: happy path, authorization, filtering.
-- `POST /fines`: happy path, invalid amount, invalid member, invalid borrow reference.
-- `PUT /fines/:fineId`: happy path, invalid status, invalid amount, not found.
-- `DELETE /fines/:fineId`: authorization, not found, unsafe delete guard if spec disallows deletion.
+- `POST /api/fines/calculate`: happy (201), not overdue (no fine), idempotent (no duplicate), missing
+  borrow detail (404), ignores client amount.
+- `GET /api/fines/me`: member sees only own fines.
+- `GET /api/fines/:fineId`: owner or staff only (member blocked from others' fine).
+- `POST /api/fines/:fineId/collections`: full → PAID, partial → UNPAID, over-amount → 400.
+- `PATCH /api/fines/:fineId/paid`: staff marks paid; member blocked; double-pay rejected.
+- `PATCH /api/fines/:fineId/waive` and `/cancel`: admin only; reason required.
 
 ## 4. E2E / Manual Acceptance Flow
 
-- Overdue borrow generates or calculates fine.
-- Librarian records fine payment.
-- Member/staff sees correct fine status.
+- Overdue return → staff calculates fine → records collection / marks paid → member/staff sees status.
+- (Frontend `FineManagement.jsx` still uses the legacy CRUD endpoints — migration is TD-004.)
 
 ## 5. Current Evidence
 
-- `backend/tests/fineRoutes.test.js`
+- `backend/tests/fineManagementRoutes.test.js` (11 tests; AC-FE09-001..010).
+- `backend/tests/fineRoutes.test.js` (legacy prototype CRUD).
+- Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
-- FE09 `PLAN.md` and `TASKS.md` are `NOT STARTED`.
-- Prototype fine code must be reconciled against the approved spec before claiming spec-driven completion.
+- TD-004: align the frontend to the server-side API and add pagination.
+- TD-021: SQL-Server-backed integration test for end-to-end fine persistence.
 
 ## 7. Required Commands / Evidence Before Merge
 
@@ -50,5 +58,5 @@ Overdue fine calculation, fine listing, fine creation/update/delete behavior whe
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

@@ -1,11 +1,12 @@
 ﻿# FE06 Test Plan - Inventory / Book Copy Management
 
-Version: 0.1.0
-Status: DRAFT - pending implementation planning
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - deferred (TD-005); planned targets only
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-inventory-book-copy/SPEC.md`
 Feature IDs: `BR-FE06-*`, `FR-FE06-*`, `AC-FE06-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -52,5 +53,5 @@ Physical book copy creation, barcode/identifier uniqueness, copy status, availab
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

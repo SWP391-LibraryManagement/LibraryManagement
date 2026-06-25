@@ -344,4 +344,398 @@ describe('FE07 borrowing management', () => {
     expect(staffCreateResponse.status).toBe(403);
     expect(staffCreateResponse.body.error.code).toBe('ROLE_REQUIRED');
   });
+
+  // AC-FE07-002, FR-FE07-015: inactive account or unapproved membership is rejected.
+  test('inactive account or unapproved membership cannot create a borrow request', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+
+    const inactiveMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'inactive.member@example.test',
+    });
+
+    const inactiveUserRecord = authDependencies.state.users.find(
+      (user) => user.userId === inactiveMember.userId
+    );
+    inactiveUserRecord.status = 'INACTIVE';
+
+    const inactiveResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(inactiveMember.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(inactiveResponse.status).toBe(403);
+    expect(inactiveResponse.body.error.code).toBe('MEMBER_ACCOUNT_INACTIVE');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+
+    const unapprovedMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'unapproved.member@example.test',
+      approveMember: false,
+    });
+
+    const unapprovedResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(unapprovedMember.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(unapprovedResponse.status).toBe(403);
+    expect(unapprovedResponse.body.error.code).toBe('MEMBERSHIP_NOT_APPROVED');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
+  // AC-FE07-003, FR-FE07-014: exceeding 5 active borrowed copies is rejected.
+  test('member exceeding the borrow limit of 5 active copies is rejected', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'limit.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'limit.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4, 5, 6] });
+
+    expect(createResponse.status).toBe(201);
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+
+    const overLimitResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [7] });
+
+    expect(overLimitResponse.status).toBe(409);
+    expect(overLimitResponse.body.error.code).toBe('BORROW_LIMIT_EXCEEDED');
+    // No extra request was created beyond the first (still-active) one.
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
+  });
+
+  // AC-FE07-005, FR-FE07-018: a copy that is no longer AVAILABLE at approval time is rejected
+  // and the request/details/copy data stay unchanged.
+  test('approval is rejected when a copy is no longer available and leaves data unchanged', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'unavailable.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'unavailable.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    // Another process makes the copy unavailable before the librarian approves.
+    borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'BORROWED';
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(approveResponse.status).toBe(409);
+    expect(approveResponse.body.error.code).toBe('COPY_NOT_AVAILABLE');
+
+    // Request stays PENDING, detail stays REQUESTED, copy status was not flipped by approval.
+    const storedRequest = borrowingDependencies.state.borrowRequests.find(
+      (item) => item.requestId === requestId
+    );
+    expect(storedRequest.status).toBe('PENDING');
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (item) => item.requestId === requestId
+    );
+    expect(storedDetail.status).toBe('REQUESTED');
+    expect(storedDetail.dueDate).toBeNull();
+  });
+
+  // AC-FE07-006, BR-FE07-011, BR-FE07-012: a normal return stores a return date and frees the copy.
+  test('normal return marks the copy AVAILABLE and stores the return date', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'normal.return.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'normal.return.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+    const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+
+    const returnResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-10' });
+
+    expect(returnResponse.status).toBe(200);
+    expect(returnResponse.body.borrowDetail).toMatchObject({
+      borrowDetailId,
+      status: 'RETURNED',
+    });
+    expect(returnResponse.body.borrowDetail.returnDate).toBeTruthy();
+    expect(returnResponse.body.fineCandidate).toMatchObject({
+      borrowDetailId,
+      condition: 'NORMAL',
+      overdueDays: 0,
+      needsFineReview: false,
+    });
+    expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'AVAILABLE'
+    );
+    expect(
+      borrowingDependencies.state.borrowRequests.find((item) => item.requestId === requestId).status
+    ).toBe('COMPLETED');
+    expect(borrowingDependencies.state.fines).toHaveLength(0);
+  });
+
+  // FR-FE07-021: returning a detail that is not BORROWED (e.g. a second return) is rejected,
+  // and a return date earlier than the borrow date is rejected as an invalid transition.
+  test('invalid return transitions are rejected (second return and return date before borrow date)', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'invalid.return.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'invalid.return.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+    const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+
+    // Return date before borrow date (borrow date is the approval clock 2026-06-10).
+    const earlyReturnResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-09' });
+
+    expect(earlyReturnResponse.status).toBe(400);
+    expect(earlyReturnResponse.body.error.code).toBe('INVALID_RETURN_DATE');
+    expect(
+      borrowingDependencies.state.borrowDetails.find(
+        (item) => item.borrowDetailId === borrowDetailId
+      ).status
+    ).toBe('BORROWED');
+
+    // First valid return succeeds.
+    await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-10' })
+      .expect(200);
+
+    // Second return on an already-returned detail is rejected as invalid state.
+    const secondReturnResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-10' });
+
+    expect(secondReturnResponse.status).toBe(409);
+    expect(secondReturnResponse.body.error.code).toBe('BORROW_DETAIL_NOT_BORROWED');
+  });
+
+  // FR-FE07-019: two requests target the same copy; only one approval may win and the copy must not
+  // be double-borrowed. The later approval is rejected and its request stays PENDING.
+  test('concurrent approvals of the same copy do not double-borrow it', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'race.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'race.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'race.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    // Both members request the same available copy while it is still AVAILABLE.
+    const firstRequest = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyIds: [1] });
+    const secondRequest = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(firstRequest.status).toBe(201);
+    expect(secondRequest.status).toBe(201);
+
+    // First approval wins.
+    await request(app)
+      .patch(`/api/borrow-requests/${firstRequest.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+
+    // Second approval on the now-unavailable copy is rejected; no double-borrow.
+    const secondApproval = await request(app)
+      .patch(`/api/borrow-requests/${secondRequest.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(secondApproval.status).toBe(409);
+    expect(secondApproval.body.error.code).toBe('COPY_NOT_AVAILABLE');
+
+    const secondStored = borrowingDependencies.state.borrowRequests.find(
+      (item) => item.requestId === secondRequest.body.borrowRequest.requestId
+    );
+    expect(secondStored.status).toBe('PENDING');
+    // The copy is borrowed exactly once.
+    const borrowedForCopyOne = borrowingDependencies.state.borrowDetails.filter(
+      (detail) => detail.copyId === 1 && detail.status === 'BORROWED'
+    );
+    expect(borrowedForCopyOne).toHaveLength(1);
+  });
+
+  // FR-FE07-016, BR-FE07-006: an unpaid fine (> 0) blocks creating a new borrow request.
+  test('member with an unpaid fine cannot create a borrow request', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'fined.member@example.test',
+    });
+
+    borrowingDependencies.state.fines.push({
+      fineId: 1,
+      userId: member.userId,
+      status: 'UNPAID',
+      amount: 5000,
+    });
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('UNPAID_FINE_BLOCKS_BORROWING');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
+  // FR-FE07-020, BR-FE07-018: an overdue borrowed item cannot be renewed and the due date is unchanged.
+  test('renewal is rejected for an overdue borrowed item and keeps the due date', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'overdue.renew.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'overdue.renew.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+    const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+
+    // Force the due date into the past relative to the fixed clock (2026-06-10).
+    const overdueDueDate = new Date('2026-06-01T00:00:00.000Z');
+    borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    ).dueDate = overdueDueDate;
+
+    const renewResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({});
+
+    expect(renewResponse.status).toBe(409);
+    expect(renewResponse.body.error.code).toBe('BORROW_DETAIL_OVERDUE');
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    );
+    expect(new Date(storedDetail.dueDate).toISOString()).toBe(overdueDueDate.toISOString());
+    expect(storedDetail.renewalCount).toBe(0);
+  });
 });
