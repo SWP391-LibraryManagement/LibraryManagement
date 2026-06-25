@@ -1,7 +1,8 @@
 const AppException = require('../CustomException/AppException');
 
 const DAILY_FINE_RATE = 5000;
-const VALID_STATUSES = new Set(['UNPAID', 'PAID', 'WAIVED']);
+const VALID_STATUSES = new Set(['UNPAID', 'PAID', 'WAIVED', 'CANCELLED']);
+const TERMINAL_STATUSES = new Set(['PAID', 'WAIVED', 'CANCELLED']);
 
 let fines = [
   {
@@ -158,7 +159,7 @@ function normalizeFinePayload(body = {}, existingFineId = null) {
   const status = requiredText(body.status || 'UNPAID', 'Status', 20).toUpperCase();
 
   if (!VALID_STATUSES.has(status)) {
-    throw new AppException(400, 'INVALID_FINE_STATUS', 'Fine status must be UNPAID, PAID, or WAIVED.');
+    throw new AppException(400, 'INVALID_FINE_STATUS', 'Fine status must be UNPAID, PAID, WAIVED, or CANCELLED.');
   }
 
   return {
@@ -204,7 +205,8 @@ function listFines({ status, q } = {}) {
 }
 
 function createFine(body = {}) {
-  const payload = normalizeFinePayload(body);
+  // A fine is never "born resolved": it always starts UNPAID (state model [*] -> UNPAID).
+  const payload = normalizeFinePayload({ ...body, status: 'UNPAID' });
   const nextFine = {
     fineId: fines.reduce((max, fine) => Math.max(max, fine.fineId), 9000) + 1,
     ...payload,
@@ -219,6 +221,17 @@ function updateFine(fineId, body = {}) {
   if (!existing) {
     throw new AppException(404, 'FINE_NOT_FOUND', 'Fine was not found.');
   }
+
+  // INV-6: terminal states are final — no re-activation, no double collection.
+  if (TERMINAL_STATUSES.has(existing.status)) {
+    throw new AppException(409, 'FINE_NOT_EDITABLE', `Fine is already ${existing.status} and cannot be modified.`);
+  }
+
+  // INV-3: amount is immutable after creation.
+  if (body.amount !== undefined && body.amount !== '' && Number(body.amount) !== Number(existing.amount)) {
+    throw new AppException(400, 'FINE_AMOUNT_IMMUTABLE', 'Fine amount cannot be changed after creation.');
+  }
+
   const payload = normalizeFinePayload({ ...existing, ...body }, id);
   const updated = { ...existing, ...payload };
   fines = fines.map((fine) => (fine.fineId === id ? updated : fine));
