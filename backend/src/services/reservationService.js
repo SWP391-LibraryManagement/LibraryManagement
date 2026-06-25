@@ -192,9 +192,14 @@ function createReservationService({
       throw errors.forbidden('RESERVATION_OWNER_REQUIRED', 'You can cancel only your own reservations.');
     }
 
-    // @spec FR-FE08-017 — reject re-cancelling a reservation that is already cancelled/expired (EC-FE08-007)
+    // @spec FR-FE08-017 — reject re-cancelling a reservation that is already cancelled/expired and
+    // return its current state alongside the 409 so the caller can resync (EC-FE08-007).
     if (reservation.status !== 'ACTIVE' && reservation.status !== 'NOTIFIED') {
-      throw errors.conflict('RESERVATION_NOT_ACTIVE', 'Only active or notified reservations can be cancelled.');
+      throw errors.conflict(
+        'RESERVATION_NOT_ACTIVE',
+        'Only active or notified reservations can be cancelled.',
+        { reservationId: reservation.reservationId, status: reservation.status }
+      );
     }
 
     const cancelledReservation = await reservationRepository.cancelReservation(reservationId);

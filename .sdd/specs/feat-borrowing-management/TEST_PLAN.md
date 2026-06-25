@@ -48,7 +48,7 @@ Borrow request creation, approval/rejection, member borrowing history, return fl
 
 - FR-FE07-017 (zero-valid-after-validation) and FR-FE07-022 (transaction rollback) are exercised only
   indirectly; add explicit cases during the Week 11 Testing Sprint.
-- TD-007 (per-item vs all-or-nothing reject) and TD-008 (model `allowedValues` sync) remain open decisions.
+- TD-007 (per-item vs all-or-nothing reject) remains an open decision. TD-008 (model `allowedValues` sync) is resolved.
 
 ## 7. Required Commands / Evidence Before Merge
 

@@ -38,7 +38,9 @@ Read-only borrowing, inventory, and user/statistics reports for authorized staff
 
 ## 5. Current Evidence
 
-- `backend/tests/reportRoutes.test.js`
+- `backend/tests/reportRoutes.test.js` (7 tests: borrowing/inventory aggregates + no-mutation,
+  user stats PII redaction + empty filter, RBAC 401/403 on all three endpoints, invalid filter/range,
+  empty inventory totals, audit-log on view).
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps

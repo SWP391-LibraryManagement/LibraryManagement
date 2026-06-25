@@ -46,7 +46,7 @@ Reservation creation, queue behavior, cancellation, queue processing, hold expir
 
 - FR-FE08-023/024 (held copy blocks other members' borrow/renewal) are enforced in FE07; an end-to-end
   cross-feature integration test is still pending (TD-011).
-- TD-010 (cancel should return current reservation state alongside the 409) remains open.
+- TD-010 (cancel returns current reservation state alongside the 409) is resolved.
 
 ## 7. Required Commands / Evidence Before Merge
 
