@@ -1,7 +1,7 @@
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
 
-const reservationStatuses = ['ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED'];
+const reservationStatuses = ['ACTIVE', 'NOTIFIED', 'FULFILLED', 'CANCELLED', 'EXPIRED'];
 
 const createReservationValidators = [
   body('copyId')
