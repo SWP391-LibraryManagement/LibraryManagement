@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-06-25 - FE02 Formal State Model
+
+- Bumped SPEC.md version 0.2.0 -> 0.3.0 (MINOR); status unchanged (APPROVED).
+- Added formal State Model & Transition Rules (state diagram + valid/invalid transitions + invariants) for User account lifecycle.
+
 ## 2026-06-03
 
 - Created FE02 Authentication feature specification structure.
@@ -38,6 +43,19 @@
 - Added tests for the FE02 cases from FT05 to FT11.
 - Connected the current login, register, and forgot-password screens to the auth API.
 - Marked FE02 `PLAN.md`, `TASKS.md`, and traceability as ready for review.
+
+## 2026-06-25 - FE02 EARS Unwanted Requirements Hardening
+
+- Bumped SPEC.md version 0.1.0 -> 0.2.0 (MINOR); status unchanged (APPROVED).
+- Promoted error-handling branches to formal Unwanted FRs (FR-FE02-015..FR-FE02-021) to meet the EARS â‰¥30% Unwanted standard from Spec-Driven Development. No new logic introduced; each FR traces to an existing AF/EC/BR.
+  - FR-FE02-015: Reject registration with already-registered email; no new user created. (AF-FE02-001, EC-FE02-003, BR-FE02-001)
+  - FR-FE02-016: Reject expired/malformed verification token; keep account INACTIVE, offer resend. (AF-FE02-002, BR-FE02-004)
+  - FR-FE02-017: Reject login to LOCKED account with lock message. (AF-FE02-003, BR-FE02-009)
+  - FR-FE02-018: Reject already-used/expired reset token; no password change. (AF-FE02-005, BR-FE02-014)
+  - FR-FE02-019: Reject password not meeting complexity policy; do not persist. (AF-FE02-007, BR-FE02-005, Q-FE02-001)
+  - FR-FE02-020: Reject password change reusing current password. (AF-FE02-006)
+  - FR-FE02-021: Reject protected request with malformed/invalid/expired token (401). (AF-FE02-004, EC-FE02-014, BR-FE02-012)
+- Added a "7.1 Unwanted Behavior Requirements (EARS)" subsection and an Unwanted-FR traceability table in Section 16; updated Coverage Summary (Total FR 14 -> 21, Unwanted FR 7 = 33.3%).
 
 ## 2026-06-19 - FE02 Auth Fix Review
 

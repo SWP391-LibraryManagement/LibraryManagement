@@ -1,12 +1,12 @@
 ﻿# SPEC.md - FE02 Authentication
 
-# Version: 0.1.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE02
 
@@ -265,6 +265,18 @@ Use these stable IDs for tasks and tests.
 - FR-FE02-013: When a user's account is created, the system shall assign default role(s) based on user type (member, librarian, admin).
 - FR-FE02-014: When checking user permissions, the system shall retrieve roles from `UserRoles` table.
 
+### 7.1 Unwanted Behavior Requirements (EARS)
+
+The following requirements formalize the error-handling and abnormal-condition branches already described in Sections 5 (Alternative Flows), 6 (Business Rules), and 9 (Edge Cases). Each is expressed in EARS Unwanted syntax (`IF ...` / `WHERE ...`) and traces back to a source AF/EC/BR.
+
+- FR-FE02-015: IF a guest submits registration data with an email that is already registered, the system shall reject the registration and return the message "Email is already registered. Please login or use forgot password." without creating a new user record. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
+- FR-FE02-016: IF a user submits an email verification token that is expired, malformed, or does not match any user record, the system shall reject activation, keep the account `INACTIVE`, and offer to resend a new verification email. (Source: AF-FE02-002, BR-FE02-004)
+- FR-FE02-017: IF a user attempts to log in to an account whose status is `LOCKED`, the system shall reject the login and return the account-lock message instructing the user to reset their password or contact support. (Source: AF-FE02-003, BR-FE02-009)
+- FR-FE02-018: IF a user submits a password reset/setup token that has already been used, expired, or does not match any user record, the system shall reject the request and return the message "This reset link is no longer valid. Request a new one." without changing any password. (Source: AF-FE02-005, BR-FE02-014)
+- FR-FE02-019: IF a submitted new password (during registration, change, or reset) does not meet the configured complexity policy, the system shall reject the operation and return a complexity-requirement error without persisting the password. (Source: AF-FE02-007, BR-FE02-005, Q-FE02-001)
+- FR-FE02-020: IF an authenticated user attempts to change their password to a value identical to the current password, the system shall reject the change and return the message "New password must be different from current password." (Source: AF-FE02-006)
+- FR-FE02-021: IF a protected request presents a session/token that is malformed, has an invalid signature, or has expired, the system shall reject the request with 401 Unauthorized and shall not process the requested operation. (Source: AF-FE02-004, EC-FE02-014, BR-FE02-012)
+
 ---
 
 ## 8. Acceptance Criteria
@@ -350,6 +362,70 @@ Use these stable IDs for tasks and tests.
 | verificationTokenExpiresAt | datetime | No | Verification token expiration. |
 | resetToken | string | No | Password reset/setup token. Token purpose must distinguish normal reset from admin-created account setup. |
 | resetTokenExpiresAt | datetime | No | Password reset/setup token expiration. |
+
+### 10.3 State Model & Transition Rules (User Account)
+
+This subsection formalizes the lifecycle of the `User.status` field (see 10.2 Data Fields). The state set is fixed to the four declared enum values: `ACTIVE`, `INACTIVE`, `LOCKED`, `DELETED`. No additional states are introduced. Every transition below traces back to a Main Flow (MF), Alternative Flow (AF), Functional Requirement (FR), Business Rule (BR), Edge Case (EC), or Resolved Question (Q) already present in this spec.
+
+#### a) State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> INACTIVE : register (MF-001 / FR-001)
+    INACTIVE --> ACTIVE : verify email (MF-002 / FR-003)
+    INACTIVE --> ACTIVE : complete setup via reset token (MF-008 / FR-012)
+    ACTIVE --> LOCKED : failed logins exceed threshold (MF-004 / FR-006)
+    LOCKED --> ACTIVE : successful password reset (AF-003 / FR-012)
+    LOCKED --> ACTIVE : admin unlock (AF-003)
+    LOCKED --> ACTIVE : automatic unlock after N hours (AF-003)
+    ACTIVE --> DELETED : soft delete
+    INACTIVE --> DELETED : soft delete
+    LOCKED --> DELETED : soft delete
+    DELETED --> [*]
+```
+
+#### b) Trạng thái (State meanings)
+
+| State | Ý nghĩa |
+| ----- | ------- |
+| INACTIVE | Tài khoản đã được tạo nhưng chưa xác minh email (hoặc tài khoản do admin tạo chưa hoàn tất thiết lập mật khẩu). Không thể đăng nhập. |
+| ACTIVE | Tài khoản đã xác minh và đang hoạt động. Đây là trạng thái duy nhất cho phép đăng nhập thành công. |
+| LOCKED | Tài khoản bị khóa tự động do vượt ngưỡng số lần đăng nhập sai. Không thể đăng nhập cho đến khi được mở khóa. |
+| DELETED | Tài khoản đã bị xóa mềm. Trạng thái cuối, không thể đăng nhập và không thể quay lại bất kỳ trạng thái nào khác. |
+
+#### c) Valid Transitions
+
+| From | To | Trigger / Event | Điều kiện | FR / BR liên quan |
+| ---- | -- | --------------- | --------- | ----------------- |
+| `[*]` (none) | INACTIVE | Guest đăng ký tài khoản | Dữ liệu đăng ký hợp lệ, email chưa tồn tại | MF-FE02-001, FR-FE02-001, BR-FE02-001, BR-FE02-004 |
+| INACTIVE | ACTIVE | Người dùng bấm link xác minh email | Verification token hợp lệ, chưa hết hạn (24h), khớp user | MF-FE02-002, FR-FE02-003, BR-FE02-004 |
+| INACTIVE | ACTIVE | Hoàn tất thiết lập mật khẩu cho tài khoản admin tạo | Reset/setup token hợp lệ, đúng mục đích setup | MF-FE02-008, FR-FE02-012, BR-FE02-013, BR-FE02-014 |
+| ACTIVE | LOCKED | Số lần đăng nhập sai vượt ngưỡng | failedLoginCount đạt ngưỡng cấu hình (ví dụ 5) | MF-FE02-004, FR-FE02-006, BR-FE02-008, BR-FE02-009 |
+| LOCKED | ACTIVE | Reset mật khẩu thành công | Reset token hợp lệ, mật khẩu mới đạt độ phức tạp | AF-FE02-003, FR-FE02-012, Q-FE02-001 |
+| LOCKED | ACTIVE | Admin mở khóa thủ công | Hành động của admin có thẩm quyền | AF-FE02-003 |
+| LOCKED | ACTIVE | Tự động mở khóa sau N giờ | lockedUntil đã qua thời điểm hiện tại | AF-FE02-003, EC-FE02-006 |
+| ACTIVE | DELETED | Xóa mềm tài khoản | Hành động xóa mềm hợp lệ | 10.2 (status enum) |
+| INACTIVE | DELETED | Xóa mềm tài khoản | Hành động xóa mềm hợp lệ | 10.2 (status enum) |
+| LOCKED | DELETED | Xóa mềm tài khoản | Hành động xóa mềm hợp lệ | 10.2 (status enum) |
+
+#### d) Invalid Transitions (cấm tường minh)
+
+- DELETED → bất kỳ trạng thái nào: tài khoản đã xóa mềm không thể được khôi phục về ACTIVE, INACTIVE hay LOCKED trong phạm vi FE02 (DELETED là trạng thái cuối).
+- INACTIVE → LOCKED: tài khoản chưa kích hoạt không thể đăng nhập, do đó không thể tích lũy đủ số lần đăng nhập sai để bị khóa (MF-FE02-003 b5, BR-FE02-002).
+- LOCKED → ACTIVE khi chưa thỏa điều kiện mở khóa: không được tự chuyển về ACTIVE nếu chưa qua reset mật khẩu, admin unlock, hoặc đủ thời gian auto-unlock (AF-FE02-003).
+- INACTIVE → ACTIVE bằng đăng nhập: đăng nhập không kích hoạt tài khoản; chỉ xác minh email hoặc hoàn tất setup mới chuyển sang ACTIVE (FR-FE02-003, Q-FE02-008).
+- INACTIVE / LOCKED / DELETED → đăng nhập thành công: chỉ ACTIVE mới đăng nhập được (MF-FE02-003 b5, FR-FE02-005, FR-FE02-017, Q-FE02-008).
+- ACTIVE → INACTIVE: không có sự kiện nào trong FE02 đưa tài khoản đã kích hoạt trở lại trạng thái chưa xác minh.
+
+#### e) Invariants (bất biến luôn đúng)
+
+- INV-FE02-001: Một user luôn có đúng một giá trị `status` tại một thời điểm, thuộc tập {ACTIVE, INACTIVE, LOCKED, DELETED}. (10.2)
+- INV-FE02-002: Chỉ tài khoản có `status = ACTIVE` mới có thể đăng nhập thành công. (MF-FE02-003 b5, FR-FE02-004, Q-FE02-008)
+- INV-FE02-003: Tài khoản mới tạo qua đăng ký luôn bắt đầu ở `INACTIVE`, không bao giờ ở `ACTIVE` ngay lập tức. (MF-FE02-001 b5, FR-FE02-001)
+- INV-FE02-004: `DELETED` là trạng thái hấp thụ (absorbing) — không có chuyển trạng thái nào rời khỏi `DELETED`.
+- INV-FE02-005: Khi tài khoản chuyển sang `LOCKED`, mọi nỗ lực đăng nhập đều bị từ chối với thông báo khóa cho đến khi được mở khóa. (AF-FE02-003, FR-FE02-017)
+- INV-FE02-006: Mọi chuyển trạng thái liên quan đến xác thực (kích hoạt, khóa, mở khóa, reset) đều phải ghi audit log. (BR-FE02-016, NFR-FE02-LOG-001..005)
+- INV-FE02-007: Việc chuyển sang `LOCKED` chỉ xảy ra khi `failedLoginCount` đạt ngưỡng cấu hình; không có đường nào khác đưa tài khoản vào `LOCKED`. (MF-FE02-004, FR-FE02-006, BR-FE02-008)
 
 ---
 
@@ -515,9 +591,22 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE02-017 | Expired reset token + new password submitted -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Ready for review |
 | AC-FE02-018 | Already-used reset token reused -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Ready for review |
 
+### FE02 Unwanted Functional Requirements to Sources to Tests
+
+| FR ID | Unwanted Requirement (summary) | Source AF / EC | Related BR / Q | Test Case | Status |
+| ----- | ------------------------------ | -------------- | -------------- | --------- | ------ |
+| FR-FE02-015 | Reject registration with already-registered email; no new user created | AF-FE02-001, EC-FE02-003 | BR-FE02-001 | FT05 | Ready for review |
+| FR-FE02-016 | Reject expired/malformed verification token; keep account INACTIVE, offer resend | AF-FE02-002 | BR-FE02-004 | FT05 | Ready for review |
+| FR-FE02-017 | Reject login to LOCKED account with lock message | AF-FE02-003 | BR-FE02-009 | FT07 | Ready for review |
+| FR-FE02-018 | Reject already-used/expired reset token; no password change | AF-FE02-005 | BR-FE02-014 | FT11 | Ready for review |
+| FR-FE02-019 | Reject password not meeting complexity policy; do not persist | AF-FE02-007 | BR-FE02-005, Q-FE02-001 | FT09, FT11 | Ready for review |
+| FR-FE02-020 | Reject password change reusing current password | AF-FE02-006 | BR-FE02-019 | FT09 | Ready for review |
+| FR-FE02-021 | Reject protected request with malformed/invalid/expired token (401) | AF-FE02-004, EC-FE02-014 | BR-FE02-012 | FT07 | Ready for review |
+
 ### Coverage Summary (FE02)
 - **Total AC**: 18 (AC-FE02-001 to AC-FE02-018) âœ“ All mapped
-- **Total FR**: 14 (FR-FE02-001 to FR-FE02-014) âœ“ All mapped
+- **Total FR**: 21 (FR-FE02-001 to FR-FE02-021) âœ“ All mapped
+- **EARS Unwanted FR**: 7 (FR-FE02-015 to FR-FE02-021) = 33.3% of total FR (meets â‰¥30% standard)
 - **Total BR**: 19 (BR-FE02-001 to BR-FE02-019) âœ“ All key BR mapped
 - **Total Tests**: 7 (FT05 to FT11) - aligned with assignment sheet
 

@@ -26,3 +26,10 @@
 
 - Added prototype drift notes to `PLAN.md` and `TASKS.md`.
 - Clarified that existing FE09 backend/frontend code remains prototype/demo code until reconciled against approved tasks, server-side fine calculation/persistence, borrowing-block integration, authorization, traceability tags, and tests.
+
+## 2026-06-25
+
+- Added section `10.3 State Model & Transition Rules (Fine)` formalizing the `Fine.status` lifecycle (Mermaid `stateDiagram-v2`, state descriptions, valid/invalid transitions, and invariants).
+- State set sourced directly from approved values in 10.2: `UNPAID`, `PAID`, `WAIVED`, `CANCELLED`. No `PARTIALLY_PAID` state per Q-FE09-003 (no partial payment in Phase 1).
+- Documented idempotency / duplicate-prevention and `amount` immutability as explicit invariants and forbidden transitions; traced to FR/BR/AF/EC/NFR.
+- Bumped version `0.1.0` → `0.2.0` (MINOR) and updated `Last Updated` to 2026-06-25; Status kept `APPROVED`.
