@@ -1,10 +1,12 @@
 # Feature Integration Map - Library Management System
 
-Version: 0.1.0
+Version: 1.0.0
 
-Status: DRAFT - pending team review
+Status: APPROVED
 
-Last Updated: 2026-06-22
+Last Updated: 2026-06-25
+
+> This is the Layer 1 (system-level) "big picture" that links the 12 separately-owned feature specs. Approved on 2026-06-25 together with the system ERD (Section 4.1).
 
 ---
 
@@ -129,6 +131,59 @@ flowchart TD
 
   FE10 -->|"delivery/audit status"| FE12
 ```
+
+---
+
+## 4.1 System Data Model (ERD)
+
+The features above are also linked at the data layer: they share one relational schema
+(`database/Librarymanagement.sql`). This ERD shows how the core entities connect. Relationships
+are derived from the actual foreign keys in the schema. Per-column details and validation rules
+live in each feature `SPEC.md` (Section 10) and in `ADR-002-database-design.md`.
+
+```mermaid
+erDiagram
+  Roles ||--o{ UserRoles : "assigned in"
+  Users ||--o{ UserRoles : "has"
+  Users ||--o| UserProfiles : "has"
+  Users ||--o| Members : "may be"
+  Users ||--o{ MembershipApplications : "submits"
+  Users ||--o{ AuthTokens : "owns"
+  Categories ||--o{ Books : "groups"
+  Authors ||--o{ Books : "writes"
+  Publishers ||--o{ Books : "publishes"
+  Books ||--o{ BookCopies : "has copies"
+  Users ||--o{ BorrowRequests : "creates"
+  BorrowRequests ||--o{ BorrowDetails : "contains"
+  BookCopies ||--o{ BorrowDetails : "borrowed as"
+  Users ||--o{ Reservations : "places"
+  BookCopies ||--o{ Reservations : "reserved as"
+  Users ||--o{ Fines : "owes"
+  BorrowDetails ||--o{ Fines : "incurs"
+  NotificationTemplates ||--o{ Notifications : "renders"
+  Users ||--o{ Notifications : "receives"
+  Notifications ||--o{ NotificationAttempts : "delivered via"
+  Users ||--o{ AuditLogs : "acts in"
+```
+
+### Entity ownership (which feature owns which table)
+
+| Entity | Owning Feature(s) |
+| --- | --- |
+| `Users`, `Roles`, `UserRoles` | FE02 Authentication, FE11 User & Role |
+| `UserProfiles` | FE03 User Profile |
+| `Members`, `MembershipApplications` | FE04 Membership |
+| `AuthTokens` | FE02 Authentication |
+| `Categories`, `Authors`, `Publishers`, `Books` | FE05 Book Management (FE01 reads) |
+| `BookCopies` | FE06 Inventory / Book Copy |
+| `BorrowRequests`, `BorrowDetails` | FE07 Borrowing |
+| `Reservations` | FE08 Reservation |
+| `Fines` | FE09 Fine |
+| `NotificationTemplates`, `Notifications`, `NotificationAttempts` | FE10 Notification |
+| `AuditLogs` | Cross-feature (FE02, FE05, FE07, FE09, FE11) |
+
+A feature must only write the tables it owns; cross-feature access goes through the documented
+integration points in Section 5, never by directly mutating another feature's tables.
 
 ---
 

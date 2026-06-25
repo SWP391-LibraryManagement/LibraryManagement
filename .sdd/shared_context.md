@@ -1,10 +1,10 @@
 # Shared Context — Library Management System
 
-# Version: 0.1.0
+# Version: 1.0.0
 
-# Status: DRAFT
+# Status: APPROVED
 
-# Last Updated: 2026-06-09
+# Last Updated: 2026-06-25
 
 ---
 
@@ -126,25 +126,37 @@ These decisions close the shared Phase 0 business questions so that feature spec
 
 ---
 
-## 6. Suggested Data Entities
+## 6. Data Entities (Confirmed)
 
-Initial entities may include:
+These are the actual tables in the shared schema (`database/Librarymanagement.sql`). For how they
+relate to each other, see the system ERD in
+[`docs/architecture/feature-integration-map.md`](../docs/architecture/feature-integration-map.md) (Section 4.1).
 
-| Entity            | Purpose                                           |
-| ----------------- | ------------------------------------------------- |
-| User              | Stores login account information                  |
-| Role              | Defines system permissions                        |
-| Member            | Stores library reader information                 |
-| Book              | Stores book information                           |
-| Category          | Groups books by category                          |
-| Author            | Stores author information if needed               |
-| Publisher         | Stores publisher information if needed            |
-| BorrowTransaction | Stores borrowing records                          |
-| ReturnTransaction | Stores return records if separated from borrowing |
-| Fine              | Stores overdue fine information                   |
-| AuditLog          | Stores important actions                          |
+| Entity | Purpose | Owning Feature(s) |
+| ------ | ------- | ----------------- |
+| `Users` | Login account information and status | FE02, FE11 |
+| `Roles` | System permission roles | FE11 |
+| `UserRoles` | Maps users to roles (many-to-many) | FE02, FE11 |
+| `UserProfiles` | Personal profile details | FE03 |
+| `Members` | Library reader record | FE04 |
+| `MembershipApplications` | Membership apply/approval records | FE04 |
+| `AuthTokens` | Hashed verification/reset/refresh tokens | FE02 |
+| `Categories` | Book categories | FE05 |
+| `Authors` | Author information | FE05 |
+| `Publishers` | Publisher information | FE05 |
+| `Books` | Book metadata | FE05 |
+| `BookCopies` | Physical copies, barcode, status, availability | FE06 |
+| `BorrowRequests` | Borrow request header | FE07 |
+| `BorrowDetails` | Per-copy borrow/return/renewal records | FE07 |
+| `Reservations` | Reservation queue / hold records | FE08 |
+| `Fines` | Overdue/lost/damaged fine records | FE09 |
+| `NotificationTemplates` | Reusable notification templates | FE10 |
+| `Notifications` | Notification records | FE10 |
+| `NotificationAttempts` | Delivery attempts / status | FE10 |
+| `AuditLogs` | Important administrative actions | Cross-feature |
 
-This list is not final. Database design must be confirmed in ADR/RFC files under [`.sdd/rfcs/`](rfcs) and related feature specs.
+Any schema change must update `database/Librarymanagement.sql`, the relevant feature `SPEC.md`, and
+`ADR-002-database-design.md` before implementation (see Migration Policy in ADR-002).
 
 ---
 
