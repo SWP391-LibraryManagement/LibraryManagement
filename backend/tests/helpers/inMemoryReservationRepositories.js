@@ -262,6 +262,30 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
       return mapReservation(reservation);
     },
+
+    async expireOverdueHolds(now) {
+      const reference = new Date(now).getTime();
+      const expired = [];
+
+      reservations.forEach((reservation) => {
+        if (
+          reservation.status === 'NOTIFIED' &&
+          reservation.expiresAt &&
+          new Date(reservation.expiresAt).getTime() < reference
+        ) {
+          reservation.status = 'EXPIRED';
+          reservation.updatedAt = new Date();
+          const copy = getCopy(reservation.copyId);
+          if (copy && copy.status === 'RESERVED') {
+            copy.status = 'AVAILABLE';
+            copy.updatedAt = new Date();
+          }
+          expired.push({ reservationId: reservation.reservationId, copyId: reservation.copyId });
+        }
+      });
+
+      return expired;
+    },
   };
 
   return {

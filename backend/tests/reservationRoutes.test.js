@@ -11,14 +11,14 @@ const {
   makeInMemoryReservationDependencies,
 } = require('./helpers/inMemoryReservationRepositories');
 
-function makeTestApp() {
+function makeTestApp({ notificationRepository } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const reservationDependencies = makeInMemoryReservationDependencies(authDependencies.state);
   const authService = createAuthService(authDependencies);
   const reservationService = createReservationService({
     reservationRepository: reservationDependencies.reservationRepository,
     auditLogRepository: authDependencies.auditLogRepository,
-    notificationRepository: authDependencies.notificationRepository,
+    notificationRepository: notificationRepository || authDependencies.notificationRepository,
   });
   const app = createApp({ authService, reservationService });
 
@@ -253,6 +253,106 @@ describe('FE08 reservation management', () => {
           sourceFeature: 'FE08',
           sourceEntityType: 'RESERVATION',
         }),
+      ])
+    );
+  });
+
+  test('expire-holds expires an overdue hold and promotes the next reservation (FR-FE08-019)', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'hold.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'hold.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'hold.lib@example.test',
+      role: 'LIBRARIAN', approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 })
+      .expect(200);
+
+    // Giả lập hold của member đầu đã quá hạn giữ chỗ
+    const firstReservation = reservationDependencies.state.reservations.find(
+      (r) => r.userId === firstMember.userId && r.copyId === 1
+    );
+    firstReservation.expiresAt = new Date(Date.now() - 60 * 1000);
+
+    const expireResponse = await request(app)
+      .post('/api/reservations/expire-holds')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(expireResponse.status).toBe(200);
+    expect(expireResponse.body.expiredCount).toBe(1);
+
+    expect(
+      reservationDependencies.state.reservations.find(
+        (r) => r.userId === firstMember.userId && r.copyId === 1
+      ).status
+    ).toBe('EXPIRED');
+    expect(
+      reservationDependencies.state.reservations.find(
+        (r) => r.userId === secondMember.userId && r.copyId === 1
+      ).status
+    ).toBe('NOTIFIED');
+    expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'RESERVED'
+    );
+  });
+
+  test('process-queue keeps the hold when notification fails and records the failure (FR-FE08-021)', async () => {
+    const failingNotification = {
+      createNotification: jest.fn(async () => {
+        throw new Error('smtp down');
+      }),
+    };
+    const { app, authDependencies, reservationDependencies } = makeTestApp({
+      notificationRepository: failingNotification,
+    });
+    const member = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'notify.fail@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'notify.lib@example.test',
+      role: 'LIBRARIAN', approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const processResponse = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(processResponse.status).toBe(200);
+    expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
+    expect(failingNotification.createNotification).toHaveBeenCalled();
+    expect(authDependencies.state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' }),
       ])
     );
   });

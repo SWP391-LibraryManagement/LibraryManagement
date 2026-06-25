@@ -369,6 +369,50 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
   }
 }
 
+async function expireOverdueHolds(now) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const expiredResult = await new sql.Request(transaction)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE Reservations
+        SET Status = 'EXPIRED',
+            UpdatedAt = GETDATE()
+        OUTPUT INSERTED.ReservationId, INSERTED.CopyId
+        WHERE Status = 'NOTIFIED'
+          AND ExpiresAt IS NOT NULL
+          AND ExpiresAt < @Now
+      `);
+
+    const expired = expiredResult.recordset.map((row) => ({
+      reservationId: row.ReservationId,
+      copyId: row.CopyId,
+    }));
+
+    for (const item of expired) {
+      await new sql.Request(transaction)
+        .input('CopyId', sql.Int, item.copyId)
+        .query(`
+          UPDATE BookCopies
+          SET Status = 'AVAILABLE',
+              UpdatedAt = GETDATE()
+          WHERE CopyId = @CopyId
+            AND Status = 'RESERVED'
+        `);
+    }
+
+    await transaction.commit();
+    return expired;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
 module.exports = {
   getMemberEligibility,
   findCopyById,
@@ -380,4 +424,5 @@ module.exports = {
   cancelReservation,
   findNextActiveReservationForCopy,
   holdReservation,
+  expireOverdueHolds,
 };
