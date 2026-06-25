@@ -225,6 +225,18 @@ function createAuthService({
     }
   }
 
+  /** FR-FE02-020: chặn đặt mật khẩu mới trùng mật khẩu hiện tại */
+  async function ensureNewPasswordDiffers(user, newPassword, context) {
+    const sameAsCurrent = await verifyPassword(newPassword || '', user.passwordHash);
+    if (sameAsCurrent) {
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_FAILURE', {
+        userId: user.userId,
+        targetId: user.userId,
+      });
+      throw errors.badRequest('PASSWORD_REUSED', 'Mật khẩu mới phải khác mật khẩu hiện tại.');
+    }
+  }
+
   /** Cấp access token cho user dựa vào sessionId */
   async function issueAccessTokenForUser(user, sessionId) {
     const roles = await userRepository.getRolesByUserId(user.userId);
@@ -427,8 +439,25 @@ function createAuthService({
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
-    const isLockedByTime = user.lockedUntil && new Date(user.lockedUntil).getTime() > clock().getTime();
-    if (isLockedByTime || user.status === 'LOCKED') {
+    const lockExpiry = user.lockedUntil ? new Date(user.lockedUntil).getTime() : null;
+    const isLockedByTime = lockExpiry !== null && lockExpiry > clock().getTime();
+
+    if (isLockedByTime) {
+      await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
+      throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
+    }
+
+    // AF-FE02-003: tự động mở khóa khi cửa sổ khóa do đăng nhập sai đã hết hạn
+    if (user.status === 'LOCKED' && lockExpiry !== null) {
+      await userRepository.unlockExpiredAccount(user.userId);
+      user.status = 'ACTIVE';
+      user.failedLoginCount = 0;
+      user.lockedUntil = null;
+      await writeAudit(context, 'AUTH_ACCOUNT_AUTO_UNLOCKED', { userId: user.userId, targetId: user.userId });
+    }
+
+    // Khóa không có thời hạn (ví dụ admin khóa thủ công) vẫn bị chặn
+    if (user.status === 'LOCKED') {
       await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
       throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
     }
@@ -506,6 +535,7 @@ function createAuthService({
     const user = await requireActiveUser(context.userId);
     await verifyCurrentPassword(user, input.currentPassword, context);
     validateNewPassword(input.newPassword);
+    await ensureNewPasswordDiffers(user, input.newPassword, context);
 
     await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
     await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', { userId: user.userId, targetId: user.userId });
@@ -517,6 +547,7 @@ function createAuthService({
     const user = await requireActiveUser(context.userId);
     await verifyCurrentPassword(user, input.currentPassword, context);
     validateNewPassword(input.newPassword);
+    await ensureNewPasswordDiffers(user, input.newPassword, context);
 
     const { otp } = await createOtpToken(user.userId, 'CHANGE_PASSWORD_OTP', env.changePasswordOtpTtlMinutes, context.ip);
 
@@ -538,6 +569,7 @@ function createAuthService({
     const user = await requireActiveUser(context.userId);
     const tokenRecord = await validateOtpToken('CHANGE_PASSWORD_OTP', input.otp, user.userId);
     validateNewPassword(input.newPassword);
+    await ensureNewPasswordDiffers(user, input.newPassword, context);
 
     await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
     await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
