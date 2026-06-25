@@ -442,6 +442,8 @@ describe('FE08 reservation management', () => {
 
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
+    // TD-010: the current reservation state is returned alongside the 409.
+    expect(response.body.error.details).toMatchObject({ reservationId, status: 'EXPIRED' });
   });
 
   test('process-queue skips an ineligible member instead of holding (FR-FE08-018)', async () => {

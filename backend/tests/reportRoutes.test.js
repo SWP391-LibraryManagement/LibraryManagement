@@ -204,4 +204,97 @@ describe('FE12 reporting and statistics', () => {
 
     expect(invalidRangeResponse.status).toBe(400);
   });
+
+  // FR-FE12 security: every report endpoint requires auth and rejects non-staff members.
+  test('all three report endpoints require authentication and reject members', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.guard.member@example.test',
+    });
+
+    for (const path of ['/api/reports/borrowing', '/api/reports/inventory', '/api/reports/users']) {
+      await request(app).get(path).expect(401);
+
+      const forbidden = await request(app).get(path).set('Authorization', authHeader(member.accessToken));
+      expect(forbidden.status).toBe(403);
+      expect(forbidden.body.error.code).toBe('ROLE_REQUIRED');
+    }
+  });
+
+  // FR-FE12 validation: unsupported filter values and bad ranges are rejected on each endpoint.
+  test('rejects invalid filter values and date ranges across endpoints', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.invalid.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
+
+    const badBorrowingStatus = await request(app)
+      .get('/api/reports/borrowing?status=NOT_A_STATUS')
+      .set('Authorization', authHeader(admin.accessToken));
+    expect(badBorrowingStatus.status).toBe(400);
+    expect(badBorrowingStatus.body.error.code).toBe('VALIDATION_ERROR');
+
+    const badCopyStatus = await request(app)
+      .get('/api/reports/inventory?status=NOT_A_COPY_STATUS')
+      .set('Authorization', authHeader(admin.accessToken));
+    expect(badCopyStatus.status).toBe(400);
+
+    const badUserRange = await request(app)
+      .get('/api/reports/users?fromDate=2030-02-02&toDate=2030-01-01')
+      .set('Authorization', authHeader(admin.accessToken));
+    expect(badUserRange.status).toBe(400);
+  });
+
+  // FR-FE12: a non-matching inventory filter returns empty totals, not an error.
+  test('inventory report returns empty totals for a non-matching filter', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.empty.inv@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const response = await request(app)
+      .get('/api/reports/inventory?bookId=999999')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body.totals.books).toBe(0);
+    expect(response.body.totals.copies).toBe(0);
+  });
+
+  // NFR-FE12-LOG: viewing a report writes an audit log entry.
+  test('viewing a report writes an audit log entry', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.audit.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
+
+    await request(app)
+      .get('/api/reports/borrowing')
+      .set('Authorization', authHeader(admin.accessToken))
+      .expect(200);
+
+    expect(authDependencies.state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'REPORT_BORROWING_VIEW' }),
+      ])
+    );
+  });
 });

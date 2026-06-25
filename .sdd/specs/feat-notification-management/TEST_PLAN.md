@@ -37,7 +37,9 @@ Notification requests, template validation, safe payload behavior, pending proce
 
 ## 5. Current Evidence
 
-- `backend/tests/notificationRoutes.test.js`
+- `backend/tests/notificationRoutes.test.js` (10 tests: create/idempotency, template-data missing,
+  unsupported type/channel, unknown template, recipient required/not-found, userId resolve + audit,
+  payload sanitize/redaction, process-pending success/failure/empty, RBAC 401/403).
 - `backend/tests/integration.test.js`
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
