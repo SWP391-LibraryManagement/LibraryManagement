@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-06-25 - Mark implementation as deferred (v0.3.1)
+
+- Added an explicit "Implementation Status: NOT IMPLEMENTED (deferred)" note to the spec header.
+- Recorded (Validation Gate finding) that no FE06 backend layer exists yet beyond the `BookCopies`
+  model: API endpoints (Section 11) and transition guards/invariants (Section 10.3) are not enforced
+  in code; copy status is changed only indirectly by FE07/FE08. A dedicated FE06 layer is deferred.
+- No code change; spec remains APPROVED for a future implementation iteration.
+
 ## 2026-06-25 - Add Book Copy State Model & Transition Rules
 
 - Bumped `SPEC.md` version 0.2.0 -> 0.3.0; Last Updated 2026-06-25; Status unchanged (APPROVED).
