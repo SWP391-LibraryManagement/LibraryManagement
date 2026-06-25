@@ -1,5 +1,9 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-06-25
+
+- Completed Traceability Matrix to cover all BR/FR/AC IDs.
+
 ## 2026-06-10
 
 - Created FE04 Membership Management feature specification structure.

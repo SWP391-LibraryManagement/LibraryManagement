@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-06-25 - Traceability Matrix Completed — v0.3.1
+
+- Completed Traceability Matrix to cover all BR/FR/AC IDs.
+- Bumped Version 0.3.0 -> 0.3.1; Last Updated 2026-06-25; Status remains APPROVED.
+
 ## 2026-06-25 - Spec Locked (Avatar Storage Policy Approved) — v0.3.0
 
 - Approved Q-FE03-004: avatars are stored on the server local filesystem under a public uploads directory (`/uploads/avatars/`) with server-generated filenames; the public path/URL is saved in `UserProfiles.AvatarUrl`. Allowed types JPG/JPEG/PNG/WebP, max 2 MB. Cloud/object storage is out of scope for Phase 1. (Matches the backend implemented on 2026-06-20.)
