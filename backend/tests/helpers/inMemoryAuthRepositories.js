@@ -103,6 +103,16 @@ function makeInMemoryAuthDependencies() {
       user.updatedAt = new Date();
     },
 
+    async unlockExpiredAccount(userId) {
+      const user = users.find((item) => item.userId === Number(userId));
+      user.failedLoginCount = 0;
+      user.lockedUntil = null;
+      if (user.status === 'LOCKED') {
+        user.status = 'ACTIVE';
+      }
+      user.updatedAt = new Date();
+    },
+
     async updatePassword(userId, passwordHash) {
       const user = users.find((item) => item.userId === Number(userId));
       user.passwordHash = passwordHash;

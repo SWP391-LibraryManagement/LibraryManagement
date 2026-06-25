@@ -619,6 +619,21 @@ async function resetFailedLoginsAndSetLastLogin(userId) {
     `);
 }
 
+async function unlockExpiredAccount(userId) {
+  const pool = await getPool();
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      UPDATE Users
+      SET FailedLoginCount = 0,
+          LockedUntil = NULL,
+          Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
+          UpdatedAt = GETDATE()
+      WHERE UserId = @UserId
+    `);
+}
+
 async function updatePassword(userId, passwordHash) {
   const pool = await getPool();
   await pool
@@ -678,6 +693,7 @@ module.exports = {
   markEmailVerified,
   updateFailedLogin,
   resetFailedLoginsAndSetLastLogin,
+  unlockExpiredAccount,
   updatePassword,
   updatePasswordAndActivate,
 };
