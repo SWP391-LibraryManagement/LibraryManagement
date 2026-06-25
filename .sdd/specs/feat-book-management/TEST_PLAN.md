@@ -1,11 +1,12 @@
 ﻿# FE05 Test Plan - Book Management
 
-Version: 0.1.0
-Status: DRAFT - prototype reconciliation required
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - prototype reconciliation required (not started)
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-book-management/SPEC.md`
 Feature IDs: `BR-FE05-*`, `FR-FE05-*`, `AC-FE05-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -54,5 +55,5 @@ Book catalog management for authorized staff, including create, update, metadata
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

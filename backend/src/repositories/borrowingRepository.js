@@ -300,6 +300,7 @@ async function findBorrowDetailById(borrowDetailId) {
   return mapBorrowDetail(result.recordset[0]);
 }
 
+// @spec FR-FE07-022 — create runs inside a transaction so request + details commit or roll back together (NFR-FE07-TXN-001)
 async function createBorrowRequest({ userId, copyIds }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
@@ -410,6 +411,9 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
   return result.recordset.map(mapBorrowDetail);
 }
 
+// @spec FR-FE07-019, FR-FE07-022 — approval locks the copies (UPDLOCK/HOLDLOCK) and updates request,
+// details, due dates and copy statuses atomically; any partial failure rolls the whole transaction back
+// (NFR-FE07-TXN-001). Returns null when a copy is no longer AVAILABLE so concurrent approvals cannot double-borrow.
 async function approveBorrowRequest({ requestId, approvedBy, approvalDate, dueDate }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
@@ -507,6 +511,7 @@ async function rejectBorrowRequest({ requestId, rejectedBy }) {
   return findBorrowRequestById(requestId);
 }
 
+// @spec FR-FE07-022 — return updates detail, copy status and request completion atomically; partial failure rolls back (NFR-FE07-TXN-002)
 async function returnBorrowDetail({ borrowDetailId, detailStatus, copyStatus, returnDate }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);

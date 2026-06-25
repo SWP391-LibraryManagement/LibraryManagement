@@ -1,11 +1,12 @@
-﻿# FE10 Test Plan - Notification Management
+# FE10 Test Plan - Notification Management
 
-Version: 0.1.0
-Status: DRAFT - pending team review
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: READY FOR REVIEW
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
 Feature IDs: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -38,10 +39,11 @@ Notification requests, template validation, safe payload behavior, pending proce
 
 - `backend/tests/notificationRoutes.test.js`
 - `backend/tests/integration.test.js`
+- Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
-- If frontend notification inbox exists, add manual UI evidence and/or future E2E test for inbox states.
+- If a frontend notification inbox exists, add manual UI evidence and/or a future E2E test for inbox states.
 
 ## 7. Required Commands / Evidence Before Merge
 
@@ -49,5 +51,5 @@ Notification requests, template validation, safe payload behavior, pending proce
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

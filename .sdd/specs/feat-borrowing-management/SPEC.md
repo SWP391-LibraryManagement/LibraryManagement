@@ -563,14 +563,14 @@ This feature does not include:
 | FR-FE07-010 | UC30 | FT31 | Ready for review |
 | FR-FE07-011 | UC34 | FT35 | Ready for review |
 | FR-FE07-013 | UC33 | FT34 | Ready for review |
-| FR-FE07-014 | UC29, UC32 | TBD | Ready for review |
-| FR-FE07-015 | UC29, UC31 | TBD | Ready for review |
-| FR-FE07-016 | UC29, UC31 | TBD | Ready for review |
-| FR-FE07-017 | UC29 | TBD | Ready for review |
-| FR-FE07-018 | UC32 | TBD | Ready for review |
-| FR-FE07-019 | UC32 | TBD | Ready for review |
-| FR-FE07-020 | UC31 | TBD | Ready for review |
-| FR-FE07-021 | UC31, UC33 | TBD | Ready for review |
+| FR-FE07-014 | UC29, UC32 | borrowingRoutes.test.js > "member exceeding the borrow limit of 5 active copies is rejected" | Ready for review |
+| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account or unapproved membership cannot create a borrow request" | Ready for review |
+| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
+| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
+| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
+| FR-FE07-019 | UC32 | borrowingRoutes.test.js > "concurrent approvals of the same copy do not double-borrow it" | Ready for review |
+| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal is rejected for an overdue borrowed item and keeps the due date" | Ready for review |
+| FR-FE07-021 | UC31, UC33 | borrowingRoutes.test.js > "invalid return transitions are rejected (second return and return date before borrow date)" | Ready for review |
 | FR-FE07-022 | UC32, UC33 | TBD | Ready for review |
 
 ---

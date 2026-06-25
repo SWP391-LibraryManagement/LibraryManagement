@@ -100,14 +100,17 @@ function createReservationService({
   async function ensureEligibleMember(userId) {
     const eligibility = await reservationRepository.getMemberEligibility(userId);
 
+    // @spec FR-FE08-011 — reject reservation when the member ID does not exist (EC-FE08-001)
     if (!eligibility) {
       throw errors.notFound('MEMBER_NOT_FOUND', 'Member account was not found.');
     }
 
+    // @spec FR-FE08-012 — reject reservation when the member account is inactive (EC-FE08-002, BR-FE08-005)
     if (eligibility.userStatus !== 'ACTIVE') {
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
+    // @spec FR-FE08-013 — reject reservation when membership is not approved (EC-FE08-003, BR-FE08-005)
     if (eligibility.memberStatus !== 'APPROVED') {
       throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to reserve books.');
     }
@@ -122,6 +125,7 @@ function createReservationService({
     const copyId = toPositiveInteger(input.copyId, 'Copy ID');
     const copy = await reservationRepository.findCopyById(copyId);
 
+    // @spec FR-FE08-014 — reject reservation when the requested copy does not exist (EC-FE08-004)
     if (!copy) {
       throw errors.notFound('COPY_NOT_FOUND', 'Book copy was not found.');
     }
@@ -141,6 +145,7 @@ function createReservationService({
       throw errors.conflict('DUPLICATE_ACTIVE_RESERVATION', 'You already have an active reservation for this copy.');
     }
 
+    // @spec FR-FE08-015 — reject when the member already holds the max active reservations (Q-FE08-003)
     const activeCount = await reservationRepository.countActiveReservationsForUser(userId);
     if (activeCount >= MAX_ACTIVE_RESERVATIONS) {
       throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 active reservations.');
@@ -182,10 +187,12 @@ function createReservationService({
       throw errors.notFound('RESERVATION_NOT_FOUND', 'Reservation was not found.');
     }
 
+    // @spec FR-FE08-016 — a member may cancel only their own reservation (EC-FE08-006, BR-FE08-003)
     if (reservation.userId !== actor.userId) {
       throw errors.forbidden('RESERVATION_OWNER_REQUIRED', 'You can cancel only your own reservations.');
     }
 
+    // @spec FR-FE08-017 — reject re-cancelling a reservation that is already cancelled/expired (EC-FE08-007)
     if (reservation.status !== 'ACTIVE' && reservation.status !== 'NOTIFIED') {
       throw errors.conflict('RESERVATION_NOT_ACTIVE', 'Only active or notified reservations can be cancelled.');
     }
@@ -240,8 +247,8 @@ function createReservationService({
       throw errors.conflict('COPY_NOT_AVAILABLE', 'Copy is not available for reservation queue processing.');
     }
 
-    // FR-FE08-021: a notification failure must not undo the hold; keep the held
-    // state and record the failure so it can be retried later.
+    // @spec FR-FE08-021 — a notification failure must not undo the hold; keep the held
+    // state and record the failure so it can be retried later (EC-FE08-009, BR-FE08-012).
     try {
       await createNotification(processedReservation);
     } catch (notifyError) {
@@ -302,6 +309,7 @@ function createReservationService({
 
     const nextReservation = await reservationRepository.findNextActiveReservationForCopy(copyId);
 
+    // @spec FR-FE08-020 — when no eligible active reservation exists, select nothing and leave the copy available (EC-FE08-008)
     if (!nextReservation) {
       return {
         selectedReservation: null,
@@ -329,7 +337,7 @@ function createReservationService({
         metadata: { copyId: item.copyId },
       });
 
-      // FR-FE08-019: offer the freed copy to the next eligible reservation in the queue.
+      // @spec FR-FE08-019 — offer the freed copy to the next eligible reservation in the queue (AF-FE08-004).
       const next = await reservationRepository.findNextActiveReservationForCopy(item.copyId);
       if (next) {
         const held = await holdReservation(next, actor, context);

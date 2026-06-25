@@ -1,11 +1,12 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.1.0
-Status: DRAFT - pending team review
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - not started (planned targets)
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -54,5 +55,5 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

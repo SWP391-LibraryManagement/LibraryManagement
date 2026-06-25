@@ -1,11 +1,12 @@
-﻿# FE07 Test Plan - Borrowing Management
+# FE07 Test Plan - Borrowing Management
 
-Version: 0.1.0
-Status: DRAFT - pending team review
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: READY FOR REVIEW
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
 Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -13,43 +14,41 @@ Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
 
 Borrow request creation, approval/rejection, member borrowing history, return flow, renewal flow, and core circulation business rules.
 
-## 2. Unit Test Targets
+## 2. Unit / Service Test Targets
 
 - Borrow eligibility: approved membership, active account, no blocking overdue/fine state.
 - Borrow limit: maximum 5 active borrowed copies.
-- Copy availability check.
+- Copy availability check (at create and re-check at approval).
 - Due date calculation: default 14 calendar days.
-- Approve/reject/return/renew state transitions.
-- Return transaction recording.
-- Renewal boundary and conflict cases.
+- Approve/reject/return/renew state transitions; renewal boundary and conflict cases.
 
 ## 3. API / Integration Test Targets
 
-- `POST /borrowing/borrow-requests`: happy path, unavailable copy, over limit, not approved member.
-- `GET /borrowing/borrow-requests/me`: own history only.
-- `GET /borrowing/borrow-requests`: staff list, unauthorized member forbidden.
-- `GET /borrowing/members/:memberId/borrowings`: staff happy path, not found, forbidden.
-- `PATCH /borrowing/borrow-requests/:requestId/approve`: happy path, conflict, unavailable copy, forbidden.
-- `PATCH /borrowing/borrow-requests/:requestId/reject`: happy path, invalid state.
-- `PATCH /borrowing/borrow-details/:borrowDetailId/return`: happy path, already returned, not found.
-- `PATCH /borrowing/borrow-details/:borrowDetailId/renew`: happy path, overdue, limit, invalid state.
+- `POST /api/borrow-requests`: happy, duplicate/unavailable copy, over limit, inactive/unapproved member.
+- `GET /api/borrow-requests/me`: own history only.
+- `GET /api/borrow-requests`: staff list, unauthorized member forbidden.
+- `GET /api/members/:memberId/borrowings`: staff happy, not found, forbidden.
+- `PATCH /api/borrow-requests/:requestId/approve`: happy, unavailable copy, concurrent double-borrow, forbidden.
+- `PATCH /api/borrow-requests/:requestId/reject`: happy, invalid state.
+- `PATCH /api/borrow-details/:borrowDetailId/return`: happy, invalid state/date, already returned.
+- `PATCH /api/borrow-details/:borrowDetailId/renew`: happy, overdue, renewal limit, reservation conflict.
 
 ## 4. E2E / Manual Acceptance Flow
 
-- Member requests borrow.
-- Librarian approves.
-- Member sees borrowing history.
-- Librarian records return.
-- Overdue/renewal behavior is checked with deterministic dates.
+- Member requests borrow → librarian approves → member sees history → librarian records return.
+- Overdue/renewal behavior verified with deterministic dates.
 
 ## 5. Current Evidence
 
-- `backend/tests/borrowingRoutes.test.js`
-- `backend/tests/integration.test.js`
+- `backend/tests/borrowingRoutes.test.js` (13 tests; AC-FE07-001..006/009..013, FR-FE07-014..021).
+- `backend/tests/integration.test.js`.
+- Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
-- Week 11 should verify service-level coverage and all spec edge cases, especially date and limit boundaries.
+- FR-FE07-017 (zero-valid-after-validation) and FR-FE07-022 (transaction rollback) are exercised only
+  indirectly; add explicit cases during the Week 11 Testing Sprint.
+- TD-007 (per-item vs all-or-nothing reject) and TD-008 (model `allowedValues` sync) remain open decisions.
 
 ## 7. Required Commands / Evidence Before Merge
 
@@ -57,5 +56,5 @@ Borrow request creation, approval/rejection, member borrowing history, return fl
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

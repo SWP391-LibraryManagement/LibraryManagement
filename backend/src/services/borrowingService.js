@@ -103,6 +103,7 @@ function createBorrowingService({
     }
   }
 
+  // @spec FR-FE07-015 — reject borrow/renew when account inactive or membership not approved (BR-FE07-004, EC-FE07-002/003)
   async function ensureEligibleMember(userId) {
     const eligibility = await borrowingRepository.getMemberEligibility(userId);
 
@@ -121,6 +122,7 @@ function createBorrowingService({
     return eligibility;
   }
 
+  // @spec FR-FE07-016 — block borrow/renew when member has an unpaid fine (>0) or an overdue active loan (BR-FE07-006, AF-FE07-001)
   async function ensureNoBorrowingBlockers(userId) {
     if (await borrowingRepository.hasBlockingFine(userId)) {
       throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
@@ -131,6 +133,7 @@ function createBorrowingService({
     }
   }
 
+  // @spec FR-FE07-017 — reject duplicate copies or an empty/zero-valid request (EC-FE07-006/007)
   function normalizeCopyIds(copyIds) {
     if (!Array.isArray(copyIds) || copyIds.length === 0) {
       throw errors.badRequest('COPY_IDS_REQUIRED', 'At least one copy ID is required.');
@@ -146,6 +149,8 @@ function createBorrowingService({
     return normalizedCopyIds;
   }
 
+  // @spec FR-FE07-017, FR-FE07-018 — reject non-existent copies and copies no longer AVAILABLE at create/approve (BR-FE07-007/008, EC-FE07-004/005, AF-FE07-002)
+  // @spec FR-FE08-023 — a copy held (RESERVED) for a NOTIFIED reservation is not AVAILABLE, so it cannot be borrowed by another member (BR-FE08-011)
   async function validateCopiesAvailable(copyIds) {
     const copies = await borrowingRepository.findCopiesByIds(copyIds);
     const foundIds = new Set(copies.map((copy) => copy.copyId));
@@ -165,6 +170,7 @@ function createBorrowingService({
     return copies;
   }
 
+  // @spec FR-FE07-014 — reject when the member would exceed 5 active borrowed copies (BR-FE07-005, AC-FE07-003)
   async function validateBorrowLimit(userId, requestedCount) {
     const activeCount = await borrowingRepository.countActiveBorrowedCopies(userId);
 
@@ -270,8 +276,10 @@ function createBorrowingService({
       dueDate,
     });
 
+    // @spec FR-FE07-019 — concurrency-safe approval: the repository approves under a lock and returns
+    // null if the copy was taken first, so at most one approval wins and no copy is double-borrowed.
     if (!approvedRequest) {
-      throw errors.conflict('BORROW_REQUEST_APPROVAL_FAILED', 'Borrow request cannot be approved safely.');
+      throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
     }
 
     await writeAudit(context, 'BORROW_REQUEST_APPROVE', {
@@ -349,12 +357,14 @@ function createBorrowingService({
       throw errors.notFound('BORROW_DETAIL_NOT_FOUND', 'Borrow detail was not found.');
     }
 
+    // @spec FR-FE07-021 — reject a return that targets a detail not in BORROWED state (already returned/lost/damaged) (EC-FE07-008)
     if (borrowDetail.status !== 'BORROWED') {
       throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be returned.');
     }
 
     const returnDate = input.returnDate ? new Date(input.returnDate) : clock();
 
+    // @spec FR-FE07-021 — reject a return date earlier than the borrow date (EC-FE07-009)
     if (borrowDetail.borrowDate && toDateOnly(returnDate) < toDateOnly(new Date(borrowDetail.borrowDate))) {
       throw errors.badRequest('INVALID_RETURN_DATE', 'Return date cannot be before borrow date.');
     }
@@ -411,6 +421,9 @@ function createBorrowingService({
       throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
     }
 
+    // @spec FR-FE07-020, FR-FE07-021 — reject renewal when the detail is not BORROWED, already renewed
+    // once, overdue, blocked by an unpaid fine, or reserved by another member; due date stays unchanged
+    // (BR-FE07-015/018, AF-FE07-004, EC-FE07-010).
     if (borrowDetail.status !== 'BORROWED') {
       throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be renewed.');
     }
@@ -426,6 +439,7 @@ function createBorrowingService({
     await ensureEligibleMember(borrowDetail.userId);
     await ensureNoBorrowingBlockers(borrowDetail.userId);
 
+    // @spec FR-FE08-024 — an active reservation / held copy for another member blocks FE07 renewal of the same copy (BR-FE08-014)
     if (await borrowingRepository.hasReservationConflict(borrowDetail.copyId, borrowDetail.userId)) {
       throw errors.conflict('RESERVATION_BLOCKS_RENEWAL', 'Another member has reservation priority for this copy.');
     }
