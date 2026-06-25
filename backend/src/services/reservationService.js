@@ -186,8 +186,8 @@ function createReservationService({
       throw errors.forbidden('RESERVATION_OWNER_REQUIRED', 'You can cancel only your own reservations.');
     }
 
-    if (reservation.status !== ACTIVE_STATUS) {
-      throw errors.conflict('RESERVATION_NOT_ACTIVE', 'Only active reservations can be cancelled.');
+    if (reservation.status !== 'ACTIVE' && reservation.status !== 'NOTIFIED') {
+      throw errors.conflict('RESERVATION_NOT_ACTIVE', 'Only active or notified reservations can be cancelled.');
     }
 
     const cancelledReservation = await reservationRepository.cancelReservation(reservationId);

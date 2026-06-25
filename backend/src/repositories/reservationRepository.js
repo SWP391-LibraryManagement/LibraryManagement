@@ -250,7 +250,7 @@ async function cancelReservation(reservationId) {
         SELECT TOP 1 CopyId, NotifiedAt
         FROM Reservations WITH (UPDLOCK, HOLDLOCK)
         WHERE ReservationId = @ReservationId
-          AND Status = 'ACTIVE'
+          AND Status IN ('ACTIVE', 'NOTIFIED')
       `);
 
     const reservation = reservationResult.recordset[0];
@@ -336,7 +336,8 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
       .input('ExpiresAt', sql.DateTime, expiresAt)
       .query(`
         UPDATE Reservations
-        SET NotifiedAt = @NotifiedAt,
+        SET Status = 'NOTIFIED',
+            NotifiedAt = @NotifiedAt,
             ExpiresAt = @ExpiresAt,
             QueuePosition = 1,
             UpdatedAt = GETDATE()
