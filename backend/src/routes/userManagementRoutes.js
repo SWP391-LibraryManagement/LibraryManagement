@@ -22,10 +22,10 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
     : authenticate;
   const requireAdmin = [authenticateOrDevAdmin, requireRole('ADMIN')];
 
-  router.get('/', controller.listUsers);
-  router.get('/roles', controller.listRoles);
+  router.get('/', requireAdmin, controller.listUsers);
+  router.get('/roles', requireAdmin, controller.listRoles);
   router.get('/audit-logs', requireAdmin, controller.listAuditLogs);
-  router.get('/:userId', controller.getUser);
+  router.get('/:userId', requireAdmin, controller.getUser);
   router.post('/', requireAdmin, controller.createUser);
   router.put('/:userId', requireAdmin, controller.updateUser);
   router.patch('/:userId/status', requireAdmin, controller.updateStatus);

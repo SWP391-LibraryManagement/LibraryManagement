@@ -37,11 +37,43 @@ describe('FE11 user management routes', () => {
     const app = makeApp({ userManagementService });
 
     const response = await request(app)
-      .get('/api/users?search=member');
+      .get('/api/users?search=member')
+      .set('Authorization', 'Bearer token');
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
     expect(userManagementService.listUsers).toHaveBeenCalledWith(expect.objectContaining({ search: 'member' }));
+  });
+
+  test('GET /api/users requires authentication', async () => {
+    const app = makeApp();
+
+    const response = await request(app).get('/api/users');
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  test('GET /api/users requires Admin role', async () => {
+    const app = makeApp({ roles: ['MEMBER'] });
+
+    const response = await request(app)
+      .get('/api/users')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+  });
+
+  test('GET /api/users/:userId requires Admin role', async () => {
+    const app = makeApp({ roles: ['MEMBER'] });
+
+    const response = await request(app)
+      .get('/api/users/1')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
   });
 
   test('POST /api/users still requires authentication', async () => {
