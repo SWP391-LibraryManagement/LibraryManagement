@@ -44,9 +44,10 @@ Reservation creation, queue behavior, cancellation, queue processing, hold expir
 
 ## 6. Gaps
 
-- FR-FE08-023/024 (held copy blocks other members' borrow/renewal) are enforced in FE07; an end-to-end
-  cross-feature integration test is still pending (TD-011).
+- FR-FE08-023/024 (held copy blocks other members' borrow/renewal) are covered by cross-feature
+  integration tests in `integration.test.js` (TD-011 resolved).
 - TD-010 (cancel returns current reservation state alongside the 409) is resolved.
+- Remaining: a SQL-Server-backed integration environment for true end-to-end persistence (TD-021).
 
 ## 7. Required Commands / Evidence Before Merge
 

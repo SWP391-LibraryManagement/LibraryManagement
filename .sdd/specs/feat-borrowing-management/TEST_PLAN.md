@@ -46,9 +46,8 @@ Borrow request creation, approval/rejection, member borrowing history, return fl
 
 ## 6. Gaps
 
-- FR-FE07-017 (zero-valid-after-validation) and FR-FE07-022 (transaction rollback) are exercised only
-  indirectly; add explicit cases during the Week 11 Testing Sprint.
-- TD-007 (per-item vs all-or-nothing reject) remains an open decision. TD-008 (model `allowedValues` sync) is resolved.
+- FR-FE07-022 (transaction rollback) is exercised only indirectly; add an explicit case during the Week 11 Testing Sprint.
+- TD-007 resolved: Phase 1 borrow policy is all-or-nothing (spec aligned to code, BR-FE07-022). TD-008 (model `allowedValues` sync) resolved.
 
 ## 7. Required Commands / Evidence Before Merge
 
