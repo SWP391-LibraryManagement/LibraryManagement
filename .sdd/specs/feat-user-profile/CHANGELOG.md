@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-06-25 - Spec Locked (Avatar Storage Policy Approved) — v0.3.0
+
+- Approved Q-FE03-004: avatars are stored on the server local filesystem under a public uploads directory (`/uploads/avatars/`) with server-generated filenames; the public path/URL is saved in `UserProfiles.AvatarUrl`. Allowed types JPG/JPEG/PNG/WebP, max 2 MB. Cloud/object storage is out of scope for Phase 1. (Matches the backend implemented on 2026-06-20.)
+- Added BR-FE03-015 documenting the avatar storage location and added it to the Traceability Matrix.
+- Updated PRE-FE03-006 and the `avatarUrl` data-field note to reference the approved storage policy.
+- Ticked the "Avatar upload storage policy" review-checklist item.
+- Changed Status from `DRAFT - AVATAR UPLOAD REVISION` to `APPROVED`; bumped Version 0.2.0 -> 0.3.0; Last Updated 2026-06-25. Phase 1 spec is now locked.
+
 ## 2026-06-20 - Frontend Avatar Upload UI Implemented
 
 - Added frontend API call for `POST /api/profile/me/avatar` using multipart form-data.
