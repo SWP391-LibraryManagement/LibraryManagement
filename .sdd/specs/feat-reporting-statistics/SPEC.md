@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.0
+# Version: 0.1.1
 
 # Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-06-25
 
 # Feature ID: FE12
 
@@ -315,15 +315,46 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
+| BR-FE12-001 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-002 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-001 | UC58 | FT59 | Ready for review |
 | BR-FE12-004 | UC58 | FT59 | Ready for review |
-| FR-FE12-002 | UC59 | FT60 | Ready for review |
 | BR-FE12-005 | UC59 | FT60 | Ready for review |
-| FR-FE12-003 | UC60 | FT61 | Ready for review |
 | BR-FE12-006 | UC60 | FT61 | Ready for review |
+| BR-FE12-007 | UC60 | FT61 | Ready for review |
+| BR-FE12-008 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-011 | UC60 | FT61 | Ready for review |
+| BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-013 | TBD | TBD | Ready for review |
+| FR-FE12-001 | UC58 | FT59 | Ready for review |
+| FR-FE12-002 | UC59 | FT60 | Ready for review |
+| FR-FE12-003 | UC60 | FT61 | Ready for review |
+| FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| FR-FE12-008 | UC60 | FT61 | Ready for review |
+| AC-FE12-001 | UC58 | FT59 | Ready for review |
+| AC-FE12-002 | UC59 | FT60 | Ready for review |
+| AC-FE12-003 | UC60 | FT61 | Ready for review |
+| AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| AC-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| AC-FE12-008 | UC60 | FT61 | Ready for review |
+
+### 16.1 Coverage Summary
+
+| Requirement Type | Total IDs | Mapped IDs | Coverage |
+| ---------------- | --------- | ---------- | -------- |
+| Business Rules (BR-FE12-*) | 13 | 13 | 100% |
+| Functional Requirements (FR-FE12-*) | 8 | 8 | 100% |
+| Acceptance Criteria (AC-FE12-*) | 8 | 8 | 100% |
+| **Total** | **29** | **29** | **100%** |
+
+> Note: BR-FE12-013 (export out of scope) has no active use case/test mapping (marked TBD) because export functionality is explicitly out of scope per Section 13.
 
 ---
 
