@@ -83,6 +83,19 @@ function createReservationController(reservationService = defaultReservationServ
         return next(error);
       }
     },
+
+    // @spec FR-FE08-019
+    expireHolds: async (req, res, next) => {
+      try {
+        const result = await reservationService.expireHolds(req.user, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
   };
 }
 

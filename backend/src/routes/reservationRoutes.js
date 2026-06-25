@@ -39,6 +39,13 @@ function createReservationRoutes({ authService, reservationService } = {}) {
     controller.processQueue
   );
 
+  router.post(
+    '/expire-holds',
+    authenticate,
+    requireAnyRole('LIBRARIAN', 'ADMIN'),
+    controller.expireHolds
+  );
+
   router.get(
     '/',
     authenticate,
