@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-06-25 - Clarified OVERDUE as a derived state (v0.3.1)
+
+- Documented that `OVERDUE` is a derived state in Phase 1: the system does not persist
+  `BorrowDetails.Status = 'OVERDUE'`; it is computed from a `BORROWED` detail with `dueDate < today`
+  and consumed by FE09. A persisted OVERDUE status + scheduled job is deferred to a later phase.
+- This aligns the spec with the current implementation (Validation Gate finding); no behavior change.
+
 ## 2026-06-02
 
 - Replaced old Borrow Book draft with FE07 Borrowing Management draft.
