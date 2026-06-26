@@ -1,0 +1,286 @@
+openapi: 3.0.3
+info:
+  title: Library Management System API — FE07/FE08/FE10/FE12
+  version: 1.0.0
+  description: >
+    API documentation for the features owned by Nhật:
+    FE07 Borrowing, FE08 Reservation, FE10 Notification, FE12 Reporting.
+    All endpoints require a Bearer JWT obtained from /api/auth/login.
+servers:
+  - url: /
+    description: Same-origin server
+tags:
+  - name: Borrowing
+    description: FE07 — borrow requests, approval, return, renewal
+  - name: Reservation
+    description: FE08 — reservation queue, hold, expire
+  - name: Notification
+    description: FE10 — notification requests and delivery
+  - name: Reporting
+    description: FE12 — read-only aggregate reports
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+    Forbidden:
+      description: Authenticated but role not allowed
+    ValidationError:
+      description: Invalid input
+    NotFound:
+      description: Resource not found
+    Conflict:
+      description: Business-rule conflict (e.g. duplicate, not available, terminal state)
+security:
+  - bearerAuth: []
+paths:
+  /api/borrow-requests:
+    post:
+      tags: [Borrowing]
+      summary: Member creates a borrow request (FR-FE07-001/002)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [copyIds]
+              properties:
+                copyIds:
+                  type: array
+                  items: { type: integer }
+      responses:
+        '201': { description: Borrow request created (PENDING) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Borrowing]
+      summary: Librarian/Admin lists borrow requests (FR-FE07-011)
+      responses:
+        '200': { description: List of borrow requests }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/borrow-requests/me:
+    get:
+      tags: [Borrowing]
+      summary: Member views own borrowing history (FR-FE07-010)
+      responses:
+        '200': { description: Caller's borrow requests }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/members/{memberId}/borrowings:
+    get:
+      tags: [Borrowing]
+      summary: Librarian/Admin views a member's borrowings (FR-FE07-011)
+      parameters:
+        - { name: memberId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Member's borrowings }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/borrow-requests/{requestId}/approve:
+    patch:
+      tags: [Borrowing]
+      summary: Approve a borrow request (FR-FE07-004/005)
+      parameters:
+        - { name: requestId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Request approved; copies set BORROWED }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/borrow-requests/{requestId}/reject:
+    patch:
+      tags: [Borrowing]
+      summary: Reject a borrow request (FR-FE07-006)
+      parameters:
+        - { name: requestId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Request rejected }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/borrow-details/{borrowDetailId}/return:
+    patch:
+      tags: [Borrowing]
+      summary: Process a return (FR-FE07-007/008/013)
+      parameters:
+        - { name: borrowDetailId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condition: { type: string, enum: [NORMAL, DAMAGED, LOST] }
+                returnDate: { type: string, format: date }
+      responses:
+        '200': { description: Detail returned; copy/availability updated }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/borrow-details/{borrowDetailId}/renew:
+    patch:
+      tags: [Borrowing]
+      summary: Renew a borrowed copy once (FR-FE07-009/020)
+      parameters:
+        - { name: borrowDetailId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Due date extended }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/reservations:
+    post:
+      tags: [Reservation]
+      summary: Member reserves a copy (FR-FE08-001/002/003)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [copyId]
+              properties:
+                copyId: { type: integer }
+      responses:
+        '201': { description: Reservation created (ACTIVE) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Reservation]
+      summary: Librarian/Admin lists reservations (FR-FE08-005)
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [ACTIVE, NOTIFIED, FULFILLED, CANCELLED, EXPIRED] } }
+        - { name: bookId, in: query, required: false, schema: { type: integer } }
+        - { name: memberId, in: query, required: false, schema: { type: integer } }
+      responses:
+        '200': { description: List of reservations }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reservations/me:
+    get:
+      tags: [Reservation]
+      summary: Member views own reservations (FR-FE08-010)
+      responses:
+        '200': { description: Caller's reservations }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reservations/process-queue:
+    post:
+      tags: [Reservation]
+      summary: Process the queue for an available copy → hold + notify (FR-FE08-006/007/008)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [copyId]
+              properties:
+                copyId: { type: integer }
+      responses:
+        '200': { description: Next eligible reservation held (NOTIFIED) or none }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reservations/expire-holds:
+    post:
+      tags: [Reservation]
+      summary: Expire overdue holds and promote the next member (FR-FE08-019)
+      responses:
+        '200': { description: Expired count + promoted reservations }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reservations/{reservationId}/cancel:
+    patch:
+      tags: [Reservation]
+      summary: Member cancels own reservation (FR-FE08-004)
+      parameters:
+        - { name: reservationId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Reservation cancelled }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/reservations/{reservationId}/process:
+    patch:
+      tags: [Reservation]
+      summary: Librarian/Admin processes a specific reservation (FR-FE08-007)
+      parameters:
+        - { name: reservationId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Reservation held (NOTIFIED) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/notifications/requests:
+    post:
+      tags: [Notification]
+      summary: Create a notification request (FR-FE10-001..005)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, channel, recipientEmail, templateKey, idempotencyKey]
+              properties:
+                type: { type: string }
+                channel: { type: string, enum: [EMAIL] }
+                recipientEmail: { type: string, format: email }
+                templateKey: { type: string }
+                templateData: { type: object }
+                idempotencyKey: { type: string }
+      responses:
+        '201': { description: Notification queued (PENDING) }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/notifications/process-pending:
+    post:
+      tags: [Notification]
+      summary: Process pending notifications (FR-FE10-006/007)
+      responses:
+        '200': { description: Delivery attempt results }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reports/borrowing:
+    get:
+      tags: [Reporting]
+      summary: Borrowing report (FR-FE12-001)
+      parameters:
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Aggregated borrowing statistics }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reports/inventory:
+    get:
+      tags: [Reporting]
+      summary: Inventory report (FR-FE12-002)
+      responses:
+        '200': { description: Aggregated inventory statistics }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reports/users:
+    get:
+      tags: [Reporting]
+      summary: User statistics report (FR-FE12-003/008)
+      responses:
+        '200': { description: Aggregated user statistics }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }

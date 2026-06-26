@@ -3,6 +3,8 @@ const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
 const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
 const { createAuthRoutes } = require('./routes/authRoutes');
 const { createBorrowingRoutes } = require('./routes/borrowingRoutes');
@@ -65,6 +67,14 @@ function createApp({
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/books', createBookRoutes());
   app.use('/api/fines', createFineRoutes({ authService, fineManagementService }));
+
+  // API docs (Swagger UI). Optional: skip silently if the spec file is missing/invalid.
+  try {
+    const openapiDocument = YAML.load(path.resolve(__dirname, 'docs/openapi.yaml'));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
+  } catch (err) {
+    // OpenAPI spec not available — continue without the docs UI.
+  }
 
   app.use((req, res) => {
     res.status(404).json({
