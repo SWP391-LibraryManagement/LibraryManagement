@@ -7,12 +7,22 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "create-admin": "node scripts/createAdmin.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "jest": {
+    "collectCoverageFrom": [
+      "src/controllers/{borrowing,reservation,notification,report}Controller.js",
+      "src/services/{borrowing,reservation,notification,report}Service.js",
+      "src/routes/{borrowing,reservation,notification,report}Routes.js",
+      "src/validators/{borrowing,reservation,notification,report}Validators.js"
+    ],
+    "coverageReporters": ["text-summary", "text"]
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
