@@ -420,17 +420,17 @@ This feature does not include:
 | FR-FE08-009 | UC39 | FT40 | Ready for review |
 | FR-FE08-010 | UC38 | FT39 | Ready for review |
 | FR-FE08-011 | UC36 (EC-FE08-001) | TBD | Ready for review |
-| FR-FE08-012 | UC36 (EC-FE08-002) | TBD | Ready for review |
-| FR-FE08-013 | UC36 (EC-FE08-003) | FT37 | Ready for review |
-| FR-FE08-014 | UC36 (EC-FE08-004) | TBD | Ready for review |
-| FR-FE08-015 | UC36 (Q-FE08-003) | TBD | Ready for review |
-| FR-FE08-016 | UC37 (EC-FE08-006) | TBD | Ready for review |
-| FR-FE08-017 | UC37 (EC-FE08-007) | TBD | Ready for review |
-| FR-FE08-018 | UC39 (AF-FE08-003) | TBD | Ready for review |
-| FR-FE08-019 | UC39 (AF-FE08-004) | TBD | Ready for review |
-| FR-FE08-020 | UC39 (EC-FE08-008) | TBD | Ready for review |
+| FR-FE08-012 | UC36 (EC-FE08-002) | rejects reservation when member account is inactive (FR-FE08-012) | Ready for review |
+| FR-FE08-013 | UC36 (EC-FE08-003) | FT37; rejects reservation when membership is not approved (FR-FE08-013) | Ready for review |
+| FR-FE08-014 | UC36 (EC-FE08-004) | rejects reservation when the copy does not exist (FR-FE08-014) | Ready for review |
+| FR-FE08-015 | UC36 (Q-FE08-003) | member creates reservations only for unavailable copies within the active limit (FR-FE08-015) | Ready for review |
+| FR-FE08-016 | UC37 (EC-FE08-006) | member cancels only their own active reservation (FR-FE08-016) | Ready for review |
+| FR-FE08-017 | UC37 (EC-FE08-007) | member cancels only their own active reservation; rejects cancelling a reservation that is already expired (FR-FE08-017) | Ready for review |
+| FR-FE08-018 | UC39 (AF-FE08-003) | process-queue skips an ineligible member instead of holding (FR-FE08-018) | Ready for review |
+| FR-FE08-019 | UC39 (AF-FE08-004) | expire-holds expires an overdue hold and promotes the next reservation (FR-FE08-019) | Ready for review |
+| FR-FE08-020 | UC39 (EC-FE08-008) | process-queue selects nothing when no eligible reservation exists (FR-FE08-020) | Ready for review |
 | FR-FE08-021 | UC40 (EC-FE08-009) | FT41 | Ready for review |
-| FR-FE08-022 | UC39 (EC-FE08-010) | TBD | Ready for review |
+| FR-FE08-022 | UC39 (EC-FE08-010) | concurrent queue processing holds the copy only once (FR-FE08-022) | Ready for review |
 | FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Ready for review |
 | FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Ready for review |
 

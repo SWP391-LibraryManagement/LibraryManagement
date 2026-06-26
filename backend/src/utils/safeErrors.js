@@ -16,8 +16,8 @@ function notFound(code = 'NOT_FOUND', message = 'Resource not found.') {
   return new AppException(404, code, message);
 }
 
-function conflict(code, message) {
-  return new AppException(409, code, message);
+function conflict(code, message, details) {
+  return new AppException(409, code, message, details);
 }
 
 function tooManyRequests(code, message) {

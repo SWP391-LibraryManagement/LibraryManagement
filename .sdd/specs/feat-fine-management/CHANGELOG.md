@@ -33,3 +33,14 @@
 - State set sourced directly from approved values in 10.2: `UNPAID`, `PAID`, `WAIVED`, `CANCELLED`. No `PARTIALLY_PAID` state per Q-FE09-003 (no partial payment in Phase 1).
 - Documented idempotency / duplicate-prevention and `amount` immutability as explicit invariants and forbidden transitions; traced to FR/BR/AF/EC/NFR.
 - Bumped version `0.1.0` → `0.2.0` (MINOR) and updated `Last Updated` to 2026-06-25; Status kept `APPROVED`.
+
+## 2026-06-25 - Server-side implementation (TD-001/002/003)
+
+- Implemented the production-aligned FE09 backend layer alongside the kept prototype (decision: "Backend + keep FE", owner Dung; implemented by Nhat):
+  - `repositories/fineRepository.js` — DB access with transactions and locked duplicate-prevention.
+  - `services/fineManagementService.js` — server-side overdue calculation (5,000 VND/day from the day after due date), duplicate prevention, collection (PAID iff fully collected), mark paid, admin waive/cancel, and audit logging.
+  - `controllers/fineManagementController.js` + extended `routes/fineRoutes.js` exposing SPEC §11 endpoints (`/calculate`, `/me`, `/{id}/collections`, `PATCH /{id}/paid`, waive/cancel); legacy CRUD routes kept for the demo UI.
+- Computed amounts no longer trust client input (BR-FE09-007/008, NFR-FE09-SEC-004).
+- Tagged FR-FE09-001..010 with `@spec` → 100% traceability; added `tests/fineManagementRoutes.test.js` (11 tests, AC-FE09-001..010) with an in-memory repository double.
+- Updated `database/Librarymanagement.sql` `CK_Fines_Status` to include `CANCELLED` (matches the §10.3 state model).
+- `PLAN.md`/`TASKS.md` moved NOT STARTED → READY FOR REVIEW; TD-001/002/003 closed. Frontend alignment remains TD-004.

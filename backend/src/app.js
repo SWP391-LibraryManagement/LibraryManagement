@@ -22,6 +22,7 @@ const { defaultNotificationService } = require('./services/notificationService')
 const { defaultReportService } = require('./services/reportService');
 const { defaultReservationService } = require('./services/reservationService');
 const { defaultProfileService } = require('./services/profileService');
+const { defaultFineManagementService } = require('./services/fineManagementService');
 
 function createApp({
   authService = defaultAuthService,
@@ -30,6 +31,7 @@ function createApp({
   reportService = defaultReportService,
   reservationService = defaultReservationService,
   profileService = defaultProfileService,
+  fineManagementService = defaultFineManagementService,
   userManagementService,
 } = {}) {
   const app = express();
@@ -62,7 +64,7 @@ function createApp({
   app.use('/api/profile', createProfileRoutes({ authService, profileService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/books', createBookRoutes());
-  app.use('/api/fines', createFineRoutes({ authService }));
+  app.use('/api/fines', createFineRoutes({ authService, fineManagementService }));
 
   app.use((req, res) => {
     res.status(404).json({

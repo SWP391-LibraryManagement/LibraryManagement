@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.3.1
+# Version: 0.3.2
 
 # Status: APPROVED
 
@@ -146,7 +146,7 @@ The feature can only start when:
 1. Member creates a borrow request while the copy appears available.
 2. Before librarian approval, another process changes the copy status.
 3. The system revalidates availability during approval.
-4. The system rejects the unavailable copy and asks the librarian to update the request.
+4. The system rejects the whole approval (all-or-nothing in Phase 1), keeps the request `PENDING`, and asks the librarian to recreate the request without the unavailable copy.
 
 ### AF-FE07-003: Partial Return
 
@@ -188,6 +188,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-019: Pending borrow request items must be stored in `BorrowDetails` with status `REQUESTED`; no separate request-detail table is used in Phase 1.
 - BR-FE07-020: When all details in a borrow request reach a terminal status (`RETURNED`, `LOST`, or `DAMAGED`), the request status must become `COMPLETED`.
 - BR-FE07-021: FE07 must not calculate or create fine records for overdue, damaged, or lost returns; it only exposes return data for FE09 Fine Management.
+- BR-FE07-022: Phase 1 borrow-request handling is all-or-nothing: if any requested copy is duplicate, non-existent, or not `AVAILABLE` (at create or approval), the entire request/approval is rejected and no partial request is created. Per-item rejection (keeping the valid copies) is deferred to a later phase.
 
 ---
 
@@ -195,7 +196,7 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE07-001: When a member submits a borrow request, the system shall validate member eligibility before creating the request.
 - FR-FE07-002: When a member submits a borrow request with valid data, the system shall create a pending borrow request and store requested items as `BorrowDetails.Status = REQUESTED`.
-- FR-FE07-003: If a requested copy is not available, the system shall reject that copy from the borrow request.
+- FR-FE07-003: If any requested copy is not available, the system shall reject the whole borrow request and shall not create a partial request. (Phase 1 policy: all-or-nothing; per-item rejection is future work — see §6 BR-FE07-022.)
 - FR-FE07-004: When a librarian approves a borrow request, the system shall revalidate all business rules before approval.
 - FR-FE07-005: When approval succeeds, the system shall update the borrow request, borrow details, due dates, and book copy statuses.
 - FR-FE07-006: When a librarian rejects a borrow request, the system shall keep copy statuses unchanged and store rejection information if supported.
@@ -214,8 +215,8 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - FR-FE07-014: IF a member submits a borrow request while already holding 5 active borrowed copies, the system shall reject the request and return a borrow-limit error without creating any `BorrowRequests` or `BorrowDetails` record. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
 - FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive or the membership is not approved, the system shall reject the action and return an eligibility error explaining the blocking reason. (Source: BR-FE07-004, EC-FE07-002, EC-FE07-003, AF-FE07-001)
 - FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
-- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or zero valid items after validation, the system shall reject the affected items and shall not create a request when no valid item remains. (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
-- FR-FE07-018: IF a copy is no longer `AVAILABLE` at the moment of approval, the system shall reject approval for that copy, keep all data unchanged, and ask the librarian to update the request. (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
+- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any unavailable copy, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work — see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
+- FR-FE07-018: IF any copy is no longer `AVAILABLE` at the moment of approval, the system shall reject the whole approval, keep all data unchanged (request stays `PENDING`), and ask the librarian to recreate the request without the unavailable copy. (Phase 1 policy: all-or-nothing.) (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
 - FR-FE07-019: WHERE two approval actions target the same copy concurrently, the system shall allow at most one approval to succeed and shall fail the later action safely without double-borrowing the copy. (Source: EC-FE07-011, FR-FE07-012)
 - FR-FE07-020: IF a renewal is requested for a borrow detail that is overdue, already renewed once, blocked by an unpaid fine, or reserved by another member, the system shall reject the renewal and keep the existing due date unchanged. (Source: BR-FE07-015, BR-FE07-018, AF-FE07-004, EC-FE07-010, AC-FE07-010)
 - FR-FE07-021: IF a return or renewal action targets a borrow detail in an invalid state (already returned/lost/damaged) or supplies a return date earlier than the borrow/request date, the system shall reject the action as an invalid state or date transition. (Source: EC-FE07-008, EC-FE07-009, EC-FE07-010)
@@ -563,14 +564,14 @@ This feature does not include:
 | FR-FE07-010 | UC30 | FT31 | Ready for review |
 | FR-FE07-011 | UC34 | FT35 | Ready for review |
 | FR-FE07-013 | UC33 | FT34 | Ready for review |
-| FR-FE07-014 | UC29, UC32 | TBD | Ready for review |
-| FR-FE07-015 | UC29, UC31 | TBD | Ready for review |
-| FR-FE07-016 | UC29, UC31 | TBD | Ready for review |
-| FR-FE07-017 | UC29 | TBD | Ready for review |
-| FR-FE07-018 | UC32 | TBD | Ready for review |
-| FR-FE07-019 | UC32 | TBD | Ready for review |
-| FR-FE07-020 | UC31 | TBD | Ready for review |
-| FR-FE07-021 | UC31, UC33 | TBD | Ready for review |
+| FR-FE07-014 | UC29, UC32 | borrowingRoutes.test.js > "member exceeding the borrow limit of 5 active copies is rejected" | Ready for review |
+| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account or unapproved membership cannot create a borrow request" | Ready for review |
+| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
+| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
+| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
+| FR-FE07-019 | UC32 | borrowingRoutes.test.js > "concurrent approvals of the same copy do not double-borrow it" | Ready for review |
+| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal is rejected for an overdue borrowed item and keeps the due date" | Ready for review |
+| FR-FE07-021 | UC31, UC33 | borrowingRoutes.test.js > "invalid return transitions are rejected (second return and return date before borrow date)" | Ready for review |
 | FR-FE07-022 | UC32, UC33 | TBD | Ready for review |
 
 ---

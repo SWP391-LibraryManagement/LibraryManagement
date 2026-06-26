@@ -1,11 +1,12 @@
 ﻿# FE03 Test Plan - User Profile
 
-Version: 0.1.0
-Status: DRAFT - avatar upload revision/manual verification pending
-Last Updated: 2026-06-22
+Version: 0.2.0
+Status: DRAFT - avatar upload revision / manual verification pending
+Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-user-profile/SPEC.md`
 Feature IDs: `BR-FE03-*`, `FR-FE03-*`, `AC-FE03-*`
+Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
 
 ---
 
@@ -53,5 +54,5 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-node scripts/check-traceability.js
+npm.cmd run trace:enforce
 ```

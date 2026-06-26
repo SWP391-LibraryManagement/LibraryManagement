@@ -22,8 +22,8 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Spec traceability report (FR @spec coverage)
-        run: node scripts/check-traceability.js
+      - name: Spec traceability gate (FR @spec coverage >= 70% for implemented features)
+        run: npm run trace:enforce
 
       - name: Install backend dependencies
         run: npm ci

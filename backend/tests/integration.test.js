@@ -264,6 +264,106 @@ describe('Integration: End-to-End Flows', () => {
     });
   });
 
+  describe('Cross-Feature: FE08 held copy blocks FE07 (TD-011, FR-FE08-023/024)', () => {
+    test('a copy held for one member cannot be borrowed by another member', async () => {
+      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const memberA = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'held.a@example.com',
+      });
+      const memberB = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'held.b@example.com',
+      });
+      const librarian = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'held.lib@example.com', role: 'LIBRARIAN', approveMember: false,
+      });
+
+      // FE08: member A reserves copy 1 (reservation store seeds copy 1 as BORROWED, so it is reservable).
+      await request(app)
+        .post('/api/reservations')
+        .set('Authorization', `Bearer ${memberA.accessToken}`)
+        .send({ copyId: 1 })
+        .expect(201);
+
+      // The copy becomes available and the librarian processes the queue → copy is HELD for member A.
+      reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+      const processResponse = await request(app)
+        .post('/api/reservations/process-queue')
+        .set('Authorization', `Bearer ${librarian.accessToken}`)
+        .send({ copyId: 1 });
+
+      expect(processResponse.status).toBe(200);
+      expect(processResponse.body.selectedReservation).toMatchObject({
+        userId: memberA.userId,
+        status: 'NOTIFIED',
+      });
+      // FE08 set the physical copy to RESERVED (held).
+      expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+        'RESERVED'
+      );
+
+      // The two in-memory stores model the same physical copy; reflect the hold in the shared copy state.
+      borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'RESERVED';
+
+      // FE07: member B cannot borrow the held copy (FR-FE08-023, BR-FE08-011).
+      const borrowBlocked = await request(app)
+        .post('/api/borrow-requests')
+        .set('Authorization', `Bearer ${memberB.accessToken}`)
+        .send({ copyIds: [1] });
+
+      expect(borrowBlocked.status).toBe(409);
+      expect(borrowBlocked.body.error.code).toBe('COPY_NOT_AVAILABLE');
+      expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+    });
+
+    test('an active reservation by another member blocks FE07 renewal of the same copy', async () => {
+      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const owner = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'renew.owner@example.com',
+      });
+      const otherMember = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'renew.other@example.com',
+      });
+      const librarian = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'renew.held.lib@example.com', role: 'LIBRARIAN', approveMember: false,
+      });
+
+      // Owner borrows copy 2 and the librarian approves it.
+      const borrowResponse = await request(app)
+        .post('/api/borrow-requests')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ copyIds: [2] });
+      const requestId = borrowResponse.body.borrowRequest.requestId;
+      const approveResponse = await request(app)
+        .patch(`/api/borrow-requests/${requestId}/approve`)
+        .set('Authorization', `Bearer ${librarian.accessToken}`)
+        .send({});
+      const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+
+      // Another member holds an active reservation on the same copy (FE08 queue priority).
+      borrowingDependencies.state.reservations.push({
+        reservationId: 1,
+        userId: otherMember.userId,
+        copyId: 2,
+        status: 'ACTIVE',
+      });
+
+      // FE07 renewal is blocked by the reservation conflict (FR-FE08-024, BR-FE08-014).
+      const renewResponse = await request(app)
+        .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({});
+
+      expect(renewResponse.status).toBe(409);
+      expect(renewResponse.body.error.code).toBe('RESERVATION_BLOCKS_RENEWAL');
+    });
+  });
+
   describe('Health and Foundation', () => {
     test('GET /health returns ok', async () => {
       const { app } = makeTestApp();
