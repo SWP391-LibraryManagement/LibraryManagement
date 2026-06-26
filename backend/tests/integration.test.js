@@ -364,6 +364,99 @@ describe('Integration: End-to-End Flows', () => {
     });
   });
 
+  describe('Cross-Feature: FE08 -> FE10 reservation-ready notification (FR-FE08-008)', () => {
+    test('processing the queue holds the copy and creates a RESERVATION_READY notification', async () => {
+      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const member = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'rr.member@example.com',
+      });
+      const librarian = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'rr.lib@example.com', role: 'LIBRARIAN', approveMember: false,
+      });
+
+      await request(app)
+        .post('/api/reservations')
+        .set('Authorization', `Bearer ${member.accessToken}`)
+        .send({ copyId: 1 })
+        .expect(201);
+
+      // Another member returns the copy -> it becomes available for the queue.
+      reservationDependencies.state.copies.find((c) => c.copyId === 1).status = 'AVAILABLE';
+
+      const processResponse = await request(app)
+        .post('/api/reservations/process-queue')
+        .set('Authorization', `Bearer ${librarian.accessToken}`)
+        .send({ copyId: 1 });
+
+      expect(processResponse.status).toBe(200);
+      expect(processResponse.body.selectedReservation).toMatchObject({
+        userId: member.userId,
+        copyId: 1,
+        status: 'NOTIFIED',
+      });
+      expect(reservationDependencies.state.copies.find((c) => c.copyId === 1).status).toBe('RESERVED');
+      expect(authDependencies.state.notifications).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: member.userId,
+            templateCode: 'RESERVATION_READY',
+            sourceFeature: 'FE08',
+          }),
+        ])
+      );
+    });
+  });
+
+  describe('Cross-Feature: FE08 expire-holds promotes the next member + notifies (FR-FE08-019)', () => {
+    test('an expired hold frees the copy, expires the reservation, and notifies the next member', async () => {
+      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const first = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies, email: 'exp.first@example.com',
+      });
+      const second = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies, email: 'exp.second@example.com',
+      });
+      const librarian = await createVerifiedUser({
+        app, authDependencies, borrowingDependencies, reservationDependencies,
+        email: 'exp.lib@example.com', role: 'LIBRARIAN', approveMember: false,
+      });
+
+      await request(app).post('/api/reservations')
+        .set('Authorization', `Bearer ${first.accessToken}`).send({ copyId: 1 }).expect(201);
+      await request(app).post('/api/reservations')
+        .set('Authorization', `Bearer ${second.accessToken}`).send({ copyId: 1 }).expect(201);
+
+      reservationDependencies.state.copies.find((c) => c.copyId === 1).status = 'AVAILABLE';
+      await request(app).post('/api/reservations/process-queue')
+        .set('Authorization', `Bearer ${librarian.accessToken}`).send({ copyId: 1 }).expect(200);
+
+      // Simulate the first member's hold window having passed (clock is fixed at 2026-06-10).
+      reservationDependencies.state.reservations.find(
+        (r) => r.userId === first.userId && r.copyId === 1
+      ).expiresAt = new Date('2026-06-01T00:00:00.000Z');
+
+      const expireResponse = await request(app)
+        .post('/api/reservations/expire-holds')
+        .set('Authorization', `Bearer ${librarian.accessToken}`);
+
+      expect(expireResponse.status).toBe(200);
+      expect(expireResponse.body.expiredCount).toBe(1);
+      expect(
+        reservationDependencies.state.reservations.find((r) => r.userId === first.userId && r.copyId === 1).status
+      ).toBe('EXPIRED');
+      expect(
+        reservationDependencies.state.reservations.find((r) => r.userId === second.userId && r.copyId === 1).status
+      ).toBe('NOTIFIED');
+      expect(reservationDependencies.state.copies.find((c) => c.copyId === 1).status).toBe('RESERVED');
+      const readyForSecond = authDependencies.state.notifications.filter(
+        (n) => n.userId === second.userId && n.templateCode === 'RESERVATION_READY'
+      );
+      expect(readyForSecond.length).toBeGreaterThan(0);
+    });
+  });
+
   describe('Health and Foundation', () => {
     test('GET /health returns ok', async () => {
       const { app } = makeTestApp();

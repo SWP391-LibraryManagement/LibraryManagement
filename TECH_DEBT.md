@@ -34,7 +34,7 @@ Last Updated: 2026-06-25
 | TD-018 | FE02 Auth | P2 | Add tests for FR-FE02-015 (duplicate email) and FR-FE02-019 (weak password) via the API, and for the OTP verify/reset branches (currently only token branch is tested). | VG FE02 P2 | OPEN |
 | TD-019 | FE02 Auth | P2 | IP-based rate limiting (NFR-FE02-SEC-005) is not implemented (only per-user lockout). Confirm whether per-user is sufficient for Phase 1. | VG FE02 P2 | OPEN |
 | TD-020 | FE02 Auth | P2 (decision) | Login returns `ACCOUNT_INACTIVE` (403) for existing-but-unverified accounts, which is a mild user-enumeration signal vs NFR-SEC-010. Confirm intended vs generic message. | VG FE02 P2 | OPEN |
-| TD-021 | Cross-feature | P2 | No browser E2E test and no SQL-Server-backed integration test prove full cross-feature flows (integration map §7 known gaps). | Integration map | OPEN |
+| TD-021 | Cross-feature | P2 | **Partial.** API-level integration tests now prove the in-scope cross-feature flows (FE02→FE07/FE08/FE10/FE12, FE07→FE09→FE10, FE08 held-copy→FE07, **FE08→FE10 reservation-ready**, **FE08 expire→promote→FE10**). Still missing: a true browser E2E (no Playwright/Cypress installed) and a SQL-Server-backed integration run (no MSSQL instance in CI) — both need infra not available now, so deferred. | Integration map | PARTIAL |
 
 ---
 
