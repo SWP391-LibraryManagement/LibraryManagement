@@ -220,7 +220,7 @@ CREATE TABLE Fines (
     FOREIGN KEY (BorrowDetailId) REFERENCES BorrowDetails(BorrowDetailId),
     FOREIGN KEY (CreatedBy) REFERENCES Users(UserId),
     FOREIGN KEY (CollectedBy) REFERENCES Users(UserId),
-    CONSTRAINT CK_Fines_Status CHECK (Status IN ('UNPAID', 'PAID', 'WAIVED'))
+    CONSTRAINT CK_Fines_Status CHECK (Status IN ('UNPAID', 'PAID', 'WAIVED', 'CANCELLED'))
 );
 
 CREATE TABLE NotificationTemplates (

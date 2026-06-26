@@ -393,17 +393,17 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE09-002 | UC41 | FT42 | Not Started |
-| FR-FE09-001 | UC41 | FT42 | Not Started |
-| BR-FE09-005 | UC42 | FT43 | Not Started |
-| BR-FE09-006 | UC42 | FT43 | Not Started |
-| FR-FE09-003 | UC42 | FT43 | Not Started |
-| FR-FE09-005 | UC42 | FT43 | Not Started |
-| BR-FE09-009 | UC42 | FT43 | Not Started |
-| FR-FE09-007 | UC43 | FT44 | Not Started |
-| BR-FE09-012 | UC44 | FT45 | Not Started |
-| FR-FE09-008 | UC44 | FT45 | Not Started |
-| BR-FE09-014 | UC42 | FT43 | Not Started |
+| BR-FE09-002 | UC41 | fineManagementRoutes.test.js > "member sees only their own fines via /fines/me" | Ready for review |
+| FR-FE09-001 | UC41 | fineManagementRoutes.test.js > "member sees only their own fines via /fines/me" | Ready for review |
+| BR-FE09-005 | UC42 | fineManagementRoutes.test.js > "staff calculate creates an UNPAID fine equal to overdue days * 5000" | Ready for review |
+| BR-FE09-006 | UC42 | fineManagementRoutes.test.js > "staff calculate creates an UNPAID fine equal to overdue days * 5000" | Ready for review |
+| FR-FE09-003 | UC42 | fineManagementRoutes.test.js > "calculate ignores a client-supplied amount and uses server-side data" | Ready for review |
+| FR-FE09-005 | UC42 | fineManagementRoutes.test.js > "staff calculate creates an UNPAID fine equal to overdue days * 5000" | Ready for review |
+| BR-FE09-009 | UC42 | fineManagementRoutes.test.js > "calculate is idempotent for the same borrow detail (no duplicate fine)" | Ready for review |
+| FR-FE09-007 | UC43 | fineManagementRoutes.test.js > "collection marks PAID only when fully collected" | Ready for review |
+| BR-FE09-012 | UC44 | fineManagementRoutes.test.js > "staff marks an unpaid fine paid" | Ready for review |
+| FR-FE09-008 | UC44 | fineManagementRoutes.test.js > "staff marks an unpaid fine paid" | Ready for review |
+| BR-FE09-014 | UC42 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
 
 ---
 

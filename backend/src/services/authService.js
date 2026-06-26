@@ -218,6 +218,7 @@ function createAuthService({
   }
 
   /** Kiểm tra policy mật khẩu, ném lỗi nếu không đạt */
+  // @spec FR-FE02-019 — reject a new password that fails the complexity policy without persisting it (BR-FE02-005, Q-FE02-001)
   function validateNewPassword(password) {
     const check = validatePasswordPolicy(password);
     if (!check.valid) {
@@ -225,7 +226,7 @@ function createAuthService({
     }
   }
 
-  /** FR-FE02-020: chặn đặt mật khẩu mới trùng mật khẩu hiện tại */
+  /** @spec FR-FE02-020 — reject changing the password to a value identical to the current one (AF-FE02-006) */
   async function ensureNewPasswordDiffers(user, newPassword, context) {
     const sameAsCurrent = await verifyPassword(newPassword || '', user.passwordHash);
     if (sameAsCurrent) {
@@ -311,6 +312,7 @@ function createAuthService({
       throw errors.badRequest('PASSWORD_MISMATCH', 'Password confirmation must match password.');
     }
 
+    // @spec FR-FE02-015 — reject registration with an already-registered email; no new user is created (AF-FE02-001, EC-FE02-003, BR-FE02-001)
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
       throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
@@ -351,6 +353,7 @@ function createAuthService({
     return response;
   }
 
+  // @spec FR-FE02-016 — reject an expired/malformed/non-matching verification token; account stays INACTIVE and a resend is offered (AF-FE02-002, BR-FE02-004)
   async function verifyEmail(input, context = {}) {
     if (input.token) {
       const tokenRecord = await validateLegacyToken(['EMAIL_VERIFY'], input.token, {
@@ -456,6 +459,7 @@ function createAuthService({
       await writeAudit(context, 'AUTH_ACCOUNT_AUTO_UNLOCKED', { userId: user.userId, targetId: user.userId });
     }
 
+    // @spec FR-FE02-017 — reject login to a LOCKED account and return the account-lock message (AF-FE02-003, BR-FE02-009)
     // Khóa không có thời hạn (ví dụ admin khóa thủ công) vẫn bị chặn
     if (user.status === 'LOCKED') {
       await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
@@ -624,6 +628,7 @@ function createAuthService({
     validateNewPassword(input.newPassword);
 
     if (input.token) {
+      // @spec FR-FE02-018 — reject an already-used/expired/non-matching reset token without changing any password (AF-FE02-005, BR-FE02-014)
       const tokenRecord = await validateLegacyToken(['PASSWORD_RESET', 'ACCOUNT_SETUP'], input.token, {
         invalidCode: 'INVALID_RESET_TOKEN',
         invalidMessage: 'Invalid or expired reset token.',
@@ -684,6 +689,7 @@ function createAuthService({
     };
   }
 
+  // @spec FR-FE02-021 — reject a protected request whose token is malformed, has an invalid signature, or is expired (401) (AF-FE02-004, EC-FE02-014, BR-FE02-012)
   async function authenticateToken(token) {
     const payload = verifyAccessToken(token);
     const userId = Number(payload.sub);

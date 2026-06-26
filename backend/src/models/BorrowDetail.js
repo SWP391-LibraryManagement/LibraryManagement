@@ -12,7 +12,7 @@ module.exports = defineModel({
     { attribute: 'dueDate', name: 'DueDate', type: 'DATE', required: true },
     { attribute: 'returnDate', name: 'ReturnDate', type: 'DATE', nullable: true },
     { attribute: 'renewalCount', name: 'RenewalCount', type: 'INT', required: true, default: 0 },
-    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'BORROWED', allowedValues: ['BORROWED', 'RETURNED', 'OVERDUE', 'LOST'] },
+    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'REQUESTED', allowedValues: ['REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'] },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
   ],

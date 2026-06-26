@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-06-25 - All-or-nothing borrow policy (v0.3.2, TD-007)
+
+- Resolved TD-007: Phase 1 borrow-request handling is **all-or-nothing**. Aligned the spec to the
+  current code instead of changing core circulation logic (team decision 2026-06-25).
+- Updated FR-FE07-003, FR-FE07-017, FR-FE07-018 and AF-FE07-002 to state that any duplicate /
+  non-existent / unavailable copy rejects the whole request/approval (no partial request).
+- Added BR-FE07-022 documenting the all-or-nothing policy and deferring per-item rejection to a later phase.
+
 ## 2026-06-25 - Clarified OVERDUE as a derived state (v0.3.1)
 
 - Documented that `OVERDUE` is a derived state in Phase 1: the system does not persist

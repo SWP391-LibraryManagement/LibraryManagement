@@ -257,4 +257,185 @@ describe('FE10 notification management', () => {
 
     expect(memberResponse.status).toBe(403);
   });
+
+  // FR-FE10-005, BR-FE10-002: unsupported type and non-EMAIL channel are rejected at the
+  // request-validation layer (before the service), with no notification created.
+  test('rejects unsupported notification type and channel', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.unsupported.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const badType = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'NOT_A_REAL_TYPE',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Reader', purpose: 'VERIFY' },
+      });
+    expect(badType.status).toBe(400);
+    expect(badType.body.error.code).toBe('VALIDATION_ERROR');
+
+    const badChannel = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'ACCOUNT_VERIFICATION',
+        channel: 'SMS',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Reader', purpose: 'VERIFY' },
+      });
+    expect(badChannel.status).toBe(400);
+    expect(badChannel.body.error.code).toBe('VALIDATION_ERROR');
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  // BR-FE10-010: a request whose template key does not exist is rejected.
+  test('rejects an unknown template key', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.template.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'GENERAL_SYSTEM',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DOES_NOT_EXIST',
+        templateData: {},
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('TEMPLATE_NOT_AVAILABLE');
+  });
+
+  // AC-FE10-006: a request with neither recipient userId nor email is rejected; a non-existent
+  // recipient user returns not found.
+  test('rejects request without a recipient and 404 for a non-existent recipient user', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.recipient.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const noRecipient = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'ACCOUNT_VERIFICATION',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Reader', purpose: 'VERIFY' },
+      });
+    expect(noRecipient.status).toBe(400);
+    expect(noRecipient.body.error.code).toBe('RECIPIENT_REQUIRED');
+
+    const missingUser = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'ACCOUNT_VERIFICATION',
+        userId: 999999,
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Reader', purpose: 'VERIFY' },
+      });
+    expect(missingUser.status).toBe(404);
+    expect(missingUser.body.error.code).toBe('RECIPIENT_NOT_FOUND');
+  });
+
+  // AC-FE10-001 (userId path) + BR-FE10-013: resolve recipient by userId and write an audit entry.
+  test('resolves recipient by userId and writes an audit log on create', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.audit.admin@example.test',
+      role: 'ADMIN',
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.audit.member@example.test',
+      role: 'MEMBER',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'ACCOUNT_VERIFICATION',
+        userId: member.userId,
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Member', purpose: 'VERIFY' },
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.notification).toMatchObject({
+      userId: member.userId,
+      recipientEmail: 'notif.audit.member@example.test',
+      status: 'PENDING',
+    });
+    expect(authDependencies.state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'NOTIFICATION_REQUEST_CREATE' }),
+      ])
+    );
+  });
+
+  // BR-FE10-004: template data is sanitized so injected markup is not stored/rendered.
+  test('sanitizes script content in template data', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.xss.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'ACCOUNT_VERIFICATION',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: '<script>alert(1)</script>Bob', purpose: 'VERIFY' },
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.notification.safePayload.name).not.toContain('<script>');
+    expect(JSON.stringify(response.body)).not.toContain('<script>');
+  });
+
+  // FR-FE10-006/007: processing with no pending notifications is a safe no-op.
+  test('process-pending with no pending notifications returns zero counts', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.empty.worker@example.test',
+      role: 'LIBRARIAN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/process-pending')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ limit: 10 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ processed: 0, failed: 0 });
+  });
 });
