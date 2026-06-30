@@ -15,6 +15,7 @@ const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
 const { createBookRoutes } = require('./routes/bookRoutes');
 const { createFineRoutes } = require('./routes/fineRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
+const { createAdminRoutes } = require('./routes/adminRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
@@ -35,6 +36,7 @@ function createApp({
   profileService = defaultProfileService,
   fineManagementService = defaultFineManagementService,
   userManagementService,
+  adminService,
 } = {}) {
   const app = express();
 
@@ -65,6 +67,7 @@ function createApp({
   app.use('/api/reservations', createReservationRoutes({ authService, reservationService }));
   app.use('/api/profile', createProfileRoutes({ authService, profileService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
+  app.use('/api/admin', createAdminRoutes({ authService, adminService }));
   app.use('/api/books', createBookRoutes());
   app.use('/api/fines', createFineRoutes({ authService, fineManagementService }));
 

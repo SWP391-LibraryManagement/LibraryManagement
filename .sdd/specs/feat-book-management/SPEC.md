@@ -1,12 +1,12 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.2.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-06-30
 
 # Feature ID: FE05
 
@@ -37,6 +37,7 @@ The system shall:
 - Allow librarians/admins to view book lists.
 - Allow librarians/admins to add new books.
 - Allow librarians/admins to update book information.
+- Allow librarians/admins to update public book availability as `AVAILABLE` / `BORROWED` through the approved copy-status integration.
 - Allow librarians/admins to deactivate books.
 - Maintain accurate book metadata for inventory, borrowing, and reporting features.
 - Keep book management actions traceable for audit purposes.
@@ -120,6 +121,15 @@ The feature can only start when:
 4. The system prevents future borrowing of the book.
 5. The system writes an audit log entry.
 
+### MF-FE05-007: Update Public Availability Status
+
+1. Librarian/admin selects an existing book in the management list.
+2. The system displays public availability status as `Còn sách` (`AVAILABLE`) or `Đã mượn` (`BORROWED`), derived from `BookCopies`.
+3. Librarian/admin chooses the new availability status and submits the update.
+4. The system validates the selected status server-side.
+5. The system updates the related `BookCopies.Status` values according to the approved availability rule while keeping `Books.Status = ACTIVE` unless the book is explicitly deactivated.
+6. The updated availability is immediately reflected in staff book management and FE01 public home/search/detail views.
+
 ---
 
 ## 5. Alternative Flows
@@ -166,6 +176,9 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-008: Deactivated books cannot be borrowed.
 - BR-FE05-009: Deactivated books should not appear in public search results.
 - BR-FE05-010: Every create, update, and deactivate action must be auditable.
+- BR-FE05-011: Public availability is not the same as catalog visibility; `Books.Status` controls active/inactive catalog visibility, while `BookCopies.Status` controls whether the book displays as `Còn sách` or `Đã mượn`.
+- BR-FE05-012: Only librarians/admins may manually update public availability, and the only accepted values are `AVAILABLE` and `BORROWED`.
+- BR-FE05-013: When availability is changed, FE01 public browse/home must read the updated `BookCopies` state and show the new availability without requiring a separate public-data edit.
 
 ---
 
@@ -193,6 +206,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-017: IF a search keyword exceeds the allowed maximum length, the system shall reject the search and return a validation message. (Source: EC-FE05-011)
 - FR-FE05-018: IF a book update or its audit log entry fails partway through, the system shall roll back both the book update and the audit log so no partial change persists. (Source: EC-FE05-012, NFR-FE05-TXN-001)
 - FR-FE05-019: WHERE a book has status `INACTIVE`, the system shall prevent it from being borrowed and shall exclude it from public search results while keeping borrow/reservation history and copy records unchanged. (Source: BR-FE05-008, BR-FE05-009, EC-FE05-010, Q-FE05-007)
+- FR-FE05-020: WHEN a librarian/admin updates a book's availability status, the system shall accept only `AVAILABLE` or `BORROWED`, update the related copy availability server-side, and return the updated book summary used by staff and public browse views. (Source: MF-FE05-007, BR-FE05-011, BR-FE05-012, BR-FE05-013)
+- FR-FE05-021: IF a librarian/admin submits an invalid availability value, the system shall reject the request and shall not modify `Books` or `BookCopies`. (Source: BR-FE05-012, EC-FE05-013)
 
 ---
 
@@ -208,6 +223,8 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-008: Given an active book, when a librarian/admin deactivates it, then the book becomes inactive and is excluded from public search.
 - AC-FE05-009: Given a guest or member attempts to add, update, or deactivate a book, when the request is processed, then access is denied.
 - AC-FE05-010: Given a create, update, or deactivate action succeeds, when the action completes, then an audit record is written if audit logging is approved.
+- AC-FE05-011: Given a librarian/admin updates a selected book from `Đã mượn` to `Còn sách`, when the update succeeds, then the staff list and FE01 home/search/detail views show the book as available.
+- AC-FE05-012: Given a librarian/admin submits an invalid availability value, when the request is processed, then the request is rejected and existing copy statuses remain unchanged.
 
 ---
 
@@ -227,6 +244,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE05-010 | Deactivate book with active borrowed/reserved copies | Allow status-based catalog deactivation; keep borrow/reservation history and copy records unchanged. |
 | EC-FE05-011 | Search keyword too long | Reject with validation message. |
 | EC-FE05-012 | Database update partially fails | Roll back book update and audit log. |
+| EC-FE05-013 | Invalid availability value | Reject request; accepted values are `AVAILABLE` and `BORROWED` only. |
 
 ---
 
@@ -258,6 +276,7 @@ Use these stable IDs for tasks and tests.
 | description | string | No | Must be sanitized before display. |
 | coverUrl | string | No | Must be a safe URL/path according to approved storage policy. |
 | status | string | Recommended | Add `ACTIVE`/`INACTIVE` if status-based deactivation is approved. |
+| copyStatus | string | No for catalog metadata; yes for manual availability update | Values: `AVAILABLE`, `BORROWED`. Stored through `BookCopies.Status`, not `Books.Status`. |
 
 ---
 
@@ -273,6 +292,7 @@ Use these stable IDs for tasks and tests.
 | POST | `/api/books` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, description?, coverUrl? }` | Created book | Validates required fields and unique ISBN. |
 | PUT | `/api/books/{bookId}` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl?, status?: "ACTIVE"\|"INACTIVE" }` | Updated book | Validates references, unique ISBN, and optional status update. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | `{ reason?: string }` | Deactivated book | Prefer status-based deactivation. |
+| PATCH | `/api/books/{bookId}/availability` | Librarian/Admin | `{ copyStatus: "AVAILABLE"\|"BORROWED" }` | Updated book with availability summary | Updates `BookCopies.Status` and returns data consumed by staff list and FE01 public browse. |
 
 ---
 
@@ -347,6 +367,7 @@ This feature does not include:
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
 | Q-FE05-008 | Staff update form may set book status directly to `ACTIVE` or `INACTIVE`; public browse must hide `INACTIVE` books. | User request 2026-06-21 | APPROVED |
+| Q-FE05-009 | Staff update form displays availability as `Còn sách` / `Đã mượn`; it updates `BookCopies.Status` via `/api/books/{bookId}/availability` and does not expose `ACTIVE`/`INACTIVE` as public availability choices. | User correction 2026-06-30 | APPROVED |
 
 ---
 
@@ -391,6 +412,8 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE05-017 | UC18, UC19 | TBD | Not Started |
 | FR-FE05-018 | UC23 | TBD | Not Started |
 | FR-FE05-019 | UC24 | TBD | Not Started |
+| FR-FE05-020 | UC23 | TBD | Ready for review |
+| FR-FE05-021 | UC23 | TBD | Ready for review |
 
 ---
 

@@ -50,3 +50,11 @@
   - FR-FE05-019: Prevent borrowing and hide INACTIVE books from public search while preserving history (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
 - Updated Section 16 Traceability Matrix with the 9 new FRs (Test Case marked TBD).
 - Result: total FRs 10 -> 19; Unwanted FRs 0 -> 9 (~47.4%).
+
+## 2026-06-30
+
+- Bumped `SPEC.md` version to 0.3.0 and updated Last Updated to 2026-06-30.
+- Added the approved public availability update flow: staff update form shows `Còn sách` / `Đã mượn`, validates `AVAILABLE` / `BORROWED`, and updates availability through `BookCopies.Status`.
+- Added `PATCH /api/books/{bookId}/availability` to the API contract.
+- Clarified that `Books.Status` controls catalog visibility while `BookCopies.Status` controls public availability shown by FE01.
+- Added BR-FE05-011..013, FR-FE05-020..021, AC-FE05-011..012, EC-FE05-013, and Q-FE05-009 for traceability.

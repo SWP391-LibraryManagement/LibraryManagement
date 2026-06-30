@@ -44,6 +44,7 @@ function createBookRoutes({ authService } = {}) {
   router.get('/:bookId', bookController.getBookById);
   router.post('/', requireBookManager, bookController.createBook);
   router.put('/:bookId', requireBookManager, bookController.updateBook);
+  router.patch('/:bookId/availability', requireBookManager, bookController.updateBookAvailability);
   router.patch('/:bookId/deactivate', requireBookManager, bookController.deactivateBook);
 
   return router;

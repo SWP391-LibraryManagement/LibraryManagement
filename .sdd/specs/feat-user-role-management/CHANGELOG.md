@@ -44,3 +44,12 @@
 - Coverage of Unwanted-behavior FRs raised from ~21% (3 of 14) to ~62% (18 of 29), exceeding the >=30% target per Spec-Driven Development EARS guidance.
 - Each new FR traces back to its source EC/BR/AF/Q; no new logic invented.
 - Updated section 16 Traceability Matrix: added a dedicated Unwanted-Behavior table mapping each new FR to its source BR/EC/AF/Q and test case (TBD where no test is allocated yet), and refreshed the Coverage Summary totals.
+
+## 2026-06-30
+
+- Bumped `SPEC.md` version to 0.3.0 and updated Last Updated to 2026-06-30.
+- Added admin console requirements for sidebar visibility, Dashboard, Permissions, Audit Logs, and Request Management.
+- Documented that Confirm Payment and Confirm Borrow are removed from the admin sidebar in the current prototype.
+- Clarified that admin Reports-style content is consolidated into Dashboard while detailed reporting remains FE12.
+- Added request-management rule: pending requests may expose action controls; completed requests are view-only.
+- Added BR-FE11-016..020, FR-FE11-030..035, AC-FE11-016..019, EC-FE11-016..018, and Q-FE11-011..013.

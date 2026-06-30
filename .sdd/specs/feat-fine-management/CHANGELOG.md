@@ -44,3 +44,11 @@
 - Tagged FR-FE09-001..010 with `@spec` → 100% traceability; added `tests/fineManagementRoutes.test.js` (11 tests, AC-FE09-001..010) with an in-memory repository double.
 - Updated `database/Librarymanagement.sql` `CK_Fines_Status` to include `CANCELLED` (matches the §10.3 state model).
 - `PLAN.md`/`TASKS.md` moved NOT STARTED → READY FOR REVIEW; TD-001/002/003 closed. Frontend alignment remains TD-004.
+
+## 2026-06-30
+
+- Bumped `SPEC.md` version to 0.3.0 and updated Last Updated to 2026-06-30.
+- Clarified the Phase 1 fine collection workflow: librarian/admin records offline collection; full collection resolves the fine as `PAID`; no admin confirm/refuse payment sidebar step is required unless approved later.
+- Added stable fine-list ordering guidance: librarian fine list defaults to fine ID ascending.
+- Added BR-FE09-017..018, FR-FE09-011..013, AC-FE09-011..012, EC-FE09-011, and Q-FE09-008..009.
+- Updated the `/api/fines` API contract to include `q?` and `sort?` with default fine ID ascending order.

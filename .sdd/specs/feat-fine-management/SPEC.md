@@ -1,12 +1,12 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.2.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-06-30
 
 # Feature ID: FE09
 
@@ -36,6 +36,7 @@ The system shall:
 - Calculate overdue fines using approved policy.
 - Record fine collection.
 - Mark fines as paid when collection is complete.
+- Let librarian/admin manage the fine list UI with search/filter/detail and ascending fine ID ordering for traceable review.
 - Keep fine calculation traceable and testable.
 - Provide unpaid fine status for borrowing eligibility and reports.
 
@@ -94,10 +95,11 @@ The feature can only start when:
 ### MF-FE09-003: Record Fine Collection
 
 1. Librarian/admin opens an unpaid fine.
-2. Librarian/admin records collection information according to approved fields.
+2. Librarian/admin records collection information according to approved fields, such as collected amount, method, collector, and note when supported by the schema.
 3. The system validates actor permission and fine state.
 4. The system records collection event or payment timestamp if schema supports it.
-5. The system keeps the fine traceable.
+5. If the full amount is collected in Phase 1, the system marks the fine `PAID`.
+6. The system keeps the fine traceable.
 
 ### MF-FE09-004: Mark Fine As Paid
 
@@ -106,6 +108,14 @@ The feature can only start when:
 3. The system updates fine status to `PAID`.
 4. The system records `PaidAt`.
 5. The system writes an audit log entry if approved.
+
+### MF-FE09-005: Manage Fine List In Librarian UI
+
+1. Librarian opens Fine Management.
+2. The system lists fines with member, book, overdue days, amount, status, and related borrow detail.
+3. The list is sorted by fine ID ascending by default unless the user applies another approved sort.
+4. Librarian can search/filter and view detail without modifying the record.
+5. Paid/resolved fines remain visible for traceability.
 
 ---
 
@@ -158,6 +168,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE09-014: Any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal according to approved FE07 policy.
 - BR-FE09-015: Fine calculation and payment state changes must be traceable.
 - BR-FE09-016: Online payment gateway is out of scope; FE09 records offline collection/payment status only.
+- BR-FE09-017: Phase 1 does not require an admin confirm/refuse payment step after librarian collection; a full offline collection by librarian/admin may directly resolve the fine as `PAID`.
+- BR-FE09-018: Fine lists must use stable ordering by fine ID ascending by default to support reconciliation and classroom review.
 
 ---
 
@@ -173,6 +185,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE09-008: When a librarian/admin marks a fine as paid, the system shall set status to `PAID` and record paid timestamp.
 - FR-FE09-009: If an unauthorized actor attempts fine collection or paid marking, then the system shall deny access.
 - FR-FE09-010: When fine status changes, the system shall make the new status available for FE07 and FE12.
+- FR-FE09-011: When displaying the librarian fine list, the system shall support search/filter and default to fine ID ascending order.
+- FR-FE09-012: When a librarian/admin records full offline collection for an unpaid fine, the system shall mark the fine `PAID`, set payment metadata supported by the schema, and expose the updated state to borrowing eligibility and reports.
+- FR-FE09-013: IF a client submits collection for a resolved fine, the system shall reject the action or return the terminal state without collecting again.
 
 ---
 
@@ -188,6 +203,8 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-008: Given a member, when the member attempts to mark a fine paid, then access is denied.
 - AC-FE09-009: Given a paid fine, when borrowing eligibility checks unpaid fines, then the paid fine does not block borrowing.
 - AC-FE09-010: Given a member has any `UNPAID` fine with amount greater than 0, when FE07 checks borrowing or renewal eligibility, then the member is considered blocked.
+- AC-FE09-011: Given fines exist, when a librarian opens the fine list, then records are shown in fine ID ascending order by default and can be searched/filtered.
+- AC-FE09-012: Given an unpaid fine and full offline collection, when librarian/admin records the collection, then the fine becomes `PAID` and no longer blocks FE07 borrowing eligibility.
 
 ---
 
@@ -205,6 +222,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE09-008 | Unauthorized actor marks paid | Return forbidden response. |
 | EC-FE09-009 | Fine already paid | Return current state or reject duplicate paid action. |
 | EC-FE09-010 | Database update partially fails | Roll back fine status/payment/audit changes. |
+| EC-FE09-011 | Collection attempted on resolved fine | Reject or return current terminal state; do not double-collect. |
 
 ---
 
@@ -305,7 +323,7 @@ Note: when calculated overdue days are zero or negative, **no fine record is cre
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/fines/me` | Member | Query: `status?, page?, limit?` | Own fines | Member can see own fines only. |
-| GET | `/api/fines` | Librarian/Admin | Query: `userId?, status?, page?, limit?` | Fine list | Protected endpoint. |
+| GET | `/api/fines` | Librarian/Admin | Query: `q?, userId?, status?, page?, limit?, sort?` | Fine list | Protected endpoint. Default sort is fine ID ascending unless another approved sort is requested. |
 | GET | `/api/fines/{fineId}` | Owner or Librarian/Admin | - | Fine detail | Owner can view own fine only. |
 | POST | `/api/fines/calculate` | Librarian/Admin/System | `{ borrowDetailId }` | Fine result | Calculates from stored borrowing data. |
 | POST | `/api/fines/{fineId}/collections` | Librarian/Admin | `{ collectedAmount?, note? }` | Collection record/status | Optional if schema supports collection records. |
@@ -386,6 +404,8 @@ This feature does not include:
 | Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-007 | Prototype UI may store fine records locally for demo continuity, but final FE09 behavior must use server-side calculation and persistence. | User correction 2026-06-21 | APPROVED |
+| Q-FE09-008 | Phase 1 librarian collection resolves an offline-paid overdue fine directly; admin payment confirmation/refusal is not required in the sidebar/workflow unless approved later. | User correction 2026-06-30 | APPROVED |
+| Q-FE09-009 | Librarian fine list defaults to fine ID ascending order for stable review. | User correction 2026-06-30 | APPROVED |
 
 ---
 
@@ -404,6 +424,9 @@ This feature does not include:
 | BR-FE09-012 | UC44 | fineManagementRoutes.test.js > "staff marks an unpaid fine paid" | Ready for review |
 | FR-FE09-008 | UC44 | fineManagementRoutes.test.js > "staff marks an unpaid fine paid" | Ready for review |
 | BR-FE09-014 | UC42 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
+| FR-FE09-011 | UC41 | TBD | Ready for review |
+| FR-FE09-012 | UC43, UC44 | fineManagementRoutes.test.js > "collection marks PAID only when fully collected" | Ready for review |
+| FR-FE09-013 | UC43, UC44 | TBD | Ready for review |
 
 ---
 

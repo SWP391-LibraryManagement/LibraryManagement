@@ -20,6 +20,7 @@ import {
   CreditCard,
   FileText,
   Filter,
+  Home,
   ListChecks,
   LogOut,
   Plus,
@@ -455,17 +456,19 @@ export default function FineManagement() {
   const filteredFines = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return fines.filter((fine) => {
-      const matchesStatus = statusFilter === 'ALL' || fine.status === statusFilter;
-      const matchesQuery =
-        !normalizedQuery ||
-        fine.memberName.toLowerCase().includes(normalizedQuery) ||
-        fine.memberCode.toLowerCase().includes(normalizedQuery) ||
-        fine.bookTitle.toLowerCase().includes(normalizedQuery) ||
-        String(fine.borrowDetailId).includes(normalizedQuery);
+    return fines
+      .filter((fine) => {
+        const matchesStatus = statusFilter === 'ALL' || fine.status === statusFilter;
+        const matchesQuery =
+          !normalizedQuery ||
+          fine.memberName.toLowerCase().includes(normalizedQuery) ||
+          fine.memberCode.toLowerCase().includes(normalizedQuery) ||
+          fine.bookTitle.toLowerCase().includes(normalizedQuery) ||
+          String(fine.borrowDetailId).includes(normalizedQuery);
 
-      return matchesStatus && matchesQuery;
-    });
+        return matchesStatus && matchesQuery;
+      })
+      .sort((first, second) => Number(first.fineId) - Number(second.fineId));
   }, [fines, query, statusFilter]);
 
   const stats = useMemo(() => {
@@ -725,6 +728,8 @@ export default function FineManagement() {
           ? {
               ...fine,
               paidAmount: fine.amount,
+              paymentReviewStatus: 'PENDING',
+              paymentReviewRequestedAt: new Date().toISOString(),
               collectionNote,
               paymentMethod: collectionForm.paymentMethod,
               collectedAt: new Date().toISOString(),
@@ -747,9 +752,9 @@ export default function FineManagement() {
         fine.fineId === selectedFine.fineId
           ? {
               ...fine,
-              status: 'PAID',
               paidAmount: fine.amount,
-              paidAt: new Date().toISOString(),
+              paymentReviewStatus: 'PENDING',
+              paymentReviewRequestedAt: new Date().toISOString(),
               collectedAt: fine.collectedAt || new Date().toISOString(),
               collectedBy: fine.collectedBy || staffUser?.email || 'Thủ thư demo',
               paymentMethod: fine.paymentMethod || collectionForm.paymentMethod,
@@ -758,7 +763,7 @@ export default function FineManagement() {
           : fine
       )
     );
-    showToast('Đã đánh dấu phiếu phạt là đã thanh toán.');
+    showToast('Đã gửi phiếu thanh toán sang admin chờ xác nhận.');
   }
 
   function handleLogout() {
@@ -782,6 +787,19 @@ export default function FineManagement() {
           </div>
         </div>
 
+        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
+          <button onClick={() => navigate('/home')}>
+            <Home size={18} />Home
+          </button>
+          <span>Quản lý thư viện</span>
+          <button
+            className={workspace === 'books' ? 'active' : ''}
+            onClick={() => setWorkspace('books')}
+          >
+            <BookOpen size={18} />Book Management
+          </button>
+        </nav>
+
         <nav className="fine-workflow-nav" aria-label="Nghiệp vụ tiền phạt">
           <span>Nghiệp vụ tiền phạt</span>
           {fineSections.map((item) => {
@@ -801,16 +819,6 @@ export default function FineManagement() {
               </button>
             );
           })}
-        </nav>
-
-        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
-          <span>Quản lý thư viện</span>
-          <button
-            className={workspace === 'books' ? 'active' : ''}
-            onClick={() => setWorkspace('books')}
-          >
-            <BookOpen size={18} />Book Management
-          </button>
         </nav>
 
         <div className="fine-session">
@@ -1227,7 +1235,9 @@ export default function FineManagement() {
         .fine-workflow-nav button span { flex: 1; }
         .fine-workflow-nav button:hover, .fine-app-nav button:hover, .fine-session button:hover, .fine-workflow-nav button.active, .fine-app-nav button.active { background: #243244; color: #fff; }
         .fine-workflow-nav button.active, .fine-app-nav button.active { box-shadow: inset 3px 0 0 #2dd4bf; }
-        .fine-app-nav { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
+        .fine-app-nav button:first-of-type { margin-bottom: 10px; }
+        .fine-app-nav button:first-of-type + span { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
+        .fine-workflow-nav { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
         .fine-session span { color: #94a3b8; font-size: 12px; }
         .fine-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }

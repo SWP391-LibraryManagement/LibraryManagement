@@ -1,10 +1,10 @@
 # Feature Integration Map - Library Management System
 
-Version: 1.0.0
+Version: 1.1.0
 
 Status: APPROVED
 
-Last Updated: 2026-06-25
+Last Updated: 2026-06-30
 
 > This is the Layer 1 (system-level) "big picture" that links the 12 separately-owned feature specs. Approved on 2026-06-25 together with the system ERD (Section 4.1).
 
@@ -101,12 +101,14 @@ flowchart TD
   FE11 -->|"role checks"| FE08
   FE11 -->|"role checks"| FE09
   FE11 -->|"role checks"| FE12
+  FE11 -->|"admin console navigation / permissions / audit UI"| FE12
 
   FE04 -->|"approved membership eligibility"| FE07
   FE04 -->|"approved membership eligibility"| FE08
   FE04 -->|"member stats source"| FE12
 
   FE05 -->|"book metadata"| FE01
+  FE05 -->|"availability update command"| FE06
   FE05 -->|"book metadata"| FE06
   FE05 -->|"book metadata"| FE07
   FE05 -->|"book metadata"| FE08
@@ -191,17 +193,17 @@ integration points in Section 5, never by directly mutating another feature's ta
 
 | Feature | Depends On | Provides To Others | Integration Type |
 | --- | --- | --- | --- |
-| FE01 Public / Browse | FE05 book metadata, FE06 public availability, FE02 login/register navigation, FE04 membership application navigation | Public discovery flow before auth/membership | Data read, safety/privacy boundary |
+| FE01 Public / Browse | FE05 book metadata, FE06 public availability, FE02 login/register navigation, FE04 membership application navigation | Public discovery flow before auth/membership; latest home/search/detail availability after staff changes | Data read, safety/privacy boundary |
 | FE02 Authentication | FE11 role data / user-role tables | Identity, tokens, sessions, account events, protected request user context | Auth / role foundation |
 | FE03 User Profile | FE02 authenticated identity, FE04 membership status read-only, FE11 role/status read-only | Safe personal profile data for workflows | Data read, safety/privacy boundary |
 | FE04 Membership Management | FE02 authenticated user, FE11 staff/admin roles | Approved membership status for FE07/FE08 and member stats for FE12 | Eligibility dependency |
-| FE05 Book Management | FE02 auth, FE11 staff/admin roles | Book metadata for FE01/FE06/FE07/FE08/FE12 | Data owner dependency |
+| FE05 Book Management | FE02 auth, FE11 staff/admin roles, FE06 copy-status rules | Book metadata for FE01/FE06/FE07/FE08/FE12; staff availability update command for public display | Data owner dependency, documented availability integration |
 | FE06 Inventory / Book Copy | FE02 auth, FE05 book metadata, FE11 staff/admin roles, FE07/FE08 conflict records | Copy availability and copy status for FE01/FE07/FE08/FE12 | Data owner dependency, conflict check |
 | FE07 Borrowing Management | FE02 auth, FE04 membership, FE06 copy availability, FE08 reservation conflict, FE09 unpaid fine blocker, FE11 roles | Borrow records, due dates, return data, notification requests, report data | Core workflow, trigger, reporting source |
 | FE08 Reservation Management | FE02 auth, FE04 membership, FE06 copy status, FE11 roles | Reservation queue/status, reservation-ready notification requests, renewal conflict data | Core workflow, trigger, conflict check |
-| FE09 Fine Management | FE02 auth, FE07 borrow/return/due-date data, FE11 roles | Fine records, unpaid fine blockers, fine notifications, report data | Derived workflow, eligibility blocker |
+| FE09 Fine Management | FE02 auth, FE07 borrow/return/due-date data, FE11 roles | Fine records, offline collection/paid state, unpaid fine blockers, fine notifications, report data | Derived workflow, eligibility blocker |
 | FE10 Notification Management | Source features FE02/FE07/FE08/FE09, approved templates, email/mock provider | Notification records, delivery attempts/status | Workflow trigger receiver |
-| FE11 User & Role Management | FE02/role tables, admin identity, FE10 for password setup links if needed | Role assignments and account lifecycle data used by protected features | Authorization data owner |
+| FE11 User & Role Management | FE02/role tables, admin identity, FE07 request data for admin review, FE10 for password setup links if needed, FE12 for detailed reports | Role assignments, admin sidebar/permissions/audit surfaces, and account lifecycle data used by protected features | Authorization data owner, admin console shell |
 | FE12 Reporting & Statistics | FE02 auth, FE11 roles, FE04 membership, FE06 inventory, FE07 borrowing, FE08 reservations, FE09 fines | Read-only aggregate reports | Reporting source aggregation |
 
 ---
@@ -214,6 +216,7 @@ integration points in Section 5, never by directly mutating another feature's ta
 FE01 Public / Browse
   -> reads FE05 book metadata
   -> optionally reads FE06 public availability
+  -> displays latest availability from BookCopies after FE05/FE06 staff updates
   -> links user to FE02 login/register
   -> after registration, user may apply via FE04 Membership
 ```
@@ -221,8 +224,26 @@ FE01 Public / Browse
 Evidence in specs:
 
 - FE01 depends on FE06 for public availability.
+- FE01 must treat availability as a read-only public summary (`Còn sách` / `Đã mượn`) and must not expose copy barcodes, locations, borrowers, or staff-only inventory fields.
 - FE01 depends on FE02 for login/register navigation.
 - FE01 depends on FE04 for membership application after discovery.
+
+### 6.1.1 Catalog Availability Sync
+
+```text
+FE05 Book Management staff UI
+  -> validates librarian/admin role through FE02/FE11
+  -> sends availability command (`AVAILABLE` / `BORROWED`)
+  -> updates or delegates update of FE06 `BookCopies.Status`
+  -> FE01 `/home`, search, and detail read the latest active-book availability summary
+```
+
+Integration notes:
+
+- `Books.Status` is catalog visibility (`ACTIVE` / `INACTIVE`).
+- `BookCopies.Status` is public availability (`AVAILABLE` / `BORROWED` summary).
+- Public browse must hide inactive books even when copies are available.
+- The current prototype endpoint is `/api/books/{bookId}/availability`; final ownership may route this through a FE06 service boundary, but the integration contract remains the same.
 
 ### 6.2 Authentication And Protected Feature Access
 
@@ -291,6 +312,8 @@ Integration notes:
 ```text
 FE07 Borrowing return/due-date data
   -> FE09 Fine calculation
+  -> librarian/admin records offline collection in FE09
+  -> full collection sets FE09 fine status to PAID
   -> FE09 unpaid fine status
   -> FE07 borrowing eligibility blocker
   -> FE10 fine/overdue notification
@@ -300,6 +323,7 @@ FE07 Borrowing return/due-date data
 Integration notes:
 
 - FE09 calculation is derived from FE07 borrowing records.
+- FE09 Phase 1 records offline collection only; no online gateway and no admin confirm/refuse payment step is required after librarian collection unless a later spec adds it.
 - FE09 unpaid fine can block future FE07 borrowing.
 - FE09 can request FE10 fine notifications.
 - FE09 feeds FE12 reporting.
@@ -322,6 +346,22 @@ Integration notes:
 - FE12 must not mutate business records.
 - FE12 must enforce staff/admin access through FE02/FE11.
 
+### 6.7 Admin Console Flow
+
+```text
+FE11 User & Role Management
+  -> owns admin access shell, sidebar visibility, permissions matrix, and audit-log UI boundary
+  -> reads FE05/FE06/FE07/FE09/FE12 summaries for dashboard/admin views
+  -> FE07 request management data is view/action-enabled only while request status is pending
+  -> completed requests are read-only
+```
+
+Integration notes:
+
+- Admin sidebar currently includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs.
+- Confirm Payment and Confirm Borrow are removed admin sidebar workflows for the current prototype.
+- Reports-style summary visuals are consolidated into Dashboard; detailed reporting remains FE12 and must stay read-only.
+
 ---
 
 ## 7. Integration Evidence From Current Automated Tests
@@ -337,12 +377,16 @@ Integration notes:
 | FE08 -> FE10 | `backend/tests/reservationRoutes.test.js` | Processing reservation queue creates reservation-ready notification data. |
 | FE09 permissions / fine behavior | `backend/tests/fineRoutes.test.js` | Fine APIs and business rules are tested. |
 | FE12 aggregation | `backend/tests/reportRoutes.test.js` | Borrowing, inventory, and user reports aggregate source data without mutating it. |
+| FE05 -> FE01 availability sync | `frontend/src/page/BookManagement.jsx`, `backend/src/routes/bookRoutes.js` | Prototype supports `/api/books/{bookId}/availability`; public browse reads current active-book availability summary. Dedicated automated integration test still needed. |
+| FE11 admin console / request view | `frontend/src/page/UserManagement.jsx`, `backend/src/routes/adminRoutes.js` | Prototype includes admin sidebar, dashboard, permissions, audit logs, library, borrowings, and request views. Dedicated automated UI/API coverage still needed. |
 
 Known test gaps:
 
 - No browser E2E test currently proves full UI-level cross-feature flows.
 - No SQL Server-backed integration test currently proves DB schema-level integration.
 - FE01/FE04/FE05/FE06 backend coverage should be reviewed and expanded if code is implemented.
+- FE05 availability update -> FE01 `/home` refresh should receive a dedicated regression test.
+- FE11 request-management completed-state behavior should receive a dedicated regression test.
 
 ---
 
