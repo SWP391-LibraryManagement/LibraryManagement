@@ -2,13 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
-  BarChart3,
+  Banknote,
   BookOpen,
   Calendar,
   Check,
   ClipboardList,
+  Eye,
+  FileDown,
   Edit2,
   FilterX,
+  BookCopy,
+  Building2,
+  Home,
+  Library,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -18,11 +24,15 @@ import {
   RefreshCw,
   Search,
   Shield,
+  Tags,
+  Trash2,
   UserCog,
   Users,
   X,
 } from 'lucide-react';
 
+import { getFineRecords, saveFineRecords } from '../utils/libraryWorkflow';
+import { adminApi } from '../api/adminApi';
 import {
   createManagedUser,
   deactivateManagedUser,
@@ -56,6 +66,68 @@ const permissionRows = [
   { name: 'Deactivate accounts', admin: true, librarian: false, member: false },
   { name: 'Manage roles', admin: true, librarian: false, member: false },
   { name: 'View audit logs', admin: true, librarian: false, member: false },
+  { name: 'Manage library catalog', admin: true, librarian: true, member: false },
+  { name: 'Manage authors/publishers/categories', admin: true, librarian: false, member: false },
+  { name: 'Approve/reject borrow requests', admin: true, librarian: true, member: false },
+  { name: 'Process returns and renewals', admin: true, librarian: true, member: false },
+  { name: 'Calculate and collect fines', admin: true, librarian: true, member: false },
+  { name: 'Waive or cancel fines', admin: true, librarian: false, member: false },
+  { name: 'View reports', admin: true, librarian: true, member: false },
+  { name: 'Create borrow request', admin: false, librarian: false, member: true },
+  { name: 'View own borrowing history', admin: false, librarian: false, member: true },
+];
+const permissionModules = [
+  { module: 'User & Role', admin: 6, librarian: 0, member: 0 },
+  { module: 'Library', admin: 4, librarian: 2, member: 1 },
+  { module: 'Borrow/Return', admin: 5, librarian: 5, member: 2 },
+  { module: 'Fine', admin: 4, librarian: 3, member: 1 },
+  { module: 'Reports', admin: 3, librarian: 2, member: 0 },
+];
+const libraryResources = [
+  { id: 'books', label: 'Kho sách', icon: BookOpen },
+  { id: 'authors', label: 'Tác giả', icon: Users },
+  { id: 'publishers', label: 'Nhà xuất bản', icon: Building2 },
+  { id: 'categories', label: 'Quản lý danh mục', icon: Tags },
+];
+const borrowingStatuses = ['ALL', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'];
+const requestStatuses = ['ALL', 'PENDING', 'APPROVED', 'COMPLETED', 'REJECTED', 'CANCELLED'];
+const demoDashboard = {
+  summary: { totalBooks: 67, totalMembers: 23, totalAuthors: 26, totalBorrowed: 0, overdueBorrowed: 62 },
+  charts: {
+    mostBorrowed: [
+      { label: 'Clean Code', value: 11 }, { label: 'Java', value: 8 }, { label: 'CSDL', value: 6 },
+      { label: 'React', value: 5 }, { label: 'Node', value: 4 }, { label: 'SQL', value: 4 },
+      { label: 'Design', value: 4 }, { label: 'Testing', value: 3 }, { label: 'UX', value: 3 }, { label: 'API', value: 3 },
+    ],
+    overdue: [
+      { label: 'Java', value: 9 }, { label: 'C#', value: 7 }, { label: 'JS', value: 5 }, { label: 'SQL', value: 4 },
+    ],
+    returnedToday: [
+      { label: 'Clean Code', value: 4 }, { label: 'DDD', value: 3 }, { label: 'React', value: 2 }, { label: 'Node', value: 1 },
+    ],
+  },
+};
+const demoLibraryRows = {
+  books: [
+    { id: 1, title: 'Clean Code', isbn: '9780132350884', category: 'Programming', author: 'Robert C. Martin', publisher: 'Prentice Hall', publishYear: 2008, totalCopies: 5, availableCopies: 3, status: 'ACTIVE' },
+    { id: 2, title: 'Javaa', isbn: 'JAVA-001', category: 'Technology', author: 'James Gosling', publisher: 'Demo Press', publishYear: 2020, totalCopies: 2, availableCopies: 1, status: 'ACTIVE' },
+  ],
+  authors: [{ id: 1, name: 'Robert C. Martin', status: 'ACTIVE' }, { id: 2, name: 'James Gosling', status: 'ACTIVE' }],
+  publishers: [{ id: 1, name: 'Prentice Hall', status: 'ACTIVE' }, { id: 2, name: 'Demo Press', status: 'ACTIVE' }],
+  categories: [{ id: 1, name: 'Programming', status: 'ACTIVE' }, { id: 2, name: 'Technology', status: 'ACTIVE' }],
+};
+const demoBookMetadata = {
+  categories: demoLibraryRows.categories,
+  authors: demoLibraryRows.authors,
+  publishers: demoLibraryRows.publishers,
+};
+const demoBorrowings = [
+  { id: 332, requestId: 101, userId: 6, memberName: 'dat', email: '3eesfcs@gmail.com', bookTitle: 'Javaa', copyId: 233, barcode: 'BC-233', borrowDate: '2026-06-01', dueDate: '2026-06-02', returnDate: '', status: 'BORROWED' },
+  { id: 333, requestId: 102, userId: 7, memberName: 'Nguyen Lan An', email: 'lan@example.test', bookTitle: 'Clean Code', copyId: 12, barcode: 'BC-012', borrowDate: '2026-06-16', dueDate: '2026-06-30', returnDate: '2026-06-30', status: 'RETURNED' },
+];
+const demoRequests = [
+  { id: 1, requestDate: '2026-06-30T15:18:00', status: 'PENDING', memberName: 'Bích Hằng update', phone: '0912789876', email: 'bich@example.test', bookTitles: 'Gia đình, Bạn bè, Đất nước', categories: 'Chính trị 2', itemCount: 1 },
+  { id: 2, requestDate: '2026-06-30T14:47:00', status: 'COMPLETED', memberName: 'Nguyen Lan An', phone: '84946789559', email: 'lan@example.test', bookTitles: 'Kết nối tri thức', categories: 'Test 6', itemCount: 1 },
 ];
 
 function validateUserForm(form) {
@@ -122,6 +194,33 @@ function formatDate(value) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function toDateInput(value) {
+  return value ? String(value).slice(0, 10) : '';
+}
+
+function downloadCsv(filename, rows) {
+  const dataRows = Array.isArray(rows) ? rows : [];
+  if (!dataRows.length) return;
+  const columns = Object.keys(dataRows[0]);
+  const escapeCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const csv = [columns.join(','), ...dataRows.map((row) => columns.map((column) => escapeCell(row[column])).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function RoleBadge({ role }) {
@@ -336,13 +435,16 @@ function RoleModal({ user, roles, onClose, onSave }) {
   );
 }
 
-function Sidebar({ activeSection, onSectionChange, onLogout }) {
+function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavigate }) {
   const items = [
+    { id: 'home', icon: Home, label: 'Home', path: '/home' },
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'library', icon: Library, label: 'Thư viện' },
+    { id: 'circulation', icon: BookCopy, label: 'Quản lý mượn trả' },
+    { id: 'requests', icon: ClipboardList, label: 'Quản lý yêu cầu' },
     { id: 'users', icon: Users, label: 'All Users' },
     { id: 'roles', icon: Shield, label: 'Permissions' },
     { id: 'audit', icon: ClipboardList, label: 'Audit Logs' },
-    { id: 'reports', icon: BarChart3, label: 'Reports' },
   ];
 
   return (
@@ -358,12 +460,12 @@ function Sidebar({ activeSection, onSectionChange, onLogout }) {
       </div>
 
       <nav className="um-nav">
-        {items.map(({ id, icon: Icon, label }) => (
+        {items.map(({ id, icon: Icon, label, path }) => (
           <button
             key={id}
             type="button"
             className={activeSection === id ? 'active' : ''}
-            onClick={() => onSectionChange(id)}
+            onClick={() => (path ? onNavigate(path) : onSectionChange(id))}
           >
             <Icon size={18} />
             <span>{label}</span>
@@ -372,17 +474,157 @@ function Sidebar({ activeSection, onSectionChange, onLogout }) {
       </nav>
 
       <div className="um-sidebar-footer">
+        <div className="um-session">
+          <span>Dang dang nhap voi</span>
+          <strong>{currentUser?.email || 'admin.demo@library.test'}</strong>
+        </div>
         <button type="button" onClick={onLogout}>
           <LogOut size={18} />
-          <span>Logout</span>
+          <span>Dang xuat</span>
         </button>
       </div>
     </aside>
   );
 }
 
+function AdminLineChart({ title, rows }) {
+  const data = rows?.length ? rows : [{ label: 'No data', value: 0 }];
+  const maxValue = Math.max(...data.map((item) => Number(item.value) || 0), 1);
+  const width = 720;
+  const height = 230;
+  const pad = 34;
+  const points = data.map((item, index) => {
+    const x = pad + (index * (width - pad * 2)) / Math.max(data.length - 1, 1);
+    const y = height - pad - ((Number(item.value) || 0) / maxValue) * (height - pad * 2);
+    return { ...item, x, y };
+  });
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+
+  return (
+    <div className="um-panel chart">
+      <div className="um-chart-head">
+        <h2>{title}</h2>
+        <span>{data.reduce((sum, item) => sum + (Number(item.value) || 0), 0)} lượt</span>
+      </div>
+      <svg className="um-line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title}>
+        {[0, 1, 2, 3, 4].map((line) => {
+          const y = pad + (line * (height - pad * 2)) / 4;
+          return <line key={line} x1={pad} x2={width - pad} y1={y} y2={y} />;
+        })}
+        {points.map((point) => <line key={`v-${point.label}`} x1={point.x} x2={point.x} y1={pad} y2={height - pad} />)}
+        <path d={path} />
+        {points.map((point) => (
+          <g key={point.label}>
+            <circle cx={point.x} cy={point.y} r="4" />
+            <text className="value" x={point.x} y={Math.max(point.y - 10, 14)}>{point.value}</text>
+            <text x={point.x} y={height - 9}>{String(point.label).slice(0, 12)}</text>
+          </g>
+        ))}
+      </svg>
+      <div className="um-chart-list">
+        {data.slice(0, 8).map((item, index) => (
+          <div key={`${item.label}-${index}`}>
+            <span>{index + 1}. {item.label}</span>
+            <strong>{item.value}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
+  const isBook = resource === 'books';
+  const [form, setForm] = useState(() => isBook ? {
+    title: item?.title || '',
+    isbn: item?.isbn || '',
+    categoryId: item?.categoryId || metadata.categories?.[0]?.id || '',
+    authorId: item?.authorId || metadata.authors?.[0]?.id || '',
+    publisherId: item?.publisherId || metadata.publishers?.[0]?.id || '',
+    publishYear: item?.publishYear || item?.year || '',
+    pages: item?.pages || '',
+    status: item?.status || 'ACTIVE',
+    description: item?.description || '',
+  } : { name: item?.name || '' });
+
+  function update(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  return (
+    <div className="um-modal-backdrop" onMouseDown={onClose}>
+      <form className="um-modal wide" onMouseDown={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); onSubmit(form); }}>
+        <div className="um-modal-header">
+          <div>
+            <p>{item ? 'Update' : 'Create'}</p>
+            <h2>{isBook ? 'Kho sách' : 'Danh mục thư viện'}</h2>
+          </div>
+          <button type="button" className="um-icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="um-modal-body">
+          {isBook ? (
+            <div className="um-form-grid">
+              <label>Tên sách<input value={form.title} onChange={(e) => update('title', e.target.value)} required /></label>
+              <label>ISBN<input value={form.isbn} onChange={(e) => update('isbn', e.target.value)} /></label>
+              <label>Danh mục<select value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)} required>{metadata.categories.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+              <label>Tác giả<select value={form.authorId} onChange={(e) => update('authorId', e.target.value)} required>{metadata.authors.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+              <label>Nhà xuất bản<select value={form.publisherId} onChange={(e) => update('publisherId', e.target.value)}>{metadata.publishers.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+              <label>Năm xuất bản<input type="number" value={form.publishYear} onChange={(e) => update('publishYear', e.target.value)} /></label>
+              <label>Số trang<input type="number" value={form.pages} onChange={(e) => update('pages', e.target.value)} /></label>
+              <label>Trạng thái<select value={form.status} onChange={(e) => update('status', e.target.value)}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
+              <label className="span-2">Mô tả<textarea value={form.description} onChange={(e) => update('description', e.target.value)} /></label>
+            </div>
+          ) : (
+            <label>Tên<input value={form.name} onChange={(e) => update('name', e.target.value)} required maxLength={100} /></label>
+          )}
+        </div>
+        <div className="um-modal-actions">
+          <button type="button" className="um-secondary-button" onClick={onClose}>Cancel</button>
+          <button type="submit" className="um-primary-button">Save</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function BorrowingModal({ item, onClose, onSubmit }) {
+  const [form, setForm] = useState(() => ({
+    userId: item?.userId || '',
+    copyId: item?.copyId || '',
+    borrowDate: toDateInput(item?.borrowDate),
+    dueDate: toDateInput(item?.dueDate),
+    returnDate: toDateInput(item?.returnDate),
+    status: item?.status || 'BORROWED',
+  }));
+  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+
+  return (
+    <div className="um-modal-backdrop" onMouseDown={onClose}>
+      <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); onSubmit(form); }}>
+        <div className="um-modal-header">
+          <div><p>{item ? 'Update' : 'Create'}</p><h2>Quản lý mượn trả</h2></div>
+          <button type="button" className="um-icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="um-modal-body">
+          {!item && <label>User ID<input value={form.userId} onChange={(e) => update('userId', e.target.value)} required /></label>}
+          {!item && <label>Copy ID<input value={form.copyId} onChange={(e) => update('copyId', e.target.value)} required /></label>}
+          <label>Ngày mượn<input type="date" value={form.borrowDate} onChange={(e) => update('borrowDate', e.target.value)} /></label>
+          <label>Ngày hạn<input type="date" value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} required /></label>
+          <label>Ngày trả<input type="date" value={form.returnDate} onChange={(e) => update('returnDate', e.target.value)} /></label>
+          <label>Trạng thái<select value={form.status} onChange={(e) => update('status', e.target.value)}>{borrowingStatuses.filter((status) => status !== 'ALL').map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+        </div>
+        <div className="um-modal-actions">
+          <button type="button" className="um-secondary-button" onClick={onClose}>Cancel</button>
+          <button type="submit" className="um-primary-button">Save</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function UserManagement() {
   const navigate = useNavigate();
+  const currentAdmin = getStoredAdminUser();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
@@ -397,6 +639,20 @@ function UserManagement() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
+  const [paymentFines, setPaymentFines] = useState(() => getFineRecords());
+  const [dashboardData, setDashboardData] = useState(demoDashboard);
+  const [libraryResource, setLibraryResource] = useState('books');
+  const [libraryRows, setLibraryRows] = useState(demoLibraryRows.books);
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [libraryStatus, setLibraryStatus] = useState('ALL');
+  const [libraryModal, setLibraryModal] = useState(null);
+  const [bookMetadata, setBookMetadata] = useState(demoBookMetadata);
+  const [borrowings, setBorrowings] = useState(demoBorrowings);
+  const [borrowingFilter, setBorrowingFilter] = useState({ q: '', status: 'ALL' });
+  const [borrowingModal, setBorrowingModal] = useState(null);
+  const [requests, setRequests] = useState(demoRequests);
+  const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', fromDate: '', toDate: '' });
+  const [viewRequest, setViewRequest] = useState(null);
   const [toast, setToast] = useState(null);
   const hasActiveFilters = search.trim() || roleFilter !== 'ALL' || statusFilter !== 'ALL';
   const isUserDirectorySection = activeSection === 'users';
@@ -405,8 +661,12 @@ function UserManagement() {
     users: { eyebrow: 'User Directory', title: 'All Users' },
     roles: { eyebrow: 'Access Control', title: 'Permissions' },
     audit: { eyebrow: 'System Trace', title: 'Audit Logs' },
-    reports: { eyebrow: 'Admin Insights', title: 'Reports' },
+    library: { eyebrow: 'Library', title: 'Thư viện' },
+    circulation: { eyebrow: 'Borrow Return', title: 'Quản lý mượn trả' },
+    requests: { eyebrow: 'Request Management', title: 'Quản lý yêu cầu' },
+    payments: { eyebrow: 'Payment Review', title: 'Confirm / Refuse Payment' },
   }[activeSection];
+  const pendingPayments = paymentFines.filter((fine) => fine.paymentReviewStatus === 'PENDING');
 
   function handleLogout() {
     localStorage.removeItem('accessToken');
@@ -462,6 +722,10 @@ function UserManagement() {
       setStatusFilter('ALL');
       setSearch('');
     }
+
+    if (section === 'payments') {
+      setPaymentFines(getFineRecords());
+    }
   }
 
   const stats = useMemo(
@@ -483,27 +747,6 @@ function UserManagement() {
         })),
     [roles, users]
   );
-  const roleChart = useMemo(() => {
-    const colors = ['#7c3aed', '#0f766e', '#2f80ed'];
-    const total = Math.max(roleSummary.reduce((sum, role) => sum + role.count, 0), 1);
-    const chart = roleSummary.reduce(
-      (acc, role, index) => {
-        const start = acc.cursor;
-        const end = start + (role.count / total) * 360;
-        return {
-          cursor: end,
-          segments: [...acc.segments, `${colors[index % colors.length]} ${start}deg ${end}deg`],
-        };
-      },
-      { cursor: 0, segments: [] }
-    );
-
-    return {
-      total: total === 1 && roleSummary.every((role) => role.count === 0) ? 0 : total,
-      background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
-    };
-  }, [roleSummary]);
-  const recentUsers = users.slice(0, 5);
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
@@ -544,6 +787,23 @@ function UserManagement() {
   }, []);
 
   useEffect(() => {
+    if (activeSection === 'dashboard') {
+      loadDashboard();
+    }
+    if (activeSection === 'library') {
+      loadLibrary(libraryResource);
+    }
+    if (activeSection === 'circulation') {
+      loadBorrowings();
+    }
+    if (activeSection === 'requests') {
+      loadRequests();
+    }
+  // The loaders intentionally read current filters when the active admin section changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, libraryResource]);
+
+  useEffect(() => {
     if (activeSection !== 'audit') {
       return;
     }
@@ -572,11 +832,186 @@ function UserManagement() {
     return () => clearTimeout(timer);
   }, [activeSection]);
 
+  useEffect(() => {
+    function refreshPayments() {
+      setPaymentFines(getFineRecords());
+    }
+
+    window.addEventListener('storage', refreshPayments);
+    return () => window.removeEventListener('storage', refreshPayments);
+  }, []);
+
   function clearFilters() {
     setSearch('');
     setRoleFilter('ALL');
     setStatusFilter('ALL');
     loadUsers(1, { search: '', role: 'ALL', status: 'ALL' });
+  }
+
+  async function loadDashboard() {
+    try {
+      setDashboardData(await adminApi.dashboard());
+    } catch (error) {
+      setDashboardData(demoDashboard);
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function loadLibrary(resource = libraryResource) {
+    try {
+      const params = {
+        q: libraryQuery.trim(),
+        status: libraryStatus === 'ALL' ? '' : libraryStatus,
+      };
+      const result = resource === 'books'
+        ? await adminApi.libraryBooks(params)
+        : await adminApi.libraryResource(resource, params);
+      setLibraryRows(result.data || []);
+      if (resource === 'books') {
+        const metadata = await adminApi.bookMetadata();
+        setBookMetadata(metadata.data || { categories: [], authors: [], publishers: [] });
+      }
+    } catch (error) {
+      setLibraryRows(demoLibraryRows[resource] || []);
+      if (resource === 'books') {
+        setBookMetadata(demoBookMetadata);
+      }
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function saveLibrary(form) {
+    try {
+      if (libraryResource === 'books') {
+        if (libraryModal?.item) {
+          await adminApi.updateBook(libraryModal.item.id, form);
+        } else {
+          await adminApi.createBook(form);
+        }
+      } else if (libraryModal?.item) {
+        await adminApi.updateResource(libraryResource, libraryModal.item.id, form);
+      } else {
+        await adminApi.createResource(libraryResource, form);
+      }
+      setLibraryModal(null);
+      await loadLibrary();
+      setToast({ type: 'success', message: 'Library data saved.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function deleteLibraryItem(row) {
+    if (!window.confirm(`Delete ${row.title || row.name}?`)) return;
+    try {
+      if (libraryResource === 'books') {
+        await adminApi.deactivateBook(row.id);
+      } else {
+        await adminApi.deleteResource(libraryResource, row.id);
+      }
+      await loadLibrary();
+      setToast({ type: 'success', message: 'Item deleted.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function loadBorrowings() {
+    try {
+      const result = await adminApi.borrowings({
+        q: borrowingFilter.q.trim(),
+        status: borrowingFilter.status === 'ALL' ? '' : borrowingFilter.status,
+      });
+      setBorrowings(result.data || []);
+    } catch (error) {
+      setBorrowings(demoBorrowings);
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function saveBorrowing(form) {
+    try {
+      if (borrowingModal?.item) {
+        await adminApi.updateBorrowing(borrowingModal.item.id, form);
+      } else {
+        await adminApi.createBorrowing(form);
+      }
+      setBorrowingModal(null);
+      await loadBorrowings();
+      setToast({ type: 'success', message: 'Borrowing saved.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function loadRequests() {
+    try {
+      const result = await adminApi.requests({
+        q: requestFilter.q.trim(),
+        status: requestFilter.status === 'ALL' ? '' : requestFilter.status,
+        fromDate: requestFilter.fromDate,
+        toDate: requestFilter.toDate,
+      });
+      setRequests(result.data || []);
+    } catch (error) {
+      setRequests(demoRequests);
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function updateRequestStatus(requestId, status) {
+    try {
+      await adminApi.updateRequestStatus(requestId, status);
+      setViewRequest(null);
+      await loadRequests();
+      setToast({ type: 'success', message: 'Request status updated.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  function savePaymentRows(nextRows, message) {
+    saveFineRecords(nextRows);
+    setPaymentFines(nextRows);
+    setToast({ type: 'success', message });
+  }
+
+  function confirmPayment(fineId) {
+    const now = new Date().toISOString();
+    const nextRows = paymentFines.map((fine) =>
+      fine.fineId === fineId
+        ? {
+            ...fine,
+            status: 'PAID',
+            paidAmount: fine.amount,
+            paidAt: now,
+            paymentReviewStatus: 'CONFIRMED',
+            paymentReviewedAt: now,
+            paymentReviewedBy: currentAdmin?.email || 'admin.demo@library.test',
+          }
+        : fine
+    );
+
+    savePaymentRows(nextRows, 'Payment confirmed and fine marked as paid.');
+  }
+
+  function refusePayment(fineId) {
+    const now = new Date().toISOString();
+    const nextRows = paymentFines.map((fine) =>
+      fine.fineId === fineId
+        ? {
+            ...fine,
+            paidAmount: 0,
+            paidAt: '',
+            collectedAt: '',
+            paymentReviewStatus: 'REFUSED',
+            paymentReviewedAt: now,
+            paymentReviewedBy: currentAdmin?.email || 'admin.demo@library.test',
+          }
+        : fine
+    );
+
+    savePaymentRows(nextRows, 'Payment refused. Fine is returned to unpaid follow-up.');
   }
 
   async function submitModal(form) {
@@ -671,8 +1106,10 @@ function UserManagement() {
     <div className="um-shell">
       <Sidebar
         activeSection={activeSection}
+        currentUser={currentAdmin}
         onSectionChange={handleSectionChange}
         onLogout={handleLogout}
+        onNavigate={(path) => navigate(path)}
       />
 
       <main className="um-main">
@@ -682,7 +1119,17 @@ function UserManagement() {
             <h1>{sectionMeta.title}</h1>
           </div>
           <div className="um-actions">
-            <button className="um-secondary-button" onClick={() => loadUsers()}>
+            <button
+              className="um-secondary-button"
+              onClick={() => {
+                if (activeSection === 'payments') setPaymentFines(getFineRecords());
+                else if (activeSection === 'dashboard') loadDashboard();
+                else if (activeSection === 'library') loadLibrary();
+                else if (activeSection === 'circulation') loadBorrowings();
+                else if (activeSection === 'requests') loadRequests();
+                else loadUsers();
+              }}
+            >
               <RefreshCw size={16} />
               Refresh
             </button>
@@ -695,7 +1142,7 @@ function UserManagement() {
           </div>
         </header>
 
-        {(activeSection === 'dashboard' || isUserDirectorySection) && <section className="um-stats">
+        {isUserDirectorySection && <section className="um-stats">
           {stats.map(({ label, value, icon: Icon }) => (
             <div className="um-stat" key={label}>
               <Icon size={20} />
@@ -708,26 +1155,180 @@ function UserManagement() {
         </section>}
 
         {activeSection === 'dashboard' && (
-          <section className="um-panel-grid">
-            <div className="um-panel">
-              <h2>Recent Accounts</h2>
-              <div className="um-mini-list">
-                {recentUsers.map((user) => (
-                  <button key={user.userId} type="button" onClick={() => setSelectedUser(user)}>
-                    <span>{user.fullName || user.email}</span>
-                    <RoleBadge role={getPrimaryRole(user)} />
-                  </button>
-                ))}
-              </div>
+          <>
+            <section className="um-stats dashboard">
+              {[
+                { label: 'Tổng số sách', value: dashboardData.summary?.totalBooks || 0, icon: BookOpen },
+                { label: 'Tổng số thành viên', value: dashboardData.summary?.totalMembers || 0, icon: Users },
+                { label: 'Tác giả', value: dashboardData.summary?.totalAuthors || 0, icon: UserCog },
+                { label: 'Tổng số sách mượn', value: dashboardData.summary?.totalBorrowed || 0, icon: BookCopy },
+                { label: 'Sách mượn quá hạn', value: dashboardData.summary?.overdueBorrowed || 0, icon: AlertTriangle },
+              ].map(({ label, value, icon: Icon }) => (
+                <div className="um-stat dashboard-card" key={label}>
+                  <Icon size={24} />
+                  <div>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                </div>
+              ))}
+            </section>
+            <section className="um-chart-grid">
+              <AdminLineChart title="Sách được mượn nhiều nhất" rows={dashboardData.charts?.mostBorrowed} />
+              <AdminLineChart title="Danh sách mượn quá hạn" rows={dashboardData.charts?.overdue} />
+              <AdminLineChart title="Danh sách trả lại hôm nay" rows={dashboardData.charts?.returnedToday} />
+            </section>
+          </>
+        )}
+
+        {activeSection === 'library' && (
+          <section className="um-admin-section">
+            <div className="um-tabs">
+              {libraryResources.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={libraryResource === id ? 'active' : ''}
+                  onClick={() => {
+                    setLibraryResource(id);
+                    setLibraryQuery('');
+                    setLibraryStatus('ALL');
+                  }}
+                >
+                  <Icon size={16} />
+                  {label}
+                </button>
+              ))}
             </div>
-            <div className="um-panel">
-              <h2>Admin Shortcuts</h2>
-              <div className="um-shortcuts">
-                <button type="button" onClick={() => handleSectionChange('users')}>Review all users</button>
-                <button type="button" onClick={() => handleSectionChange('roles')}>Manage role assignments</button>
-                <button type="button" onClick={() => handleSectionChange('audit')}>Check audit trail</button>
+            <div className="um-toolbar">
+              <div className="um-search">
+                <Search size={18} />
+                <input value={libraryQuery} placeholder="Search library data..." onChange={(event) => setLibraryQuery(event.target.value)} />
               </div>
+              {libraryResource === 'books' && (
+                <select value={libraryStatus} onChange={(event) => setLibraryStatus(event.target.value)}>
+                  <option value="ALL">All statuses</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
+              )}
+              <button className="um-secondary-button" onClick={() => loadLibrary()}>Search</button>
+              <button className="um-secondary-button" onClick={() => downloadCsv(`${libraryResource}.csv`, libraryRows)}><FileDown size={16} /> Export</button>
+              <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Add</button>
             </div>
+            <section className="um-content">
+              <table className="um-table">
+                <thead>
+                  {libraryResource === 'books' ? (
+                    <tr><th>ID</th><th>Tên sách</th><th>ISBN</th><th>Danh mục</th><th>Tác giả</th><th>NXB</th><th>Năm</th><th>Bản sao</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                  ) : (
+                    <tr><th>STT</th><th>Tên</th><th>Ngày tạo</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                  )}
+                </thead>
+                <tbody>
+                  {libraryRows.map((row, index) => libraryResource === 'books' ? (
+                    <tr key={row.id}>
+                      <td>#{row.id}</td>
+                      <td><strong>{row.title}</strong></td>
+                      <td>{row.isbn || '-'}</td>
+                      <td>{row.category || '-'}</td>
+                      <td>{row.author || '-'}</td>
+                      <td>{row.publisher || '-'}</td>
+                      <td>{row.publishYear || row.year || '-'}</td>
+                      <td>{row.availableCopies || 0}/{row.totalCopies || 0}</td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" onClick={() => deleteLibraryItem(row)}><Trash2 size={16} /></button></div></td>
+                    </tr>
+                  ) : (
+                    <tr key={row.id}>
+                      <td>{index + 1}</td>
+                      <td><strong>{row.name}</strong></td>
+                      <td>{row.createdAt || 'Không lưu trong DB'}</td>
+                      <td><span className="um-badge status-active">{row.status || 'ACTIVE'}</span></td>
+                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" onClick={() => deleteLibraryItem(row)}><Trash2 size={16} /></button></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {libraryRows.length === 0 && <div className="um-empty">No library data found.</div>}
+            </section>
+          </section>
+        )}
+
+        {activeSection === 'circulation' && (
+          <section className="um-admin-section">
+            <div className="um-toolbar">
+              <div className="um-search"><Search size={18} /><input value={borrowingFilter.q} placeholder="Search member, book, barcode..." onChange={(event) => setBorrowingFilter((current) => ({ ...current, q: event.target.value }))} /></div>
+              <select value={borrowingFilter.status} onChange={(event) => setBorrowingFilter((current) => ({ ...current, status: event.target.value }))}>
+                {borrowingStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <button className="um-secondary-button" onClick={loadBorrowings}>Search</button>
+              <button className="um-secondary-button" onClick={() => downloadCsv('borrowings.csv', borrowings)}><FileDown size={16} /> Export</button>
+              <button className="um-primary-button" onClick={() => setBorrowingModal({ item: null })}><Plus size={16} /> Add</button>
+            </div>
+            <section className="um-content">
+              <table className="um-table">
+                <thead><tr><th>ID</th><th>Thành viên</th><th>Sách</th><th>Barcode</th><th>Ngày mượn</th><th>Ngày hạn</th><th>Ngày trả</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                  {borrowings.map((row) => (
+                    <tr key={row.id}>
+                      <td>#{row.id}</td>
+                      <td><strong>{row.memberName}</strong><span>{row.email}</span></td>
+                      <td>{row.bookTitle}</td>
+                      <td>{row.barcode || `Copy #${row.copyId}`}</td>
+                      <td>{formatDate(row.borrowDate)}</td>
+                      <td>{formatDate(row.dueDate)}</td>
+                      <td>{formatDate(row.returnDate)}</td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status}</span></td>
+                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setBorrowingModal({ item: row })}><Edit2 size={16} /></button></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {borrowings.length === 0 && <div className="um-empty">No borrowing records found.</div>}
+            </section>
+          </section>
+        )}
+
+        {activeSection === 'requests' && (
+          <section className="um-admin-section">
+            <div className="um-toolbar requests">
+              <div className="um-search"><Search size={18} /><input value={requestFilter.q} placeholder="Tìm theo tên sách hoặc tài khoản..." onChange={(event) => setRequestFilter((current) => ({ ...current, q: event.target.value }))} /></div>
+              <select value={requestFilter.status} onChange={(event) => setRequestFilter((current) => ({ ...current, status: event.target.value }))}>{requestStatuses.map((status) => <option key={status} value={status}>{status === 'PENDING' ? 'Chờ xác nhận' : status === 'COMPLETED' ? 'Hoàn thành' : status}</option>)}</select>
+              <input type="date" value={requestFilter.fromDate} onChange={(event) => setRequestFilter((current) => ({ ...current, fromDate: event.target.value }))} />
+              <input type="date" value={requestFilter.toDate} onChange={(event) => setRequestFilter((current) => ({ ...current, toDate: event.target.value }))} />
+              <button className="um-secondary-button" onClick={loadRequests}>Search</button>
+              <button className="um-primary-button" onClick={() => downloadCsv('requests.csv', requests)}><FileDown size={16} /> Xuất dữ liệu</button>
+            </div>
+            <section className="um-content">
+              <table className="um-table request-table">
+                <thead><tr><th>STT</th><th>Tên sách</th><th>Tài khoản</th><th>Số điện thoại</th><th>Thể loại</th><th>Thời gian đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                  {requests.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{index + 1}</td>
+                      <td><strong>{row.bookTitles || '-'}</strong><span>{row.itemCount || 0} sách</span></td>
+                      <td>{row.memberName}</td>
+                      <td>{row.phone || '-'}</td>
+                      <td>{row.categories || '-'}</td>
+                      <td>{formatDate(row.requestDate)}</td>
+                      <td><span className={`um-badge status-${String(row.status || '').toLowerCase()}`}>{row.status === 'PENDING' ? 'Chờ xác nhận' : row.status === 'COMPLETED' ? 'Hoàn thành' : row.status}</span></td>
+                      <td>
+                        <button
+                          className="um-icon-button"
+                          disabled={row.status !== 'PENDING'}
+                          title={row.status === 'PENDING' ? 'Cập nhật yêu cầu' : 'Yêu cầu đã hoàn thành, không thể sửa'}
+                          onClick={() => setViewRequest(row)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {requests.length === 0 && <div className="um-empty">No requests found.</div>}
+            </section>
           </section>
         )}
 
@@ -858,56 +1459,118 @@ function UserManagement() {
           </button>
         </footer>}
 
-        {activeSection === 'roles' && (
-          <section className="um-panel-grid permissions">
-            <div className="um-panel">
-              <h2>Role Summary</h2>
-              <div className="um-role-summary">
-                {roleSummary.map((role) => (
-                  <button
-                    type="button"
-                    key={role.roleName}
-                    onClick={() => {
-                      setActiveSection('users');
-                      setRoleFilter(role.roleName);
-                      setStatusFilter('ALL');
-                      setSearch('');
-                    }}
-                  >
-                    <RoleBadge role={role.roleName} />
-                    <strong>{role.count}</strong>
-                    <span>assigned account{role.count === 1 ? '' : 's'}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="um-note">
-                Assign and revoke roles from the shield action on any user row or detail drawer.
-              </div>
-            </div>
-
-            <div className="um-panel">
-              <h2>Permission Matrix</h2>
-              <table className="um-permission-table">
-                <thead>
-                  <tr>
-                    <th>Permission</th>
-                    <th>Admin</th>
-                    <th>Librarian</th>
-                    <th>Member</th>
+        {activeSection === 'payments' && (
+          <section className="um-content">
+            <table className="um-table">
+              <thead>
+                <tr>
+                  <th>Fine</th>
+                  <th>Member</th>
+                  <th>Book</th>
+                  <th>Amount</th>
+                  <th>Collected by</th>
+                  <th>Method</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingPayments.map((fine) => (
+                  <tr key={fine.fineId}>
+                    <td>
+                      <strong>#{fine.fineId}</strong>
+                      <span>{formatDate(fine.paymentReviewRequestedAt || fine.collectedAt)}</span>
+                    </td>
+                    <td>
+                      <strong>{fine.memberName || '-'}</strong>
+                      <span>{fine.email || fine.memberCode || '-'}</span>
+                    </td>
+                    <td>
+                      <strong>{fine.bookTitle || '-'}</strong>
+                      <span>Borrow detail #{fine.borrowDetailId || '-'}</span>
+                    </td>
+                    <td>{formatCurrency(fine.amount)}</td>
+                    <td>{fine.collectedBy || '-'}</td>
+                    <td>{fine.paymentMethod || '-'}</td>
+                    <td>
+                      <div className="um-row-actions">
+                        <button className="um-primary-button" onClick={() => confirmPayment(fine.fineId)}>
+                          <Check size={16} />
+                          Confirm
+                        </button>
+                        <button className="um-danger-button" onClick={() => refusePayment(fine.fineId)}>
+                          <X size={16} />
+                          Refuse
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {permissionRows.map((permission) => (
-                    <tr key={permission.name}>
-                      <td>{permission.name}</td>
-                      <td>{permission.admin ? 'Yes' : '-'}</td>
-                      <td>{permission.librarian ? 'Yes' : '-'}</td>
-                      <td>{permission.member ? 'Yes' : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+            {pendingPayments.length === 0 && (
+              <div className="um-empty">
+                <Banknote size={28} />
+                <strong>No payment waiting for admin review</strong>
+                <span>Librarian payment records will appear here after collection is recorded.</span>
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeSection === 'roles' && (
+          <section className="um-admin-section">
+            <div className="um-permission-cards">
+              {roleSummary.map((role) => (
+                <button
+                  type="button"
+                  key={role.roleName}
+                  onClick={() => {
+                    setActiveSection('users');
+                    setRoleFilter(role.roleName);
+                    setStatusFilter('ALL');
+                    setSearch('');
+                  }}
+                >
+                  <RoleBadge role={role.roleName} />
+                  <strong>{role.count}</strong>
+                  <span>assigned accounts</span>
+                </button>
+              ))}
             </div>
+            <section className="um-panel-grid permissions">
+              <div className="um-panel">
+                <h2>Module Coverage</h2>
+                <table className="um-permission-table compact">
+                  <thead><tr><th>Module</th><th>Admin</th><th>Librarian</th><th>Member</th></tr></thead>
+                  <tbody>
+                    {permissionModules.map((row) => (
+                      <tr key={row.module}>
+                        <td>{row.module}</td>
+                        <td>{row.admin} rules</td>
+                        <td>{row.librarian} rules</td>
+                        <td>{row.member} rules</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="um-panel">
+                <h2>Permission Matrix</h2>
+                <table className="um-permission-table">
+                  <thead><tr><th>Permission</th><th>Admin</th><th>Librarian</th><th>Member</th></tr></thead>
+                  <tbody>
+                    {permissionRows.map((permission) => (
+                      <tr key={permission.name}>
+                        <td>{permission.name}</td>
+                        <td>{permission.admin ? 'Yes' : '-'}</td>
+                        <td>{permission.librarian ? 'Yes' : '-'}</td>
+                        <td>{permission.member ? 'Yes' : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </section>
         )}
 
@@ -948,42 +1611,6 @@ function UserManagement() {
           </section>
         )}
 
-        {activeSection === 'reports' && (
-          <section className="um-panel-grid">
-            <div className="um-panel">
-              <h2>Status Report</h2>
-              <div className="um-report-bars">
-                {['ACTIVE', 'INACTIVE', 'LOCKED'].map((status) => {
-                  const count = users.filter((user) => user.status === status).length;
-                  const pct = users.length ? Math.round((count / users.length) * 100) : 0;
-                  return (
-                    <div key={status}>
-                      <span>{statusLabels[status]}</span>
-                      <strong>{count}</strong>
-                      <div><i style={{ width: `${pct}%` }} /></div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="um-panel">
-              <h2>Role Distribution</h2>
-              <div className="um-chart-card">
-                <div className="um-donut" style={{ background: roleChart.background }}>
-                  <span>{roleChart.total}</span>
-                </div>
-                <div className="um-role-summary compact">
-                  {roleSummary.map((role) => (
-                    <div key={role.roleName}>
-                      <RoleBadge role={role.roleName} />
-                      <strong>{role.count}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
       </main>
 
       {selectedUser && (
@@ -1059,6 +1686,49 @@ function UserManagement() {
         />
       )}
 
+      {libraryModal && (
+        <LibraryModal
+          resource={libraryResource}
+          metadata={bookMetadata}
+          item={libraryModal.item}
+          onClose={() => setLibraryModal(null)}
+          onSubmit={saveLibrary}
+        />
+      )}
+
+      {borrowingModal && (
+        <BorrowingModal
+          item={borrowingModal.item}
+          onClose={() => setBorrowingModal(null)}
+          onSubmit={saveBorrowing}
+        />
+      )}
+
+      {viewRequest && (
+        <div className="um-modal-backdrop" onMouseDown={() => setViewRequest(null)}>
+          <div className="um-modal" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="um-modal-header">
+              <div><p>Request detail</p><h2>Yêu cầu #{viewRequest.id}</h2></div>
+              <button type="button" className="um-icon-button" onClick={() => setViewRequest(null)}><X size={18} /></button>
+            </div>
+            <div className="um-modal-body detail">
+              <p><strong>Tài khoản:</strong> {viewRequest.memberName} - {viewRequest.email}</p>
+              <p><strong>Số điện thoại:</strong> {viewRequest.phone || '-'}</p>
+              <p><strong>Sách:</strong> {viewRequest.bookTitles || '-'}</p>
+              <p><strong>Thể loại:</strong> {viewRequest.categories || '-'}</p>
+              <p><strong>Thời gian đặt:</strong> {formatDate(viewRequest.requestDate)}</p>
+              <p><strong>Trạng thái:</strong> {viewRequest.status}</p>
+            </div>
+            {viewRequest.status === 'PENDING' && (
+              <div className="um-modal-actions">
+                <button className="um-secondary-button" onClick={() => updateRequestStatus(viewRequest.id, 'REJECTED')}>Từ chối</button>
+                <button className="um-primary-button" onClick={() => updateRequestStatus(viewRequest.id, 'COMPLETED')}>Hoàn thành</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
 
       <style>{`
@@ -1069,9 +1739,13 @@ function UserManagement() {
         .um-brand strong, .um-brand span { display: block; }
         .um-brand span { color: #9fb0c3; font-size: 12px; margin-top: 2px; }
         .um-nav, .um-sidebar-footer { display: flex; flex-direction: column; gap: 8px; }
+        .um-nav { flex: 1; overflow-y: auto; }
         .um-nav button { min-height: 42px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font-size: 16px; text-align: left; }
         .um-nav button.active, .um-nav button:hover { background: #243244; color: #fff; }
         .um-sidebar-footer { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; }
+        .um-session { display: grid; gap: 7px; padding: 0 0 10px; color: #cbd5e1; }
+        .um-session span { color: #9fb0c3; font-size: 12px; }
+        .um-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
         .um-sidebar-footer button { min-height: 42px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font-size: 16px; text-align: left; }
         .um-sidebar-footer button:hover { background: #243244; color: #fff; }
         .um-main { flex: 1; min-width: 0; padding: 26px 30px; }
@@ -1086,8 +1760,10 @@ function UserManagement() {
         .um-danger-button { background: #dc2626; color: #fff; }
         button:disabled { opacity: 0.48; cursor: not-allowed; }
         .um-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .um-stats.dashboard { grid-template-columns: repeat(5, minmax(180px, 1fr)); }
         .um-stat { padding: 16px; display: flex; gap: 12px; align-items: center; }
-        .um-stat svg { color: #2f80ed; }
+        .um-stat svg { color: #2f80ed; flex-shrink: 0; }
+        .um-stat.dashboard-card svg { width: 52px; height: 52px; padding: 13px; border-radius: 6px; background: #edf5ff; }
         .um-stat span { display: block; color: #64748b; font-size: 12px; font-weight: 700; }
         .um-stat strong { display: block; font-size: 24px; margin-top: 2px; }
         .um-toolbar { padding: 14px; display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
@@ -1100,7 +1776,36 @@ function UserManagement() {
         .um-panel-grid.permissions { align-items: start; }
         .um-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; }
         .um-panel h2 { font-size: 18px; margin: 0 0 14px; letter-spacing: 0; }
-        .um-mini-list, .um-shortcuts, .um-role-summary, .um-report-bars { display: grid; gap: 10px; }
+        .um-chart-grid { display: grid; gap: 18px; }
+        .um-panel.chart { overflow: hidden; }
+        .um-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+        .um-chart-head h2 { margin: 0; }
+        .um-chart-head span { color: #64748b; font-size: 13px; font-weight: 800; }
+        .um-line-chart { width: 100%; height: 260px; }
+        .um-line-chart line { stroke: #d8dee8; stroke-width: 1; }
+        .um-line-chart path { fill: none; stroke: #9ca3af; stroke-width: 2.2; }
+        .um-line-chart circle { fill: #dc2626; stroke: #fff; stroke-width: 1.5; }
+        .um-line-chart text { fill: #475569; font-size: 10px; text-anchor: middle; }
+        .um-line-chart text.value { fill: #111827; font-size: 11px; font-weight: 800; }
+        .um-chart-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; border-top: 1px solid #eef2f7; padding-top: 12px; }
+        .um-chart-list div { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 8px 10px; }
+        .um-chart-list span { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .um-chart-list strong { color: #1d4ed8; }
+        .um-admin-section { display: grid; gap: 16px; }
+        .um-permission-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+        .um-permission-cards button { min-height: 96px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; padding: 14px; display: grid; gap: 8px; align-content: center; justify-items: start; cursor: pointer; }
+        .um-permission-cards strong { font-size: 28px; }
+        .um-permission-cards span:last-child { color: #64748b; }
+        .um-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .um-tabs button { min-height: 38px; border-radius: 8px; border: 1px solid #d7dee8; background: #fff; color: #334155; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; cursor: pointer; font-weight: 800; }
+        .um-tabs button.active { background: #2f80ed; color: #fff; border-color: #2f80ed; }
+        .um-toolbar.requests { grid-template-columns: minmax(260px, 1fr) 170px 150px 150px auto auto; }
+        .um-toolbar input[type="date"] { min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
+        .um-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .um-form-grid .span-2 { grid-column: span 2; }
+        .um-modal.wide { width: min(760px, 100%); }
+        .um-modal-body.detail p { margin: 0; color: #334155; }
+        .um-mini-list, .um-shortcuts, .um-role-summary { display: grid; gap: 10px; }
         .um-mini-list button, .um-shortcuts button, .um-role-summary button { min-height: 44px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
         .um-shortcuts button { justify-content: flex-start; font-weight: 700; }
         .um-role-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; }
@@ -1111,10 +1816,6 @@ function UserManagement() {
         .um-donut { width: 170px; height: 170px; border-radius: 50%; display: grid; place-items: center; position: relative; }
         .um-donut::after { content: ''; position: absolute; inset: 34px; background: #fff; border-radius: 50%; }
         .um-donut span { position: relative; z-index: 1; font-size: 28px; font-weight: 900; color: #1f2937; }
-        .um-report-bars > div { display: grid; grid-template-columns: 90px 36px 1fr; gap: 10px; align-items: center; }
-        .um-report-bars span { color: #64748b; font-weight: 800; font-size: 12px; }
-        .um-report-bars div div { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-        .um-report-bars i { display: block; height: 100%; background: #2f80ed; border-radius: inherit; }
         .um-table { width: 100%; border-collapse: collapse; min-width: 850px; }
         .um-permission-table { width: 100%; border-collapse: collapse; }
         .um-permission-table th, .um-permission-table td { border-bottom: 1px solid #eef2f7; padding: 12px 10px; text-align: left; }
@@ -1141,6 +1842,10 @@ function UserManagement() {
         .status-active { background: #dcfce7; color: #15803d; }
         .status-inactive { background: #f1f5f9; color: #475569; }
         .status-locked { background: #fee2e2; color: #b91c1c; }
+        .status-pending { background: #dbeafe; color: #1d4ed8; }
+        .status-approved, .status-completed, .status-returned { background: #dcfce7; color: #15803d; }
+        .status-borrowed, .status-overdue { background: #fef3c7; color: #b45309; }
+        .status-rejected, .status-cancelled, .status-lost, .status-damaged { background: #fee2e2; color: #b91c1c; }
         .um-icon-button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #d7dee8; background: #fff; color: #334155; display: grid; place-items: center; cursor: pointer; }
         .um-icon-button.danger { color: #dc2626; }
         .um-empty { padding: 44px; text-align: center; color: #64748b; display: grid; place-items: center; gap: 10px; }
@@ -1178,9 +1883,11 @@ function UserManagement() {
           .um-sidebar { width: 100%; height: auto; position: static; }
           .um-nav, .um-sidebar-footer { flex-direction: row; flex-wrap: wrap; }
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }
-          .um-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .um-stats, .um-stats.dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .um-panel-grid, .um-role-summary { grid-template-columns: 1fr; }
           .um-chart-card { grid-template-columns: 1fr; justify-items: center; }
+          .um-toolbar.requests, .um-form-grid { grid-template-columns: 1fr; }
+          .um-form-grid .span-2 { grid-column: auto; }
         }
       `}</style>
     </div>

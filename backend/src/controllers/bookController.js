@@ -121,6 +121,20 @@ async function deactivateBook(req, res, next) {
   }
 }
 
+async function updateBookAvailability(req, res, next) {
+  try {
+    const book = await bookService.updateBookAvailability(req.params.bookId, req.body, req.user?.userId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật tình trạng sách thành công',
+      data: book,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   getHomeBooks,
   getCategories,
@@ -130,4 +144,5 @@ module.exports = {
   createBook,
   updateBook,
   deactivateBook,
+  updateBookAvailability,
 };

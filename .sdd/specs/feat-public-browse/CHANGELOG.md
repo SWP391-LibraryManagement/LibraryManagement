@@ -18,3 +18,10 @@
 
 - Aligned FE01 API contract with the current prototype routes: public browse uses `/api/books` and `/api/books/{bookId}`.
 - Kept `/api/public/*` routes as optional future aliases rather than the required implementation path.
+
+## 2026-06-30
+
+- Bumped `SPEC.md` version to 0.2.0 and updated Last Updated to 2026-06-30.
+- Added the FE05/FE06 -> FE01 availability sync rule so `/home`, public search, and book detail display the latest `BookCopies.Status` summary.
+- Clarified that public browse shows only simple availability (`Còn sách` / `Đã mượn`) and never exposes copy barcodes, borrower data, locations, fines, or staff-only inventory fields.
+- Added BR-FE01-011..012, FR-FE01-009..010, AC-FE01-009, EC-FE01-011, and Q-FE01-007.

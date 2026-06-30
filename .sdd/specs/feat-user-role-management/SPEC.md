@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.2.0
+# Version: 0.3.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-06-30
 
 # Feature ID: FE11
 
@@ -43,6 +43,8 @@ The system shall:
 - Allow admins to deactivate user accounts.
 - Allow admins to deactivate librarian accounts.
 - Allow admins to manage user role assignments (assign/revoke roles).
+- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs.
+- Provide read-only permission/reporting views that summarize users, roles, access rules, and audit activity without duplicating FE12 reporting scope.
 - Keep every user management action traceable for audit.
 
 ### 1.4 Scope Level
@@ -173,6 +175,34 @@ The feature can only start when:
 7. The system writes an audit log entry with role change details.
 8. The system shows success message.
 
+### MF-FE11-010: View Admin Dashboard And Console Navigation
+
+1. Admin opens the admin console.
+2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user, and fine sources.
+3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs.
+4. The system does not show removed or unapproved sidebar entries such as Confirm Payment or Confirm Borrow.
+
+### MF-FE11-011: View Permissions
+
+1. Admin opens Permissions.
+2. The system displays role summary and permission matrix for Admin, Librarian, and Member.
+3. The system uses FE11 roles as the source of truth and does not allow non-admin users to edit permissions.
+
+### MF-FE11-012: View Audit Logs
+
+1. Admin opens Audit Logs.
+2. The system lists important administrative/system actions with actor, action, target, timestamp, and safe details.
+3. Admin may search/filter logs.
+4. Audit logs are read-only from the UI.
+
+### MF-FE11-013: Manage Admin Request Review View
+
+1. Admin opens Request Management.
+2. The system lists borrow/request records using FE07 request data with search/filter/export controls.
+3. Admin may view request detail.
+4. Requests with status `PENDING` / `Chờ xác nhận` can be acted on by the approved borrowing workflow.
+5. Requests with status `COMPLETED` / `Hoàn thành` are read-only and cannot be edited from this view.
+
 ---
 
 ## 5. Alternative Flows
@@ -221,6 +251,11 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-013: Admin never enters, sees, or creates passwords directly. Password setup generates a one-time token link sent via email, and the user sets their own password through FE02.
 - BR-FE11-014: User information updates must preserve creation date and update the UpdatedAt timestamp.
 - BR-FE11-015: Librarian accounts are user accounts with the Librarian role and must follow the same security, audit, and deactivation rules as other user accounts.
+- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only approved admin sections and must not include removed workflows such as Confirm Payment or Confirm Borrow.
+- BR-FE11-017: Permissions UI is a read-only role summary/matrix unless a separate role-editing action is explicitly performed under Manage Roles.
+- BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
+- BR-FE11-019: Admin Request Management may show FE07 request data, but completed requests are read-only; only pending requests may expose action controls.
+- BR-FE11-020: Admin Dashboard may aggregate operational counts/charts, but detailed report generation remains owned by FE12 Reporting & Statistics.
 
 ---
 
@@ -240,6 +275,12 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-012: When admin assigns a role to a user, the system shall create an entry in UserRoles table.
 - FR-FE11-013: When admin revokes a role from a user, the system shall remove the entry from UserRoles table.
 - FR-FE11-014: When admin revokes the last Admin role, the system shall reject the action.
+- FR-FE11-030: When admin opens the console, the system shall display approved sidebar sections and shall hide removed Confirm Payment / Confirm Borrow navigation items.
+- FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
+- FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
+- FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries.
+- FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/export controls and view detail.
+- FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
 
 ### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
 
@@ -280,6 +321,10 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-013: Given user without Admin role, when admin assigns Admin role, then UserRoles table is updated.
 - AC-FE11-014: Given user with Admin role, when admin revokes Admin role (not last admin), then UserRoles table is updated.
 - AC-FE11-015: Given last admin user, when admin attempts to revoke Admin role, then system rejects action.
+- AC-FE11-016: Given admin opens the console sidebar, then the approved sections are visible and Confirm Payment / Confirm Borrow are not visible.
+- AC-FE11-017: Given admin opens Permissions, then role counts and permission matrix are displayed using FE11 role data.
+- AC-FE11-018: Given admin opens Audit Logs, then log rows can be reviewed without exposing sensitive credential/token fields.
+- AC-FE11-019: Given admin opens Request Management, then pending requests can expose approved action controls and completed requests are view-only.
 
 ---
 
@@ -302,6 +347,9 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | EC-FE11-013 | User has no role after revocation | Reject; user must have at least one role. |
 | EC-FE11-014 | Email update to same email | Allow (no-op) or accept without complaint. |
 | EC-FE11-015 | Librarian-specific field is too long or invalid | Reject the update and return a validation error. |
+| EC-FE11-016 | Removed admin sidebar item is requested directly | Return not-found or redirect to the approved admin dashboard. |
+| EC-FE11-017 | Completed request action attempted from admin request view | Reject action and keep request unchanged. |
+| EC-FE11-018 | Audit log detail contains sensitive token/password fields | Redact those fields before response/display. |
 
 ---
 
@@ -354,6 +402,11 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | PATCH | `/api/users/{userId}/status` | Admin | `{ status: "INACTIVE" }` | Updated user status | Deactivate user or librarian account. |
 | POST | `/api/users/{userId}/roles` | Admin | `{ roleId: number }` | User with updated roles | Assign role to user. |
 | DELETE | `/api/users/{userId}/roles/{roleId}` | Admin | - | User with updated roles | Revoke role from user. |
+| GET | `/api/admin/dashboard` | Admin | - | Dashboard summary/cards/chart data | Read-only aggregation; detailed reports belong to FE12. |
+| GET | `/api/admin/permissions` | Admin | - | Role summary and permission matrix | Read-only matrix unless using role assignment endpoints. |
+| GET | `/api/admin/audit-logs` | Admin | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Audit log list | Redacts sensitive fields. |
+| GET | `/api/admin/requests` | Admin | Query: `q?, status?, from?, to?, page?, limit?` | Borrow/request list | Reads FE07 request data for admin review UI. |
+| GET | `/api/admin/requests/{requestId}` | Admin | - | Request detail | Completed requests are view-only. |
 
 ---
 
@@ -437,6 +490,9 @@ This feature does not include:
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-010 | Admin-created account notification queuing must tolerate notification schema/template differences in the Phase 1 prototype; account creation still creates the active account and setup token. | User correction 2026-06-21 | APPROVED |
+| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs; Confirm Payment and Confirm Borrow are removed from sidebar. | User correction 2026-06-30 | APPROVED |
+| Q-FE11-012 | Admin Reports content is consolidated into Dashboard for this prototype; detailed reporting remains FE12. | User correction 2026-06-30 | APPROVED |
+| Q-FE11-013 | Admin Request Management is read-only for completed requests and action-enabled only for pending/chờ xác nhận requests. | User correction 2026-06-30 | APPROVED |
 
 ---
 
@@ -499,6 +555,12 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-027 | Revocation would leave user with no role -> rejected | BR-FE11-007 | EC-FE11-013 | TBD | Not Started |
 | FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FT56 | Not Started |
 | FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | TBD | Not Started |
+| FR-FE11-030 | Approved admin sidebar is displayed; removed items hidden | BR-FE11-016 | Q-FE11-011, EC-FE11-016 | TBD | Ready for review |
+| FR-FE11-031 | Admin dashboard displays read-only operational summaries | BR-FE11-020 | Q-FE11-012 | TBD | Ready for review |
+| FR-FE11-032 | Permissions role summary and matrix are displayed | BR-FE11-017 | MF-FE11-011 | TBD | Ready for review |
+| FR-FE11-033 | Audit logs are searchable/filterable and redacted | BR-FE11-018 | EC-FE11-018 | TBD | Ready for review |
+| FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | TBD | Ready for review |
+| FR-FE11-035 | Completed request actions are disabled/rejected | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | TBD | Ready for review |
 
 ### Coverage Summary (FE11)
 - **Total AC**: 15 (AC-FE11-001 to AC-FE11-015) ✓ All mapped
@@ -507,6 +569,8 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 - **Total BR**: 15 (BR-FE11-001 to BR-FE11-015) ✓ All mapped
 - **Total Tests**: 9 (FT50 to FT58) - aligned with assignment sheet; new Unwanted FRs marked TBD pending test allocation
 
+
+2026-06-30 addendum: after admin-console updates, the current FE11 totals are 19 AC (AC-FE11-001..019), 35 FR (FR-FE11-001..035), 20 BR (BR-FE11-001..020), and 19 unwanted FRs. The new admin-console/request requirements are mapped above and remain pending dedicated tests.
 
 ### External Assignment Traceability (Excel UC IDs)
 

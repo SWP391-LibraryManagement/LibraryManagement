@@ -279,6 +279,18 @@ async function deactivateBook(bookId, actorUserId = null) {
   return mapBook(await bookRepository.deactivateBook(id, actorUserId));
 }
 
+async function updateBookAvailability(bookId, body = {}, actorUserId = null) {
+  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
+  await getBookById(id);
+
+  const copyStatus = trimString(body.copyStatus || body.status).toUpperCase();
+  if (!['AVAILABLE', 'BORROWED'].includes(copyStatus)) {
+    throw new AppException(400, 'INVALID_COPY_STATUS', 'Tình trạng sách phải là AVAILABLE hoặc BORROWED.');
+  }
+
+  return mapBook(await bookRepository.updateBookAvailability(id, copyStatus, actorUserId));
+}
+
 async function getCategories() {
   const categories = await bookRepository.getCategories();
 
@@ -309,4 +321,5 @@ module.exports = {
   createBook,
   updateBook,
   deactivateBook,
+  updateBookAvailability,
 };

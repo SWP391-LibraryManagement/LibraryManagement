@@ -35,6 +35,7 @@ function App() {
       <Route path="/home" element={<HomePage />} />
 
       <Route path="/admin/users" element={<UserManagement />} />
+      <Route path="/admin/borrow-requests" element={<BorrowRequestsAdminPage />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
       <Route path="/librarian/books" element={<Navigate to="/librarian/fines" replace />} />
 

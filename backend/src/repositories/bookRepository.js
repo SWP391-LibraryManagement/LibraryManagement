@@ -358,6 +358,39 @@ async function deactivateBook(bookId, actorUserId = null) {
   return getBookById(bookId);
 }
 
+async function updateBookAvailability(bookId, copyStatus, actorUserId = null) {
+  const pool = await getPool();
+  const targetStatus = copyStatus === 'AVAILABLE' ? 'AVAILABLE' : 'BORROWED';
+  const sourceStatuses = targetStatus === 'AVAILABLE'
+    ? ['BORROWED']
+    : ['AVAILABLE'];
+
+  const request = pool.request()
+    .input('bookId', sql.Int, bookId)
+    .input('targetStatus', sql.NVarChar(20), targetStatus)
+    .input('updatedBy', sql.Int, actorUserId || null);
+
+  sourceStatuses.forEach((status, index) => {
+    request.input(`status${index}`, sql.NVarChar(20), status);
+  });
+
+  await request.query(`
+    UPDATE BookCopies
+    SET Status = @targetStatus,
+        UpdatedAt = GETDATE()
+    WHERE BookId = @bookId
+      AND Status IN (${sourceStatuses.map((_, index) => `@status${index}`).join(', ')});
+
+    UPDATE Books
+    SET Status = 'ACTIVE',
+        UpdatedBy = @updatedBy,
+        UpdatedAt = GETDATE()
+    WHERE BookId = @bookId;
+  `);
+
+  return getBookById(bookId);
+}
+
 module.exports = {
   getHomeBooks,
   getCategories,
@@ -369,4 +402,5 @@ module.exports = {
   createBook,
   updateBook,
   deactivateBook,
+  updateBookAvailability,
 };

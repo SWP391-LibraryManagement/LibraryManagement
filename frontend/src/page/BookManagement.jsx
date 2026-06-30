@@ -20,6 +20,7 @@ const DEFAULT_FORM = {
   pages: '',
   rating: '0',
   status: 'ACTIVE',
+  copyStatus: 'AVAILABLE',
   coverUrl: '',
   description: '',
 };
@@ -60,6 +61,7 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
     status: book.status || 'ACTIVE',
+    copyStatus: Number(book.availableCopies || 0) > 0 ? 'AVAILABLE' : 'BORROWED',
     coverUrl: book.cover || '',
     description: book.description || '',
   };
@@ -88,8 +90,8 @@ function validateBookForm(form, currentBooks = [], editingBookId = null, { allow
   }
   if (pages && (!Number.isInteger(pages) || pages < 1)) errors.pages = 'Pages must be a positive number.';
   if (!Number.isFinite(rating) || rating < 0 || rating > 5) errors.rating = 'Rating must be between 0 and 5.';
-  if (allowStatus && !['ACTIVE', 'INACTIVE'].includes(form.status)) {
-    errors.status = 'Status must be ACTIVE or INACTIVE.';
+  if (allowStatus && !['AVAILABLE', 'BORROWED'].includes(form.copyStatus)) {
+    errors.copyStatus = 'Tình trạng sách phải là Còn sách hoặc Đã mượn.';
   }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'Cover URL must start with http(s) or /.';
@@ -140,7 +142,7 @@ function FieldError({ message }) {
   return message ? <span className="bm-field-error">{message}</span> : null;
 }
 
-function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disabled, showStatus = false }) {
+function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disabled, showAvailabilityStatus = false }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
   return (
@@ -195,14 +197,14 @@ function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disa
         <FieldError message={errors.pages} />
       </label>
 
-      {showStatus && (
+      {showAvailabilityStatus && (
         <label>
-          <span>Status</span>
-          <select value={form.status} onChange={(event) => update('status', event.target.value)}>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
+          <span>Tình trạng</span>
+          <select value={form.copyStatus} onChange={(event) => update('copyStatus', event.target.value)}>
+            <option value="AVAILABLE">Còn sách</option>
+            <option value="BORROWED">Đã mượn</option>
           </select>
-          <FieldError message={errors.status} />
+          <FieldError message={errors.copyStatus} />
         </label>
       )}
 
@@ -413,9 +415,13 @@ export default function BookManagement() {
         method: 'PUT',
         body: JSON.stringify(makePayload(updateForm)),
       });
+      const availabilityResult = await apiRequest(`/books/${selectedBookId}/availability`, {
+        method: 'PATCH',
+        body: JSON.stringify({ copyStatus: updateForm.copyStatus }),
+      });
       await loadBooks();
-      setDetailBook(result.data);
-      showToast('Book information updated.');
+      setDetailBook(availabilityResult.data || result.data);
+      showToast('Book information and availability updated. Homepage will show the new status.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -623,7 +629,7 @@ export default function BookManagement() {
                 submitLabel="Save Changes"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
-                showStatus
+                showAvailabilityStatus
               />
             ) : (
               <div className="bm-empty">Select a book before updating.</div>

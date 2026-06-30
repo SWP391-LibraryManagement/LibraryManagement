@@ -1,12 +1,12 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.1.0
+# Version: 0.2.0
 
 # Status: APPROVED
 
 # Owner: Dung
 
-# Last Updated: 2026-06-21
+# Last Updated: 2026-06-30
 
 # Feature ID: FE01
 
@@ -36,6 +36,7 @@ The system shall:
 - Allow guests to search the public book catalog.
 - Allow guests to view public book information.
 - Allow guests to view public book details.
+- Display the latest public availability when staff update book copy status in FE05/FE06.
 - Display only public-safe data.
 - Keep all public browse behavior read-only.
 
@@ -103,6 +104,14 @@ The feature can only start when:
 4. The system displays description and public metadata.
 5. The system presents member-only actions as navigation to login/register or membership flows.
 
+### MF-FE01-005: Reflect Updated Availability On Home/Search
+
+1. Librarian/admin changes a book's availability through FE05.
+2. FE05 updates the related `BookCopies.Status`.
+3. Guest/member opens `/home`, search, or book detail.
+4. The system reads current active catalog records and copy availability.
+5. The UI displays `Còn sách` when at least one active/public copy is available, otherwise `Đã mượn`/unavailable.
+
 ---
 
 ## 5. Alternative Flows
@@ -147,6 +156,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-008: Public availability display must be derived from FE06 inventory rules when shown.
 - BR-FE01-009: FE01 must not create, update, deactivate, borrow, reserve, or fine records.
 - BR-FE01-010: Public responses must not expose user data, borrowing records, reservation queues, fines, audit logs, or protected staff fields.
+- BR-FE01-011: Public availability must be computed from current `BookCopies.Status` for active books and must not use a hardcoded or stale UI-only value.
+- BR-FE01-012: Public browse must hide `Books.Status = INACTIVE` even if one or more copies are marked `AVAILABLE`.
 
 ---
 
@@ -160,6 +171,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-006: If a requested book does not exist or is not public-visible, then the system shall return a not-found response.
 - FR-FE01-007: When search page or limit values are invalid, the system shall reject or normalize them safely.
 - FR-FE01-008: When availability is displayed, the system shall use approved inventory status rules rather than hardcoded values.
+- FR-FE01-009: When staff updates book availability through FE05, the public home/search/detail views shall show the updated availability by reading the current active book and copy state.
+- FR-FE01-010: If a book has no available copies, public browse shall display it as unavailable/`Đã mượn` without exposing copy barcodes, locations, or borrower data.
 
 ---
 
@@ -173,6 +186,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-006: Given an invalid book ID, when the guest opens details, then a not-found response is returned.
 - AC-FE01-007: Given a deactivated/hidden book, when the guest searches or opens details, then the book is not exposed publicly.
 - AC-FE01-008: Given a public request, when the system responds, then no protected user, borrowing, reservation, fine, or audit data is included.
+- AC-FE01-009: Given a staff user changes a book from `Đã mượn` to `Còn sách`, when a guest opens `/home` or searches the book, then the public availability display shows the updated available state.
 
 ---
 
@@ -190,6 +204,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-008 | Book has no available copies | Show unavailable status if availability display is approved. |
 | EC-FE01-009 | Category/author/publisher record missing | Return book with safe fallback or exclude broken metadata according to policy. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
+| EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
 
 ---
 
@@ -220,6 +235,7 @@ Use these stable IDs for tasks and tests.
 | coverUrl | string | No | Must not point to unsafe/internal path. |
 | availableCount | integer | No | Derived from FE06 if exact count is approved. |
 | availabilityStatus | string | No | Derived from FE06 if public display is approved. |
+| bookStatus | string | Internal filter only | Public endpoints must filter out `INACTIVE`; do not expose inactive records. |
 
 ---
 
@@ -300,6 +316,7 @@ This feature does not include:
 | Q-FE01-004 | ISBN is visible to guests when available. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-006 | Current prototype uses `/api/books` and `/api/books/{bookId}` as the public browse endpoints; `/api/public/*` remains an optional future namespace. | User correction 2026-06-21 | APPROVED |
+| Q-FE01-007 | `/home`, public search, and public detail use the latest `BookCopies.Status` summary after librarian/admin availability updates; the public UI shows only simple availability, not internal copy data. | User correction 2026-06-30 | APPROVED |
 
 ---
 
@@ -315,6 +332,8 @@ This feature does not include:
 | FR-FE01-005 | UC04 | FT04 | Not Started |
 | BR-FE01-010 | UC03, UC04 | FT03, FT04 | Not Started |
 | AC-FE01-008 | UC03, UC04 | FT03, FT04 | Not Started |
+| FR-FE01-009 | UC01, UC02, UC04 | TBD | Ready for review |
+| FR-FE01-010 | UC01, UC02, UC04 | TBD | Ready for review |
 
 ---
 
