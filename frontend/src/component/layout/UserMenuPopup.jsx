@@ -17,6 +17,7 @@ export default function UserMenuPopup({
   name = "Eleanor Voss",
   role = "Head Librarian",
   initials = "EV",
+  avatarUrl = "",
   onAccountInfo,
   onLogout,
 }) {
@@ -66,6 +67,7 @@ export default function UserMenuPopup({
       <Box sx={{ px: 2.5, pt: 2, pb: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Avatar
+            src={avatarUrl || undefined}
             sx={{
               width: 40,
               height: 40,
