@@ -74,6 +74,15 @@ export async function fetchMyProfile() {
   }
 }
 
+export async function fetchHeaderProfile() {
+  const profile = await fetchMyProfile();
+
+  return {
+    fullName: profile?.fullName || '',
+    avatarUrl: profile?.avatarUrl || '',
+  };
+}
+
 export async function updateMyProfile(profile) {
   try {
     const response = await api.put('/profile/me', buildProfileUpdatePayload(profile), {

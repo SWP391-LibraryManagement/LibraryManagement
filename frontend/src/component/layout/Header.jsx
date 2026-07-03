@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
 import { Search } from "lucide-react";
-import { fetchMyProfile } from "../../api/profileApi";
+import { fetchHeaderProfile } from "../../api/profileApi";
 import { logoutAccount } from "../../api/authApi";
 import UserMenuPopup from "./UserMenuPopup";
 
@@ -19,7 +19,7 @@ function getRoleLabel(roles = []) {
   if (roles.includes("ADMIN")) return "Admin";
   if (roles.includes("LIBRARIAN")) return "Librarian";
   if (roles.includes("MEMBER")) return "Member";
-  return "User";
+  return "";
 }
 
 function getInitials(name, email) {
@@ -35,7 +35,7 @@ function getInitials(name, email) {
       .join("");
   }
 
-  return String(email || "U").charAt(0).toUpperCase();
+  return String(email || "").charAt(0).toUpperCase();
 }
 
 export default function Header() {
@@ -49,7 +49,7 @@ export default function Header() {
 
     async function loadProfile() {
       try {
-        const data = await fetchMyProfile();
+        const data = await fetchHeaderProfile();
         if (isMounted) {
           setProfile(data);
         }
@@ -65,9 +65,10 @@ export default function Header() {
     };
   }, []);
 
-  const displayName = profile?.fullName || storedUser?.email || "User";
+  const displayName = profile?.fullName || storedUser?.email || "";
   const roleLabel = getRoleLabel(storedUser?.roles || []);
   const initials = getInitials(profile?.fullName, storedUser?.email);
+  const avatarUrl = profile?.avatarUrl || "";
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -120,7 +121,7 @@ export default function Header() {
             <span className="app-user-role">{roleLabel}</span>
           </div>
           <Avatar
-            src={profile?.avatarUrl || undefined}
+            src={avatarUrl || undefined}
             className="app-avatar app-avatar-image"
             sx={{ width: 40, height: 40 }}
           >
@@ -136,7 +137,7 @@ export default function Header() {
         name={displayName}
         role={roleLabel}
         initials={initials}
-        avatarUrl={profile?.avatarUrl || ""}
+        avatarUrl={avatarUrl}
         onAccountInfo={handleAccountInfo}
         onLogout={handleLogout}
       />
