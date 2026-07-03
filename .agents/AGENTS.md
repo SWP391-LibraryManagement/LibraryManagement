@@ -79,7 +79,31 @@ If the user asks for something not covered by the spec:
 
 ---
 
-## 5. Project Business Context
+## 5. Working Style
+
+Before implementing:
+
+- State assumptions explicitly when they affect the result.
+- If multiple reasonable interpretations exist, do not pick one silently.
+- If something important is unclear, ask or flag the ambiguity before coding.
+- Prefer the simplest solution that fully satisfies the current SPEC.md and task.
+
+When editing existing code:
+
+- Make surgical changes only.
+- Do not refactor unrelated code, comments, or formatting.
+- Match existing project style and structure.
+- Remove only the unused code created by your own change.
+
+For non-trivial tasks:
+
+- Define a short success path before coding.
+- Verify the change with tests or another concrete check.
+- If the requested change can be solved more simply, say so.
+
+---
+
+## 6. Project Business Context
 
 The system helps librarians and administrators manage:
 
@@ -113,7 +137,7 @@ Do not introduce a different backend framework, frontend framework, database, or
 
 ---
 
-## 6. Specification Rules
+## 7. Specification Rules
 
 When drafting or reviewing a SPEC.md, ensure it contains:
 
@@ -138,7 +162,7 @@ Do not approve a spec if major business rules are missing.
 
 ---
 
-## 7. Implementation Rules
+## 8. Implementation Rules
 
 When implementing code:
 
@@ -151,10 +175,11 @@ When implementing code:
 - Keep validation close to the boundary of the system.
 - Keep core business rules testable.
 - Do not silently change database schema without updating related spec and ADR.
+- Every changed line should trace directly to the user request and current task.
 
 ---
 
-## 8. Security Rules
+## 9. Security Rules
 
 Never create, expose, log, or commit:
 
@@ -180,7 +205,7 @@ See [`.sdd/constraints/safety.md`](../.sdd/constraints/safety.md) for full safet
 
 ---
 
-## 9. Testing Rules
+## 10. Testing Rules
 
 For core business logic, tests are required.
 
@@ -199,7 +224,7 @@ Tests should map back to business rules and acceptance criteria where possible.
 
 ---
 
-## 10. AI Output Review Rules
+## 11. AI Output Review Rules
 
 Before accepting AI-generated code, check:
 
@@ -217,7 +242,7 @@ If the answer is unclear, ask for human review.
 
 ---
 
-## 11. Git and Commit Rules
+## 12. Git and Commit Rules
 
 Use branch names such as:
 
@@ -239,7 +264,7 @@ Do not commit directly to production-related branches unless the team explicitly
 
 ---
 
-## 12. Agent Behavior Rules
+## 13. Agent Behavior Rules
 
 You should:
 
@@ -249,6 +274,7 @@ You should:
 - Explain risky assumptions.
 - Prefer small, reviewable changes.
 - Keep outputs traceable to requirements.
+- Push back gently on unnecessary complexity.
 
 You must not:
 
@@ -262,7 +288,7 @@ You must not:
 
 ---
 
-## 13. Definition of Done
+## 14. Definition of Done
 
 A task is done only when:
 
@@ -276,7 +302,7 @@ A task is done only when:
 
 ---
 
-## 14. Repository Map
+## 15. Repository Map
 
 Reference paths used by agents:
 
