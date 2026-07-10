@@ -3,28 +3,43 @@
  * API that: GET /api/reports/inventory. Có fallback demo khi chưa đăng nhập/chưa chạy backend.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Library, Copy, CheckCircle2, BookMarked, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Library, Copy, CheckCircle2, BookMarked, AlertTriangle, Filter, RefreshCw, RotateCcw } from 'lucide-react';
 
-import { reportApi } from '../../api/libraryFeatureApi';
+import { authorizedRequest, reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DEMO_REPORTS, objectToChart } from '../../utils/libraryFeatureViewModels';
+import { buildInventoryReportParams } from '../../utils/reportFilters';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t: 'Sắp hết' }, out: { s: 'overdue', t: 'Hết hàng' } };
 
 export default function InventoryReportPage() {
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState([]);
   const [report, setReport] = useState(DEMO_REPORTS.inventory);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review giao diện.');
   const [isDemo, setIsDemo] = useState(true);
 
-  async function loadReport() {
+  const loadCategories = useCallback(async () => {
+    try {
+      const response = await authorizedRequest(
+        { method: 'get', url: '/books/metadata' },
+        'Không thể tải danh sách thể loại.'
+      );
+      setCategories(response.data?.categories || []);
+    } catch {
+      setCategories([]);
+    }
+  }, []);
+
+  const loadReport = useCallback(async (selectedCategoryId = '') => {
     setLoading(true);
     try {
-      const data = await reportApi.inventory();
+      const data = await reportApi.inventory(buildInventoryReportParams(selectedCategoryId));
       setReport({ ...DEMO_REPORTS.inventory, ...data });
       setIsDemo(false);
       setNotice('Đã kết nối backend thật qua GET /api/reports/inventory.');
@@ -35,12 +50,25 @@ export default function InventoryReportPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { loadReport(); }, 0);
+    const timer = window.setTimeout(() => {
+      loadCategories();
+      loadReport('');
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadCategories, loadReport]);
+
+  function applyCategoryFilter(event) {
+    event.preventDefault();
+    loadReport(categoryId);
+  }
+
+  function clearCategoryFilter() {
+    setCategoryId('');
+    loadReport('');
+  }
 
   const totals = report.totals || {};
   const statusCounts = report.copyStatusCounts || {};
@@ -64,9 +92,38 @@ export default function InventoryReportPage() {
       active="inventory-report"
       title="Báo cáo tồn kho"
       subtitle="Tổng hợp tình trạng bản sao, tồn kho thấp và phân bổ theo nhóm sách."
-      actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(categoryId)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
+      <form className="toolbar" onSubmit={applyCategoryFilter}>
+        <div className="field">
+          <label htmlFor="inventory-category">Thể loại</label>
+          <select
+            id="inventory-category"
+            className="select"
+            value={categoryId}
+            onChange={(event) => setCategoryId(event.target.value)}
+          >
+            <option value="">Tất cả thể loại</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </div>
+        <button className="btn btn-primary btn-sm" type="submit" disabled={loading}>
+          <Filter size={16} /> Lọc
+        </button>
+        <button
+          className="icon-btn"
+          type="button"
+          onClick={clearCategoryFilter}
+          disabled={loading || !categoryId}
+          aria-label="Xóa bộ lọc thể loại"
+          title="Xóa bộ lọc thể loại"
+        >
+          <RotateCcw size={17} />
+        </button>
+      </form>
       {loading ? <LoadingBlock rows={4} /> : (
         <>
           <div className="kpi-grid">
