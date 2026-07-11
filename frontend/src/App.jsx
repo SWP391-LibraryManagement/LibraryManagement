@@ -8,7 +8,7 @@ import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
 import InventoryPage from './page/InventoryPage';
-import ForbiddenPage from './page/ForbiddenPage';
+import ForbiddenPage from './page/error/ForbiddenPage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';

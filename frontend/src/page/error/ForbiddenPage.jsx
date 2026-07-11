@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import BlockIcon from '@mui/icons-material/Block';
 import HomeIcon from '@mui/icons-material/Home';
 
-import AppLayout from '../component/layout/AppLayout';
+import AppLayout from '../../component/layout/AppLayout';
 
 function getStoredRoles() {
   try {
