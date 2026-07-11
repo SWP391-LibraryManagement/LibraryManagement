@@ -767,7 +767,6 @@ function UserManagement() {
       background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
     };
   }, [roleSummary]);
-  const recentUsers = users.slice(0, 5);
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
