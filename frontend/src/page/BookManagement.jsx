@@ -20,7 +20,6 @@ const DEFAULT_FORM = {
   pages: '',
   rating: '0',
   status: 'ACTIVE',
-  copyStatus: 'AVAILABLE',
   coverUrl: '',
   description: '',
 };
@@ -61,7 +60,6 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
     status: book.status || 'ACTIVE',
-    copyStatus: Number(book.availableCopies || 0) > 0 ? 'AVAILABLE' : 'BORROWED',
     coverUrl: book.cover || '',
     description: book.description || '',
   };

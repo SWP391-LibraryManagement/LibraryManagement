@@ -752,9 +752,9 @@ export default function FineManagement() {
         fine.fineId === selectedFine.fineId
           ? {
               ...fine,
+              status: 'PAID',
               paidAmount: fine.amount,
-              paymentReviewStatus: 'PENDING',
-              paymentReviewRequestedAt: new Date().toISOString(),
+              paidAt: new Date().toISOString(),
               collectedAt: fine.collectedAt || new Date().toISOString(),
               collectedBy: fine.collectedBy || staffUser?.email || 'Thủ thư demo',
               paymentMethod: fine.paymentMethod || collectionForm.paymentMethod,
@@ -763,7 +763,7 @@ export default function FineManagement() {
           : fine
       )
     );
-    showToast('Đã gửi phiếu thanh toán sang admin chờ xác nhận.');
+    showToast('Đã đánh dấu phiếu phạt là đã thanh toán.');
   }
 
   function handleLogout() {
@@ -819,6 +819,16 @@ export default function FineManagement() {
               </button>
             );
           })}
+        </nav>
+
+        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
+          <span>Quản lý thư viện</span>
+          <button
+            className={workspace === 'books' ? 'active' : ''}
+            onClick={() => setWorkspace('books')}
+          >
+            <BookOpen size={18} />Book Management
+          </button>
         </nav>
 
         <div className="fine-session">

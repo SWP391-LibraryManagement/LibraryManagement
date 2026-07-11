@@ -158,3 +158,27 @@ export const reportApi = {
     return authorizedRequest({ method: 'get', url: '/reports/users', params }, 'Không thể tải thống kê người dùng.');
   },
 };
+
+export const inventoryApi = {
+  list(params = {}) {
+    return authorizedRequest({ method: 'get', url: '/inventory', params }, 'Không thể tải dữ liệu kho sách.');
+  },
+  getCopy(copyId) {
+    return authorizedRequest({ method: 'get', url: `/book-copies/${copyId}` }, 'Không thể tải thông tin bản sao.');
+  },
+  getByBarcode(barcode) {
+    return authorizedRequest({ method: 'get', url: `/book-copies/barcode/${barcode}` }, 'Không thể tìm bản sao theo mã vạch.');
+  },
+  createCopy(bookId, data) {
+    return authorizedRequest({ method: 'post', url: `/books/${bookId}/copies`, data }, 'Không thể thêm bản sao.');
+  },
+  updateCopy(copyId, data) {
+    return authorizedRequest({ method: 'put', url: `/book-copies/${copyId}`, data }, 'Không thể cập nhật bản sao.');
+  },
+  updateStatus(copyId, data) {
+    return authorizedRequest({ method: 'patch', url: `/book-copies/${copyId}/status`, data }, 'Không thể cập nhật trạng thái bản sao.');
+  },
+  deactivate(copyId) {
+    return authorizedRequest({ method: 'delete', url: `/book-copies/${copyId}` }, 'Không thể ngừng sử dụng bản sao.');
+  },
+};

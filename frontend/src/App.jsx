@@ -7,6 +7,8 @@ import HomePage from './page/HomePage';
 import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
+import InventoryPage from './page/InventoryPage';
+import ForbiddenPage from './page/ForbiddenPage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -31,12 +33,13 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route path="/home" element={<HomePage />} />
 
       <Route path="/admin/users" element={<UserManagement />} />
-      <Route path="/admin/borrow-requests" element={<BorrowRequestsAdminPage />} />
       <Route path="/librarian/fines" element={<FineManagement />} />
+      <Route path="/librarian/inventory" element={<InventoryPage />} />
       <Route path="/librarian/books" element={<Navigate to="/librarian/fines" replace />} />
 
       {/* FE07 · Borrowing Management */}

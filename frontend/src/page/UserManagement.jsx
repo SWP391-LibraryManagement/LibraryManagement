@@ -747,6 +747,27 @@ function UserManagement() {
         })),
     [roles, users]
   );
+  const roleChart = useMemo(() => {
+    const colors = ['#7c3aed', '#0f766e', '#2f80ed'];
+    const total = Math.max(roleSummary.reduce((sum, role) => sum + role.count, 0), 1);
+    const chart = roleSummary.reduce(
+      (acc, role, index) => {
+        const start = acc.cursor;
+        const end = start + (role.count / total) * 360;
+        return {
+          cursor: end,
+          segments: [...acc.segments, `${colors[index % colors.length]} ${start}deg ${end}deg`],
+        };
+      },
+      { cursor: 0, segments: [] }
+    );
+
+    return {
+      total: total === 1 && roleSummary.every((role) => role.count === 0) ? 0 : total,
+      background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
+    };
+  }, [roleSummary]);
+  const recentUsers = users.slice(0, 5);
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
@@ -1611,6 +1632,42 @@ function UserManagement() {
           </section>
         )}
 
+        {activeSection === 'reports' && (
+          <section className="um-panel-grid">
+            <div className="um-panel">
+              <h2>Status Report</h2>
+              <div className="um-report-bars">
+                {['ACTIVE', 'INACTIVE', 'LOCKED'].map((status) => {
+                  const count = users.filter((user) => user.status === status).length;
+                  const pct = users.length ? Math.round((count / users.length) * 100) : 0;
+                  return (
+                    <div key={status}>
+                      <span>{statusLabels[status]}</span>
+                      <strong>{count}</strong>
+                      <div><i style={{ width: `${pct}%` }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="um-panel">
+              <h2>Role Distribution</h2>
+              <div className="um-chart-card">
+                <div className="um-donut" style={{ background: roleChart.background }}>
+                  <span>{roleChart.total}</span>
+                </div>
+                <div className="um-role-summary compact">
+                  {roleSummary.map((role) => (
+                    <div key={role.roleName}>
+                      <RoleBadge role={role.roleName} />
+                      <strong>{role.count}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       {selectedUser && (
@@ -1816,6 +1873,10 @@ function UserManagement() {
         .um-donut { width: 170px; height: 170px; border-radius: 50%; display: grid; place-items: center; position: relative; }
         .um-donut::after { content: ''; position: absolute; inset: 34px; background: #fff; border-radius: 50%; }
         .um-donut span { position: relative; z-index: 1; font-size: 28px; font-weight: 900; color: #1f2937; }
+        .um-report-bars > div { display: grid; grid-template-columns: 90px 36px 1fr; gap: 10px; align-items: center; }
+        .um-report-bars span { color: #64748b; font-weight: 800; font-size: 12px; }
+        .um-report-bars div div { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .um-report-bars i { display: block; height: 100%; background: #2f80ed; border-radius: inherit; }
         .um-table { width: 100%; border-collapse: collapse; min-width: 850px; }
         .um-permission-table { width: 100%; border-collapse: collapse; }
         .um-permission-table th, .um-permission-table td { border-bottom: 1px solid #eef2f7; padding: 12px 10px; text-align: left; }
