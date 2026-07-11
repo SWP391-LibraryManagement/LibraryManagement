@@ -47,6 +47,7 @@ const NAV_GROUPS = [
       { key: 'process-returns', label: 'Process Returns', icon: PackageCheck, path: '/librarian/returns' },
       { key: 'reservations-librarian', label: 'Reservations', icon: CalendarClock, path: '/librarian/reservations' },
       { key: 'member-details', label: 'Member Details', icon: Users, path: '/librarian/members' },
+      { key: 'inventory-management', label: 'Inventory Management', icon: Boxes, path: '/librarian/inventory' },
     ],
   },
   {
