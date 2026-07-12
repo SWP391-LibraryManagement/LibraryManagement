@@ -33,3 +33,9 @@
 - Added loading, empty, and error states on all reviewed screens.
 - Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
 - Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
+
+## 2026-07-10 - Inventory Category Filter Completed
+
+- Added the missing category selector to the inventory report screen and loaded options from the existing book metadata endpoint.
+- Applied the selected `categoryId` to `GET /api/reports/inventory`, with a reset control to return to all categories.
+- Added focused frontend tests for the inventory report query parameters.
