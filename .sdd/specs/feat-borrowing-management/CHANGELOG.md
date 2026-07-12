@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-12 - Localized Borrowing API Errors
+
+- Added actionable Vietnamese messages for FE07 role, eligibility, borrowing-limit, copy, fine, overdue, and renewal-conflict errors.
+- Extracted API error formatting into a testable frontend helper while preserving authentication, validation, network, and backend fallbacks.
+- Added focused Node tests for `NFR-FE07-UX-001` error-message behavior.
+
 ## 2026-06-25 - All-or-nothing borrow policy (v0.3.2, TD-007)
 
 - Resolved TD-007: Phase 1 borrow-request handling is **all-or-nothing**. Aligned the spec to the
