@@ -115,6 +115,8 @@ export function statusToUi(status, { notifiedAt, expiresAt } = {}) {
   const normalized = String(status || '').toUpperCase();
   if (normalized === 'ACTIVE' && notifiedAt) return 'Ready to pick up';
   if (normalized === 'ACTIVE') return 'Waiting';
+  if (normalized === 'NOTIFIED') return 'Ready to pick up';
+  if (normalized === 'FULFILLED') return 'Completed';
   if (normalized === 'CANCELLED') return 'Cancelled';
   if (normalized === 'EXPIRED') return 'Expired';
   if (normalized === 'PENDING' || normalized === 'REQUESTED') return 'Pending';
