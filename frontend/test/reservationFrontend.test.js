@@ -33,7 +33,7 @@ test('keeps only active FE08 states in the librarian queue', async () => {
 
   assert.equal(typeof isActiveReservationQueueStatus, 'function');
   assert.equal(isActiveReservationQueueStatus('Waiting'), true);
-  assert.equal(isActiveReservationQueueStatus('Ready to pick up'), true);
+  assert.equal(isActiveReservationQueueStatus('Ready to pick up'), false);
   assert.equal(isActiveReservationQueueStatus('Completed'), false);
   assert.equal(isActiveReservationQueueStatus('Cancelled'), false);
   assert.equal(isActiveReservationQueueStatus('Expired'), false);

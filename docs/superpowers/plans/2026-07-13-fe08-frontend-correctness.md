@@ -14,7 +14,7 @@
 - Use only the existing `POST /api/reservations/expire-holds` backend contract.
 - Do not add backend endpoints, database changes, status values, dependencies, or automatic scheduled expiration.
 - Do not implement FE07 fulfillment, FE10 delivery changes, or server-side pagination.
-- Keep reservation-specific Vietnamese messages isolated to `reservationApi`.
+- Keep reservation-specific Vietnamese API error messages isolated to `reservationApi`.
 - Remove UI actions that claim server-side fulfillment or deletion while changing only local state.
 - Preserve unrelated untracked files, especially `backend/coverage/` and `docs/briefing-thuyet-trinh-du-an-vi.docx`.
 - Use branch `fix/fe08-frontend-correctness`; do not create a branch containing `codex`.
@@ -87,7 +87,7 @@ test('keeps only active FE08 states in the librarian queue', async () => {
 
   assert.equal(typeof isActiveReservationQueueStatus, 'function');
   assert.equal(isActiveReservationQueueStatus('Waiting'), true);
-  assert.equal(isActiveReservationQueueStatus('Ready to pick up'), true);
+  assert.equal(isActiveReservationQueueStatus('Ready to pick up'), false);
   assert.equal(isActiveReservationQueueStatus('Completed'), false);
   assert.equal(isActiveReservationQueueStatus('Cancelled'), false);
   assert.equal(isActiveReservationQueueStatus('Expired'), false);
@@ -142,7 +142,7 @@ Leave the existing mappings after `PENDING` unchanged.
 Create `frontend/src/utils/reservationViewState.js`:
 
 ```js
-const ACTIVE_QUEUE_STATUSES = new Set(['Waiting', 'Ready to pick up']);
+const ACTIVE_QUEUE_STATUSES = new Set(['Waiting']);
 
 export function isActiveReservationQueueStatus(status) {
   return ACTIVE_QUEUE_STATUSES.has(status);
@@ -442,7 +442,7 @@ Add beside the existing loading state:
 const [expiringHolds, setExpiringHolds] = useState(false);
 ```
 
-- [ ] **Step 3: Restrict the active queue to active FE08 states**
+- [ ] **Step 3: Restrict the active queue to the active FE08 state**
 
 Replace the queue calculation with:
 
@@ -500,7 +500,7 @@ In each queue row, keep only the supported notify action:
 
 ```jsx
 <div className="queue-actions">
-  {index === 0 && item.status !== 'Ready to pick up' && (
+  {index === 0 && (
     <button className="btn btn-outline btn-sm" onClick={() => setNotifyTarget(item)}>
       <Bell size={13} /> Báo nhận
     </button>
@@ -580,7 +580,7 @@ Add a `3.6 Frontend Correctness` subsection:
 ### 3.6 Frontend Correctness
 
 - Map `NOTIFIED` to ready for pickup and `FULFILLED` to completed.
-- Keep terminal reservations out of active librarian queues.
+- Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue; show `Ready to pick up` (`NOTIFIED`) in the all-reservations list only.
 - Use a reservation-only Vietnamese error resolver.
 - Expose the existing hold-expiration endpoint to staff and reload server state after success.
 - Do not expose local-only fulfillment or deletion controls.
@@ -596,7 +596,7 @@ In `TASKS.md`, update `Updated: 2026-07-13` and add:
 ## 4. Frontend Correctness Tasks
 
 - [x] FE08-T22 Map `NOTIFIED` and `FULFILLED` to canonical UI states.
-- [x] FE08-T23 Exclude terminal reservations from active librarian queues.
+- [x] FE08-T23 Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue and exclude `NOTIFIED` plus terminal states from queue actions.
 - [x] FE08-T24 Add reservation-specific Vietnamese API errors without affecting other APIs.
 - [x] FE08-T25 Connect staff hold-expiration processing to `POST /api/reservations/expire-holds`.
 - [x] FE08-T26 Remove local-only fulfillment and deletion controls.

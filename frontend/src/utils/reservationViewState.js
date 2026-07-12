@@ -1,4 +1,4 @@
-const ACTIVE_QUEUE_STATUSES = new Set(['Waiting', 'Ready to pick up']);
+const ACTIVE_QUEUE_STATUSES = new Set(['Waiting']);
 
 export function isActiveReservationQueueStatus(status) {
   return ACTIVE_QUEUE_STATUSES.has(status);

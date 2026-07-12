@@ -43,7 +43,7 @@ Excluded:
 | `CANCELLED` | `Cancelled` |
 | `EXPIRED` | `Expired` |
 
-The existing legacy handling of `ACTIVE` with `notifiedAt` remains compatible, but the canonical `NOTIFIED` state no longer falls through to `Unknown`. The librarian queue will include only `Waiting` and `Ready to pick up` rows, so `Completed`, `Cancelled`, and `Expired` reservations cannot receive active queue actions.
+The existing legacy handling of `ACTIVE` with `notifiedAt` remains compatible, but the canonical `NOTIFIED` state no longer falls through to `Unknown`. The librarian queue will include only `Waiting` rows because only backend `ACTIVE` reservations are selectable. `Ready to pick up` remains visible in the all-reservations list as the UI state for `NOTIFIED`, but cannot receive queue actions.
 
 ### 3.2 Reservation Error Isolation
 
@@ -115,7 +115,7 @@ Verification commands will cover:
 ## 6. Acceptance Criteria
 
 - A backend reservation with status `NOTIFIED` renders as ready for pickup, never `Unknown`.
-- Completed, cancelled, and expired reservations do not appear in the active librarian queue.
+- Only `Waiting` reservations appear in the active librarian queue; `Ready to pick up` remains visible in the all-reservations list but is excluded from queue actions.
 - Librarians can invoke the existing hold-expiration endpoint and receive clear expired/promoted counts.
 - The page reloads canonical server state after a successful expiration run.
 - No visible control claims to fulfill or delete a reservation without a backend operation.
