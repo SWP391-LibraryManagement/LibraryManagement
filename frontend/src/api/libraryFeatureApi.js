@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getBorrowingErrorMessage, getLibraryFeatureErrorMessage } from './apiErrorMessages';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -47,28 +48,7 @@ export function hasStoredAuth() {
   return Boolean(getAccessToken() || localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken'));
 }
 
-function getErrorMessage(error, fallback = 'Không thể tải dữ liệu từ backend.') {
-  if (!error.response) {
-    return 'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.';
-  }
-
-  const code = error.response?.data?.error?.code;
-  if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
-    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.';
-  }
-  if (code === 'ROLE_REQUIRED' || code === 'STAFF_ROLE_REQUIRED' || code === 'MEMBER_ROLE_REQUIRED' || error.response?.status === 403) {
-    return 'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.';
-  }
-
-  const details = error.response?.data?.error?.details;
-  if (Array.isArray(details) && details.length) {
-    return details.map((item) => item.message).filter(Boolean).join('\n') || fallback;
-  }
-
-  return error.response?.data?.error?.message || fallback;
-}
-
-export async function authorizedRequest(config, fallbackMessage) {
+export async function authorizedRequest(config, fallbackMessage, errorMessageResolver = getLibraryFeatureErrorMessage) {
   try {
     const response = await api.request({
       ...config,
@@ -78,7 +58,7 @@ export async function authorizedRequest(config, fallbackMessage) {
   } catch (error) {
     const shouldRefresh = error.response?.status === 401 && !config._retried;
     if (!shouldRefresh) {
-      throw new Error(getErrorMessage(error, fallbackMessage), { cause: error });
+      throw new Error(errorMessageResolver(error, fallbackMessage), { cause: error });
     }
 
     try {
@@ -94,35 +74,39 @@ export async function authorizedRequest(config, fallbackMessage) {
     } catch (refreshError) {
       clearStoredAuth();
       const source = refreshError.response ? refreshError : error;
-      throw new Error(getErrorMessage(source, fallbackMessage), { cause: refreshError });
+      throw new Error(errorMessageResolver(source, fallbackMessage), { cause: refreshError });
     }
   }
 }
 
+function authorizedBorrowingRequest(config, fallbackMessage) {
+  return authorizedRequest(config, fallbackMessage, getBorrowingErrorMessage);
+}
+
 export const borrowingApi = {
   createRequest(copyIds) {
-    return authorizedRequest({ method: 'post', url: '/borrow-requests', data: { copyIds } }, 'Không thể gửi yêu cầu mượn.');
+    return authorizedBorrowingRequest({ method: 'post', url: '/borrow-requests', data: { copyIds } }, 'Không thể gửi yêu cầu mượn.');
   },
   listMine(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/borrow-requests/me', params }, 'Không thể tải lịch sử mượn.');
+    return authorizedBorrowingRequest({ method: 'get', url: '/borrow-requests/me', params }, 'Không thể tải lịch sử mượn.');
   },
   listAll(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/borrow-requests', params }, 'Không thể tải danh sách yêu cầu mượn.');
+    return authorizedBorrowingRequest({ method: 'get', url: '/borrow-requests', params }, 'Không thể tải danh sách yêu cầu mượn.');
   },
   listMemberBorrowings(memberId, params = {}) {
-    return authorizedRequest({ method: 'get', url: `/members/${memberId}/borrowings`, params }, 'Không thể tải thông tin mượn của thành viên.');
+    return authorizedBorrowingRequest({ method: 'get', url: `/members/${memberId}/borrowings`, params }, 'Không thể tải thông tin mượn của thành viên.');
   },
   approve(requestId, data = {}) {
-    return authorizedRequest({ method: 'patch', url: `/borrow-requests/${requestId}/approve`, data }, 'Không thể duyệt yêu cầu mượn.');
+    return authorizedBorrowingRequest({ method: 'patch', url: `/borrow-requests/${requestId}/approve`, data }, 'Không thể duyệt yêu cầu mượn.');
   },
   reject(requestId, reason) {
-    return authorizedRequest({ method: 'patch', url: `/borrow-requests/${requestId}/reject`, data: { reason } }, 'Không thể từ chối yêu cầu mượn.');
+    return authorizedBorrowingRequest({ method: 'patch', url: `/borrow-requests/${requestId}/reject`, data: { reason } }, 'Không thể từ chối yêu cầu mượn.');
   },
   returnDetail(borrowDetailId, data) {
-    return authorizedRequest({ method: 'patch', url: `/borrow-details/${borrowDetailId}/return`, data }, 'Không thể ghi nhận trả sách.');
+    return authorizedBorrowingRequest({ method: 'patch', url: `/borrow-details/${borrowDetailId}/return`, data }, 'Không thể ghi nhận trả sách.');
   },
   renewDetail(borrowDetailId) {
-    return authorizedRequest({ method: 'patch', url: `/borrow-details/${borrowDetailId}/renew`, data: {} }, 'Không thể gia hạn sách.');
+    return authorizedBorrowingRequest({ method: 'patch', url: `/borrow-details/${borrowDetailId}/renew`, data: {} }, 'Không thể gia hạn sách.');
   },
 };
 
