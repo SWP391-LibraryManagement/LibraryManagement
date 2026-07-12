@@ -94,3 +94,18 @@ test('reservation API posts hold expiration without a request body', async () =>
   );
   assert.doesNotMatch(expireHoldsSource, /\bdata\s*:/);
 });
+
+test('librarian page uses the server expiration flow and omits local-only actions', async () => {
+  const source = await readFile(
+    new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /reservationApi\.expireHolds\(\)/);
+  assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
+  assert.match(source, /getExpireHoldsSuccessMessage\(result\)/);
+  assert.doesNotMatch(source, /function fulfill\(/);
+  assert.doesNotMatch(source, /function remove\(/);
+  assert.doesNotMatch(source, /> Đã giao</);
+  assert.doesNotMatch(source, /title="Xóa"/);
+});

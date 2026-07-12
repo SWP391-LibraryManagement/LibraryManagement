@@ -4,12 +4,16 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Search, CalendarClock, Bell, PackageCheck, Trash2, ChevronLeft, ChevronRight, Send, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, CalendarClock, Bell, PackageCheck, ChevronLeft, ChevronRight, Send, RefreshCw } from 'lucide-react';
 
 import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, Modal, Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DEMO_ALL_RESERVATIONS, fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import {
+  getExpireHoldsSuccessMessage,
+  isActiveReservationQueueStatus,
+} from '../../utils/reservationViewState';
 
 const PAGE_SIZE = 5;
 const STATUSES = ['ALL', 'Waiting', 'Ready to pick up', 'Expired', 'Cancelled'];
@@ -24,6 +28,7 @@ export default function ReservationsLibrarianPage() {
   const [queueBook, setQueueBook] = useState('Clean Code');
   const [notifyTarget, setNotifyTarget] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [expiringHolds, setExpiringHolds] = useState(false);
   const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review UI quản lý đặt chỗ.');
   const [isDemo, setIsDemo] = useState(true);
   const [toast, showToast, clearToast] = useToast();
@@ -66,7 +71,12 @@ export default function ReservationsLibrarianPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const queue = useMemo(() => rows.filter((item) => item.book === queueBook && !['Expired', 'Cancelled'].includes(item.status)).sort((a, b) => a.queue - b.queue), [rows, queueBook]);
+  const queue = useMemo(
+    () => rows
+      .filter((item) => item.book === queueBook && isActiveReservationQueueStatus(item.status))
+      .sort((a, b) => a.queue - b.queue),
+    [rows, queueBook],
+  );
 
   function notifyNext() {
     const head = queue[0];
@@ -87,15 +97,17 @@ export default function ReservationsLibrarianPage() {
     }
   }
 
-  function fulfill(id) {
-    const item = rows.find((row) => row.id === id);
-    setRows((prev) => prev.filter((row) => row.id !== id));
-    showToast(`Đã giao sách "${item?.book || '-'}" cho ${item?.member || 'thành viên'}.`, 'success');
-  }
-
-  function remove(id) {
-    setRows((prev) => prev.filter((row) => row.id !== id));
-    showToast('Đã xóa đặt chỗ khỏi hàng đợi trên UI demo.', 'info');
+  async function expireHolds() {
+    setExpiringHolds(true);
+    try {
+      const result = await reservationApi.expireHolds();
+      showToast(getExpireHoldsSuccessMessage(result), 'success');
+      await loadReservations();
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setExpiringHolds(false);
+    }
   }
 
   return (
@@ -103,7 +115,21 @@ export default function ReservationsLibrarianPage() {
       active="reservations-librarian"
       title="Quản lý đặt chỗ"
       subtitle="Quản lý đặt chỗ, xử lý ưu tiên hàng đợi và gửi thông báo có sách."
-      actions={<button className="btn btn-outline" onClick={loadReservations} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={(
+        <div className="row-flex" style={{ flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-outline"
+            onClick={expireHolds}
+            disabled={loading || expiringHolds || isDemo}
+          >
+            <CalendarClock size={16} />
+            {expiringHolds ? 'Đang xử lý...' : 'Xử lý giữ chỗ hết hạn'}
+          </button>
+          <button className="btn btn-outline" onClick={loadReservations} disabled={loading || expiringHolds}>
+            <RefreshCw size={16} /> Tải lại
+          </button>
+        </div>
+      )}
     >
       <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
       <div className="tabs">
@@ -134,7 +160,7 @@ export default function ReservationsLibrarianPage() {
           </div>
           <div className="alert-box info" style={{ marginBottom: 16 }}>Backend giữ luật ưu tiên: chỉ staff mới process queue, và service sẽ chọn reservation đủ điều kiện ưu tiên.</div>
           <div className="queue-list">
-            {queue.map((item, index) => <div className={`queue-item${index === 0 ? ' head' : ''}`} key={item.id}><span className="queue-pos">{item.queue}</span><div className="stack-sm"><strong>{item.member}</strong><span className="muted" style={{ fontSize: 13 }}>Đặt ngày {fmtDate(item.reservedDate)} • {item.id}</span></div>{item.status === 'Ready to pick up' && <Badge status="Ready to pick up" />}<div className="queue-actions">{index === 0 && item.status !== 'Ready to pick up' && <button className="btn btn-outline btn-sm" onClick={() => setNotifyTarget(item)}><Bell size={13} /> Báo nhận</button>}<button className="btn btn-success btn-sm" onClick={() => fulfill(item.id)}><CheckCircle2 size={13} /> Đã giao</button><button className="icon-btn" title="Xóa" onClick={() => remove(item.id)} aria-label={`Remove reservation ${item.id}`}><Trash2 size={15} /></button></div></div>)}
+            {queue.map((item, index) => <div className={`queue-item${index === 0 ? ' head' : ''}`} key={item.id}><span className="queue-pos">{item.queue}</span><div className="stack-sm"><strong>{item.member}</strong><span className="muted" style={{ fontSize: 13 }}>Đặt ngày {fmtDate(item.reservedDate)} • {item.id}</span></div><div className="queue-actions">{index === 0 && <button className="btn btn-outline btn-sm" onClick={() => setNotifyTarget(item)}><Bell size={13} /> Báo nhận</button>}</div></div>)}
             {queue.length === 0 && <EmptyState icon={PackageCheck} title="Hàng đợi trống cho cuốn sách này" />}
           </div>
         </div>
