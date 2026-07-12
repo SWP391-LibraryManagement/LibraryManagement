@@ -54,14 +54,43 @@ test('formats expired and promoted counts from the backend response', async () =
   );
 });
 
-test('reservation API exposes the existing hold-expiration endpoint', async () => {
-  const source = await readFile(
+async function loadReservationApiSource() {
+  return readFile(
     new URL('../src/api/libraryFeatureApi.js', import.meta.url),
     'utf8',
   );
+}
+
+function getReservationApiObject(source) {
+  const match = source.match(/export const reservationApi = \{([\s\S]*?)\r?\n\};\r?\n\r?\nexport const reportApi/);
+  assert.ok(match, 'reservationApi object must be declared before reportApi');
+  return match[1];
+}
+
+function getReservationApiMethod(reservationApiSource, method) {
+  const match = reservationApiSource.match(new RegExp(`\\r?\\n  ${method}\\([^)]*\\) \\{([\\s\\S]*?)\\r?\\n  },`));
+  assert.ok(match, `reservationApi.${method}() must be declared`);
+  return match[1];
+}
+
+test('reservation API routes every method through the reservation resolver', async () => {
+  const reservationApiSource = getReservationApiObject(await loadReservationApiSource());
+  const methods = ['create', 'listMine', 'cancel', 'listAll', 'processQueue', 'process', 'expireHolds'];
+
+  for (const method of methods) {
+    const methodSource = getReservationApiMethod(reservationApiSource, method);
+    assert.match(methodSource, /\bauthorizedReservationRequest\(/, method);
+    assert.doesNotMatch(methodSource, /\bauthorizedRequest\(/, method);
+  }
+});
+
+test('reservation API posts hold expiration without a request body', async () => {
+  const reservationApiSource = getReservationApiObject(await loadReservationApiSource());
+  const expireHoldsSource = getReservationApiMethod(reservationApiSource, 'expireHolds');
 
   assert.match(
-    source,
-    /expireHolds\(\)\s*{[\s\S]*?method: 'post', url: '\/reservations\/expire-holds'/,
+    expireHoldsSource,
+    /method: 'post', url: '\/reservations\/expire-holds'/,
   );
+  assert.doesNotMatch(expireHoldsSource, /\bdata\s*:/);
 });

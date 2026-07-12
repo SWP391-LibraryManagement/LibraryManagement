@@ -370,7 +370,9 @@ Expected: all matching FE07, FE08, fallback, and isolation tests PASS.
 Run:
 
 ```powershell
-npm.cmd --prefix frontend exec -- eslint src/api/apiErrorMessages.js src/api/libraryFeatureApi.js test/apiErrorMessages.test.js
+Push-Location frontend
+npm.cmd exec -- eslint src/api/apiErrorMessages.js src/api/libraryFeatureApi.js test/apiErrorMessages.test.js
+Pop-Location
 ```
 
 Expected: exit code 0 with no ESLint errors.
@@ -523,7 +525,9 @@ Expected: all 4 matching tests PASS.
 Run:
 
 ```powershell
-npm.cmd --prefix frontend exec -- eslint src/page/reservation/ReservationsLibrarianPage.jsx src/utils/reservationViewState.js test/reservationFrontend.test.js
+Push-Location frontend
+npm.cmd exec -- eslint src/page/reservation/ReservationsLibrarianPage.jsx src/utils/reservationViewState.js test/reservationFrontend.test.js
+Pop-Location
 npm.cmd --prefix frontend run build
 ```
 

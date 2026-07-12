@@ -138,3 +138,30 @@ test('keeps FE08 messages isolated from borrowing and generic feature APIs', asy
   assert.equal(getBorrowingErrorMessage(error, 'Fallback'), 'Backend reservation message.');
   assert.equal(getLibraryFeatureErrorMessage(error, 'Fallback'), 'Backend reservation message.');
 });
+
+test('keeps FE08 generic error precedence and fallbacks', async () => {
+  const { getReservationErrorMessage } = await loadApiErrorMessages();
+
+  assert.equal(
+    getReservationErrorMessage({
+      response: { status: 401, data: { error: { code: 'ACTIVE_RESERVATION_LIMIT' } } },
+    }),
+    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.',
+  );
+  assert.equal(
+    getReservationErrorMessage({}, 'Reservation fallback.'),
+    'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.',
+  );
+  assert.equal(
+    getReservationErrorMessage({
+      response: { status: 409, data: { error: { code: 'UNKNOWN_RESERVATION_ERROR', message: 'Backend reservation message.' } } },
+    }, 'Reservation fallback.'),
+    'Backend reservation message.',
+  );
+  assert.equal(
+    getReservationErrorMessage({
+      response: { status: 409, data: { error: { code: 'UNKNOWN_RESERVATION_ERROR' } } },
+    }, 'Reservation fallback.'),
+    'Reservation fallback.',
+  );
+});
