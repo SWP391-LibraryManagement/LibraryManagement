@@ -3,8 +3,10 @@
 ## 2026-07-12 - Localized Borrowing API Errors
 
 - Added actionable Vietnamese messages for FE07 role, eligibility, borrowing-limit, copy, fine, overdue, and renewal-conflict errors.
-- Extracted API error formatting into a testable frontend helper while preserving authentication, validation, network, and backend fallbacks.
-- Added focused Node tests for `NFR-FE07-UX-001` error-message behavior.
+- Scoped borrowing-specific messages to `borrowingApi` and preserved generic handling for FE06, FE08, FE10, and FE12 API calls.
+- Extracted API error formatting into testable frontend helpers while preserving authentication, validation, network, and backend fallbacks.
+- Added focused Node tests for `NFR-FE07-UX-001` error-message behavior and wired frontend tests into CI.
+- Updated `PLAN.md` to reflect the implemented FE07 frontend screens and error-state scope.
 
 ## 2026-06-25 - All-or-nothing borrow policy (v0.3.2, TD-007)
 

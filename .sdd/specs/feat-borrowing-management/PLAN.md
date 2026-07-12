@@ -4,13 +4,13 @@ Status: READY FOR REVIEW
 
 Owner: Nhat
 
-Updated: 2026-06-10
+Updated: 2026-07-12
 
 ---
 
 ## 1. Scope
 
-Implement the Phase 2 backend slice for FE07 from the approved `SPEC.md`.
+Implement and harden the Phase 2 FE07 slice from the approved `SPEC.md`.
 
 Included:
 
@@ -20,12 +20,13 @@ Included:
 - Return processing updates copy status and exposes fine-review data for FE09.
 - Renewal checks overdue, unpaid fine, renewal limit, and FE08 reservation conflict.
 - Borrowing actions write audit logs and create safe FE10 notification requests where useful.
+- Frontend borrowing screens expose actionable loading, empty, permission, eligibility, invalid-state, and API error feedback.
 
 Not included:
 
 - FE09 fine calculation or fine creation.
 - FE10 delivery worker implementation.
-- Frontend borrowing screens.
+- Redesigning frontend screens outside FE07 borrowing workflows.
 - Hardware/RFID flows.
 
 ---
@@ -77,10 +78,17 @@ Not included:
 
 - Add route tests with in-memory repositories.
 - Cover create, duplicate copy, unavailable copy, approve, history, return, fine candidate, completion, renewal, reservation conflict, and role guards.
+- Add focused frontend Node tests for borrowing API error messages and generic fallback behavior.
+
+### 3.6 Frontend Error Handling
+
+- Keep borrowing-specific error messages scoped to `borrowingApi` so other feature APIs retain generic handling.
+- Translate FE07 role, eligibility, borrowing-limit, copy, return-state, and renewal-conflict codes into actionable Vietnamese messages.
+- Preserve authentication, validation-detail, backend-message, and network fallbacks.
 
 ---
 
 ## 4. Review Notes
 
 - `database/Librarymanagement.sql` is aligned with approved FE07 statuses.
-- The slice is backend-only; UI can be planned after book/inventory screens are stable.
+- FE07 frontend screens and error states are implemented under FE07-T20 to FE07-T27.

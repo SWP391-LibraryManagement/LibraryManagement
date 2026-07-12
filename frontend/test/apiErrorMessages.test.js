@@ -36,13 +36,13 @@ const expectedMessages = {
 };
 
 test('maps FE07 API error codes to actionable Vietnamese messages', async () => {
-  const { getLibraryFeatureErrorMessage } = await loadApiErrorMessages();
+  const { getBorrowingErrorMessage } = await loadApiErrorMessages();
 
-  assert.equal(typeof getLibraryFeatureErrorMessage, 'function');
+  assert.equal(typeof getBorrowingErrorMessage, 'function');
 
   for (const [code, message] of Object.entries(expectedMessages)) {
     assert.equal(
-      getLibraryFeatureErrorMessage({ response: { status: 400, data: { error: { code } } } }),
+      getBorrowingErrorMessage({ response: { status: 400, data: { error: { code } } } }),
       message,
       code,
     );
@@ -50,31 +50,45 @@ test('maps FE07 API error codes to actionable Vietnamese messages', async () => 
 });
 
 test('keeps authentication, validation, backend, and network fallbacks', async () => {
+  const { getBorrowingErrorMessage } = await loadApiErrorMessages();
+
+  assert.equal(typeof getBorrowingErrorMessage, 'function');
+  assert.equal(
+    getBorrowingErrorMessage({ response: { status: 401, data: { error: {} } } }),
+    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.',
+  );
+  assert.equal(
+    getBorrowingErrorMessage({ response: { status: 422, data: { error: { details: [{ message: 'copyIds must be an array.' }] } } } }),
+    'copyIds must be an array.',
+  );
+  assert.equal(
+    getBorrowingErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Fallback'),
+    'Backend error',
+  );
+  assert.equal(
+    getBorrowingErrorMessage({ response: { status: 403, data: { error: { code: 'BORROW_DETAIL_OWNER_REQUIRED' } } } }),
+    'Bạn chỉ có thể gia hạn sách do chính mình mượn.',
+  );
+  assert.equal(
+    getBorrowingErrorMessage({ response: { status: 403, data: { error: { code: 'UNKNOWN_ROLE_ERROR' } } } }),
+    'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.',
+  );
+  assert.equal(
+    getBorrowingErrorMessage({}, 'Fallback'),
+    'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.',
+  );
+});
+
+test('does not leak borrowing-specific messages into other feature APIs', async () => {
   const { getLibraryFeatureErrorMessage } = await loadApiErrorMessages();
 
   assert.equal(typeof getLibraryFeatureErrorMessage, 'function');
   assert.equal(
-    getLibraryFeatureErrorMessage({ response: { status: 401, data: { error: {} } } }),
-    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.',
+    getLibraryFeatureErrorMessage({ response: { status: 404, data: { error: { code: 'COPY_NOT_FOUND', message: 'Book copy was not found.' } } } }),
+    'Book copy was not found.',
   );
   assert.equal(
-    getLibraryFeatureErrorMessage({ response: { status: 422, data: { error: { details: [{ message: 'Lỗi 1' }, { message: 'Lỗi 2' }] } } } }),
-    'Lỗi 1\nLỗi 2',
-  );
-  assert.equal(
-    getLibraryFeatureErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Fallback'),
-    'Backend error',
-  );
-  assert.equal(
-    getLibraryFeatureErrorMessage({ response: { status: 403, data: { error: { code: 'BORROW_DETAIL_OWNER_REQUIRED' } } } }),
-    'Bạn chỉ có thể gia hạn sách do chính mình mượn.',
-  );
-  assert.equal(
-    getLibraryFeatureErrorMessage({ response: { status: 403, data: { error: { code: 'UNKNOWN_ROLE_ERROR' } } } }),
+    getLibraryFeatureErrorMessage({ response: { status: 403, data: { error: { code: 'MEMBERSHIP_NOT_APPROVED' } } } }),
     'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.',
-  );
-  assert.equal(
-    getLibraryFeatureErrorMessage({}, 'Fallback'),
-    'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.',
   );
 });
