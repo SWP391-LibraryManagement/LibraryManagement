@@ -92,3 +92,49 @@ test('does not leak borrowing-specific messages into other feature APIs', async 
     'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.',
   );
 });
+
+const expectedReservationMessages = {
+  MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới được đặt chỗ sách.',
+  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc admin mới được quản lý hàng đợi đặt chỗ.',
+  ROLE_REQUIRED: 'Tài khoản hiện tại không có quyền thực hiện thao tác đặt chỗ này.',
+  MEMBER_NOT_FOUND: 'Tài khoản hiện tại chưa có hồ sơ thành viên. Vui lòng liên hệ thủ thư/admin.',
+  MEMBER_ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt nên chưa thể đặt chỗ sách.',
+  MEMBERSHIP_NOT_APPROVED: 'Membership của bạn chưa được duyệt nên chưa thể đặt chỗ sách.',
+  COPY_NOT_FOUND: 'Không tìm thấy bản sao sách này. Vui lòng tải lại dữ liệu và thử lại.',
+  COPY_AVAILABLE: 'Bản sao này đang sẵn có. Vui lòng mượn sách thay vì đặt chỗ.',
+  RESERVATION_NOT_ALLOWED: 'Không thể đặt chỗ bản sao ở trạng thái hiện tại.',
+  DUPLICATE_ACTIVE_RESERVATION: 'Bạn đã có một lượt đặt chỗ đang hoạt động cho bản sao này.',
+  ACTIVE_RESERVATION_LIMIT: 'Bạn đã đạt giới hạn 3 lượt đặt chỗ đang hoạt động.',
+  RESERVATION_NOT_FOUND: 'Không tìm thấy lượt đặt chỗ này. Vui lòng tải lại dữ liệu.',
+  RESERVATION_OWNER_REQUIRED: 'Bạn chỉ có thể hủy lượt đặt chỗ của chính mình.',
+  RESERVATION_NOT_ACTIVE: 'Lượt đặt chỗ này không còn ở trạng thái cho phép thực hiện thao tác.',
+  COPY_NOT_AVAILABLE: 'Bản sao chưa sẵn sàng để xử lý hàng đợi đặt chỗ.',
+  COPY_MISMATCH: 'Bản sao được chọn không khớp với lượt đặt chỗ.',
+  INVALID_ID: 'Mã đặt chỗ hoặc bản sao không hợp lệ.',
+};
+
+test('maps FE08 API error codes to actionable Vietnamese messages', async () => {
+  const { getReservationErrorMessage } = await loadApiErrorMessages();
+
+  assert.equal(typeof getReservationErrorMessage, 'function');
+  for (const [code, message] of Object.entries(expectedReservationMessages)) {
+    assert.equal(
+      getReservationErrorMessage({ response: { status: 400, data: { error: { code } } } }),
+      message,
+      code,
+    );
+  }
+});
+
+test('keeps FE08 messages isolated from borrowing and generic feature APIs', async () => {
+  const { getBorrowingErrorMessage, getLibraryFeatureErrorMessage } = await loadApiErrorMessages();
+  const error = {
+    response: {
+      status: 409,
+      data: { error: { code: 'ACTIVE_RESERVATION_LIMIT', message: 'Backend reservation message.' } },
+    },
+  };
+
+  assert.equal(getBorrowingErrorMessage(error, 'Fallback'), 'Backend reservation message.');
+  assert.equal(getLibraryFeatureErrorMessage(error, 'Fallback'), 'Backend reservation message.');
+});

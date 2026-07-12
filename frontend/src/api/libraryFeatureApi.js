@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { getBorrowingErrorMessage, getLibraryFeatureErrorMessage } from './apiErrorMessages';
+import {
+  getBorrowingErrorMessage,
+  getLibraryFeatureErrorMessage,
+  getReservationErrorMessage,
+} from './apiErrorMessages';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -83,6 +87,10 @@ function authorizedBorrowingRequest(config, fallbackMessage) {
   return authorizedRequest(config, fallbackMessage, getBorrowingErrorMessage);
 }
 
+function authorizedReservationRequest(config, fallbackMessage) {
+  return authorizedRequest(config, fallbackMessage, getReservationErrorMessage);
+}
+
 export const borrowingApi = {
   createRequest(copyIds) {
     return authorizedBorrowingRequest({ method: 'post', url: '/borrow-requests', data: { copyIds } }, 'Không thể gửi yêu cầu mượn.');
@@ -112,22 +120,28 @@ export const borrowingApi = {
 
 export const reservationApi = {
   create(copyId) {
-    return authorizedRequest({ method: 'post', url: '/reservations', data: { copyId } }, 'Không thể đặt chỗ sách.');
+    return authorizedReservationRequest({ method: 'post', url: '/reservations', data: { copyId } }, 'Không thể đặt chỗ sách.');
   },
   listMine(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/reservations/me', params }, 'Không thể tải đặt chỗ của bạn.');
+    return authorizedReservationRequest({ method: 'get', url: '/reservations/me', params }, 'Không thể tải đặt chỗ của bạn.');
   },
   cancel(reservationId, reason = 'Cancelled by member') {
-    return authorizedRequest({ method: 'patch', url: `/reservations/${reservationId}/cancel`, data: { reason } }, 'Không thể hủy đặt chỗ.');
+    return authorizedReservationRequest({ method: 'patch', url: `/reservations/${reservationId}/cancel`, data: { reason } }, 'Không thể hủy đặt chỗ.');
   },
   listAll(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/reservations', params }, 'Không thể tải danh sách đặt chỗ.');
+    return authorizedReservationRequest({ method: 'get', url: '/reservations', params }, 'Không thể tải danh sách đặt chỗ.');
   },
   processQueue(copyId) {
-    return authorizedRequest({ method: 'post', url: '/reservations/process-queue', data: { copyId } }, 'Không thể xử lý hàng đợi đặt chỗ.');
+    return authorizedReservationRequest({ method: 'post', url: '/reservations/process-queue', data: { copyId } }, 'Không thể xử lý hàng đợi đặt chỗ.');
   },
   process(reservationId, data = {}) {
-    return authorizedRequest({ method: 'patch', url: `/reservations/${reservationId}/process`, data }, 'Không thể xử lý đặt chỗ.');
+    return authorizedReservationRequest({ method: 'patch', url: `/reservations/${reservationId}/process`, data }, 'Không thể xử lý đặt chỗ.');
+  },
+  expireHolds() {
+    return authorizedReservationRequest(
+      { method: 'post', url: '/reservations/expire-holds' },
+      'Không thể xử lý các lượt giữ chỗ hết hạn.',
+    );
   },
 };
 
