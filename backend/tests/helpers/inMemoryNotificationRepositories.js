@@ -2,6 +2,18 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+const sensitiveQueueIdentifiers = new Set([
+  'ACCOUNT_VERIFICATION',
+  'PASSWORD_RESET',
+  'EMAIL_VERIFY',
+]);
+
+function isSensitiveQueueNotification(notification) {
+  return [notification?.type, notification?.templateKey].some((identifier) =>
+    sensitiveQueueIdentifiers.has(String(identifier || '').toUpperCase())
+  );
+}
+
 function makeInMemoryNotificationDependencies() {
   let nextNotificationId = 1;
   const templates = [
@@ -113,7 +125,7 @@ function makeInMemoryNotificationDependencies() {
       }
 
       return this.createRequest({
-        type: input.templateCode,
+        type: null,
         channel: 'EMAIL',
         userId: input.userId,
         recipientEmail: input.recipientEmail,
@@ -133,7 +145,7 @@ function makeInMemoryNotificationDependencies() {
         .filter(
           (notification) =>
             notification.status === 'PENDING' &&
-            !['ACCOUNT_VERIFICATION', 'PASSWORD_RESET'].includes(notification.type)
+            !isSensitiveQueueNotification(notification)
         )
         .slice(0, limit)
         .map(mapNotification);

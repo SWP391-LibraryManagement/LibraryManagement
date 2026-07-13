@@ -193,7 +193,8 @@ async function listPending(limit = 20) {
       SELECT TOP (@Limit) *
       FROM Notifications
       WHERE Status = 'PENDING'
-        AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET'))
+        AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_VERIFY'))
+        AND (TemplateKey IS NULL OR TemplateKey NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_VERIFY'))
       ORDER BY CreatedAt ASC, NotificationId ASC
     `);
 

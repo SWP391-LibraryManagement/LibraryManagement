@@ -245,6 +245,78 @@ describe('FE10 notification management', () => {
     expect(JSON.stringify(emailProviderMessages)).not.toContain('https://example.test/verify/pending-link');
   });
 
+  test('excludes null-type legacy auth templates while processing null-type non-sensitive rows', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notification.legacy-worker@example.test',
+      role: 'LIBRARIAN',
+    });
+
+    notificationDependencies.state.notifications.push(
+      {
+        notificationId: 991,
+        type: null,
+        templateKey: 'PASSWORD_RESET',
+        recipientEmail: 'legacy-reset@example.test',
+        title: 'Reset password',
+        body: 'Reset link: https://example.test/reset/legacy-secret',
+        status: 'PENDING',
+        attemptCount: 0,
+      },
+      {
+        notificationId: 992,
+        type: null,
+        templateKey: 'ACCOUNT_VERIFICATION',
+        recipientEmail: 'legacy-verify@example.test',
+        title: 'Verify account',
+        body: 'Verification link: https://example.test/verify/legacy-secret',
+        status: 'PENDING',
+        attemptCount: 0,
+      },
+      {
+        notificationId: 993,
+        type: null,
+        templateKey: 'EMAIL_VERIFY',
+        recipientEmail: 'legacy-email-verify@example.test',
+        title: 'Legacy verify',
+        body: 'Verification link: https://example.test/verify/legacy-email-secret',
+        status: 'PENDING',
+        attemptCount: 0,
+      },
+      {
+        notificationId: 994,
+        type: null,
+        templateKey: 'DUE_DATE_REMINDER',
+        recipientEmail: 'legacy-due-date@example.test',
+        title: 'Due date reminder',
+        body: 'Due date: 2026-07-20',
+        status: 'PENDING',
+        attemptCount: 0,
+      }
+    );
+
+    const response = await request(app)
+      .post('/api/notifications/process-pending')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ limit: 10 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ processed: 1, failed: 0 });
+    expect(emailProviderMessages).toEqual([
+      expect.objectContaining({ to: 'legacy-due-date@example.test' }),
+    ]);
+    expect(notificationDependencies.state.notifications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ notificationId: 991, status: 'PENDING' }),
+        expect.objectContaining({ notificationId: 992, status: 'PENDING' }),
+        expect.objectContaining({ notificationId: 993, status: 'PENDING' }),
+        expect.objectContaining({ notificationId: 994, status: 'SENT' }),
+      ])
+    );
+  });
+
   test('notification APIs are protected from public callers', async () => {
     const { app, authDependencies } = makeTestApp();
     const member = await createVerifiedUser({
@@ -685,6 +757,80 @@ describe('FE10 notification management', () => {
       expect(persistedAndExposed).not.toContain(renderedSubject);
       expect(persistedAndExposed).not.toContain(renderedBody);
       expect(persistedAndExposed).not.toContain('smtp auth token secret stack trace');
+    }
+  );
+
+  test.each([
+    [
+      'ACCOUNT_VERIFICATION',
+      'ACCOUNT_VERIFICATION',
+      'reader@example.test',
+      { name: 'Reader', verificationLink: 'https://example.test/verify/audit-write-secret' },
+      'SENT',
+    ],
+    [
+      'PASSWORD_RESET',
+      'PASSWORD_RESET',
+      'fail-audit@example.test',
+      { resetLink: 'https://example.test/reset/audit-write-secret' },
+      'FAILED',
+    ],
+  ])(
+    'preserves accepted %s delivery when its post-delivery audit write fails safely',
+    async (type, templateKey, recipientEmail, templateData, expectedStatus) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+      const admin = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.sensitive.audit.${type.toLowerCase()}@example.test`,
+        role: 'ADMIN',
+      });
+      const rawLink = Object.values(templateData)[Object.values(templateData).length - 1];
+      const auditError = `audit write failed with sensitive data: ${rawLink}`;
+      authDependencies.auditLogRepository.create = async () => {
+        throw new Error(auditError);
+      };
+
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      let response;
+      let capturedLogs;
+
+      try {
+        response = await request(app)
+          .post('/api/notifications/requests')
+          .set('Authorization', authHeader(admin.accessToken))
+          .send({ type, recipientEmail, templateKey, templateData });
+      } finally {
+        capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
+        consoleErrorSpy.mockRestore();
+      }
+
+      expect(response.status).toBe(201);
+      expect(response.body.notification.status).toBe(expectedStatus);
+      expect(emailProviderMessages).toHaveLength(1);
+      expect(notificationDependencies.state.notifications[0]).toMatchObject({
+        status: expectedStatus,
+        title: null,
+        body: null,
+      });
+      expect(notificationDependencies.state.attempts).toEqual([
+        expect.objectContaining({ status: expectedStatus }),
+      ]);
+
+      const fallbackMetadata = capturedLogs.flat().find(
+        (value) => value?.code === 'NOTIFICATION_AUDIT_WRITE_FAILED'
+      );
+      expect(fallbackMetadata).toEqual({
+        code: 'NOTIFICATION_AUDIT_WRITE_FAILED',
+        message: 'Notification audit record could not be written.',
+      });
+      expect(fallbackMetadata.stack).toBeUndefined();
+      const loggedOutput = capturedLogs
+        .flat()
+        .map((value) => (value instanceof Error ? `${value.message} ${value.stack}` : JSON.stringify(value)))
+        .join(' ');
+      expect(loggedOutput).not.toContain(auditError);
+      expect(loggedOutput).not.toContain(rawLink);
     }
   );
 

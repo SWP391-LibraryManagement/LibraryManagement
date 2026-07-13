@@ -23,6 +23,11 @@ const canonicalTemplateKeys = {
 };
 
 const sensitiveNotificationTypes = new Set(['ACCOUNT_VERIFICATION', 'PASSWORD_RESET']);
+const sensitiveQueueIdentifiers = new Set([
+  'ACCOUNT_VERIFICATION',
+  'PASSWORD_RESET',
+  'EMAIL_VERIFY',
+]);
 const sensitiveKeyFragments = ['token', 'otp', 'password', 'verificationlink', 'resetlink'];
 
 function normalizeRole(role) {
@@ -92,6 +97,12 @@ function safeInternalError(code, message) {
   const error = errors.internal(code, message);
   error.stack = undefined;
   return error;
+}
+
+function isSensitiveQueueNotification(notification) {
+  return [notification?.type, notification?.templateKey].some((identifier) =>
+    sensitiveQueueIdentifiers.has(String(identifier || '').toUpperCase())
+  );
 }
 
 function deriveSensitiveIdempotencyKey(idempotencyKey) {
@@ -345,7 +356,7 @@ function createNotificationService({
       }
     }
 
-    await writeAudit(context, 'NOTIFICATION_REQUEST_CREATE', {
+    const auditDetails = {
       userId: actor.userId,
       targetId: notification.notificationId,
       metadata: {
@@ -355,7 +366,20 @@ function createNotificationService({
         sourceEntityType,
         sourceEntityId: input.sourceEntityId || null,
       },
-    });
+    };
+
+    if (isSensitiveNotification) {
+      try {
+        await writeAudit(context, 'NOTIFICATION_REQUEST_CREATE', auditDetails);
+      } catch {
+        console.error('[notification audit fallback]', {
+          code: 'NOTIFICATION_AUDIT_WRITE_FAILED',
+          message: 'Notification audit record could not be written.',
+        });
+      }
+    } else {
+      await writeAudit(context, 'NOTIFICATION_REQUEST_CREATE', auditDetails);
+    }
 
     return {
       duplicate: false,
@@ -376,7 +400,7 @@ function createNotificationService({
 
     const limit = Number(input.limit || 20);
     const pendingNotifications = (await notificationRepository.listPending(limit)).filter(
-      (notification) => !sensitiveNotificationTypes.has(notification.type)
+      (notification) => !isSensitiveQueueNotification(notification)
     );
     const result = {
       processed: 0,
