@@ -578,14 +578,13 @@ VALUES
 
 INSERT INTO NotificationTemplates (TemplateCode, Subject, Body)
 VALUES
-('ACCOUNT_VERIFICATION','Verify your account','Please verify your library account.'),
-('PASSWORD_RESET','Reset your password','Please reset your library account password.'),
+('ACCOUNT_VERIFICATION','Verify your account','Please verify your library account: {{verificationLink}}.'),
+('PASSWORD_RESET','Reset your password','Please reset your library account password: {{resetLink}}.'),
 ('RESERVATION_READY','Book reservation ready','Your reserved book is ready.'),
 ('DUE_DATE_REMINDER','Library due date reminder','Please review your borrowing due date.'),
 ('OVERDUE_NOTICE','Library overdue notice','Please review your overdue borrowing item.'),
 ('FINE_NOTICE','Library fine notice','Please review your library fine notice.'),
-('MEMBERSHIP_RESULT','Membership result','Please review your membership result.'),
-('DUE_OR_FINE_NOTICE','Library due date or fine notice','Please review your borrowing or fine notice.');
+('MEMBERSHIP_RESULT','Membership result','Please review your membership result.');
 
 INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)
 VALUES

@@ -10,7 +10,18 @@ const supportedTypes = [
   'GENERAL_SYSTEM',
 ];
 
-const sensitiveKeys = ['token', 'verificationToken', 'resetToken', 'verificationLink', 'resetLink', 'password'];
+const canonicalTemplateKeys = {
+  ACCOUNT_VERIFICATION: 'ACCOUNT_VERIFICATION',
+  PASSWORD_RESET: 'PASSWORD_RESET',
+  RESERVATION_AVAILABLE: 'RESERVATION_READY',
+  DUE_DATE_REMINDER: 'DUE_DATE_REMINDER',
+  OVERDUE_NOTICE: 'OVERDUE_NOTICE',
+  FINE_NOTICE: 'FINE_NOTICE',
+  GENERAL_SYSTEM: 'MEMBERSHIP_RESULT',
+};
+
+const sensitiveNotificationTypes = new Set(['ACCOUNT_VERIFICATION', 'PASSWORD_RESET']);
+const sensitiveKeyFragments = ['token', 'otp', 'password', 'verificationlink', 'resetlink'];
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -27,21 +38,49 @@ function sanitizeString(value) {
     .replace(/[<>]/g, '');
 }
 
-function sanitizePayload(payload = {}) {
+function normalizePayloadKey(key) {
+  return String(key || '')
+    .toLowerCase()
+    .replace(/[_\-\s]/g, '');
+}
+
+function isSensitivePayloadKey(key) {
+  const normalizedKey = normalizePayloadKey(key);
+  return sensitiveKeyFragments.some((fragment) => normalizedKey.includes(fragment));
+}
+
+function containsSensitivePayloadKey(payload) {
+  if (Array.isArray(payload)) {
+    return payload.some(containsSensitivePayloadKey);
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+
+  return Object.entries(payload).some(
+    ([key, value]) => isSensitivePayloadKey(key) || containsSensitivePayloadKey(value)
+  );
+}
+
+function sanitizePayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload.map(sanitizePayload);
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return typeof payload === 'string' ? sanitizeString(payload) : payload;
+  }
+
   const result = {};
 
-  for (const [key, value] of Object.entries(payload || {})) {
-    if (sensitiveKeys.some((sensitiveKey) => key.toLowerCase().includes(sensitiveKey.toLowerCase()))) {
+  for (const [key, value] of Object.entries(payload)) {
+    if (isSensitivePayloadKey(key)) {
       result[key] = '[REDACTED]';
       continue;
     }
 
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      result[key] = sanitizePayload(value);
-      continue;
-    }
-
-    result[key] = typeof value === 'string' ? sanitizeString(value) : value;
+    result[key] = sanitizePayload(value);
   }
 
   return result;
@@ -168,7 +207,7 @@ function createNotificationService({
     const type = String(input.type || '').toUpperCase();
     const channel = String(input.channel || 'EMAIL').toUpperCase();
     const templateKey = String(input.templateKey || '').trim();
-    const templateData = sanitizePayload(input.templateData || {});
+    const rawTemplateData = input.templateData || {};
 
     if (!supportedTypes.includes(type)) {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
@@ -177,6 +216,22 @@ function createNotificationService({
     if (channel !== 'EMAIL') {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_CHANNEL', 'Notification channel is not supported.');
     }
+
+    if (templateKey !== canonicalTemplateKeys[type]) {
+      throw errors.badRequest(
+        'CANONICAL_TEMPLATE_MISMATCH',
+        'Notification type and template key do not match.'
+      );
+    }
+
+    if (!sensitiveNotificationTypes.has(type) && containsSensitivePayloadKey(rawTemplateData)) {
+      throw errors.badRequest(
+        'SENSITIVE_TEMPLATE_DATA',
+        'Queued notification template data contains a sensitive field.'
+      );
+    }
+
+    const templateData = sanitizePayload(rawTemplateData);
 
     if (input.idempotencyKey) {
       const existing = await notificationRepository.findActiveByIdempotencyKey(input.idempotencyKey);

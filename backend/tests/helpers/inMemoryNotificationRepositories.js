@@ -9,7 +9,7 @@ function makeInMemoryNotificationDependencies() {
       templateId: 1,
       templateCode: 'ACCOUNT_VERIFICATION',
       subject: 'Verify {{name}}',
-      body: 'Verification purpose: {{purpose}}',
+      body: 'Verification link: {{verificationLink}}',
       status: 'ACTIVE',
     },
     {
@@ -38,6 +38,20 @@ function makeInMemoryNotificationDependencies() {
       templateCode: 'FINE_NOTICE',
       subject: 'Fine notice',
       body: 'Fine amount: {{amount}}',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 6,
+      templateCode: 'OVERDUE_NOTICE',
+      subject: 'Overdue notice',
+      body: 'Overdue since: {{dueDate}}',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 7,
+      templateCode: 'MEMBERSHIP_RESULT',
+      subject: 'Membership result',
+      body: 'Membership status: {{membershipStatus}}',
       status: 'ACTIVE',
     },
   ];
