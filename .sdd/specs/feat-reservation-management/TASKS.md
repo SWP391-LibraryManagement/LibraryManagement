@@ -50,9 +50,9 @@ Updated: 2026-07-13
 ## 5. Validation
 
 - [x] `npm.cmd --prefix frontend test` - 14/14 tests passed.
-- [x] `Push-Location frontend; npm.cmd exec -- eslint src/page/reservation/ReservationsLibrarianPage.jsx src/utils/reservationViewState.js test/reservationFrontend.test.js; Pop-Location` - focused lint passed.
-- [x] `npm.cmd --prefix frontend run build` - production build passed.
-- [ ] Final backend verification is pending Task 5; add only its command and passing result after it runs.
+- [x] `npm.cmd --prefix frontend run lint` - passed with 0 ESLint errors.
+- [x] `npm.cmd --prefix frontend run build` - Vite 8.0.16 production build passed after transforming 14,323 modules; Vite reported a non-failing chunk-size warning.
+- [x] `npm.cmd --prefix backend test` - 15/15 Jest suites and 123/123 tests passed; 0 snapshots.
 
 ## 6. Traceability
 
