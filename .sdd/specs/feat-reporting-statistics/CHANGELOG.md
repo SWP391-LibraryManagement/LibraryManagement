@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-13 - B7 Integration And Review Closeout
+
+- Nhat confirmed the human review gate and selected local merge after the clean FE12 re-review.
+- Commit `58747bc10657ed1accb44950ae0c5edbd178a242` reached `main` and was pushed to `origin/main`.
+- GitHub Actions CI run `29249491818` passed for the same commit, including traceability, backend
+  tests, frontend lint/tests/build, and the backend health import check.
+- Added `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md` with integration,
+  scope-control, documentation, and remaining-follow-up evidence.
+- CSV/PDF export, dashboards, BI integration, and the shared logout-shell issue remain outside FE12.
+
 ## 2026-07-13 - Final Review Remediation
 
 - Read inventory categories from the authorized metadata controller envelope.

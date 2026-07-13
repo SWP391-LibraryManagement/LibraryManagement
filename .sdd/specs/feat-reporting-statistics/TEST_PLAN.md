@@ -1,7 +1,7 @@
 # FE12 Test Plan - Reporting & Statistics
 
-Version: 0.6.0
-Status: B6 COMPLETE - HUMAN REVIEW CONFIRMED
+Version: 0.7.0
+Status: COMPLETE
 Last Updated: 2026-07-13
 
 Source Spec: `.sdd/specs/feat-reporting-statistics/SPEC.md`
@@ -76,7 +76,16 @@ Read-only borrowing, inventory, and user/statistics reports for authorized staff
 - Shared `AppLayout` logout currently navigates to `/login` without clearing auth storage;
   this pre-existing authentication-shell issue is outside FE12 and should be handled separately.
 
-## 8. Required Commands / Evidence Before Merge
+## 8. B7 Integration Evidence
+
+- Commit `58747bc10657ed1accb44950ae0c5edbd178a242` is in `main` and `origin/main`.
+- GitHub Actions CI run `29249491818` passed for the same commit.
+- The successful CI job covered traceability enforcement, backend tests, frontend lint/tests/build,
+  and the backend health import check.
+- Detailed evidence is recorded in
+  `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
+
+## 9. Verification Commands
 
 ```powershell
 npm.cmd --prefix backend test

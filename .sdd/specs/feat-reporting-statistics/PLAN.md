@@ -1,10 +1,12 @@
 # PLAN.md - FE12 Reporting & Statistics
 
-Status: B6 COMPLETE - HUMAN REVIEW CONFIRMED
+Status: COMPLETE
 
 Owner: Nhat
 
 Updated: 2026-07-13
+
+Workflow State: B5 implementation, B6 validation, and B7 integration complete
 
 ---
 
@@ -84,10 +86,12 @@ Not included:
 - The slice is read-only and does not modify source data.
 - Any future export or dashboard work should stay outside this approved scope.
 
-## 5. B6 Validation Status
+## 5. B6 Validation And B7 Integration Status
 
 Automated and browser validation were completed on `feat/fe12-validation`, then independent
 reviews identified follow-up correctness, contract, and test-double parity findings. The findings
 are remediated, fresh full verification is complete, and the final independent re-review is clean.
-Nhat confirmed human review in the Codex task. Commit, push, merge, and B7 integration remain
-separate decisions.
+Nhat confirmed human review in the Codex task. Commit
+`58747bc10657ed1accb44950ae0c5edbd178a242` was then fast-forward merged into `main`, pushed to
+`origin/main`, and GitHub Actions CI run `29249491818` passed for the same commit. Detailed B7
+evidence is recorded in `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
