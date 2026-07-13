@@ -23,25 +23,25 @@ function makeTestApp() {
   const reportDependencies = makeInMemoryReportDependencies(authDependencies.state, borrowingDependencies.state);
 
   const authService = createAuthService(authDependencies);
-  const borrowingService = createBorrowingService({
-    borrowingRepository: borrowingDependencies.borrowingRepository,
-    auditLogRepository: authDependencies.auditLogRepository,
-    notificationRepository: authDependencies.notificationRepository,
-    clock: () => new Date('2026-06-10T00:00:00.000Z'),
-  });
-  const reservationService = createReservationService({
-    reservationRepository: reservationDependencies.reservationRepository,
-    bookCopyRepository: reservationDependencies.bookCopyRepository,
-    auditLogRepository: authDependencies.auditLogRepository,
-    notificationRepository: authDependencies.notificationRepository,
-    clock: () => new Date('2026-06-10T00:00:00.000Z'),
-  });
   const notificationService = createNotificationService({
     notificationRepository: notificationRepositories.notificationRepository,
     templateRepository: notificationRepositories.templateRepository,
     userRepository: authDependencies.userRepository,
     auditLogRepository: authDependencies.auditLogRepository,
     emailProvider: { send: async () => ({ success: true }) },
+    clock: () => new Date('2026-06-10T00:00:00.000Z'),
+  });
+  const borrowingService = createBorrowingService({
+    borrowingRepository: borrowingDependencies.borrowingRepository,
+    auditLogRepository: authDependencies.auditLogRepository,
+    notificationService,
+    clock: () => new Date('2026-06-10T00:00:00.000Z'),
+  });
+  const reservationService = createReservationService({
+    reservationRepository: reservationDependencies.reservationRepository,
+    bookCopyRepository: reservationDependencies.bookCopyRepository,
+    auditLogRepository: authDependencies.auditLogRepository,
+    notificationService,
     clock: () => new Date('2026-06-10T00:00:00.000Z'),
   });
   const reportService = createReportService({
@@ -57,7 +57,13 @@ function makeTestApp() {
     reportService,
   });
 
-  return { app, authDependencies, borrowingDependencies, reservationDependencies };
+  return {
+    app,
+    authDependencies,
+    borrowingDependencies,
+    reservationDependencies,
+    notificationRepositories,
+  };
 }
 
 async function createVerifiedUser({
@@ -272,7 +278,7 @@ describe('Integration: End-to-End Flows', () => {
 
   describe('Cross-Feature: FE07 -> FE09 -> FE10', () => {
     test('Borrow approval creates notification and overdue return exposes fine candidate data', async () => {
-      const { app, authDependencies, borrowingDependencies } = makeTestApp();
+      const { app, authDependencies, borrowingDependencies, notificationRepositories } = makeTestApp();
       const member = await createVerifiedUser({
         app,
         authDependencies,
@@ -302,11 +308,12 @@ describe('Integration: End-to-End Flows', () => {
         .send({});
 
       expect(approveResponse.status).toBe(200);
-      expect(authDependencies.state.notifications).toEqual(
+      expect(notificationRepositories.state.notifications).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             userId: member.userId,
-            templateCode: 'DUE_DATE_REMINDER',
+            type: 'DUE_DATE_REMINDER',
+            templateKey: 'DUE_DATE_REMINDER',
             sourceFeature: 'FE07',
           }),
         ])
@@ -433,7 +440,13 @@ describe('Integration: End-to-End Flows', () => {
 
   describe('Cross-Feature: FE08 -> FE10 reservation-ready notification (FR-FE08-008)', () => {
     test('processing the queue holds the copy and creates a RESERVATION_READY notification', async () => {
-      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const {
+        app,
+        authDependencies,
+        borrowingDependencies,
+        reservationDependencies,
+        notificationRepositories,
+      } = makeTestApp();
       const member = await createVerifiedUser({
         app, authDependencies, borrowingDependencies, reservationDependencies,
         email: 'rr.member@example.com',
@@ -464,11 +477,12 @@ describe('Integration: End-to-End Flows', () => {
         status: 'NOTIFIED',
       });
       expect(reservationDependencies.state.copies.find((c) => c.copyId === 1).status).toBe('RESERVED');
-      expect(authDependencies.state.notifications).toEqual(
+      expect(notificationRepositories.state.notifications).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             userId: member.userId,
-            templateCode: 'RESERVATION_READY',
+            type: 'RESERVATION_AVAILABLE',
+            templateKey: 'RESERVATION_READY',
             sourceFeature: 'FE08',
           }),
         ])
@@ -478,7 +492,13 @@ describe('Integration: End-to-End Flows', () => {
 
   describe('Cross-Feature: FE08 expire-holds promotes the next member + notifies (FR-FE08-019)', () => {
     test('an expired hold frees the copy, expires the reservation, and notifies the next member', async () => {
-      const { app, authDependencies, borrowingDependencies, reservationDependencies } = makeTestApp();
+      const {
+        app,
+        authDependencies,
+        borrowingDependencies,
+        reservationDependencies,
+        notificationRepositories,
+      } = makeTestApp();
       const first = await createVerifiedUser({
         app, authDependencies, borrowingDependencies, reservationDependencies, email: 'exp.first@example.com',
       });
@@ -517,8 +537,12 @@ describe('Integration: End-to-End Flows', () => {
         reservationDependencies.state.reservations.find((r) => r.userId === second.userId && r.copyId === 1).status
       ).toBe('NOTIFIED');
       expect(reservationDependencies.state.copies.find((c) => c.copyId === 1).status).toBe('RESERVED');
-      const readyForSecond = authDependencies.state.notifications.filter(
-        (n) => n.userId === second.userId && n.templateCode === 'RESERVATION_READY'
+      const readyForSecond = notificationRepositories.state.notifications.filter(
+        (n) =>
+          n.userId === second.userId &&
+          n.type === 'RESERVATION_AVAILABLE' &&
+          n.templateKey === 'RESERVATION_READY' &&
+          n.sourceFeature === 'FE08'
       );
       expect(readyForSecond.length).toBeGreaterThan(0);
     });
