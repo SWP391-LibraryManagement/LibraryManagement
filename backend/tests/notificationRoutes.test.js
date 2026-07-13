@@ -301,6 +301,60 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(0);
   });
 
+  // H04 baseline: the current validator coerces integer strings but rejects decimals.
+  test('characterizes current sourceEntityId coercion before H04 hardening', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.source-id.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const numericStringResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        sourceEntityId: '42',
+      });
+
+    expect(numericStringResponse.status).toBe(201);
+    expect(numericStringResponse.body.error).toBeUndefined();
+    expect(notificationDependencies.state.notifications).toHaveLength(1);
+    expect(notificationDependencies.state.notifications[0].sourceEntityId).toBe(42);
+
+    const decimalResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        sourceEntityId: 42.5,
+      });
+
+    expect(decimalResponse.status).toBe(400);
+    expect(decimalResponse.body).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request.',
+        details: [
+          {
+            field: 'sourceEntityId',
+            message: 'Source entity ID must be a positive integer.',
+          },
+        ],
+      },
+    });
+    expect(notificationDependencies.state.notifications).toHaveLength(1);
+    expect(notificationDependencies.state.notifications[0].sourceEntityId).toBe(42);
+  });
+
   // BR-FE10-002: a template key outside the canonical pair is rejected before lookup.
   test('rejects an unknown template key', async () => {
     const { app, authDependencies } = makeTestApp();
@@ -517,6 +571,8 @@ describe('FE10 notification management', () => {
     ['OTP', { schedule: [{ reminder: { OTP: 'test-otp' } }] }],
     ['reset_token', { schedule: [{ reminder: { reset_token: 'test-reset-token' } }] }],
     ['verification-link', { schedule: [{ reminder: { 'verification-link': 'test-verify-link' } }] }],
+    ['user password', { schedule: [{ reminder: { 'user password': 'test-password' } }] }],
+    ['reset link', { schedule: [{ reminder: { 'reset link': 'test-reset-link' } }] }],
   ])('rejects nested queued template data containing %s before persistence', async (_, templateData) => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
@@ -563,7 +619,10 @@ describe('FE10 notification management', () => {
           context: [
             {
               'verification-link': 'test-verify-link',
-              details: { reset_token: 'test-reset-token' },
+              details: {
+                reset_token: 'test-reset-token',
+                'user password': 'test-password',
+              },
             },
           ],
         },
@@ -575,7 +634,10 @@ describe('FE10 notification management', () => {
       context: [
         {
           'verification-link': '[REDACTED]',
-          details: { reset_token: '[REDACTED]' },
+          details: {
+            reset_token: '[REDACTED]',
+            'user password': '[REDACTED]',
+          },
         },
       ],
     });
