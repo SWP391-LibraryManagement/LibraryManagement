@@ -41,3 +41,20 @@ This entry describes the historical initial slice. Its active-only duplicate loo
 - Changed idempotency to one record per key across all statuses and defined manual retry only for failed non-sensitive queued records; sensitive retry returns safe `409 REISSUE_REQUIRED`.
 - Kept FE02 OTP/link and `EMAIL_VERIFY` reconciliation plus FE02 migration with the FE02 owner; deferred FE09 caller integration because no caller currently exists.
 - Updated stable BR/FR/AC semantics, API/NFR requirements, traceability, and review checklist. No implementation, test, database, or OpenAPI files changed in FE10-H01.
+
+## 2026-07-13 - FE10-H02 To FE10-H08 Hardening Implemented
+
+- Enforced canonical type/template pairs, recursive normalized sensitive-key rejection, matching safe-payload redaction, and integer-only source entity IDs.
+- Delivered account verification and password reset notifications synchronously through the mock provider while keeping raw links and rendered sensitive content out of persistence, logs, audits, and HTTP responses.
+- Reduced create, replay, process, and retry responses to the approved DTOs and kept notification HTTP routes protected.
+- Added the construction-bound source requester, then migrated only FE07 borrowing and FE08 reservation notifications with non-blocking source-flow behavior.
+- Enforced one notification record per idempotency key across all statuses and added protected same-record retry for failed non-sensitive notifications; sensitive retries return `409 REISSUE_REQUIRED`.
+- Completed implementation through commits `105e51c` to `7c88223`; FE02 migration, FE09 caller integration, frontend work, real-provider work, and dependency changes remain out of scope.
+
+## 2026-07-13 - FE10-H09 Validation Evidence Recorded
+
+- Targeted FE10/FE07/FE08/integration validation passed: 4 suites and 131 tests.
+- The full backend suite passed: 15 suites and 207 tests.
+- Enforced traceability passed with FE10 at 9/9 functional requirements (100%) and no implemented feature below the 70% threshold.
+- `git diff --check a613604..HEAD` passed; placeholder, contradiction, leakage, and changed-file scope scans found no blocking issue.
+- H09 remains in review until an independent task reviewer reports no blocking findings.

@@ -57,13 +57,13 @@ Updated: 2026-07-13
 
 ## 6. FE10 Hardening Tasks - B4 Decomposition
 
-B4 status: COMPLETE. B5 implementation status: NOT STARTED.
+B4 status: COMPLETE. B5 implementation status: COMPLETE. B6 validation status: IN REVIEW.
 
 The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for the initial backend slice. The hardening tasks below implement the approved G1-G7 contract as ordered vertical slices. Every implementation task owns its focused tests in the same slice.
 
 ### FE10-H01 Revise The Approved FE10 Contract
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`105e51c`)
 - Estimate: 2-3h
 - Dependencies: G1-G7 approval recorded in `PLAN.md`; no code task may start first.
 - Maps to: G1-G7; BR-FE10-001 to BR-FE10-013; FR-FE10-001 to FR-FE10-009; AC-FE10-001 to AC-FE10-009; Q-FE10-005 to Q-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004, NFR-FE10-REL-001 to NFR-FE10-REL-003.
@@ -73,7 +73,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H02 Enforce Canonical Templates And Queued-Payload Safety
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`3e0cae1`, `5686992`)
 - Estimate: 3-4h
 - Dependencies: FE10-H01.
 - Maps to: G1, G4, G7; BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010; FR-FE10-005, FR-FE10-009; AC-FE10-006, AC-FE10-007; EC-FE10-004, EC-FE10-006, EC-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004.
@@ -83,7 +83,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H03 Deliver Sensitive Auth Notifications Synchronously
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`6e58c9e` through `5ce05c8`)
 - Estimate: 3-4h
 - Dependencies: FE10-H02.
 - Maps to: G1, G2; BR-FE10-003, BR-FE10-004, BR-FE10-008 to BR-FE10-010, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006, FR-FE10-007; AC-FE10-001, AC-FE10-002, AC-FE10-007, AC-FE10-009; NFR-FE10-REL-001, NFR-FE10-REL-002, NFR-FE10-LOG-001, NFR-FE10-LOG-002.
@@ -93,7 +93,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H04 Contain HTTP Responses And Align The Contract Surface
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`498dc67`, `549c6af`)
 - Estimate: 2-3h
 - Dependencies: FE10-H03.
 - Maps to: G2, G4, G5; BR-FE10-002, BR-FE10-004, BR-FE10-011; FR-FE10-005 to FR-FE10-007; AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001, NFR-FE10-SEC-002, NFR-FE10-UX-002.
@@ -103,7 +103,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H05 Add The Bound Internal Source Requester
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`2ac8533`, `b877188`)
 - Estimate: 3-4h
 - Dependencies: FE10-H04.
 - Maps to: G3; BR-FE10-001, BR-FE10-002, BR-FE10-004, BR-FE10-005, BR-FE10-011 to BR-FE10-013; FR-FE10-003 to FR-FE10-005; AC-FE10-003, AC-FE10-004, AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001, NFR-FE10-SEC-006, NFR-FE10-REL-002.
@@ -113,7 +113,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H06 Migrate FE07 Borrowing Notifications
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`c8da11b`)
 - Estimate: 2-3h
 - Dependencies: FE10-H05.
 - Maps to: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-004; AC-FE10-004; NFR-FE10-REL-002.
@@ -123,7 +123,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H07 Migrate FE08 Reservation Notifications
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`83b645a`)
 - Estimate: 2-3h
 - Dependencies: FE10-H05.
 - Maps to: G3; BR-FE10-001, BR-FE10-005, BR-FE10-012; FR-FE10-003; AC-FE10-003; NFR-FE10-REL-002.
@@ -133,7 +133,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H08 Enforce All-Status Idempotency And Manual Retry
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`5c0c0dd`, `cad91ba`, `7c88223`)
 - Estimate: 3-4h
 - Dependencies: FE10-H04, FE10-H05; may start only after FE10-H06 and FE10-H07 integration diffs are stable because shared FE10 tests and service files are reused.
 - Maps to: G5, G6; BR-FE10-006, BR-FE10-008, BR-FE10-011, BR-FE10-013; FR-FE10-007, FR-FE10-008; AC-FE10-008, AC-FE10-009; EC-FE10-008, EC-FE10-009, EC-FE10-011; Q-FE10-005; NFR-FE10-REL-001 to NFR-FE10-REL-003.
@@ -143,7 +143,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H09 Pass The B6 Validation Gate
 
-- [ ] Status: PENDING
+- [ ] Status: IN REVIEW
 - Estimate: 2-4h
 - Dependencies: FE10-H01 to FE10-H08 complete and independently reviewed.
 - Maps to: G1-G7 and all revised FE10 BR/FR/AC/API/NFR traceability rows.
@@ -151,9 +151,18 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 - Definition of Done: targeted FE10, FE07, and FE08 tests pass; the full backend suite passes; SPEC-to-task-to-test traceability is complete; no secret/link/token is exposed by fixtures, logs, persistence assertions, or responses; diff contains no frontend, FE02 implementation, FE09 implementation, real provider, dependency, expiry, or unrelated refactor changes; an independent review reports no blocking findings.
 - Verification: run targeted tests, `npm test` in `backend`, `git diff --check`, placeholder scan, contradiction scan, secret scan, and final changed-file scope review; record exact commands and outcomes before marking complete.
 
+Validation evidence recorded on 2026-07-13:
+
+- `npm.cmd test -- notificationRoutes.test.js borrowingRoutes.test.js reservationRoutes.test.js integration.test.js` in `backend`: PASS, 4 suites and 131 tests.
+- `npm.cmd test` in `backend`: PASS, 15 suites and 207 tests.
+- `node scripts/check-traceability.js --enforce`: PASS; FE10 covers 9/9 functional requirements (100%), and no implemented feature is below the 70% gate.
+- `git diff --check a613604..HEAD`: PASS.
+- Placeholder, contradiction, leakage, and changed-file scope scans: PASS; detailed command output is recorded in the H09 review package.
+- Independent H09 task review: PENDING before this task can be marked complete.
+
 ## 7. Hardening Traceability And Parallel Work
 
-| Approved gate | Pending tasks |
+| Approved gate | Hardening tasks |
 | --- | --- |
 | G1 | FE10-H01, FE10-H02, FE10-H03, FE10-H09 |
 | G2 | FE10-H01, FE10-H03, FE10-H04, FE10-H09 |
