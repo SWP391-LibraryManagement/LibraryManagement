@@ -400,7 +400,7 @@ describe('FE10 notification management', () => {
       role: 'ADMIN',
     });
 
-    for (const sourceEntityId of ['42', 42.5, 0, -1]) {
+    for (const sourceEntityId of [null, '42', 42.5, 0, -1]) {
       const response = await request(app)
         .post('/api/notifications/requests')
         .set('Authorization', authHeader(admin.accessToken))

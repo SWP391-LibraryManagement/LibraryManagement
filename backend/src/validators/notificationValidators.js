@@ -61,7 +61,7 @@ const createNotificationRequestValidators = [
     .isLength({ max: 50 })
     .withMessage('Source entity type must be at most 50 characters.'),
   body('sourceEntityId')
-    .optional({ nullable: true })
+    .optional()
     .custom((value) => Number.isInteger(value) && value > 0)
     .withMessage('Source entity ID must be a positive integer.'),
   body('idempotencyKey')

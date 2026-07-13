@@ -149,7 +149,7 @@ describe('Integration: End-to-End Flows', () => {
   });
 
   describe('FE02 -> FE10: Auth then Notification', () => {
-    test('Librarian creates notification request after auth', async () => {
+    test('Librarian receives exact H04 create, replay, process, and validation responses', async () => {
       const { app, authDependencies, borrowingDependencies } = makeTestApp();
       const { accessToken } = await createVerifiedUser({
         app,
@@ -160,22 +160,66 @@ describe('Integration: End-to-End Flows', () => {
         approveMember: false,
       });
 
-      const response = await request(app)
+      const payload = {
+        type: 'DUE_DATE_REMINDER',
+        channel: 'EMAIL',
+        recipientEmail: 'member@example.com',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-06-24' },
+        idempotencyKey: 'test-1',
+      };
+
+      const createResponse = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(payload);
+
+      expect(createResponse.status).toBe(201);
+      expect(createResponse.body).toEqual({
+        notificationId: expect.any(Number),
+        status: 'PENDING',
+      });
+
+      const replayResponse = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(payload);
+
+      expect(replayResponse.status).toBe(200);
+      expect(replayResponse.body).toEqual(createResponse.body);
+
+      const processResponse = await request(app)
+        .post('/api/notifications/process-pending')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ limit: 10 });
+
+      expect(processResponse.status).toBe(200);
+      expect(processResponse.body).toEqual({ processed: 1, failed: 0 });
+      expect(processResponse.body).not.toHaveProperty('notifications');
+
+      const invalidResponse = await request(app)
         .post('/api/notifications/requests')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           type: 'DUE_DATE_REMINDER',
-          channel: 'EMAIL',
           recipientEmail: 'member@example.com',
           templateKey: 'DUE_DATE_REMINDER',
           templateData: { dueDate: '2026-06-24' },
-          idempotencyKey: 'test-1',
+          sourceEntityId: null,
         });
 
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({
-        notificationId: expect.any(Number),
-        status: 'PENDING',
+      expect(invalidResponse.status).toBe(400);
+      expect(invalidResponse.body).toEqual({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request.',
+          details: [
+            {
+              field: 'sourceEntityId',
+              message: 'Source entity ID must be a positive integer.',
+            },
+          ],
+        },
       });
     });
   });
