@@ -717,22 +717,14 @@ describe('FE10 notification management', () => {
       idempotencyKey: rawIdempotencyKey,
     };
 
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    let createResponse;
-    let replayResponse;
-
-    try {
-      createResponse = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send(payload);
-      replayResponse = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send(payload);
-    } finally {
-      consoleErrorSpy.mockRestore();
-    }
+    const createResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload);
+    const replayResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload);
 
     expect(createResponse.status).toBe(201);
     expect(replayResponse.status).toBe(200);
@@ -763,7 +755,6 @@ describe('FE10 notification management', () => {
       notification,
       attempts: notificationDependencies.state.attempts,
       auditLogs: authDependencies.state.auditLogs,
-      capturedLogs: consoleErrorSpy.mock.calls,
     });
     expect(persistedAndExposed).not.toContain(rawLink);
     expect(persistedAndExposed).not.toContain(rawIdempotencyKey);
@@ -794,6 +785,7 @@ describe('FE10 notification management', () => {
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     let response;
+    let capturedLogs;
 
     try {
       response = await request(app)
@@ -807,6 +799,7 @@ describe('FE10 notification management', () => {
           sourceFeature: 'FE02',
         });
     } finally {
+      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
       consoleErrorSpy.mockRestore();
     }
 
@@ -820,11 +813,20 @@ describe('FE10 notification management', () => {
     expect(markFailedCalled).toBe(false);
     expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
+    expect(capturedLogs).toEqual([
+      expect.arrayContaining([
+        '[api error]',
+        expect.objectContaining({
+          code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
+          message: 'Notification delivery state could not be recorded.',
+        }),
+      ]),
+    ]);
     const safeBoundaries = JSON.stringify({
       response: response.body,
       notification: notificationDependencies.state.notifications[0],
       attempts: notificationDependencies.state.attempts,
-      capturedLogs: consoleErrorSpy.mock.calls,
+      capturedLogs,
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawLink);
