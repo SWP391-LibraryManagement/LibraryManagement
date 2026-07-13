@@ -11,14 +11,14 @@ const {
   makeInMemoryReservationDependencies,
 } = require('./helpers/inMemoryReservationRepositories');
 
-function makeTestApp({ notificationRepository } = {}) {
+function makeTestApp({ notificationService, auditLogRepository } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const reservationDependencies = makeInMemoryReservationDependencies(authDependencies.state);
   const authService = createAuthService(authDependencies);
   const reservationService = createReservationService({
     reservationRepository: reservationDependencies.reservationRepository,
-    auditLogRepository: authDependencies.auditLogRepository,
-    notificationRepository: notificationRepository || authDependencies.notificationRepository,
+    auditLogRepository: auditLogRepository || authDependencies.auditLogRepository,
+    notificationService,
   });
   const app = createApp({ authService, reservationService });
 
@@ -76,6 +76,15 @@ async function createVerifiedUser({
 
 function authHeader(accessToken) {
   return `Bearer ${accessToken}`;
+}
+
+function makeNotificationServiceDouble(createNotificationRequest = jest.fn()) {
+  const requester = { createNotificationRequest };
+  const notificationService = {
+    createSourceNotificationRequester: jest.fn(() => requester),
+  };
+
+  return { notificationService, requester };
 }
 
 describe('FE08 reservation management', () => {
@@ -186,8 +195,17 @@ describe('FE08 reservation management', () => {
     expect(repeatCancelResponse.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
   });
 
-  test('librarian views reservations and processes the earliest eligible queue item', async () => {
-    const { app, authDependencies, reservationDependencies } = makeTestApp();
+  test('binds FE08 and submits the canonical reservation-ready notification request', async () => {
+    const createNotificationRequest = jest.fn(async () => ({
+      notificationId: 1,
+      status: 'PENDING',
+    }));
+    const { notificationService, requester } = makeNotificationServiceDouble(
+      createNotificationRequest
+    );
+    const { app, authDependencies, reservationDependencies } = makeTestApp({
+      notificationService,
+    });
     const firstMember = await createVerifiedUser({
       app,
       authDependencies,
@@ -245,16 +263,43 @@ describe('FE08 reservation management', () => {
     expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'RESERVED'
     );
-    expect(authDependencies.state.notifications).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          userId: firstMember.userId,
-          templateCode: 'RESERVATION_READY',
-          sourceFeature: 'FE08',
-          sourceEntityType: 'RESERVATION',
-        }),
-      ])
-    );
+    expect(notificationService.createSourceNotificationRequester).toHaveBeenCalledTimes(1);
+    expect(notificationService.createSourceNotificationRequester).toHaveBeenCalledWith('FE08');
+    expect(requester.createNotificationRequest).toHaveBeenCalledTimes(1);
+
+    const notificationRequest = requester.createNotificationRequest.mock.calls[0][0];
+    expect(Object.keys(notificationRequest).sort()).toEqual([
+      'channel',
+      'recipientEmail',
+      'sourceEntityId',
+      'sourceEntityType',
+      'templateData',
+      'templateKey',
+      'type',
+      'userId',
+    ]);
+    expect(notificationRequest).toEqual({
+      type: 'RESERVATION_AVAILABLE',
+      channel: 'EMAIL',
+      templateKey: 'RESERVATION_READY',
+      userId: firstMember.userId,
+      recipientEmail: 'first.member@example.test',
+      templateData: {
+        reservationId: processResponse.body.selectedReservation.reservationId,
+        copyId: 1,
+        bookId: 1,
+        expiresAt: processResponse.body.selectedReservation.expiresAt,
+      },
+      sourceEntityType: 'RESERVATION',
+      sourceEntityId: processResponse.body.selectedReservation.reservationId,
+    });
+    expect(Object.keys(notificationRequest.templateData).sort()).toEqual([
+      'bookId',
+      'copyId',
+      'expiresAt',
+      'reservationId',
+    ]);
+    expect(notificationRequest).not.toHaveProperty('sourceFeature');
   });
 
   test('expire-holds expires an overdue hold and promotes the next reservation (FR-FE08-019)', async () => {
@@ -317,14 +362,15 @@ describe('FE08 reservation management', () => {
     );
   });
 
-  test('process-queue keeps the hold when notification fails and records the failure (FR-FE08-021)', async () => {
-    const failingNotification = {
-      createNotification: jest.fn(async () => {
+  test('process-queue keeps the hold when the FE10 requester fails and records only a safe audit', async () => {
+    const createNotificationRequest = jest.fn(async () => {
         throw new Error('smtp down');
-      }),
-    };
+    });
+    const { notificationService, requester } = makeNotificationServiceDouble(
+      createNotificationRequest
+    );
     const { app, authDependencies, reservationDependencies } = makeTestApp({
-      notificationRepository: failingNotification,
+      notificationService,
     });
     const member = await createVerifiedUser({
       app, authDependencies, reservationDependencies, email: 'notify.fail@example.test',
@@ -349,11 +395,65 @@ describe('FE08 reservation management', () => {
 
     expect(processResponse.status).toBe(200);
     expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
-    expect(failingNotification.createNotification).toHaveBeenCalled();
+    expect(requester.createNotificationRequest).toHaveBeenCalled();
     expect(authDependencies.state.auditLogs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' }),
+        expect.objectContaining({
+          action: 'RESERVATION_NOTIFY_FAILED',
+          metadata: {
+            code: 'NOTIFICATION_REQUEST_FAILED',
+            message: 'Reservation notification request failed.',
+          },
+        }),
       ])
+    );
+    expect(JSON.stringify(authDependencies.state.auditLogs)).not.toContain('smtp down');
+  });
+
+  test('process-queue keeps the hold when the requester and its failure audit both fail', async () => {
+    const createNotificationRequest = jest.fn(async () => {
+      throw new Error('provider unavailable');
+    });
+    const { notificationService, requester } = makeNotificationServiceDouble(
+      createNotificationRequest
+    );
+    const auditLogRepository = {
+      create: jest.fn(async (entry) => {
+        if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
+          throw new Error('audit unavailable');
+        }
+      }),
+    };
+    const { app, authDependencies, reservationDependencies } = makeTestApp({
+      notificationService,
+      auditLogRepository,
+    });
+    const member = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'notify.audit.fail@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'notify.audit.lib@example.test',
+      role: 'LIBRARIAN', approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const processResponse = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(processResponse.status).toBe(200);
+    expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
+    expect(requester.createNotificationRequest).toHaveBeenCalledTimes(1);
+    expect(auditLogRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' })
     );
   });
 

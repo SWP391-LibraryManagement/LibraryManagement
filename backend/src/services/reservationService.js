@@ -33,7 +33,7 @@ function addDays(date, days) {
 function createReservationService({
   reservationRepository,
   auditLogRepository,
-  notificationRepository,
+  notificationService,
   clock = () => new Date(),
 } = {}) {
   if (!reservationRepository) {
@@ -44,9 +44,11 @@ function createReservationService({
     auditLogRepository = require('../repositories/auditLogRepository');
   }
 
-  if (!notificationRepository) {
-    notificationRepository = require('../repositories/notificationRepository');
+  if (!notificationService) {
+    notificationService = require('./notificationService').defaultNotificationService;
   }
+
+  const notificationRequester = notificationService.createSourceNotificationRequester('FE08');
 
   async function writeAudit(context, action, extra = {}) {
     if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
@@ -64,24 +66,21 @@ function createReservationService({
     });
   }
 
-  async function createNotification(reservation) {
-    if (!notificationRepository || typeof notificationRepository.createNotification !== 'function') {
-      return;
-    }
-
-    await notificationRepository.createNotification({
+  async function createReservationReadyNotification(reservation) {
+    await notificationRequester.createNotificationRequest({
+      type: 'RESERVATION_AVAILABLE',
+      channel: 'EMAIL',
+      templateKey: 'RESERVATION_READY',
       userId: reservation.userId,
       recipientEmail: reservation.member.email,
-      templateCode: 'RESERVATION_READY',
-      sourceFeature: 'FE08',
-      sourceEntityType: 'RESERVATION',
-      sourceEntityId: reservation.reservationId,
-      safePayload: {
+      templateData: {
         reservationId: reservation.reservationId,
         copyId: reservation.copyId,
         bookId: reservation.copy.bookId,
         expiresAt: reservation.expiresAt,
       },
+      sourceEntityType: 'RESERVATION',
+      sourceEntityId: reservation.reservationId,
     });
   }
 
@@ -255,13 +254,20 @@ function createReservationService({
     // @spec FR-FE08-021 — a notification failure must not undo the hold; keep the held
     // state and record the failure so it can be retried later (EC-FE08-009, BR-FE08-012).
     try {
-      await createNotification(processedReservation);
-    } catch (notifyError) {
-      await writeAudit(context, 'RESERVATION_NOTIFY_FAILED', {
-        userId: processedReservation.userId,
-        targetId: processedReservation.reservationId,
-        metadata: { copyId: processedReservation.copyId, error: notifyError.message },
-      });
+      await createReservationReadyNotification(processedReservation);
+    } catch {
+      try {
+        await writeAudit(context, 'RESERVATION_NOTIFY_FAILED', {
+          userId: processedReservation.userId,
+          targetId: processedReservation.reservationId,
+          metadata: {
+            code: 'NOTIFICATION_REQUEST_FAILED',
+            message: 'Reservation notification request failed.',
+          },
+        });
+      } catch {
+        // Notification failure auditing is best-effort and must not undo the hold.
+      }
     }
 
     await writeAudit(context, 'RESERVATION_PROCESS', {
