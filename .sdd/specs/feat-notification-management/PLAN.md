@@ -6,11 +6,15 @@ Owner: Nhat
 
 Updated: 2026-07-13
 
+Approval: G1-G7 approved by Nhat on 2026-07-13
+
+Workflow State: B4 task decomposition complete; B5 implementation not started
+
 ---
 
-## B3 Plan Review: Human-Veto Artifact
+## B3 Approval And B4 Task Decomposition Authorization
 
-This is a proposed execution plan, not an approval to implement. B3 is the last human veto point before B4 task decomposition: a human may accept the recommendations below, choose an identified alternative, or require a SPEC revision and replan. This document does not change `TASKS.md` and stops before B4.
+Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval authorizes B4 task decomposition only. B4 is now complete in `TASKS.md`; B5 implementation remains not started and requires deliberate branch/review authorization before code, tests, database schema, OpenAPI, or SPEC/CHANGELOG behavior changes begin.
 
 **Goal:** deliver the smallest current-SPEC-compliant FE10 backend hardening pass: send sensitive authentication messages synchronously without persisting their rendered content, keep non-sensitive notifications queued, return only approved API summaries, align template/schema/idempotency contracts, provide an approved internal source boundary, and define manual retry for queued notifications. No frontend, real SMTP, template editor, retry UI, or unrelated refactor is included.
 
@@ -29,15 +33,15 @@ This is a proposed execution plan, not an approval to implement. B3 is the last 
 | CORE | Source-reference type and template keys | The data contract says integer/string but every source PK and FE10 execution layer is `INT`; live FE02 uses `EMAIL_VERIFY` while canonical SQL/spec keys include `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. Recommended Phase 1 decision is integer-only, with a FE10 SPEC correction. Define `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` as canonical keys; do not add an undocumented `EMAIL_VERIFY` alias. |
 | SHELL | HTTP/controller/validator plumbing | These implement the approved response and retry contract but do not decide authorization or business rules. Keep routes thin. |
 | SHELL | In-memory repository and tests | Fixtures and assertions must mirror sensitive synchronous delivery, non-sensitive queueing, idempotency, and retry semantics; they are evidence for CORE behavior. |
-| SHELL | OpenAPI description | It documents the approved route/response contract only after human approval; it does not make a product decision. |
+| SHELL | OpenAPI description | It documents the approved route/response contract during B5 after the SPEC revision; it does not make a product decision. |
 
-## 2. Concrete Decisions Required Before B4
+## 2. Concrete Decisions Approved For B4
 
 | Gate | Proven drift | Binding recommendation for approval | Alternative and consequence |
 | --- | --- | --- | --- |
 | G1: sensitive delivery architecture | Sanitization runs before rendering; the FE10 review checklist forbids storing sensitive links; processing normally needs persisted queued content. | Split by server-enforced type/template pair. SQL/test fixtures require `ACCOUNT_VERIFICATION` to contain `{{verificationLink}}` and `PASSWORD_RESET` to contain `{{resetLink}}`; synchronously render/send them and store only redacted summary/`safePayload`, delivery status, and attempt. Do not persist rendered sensitive title/body or raw values. Queue only canonical non-sensitive pairs; recursively traverse objects/arrays, normalize keys by lowercasing and removing `_`, `-`, and whitespace, and reject if a normalized key contains `token`, `otp`, `password`, `verificationlink`, or `resetlink`. Use the same normalized recursive rule to redact `safePayload`. | Plaintext queued sensitive body requires a SPEC revision plus an explicit database access-control standard and named owner. Encrypted short-lived payload is rejected as over-engineered for Phase 1. |
 | G2: minimal responses | Controllers return service results containing full notifications/arrays. | Keep validation/template errors as normal safe 4xx responses. Sensitive provider success persists `SENT` plus an attempt and returns `201 { notificationId, status: "SENT" }`; sensitive provider failure persists `FAILED` plus a safe attempt reason and returns `201 { notificationId, status: "FAILED" }`. Non-sensitive creation returns its minimal persisted status. An idempotent replay returns `200 { notificationId, status }` for any existing status; process returns `200 { processed, failed }`; never return full objects/arrays. | Retaining full objects contradicts the current SPEC and leaves content exposure. |
-| G3: internal requester | Routes/service require `LIBRARIAN`/`ADMIN`; FE02/FE07/FE08 bypass the service through the repository. | Add `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`/`FE07`/`FE08`/`FE09`/`SYSTEM`, construction-bound source metadata, `userId: null` source audits, safe errors, and caller-side non-blocking catch. It must apply the same type/template map, normalized recursive object/array sensitive-key rejection, `safePayload` redaction, and delivery split as HTTP. HTTP routes remain role-protected. FE07/FE08 may migrate after approval; FE09 is allowlisted with implementation deferred. | Authenticated internal HTTP is viable but needs a configured service credential and more boundary/test work. Retaining direct repository writes duplicates policy and is not recommended. Do not invent a `SYSTEM` login role. |
+| G3: internal requester | Routes/service require `LIBRARIAN`/`ADMIN`; FE02/FE07/FE08 bypass the service through the repository. | Add `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`/`FE07`/`FE08`/`FE09`/`SYSTEM`, construction-bound source metadata, `userId: null` source audits, safe errors, and caller-side non-blocking catch. It must apply the same type/template map, normalized recursive object/array sensitive-key rejection, `safePayload` redaction, and delivery split as HTTP. HTTP routes remain role-protected. FE07/FE08 migration is authorized after the requester task is reviewed; FE09 is allowlisted with implementation deferred. | Authenticated internal HTTP is viable but needs a configured service credential and more boundary/test work. Retaining direct repository writes duplicates policy and is not recommended. Do not invent a `SYSTEM` login role. |
 | G4: source entity ID | SPEC allows integer/string; validator/repository/model/SQL are `INT`, and current source primary keys are integers. | Phase 1 is integer-only; revise FE10 SPEC data requirements from integer/string to integer. | String support requires a coordinated schema migration and validator/model/repository updates. Do not silently widen/narrow the contract. |
 | G5: manual retry | No retry route/service/repository behavior exists; `FAILED` is never reselected by pending processing. | Add protected `POST /api/notifications/{id}/retry` for `LIBRARIAN`/`ADMIN`. It permits only a `FAILED` non-sensitive queued notification to transition to `PENDING`, retaining the same record, idempotency key, and attempt history; return `200 { notificationId, status }` and `409` otherwise. Retry of `ACCOUNT_VERIFICATION` or `PASSWORD_RESET` returns the standard safe `409` error body with code `REISSUE_REQUIRED` and a generic message instructing creation of a new source event; include no secret or provider detail. | An operator workflow without an endpoint is possible only if its actor, mechanism, transition, audit, and response contract are added to SPEC. No retry is executable until one option is approved. |
 | G6: terminal-state idempotency | SQL unique index applies to all statuses; service lookup checks only active statuses, so a terminal record can block a new insert unexpectedly. | One record per key across all statuses: change lookup semantics to all statuses, keep the existing all-status unique index, and make non-sensitive retry reuse the record. | A filtered active-only unique index permits a new record after a terminal state, but requires schema/index change and weakens source-event uniqueness. Do not alter lookup alone. |
@@ -47,10 +51,10 @@ This is a proposed execution plan, not an approval to implement. B3 is the last 
 
 ### Recommended: smallest coherent, current-SPEC-compliant FE10 hardening
 
-1. Human approves G1-G7. The feature owner updates FE10 `SPEC.md`/`CHANGELOG.md` for the selected observable contracts; FE02 owner resolves the separate FE02 dependency before any FE02 migration.
+1. G1-G7 are approved. B5 begins with the feature owner updating FE10 `SPEC.md`/`CHANGELOG.md` for the selected observable contracts; FE02 owner resolves the separate FE02 dependency before any FE02 migration.
 2. Enforce the canonical type/template map before delivery. Require `{{verificationLink}}` in `ACCOUNT_VERIFICATION` and `{{resetLink}}` in `PASSWORD_RESET` SQL/test fixtures. For sensitive auth types, validate raw template data, render, and synchronously send through the mock provider. On provider success persist `SENT` plus attempt and return `201` minimal DTO; on provider failure persist `FAILED` plus safe reason and still return `201` minimal DTO. Sensitive rendered content and raw values do not cross persistence, logging, audit, or HTTP boundaries.
 3. For non-sensitive types, recursively traverse objects/arrays in `templateData`, normalize keys by lowercasing and removing `_`, `-`, and whitespace, and reject any normalized key containing `token`, `otp`, `password`, `verificationlink`, or `resetlink`; apply the same rule while redacting `safePayload`. Then validate, render, and persist queued content; `process-pending` selects only non-sensitive `PENDING` records. Add minimal controller DTOs, the construction-bound source requester, canonical template-key checks, integer-only source reference validation, and all-status idempotency lookup.
-4. Add protected retry only for failed non-sensitive queued notifications; return safe `409 REISSUE_REQUIRED` for either sensitive auth type. Migrate FE07 and FE08 to the source requester only after G3 approval. FE09's due/fine event is approved in FE10 SPEC but has no current caller/integration, so its implementation is deferred; FE02 remains its owner's deferred dependency.
+4. Add protected retry only for failed non-sensitive queued notifications; return safe `409 REISSUE_REQUIRED` for either sensitive auth type. Migrate FE07 and FE08 only after the source requester is implemented and reviewed. FE09's due/fine event is approved in FE10 SPEC but has no current caller/integration, so its implementation is deferred; FE02 remains its owner's deferred dependency.
 5. Keep the mock provider, Express/SQL Server layering, and no-frontend posture.
 
 ### Alternative A: plaintext queued sensitive body
@@ -67,15 +71,15 @@ Use an internal service credential to call the protected request endpoint. This 
 
 ## 4. Bounded Agent Structure
 
-At B4, one implementation agent has exclusive write scope over the approved FE10 hardening files; one independent reviewer verifies the diff and tests after implementation. Do not use nested agents or parallel edits because sensitive delivery, queueing, retries, idempotency, and source integration share one contract. Human approval remains required for G1-G7. This B3 artifact dispatches no agents.
+At B5, one implementation agent has exclusive write scope over each approved FE10 hardening task; one independent reviewer verifies each task diff and its test evidence. Do not run parallel edits across the shared FE10 service, repository, route, or notification-test files because sensitive delivery, queueing, retries, idempotency, and source integration share one contract. The only conservative parallel opportunity is the disjoint FE07 and FE08 caller migrations after their common requester dependency is complete.
 
 ## 5. Exact Expected Files
 
-### Approval prerequisite and B4 planning files
+### B4 planning record and B5 prerequisite files
 
-- `.sdd/specs/feat-notification-management/SPEC.md` - approved G1-G7 behavior, canonical keys, sensitive/non-sensitive delivery split, retry route, and integer-only source ID.
-- `.sdd/specs/feat-notification-management/CHANGELOG.md` - approved behavior/contract change record.
-- `.sdd/specs/feat-notification-management/TASKS.md` - after B3 approval, append a new pending FE10 hardening section. Existing completed tasks remain historical evidence for the initial slice and are not erased or rewritten.
+- `.sdd/specs/feat-notification-management/SPEC.md` - first B5 task revises the approved observable contract for G1-G7 before implementation starts.
+- `.sdd/specs/feat-notification-management/CHANGELOG.md` - first B5 task records the approved contract revision.
+- `.sdd/specs/feat-notification-management/TASKS.md` - B4 appends the pending FE10 hardening tasks while preserving all completed initial-slice tasks as historical evidence.
 
 ### Default FE10 implementation files
 
@@ -91,24 +95,24 @@ At B4, one implementation agent has exclusive write scope over the approved FE10
 - `backend/tests/integration.test.js` - update the existing full-notification response assertion to G2 minimal DTO expectations, regardless of whether FE07/FE08 migrations occur.
 - `backend/src/docs/openapi.yaml` - approved request validation, synchronous sensitive `SENT`/`FAILED` 201 responses, non-sensitive process response, replay, and retry error contract.
 
-### Conditional integrations and deferred dependency
+### Approved integrations and deferred dependencies
 
-- `backend/src/services/borrowingService.js` and `backend/src/services/reservationService.js` - conditional in-scope migrations from direct repository creation to the approved source requester after G3. Their affected tests are `backend/tests/borrowingRoutes.test.js` and `backend/tests/reservationRoutes.test.js`; `backend/tests/integration.test.js` is already in default FE10 scope for G2.
+- `backend/src/services/borrowingService.js` and `backend/src/services/reservationService.js` - in-scope migrations from direct repository creation to the approved source requester after the requester task is reviewed. Their affected tests are `backend/tests/borrowingRoutes.test.js` and `backend/tests/reservationRoutes.test.js`; `backend/tests/integration.test.js` is already in default FE10 scope for G2.
 - FE09 integration is deferred: its due/fine event is approved in FE10 SPEC, but no current caller/integration exists. No FE09 service file change is planned in this slice; a future FE09-owned implementation must identify the actual event and integration point first.
 - `backend/src/services/authService.js` - not in the default FE10 implementation scope. It is a deferred FE02-owned migration after the FE02 owner reconciles OTP versus token-link and `EMAIL_VERIFY` versus canonical keys in `.sdd/specs/feat-auth/SPEC.md`; update `backend/tests/authRoutes.test.js` only in that FE02-owned work.
 
 No frontend files, provider credentials, real SMTP code, new dependencies, retry UI, expiry metadata, database migration framework, or unrelated refactor are expected.
 
-## 6. Ordered Implementation Slices (TDD, Not B4 Tasks)
+## 6. Ordered B5 Implementation Slices
 
-These are ordered review slices, not atomic `TASKS.md` decomposition. Each begins with a focused failing test, receives the smallest approved change, reruns the focused test, then runs the affected suite.
+`TASKS.md` owns the atomic B4 decomposition. The sequence below is the B5 execution order: each implementation slice begins with focused failing evidence, receives the smallest approved change, reruns the focused test, then runs the affected suite.
 
 1. **Approved-contract characterization.** After G1-G7 and required SPEC revisions, add failing assertions for every canonical type/template pair and mismatch rejection; normalized recursive object/array queued-data rejection for `OTP`, `reset_token`, `verification-link`, and nested values; matching `safePayload` redaction; provider-only rendering for both link templates with no persistence/API/audit/log output; synchronous sensitive success/failure; non-sensitive queueing/filtered processing; minimal create/replay/process DTOs; integer source IDs; all-status idempotency; and sensitive/non-sensitive retry outcomes.
 2. **Delivery split and response containment.** Implement server-side type classification and the canonical map. Sensitive auth requests render `{{verificationLink}}` or `{{resetLink}}` and invoke the mock provider synchronously: success persists `SENT`/attempt and failure persists `FAILED`/safe attempt, while both return `201` DTOs. Non-sensitive requests first pass normalized recursive object/array sensitive-key inspection and matching `safePayload` redaction, then render into the queue; `process-pending` selects only them. Verify both sensitive links never reach persistence, API, audit, or logs.
 3. **Schema/template/idempotency alignment.** Apply canonical template seed alignment, integer-only contract revision, all-status duplicate behavior, and non-sensitive pending filtering across SQL, repository, model, and in-memory helper. Do not add `EMAIL_VERIFY` or treat `DUE_OR_FINE_NOTICE` as canonical without approval.
-4. **Source requester and FE07/FE08 migration.** Implement the construction-bound allowlisted requester and migrate only FE07/FE08 if G3 is approved. Confirm safe caller catches preserve source flow and that source audit records have null user ID plus bound source metadata. Do not migrate FE02; defer FE09 implementation despite its approved event.
+4. **Source requester and FE07/FE08 migration.** Implement and review the construction-bound allowlisted requester, then migrate only FE07/FE08. Confirm safe caller catches preserve source flow and that source audit records have null user ID plus bound source metadata. Do not migrate FE02; defer FE09 implementation despite its approved event.
 5. **Manual retry.** Add the authorized `FAILED -> PENDING` behavior only for non-sensitive queued notifications. Test `200` summary, `409` for other statuses, preserved record/key/history, audit, and the standard safe `409 REISSUE_REQUIRED` body for either failed sensitive auth type.
-6. **Integration verification.** Run targeted FE10 and conditional FE07/FE08 tests, backend suite, traceability check if available, `git diff --check`, placeholder scan, contradiction scan, and final diff scope review.
+6. **Integration verification.** Run targeted FE10 and affected FE07/FE08 tests, backend suite, traceability check if available, `git diff --check`, placeholder scan, contradiction scan, and final diff scope review.
 
 ## 7. Integration Risks, Assumptions, And Out Of Scope
 
@@ -121,7 +125,7 @@ These are ordered review slices, not atomic `TASKS.md` decomposition. Each begin
 - A sensitive provider failure returns `201 FAILED` rather than a delivery-error 5xx because FE10 accepted and recorded the request without rolling back the source flow; consumers must use the returned status, not HTTP status alone, to observe delivery state.
 - Schema/index changes require database-owner review for deployed instances, not just fresh initializer runs.
 
-### Assumptions to confirm, not silently adopt
+### Approved implementation constraints
 
 - The FE10 review checklist's sensitive-link prohibition governs the implementation; synchronous mock-provider delivery is acceptable for the two sensitive auth types.
 - The listed type/template pairs are the approved server-side contract; `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` fixtures use `{{verificationLink}}` and `{{resetLink}}`; `DUE_OR_FINE_NOTICE` is not canonical unless separately approved.
@@ -133,19 +137,19 @@ These are ordered review slices, not atomic `TASKS.md` decomposition. Each begin
 
 - Plaintext or encrypted queued sensitive content, frontend inbox/retry/admin screens, template editor, in-app read state, SMS, push, marketing, real SMTP/provider credentials, token generation or validation, FE02 OTP/link reconciliation, fine calculation, reservation queue decisions, borrowing-state changes, and a new FE09 notification implementation.
 
-## 8. Human Review Checklist
+## 8. Approved Human Review Checklist
 
-- [ ] G1 accepts the server-enforced canonical type/template map; `{{verificationLink}}` and `{{resetLink}}` fixtures; synchronous sensitive auth delivery with no sensitive rendered persistence; and queued delivery only for non-sensitive types after normalized recursive object/array key inspection and matching `safePayload` redaction.
-- [ ] G2 accepts safe 4xx validation/template errors, `201 SENT` and `201 FAILED` sensitive delivery summaries, any-status `200` replay summary, and no objects or arrays.
-- [ ] G3 accepts the bound-source factory, fixed allowlist, null-user audit metadata, the same mapping/normalized recursive queue protections and `safePayload` redaction as HTTP, and FE07/FE08-only conditional migration.
-- [ ] G4 accepts integer-only Phase 1 and a FE10 SPEC correction.
-- [ ] G5 accepts the protected non-sensitive retry route, state transition, status conflicts, and standard safe `REISSUE_REQUIRED` response for either sensitive auth type.
-- [ ] G6 accepts one record per idempotency key across all statuses and non-sensitive retry reuse.
-- [ ] G7 accepts canonical `ACCOUNT_VERIFICATION`/`PASSWORD_RESET`, no `EMAIL_VERIFY` alias, and FE02-owner deferral.
-- [ ] FE09's approved event is correctly marked implementation-deferred because no current caller/integration exists, with no FE09 service file change planned in this slice.
-- [ ] The historical completed `TASKS.md` entries remain intact, with a new pending hardening section only after B3 approval.
-- [ ] The no-frontend, mock-provider-only, smallest-coherent-hardening scope is acceptable.
+- [x] G1 accepts the server-enforced canonical type/template map; `{{verificationLink}}` and `{{resetLink}}` fixtures; synchronous sensitive auth delivery with no sensitive rendered persistence; and queued delivery only for non-sensitive types after normalized recursive object/array key inspection and matching `safePayload` redaction.
+- [x] G2 accepts safe 4xx validation/template errors, `201 SENT` and `201 FAILED` sensitive delivery summaries, any-status `200` replay summary, and no objects or arrays.
+- [x] G3 accepts the bound-source factory, fixed allowlist, null-user audit metadata, the same mapping/normalized recursive queue protections and `safePayload` redaction as HTTP, and FE07/FE08-only scoped migration.
+- [x] G4 accepts integer-only Phase 1 and a FE10 SPEC correction.
+- [x] G5 accepts the protected non-sensitive retry route, state transition, status conflicts, and standard safe `REISSUE_REQUIRED` response for either sensitive auth type.
+- [x] G6 accepts one record per idempotency key across all statuses and non-sensitive retry reuse.
+- [x] G7 accepts canonical `ACCOUNT_VERIFICATION`/`PASSWORD_RESET`, no `EMAIL_VERIFY` alias, and FE02-owner deferral.
+- [x] FE09's approved event is correctly marked implementation-deferred because no current caller/integration exists, with no FE09 service file change planned in this slice.
+- [x] The historical completed `TASKS.md` entries remain intact, with a new pending hardening section only after B3 approval.
+- [x] The no-frontend, mock-provider-only, smallest-coherent-hardening scope is acceptable.
 
-## STOP: Await Human Approval Before B4
+## B4 Complete: Stop Before B5
 
-Do not append B4 tasks, modify implementation code, tests, database schema, or other documentation, dispatch implementation agents, or claim approval until a human records decisions for G1-G7. A veto requires the relevant SPEC revision and a revised B3 plan.
+B4 task decomposition is complete and ready for review. Do not start FE10-H01 or modify implementation code, tests, database schema, OpenAPI, `SPEC.md`, or `CHANGELOG.md` on this documentation branch. B5 remains not started until this B4 documentation is reviewed and deliberately moved to an implementation branch.
