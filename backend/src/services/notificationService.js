@@ -252,23 +252,47 @@ function createNotificationService({
 
     const recipient = await resolveRecipient(input);
 
-    validateTemplateData(template, templateData);
+    validateTemplateData(template, rawTemplateData);
 
-    const notification = await notificationRepository.createRequest({
+    const isSensitiveNotification = sensitiveNotificationTypes.has(type);
+    const renderedTitle = renderTemplate(template.subject, rawTemplateData);
+    const renderedBody = renderTemplate(template.body, rawTemplateData);
+
+    let notification = await notificationRepository.createRequest({
       type,
       channel,
       userId: recipient.userId,
       recipientEmail: recipient.recipientEmail,
       templateId: template.templateId,
       templateKey,
-      title: renderTemplate(template.subject, templateData),
-      body: renderTemplate(template.body, templateData),
+      title: isSensitiveNotification ? null : renderedTitle,
+      body: isSensitiveNotification ? null : renderedBody,
       sourceFeature: input.sourceFeature || null,
       sourceEntityType: input.sourceEntityType || null,
       sourceEntityId: input.sourceEntityId || null,
       idempotencyKey: input.idempotencyKey || null,
       safePayload: templateData,
     });
+
+    if (isSensitiveNotification) {
+      try {
+        await emailProvider.send({
+          to: recipient.recipientEmail,
+          subject: renderedTitle,
+          body: renderedBody,
+        });
+
+        notification = await notificationRepository.markSent({
+          notificationId: notification.notificationId,
+          providerMessageId: null,
+        });
+      } catch (error) {
+        notification = await notificationRepository.markFailed({
+          notificationId: notification.notificationId,
+          safeErrorMessage: 'Notification delivery failed.',
+        });
+      }
+    }
 
     await writeAudit(context, 'NOTIFICATION_REQUEST_CREATE', {
       userId: actor.userId,
@@ -300,7 +324,9 @@ function createNotificationService({
     requireInternalActor(actor);
 
     const limit = Number(input.limit || 20);
-    const pendingNotifications = await notificationRepository.listPending(limit);
+    const pendingNotifications = (await notificationRepository.listPending(limit)).filter(
+      (notification) => !sensitiveNotificationTypes.has(notification.type)
+    );
     const result = {
       processed: 0,
       failed: 0,

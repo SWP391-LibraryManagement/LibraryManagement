@@ -14,6 +14,7 @@ const {
 function makeTestApp() {
   const authDependencies = makeInMemoryAuthDependencies();
   const notificationDependencies = makeInMemoryNotificationDependencies();
+  const emailProviderMessages = [];
   const authService = createAuthService(authDependencies);
   const notificationService = createNotificationService({
     notificationRepository: notificationDependencies.notificationRepository,
@@ -21,6 +22,8 @@ function makeTestApp() {
     auditLogRepository: authDependencies.auditLogRepository,
     emailProvider: {
       async send(message) {
+        emailProviderMessages.push(message);
+
         if (message.to.includes('fail')) {
           const error = new Error('smtp auth token secret stack trace');
           error.safeMessage = 'Email provider unavailable.';
@@ -33,7 +36,7 @@ function makeTestApp() {
   });
   const app = createApp({ authService, notificationService });
 
-  return { app, authDependencies, notificationDependencies };
+  return { app, authDependencies, notificationDependencies, emailProviderMessages };
 }
 
 async function createVerifiedUser({ app, authDependencies, email, role = 'MEMBER' }) {
@@ -91,19 +94,17 @@ describe('FE10 notification management', () => {
     });
 
     const payload = {
-      type: 'ACCOUNT_VERIFICATION',
+      type: 'DUE_DATE_REMINDER',
       channel: 'EMAIL',
       userId: member.userId,
-      templateKey: 'ACCOUNT_VERIFICATION',
+      templateKey: 'DUE_DATE_REMINDER',
       templateData: {
-        name: 'Member',
-        purpose: 'VERIFY',
-        verificationLink: 'https://example.test/verify/member',
+        dueDate: '2026-07-20',
       },
-      sourceFeature: 'FE02',
-      sourceEntityType: 'USER',
+      sourceFeature: 'FE07',
+      sourceEntityType: 'BORROW_REQUEST',
       sourceEntityId: member.userId,
-      idempotencyKey: 'fe02-verify-member',
+      idempotencyKey: 'fe07-due-date-member',
     };
 
     const createResponse = await request(app)
@@ -113,10 +114,10 @@ describe('FE10 notification management', () => {
 
     expect(createResponse.status).toBe(201);
     expect(createResponse.body.notification).toMatchObject({
-      type: 'ACCOUNT_VERIFICATION',
+      type: 'DUE_DATE_REMINDER',
       status: 'PENDING',
-      sourceFeature: 'FE02',
-      idempotencyKey: 'fe02-verify-member',
+      sourceFeature: 'FE07',
+      idempotencyKey: 'fe07-due-date-member',
     });
 
     const duplicateResponse = await request(app)
@@ -174,8 +175,8 @@ describe('FE10 notification management', () => {
     expect(JSON.stringify(resetResponse.body)).not.toContain('secret-token');
   });
 
-  test('processes pending notifications and records safe delivery failures', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
+  test('processes queued non-sensitive notifications and excludes sensitive pending fixtures', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
     const librarian = await createVerifiedUser({
       app,
       authDependencies,
@@ -194,6 +195,17 @@ describe('FE10 notification management', () => {
         sourceFeature: 'FE07',
       })
       .expect(201);
+
+    notificationDependencies.state.notifications.push({
+      notificationId: 999,
+      type: 'ACCOUNT_VERIFICATION',
+      recipientEmail: 'sensitive-pending@example.test',
+      title: 'Sensitive rendered title',
+      body: 'Verification link: https://example.test/verify/pending-link',
+      status: 'PENDING',
+      attemptCount: 0,
+      safePayload: { verificationLink: '[REDACTED]' },
+    });
 
     await request(app)
       .post('/api/notifications/requests')
@@ -214,10 +226,13 @@ describe('FE10 notification management', () => {
 
     expect(processResponse.status).toBe(200);
     expect(processResponse.body).toMatchObject({ processed: 1, failed: 1 });
-    expect(notificationDependencies.state.notifications.map((notification) => notification.status)).toEqual([
-      'SENT',
-      'FAILED',
-    ]);
+    expect(notificationDependencies.state.notifications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'DUE_DATE_REMINDER', status: 'SENT' }),
+        expect.objectContaining({ type: 'FINE_NOTICE', status: 'FAILED' }),
+        expect.objectContaining({ type: 'ACCOUNT_VERIFICATION', status: 'PENDING' }),
+      ])
+    );
     expect(notificationDependencies.state.attempts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ status: 'SENT' }),
@@ -228,6 +243,7 @@ describe('FE10 notification management', () => {
       ])
     );
     expect(JSON.stringify(notificationDependencies.state.attempts)).not.toContain('secret');
+    expect(JSON.stringify(emailProviderMessages)).not.toContain('https://example.test/verify/pending-link');
   });
 
   test('notification APIs are protected from public callers', async () => {
@@ -448,7 +464,7 @@ describe('FE10 notification management', () => {
     expect(response.body.notification).toMatchObject({
       userId: member.userId,
       recipientEmail: 'notif.audit.member@example.test',
-      status: 'PENDING',
+      status: 'SENT',
     });
     expect(authDependencies.state.auditLogs).toEqual(
       expect.arrayContaining([
@@ -540,6 +556,145 @@ describe('FE10 notification management', () => {
     expect(response.status).toBe(201);
     expect(notificationDependencies.state.notifications).toHaveLength(1);
   });
+
+  // FE10-H03, AC-FE10-001/002/007: sensitive auth content is rendered only for the
+  // immediate provider call and never crosses a persistence, audit, or HTTP boundary.
+  test.each([
+    [
+      'ACCOUNT_VERIFICATION',
+      'ACCOUNT_VERIFICATION',
+      'verify@example.test',
+      { name: 'Reader', verificationLink: 'https://example.test/verify/sensitive-link' },
+      'Verify Reader',
+      'Verification link: https://example.test/verify/sensitive-link',
+      'https://example.test/verify/sensitive-link',
+    ],
+    [
+      'PASSWORD_RESET',
+      'PASSWORD_RESET',
+      'reset@example.test',
+      { resetLink: 'https://example.test/reset/sensitive-link' },
+      'Reset password',
+      'Use this safe reset link: https://example.test/reset/sensitive-link',
+      'https://example.test/reset/sensitive-link',
+    ],
+  ])(
+    'sends %s synchronously without persisting or returning its rendered sensitive content',
+    async (type, templateKey, recipientEmail, templateData, renderedSubject, renderedBody, rawLink) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+      const admin = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.sensitive.${type.toLowerCase()}@example.test`,
+        role: 'ADMIN',
+      });
+
+      const response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({ type, recipientEmail, templateKey, templateData, sourceFeature: 'FE02' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.notification.status).toBe('SENT');
+      expect(emailProviderMessages).toEqual([
+        expect.objectContaining({ to: recipientEmail, subject: renderedSubject, body: renderedBody }),
+      ]);
+
+      const notification = notificationDependencies.state.notifications[0];
+      expect(notification).toMatchObject({ status: 'SENT', title: null, body: null });
+      expect(notification.safePayload).toEqual(
+        expect.objectContaining(
+          type === 'ACCOUNT_VERIFICATION'
+            ? { verificationLink: '[REDACTED]' }
+            : { resetLink: '[REDACTED]' }
+        )
+      );
+      expect(notificationDependencies.state.attempts).toEqual([
+        expect.objectContaining({ status: 'SENT', providerMessageId: null }),
+      ]);
+
+      const persistedAndExposed = JSON.stringify({
+        response: response.body,
+        notification,
+        attempts: notificationDependencies.state.attempts,
+        auditLogs: authDependencies.state.auditLogs,
+      });
+      expect(persistedAndExposed).not.toContain(rawLink);
+      expect(persistedAndExposed).not.toContain(renderedSubject);
+      expect(persistedAndExposed).not.toContain(renderedBody);
+    }
+  );
+
+  // FE10-H03, AC-FE10-001/002/009: provider failures leave one safe failed record and
+  // attempt while retaining the accepted 201 response.
+  test.each([
+    [
+      'ACCOUNT_VERIFICATION',
+      'ACCOUNT_VERIFICATION',
+      { name: 'Reader', verificationLink: 'https://example.test/verify/failed-link' },
+      'Verify Reader',
+      'Verification link: https://example.test/verify/failed-link',
+      'https://example.test/verify/failed-link',
+    ],
+    [
+      'PASSWORD_RESET',
+      'PASSWORD_RESET',
+      { resetLink: 'https://example.test/reset/failed-link' },
+      'Reset password',
+      'Use this safe reset link: https://example.test/reset/failed-link',
+      'https://example.test/reset/failed-link',
+    ],
+  ])(
+    'records a safe synchronous failure for %s without leaking provider or rendered content',
+    async (type, templateKey, templateData, renderedSubject, renderedBody, rawLink) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+      const admin = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.sensitive.failure.${type.toLowerCase()}@example.test`,
+        role: 'ADMIN',
+      });
+
+      const response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({
+          type,
+          recipientEmail: `fail-${type.toLowerCase()}@example.test`,
+          templateKey,
+          templateData,
+          sourceFeature: 'FE02',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.notification.status).toBe('FAILED');
+      expect(emailProviderMessages).toEqual([
+        expect.objectContaining({ subject: renderedSubject, body: renderedBody }),
+      ]);
+
+      const notification = notificationDependencies.state.notifications[0];
+      expect(notification).toMatchObject({
+        status: 'FAILED',
+        title: null,
+        body: null,
+        lastErrorMessage: 'Notification delivery failed.',
+      });
+      expect(notificationDependencies.state.attempts).toEqual([
+        expect.objectContaining({ status: 'FAILED', safeErrorMessage: 'Notification delivery failed.' }),
+      ]);
+
+      const persistedAndExposed = JSON.stringify({
+        response: response.body,
+        notification,
+        attempts: notificationDependencies.state.attempts,
+        auditLogs: authDependencies.state.auditLogs,
+      });
+      expect(persistedAndExposed).not.toContain(rawLink);
+      expect(persistedAndExposed).not.toContain(renderedSubject);
+      expect(persistedAndExposed).not.toContain(renderedBody);
+      expect(persistedAndExposed).not.toContain('smtp auth token secret stack trace');
+    }
+  );
 
   // EC-FE10-004: a valid but non-canonical template must not reach persistence.
   test('rejects a mismatched canonical pair before persistence', async () => {

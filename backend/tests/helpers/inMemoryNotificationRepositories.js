@@ -130,7 +130,11 @@ function makeInMemoryNotificationDependencies() {
 
     async listPending(limit = 20) {
       return notifications
-        .filter((notification) => notification.status === 'PENDING')
+        .filter(
+          (notification) =>
+            notification.status === 'PENDING' &&
+            !['ACCOUNT_VERIFICATION', 'PASSWORD_RESET'].includes(notification.type)
+        )
         .slice(0, limit)
         .map(mapNotification);
     },
