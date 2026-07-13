@@ -38,7 +38,7 @@ function makeTestApp() {
   });
   const app = createApp({ authService, notificationService });
 
-  return { app, authDependencies, notificationDependencies, emailProviderMessages };
+  return { app, authService, authDependencies, notificationDependencies, emailProviderMessages };
 }
 
 async function createVerifiedUser({ app, authDependencies, email, role = 'MEMBER' }) {
@@ -745,6 +745,12 @@ describe('FE10 notification management', () => {
       safePayload: { redacted: true },
     });
     expect(notification.idempotencyKey).not.toBe(rawIdempotencyKey);
+    expect(notification.idempotencyKey).toBe(
+      `sensitive-hmac-sha256:${crypto
+        .createHmac('sha256', process.env.JWT_SECRET)
+        .update(rawIdempotencyKey)
+        .digest('hex')}`
+    );
     expect(notification.idempotencyKey).not.toBe(
       `sensitive-hmac-sha256:${crypto.createHash('sha256').update(rawIdempotencyKey).digest('hex')}`
     );
@@ -819,6 +825,7 @@ describe('FE10 notification management', () => {
         expect.objectContaining({
           code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
           message: 'Notification delivery state could not be recorded.',
+          stack: undefined,
         }),
       ]),
     ]);
@@ -830,6 +837,138 @@ describe('FE10 notification management', () => {
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawLink);
+  });
+
+  // FE10-H03: a provider failure remains distinct from a subsequent failed-state persistence error.
+  test('contains a sensitive markFailed persistence failure without recording a false attempt', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.sensitive.failed-transition@example.test',
+      role: 'ADMIN',
+    });
+    const rawLink = 'https://example.test/reset/failed-transition-link';
+    const repositoryError = `failed notification transition storage: ${rawLink}`;
+    let markFailedCalled = false;
+    notificationDependencies.notificationRepository.markFailed = async () => {
+      markFailedCalled = true;
+      throw new Error(repositoryError);
+    };
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let response;
+    let capturedLogs;
+
+    try {
+      response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({
+          type: 'PASSWORD_RESET',
+          recipientEmail: 'fail-mark-failed@example.test',
+          templateKey: 'PASSWORD_RESET',
+          templateData: { resetLink: rawLink },
+        });
+    } finally {
+      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
+      consoleErrorSpy.mockRestore();
+    }
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: {
+        code: 'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
+        message: 'Internal server error.',
+      },
+    });
+    expect(markFailedCalled).toBe(true);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.attempts).toEqual([]);
+    expect(capturedLogs).toEqual([
+      expect.arrayContaining([
+        '[api error]',
+        expect.objectContaining({
+          code: 'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
+          message: 'Notification delivery failure could not be recorded.',
+          stack: undefined,
+        }),
+      ]),
+    ]);
+    const safeBoundaries = JSON.stringify({
+      response: response.body,
+      notification: notificationDependencies.state.notifications[0],
+      attempts: notificationDependencies.state.attempts,
+      capturedLogs,
+    });
+    expect(safeBoundaries).not.toContain(repositoryError);
+    expect(safeBoundaries).not.toContain(rawLink);
+  });
+
+  test('contains missing JWT_SECRET failures before sensitive notification side effects', async () => {
+    const { app, authService, authDependencies, notificationDependencies, emailProviderMessages } =
+      makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.sensitive.config@example.test',
+      role: 'ADMIN',
+    });
+    const rawLink = 'https://example.test/verify/config-link';
+    const rawIdempotencyKey = 'config-secret-123456';
+    const originalJwtSecret = process.env.JWT_SECRET;
+    const auditLogCount = authDependencies.state.auditLogs.length;
+
+    // Keep the already-authenticated test actor available while exercising FE10 with no JWT secret.
+    authService.authenticateToken = async () => ({ userId: admin.userId, roles: ['ADMIN'] });
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let response;
+    let capturedLogs;
+
+    try {
+      delete process.env.JWT_SECRET;
+      response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({
+          type: 'ACCOUNT_VERIFICATION',
+          recipientEmail: 'reader@example.test',
+          templateKey: 'ACCOUNT_VERIFICATION',
+          templateData: { name: 'Reader', verificationLink: rawLink },
+          idempotencyKey: rawIdempotencyKey,
+        });
+    } finally {
+      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
+      if (originalJwtSecret === undefined) {
+        delete process.env.JWT_SECRET;
+      } else {
+        process.env.JWT_SECRET = originalJwtSecret;
+      }
+      consoleErrorSpy.mockRestore();
+    }
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: { code: 'NOTIFICATION_CONFIG_ERROR', message: 'Internal server error.' },
+    });
+    expect(notificationDependencies.state.notifications).toEqual([]);
+    expect(notificationDependencies.state.attempts).toEqual([]);
+    expect(emailProviderMessages).toEqual([]);
+    expect(authDependencies.state.auditLogs).toHaveLength(auditLogCount);
+    expect(capturedLogs).toEqual([
+      expect.arrayContaining([
+        '[api error]',
+        expect.objectContaining({
+          code: 'NOTIFICATION_CONFIG_ERROR',
+          message: 'Notification configuration is incomplete.',
+          stack: undefined,
+        }),
+      ]),
+    ]);
+    const safeBoundaries = JSON.stringify({ response: response.body, capturedLogs });
+    expect(safeBoundaries).not.toContain(rawLink);
+    expect(safeBoundaries).not.toContain(rawIdempotencyKey);
   });
 
   // EC-FE10-004: a valid but non-canonical template must not reach persistence.

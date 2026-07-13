@@ -88,13 +88,19 @@ function sanitizePayload(payload) {
   return result;
 }
 
+function safeInternalError(code, message) {
+  const error = errors.internal(code, message);
+  error.stack = undefined;
+  return error;
+}
+
 function deriveSensitiveIdempotencyKey(idempotencyKey) {
   let jwtSecret;
 
   try {
     jwtSecret = env.requiredEnv('JWT_SECRET');
   } catch (error) {
-    throw errors.internal('NOTIFICATION_CONFIG_ERROR', 'Notification configuration is incomplete.');
+    throw safeInternalError('NOTIFICATION_CONFIG_ERROR', 'Notification configuration is incomplete.');
   }
 
   return `sensitive-hmac-sha256:${crypto
@@ -310,10 +316,17 @@ function createNotificationService({
           body: renderedBody,
         });
       } catch (error) {
-        notification = await notificationRepository.markFailed({
-          notificationId: notification.notificationId,
-          safeErrorMessage: 'Notification delivery failed.',
-        });
+        try {
+          notification = await notificationRepository.markFailed({
+            notificationId: notification.notificationId,
+            safeErrorMessage: 'Notification delivery failed.',
+          });
+        } catch (markFailedError) {
+          throw safeInternalError(
+            'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
+            'Notification delivery failure could not be recorded.'
+          );
+        }
         providerFailed = true;
       }
 
@@ -324,7 +337,7 @@ function createNotificationService({
             providerMessageId: null,
           });
         } catch (error) {
-          throw errors.internal(
+          throw safeInternalError(
             'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
             'Notification delivery state could not be recorded.'
           );
