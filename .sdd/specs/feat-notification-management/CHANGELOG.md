@@ -51,10 +51,13 @@ This entry describes the historical initial slice. Its active-only duplicate loo
 - Enforced one notification record per idempotency key across all statuses and added protected same-record retry for failed non-sensitive notifications; sensitive retries return `409 REISSUE_REQUIRED`.
 - Completed implementation through commits `105e51c` to `7c88223`; FE02 migration, FE09 caller integration, frontend work, real-provider work, and dependency changes remain out of scope.
 
-## 2026-07-13 - FE10-H09 Validation Evidence Recorded
+## 2026-07-13 - FE10-H09 Validation And Review Fixes
 
-- Targeted FE10/FE07/FE08/integration validation passed: 4 suites and 131 tests.
-- The full backend suite passed: 15 suites and 207 tests.
+- Targeted FE10/FE07/FE08/integration validation passed after the review fix: 4 suites and 136 tests.
+- The full backend suite passed after the review fix: 15 suites and 212 tests.
 - Enforced traceability passed with FE10 at 9/9 functional requirements (100%) and no implemented feature below the 70% threshold.
-- `git diff --check a613604..HEAD` passed; placeholder, contradiction, leakage, and changed-file scope scans found no blocking issue.
-- H09 remains in review until an independent task reviewer reports no blocking findings.
+- The first independent scan found that HTTP source metadata could bypass strict service validation and provider-supplied `safeMessage` text could reach queued failure persistence.
+- Commit `a04b64b` added test-first source allowlist/entity-type validation at the HTTP and service boundaries and replaced provider failure text with the fixed generic summary `Notification delivery failed.`.
+- Stale B5 stop-state wording in `PLAN.md` and `CONTEXT.md` was aligned with the implemented B5 and in-review B6 state.
+- Focused review of `a04b64b` approved both spec compliance and code quality with no findings.
+- H09 remains in review until the final whole-branch review reports no blocking findings.

@@ -8,13 +8,13 @@ Updated: 2026-07-13
 
 Approval: G1-G7 approved by Nhat on 2026-07-13
 
-Workflow State: B4 task decomposition complete; B5 implementation not started
+Workflow State: B5 implementation complete through FE10-H08; B6 validation in review
 
 ---
 
 ## B3 Approval And B4 Task Decomposition Authorization
 
-Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval authorizes B4 task decomposition only. B4 is now complete in `TASKS.md`; B5 implementation remains not started and requires deliberate branch/review authorization before code, tests, database schema, OpenAPI, or SPEC/CHANGELOG behavior changes begin.
+Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval first authorized B4 task decomposition. The B4 documentation was reviewed, B5 then proceeded on `feat/fe10-hardening`, and FE10-H01 through FE10-H08 are complete. FE10-H09 now owns the B6 validation and independent-review gate.
 
 **Goal:** deliver the smallest current-SPEC-compliant FE10 backend hardening pass: send sensitive authentication messages synchronously without persisting their rendered content, keep non-sensitive notifications queued, return only approved API summaries, align template/schema/idempotency contracts, provide an approved internal source boundary, and define manual retry for queued notifications. No frontend, real SMTP, template editor, retry UI, or unrelated refactor is included.
 
@@ -150,6 +150,6 @@ No frontend files, provider credentials, real SMTP code, new dependencies, retry
 - [x] The historical completed `TASKS.md` entries remain intact, with a new pending hardening section only after B3 approval.
 - [x] The no-frontend, mock-provider-only, smallest-coherent-hardening scope is acceptable.
 
-## B4 Complete: Stop Before B5
+## B4 Complete; B5 Implemented; B6 In Review
 
-B4 task decomposition is complete and ready for review. Do not start FE10-H01 or modify implementation code, tests, database schema, OpenAPI, `SPEC.md`, or `CHANGELOG.md` on this documentation branch. B5 remains not started until this B4 documentation is reviewed and deliberately moved to an implementation branch.
+This section originally stopped work after B4 until the documentation was reviewed and deliberately moved to an implementation branch. That gate was satisfied; FE10-H01 through FE10-H08 were implemented and independently reviewed on `feat/fe10-hardening`. FE10-H09 is validating the completed B5 slice before integration.

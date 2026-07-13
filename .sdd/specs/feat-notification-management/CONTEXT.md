@@ -153,10 +153,10 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Current Hardening Status
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- `SPEC.md` version 0.2.0 is approved, and FE10-H01 through FE10-H08 are implemented on `feat/fe10-hardening`.
+- `PLAN.md` and `TASKS.md` track B5 as implemented and B6 validation as in review.
 - Use environment variables or deployment configuration for email provider credentials.
 - Do not log raw tokens, full reset links, or provider secrets.
 - Keep FE10 APIs role-protected and server-side validated.

@@ -153,12 +153,17 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 Validation evidence recorded on 2026-07-13:
 
-- `npm.cmd test -- notificationRoutes.test.js borrowingRoutes.test.js reservationRoutes.test.js integration.test.js` in `backend`: PASS, 4 suites and 131 tests.
-- `npm.cmd test` in `backend`: PASS, 15 suites and 207 tests.
+- `npm.cmd test -- notificationRoutes.test.js borrowingRoutes.test.js reservationRoutes.test.js integration.test.js` in `backend`: PASS, 4 suites and 136 tests after the H09 review fix.
+- `npm.cmd test` in `backend`: PASS, 15 suites and 212 tests after the H09 review fix.
 - `node scripts/check-traceability.js --enforce`: PASS; FE10 covers 9/9 functional requirements (100%), and no implemented feature is below the 70% gate.
-- `git diff --check a613604..HEAD`: PASS.
-- Placeholder, contradiction, leakage, and changed-file scope scans: PASS; detailed command output is recorded in the H09 review package.
-- Independent H09 task review: PENDING before this task can be marked complete.
+- The first independent scan found unsafe HTTP source metadata and provider-supplied failure text. Commit `a04b64b` added test-first validation and fixed generic failure persistence; its RED run had 6 expected failures, then the focused FE10 suite passed 96/96 tests.
+- `git diff --check a613604..HEAD`: PASS after the review fix.
+- Placeholder scan command: `git diff -U0 a613604..HEAD -- backend/src backend/tests database | Select-String -Pattern '^\+.*\b(TODO|FIXME|TBD|XXX)\b' -CaseSensitive`; PASS with 0 unresolved implementation markers.
+- Contradiction scan commands: `rg -n -i "B5 (implementation )?(remains )?not started|stay .*NOT STARTED.* until approval" .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md` and `rg -n "DUE_OR_FINE_NOTICE|EMAIL_VERIFY|findActiveByIdempotencyKey" .sdd/specs/feat-notification-management/SPEC.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/CONTEXT.md backend/src backend/tests database/Librarymanagement.sql`; PASS with 0 stale B5 matches and 0 obsolete active-only lookup matches. All `DUE_OR_FINE_NOTICE` matches are explicit non-canonical statements; `EMAIL_VERIFY` remains only in explicit rejection/deferred FE02 or defensive legacy-sensitive handling.
+- Leakage scan commands inspected added backend lines for sensitive log/response patterns and real credential signatures; PASS with 0 sensitive log additions, 0 sensitive response additions, and 0 real-secret signature matches. Synthetic provider/test sentinels appear only in provider-memory input and negative assertions.
+- Changed-file scope command: `git diff --name-only a613604..HEAD`; PASS with 0 forbidden scope matches: no frontend, FE02 implementation, FE09 implementation, real provider, dependency, expiry, or unrelated refactor file.
+- Focused review of commit `a04b64b`: `Spec compliance: APPROVED`; `Code quality: APPROVED`.
+- Final whole-branch review: PENDING before this task can be marked complete.
 
 ## 7. Hardening Traceability And Parallel Work
 
