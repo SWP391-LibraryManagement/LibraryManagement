@@ -9,19 +9,38 @@ const { createBorrowingService } = require('../src/services/borrowingService');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const { makeInMemoryBorrowingDependencies } = require('./helpers/inMemoryBorrowingRepositories');
 
-function makeTestApp() {
+function makeNotificationRequesterStub({ error } = {}) {
+  const requester = {
+    createNotificationRequest: jest.fn(async () => {
+      if (error) {
+        throw error;
+      }
+
+      return { notificationId: 1, status: 'PENDING' };
+    }),
+  };
+
+  return {
+    requester,
+    service: {
+      createSourceNotificationRequester: jest.fn(() => requester),
+    },
+  };
+}
+
+function makeTestApp({ notificationStub = makeNotificationRequesterStub() } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const borrowingDependencies = makeInMemoryBorrowingDependencies(authDependencies.state);
   const authService = createAuthService(authDependencies);
   const borrowingService = createBorrowingService({
     borrowingRepository: borrowingDependencies.borrowingRepository,
     auditLogRepository: authDependencies.auditLogRepository,
-    notificationRepository: authDependencies.notificationRepository,
+    notificationService: notificationStub.service,
     clock: () => new Date('2026-06-10T00:00:00.000Z'),
   });
   const app = createApp({ authService, borrowingService });
 
-  return { app, authDependencies, borrowingDependencies };
+  return { app, authDependencies, borrowingDependencies, notificationStub };
 }
 
 async function createVerifiedUser({
@@ -115,8 +134,8 @@ describe('FE07 borrowing management', () => {
     expect(unavailableResponse.body.error.code).toBe('COPY_NOT_AVAILABLE');
   });
 
-  test('librarian approves request and member sees only own history', async () => {
-    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+  test('librarian approval uses the FE07-bound requester with the canonical due-date request', async () => {
+    const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -165,15 +184,25 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'BORROWED'
     );
-    expect(authDependencies.state.notifications).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          userId: member.userId,
-          templateCode: 'DUE_DATE_REMINDER',
-          sourceFeature: 'FE07',
-        }),
-      ])
-    );
+    expect(notificationStub.service.createSourceNotificationRequester).toHaveBeenCalledTimes(1);
+    expect(notificationStub.service.createSourceNotificationRequester).toHaveBeenCalledWith('FE07');
+    expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(1);
+    const notificationRequest = notificationStub.requester.createNotificationRequest.mock.calls[0][0];
+    expect(notificationRequest).toEqual({
+      type: 'DUE_DATE_REMINDER',
+      channel: 'EMAIL',
+      templateKey: 'DUE_DATE_REMINDER',
+      userId: member.userId,
+      recipientEmail: 'approve.member@example.test',
+      templateData: {
+        purpose: 'BORROW_APPROVED',
+        requestId,
+        dueDate: expect.any(Date),
+      },
+      sourceEntityType: 'BORROWING',
+      sourceEntityId: requestId,
+    });
+    expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
     const ownHistoryResponse = await request(app)
       .get('/api/borrow-requests/me')
@@ -242,8 +271,8 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.fines).toHaveLength(0);
   });
 
-  test('renewal extends due date once and blocks reservation conflict', async () => {
-    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+  test('renewal uses the FE07-bound requester with the canonical due-date request', async () => {
+    const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -285,6 +314,24 @@ describe('FE07 borrowing management', () => {
 
     expect(renewResponse.status).toBe(200);
     expect(renewResponse.body.borrowDetail.renewalCount).toBe(1);
+    expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(2);
+    const notificationRequest = notificationStub.requester.createNotificationRequest.mock.calls[1][0];
+    expect(notificationRequest).toEqual({
+      type: 'DUE_DATE_REMINDER',
+      channel: 'EMAIL',
+      templateKey: 'DUE_DATE_REMINDER',
+      userId: member.userId,
+      recipientEmail: 'renew.member@example.test',
+      templateData: {
+        purpose: 'BORROW_RENEWED',
+        requestId,
+        borrowDetailId: firstDetail.borrowDetailId,
+        dueDate: expect.any(Date),
+      },
+      sourceEntityType: 'BORROWING',
+      sourceEntityId: requestId,
+    });
+    expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
     const repeatRenewResponse = await request(app)
       .patch(`/api/borrow-details/${firstDetail.borrowDetailId}/renew`)
@@ -308,6 +355,52 @@ describe('FE07 borrowing management', () => {
 
     expect(reservationConflictResponse.status).toBe(409);
     expect(reservationConflictResponse.body.error.code).toBe('RESERVATION_BLOCKS_RENEWAL');
+  });
+
+  test('requester failures do not block completed approval or renewal state changes', async () => {
+    const notificationStub = makeNotificationRequesterStub({ error: new Error('provider failure') });
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({ notificationStub });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'non-blocking.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'non-blocking.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+    const requestId = createResponse.body.borrowRequest.requestId;
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(approveResponse.status).toBe(200);
+    expect(approveResponse.body.borrowRequest.status).toBe('APPROVED');
+    const borrowDetailId = approveResponse.body.borrowRequest.details[0].borrowDetailId;
+    expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'BORROWED'
+    );
+
+    const renewResponse = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({});
+
+    expect(renewResponse.status).toBe(200);
+    expect(renewResponse.body.borrowDetail.renewalCount).toBe(1);
+    expect(notificationStub.requester.createNotificationRequest).toHaveBeenCalledTimes(2);
   });
 
   test('borrowing endpoints enforce authentication and staff/member roles', async () => {

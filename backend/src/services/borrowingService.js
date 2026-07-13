@@ -44,7 +44,7 @@ function differenceInCalendarDays(leftDate, rightDate) {
 function createBorrowingService({
   borrowingRepository,
   auditLogRepository,
-  notificationRepository,
+  notificationService,
   clock = () => new Date(),
 } = {}) {
   if (!borrowingRepository) {
@@ -55,9 +55,11 @@ function createBorrowingService({
     auditLogRepository = require('../repositories/auditLogRepository');
   }
 
-  if (!notificationRepository) {
-    notificationRepository = require('../repositories/notificationRepository');
+  if (!notificationService) {
+    notificationService = require('./notificationService').defaultNotificationService;
   }
+
+  const notificationRequester = notificationService.createSourceNotificationRequester('FE07');
 
   async function writeAudit(context, action, extra = {}) {
     if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
@@ -75,20 +77,21 @@ function createBorrowingService({
     });
   }
 
-  async function createNotification({ userId, recipientEmail, templateCode, sourceEntityId, safePayload }) {
-    if (!notificationRepository || typeof notificationRepository.createNotification !== 'function') {
-      return;
+  async function requestDueDateNotification({ userId, recipientEmail, sourceEntityId, templateData }) {
+    try {
+      await notificationRequester.createNotificationRequest({
+        type: 'DUE_DATE_REMINDER',
+        channel: 'EMAIL',
+        templateKey: 'DUE_DATE_REMINDER',
+        userId,
+        recipientEmail,
+        templateData,
+        sourceEntityType: 'BORROWING',
+        sourceEntityId,
+      });
+    } catch {
+      // A notification failure must not undo a completed borrowing state change.
     }
-
-    await notificationRepository.createNotification({
-      userId,
-      recipientEmail,
-      templateCode,
-      sourceFeature: 'FE07',
-      sourceEntityType: 'BORROWING',
-      sourceEntityId,
-      safePayload,
-    });
   }
 
   function requireMember(actor) {
@@ -288,12 +291,11 @@ function createBorrowingService({
       metadata: { approvedMemberId: approvedRequest.userId, copyIds, notes: input.notes || null },
     });
 
-    await createNotification({
+    await requestDueDateNotification({
       userId: approvedRequest.userId,
       recipientEmail: approvedRequest.member.email,
-      templateCode: 'DUE_DATE_REMINDER',
       sourceEntityId: approvedRequest.requestId,
-      safePayload: {
+      templateData: {
         purpose: 'BORROW_APPROVED',
         requestId: approvedRequest.requestId,
         dueDate,
@@ -463,12 +465,11 @@ function createBorrowingService({
       },
     });
 
-    await createNotification({
+    await requestDueDateNotification({
       userId: borrowDetail.userId,
       recipientEmail: borrowDetail.member.email,
-      templateCode: 'DUE_DATE_REMINDER',
       sourceEntityId: borrowDetail.requestId,
-      safePayload: {
+      templateData: {
         purpose: 'BORROW_RENEWED',
         requestId: borrowDetail.requestId,
         borrowDetailId,
