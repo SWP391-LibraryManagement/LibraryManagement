@@ -2,7 +2,7 @@
 
 Version: 0.2.0
 Status: READY FOR REVIEW
-Last Updated: 2026-06-25
+Last Updated: 2026-07-13
 
 Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md`
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
@@ -41,6 +41,7 @@ Reservation creation, queue behavior, cancellation, queue processing, hold expir
 - `backend/tests/reservationRoutes.test.js` (13 tests; AC-FE08-001..010, FR-FE08-011..022).
 - `backend/tests/integration.test.js`.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
+- Post-merge: commit `236043864304627f3577baafa9b8648c13c7a691` is in `main` and GitHub Actions CI run `29217437981` completed successfully.
 
 ## 6. Gaps
 

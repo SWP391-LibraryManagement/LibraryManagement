@@ -53,6 +53,7 @@ Updated: 2026-07-13
 - [x] `npm.cmd --prefix frontend run lint` - passed with 0 ESLint errors.
 - [x] `npm.cmd --prefix frontend run build` - Vite 8.0.16 production build passed after transforming 14,323 modules; Vite reported a non-failing chunk-size warning.
 - [x] `npm.cmd --prefix backend test` - 15/15 Jest suites and 123/123 tests passed; 0 snapshots.
+- [x] B7 post-merge record - commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`; GitHub Actions CI run `29217437981` passed.
 
 ## 6. Traceability
 

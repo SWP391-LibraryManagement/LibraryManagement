@@ -94,3 +94,9 @@ Not included:
 - This plan covers the approved backend and frontend reservation slice.
 - Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
 - FE07 can later call FE08 queue processing when a copy is returned, but automatic triggering is out of scope for Phase 1.
+
+## 5. B7 Closeout Evidence
+
+- Commit `236043864304627f3577baafa9b8648c13c7a691` is contained in `main`.
+- GitHub Actions CI run `29217437981` completed successfully for that commit.
+- The scoped integration/review record is `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
