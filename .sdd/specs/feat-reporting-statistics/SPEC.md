@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.1
+# Version: 0.1.4
 
 # Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-07-13
 
 # Feature ID: FE12
 
@@ -96,7 +96,7 @@ The feature can only start when:
 1. Admin or approved actor opens user statistics.
 2. Actor selects optional filters such as role, status, membership status, or date range.
 3. The system validates filters.
-4. The system reads `Users`, `UserRoles`, `Roles`, and `MembershipApplications`.
+4. The system reads `Users`, `UserRoles`, `Roles`, and `Members`; runtime membership status and approval date come from `Members`.
 5. The system calculates approved user/member metrics.
 6. The system displays aggregate statistics without exposing unnecessary personal details.
 
@@ -137,12 +137,12 @@ Use these stable IDs for tasks and tests.
 - BR-FE12-001: Reports are read-only and must not modify source data.
 - BR-FE12-002: Guests and members cannot access staff reports.
 - BR-FE12-003: Report access must be role-protected on the server.
-- BR-FE12-004: Borrowing reports must use FE07 borrowing records as source of truth.
+- BR-FE12-004: Borrowing reports must use FE07 borrowing records as source of truth. Borrow-period and top-book metrics count only `BorrowDetails` in `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, or `OVERDUE`; `REQUESTED` is not a handed-over loan and does not contribute.
 - BR-FE12-005: Inventory reports must use FE06/BookCopies status as source of truth.
 - BR-FE12-006: User statistics must use FE11/Users/Roles data as source of truth.
 - BR-FE12-007: Membership statistics, if shown, must use FE04 membership data as source of truth.
 - BR-FE12-008: Report filters must be validated before query execution.
-- BR-FE12-009: Date range filters must have valid start/end order.
+- BR-FE12-009: Date range filters must use valid `YYYY-MM-DD` values with start <= end. For user statistics, the date range limits only `newMembersByPeriod` by `Members.ApprovedAt`; total/status/role counts remain global subject to non-date filters.
 - BR-FE12-010: Reports must use approved status definitions from source features.
 - BR-FE12-011: User statistics must not expose unnecessary personal data.
 - BR-FE12-012: Aggregate counts must be reproducible from source records.
@@ -153,8 +153,8 @@ Use these stable IDs for tasks and tests.
 ## 7. Functional Requirements
 
 - FR-FE12-001: When an authorized actor views borrowing report, the system shall return approved borrowing metrics.
-- FR-FE12-002: When an authorized actor views inventory report, the system shall return approved inventory metrics.
-- FR-FE12-003: When an authorized actor views user statistics, the system shall return approved user/member metrics.
+- FR-FE12-002: When an authorized actor views inventory report, the system shall return approved inventory metrics and identify low-stock books with two or fewer available copies.
+- FR-FE12-003: When an authorized actor views user statistics, the system shall return approved user/member metrics, with date filters applied to approval-period growth only.
 - FR-FE12-004: If an actor is unauthorized, then the system shall deny report access.
 - FR-FE12-005: If report filters are invalid, then the system shall reject the request.
 - FR-FE12-006: If report filters match no data, then the system shall return zero/empty report results.
@@ -166,8 +166,8 @@ Use these stable IDs for tasks and tests.
 ## 8. Acceptance Criteria
 
 - AC-FE12-001: Given an authorized actor, when viewing borrowing report, then borrowing totals and status counts are displayed.
-- AC-FE12-002: Given an authorized actor, when viewing inventory report, then copy counts by status and book/category are displayed according to filters.
-- AC-FE12-003: Given an authorized actor, when viewing user statistics, then user/member counts are displayed according to approved grouping.
+- AC-FE12-002: Given an authorized actor, when viewing inventory report, then copy counts by status and book/category are displayed according to filters, and books with 0-2 available copies appear in the low-stock list. Status/location filters select matching books and filtered copy totals without hiding those books' full availability from low-stock calculation.
+- AC-FE12-003: Given an authorized actor, when viewing user statistics with a date range, then total/status/role counts remain global and `newMembersByPeriod` includes only approvals in that range.
 - AC-FE12-004: Given a guest or member, when requesting staff reports, then access is denied.
 - AC-FE12-005: Given invalid report filters, when the request is submitted, then the system returns validation error.
 - AC-FE12-006: Given filters with no matching data, when report is generated, then the system returns zero/empty result.
@@ -202,7 +202,7 @@ Use these stable IDs for tasks and tests.
 | Users | Source for user statistics and member/staff counts. |
 | UserRoles | Source for role-based user statistics. |
 | Roles | Provides role names. |
-| MembershipApplications | Source for membership status counts if included. |
+| Members | Source for runtime membership status counts and `ApprovedAt` growth periods. |
 | Books | Source for inventory and borrowing report book metadata. |
 | Categories | Source for inventory grouping. |
 | BookCopies | Source for inventory status counts. |
@@ -214,8 +214,8 @@ Use these stable IDs for tasks and tests.
 
 | Field | Type | Required | Validation / Notes |
 | ----- | ---- | -------- | ------------------ |
-| fromDate | date | No | Must be <= `toDate` when both provided. |
-| toDate | date | No | Must be >= `fromDate` when both provided. |
+| fromDate | date | No | Exact `YYYY-MM-DD`; must be <= `toDate` when both provided. For user statistics, applies to `Members.ApprovedAt` growth only. |
+| toDate | date | No | Exact `YYYY-MM-DD`; must be >= `fromDate` when both provided and includes the full selected day. For user statistics, applies to `Members.ApprovedAt` growth only. |
 | status | string | No | Must be an approved status for selected report type. |
 | categoryId | integer | No | Used for inventory report. |
 | bookId | integer | No | Used for borrowing/inventory report. |
@@ -303,11 +303,11 @@ This feature does not include:
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE12-001 | Librarian and Admin can view reports; Member/Guest cannot. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. Borrow-period and top-book metrics exclude `REQUESTED` and count only actual-loan statuses: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, and `OVERDUE`. | Review packet 2026-06-10; final-review remediation 2026-07-13 | APPROVED |
+| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, and low-stock books defined as 0-2 available copies. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
+| Q-FE12-004 | User statistics: total members, active/inactive users, and new members by `Members.ApprovedAt`; date ranges affect the new-member period only. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
 | Q-FE12-005 | CSV/PDF export is out of scope unless teacher requires it. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views without persisting raw query/filter values. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
 
 ---
 

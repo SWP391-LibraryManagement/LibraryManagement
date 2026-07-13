@@ -9,6 +9,7 @@ import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
 import InventoryPage from './page/InventoryPage';
 import ForbiddenPage from './page/error/ForbiddenPage';
+import ReportRouteGuard from './component/report/ReportRouteGuard';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -54,9 +55,9 @@ function App() {
       <Route path="/librarian/reservations" element={<ReservationsLibrarianPage />} />
 
       {/* FE12 · Reporting & Statistics */}
-      <Route path="/reports/borrowing" element={<BorrowingReportPage />} />
-      <Route path="/reports/inventory" element={<InventoryReportPage />} />
-      <Route path="/reports/users" element={<UserStatisticsPage />} />
+      <Route path="/reports/borrowing" element={<ReportRouteGuard><BorrowingReportPage /></ReportRouteGuard>} />
+      <Route path="/reports/inventory" element={<ReportRouteGuard><InventoryReportPage /></ReportRouteGuard>} />
+      <Route path="/reports/users" element={<ReportRouteGuard><UserStatisticsPage /></ReportRouteGuard>} />
       <Route path="/profile" element={<UserProfilePage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />

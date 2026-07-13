@@ -94,7 +94,7 @@
 .app-nav-item.active { background: var(--lib-accent-bg); color: var(--lib-accent-d); font-weight: 600; }
 .app-sidebar-footer { border-top: 1px solid var(--lib-line); padding-top: 10px; margin-top: 8px; }
 
-.app-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 
 .app-topbar {
   height: 64px; flex-shrink: 0;
@@ -161,7 +161,7 @@
   border: 2px solid rgba(199, 138, 59, 0.3);
 }
 
-.app-content { flex: 1; overflow-y: auto; padding: 28px 32px 60px; }
+.app-content { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 32px 60px; }
 
 /* ---- Page header --------------------------------------------------------- */
 .ph { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
@@ -267,6 +267,8 @@
 .form-grid { display: grid; gap: 16px; }
 .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 .field { display: flex; flex-direction: column; gap: 6px; }
+.report-date-filter { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px; }
+.report-date-filter .input { width: 160px; }
 .field > label { font-size: 13px; font-weight: 600; color: var(--lib-ink); }
 .input, .select, .textarea {
   border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm);
@@ -540,4 +542,7 @@
   .ph { align-items: flex-start; flex-direction: column; }
   .toolbar { align-items: stretch; }
   .search-input, .toolbar .select, .toolbar .input { width: 100% !important; min-width: 0; }
+  .report-date-filter { display: grid; grid-template-columns: 1fr; width: 100%; }
+  .report-date-filter > .muted { display: none; }
+  .report-date-filter .btn { width: 100%; justify-content: center; }
 }

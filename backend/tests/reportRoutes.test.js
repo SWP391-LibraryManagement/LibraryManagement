@@ -164,6 +164,12 @@ describe('FE12 reporting and statistics', () => {
     expect(JSON.stringify(userStatsResponse.body)).not.toContain('report.user.member@example.test');
     expect(JSON.stringify(userStatsResponse.body)).not.toContain('passwordHash');
 
+    await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
     const emptyResponse = await request(app)
       .get('/api/reports/borrowing?fromDate=2030-01-01&toDate=2030-01-02')
       .set('Authorization', authHeader(admin.accessToken));
@@ -171,6 +177,65 @@ describe('FE12 reporting and statistics', () => {
     expect(emptyResponse.status).toBe(200);
     expect(emptyResponse.body.totals.requests).toBe(0);
     expect(emptyResponse.body.topBorrowedBooks).toEqual([]);
+  });
+
+  test('user date filters keep totals global and limit new members by approval date', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.user-period.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.user-period.member@example.test',
+    });
+
+    const memberAccount = authDependencies.state.users.find((user) => user.userId === member.userId);
+    memberAccount.createdAt = new Date('2025-01-05T09:00:00.000Z');
+    borrowingDependencies.approveMember(member.userId, new Date('2026-06-10T23:30:00.000Z'));
+
+    const response = await request(app)
+      .get('/api/reports/users?fromDate=2026-06-10&toDate=2026-06-10')
+      .set('Authorization', authHeader(admin.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body.totals.users).toBe(2);
+    expect(response.body.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
+  });
+
+  test('inventory report returns books with two or fewer available copies as low stock', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.low-stock.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    borrowingDependencies.state.copies.forEach((copy, index) => {
+      copy.status = index < 2 ? 'AVAILABLE' : 'BORROWED';
+    });
+
+    const response = await request(app)
+      .get('/api/reports/inventory')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body.lowAvailabilityBooks).toEqual([
+      expect.objectContaining({
+        bookId: 1,
+        totalCopies: 7,
+        availableCopies: 2,
+      }),
+    ]);
   });
 
   test('report access is role-protected and invalid ranges are rejected', async () => {
@@ -253,6 +318,29 @@ describe('FE12 reporting and statistics', () => {
     expect(badUserRange.status).toBe(400);
   });
 
+  test('accepts only YYYY-MM-DD values for FE12 date filters', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.date-format.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
+
+    for (const path of ['/api/reports/borrowing', '/api/reports/users']) {
+      for (const fromDate of ['2026-06-10T12:30:00Z', '2026-02-30']) {
+        const response = await request(app)
+          .get(`${path}?fromDate=${encodeURIComponent(fromDate)}`)
+          .set('Authorization', authHeader(admin.accessToken));
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      }
+    }
+  });
+
   // FR-FE12: a non-matching inventory filter returns empty totals, not an error.
   test('inventory report returns empty totals for a non-matching filter', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
@@ -287,14 +375,58 @@ describe('FE12 reporting and statistics', () => {
     });
 
     await request(app)
-      .get('/api/reports/borrowing')
+      .get('/api/reports/borrowing?fromDate=2026-06-10&userId=999999')
       .set('Authorization', authHeader(admin.accessToken))
       .expect(200);
 
-    expect(authDependencies.state.auditLogs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ action: 'REPORT_BORROWING_VIEW' }),
-      ])
+    const reportViewEntry = authDependencies.state.auditLogs.find(
+      (entry) => entry.action === 'REPORT_BORROWING_VIEW'
     );
+
+    expect(reportViewEntry).toEqual(
+      expect.objectContaining({
+        action: 'REPORT_BORROWING_VIEW',
+        metadata: null,
+      })
+    );
+    expect(JSON.stringify(reportViewEntry)).not.toContain('2026-06-10');
+    expect(JSON.stringify(reportViewEntry)).not.toContain('999999');
+  });
+
+  test('failed report access writes safe audit log entries', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'report.audit.member@example.test',
+    });
+
+    await request(app).get('/api/reports/borrowing').expect(401);
+    await request(app)
+      .get('/api/reports/inventory')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(403);
+
+    const deniedEntries = authDependencies.state.auditLogs.filter(
+      (entry) => entry.action === 'REPORT_ACCESS_DENIED'
+    );
+
+    expect(deniedEntries).toEqual([
+      expect.objectContaining({
+        userId: null,
+        metadata: expect.objectContaining({
+          code: 'UNAUTHORIZED',
+          path: '/api/reports/borrowing',
+        }),
+      }),
+      expect.objectContaining({
+        userId: member.userId,
+        metadata: expect.objectContaining({
+          code: 'ROLE_REQUIRED',
+          path: '/api/reports/inventory',
+        }),
+      }),
+    ]);
   });
 });

@@ -1,10 +1,10 @@
 # TASKS.md - FE12 Reporting & Statistics
 
-Status: READY FOR REVIEW
+Status: B6 COMPLETE - HUMAN REVIEW CONFIRMED
 
 Owner: Nhat
 
-Updated: 2026-06-10
+Updated: 2026-07-13
 
 ---
 
@@ -38,10 +38,14 @@ Updated: 2026-06-10
 
 ## 4. Validation
 
-- [x] `npm test` in `backend`.
+- [x] `npm.cmd --prefix backend test` passed: 18 suites, 236 tests.
+- [x] `npm.cmd --prefix frontend test` passed: 24 tests.
 - [x] `npm.cmd --prefix frontend run lint` passed.
 - [x] `npm.cmd --prefix frontend run build` passed.
-- [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
+- [x] `npm.cmd run trace:enforce` passed; FE12 has 8/8 tagged FRs (100%).
+- [x] Fresh browser verification passed at `http://127.0.0.1:5173`: Admin success for
+  borrowing/inventory/users, Guest redirect to `/login`, Member redirect to `/forbidden`,
+  inventory category filtering, truthful error/empty states, and responsive layout checks.
 
 ## 4. Traceability
 
@@ -72,3 +76,29 @@ Updated: 2026-06-10
 - CSV/PDF export.
 - Dashboards.
 - BI warehouse integration.
+
+## 6. FE12 B6 Validation Hardening
+
+B5 implementation status: COMPLETE. The initial B6 automated/manual browser validation
+completed, then independent reviews opened follow-up findings. Remediation and fresh full
+verification pass, the final independent re-review is clean, and Nhat confirmed human review.
+
+- [x] FE12-H01 Add regression tests for request deduplication, inclusive date-only filters,
+  membership approval periods, inventory category counts, and low-stock copy totals.
+- [x] FE12-H02 Correct repository aggregation and date-boundary behavior.
+- [x] FE12-H03 Add safe audit entries for failed report access and align all OpenAPI filters.
+- [x] FE12-H04 Protect all FE12 frontend routes and remove fabricated demo fallback data.
+- [x] FE12-H05 Restore inventory category options from the authorized metadata payload.
+- [x] FE12-H06 Run focused and full automated validation.
+- [x] FE12-H07 Capture fresh staff/member/guest browser evidence, responsive measurements,
+  inventory filter behavior, and loading/empty/error states.
+- [x] FE12-H08 Remove raw query values from successful report audit metadata.
+- [x] FE12-H09 Apply user date ranges only to `newMembersByPeriod` by `Members.ApprovedAt`.
+- [x] FE12-H10 Add strict date-only validation and complete OpenAPI `400` responses.
+- [x] FE12-H11 Default report date filters to blank and omit empty query parameters.
+- [x] FE12-H12 Align production/test low-stock behavior to `availableCopies <= 2`.
+- [x] FE12-H13 Obtain clean independent re-review after fresh full validation.
+- [x] FE12-H14 Obtain Nhat's human review before commit/push/merge.
+
+Detailed evidence is recorded in
+`.sdd/reviews/fe12-b6-validation-review-2026-07-13.md`.

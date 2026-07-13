@@ -22,3 +22,17 @@ test('omits the category ID when the inventory report filter is blank', async ()
   assert.equal(typeof buildInventoryReportParams, 'function');
   assert.deepEqual(buildInventoryReportParams(''), {});
 });
+
+test('builds date report params from only non-blank date values', async () => {
+  const { buildDateRangeReportParams } = await loadReportFilters();
+
+  assert.equal(typeof buildDateRangeReportParams, 'function');
+  assert.deepEqual(buildDateRangeReportParams('2026-06-01', '2026-06-10'), {
+    fromDate: '2026-06-01',
+    toDate: '2026-06-10',
+  });
+  assert.deepEqual(buildDateRangeReportParams('2026-06-01', ''), {
+    fromDate: '2026-06-01',
+  });
+  assert.deepEqual(buildDateRangeReportParams(null, undefined), {});
+});

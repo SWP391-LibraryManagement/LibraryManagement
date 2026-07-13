@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-13 - Final Review Remediation
+
+- Read inventory categories from the authorized metadata controller envelope.
+- Matched in-memory low-stock rows to the production response with category metadata and copy details.
+- Corrected parity fixtures to use explicit category records and production-valid book-copy statuses.
+- Excluded `REQUESTED` details from borrow-period and top-book activity metrics while counting all actual-loan statuses.
+- Documented `Members` as the runtime source for membership status and `ApprovedAt` user-statistics data.
+- Updated `SPEC.md` to version 0.1.4.
+
+## 2026-07-13 - Independent Review Remediation
+
+- Aligned the in-memory borrowing report helper with production joined-row filtering and aggregation semantics.
+- Aligned selected-user role, status, and membership aggregates with production SQL row semantics.
+- Documented FE12 report success payload schemas and exact runtime filter status enums in OpenAPI.
+- Updated the FE12 specification metadata to version 0.1.3.
+
 ## 2026-06-10
 
 - Created FE12 Reporting & Statistics feature specification structure.
@@ -39,3 +55,30 @@
 - Added the missing category selector to the inventory report screen and loaded options from the existing book metadata endpoint.
 - Applied the selected `categoryId` to `GET /api/reports/inventory`, with a reset control to return to all categories.
 - Added focused frontend tests for the inventory report query parameters.
+
+## 2026-07-13 - B6 Validation Hardening
+
+- Corrected borrowing request status counts so joined detail rows do not duplicate request totals.
+- Made date-only `toDate` filters include the full selected day through an exclusive next-day boundary.
+- Based new-member periods on `Members.ApprovedAt` instead of account creation time.
+- Counted inventory categories by unique books and exposed total/available copies for low-stock rows.
+- Added safe audit logging for failed FE12 access and aligned OpenAPI with implemented filters.
+- Added frontend report route guards, removed fabricated demo fallback statistics, and restored
+  category options from the authorized metadata payload.
+- Added responsive report layout rules for shrinking flex content, single-column mobile report
+  splits, and mobile-safe date filters.
+- Added FE12-specific API error messages so backend failures never claim demo fallback data.
+- Added focused backend/frontend regression tests and recorded B6 automated validation evidence.
+- Completed fresh browser validation for Admin/Member/Guest access, all three report screens,
+  inventory filtering, loading/empty/error states, and desktop/mobile overflow behavior.
+- Removed raw query/filter values from successful report audit entries.
+- Clarified user report date semantics: global totals remain unchanged while member growth uses
+  `Members.ApprovedAt` within the optional inclusive date range.
+- Enforced exact `YYYY-MM-DD` report dates and documented `400` responses for every FE12 endpoint.
+- Removed fixed sample date defaults and omitted blank date query parameters on report pages.
+- Aligned low-stock behavior across backend, UI, and test doubles at two or fewer available copies.
+- Preserved full-copy availability for low-stock calculations when status/location filters select
+  books, and included books with zero physical copies.
+- Corrected the inventory category chart label to describe unique book counts.
+- Strengthened the borrowing date-range integration test with real source data and matching
+  in-memory filter behavior.

@@ -1,5 +1,7 @@
 const { sql, getPool } = require('../config/db');
 
+const ACTUAL_LOAN_DETAIL_STATUSES = new Set(['BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
+
 function groupCount(items, keySelector) {
   const result = {};
 
@@ -20,6 +22,29 @@ function toDateKey(value) {
   return date.toISOString().slice(0, 10);
 }
 
+function toExclusiveNextDay(value) {
+  const date = new Date(value);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date;
+}
+
+function isWithinDateRange(value, filters = {}) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  if (filters.fromDate && date < new Date(filters.fromDate)) {
+    return false;
+  }
+
+  if (filters.toDate && date >= toExclusiveNextDay(filters.toDate)) {
+    return false;
+  }
+
+  return true;
+}
+
 async function getBorrowRows(filters = {}) {
   const pool = await getPool();
   const request = pool.request();
@@ -31,8 +56,8 @@ async function getBorrowRows(filters = {}) {
   }
 
   if (filters.toDate) {
-    request.input('ToDate', sql.DateTime, new Date(filters.toDate));
-    where.push('br.RequestDate <= @ToDate');
+    request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(filters.toDate));
+    where.push('br.RequestDate < @ToDateExclusive');
   }
 
   if (filters.status) {
@@ -95,16 +120,6 @@ async function getInventoryRows(filters = {}) {
     where.push('b.BookId = @BookId');
   }
 
-  if (filters.status) {
-    request.input('Status', sql.NVarChar(20), filters.status);
-    where.push('bc.Status = @Status');
-  }
-
-  if (filters.location) {
-    request.input('Location', sql.NVarChar(100), filters.location);
-    where.push('bc.Location = @Location');
-  }
-
   const result = await request.query(`
     SELECT
       b.BookId,
@@ -139,16 +154,6 @@ async function getUserRows(filters = {}) {
     where.push('u.Status = @Status');
   }
 
-  if (filters.fromDate) {
-    request.input('FromDate', sql.DateTime, new Date(filters.fromDate));
-    where.push('u.CreatedAt >= @FromDate');
-  }
-
-  if (filters.toDate) {
-    request.input('ToDate', sql.DateTime, new Date(filters.toDate));
-    where.push('u.CreatedAt <= @ToDate');
-  }
-
   if (filters.membershipStatus) {
     request.input('MembershipStatus', sql.NVarChar(20), filters.membershipStatus);
     where.push('m.Status = @MembershipStatus');
@@ -161,7 +166,8 @@ async function getUserRows(filters = {}) {
       u.CreatedAt,
       ur.RoleId,
       r.RoleName,
-      m.Status AS MemberStatus
+      m.Status AS MemberStatus,
+      m.ApprovedAt AS MemberApprovedAt
     FROM Users u
     LEFT JOIN UserRoles ur ON u.UserId = ur.UserId
     LEFT JOIN Roles r ON ur.RoleId = r.RoleId
@@ -176,13 +182,19 @@ async function getUserRows(filters = {}) {
 async function getBorrowingReport(filters = {}) {
   const rows = await getBorrowRows(filters);
   const detailRows = rows.filter((row) => row.BorrowDetailId);
-  const requestRows = rows.filter((row) => row.RequestId);
+  const requestRows = Array.from(
+    new Map(rows.filter((row) => row.RequestId).map((row) => [row.RequestId, row])).values()
+  );
   const now = new Date();
 
   const borrowCountByPeriod = {};
   const topBorrowedBooks = {};
 
   for (const row of detailRows) {
+    if (!ACTUAL_LOAN_DETAIL_STATUSES.has(row.DetailStatus)) {
+      continue;
+    }
+
     const periodKey = toDateKey(row.BorrowDate || row.RequestDate);
 
     if (periodKey) {
@@ -195,9 +207,7 @@ async function getBorrowingReport(filters = {}) {
         title: row.Title || null,
         borrowCount: 0,
       };
-      if (row.DetailStatus === 'BORROWED' || row.DetailStatus === 'RETURNED' || row.DetailStatus === 'OVERDUE') {
-        topBorrowedBooks[row.BookId].borrowCount += 1;
-      }
+      topBorrowedBooks[row.BookId].borrowCount += 1;
     }
   }
 
@@ -229,10 +239,20 @@ async function getBorrowingReport(filters = {}) {
 
 async function getInventoryReport(filters = {}) {
   const rows = await getInventoryRows(filters);
+  const hasCopyFilters = Boolean(filters.status || filters.location);
+  const matchesCopyFilters = (row) => Boolean(
+    row.CopyId
+    && (!filters.status || row.CopyStatus === filters.status)
+    && (!filters.location || row.Location === filters.location)
+  );
+  const matchedBookIds = hasCopyFilters
+    ? new Set(rows.filter(matchesCopyFilters).map((row) => row.BookId))
+    : new Set(rows.map((row) => row.BookId));
+  const scopedRows = rows.filter((row) => matchedBookIds.has(row.BookId));
   const booksById = new Map();
-  const copies = rows.filter((row) => row.CopyId);
+  const copies = scopedRows.filter(matchesCopyFilters);
 
-  for (const row of rows) {
+  for (const row of scopedRows) {
     if (!booksById.has(row.BookId)) {
       booksById.set(row.BookId, {
         bookId: row.BookId,
@@ -253,11 +273,15 @@ async function getInventoryReport(filters = {}) {
   }
 
   const copyStatusCounts = groupCount(copies, (row) => row.CopyStatus);
-  const categoryCounts = groupCount(rows, (row) => row.CategoryName);
-  const lowAvailabilityBooks = Array.from(booksById.values()).filter((book) => {
-    const availableCount = book.copies.filter((copy) => copy.status === 'AVAILABLE').length;
-    return book.copies.length > 0 && availableCount <= 0;
-  });
+  const books = Array.from(booksById.values());
+  const categoryCounts = groupCount(books, (book) => book.categoryName);
+  const lowAvailabilityBooks = books
+    .map((book) => ({
+      ...book,
+      totalCopies: book.copies.length,
+      availableCopies: book.copies.filter((copy) => copy.status === 'AVAILABLE').length,
+    }))
+    .filter((book) => book.availableCopies <= 2);
 
   return {
     totals: {
@@ -280,6 +304,7 @@ async function getUserStatistics(filters = {}) {
         userId: row.UserId,
         status: row.UserStatus,
         createdAt: row.CreatedAt,
+        memberApprovedAt: row.MemberApprovedAt,
         roles: new Set(),
         memberStatus: row.MemberStatus || null,
       });
@@ -302,8 +327,10 @@ async function getUserStatistics(filters = {}) {
   }
 
   const newMembersByPeriod = {};
-  for (const user of users.filter((item) => item.memberStatus === 'APPROVED')) {
-    const periodKey = toDateKey(user.createdAt);
+  for (const user of users.filter(
+    (item) => item.memberStatus === 'APPROVED' && isWithinDateRange(item.memberApprovedAt, filters)
+  )) {
+    const periodKey = toDateKey(user.memberApprovedAt);
 
     if (periodKey) {
       newMembersByPeriod[periodKey] = (newMembersByPeriod[periodKey] || 0) + 1;

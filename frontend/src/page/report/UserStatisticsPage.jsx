@@ -10,28 +10,29 @@ import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { LineChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
-import { DEMO_REPORTS, objectToChart } from '../../utils/libraryFeatureViewModels';
+import { objectToChart } from '../../utils/libraryFeatureViewModels';
+import { buildDateRangeReportParams } from '../../utils/reportFilters';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 
 export default function UserStatisticsPage() {
-  const [from, setFrom] = useState('2026-01-01');
-  const [to, setTo] = useState('2026-06-15');
-  const [report, setReport] = useState(DEMO_REPORTS.users);
-  const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review giao diện.');
-  const [isDemo, setIsDemo] = useState(true);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [noticeType, setNoticeType] = useState('info');
 
   async function loadReport() {
     setLoading(true);
     try {
-      const data = await reportApi.users({ fromDate: from, toDate: to });
-      setReport({ ...DEMO_REPORTS.users, ...data });
-      setIsDemo(false);
+      const data = await reportApi.users(buildDateRangeReportParams(from, to));
+      setReport(data);
+      setNoticeType('success');
       setNotice('Đã kết nối backend thật qua GET /api/reports/users.');
     } catch (error) {
-      setReport(DEMO_REPORTS.users);
-      setIsDemo(true);
+      setReport(null);
+      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -44,17 +45,17 @@ export default function UserStatisticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const totals = report.totals || {};
-  const statusData = useMemo(() => objectToChart(report.usersByStatus), [report]);
-  const growthData = useMemo(() => objectToChart(report.newMembersByPeriod, (label) => label.length >= 7 ? label.slice(5) : label), [report]);
-  const pendingMembers = report.membersByStatus?.PENDING || report.membersByStatus?.Pending || 0;
+  const totals = report?.totals || {};
+  const statusData = useMemo(() => objectToChart(report?.usersByStatus), [report]);
+  const growthData = useMemo(() => objectToChart(report?.newMembersByPeriod, (label) => label.length >= 7 ? label.slice(5) : label), [report]);
+  const pendingMembers = report?.membersByStatus?.PENDING || report?.membersByStatus?.Pending || 0;
   const kpis = [
     { label: 'Tổng người dùng', value: totals.users, icon: Users, hint: 'aggregate only' },
     { label: 'Thành viên', value: totals.members, icon: UserCheck, hint: 'approved members' },
     { label: 'Mới theo kỳ', value: growthData.at(-1)?.value || 0, icon: UserPlus, hint: 'newMembersByPeriod' },
     { label: 'Đang chờ duyệt', value: pendingMembers, icon: Clock, hint: 'membership pending' },
   ];
-  const roleRows = objectToChart(report.usersByRole);
+  const roleRows = objectToChart(report?.usersByRole);
 
   return (
     <AppLayout
@@ -63,18 +64,22 @@ export default function UserStatisticsPage() {
       subtitle="Thống kê người dùng dạng aggregate, tránh lộ thông tin cá nhân không cần thiết."
       actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
+      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
       <div className="toolbar">
-        <div className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <div className="field report-date-filter">
           <Calendar size={16} className="muted" />
-          <input type="date" className="input" style={{ width: 160 }} value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+          <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
           <span className="muted">-</span>
-          <input type="date" className="input" style={{ width: 160 }} value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+          <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
           <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
         </div>
       </div>
 
-      {loading ? <LoadingBlock rows={4} /> : (
+      {loading ? <LoadingBlock rows={4} /> : !report ? (
+        <EmptyState icon={Users} title="Không có dữ liệu báo cáo">
+          Hãy kiểm tra phiên đăng nhập hoặc kết nối backend rồi thử tải lại.
+        </EmptyState>
+      ) : (
         <>
           <div className="kpi-grid">
             {kpis.map(({ label, value, icon: Icon, hint }) => (
@@ -111,7 +116,7 @@ export default function UserStatisticsPage() {
                       <td><Badge status="Active" /></td>
                     </tr>
                   ))}
-                  {Object.entries(report.membersByStatus || {}).map(([status, value]) => (
+                  {Object.entries(report?.membersByStatus || {}).map(([status, value]) => (
                     <tr key={`member-${status}`}>
                       <td><strong>Membership {status}</strong></td>
                       <td><strong>{fmtNumber(value)}</strong></td>

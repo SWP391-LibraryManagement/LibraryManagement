@@ -93,6 +93,28 @@ test('does not leak borrowing-specific messages into other feature APIs', async 
   );
 });
 
+test('keeps FE12 report errors truthful without claiming demo fallback data', async () => {
+  const { getReportErrorMessage } = await loadApiErrorMessages();
+
+  assert.equal(typeof getReportErrorMessage, 'function');
+  assert.equal(
+    getReportErrorMessage({}, 'Report fallback.'),
+    'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.',
+  );
+  assert.equal(
+    getReportErrorMessage({ response: { status: 401, data: { error: {} } } }),
+    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.',
+  );
+  assert.equal(
+    getReportErrorMessage({ response: { status: 403, data: { error: {} } } }),
+    'Tài khoản hiện tại không có quyền xem báo cáo này.',
+  );
+  assert.equal(
+    getReportErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Report fallback.'),
+    'Backend error',
+  );
+});
+
 const expectedReservationMessages = {
   MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới được đặt chỗ sách.',
   STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc admin mới được quản lý hàng đợi đặt chỗ.',

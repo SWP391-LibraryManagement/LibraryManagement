@@ -1,6 +1,6 @@
 /**
  * FE12 - UC58 - Borrowing Report (Librarian/Admin)
- * API that: GET /api/reports/borrowing. Có fallback demo khi chưa đăng nhập/chưa chạy backend.
+ * API that: GET /api/reports/borrowing.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -10,28 +10,29 @@ import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, LineChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
-import { DEMO_REPORTS, objectToChart } from '../../utils/libraryFeatureViewModels';
+import { objectToChart } from '../../utils/libraryFeatureViewModels';
+import { buildDateRangeReportParams } from '../../utils/reportFilters';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 
 export default function BorrowingReportPage() {
-  const [from, setFrom] = useState('2026-01-01');
-  const [to, setTo] = useState('2026-06-15');
-  const [report, setReport] = useState(DEMO_REPORTS.borrowing);
-  const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review giao diện.');
-  const [isDemo, setIsDemo] = useState(true);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [noticeType, setNoticeType] = useState('info');
 
   async function loadReport() {
     setLoading(true);
     try {
-      const data = await reportApi.borrowing({ fromDate: from, toDate: to });
-      setReport({ ...DEMO_REPORTS.borrowing, ...data });
-      setIsDemo(false);
+      const data = await reportApi.borrowing(buildDateRangeReportParams(from, to));
+      setReport(data);
+      setNoticeType('success');
       setNotice('Đã kết nối backend thật qua GET /api/reports/borrowing.');
     } catch (error) {
-      setReport(DEMO_REPORTS.borrowing);
-      setIsDemo(true);
+      setReport(null);
+      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -45,11 +46,11 @@ export default function BorrowingReportPage() {
   }, []);
 
   const periodData = useMemo(
-    () => objectToChart(report.borrowCountByPeriod, (label) => label.length >= 7 ? label.slice(5) : label),
+    () => objectToChart(report?.borrowCountByPeriod, (label) => label.length >= 7 ? label.slice(5) : label),
     [report]
   );
-  const topBooks = report.topBorrowedBooks || [];
-  const totals = report.totals || {};
+  const topBooks = report?.topBorrowedBooks || [];
+  const totals = report?.totals || {};
   const kpis = [
     { label: 'Tổng yêu cầu', value: totals.requests, icon: ClipboardList, hint: 'BorrowRequests' },
     { label: 'Tổng bản ghi', value: totals.details, icon: BookOpen, hint: 'BorrowDetails' },
@@ -64,19 +65,23 @@ export default function BorrowingReportPage() {
       subtitle="Báo cáo mượn/trả được lấy trực tiếp từ FE07, không chỉnh sửa dữ liệu nguồn."
       actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
+      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
 
       <div className="toolbar">
-        <div className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <div className="field report-date-filter">
           <Calendar size={16} className="muted" />
-          <input type="date" className="input" style={{ width: 160 }} value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+          <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
           <span className="muted">-</span>
-          <input type="date" className="input" style={{ width: 160 }} value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+          <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
           <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
         </div>
       </div>
 
-      {loading ? <LoadingBlock rows={4} /> : (
+      {loading ? <LoadingBlock rows={4} /> : !report ? (
+        <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
+          Hãy kiểm tra phiên đăng nhập hoặc kết nối backend rồi thử tải lại.
+        </EmptyState>
+      ) : (
         <>
           <div className="kpi-grid">
             {kpis.map(({ label, value, icon: Icon, hint }) => (
@@ -89,11 +94,11 @@ export default function BorrowingReportPage() {
           </div>
 
           <div className="stat-strip">
-            {Object.entries(report.requestStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> request {status}</span>)}
-            {Object.entries(report.detailStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> detail {status}</span>)}
+            {Object.entries(report?.requestStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> request {status}</span>)}
+            {Object.entries(report?.detailStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> detail {status}</span>)}
           </div>
 
-          <div className="split" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
+          <div className="split">
             <div className="lib-card">
               <h3 className="lib-card-title">Lượt mượn theo kỳ</h3>
               {periodData.length ? <LineChart data={periodData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu theo kỳ" />}

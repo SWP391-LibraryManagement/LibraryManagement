@@ -38,6 +38,21 @@ components:
       description: Resource not found
     Conflict:
       description: Business-rule conflict (e.g. duplicate, not available, terminal state)
+    BorrowingReportResponse:
+      description: Aggregated borrowing statistics
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowingReport' }
+    InventoryReportResponse:
+      description: Aggregated inventory statistics
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/InventoryReport' }
+    UserStatisticsReportResponse:
+      description: Aggregated user statistics
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/UserStatisticsReport' }
   schemas:
     NotificationSummary:
       type: object
@@ -74,6 +89,104 @@ components:
                 properties:
                   field: { type: string }
                   message: { type: string }
+    BorrowingReport:
+      type: object
+      additionalProperties: false
+      required: [totals, requestStatusCounts, detailStatusCounts, borrowCountByPeriod, topBorrowedBooks]
+      properties:
+        totals:
+          type: object
+          additionalProperties: false
+          required: [requests, details, activeLoans, overdueLoans]
+          properties:
+            requests: { type: integer, minimum: 0 }
+            details: { type: integer, minimum: 0 }
+            activeLoans: { type: integer, minimum: 0 }
+            overdueLoans: { type: integer, minimum: 0 }
+        requestStatusCounts:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        detailStatusCounts:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        borrowCountByPeriod:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        topBorrowedBooks:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [bookId, title, borrowCount]
+            properties:
+              bookId: { type: integer }
+              title: { type: string, nullable: true }
+              borrowCount: { type: integer, minimum: 0 }
+    InventoryReport:
+      type: object
+      additionalProperties: false
+      required: [totals, copyStatusCounts, categoryCounts, lowAvailabilityBooks]
+      properties:
+        totals:
+          type: object
+          additionalProperties: false
+          required: [books, copies]
+          properties:
+            books: { type: integer, minimum: 0 }
+            copies: { type: integer, minimum: 0 }
+        copyStatusCounts:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        categoryCounts:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        lowAvailabilityBooks:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [bookId, title, categoryId, categoryName, copies, totalCopies, availableCopies]
+            properties:
+              bookId: { type: integer }
+              title: { type: string, nullable: true }
+              categoryId: { type: integer, nullable: true }
+              categoryName: { type: string, nullable: true }
+              copies:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [copyId, status, location]
+                  properties:
+                    copyId: { type: integer }
+                    status: { type: string }
+                    location: { type: string, nullable: true }
+              totalCopies: { type: integer, minimum: 0 }
+              availableCopies: { type: integer, minimum: 0 }
+    UserStatisticsReport:
+      type: object
+      additionalProperties: false
+      required: [totals, usersByStatus, usersByRole, membersByStatus, newMembersByPeriod]
+      properties:
+        totals:
+          type: object
+          additionalProperties: false
+          required: [users, members]
+          properties:
+            users: { type: integer, minimum: 0 }
+            members: { type: integer, minimum: 0 }
+        usersByStatus:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        usersByRole:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        membersByStatus:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
+        newMembersByPeriod:
+          type: object
+          additionalProperties: { type: integer, minimum: 0 }
 security:
   - bearerAuth: []
 paths:
@@ -351,10 +464,13 @@ paths:
       tags: [Reporting]
       summary: Borrowing report (FR-FE12-001)
       parameters:
-        - { name: from, in: query, required: false, schema: { type: string, format: date } }
-        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+        - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED, REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE] } }
+        - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: userId, in: query, required: false, schema: { type: integer, minimum: 1 } }
       responses:
-        '200': { description: Aggregated borrowing statistics }
+        '200': { $ref: '#/components/responses/BorrowingReportResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -362,15 +478,28 @@ paths:
     get:
       tags: [Reporting]
       summary: Inventory report (FR-FE12-002)
+      parameters:
+        - { name: categoryId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE] } }
+        - { name: location, in: query, required: false, schema: { type: string, maxLength: 100 } }
       responses:
-        '200': { description: Aggregated inventory statistics }
+        '200': { $ref: '#/components/responses/InventoryReportResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/reports/users:
     get:
       tags: [Reporting]
       summary: User statistics report (FR-FE12-003/008)
+      parameters:
+        - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: roleId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [ACTIVE, INACTIVE, LOCKED] } }
+        - { name: membershipStatus, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, INACTIVE] } }
       responses:
-        '200': { description: Aggregated user statistics }
+        '200': { $ref: '#/components/responses/UserStatisticsReportResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

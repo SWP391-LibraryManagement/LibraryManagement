@@ -1,6 +1,6 @@
 /**
  * FE12 - UC59 - Inventory Report (Librarian/Admin)
- * API that: GET /api/reports/inventory. Có fallback demo khi chưa đăng nhập/chưa chạy backend.
+ * API that: GET /api/reports/inventory.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,7 +10,7 @@ import { authorizedRequest, reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
-import { DEMO_REPORTS, objectToChart } from '../../utils/libraryFeatureViewModels';
+import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildInventoryReportParams } from '../../utils/reportFilters';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
@@ -19,10 +19,10 @@ const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t
 export default function InventoryReportPage() {
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState([]);
-  const [report, setReport] = useState(DEMO_REPORTS.inventory);
-  const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review giao diện.');
-  const [isDemo, setIsDemo] = useState(true);
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [noticeType, setNoticeType] = useState('info');
 
   const loadCategories = useCallback(async () => {
     try {
@@ -30,7 +30,7 @@ export default function InventoryReportPage() {
         { method: 'get', url: '/books/metadata' },
         'Không thể tải danh sách thể loại.'
       );
-      setCategories(response.data?.categories || []);
+      setCategories(response?.data?.categories || []);
     } catch {
       setCategories([]);
     }
@@ -40,12 +40,12 @@ export default function InventoryReportPage() {
     setLoading(true);
     try {
       const data = await reportApi.inventory(buildInventoryReportParams(selectedCategoryId));
-      setReport({ ...DEMO_REPORTS.inventory, ...data });
-      setIsDemo(false);
+      setReport(data);
+      setNoticeType('success');
       setNotice('Đã kết nối backend thật qua GET /api/reports/inventory.');
     } catch (error) {
-      setReport(DEMO_REPORTS.inventory);
-      setIsDemo(true);
+      setReport(null);
+      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -70,9 +70,9 @@ export default function InventoryReportPage() {
     loadReport('');
   }
 
-  const totals = report.totals || {};
-  const statusCounts = report.copyStatusCounts || {};
-  const categoryData = useMemo(() => objectToChart(report.categoryCounts), [report]);
+  const totals = report?.totals || {};
+  const statusCounts = report?.copyStatusCounts || {};
+  const categoryData = useMemo(() => objectToChart(report?.categoryCounts), [report]);
   const availability = [
     { label: 'Khả dụng', value: statusCounts.AVAILABLE || statusCounts.Available || 0, color: '#2f8f5b' },
     { label: 'Đang mượn', value: statusCounts.BORROWED || statusCounts.Borrowed || 0, color: '#a87532' },
@@ -85,7 +85,7 @@ export default function InventoryReportPage() {
     { label: 'Đang mượn', value: availability[1].value, icon: BookMarked },
     { label: 'Mất / Hỏng', value: availability[2].value, icon: AlertTriangle },
   ];
-  const lowBooks = report.lowAvailabilityBooks || [];
+  const lowBooks = report?.lowAvailabilityBooks || [];
 
   return (
     <AppLayout
@@ -94,7 +94,7 @@ export default function InventoryReportPage() {
       subtitle="Tổng hợp tình trạng bản sao, tồn kho thấp và phân bổ theo nhóm sách."
       actions={<button className="btn btn-outline" onClick={() => loadReport(categoryId)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
+      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
       <form className="toolbar" onSubmit={applyCategoryFilter}>
         <div className="field">
           <label htmlFor="inventory-category">Thể loại</label>
@@ -124,7 +124,11 @@ export default function InventoryReportPage() {
           <RotateCcw size={17} />
         </button>
       </form>
-      {loading ? <LoadingBlock rows={4} /> : (
+      {loading ? <LoadingBlock rows={4} /> : !report ? (
+        <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
+          Hãy kiểm tra phiên đăng nhập hoặc kết nối backend rồi thử tải lại.
+        </EmptyState>
+      ) : (
         <>
           <div className="kpi-grid">
             {kpis.map(({ label, value, icon: Icon }) => (
@@ -137,7 +141,7 @@ export default function InventoryReportPage() {
 
           <div className="split">
             <div className="lib-card">
-              <h3 className="lib-card-title">Bản sao theo thể loại</h3>
+              <h3 className="lib-card-title">Đầu sách theo thể loại</h3>
               {categoryData.length ? <BarChart data={categoryData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu thể loại" />}
             </div>
             <div className="lib-card">

@@ -18,6 +18,19 @@ const copyStatuses = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'I
 const userStatuses = ['ACTIVE', 'INACTIVE', 'LOCKED'];
 const membershipStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE'];
 
+function isDateOnly(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
+}
+
 function dateRangeValidator(value, { req }) {
   if (!req.query.fromDate || !req.query.toDate) {
     return true;
@@ -33,12 +46,12 @@ function dateRangeValidator(value, { req }) {
 const commonDateValidators = [
   query('fromDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('From date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('From date must use YYYY-MM-DD.'),
   query('toDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('To date must be a valid date.')
+    .custom(isDateOnly)
+    .withMessage('To date must use YYYY-MM-DD.')
     .custom(dateRangeValidator),
 ];
 
@@ -107,6 +120,10 @@ const userStatisticsValidators = [
 ];
 
 module.exports = {
+  borrowingStatuses,
+  copyStatuses,
+  userStatuses,
+  membershipStatuses,
   borrowingReportValidators,
   inventoryReportValidators,
   userStatisticsValidators,

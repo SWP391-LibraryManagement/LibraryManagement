@@ -52,7 +52,6 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
 
     await writeAudit(context, 'REPORT_BORROWING_VIEW', {
       userId: actor.userId,
-      metadata: filters,
     });
 
     return report;
@@ -64,7 +63,6 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
 
     await writeAudit(context, 'REPORT_INVENTORY_VIEW', {
       userId: actor.userId,
-      metadata: filters,
     });
 
     return report;
@@ -76,16 +74,31 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
 
     await writeAudit(context, 'REPORT_USERS_VIEW', {
       userId: actor.userId,
-      metadata: filters,
     });
 
     return report;
+  }
+
+  async function auditAccessFailure(error, actor, context = {}) {
+    const statusCode = Number(error?.statusCode) || 500;
+    const code = statusCode >= 500 ? 'INTERNAL_ERROR' : error?.code || 'UNKNOWN_ERROR';
+
+    await writeAudit(context, 'REPORT_ACCESS_DENIED', {
+      userId: actor?.userId ?? null,
+      metadata: {
+        code,
+        statusCode,
+        method: context.method || null,
+        path: context.path || null,
+      },
+    });
   }
 
   return {
     getBorrowingReport,
     getInventoryReport,
     getUserStatistics,
+    auditAccessFailure,
   };
 }
 

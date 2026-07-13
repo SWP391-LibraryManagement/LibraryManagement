@@ -2,6 +2,7 @@ import axios from 'axios';
 import {
   getBorrowingErrorMessage,
   getLibraryFeatureErrorMessage,
+  getReportErrorMessage,
   getReservationErrorMessage,
 } from './apiErrorMessages';
 
@@ -91,6 +92,10 @@ function authorizedReservationRequest(config, fallbackMessage) {
   return authorizedRequest(config, fallbackMessage, getReservationErrorMessage);
 }
 
+function authorizedReportRequest(config, fallbackMessage) {
+  return authorizedRequest(config, fallbackMessage, getReportErrorMessage);
+}
+
 export const borrowingApi = {
   createRequest(copyIds) {
     return authorizedBorrowingRequest({ method: 'post', url: '/borrow-requests', data: { copyIds } }, 'Không thể gửi yêu cầu mượn.');
@@ -147,13 +152,13 @@ export const reservationApi = {
 
 export const reportApi = {
   borrowing(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/reports/borrowing', params }, 'Không thể tải báo cáo mượn sách.');
+    return authorizedReportRequest({ method: 'get', url: '/reports/borrowing', params }, 'Không thể tải báo cáo mượn sách.');
   },
   inventory(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/reports/inventory', params }, 'Không thể tải báo cáo tồn kho.');
+    return authorizedReportRequest({ method: 'get', url: '/reports/inventory', params }, 'Không thể tải báo cáo tồn kho.');
   },
   users(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/reports/users', params }, 'Không thể tải thống kê người dùng.');
+    return authorizedReportRequest({ method: 'get', url: '/reports/users', params }, 'Không thể tải thống kê người dùng.');
   },
 };
 

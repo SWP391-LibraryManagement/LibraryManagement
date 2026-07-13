@@ -88,3 +88,20 @@ export function getReservationErrorMessage(error, fallback) {
 
   return getLibraryFeatureErrorMessage(error, fallback);
 }
+
+export function getReportErrorMessage(error, fallback) {
+  if (!error.response) {
+    return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
+  }
+
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
+    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  }
+
+  if (error.response?.status === 403) {
+    return 'Tài khoản hiện tại không có quyền xem báo cáo này.';
+  }
+
+  return getLibraryFeatureErrorMessage(error, fallback);
+}

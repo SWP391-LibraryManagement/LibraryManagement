@@ -22,6 +22,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
   const fines = [];
   const reservations = clone(initialState.reservations || []);
   const memberStatuses = new Map();
+  const memberApprovedAt = new Map();
 
   function getUser(userId) {
     return authState.users.find((user) => user.userId === Number(userId)) || null;
@@ -122,7 +123,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         userStatus: user.status,
         email: user.email,
         memberStatus: memberStatuses.get(Number(userId)) || null,
-        approvedAt: memberStatuses.get(Number(userId)) === 'APPROVED' ? new Date() : null,
+        approvedAt: memberApprovedAt.get(Number(userId)) || null,
       });
     },
 
@@ -351,11 +352,17 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
   return {
     borrowingRepository,
-    approveMember(userId) {
-      memberStatuses.set(Number(userId), 'APPROVED');
+    approveMember(userId, approvedAt = new Date()) {
+      const normalizedUserId = Number(userId);
+      memberStatuses.set(normalizedUserId, 'APPROVED');
+      memberApprovedAt.set(normalizedUserId, new Date(approvedAt));
     },
     setMemberStatus(userId, status) {
-      memberStatuses.set(Number(userId), status);
+      const normalizedUserId = Number(userId);
+      memberStatuses.set(normalizedUserId, status);
+      if (status !== 'APPROVED') {
+        memberApprovedAt.delete(normalizedUserId);
+      }
     },
     state: {
       books,
@@ -365,6 +372,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       fines,
       reservations,
       memberStatuses,
+      memberApprovedAt,
     },
   };
 }
