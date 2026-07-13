@@ -1,12 +1,13 @@
+const crypto = require('crypto');
+
 process.env.BCRYPT_COST = '4';
-process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
+process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
 process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createNotificationService } = require('../src/services/notificationService');
-const { mapNotification } = require('../src/repositories/notificationRepository');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const {
   makeInMemoryNotificationDependencies,
@@ -131,7 +132,7 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(1);
   });
 
-  test('rejects missing template variables and redacts password reset token data', async () => {
+  test('rejects missing template variables and retains a fixed password reset payload summary', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -169,10 +170,7 @@ describe('FE10 notification management', () => {
       });
 
     expect(resetResponse.status).toBe(201);
-    expect(resetResponse.body.notification.safePayload).toMatchObject({
-      resetLink: '[REDACTED]',
-      resetToken: '[REDACTED]',
-    });
+    expect(resetResponse.body.notification.safePayload).toEqual({ redacted: true });
     expect(JSON.stringify(resetResponse.body)).not.toContain('secret-token');
   });
 
@@ -488,18 +486,16 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'ACCOUNT_VERIFICATION',
+        type: 'FINE_NOTICE',
         recipientEmail: 'reader@example.test',
-        templateKey: 'ACCOUNT_VERIFICATION',
+        templateKey: 'FINE_NOTICE',
         templateData: {
-          name: '<script>alert(1)</script>Bob',
-          purpose: 'VERIFY',
-          verificationLink: 'https://example.test/verify/member',
+          amount: '<script>alert(1)</script>5000',
         },
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.notification.safePayload.name).not.toContain('<script>');
+    expect(response.body.notification.safePayload.amount).not.toContain('<script>');
     expect(JSON.stringify(response.body)).not.toContain('<script>');
   });
 
@@ -603,13 +599,8 @@ describe('FE10 notification management', () => {
 
       const notification = notificationDependencies.state.notifications[0];
       expect(notification).toMatchObject({ status: 'SENT', title: null, body: null });
-      expect(notification.safePayload).toEqual(
-        expect.objectContaining(
-          type === 'ACCOUNT_VERIFICATION'
-            ? { verificationLink: '[REDACTED]' }
-            : { resetLink: '[REDACTED]' }
-        )
-      );
+      expect(notification.safePayload).toEqual({ redacted: true });
+      expect(notification).toMatchObject({ sourceFeature: null, sourceEntityType: null });
       expect(notificationDependencies.state.attempts).toEqual([
         expect.objectContaining({ status: 'SENT', providerMessageId: null }),
       ]);
@@ -697,9 +688,9 @@ describe('FE10 notification management', () => {
     }
   );
 
-  // FE10-H03 follow-up: sensitive request payloads and idempotency keys never cross
-  // persistence or response boundaries, while the raw key still deterministically replays.
-  test('redacts all sensitive request leaves and hashes the idempotency key for replay', async () => {
+  // FE10-H03 follow-up: sensitive caller metadata is replaced with a fixed summary and a
+  // keyed idempotency representation, while raw template data remains provider-only.
+  test('contains sensitive caller metadata and HMAC idempotency data while replaying once', async () => {
     const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -708,8 +699,9 @@ describe('FE10 notification management', () => {
       role: 'ADMIN',
     });
     const rawLink = 'https://example.test/verify/replay-link';
-    const rawCallbackUrl = 'https://example.test/callback/private-value';
-    const rawIdempotencyKey = 'sensitive-idempotency-private-value';
+    const rawSourceFeature = 'OTP-482913-source';
+    const rawSourceEntityType = 'reset-token-482913';
+    const rawIdempotencyKey = '123456';
     const payload = {
       type: 'ACCOUNT_VERIFICATION',
       recipientEmail: 'reader@example.test',
@@ -717,21 +709,30 @@ describe('FE10 notification management', () => {
       templateData: {
         name: 'Reader',
         verificationLink: rawLink,
-        callbackUrl: rawCallbackUrl,
-        nested: [{ value: rawCallbackUrl }],
+        [rawLink]: 'caller-controlled-value',
       },
-      sourceFeature: 'FE02',
+      sourceFeature: rawSourceFeature,
+      sourceEntityType: rawSourceEntityType,
+      sourceEntityId: 91,
       idempotencyKey: rawIdempotencyKey,
     };
 
-    const createResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload);
-    const replayResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload);
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let createResponse;
+    let replayResponse;
+
+    try {
+      createResponse = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send(payload);
+      replayResponse = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send(payload);
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
 
     expect(createResponse.status).toBe(201);
     expect(replayResponse.status).toBe(200);
@@ -745,14 +746,16 @@ describe('FE10 notification management', () => {
     const notification = notificationDependencies.state.notifications[0];
     expect(notification).toMatchObject({
       templateKey: 'ACCOUNT_VERIFICATION',
-      idempotencyKey: expect.stringMatching(/^sensitive-sha256:[a-f0-9]{64}$/),
-      safePayload: {
-        name: '[REDACTED]',
-        verificationLink: '[REDACTED]',
-        callbackUrl: '[REDACTED]',
-        nested: [{ value: '[REDACTED]' }],
-      },
+      sourceFeature: null,
+      sourceEntityType: null,
+      sourceEntityId: 91,
+      idempotencyKey: expect.stringMatching(/^sensitive-hmac-sha256:[a-f0-9]{64}$/),
+      safePayload: { redacted: true },
     });
+    expect(notification.idempotencyKey).not.toBe(rawIdempotencyKey);
+    expect(notification.idempotencyKey).not.toBe(
+      `sensitive-hmac-sha256:${crypto.createHash('sha256').update(rawIdempotencyKey).digest('hex')}`
+    );
 
     const persistedAndExposed = JSON.stringify({
       createResponse: createResponse.body,
@@ -760,15 +763,17 @@ describe('FE10 notification management', () => {
       notification,
       attempts: notificationDependencies.state.attempts,
       auditLogs: authDependencies.state.auditLogs,
+      capturedLogs: consoleErrorSpy.mock.calls,
     });
     expect(persistedAndExposed).not.toContain(rawLink);
-    expect(persistedAndExposed).not.toContain(rawCallbackUrl);
     expect(persistedAndExposed).not.toContain(rawIdempotencyKey);
+    expect(persistedAndExposed).not.toContain(rawSourceFeature);
+    expect(persistedAndExposed).not.toContain(rawSourceEntityType);
   });
 
   // FE10-H03 follow-up: a persistence transition failure is not a provider failure and must
-  // reach the existing safe error handler without recording a false FAILED attempt.
-  test('propagates a sensitive markSent failure without recording a false provider failure', async () => {
+  // be replaced before it reaches error-handler logging.
+  test('contains sensitive markSent failures without recording a false provider failure', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -777,40 +782,52 @@ describe('FE10 notification management', () => {
       role: 'ADMIN',
     });
     let markFailedCalled = false;
+    const rawLink = 'https://example.test/reset/transition-link';
+    const repositoryError = `notification transition storage failed: ${rawLink}`;
     notificationDependencies.notificationRepository.markSent = async () => {
-      throw new Error('notification transition storage failed');
+      throw new Error(repositoryError);
     };
     notificationDependencies.notificationRepository.markFailed = async () => {
       markFailedCalled = true;
       throw new Error('markFailed must not run');
     };
 
-    const response = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send({
-        type: 'PASSWORD_RESET',
-        recipientEmail: 'reader@example.test',
-        templateKey: 'PASSWORD_RESET',
-        templateData: { resetLink: 'https://example.test/reset/transition-link' },
-        sourceFeature: 'FE02',
-      });
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let response;
+
+    try {
+      response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({
+          type: 'PASSWORD_RESET',
+          recipientEmail: 'reader@example.test',
+          templateKey: 'PASSWORD_RESET',
+          templateData: { resetLink: rawLink },
+          sourceFeature: 'FE02',
+        });
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({
-      error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' },
+      error: {
+        code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
+        message: 'Internal server error.',
+      },
     });
     expect(markFailedCalled).toBe(false);
     expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
-    expect(JSON.stringify(response.body)).not.toContain('notification transition storage failed');
-    expect(JSON.stringify(response.body)).not.toContain('https://example.test/reset/transition-link');
-  });
-
-  test('maps the notification template key from repository rows', () => {
-    expect(mapNotification({ TemplateKey: 'PASSWORD_RESET' })).toMatchObject({
-      templateKey: 'PASSWORD_RESET',
+    const safeBoundaries = JSON.stringify({
+      response: response.body,
+      notification: notificationDependencies.state.notifications[0],
+      attempts: notificationDependencies.state.attempts,
+      capturedLogs: consoleErrorSpy.mock.calls,
     });
+    expect(safeBoundaries).not.toContain(repositoryError);
+    expect(safeBoundaries).not.toContain(rawLink);
   });
 
   // EC-FE10-004: a valid but non-canonical template must not reach persistence.
@@ -869,8 +886,8 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(0);
   });
 
-  // BR-FE10-004: redaction uses the same recursive normalized-key traversal as rejection.
-  test('redacts sensitive keys nested in safePayload arrays and objects', async () => {
+  // FE10-H03: sensitive requests retain a fixed safe payload summary, not caller-controlled shape.
+  test('stores only the fixed safe payload summary for nested sensitive request data', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -901,17 +918,6 @@ describe('FE10 notification management', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(notificationDependencies.state.notifications[0].safePayload).toMatchObject({
-      resetLink: '[REDACTED]',
-      context: [
-        {
-          'verification-link': '[REDACTED]',
-          details: {
-            reset_token: '[REDACTED]',
-            'user password': '[REDACTED]',
-          },
-        },
-      ],
-    });
+    expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
   });
 });

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const env = require('../config/env');
 const errors = require('../utils/safeErrors');
 
 const supportedTypes = [
@@ -87,23 +88,17 @@ function sanitizePayload(payload) {
   return result;
 }
 
-function redactSensitivePayload(payload) {
-  if (Array.isArray(payload)) {
-    return payload.map(redactSensitivePayload);
-  }
-
-  if (payload && typeof payload === 'object') {
-    return Object.fromEntries(
-      Object.entries(payload).map(([key, value]) => [key, redactSensitivePayload(value)])
-    );
-  }
-
-  return '[REDACTED]';
-}
-
 function deriveSensitiveIdempotencyKey(idempotencyKey) {
-  return `sensitive-sha256:${crypto
-    .createHash('sha256')
+  let jwtSecret;
+
+  try {
+    jwtSecret = env.requiredEnv('JWT_SECRET');
+  } catch (error) {
+    throw errors.internal('NOTIFICATION_CONFIG_ERROR', 'Notification configuration is incomplete.');
+  }
+
+  return `sensitive-hmac-sha256:${crypto
+    .createHmac('sha256', jwtSecret)
     .update(String(idempotencyKey))
     .digest('hex')}`;
 }
@@ -255,8 +250,10 @@ function createNotificationService({
 
     const isSensitiveNotification = sensitiveNotificationTypes.has(type);
     const templateData = isSensitiveNotification
-      ? redactSensitivePayload(rawTemplateData)
+      ? { redacted: true }
       : sanitizePayload(rawTemplateData);
+    const sourceFeature = isSensitiveNotification ? null : input.sourceFeature || null;
+    const sourceEntityType = isSensitiveNotification ? null : input.sourceEntityType || null;
     const idempotencyKey = input.idempotencyKey
       ? isSensitiveNotification
         ? deriveSensitiveIdempotencyKey(input.idempotencyKey)
@@ -296,8 +293,8 @@ function createNotificationService({
       templateKey,
       title: isSensitiveNotification ? null : renderedTitle,
       body: isSensitiveNotification ? null : renderedBody,
-      sourceFeature: input.sourceFeature || null,
-      sourceEntityType: input.sourceEntityType || null,
+      sourceFeature,
+      sourceEntityType,
       sourceEntityId: input.sourceEntityId || null,
       idempotencyKey,
       safePayload: templateData,
@@ -321,10 +318,17 @@ function createNotificationService({
       }
 
       if (!providerFailed) {
-        notification = await notificationRepository.markSent({
-          notificationId: notification.notificationId,
-          providerMessageId: null,
-        });
+        try {
+          notification = await notificationRepository.markSent({
+            notificationId: notification.notificationId,
+            providerMessageId: null,
+          });
+        } catch (error) {
+          throw errors.internal(
+            'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
+            'Notification delivery state could not be recorded.'
+          );
+        }
       }
     }
 
@@ -334,8 +338,8 @@ function createNotificationService({
       metadata: {
         type,
         channel,
-        sourceFeature: input.sourceFeature || null,
-        sourceEntityType: input.sourceEntityType || null,
+        sourceFeature,
+        sourceEntityType,
         sourceEntityId: input.sourceEntityId || null,
       },
     });

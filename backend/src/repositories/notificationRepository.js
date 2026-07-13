@@ -271,7 +271,6 @@ async function markFailed({ notificationId, safeErrorMessage }) {
 }
 
 module.exports = {
-  mapNotification,
   findTemplateByCode,
   findActiveByIdempotencyKey,
   createRequest,
