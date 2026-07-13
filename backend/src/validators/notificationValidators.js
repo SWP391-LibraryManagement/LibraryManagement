@@ -84,7 +84,7 @@ const processPendingNotificationsValidators = [
 
 const retryNotificationValidators = [
   param('id')
-    .isInt({ min: 1 })
+    .isInt({ min: 1, max: 2147483647 })
     .withMessage('Notification ID must be a positive integer.')
     .toInt(),
   handleValidationErrors,

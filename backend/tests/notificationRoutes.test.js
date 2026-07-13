@@ -302,7 +302,7 @@ describe('FE10 notification management', () => {
       .set('Authorization', authHeader(member.accessToken))
       .expect(403);
 
-    for (const notificationId of ['abc', '0', '-1', '1.5']) {
+    for (const notificationId of ['abc', '0', '-1', '1.5', '2147483648']) {
       const response = await request(app)
         .post(`/api/notifications/${notificationId}/retry`)
         .set('Authorization', authHeader(librarian.accessToken));

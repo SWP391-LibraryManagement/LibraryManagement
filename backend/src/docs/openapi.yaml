@@ -333,7 +333,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer, minimum: 1 }
+          schema: { type: integer, minimum: 1, maximum: 2147483647 }
       responses:
         '200':
           description: Failed non-sensitive notification returned to PENDING without delivery.
