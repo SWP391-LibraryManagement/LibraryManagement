@@ -329,7 +329,7 @@ stateDiagram-v2
 | GET | `/api/reservations` | Librarian/Admin | Query: bookId, memberId, status | Reservation list | Protected endpoint. |
 | PATCH | `/api/reservations/{reservationId}/process` | Librarian/Admin | Optional copyId | Processed reservation | Used for queue processing/manual hold. |
 | POST | `/api/reservations/process-queue` | Librarian/Admin/System | `{ bookId?: number, copyId?: number }` | Selected reservation or none | Optional if queue runs manually. |
-| POST | `/api/reservations/expire-holds` | Librarian/Admin/System | No body | Expired count, expired reservations, and promoted reservations | Manually expires overdue `NOTIFIED` holds and advances eligible queues; traces FR-FE08-019. |
+| POST | `/api/reservations/expire-holds` | Librarian/Admin | No body | Expired count, expired reservations, and promoted reservations | Manually expires overdue `NOTIFIED` holds and advances eligible queues; traces FR-FE08-019. |
 
 ---
 
