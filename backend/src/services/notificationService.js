@@ -29,7 +29,15 @@ const sensitiveQueueIdentifiers = new Set([
   'EMAIL_VERIFY',
 ]);
 const sensitiveKeyFragments = ['token', 'otp', 'password', 'verificationlink', 'resetlink'];
-const unsafeAuditSourceFragments = ['template', 'link', 'token', 'provider', 'stack', 'password', 'otp'];
+const unsafeSourceEntityTypeFragments = [
+  'template',
+  'link',
+  'token',
+  'provider',
+  'stack',
+  'password',
+  'otp',
+];
 const allowedSourceFeatures = new Set(['FE02', 'FE07', 'FE08', 'FE09', 'SYSTEM']);
 
 function normalizeRole(role) {
@@ -107,25 +115,6 @@ function normalizeSourceFeature(sourceFeature) {
 
 function isValidRecipientEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
-}
-
-function safeSourceEntityType(sourceEntityType) {
-  if (typeof sourceEntityType !== 'string') {
-    return null;
-  }
-
-  const normalizedValue = normalizePayloadKey(sourceEntityType);
-
-  if (unsafeAuditSourceFragments.some((fragment) => normalizedValue.includes(fragment))) {
-    return null;
-  }
-
-  const safeValue = sanitizeString(sourceEntityType)
-    .replace(/[^a-zA-Z0-9_\-\s]/g, '')
-    .trim()
-    .slice(0, 50);
-
-  return safeValue || null;
 }
 
 function isSensitiveQueueNotification(notification) {
@@ -266,7 +255,14 @@ function createNotificationService({
     }
   }
 
-  function validateServiceBoundaryInput(input) {
+  function validateServiceBoundaryInput(input, { isInternal = false } = {}) {
+    if (isInternal && (!input || typeof input !== 'object' || Array.isArray(input))) {
+      throw errors.badRequest(
+        'INVALID_NOTIFICATION_REQUEST',
+        'Notification request must be an object.'
+      );
+    }
+
     if (
       Object.prototype.hasOwnProperty.call(input, 'sourceEntityId') &&
       (!Number.isInteger(input.sourceEntityId) || input.sourceEntityId <= 0)
@@ -281,10 +277,148 @@ function createNotificationService({
       input.recipientEmail !== undefined &&
       input.recipientEmail !== null &&
       input.recipientEmail !== '' &&
-      !isValidRecipientEmail(input.recipientEmail)
+      (typeof input.recipientEmail !== 'string' || !isValidRecipientEmail(input.recipientEmail))
     ) {
       throw errors.badRequest('INVALID_RECIPIENT_EMAIL', 'Recipient email must be valid.');
     }
+
+    if (!isInternal) {
+      return input;
+    }
+
+    if (typeof input.type !== 'string') {
+      throw errors.badRequest(
+        'INVALID_NOTIFICATION_TYPE',
+        'Notification type must be a supported string.'
+      );
+    }
+
+    const type = input.type.trim().toUpperCase();
+
+    if (!supportedTypes.includes(type)) {
+      throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
+    }
+
+    let channel = 'EMAIL';
+
+    if (input.channel !== undefined && input.channel !== null && input.channel !== '') {
+      if (typeof input.channel !== 'string') {
+        throw errors.badRequest(
+          'INVALID_NOTIFICATION_CHANNEL',
+          'Notification channel must be a supported string.'
+        );
+      }
+
+      channel = input.channel.trim().toUpperCase();
+    }
+
+    if (channel !== 'EMAIL') {
+      throw errors.badRequest(
+        'UNSUPPORTED_NOTIFICATION_CHANNEL',
+        'Notification channel is not supported.'
+      );
+    }
+
+    if (
+      input.userId !== undefined &&
+      input.userId !== null &&
+      input.userId !== '' &&
+      (!Number.isInteger(input.userId) || input.userId <= 0)
+    ) {
+      throw errors.badRequest('INVALID_USER_ID', 'User ID must be a positive integer.');
+    }
+
+    if (typeof input.templateKey !== 'string') {
+      throw errors.badRequest(
+        'INVALID_TEMPLATE_KEY',
+        'Template key must be a non-empty string of at most 100 characters.'
+      );
+    }
+
+    const templateKey = input.templateKey.trim();
+
+    if (!templateKey || templateKey.length > 100) {
+      throw errors.badRequest(
+        'INVALID_TEMPLATE_KEY',
+        'Template key must be a non-empty string of at most 100 characters.'
+      );
+    }
+
+    if (
+      input.templateData !== undefined &&
+      input.templateData !== null &&
+      (typeof input.templateData !== 'object' || Array.isArray(input.templateData))
+    ) {
+      throw errors.badRequest('INVALID_TEMPLATE_DATA', 'Template data must be an object.');
+    }
+
+    let sourceEntityType = null;
+
+    if (
+      input.sourceEntityType !== undefined &&
+      input.sourceEntityType !== null &&
+      input.sourceEntityType !== ''
+    ) {
+      if (typeof input.sourceEntityType !== 'string') {
+        throw errors.badRequest(
+          'INVALID_SOURCE_ENTITY_TYPE',
+          'Source entity type must be a safe identifier of at most 50 characters.'
+        );
+      }
+
+      sourceEntityType = input.sourceEntityType.trim();
+      const normalizedSourceEntityType = normalizePayloadKey(sourceEntityType);
+      const isUnsafeSourceEntityType = unsafeSourceEntityTypeFragments.some((fragment) =>
+        normalizedSourceEntityType.includes(fragment)
+      );
+
+      if (
+        !sourceEntityType ||
+        sourceEntityType.length > 50 ||
+        !/^[a-zA-Z][a-zA-Z0-9_]*$/.test(sourceEntityType) ||
+        isUnsafeSourceEntityType
+      ) {
+        throw errors.badRequest(
+          'INVALID_SOURCE_ENTITY_TYPE',
+          'Source entity type must be a safe identifier of at most 50 characters.'
+        );
+      }
+    }
+
+    let idempotencyKey = null;
+
+    if (
+      input.idempotencyKey !== undefined &&
+      input.idempotencyKey !== null &&
+      input.idempotencyKey !== ''
+    ) {
+      if (typeof input.idempotencyKey !== 'string') {
+        throw errors.badRequest(
+          'INVALID_IDEMPOTENCY_KEY',
+          'Idempotency key must be a string of at most 100 characters.'
+        );
+      }
+
+      idempotencyKey = input.idempotencyKey.trim();
+
+      if (idempotencyKey.length > 100) {
+        throw errors.badRequest(
+          'INVALID_IDEMPOTENCY_KEY',
+          'Idempotency key must be a string of at most 100 characters.'
+        );
+      }
+    }
+
+    return {
+      ...input,
+      type,
+      channel,
+      userId: input.userId || null,
+      templateKey,
+      templateData: input.templateData ?? {},
+      sourceEntityType,
+      idempotencyKey,
+    };
   }
 
   async function createNotificationRequestWithSource(
@@ -292,12 +426,12 @@ function createNotificationService({
     { sourceFeature, auditUserId, isInternal },
     context = {}
   ) {
-    validateServiceBoundaryInput(input);
+    const requestInput = validateServiceBoundaryInput(input, { isInternal });
 
-    const type = String(input.type || '').toUpperCase();
-    const channel = String(input.channel || 'EMAIL').toUpperCase();
-    const templateKey = String(input.templateKey || '').trim();
-    const rawTemplateData = input.templateData || {};
+    const type = String(requestInput.type || '').toUpperCase();
+    const channel = String(requestInput.channel || 'EMAIL').toUpperCase();
+    const templateKey = String(requestInput.templateKey || '').trim();
+    const rawTemplateData = requestInput.templateData || {};
 
     if (!supportedTypes.includes(type)) {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
@@ -327,12 +461,12 @@ function createNotificationService({
       : sanitizePayload(rawTemplateData);
     const persistedSourceFeature = isSensitiveNotification ? null : sourceFeature || null;
     const auditSourceFeature = isSensitiveNotification && !isInternal ? null : sourceFeature || null;
-    const sourceEntityType = isSensitiveNotification ? null : input.sourceEntityType || null;
-    const sourceEntityId = input.sourceEntityId ?? null;
-    const idempotencyKey = input.idempotencyKey
+    const sourceEntityType = isSensitiveNotification ? null : requestInput.sourceEntityType || null;
+    const sourceEntityId = requestInput.sourceEntityId ?? null;
+    const idempotencyKey = requestInput.idempotencyKey
       ? isSensitiveNotification
-        ? deriveSensitiveIdempotencyKey(input.idempotencyKey)
-        : input.idempotencyKey
+        ? deriveSensitiveIdempotencyKey(requestInput.idempotencyKey)
+        : requestInput.idempotencyKey
       : null;
 
     if (idempotencyKey) {
@@ -352,7 +486,7 @@ function createNotificationService({
       throw errors.badRequest('TEMPLATE_NOT_AVAILABLE', 'Notification template is not available.');
     }
 
-    const recipient = await resolveRecipient(input);
+    const recipient = await resolveRecipient(requestInput);
 
     validateTemplateData(template, rawTemplateData);
 
@@ -421,7 +555,7 @@ function createNotificationService({
         type,
         channel,
         sourceFeature: auditSourceFeature,
-        sourceEntityType: isInternal ? safeSourceEntityType(input.sourceEntityType) : sourceEntityType,
+        sourceEntityType: isInternal ? requestInput.sourceEntityType || null : sourceEntityType,
         sourceEntityId,
       },
     };
@@ -472,7 +606,7 @@ function createNotificationService({
         }
 
         const result = await createNotificationRequestWithSource(
-          input || {},
+          input,
           { sourceFeature: boundSourceFeature, auditUserId: null, isInternal: true },
           context
         );

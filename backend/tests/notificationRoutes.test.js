@@ -1239,6 +1239,16 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
   });
 
+  function makeInternalRequestInput(overrides = {}) {
+    return {
+      type: 'DUE_DATE_REMINDER',
+      recipientEmail: 'reader@example.test',
+      templateKey: 'DUE_DATE_REMINDER',
+      templateData: { dueDate: '2026-07-20' },
+      ...overrides,
+    };
+  }
+
   // FE10-H05, BR-FE10-011: an in-process caller must bind one trusted source up front.
   test('rejects an unallowlisted source requester without side effects', () => {
     const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
@@ -1285,7 +1295,7 @@ describe('FE10 notification management', () => {
       recipientEmail: 'reader@example.test',
       templateKey: 'DUE_DATE_REMINDER',
       templateData: { dueDate: '2026-07-20' },
-      sourceEntityType: 'BORROW_DETAIL',
+      sourceEntityType: '  BORROW_DETAIL  ',
       sourceEntityId: 42,
       idempotencyKey: 'fe07-bound-source-replay',
     };
@@ -1317,7 +1327,7 @@ describe('FE10 notification management', () => {
     ]);
   });
 
-  // FE10-H05, FR-FE10-005: bypassing express-validator retains every shared policy check.
+  // FE10-H05, FR-FE10-005: bypassing express-validator retains the shared policy checks.
   test.each([
     [
       'canonical template mismatch',
@@ -1339,34 +1349,286 @@ describe('FE10 notification management', () => {
       },
       'SENSITIVE_TEMPLATE_DATA',
     ],
-    [
-      'a string source entity ID',
-      {
-        type: 'DUE_DATE_REMINDER',
-        recipientEmail: 'reader@example.test',
-        templateKey: 'DUE_DATE_REMINDER',
-        templateData: { dueDate: '2026-07-20' },
-        sourceEntityId: '42',
-      },
-      'INVALID_SOURCE_ENTITY_ID',
-    ],
-    [
-      'an invalid recipient email',
-      {
-        type: 'DUE_DATE_REMINDER',
-        recipientEmail: 'not-an-email',
-        templateKey: 'DUE_DATE_REMINDER',
-        templateData: { dueDate: '2026-07-20' },
-      },
-      'INVALID_RECIPIENT_EMAIL',
-    ],
   ])('rejects internal %s before persistence', async (_, input, code) => {
-    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const {
+      notificationService,
+      notificationDependencies,
+      authDependencies,
+      emailProviderMessages,
+    } = makeTestApp();
     const requester = notificationService.createSourceNotificationRequester('FE07');
 
     await expect(requester.createNotificationRequest(input)).rejects.toMatchObject({ code });
     expect(notificationDependencies.state.notifications).toHaveLength(0);
     expect(authDependencies.state.auditLogs).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
+  });
+
+  // FE10-H05 P1: the in-process requester must enforce every remaining HTTP-shape boundary
+  // before the shared notification pipeline can read, persist, audit, or deliver the request.
+  test.each([
+    [
+      'null input',
+      null,
+      'INVALID_NOTIFICATION_REQUEST',
+      'Notification request must be an object.',
+    ],
+    [
+      'array input',
+      [],
+      'INVALID_NOTIFICATION_REQUEST',
+      'Notification request must be an object.',
+    ],
+    [
+      'string input',
+      'request',
+      'INVALID_NOTIFICATION_REQUEST',
+      'Notification request must be an object.',
+    ],
+    [
+      'non-string type',
+      makeInternalRequestInput({ type: 42 }),
+      'INVALID_NOTIFICATION_TYPE',
+      'Notification type must be a supported string.',
+    ],
+    [
+      'unsupported type',
+      makeInternalRequestInput({ type: 'NOT_SUPPORTED' }),
+      'UNSUPPORTED_NOTIFICATION_TYPE',
+      'Notification type is not supported.',
+    ],
+    [
+      'non-string channel',
+      makeInternalRequestInput({ channel: 42 }),
+      'INVALID_NOTIFICATION_CHANNEL',
+      'Notification channel must be a supported string.',
+    ],
+    [
+      'unsupported channel',
+      makeInternalRequestInput({ channel: 'SMS' }),
+      'UNSUPPORTED_NOTIFICATION_CHANNEL',
+      'Notification channel is not supported.',
+    ],
+    [
+      'string userId',
+      makeInternalRequestInput({ userId: '1' }),
+      'INVALID_USER_ID',
+      'User ID must be a positive integer.',
+    ],
+    [
+      'zero userId',
+      makeInternalRequestInput({ userId: 0 }),
+      'INVALID_USER_ID',
+      'User ID must be a positive integer.',
+    ],
+    [
+      'negative userId',
+      makeInternalRequestInput({ userId: -1 }),
+      'INVALID_USER_ID',
+      'User ID must be a positive integer.',
+    ],
+    [
+      'decimal userId',
+      makeInternalRequestInput({ userId: 1.5 }),
+      'INVALID_USER_ID',
+      'User ID must be a positive integer.',
+    ],
+    [
+      'non-string recipient email',
+      makeInternalRequestInput({ recipientEmail: 42 }),
+      'INVALID_RECIPIENT_EMAIL',
+      'Recipient email must be valid.',
+    ],
+    [
+      'invalid recipient email',
+      makeInternalRequestInput({ recipientEmail: 'not-an-email' }),
+      'INVALID_RECIPIENT_EMAIL',
+      'Recipient email must be valid.',
+    ],
+    [
+      'non-string template key',
+      makeInternalRequestInput({ templateKey: 42 }),
+      'INVALID_TEMPLATE_KEY',
+      'Template key must be a non-empty string of at most 100 characters.',
+    ],
+    [
+      'empty template key',
+      makeInternalRequestInput({ templateKey: '' }),
+      'INVALID_TEMPLATE_KEY',
+      'Template key must be a non-empty string of at most 100 characters.',
+    ],
+    [
+      'blank template key',
+      makeInternalRequestInput({ templateKey: '   ' }),
+      'INVALID_TEMPLATE_KEY',
+      'Template key must be a non-empty string of at most 100 characters.',
+    ],
+    [
+      'overlong template key',
+      makeInternalRequestInput({ templateKey: 'T'.repeat(101) }),
+      'INVALID_TEMPLATE_KEY',
+      'Template key must be a non-empty string of at most 100 characters.',
+    ],
+    [
+      'string template data',
+      makeInternalRequestInput({ templateData: 'not-an-object' }),
+      'INVALID_TEMPLATE_DATA',
+      'Template data must be an object.',
+    ],
+    [
+      'array template data',
+      makeInternalRequestInput({ templateData: [] }),
+      'INVALID_TEMPLATE_DATA',
+      'Template data must be an object.',
+    ],
+    [
+      'non-string source entity type',
+      makeInternalRequestInput({ sourceEntityType: 42 }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'overlong source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'S'.repeat(51) }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'link-like source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'https://example.test/verify/raw-link' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'token-like source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'reset_token' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'OTP-like source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'OTP_EVENT' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'password-like source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'PASSWORD_EVENT' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'provider-like source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'PROVIDER_STACK' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'non-identifier source entity type',
+      makeInternalRequestInput({ sourceEntityType: 'Borrow Detail?' }),
+      'INVALID_SOURCE_ENTITY_TYPE',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+    [
+      'null source entity ID',
+      makeInternalRequestInput({ sourceEntityId: null }),
+      'INVALID_SOURCE_ENTITY_ID',
+      'Source entity ID must be a positive integer.',
+    ],
+    [
+      'string source entity ID',
+      makeInternalRequestInput({ sourceEntityId: '42' }),
+      'INVALID_SOURCE_ENTITY_ID',
+      'Source entity ID must be a positive integer.',
+    ],
+    [
+      'decimal source entity ID',
+      makeInternalRequestInput({ sourceEntityId: 42.5 }),
+      'INVALID_SOURCE_ENTITY_ID',
+      'Source entity ID must be a positive integer.',
+    ],
+    [
+      'zero source entity ID',
+      makeInternalRequestInput({ sourceEntityId: 0 }),
+      'INVALID_SOURCE_ENTITY_ID',
+      'Source entity ID must be a positive integer.',
+    ],
+    [
+      'negative source entity ID',
+      makeInternalRequestInput({ sourceEntityId: -1 }),
+      'INVALID_SOURCE_ENTITY_ID',
+      'Source entity ID must be a positive integer.',
+    ],
+    [
+      'non-string idempotency key',
+      makeInternalRequestInput({ idempotencyKey: 42 }),
+      'INVALID_IDEMPOTENCY_KEY',
+      'Idempotency key must be a string of at most 100 characters.',
+    ],
+    [
+      'overlong idempotency key',
+      makeInternalRequestInput({ idempotencyKey: 'I'.repeat(101) }),
+      'INVALID_IDEMPOTENCY_KEY',
+      'Idempotency key must be a string of at most 100 characters.',
+    ],
+  ])('rejects direct requester boundary case: %s', async (_, input, code, message) => {
+    const {
+      notificationService,
+      notificationDependencies,
+      authDependencies,
+      emailProviderMessages,
+    } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(requester.createNotificationRequest(input)).rejects.toMatchObject({ code, message });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
+  });
+
+  test('accepts optional null requester fields while sourceEntityId remains absent', async () => {
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    const result = await requester.createNotificationRequest(
+      makeInternalRequestInput({
+        channel: null,
+        userId: null,
+        sourceEntityType: null,
+        idempotencyKey: null,
+      })
+    );
+
+    expect(result).toEqual({ notificationId: expect.any(Number), status: 'PENDING' });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
+      channel: 'EMAIL',
+      userId: null,
+      sourceEntityType: null,
+      sourceEntityId: null,
+      idempotencyKey: null,
+    });
+  });
+
+  test.each([
+    ['  BORROW_DETAIL  ', 'BORROW_DETAIL'],
+    ['Reservation', 'Reservation'],
+    ['Fine', 'Fine'],
+  ])('persists validated source entity type %s as %s', async (sourceEntityType, expected) => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    const result = await requester.createNotificationRequest(
+      makeInternalRequestInput({ sourceEntityType, sourceEntityId: 42 })
+    );
+
+    expect(notificationDependencies.state.notifications[0].sourceEntityType).toBe(expected);
+    expect(authDependencies.state.auditLogs).toEqual([
+      expect.objectContaining({
+        userId: null,
+        targetId: result.notificationId,
+        metadata: expect.objectContaining({ sourceEntityType: expected, sourceEntityId: 42 }),
+      }),
+    ]);
   });
 
   // FE10-H05, FR-FE10-001: sensitive source requests keep the link provider-only while their
@@ -1383,7 +1645,7 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'ACCOUNT_VERIFICATION',
         templateData: { name: 'Reader', verificationLink: rawLink },
-        sourceEntityType: rawLink,
+        sourceEntityType: 'AUTH_EVENT',
         sourceEntityId: 9,
       },
       { userId: 456, ip: '127.0.0.1' }
@@ -1413,7 +1675,7 @@ describe('FE10 notification management', () => {
         targetId: result.notificationId,
         metadata: expect.objectContaining({
           sourceFeature: 'FE02',
-          sourceEntityType: null,
+          sourceEntityType: 'AUTH_EVENT',
           sourceEntityId: 9,
         }),
       }),
