@@ -12,6 +12,22 @@ const notificationTypes = [
 ];
 
 const channels = ['EMAIL'];
+const sourceFeatures = ['FE02', 'FE07', 'FE08', 'FE09', 'SYSTEM'];
+const unsafeSourceEntityTypeFragments = [
+  'template',
+  'link',
+  'token',
+  'provider',
+  'stack',
+  'password',
+  'otp',
+];
+
+function normalizeSourceEntityType(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[_\-\s]/g, '');
+}
 
 const createNotificationRequestValidators = [
   body('type')
@@ -52,14 +68,28 @@ const createNotificationRequestValidators = [
     .optional({ nullable: true, checkFalsy: true })
     .isString()
     .trim()
-    .isLength({ max: 20 })
-    .withMessage('Source feature must be at most 20 characters.'),
+    .toUpperCase()
+    .isIn(sourceFeatures)
+    .withMessage('Source feature must be one of FE02, FE07, FE08, FE09, SYSTEM.'),
   body('sourceEntityType')
     .optional({ nullable: true, checkFalsy: true })
     .isString()
     .trim()
     .isLength({ max: 50 })
-    .withMessage('Source entity type must be at most 50 characters.'),
+    .withMessage('Source entity type must be a safe identifier of at most 50 characters.')
+    .matches(/^[a-zA-Z][a-zA-Z0-9_]*$/)
+    .withMessage('Source entity type must be a safe identifier of at most 50 characters.')
+    .custom((value) => {
+      if (
+        unsafeSourceEntityTypeFragments.some((fragment) =>
+          normalizeSourceEntityType(value).includes(fragment)
+        )
+      ) {
+        throw new Error('Source entity type must be a safe identifier of at most 50 characters.');
+      }
+
+      return true;
+    }),
   body('sourceEntityId')
     .optional()
     .custom((value) => Number.isInteger(value) && value > 0)

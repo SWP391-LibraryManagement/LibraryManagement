@@ -30,7 +30,7 @@ function makeTestApp() {
 
         if (message.to.includes('fail')) {
           const error = new Error('smtp auth token secret stack trace');
-          error.safeMessage = 'Email provider unavailable.';
+          error.safeMessage = 'Provider unavailable: provider-secret https://provider.test/error';
           throw error;
         }
 
@@ -479,11 +479,19 @@ describe('FE10 notification management', () => {
         expect.objectContaining({ status: 'SENT' }),
         expect.objectContaining({
           status: 'FAILED',
-          safeErrorMessage: 'Email provider unavailable.',
+          safeErrorMessage: 'Notification delivery failed.',
         }),
       ])
     );
-    expect(JSON.stringify(notificationDependencies.state.attempts)).not.toContain('secret');
+    const persistedOrAudited = JSON.stringify({
+      notifications: notificationDependencies.state.notifications,
+      attempts: notificationDependencies.state.attempts,
+      auditLogs: authDependencies.state.auditLogs,
+      response: processResponse.body,
+    });
+    expect(persistedOrAudited).not.toContain('provider-secret');
+    expect(persistedOrAudited).not.toContain('https://provider.test/error');
+    expect(persistedOrAudited).not.toContain('smtp auth token secret stack trace');
     expect(JSON.stringify(emailProviderMessages)).not.toContain('https://example.test/verify/pending-link');
   });
 
@@ -686,6 +694,108 @@ describe('FE10 notification management', () => {
       status: 'PENDING',
     });
     expect(notificationDependencies.state.notifications[0].sourceEntityId).toBe(42);
+  });
+
+  // FE10-H09, BR-FE10-005, NFR-FE10-SEC-001: HTTP source metadata is validated before
+  // service work can create records or audits, and its rejected value never crosses the boundary.
+  test.each([
+    ['sourceFeature', 'FE99', 'Source feature must be one of FE02, FE07, FE08, FE09, SYSTEM.'],
+    [
+      'sourceEntityType',
+      'reset_token',
+      'Source entity type must be a safe identifier of at most 50 characters.',
+    ],
+  ])('rejects unsafe HTTP %s before persistence, audit, or response leakage', async (field, value, message) => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: `notif.http-${field}@example.test`,
+      role: 'ADMIN',
+    });
+    const auditLogCount = authDependencies.state.auditLogs.length;
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        [field]: value,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request.',
+        details: [{ field, message }],
+      },
+    });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(notificationDependencies.state.attempts).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(auditLogCount);
+    expect(emailProviderMessages).toHaveLength(0);
+    expect(JSON.stringify(response.body)).not.toContain(value);
+  });
+
+  // FE10-H09, BR-FE10-005: service validation remains mandatory if an HTTP caller bypasses
+  // express-validator, so unsafe metadata cannot be persisted or audited through that path.
+  test.each([
+    ['sourceFeature', 'FE99', 'INVALID_SOURCE_FEATURE'],
+    ['sourceEntityType', 'reset_token', 'INVALID_SOURCE_ENTITY_TYPE'],
+  ])('rejects unsafe HTTP %s at the service boundary without side effects', async (field, value, code) => {
+    const { notificationService, notificationDependencies, authDependencies, emailProviderMessages } =
+      makeTestApp();
+
+    await expect(
+      notificationService.createNotificationRequest(
+        {
+          type: 'DUE_DATE_REMINDER',
+          recipientEmail: 'reader@example.test',
+          templateKey: 'DUE_DATE_REMINDER',
+          templateData: { dueDate: '2026-07-20' },
+          [field]: value,
+        },
+        { userId: 1, roles: ['ADMIN'] }
+      )
+    ).rejects.toMatchObject({ code });
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(notificationDependencies.state.attempts).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
+  });
+
+  test('normalizes an allowed HTTP sourceFeature before persistence and audit', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.http-source-normalization@example.test',
+      role: 'ADMIN',
+    });
+
+    await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        sourceFeature: ' fe07 ',
+      })
+      .expect(201);
+
+    expect(notificationDependencies.state.notifications[0].sourceFeature).toBe('FE07');
+    expect(authDependencies.state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ metadata: expect.objectContaining({ sourceFeature: 'FE07' }) }),
+      ])
+    );
   });
 
   // BR-FE10-002: a template key outside the canonical pair is rejected before lookup.
@@ -1108,8 +1218,8 @@ describe('FE10 notification management', () => {
       role: 'ADMIN',
     });
     const rawLink = 'https://example.test/verify/replay-link';
-    const rawSourceFeature = 'OTP-482913-source';
-    const rawSourceEntityType = 'reset-token-482913';
+    const rawSourceFeature = 'FE02';
+    const rawSourceEntityType = 'AUTH_EVENT';
     const rawIdempotencyKey = '123456';
     const payload = {
       type: 'ACCOUNT_VERIFICATION',
