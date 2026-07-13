@@ -29,6 +29,8 @@ const sensitiveQueueIdentifiers = new Set([
   'EMAIL_VERIFY',
 ]);
 const sensitiveKeyFragments = ['token', 'otp', 'password', 'verificationlink', 'resetlink'];
+const unsafeAuditSourceFragments = ['template', 'link', 'token', 'provider', 'stack', 'password', 'otp'];
+const allowedSourceFeatures = new Set(['FE02', 'FE07', 'FE08', 'FE09', 'SYSTEM']);
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -97,6 +99,33 @@ function safeInternalError(code, message) {
   const error = errors.internal(code, message);
   error.stack = undefined;
   return error;
+}
+
+function normalizeSourceFeature(sourceFeature) {
+  return String(sourceFeature || '').trim().toUpperCase();
+}
+
+function isValidRecipientEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
+}
+
+function safeSourceEntityType(sourceEntityType) {
+  if (typeof sourceEntityType !== 'string') {
+    return null;
+  }
+
+  const normalizedValue = normalizePayloadKey(sourceEntityType);
+
+  if (unsafeAuditSourceFragments.some((fragment) => normalizedValue.includes(fragment))) {
+    return null;
+  }
+
+  const safeValue = sanitizeString(sourceEntityType)
+    .replace(/[^a-zA-Z0-9_\-\s]/g, '')
+    .trim()
+    .slice(0, 50);
+
+  return safeValue || null;
 }
 
 function isSensitiveQueueNotification(notification) {
@@ -173,7 +202,9 @@ function createNotificationService({
     }
 
     await auditLogRepository.create({
-      userId: extra.userId ?? context?.userId ?? null,
+      userId: Object.prototype.hasOwnProperty.call(extra, 'userId')
+        ? extra.userId
+        : context?.userId ?? null,
       action,
       targetType: extra.targetType || 'NOTIFICATION',
       targetId: extra.targetId ?? null,
@@ -235,8 +266,33 @@ function createNotificationService({
     }
   }
 
-  async function createNotificationRequest(input, actor, context = {}) {
-    requireInternalActor(actor);
+  function validateServiceBoundaryInput(input) {
+    if (
+      Object.prototype.hasOwnProperty.call(input, 'sourceEntityId') &&
+      (!Number.isInteger(input.sourceEntityId) || input.sourceEntityId <= 0)
+    ) {
+      throw errors.badRequest(
+        'INVALID_SOURCE_ENTITY_ID',
+        'Source entity ID must be a positive integer.'
+      );
+    }
+
+    if (
+      input.recipientEmail !== undefined &&
+      input.recipientEmail !== null &&
+      input.recipientEmail !== '' &&
+      !isValidRecipientEmail(input.recipientEmail)
+    ) {
+      throw errors.badRequest('INVALID_RECIPIENT_EMAIL', 'Recipient email must be valid.');
+    }
+  }
+
+  async function createNotificationRequestWithSource(
+    input,
+    { sourceFeature, auditUserId, isInternal },
+    context = {}
+  ) {
+    validateServiceBoundaryInput(input);
 
     const type = String(input.type || '').toUpperCase();
     const channel = String(input.channel || 'EMAIL').toUpperCase();
@@ -269,8 +325,10 @@ function createNotificationService({
     const templateData = isSensitiveNotification
       ? { redacted: true }
       : sanitizePayload(rawTemplateData);
-    const sourceFeature = isSensitiveNotification ? null : input.sourceFeature || null;
+    const persistedSourceFeature = isSensitiveNotification ? null : sourceFeature || null;
+    const auditSourceFeature = isSensitiveNotification && !isInternal ? null : sourceFeature || null;
     const sourceEntityType = isSensitiveNotification ? null : input.sourceEntityType || null;
+    const sourceEntityId = input.sourceEntityId ?? null;
     const idempotencyKey = input.idempotencyKey
       ? isSensitiveNotification
         ? deriveSensitiveIdempotencyKey(input.idempotencyKey)
@@ -310,9 +368,9 @@ function createNotificationService({
       templateKey,
       title: isSensitiveNotification ? null : renderedTitle,
       body: isSensitiveNotification ? null : renderedBody,
-      sourceFeature,
+      sourceFeature: persistedSourceFeature,
       sourceEntityType,
-      sourceEntityId: input.sourceEntityId || null,
+      sourceEntityId,
       idempotencyKey,
       safePayload: templateData,
     });
@@ -357,14 +415,14 @@ function createNotificationService({
     }
 
     const auditDetails = {
-      userId: actor.userId,
+      userId: auditUserId,
       targetId: notification.notificationId,
       metadata: {
         type,
         channel,
-        sourceFeature,
-        sourceEntityType,
-        sourceEntityId: input.sourceEntityId || null,
+        sourceFeature: auditSourceFeature,
+        sourceEntityType: isInternal ? safeSourceEntityType(input.sourceEntityType) : sourceEntityType,
+        sourceEntityId,
       },
     };
 
@@ -384,6 +442,46 @@ function createNotificationService({
     return {
       duplicate: false,
       notification,
+    };
+  }
+
+  async function createNotificationRequest(input, actor, context = {}) {
+    requireInternalActor(actor);
+
+    return createNotificationRequestWithSource(
+      input,
+      { sourceFeature: input.sourceFeature || null, auditUserId: actor.userId, isInternal: false },
+      context
+    );
+  }
+
+  function createSourceNotificationRequester(sourceFeature) {
+    const boundSourceFeature = normalizeSourceFeature(sourceFeature);
+
+    if (!allowedSourceFeatures.has(boundSourceFeature)) {
+      throw errors.badRequest('SOURCE_REQUESTER_NOT_ALLOWED', 'Notification source is not allowed.');
+    }
+
+    return {
+      async createNotificationRequest(input, context = {}) {
+        if (Object.prototype.hasOwnProperty.call(input || {}, 'sourceFeature')) {
+          throw errors.badRequest(
+            'SOURCE_FEATURE_OVERRIDE',
+            'Notification source cannot be overridden.'
+          );
+        }
+
+        const result = await createNotificationRequestWithSource(
+          input || {},
+          { sourceFeature: boundSourceFeature, auditUserId: null, isInternal: true },
+          context
+        );
+
+        return {
+          notificationId: result.notification.notificationId,
+          status: result.notification.status,
+        };
+      },
     };
   }
 
@@ -444,6 +542,7 @@ function createNotificationService({
 
   return {
     createNotificationRequest,
+    createSourceNotificationRequester,
     processPendingNotifications,
   };
 }

@@ -38,7 +38,14 @@ function makeTestApp() {
   });
   const app = createApp({ authService, notificationService });
 
-  return { app, authService, authDependencies, notificationDependencies, emailProviderMessages };
+  return {
+    app,
+    authService,
+    notificationService,
+    authDependencies,
+    notificationDependencies,
+    emailProviderMessages,
+  };
 }
 
 async function createVerifiedUser({ app, authDependencies, email, role = 'MEMBER' }) {
@@ -1230,5 +1237,196 @@ describe('FE10 notification management', () => {
 
     expect(response.status).toBe(201);
     expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
+  });
+
+  // FE10-H05, BR-FE10-011: an in-process caller must bind one trusted source up front.
+  test('rejects an unallowlisted source requester without side effects', () => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+
+    expect(() => notificationService.createSourceNotificationRequester('FE99')).toThrow(
+      expect.objectContaining({
+        code: 'SOURCE_REQUESTER_NOT_ALLOWED',
+        message: 'Notification source is not allowed.',
+      })
+    );
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+  });
+
+  // FE10-H05, NFR-FE10-SEC-006: payloads cannot replace a construction-bound source.
+  test('rejects an internal sourceFeature override before persistence', async () => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(
+      requester.createNotificationRequest({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        sourceFeature: 'FE07',
+      })
+    ).rejects.toMatchObject({
+      code: 'SOURCE_FEATURE_OVERRIDE',
+      message: 'Notification source cannot be overridden.',
+    });
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+  });
+
+  // FE10-H05, FR-FE10-004: internal non-sensitive events use the shared queued policy and
+  // project only the public summary while recording the bound source in a null-user audit.
+  test('queues and replays a bound FE07 request with a null-user source audit', async () => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester(' fe07 ');
+    const input = {
+      type: 'DUE_DATE_REMINDER',
+      recipientEmail: 'reader@example.test',
+      templateKey: 'DUE_DATE_REMINDER',
+      templateData: { dueDate: '2026-07-20' },
+      sourceEntityType: 'BORROW_DETAIL',
+      sourceEntityId: 42,
+      idempotencyKey: 'fe07-bound-source-replay',
+    };
+
+    const created = await requester.createNotificationRequest(input, { userId: 777, ip: '127.0.0.1' });
+    const replayed = await requester.createNotificationRequest(input, { userId: 888, ip: '127.0.0.1' });
+
+    expect(created).toEqual({ notificationId: expect.any(Number), status: 'PENDING' });
+    expect(replayed).toEqual(created);
+    expect(notificationDependencies.state.notifications).toEqual([
+      expect.objectContaining({
+        sourceFeature: 'FE07',
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 42,
+        status: 'PENDING',
+      }),
+    ]);
+    expect(authDependencies.state.auditLogs).toEqual([
+      expect.objectContaining({
+        userId: null,
+        action: 'NOTIFICATION_REQUEST_CREATE',
+        targetId: created.notificationId,
+        metadata: expect.objectContaining({
+          sourceFeature: 'FE07',
+          sourceEntityType: 'BORROW_DETAIL',
+          sourceEntityId: 42,
+        }),
+      }),
+    ]);
+  });
+
+  // FE10-H05, FR-FE10-005: bypassing express-validator retains every shared policy check.
+  test.each([
+    [
+      'canonical template mismatch',
+      {
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'FINE_NOTICE',
+        templateData: { dueDate: '2026-07-20' },
+      },
+      'CANONICAL_TEMPLATE_MISMATCH',
+    ],
+    [
+      'nested secret-like queued data',
+      {
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20', nested: { reset_token: 'secret' } },
+      },
+      'SENSITIVE_TEMPLATE_DATA',
+    ],
+    [
+      'a string source entity ID',
+      {
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        sourceEntityId: '42',
+      },
+      'INVALID_SOURCE_ENTITY_ID',
+    ],
+    [
+      'an invalid recipient email',
+      {
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'not-an-email',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+      },
+      'INVALID_RECIPIENT_EMAIL',
+    ],
+  ])('rejects internal %s before persistence', async (_, input, code) => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(requester.createNotificationRequest(input)).rejects.toMatchObject({ code });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+  });
+
+  // FE10-H05, FR-FE10-001: sensitive source requests keep the link provider-only while their
+  // audit identifies the trusted bound source rather than caller-controlled metadata.
+  test('sends a bound FE02 sensitive request with redacted persistence and safe source audit', async () => {
+    const { notificationService, notificationDependencies, authDependencies, emailProviderMessages } =
+      makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
+    const rawLink = 'https://example.test/verify/h05-provider-only-link';
+
+    const result = await requester.createNotificationRequest(
+      {
+        type: 'ACCOUNT_VERIFICATION',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { name: 'Reader', verificationLink: rawLink },
+        sourceEntityType: rawLink,
+        sourceEntityId: 9,
+      },
+      { userId: 456, ip: '127.0.0.1' }
+    );
+
+    expect(result).toEqual({ notificationId: expect.any(Number), status: 'SENT' });
+    expect(emailProviderMessages).toEqual([
+      expect.objectContaining({
+        to: 'reader@example.test',
+        subject: 'Verify Reader',
+        body: `Verification link: ${rawLink}`,
+      }),
+    ]);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
+      status: 'SENT',
+      title: null,
+      body: null,
+      safePayload: { redacted: true },
+      sourceFeature: null,
+      sourceEntityType: null,
+      sourceEntityId: 9,
+    });
+    expect(authDependencies.state.auditLogs).toEqual([
+      expect.objectContaining({
+        userId: null,
+        action: 'NOTIFICATION_REQUEST_CREATE',
+        targetId: result.notificationId,
+        metadata: expect.objectContaining({
+          sourceFeature: 'FE02',
+          sourceEntityType: null,
+          sourceEntityId: 9,
+        }),
+      }),
+    ]);
+
+    const storedOrAudited = JSON.stringify({
+      result,
+      notification: notificationDependencies.state.notifications[0],
+      attempts: notificationDependencies.state.attempts,
+      auditLogs: authDependencies.state.auditLogs,
+    });
+    expect(storedOrAudited).not.toContain(rawLink);
+    expect(storedOrAudited).not.toContain('Verify Reader');
+    expect(storedOrAudited).not.toContain('Verification link:');
   });
 });
