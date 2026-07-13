@@ -62,10 +62,10 @@ POST /api/reservations/expire-holds
 The librarian page will expose one explicit staff command for this existing backend operation. On success it will:
 
 1. Read `expiredCount` and the length of `promoted` from the response.
-2. Show a Vietnamese success message with both counts.
-3. Reload reservations from the backend instead of predicting state changes locally.
+2. Reload reservations from the backend instead of predicting state changes locally.
+3. Show a Vietnamese success message with both counts only after the canonical reload succeeds.
 
-On failure it will show the reservation-specific error and keep the current rows unchanged. The command will be disabled while a request or list reload is in progress to avoid duplicate submissions.
+If the expiration request or canonical reload fails, the page will show the reservation-specific error, keep the current rows unchanged, and avoid a false success message. The command will be disabled while a request or list reload is in progress to avoid duplicate submissions.
 
 ### 3.4 Unsupported Actions
 
@@ -80,9 +80,9 @@ Librarian action
   -> reservationApi.expireHolds()
   -> existing POST /api/reservations/expire-holds
   -> backend expires overdue NOTIFIED holds and promotes eligible reservations
-  -> frontend reports counts
   -> GET /api/reservations reloads canonical server state
   -> mapReservation()/statusToUi() renders the updated lifecycle states
+  -> frontend reports counts after the canonical reload succeeds
 ```
 
 No optimistic mutation is used for hold expiration, fulfillment, or deletion. The backend response and reload remain the source of truth.

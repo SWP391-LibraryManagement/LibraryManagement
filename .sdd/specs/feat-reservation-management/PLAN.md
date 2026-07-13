@@ -62,8 +62,8 @@ Not included:
 ### 3.3 Member Reservation Actions
 
 - Return only the current member's reservations from `/api/reservations/me`.
-- Allow cancellation only for the owner and only while the reservation is `ACTIVE`.
-- Mark cancelled records as `CANCELLED` with `CancelledAt`.
+- Allow cancellation only for the owner while the reservation is `ACTIVE` or `NOTIFIED`.
+- Mark cancelled records as `CANCELLED` with `CancelledAt`; cancelling a `NOTIFIED` reservation releases its held copy atomically.
 
 ### 3.4 Staff Queue Actions
 
@@ -84,7 +84,7 @@ Not included:
 - Map `NOTIFIED` to ready for pickup and `FULFILLED` to completed.
 - Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue; show `Ready to pick up` (`NOTIFIED`) in the all-reservations list only.
 - Use a reservation-only Vietnamese error resolver.
-- Expose the existing hold-expiration endpoint to staff and reload server state after success.
+- Expose the existing hold-expiration endpoint to staff, reload canonical server state, and report success only after that reload succeeds.
 - Do not expose local-only fulfillment or deletion controls.
 
 ---

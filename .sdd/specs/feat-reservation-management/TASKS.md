@@ -80,7 +80,7 @@ Updated: 2026-07-13
 | FR-FE08-007 | FE08-T18, FE08-T22, FE08-T23 |
 | FR-FE08-009 | FE08-T22, FE08-T23, FE08-T27 |
 | FR-FE08-017 | FE08-T12, FE08-T24, FE08-T27 |
-| FR-FE08-019 | FE08-T25, FE08-T27 |
+| FR-FE08-019 | FE08-T25, FE08-T27; `backend/tests/integration.test.js` and `backend/tests/reservationRoutes.test.js` expire-holds promotion coverage |
 | NFR-FE08-UX-001 | FE08-T21, FE08-T22, FE08-T24, FE08-T27 |
 
 ## 7. Still Outside This Slice

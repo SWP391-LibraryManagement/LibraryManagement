@@ -13,6 +13,7 @@ import { DEMO_ALL_RESERVATIONS, fmtDate, mapReservation } from '../../utils/libr
 import {
   getExpireHoldsSuccessMessage,
   isActiveReservationQueueStatus,
+  runHoldExpirationWorkflow,
 } from '../../utils/reservationViewState';
 
 const PAGE_SIZE = 5;
@@ -103,9 +104,11 @@ export default function ReservationsLibrarianPage() {
   async function expireHolds() {
     setExpiringHolds(true);
     try {
-      const result = await reservationApi.expireHolds();
-      await loadReservations({ fallbackToDemo: false });
-      showToast(getExpireHoldsSuccessMessage(result), 'success');
+      await runHoldExpirationWorkflow({
+        expireHolds: reservationApi.expireHolds,
+        reloadReservations: loadReservations,
+        onSuccess: (result) => showToast(getExpireHoldsSuccessMessage(result), 'success'),
+      });
     } catch (error) {
       showToast(error.message, 'error');
     } finally {

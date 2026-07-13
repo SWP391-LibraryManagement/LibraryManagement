@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Follow `.sdd/specs/feat-reservation-management/SPEC.md` version 0.3.0 as the behavior source of truth.
+- Follow `.sdd/specs/feat-reservation-management/SPEC.md` version 0.3.1 as the behavior source of truth.
 - Use only the existing `POST /api/reservations/expire-holds` backend contract.
 - Do not add backend endpoints, database changes, status values, dependencies, or automatic scheduled expiration.
 - Do not implement FE07 fulfillment, FE10 delivery changes, or server-side pagination.
@@ -45,7 +45,7 @@
 
 **Interfaces:**
 - Consumes: backend reservation states `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, and `EXPIRED`.
-- Produces: `statusToUi(status, metadata)`, `isActiveReservationQueueStatus(status)`, and `getExpireHoldsSuccessMessage(result)`.
+- Produces: `statusToUi(status, metadata)`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)`, and `runHoldExpirationWorkflow(dependencies)`.
 
 - [ ] **Step 1: Write failing lifecycle and view-state tests**
 
@@ -152,6 +152,13 @@ export function getExpireHoldsSuccessMessage({ expiredCount = 0, promoted = [] }
   const normalizedExpiredCount = Number(expiredCount) || 0;
   const promotedCount = Array.isArray(promoted) ? promoted.length : 0;
   return `Đã xử lý ${normalizedExpiredCount} lượt giữ chỗ hết hạn và chuyển tiếp ${promotedCount} lượt đặt chỗ.`;
+}
+
+export async function runHoldExpirationWorkflow({ expireHolds, reloadReservations, onSuccess }) {
+  const result = await expireHolds();
+  await reloadReservations({ fallbackToDemo: false });
+  await onSuccess?.(result);
+  return result;
 }
 ```
 
@@ -393,23 +400,25 @@ git commit -m "fix: localize FE08 reservation API errors"
 - Test: `frontend/test/reservationFrontend.test.js`
 
 **Interfaces:**
-- Consumes: `reservationApi.expireHolds()`, `isActiveReservationQueueStatus(status)`, and `getExpireHoldsSuccessMessage(result)` from Tasks 1-2.
-- Produces: a staff action that reports expired/promoted counts and then calls `loadReservations()` to restore canonical server state.
+- Consumes: `reservationApi.expireHolds()`, `isActiveReservationQueueStatus(status)`, `getExpireHoldsSuccessMessage(result)`, and `runHoldExpirationWorkflow(dependencies)` from Tasks 1-2.
+- Produces: a staff action that restores canonical server state and reports expired/promoted counts only after reload succeeds.
 
 - [ ] **Step 1: Add and run the failing page contract test**
 
 Append this test to `frontend/test/reservationFrontend.test.js`:
 
 ```js
-test('librarian page uses the server expiration flow and omits local-only actions', async () => {
+test('librarian page wires the hold expiration workflow and omits local-only actions', async () => {
   const source = await readFile(
     new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
     'utf8',
   );
 
-  assert.match(source, /reservationApi\.expireHolds\(\)/);
+  assert.match(source, /runHoldExpirationWorkflow/);
+  assert.match(source, /expireHolds: reservationApi\.expireHolds/);
+  assert.match(source, /reloadReservations: loadReservations/);
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
-  assert.match(source, /getExpireHoldsSuccessMessage\(result\)/);
+  assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
   assert.doesNotMatch(source, /function fulfill\(/);
   assert.doesNotMatch(source, /function remove\(/);
   assert.doesNotMatch(source, /> Đã giao</);
@@ -423,7 +432,7 @@ Run:
 node --test --test-name-pattern="librarian page" frontend/test/reservationFrontend.test.js
 ```
 
-Expected: FAIL because the page does not call `expireHolds()`, still defines `fulfill()`/`remove()`, and still renders `Đã giao`/`Xóa` controls.
+Expected: FAIL because the page does not wire `runHoldExpirationWorkflow()`, still defines `fulfill()`/`remove()`, and still renders `Đã giao`/`Xóa` controls. The pure helper tests separately verify expiration -> canonical reload -> success ordering and ensure reload failures do not report success.
 
 - [ ] **Step 2: Replace imports and add expiration state**
 
@@ -465,9 +474,11 @@ Add after `confirmNotify()` and remove the existing `fulfill()` and `remove()` f
 async function expireHolds() {
   setExpiringHolds(true);
   try {
-    const result = await reservationApi.expireHolds();
-    showToast(getExpireHoldsSuccessMessage(result), 'success');
-    await loadReservations();
+    await runHoldExpirationWorkflow({
+      expireHolds: reservationApi.expireHolds,
+      reloadReservations: loadReservations,
+      onSuccess: (result) => showToast(getExpireHoldsSuccessMessage(result), 'success'),
+    });
   } catch (error) {
     showToast(error.message, 'error');
   } finally {

@@ -54,6 +54,59 @@ test('formats expired and promoted counts from the backend response', async () =
   );
 });
 
+test('hold expiration workflow expires before reloading canonical state and then reports success', async () => {
+  const { runHoldExpirationWorkflow } = await loadReservationViewState();
+  const calls = [];
+
+  const result = await runHoldExpirationWorkflow({
+    expireHolds: async () => {
+      calls.push('expire');
+      return { expiredCount: 2 };
+    },
+    reloadReservations: async (options) => {
+      calls.push(['reload', options]);
+    },
+    onSuccess: (expirationResult) => {
+      calls.push(['success', expirationResult]);
+    },
+  });
+
+  assert.deepEqual(calls, [
+    'expire',
+    ['reload', { fallbackToDemo: false }],
+    ['success', { expiredCount: 2 }],
+  ]);
+  assert.deepEqual(result, { expiredCount: 2 });
+});
+
+test('hold expiration workflow propagates reload failures without reporting success', async () => {
+  const { runHoldExpirationWorkflow } = await loadReservationViewState();
+  const reloadError = new Error('Reload failed');
+  const calls = [];
+
+  await assert.rejects(
+    runHoldExpirationWorkflow({
+      expireHolds: async () => {
+        calls.push('expire');
+        return { expiredCount: 2 };
+      },
+      reloadReservations: async (options) => {
+        calls.push(['reload', options]);
+        throw reloadError;
+      },
+      onSuccess: () => {
+        calls.push('success');
+      },
+    }),
+    reloadError,
+  );
+
+  assert.deepEqual(calls, [
+    'expire',
+    ['reload', { fallbackToDemo: false }],
+  ]);
+});
+
 async function loadReservationApiSource() {
   return readFile(
     new URL('../src/api/libraryFeatureApi.js', import.meta.url),
@@ -95,29 +148,25 @@ test('reservation API posts hold expiration without a request body', async () =>
   assert.doesNotMatch(expireHoldsSource, /\bdata\s*:/);
 });
 
-test('librarian page uses the server expiration flow and omits local-only actions', async () => {
+test('librarian page wires the hold expiration workflow and omits local-only actions', async () => {
   const source = await readFile(
     new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
     'utf8',
   );
   const loadReservationsStart = source.indexOf('async function loadReservations');
   const loadReservationsEnd = source.indexOf('\n  useEffect(', loadReservationsStart);
-  const expireHoldsStart = source.indexOf('async function expireHolds');
-  const expireHoldsEnd = source.indexOf('\n\n  return (', expireHoldsStart);
   const loadReservationsSource = source.slice(loadReservationsStart, loadReservationsEnd);
-  const expireHoldsSource = source.slice(expireHoldsStart, expireHoldsEnd);
 
   assert.match(source, /async function loadReservations\(\{ fallbackToDemo = true \} = \{\}\)/);
   assert.match(
     loadReservationsSource,
     /if \(!fallbackToDemo\) \{\s*throw error;\s*\}\s*setRows\(DEMO_ALL_RESERVATIONS\)/,
   );
-  assert.match(source, /reservationApi\.expireHolds\(\)/);
+  assert.match(source, /runHoldExpirationWorkflow/);
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
-  assert.match(
-    expireHoldsSource,
-    /const result = await reservationApi\.expireHolds\(\);\s*await loadReservations\(\{ fallbackToDemo: false \}\);\s*showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\);/,
-  );
+  assert.match(source, /expireHolds: reservationApi\.expireHolds/);
+  assert.match(source, /reloadReservations: loadReservations/);
+  assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
   assert.match(source, /disabled=\{loading \|\| expiringHolds \|\| isDemo\}/);
   assert.match(source, /onClick=\{loadReservations\} disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /POST \/api\/reservations\/expire-holds/);

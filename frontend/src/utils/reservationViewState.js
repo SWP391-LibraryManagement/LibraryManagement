@@ -9,3 +9,14 @@ export function getExpireHoldsSuccessMessage({ expiredCount = 0, promoted = [] }
   const promotedCount = Array.isArray(promoted) ? promoted.length : 0;
   return `Đã xử lý ${normalizedExpiredCount} lượt giữ chỗ hết hạn và chuyển tiếp ${promotedCount} lượt đặt chỗ.`;
 }
+
+export async function runHoldExpirationWorkflow({
+  expireHolds,
+  reloadReservations,
+  onSuccess,
+}) {
+  const result = await expireHolds();
+  await reloadReservations({ fallbackToDemo: false });
+  await onSuccess?.(result);
+  return result;
+}
