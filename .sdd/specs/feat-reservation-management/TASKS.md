@@ -4,7 +4,7 @@ Status: READY FOR REVIEW
 
 Owner: Nhat
 
-Updated: 2026-06-10
+Updated: 2026-07-13
 
 ---
 
@@ -38,14 +38,23 @@ Updated: 2026-06-10
 - [x] FE08-T20 Add accessibility: table captions, header scopes, form labels, keyboard support.
 - [x] FE08-T21 Add loading, empty, and error states on all screens.
 
-## 4. Validation
+## 4. Frontend Correctness Tasks
 
-- [x] `npm test` in `backend`.
-- [x] `npm.cmd --prefix frontend run lint` passed.
-- [x] `npm.cmd --prefix frontend run build` passed.
-- [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
+- [x] FE08-T22 Map `NOTIFIED` and `FULFILLED` to canonical UI states.
+- [x] FE08-T23 Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue and exclude `NOTIFIED` plus terminal states from queue actions.
+- [x] FE08-T24 Add reservation-specific Vietnamese API errors without affecting other APIs.
+- [x] FE08-T25 Connect staff hold-expiration processing to `POST /api/reservations/expire-holds`.
+- [x] FE08-T26 Remove local-only fulfillment and deletion controls.
+- [x] FE08-T27 Add focused frontend regression tests for lifecycle, error isolation, and page contract.
 
-## 4. Traceability
+## 5. Validation
+
+- [x] `npm.cmd --prefix frontend test` - 14/14 tests passed.
+- [x] `Push-Location frontend; npm.cmd exec -- eslint src/page/reservation/ReservationsLibrarianPage.jsx src/utils/reservationViewState.js test/reservationFrontend.test.js; Pop-Location` - focused lint passed.
+- [x] `npm.cmd --prefix frontend run build` - production build passed.
+- [ ] Final backend verification is pending Task 5; add only its command and passing result after it runs.
+
+## 6. Traceability
 
 | Spec ID | Covered by |
 | --- | --- |
@@ -63,7 +72,18 @@ Updated: 2026-06-10
 | FR-FE08-008 | FE08-T08, FE08-T14 |
 | FR-FE08-010 | FE08-T06, FE08-T12 |
 
-## 5. Still Outside This Slice
+### 6.1 Frontend Correctness Traceability
+
+| Spec ID | Covered by |
+| --- | --- |
+| FR-FE08-005 | FE08-T17, FE08-T19, FE08-T23 |
+| FR-FE08-007 | FE08-T18, FE08-T22, FE08-T23 |
+| FR-FE08-009 | FE08-T22, FE08-T23, FE08-T27 |
+| FR-FE08-017 | FE08-T24, FE08-T27 |
+| FR-FE08-019 | FE08-T25, FE08-T27 |
+| NFR-FE08-UX-001 | FE08-T21, FE08-T24, FE08-T27 |
+
+## 7. Still Outside This Slice
 
 - FE07 return integration.
 - FE10 delivery worker.

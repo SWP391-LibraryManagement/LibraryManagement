@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-13 - Frontend Correctness Aligned With Approved Lifecycle
+
+- Mapped `NOTIFIED` to ready for pickup and `FULFILLED` to completed in the shared frontend view model.
+- Added reservation-specific Vietnamese API errors without changing FE07 or generic API behavior.
+- Connected the librarian UI to the existing `POST /api/reservations/expire-holds` endpoint and reloads canonical server state after success.
+- Removed local-only fulfillment and deletion controls that did not persist backend state.
+- Added focused frontend tests and refreshed FE08 plan/task traceability.
+- No backend contract, database schema, FE07 fulfillment, FE10 delivery, or pagination changes.
+
 ## 2026-06-25 - Reservation State Model Added (v0.3.0)
 
 - Bumped `SPEC.md` version `0.2.0` -> `0.3.0`; `Last Updated` 2026-06-25; Status unchanged (APPROVED).

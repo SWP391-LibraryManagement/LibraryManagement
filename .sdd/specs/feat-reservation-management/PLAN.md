@@ -4,28 +4,28 @@ Status: READY FOR REVIEW
 
 Owner: Nhat
 
-Updated: 2026-06-10
+Updated: 2026-07-13
 
 ---
 
 ## 1. Scope
 
-Build the Phase 1 backend slice for FE08 Reservation Management from `SPEC.md`.
+Maintain the approved Phase 1 FE08 backend and frontend reservation slice from `SPEC.md`.
 
 Included:
 
-- Member creates a reservation for an unavailable physical copy.
-- Member views and cancels only their own reservations.
-- Librarian/admin views reservations and processes the queue manually.
-- Queue processing holds the copy, sets a 2-day hold window, and creates a FE10 notification request.
-- Reservation actions write audit logs.
+- Existing member and staff reservation APIs and frontend screens.
+- Canonical rendering of the approved FE08 reservation lifecycle.
+- Reservation-specific Vietnamese API errors.
+- Manual staff queue processing and manual hold-expiration processing.
+- Server-backed refresh after hold expiration.
 
 Not included:
 
-- FE07 borrow/return implementation.
-- FE10 email delivery worker.
-- Frontend reservation screens.
-- Automatic queue processing job.
+- FE07 borrow/return or fulfillment implementation.
+- FE10 email delivery worker changes.
+- Server-side reservation pagination.
+- Automatic queue processing or hold-expiration jobs.
 
 ---
 
@@ -79,10 +79,18 @@ Not included:
 - Cover create, duplicate, available-copy rejection, active limit, owner-only cancellation, staff list, queue order, notification request, and role guards.
 - Run backend Jest suite before handoff.
 
+### 3.6 Frontend Correctness
+
+- Map `NOTIFIED` to ready for pickup and `FULFILLED` to completed.
+- Keep only `Waiting` (`ACTIVE`) reservations in the librarian queue; show `Ready to pick up` (`NOTIFIED`) in the all-reservations list only.
+- Use a reservation-only Vietnamese error resolver.
+- Expose the existing hold-expiration endpoint to staff and reload server state after success.
+- Do not expose local-only fulfillment or deletion controls.
+
 ---
 
 ## 4. Review Notes
 
-- This plan keeps FE08 backend-only for the current slice.
-- Frontend pages should be planned separately after book/copy browsing screens exist.
+- This plan covers the approved backend and frontend reservation slice.
+- Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
 - FE07 can later call FE08 queue processing when a copy is returned, but automatic triggering is out of scope for Phase 1.
