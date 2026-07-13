@@ -31,10 +31,49 @@ components:
       description: Authenticated but role not allowed
     ValidationError:
       description: Invalid input
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SafeValidationError' }
     NotFound:
       description: Resource not found
     Conflict:
       description: Business-rule conflict (e.g. duplicate, not available, terminal state)
+  schemas:
+    NotificationSummary:
+      type: object
+      additionalProperties: false
+      required: [notificationId, status]
+      properties:
+        notificationId: { type: integer }
+        status: { type: string, enum: [PENDING, SENT, DELIVERED, FAILED, SKIPPED] }
+    ProcessPendingSummary:
+      type: object
+      additionalProperties: false
+      required: [processed, failed]
+      properties:
+        processed: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+    SafeValidationError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string, example: Invalid request. }
+            details:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [field, message]
+                properties:
+                  field: { type: string }
+                  message: { type: string }
 security:
   - bearerAuth: []
 paths:
@@ -235,16 +274,32 @@ paths:
           application/json:
             schema:
               type: object
-              required: [type, channel, recipientEmail, templateKey, idempotencyKey]
+              required: [type, templateKey]
               properties:
                 type: { type: string }
                 channel: { type: string, enum: [EMAIL] }
+                userId: { type: integer, minimum: 1 }
                 recipientEmail: { type: string, format: email }
                 templateKey: { type: string }
                 templateData: { type: object }
+                sourceFeature: { type: string }
+                sourceEntityType: { type: string }
+                sourceEntityId:
+                  type: integer
+                  minimum: 1
+                  description: Positive JSON integer only; strings and decimals are rejected.
                 idempotencyKey: { type: string }
       responses:
-        '201': { description: Notification queued (PENDING) }
+        '201':
+          description: New notification accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSummary' }
+        '200':
+          description: Idempotent replay of an existing notification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSummary' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -252,8 +307,21 @@ paths:
     post:
       tags: [Notification]
       summary: Process pending notifications (FR-FE10-006/007)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit: { type: integer, minimum: 1, maximum: 100 }
       responses:
-        '200': { description: Delivery attempt results }
+        '200':
+          description: Delivery processing summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessPendingSummary' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/reports/borrowing:

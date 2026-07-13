@@ -1,5 +1,12 @@
 const { defaultNotificationService } = require('../services/notificationService');
 
+function notificationSummary(notification) {
+  return {
+    notificationId: notification.notificationId,
+    status: notification.status,
+  };
+}
+
 function createNotificationController(notificationService = defaultNotificationService) {
   return {
     // @spec FR-FE10-001, FR-FE10-002, FR-FE10-003, FR-FE10-004, FR-FE10-005, FR-FE10-008, FR-FE10-009
@@ -9,7 +16,7 @@ function createNotificationController(notificationService = defaultNotificationS
           ip: req.ip,
           userAgent: req.get('user-agent'),
         });
-        return res.status(result.duplicate ? 200 : 201).json(result);
+        return res.status(result.duplicate ? 200 : 201).json(notificationSummary(result.notification));
       } catch (error) {
         return next(error);
       }
@@ -22,7 +29,7 @@ function createNotificationController(notificationService = defaultNotificationS
           ip: req.ip,
           userAgent: req.get('user-agent'),
         });
-        return res.status(200).json(result);
+        return res.status(200).json({ processed: result.processed, failed: result.failed });
       } catch (error) {
         return next(error);
       }

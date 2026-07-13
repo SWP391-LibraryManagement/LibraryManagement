@@ -115,11 +115,9 @@ describe('FE10 notification management', () => {
       .send(payload);
 
     expect(createResponse.status).toBe(201);
-    expect(createResponse.body.notification).toMatchObject({
-      type: 'DUE_DATE_REMINDER',
+    expect(createResponse.body).toEqual({
+      notificationId: expect.any(Number),
       status: 'PENDING',
-      sourceFeature: 'FE07',
-      idempotencyKey: 'fe07-due-date-member',
     });
 
     const duplicateResponse = await request(app)
@@ -128,7 +126,7 @@ describe('FE10 notification management', () => {
       .send(payload);
 
     expect(duplicateResponse.status).toBe(200);
-    expect(duplicateResponse.body.duplicate).toBe(true);
+    expect(duplicateResponse.body).toEqual(createResponse.body);
     expect(notificationDependencies.state.notifications).toHaveLength(1);
   });
 
@@ -170,7 +168,11 @@ describe('FE10 notification management', () => {
       });
 
     expect(resetResponse.status).toBe(201);
-    expect(resetResponse.body.notification.safePayload).toEqual({ redacted: true });
+    expect(resetResponse.body).toEqual({
+      notificationId: expect.any(Number),
+      status: 'SENT',
+    });
+    expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
     expect(JSON.stringify(resetResponse.body)).not.toContain('secret-token');
   });
 
@@ -224,7 +226,7 @@ describe('FE10 notification management', () => {
       .send({ limit: 10 });
 
     expect(processResponse.status).toBe(200);
-    expect(processResponse.body).toMatchObject({ processed: 1, failed: 1 });
+    expect(processResponse.body).toEqual({ processed: 1, failed: 1 });
     expect(notificationDependencies.state.notifications).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: 'DUE_DATE_REMINDER', status: 'SENT' }),
@@ -303,7 +305,7 @@ describe('FE10 notification management', () => {
       .send({ limit: 10 });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ processed: 1, failed: 0 });
+    expect(response.body).toEqual({ processed: 1, failed: 0 });
     expect(emailProviderMessages).toEqual([
       expect.objectContaining({ to: 'legacy-due-date@example.test' }),
     ]);
@@ -388,8 +390,8 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(0);
   });
 
-  // H04 baseline: the current validator coerces integer strings but rejects decimals.
-  test('characterizes current sourceEntityId coercion before H04 hardening', async () => {
+  // FE10-H04: source references remain positive JSON integers without coercing strings.
+  test('accepts only positive JSON integer sourceEntityId values', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -398,7 +400,36 @@ describe('FE10 notification management', () => {
       role: 'ADMIN',
     });
 
-    const numericStringResponse = await request(app)
+    for (const sourceEntityId of ['42', 42.5, 0, -1]) {
+      const response = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(admin.accessToken))
+        .send({
+          type: 'DUE_DATE_REMINDER',
+          recipientEmail: 'reader@example.test',
+          templateKey: 'DUE_DATE_REMINDER',
+          templateData: { dueDate: '2026-07-20' },
+          sourceEntityId,
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request.',
+          details: [
+            {
+              field: 'sourceEntityId',
+              message: 'Source entity ID must be a positive integer.',
+            },
+          ],
+        },
+      });
+    }
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+
+    const validResponse = await request(app)
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
@@ -406,39 +437,14 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'DUE_DATE_REMINDER',
         templateData: { dueDate: '2026-07-20' },
-        sourceEntityId: '42',
+        sourceEntityId: 42,
       });
 
-    expect(numericStringResponse.status).toBe(201);
-    expect(numericStringResponse.body.error).toBeUndefined();
-    expect(notificationDependencies.state.notifications).toHaveLength(1);
-    expect(notificationDependencies.state.notifications[0].sourceEntityId).toBe(42);
-
-    const decimalResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send({
-        type: 'DUE_DATE_REMINDER',
-        recipientEmail: 'reader@example.test',
-        templateKey: 'DUE_DATE_REMINDER',
-        templateData: { dueDate: '2026-07-20' },
-        sourceEntityId: 42.5,
-      });
-
-    expect(decimalResponse.status).toBe(400);
-    expect(decimalResponse.body).toEqual({
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request.',
-        details: [
-          {
-            field: 'sourceEntityId',
-            message: 'Source entity ID must be a positive integer.',
-          },
-        ],
-      },
+    expect(validResponse.status).toBe(201);
+    expect(validResponse.body).toEqual({
+      notificationId: expect.any(Number),
+      status: 'PENDING',
     });
-    expect(notificationDependencies.state.notifications).toHaveLength(1);
     expect(notificationDependencies.state.notifications[0].sourceEntityId).toBe(42);
   });
 
@@ -503,7 +509,7 @@ describe('FE10 notification management', () => {
 
   // AC-FE10-001 (userId path) + BR-FE10-013: resolve recipient by userId and write an audit entry.
   test('resolves recipient by userId and writes an audit log on create', async () => {
-    const { app, authDependencies } = makeTestApp();
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
       authDependencies,
@@ -532,7 +538,11 @@ describe('FE10 notification management', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.notification).toMatchObject({
+    expect(response.body).toEqual({
+      notificationId: expect.any(Number),
+      status: 'SENT',
+    });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
       userId: member.userId,
       recipientEmail: 'notif.audit.member@example.test',
       status: 'SENT',
@@ -546,7 +556,7 @@ describe('FE10 notification management', () => {
 
   // BR-FE10-004: template data is sanitized so injected markup is not stored/rendered.
   test('sanitizes script content in template data', async () => {
-    const { app, authDependencies } = makeTestApp();
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
       authDependencies,
@@ -567,7 +577,11 @@ describe('FE10 notification management', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.notification.safePayload.amount).not.toContain('<script>');
+    expect(response.body).toEqual({
+      notificationId: expect.any(Number),
+      status: 'PENDING',
+    });
+    expect(notificationDependencies.state.notifications[0].safePayload.amount).not.toContain('<script>');
     expect(JSON.stringify(response.body)).not.toContain('<script>');
   });
 
@@ -587,7 +601,7 @@ describe('FE10 notification management', () => {
       .send({ limit: 10 });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ processed: 0, failed: 0 });
+    expect(response.body).toEqual({ processed: 0, failed: 0 });
   });
 
   // BR-FE10-002, BR-FE10-007: every supported type has exactly one approved template.
@@ -664,7 +678,10 @@ describe('FE10 notification management', () => {
         .send({ type, recipientEmail, templateKey, templateData, sourceFeature: 'FE02' });
 
       expect(response.status).toBe(201);
-      expect(response.body.notification.status).toBe('SENT');
+      expect(response.body).toEqual({
+        notificationId: expect.any(Number),
+        status: 'SENT',
+      });
       expect(emailProviderMessages).toEqual([
         expect.objectContaining({ to: recipientEmail, subject: renderedSubject, body: renderedBody }),
       ]);
@@ -731,7 +748,10 @@ describe('FE10 notification management', () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.notification.status).toBe('FAILED');
+      expect(response.body).toEqual({
+        notificationId: expect.any(Number),
+        status: 'FAILED',
+      });
       expect(emailProviderMessages).toEqual([
         expect.objectContaining({ subject: renderedSubject, body: renderedBody }),
       ]);
@@ -806,7 +826,10 @@ describe('FE10 notification management', () => {
       }
 
       expect(response.status).toBe(201);
-      expect(response.body.notification.status).toBe(expectedStatus);
+      expect(response.body).toEqual({
+        notificationId: expect.any(Number),
+        status: expectedStatus,
+      });
       expect(emailProviderMessages).toHaveLength(1);
       expect(notificationDependencies.state.notifications[0]).toMatchObject({
         status: expectedStatus,
@@ -874,10 +897,11 @@ describe('FE10 notification management', () => {
 
     expect(createResponse.status).toBe(201);
     expect(replayResponse.status).toBe(200);
-    expect(replayResponse.body.duplicate).toBe(true);
-    expect(replayResponse.body.notification.notificationId).toBe(
-      createResponse.body.notification.notificationId
-    );
+    expect(createResponse.body).toEqual({
+      notificationId: expect.any(Number),
+      status: 'SENT',
+    });
+    expect(replayResponse.body).toEqual(createResponse.body);
     expect(emailProviderMessages).toHaveLength(1);
     expect(emailProviderMessages[0].body).toContain(rawLink);
 

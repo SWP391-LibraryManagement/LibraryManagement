@@ -173,10 +173,9 @@ describe('Integration: End-to-End Flows', () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.notification).toMatchObject({
-        type: 'DUE_DATE_REMINDER',
+      expect(response.body).toEqual({
+        notificationId: expect.any(Number),
         status: 'PENDING',
-        idempotencyKey: 'test-1',
       });
     });
   });
