@@ -34,6 +34,19 @@ function createNotificationController(notificationService = defaultNotificationS
         return next(error);
       }
     },
+
+    // @spec FR-FE10-007, FR-FE10-009
+    retry: async (req, res, next) => {
+      try {
+        const result = await notificationService.retryNotification(req.params.id, req.user, {
+          ip: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
   };
 }
 

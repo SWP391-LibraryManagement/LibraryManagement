@@ -95,7 +95,7 @@ async function findTemplateByCode(templateCode) {
   return mapTemplate(result.recordset[0]);
 }
 
-async function findActiveByIdempotencyKey(idempotencyKey) {
+async function findByIdempotencyKey(idempotencyKey) {
   const pool = await getPool();
   const result = await pool
     .request()
@@ -104,8 +104,39 @@ async function findActiveByIdempotencyKey(idempotencyKey) {
       SELECT TOP 1 *
       FROM Notifications
       WHERE IdempotencyKey = @IdempotencyKey
-        AND Status IN ('PENDING', 'SENT', 'DELIVERED')
       ORDER BY CreatedAt DESC
+    `);
+
+  return mapNotification(result.recordset[0]);
+}
+
+async function findById(notificationId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('NotificationId', sql.Int, notificationId)
+    .query(`
+      SELECT TOP 1 *
+      FROM Notifications
+      WHERE NotificationId = @NotificationId
+    `);
+
+  return mapNotification(result.recordset[0]);
+}
+
+async function transitionFailedToPending(notificationId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('NotificationId', sql.Int, notificationId)
+    .query(`
+      UPDATE Notifications
+      SET Status = 'PENDING',
+          LastErrorMessage = NULL,
+          SentAt = NULL
+      OUTPUT INSERTED.*
+      WHERE NotificationId = @NotificationId
+        AND Status = 'FAILED'
     `);
 
   return mapNotification(result.recordset[0]);
@@ -273,7 +304,9 @@ async function markFailed({ notificationId, safeErrorMessage }) {
 
 module.exports = {
   findTemplateByCode,
-  findActiveByIdempotencyKey,
+  findByIdempotencyKey,
+  findById,
+  transitionFailedToPending,
   createRequest,
   createNotification,
   listPending,

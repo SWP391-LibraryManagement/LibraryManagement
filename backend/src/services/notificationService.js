@@ -470,7 +470,7 @@ function createNotificationService({
       : null;
 
     if (idempotencyKey) {
-      const existing = await notificationRepository.findActiveByIdempotencyKey(idempotencyKey);
+      const existing = await notificationRepository.findByIdempotencyKey(idempotencyKey);
 
       if (existing) {
         return {
@@ -589,6 +589,50 @@ function createNotificationService({
     );
   }
 
+  async function retryNotification(notificationId, actor, context = {}) {
+    requireInternalActor(actor);
+
+    const notification = await notificationRepository.findById(notificationId);
+
+    if (!notification) {
+      throw errors.notFound('NOTIFICATION_NOT_FOUND', 'Notification was not found.');
+    }
+
+    if (isSensitiveQueueNotification(notification)) {
+      throw errors.conflict(
+        'REISSUE_REQUIRED',
+        'Create a new notification from the source event.'
+      );
+    }
+
+    if (notification.status !== 'FAILED') {
+      throw errors.conflict(
+        'NOTIFICATION_RETRY_NOT_ALLOWED',
+        'Only failed queued notifications can be retried.'
+      );
+    }
+
+    const retriedNotification = await notificationRepository.transitionFailedToPending(notificationId);
+
+    if (!retriedNotification) {
+      throw errors.conflict(
+        'NOTIFICATION_RETRY_NOT_ALLOWED',
+        'Only failed queued notifications can be retried.'
+      );
+    }
+
+    await writeAudit(context, 'NOTIFICATION_RETRY', {
+      userId: actor.userId,
+      targetId: retriedNotification.notificationId,
+      metadata: { fromStatus: 'FAILED', toStatus: 'PENDING' },
+    });
+
+    return {
+      notificationId: retriedNotification.notificationId,
+      status: retriedNotification.status,
+    };
+  }
+
   function createSourceNotificationRequester(sourceFeature) {
     const boundSourceFeature = normalizeSourceFeature(sourceFeature);
 
@@ -678,6 +722,7 @@ function createNotificationService({
     createNotificationRequest,
     createSourceNotificationRequester,
     processPendingNotifications,
+    retryNotification,
   };
 }
 

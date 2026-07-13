@@ -4,6 +4,7 @@ const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddle
 const {
   createNotificationRequestValidators,
   processPendingNotificationsValidators,
+  retryNotificationValidators,
 } = require('../validators/notificationValidators');
 
 function createNotificationRoutes({ authService, notificationService } = {}) {
@@ -25,6 +26,14 @@ function createNotificationRoutes({ authService, notificationService } = {}) {
     requireAnyRole('LIBRARIAN', 'ADMIN'),
     processPendingNotificationsValidators,
     controller.processPending
+  );
+
+  router.post(
+    '/:id/retry',
+    authenticate,
+    requireAnyRole('LIBRARIAN', 'ADMIN'),
+    retryNotificationValidators,
+    controller.retry
   );
 
   return router;

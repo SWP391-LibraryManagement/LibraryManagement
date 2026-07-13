@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
 
 const notificationTypes = [
@@ -82,7 +82,16 @@ const processPendingNotificationsValidators = [
   handleValidationErrors,
 ];
 
+const retryNotificationValidators = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Notification ID must be a positive integer.')
+    .toInt(),
+  handleValidationErrors,
+];
+
 module.exports = {
   createNotificationRequestValidators,
   processPendingNotificationsValidators,
+  retryNotificationValidators,
 };

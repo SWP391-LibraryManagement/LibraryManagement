@@ -12,7 +12,7 @@ module.exports = defineModel({
     { attribute: 'userId', name: 'UserId', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },
     { attribute: 'recipientEmail', name: 'RecipientEmail', type: 'NVARCHAR(100)', required: true },
     { attribute: 'channel', name: 'Channel', type: 'NVARCHAR(20)', required: true, default: 'EMAIL', allowedValues: ['EMAIL'] },
-    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'PENDING', allowedValues: ['PENDING', 'SENT', 'FAILED', 'CANCELLED'] },
+    { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'PENDING', allowedValues: ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'] },
     { attribute: 'title', name: 'Title', type: 'NVARCHAR(255)', nullable: true },
     { attribute: 'body', name: 'Body', type: 'NVARCHAR(MAX)', nullable: true },
     { attribute: 'sourceFeature', name: 'SourceFeature', type: 'NVARCHAR(20)', nullable: true },

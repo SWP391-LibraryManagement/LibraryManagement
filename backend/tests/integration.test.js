@@ -149,6 +149,30 @@ describe('Integration: End-to-End Flows', () => {
   });
 
   describe('FE02 -> FE10: Auth then Notification', () => {
+    test('Librarian receives the exact retry not-found response through the application route', async () => {
+      const { app, authDependencies, borrowingDependencies } = makeTestApp();
+      const { accessToken } = await createVerifiedUser({
+        app,
+        authDependencies,
+        borrowingDependencies,
+        email: 'librarian.retry.not-found@example.com',
+        role: 'LIBRARIAN',
+        approveMember: false,
+      });
+
+      const response = await request(app)
+        .post('/api/notifications/999999/retry')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        error: {
+          code: 'NOTIFICATION_NOT_FOUND',
+          message: 'Notification was not found.',
+        },
+      });
+    });
+
     test('Librarian receives exact H04 create, replay, process, and validation responses', async () => {
       const { app, authDependencies, borrowingDependencies } = makeTestApp();
       const { accessToken } = await createVerifiedUser({

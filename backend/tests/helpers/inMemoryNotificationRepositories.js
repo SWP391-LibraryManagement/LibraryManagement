@@ -79,14 +79,31 @@ function makeInMemoryNotificationDependencies() {
       return clone(templates.find((template) => template.templateCode === templateCode) || null);
     },
 
-    async findActiveByIdempotencyKey(idempotencyKey) {
+    async findByIdempotencyKey(idempotencyKey) {
       return mapNotification(
-        notifications.find(
-          (notification) =>
-            notification.idempotencyKey === idempotencyKey &&
-            ['PENDING', 'SENT', 'DELIVERED'].includes(notification.status)
-        ) || null
+        notifications.find((notification) => notification.idempotencyKey === idempotencyKey) || null
       );
+    },
+
+    async findById(notificationId) {
+      return mapNotification(
+        notifications.find((notification) => notification.notificationId === Number(notificationId)) || null
+      );
+    },
+
+    async transitionFailedToPending(notificationId) {
+      const notification = notifications.find(
+        (item) => item.notificationId === Number(notificationId) && item.status === 'FAILED'
+      );
+
+      if (!notification) {
+        return null;
+      }
+
+      notification.status = 'PENDING';
+      notification.lastErrorMessage = null;
+      notification.sentAt = null;
+      return mapNotification(notification);
     },
 
     async createRequest(input) {

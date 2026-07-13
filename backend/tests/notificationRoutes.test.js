@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
@@ -87,6 +89,237 @@ function authHeader(accessToken) {
 }
 
 describe('FE10 notification management', () => {
+  test.each(['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'])(
+    'replays one non-sensitive notification across the %s idempotency status',
+    async (status) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+      const librarian = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.replay.${status.toLowerCase()}@example.test`,
+        role: 'LIBRARIAN',
+      });
+      const payload = {
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
+        idempotencyKey: `all-status-${status.toLowerCase()}`,
+      };
+
+      const created = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send(payload)
+        .expect(201);
+      notificationDependencies.state.notifications[0].status = status;
+
+      const replay = await request(app)
+        .post('/api/notifications/requests')
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send(payload);
+
+      expect(replay.status).toBe(200);
+      expect(replay.body).toEqual({ notificationId: created.body.notificationId, status });
+      expect(notificationDependencies.state.notifications).toHaveLength(1);
+      expect(emailProviderMessages).toHaveLength(0);
+    }
+  );
+
+  test('replays a failed sensitive notification through its HMAC key without another provider send', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.failed-sensitive.replay@example.test',
+      role: 'ADMIN',
+    });
+    const payload = {
+      type: 'ACCOUNT_VERIFICATION',
+      recipientEmail: 'fail-sensitive-replay@example.test',
+      templateKey: 'ACCOUNT_VERIFICATION',
+      templateData: { name: 'Reader', verificationLink: 'https://example.test/verify/replay-secret' },
+      idempotencyKey: 'sensitive-failed-replay',
+    };
+
+    const created = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload)
+      .expect(201);
+    expect(created.body.status).toBe('FAILED');
+
+    const replay = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload);
+
+    expect(replay.status).toBe(200);
+    expect(replay.body).toEqual(created.body);
+    expect(notificationDependencies.state.notifications).toHaveLength(1);
+    expect(emailProviderMessages).toHaveLength(1);
+    expect(notificationDependencies.state.notifications[0].idempotencyKey).toMatch(/^sensitive-hmac-sha256:/);
+    expect(JSON.stringify(replay.body)).not.toContain(payload.idempotencyKey);
+  });
+
+  test('retries one failed non-sensitive record without sending, changing history, or exposing delivery data', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.retry.librarian@example.test',
+      role: 'LIBRARIAN',
+    });
+    const notification = {
+      notificationId: 700,
+      type: 'DUE_DATE_REMINDER',
+      templateKey: 'DUE_DATE_REMINDER',
+      recipientEmail: 'reader@example.test',
+      status: 'FAILED',
+      idempotencyKey: 'retry-kept-key',
+      attemptCount: 2,
+      lastErrorMessage: 'Notification delivery failed.',
+    };
+    notificationDependencies.state.notifications.push(notification);
+    notificationDependencies.state.attempts.push(
+      { notificationId: 700, status: 'FAILED', safeErrorMessage: 'Notification delivery failed.' },
+      { notificationId: 700, status: 'FAILED', safeErrorMessage: 'Notification delivery failed.' }
+    );
+
+    const response = await request(app)
+      .post('/api/notifications/700/retry')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ notificationId: 700, status: 'PENDING' });
+    expect(Object.keys(response.body).sort()).toEqual(['notificationId', 'status']);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
+      notificationId: 700,
+      idempotencyKey: 'retry-kept-key',
+      status: 'PENDING',
+      attemptCount: 2,
+      lastErrorMessage: null,
+    });
+    expect(notificationDependencies.state.attempts).toHaveLength(2);
+    expect(emailProviderMessages).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'NOTIFICATION_RETRY',
+          userId: librarian.userId,
+          targetId: 700,
+          metadata: { fromStatus: 'FAILED', toStatus: 'PENDING' },
+        }),
+      ])
+    );
+  });
+
+  test('rejects retry unless the stored record is a failed non-sensitive notification', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.retry.conflicts@example.test',
+      role: 'LIBRARIAN',
+    });
+
+    for (const [notificationId, status] of ['PENDING', 'SENT', 'DELIVERED', 'SKIPPED', 'CANCELLED'].entries()) {
+      notificationDependencies.state.notifications.push({
+        notificationId: 710 + notificationId,
+        type: 'DUE_DATE_REMINDER',
+        templateKey: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        status,
+        attemptCount: 1,
+      });
+      const response = await request(app)
+        .post(`/api/notifications/${710 + notificationId}/retry`)
+        .set('Authorization', authHeader(librarian.accessToken));
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        error: {
+          code: 'NOTIFICATION_RETRY_NOT_ALLOWED',
+          message: 'Only failed queued notifications can be retried.',
+        },
+      });
+    }
+
+    for (const [notificationId, type] of ['ACCOUNT_VERIFICATION', 'PASSWORD_RESET'].entries()) {
+      notificationDependencies.state.notifications.push({
+        notificationId: 720 + notificationId,
+        type,
+        templateKey: type,
+        recipientEmail: 'reader@example.test',
+        status: 'FAILED',
+        attemptCount: 1,
+      });
+      const response = await request(app)
+        .post(`/api/notifications/${720 + notificationId}/retry`)
+        .set('Authorization', authHeader(librarian.accessToken));
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        error: {
+          code: 'REISSUE_REQUIRED',
+          message: 'Create a new notification from the source event.',
+        },
+      });
+    }
+
+    notificationDependencies.state.notifications.push({
+      notificationId: 730,
+      type: null,
+      templateKey: 'EMAIL_VERIFY',
+      recipientEmail: 'reader@example.test',
+      status: 'FAILED',
+      attemptCount: 1,
+    });
+    const legacyResponse = await request(app)
+      .post('/api/notifications/730/retry')
+      .set('Authorization', authHeader(librarian.accessToken));
+    expect(legacyResponse.status).toBe(409);
+    expect(legacyResponse.body.error.code).toBe('REISSUE_REQUIRED');
+    expect(emailProviderMessages).toHaveLength(0);
+  });
+
+  test('protects and validates the retry route before the controller', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.retry.member@example.test',
+      role: 'MEMBER',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.retry.validation@example.test',
+      role: 'LIBRARIAN',
+    });
+
+    await request(app).post('/api/notifications/1/retry').expect(401);
+    await request(app)
+      .post('/api/notifications/1/retry')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(403);
+
+    for (const notificationId of ['abc', '0', '-1', '1.5']) {
+      const response = await request(app)
+        .post(`/api/notifications/${notificationId}/retry`)
+        .set('Authorization', authHeader(librarian.accessToken));
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    }
+  });
+
+  test('documents the protected retry contract with safe response schemas', () => {
+    const openapi = fs.readFileSync(path.join(__dirname, '../src/docs/openapi.yaml'), 'utf8');
+    expect(openapi).toContain('/api/notifications/{id}/retry:');
+    expect(openapi).toContain('name: id');
+    expect(openapi).toContain('minimum: 1');
+    expect(openapi).toContain('REISSUE_REQUIRED');
+    expect(openapi).toContain('Create a new notification from the source event.');
+  });
+
   test('creates notification request and returns duplicate by idempotency key', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
