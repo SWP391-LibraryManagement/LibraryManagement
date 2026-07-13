@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const errors = require('../utils/safeErrors');
 
 const supportedTypes = [
@@ -84,6 +85,27 @@ function sanitizePayload(payload) {
   }
 
   return result;
+}
+
+function redactSensitivePayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload.map(redactSensitivePayload);
+  }
+
+  if (payload && typeof payload === 'object') {
+    return Object.fromEntries(
+      Object.entries(payload).map(([key, value]) => [key, redactSensitivePayload(value)])
+    );
+  }
+
+  return '[REDACTED]';
+}
+
+function deriveSensitiveIdempotencyKey(idempotencyKey) {
+  return `sensitive-sha256:${crypto
+    .createHash('sha256')
+    .update(String(idempotencyKey))
+    .digest('hex')}`;
 }
 
 function extractVariables(templateText) {
@@ -231,10 +253,18 @@ function createNotificationService({
       );
     }
 
-    const templateData = sanitizePayload(rawTemplateData);
+    const isSensitiveNotification = sensitiveNotificationTypes.has(type);
+    const templateData = isSensitiveNotification
+      ? redactSensitivePayload(rawTemplateData)
+      : sanitizePayload(rawTemplateData);
+    const idempotencyKey = input.idempotencyKey
+      ? isSensitiveNotification
+        ? deriveSensitiveIdempotencyKey(input.idempotencyKey)
+        : input.idempotencyKey
+      : null;
 
-    if (input.idempotencyKey) {
-      const existing = await notificationRepository.findActiveByIdempotencyKey(input.idempotencyKey);
+    if (idempotencyKey) {
+      const existing = await notificationRepository.findActiveByIdempotencyKey(idempotencyKey);
 
       if (existing) {
         return {
@@ -254,7 +284,6 @@ function createNotificationService({
 
     validateTemplateData(template, rawTemplateData);
 
-    const isSensitiveNotification = sensitiveNotificationTypes.has(type);
     const renderedTitle = renderTemplate(template.subject, rawTemplateData);
     const renderedBody = renderTemplate(template.body, rawTemplateData);
 
@@ -270,26 +299,31 @@ function createNotificationService({
       sourceFeature: input.sourceFeature || null,
       sourceEntityType: input.sourceEntityType || null,
       sourceEntityId: input.sourceEntityId || null,
-      idempotencyKey: input.idempotencyKey || null,
+      idempotencyKey,
       safePayload: templateData,
     });
 
     if (isSensitiveNotification) {
+      let providerFailed = false;
+
       try {
         await emailProvider.send({
           to: recipient.recipientEmail,
           subject: renderedTitle,
           body: renderedBody,
         });
-
-        notification = await notificationRepository.markSent({
-          notificationId: notification.notificationId,
-          providerMessageId: null,
-        });
       } catch (error) {
         notification = await notificationRepository.markFailed({
           notificationId: notification.notificationId,
           safeErrorMessage: 'Notification delivery failed.',
+        });
+        providerFailed = true;
+      }
+
+      if (!providerFailed) {
+        notification = await notificationRepository.markSent({
+          notificationId: notification.notificationId,
+          providerMessageId: null,
         });
       }
     }

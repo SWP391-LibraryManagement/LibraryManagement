@@ -6,6 +6,7 @@ const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { createNotificationService } = require('../src/services/notificationService');
+const { mapNotification } = require('../src/repositories/notificationRepository');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 const {
   makeInMemoryNotificationDependencies,
@@ -695,6 +696,122 @@ describe('FE10 notification management', () => {
       expect(persistedAndExposed).not.toContain('smtp auth token secret stack trace');
     }
   );
+
+  // FE10-H03 follow-up: sensitive request payloads and idempotency keys never cross
+  // persistence or response boundaries, while the raw key still deterministically replays.
+  test('redacts all sensitive request leaves and hashes the idempotency key for replay', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.sensitive.idempotency@example.test',
+      role: 'ADMIN',
+    });
+    const rawLink = 'https://example.test/verify/replay-link';
+    const rawCallbackUrl = 'https://example.test/callback/private-value';
+    const rawIdempotencyKey = 'sensitive-idempotency-private-value';
+    const payload = {
+      type: 'ACCOUNT_VERIFICATION',
+      recipientEmail: 'reader@example.test',
+      templateKey: 'ACCOUNT_VERIFICATION',
+      templateData: {
+        name: 'Reader',
+        verificationLink: rawLink,
+        callbackUrl: rawCallbackUrl,
+        nested: [{ value: rawCallbackUrl }],
+      },
+      sourceFeature: 'FE02',
+      idempotencyKey: rawIdempotencyKey,
+    };
+
+    const createResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload);
+    const replayResponse = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send(payload);
+
+    expect(createResponse.status).toBe(201);
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.body.duplicate).toBe(true);
+    expect(replayResponse.body.notification.notificationId).toBe(
+      createResponse.body.notification.notificationId
+    );
+    expect(emailProviderMessages).toHaveLength(1);
+    expect(emailProviderMessages[0].body).toContain(rawLink);
+
+    const notification = notificationDependencies.state.notifications[0];
+    expect(notification).toMatchObject({
+      templateKey: 'ACCOUNT_VERIFICATION',
+      idempotencyKey: expect.stringMatching(/^sensitive-sha256:[a-f0-9]{64}$/),
+      safePayload: {
+        name: '[REDACTED]',
+        verificationLink: '[REDACTED]',
+        callbackUrl: '[REDACTED]',
+        nested: [{ value: '[REDACTED]' }],
+      },
+    });
+
+    const persistedAndExposed = JSON.stringify({
+      createResponse: createResponse.body,
+      replayResponse: replayResponse.body,
+      notification,
+      attempts: notificationDependencies.state.attempts,
+      auditLogs: authDependencies.state.auditLogs,
+    });
+    expect(persistedAndExposed).not.toContain(rawLink);
+    expect(persistedAndExposed).not.toContain(rawCallbackUrl);
+    expect(persistedAndExposed).not.toContain(rawIdempotencyKey);
+  });
+
+  // FE10-H03 follow-up: a persistence transition failure is not a provider failure and must
+  // reach the existing safe error handler without recording a false FAILED attempt.
+  test('propagates a sensitive markSent failure without recording a false provider failure', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'notif.sensitive.transition@example.test',
+      role: 'ADMIN',
+    });
+    let markFailedCalled = false;
+    notificationDependencies.notificationRepository.markSent = async () => {
+      throw new Error('notification transition storage failed');
+    };
+    notificationDependencies.notificationRepository.markFailed = async () => {
+      markFailedCalled = true;
+      throw new Error('markFailed must not run');
+    };
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'PASSWORD_RESET',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'PASSWORD_RESET',
+        templateData: { resetLink: 'https://example.test/reset/transition-link' },
+        sourceFeature: 'FE02',
+      });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' },
+    });
+    expect(markFailedCalled).toBe(false);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.attempts).toEqual([]);
+    expect(JSON.stringify(response.body)).not.toContain('notification transition storage failed');
+    expect(JSON.stringify(response.body)).not.toContain('https://example.test/reset/transition-link');
+  });
+
+  test('maps the notification template key from repository rows', () => {
+    expect(mapNotification({ TemplateKey: 'PASSWORD_RESET' })).toMatchObject({
+      templateKey: 'PASSWORD_RESET',
+    });
+  });
 
   // EC-FE10-004: a valid but non-canonical template must not reach persistence.
   test('rejects a mismatched canonical pair before persistence', async () => {

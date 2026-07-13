@@ -28,6 +28,7 @@ function mapNotification(row) {
     userId: row.UserId,
     recipientEmail: row.RecipientEmail,
     templateId: row.TemplateId,
+    templateKey: row.TemplateKey,
     status: row.Status,
     sourceFeature: row.SourceFeature,
     sourceEntityType: row.SourceEntityType,
@@ -270,6 +271,7 @@ async function markFailed({ notificationId, safeErrorMessage }) {
 }
 
 module.exports = {
+  mapNotification,
   findTemplateByCode,
   findActiveByIdempotencyKey,
   createRequest,
