@@ -45,7 +45,7 @@ Not included:
 
 ### 3.1 API and Access Control
 
-- Add `/api/reservations` routes under Express.
+- Use the existing `/api/reservations` routes under Express.
 - Reuse FE02 token authentication.
 - Enforce member-only actions for create, own list, and cancel.
 - Enforce librarian/admin-only actions for list all and queue processing.

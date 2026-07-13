@@ -72,16 +72,16 @@ Updated: 2026-07-13
 | FR-FE08-008 | FE08-T08, FE08-T14 |
 | FR-FE08-010 | FE08-T06, FE08-T12 |
 
-### 6.1 Frontend Correctness Traceability
+### 6.1 Supplemental Frontend Correctness Traceability
 
 | Spec ID | Covered by |
 | --- | --- |
 | FR-FE08-005 | FE08-T17, FE08-T19, FE08-T23 |
 | FR-FE08-007 | FE08-T18, FE08-T22, FE08-T23 |
 | FR-FE08-009 | FE08-T22, FE08-T23, FE08-T27 |
-| FR-FE08-017 | FE08-T24, FE08-T27 |
+| FR-FE08-017 | FE08-T12, FE08-T24, FE08-T27 |
 | FR-FE08-019 | FE08-T25, FE08-T27 |
-| NFR-FE08-UX-001 | FE08-T21, FE08-T24, FE08-T27 |
+| NFR-FE08-UX-001 | FE08-T21, FE08-T22, FE08-T24, FE08-T27 |
 
 ## 7. Still Outside This Slice
 
