@@ -100,12 +100,30 @@ test('librarian page uses the server expiration flow and omits local-only action
     new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
     'utf8',
   );
+  const loadReservationsStart = source.indexOf('async function loadReservations');
+  const loadReservationsEnd = source.indexOf('\n  useEffect(', loadReservationsStart);
+  const expireHoldsStart = source.indexOf('async function expireHolds');
+  const expireHoldsEnd = source.indexOf('\n\n  return (', expireHoldsStart);
+  const loadReservationsSource = source.slice(loadReservationsStart, loadReservationsEnd);
+  const expireHoldsSource = source.slice(expireHoldsStart, expireHoldsEnd);
 
+  assert.match(source, /async function loadReservations\(\{ fallbackToDemo = true \} = \{\}\)/);
+  assert.match(
+    loadReservationsSource,
+    /if \(!fallbackToDemo\) \{\s*throw error;\s*\}\s*setRows\(DEMO_ALL_RESERVATIONS\)/,
+  );
   assert.match(source, /reservationApi\.expireHolds\(\)/);
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
-  assert.match(source, /getExpireHoldsSuccessMessage\(result\)/);
+  assert.match(
+    expireHoldsSource,
+    /const result = await reservationApi\.expireHolds\(\);\s*await loadReservations\(\{ fallbackToDemo: false \}\);\s*showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\);/,
+  );
+  assert.match(source, /disabled=\{loading \|\| expiringHolds \|\| isDemo\}/);
+  assert.match(source, /onClick=\{loadReservations\} disabled=\{loading \|\| expiringHolds\}/);
+  assert.match(source, /POST \/api\/reservations\/expire-holds/);
   assert.doesNotMatch(source, /function fulfill\(/);
   assert.doesNotMatch(source, /function remove\(/);
   assert.doesNotMatch(source, /> Đã giao</);
   assert.doesNotMatch(source, /title="Xóa"/);
+  assert.doesNotMatch(source, /item\.status !== 'Ready to pick up'/);
 });

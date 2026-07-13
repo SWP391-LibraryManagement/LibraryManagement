@@ -1,6 +1,6 @@
 /**
  * FE08 - UC38 View Reservation List + UC39 Process Reservation Queue + UC40 Notify.
- * API thật: GET /api/reservations, PATCH /api/reservations/:id/process, POST /api/reservations/process-queue.
+ * API thật: GET /api/reservations, PATCH /api/reservations/:id/process, POST /api/reservations/process-queue, POST /api/reservations/expire-holds.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -33,7 +33,7 @@ export default function ReservationsLibrarianPage() {
   const [isDemo, setIsDemo] = useState(true);
   const [toast, showToast, clearToast] = useToast();
 
-  async function loadReservations() {
+  async function loadReservations({ fallbackToDemo = true } = {}) {
     setLoading(true);
     try {
       const data = await reservationApi.listAll();
@@ -43,6 +43,9 @@ export default function ReservationsLibrarianPage() {
       setNotice('Đã kết nối backend thật qua GET /api/reservations.');
       if (mapped[0]) setQueueBook(mapped[0].book);
     } catch (error) {
+      if (!fallbackToDemo) {
+        throw error;
+      }
       setRows(DEMO_ALL_RESERVATIONS);
       setIsDemo(true);
       setNotice(error.message);
@@ -101,8 +104,8 @@ export default function ReservationsLibrarianPage() {
     setExpiringHolds(true);
     try {
       const result = await reservationApi.expireHolds();
+      await loadReservations({ fallbackToDemo: false });
       showToast(getExpireHoldsSuccessMessage(result), 'success');
-      await loadReservations();
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
