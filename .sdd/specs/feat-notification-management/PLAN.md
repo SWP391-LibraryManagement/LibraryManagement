@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: READY FOR REVIEW
+Status: COMPLETE
 
 Owner: Nhat
 
@@ -8,13 +8,13 @@ Updated: 2026-07-13
 
 Approval: G1-G7 approved by Nhat on 2026-07-13
 
-Workflow State: B5 implementation complete through FE10-H08; B6 validation in review
+Workflow State: B5 implementation and B6 validation complete
 
 ---
 
 ## B3 Approval And B4 Task Decomposition Authorization
 
-Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval first authorized B4 task decomposition. The B4 documentation was reviewed, B5 then proceeded on `feat/fe10-hardening`, and FE10-H01 through FE10-H08 are complete. FE10-H09 now owns the B6 validation and independent-review gate.
+Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval first authorized B4 task decomposition. The B4 documentation was reviewed, B5 then proceeded on `feat/fe10-hardening`, and FE10-H01 through FE10-H08 were completed. FE10-H09 passed the B6 validation and independent-review gate.
 
 **Goal:** deliver the smallest current-SPEC-compliant FE10 backend hardening pass: send sensitive authentication messages synchronously without persisting their rendered content, keep non-sensitive notifications queued, return only approved API summaries, align template/schema/idempotency contracts, provide an approved internal source boundary, and define manual retry for queued notifications. No frontend, real SMTP, template editor, retry UI, or unrelated refactor is included.
 
@@ -150,6 +150,6 @@ No frontend files, provider credentials, real SMTP code, new dependencies, retry
 - [x] The historical completed `TASKS.md` entries remain intact, with a new pending hardening section only after B3 approval.
 - [x] The no-frontend, mock-provider-only, smallest-coherent-hardening scope is acceptable.
 
-## B4 Complete; B5 Implemented; B6 In Review
+## B4 Complete; B5 Implemented; B6 Complete
 
-This section originally stopped work after B4 until the documentation was reviewed and deliberately moved to an implementation branch. That gate was satisfied; FE10-H01 through FE10-H08 were implemented and independently reviewed on `feat/fe10-hardening`. FE10-H09 is validating the completed B5 slice before integration.
+This section originally stopped work after B4 until the documentation was reviewed and deliberately moved to an implementation branch. That gate was satisfied; FE10-H01 through FE10-H08 were implemented and independently reviewed on `feat/fe10-hardening`, and FE10-H09 passed final validation and whole-branch review.

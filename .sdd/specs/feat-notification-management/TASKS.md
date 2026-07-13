@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Notification Management
 
-Status: READY FOR REVIEW
+Status: COMPLETE
 
 Owner: Nhat
 
@@ -57,7 +57,7 @@ Updated: 2026-07-13
 
 ## 6. FE10 Hardening Tasks - B4 Decomposition
 
-B4 status: COMPLETE. B5 implementation status: COMPLETE. B6 validation status: IN REVIEW.
+B4 status: COMPLETE. B5 implementation status: COMPLETE. B6 validation status: COMPLETE.
 
 The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for the initial backend slice. The hardening tasks below implement the approved G1-G7 contract as ordered vertical slices. Every implementation task owns its focused tests in the same slice.
 
@@ -143,7 +143,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 
 ### FE10-H09 Pass The B6 Validation Gate
 
-- [ ] Status: IN REVIEW
+- [x] Status: COMPLETE
 - Estimate: 2-4h
 - Dependencies: FE10-H01 to FE10-H08 complete and independently reviewed.
 - Maps to: G1-G7 and all revised FE10 BR/FR/AC/API/NFR traceability rows.
@@ -163,7 +163,7 @@ Validation evidence recorded on 2026-07-13:
 - Leakage scan commands inspected added backend lines for sensitive log/response patterns and real credential signatures; PASS with 0 sensitive log additions, 0 sensitive response additions, and 0 real-secret signature matches. Synthetic provider/test sentinels appear only in provider-memory input and negative assertions.
 - Changed-file scope command: `git diff --name-only a613604..HEAD`; PASS with 0 forbidden scope matches: no frontend, FE02 implementation, FE09 implementation, real provider, dependency, expiry, or unrelated refactor file.
 - Focused review of commit `a04b64b`: `Spec compliance: APPROVED`; `Code quality: APPROVED`.
-- Final whole-branch review: PENDING before this task can be marked complete.
+- Final whole-branch review of `a613604..eb82b1d`: APPROVED with no findings; reviewer independently reran the full backend suite (15 suites, 212 tests), traceability enforcement, and `git diff --check`.
 
 ## 7. Hardening Traceability And Parallel Work
 

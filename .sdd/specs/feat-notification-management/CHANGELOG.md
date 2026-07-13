@@ -60,4 +60,5 @@ This entry describes the historical initial slice. Its active-only duplicate loo
 - Commit `a04b64b` added test-first source allowlist/entity-type validation at the HTTP and service boundaries and replaced provider failure text with the fixed generic summary `Notification delivery failed.`.
 - Stale B5 stop-state wording in `PLAN.md` and `CONTEXT.md` was aligned with the implemented B5 and in-review B6 state.
 - Focused review of `a04b64b` approved both spec compliance and code quality with no findings.
-- H09 remains in review until the final whole-branch review reports no blocking findings.
+- Final whole-branch review of `a613604..eb82b1d` reported no findings and approved the branch after independently rerunning the full backend suite (15 suites, 212 tests), traceability enforcement, and `git diff --check`.
+- FE10-H09 and the B6 validation gate are complete. FE02 reconciliation and FE09 caller migration remain explicitly deferred.

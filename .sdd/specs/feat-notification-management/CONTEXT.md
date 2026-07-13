@@ -2,11 +2,11 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-13
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
@@ -73,12 +73,12 @@ FE10 does not include:
 
 ## 4. Current Data Model Notes
 
-The current SQL script does not yet define notification tables. Before implementation, the team should confirm whether to add:
+The approved SQL design is implemented in `database/Librarymanagement.sql` for:
 
-- `NotificationTemplates(TemplateId, TemplateKey, Channel, SubjectTemplate, BodyTemplate, IsActive, CreatedAt, UpdatedAt)`
-- `Notifications(NotificationId, UserId, Type, Channel, Title, Body, Status, SourceFeature, SourceEntityType, SourceEntityId, CreatedAt, SentAt)`
-- `NotificationAttempts(AttemptId, NotificationId, AttemptNo, Status, ErrorMessage, AttemptedAt)`
-- `UserNotificationPreferences(UserId, EmailEnabled, InAppEnabled, DueReminderEnabled, FineNotificationEnabled)`
+- `NotificationTemplates` with canonical template code, subject, body, status, and timestamps.
+- `Notifications` with type/template, recipient, delivery status, safe source metadata, all-status idempotency key, redacted payload, attempt count, and safe failure summary.
+- `NotificationAttempts` with attempt timestamp/status, safe error message, and provider message ID.
+- `UserNotificationPreferences` remains future work because notification preferences and in-app state are outside the current FE10 slice.
 
 Potential issues to review:
 
@@ -89,7 +89,7 @@ Potential issues to review:
 - Failed sends should not roll back already-completed business transactions in FE02/FE07/FE08/FE09.
 - In-app notification read/unread state is out of the current assignment scope unless the team adds it later.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation blockers above; future-scope items remain explicitly deferred.
 
 ---
 
@@ -156,7 +156,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 ## 10. Current Hardening Status
 
 - `SPEC.md` version 0.2.0 is approved, and FE10-H01 through FE10-H08 are implemented on `feat/fe10-hardening`.
-- `PLAN.md` and `TASKS.md` track B5 as implemented and B6 validation as in review.
+- `PLAN.md` and `TASKS.md` track B5 implementation and B6 validation as complete.
 - Use environment variables or deployment configuration for email provider credentials.
 - Do not log raw tokens, full reset links, or provider secrets.
 - Keep FE10 APIs role-protected and server-side validated.
