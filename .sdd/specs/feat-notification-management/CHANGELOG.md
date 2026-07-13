@@ -28,3 +28,16 @@
 - Added idempotency handling, template rendering, safe payload redaction, status updates, and attempt logging.
 - Aligned the SQL script with FE10 fields, statuses, idempotency index, and required templates.
 - Added backend tests for request creation, duplicate events, reset-token redaction, template validation, delivery attempts, and access control.
+
+This entry describes the historical initial slice. Its active-only duplicate lookup, shallow safe-payload handling, full-record controller responses, and queued-sensitive assumptions are superseded by the approved 2026-07-13 hardening contract below.
+
+## 2026-07-13 - FE10-H01 Hardening Contract Approved
+
+- Recorded Nhat's approval of G1-G7 and updated `SPEC.md` to version `0.2.0` for B5 implementation.
+- Split delivery by canonical server-enforced type/template pair: `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE`, and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`.
+- Required synchronous mock-provider delivery for sensitive account verification/password reset messages, with raw links and rendered sensitive title/body kept out of persistence, logs, audits, and HTTP responses.
+- Kept non-sensitive notifications queued and required recursive object/array inspection with normalized secret-key rejection plus matching `safePayload` redaction.
+- Approved minimal create/replay/process/retry DTOs, integer-only `sourceEntityId`, protected HTTP routes, and the construction-bound requester allowlist `FE02`, `FE07`, `FE08`, `FE09`, `SYSTEM`.
+- Changed idempotency to one record per key across all statuses and defined manual retry only for failed non-sensitive queued records; sensitive retry returns safe `409 REISSUE_REQUIRED`.
+- Kept FE02 OTP/link and `EMAIL_VERIFY` reconciliation plus FE02 migration with the FE02 owner; deferred FE09 caller integration because no caller currently exists.
+- Updated stable BR/FR/AC semantics, API/NFR requirements, traceability, and review checklist. No implementation, test, database, or OpenAPI files changed in FE10-H01.
