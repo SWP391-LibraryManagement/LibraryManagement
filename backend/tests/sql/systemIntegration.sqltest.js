@@ -434,7 +434,7 @@ test('[SIT-SQL-001] FE07 return is visible to FE09 and FE12 through shared SQL s
 
   const returned = await borrowingService.returnBorrowDetail(
     detailId,
-    { condition: 'GOOD', returnDate: '2026-07-14', notes: 'SIT-SQL-001 return' },
+    { condition: 'NORMAL', returnDate: '2026-07-14', notes: 'SIT-SQL-001 return' },
     librarian,
     librarianContext
   );

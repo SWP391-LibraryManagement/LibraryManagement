@@ -372,18 +372,20 @@ Integration notes:
 | FE02 -> FE08 | `backend/tests/integration.test.js` | Member registers/verifies/logs in, then creates reservation. |
 | FE02 -> FE10 | `backend/tests/integration.test.js` | Staff user authenticates, then creates notification request. |
 | FE02 -> FE12 | `backend/tests/integration.test.js` | Admin/staff authenticates, then views borrowing report. |
-| FE07 -> FE10 | `backend/tests/integration.test.js`, `backend/tests/borrowingRoutes.test.js` | Borrow approval creates due-date reminder notification data. |
-| FE07 -> FE09 | `backend/tests/integration.test.js`, `backend/tests/borrowingRoutes.test.js` | Overdue/damaged return exposes fine candidate data. |
-| FE08 -> FE10 | `backend/tests/reservationRoutes.test.js` | Processing reservation queue creates reservation-ready notification data. |
-| FE09 permissions / fine behavior | `backend/tests/fineRoutes.test.js` | Fine APIs and business rules are tested. |
-| FE12 aggregation | `backend/tests/reportRoutes.test.js` | Borrowing, inventory, and user reports aggregate source data without mutating it. |
+| FE02/FE11 -> FE07/FE08/FE09/FE10/FE12 authorization | `backend/tests/systemIntegration.test.js` (`SIT-001`) | Shared app rejects missing authentication and enforces Member, Librarian, and Admin boundaries. |
+| FE07 -> FE10 -> FE12 | `backend/tests/systemIntegration.test.js` (`SIT-002`, `SIT-007`, `SIT-009`) | Approval creates safe/idempotent due-date notification data, reports the loan, and notification failure does not roll back FE07. |
+| FE08 -> FE10 -> FE07 | `backend/tests/systemIntegration.test.js` (`SIT-003`) | Queue processing holds the copy, creates reservation-ready notification data, and blocks another borrow. |
+| FE08 -> FE07 renewal conflict | `backend/tests/systemIntegration.test.js` (`SIT-004`) | Reservation priority blocks renewal without mutating the active loan. |
+| FE07 -> FE09 -> FE07 eligibility | `backend/tests/systemIntegration.test.js` (`SIT-005`, `SIT-006`) | A 14-day overdue return produces a 70,000 VND fine; unpaid blocks borrowing and paid removes the blocker. |
+| FE12 read-only aggregation | `backend/tests/systemIntegration.test.js` (`SIT-008`) | Reports exclude `REQUESTED` details from actual loan activity and do not mutate source state. |
+| FE07 -> FE10 -> FE09 -> FE12 shared SQL state | `backend/tests/sql/systemIntegration.sqltest.js` (`SIT-SQL-001`) | Production services share SQL state from approval through notification, return, fine calculation, and reporting; cleanup is asserted. |
 | FE05 -> FE01 availability sync | `frontend/src/page/BookManagement.jsx`, `backend/src/routes/bookRoutes.js` | Prototype supports `/api/books/{bookId}/availability`; public browse reads current active-book availability summary. Dedicated automated integration test still needed. |
 | FE11 admin console / request view | `frontend/src/page/UserManagement.jsx`, `backend/src/routes/adminRoutes.js` | Prototype includes admin sidebar, dashboard, permissions, audit logs, library, borrowings, and request views. Dedicated automated UI/API coverage still needed. |
 
 Known test gaps:
 
 - No browser E2E test currently proves full UI-level cross-feature flows.
-- No SQL Server-backed integration test currently proves DB schema-level integration.
+- SQL Server shared-state coverage now proves the FE07 -> FE10 -> FE09 -> FE12 golden path; broader SQL coverage remains mutation-gated and local-only.
 - FE01/FE04/FE05/FE06 backend coverage should be reviewed and expanded if code is implemented.
 - FE05 availability update -> FE01 `/home` refresh should receive a dedicated regression test.
 - FE11 request-management completed-state behavior should receive a dedicated regression test.

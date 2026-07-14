@@ -5,6 +5,7 @@
     "dev": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
+    "test:system": "npm --prefix backend run test:integration:system",
     "trace": "node scripts/check-traceability.js",
     "trace:enforce": "node scripts/check-traceability.js --enforce --min=70"
   },

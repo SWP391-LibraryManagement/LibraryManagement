@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "create-admin": "node scripts/createAdmin.js",
     "test": "jest --runInBand",
+    "test:integration:system": "jest --runInBand --runTestsByPath tests/systemIntegration.test.js",
     "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
     "test:sql:system": "jest --runInBand --testMatch \"**/systemIntegration.sqltest.js\"",
     "test:coverage": "jest --runInBand --coverage"
