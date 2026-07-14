@@ -64,3 +64,14 @@ If time is limited, complete this secure vertical slice first:
 - Integration tests for register -> verify -> login -> `/me`
 
 Password reset and frontend integration may follow only if the team explicitly scopes Sprint 1 that way.
+
+## Authentication/OTP UX B7 Evidence
+
+- [x] `FE02-T024` through `FE02-T028` completed implementation and targeted validation.
+- [x] Nhat confirmed the App Shell and Authentication/OTP human review gates.
+- [x] Merge commit `01c66ef` reached `main` and `origin/main`.
+- [x] E2E remediation commit `232ee4c` aligned the golden path with the approved `/home` and accessible login contracts.
+- [x] Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
+- [x] B7 evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
+
+This evidence closes the Authentication/OTP UX task group only and does not change the overall FE02 `READY FOR REVIEW` status.
