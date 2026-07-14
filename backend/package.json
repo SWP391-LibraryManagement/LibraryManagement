@@ -9,6 +9,7 @@
     "create-admin": "node scripts/createAdmin.js",
     "test": "jest --runInBand",
     "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
+    "test:sql:system": "jest --runInBand --testMatch \"**/systemIntegration.sqltest.js\"",
     "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [],
