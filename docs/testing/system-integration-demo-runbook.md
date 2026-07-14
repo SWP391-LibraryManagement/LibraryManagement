@@ -1,7 +1,9 @@
 # System Integration Demo Runbook
 
-Date: 2026-07-14  
-Audience: SWP391 project presentation  
+Date: 2026-07-14
+
+Audience: SWP391 project presentation
+
 Target duration: five minutes
 
 ## 1. Evidence Boundary

@@ -1,6 +1,7 @@
 # System Integration Evidence - 2026-07-14
 
-Branch: `test/system-integration`  
+Branch: `test/system-integration`
+
 Plan: `docs/superpowers/plans/2026-07-14-system-integration-test-plan.md`
 
 Only observed results are marked `PASS`. Manual presentation rehearsals remain `NOT RUN` until Nhật performs them.
