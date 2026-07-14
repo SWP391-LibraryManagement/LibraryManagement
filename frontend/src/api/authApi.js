@@ -51,7 +51,6 @@ export async function loginAccount({ email, password }) {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   } catch (error) {
-    console.error('Login API error:', error);
     throw new Error(getErrorMessage(error, 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'), {
       cause: error,
     });

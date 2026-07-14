@@ -1,66 +1,41 @@
-/**
- * AppLayout
- * Khung dùng chung cho các màn nội bộ (sidebar + topbar) của FE07/FE08/FE10/FE12.
- * Dùng lucide-react + class trong src/styles/app-shell.css (theme thư viện kem/be).
- *
- * Props:
- *  - active:   key của mục nav đang mở (vd "borrowing-history")
- *  - title:    tiêu đề trang
- *  - subtitle: mô tả ngắn dưới tiêu đề
- *  - actions:  node hiển thị bên phải header (nút...) - tuỳ chọn
- *  - children: nội dung trang
- */
-
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import {
-  BookOpen,
-  Search,
-  LayoutDashboard,
-  BookMarked,
-  History,
-  Bookmark,
-  ClipboardList,
-  PackageCheck,
-  Users,
-  CalendarClock,
   BarChart2,
+  Bookmark,
+  BookMarked,
+  BookOpen,
   Boxes,
+  CalendarClock,
+  ClipboardList,
+  History,
+  LayoutDashboard,
+  PackageCheck,
   UserCog,
-  LogOut,
+  Users,
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const NAV_GROUPS = [
-  {
-    label: 'Member',
-    roles: ['MEMBER'],
-    items: [
-      { key: 'borrow-request', label: 'My Borrows', icon: BookMarked, path: '/borrowing/new' },
-      { key: 'borrowing-history', label: 'Borrowing History', icon: History, path: '/borrowing/history' },
-      { key: 'my-reservations', label: 'My Reservations', icon: Bookmark, path: '/reservations/mine' },
-    ],
-  },
-  {
-    label: 'Librarian',
-    roles: ['LIBRARIAN', 'ADMIN'],
-    items: [
-      { key: 'borrow-requests-admin', label: 'Borrow Requests', icon: ClipboardList, path: '/librarian/borrow-requests' },
-      { key: 'process-returns', label: 'Process Returns', icon: PackageCheck, path: '/librarian/returns' },
-      { key: 'reservations-librarian', label: 'Reservations', icon: CalendarClock, path: '/librarian/reservations' },
-      { key: 'member-details', label: 'Member Details', icon: Users, path: '/librarian/members' },
-    ],
-  },
-  {
-    label: 'Reports',
-    roles: ['LIBRARIAN', 'ADMIN'],
-    items: [
-      { key: 'borrowing-report', label: 'Borrowing Report', icon: BarChart2, path: '/reports/borrowing' },
-      { key: 'inventory-report', label: 'Inventory Report', icon: Boxes, path: '/reports/inventory' },
-      { key: 'user-statistics', label: 'User Statistics', icon: UserCog, path: '/reports/users' },
-    ],
-  },
-];
+import {
+  APP_NAV_GROUPS,
+  getActiveNavigationKey,
+  getVisibleNavigation,
+} from '../../utils/appNavigation';
+import Header from './Header';
 
-// Vai trò của người dùng hiện tại, đọc từ token đã lưu khi đăng nhập.
+const NAV_ICONS = {
+  home: LayoutDashboard,
+  'borrow-request': BookMarked,
+  'borrowing-history': History,
+  'my-reservations': Bookmark,
+  'borrow-requests-admin': ClipboardList,
+  'process-returns': PackageCheck,
+  'reservations-librarian': CalendarClock,
+  'member-details': Users,
+  'borrowing-report': BarChart2,
+  'inventory-report': Boxes,
+  'user-statistics': UserCog,
+};
+
 function getCurrentRoles() {
   try {
     const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
@@ -71,57 +46,92 @@ function getCurrentRoles() {
   }
 }
 
-export default function AppLayout({ active, title, subtitle, actions, children }) {
+export default function AppLayout({ title, subtitle, actions, children }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [navigationOpenState, setNavigationOpen] = useState(false);
+  const [navigationPath, setNavigationPath] = useState(null);
+  const menuTriggerRef = useRef(null);
   const roles = getCurrentRoles();
-  // Chỉ hiển thị nhóm menu mà vai trò hiện tại được phép xem (khớp RBAC backend).
-  const visibleGroups = NAV_GROUPS.filter((group) =>
-    group.roles.some((role) => roles.includes(role))
-  );
+  const activeKey = getActiveNavigationKey(location.pathname);
+  const navigationOpen = navigationOpenState && navigationPath === location.pathname;
+  const visibleNavigationKeys = new Set(getVisibleNavigation(roles).map((item) => item.key));
+  const visibleGroups = APP_NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => visibleNavigationKeys.has(item.key)),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  useEffect(() => {
+    if (!navigationOpen) return undefined;
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setNavigationOpen(false);
+        window.requestAnimationFrame(() => menuTriggerRef.current?.focus());
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [navigationOpen]);
+
+  function closeNavigation({ restoreFocus = false } = {}) {
+    setNavigationOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => menuTriggerRef.current?.focus());
+    }
+  }
+
+  function navigateFromShell(path) {
+    closeNavigation();
+    navigate(path);
+  }
+
+  const HomeIcon = NAV_ICONS.home;
+  const homeIsActive = activeKey === 'home';
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
-        <div
+      <aside
+        id="app-navigation"
+        className={`app-sidebar${navigationOpen ? ' app-sidebar-open' : ''}`}
+      >
+        <button
+          type="button"
           className="app-brand"
-          onClick={() => navigate('/home')}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              navigate('/home');
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Go home"
+          onClick={() => navigateFromShell('/home')}
+          aria-label="Về trang tổng quan"
         >
           <span className="app-brand-mark"><BookOpen size={20} /></span>
-          <span className="app-brand-text">Library<br />Management</span>
-        </div>
+          <span className="app-brand-text">Quản lý<br />thư viện</span>
+        </button>
 
-        <nav className="app-nav">
+        <nav className="app-nav" aria-label="Điều hướng chính">
           <button
             type="button"
-            className="app-nav-item"
-            onClick={() => navigate('/home')}
-            aria-label="Home"
+            className={`app-nav-item${homeIsActive ? ' active' : ''}`}
+            onClick={() => navigateFromShell('/home')}
+            aria-label="Tổng quan"
+            aria-current={homeIsActive ? 'page' : undefined}
           >
-            <LayoutDashboard size={18} />
-            <span>Home</span>
+            <HomeIcon size={18} />
+            <span>Tổng quan</span>
           </button>
 
           {visibleGroups.map((group) => (
             <div className="app-nav-group" key={group.label}>
               <div className="app-nav-label">{group.label}</div>
               {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.key === active;
+                const Icon = NAV_ICONS[item.key];
+                const isActive = item.key === activeKey;
                 return (
                   <button
                     key={item.key}
                     type="button"
                     className={`app-nav-item${isActive ? ' active' : ''}`}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => navigateFromShell(item.path)}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
                   >
@@ -133,25 +143,30 @@ export default function AppLayout({ active, title, subtitle, actions, children }
             </div>
           ))}
         </nav>
-
-        <div className="app-sidebar-footer">
-          <button type="button" className="app-nav-item" onClick={() => navigate('/login')} aria-label="Logout">
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
-        </div>
       </aside>
 
+      {navigationOpen && (
+        <button
+          type="button"
+          className="app-sidebar-backdrop"
+          onClick={() => closeNavigation({ restoreFocus: true })}
+          aria-label="Đóng điều hướng"
+        />
+      )}
+
       <div className="app-main">
-        <header className="app-topbar">
-          <div className="app-search">
-            <Search size={18} />
-            <input type="text" placeholder="Search books, members, loans..." aria-label="Search" />
-          </div>
-          <div className="app-topbar-actions">
-            <div className="app-avatar">N</div>
-          </div>
-        </header>
+        <Header
+          onOpenNavigation={(event) => {
+            menuTriggerRef.current = event.currentTarget;
+            if (navigationOpen) {
+              closeNavigation();
+            } else {
+              setNavigationPath(location.pathname);
+              setNavigationOpen(true);
+            }
+          }}
+          navigationOpen={navigationOpen}
+        />
 
         <main className="app-content">
           {(title || actions) && (

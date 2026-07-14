@@ -1,41 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { registerAccount, resendVerification, verifyEmail } from '../api/authApi';
 import BackgroundPanel from '../component/register/BackgroundPanel';
 import AuthCard from '../component/register/AuthCard';
-import { registerAccount, verifyEmail, resendVerification } from '../api/authApi';
+import { RESEND_COOLDOWN_SECONDS, maskEmail } from '../utils/authUx';
 import '../styles/login.css';
-
-function maskEmailForOtp(email) {
-  const [localPart = '', domain = 'gmail.com'] = String(email || '').trim().split('@');
-  const firstLetter = localPart.charAt(0);
-  const lastLetter = localPart.length > 1 ? localPart.charAt(localPart.length - 1) : '';
-  const middleMaskLength = Math.max(localPart.length - 2, 3);
-  const maskedLocalPart = `${firstLetter}${'*'.repeat(middleMaskLength)}${lastLetter}`;
-
-  return `${maskedLocalPart}@${domain || 'gmail.com'}`;
-}
 
 export default function RegisterPage() {
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [verificationStep, setVerificationStep] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
+
   const handleRegister = async (formData) => {
     setFeedback(null);
-
-    if (formData.password !== formData.confirmPassword) {
-      setFeedback({ severity: 'error', message: 'Xác nhận mật khẩu phải trùng khớp với mật khẩu.' });
-      return false;
-    }
-
     setIsSubmitting(true);
 
     try {
       const result = await registerAccount(formData);
       setRegisteredEmail(result.email || formData.email);
       setVerificationStep(true);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setFeedback({ severity: 'success', message: result.message || 'Mã xác thực đã được gửi.' });
       return true;
     } catch (error) {
@@ -47,27 +44,29 @@ export default function RegisterPage() {
   };
 
   const handleResendEmail = async () => {
+    if (!registeredEmail || isResending || resendCooldown > 0) return false;
+
     setFeedback(null);
+    setIsResending(true);
     try {
       const result = await resendVerification(registeredEmail);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setFeedback({ severity: 'success', message: result.message || 'Mã xác thực mới đã được gửi.' });
+      return true;
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
+      return false;
+    } finally {
+      setIsResending(false);
     }
   };
 
   const handleVerifyEmail = async ({ otp }) => {
     setFeedback(null);
-
-    if (!otp?.trim()) {
-      setFeedback({ severity: 'error', message: 'Vui lòng nhập mã xác thực email.' });
-      return false;
-    }
-
     setIsVerifying(true);
 
     try {
-      const result = await verifyEmail(registeredEmail, otp.trim());
+      const result = await verifyEmail(registeredEmail, otp);
       setFeedback({ severity: 'success', message: result.message || 'Email đã được xác thực.' });
       setVerificationSuccess(true);
       return true;
@@ -91,10 +90,12 @@ export default function RegisterPage() {
             feedback={feedback}
             isSubmitting={isSubmitting}
             isVerifying={isVerifying}
+            isResending={isResending}
+            resendCooldown={resendCooldown}
             verificationStep={verificationStep}
             verificationSuccess={verificationSuccess}
             registeredEmail={registeredEmail}
-            maskedEmail={maskEmailForOtp(registeredEmail)}
+            maskedEmail={maskEmail(registeredEmail)}
             onBackToRegister={() => {
               setVerificationStep(false);
               setVerificationSuccess(false);

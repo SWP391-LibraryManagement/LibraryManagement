@@ -47,7 +47,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 - MFA/2FA.
 - Social login.
 - Full FE11 admin user management.
-- Frontend redesign beyond API integration tasks.
+- Unrelated frontend redesign outside the approved Authentication/OTP UX slice.
 
 ## 4. Approved Technical Decisions
 
@@ -56,8 +56,8 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Password hashing | `bcrypt`; cost factor 10 for Phase 1 unless performance review changes it. |
 | Access token | JWT, 15-minute expiry. |
 | Refresh token | Random token, stored as hash in `AuthTokens`, 7-day expiry. |
-| Email verification token | Random token, stored as hash in `AuthTokens`, 24-hour expiry. |
-| Password reset token | Random token, stored as hash in `AuthTokens`, 15-minute expiry. |
+| Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 24-hour expiry; legacy token links remain accepted. |
+| Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy reset/setup tokens remain accepted. |
 | Account setup token | Shared storage through `AuthTokens`; FE11 owns admin-created account flow. |
 | Roles | Flat roles from `Roles`/`UserRoles`. |
 | Email delivery | Mock notification record or safe stub until FE10 service exists. |
@@ -79,15 +79,15 @@ Implement the FE02 endpoints from `docs/api/api-contract.md`:
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| POST | `/api/auth/register` | Register account and create verification token. |
-| POST | `/api/auth/verify-email` | Verify email token. |
-| POST | `/api/auth/resend-verification` | Resend verification token safely. |
+| POST | `/api/auth/register` | Register account and create verification OTP. |
+| POST | `/api/auth/verify-email` | Verify email with OTP/email or legacy token. |
+| POST | `/api/auth/resend-verification` | Resend verification OTP safely. |
 | POST | `/api/auth/login` | Login and return access/refresh tokens. |
 | POST | `/api/auth/refresh-token` | Exchange refresh token for new access token. |
 | POST | `/api/auth/logout` | Revoke refresh token. |
 | POST | `/api/auth/change-password` | Change password for authenticated user. |
-| POST | `/api/auth/forgot-password` | Request reset token without email enumeration. |
-| POST | `/api/auth/reset-password` | Reset password with valid token. |
+| POST | `/api/auth/forgot-password` | Request reset OTP without email enumeration. |
+| POST | `/api/auth/reset-password` | Reset password with valid OTP/email or legacy token. |
 | GET | `/api/auth/me` | Return safe current user context. |
 
 ## 7. Backend File Plan
@@ -125,6 +125,8 @@ frontend/src/hooks/useAuth.js
 ```
 
 Existing login/register/forgot-password pages may be connected after backend endpoints are implemented. UI behavior must not be trusted as security enforcement.
+
+The approved Authentication/OTP UX hardening is implemented through `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`. It adds presentation validation, two-step registration, six-digit OTP focus and masking, a 60-second resend cooldown, and responsive/accessibility checks without moving security enforcement out of the backend.
 
 ## 9. Test Strategy
 

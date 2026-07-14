@@ -13,20 +13,28 @@ const FormInput = ({
   error = false,
   errorText = '',
   fullWidth = true,
+  inputRef,
+  inputProps,
+  autoFocus = false,
+  disabled = false,
 }) => {
   return (
     <TextField
       label={label}
       type={type}
       placeholder={placeholder}
-      helperText={error ? errorText : helperText}
+      helperText={error ? (errorText || helperText) : helperText}
       required={required}
       value={value}
       onChange={onChange}
       error={error}
       fullWidth={fullWidth}
+      inputRef={inputRef}
+      autoFocus={autoFocus}
+      disabled={disabled}
       variant="outlined"
       slotProps={{
+        htmlInput: inputProps,
         input: {
           startAdornment: Icon && (
             <InputAdornment position="start">

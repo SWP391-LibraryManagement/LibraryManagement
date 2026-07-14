@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-14 - OTP UX Contract Alignment
+
+- Bumped `SPEC.md` version 0.3.0 -> 0.4.0 to document the implemented six-digit email OTP flow for registration verification and password reset.
+- Preserved legacy verification/reset token payloads for compatibility and FE11 account setup.
+- Approved a 60-second client resend cooldown and recorded the Authentication/OTP UX hardening plan in `docs/superpowers/plans/2026-07-14-auth-otp-ux.md`.
+
 ## 2026-06-25 - FE02 Formal State Model
 
 - Bumped SPEC.md version 0.2.0 -> 0.3.0 (MINOR); status unchanged (APPROVED).

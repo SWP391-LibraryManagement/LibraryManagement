@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LoginPage from './page/LoginPage';
 import RegisterPage from './page/RegisterPage';
 import ForgotPasswordPage from './page/ForgotPasswordPage';
-import HomePage from './page/HomePage';
+import HomeRoutePage from './page/dashboard/HomeRoutePage';
 import UserManagement from './page/UserManagement';
 import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
@@ -37,7 +37,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
-      <Route path="/home" element={<HomePage />} />
+      <Route path="/home" element={<HomeRoutePage />} />
 
       <Route path="/admin/users" element={<UserManagement />} />
       <Route path="/librarian/fines" element={<FineManagement />} />

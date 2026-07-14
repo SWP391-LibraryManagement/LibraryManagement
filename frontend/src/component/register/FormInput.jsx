@@ -1,4 +1,4 @@
-import { TextField, InputAdornment } from '@mui/material';
+import { InputAdornment, TextField } from '@mui/material';
 
 export default function FormInput({
   label,
@@ -11,6 +11,10 @@ export default function FormInput({
   endAdornment,
   error = false,
   helperText = '',
+  inputRef,
+  inputProps,
+  autoFocus = false,
+  disabled = false,
 }) {
   return (
     <TextField
@@ -20,22 +24,24 @@ export default function FormInput({
       label={label}
       placeholder={placeholder}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange(event.target.value)}
       variant="outlined"
       className="form-field"
       error={error}
       helperText={helperText}
-      InputProps={{
-        startAdornment: icon ? (
-          <InputAdornment position="start">
-            {icon}
-          </InputAdornment>
-        ) : undefined,
-        endAdornment: endAdornment ? (
-          <InputAdornment position="end">
-            {endAdornment}
-          </InputAdornment>
-        ) : undefined,
+      inputRef={inputRef}
+      autoFocus={autoFocus}
+      disabled={disabled}
+      slotProps={{
+        input: {
+          startAdornment: icon ? (
+            <InputAdornment position="start">{icon}</InputAdornment>
+          ) : undefined,
+          endAdornment: endAdornment ? (
+            <InputAdornment position="end">{endAdornment}</InputAdornment>
+          ) : undefined,
+        },
+        htmlInput: inputProps,
       }}
     />
   );
