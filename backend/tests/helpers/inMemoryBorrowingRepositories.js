@@ -46,6 +46,52 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     return copies.find((copy) => copy.copyId === Number(copyId)) || null;
   }
 
+  function findReservationClaim(copyId, status, orderField) {
+    return (
+      reservations
+        .filter(
+          (reservation) =>
+            reservation.copyId === Number(copyId) && reservation.status === status
+        )
+        .sort((left, right) => {
+          const leftTime = left[orderField] ? new Date(left[orderField]).getTime() : 0;
+          const rightTime = right[orderField] ? new Date(right[orderField]).getTime() : 0;
+          return leftTime - rightTime || left.reservationId - right.reservationId;
+        })[0] || null
+    );
+  }
+
+  function classifyCopyBorrowability(copy, userId) {
+    if (!copy) {
+      return { outcome: 'COPY_NOT_AVAILABLE' };
+    }
+
+    const activeReservation = findReservationClaim(copy.copyId, 'ACTIVE', 'reservedAt');
+    const notifiedReservation = findReservationClaim(copy.copyId, 'NOTIFIED', 'notifiedAt');
+
+    if (copy.status === 'AVAILABLE' && activeReservation) {
+      return { outcome: 'RESERVATION_QUEUE_PRIORITY' };
+    }
+
+    if (copy.status === 'AVAILABLE' && !notifiedReservation) {
+      return { outcome: 'NORMAL_AVAILABLE' };
+    }
+
+    if (
+      copy.status === 'RESERVED' &&
+      notifiedReservation &&
+      Number(notifiedReservation.userId) === Number(userId)
+    ) {
+      return { outcome: 'HELD_FOR_MEMBER', notifiedReservation };
+    }
+
+    if (copy.status === 'RESERVED' && !notifiedReservation) {
+      return { outcome: 'RESERVATION_STATE_CONFLICT' };
+    }
+
+    return { outcome: 'COPY_NOT_AVAILABLE' };
+  }
+
   function mapCopy(copy) {
     if (!copy) {
       return null;
@@ -168,26 +214,8 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
             return null;
           }
 
-          const activeReservation = reservations
-            .filter(
-              (reservation) =>
-                reservation.copyId === Number(copyId) && reservation.status === 'ACTIVE'
-            )
-            .sort(
-              (left, right) =>
-                new Date(left.reservedAt) - new Date(right.reservedAt) ||
-                left.reservationId - right.reservationId
-            )[0];
-          const notifiedReservation = reservations
-            .filter(
-              (reservation) =>
-                reservation.copyId === Number(copyId) && reservation.status === 'NOTIFIED'
-            )
-            .sort(
-              (left, right) =>
-                new Date(left.notifiedAt) - new Date(right.notifiedAt) ||
-                left.reservationId - right.reservationId
-            )[0];
+          const activeReservation = findReservationClaim(copyId, 'ACTIVE', 'reservedAt');
+          const notifiedReservation = findReservationClaim(copyId, 'NOTIFIED', 'notifiedAt');
 
           return {
             ...copy,
@@ -416,9 +444,28 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'REQUEST_NOT_APPROVABLE' };
       }
 
-      if (requestedDetails.some((detail) => getCopy(detail.copyId)?.status !== 'AVAILABLE')) {
-        return { outcome: 'COPY_NOT_AVAILABLE' };
+      const borrowabilityResults = requestedDetails.map((detail) => {
+        const copy = getCopy(detail.copyId);
+        return {
+          detail,
+          copy,
+          ...classifyCopyBorrowability(copy, request.userId),
+        };
+      });
+      const blockingResult = borrowabilityResults.find(
+        ({ outcome }) => outcome !== 'NORMAL_AVAILABLE' && outcome !== 'HELD_FOR_MEMBER'
+      );
+
+      if (blockingResult) {
+        return { outcome: blockingResult.outcome };
       }
+
+      const fulfilledReservations = borrowabilityResults
+        .filter(({ outcome }) => outcome === 'HELD_FOR_MEMBER')
+        .map(({ notifiedReservation, detail }) => ({
+          reservation: notifiedReservation,
+          copyId: detail.copyId,
+        }));
 
       const activeCount = borrowDetails.filter(
         (detail) => detail.userId === request.userId && detail.status === 'BORROWED'
@@ -442,16 +489,40 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         getCopy(detail.copyId).status = 'BORROWED';
       }
 
+      for (const { reservation } of fulfilledReservations) {
+        reservation.status = 'FULFILLED';
+        reservation.updatedAt = approvalDate;
+      }
+
       if (auditLogRepository && auditEntry) {
         try {
           await auditLogRepository.create(auditEntry);
+          for (const { reservation, copyId } of fulfilledReservations) {
+            await auditLogRepository.create({
+              ...auditEntry,
+              action: 'RESERVATION_FULFILL',
+              targetType: 'RESERVATION',
+              targetId: reservation.reservationId,
+              metadata: {
+                requestId: request.requestId,
+                copyId,
+                memberUserId: request.userId,
+              },
+            });
+          }
         } catch (error) {
           restoreMutationState(snapshot);
           throw error;
         }
       }
 
-      return { outcome: 'APPROVED', borrowRequest: mapRequest(request) };
+      return {
+        outcome: 'APPROVED',
+        borrowRequest: mapRequest(request),
+        fulfilledReservationIds: fulfilledReservations.map(
+          ({ reservation }) => reservation.reservationId
+        ),
+      };
     },
 
     async rejectBorrowRequest({ requestId, rejectedBy, auditLogRepository, auditEntry }) {

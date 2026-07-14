@@ -104,6 +104,17 @@ function makeAfterWriteFailingAuditLogRepository(auditLogRepository) {
   };
 }
 
+function makeReservationAuditFailingRepository(auditLogRepository) {
+  return {
+    create: jest.fn(async (entry) => {
+      await auditLogRepository.create(entry);
+      if (entry.action === 'RESERVATION_FULFILL') {
+        throw new Error('Reservation audit write failed.');
+      }
+    }),
+  };
+}
+
 function installTwoPartyBorrowDetailReadBarrier(
   borrowingRepository,
   description = 'Borrow-detail race'
@@ -307,6 +318,116 @@ describe('FE07 borrowing management', () => {
     expect(response.body.error).not.toHaveProperty('reservationOwnerId');
     expect(JSON.stringify(response.body)).not.toContain(holdOwnerEmail);
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
+  test('borrow approval fulfills reservation held for the requesting member', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'fulfills-reservation.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'fulfills-reservation.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const heldCopy = borrowingDependencies.state.copies.find((copy) => copy.copyId === 1);
+    heldCopy.status = 'RESERVED';
+    const heldReservation = {
+      reservationId: 904,
+      userId: member.userId,
+      copyId: 1,
+      status: 'NOTIFIED',
+      notifiedAt: new Date('2026-06-09T00:00:00.000Z'),
+      expiresAt: new Date('2026-06-11T00:00:00.000Z'),
+    };
+    borrowingDependencies.state.reservations.push(heldReservation);
+
+    const createResponse = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
+    const approveResponse = await request(app)
+      .patch(`/api/borrow-requests/${createResponse.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(approveResponse.status).toBe(200);
+    expect(heldReservation.status).toBe('FULFILLED');
+    expect(heldCopy.status).toBe('BORROWED');
+    expect(authDependencies.state.auditLogs.map((entry) => entry.action)).toEqual(
+      expect.arrayContaining(['BORROW_REQUEST_APPROVE', 'RESERVATION_FULFILL'])
+    );
+  });
+
+  test('reservation audit failure rolls back borrow approval and fulfillment', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'reservation-audit.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'reservation-audit.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const heldCopy = setup.borrowingDependencies.state.copies.find((copy) => copy.copyId === 1);
+    heldCopy.status = 'RESERVED';
+    setup.borrowingDependencies.state.reservations.push({
+      reservationId: 905,
+      userId: member.userId,
+      copyId: 1,
+      status: 'NOTIFIED',
+      notifiedAt: new Date('2026-06-09T00:00:00.000Z'),
+      expiresAt: new Date('2026-06-11T00:00:00.000Z'),
+    });
+
+    const createResponse = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestId = createResponse.body.borrowRequest.requestId;
+    const reservationAuditFailingRepository = makeReservationAuditFailingRepository(
+      setup.authDependencies.auditLogRepository
+    );
+    const { app } = makeTestApp({
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      auditLogRepository: reservationAuditFailingRepository,
+    });
+    const auditLogsBefore = setup.authDependencies.state.auditLogs.map((entry) => ({ ...entry }));
+
+    const response = await request(app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(response.status).toBe(500);
+    expect(reservationAuditFailingRepository.create).toHaveBeenCalledTimes(2);
+    expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
+    expect(setup.borrowingDependencies.state.borrowDetails[0]).toMatchObject({
+      status: 'REQUESTED',
+      borrowDate: null,
+      dueDate: null,
+    });
+    expect(
+      setup.borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status
+    ).toBe('RESERVED');
+    expect(setup.borrowingDependencies.state.reservations[0].status).toBe('NOTIFIED');
+    expect(setup.authDependencies.state.auditLogs).toEqual(auditLogsBefore);
   });
 
   test('librarian approval uses the FE07-bound requester with the canonical due-date request', async () => {
@@ -1825,6 +1946,8 @@ describe('FE07 borrowing management', () => {
     ['UNPAID_FINE_BLOCKS_BORROWING', 409, 'UNPAID_FINE_BLOCKS_BORROWING'],
     ['OVERDUE_LOAN_BLOCKS_BORROWING', 409, 'OVERDUE_LOAN_BLOCKS_BORROWING'],
     ['REQUEST_NOT_APPROVABLE', 409, 'BORROW_REQUEST_NOT_PENDING'],
+    ['RESERVATION_QUEUE_PRIORITY', 409, 'RESERVATION_QUEUE_PRIORITY'],
+    ['RESERVATION_STATE_CONFLICT', 409, 'RESERVATION_STATE_CONFLICT'],
   ])('approval maps the transaction eligibility outcome %s to its safe error', async (outcome, status, code) => {
     const setup = makeTestApp();
     const member = await createVerifiedUser({

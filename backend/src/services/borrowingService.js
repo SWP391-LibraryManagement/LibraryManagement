@@ -352,6 +352,20 @@ function createBorrowingService({
       throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be approved.');
     }
 
+    if (approvalResult?.outcome === 'RESERVATION_QUEUE_PRIORITY') {
+      throw errors.conflict(
+        'RESERVATION_QUEUE_PRIORITY',
+        'Reservation queue priority must be processed before borrowing.'
+      );
+    }
+
+    if (approvalResult?.outcome === 'RESERVATION_STATE_CONFLICT') {
+      throw errors.conflict(
+        'RESERVATION_STATE_CONFLICT',
+        'Reserved copy state changed. Reload and try again.'
+      );
+    }
+
     if (approvalResult?.outcome !== 'APPROVED') {
       throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
     }

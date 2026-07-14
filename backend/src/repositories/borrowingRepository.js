@@ -466,8 +466,8 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
   return result.recordset.map(mapBorrowDetail);
 }
 
-// @spec BR-FE07-005, FR-FE07-019, FR-FE07-022 — approval serializes a member's approvals and
-// updates request, details, due dates and copies atomically (NFR-FE07-TXN-001).
+// @spec BR-FE07-005, BR-FE07-025, FR-FE07-019, FR-FE07-022, FR-FE07-025 - approval
+// serializes borrowing and matching reservation fulfillment (NFR-FE07-TXN-001).
 async function approveBorrowRequest({
   requestId,
   approvedBy,
@@ -480,6 +480,7 @@ async function approveBorrowRequest({
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
+  let fulfilledReservationIds = [];
 
   try {
     // Lock the request first to get its member, then the member to serialize every approval for them.
@@ -573,6 +574,8 @@ async function approveBorrowRequest({
       .map((detail) => detail.CopyId)
       .sort((left, right) => left - right);
 
+    const lockedCopies = new Map();
+
     for (const copyId of requestedCopyIds) {
       const copyResult = await new sql.Request(transaction)
         .input('CopyId', sql.Int, copyId)
@@ -582,10 +585,64 @@ async function approveBorrowRequest({
           WHERE CopyId = @CopyId
         `);
 
-      if (!copyResult.recordset.length || copyResult.recordset[0].Status !== 'AVAILABLE') {
+      if (!copyResult.recordset.length) {
         await transaction.rollback();
         return { outcome: 'COPY_NOT_AVAILABLE' };
       }
+
+      lockedCopies.set(copyId, copyResult.recordset[0]);
+    }
+
+    const fulfilledReservations = [];
+
+    for (const copyId of requestedCopyIds) {
+      const reservationResult = await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT ReservationId, UserId, Status
+          FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+          WHERE CopyId = @CopyId
+            AND Status IN ('ACTIVE', 'NOTIFIED')
+          ORDER BY CASE WHEN Status = 'NOTIFIED' THEN 0 ELSE 1 END,
+                   ReservedAt ASC,
+                   ReservationId ASC
+        `);
+      const copy = lockedCopies.get(copyId);
+      const activeReservation = reservationResult.recordset.find(
+        (reservation) => reservation.Status === 'ACTIVE'
+      );
+      const notifiedReservation = reservationResult.recordset.find(
+        (reservation) => reservation.Status === 'NOTIFIED'
+      );
+
+      if (copy.Status === 'AVAILABLE' && activeReservation) {
+        await transaction.rollback();
+        return { outcome: 'RESERVATION_QUEUE_PRIORITY' };
+      }
+
+      if (copy.Status === 'AVAILABLE' && !notifiedReservation) {
+        continue;
+      }
+
+      if (
+        copy.Status === 'RESERVED' &&
+        notifiedReservation &&
+        Number(notifiedReservation.UserId) === Number(memberUserId)
+      ) {
+        fulfilledReservations.push({
+          reservationId: notifiedReservation.ReservationId,
+          copyId,
+        });
+        continue;
+      }
+
+      if (copy.Status === 'RESERVED' && !notifiedReservation) {
+        await transaction.rollback();
+        return { outcome: 'RESERVATION_STATE_CONFLICT' };
+      }
+
+      await transaction.rollback();
+      return { outcome: 'COPY_NOT_AVAILABLE' };
     }
 
     const activeCountResult = await new sql.Request(transaction)
@@ -646,8 +703,41 @@ async function approveBorrowRequest({
           AND bd.Status = 'BORROWED'
       `);
 
+    for (const { reservationId, copyId } of fulfilledReservations) {
+      const fulfillmentResult = await new sql.Request(transaction)
+        .input('ReservationId', sql.Int, reservationId)
+        .input('MemberUserId', sql.Int, memberUserId)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          UPDATE Reservations
+          SET Status = 'FULFILLED',
+              UpdatedAt = GETDATE()
+          WHERE ReservationId = @ReservationId
+            AND UserId = @MemberUserId
+            AND CopyId = @CopyId
+            AND Status = 'NOTIFIED'
+        `);
+
+      if (fulfillmentResult.rowsAffected?.[0] !== 1) {
+        await transaction.rollback();
+        return { outcome: 'RESERVATION_STATE_CONFLICT' };
+      }
+    }
+
+    fulfilledReservationIds = fulfilledReservations.map(({ reservationId }) => reservationId);
+
     if (auditLogRepository && auditEntry) {
       await auditLogRepository.create({ ...auditEntry, transaction });
+      for (const { reservationId, copyId } of fulfilledReservations) {
+        await auditLogRepository.create({
+          ...auditEntry,
+          action: 'RESERVATION_FULFILL',
+          targetType: 'RESERVATION',
+          targetId: reservationId,
+          metadata: { requestId, copyId, memberUserId },
+          transaction,
+        });
+      }
     }
 
     await transaction.commit();
@@ -656,7 +746,11 @@ async function approveBorrowRequest({
     throw error;
   }
 
-  return { outcome: 'APPROVED', borrowRequest: await findBorrowRequestById(requestId) };
+  return {
+    outcome: 'APPROVED',
+    borrowRequest: await findBorrowRequestById(requestId),
+    fulfilledReservationIds,
+  };
 }
 
 async function rejectBorrowRequest({ requestId, rejectedBy, auditLogRepository, auditEntry }) {
