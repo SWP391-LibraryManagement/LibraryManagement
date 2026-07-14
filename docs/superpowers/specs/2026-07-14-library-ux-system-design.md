@@ -240,8 +240,8 @@ around those requirements.
 ### Header
 
 - Keep the profile trigger and role label.
-- Make the global search behavior explicit: either route to the browse/search surface or
-  remove the control from pages where it is not functional.
+- Remove the global search control from the shared header because no cross-system search
+  contract is approved. Keep search controls local to pages that own searchable data.
 - Do not render empty user names while profile data is loading; show a stable placeholder
   or the stored account identifier.
 
@@ -360,7 +360,12 @@ Given-When-Then guidance:
 
 ## 15. Open Decisions
 
-- Confirm whether the global search should navigate to public browse or remain page-local.
-- Confirm which role should see the home dashboard modules by default.
-- Confirm whether the team wants English or Vietnamese labels consistently across protected
-  pages; the current UI mixes both.
+The clarification gate resolved the initial open decisions on 2026-07-14:
+
+- `DEC-UX-001`: Remove the non-functional global header search. Search remains local to
+  the page that owns its data.
+- `DEC-UX-002`: `/home` is role-aware: Member sees personal borrowing/reservation
+  information; Librarian/Admin sees operational queues and KPI information permitted by
+  the existing role contract.
+- `DEC-UX-003`: Protected pages use Vietnamese labels consistently. API identifiers,
+  source code identifiers, and test names remain English.
