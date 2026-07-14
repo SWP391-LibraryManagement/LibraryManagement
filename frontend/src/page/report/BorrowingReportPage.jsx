@@ -10,6 +10,7 @@ import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, LineChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
+import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildDateRangeReportParams } from '../../utils/reportFilters';
 
@@ -29,7 +30,7 @@ export default function BorrowingReportPage() {
       const data = await reportApi.borrowing(buildDateRangeReportParams(from, to));
       setReport(data);
       setNoticeType('success');
-      setNotice('Đã kết nối backend thật qua GET /api/reports/borrowing.');
+      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
       setNoticeType('error');
@@ -67,15 +68,17 @@ export default function BorrowingReportPage() {
     >
       {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
 
-      <div className="toolbar">
-        <div className="field report-date-filter">
-          <Calendar size={16} className="muted" />
-          <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
-          <span className="muted">-</span>
-          <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
-          <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
-        </div>
-      </div>
+      <DataToolbar
+        filters={(
+          <div className="field report-date-filter">
+            <Calendar size={16} className="muted" />
+            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+            <span className="muted">-</span>
+            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+            <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
+          </div>
+        )}
+      />
 
       {loading ? <LoadingBlock rows={4} /> : !report ? (
         <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
@@ -111,23 +114,22 @@ export default function BorrowingReportPage() {
 
           <div className="lib-card">
             <h3 className="lib-card-title">Chi tiết top sách</h3>
-            <div className="lib-table-wrap">
-              <table className="lib-table"><caption className="sr-only">Top borrowed books table</caption>
-                <thead><tr><th scope="col">#</th><th scope="col">Sách</th><th scope="col">Tác giả</th><th scope="col">Nhóm</th><th scope="col">Lượt mượn</th></tr></thead>
-                <tbody>
-                  {topBooks.map((book, index) => (
-                    <tr key={`${book.bookId || book.title}-${index}`}>
-                      <td>{index + 1}</td>
-                      <td><strong>{book.title || `Book #${book.bookId}`}</strong></td>
-                      <td>{book.author || '-'}</td>
-                      <td><Badge status="default">{book.category || book.categoryName || 'Nguồn FE07'}</Badge></td>
-                      <td><strong>{fmtNumber(book.borrowCount)}</strong></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!topBooks.length && <EmptyState icon={BookOpen} title="Không có dữ liệu top sách" />}
-            </div>
+            <DataTable
+              caption="Top borrowed books table"
+              headers={['#', 'Sách', 'Tác giả', 'Nhóm', 'Lượt mượn']}
+              isEmpty={!topBooks.length}
+              emptyState={<EmptyState icon={BookOpen} title="Không có dữ liệu top sách" />}
+            >
+              {topBooks.map((book, index) => (
+                <tr key={`${book.bookId || book.title}-${index}`}>
+                  <td data-label="#">{index + 1}</td>
+                  <td data-label="Sách"><strong>{book.title || `Book #${book.bookId}`}</strong></td>
+                  <td data-label="Tác giả">{book.author || '-'}</td>
+                  <td data-label="Nhóm"><Badge status="default">{book.category || book.categoryName || 'Nguồn FE07'}</Badge></td>
+                  <td data-label="Lượt mượn"><strong>{fmtNumber(book.borrowCount)}</strong></td>
+                </tr>
+              ))}
+            </DataTable>
           </div>
         </>
       )}

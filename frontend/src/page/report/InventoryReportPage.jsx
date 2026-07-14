@@ -10,6 +10,7 @@ import { authorizedRequest, reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
+import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildInventoryReportParams } from '../../utils/reportFilters';
 
@@ -42,7 +43,7 @@ export default function InventoryReportPage() {
       const data = await reportApi.inventory(buildInventoryReportParams(selectedCategoryId));
       setReport(data);
       setNoticeType('success');
-      setNotice('Đã kết nối backend thật qua GET /api/reports/inventory.');
+      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
       setNoticeType('error');
@@ -95,34 +96,42 @@ export default function InventoryReportPage() {
       actions={<button className="btn btn-outline" onClick={() => loadReport(categoryId)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
-      <form className="toolbar" onSubmit={applyCategoryFilter}>
-        <div className="field">
-          <label htmlFor="inventory-category">Thể loại</label>
-          <select
-            id="inventory-category"
-            className="select"
-            value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
-          >
-            <option value="">Tất cả thể loại</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
-        </div>
-        <button className="btn btn-primary btn-sm" type="submit" disabled={loading}>
-          <Filter size={16} /> Lọc
-        </button>
-        <button
-          className="icon-btn"
-          type="button"
-          onClick={clearCategoryFilter}
-          disabled={loading || !categoryId}
-          aria-label="Xóa bộ lọc thể loại"
-          title="Xóa bộ lọc thể loại"
-        >
-          <RotateCcw size={17} />
-        </button>
+      <form onSubmit={applyCategoryFilter}>
+        <DataToolbar
+          filters={(
+            <div className="field">
+              <label htmlFor="inventory-category">Thể loại</label>
+              <select
+                id="inventory-category"
+                className="select"
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+              >
+                <option value="">Tất cả thể loại</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          actions={(
+            <>
+              <button className="btn btn-primary btn-sm" type="submit" disabled={loading}>
+                <Filter size={16} /> Lọc
+              </button>
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={clearCategoryFilter}
+                disabled={loading || !categoryId}
+                aria-label="Xóa bộ lọc thể loại"
+                title="Xóa bộ lọc thể loại"
+              >
+                <RotateCcw size={17} />
+              </button>
+            </>
+          )}
+        />
       </form>
       {loading ? <LoadingBlock rows={4} /> : !report ? (
         <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
@@ -152,28 +161,27 @@ export default function InventoryReportPage() {
 
           <div className="lib-card">
             <h3 className="lib-card-title">Đầu sách cần theo dõi tồn kho</h3>
-            <div className="lib-table-wrap">
-              <table className="lib-table"><caption className="sr-only">Low inventory books table</caption>
-                <thead><tr><th scope="col">Sách</th><th scope="col">Thể loại</th><th scope="col">Tổng bản</th><th scope="col">Khả dụng</th><th scope="col">Trạng thái</th></tr></thead>
-                <tbody>
-                  {lowBooks.map((book, index) => {
-                    const available = Number(book.availableCopies ?? book.availableCount ?? 0);
-                    const total = Number(book.totalCopies ?? book.copyCount ?? 0);
-                    const key = available === 0 ? 'out' : available <= 2 ? 'low' : 'ok';
-                    return (
-                      <tr key={`${book.bookId || book.title}-${index}`} className={key !== 'ok' ? 'row-overdue' : ''}>
-                        <td><strong>{book.title || `Book #${book.bookId}`}</strong></td>
-                        <td>{book.categoryName || book.category || '-'}</td>
-                        <td>{fmtNumber(total)}</td>
-                        <td><strong>{fmtNumber(available)}</strong></td>
-                        <td><Badge status={STOCK_BADGE[key].s}>{STOCK_BADGE[key].t}</Badge></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {!lowBooks.length && <EmptyState icon={Library} title="Không có đầu sách tồn kho thấp" />}
-            </div>
+            <DataTable
+              caption="Low inventory books table"
+              headers={['Sách', 'Thể loại', 'Tổng bản', 'Khả dụng', 'Trạng thái']}
+              isEmpty={!lowBooks.length}
+              emptyState={<EmptyState icon={Library} title="Không có đầu sách tồn kho thấp" />}
+            >
+              {lowBooks.map((book, index) => {
+                const available = Number(book.availableCopies ?? book.availableCount ?? 0);
+                const total = Number(book.totalCopies ?? book.copyCount ?? 0);
+                const key = available === 0 ? 'out' : available <= 2 ? 'low' : 'ok';
+                return (
+                  <tr key={`${book.bookId || book.title}-${index}`} className={key !== 'ok' ? 'row-overdue' : ''}>
+                    <td data-label="Sách"><strong>{book.title || `Book #${book.bookId}`}</strong></td>
+                    <td data-label="Thể loại">{book.categoryName || book.category || '-'}</td>
+                    <td data-label="Tổng bản">{fmtNumber(total)}</td>
+                    <td data-label="Khả dụng"><strong>{fmtNumber(available)}</strong></td>
+                    <td data-label="Trạng thái"><Badge status={STOCK_BADGE[key].s}>{STOCK_BADGE[key].t}</Badge></td>
+                  </tr>
+                );
+              })}
+            </DataTable>
           </div>
         </>
       )}

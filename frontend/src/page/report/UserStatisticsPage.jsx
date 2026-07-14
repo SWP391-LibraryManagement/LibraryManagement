@@ -10,6 +10,7 @@ import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { LineChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
+import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildDateRangeReportParams } from '../../utils/reportFilters';
 
@@ -29,7 +30,7 @@ export default function UserStatisticsPage() {
       const data = await reportApi.users(buildDateRangeReportParams(from, to));
       setReport(data);
       setNoticeType('success');
-      setNotice('Đã kết nối backend thật qua GET /api/reports/users.');
+      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
       setNoticeType('error');
@@ -65,15 +66,17 @@ export default function UserStatisticsPage() {
       actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
-      <div className="toolbar">
-        <div className="field report-date-filter">
-          <Calendar size={16} className="muted" />
-          <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
-          <span className="muted">-</span>
-          <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
-          <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
-        </div>
-      </div>
+      <DataToolbar
+        filters={(
+          <div className="field report-date-filter">
+            <Calendar size={16} className="muted" />
+            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+            <span className="muted">-</span>
+            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+            <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
+          </div>
+        )}
+      />
 
       {loading ? <LoadingBlock rows={4} /> : !report ? (
         <EmptyState icon={Users} title="Không có dữ liệu báo cáo">
@@ -104,30 +107,29 @@ export default function UserStatisticsPage() {
 
           <div className="lib-card">
             <h3 className="lib-card-title">Tổng hợp theo vai trò và membership</h3>
-            <div className="lib-table-wrap">
-              <table className="lib-table"><caption className="sr-only">User statistics summary table</caption>
-                <thead><tr><th scope="col">Nhóm</th><th scope="col">Số lượng</th><th scope="col">Nguồn</th><th scope="col">Trạng thái</th></tr></thead>
-                <tbody>
-                  {roleRows.map((row) => (
-                    <tr key={row.label}>
-                      <td><strong>{row.label}</strong></td>
-                      <td><strong>{fmtNumber(row.value)}</strong></td>
-                      <td>usersByRole</td>
-                      <td><Badge status="Active" /></td>
-                    </tr>
-                  ))}
-                  {Object.entries(report?.membersByStatus || {}).map(([status, value]) => (
-                    <tr key={`member-${status}`}>
-                      <td><strong>Membership {status}</strong></td>
-                      <td><strong>{fmtNumber(value)}</strong></td>
-                      <td>membersByStatus</td>
-                      <td><Badge status={status} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!roleRows.length && <EmptyState icon={Users} title="Không có dữ liệu vai trò" />}
-            </div>
+            <DataTable
+              caption="User statistics summary table"
+              headers={['Nhóm', 'Số lượng', 'Nguồn', 'Trạng thái']}
+              isEmpty={!roleRows.length}
+              emptyState={<EmptyState icon={Users} title="Không có dữ liệu vai trò" />}
+            >
+              {roleRows.map((row) => (
+                <tr key={row.label}>
+                  <td data-label="Nhóm"><strong>{row.label}</strong></td>
+                  <td data-label="Số lượng"><strong>{fmtNumber(row.value)}</strong></td>
+                  <td data-label="Nguồn">usersByRole</td>
+                  <td data-label="Trạng thái"><Badge status="Active" /></td>
+                </tr>
+              ))}
+              {Object.entries(report?.membersByStatus || {}).map(([status, value]) => (
+                <tr key={`member-${status}`}>
+                  <td data-label="Nhóm"><strong>Membership {status}</strong></td>
+                  <td data-label="Số lượng"><strong>{fmtNumber(value)}</strong></td>
+                  <td data-label="Nguồn">membersByStatus</td>
+                  <td data-label="Trạng thái"><Badge status={status} /></td>
+                </tr>
+              ))}
+            </DataTable>
           </div>
         </>
       )}
