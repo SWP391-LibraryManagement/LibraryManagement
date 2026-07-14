@@ -38,6 +38,28 @@ At least 23 additional meaningful branches must be covered to reach the 80 perce
 3. Re-run coverage after each focused group.
 4. Do not add tests whose only purpose is invoking route factory defaults; threshold credit must come from observable behavior or safe failure handling.
 
+## Closure Result
+
+Added direct service coverage in:
+
+- `backend/tests/reservationService.test.js`: 14 FE08 tests covering list filters, role guards, cancellation outcomes, process validation, queue outcomes, notification/audit fallback, and hold expiration promotion.
+- `backend/tests/reportService.test.js`: 5 FE12 tests covering report forwarding, role guards, safe 5xx/unknown error metadata, and audit-disabled operation.
+
+Observed after the focused additions: 23 suites passed, 301 tests passed.
+
+| Metric | Covered / Total | Final | Target | Status |
+| --- | --- | --- | --- | --- |
+| Statements | 760 / 817 | 93.02% | 80% | PASS |
+| Branches | 496 / 596 | 83.22% | 80% | PASS |
+| Functions | 133 / 138 | 96.37% | 80% | PASS |
+| Lines | 751 / 808 | 92.94% | 80% | PASS |
+
+Key improvements:
+
+- `reservationService.js` branch coverage: 59.37% -> 88.54%.
+- `reportService.js` branch coverage: 65.95% -> 95.74%.
+- No production source file changed to obtain the result.
+
 ## Generated Artifacts
 
 `backend/coverage/` is generated locally and must remain untracked. The sprint will add it to `.gitignore` before completion.
