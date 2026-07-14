@@ -170,3 +170,11 @@ Before FE02 is considered complete:
 - API responses match `docs/api/api-contract.md`.
 - `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-018 remains satisfied.
 - Reviewer signoff completed for security-sensitive auth code.
+
+## 12. Authentication/OTP UX B7 Status
+
+The frontend hardening slice `FE02-T024` through `FE02-T028` completed automated validation and Nhat's human review before merge. Merge commit `01c66ef` integrated the App Shell and Authentication/OTP UX into `main`.
+
+The first same-commit CI run exposed stale golden-path assumptions. Commit `232ee4c` aligned the E2E password locator, `/home` login destination, and browser clock with the approved UX/runtime contracts. Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
+
+Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes only the approved Authentication/OTP UX hardening slice; the overall FE02 plan remains `READY FOR REVIEW` until the Core feature's full completion criteria are closed.

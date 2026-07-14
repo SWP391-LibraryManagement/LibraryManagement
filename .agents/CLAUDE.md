@@ -1,10 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.2.0
+# Version: 0.3.0
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
-# Last Updated: 2026-07-13
+# Last Updated: 2026-07-15
 
 # Project: SWP391 Library Management System
 
@@ -21,6 +21,7 @@
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server (Sequelize ORM) database, RESTful API.
 - **Current SDD scope**: all 12 Phase 1 feature `SPEC.md` files are **APPROVED**. `PLAN.md` + `TASKS.md` are **READY FOR REVIEW** (implemented vertical slice) for 3 features:
   - FE02 `feat-auth`, FE08 `feat-reservation-management`, and FE09 `feat-fine-management`.
+  - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
   - FE07 `feat-borrowing-management` is **COMPLETE** through B7: Nhat confirmed human review, implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` reached `main` through PR #19 / merge commit `aeed0dfecb764e6cbe63d7074727f318700e59ea`, and GitHub Actions CI run `29308540692` passed. See `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
   - FE08 also has B7 evidence: human review confirmed in the Codex task before merge, commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`, and GitHub Actions CI run `29217437981` passed. See `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
   - FE10 `feat-notification-management` is **COMPLETE** through B7: human integration review was confirmed, commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` is in `main`, and GitHub Actions CI run `29236572558` passed. See `.sdd/reviews/fe10-b7-integration-review-closeout-2026-07-13.md`.

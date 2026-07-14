@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-15 - Authentication/OTP UX B7 Closeout
+
+- Recorded human acceptance and merge evidence for `FE02-T024` through `FE02-T028`.
+- Remediated the system golden path to use the accessible password textbox, the approved `/home` login destination, and the deterministic integration clock.
+- GitHub Actions CI run `29358045198` passed on final `main` commit `6eee459`; detailed evidence is in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
+
 ## 2026-07-14 - OTP UX Contract Alignment
 
 - Bumped `SPEC.md` version 0.3.0 -> 0.4.0 to document the implemented six-digit email OTP flow for registration verification and password reset.
