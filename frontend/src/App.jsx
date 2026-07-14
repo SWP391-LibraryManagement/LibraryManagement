@@ -11,6 +11,7 @@ import InventoryPage from './page/InventoryPage';
 import ForbiddenPage from './page/error/ForbiddenPage';
 import ReportRouteGuard from './component/report/ReportRouteGuard';
 import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
+import MembershipPage from './page/MembershipPage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -60,6 +61,7 @@ function App() {
       <Route path="/reports/inventory" element={<ReportRouteGuard><InventoryReportPage /></ReportRouteGuard>} />
       <Route path="/reports/users" element={<ReportRouteGuard><UserStatisticsPage /></ReportRouteGuard>} />
       <Route path="/profile" element={<UserProfilePage />} />
+      <Route path="/membership" element={<MembershipPage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

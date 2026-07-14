@@ -24,6 +24,7 @@ import Header from './Header';
 
 const NAV_ICONS = {
   home: LayoutDashboard,
+  membership: UserCog,
   'borrow-request': BookMarked,
   'borrowing-history': History,
   'my-reservations': Bookmark,

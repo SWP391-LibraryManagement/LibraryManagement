@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
-import { Toast, useToast, Modal, Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
+import { Toast, useToast, Modal, Badge, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DEMO_MY_RESERVATIONS, DEMO_RESERVABLE, fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
 
 export default function MyReservationsPage() {
@@ -18,7 +18,6 @@ export default function MyReservationsPage() {
   const [search, setSearch] = useState('');
   const [cancelTarget, setCancelTarget] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review UI đặt chỗ.');
   const [isDemo, setIsDemo] = useState(true);
   const [toast, showToast, clearToast] = useToast();
 
@@ -28,11 +27,9 @@ export default function MyReservationsPage() {
       const data = await reservationApi.listMine();
       setReservations((data.reservations || []).map(mapReservation));
       setIsDemo(false);
-      setNotice('Đã kết nối backend thật qua GET /api/reservations/me.');
-    } catch (error) {
+    } catch {
       setReservations(DEMO_MY_RESERVATIONS);
       setIsDemo(true);
-      setNotice(error.message);
     } finally {
       setLoading(false);
     }
@@ -105,8 +102,6 @@ export default function MyReservationsPage() {
       subtitle="Đặt sách và theo dõi vai trò trong hàng đợi."
       actions={<button className="btn btn-outline" onClick={loadReservations} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
-
       <div className="lib-card">
         <h3 className="lib-card-title">Đặt một cuốn sách</h3>
         <div className="search-input" style={{ width: '100%', marginBottom: 14 }}>

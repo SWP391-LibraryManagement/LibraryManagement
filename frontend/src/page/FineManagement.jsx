@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookManagement from './BookManagement';
+import LogoutConfirmModal from '../component/layout/LogoutConfirmModal';
 import {
   DAILY_FINE_RATE,
   FINE_RECORDS_KEY,
@@ -399,6 +400,7 @@ export default function FineManagement() {
   const [fineFormErrors, setFineFormErrors] = useState({});
   const [fineFormMode, setFineFormMode] = useState('create');
   const [toast, setToast] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
   const isPaymentWorkflow = activeSection === 'collection' || activeSection === 'paid';
@@ -834,7 +836,7 @@ export default function FineManagement() {
         <div className="fine-session">
           <span>Đang đăng nhập với</span>
           <strong>{staffUser?.email || 'librarian.demo@library.test'}</strong>
-          <button onClick={handleLogout}><LogOut size={17} />Đăng xuất</button>
+          <button onClick={() => setShowLogoutConfirm(true)}><LogOut size={17} />Đăng xuất</button>
         </div>
       </aside>
 
@@ -1230,6 +1232,12 @@ export default function FineManagement() {
       </main>
 
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleLogout}
+        />
+      )}
 
       <style>{`
         .fine-shell { min-height: 100vh; background: #f6f7fb; color: #17202a; display: flex; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }

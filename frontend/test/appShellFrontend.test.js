@@ -12,7 +12,7 @@ import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/das
 test('navigation visibility follows stored roles', () => {
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
-    ['home', 'borrow-request', 'borrowing-history', 'my-reservations'],
+    ['home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
@@ -22,6 +22,7 @@ test('navigation visibility follows stored roles', () => {
 
 test('active navigation is derived from the current URL', () => {
   assert.equal(getActiveNavigationKey('/home'), 'home');
+  assert.equal(getActiveNavigationKey('/membership'), 'membership');
   assert.equal(getActiveNavigationKey('/borrowing/history'), 'borrowing-history');
   assert.equal(getActiveNavigationKey('/reports/inventory'), 'inventory-report');
   assert.equal(getActiveNavigationKey('/unknown'), null);

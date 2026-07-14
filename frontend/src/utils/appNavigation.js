@@ -3,6 +3,7 @@ export const APP_NAV_GROUPS = [
     label: 'Thành viên',
     roles: ['MEMBER'],
     items: [
+      { key: 'membership', label: 'Đăng ký hội viên', path: '/membership' },
       { key: 'borrow-request', label: 'Mượn sách', path: '/borrowing/new' },
       { key: 'borrowing-history', label: 'Lịch sử mượn', path: '/borrowing/history' },
       { key: 'my-reservations', label: 'Đặt chỗ của tôi', path: '/reservations/mine' },

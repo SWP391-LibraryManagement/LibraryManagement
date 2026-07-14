@@ -8,7 +8,7 @@ import { Search, BookOpen, MapPin, CheckCircle2, Star } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
-import { Toast, useToast, DataNotice } from '../../component/shared/Feedback';
+import { Toast, useToast } from '../../component/shared/Feedback';
 import { DEMO_BORROW_CATALOG } from '../../utils/libraryFeatureViewModels';
 
 export default function BorrowRequestPage() {

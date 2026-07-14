@@ -73,8 +73,8 @@
   font-weight: 600;
 }
 
-.app-nav { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-.app-nav-group { margin-top: 14px; }
+.app-nav { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.app-nav-group { display: flex; flex-direction: column; gap: 10px; }
 .app-nav-label {
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--lib-ink-2); padding: 4px 10px; font-weight: 600;
@@ -470,6 +470,17 @@
 .app-content { max-width: 1440px; width: 100%; margin: 0 auto; }
 .app-brand-mark,
 .app-avatar { border-radius: 13px; box-shadow: inset 0 -8px 18px rgba(36,29,22,.16); }
+.app-layout-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(199,138,59,0.35);
+  background: #EDE0CE;
+  color: #7A5C44;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: none;
+}
 .app-nav-item:focus-visible,
 .app-icon-btn:focus-visible,
 .app-user-trigger:focus-visible,
