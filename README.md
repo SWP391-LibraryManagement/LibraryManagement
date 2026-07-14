@@ -129,6 +129,8 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run test:system                # deterministic system integration
 npm.cmd run test:e2e                   # browser golden path
+npm.cmd run test:deployment            # deployment utility tests
+npm.cmd run schema:azure:prepare       # derive Azure SQL schema under tmp/
 npm.cmd run trace:enforce              # FR @spec traceability gate
 ```
 
