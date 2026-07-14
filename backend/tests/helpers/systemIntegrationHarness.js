@@ -103,8 +103,13 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
   };
 }
 
-async function createVerifiedActor({ setup, email, role = 'MEMBER', approveMember = true }) {
-  const password = 'Password1!';
+async function createVerifiedActor({
+  setup,
+  email,
+  password = 'Password1!',
+  role = 'MEMBER',
+  approveMember = true,
+}) {
   const registered = await request(setup.app).post('/api/auth/register').send({
     email,
     password,

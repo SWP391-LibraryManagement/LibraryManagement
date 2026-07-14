@@ -384,7 +384,7 @@ Integration notes:
 
 Known test gaps:
 
-- No browser E2E test currently proves full UI-level cross-feature flows.
+- `tests/e2e/system-golden-path.spec.js` now proves the FE02 -> FE07 -> FE09 -> FE12 hybrid journey in Chromium; FE09 remains API-context evidence until its legacy frontend is aligned.
 - SQL Server shared-state coverage now proves the FE07 -> FE10 -> FE09 -> FE12 golden path; broader SQL coverage remains mutation-gated and local-only.
 - FE01/FE04/FE05/FE06 backend coverage should be reviewed and expanded if code is implemented.
 - FE05 availability update -> FE01 `/home` refresh should receive a dedicated regression test.

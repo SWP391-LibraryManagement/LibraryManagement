@@ -57,6 +57,12 @@ jobs:
         run: npm run build
         working-directory: frontend
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: System browser E2E
+        run: npm run test:e2e
+
       - name: Backend health import check
         run: node -e "const app = require('./src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid');"
         working-directory: backend

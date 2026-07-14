@@ -71,7 +71,7 @@ Rule: when a feature `SPEC.md`, `PLAN.md`, or `TASKS.md` changes, update that fe
 - Minimum coverage: `>=80%` for all new backend code (playbook ch.14 Testing Sprint, constitution Article 5).
 - Required: unit tests for all service/business-logic functions.
 - Required: integration tests for all API endpoints — happy path and error path.
-- E2E tests: encouraged for critical user flows (deferred, see TD-021).
+- E2E tests: required for the selected critical flow; `tests/e2e/system-golden-path.spec.js` covers the FE02/FE07/FE09/FE12 hybrid journey.
 - No merge if existing tests break.
 
 ### 1.2 Project-Specific Coverage Scope
@@ -92,7 +92,7 @@ frontend PR must at minimum pass lint/build and include manual UI verification n
 - Traceability gate: `npm run trace:enforce` (min 70% FR `@spec` coverage for implemented features) —
   **enforced in CI** (`.github/workflows/ci.yml`). Six implemented features are at 100%.
 - SQL Server shared-state integration is available through the mutation-gated local `test:sql:system` suite.
-- Browser E2E remains the final Week 11 target in this sprint.
+- Browser E2E is enabled through Playwright Chromium and runs in CI.
 
 ---
 
@@ -121,7 +121,7 @@ small number of E2E flows.
 | --- | --- | --- | --- |
 | Unit | Verify one service/function/business rule in isolation | All service/business-logic functions | `backend/tests/*.test.js` (in-memory repository doubles) |
 | Integration/API | Verify REST endpoints, auth, validation, data effects | Every implemented API endpoint | `backend/tests/*Routes.test.js`, `backend/tests/integration.test.js` |
-| E2E | Verify critical browser-level flows | Critical journeys | Gap — future `tests/e2e/` (TD-021) |
+| E2E | Verify critical browser-level flows | Critical journeys | Present: `tests/e2e/system-golden-path.spec.js` |
 | Manual UI | Verify layout/responsive/visible states | Every UI-facing change | PR checklist / screenshots |
 | Security/Dependency | No Critical/High vulns, no unsafe dependency drift | Week 12 + before release | `npm audit`, code review, RBAC checks |
 
@@ -238,9 +238,9 @@ readiness summary; it intentionally does **not** restate per-feature test cases.
 | `backend/tests/reservationRoutes.test.js` | FE08 reservation routes |
 | `backend/tests/userManagementRoutes.test.js` | FE11 user & role routes |
 
-Gaps to close (tracked in `TECH_DEBT.md`): enforced Jest coverage threshold; frontend component tests;
-E2E flows; SQL-Server-backed integration environment (TD-021); dedicated `bookRoutes` tests for
-FE01/FE05; service-level tests for FE11 (TD-015).
+Remaining gaps (tracked in `TECH_DEBT.md`): broader frontend component tests; a disposable SQL Server
+service in shared CI; dedicated `bookRoutes` tests for FE01/FE05; service-level tests for FE11
+(TD-015); and full FE09 browser coverage after the legacy frontend is aligned to the server API.
 
 ### 5.4 Per-Feature Readiness Summary
 
@@ -340,6 +340,7 @@ Do not merge if a required command fails unless the team lead documents an accep
 | Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | In progress (6 features implemented) |
 | Traceability gate enforced | CI runs `trace:enforce`; implemented features ≥70% | **Done (2026-06-25)** |
 | Week 11: `>=80%` coverage verified | Coverage report generated; gaps filled | **Done (2026-07-14)** |
+| Week 11: critical browser E2E | Playwright covers login -> borrow -> approve -> return -> fine -> report | **Done (2026-07-14)** |
 | Week 12: Security clean | No Critical/High vulns; dependency audit complete | Pending |
 
 ---
