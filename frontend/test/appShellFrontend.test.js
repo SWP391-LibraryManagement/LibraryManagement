@@ -7,6 +7,7 @@ import {
   getDashboardAudience,
   getVisibleNavigation,
 } from '../src/utils/appNavigation.js';
+import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/dashboardViewModel.js';
 
 test('navigation visibility follows stored roles', () => {
   assert.deepEqual(
@@ -65,4 +66,34 @@ test('shared profile menu remains compatible with the header contract', async ()
   assert.match(source, /onAccountInfo/);
   assert.match(source, /onLogout/);
   assert.doesNotMatch(source, /function BookCopies/);
+});
+
+test('member dashboard summarizes personal activity', () => {
+  assert.deepEqual(
+    buildMemberSummary(
+      { borrowRequests: [{ status: 'APPROVED' }, { status: 'COMPLETED' }] },
+      { reservations: [{ status: 'WAITING' }, { status: 'CANCELLED' }] },
+    ),
+    { activeBorrows: 1, completedBorrows: 1, activeReservations: 1 },
+  );
+});
+
+test('staff dashboard summarizes operational queues', () => {
+  assert.deepEqual(
+    buildStaffSummary(
+      { borrowRequests: [{ status: 'PENDING' }, { status: 'APPROVED' }] },
+      { reservations: [{ status: 'WAITING' }, { status: 'READY' }] },
+    ),
+    { pendingBorrowRequests: 1, waitingReservations: 1, readyReservations: 1 },
+  );
+});
+
+test('home route delegates authenticated users to the role-aware wrapper', async () => {
+  const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const routeSource = await readFile(new URL('../src/page/dashboard/HomeRoutePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(appSource, /import HomeRoutePage from '.\/page\/dashboard\/HomeRoutePage';/);
+  assert.match(appSource, /<Route path="\/home" element=\{<HomeRoutePage \/>\}/);
+  assert.match(routeSource, /hasStoredAuth/);
+  assert.match(routeSource, /getDashboardAudience/);
 });
