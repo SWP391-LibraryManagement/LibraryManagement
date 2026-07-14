@@ -35,10 +35,18 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   });
   expect(setupResponse.ok()).toBeTruthy();
 
+  await page.goto(`${FRONTEND_URL}/login`);
+  await expect(page.getByLabel('Tài khoản của bạn')).toBeVisible();
+  await page.screenshot({ path: 'output/playwright/manual-login.png', fullPage: true });
+
   await login(page, memberEmail, password, '/borrowing/history');
   await page.goto(`${FRONTEND_URL}/borrowing/new`);
   await page.getByRole('button', { name: /Gửi yêu cầu mượn/i }).click();
   await expect(page.getByText(/Yêu cầu #\d+ đã được tạo/i)).toBeVisible();
+  await page.screenshot({
+    path: 'output/playwright/manual-member-borrow-request.png',
+    fullPage: true,
+  });
 
   await clearSession(page);
   await login(page, librarianEmail, password, '/librarian/fines');
@@ -47,6 +55,10 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   await page.getByRole('button', { name: /^Duyệt$/i }).click();
   await page.getByRole('button', { name: /Duyệt & cấp sách/i }).click();
   await expect(page.getByText(/Đã duyệt yêu cầu/i)).toBeVisible();
+  await page.screenshot({
+    path: 'output/playwright/manual-librarian-approval.png',
+    fullPage: true,
+  });
 
   const stateResponse = await request.get(`${BACKEND_URL}/__e2e__/state`);
   expect(stateResponse.ok()).toBeTruthy();
@@ -94,6 +106,10 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   const requestKpi = page.locator('.kpi-card').filter({ hasText: 'Tổng yêu cầu' });
   await expect(requestKpi.getByText('1', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'output/playwright/system-golden-path-desktop.png' });
+  await page.screenshot({
+    path: 'output/playwright/manual-borrowing-report.png',
+    fullPage: true,
+  });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();

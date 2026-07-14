@@ -1,27 +1,220 @@
 # Library Management System
 
-SWP391 Library Management System using Hybrid Spec-Driven Development and Agent-Driven Development.
+## Overview
 
-## Approved Stack
+This SWP391 project implements a role-based library management system for Guests, Members,
+Librarians, and Administrators. The team follows Hybrid Spec-Driven and Agent-Driven Development:
+approved specifications define business behavior, while agents support implementation, testing,
+documentation, and review.
 
-- Backend: Node.js + Express.js
-- Frontend: React + Bootstrap
-- Database: SQL Server
-- API style: RESTful API
+## Implemented Scope
 
-## Project Structure
+The current production-aligned release candidate includes:
+
+| Feature | Scope | Status boundary |
+| --- | --- | --- |
+| FE02 Authentication | Register, verification, login, refresh, logout, password change/reset, token validation | Ready for human staging acceptance |
+| FE07 Borrowing | Member requests, staff approval/rejection, return, renewal, member history | Complete; staging recheck required |
+| FE08 Reservation | Member reservation lifecycle and staff queue/hold processing | Ready for human staging acceptance |
+| FE09 Fine | Server-side overdue calculation, collection, paid/waive/cancel, owner/staff access | Backend ready; legacy frontend is not release evidence |
+| FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit | Complete backend; inbox UI is deferred |
+| FE12 Reporting | Borrowing, inventory, and user aggregate reports | Complete; staging recheck required |
+
+Features marked `NOT STARTED` or `DRAFT` in the project test plan are outside this release candidate.
+
+## Architecture
+
+The React frontend calls an Express REST API. The backend owns validation, authorization, business
+rules, audit writes, and parameterized SQL Server access.
+
+- [System architecture](docs/architecture/system-architecture.md)
+- [Feature integration map](docs/architecture/feature-integration-map.md)
+- [Architecture decisions](.sdd/rfcs/)
+
+## Technology Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Vite 8, Material UI, Bootstrap |
+| Backend | Node.js, Express 5, `mssql`, JWT, bcrypt |
+| Database | SQL Server locally; Azure SQL for staging |
+| Tests | Jest, Node test runner, Supertest, Playwright Chromium |
+| CI/CD | GitHub Actions |
+| Staging | Azure Static Web Apps, Azure App Service, Azure SQL |
+
+CI uses Node.js 22. Use a current Node.js 22 release locally for the closest parity.
+
+## Repository Structure
 
 ```text
-.sdd/                 SDD artifacts, specs, constraints, RFCs, reviews, skills
-.agents/              Agent rules and project memory
-backend/              Node.js + Express.js backend
-frontend/             React + Bootstrap frontend
-database/             SQL Server scripts
-tests/                Unit, integration, and e2e tests
-docs/                 API docs, architecture diagrams, and foundation documents
-.github/workflows/    CI/CD workflows
+.agents/                 Agent instructions and project memory
+.sdd/                    Constitution, specs, constraints, reviews, and test policy
+.github/workflows/       CI and staging deployment workflows
+backend/                 Express API, services, repositories, validators, and tests
+database/                Canonical SQL Server schema
+docs/                    Architecture, deployment, release, testing, and user documentation
+frontend/                React/Vite application and frontend tests
+scripts/                 Repository quality and deployment utilities
+tests/e2e/               Playwright system browser tests
 ```
 
-Core features must be specified under `.sdd/specs/feat-{name}/` before implementation.
+## Prerequisites
 
-The official feature source of truth is [docs/phase_1_foundation/07_master_feature_list.md](docs/phase_1_foundation/07_master_feature_list.md).
+- Node.js 22 and npm
+- SQL Server for local database-backed workflows
+- Git
+- Chromium installed through Playwright for browser tests
+- Azure for Students only when provisioning staging resources
+
+## Local Setup
+
+Install each workspace from the repository root:
+
+```powershell
+npm.cmd ci
+npm.cmd --prefix backend ci
+npm.cmd --prefix frontend ci
+npx.cmd playwright install chromium
+```
+
+Create local environment files from the tracked examples:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+Copy-Item frontend/.env.example frontend/.env
+```
+
+Generate a local JWT secret without committing it:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Set the SQL Server values in `backend/.env`, then start both applications:
+
+```powershell
+npm.cmd run dev
+```
+
+Default local endpoints:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3000`
+- Health: `http://localhost:3000/health`
+- Swagger UI: `http://localhost:3000/api-docs`
+
+## Environment Configuration
+
+The tracked environment examples contain names and safe defaults only. Real `.env` files remain
+ignored.
+
+Backend configuration groups:
+
+- authentication: `JWT_SECRET`, bcrypt and token lifetime settings;
+- SQL Server: `DB_SERVER`, `DB_NAME`, optional SQL credentials, encryption settings;
+- browser boundary: `CORS_ORIGINS`, `FRONTEND_BASE_URL`;
+- optional email: SMTP host, port, credentials, and sender.
+
+Frontend builds use `VITE_API_BASE_URL`. Vite variables are public build-time values and must never
+contain secrets.
+
+## Development Commands
+
+```powershell
+npm.cmd run dev                         # backend and frontend
+npm.cmd --prefix backend test          # full backend suite
+npm.cmd --prefix backend run test:coverage:ci
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
+npm.cmd run test:system                # deterministic system integration
+npm.cmd run test:e2e                   # browser golden path
+npm.cmd run test:deployment            # deployment utility tests
+npm.cmd run schema:azure:prepare       # derive Azure SQL schema under tmp/
+npm.cmd run smoke:staging              # read-only checks against staging URLs
+npm.cmd run docs:screenshots           # regenerate synthetic user-manual images
+npm.cmd run trace:enforce              # FR @spec traceability gate
+```
+
+The SQL shared-state suite is mutation-gated. Use only an approved local/test database and follow
+the [system integration runbook](docs/testing/system-integration-demo-runbook.md).
+
+## Test And Quality Gates
+
+The current observed baseline is:
+
+- backend: 307 tests across 24 suites;
+- frontend: 38 tests;
+- coverage: 93.02% statements, 83.22% branches, 96.37% functions, 92.94% lines;
+- Playwright system golden path: passing;
+- traceability: six implemented features meet the enforced threshold;
+- production dependency audit: no unresolved Critical/High finding.
+
+Evidence:
+
+- [Week 13 acceptance record](docs/release/week13-acceptance-record.md)
+- [System integration evidence](.sdd/reviews/system-integration-evidence-2026-07-14.md)
+- [Week 11 coverage evidence](.sdd/reviews/week11-coverage-evidence-2026-07-14.md)
+- [Week 11 E2E evidence](.sdd/reviews/week11-e2e-evidence-2026-07-14.md)
+- [Week 12 security audit](.sdd/reviews/week12-security-audit-2026-07-14.md)
+
+## API Documentation
+
+- Machine-readable source: [OpenAPI YAML](backend/src/docs/openapi.yaml)
+- Local interactive documentation: `GET /api-docs`
+- Supporting contract notes: [API contract](docs/api/api-contract.md)
+
+Protected behavior must be verified against the related feature `SPEC.md`; Swagger does not replace
+the specification.
+
+## Azure Staging
+
+Week 13 uses separate staging services:
+
+- Azure Static Web Apps Free for the frontend;
+- Azure App Service F1 for the backend;
+- Azure SQL Database only inside the confirmed free allowance or Azure for Students credit.
+
+Deployment is staging-only and manually dispatched after quality gates pass. Database schema changes
+are never executed automatically by CI.
+
+- [Azure staging guide](docs/deployment/azure-staging-guide.md)
+- [Week 13 design](docs/superpowers/specs/2026-07-14-week13-documentation-deployment-design.md)
+- [Week 13 implementation plan](docs/superpowers/plans/2026-07-14-week13-documentation-deployment.md)
+
+## User Documentation
+
+- [User manual](docs/user-manual.md)
+- [Presentation demo runbook](docs/testing/system-integration-demo-runbook.md)
+- [Vietnamese system overview](docs/tong-quan-he-thong-vi.md)
+
+## Current Limitations
+
+- FE09 legacy React UI can use local browser records for classroom continuity; release evidence uses
+  the production-aligned server API instead.
+- FE10 notification inbox UI is not part of the completed acceptance scope.
+- SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
+- The frontend production bundle has a non-blocking chunk-size advisory.
+- SMTP delivery is unavailable unless a staging mail provider is configured.
+
+## Security Notes
+
+- Never commit `.env` files, credentials, passwords, JWT secrets, deployment tokens, or real personal
+  data.
+- Production CORS is an explicit allowlist.
+- Protected actions enforce authentication and role checks on the server.
+- SQL values use parameterized `mssql` inputs; dynamic identifiers come from code-owned allowlists.
+- Internal 5xx details and sensitive notification payloads are not returned to clients.
+- Review the accepted Medium/Low risks in the [Week 12 security audit](.sdd/reviews/week12-security-audit-2026-07-14.md) before public deployment.
+
+## Team Workflow
+
+1. Update or approve the relevant feature specification.
+2. Create/review `PLAN.md` and `TASKS.md`.
+3. Implement on a feature branch or isolated worktree.
+4. Add tests and traceability.
+5. Run automated, spec, constitution, and acceptance gates.
+6. Obtain human review before merge or deployment.
+
+Project rules are defined in [`.agents/AGENTS.md`](.agents/AGENTS.md) and the
+[constitution](.sdd/constitution.md).

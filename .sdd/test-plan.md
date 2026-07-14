@@ -337,7 +337,7 @@ Do not merge if a required command fails unless the team lead documents an accep
 | Milestone | Target Evidence | Status |
 | --- | --- | --- |
 | Week 6: Auth `>=80%` coverage | Auth unit/integration tests pass; coverage checked | Pending formal coverage threshold |
-| Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | In progress (6 features implemented) |
+| Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | Ready for human staging acceptance (6 features) |
 | Traceability gate enforced | CI runs `trace:enforce`; implemented features ≥70% | **Done (2026-06-25)** |
 | Week 11: `>=80%` coverage verified | Coverage report generated; gaps filled | **Done (2026-07-14)** |
 | Week 11: critical browser E2E | Playwright covers login -> borrow -> approve -> return -> fine -> report | **Done (2026-07-14)** |
