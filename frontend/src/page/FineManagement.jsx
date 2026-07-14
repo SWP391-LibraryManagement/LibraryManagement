@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import AppLayout from '../component/layout/AppLayout';
-import { StatusNotice } from '../component/shared/Feedback';
+import { Badge, ConfirmAction, EmptyState, StatusNotice, Toast, useToast } from '../component/shared/Feedback';
+import { DataTable, DataToolbar } from '../component/shared/OperationalPatterns';
 import BookManagement from './BookManagement';
 import {
   DAILY_FINE_RATE,
@@ -233,25 +234,8 @@ function getStoredStaffUser() {
 }
 
 function StatusBadge({ status }) {
-  return <span className={`fine-badge status-${status.toLowerCase()}`}>{statusLabels[status] || status}</span>;
-}
-
-function Toast({ toast, onClose }) {
-  return (
-    <button className={`fine-toast ${toast.type}`} onClick={onClose}>
-      {toast.type === 'error' ? <AlertTriangle size={17} /> : <Check size={17} />}
-      <span>{toast.message}</span>
-    </button>
-  );
-}
-
-function EmptyState({ message }) {
-  return (
-    <div className="fine-empty">
-      <ReceiptText size={28} />
-      <span>{message}</span>
-    </div>
-  );
+  const tone = status === 'PAID' ? 'paid' : status === 'WAIVED' ? 'info' : 'unpaid';
+  return <Badge status={tone}>{statusLabels[status] || status}</Badge>;
 }
 
 const DEFAULT_FINE_FORM = {
@@ -310,32 +294,32 @@ function validateFineForm(form) {
 
   requiredFields.forEach((field) => {
     if (!String(form[field] || '').trim()) {
-      errors[field] = 'Required.';
+      errors[field] = 'Trường này là bắt buộc.';
     }
   });
 
   if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    errors.email = 'Invalid email.';
+    errors.email = 'Email không đúng định dạng.';
   }
 
   ['userId', 'borrowDetailId'].forEach((field) => {
     const value = Number(form[field]);
     if (!Number.isInteger(value) || value <= 0) {
-      errors[field] = 'Must be a positive integer.';
+      errors[field] = 'Giá trị phải là số nguyên dương.';
     }
   });
 
   const overdueDays = Number(form.overdueDays);
   if (!Number.isInteger(overdueDays) || overdueDays <= 0) {
-    errors.overdueDays = 'Must be a positive integer.';
+    errors.overdueDays = 'Số ngày quá hạn phải là số nguyên dương.';
   }
 
   if (!Number.isFinite(Number(form.amount)) || Number(form.amount) <= 0) {
-    errors.amount = 'Must be greater than zero.';
+    errors.amount = 'Số tiền phải lớn hơn 0.';
   }
 
   if (!['UNPAID', 'PAID', 'WAIVED'].includes(form.status)) {
-    errors.status = 'Invalid status.';
+    errors.status = 'Trạng thái không hợp lệ.';
   }
 
   return errors;
@@ -396,7 +380,8 @@ export default function FineManagement() {
   const [fineForm, setFineForm] = useState(DEFAULT_FINE_FORM);
   const [fineFormErrors, setFineFormErrors] = useState({});
   const [fineFormMode, setFineFormMode] = useState('create');
-  const [toast, setToast] = useState(null);
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [toast, showToast, clearToast] = useToast();
 
   const unpaidFines = useMemo(() => fines.filter((fine) => fine.status === 'UNPAID'), [fines]);
   const isPaymentWorkflow = activeSection === 'collection' || activeSection === 'paid';
@@ -504,12 +489,6 @@ export default function FineManagement() {
   const isBankTransfer = collectionForm.paymentMethod === BANK_TRANSFER_METHOD;
   const transferContent = getTransferContent(selectedFine);
 
-  function showToast(message, type = 'success') {
-    setToast({ message, type });
-    window.clearTimeout(showToast.timer);
-    showToast.timer = window.setTimeout(() => setToast(null), 3200);
-  }
-
   function resetFineForm() {
     setFineForm(DEFAULT_FINE_FORM);
     setFineFormErrors({});
@@ -538,7 +517,7 @@ export default function FineManagement() {
     setFineFormErrors(errors);
 
     if (Object.keys(errors).length) {
-      showToast('Please fix the highlighted fine fields.', 'error');
+      showToast('Vui lòng sửa các trường phiếu phạt được đánh dấu.', 'error');
       return;
     }
 
@@ -579,7 +558,7 @@ export default function FineManagement() {
 
   function handleDeleteFine() {
     if (!selectedFine) {
-      showToast('Please select a fine first.', 'error');
+      showToast('Vui lòng chọn một phiếu phạt trước.', 'error');
       return;
     }
 
@@ -596,7 +575,7 @@ export default function FineManagement() {
     const borrowDetail = fineBorrowDetails.find((item) => item.borrowDetailId === borrowDetailId);
 
     if (!borrowDetailId) {
-      showToast('No overdue borrow detail is available for fine calculation.', 'error');
+      showToast('Không có chi tiết mượn quá hạn để tính tiền phạt.', 'error');
       return;
     }
 
@@ -675,9 +654,7 @@ export default function FineManagement() {
     showToast('Đã tính tiền phạt quá hạn và thêm vào danh sách phiếu phạt.');
   }
 
-  function handleRecordCollection(event) {
-    event.preventDefault();
-
+  function recordCollection() {
     if (!selectedFine || selectedFine.status !== 'UNPAID') {
       showToast('Chỉ phiếu chưa thanh toán mới được ghi nhận thu tiền.', 'error');
       return;
@@ -830,51 +807,47 @@ export default function FineManagement() {
                 <StatusBadge status={selectedFine?.status || 'UNPAID'} />
               </div>
 
-              <div className="fine-toolbar">
-                <label className="fine-search">
-                  <Search size={18} />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Tìm thành viên, sách, mã mượn..."
-                  />
-                </label>
-                <label className="fine-select">
-                  <Filter size={17} />
-                  <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                    {Object.entries(statusLabels).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <DataToolbar
+                primary={(
+                  <div className="search-input">
+                    <Search size={18} />
+                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm thành viên, sách, mã mượn..." aria-label="Tìm phiếu phạt" />
+                  </div>
+                )}
+                filters={(
+                  <div className="row-flex">
+                    <Filter size={17} />
+                    <select className="select" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Lọc trạng thái phiếu phạt">
+                      {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                  </div>
+                )}
+                actions={(
+                  <>
+                    <button type="button" className="btn btn-outline" onClick={resetFineForm}><Plus size={15} /> Tạo mới</button>
+                    <button type="button" className="btn btn-danger" onClick={() => setConfirmTarget({ type: 'delete', fine: selectedFine })} disabled={!selectedFine}><Trash2 size={15} /> Xóa</button>
+                  </>
+                )}
+              />
 
               <form className="fine-crud-form" onSubmit={handleSaveFine}>
                 <div className="fine-crud-head">
-                  <strong>{fineFormMode === 'edit' ? `Edit fine #${fineForm.fineId}` : 'Add fine'}</strong>
-                  <div>
-                    <button type="button" className="fine-light-button" onClick={resetFineForm}>
-                      <Plus size={15} />New
-                    </button>
-                    <button type="button" className="fine-danger-button" onClick={handleDeleteFine} disabled={!selectedFine}>
-                      <Trash2 size={15} />Delete
-                    </button>
-                  </div>
+                  <strong>{fineFormMode === 'edit' ? `Chỉnh sửa phiếu #${fineForm.fineId}` : 'Thêm phiếu phạt'}</strong>
                 </div>
 
                 <div className="fine-crud-grid">
                   {[
-                    ['userId', 'User ID', 'number'],
-                    ['memberName', 'Member name', 'text'],
-                    ['memberCode', 'Member code', 'text'],
+                    ['userId', 'Mã người dùng', 'number'],
+                    ['memberName', 'Tên thành viên', 'text'],
+                    ['memberCode', 'Mã thành viên', 'text'],
                     ['email', 'Email', 'email'],
-                    ['borrowDetailId', 'Borrow detail ID', 'number'],
-                    ['bookTitle', 'Book title', 'text'],
+                    ['borrowDetailId', 'Mã chi tiết mượn', 'number'],
+                    ['bookTitle', 'Tên sách', 'text'],
                     ['barcode', 'Barcode', 'text'],
-                    ['dueDate', 'Due date', 'date'],
-                    ['returnDate', 'Return date', 'date'],
-                    ['overdueDays', 'Overdue days', 'number'],
-                    ['amount', 'Amount', 'number'],
+                    ['dueDate', 'Ngày đến hạn', 'date'],
+                    ['returnDate', 'Ngày trả', 'date'],
+                    ['overdueDays', 'Số ngày quá hạn', 'number'],
+                    ['amount', 'Số tiền', 'number'],
                   ].map(([field, label, type]) => (
                     <label key={field}>
                       {label}
@@ -890,7 +863,7 @@ export default function FineManagement() {
                   ))}
 
                   <label>
-                    Status
+                    Trạng thái
                     <select
                       value={fineForm.status}
                       onChange={(event) => setFineForm((current) => ({ ...current, status: event.target.value }))}
@@ -904,48 +877,35 @@ export default function FineManagement() {
                 </div>
 
                 <button type="submit" className="fine-save-button">
-                  <Check size={16} />{fineFormMode === 'edit' ? 'Save fine changes' : 'Add fine'}
+                  <Check size={16} />{fineFormMode === 'edit' ? 'Lưu thay đổi' : 'Thêm phiếu phạt'}
                 </button>
               </form>
 
-              <div className="fine-table-wrap">
-                <table className="fine-table">
-                  <thead>
-                    <tr>
-                      <th>Phiếu phạt</th>
-                      <th>Thành viên</th>
-                      <th>Sách</th>
-                      <th>Quá hạn</th>
-                      <th>Số tiền</th>
-                      <th>Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredFines.map((fine) => (
-                      <tr
-                        key={fine.fineId}
-                        className={fine.fineId === selectedFine?.fineId ? 'selected' : ''}
-                        onClick={() => chooseFine(fine.fineId)}
-                      >
-                        <td>#{fine.fineId}</td>
-                        <td>
-                          <strong>{fine.memberName}</strong>
-                          <span>{fine.memberCode}</span>
-                        </td>
-                        <td>
-                          <strong>{fine.bookTitle}</strong>
-                          <span>{fine.barcode}</span>
-                        </td>
-                        <td>{fine.overdueDays} ngày</td>
-                        <td>{formatCurrency(fine.amount)}</td>
-                        <td><StatusBadge status={fine.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {filteredFines.length === 0 && <EmptyState message="Không có phiếu phạt phù hợp với bộ lọc." />}
+              <DataTable
+                caption="Fine records table"
+                headers={['Phiếu phạt', 'Thành viên', 'Sách', 'Quá hạn', 'Số tiền', 'Trạng thái']}
+                isEmpty={filteredFines.length === 0}
+                emptyState={(
+                  <EmptyState
+                    icon={ReceiptText}
+                    title="Không có phiếu phạt phù hợp"
+                    action={(query || statusFilter !== 'ALL') ? (
+                      <button type="button" className="btn btn-outline" onClick={() => { setQuery(''); setStatusFilter('ALL'); }}>Xóa bộ lọc</button>
+                    ) : null}
+                  />
+                )}
+              >
+                {filteredFines.map((fine) => (
+                  <tr key={fine.fineId} className={fine.fineId === selectedFine?.fineId ? 'selected' : ''} onClick={() => chooseFine(fine.fineId)}>
+                    <td data-label="Phiếu phạt">#{fine.fineId}</td>
+                    <td data-label="Thành viên"><strong>{fine.memberName}</strong><span className="field-hint">{fine.memberCode}</span></td>
+                    <td data-label="Sách"><strong>{fine.bookTitle}</strong><span className="field-hint">{fine.barcode}</span></td>
+                    <td data-label="Quá hạn">{fine.overdueDays} ngày</td>
+                    <td data-label="Số tiền">{formatCurrency(fine.amount)}</td>
+                    <td data-label="Trạng thái"><StatusBadge status={fine.status} /></td>
+                  </tr>
+                ))}
+              </DataTable>
             </div>
 
             <FineDetailPanel selectedFine={selectedFine} />
@@ -977,7 +937,7 @@ export default function FineManagement() {
                 </select>
               </label>
 
-              {fineBorrowDetails.length === 0 && <EmptyState message="Không có chi tiết mượn trong danh sách phiếu phạt." />}
+              {fineBorrowDetails.length === 0 && <EmptyState icon={ReceiptText} title="Không có chi tiết mượn trong danh sách phiếu phạt" />}
 
               <div className="fine-preview-grid">
                 <div>
@@ -1014,7 +974,13 @@ export default function FineManagement() {
 
         {activeSection === 'collection' && (
           <section className="fine-section-layout">
-            <form className="fine-panel fine-form-panel" onSubmit={handleRecordCollection}>
+            <form
+              className="fine-panel fine-form-panel"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (selectedFine) setConfirmTarget({ type: 'collect', fine: selectedFine });
+              }}
+            >
               <div className="fine-panel-head">
                 <div>
                   <p>Thu tiền tại quầy</p>
@@ -1034,7 +1000,7 @@ export default function FineManagement() {
                 </select>
               </label>
 
-              {unpaidFines.length === 0 && <EmptyState message="Không còn phiếu phạt chưa thanh toán để ghi nhận thu tiền." />}
+              {unpaidFines.length === 0 && <EmptyState icon={ReceiptText} title="Không còn phiếu phạt chưa thanh toán để ghi nhận thu tiền" />}
 
               <label>
                 Phương thức thanh toán
@@ -1133,7 +1099,7 @@ export default function FineManagement() {
               </div>
 
               {unpaidFines.length === 0 ? (
-                <EmptyState message="Không còn phiếu phạt chưa thanh toán để tất toán." />
+                <EmptyState icon={ReceiptText} title="Không còn phiếu phạt chưa thanh toán để tất toán" />
               ) : (
                 <>
                   <label>
@@ -1156,7 +1122,7 @@ export default function FineManagement() {
                     <strong>{selectedFine ? statusLabels[selectedFine.status] : '-'}</strong>
                   </div>
 
-                  <button onClick={handleMarkPaid} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
+                  <button onClick={() => setConfirmTarget({ type: 'paid', fine: selectedFine })} disabled={!selectedFine || selectedFine.status !== 'UNPAID'}>
                     <Check size={17} />Đánh dấu đã thanh toán
                   </button>
                 </>
@@ -1175,7 +1141,23 @@ export default function FineManagement() {
         )}
           </>
         )}
-      {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      {confirmTarget && (
+        <ConfirmAction
+          title={confirmTarget.type === 'delete' ? 'Xóa phiếu phạt' : confirmTarget.type === 'collect' ? 'Ghi nhận thu tiền' : 'Đánh dấu đã thanh toán'}
+          tone={confirmTarget.type === 'delete' ? 'danger' : 'primary'}
+          confirmLabel={confirmTarget.type === 'delete' ? 'Xóa phiếu' : 'Xác nhận'}
+          onCancel={() => setConfirmTarget(null)}
+          onConfirm={() => {
+            if (confirmTarget.type === 'delete') handleDeleteFine();
+            if (confirmTarget.type === 'collect') recordCollection();
+            if (confirmTarget.type === 'paid') handleMarkPaid();
+            setConfirmTarget(null);
+          }}
+        >
+          <p>Kiểm tra lại phiếu phạt <strong>#{confirmTarget.fine?.fineId}</strong> và số tiền trước khi tiếp tục.</p>
+        </ConfirmAction>
+      )}
+      <Toast toast={toast} onClose={clearToast} />
     </AppLayout>
   );
 }
@@ -1192,7 +1174,7 @@ function FineDetailPanel({ selectedFine, compact = false }) {
       </div>
 
       {!selectedFine ? (
-        <EmptyState message="Chọn một phiếu phạt để xem chi tiết." />
+        <EmptyState icon={ReceiptText} title="Chọn một phiếu phạt để xem chi tiết" />
       ) : (
         <>
           <div className="fine-detail-card">

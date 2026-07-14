@@ -17,3 +17,19 @@ test('FE09 uses AppLayout while retaining prototype data ownership', async () =>
   assert.doesNotMatch(source, /<style>\{`/);
   assert.doesNotMatch(source, /function handleLogout\(/);
 });
+
+test('FE09 reuses shared workflow components without API alignment', async () => {
+  const source = await readFile(new URL('../src/page/FineManagement.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /DataToolbar/);
+  assert.match(source, /DataTable/);
+  assert.match(source, /ConfirmAction/);
+  assert.match(source, /EmptyState/);
+  assert.match(source, /Toast/);
+  assert.doesNotMatch(source, /function Toast\(/);
+  assert.doesNotMatch(source, /function EmptyState\(/);
+  assert.doesNotMatch(source, /<table className="fine-table"/);
+  assert.doesNotMatch(source, /authorizedRequest|fineApi/);
+  assert.match(source, /DAILY_FINE_RATE/);
+  assert.match(source, /saveFineRecords\(fines\)/);
+});
