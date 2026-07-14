@@ -12,6 +12,10 @@ import AuthCard from '../component/login/AuthCard';
 import { loginAccount } from '../api/authApi';
 import '../styles/login.css';
 
+function getPostLoginPath(roles = []) {
+  return roles.map((role) => String(role).toUpperCase()).includes('ADMIN') ? '/admin/users' : '/home';
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState(null);
@@ -38,7 +42,7 @@ export default function LoginPage() {
         roles: result.roles,
       }));
       setFeedback({ severity: 'success', message: 'Đăng nhập thành công.' });
-      navigate('/home');
+      navigate(getPostLoginPath(result.roles));
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
