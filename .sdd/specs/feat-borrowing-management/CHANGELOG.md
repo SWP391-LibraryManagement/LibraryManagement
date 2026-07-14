@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-14 - B7 Integration and Review Closeout
+
+- Pushed implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` on `feat/fe07-validation` and opened PR #19 against `main`.
+- GitHub Actions passed on the PR, then PR #19 merged as `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
+- GitHub Actions CI run `29308540692` passed for the merge commit on `main`.
+- Recorded the integration evidence in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md` and marked FE07 complete through B7.
+
 ## 2026-07-14 - B6 L4 Browser Acceptance and Validation Closeout
 
 - Added member/staff route guards for every FE07 screen and removed fabricated API fallback rows and simulated mutation success from history, approval, return, and member-detail workflows.

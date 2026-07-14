@@ -1,6 +1,6 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.2
+Version: 0.2.3
 Status: COMPLETE
 Last Updated: 2026-07-14
 
@@ -66,3 +66,10 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
+
+## 8. B7 Integration Evidence
+
+- Implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` is contained in `main` through PR #19 and merge commit `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
+- GitHub Actions CI run `29308540692` passed on the merge commit.
+- The successful CI job covered traceability enforcement, backend tests, frontend lint/tests/build, and the backend health import check.
+- Detailed evidence is recorded in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
