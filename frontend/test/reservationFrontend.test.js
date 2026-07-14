@@ -176,3 +176,20 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /title="Xóa"/);
   assert.doesNotMatch(source, /item\.status !== 'Ready to pick up'/);
 });
+
+test('FE08 pages adopt shared operational patterns and preserve demo fallback boundaries', async () => {
+  const mine = await readFile(new URL('../src/page/reservation/MyReservationsPage.jsx', import.meta.url), 'utf8');
+  const staff = await readFile(new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url), 'utf8');
+
+  for (const source of [mine, staff]) {
+    assert.match(source, /DataToolbar/);
+    assert.match(source, /DataTable/);
+    assert.match(source, /ConfirmAction/);
+  }
+  assert.match(mine, /setReservations\(DEMO_MY_RESERVATIONS\)/);
+  assert.match(staff, /setRows\(DEMO_ALL_RESERVATIONS\)/);
+  assert.match(mine, /pending=\{cancelling\}/);
+  assert.match(staff, /pending=\{notifying\}/);
+  assert.doesNotMatch(mine, /<table className="lib-table"/);
+  assert.doesNotMatch(staff, /<table className="lib-table"/);
+});
