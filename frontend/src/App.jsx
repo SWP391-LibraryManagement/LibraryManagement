@@ -60,7 +60,6 @@ function App() {
       <Route path="/reports/users" element={<UserStatisticsPage />} />
       <Route path="/profile" element={<UserProfilePage />} />
       <Route path="/membership" element={<MembershipPage />} />
-      <Route path="/librarian/membership" element={<MembershipPage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

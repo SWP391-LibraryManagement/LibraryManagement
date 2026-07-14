@@ -1,7 +1,7 @@
 import ApplicationTableBody from './ApplicationTableBody';
 import TablePagination from './TablePagination';
 
-export default function MembershipApplicationsTable({ applications, page, totalPages, onPageChange, onReview }) {
+export default function MembershipApplicationsTable({ applications, page, totalPages, onPageChange, onApprove, onReject }) {
   return (
     <>
       <div className="lib-table-wrap">
@@ -18,7 +18,7 @@ export default function MembershipApplicationsTable({ applications, page, totalP
             </tr>
           </thead>
           <tbody>
-            <ApplicationTableBody applications={applications} onReview={onReview} />
+            <ApplicationTableBody applications={applications} onApprove={onApprove} onReject={onReject} />
           </tbody>
         </table>
       </div>

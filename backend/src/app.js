@@ -17,6 +17,7 @@ const { createFineRoutes } = require('./routes/fineRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createAdminRoutes } = require('./routes/adminRoutes');
 const { createInventoryRoutes } = require('./routes/inventoryRoutes');
+const { createMembershipRoutes } = require('./routes/membershipRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
@@ -28,6 +29,7 @@ const { defaultReservationService } = require('./services/reservationService');
 const { defaultProfileService } = require('./services/profileService');
 const { defaultFineManagementService } = require('./services/fineManagementService');
 const { defaultInventoryService } = require('./services/inventoryService');
+const { defaultMembershipService } = require('./services/membershipService');
 
 function createApp({
   authService = defaultAuthService,
@@ -38,6 +40,7 @@ function createApp({
   profileService = defaultProfileService,
   fineManagementService = defaultFineManagementService,
   inventoryService = defaultInventoryService,
+  membershipService = defaultMembershipService,
   userManagementService,
   adminService,
 } = {}) {
@@ -69,6 +72,7 @@ function createApp({
   app.use('/api/reports', createReportRoutes({ authService, reportService }));
   app.use('/api/reservations', createReservationRoutes({ authService, reservationService }));
   app.use('/api/profile', createProfileRoutes({ authService, profileService }));
+  app.use('/api/membership', createMembershipRoutes({ authService, membershipService }));
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/admin', createAdminRoutes({ authService, adminService }));
   app.use('/api', createInventoryRoutes({ authService, inventoryService }));

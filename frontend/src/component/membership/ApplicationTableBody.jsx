@@ -3,7 +3,7 @@ import { ClipboardList } from 'lucide-react';
 import { EmptyState } from '../shared/Feedback';
 import ApplicationTableRow from './ApplicationTableRow';
 
-export default function ApplicationTableBody({ applications, onReview }) {
+export default function ApplicationTableBody({ applications, onApprove, onReject }) {
   if (!applications.length) {
     return (
       <tr>
@@ -15,6 +15,11 @@ export default function ApplicationTableBody({ applications, onReview }) {
   }
 
   return applications.map((application) => (
-    <ApplicationTableRow key={application.applicationId || application.id} application={application} onReview={onReview} />
+    <ApplicationTableRow
+      key={application.applicationId || application.id}
+      application={application}
+      onApprove={onApprove}
+      onReject={onReject}
+    />
   ));
 }

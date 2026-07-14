@@ -28,10 +28,20 @@ function getStoredUser() {
 }
 
 function normalizeList(response) {
-  if (Array.isArray(response)) return { items: response, totalPages: 1 };
+  if (Array.isArray(response)) return { items: response.map(normalizeApplication), totalPages: 1 };
   return {
-    items: response?.items || response?.applications || response?.data || [],
+    items: (response?.items || response?.applications || response?.data || []).map(normalizeApplication),
     totalPages: response?.totalPages || response?.pagination?.totalPages || 1,
+  };
+}
+
+function normalizeApplication(application) {
+  const applicant = application?.applicant || {};
+  return {
+    ...application,
+    fullName: application.fullName || application.name || application.userName || applicant.fullName || applicant.username,
+    email: application.email || applicant.email,
+    phone: application.phone || applicant.phone,
   };
 }
 
@@ -53,9 +63,6 @@ export default function MembershipPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const status = await membershipApi.getMyStatus();
-      setMyStatus(status || DEMO_STATUS);
-
       if (canReview) {
         const list = normalizeList(await membershipApi.listApplications({
           status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -64,6 +71,9 @@ export default function MembershipPage() {
         }));
         setApplications(list.items);
         setTotalPages(list.totalPages);
+      } else {
+        const status = await membershipApi.getMyStatus();
+        setMyStatus(status || DEMO_STATUS);
       }
 
     } catch {
@@ -96,10 +106,15 @@ export default function MembershipPage() {
   }
 
   async function approveSelected() {
+    if (!selected) return;
+    await approveApplication(selected);
+  }
+
+  async function approveApplication(application) {
     setSaving(true);
     try {
-      await membershipApi.approve(selected.applicationId || selected.id);
-      showToast('Da duyet don membership.', 'success');
+      await membershipApi.approve(application.applicationId || application.id);
+      showToast('Đã xác thực đơn membership.', 'success');
       setSelected(null);
       await loadData();
     } catch (error) {
@@ -139,34 +154,36 @@ export default function MembershipPage() {
   return (
     <AppLayout
       active={canReview ? 'membership-review' : 'membership'}
-      title="Membership"
-      subtitle="Dang ky, xem trang thai va duyet membership theo FE04."
+      title={canReview ? 'Quản lý đơn đăng ký membership' : 'Membership'}
+      subtitle={canReview ? 'Admin/thủ thư xem, xác thực hoặc từ chối đơn đăng ký hội viên.' : 'Đăng ký và xem trạng thái membership.'}
       actions={<span className="stat-chip"><UserCheck size={16} /> FE04</span>}
     >
       <Toast toast={toast} onClose={clearToast} />
 
       {loading ? <LoadingBlock rows={4} /> : (
         <>
-          <div className="split">
-            <MyMembershipStatus status={myStatus} />
-            <MembershipApplicationForm
-              applicant={authUser}
-              disabled={!['NONE', 'REJECTED'].includes(String(myStatus.status || 'NONE').toUpperCase())}
-              saving={saving}
-              onSubmit={applyForMembership}
-            />
-          </div>
+          {!canReview && (
+            <div className="split">
+              <MyMembershipStatus status={myStatus} />
+              <MembershipApplicationForm
+                applicant={authUser}
+                disabled={!['NONE', 'REJECTED'].includes(String(myStatus.status || 'NONE').toUpperCase())}
+                saving={saving}
+                onSubmit={applyForMembership}
+              />
+            </div>
+          )}
 
           {canReview && (
-            <section className="lib-card" style={{ marginTop: 18 }}>
+            <section className="lib-card">
               <div className="panel-header">
                 <span className="kpi-icon"><ClipboardList size={18} /></span>
                 <div>
-                  <h2 className="lib-card-title" style={{ margin: 0 }}>Duyet don membership</h2>
-                  <p className="ph-sub">Chi don PENDING moi duoc approve/reject.</p>
+                  <h2 className="lib-card-title" style={{ margin: 0 }}>Danh sách đơn đăng ký</h2>
+                  <p className="ph-sub">Chỉ đơn PENDING mới được xác thực hoặc từ chối.</p>
                 </div>
                 <button type="button" className="btn btn-outline" style={{ marginLeft: 'auto' }} onClick={loadData} disabled={loading}>
-                  <RefreshCw size={16} /> Tai lai
+                  <RefreshCw size={16} /> Tải lại
                 </button>
               </div>
 
@@ -178,13 +195,21 @@ export default function MembershipPage() {
                 onSearchChange={setSearch}
                 onReload={loadData}
               />
-              <MembershipApplicationsTable applications={filteredApplications} page={page} totalPages={totalPages} onPageChange={setPage} onReview={setSelected} />
+              <MembershipApplicationsTable
+                applications={filteredApplications}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onApprove={approveApplication}
+                onReject={setSelected}
+              />
             </section>
           )}
         </>
       )}
 
       <MembershipReviewModal
+        key={selected?.applicationId || selected?.id || 'membership-review'}
         application={selected}
         saving={saving}
         onApprove={approveSelected}

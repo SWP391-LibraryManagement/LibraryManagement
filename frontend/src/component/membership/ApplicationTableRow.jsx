@@ -1,4 +1,4 @@
-import { ClipboardList } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 import MembershipStatusBadge from './MembershipStatusBadge';
 
@@ -7,20 +7,28 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
-export default function ApplicationTableRow({ application, onReview }) {
+export default function ApplicationTableRow({ application, onApprove, onReject }) {
   const status = String(application.status || '').toUpperCase();
+  const fullName = application.fullName || application.name || application.userName || application.applicant?.fullName || application.applicant?.username || '-';
+  const email = application.email || application.applicant?.email || '-';
+  const canReview = status === 'PENDING';
 
   return (
     <tr>
       <td><strong>#{application.applicationId || application.id}</strong></td>
-      <td>{application.fullName || application.name || application.userName || '-'}</td>
-      <td>{application.email || '-'}</td>
+      <td>{fullName}</td>
+      <td>{email}</td>
       <td>{formatDate(application.appliedAt || application.createdAt)}</td>
       <td><MembershipStatusBadge status={status} /></td>
       <td style={{ textAlign: 'right' }}>
-        <button type="button" className="btn btn-outline btn-sm" onClick={() => onReview(application)} disabled={status !== 'PENDING'}>
-          <ClipboardList size={15} /> Xu ly
-        </button>
+        <div className="row-flex" style={{ justifyContent: 'flex-end' }}>
+          <button type="button" className="btn btn-success btn-sm" onClick={() => onApprove(application)} disabled={!canReview}>
+            <Check size={15} /> Xác thực
+          </button>
+          <button type="button" className="btn btn-danger btn-sm" onClick={() => onReject(application)} disabled={!canReview}>
+            <X size={15} /> Từ chối
+          </button>
+        </div>
       </td>
     </tr>
   );
