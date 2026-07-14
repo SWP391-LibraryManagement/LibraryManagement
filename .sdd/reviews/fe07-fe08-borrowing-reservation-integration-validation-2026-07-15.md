@@ -2,16 +2,16 @@
 
 Date: 2026-07-15
 
-Status: READY FOR HUMAN REVIEW
+Status: HUMAN REVIEW CONFIRMED - READY FOR INTEGRATION DECISION
 
 Branch: `fix/fe08-borrowing-reservation-integration`
 
 ## Purpose
 
-Record the validation evidence for the approved FE07 borrowing and FE08
-reservation integration before Nhat's required human review. This slice keeps
-FE07 responsible for borrow create/approval and FE08 responsible for queue
-processing while enforcing reservation priority across both features.
+Record the validation evidence and Nhat's completed human review for the
+approved FE07 borrowing and FE08 reservation integration. This slice keeps FE07
+responsible for borrow create/approval and FE08 responsible for queue processing
+while enforcing reservation priority across both features.
 
 ## Validated Behavior
 
@@ -69,20 +69,25 @@ Commit: `16fa2ed test: sync reservation claims in integration harness`
 - `a6137d4 fix: serialize reservation and borrowing transitions`
 - `39f9c1a docs: expose reservation priority conflicts`
 - `16fa2ed test: sync reservation claims in integration harness`
+- `cf08c0e docs: validate borrowing reservation integration`
 
 ## Human Review Checklist
 
-- [ ] Confirm FE07 create blocks ordinary borrowing when an `ACTIVE` queue exists.
-- [ ] Confirm only the matching `NOTIFIED` owner may borrow a held `RESERVED` copy.
-- [ ] Confirm approval atomically changes the matching reservation to `FULFILLED`.
-- [ ] Confirm the `BookCopies -> Reservations` lock order is consistent in hold, cancellation, expiration, and fulfillment paths.
-- [ ] Confirm queue processing remains manual and the out-of-scope list is unchanged.
-- [ ] Confirm error/OpenAPI messages clearly explain reservation priority conflicts.
-- [ ] Approve or request changes before any push or merge.
+- [x] Confirm FE07 create blocks ordinary borrowing when an `ACTIVE` queue exists.
+- [x] Confirm only the matching `NOTIFIED` owner may borrow a held `RESERVED` copy.
+- [x] Confirm approval atomically changes the matching reservation to `FULFILLED`.
+- [x] Confirm the `BookCopies -> Reservations` lock order is consistent in hold, cancellation, expiration, and fulfillment paths.
+- [x] Confirm queue processing remains manual and the out-of-scope list is unchanged.
+- [x] Confirm error/OpenAPI messages clearly explain reservation priority conflicts.
+- [x] Approve or request changes before any push or merge.
+
+Nhat explicitly confirmed `đã review` in this Codex task on 2026-07-15. This
+closes the required human review gate; it does not authorize push or merge by
+itself.
 
 ## Remaining Gate
 
-Nhat must complete the checklist and explicitly approve the branch. This record
-does not claim human approval, push, pull request creation, or merge.
+Choose the integration path for the reviewed branch. No push, pull request, or
+merge has been performed.
 
-Verdict: **Automated validation complete; ready for Nhat's human review.**
+Verdict: **Automated validation and human review complete; ready for integration decision.**
