@@ -50,6 +50,33 @@ test('passes for healthy frontend, API, strict CORS, and protected auth route', 
   }
 });
 
+test('retries a transient timeout while staging warms up', async () => {
+  const fixture = await startFixture();
+  let frontendAttempts = 0;
+  const fetchWithInitialTimeout = async (url, options) => {
+    if (url === `${fixture.baseUrl}/` && frontendAttempts++ === 0) {
+      const error = new Error('This operation was aborted');
+      error.name = 'AbortError';
+      throw error;
+    }
+    return fetch(url, options);
+  };
+
+  try {
+    const result = await runStagingSmoke({
+      frontendUrl: fixture.baseUrl,
+      apiUrl: fixture.baseUrl,
+      fetchImpl: fetchWithInitialTimeout,
+      requestAttempts: 2,
+      retryDelayMs: 0,
+    });
+    assert.equal(result.status, 'PASS');
+    assert.equal(frontendAttempts, 2);
+  } finally {
+    await fixture.close();
+  }
+});
+
 test('fails when the API allows an untrusted origin', async () => {
   const fixture = await startFixture({ permissiveCors: true });
   try {
