@@ -1,10 +1,10 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: READY FOR REVIEW
+Status: IN PROGRESS
 
 Owner: Nhat
 
-Updated: 2026-07-13
+Updated: 2026-07-15
 
 ---
 
@@ -15,7 +15,7 @@ Updated: 2026-07-13
 - [x] FE08-T03 Add role guard middleware for member/librarian/admin actions.
 - [x] FE08-T04 Add reservation service rules for eligibility, duplicate active reservation, available-copy rejection, and max active limit.
 - [x] FE08-T05 Add SQL repository methods for copy lookup, reservation CRUD, staff list, and queue hold.
-- [x] FE08-T06 Add member endpoints: create reservation, list my reservations, cancel my active reservation.
+- [x] FE08-T06 Add member endpoints: create reservation, list my reservations, cancel my `ACTIVE` or `NOTIFIED` reservation.
 - [x] FE08-T07 Add staff endpoints: list reservations, process one reservation, process next queue item.
 - [x] FE08-T08 Create FE10 `RESERVATION_READY` notification request during queue processing.
 - [x] FE08-T09 Write audit logs for create, cancel, and process actions.
@@ -47,6 +47,10 @@ Updated: 2026-07-13
 - [x] FE08-T26 Remove local-only fulfillment and deletion controls.
 - [x] FE08-T27 Add focused frontend regression tests for lifecycle, error isolation, and page contract.
 
+## 4.1 FE07-FE08 Integration Task
+
+- [ ] FE08-T025 Align cancellation/expiration lock order and FE07 fulfillment handoff. Trace: BR-FE08-015/016; AC-FE08-011/012. Dependency: FE07-T029/T030. Done when concurrency tests pass without deadlock.
+
 ## 5. Validation
 
 - [x] `npm.cmd --prefix frontend test` - 14/14 tests passed.
@@ -72,6 +76,7 @@ Updated: 2026-07-13
 | FR-FE08-005 | FE08-T07, FE08-T13 |
 | FR-FE08-008 | FE08-T08, FE08-T14 |
 | FR-FE08-010 | FE08-T06, FE08-T12 |
+| BR-FE08-015/016; AC-FE08-011/012 | FE08-T025 |
 
 ### 6.1 Supplemental Frontend Correctness Traceability
 
@@ -86,6 +91,6 @@ Updated: 2026-07-13
 
 ## 7. Still Outside This Slice
 
-- FE07 return integration.
+- Automatic FE07 return-to-queue integration.
 - FE10 delivery worker.
 - Automatic expiration job.

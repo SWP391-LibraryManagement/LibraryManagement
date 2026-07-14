@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-15 - Reservation-Aware Borrowing Contract (v0.4.0)
+
+- Approved FE07 as the owner of borrow request creation and approval for both ordinary copies and requester-owned notified holds.
+- Added reservation-priority rules that block ordinary create/approve actions while an `ACTIVE` queue entry exists.
+- Added atomic approval fulfillment for matching `NOTIFIED` reservations, including reservation audit and rollback requirements.
+- Added FE07-T029 and FE07-T030 with traceability to the new BR/FR/AC identifiers.
+- Preserved the five-copy limit, 14-day duration, one renewal, all-or-nothing policy, manual FE08 queue processing, existing endpoints, and existing schema.
+
 ## 2026-07-14 - B7 Integration and Review Closeout
 
 - Pushed implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` on `feat/fe07-validation` and opened PR #19 against `main`.

@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-15 - FE07 Fulfillment Handoff Contract (v0.4.0)
+
+- Confirmed physical `CopyId` as the required Phase 1 reservation target and removed the remaining book-level ambiguity.
+- Defined FE07 approval for the same notified member and copy as the only `NOTIFIED -> FULFILLED` trigger.
+- Defined `ACTIVE` queue priority as a blocker for ordinary FE07 create/approve actions and allowed owner cancellation from `ACTIVE` or `NOTIFIED`.
+- Added FE08-T025 for shared lock-order alignment and concurrency evidence.
+- Preserved manual queue processing and added no endpoint, table, column, automatic expiration job, or FE10 delivery change.
+
 ## 2026-07-13 - Frontend Correctness Aligned With Approved Lifecycle (v0.3.1)
 
 - Mapped `NOTIFIED` to ready for pickup and `FULFILLED` to completed in the shared frontend view model.

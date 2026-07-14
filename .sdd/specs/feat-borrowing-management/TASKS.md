@@ -1,12 +1,12 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: COMPLETE
+Status: IN PROGRESS
 
 Owner: Nhat
 
-Updated: 2026-07-14
+Updated: 2026-07-15
 
-Workflow State: B5 implementation, B6 validation, and B7 integration complete
+Workflow State: B8 FE07-FE08 borrowing-reservation integration in progress
 
 ---
 
@@ -46,6 +46,11 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
 - [x] FE07-T26 Add accessibility: table captions, header scopes, form labels, keyboard support.
 - [x] FE07-T27 Add loading, empty, and error states on all screens.
 
+## 3.1 FE07-FE08 Integration Tasks
+
+- [ ] FE07-T029 Enforce reservation-aware borrowability for create and approval. Trace: BR-FE07-023/024; AC-FE07-015/016. Dependency: FE08 queue state. Done when RED/GREEN route tests pass.
+- [ ] FE07-T030 Fulfill matching notified reservations in the approval transaction. Trace: BR-FE07-025; AC-FE07-017. Dependency: FE07-T029. Done when SQL and in-memory rollback tests pass.
+
 ## 4. Validation
 
 - [x] `npm test` in `backend`.
@@ -81,6 +86,8 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
 | FR-FE07-013 | FE07-T09, FE07-T17 |
 | AC-FE07-001 through AC-FE07-014 | SPEC.md Section 16 direct acceptance-test mappings |
 | FR-FE07-022 | borrowingConcurrency.sqltest.js > SQL create/approval/return/reject/renew audit-failure rollback tests |
+| BR-FE07-023/024; AC-FE07-015/016 | FE07-T029 |
+| BR-FE07-025; AC-FE07-017 | FE07-T030 |
 
 ## 5. Still Outside This Slice
 

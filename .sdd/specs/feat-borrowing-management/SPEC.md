@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.3.2
+# Version: 0.4.0
 
 # Status: APPROVED
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-07-15
 
 # Feature ID: FE07
 
@@ -77,9 +77,9 @@ The feature can only start when:
 ### MF-FE07-001: Create Borrow Request
 
 1. Member searches or browses books.
-2. Member selects one or more available book copies to borrow.
+2. Member selects one or more physical copies that FE07 may classify as borrowable.
 3. The system validates member eligibility.
-4. The system validates borrow limit and copy availability.
+4. The system validates borrow limit and reservation-aware copy borrowability.
 5. The system creates a `BorrowRequests` record with status `PENDING`.
 6. The system creates related `BorrowDetails` records for requested copies with status `REQUESTED`.
 7. The system shows the request result to the member.
@@ -89,12 +89,13 @@ The feature can only start when:
 1. Librarian opens pending borrow requests.
 2. Librarian reviews member information, requested copies, and eligibility warnings.
 3. Librarian approves the request.
-4. The system revalidates member eligibility and copy availability.
+4. The system revalidates member eligibility and reservation-aware copy borrowability.
 5. The system sets `BorrowRequests.Status` to `APPROVED`.
 6. The system sets each approved `BorrowDetails.Status` to `BORROWED`.
 7. The system assigns due date for each borrowed copy as approval date plus 14 calendar days.
 8. The system updates each related `BookCopies.Status` to `BORROWED`.
-9. The system writes an audit log entry.
+9. For each requester-owned `NOTIFIED` hold, the system changes the matching reservation to `FULFILLED`.
+10. The system writes borrowing and reservation-fulfillment audit log entries in the same transaction.
 
 ### MF-FE07-003: Reject Borrow Request
 
@@ -141,12 +142,12 @@ The feature can only start when:
 2. The system rejects the request or approval action.
 3. The system returns a clear error message explaining the blocking reason.
 
-### AF-FE07-002: Copy Becomes Unavailable Before Approval
+### AF-FE07-002: Copy Becomes Non-Borrowable Before Approval
 
-1. Member creates a borrow request while the copy appears available.
-2. Before librarian approval, another process changes the copy status.
-3. The system revalidates availability during approval.
-4. The system rejects the whole approval (all-or-nothing in Phase 1), keeps the request `PENDING`, and asks the librarian to recreate the request without the unavailable copy.
+1. Member creates a borrow request while the copy satisfies the reservation-aware borrowability contract.
+2. Before librarian approval, another process changes the copy or reservation state.
+3. The system revalidates copy status and reservation claims during approval.
+4. The system rejects the whole approval (all-or-nothing in Phase 1), keeps the request `PENDING`, and returns the safe blocking conflict.
 
 ### AF-FE07-003: Partial Return
 
@@ -173,8 +174,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-004: A member must have active account status and approved membership status before borrowing.
 - BR-FE07-005: A member cannot have more than 5 active borrowed copies at the same time.
 - BR-FE07-006: A member with overdue active loans or any unpaid fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy.
-- BR-FE07-007: A copy can be borrowed only when `BookCopies.Status = AVAILABLE`.
-- BR-FE07-008: Approval must recheck copy availability and member eligibility.
+- BR-FE07-007: A copy can be borrowed only when FE07 classifies it as borrowable under BR-FE07-023.
+- BR-FE07-008: Approval must recheck reservation-aware copy borrowability and member eligibility.
 - BR-FE07-009: When a borrow request is approved, each borrowed copy status must change to `BORROWED`.
 - BR-FE07-010: Every borrowed copy must have a due date; the default due date is 14 calendar days from the borrow approval date.
 - BR-FE07-011: Every return must store a return date.
@@ -188,7 +189,10 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-019: Pending borrow request items must be stored in `BorrowDetails` with status `REQUESTED`; no separate request-detail table is used in Phase 1.
 - BR-FE07-020: When all details in a borrow request reach a terminal status (`RETURNED`, `LOST`, or `DAMAGED`), the request status must become `COMPLETED`.
 - BR-FE07-021: FE07 must not calculate or create fine records for overdue, damaged, or lost returns; it only exposes return data for FE09 Fine Management.
-- BR-FE07-022: Phase 1 borrow-request handling is all-or-nothing: if any requested copy is duplicate, non-existent, or not `AVAILABLE` (at create or approval), the entire request/approval is rejected and no partial request is created. Per-item rejection (keeping the valid copies) is deferred to a later phase.
+- BR-FE07-022: Phase 1 borrow-request handling is all-or-nothing: if any requested copy is duplicate, non-existent, or not borrowable under BR-FE07-023 (at create or approval), the entire request/approval is rejected and no partial request is created. Per-item rejection (keeping the valid copies) is deferred to a later phase.
+- BR-FE07-023: FE07 may accept a copy only when it is `AVAILABLE` with no `ACTIVE`/`NOTIFIED` reservation claim, or when it is `RESERVED` by a `NOTIFIED` reservation owned by the requesting member.
+- BR-FE07-024: An `ACTIVE` reservation queue for a copy blocks ordinary borrow-request creation and approval until staff processes or resolves that queue.
+- BR-FE07-025: Approving a borrow request for a requester-owned `NOTIFIED` reservation must atomically change the matching reservation to `FULFILLED` with the borrow request, details, copy status, and audit records.
 
 ---
 
@@ -196,7 +200,7 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE07-001: When a member submits a borrow request, the system shall validate member eligibility before creating the request.
 - FR-FE07-002: When a member submits a borrow request with valid data, the system shall create a pending borrow request and store requested items as `BorrowDetails.Status = REQUESTED`.
-- FR-FE07-003: If any requested copy is not available, the system shall reject the whole borrow request and shall not create a partial request. (Phase 1 policy: all-or-nothing; per-item rejection is future work — see §6 BR-FE07-022.)
+- FR-FE07-003: If any requested copy is not borrowable under BR-FE07-023, the system shall reject the whole borrow request and shall not create a partial request. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see Section 6 BR-FE07-022.)
 - FR-FE07-004: When a librarian approves a borrow request, the system shall revalidate all business rules before approval.
 - FR-FE07-005: When approval succeeds, the system shall update the borrow request, borrow details, due dates, and book copy statuses.
 - FR-FE07-006: When a librarian rejects a borrow request, the system shall keep copy statuses unchanged and store rejection information if supported.
@@ -215,22 +219,25 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - FR-FE07-014: IF a member submits a borrow request while already holding 5 active borrowed copies, the system shall reject the request and return a borrow-limit error without creating any `BorrowRequests` or `BorrowDetails` record. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
 - FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive or the membership is not approved, the system shall reject the action and return an eligibility error explaining the blocking reason. (Source: BR-FE07-004, EC-FE07-002, EC-FE07-003, AF-FE07-001)
 - FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
-- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any unavailable copy, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work — see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
-- FR-FE07-018: IF any copy is no longer `AVAILABLE` at the moment of approval, the system shall reject the whole approval, keep all data unchanged (request stays `PENDING`), and ask the librarian to recreate the request without the unavailable copy. (Phase 1 policy: all-or-nothing.) (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
+- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any copy that fails BR-FE07-023, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
+- FR-FE07-018: IF any copy fails the reservation-aware borrowability contract at the moment of approval, the system shall reject the whole approval, keep all data unchanged (request stays `PENDING`), and return the safe blocking conflict. (Phase 1 policy: all-or-nothing.) (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
 - FR-FE07-019: WHERE two approval actions target the same copy concurrently, the system shall allow at most one approval to succeed and shall fail the later action safely without double-borrowing the copy. (Source: EC-FE07-011, FR-FE07-012)
 - FR-FE07-020: IF a renewal is requested for a borrow detail that is overdue, already renewed once, blocked by an unpaid fine, or reserved by another member, the system shall reject the renewal and keep the existing due date unchanged. (Source: BR-FE07-015, BR-FE07-018, AF-FE07-004, EC-FE07-010, AC-FE07-010)
 - FR-FE07-021: IF a return or renewal action targets a borrow detail in an invalid state (already returned/lost/damaged) or supplies a return date earlier than the borrow/request date, the system shall reject the action as an invalid state or date transition. (Source: EC-FE07-008, EC-FE07-009, EC-FE07-010)
-- FR-FE07-022: IF any step of an approve or return transaction fails, the system shall roll back the whole transaction so that request status, detail status, due date, copy status, and audit log remain consistent. (Source: EC-FE07-012, NFR-FE07-TXN-001, NFR-FE07-TXN-002)
+- FR-FE07-022: IF any step of an approve or return transaction fails, the system shall roll back the whole transaction so that request status, detail status, due date, copy status, reservation status, and audit log remain consistent. (Source: EC-FE07-012, NFR-FE07-TXN-001, NFR-FE07-TXN-002)
+- FR-FE07-023: IF a requested copy has an `ACTIVE` reservation queue, FE07 shall reject create/approve with `RESERVATION_QUEUE_PRIORITY` and shall change no record.
+- FR-FE07-024: IF a copy is `RESERVED` by a `NOTIFIED` reservation owned by the borrowing member, FE07 shall allow request creation and shall revalidate that ownership during approval.
+- FR-FE07-025: WHEN staff approves a held owner's request, FE07 shall update every matching `NOTIFIED` reservation to `FULFILLED` in the approval transaction.
 
 ---
 
 ## 8. Acceptance Criteria
 
-- AC-FE07-001: Given an eligible member and available copy, when the member creates a borrow request, then the system creates a `PENDING` borrow request with requested details marked `REQUESTED`.
+- AC-FE07-001: Given an eligible member and an `AVAILABLE` copy with no reservation claim, when the member creates a borrow request, then the system creates a `PENDING` borrow request with requested details marked `REQUESTED`.
 - AC-FE07-002: Given an inactive member, when the member creates a borrow request, then the system rejects the request.
 - AC-FE07-003: Given a member exceeding the borrow limit, when the member creates a borrow request, then the system rejects the request.
-- AC-FE07-004: Given a pending request and available copies, when a librarian approves it, then the system marks the request `APPROVED`, marks details `BORROWED`, sets due dates, and marks copies `BORROWED`.
-- AC-FE07-005: Given a pending request whose copy is no longer available, when a librarian approves it, then the system rejects approval and keeps data unchanged.
+- AC-FE07-004: Given a pending request and copies that still satisfy BR-FE07-023, when a librarian approves it, then the system marks the request `APPROVED`, marks details `BORROWED`, sets due dates, and marks copies `BORROWED`.
+- AC-FE07-005: Given a pending request whose copy is no longer borrowable under BR-FE07-023, when a librarian approves it, then the system rejects approval and keeps data unchanged.
 - AC-FE07-006: Given a borrowed copy, when the librarian processes a normal return, then the system stores return date and marks the copy `AVAILABLE`.
 - AC-FE07-007: Given a borrowed copy returned damaged, when the librarian processes the return, then the system marks the copy `DAMAGED` and does not make it available.
 - AC-FE07-008: Given an overdue borrowed copy, when it is returned, then the system exposes overdue data for fine calculation.
@@ -240,6 +247,9 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-012: Given a librarian/admin, when viewing member borrowing information, then the system can return records for the selected member.
 - AC-FE07-013: Given all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, when the return processing finishes, then the request status becomes `COMPLETED`.
 - AC-FE07-014: Given a damaged or lost return, when FE07 records it, then FE07 does not create a fine record and FE09 can later calculate or create the fine from the recorded data.
+- AC-FE07-015: Given an active reservation queue, when another member creates or approves a borrow request, then FE07 returns `409 RESERVATION_QUEUE_PRIORITY` and preserves all state.
+- AC-FE07-016: Given a requester-owned notified reservation and reserved copy, when the owner creates a borrow request, then FE07 creates the normal pending request without releasing the hold.
+- AC-FE07-017: Given that pending request, when staff approves it, then borrowing records, copy status, reservation fulfillment, and audits commit atomically.
 
 ---
 
@@ -251,7 +261,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 | EC-FE07-002 | Member account inactive | Reject borrow/renewal action. |
 | EC-FE07-003 | Membership not approved | Reject borrow request. |
 | EC-FE07-004 | Copy ID does not exist | Reject request item. |
-| EC-FE07-005 | Copy status is not `AVAILABLE` during approval | Reject approval for that copy. |
+| EC-FE07-005 | Copy or reservation state fails BR-FE07-023 during approval | Reject the whole approval and preserve all state. |
 | EC-FE07-006 | Duplicate copy in the same borrow request | Reject duplicate item. |
 | EC-FE07-007 | Borrow request has zero valid items | Reject request. |
 | EC-FE07-008 | Return action on already returned item | Reject as invalid state transition. |
@@ -276,7 +286,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 | BorrowRequests | Stores borrow request header and workflow status. |
 | BorrowDetails | Stores copy-level due date, return date, and borrow status. |
 | Fines | Read to block borrowing if unpaid fines are configured as blocking. |
-| Reservations | Read to block renewal if another member has reservation priority. |
+| Reservations | Read to enforce create/approval priority and renewal rules; update matching `NOTIFIED` holds to `FULFILLED` during approval. |
 | AuditLogs | Records important borrowing actions. |
 
 ### 10.2 Data Fields
@@ -332,8 +342,8 @@ stateDiagram-v2
 
 | From | To | Trigger | Condition | FR/BR |
 | ---- | -- | ------- | --------- | ----- |
-| `[*]` | `PENDING` | Member submits a valid borrow request | Member eligible; at least one valid available copy | MF-FE07-001, FR-FE07-001, FR-FE07-002, BR-FE07-004, BR-FE07-005 |
-| `PENDING` | `APPROVED` | Librarian/admin approves | Revalidation of eligibility and copy availability passes | MF-FE07-002, FR-FE07-004, FR-FE07-005, BR-FE07-008, BR-FE07-009 |
+| `[*]` | `PENDING` | Member submits a valid borrow request | Member eligible; every requested copy satisfies BR-FE07-023 | MF-FE07-001, FR-FE07-001, FR-FE07-002, BR-FE07-004, BR-FE07-005, BR-FE07-023 |
+| `PENDING` | `APPROVED` | Librarian/admin approves | Revalidation of eligibility and reservation-aware borrowability passes | MF-FE07-002, FR-FE07-004, FR-FE07-005, BR-FE07-008, BR-FE07-009, BR-FE07-023 |
 | `PENDING` | `REJECTED` | Librarian/admin rejects | Rejection reason provided; copies left unchanged | MF-FE07-003, FR-FE07-006, BR-FE07-001 |
 | `APPROVED` | `COMPLETED` | Return processing finishes | All owned details are `RETURNED`, `LOST`, or `DAMAGED` | MF-FE07-004, FR-FE07-013, BR-FE07-020 |
 
@@ -353,7 +363,7 @@ stateDiagram-v2
 | ID | Invariant |
 | -- | --------- |
 | INV-FE07-A1 | A `BorrowRequests` record always holds exactly one `Status` value from the declared enum. |
-| INV-FE07-A2 | A request may move to `APPROVED` only after eligibility and copy availability are revalidated (BR-FE07-008). |
+| INV-FE07-A2 | A request may move to `APPROVED` only after eligibility and reservation-aware borrowability are revalidated (BR-FE07-008, BR-FE07-023). |
 | INV-FE07-A3 | Only an `APPROVED` request can own `BORROWED` details; `PENDING`/`REJECTED`/`CANCELLED` requests never own a `BORROWED` detail. |
 | INV-FE07-A4 | A request becomes `COMPLETED` if and only if all of its details are in a terminal copy-level state (`RETURNED`/`LOST`/`DAMAGED`) (BR-FE07-020, FR-FE07-013). |
 | INV-FE07-A5 | Every request-level transition writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
@@ -374,7 +384,7 @@ Persisted state values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`.
 ```mermaid
 stateDiagram-v2
     [*] --> REQUESTED : request created
-    REQUESTED --> BORROWED : request approved (copy AVAILABLE)
+    REQUESTED --> BORROWED : request approved (borrowability revalidated)
     REQUESTED --> [*] : request rejected
     BORROWED --> RETURNED : normal return
     BORROWED --> DAMAGED : returned damaged
@@ -401,7 +411,7 @@ stateDiagram-v2
 | From | To | Trigger | Condition | FR/BR |
 | ---- | -- | ------- | --------- | ----- |
 | `[*]` | `REQUESTED` | Borrow request created | Owning request is `PENDING` | MF-FE07-001, FR-FE07-002, BR-FE07-019 |
-| `REQUESTED` | `BORROWED` | Request approved | Copy is `AVAILABLE` at approval; due date assigned | MF-FE07-002, FR-FE07-005, BR-FE07-007, BR-FE07-009, BR-FE07-010 |
+| `REQUESTED` | `BORROWED` | Request approved | Copy satisfies BR-FE07-023 at approval; due date assigned; matching notified hold fulfilled | MF-FE07-002, FR-FE07-005, FR-FE07-025, BR-FE07-007, BR-FE07-009, BR-FE07-010, BR-FE07-025 |
 | `REQUESTED` | `[*]` | Owning request rejected | Copy stays available, never handed over | MF-FE07-003, BR-FE07-019 |
 | `BORROWED` | `BORROWED` | Renewal | Not overdue, no unpaid fine, renewalCount = 0, no reservation conflict; due date +14 days, renewalCount → 1 | MF-FE07-005, FR-FE07-009, BR-FE07-015, BR-FE07-018 |
 | `BORROWED` | `RETURNED` | Normal return | Return date stored; copy → `AVAILABLE` | MF-FE07-004, FR-FE07-007, BR-FE07-011, BR-FE07-012 |
@@ -428,9 +438,9 @@ stateDiagram-v2
 | INV-FE07-B3 | Every `BORROWED` detail has a non-null due date = approval date + 14 calendar days (BR-FE07-010). |
 | INV-FE07-B4 | `renewalCount` is in {0, 1}; a renewal is allowed only from `BORROWED` with `renewalCount = 0` and no blocking condition (BR-FE07-015, BR-FE07-018). |
 | INV-FE07-B5 | Reaching `RETURNED`, `LOST`, or `DAMAGED` requires a stored return date (BR-FE07-011); the date must not precede the borrow/request date (FR-FE07-021). |
-| INV-FE07-B6 | The related `BookCopies.Status` is kept consistent with the detail status: `BORROWED`→`BORROWED`, `RETURNED`→`AVAILABLE`, `DAMAGED`→`DAMAGED`, `LOST`→`LOST` (BR-FE07-007, BR-FE07-012, BR-FE07-013, FR-FE07-012). |
+| INV-FE07-B6 | The related `BookCopies.Status` is kept consistent with the detail status: `BORROWED` -> `BORROWED`, `RETURNED` -> `AVAILABLE`, `DAMAGED` -> `DAMAGED`, `LOST` -> `LOST`; requester-owned notified holds become `FULFILLED` with approval (BR-FE07-007, BR-FE07-012, BR-FE07-013, BR-FE07-025, FR-FE07-012). |
 | INV-FE07-B7 | Every detail-level transition (approve/return/renew/lost/damaged) writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
-| INV-FE07-B8 | Approve and return transitions are atomic with their related updates; partial failure rolls back the whole transaction (FR-FE07-022, NFR-FE07-TXN-001, NFR-FE07-TXN-002). |
+| INV-FE07-B8 | Approve and return transitions are atomic with their related updates; approval includes matching reservation fulfillment and all related audits, and partial failure rolls back the whole transaction (FR-FE07-022, FR-FE07-025, NFR-FE07-TXN-001, NFR-FE07-TXN-002). |
 
 ---
 
@@ -462,7 +472,7 @@ stateDiagram-v2
 
 ### 12.2 Transaction Integrity
 
-- NFR-FE07-TXN-001: Approving borrow request must be atomic: request status, detail status, due date, copy status, and audit log must succeed together or roll back together.
+- NFR-FE07-TXN-001: Approving a borrow request must be atomic: request status, detail status, due date, copy status, matching reservation fulfillment, and audit logs must succeed together or roll back together.
 - NFR-FE07-TXN-002: Returning a copy must be atomic: detail status, return date, copy status, and audit log must succeed together or roll back together.
 
 ### 12.3 Performance
@@ -472,11 +482,11 @@ stateDiagram-v2
 
 ### 12.4 Logging and Audit
 
-- NFR-FE07-LOG-001: Create, approve, reject, return, damaged, lost, and renewal actions must write audit log entries.
+- NFR-FE07-LOG-001: Create, approve, reservation fulfillment, reject, return, damaged, lost, and renewal actions must write audit log entries.
 
 ### 12.5 Usability
 
-- NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, unpaid fine, overdue loan, or invalid state.
+- NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, reservation queue priority, reservation state conflict, unpaid fine, overdue loan, or invalid state.
 
 ---
 
@@ -484,7 +494,7 @@ stateDiagram-v2
 
 This feature does not include:
 
-- FE08 Reservation Management except reading reservation data when renewal priority must be checked.
+- FE08 queue selection, hold expiration, or cancellation ownership; FE07 only reads reservation claims and fulfills a matching requester-owned `NOTIFIED` hold during approval.
 - FE09 Fine calculation implementation, although this feature exposes overdue/return data for FE09.
 - FE10 Notification delivery implementation.
 - Real online payment gateway.
@@ -500,7 +510,7 @@ This feature does not include:
 | FE02 Authentication | Internal | Required for actor identity. |
 | FE04 Membership Management | Internal | Determines membership approval/status. |
 | FE06 Inventory / Book Copy Management | Internal | Provides copy availability and status updates. |
-| FE08 Reservation Management | Internal | Checked on 2026-06-10: active reservation/held copy for another member blocks renewal. FE08 owns reservation queue and held-copy state. |
+| FE08 Reservation Management | Internal | FE08 owns queue order, hold selection, cancellation, and expiration. FE07 reads `ACTIVE`/`NOTIFIED` claims for create/approval/renewal and changes only matching requester-owned `NOTIFIED` holds to `FULFILLED` during approval. |
 | FE09 Fine Management | Internal | Checked on 2026-06-10: any unpaid fine with amount greater than 0 blocks new borrowing and renewal. FE09 owns fine calculation/creation from FE07 return data. |
 | FE10 Notification Management | Internal | May notify borrow/return/renewal results. |
 | FE11 User & Role Management | Internal | Provides roles and permissions. |
@@ -529,9 +539,9 @@ This feature does not include:
 | ----------- | ------ |
 | Flow review | Create request, approve/reject, return, renewal, and history flows were reviewed against resolved FE07 decisions. Flow updates are reflected in Sections 4, 6, 7, and 8. |
 | API contract | Approved in Section 11 for Phase 1 RESTful API planning. Endpoints stay in this SPEC.md unless a shared API contract document is reintroduced. |
-| FE08 dependency | No FE07 conflict after decision: active reservation/held copy for another member blocks renewal. FE08 must expose reservation conflict state to FE07. |
+| FE08 dependency | Approved integration: `ACTIVE` queue priority blocks ordinary create/approve, the notified owner may request the held copy, and FE07 approval atomically fulfills the matching reservation. FE08 retains queue ownership. |
 | FE09 dependency | No FE07 conflict after decision: unpaid fines block borrowing/renewal; FE07 exposes return data and FE09 owns fine calculation/creation. |
-| Testability | AC-FE07-001 to AC-FE07-014 are concrete, observable, and mapped to assigned FE07 test cases through the traceability matrix. |
+| Testability | AC-FE07-001 to AC-FE07-017 are concrete and observable. AC-FE07-015 to AC-FE07-017 are implemented by FE07-T029/FE07-T030 in the approved integration plan. |
 
 ---
 
@@ -553,6 +563,9 @@ This feature does not include:
 | AC-FE07-012 | UC34 | borrowingRoutes.test.js > "librarian retrieves only the matching selected-member borrowing with status and date filters"; "librarian filters selected-member borrowings by derived OVERDUE status" | Ready for review |
 | AC-FE07-013 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
 | AC-FE07-014 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
+| AC-FE07-015 | UC29, UC32 | FE07-T029 route and SQL reservation-priority tests | Planned |
+| AC-FE07-016 | UC29 | FE07-T029 route test for requester-owned notified hold | Planned |
+| AC-FE07-017 | UC32, UC35 | FE07-T030 approval and rollback tests | Planned |
 | BR-FE07-004 | UC29, UC32 | FT30, FT33 | Ready for review |
 | BR-FE07-005 | UC29, UC32 | FT30, FT33 | Ready for review |
 | BR-FE07-007 | UC29, UC32 | FT30, FT33 | Ready for review |
@@ -564,6 +577,9 @@ This feature does not include:
 | BR-FE07-019 | UC29 | FT30 | Ready for review |
 | BR-FE07-020 | UC33 | FT34 | Ready for review |
 | BR-FE07-021 | UC33 | FT34 | Ready for review |
+| BR-FE07-023 | UC29, UC32 | FE07-T029 | Planned |
+| BR-FE07-024 | UC29, UC32 | FE07-T029 | Planned |
+| BR-FE07-025 | UC32, UC35 | FE07-T030 | Planned |
 | FR-FE07-010 | UC30 | FT31 | Ready for review |
 | FR-FE07-011 | UC34 | FT35 | Ready for review |
 | FR-FE07-013 | UC33 | FT34 | Ready for review |
@@ -576,6 +592,9 @@ This feature does not include:
 | FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal blockers reject and preserve due date: <blocker>" | Ready for review |
 | FR-FE07-021 | UC31, UC33 | borrowingRoutes.test.js > "invalid return transitions are rejected (second return and return date before borrow date)" | Ready for review |
 | FR-FE07-022 | UC29, UC32, UC33 | borrowingConcurrency.sqltest.js > "SQL create audit failure rolls back request, detail, copy, and audit rows"; "SQL approval audit failure rolls back request, detail due date, copy, and audit rows"; "SQL return audit failure rolls back request, detail return date, copy, and audit rows" | Ready for review |
+| FR-FE07-023 | UC29, UC32 | FE07-T029 route and SQL reservation-priority tests | Planned |
+| FR-FE07-024 | UC29, UC32 | FE07-T029 owner-held-copy tests | Planned |
+| FR-FE07-025 | UC32, UC35 | FE07-T030 approval fulfillment and rollback tests | Planned |
 
 ---
 

@@ -1,12 +1,12 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: COMPLETE
+Status: IN PROGRESS
 
 Owner: Nhat
 
-Updated: 2026-07-14
+Updated: 2026-07-15
 
-Workflow State: B5 implementation, B6 validation, and B7 integration complete
+Workflow State: B8 FE07-FE08 borrowing-reservation integration in progress
 
 ---
 
@@ -16,7 +16,7 @@ Implement and harden the Phase 2 FE07 slice from the approved `SPEC.md`.
 
 Included:
 
-- Member creates borrow requests for available physical copies.
+- Member creates borrow requests for ordinary available copies or copies held by their own notified reservation.
 - Member views only their own borrowing history.
 - Librarian/admin lists, approves, rejects, returns, and renews borrowing records.
 - Return processing updates copy status and exposes fine-review data for FE09.
@@ -43,6 +43,9 @@ Not included:
 | Pending items use `BorrowDetails.Status = REQUESTED` | Database script and repository use the approved status. |
 | Unpaid fine blocks borrowing/renewal | Service checks `Fines` before create and renew. |
 | Reservation by another member blocks renewal | Service checks FE08 reservation state before renewal. |
+| Active reservation queue blocks ordinary borrowing | Create and approval return `RESERVATION_QUEUE_PRIORITY` until staff resolves the queue. |
+| Notified owner may borrow the held copy | FE07 accepts the normal request and revalidates reservation ownership during approval. |
+| FE07 approval fulfills the hold | Request, details, copy, matching reservation, and audits commit atomically. |
 | FE07 does not create fines | Return response exposes `fineCandidate`; no `Fines` insert is performed. |
 
 ---
@@ -60,14 +63,14 @@ Not included:
 
 - Validate `copyIds` and reject duplicates.
 - Check active account and approved membership.
-- Reject unavailable copies.
+- Apply the reservation-aware borrowability contract to every copy.
 - Reject users blocked by overdue active loans or unpaid fines.
 - Create `PENDING` request and `REQUESTED` details.
 
 ### 3.3 Staff Approval and Rejection
 
-- Recheck member eligibility, borrowing blockers, copy availability, and borrow limit.
-- Approve transactionally: request status, detail status, due date, copy status.
+- Recheck member eligibility, borrowing blockers, reservation-aware copy borrowability, and borrow limit.
+- Approve transactionally: request status, detail status, due date, copy status, matching reservation fulfillment, and audits.
 - Reject pending requests without changing copy status.
 
 ### 3.4 Return and Renewal
@@ -87,6 +90,16 @@ Not included:
 - Keep borrowing-specific error messages scoped to `borrowingApi` so other feature APIs retain generic handling.
 - Translate FE07 role, eligibility, borrowing-limit, copy, return-state, and renewal-conflict codes into actionable Vietnamese messages.
 - Preserve authentication, validation-detail, backend-message, and network fallbacks.
+
+### 3.7 FE07-FE08 Integration
+
+- Keep FE07 as the only owner of borrow request creation and approval.
+- Read `ACTIVE` and `NOTIFIED` reservation claims at create time and under approval locks.
+- Lock copy rows before reservation rows whenever a transaction changes both states.
+- Block ordinary borrowing while an `ACTIVE` queue entry exists.
+- Allow a `RESERVED` copy only for the same member who owns its `NOTIFIED` reservation.
+- Fulfill matching notified reservations in the approval transaction.
+- Preserve manual FE08 queue processing, current endpoint shapes, and the existing database schema.
 
 ---
 

@@ -1,10 +1,10 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: READY FOR REVIEW
+Status: IN PROGRESS
 
 Owner: Nhat
 
-Updated: 2026-07-13
+Updated: 2026-07-15
 
 ---
 
@@ -19,10 +19,11 @@ Included:
 - Reservation-specific Vietnamese API errors.
 - Manual staff queue processing and manual hold-expiration processing.
 - Server-backed refresh after hold expiration.
+- FE07 handoff that preserves queue priority and fulfills the notified owner's hold during borrow approval.
 
 Not included:
 
-- FE07 borrow/return or fulfillment implementation.
+- FE07 return automation or general borrowing implementation outside the approved reservation handoff.
 - FE10 email delivery worker changes.
 - Server-side reservation pagination.
 - Automatic queue processing or hold-expiration jobs.
@@ -87,13 +88,21 @@ Not included:
 - Expose the existing hold-expiration endpoint to staff, reload canonical server state, and report success only after that reload succeeds.
 - Do not expose local-only fulfillment or deletion controls.
 
+### 3.7 FE07 Borrowing Handoff
+
+- Preserve FE08 ownership of queue order, queue processing, cancellation, and expiration.
+- Expose `ACTIVE` and `NOTIFIED` reservation claims to FE07 create/approval validation.
+- Treat FE07 approval for the same member and copy as the only `NOTIFIED -> FULFILLED` trigger.
+- Use the shared `BookCopies -> Reservations` lock order for hold, cancellation, expiration, and fulfillment transitions.
+- Keep queue processing manual and add no endpoint, schema field, or automatic job.
+
 ---
 
 ## 4. Review Notes
 
 - This plan covers the approved backend and frontend reservation slice.
 - Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
-- FE07 can later call FE08 queue processing when a copy is returned, but automatic triggering is out of scope for Phase 1.
+- FE07 approval may fulfill only the matching notified reservation; automatic queue processing after return remains out of scope for Phase 1.
 
 ## 5. B7 Closeout Evidence
 
