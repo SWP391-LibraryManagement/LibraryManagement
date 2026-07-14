@@ -166,7 +166,7 @@ The feature can only start when:
 
 Use these stable IDs for tasks and tests.
 
-- BR-FE05-001: Guests and members may only search books and view book details.
+- BR-FE05-001: Guests may only search books and view book details.
 - BR-FE05-002: Only librarians and admins may add books.
 - BR-FE05-003: Only librarians and admins may update books.
 - BR-FE05-004: Only librarians and admins may deactivate books.
@@ -178,7 +178,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-010: Every create, update, and deactivate action must be auditable.
 - BR-FE05-011: Public availability is not the same as catalog visibility; `Books.Status` controls active/inactive catalog visibility, while `BookCopies.Status` controls whether the book displays as `Còn sách` or `Đã mượn`.
 - BR-FE05-012: Only librarians/admins may manually update public availability, and the only accepted values are `AVAILABLE` and `BORROWED`.
-- BR-FE05-013: When availability is changed, FE01 public browse/home must read the updated `BookCopies` state and show the new availability without requiring a separate public-data edit.
+
 
 ---
 
