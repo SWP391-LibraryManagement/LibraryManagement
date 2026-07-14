@@ -52,3 +52,27 @@ test('auth API does not log or reference debug credentials', async () => {
   assert.doesNotMatch(source, /console\.error/);
   assert.doesNotMatch(source, /debugOtp|debugVerificationToken|debugResetToken/);
 });
+
+test('registration exposes two-step OTP progress and resend cooldown', async () => {
+  const page = await readFile(new URL('../src/page/RegisterPage.jsx', import.meta.url), 'utf8');
+  const card = await readFile(new URL('../src/component/register/AuthCard.jsx', import.meta.url), 'utf8');
+
+  assert.match(card, /1\. Thông tin tài khoản/);
+  assert.match(card, /2\. Xác thực email/);
+  assert.match(card, /inputMode: 'numeric'/);
+  assert.match(card, /autoComplete: 'one-time-code'/);
+  assert.match(card, /Gửi lại mã/);
+  assert.match(page, /RESEND_COOLDOWN_SECONDS/);
+  assert.match(page, /setResendCooldown/);
+  assert.match(page, /isResending/);
+});
+
+test('registration fields use current MUI slots and accessible password controls', async () => {
+  const input = await readFile(new URL('../src/component/register/FormInput.jsx', import.meta.url), 'utf8');
+  const password = await readFile(new URL('../src/component/register/PasswordInput.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(input, /\bInputProps\s*=/);
+  assert.doesNotMatch(password, /\bInputProps\s*=/);
+  assert.match(input, /slotProps/);
+  assert.match(password, /aria-label=\{showPassword \? 'Ẩn mật khẩu' : 'Hiện mật khẩu'\}/);
+});

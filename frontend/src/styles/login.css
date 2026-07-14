@@ -181,6 +181,101 @@
   color: #6f5b4a;
 }
 
+.auth-stepper {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.auth-stepper span {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border: 1px solid #ded1ba;
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.72);
+  color: #756656;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-stepper span.active,
+.auth-stepper span.complete {
+  border-color: #a87532;
+  background: rgba(168, 117, 50, 0.12);
+  color: #704a1f;
+}
+
+.auth-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: -6px 0 2px;
+  padding: 0;
+  list-style: none;
+  color: #7b6758;
+  font-size: 0.78rem;
+}
+
+.auth-requirements li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.auth-requirements li svg {
+  color: #b8aa99;
+}
+
+.auth-requirements li.met {
+  color: #2f7b51;
+}
+
+.auth-requirements li.met svg {
+  color: #2f8f5b;
+}
+
+.auth-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #6f5b4a;
+  font-size: 0.86rem;
+}
+
+.auth-resend-row .MuiButton-root {
+  min-width: 0;
+  padding-inline: 4px;
+  text-transform: none;
+}
+
+.auth-success-state {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  color: #4f4338;
+  text-align: center;
+}
+
+.auth-success-state > svg {
+  width: 48px;
+  height: 48px;
+  padding: 10px;
+  border-radius: 50%;
+  background: #e7f4ec;
+  color: #2f8f5b;
+}
+
+.auth-success-state p {
+  margin: 0;
+  line-height: 1.6;
+}
+
 @media (max-width: 960px) {
   .login-page,
   .register-container {
@@ -211,6 +306,16 @@
 
   .auth-card {
     padding: 1.25rem !important;
+  }
+
+  .auth-stepper,
+  .auth-requirements {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-resend-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .background-title {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TextField, IconButton, InputAdornment } from '@mui/material';
+import { IconButton, InputAdornment, TextField } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 export default function PasswordInput({
@@ -10,6 +10,7 @@ export default function PasswordInput({
   required = false,
   error = false,
   helperText = '',
+  disabled = false,
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,27 +22,27 @@ export default function PasswordInput({
       label={label}
       placeholder={placeholder}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(event) => onChange(event.target.value)}
       variant="outlined"
       className="form-field"
       error={error}
       helperText={helperText}
-      InputProps={{
-        endAdornment: (
-          <InputAdornment position="end">
-            <IconButton
-              onClick={() => setShowPassword(!showPassword)}
-              edge="end"
-              sx={{ color: '#8B4513' }}
-            >
-              {showPassword ? (
-                <VisibilityOff />
-              ) : (
-                <Visibility />
-              )}
-            </IconButton>
-          </InputAdornment>
-        ),
+      disabled={disabled}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                edge="end"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
       }}
     />
   );
