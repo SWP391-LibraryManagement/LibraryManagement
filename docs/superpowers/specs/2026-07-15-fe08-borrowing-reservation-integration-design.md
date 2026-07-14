@@ -132,11 +132,11 @@ This closes the return-to-queue race without changing the approved manual queue 
 
 ## 10. Concurrency Rules
 
-- Queue hold and borrow approval lock `BookCopies` before `Reservations`, preventing opposite lock ordering.
+- Every transaction that changes both copy and reservation state uses the same `BookCopies -> Reservations` lock order. Existing queue hold already follows this order; cancellation and hold expiration must be aligned to it before approval starts updating reservations.
 - If queue processing wins first, approval re-reads `RESERVED` plus the selected `NOTIFIED` owner and applies the borrowability contract.
 - If approval sees an `ACTIVE` queue entry before selection, it returns `RESERVATION_QUEUE_PRIORITY` and changes nothing.
 - Two approvals for the same held copy cannot both succeed because the first changes the copy to `BORROWED` and the reservation to `FULFILLED` under locks.
-- A concurrent hold expiration/cancellation and approval can have only one valid state transition; the loser re-reads and returns a safe conflict.
+- Approval versus hold expiration/cancellation is serialized by the copy lock. If approval wins, the later release action re-reads `FULFILLED` and returns a safe conflict. If release wins, approval re-runs the complete borrowability contract against the released copy and any remaining active queue; it may proceed as a normal available-copy approval only when no reservation priority remains.
 
 ## 11. Error Contract
 
@@ -190,7 +190,8 @@ FE08 must explicitly define:
 
 - Queue processing versus ordinary approval preserves reservation priority.
 - Two approvals against one held copy permit only one success.
-- Approval versus hold expiration/cancellation leaves one valid terminal outcome.
+- Queue hold, cancellation, expiration, and borrow approval all use `BookCopies -> Reservations` lock order without deadlock.
+- Approval versus hold expiration/cancellation reclassifies the post-release copy and preserves any remaining queue priority.
 - Transaction failure leaves request `PENDING`, details `REQUESTED`, copy `RESERVED` or `AVAILABLE` as originally read, and reservation `NOTIFIED` or `ACTIVE` as originally read.
 
 ### Contract Tests
