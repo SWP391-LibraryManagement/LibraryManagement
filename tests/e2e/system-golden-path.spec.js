@@ -55,7 +55,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   await page.goto(`${FRONTEND_URL}/librarian/borrow-requests`);
   await expect(page.locator('tbody .badge-pending').first()).toBeVisible();
   await page.getByRole('button', { name: /^Duyệt$/i }).click();
-  await page.getByRole('button', { name: /Duyệt & cấp sách/i }).click();
+  await page.getByRole('button', { name: /^Duyệt và cấp sách$/i }).click();
   await expect(page.getByText(/Đã duyệt yêu cầu/i)).toBeVisible();
   await page.screenshot({
     path: 'output/playwright/manual-librarian-approval.png',
