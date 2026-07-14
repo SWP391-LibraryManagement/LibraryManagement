@@ -14,6 +14,10 @@ const { makeInMemoryBorrowingDependencies } = require('./helpers/inMemoryBorrowi
 const { makeInMemoryReservationDependencies } = require('./helpers/inMemoryReservationRepositories');
 const { makeInMemoryNotificationDependencies } = require('./helpers/inMemoryNotificationRepositories');
 const { makeInMemoryReportDependencies } = require('./helpers/inMemoryReportRepositories');
+const {
+  syncCopyStatus,
+  syncReservationClaims,
+} = require('./helpers/systemIntegrationHarness');
 
 function makeTestApp() {
   const authDependencies = makeInMemoryAuthDependencies();
@@ -378,8 +382,9 @@ describe('Integration: End-to-End Flows', () => {
         'RESERVED'
       );
 
-      // The two in-memory stores model the same physical copy; reflect the hold in the shared copy state.
-      borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'RESERVED';
+      // The in-memory feature stores model one database; sync the held copy and its owner claim.
+      syncCopyStatus(reservationDependencies.state, borrowingDependencies.state, 1);
+      syncReservationClaims(reservationDependencies.state, borrowingDependencies.state, 1);
 
       // FE07: member B cannot borrow the held copy (FR-FE08-023, BR-FE08-011).
       const borrowBlocked = await request(app)

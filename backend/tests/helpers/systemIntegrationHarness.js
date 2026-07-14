@@ -28,6 +28,23 @@ function syncCopyStatus(sourceState, targetState, copyId) {
   target.status = source.status;
 }
 
+function syncReservationClaims(sourceState, targetState, copyId) {
+  const normalizedCopyId = Number(copyId);
+  const sourceClaims = sourceState.reservations.filter(
+    (reservation) => reservation.copyId === normalizedCopyId
+  );
+  const retainedClaims = targetState.reservations.filter(
+    (reservation) => reservation.copyId !== normalizedCopyId
+  );
+
+  targetState.reservations.splice(
+    0,
+    targetState.reservations.length,
+    ...retainedClaims,
+    ...sourceClaims.map((reservation) => ({ ...reservation }))
+  );
+}
+
 function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
   const borrowingDependencies = makeInMemoryBorrowingDependencies(authDependencies.state);
@@ -191,6 +208,7 @@ module.exports = {
   createVerifiedActor,
   makeSystemIntegrationApp,
   syncCopyStatus,
+  syncReservationClaims,
   syncFineBlockersToBorrowing,
   syncFineSourceFromBorrowing,
 };

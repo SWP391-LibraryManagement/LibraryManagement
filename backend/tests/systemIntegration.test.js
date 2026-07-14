@@ -8,6 +8,7 @@ const {
   authHeader,
   createVerifiedActor,
   syncCopyStatus,
+  syncReservationClaims,
   syncFineBlockersToBorrowing,
   syncFineSourceFromBorrowing,
 } = require('./helpers/systemIntegrationHarness');
@@ -298,6 +299,11 @@ describe('System integration', () => {
     );
 
     syncCopyStatus(
+      setup.dependencies.reservationDependencies.state,
+      setup.dependencies.borrowingDependencies.state,
+      1
+    );
+    syncReservationClaims(
       setup.dependencies.reservationDependencies.state,
       setup.dependencies.borrowingDependencies.state,
       1
