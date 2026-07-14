@@ -74,6 +74,17 @@ test('borrowing date-only toDate filters use an exclusive next-day boundary', as
   expect(borrowingCapture.inputs.ToDateExclusive.toISOString()).toBe('2026-06-11T00:00:00.000Z');
 });
 
+test('borrowing reports filter derived OVERDUE rows as past-due borrowed details', async () => {
+  const capture = useRecordset([]);
+
+  await reportRepository.getBorrowingReport({ status: 'OVERDUE' });
+
+  expect(capture.query).toContain("bd.Status = 'BORROWED'");
+  expect(capture.query).toContain('bd.DueDate < CAST(GETDATE() AS DATE)');
+  expect(capture.query).not.toContain('bd.Status = @Status');
+  expect(capture.inputs).not.toHaveProperty('Status');
+});
+
 test('requested-only details do not create borrowing activity metrics', async () => {
   useRecordset([
     {

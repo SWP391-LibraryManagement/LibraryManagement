@@ -4,7 +4,7 @@
  * Không phụ thuộc MUI/Bootstrap - phù hợp React + lucide-react.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 
 /* -------- Toast -------- */
@@ -38,34 +38,72 @@ export function useToast() {
 
 /* -------- Modal -------- */
 export function Modal({ title, eyebrow, onClose, children, actions, width }) {
+  const dialogRef = useRef(null);
+  const titleId = useId();
+
   useEffect(() => {
+    const previouslyFocused = document.activeElement;
+    const dialog = dialogRef.current;
+    const getFocusable = () => Array.from(dialog?.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    ) || []);
+
+    (getFocusable()[0] || dialog)?.focus();
+
     function onKey(e) {
       if (e.key === 'Escape') onClose?.();
+
+      if (e.key === 'Tab') {
+        const focusable = getFocusable();
+        if (!focusable.length) {
+          e.preventDefault();
+          dialog?.focus();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     }
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
+    <div className="lib-modal-backdrop" onMouseDown={onClose}>
       <div
-        className="modal"
+        ref={dialogRef}
+        className="lib-modal"
         style={width ? { width: `min(${width}px, 100%)` } : undefined}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
       >
-        <div className="modal-header">
+        <div className="lib-modal-header">
           <div>
             {eyebrow && <p className="muted" style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>{eyebrow}</p>}
-            <h2 className="modal-title">{title}</h2>
+            <h2 id={titleId} className="lib-modal-title">{title}</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>
-        <div className="modal-body">{children}</div>
-        {actions && <div className="modal-actions">{actions}</div>}
+        <div className="lib-modal-body">{children}</div>
+        {actions && <div className="lib-modal-actions">{actions}</div>}
       </div>
     </div>
   );

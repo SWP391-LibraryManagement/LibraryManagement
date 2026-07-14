@@ -1,9 +1,17 @@
 const { sql, getPool } = require('../config/db');
 
-async function create({ userId, action, targetType, targetId, metadata, ipAddress, userAgent }) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function create({
+  userId,
+  action,
+  targetType,
+  targetId,
+  metadata,
+  ipAddress,
+  userAgent,
+  transaction,
+}) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  await request
     .input('UserId', sql.Int, userId || null)
     .input('Action', sql.NVarChar(255), action)
     .input('TargetType', sql.NVarChar(100), targetType || null)

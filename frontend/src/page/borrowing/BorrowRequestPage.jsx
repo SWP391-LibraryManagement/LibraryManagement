@@ -4,28 +4,20 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Search, BookOpen, MapPin, Calendar, FileText, CheckCircle2, Star } from 'lucide-react';
+import { Search, BookOpen, MapPin, CheckCircle2, Star } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, DataNotice } from '../../component/shared/Feedback';
 import { DEMO_BORROW_CATALOG } from '../../utils/libraryFeatureViewModels';
 
-function todayPlus(days) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
 export default function BorrowRequestPage() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(DEMO_BORROW_CATALOG[0]);
   const [copyId, setCopyId] = useState(DEMO_BORROW_CATALOG[0].copies[0]?.id || '');
-  const [borrowDate, setBorrowDate] = useState(todayPlus(0));
-  const [dueDate, setDueDate] = useState(todayPlus(14));
-  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState('Catalog tạm dùng dữ liệu demo vì FE01/FE06 chưa có API browse copy công khai trong scope này. Khi submit sẽ gửi POST /api/borrow-requests bằng copyId thật nếu có đăng nhập member.');
+  const [notice, setNotice] = useState('Bản sao sẽ được kiểm tra lại khi bạn gửi yêu cầu.');
+  const [noticeType, setNoticeType] = useState('info');
   const [toast, showToast, clearToast] = useToast();
 
   const results = useMemo(() => {
@@ -49,11 +41,12 @@ export default function BorrowRequestPage() {
     setSubmitting(true);
     try {
       const data = await borrowingApi.createRequest([Number(copyId)]);
-      setNotice(`Backend đã tạo yêu cầu #${data.borrowRequest?.requestId || 'mới'} với trạng thái PENDING.`);
+      setNotice(`Yêu cầu #${data.borrowRequest?.requestId || 'mới'} đã được tạo và đang chờ thủ thư duyệt.`);
+      setNoticeType('success');
       showToast(`Đã gửi yêu cầu mượn "${selected.title}". Vui lòng chờ thủ thư duyệt.`, 'success');
-      setNotes('');
     } catch (error) {
       setNotice(error.message);
+      setNoticeType('error');
       showToast(error.message, 'error');
     } finally {
       setSubmitting(false);
@@ -62,7 +55,7 @@ export default function BorrowRequestPage() {
 
   return (
     <AppLayout active="borrow-request" title="Tạo yêu cầu mượn" subtitle="Tìm sách và gửi yêu cầu mượn tới thủ thư.">
-      <DataNotice type="info" title="API integration">{notice}</DataNotice>
+      <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể gửi yêu cầu' : 'Kiểm tra điều kiện'}>{notice}</DataNotice>
       <div className="split">
         <div>
           <div className="lib-card">
@@ -86,11 +79,10 @@ export default function BorrowRequestPage() {
             </div>
             <div className="form-grid">
               <div className="field"><label htmlFor="copy"><MapPin size={14} style={{ verticalAlign: -2 }} /> Bản sao / Chi nhánh</label><select id="copy" className="select" value={copyId} onChange={(e) => setCopyId(e.target.value)} disabled={!available}>{available ? selected.copies.map((copy) => <option key={copy.id} value={copy.id}>{copy.branch} • Kệ {copy.shelf} (Copy #{copy.id})</option>) : <option>Không có bản sao khả dụng</option>}</select></div>
-              <div className="form-grid cols-2"><div className="field"><label htmlFor="bd"><Calendar size={14} style={{ verticalAlign: -2 }} /> Ngày mượn dự kiến</label><input id="bd" type="date" className="input" value={borrowDate} onChange={(e) => setBorrowDate(e.target.value)} /></div><div className="field"><label htmlFor="dd"><Calendar size={14} style={{ verticalAlign: -2 }} /> Hạn trả dự kiến</label><input id="dd" type="date" className="input" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div></div>
-              <div className="field"><label htmlFor="notes"><FileText size={14} style={{ verticalAlign: -2 }} /> Ghi chú (tùy chọn)</label><textarea id="notes" className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Lý do mượn, yêu cầu đặc biệt..." /><span className="field-hint">Backend mới l- noi kiem tra membership, gioi han 5 sach, overdue/fine va availability.</span></div>
+              <span className="field-hint">Hệ thống sẽ kiểm tra tư cách thành viên, giới hạn 5 sách, sách quá hạn, phí phạt và tình trạng bản sao.</span>
             </div>
             <div style={{ marginTop: 20 }}><button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={!available || submitting}><CheckCircle2 size={18} /> {submitting ? 'Đang gửi...' : 'Gửi yêu cầu mượn'}</button></div>
-          </> : <div className="empty"><BookOpen size={40} /><p>Chon mot cu-n sach Đã gửi yêu cầu mượn.</p></div>}
+          </> : <div className="empty"><BookOpen size={40} /><p>Chọn một cuốn sách để gửi yêu cầu mượn.</p></div>}
         </form>
       </div>
       <Toast toast={toast} onClose={clearToast} />

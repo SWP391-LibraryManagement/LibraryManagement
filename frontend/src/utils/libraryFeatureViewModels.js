@@ -173,13 +173,11 @@ export function mapBorrowRequestsToAdminRows(borrowRequests = []) {
       memberId: request.userId,
       email: request.member?.email || '-',
       phone: '-',
-      membershipActive: true,
-      unpaidFines: 0,
       book: title,
       author: '-',
       copyId: detail.copyId || '-',
       branch: detail.copy?.location || '-',
-      copyAvailable: details.every((item) => ['REQUESTED', 'AVAILABLE'].includes(item.status) || item.copy?.status === 'AVAILABLE'),
+      copyAvailable: details.length > 0 && details.every((item) => item.copy?.status === 'AVAILABLE'),
       requestDate: request.requestDate || request.createdAt,
       borrowDate: detail.borrowDate || request.approvedAt || request.requestDate,
       dueDate: detail.dueDate,
@@ -211,14 +209,15 @@ export function mapBorrowDetailsToMember(details = [], selectedMember = {}) {
   }));
   return {
     id: String(selectedMember.id),
-    name: selectedMember.name,
-    email: selectedMember.email,
-    phone: selectedMember.phone,
-    membership: selectedMember.membership || 'Active',
-    totalFines: selectedMember.totalFines || 0,
-    activeReservations: selectedMember.activeReservations || 0,
-    current: rows.filter((row) => ['Borrowed', 'Overdue', 'Pending'].includes(row.status)),
-    history: rows.filter((row) => !['Borrowed', 'Pending'].includes(row.status)),
+    name: selectedMember.name || `Thành viên #${selectedMember.id}`,
+    email: selectedMember.email || null,
+    phone: selectedMember.phone || null,
+    membership: selectedMember.membership || null,
+    totalFines: selectedMember.totalFines ?? null,
+    activeReservations: selectedMember.activeReservations ?? null,
+    pending: rows.filter((row) => row.status === 'Pending'),
+    current: rows.filter((row) => ['Borrowed', 'Overdue'].includes(row.status)),
+    history: rows.filter((row) => !['Borrowed', 'Overdue', 'Pending'].includes(row.status)),
   };
 }
 

@@ -1,5 +1,32 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-14 - B6 L4 Browser Acceptance and Validation Closeout
+
+- Added member/staff route guards for every FE07 screen and removed fabricated API fallback rows and simulated mutation success from history, approval, return, and member-detail workflows.
+- Namespaced shared FE07 dialog styles as `lib-modal*`, kept wide tables inside `.lib-table-wrap`, and removed page-level overflow at desktop and mobile widths.
+- Kept overdue loans in the active list without duplicating them in returned history, and retained the temporary create-request catalog only as the documented FE01/FE06 dependency boundary.
+- Independent-review remediation restored the specified unknown-member `404`, mapped a lost reject race to `409`, removed client UTC return dates and invented approval notes/eligibility evidence, separated pending requests from active loans, and added modal focus management.
+- Verified guest/member/staff access, request approval, renewal, normal return, truthful network failure states, modal visibility, and responsive layout against the real FE07 backend.
+- Final automated gate passed: frontend 37/37, lint, production build, backend 273/273, live SQL 14/14 with cleanup, FE07 traceability 22/22, and `git diff --check`. No commit, push, or merge was performed.
+- Nhat confirmed the required human review on 2026-07-14; B6 is complete and awaiting the integration decision.
+
+## 2026-07-13 - B6 L3 Constitution Hardening
+
+- Kept post-commit readback errors outside mutation rollback handling for create, approval, and return transactions.
+- Revalidated active account, approved membership, unpaid positive fine, and overdue active loan under approval transaction locks; mapped each repository outcome to an existing safe API error.
+- Moved reject and renew audit writes into their repository transactions so an audit failure rolls back the state change.
+- Restricted FE07 date filters and return input to real `YYYY-MM-DD` calendar dates.
+- Added in-memory route regressions and real SQL evidence for transaction eligibility outcomes and audit rollback. B6 remains in progress.
+
+## 2026-07-13 - B6 L2.3 Contract, Model, and Traceability Alignment
+
+- Reviewer follow-up: fixed derived `OVERDUE` filtering in FE07/FE12 SQL and in-memory test parity; added direct history isolation, independent selected-member filter, four-blocker renewal, real SQL rollback, and runtime FineCandidate contract evidence.
+- Reviewer follow-up: removed the unapproved selected-member history `404` contract response and remapped FR-FE07-022 to the real SQL transaction tests.
+- Added `COMPLETED` to persisted request model metadata; made requested-detail due dates nullable; removed persisted detail `OVERDUE` from model and SQL status constraints while retaining derived FE09/FE12 reporting semantics.
+- Documented the approved FE07 OpenAPI request validation, filters, success payloads, and safe error responses without changing runtime response shapes.
+- Added direct staff selected-member history/filter acceptance coverage and mapped AC-FE07-001 through AC-FE07-014 plus direct FR-FE07-022 rollback tests in traceability.
+- Clarified return request defaults, audit metadata, and that `CANCELLED` has no approved endpoint/actor/trigger/payload in the current scope.
+
 ## 2026-07-12 - Localized Borrowing API Errors
 
 - Added actionable Vietnamese messages for FE07 role, eligibility, borrowing-limit, copy, fine, overdue, and renewal-conflict errors.

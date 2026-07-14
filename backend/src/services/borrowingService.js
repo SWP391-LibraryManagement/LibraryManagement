@@ -61,12 +61,8 @@ function createBorrowingService({
 
   const notificationRequester = notificationService.createSourceNotificationRequester('FE07');
 
-  async function writeAudit(context, action, extra = {}) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
-      return;
-    }
-
-    await auditLogRepository.create({
+  function buildAuditEntry(context, action, extra = {}) {
+    return {
       userId: extra.userId ?? context?.userId ?? null,
       action,
       targetType: extra.targetType || 'BORROWING',
@@ -74,7 +70,15 @@ function createBorrowingService({
       metadata: extra.metadata || null,
       ipAddress: context?.ip || null,
       userAgent: context?.userAgent || null,
-    });
+    };
+  }
+
+  async function writeAudit(context, action, extra = {}) {
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
+      return;
+    }
+
+    await auditLogRepository.create(buildAuditEntry(context, action, extra));
   }
 
   async function requestDueDateNotification({ userId, recipientEmail, sourceEntityId, templateData }) {
@@ -196,12 +200,16 @@ function createBorrowingService({
     await validateBorrowLimit(userId, copyIds.length);
     await validateCopiesAvailable(copyIds);
 
-    const borrowRequest = await borrowingRepository.createBorrowRequest({ userId, copyIds });
-
-    await writeAudit(context, 'BORROW_REQUEST_CREATE', {
+    const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_CREATE', {
       userId,
-      targetId: borrowRequest.requestId,
+      targetId: null,
       metadata: { copyIds },
+    });
+    const borrowRequest = await borrowingRepository.createBorrowRequest({
+      userId,
+      copyIds,
+      auditLogRepository,
+      auditEntry,
     });
 
     return {
@@ -239,6 +247,12 @@ function createBorrowingService({
     requireStaff(actor);
 
     const memberId = toPositiveInteger(memberIdInput, 'Member ID');
+    const member = await borrowingRepository.getMemberEligibility(memberId);
+
+    if (!member) {
+      throw errors.notFound('MEMBER_NOT_FOUND', 'Member account was not found.');
+    }
+
     const borrowings = await borrowingRepository.listBorrowDetails({
       userId: memberId,
       status: filters.status || undefined,
@@ -272,24 +286,53 @@ function createBorrowingService({
 
     const approvalDate = clock();
     const dueDate = addDays(approvalDate, LOAN_DAYS);
-    const approvedRequest = await borrowingRepository.approveBorrowRequest({
+    const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_APPROVE', {
+      userId: actor.userId,
+      targetId: requestId,
+      metadata: { approvedMemberId: borrowRequest.userId, copyIds, notes: input.notes || null },
+    });
+    const approvalResult = await borrowingRepository.approveBorrowRequest({
       requestId,
       approvedBy: actor.userId,
       approvalDate,
       dueDate,
+      auditLogRepository,
+      auditEntry,
     });
 
-    // @spec FR-FE07-019 — concurrency-safe approval: the repository approves under a lock and returns
-    // null if the copy was taken first, so at most one approval wins and no copy is double-borrowed.
-    if (!approvedRequest) {
+    // @spec BR-FE07-005, FR-FE07-019 — the transaction reports the conflict observed under its locks.
+    if (approvalResult?.outcome === 'BORROW_LIMIT_EXCEEDED') {
+      throw errors.conflict(
+        'BORROW_LIMIT_EXCEEDED',
+        'A member cannot have more than 5 active borrowed copies.'
+      );
+    }
+
+    if (approvalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
+      throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
+    }
+
+    if (approvalResult?.outcome === 'MEMBERSHIP_NOT_APPROVED') {
+      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
+    }
+
+    if (approvalResult?.outcome === 'UNPAID_FINE_BLOCKS_BORROWING') {
+      throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
+    }
+
+    if (approvalResult?.outcome === 'OVERDUE_LOAN_BLOCKS_BORROWING') {
+      throw errors.conflict('OVERDUE_LOAN_BLOCKS_BORROWING', 'Overdue borrowed item blocks borrowing.');
+    }
+
+    if (approvalResult?.outcome === 'REQUEST_NOT_APPROVABLE') {
+      throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be approved.');
+    }
+
+    if (approvalResult?.outcome !== 'APPROVED') {
       throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
     }
 
-    await writeAudit(context, 'BORROW_REQUEST_APPROVE', {
-      userId: actor.userId,
-      targetId: requestId,
-      metadata: { approvedMemberId: approvedRequest.userId, copyIds, notes: input.notes || null },
-    });
+    const approvedRequest = approvalResult.borrowRequest;
 
     await requestDueDateNotification({
       userId: approvedRequest.userId,
@@ -321,16 +364,21 @@ function createBorrowingService({
       throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be rejected.');
     }
 
-    const rejectedRequest = await borrowingRepository.rejectBorrowRequest({
-      requestId,
-      rejectedBy: actor.userId,
-    });
-
-    await writeAudit(context, 'BORROW_REQUEST_REJECT', {
+    const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_REJECT', {
       userId: actor.userId,
       targetId: requestId,
       metadata: { rejectedMemberId: borrowRequest.userId, reason: input.reason },
     });
+    const rejectedRequest = await borrowingRepository.rejectBorrowRequest({
+      requestId,
+      rejectedBy: actor.userId,
+      auditLogRepository,
+      auditEntry,
+    });
+
+    if (!rejectedRequest) {
+      throw errors.conflict('BORROW_REQUEST_NOT_PENDING', 'Only pending borrow requests can be rejected.');
+    }
 
     return {
       borrowRequest: rejectedRequest,
@@ -373,14 +421,7 @@ function createBorrowingService({
 
     const { detailStatus, copyStatus } = mapReturnConditionToStatuses(input.condition);
     const overdueDays = differenceInCalendarDays(returnDate, new Date(borrowDetail.dueDate));
-    const returnedDetail = await borrowingRepository.returnBorrowDetail({
-      borrowDetailId,
-      detailStatus,
-      copyStatus,
-      returnDate,
-    });
-
-    await writeAudit(context, 'BORROW_DETAIL_RETURN', {
+    const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RETURN', {
       userId: actor.userId,
       targetType: 'BORROW_DETAIL',
       targetId: borrowDetailId,
@@ -393,6 +434,18 @@ function createBorrowingService({
         notes: input.notes || null,
       },
     });
+    const returnedDetail = await borrowingRepository.returnBorrowDetail({
+      borrowDetailId,
+      detailStatus,
+      copyStatus,
+      returnDate,
+      auditLogRepository,
+      auditEntry,
+    });
+
+    if (!returnedDetail) {
+      throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be returned.');
+    }
 
     return {
       borrowDetail: returnedDetail,
@@ -447,12 +500,7 @@ function createBorrowingService({
     }
 
     const newDueDate = addDays(new Date(borrowDetail.dueDate), LOAN_DAYS);
-    const renewedDetail = await borrowingRepository.renewBorrowDetail({
-      borrowDetailId,
-      newDueDate,
-    });
-
-    await writeAudit(context, 'BORROW_DETAIL_RENEW', {
+    const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RENEW', {
       userId: actor.userId,
       targetType: 'BORROW_DETAIL',
       targetId: borrowDetailId,
@@ -464,6 +512,16 @@ function createBorrowingService({
         notes: input.notes || null,
       },
     });
+    const renewedDetail = await borrowingRepository.renewBorrowDetail({
+      borrowDetailId,
+      newDueDate,
+      auditLogRepository,
+      auditEntry,
+    });
+
+    if (!renewedDetail) {
+      throw errors.conflict('RENEWAL_LIMIT_REACHED', 'This borrowed item has already been renewed.');
+    }
 
     await requestDueDateNotification({
       userId: borrowDetail.userId,

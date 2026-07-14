@@ -44,6 +44,7 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Fine calculation must be traceable: overdue days, rate, amount, related borrow/copy, calculation date.
 - Notification attempts must not store raw reset tokens or sensitive links in logs.
 - Audit logs must capture actor, action, target, timestamp, and safe metadata.
+- FE07 persists `BorrowRequests.Status` as `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED`; `BorrowDetails.Status` as `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, or `DAMAGED`. `BorrowDetails.DueDate` is nullable for `REQUESTED` details and required by the approval flow before `BORROWED`. `OVERDUE` is derived for FE09/FE12 from `BORROWED` plus `DueDate < today`, so it is excluded from `CK_BorrowDetails_Status`.
 
 ## Migration Policy
 

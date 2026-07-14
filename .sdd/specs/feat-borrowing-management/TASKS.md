@@ -1,10 +1,10 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: READY FOR REVIEW
+Status: COMPLETE
 
 Owner: Nhat
 
-Updated: 2026-06-10
+Updated: 2026-07-14
 
 ---
 
@@ -50,6 +50,14 @@ Updated: 2026-06-10
 - [x] `npm.cmd --prefix frontend run lint` passed.
 - [x] `npm.cmd --prefix frontend run build` passed.
 - [x] Browser verification: tables, captions, labels, and keyboard navigation verified.
+- [x] B6 L2.3 aligned persisted FE07 statuses, SQL metadata, and the OpenAPI contract with the approved runtime/spec.
+- [x] B6 L2.3 added focused model/OpenAPI tests and direct staff member-borrowings filter coverage.
+- [x] B6 L3 hardened post-commit readback handling, transaction-time approval eligibility, reject/renew audit atomicity, and strict calendar-date validation.
+- [x] B6 L3 added in-memory regressions and live SQL evidence for approval eligibility and reject/renew audit rollback.
+- [x] B6 L4 removed fabricated FE07 browser state, added complete route guards, fixed modal/responsive behavior, and validated the real member/staff workflow.
+- [x] B6 independent-review remediation: unknown-member `404`, reject-race `409`, server-owned return date, truthful approval/return UI, pending-loan partitioning, modal focus, and mobile pagination.
+- [x] B6 final automated gate: frontend 37/37, lint/build, backend 273/273, live SQL 14/14 with cleanup, FE07 traceability 22/22, and `git diff --check`.
+- [x] Human review by Nhat confirmed on 2026-07-14 before commit, push, or merge.
 
 ## 4. Traceability
 
@@ -69,6 +77,8 @@ Updated: 2026-06-10
 | FR-FE07-010 | FE07-T05, FE07-T16 |
 | FR-FE07-011 | FE07-T06 |
 | FR-FE07-013 | FE07-T09, FE07-T17 |
+| AC-FE07-001 through AC-FE07-014 | SPEC.md Section 16 direct acceptance-test mappings |
+| FR-FE07-022 | borrowingConcurrency.sqltest.js > SQL create/approval/return/reject/renew audit-failure rollback tests |
 
 ## 5. Still Outside This Slice
 

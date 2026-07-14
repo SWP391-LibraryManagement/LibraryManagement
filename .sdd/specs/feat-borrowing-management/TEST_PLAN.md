@@ -1,8 +1,8 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.0
-Status: READY FOR REVIEW
-Last Updated: 2026-06-25
+Version: 0.2.2
+Status: COMPLETE
+Last Updated: 2026-07-14
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
 Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -27,7 +27,7 @@ Borrow request creation, approval/rejection, member borrowing history, return fl
 - `POST /api/borrow-requests`: happy, duplicate/unavailable copy, over limit, inactive/unapproved member.
 - `GET /api/borrow-requests/me`: own history only.
 - `GET /api/borrow-requests`: staff list, unauthorized member forbidden.
-- `GET /api/members/:memberId/borrowings`: staff happy, not found, forbidden.
+- `GET /api/members/:memberId/borrowings`: staff selected-member history, derived overdue/status/date filters, and unknown member IDs returning `404 MEMBER_NOT_FOUND`.
 - `PATCH /api/borrow-requests/:requestId/approve`: happy, unavailable copy, concurrent double-borrow, forbidden.
 - `PATCH /api/borrow-requests/:requestId/reject`: happy, invalid state.
 - `PATCH /api/borrow-details/:borrowDetailId/return`: happy, invalid state/date, already returned.
@@ -40,19 +40,28 @@ Borrow request creation, approval/rejection, member borrowing history, return fl
 
 ## 5. Current Evidence
 
-- `backend/tests/borrowingRoutes.test.js` (13 tests; AC-FE07-001..006/009..013, FR-FE07-014..021).
+- `backend/tests/borrowingRoutes.test.js` (41 tests; direct AC-FE07-001..014 coverage, unknown-member lookup, reject-race conflict, granular transaction-outcome safe errors, reject/renew audit rollback, strict calendar-date validation, derived `OVERDUE`, history isolation, and all four renewal blockers).
+- `backend/tests/models.test.js` (4 tests; persisted FE07 status and nullable-due-date metadata).
+- `backend/tests/borrowingContract.test.js` (4 tests; FE07 OpenAPI inputs, filters, runtime FineCandidate fields, response payloads, and safe errors).
+- `backend/tests/reportRepository.test.js` (9 tests; includes derived `OVERDUE` SQL filtering).
+- `backend/tests/sql/borrowingConcurrency.sqltest.js` (14 tests; includes real SQL approval eligibility outcomes and audit-failure rollback coverage for create, approval, return, reject, and renew transactions).
 - `backend/tests/integration.test.js`.
+- `frontend/test/borrowingFrontend.test.js` (route access, truthful API/mutation state, server-owned return date, truthful approval evidence, pending/current/history partitioning, modal namespace/focus management, responsive layout, and mobile pagination).
+- Browser acceptance against the real backend: guest/member/staff access, approval, renewal, normal return, network failure, modal visibility, and desktop/mobile overflow checks.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
-- FR-FE07-022 (transaction rollback) is exercised only indirectly; add an explicit case during the Week 11 Testing Sprint.
 - TD-007 resolved: Phase 1 borrow policy is all-or-nothing (spec aligned to code, BR-FE07-022). TD-008 (model `allowedValues` sync) resolved.
+- FR-FE07-022 rollback evidence is real SQL transaction coverage; the in-memory route rollback tests remain supplemental only.
+- The temporary create-request catalog remains until FE01/FE06 expose the production browsing/copy-selection integration required by FE07.
+- Automated and browser validation are complete; Nhat confirmed human review on 2026-07-14.
 
 ## 7. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test
+npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce

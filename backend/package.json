@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "create-admin": "node scripts/createAdmin.js",
     "test": "jest --runInBand",
+    "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
     "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [],

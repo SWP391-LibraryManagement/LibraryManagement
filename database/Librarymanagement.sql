@@ -179,7 +179,7 @@ CREATE TABLE BorrowDetails (
     UpdatedAt DATETIME NULL,
     FOREIGN KEY (RequestId) REFERENCES BorrowRequests(RequestId),
     FOREIGN KEY (CopyId) REFERENCES BookCopies(CopyId),
-    CONSTRAINT CK_BorrowDetails_Status CHECK (Status IN ('REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'))
+    CONSTRAINT CK_BorrowDetails_Status CHECK (Status IN ('REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED'))
 );
 
 CREATE TABLE Reservations (

@@ -27,8 +27,14 @@ components:
   responses:
     Unauthorized:
       description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SafeError' }
     Forbidden:
       description: Authenticated but role not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SafeError' }
     ValidationError:
       description: Invalid input
       content:
@@ -36,8 +42,44 @@ components:
           schema: { $ref: '#/components/schemas/SafeValidationError' }
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SafeError' }
     Conflict:
       description: Business-rule conflict (e.g. duplicate, not available, terminal state)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SafeError' }
+    BorrowRequestCreatedResponse:
+      description: Borrow request created
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowRequestCreatedPayload' }
+    BorrowRequestListResponse:
+      description: Borrow request list
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowRequestListPayload' }
+    MemberBorrowingsResponse:
+      description: Selected member borrowing details
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/MemberBorrowingsPayload' }
+    BorrowRequestResponse:
+      description: Updated borrow request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowRequestPayload' }
+    BorrowDetailReturnResponse:
+      description: Returned borrow detail and fine-review data
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowDetailReturnPayload' }
+    BorrowDetailResponse:
+      description: Updated borrow detail
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/BorrowDetailPayload' }
     BorrowingReportResponse:
       description: Aggregated borrowing statistics
       content:
@@ -89,6 +131,126 @@ components:
                 properties:
                   field: { type: string }
                   message: { type: string }
+    SafeError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code: { type: string, example: ROLE_REQUIRED }
+            message: { type: string, example: Access is denied. }
+    BorrowRequestCreateInput:
+      type: object
+      additionalProperties: false
+      required: [copyIds]
+      properties:
+        copyIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: integer, minimum: 1 }
+    BorrowRequestApproveInput:
+      type: object
+      additionalProperties: false
+      properties:
+        notes: { type: string, maxLength: 500 }
+    BorrowRequestRejectInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+    BorrowDetailReturnInput:
+      type: object
+      additionalProperties: false
+      required: [condition]
+      properties:
+        condition: { type: string, enum: [NORMAL, DAMAGED, LOST] }
+        returnDate:
+          type: string
+          format: date
+          description: Optional; omitted values default to the server date.
+        notes: { type: string, maxLength: 500 }
+    BorrowDetailRenewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        notes: { type: string, maxLength: 500 }
+    BorrowRequest:
+      type: object
+      required: [requestId, userId, requestDate, status, details]
+      properties:
+        requestId: { type: integer, minimum: 1 }
+        userId: { type: integer, minimum: 1 }
+        requestDate: { type: string, format: date-time }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
+        details:
+          type: array
+          items: { $ref: '#/components/schemas/BorrowDetail' }
+    BorrowDetail:
+      type: object
+      required: [borrowDetailId, requestId, copyId, status, renewalCount]
+      properties:
+        borrowDetailId: { type: integer, minimum: 1 }
+        requestId: { type: integer, minimum: 1 }
+        copyId: { type: integer, minimum: 1 }
+        borrowDate: { type: string, format: date, nullable: true }
+        dueDate: { type: string, format: date, nullable: true }
+        returnDate: { type: string, format: date, nullable: true }
+        renewalCount: { type: integer, minimum: 0, maximum: 1 }
+        status:
+          type: string
+          enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED]
+          description: OVERDUE is derived for reporting when status is BORROWED and dueDate is before today.
+    FineCandidate:
+      type: object
+      required: [userId, borrowDetailId, copyId, condition, overdueDays, needsFineReview]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        borrowDetailId: { type: integer, minimum: 1 }
+        copyId: { type: integer, minimum: 1 }
+        condition: { type: string, enum: [NORMAL, DAMAGED, LOST] }
+        overdueDays: { type: integer, minimum: 0 }
+        needsFineReview: { type: boolean }
+    BorrowRequestCreatedPayload:
+      type: object
+      required: [borrowRequest]
+      properties:
+        borrowRequest: { $ref: '#/components/schemas/BorrowRequest' }
+    BorrowRequestListPayload:
+      type: object
+      required: [borrowRequests]
+      properties:
+        borrowRequests:
+          type: array
+          items: { $ref: '#/components/schemas/BorrowRequest' }
+    MemberBorrowingsPayload:
+      type: object
+      required: [borrowings]
+      properties:
+        borrowings:
+          type: array
+          items: { $ref: '#/components/schemas/BorrowDetail' }
+    BorrowRequestPayload:
+      type: object
+      required: [borrowRequest]
+      properties:
+        borrowRequest: { $ref: '#/components/schemas/BorrowRequest' }
+    BorrowDetailReturnPayload:
+      type: object
+      required: [borrowDetail, fineCandidate]
+      properties:
+        borrowDetail: { $ref: '#/components/schemas/BorrowDetail' }
+        fineCandidate: { $ref: '#/components/schemas/FineCandidate' }
+    BorrowDetailPayload:
+      type: object
+      required: [borrowDetail]
+      properties:
+        borrowDetail: { $ref: '#/components/schemas/BorrowDetail' }
     BorrowingReport:
       type: object
       additionalProperties: false
@@ -198,15 +360,9 @@ paths:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [copyIds]
-              properties:
-                copyIds:
-                  type: array
-                  items: { type: integer }
+            schema: { $ref: '#/components/schemas/BorrowRequestCreateInput' }
       responses:
-        '201': { description: Borrow request created (PENDING) }
+        '201': { $ref: '#/components/responses/BorrowRequestCreatedResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -214,16 +370,27 @@ paths:
     get:
       tags: [Borrowing]
       summary: Librarian/Admin lists borrow requests (FR-FE07-011)
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] } }
+        - { name: memberId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
       responses:
-        '200': { description: List of borrow requests }
+        '200': { $ref: '#/components/responses/BorrowRequestListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/borrow-requests/me:
     get:
       tags: [Borrowing]
       summary: Member views own borrowing history (FR-FE07-010)
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] } }
+        - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
       responses:
-        '200': { description: Caller's borrow requests }
+        '200': { $ref: '#/components/responses/BorrowRequestListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/members/{memberId}/borrowings:
@@ -231,9 +398,13 @@ paths:
       tags: [Borrowing]
       summary: Librarian/Admin views a member's borrowings (FR-FE07-011)
       parameters:
-        - { name: memberId, in: path, required: true, schema: { type: integer } }
+        - { name: memberId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE], description: OVERDUE is derived from a past-due BORROWED detail. } }
+        - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
       responses:
-        '200': { description: Member's borrowings }
+        '200': { $ref: '#/components/responses/MemberBorrowingsResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -242,53 +413,70 @@ paths:
       tags: [Borrowing]
       summary: Approve a borrow request (FR-FE07-004/005)
       parameters:
-        - { name: requestId, in: path, required: true, schema: { type: integer } }
+        - { name: requestId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BorrowRequestApproveInput' }
       responses:
-        '200': { description: Request approved; copies set BORROWED }
+        '200': { $ref: '#/components/responses/BorrowRequestResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/borrow-requests/{requestId}/reject:
     patch:
       tags: [Borrowing]
       summary: Reject a borrow request (FR-FE07-006)
       parameters:
-        - { name: requestId, in: path, required: true, schema: { type: integer } }
+        - { name: requestId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BorrowRequestRejectInput' }
       responses:
-        '200': { description: Request rejected }
+        '200': { $ref: '#/components/responses/BorrowRequestResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/borrow-details/{borrowDetailId}/return:
     patch:
       tags: [Borrowing]
       summary: Process a return (FR-FE07-007/008/013)
       parameters:
-        - { name: borrowDetailId, in: path, required: true, schema: { type: integer } }
+        - { name: borrowDetailId, in: path, required: true, schema: { type: integer, minimum: 1 } }
       requestBody:
+        required: true
         content:
           application/json:
-            schema:
-              type: object
-              properties:
-                condition: { type: string, enum: [NORMAL, DAMAGED, LOST] }
-                returnDate: { type: string, format: date }
+            schema: { $ref: '#/components/schemas/BorrowDetailReturnInput' }
       responses:
-        '200': { description: Detail returned; copy/availability updated }
+        '200': { $ref: '#/components/responses/BorrowDetailReturnResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/borrow-details/{borrowDetailId}/renew:
     patch:
       tags: [Borrowing]
       summary: Renew a borrowed copy once (FR-FE07-009/020)
       parameters:
-        - { name: borrowDetailId, in: path, required: true, schema: { type: integer } }
+        - { name: borrowDetailId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BorrowDetailRenewInput' }
       responses:
-        '200': { description: Due date extended }
+        '200': { $ref: '#/components/responses/BorrowDetailResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/reservations:
     post:

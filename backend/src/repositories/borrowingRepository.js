@@ -91,6 +91,16 @@ function mapMember(row) {
   };
 }
 
+function toDateOnly(value) {
+  return value ? new Date(value).toISOString().slice(0, 10) : null;
+}
+
+function toExclusiveNextDay(value) {
+  const date = new Date(value);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date;
+}
+
 function mapBorrowDetail(row) {
   if (!row || !row.BorrowDetailId) {
     return null;
@@ -101,9 +111,9 @@ function mapBorrowDetail(row) {
     requestId: row.RequestId,
     userId: row.UserId,
     copyId: row.CopyId,
-    borrowDate: row.BorrowDate,
-    dueDate: row.DueDate,
-    returnDate: row.ReturnDate,
+    borrowDate: toDateOnly(row.BorrowDate),
+    dueDate: toDateOnly(row.DueDate),
+    returnDate: toDateOnly(row.ReturnDate),
     renewalCount: row.RenewalCount,
     status: row.DetailStatus,
     createdAt: row.DetailCreatedAt,
@@ -216,7 +226,7 @@ async function countActiveBorrowedCopies(userId) {
       FROM BorrowRequests br
       INNER JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
       WHERE br.UserId = @UserId
-        AND bd.Status IN ('BORROWED', 'OVERDUE')
+        AND bd.Status = 'BORROWED'
     `);
 
   return result.recordset[0]?.ActiveCount || 0;
@@ -301,11 +311,12 @@ async function findBorrowDetailById(borrowDetailId) {
 }
 
 // @spec FR-FE07-022 — create runs inside a transaction so request + details commit or roll back together (NFR-FE07-TXN-001)
-async function createBorrowRequest({ userId, copyIds }) {
+async function createBorrowRequest({ userId, copyIds, auditLogRepository, auditEntry }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
+  let requestId;
 
   try {
     const requestResult = await new sql.Request(transaction)
@@ -316,7 +327,7 @@ async function createBorrowRequest({ userId, copyIds }) {
         VALUES (@UserId, 'PENDING', @UserId)
       `);
 
-    const requestId = requestResult.recordset[0].RequestId;
+    requestId = requestResult.recordset[0].RequestId;
 
     for (const copyId of copyIds) {
       await new sql.Request(transaction)
@@ -328,12 +339,21 @@ async function createBorrowRequest({ userId, copyIds }) {
         `);
     }
 
+    if (auditLogRepository && auditEntry) {
+      await auditLogRepository.create({
+        ...auditEntry,
+        targetId: auditEntry.targetId ?? requestId,
+        transaction,
+      });
+    }
+
     await transaction.commit();
-    return findBorrowRequestById(requestId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return findBorrowRequestById(requestId);
 }
 
 async function listBorrowRequests({ userId, memberId, status, fromDate, toDate } = {}) {
@@ -362,8 +382,8 @@ async function listBorrowRequests({ userId, memberId, status, fromDate, toDate }
   }
 
   if (toDate) {
-    request.input('ToDate', sql.DateTime, new Date(toDate));
-    where.push('br.RequestDate <= @ToDate');
+    request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(toDate));
+    where.push('br.RequestDate < @ToDateExclusive');
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -386,7 +406,10 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
     where.push('br.UserId = @UserId');
   }
 
-  if (status) {
+  if (status === 'OVERDUE') {
+    where.push("bd.Status = 'BORROWED'");
+    where.push('bd.DueDate < CAST(GETDATE() AS DATE)');
+  } else if (status) {
     request.input('Status', sql.NVarChar(20), status);
     where.push('bd.Status = @Status');
   }
@@ -397,8 +420,8 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
   }
 
   if (toDate) {
-    request.input('ToDate', sql.DateTime, new Date(toDate));
-    where.push('br.RequestDate <= @ToDate');
+    request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(toDate));
+    where.push('br.RequestDate < @ToDateExclusive');
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -411,33 +434,146 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
   return result.recordset.map(mapBorrowDetail);
 }
 
-// @spec FR-FE07-019, FR-FE07-022 — approval locks the copies (UPDLOCK/HOLDLOCK) and updates request,
-// details, due dates and copy statuses atomically; any partial failure rolls the whole transaction back
-// (NFR-FE07-TXN-001). Returns null when a copy is no longer AVAILABLE so concurrent approvals cannot double-borrow.
-async function approveBorrowRequest({ requestId, approvedBy, approvalDate, dueDate }) {
+// @spec BR-FE07-005, FR-FE07-019, FR-FE07-022 — approval serializes a member's approvals and
+// updates request, details, due dates and copies atomically (NFR-FE07-TXN-001).
+async function approveBorrowRequest({
+  requestId,
+  approvedBy,
+  approvalDate,
+  dueDate,
+  auditLogRepository,
+  auditEntry,
+}) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
 
   try {
-    const unavailableResult = await new sql.Request(transaction)
+    // Lock the request first to get its member, then the member to serialize every approval for them.
+    const requestResult = await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
       .query(`
-        SELECT TOP 1 bc.CopyId
-        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
-        INNER JOIN BookCopies bc WITH (UPDLOCK, HOLDLOCK) ON bd.CopyId = bc.CopyId
-        WHERE bd.RequestId = @RequestId
-          AND bd.Status = 'REQUESTED'
-          AND bc.Status <> 'AVAILABLE'
+        SELECT RequestId, UserId
+        FROM BorrowRequests WITH (UPDLOCK, HOLDLOCK)
+        WHERE RequestId = @RequestId
+          AND Status = 'PENDING'
       `);
 
-    if (unavailableResult.recordset.length) {
+    if (!requestResult.recordset.length) {
       await transaction.rollback();
-      return null;
+      return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
 
-    const requestResult = await new sql.Request(transaction)
+    const memberUserId = requestResult.recordset[0].UserId;
+    const memberResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .query(`
+        SELECT u.Status AS UserStatus, m.MemberId, m.Status AS MemberStatus
+        FROM Users u WITH (UPDLOCK, HOLDLOCK)
+        LEFT JOIN Members m WITH (UPDLOCK, HOLDLOCK) ON m.UserId = u.UserId
+        WHERE u.UserId = @UserId
+      `);
+
+    const member = memberResult.recordset[0];
+    if (!member || !member.MemberId) {
+      await transaction.rollback();
+      return { outcome: 'REQUEST_NOT_APPROVABLE' };
+    }
+
+    if (member.UserStatus !== 'ACTIVE') {
+      await transaction.rollback();
+      return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+    }
+
+    if (member.MemberStatus !== 'APPROVED') {
+      await transaction.rollback();
+      return { outcome: 'MEMBERSHIP_NOT_APPROVED' };
+    }
+
+    const fineResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .query(`
+        SELECT TOP 1 FineId
+        FROM Fines WITH (UPDLOCK, HOLDLOCK)
+        WHERE UserId = @UserId
+          AND Status = 'UNPAID'
+          AND Amount > 0
+      `);
+
+    if (fineResult.recordset.length) {
+      await transaction.rollback();
+      return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
+    }
+
+    const overdueResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .input('ApprovalDate', sql.Date, approvalDate)
+      .query(`
+        SELECT TOP 1 bd.BorrowDetailId
+        FROM BorrowRequests br WITH (HOLDLOCK)
+        INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK) ON br.RequestId = bd.RequestId
+        WHERE br.UserId = @UserId
+          AND bd.Status = 'BORROWED'
+          AND bd.DueDate < @ApprovalDate
+      `);
+
+    if (overdueResult.recordset.length) {
+      await transaction.rollback();
+      return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
+    }
+
+    const requestedDetailsResult = await new sql.Request(transaction)
+      .input('RequestId', sql.Int, requestId)
+      .query(`
+        SELECT bd.CopyId
+        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+        WHERE bd.RequestId = @RequestId
+          AND bd.Status = 'REQUESTED'
+      `);
+
+    if (!requestedDetailsResult.recordset.length) {
+      await transaction.rollback();
+      return { outcome: 'REQUEST_NOT_APPROVABLE' };
+    }
+
+    const requestedCopyIds = requestedDetailsResult.recordset
+      .map((detail) => detail.CopyId)
+      .sort((left, right) => left - right);
+
+    for (const copyId of requestedCopyIds) {
+      const copyResult = await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT CopyId, Status
+          FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
+          WHERE CopyId = @CopyId
+        `);
+
+      if (!copyResult.recordset.length || copyResult.recordset[0].Status !== 'AVAILABLE') {
+        await transaction.rollback();
+        return { outcome: 'COPY_NOT_AVAILABLE' };
+      }
+    }
+
+    const activeCountResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .query(`
+        SELECT COUNT(*) AS ActiveCount
+        FROM BorrowRequests br WITH (HOLDLOCK)
+        INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK) ON br.RequestId = bd.RequestId
+        WHERE br.UserId = @UserId
+          AND bd.Status = 'BORROWED'
+      `);
+    const activeCount = activeCountResult.recordset[0].ActiveCount;
+    const requestedCount = requestedCopyIds.length;
+
+    if (activeCount + requestedCount > 5) {
+      await transaction.rollback();
+      return { outcome: 'BORROW_LIMIT_EXCEEDED' };
+    }
+
+    await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
       .input('ApprovedBy', sql.Int, approvedBy)
       .input('ApprovalDate', sql.DateTime, approvalDate)
@@ -448,15 +584,9 @@ async function approveBorrowRequest({ requestId, approvedBy, approvalDate, dueDa
             ApprovedAt = @ApprovalDate,
             ProcessedAt = @ApprovalDate,
             UpdatedAt = GETDATE()
-        OUTPUT INSERTED.RequestId
         WHERE RequestId = @RequestId
           AND Status = 'PENDING'
       `);
-
-    if (!requestResult.recordset.length) {
-      await transaction.rollback();
-      return null;
-    }
 
     await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
@@ -481,38 +611,71 @@ async function approveBorrowRequest({ requestId, approvedBy, approvalDate, dueDa
         FROM BookCopies bc
         INNER JOIN BorrowDetails bd ON bc.CopyId = bd.CopyId
         WHERE bd.RequestId = @RequestId
+          AND bd.Status = 'BORROWED'
       `);
 
+    if (auditLogRepository && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
+
     await transaction.commit();
-    return findBorrowRequestById(requestId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return { outcome: 'APPROVED', borrowRequest: await findBorrowRequestById(requestId) };
 }
 
-async function rejectBorrowRequest({ requestId, rejectedBy }) {
+async function rejectBorrowRequest({ requestId, rejectedBy, auditLogRepository, auditEntry }) {
   const pool = await getPool();
-  await pool
-    .request()
-    .input('RequestId', sql.Int, requestId)
-    .input('RejectedBy', sql.Int, rejectedBy)
-    .query(`
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const result = await new sql.Request(transaction)
+      .input('RequestId', sql.Int, requestId)
+      .input('RejectedBy', sql.Int, rejectedBy)
+      .query(`
       UPDATE BorrowRequests
       SET Status = 'REJECTED',
           RejectedAt = GETDATE(),
           ProcessedAt = GETDATE(),
           ApprovedBy = @RejectedBy,
           UpdatedAt = GETDATE()
+      OUTPUT INSERTED.RequestId
       WHERE RequestId = @RequestId
         AND Status = 'PENDING'
     `);
+
+    if (!result.recordset.length) {
+      await transaction.rollback();
+      return null;
+    }
+
+    if (auditLogRepository && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return findBorrowRequestById(requestId);
 }
 
 // @spec FR-FE07-022 — return updates detail, copy status and request completion atomically; partial failure rolls back (NFR-FE07-TXN-002)
-async function returnBorrowDetail({ borrowDetailId, detailStatus, copyStatus, returnDate }) {
+async function returnBorrowDetail({
+  borrowDetailId,
+  detailStatus,
+  copyStatus,
+  returnDate,
+  auditLogRepository,
+  auditEntry,
+}) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
@@ -570,28 +733,54 @@ async function returnBorrowDetail({ borrowDetailId, detailStatus, copyStatus, re
         `);
     }
 
+    if (auditLogRepository && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
+
     await transaction.commit();
-    return findBorrowDetailById(borrowDetailId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return findBorrowDetailById(borrowDetailId);
 }
 
-async function renewBorrowDetail({ borrowDetailId, newDueDate }) {
+async function renewBorrowDetail({ borrowDetailId, newDueDate, auditLogRepository, auditEntry }) {
   const pool = await getPool();
-  await pool
-    .request()
-    .input('BorrowDetailId', sql.Int, borrowDetailId)
-    .input('NewDueDate', sql.Date, newDueDate)
-    .query(`
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const result = await new sql.Request(transaction)
+      .input('BorrowDetailId', sql.Int, borrowDetailId)
+      .input('NewDueDate', sql.Date, newDueDate)
+      .query(`
       UPDATE BorrowDetails
       SET DueDate = @NewDueDate,
           RenewalCount = RenewalCount + 1,
           UpdatedAt = GETDATE()
+      OUTPUT INSERTED.BorrowDetailId
       WHERE BorrowDetailId = @BorrowDetailId
         AND Status = 'BORROWED'
-    `);
+        AND RenewalCount < 1
+      `);
+
+    if (!result.recordset.length) {
+      await transaction.rollback();
+      return null;
+    }
+
+    if (auditLogRepository && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
+
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 
   return findBorrowDetailById(borrowDetailId);
 }

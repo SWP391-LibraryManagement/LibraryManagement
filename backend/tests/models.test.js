@@ -41,4 +41,22 @@ describe('SQL Server model metadata', () => {
     expect(models.User.columnsByAttribute.email.name).toBe('Email');
     expect(models.UserRole.primaryKey).toEqual(['userId', 'roleId']);
   });
+
+  test('matches the persisted FE07 request and detail status decisions', () => {
+    expect(models.BorrowRequest.columnsByAttribute.status.allowedValues).toEqual([
+      'PENDING',
+      'APPROVED',
+      'REJECTED',
+      'COMPLETED',
+      'CANCELLED',
+    ]);
+    expect(models.BorrowDetail.columnsByAttribute.dueDate.required).not.toBe(true);
+    expect(models.BorrowDetail.columnsByAttribute.status.allowedValues).toEqual([
+      'REQUESTED',
+      'BORROWED',
+      'RETURNED',
+      'LOST',
+      'DAMAGED',
+    ]);
+  });
 });

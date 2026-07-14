@@ -69,18 +69,18 @@ export default function BookCopies({ book, copies, onClose, onChanged, showToast
   }
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal" style={{ width: 'min(960px, 100%)' }} onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="modal-header">
+    <div className="lib-modal-backdrop" onMouseDown={onClose}>
+      <div className="lib-modal" style={{ width: 'min(960px, 100%)' }} onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="lib-modal-header">
           <div>
             <p className="muted" style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>FE06 • BookCopies</p>
-            <h2 className="modal-title">{book.title}</h2>
+            <h2 className="lib-modal-title">{book.title}</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Đóng">
             <CloseIcon fontSize="small" />
           </button>
         </div>
-        <div className="modal-body">
+        <div className="lib-modal-body">
           <div className="lib-table-wrap">
             <table className="lib-table">
               <caption className="sr-only">Book copies table</caption>

@@ -10,6 +10,7 @@ import UserProfilePage from './page/UserProfilePage';
 import InventoryPage from './page/InventoryPage';
 import ForbiddenPage from './page/error/ForbiddenPage';
 import ReportRouteGuard from './component/report/ReportRouteGuard';
+import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -44,11 +45,11 @@ function App() {
       <Route path="/librarian/books" element={<Navigate to="/librarian/fines" replace />} />
 
       {/* FE07 · Borrowing Management */}
-      <Route path="/borrowing/new" element={<BorrowRequestPage />} />
-      <Route path="/borrowing/history" element={<BorrowingHistoryPage />} />
-      <Route path="/librarian/borrow-requests" element={<BorrowRequestsAdminPage />} />
-      <Route path="/librarian/returns" element={<ProcessReturnsPage />} />
-      <Route path="/librarian/members" element={<MemberBorrowingDetailsPage />} />
+      <Route path="/borrowing/new" element={<BorrowingRouteGuard audience="member"><BorrowRequestPage /></BorrowingRouteGuard>} />
+      <Route path="/borrowing/history" element={<BorrowingRouteGuard audience="member"><BorrowingHistoryPage /></BorrowingRouteGuard>} />
+      <Route path="/librarian/borrow-requests" element={<BorrowingRouteGuard audience="staff"><BorrowRequestsAdminPage /></BorrowingRouteGuard>} />
+      <Route path="/librarian/returns" element={<BorrowingRouteGuard audience="staff"><ProcessReturnsPage /></BorrowingRouteGuard>} />
+      <Route path="/librarian/members" element={<BorrowingRouteGuard audience="staff"><MemberBorrowingDetailsPage /></BorrowingRouteGuard>} />
 
       {/* FE08 · Reservation Management */}
       <Route path="/reservations/mine" element={<MyReservationsPage />} />
