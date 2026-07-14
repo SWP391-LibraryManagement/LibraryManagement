@@ -49,7 +49,7 @@ Updated: 2026-07-15
 
 ## 4.1 FE07-FE08 Integration Task
 
-- [ ] FE08-T025 Align cancellation/expiration lock order and FE07 fulfillment handoff. Trace: BR-FE08-015/016; AC-FE08-011/012. Dependency: FE07-T029/T030. Done when concurrency tests pass without deadlock.
+- [x] FE08-T025 Align cancellation/expiration lock order and FE07 fulfillment handoff. Trace: BR-FE08-015/016; AC-FE08-011/012. Dependency: FE07-T029/T030. Done when concurrency tests pass without deadlock.
 
 ## 5. Validation
 

@@ -2,6 +2,8 @@ process.env.BCRYPT_COST = '4';
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
+const fs = require('fs');
+const path = require('path');
 const request = require('supertest');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
@@ -10,6 +12,18 @@ const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthReposito
 const {
   makeInMemoryReservationDependencies,
 } = require('./helpers/inMemoryReservationRepositories');
+
+const reservationRepositorySource = fs.readFileSync(
+  path.join(__dirname, '../src/repositories/reservationRepository.js'),
+  'utf8'
+);
+
+function getRepositoryFunctionSource(functionName, nextFunctionName) {
+  const start = reservationRepositorySource.indexOf(`async function ${functionName}`);
+  const endMarker = nextFunctionName ? `async function ${nextFunctionName}` : 'module.exports';
+  const end = reservationRepositorySource.indexOf(endMarker, start);
+  return reservationRepositorySource.slice(start, end);
+}
 
 function makeTestApp({ notificationService, auditLogRepository } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
@@ -193,6 +207,90 @@ describe('FE08 reservation management', () => {
 
     expect(repeatCancelResponse.status).toBe(409);
     expect(repeatCancelResponse.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
+  });
+
+  test('cancelling a notified reservation releases only its reserved copy', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'notified.cancel@example.test',
+    });
+    const createResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    const reservation = reservationDependencies.state.reservations.find(
+      (item) => item.reservationId === createResponse.body.reservation.reservationId
+    );
+    reservation.status = 'NOTIFIED';
+    reservation.notifiedAt = new Date();
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'RESERVED';
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 2).status = 'RESERVED';
+
+    const cancelResponse = await request(app)
+      .patch(`/api/reservations/${reservation.reservationId}/cancel`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ reason: 'cannot pick up' });
+
+    expect(cancelResponse.status).toBe(200);
+    expect(reservation.status).toBe('CANCELLED');
+    expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'AVAILABLE'
+    );
+    expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 2).status).toBe(
+      'RESERVED'
+    );
+  });
+
+  test('fulfilled reservation cannot be cancelled', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'fulfilled.cancel@example.test',
+    });
+    const createResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    const reservationId = createResponse.body.reservation.reservationId;
+    reservationDependencies.state.reservations.find(
+      (item) => item.reservationId === reservationId
+    ).status = 'FULFILLED';
+
+    const cancelResponse = await request(app)
+      .patch(`/api/reservations/${reservationId}/cancel`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({});
+
+    expect(cancelResponse.status).toBe(409);
+    expect(cancelResponse.body.error.code).toBe('RESERVATION_NOT_ACTIVE');
+    expect(
+      reservationDependencies.state.reservations.find(
+        (item) => item.reservationId === reservationId
+      ).status
+    ).toBe('FULFILLED');
+  });
+
+  test('copy-reservation mutations lock copies before reservations', () => {
+    const cancelSource = getRepositoryFunctionSource(
+      'cancelReservation',
+      'findNextActiveReservationForCopy'
+    );
+    const expireSource = getRepositoryFunctionSource('expireOverdueHolds');
+
+    for (const source of [cancelSource, expireSource]) {
+      const copyLockIndex = source.indexOf('FROM BookCopies WITH (UPDLOCK, HOLDLOCK)');
+      const reservationLockIndex = source.indexOf('FROM Reservations WITH (UPDLOCK, HOLDLOCK)');
+      expect(copyLockIndex).toBeGreaterThanOrEqual(0);
+      expect(reservationLockIndex).toBeGreaterThanOrEqual(0);
+      expect(copyLockIndex).toBeLessThan(reservationLockIndex);
+    }
   });
 
   test('binds FE08 and submits the canonical reservation-ready notification request', async () => {

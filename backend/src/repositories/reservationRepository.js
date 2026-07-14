@@ -237,19 +237,49 @@ async function listReservations({ userId, bookId, memberId, status } = {}) {
   return result.recordset.map(mapReservation);
 }
 
+// @spec BR-FE08-003, BR-FE08-015 - cancellation locks the copy before revalidating the reservation.
 async function cancelReservation(reservationId) {
   const pool = await getPool();
+  const copyLookup = await pool
+    .request()
+    .input('ReservationId', sql.Int, reservationId)
+    .query(`
+      SELECT CopyId
+      FROM Reservations
+      WHERE ReservationId = @ReservationId
+    `);
+  const copyId = copyLookup.recordset[0]?.CopyId;
+
+  if (!copyId) {
+    return null;
+  }
+
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
 
   try {
+    const copyResult = await new sql.Request(transaction)
+      .input('CopyId', sql.Int, copyId)
+      .query(`
+        SELECT CopyId, Status
+        FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
+        WHERE CopyId = @CopyId
+      `);
+
+    if (!copyResult.recordset.length) {
+      await transaction.rollback();
+      return null;
+    }
+
     const reservationResult = await new sql.Request(transaction)
       .input('ReservationId', sql.Int, reservationId)
+      .input('CopyId', sql.Int, copyId)
       .query(`
-        SELECT TOP 1 CopyId, NotifiedAt
+        SELECT TOP 1 CopyId, Status
         FROM Reservations WITH (UPDLOCK, HOLDLOCK)
         WHERE ReservationId = @ReservationId
+          AND CopyId = @CopyId
           AND Status IN ('ACTIVE', 'NOTIFIED')
       `);
 
@@ -268,11 +298,12 @@ async function cancelReservation(reservationId) {
             CancelledAt = GETDATE(),
             UpdatedAt = GETDATE()
         WHERE ReservationId = @ReservationId
+          AND Status IN ('ACTIVE', 'NOTIFIED')
       `);
 
-    if (reservation.NotifiedAt) {
+    if (reservation.Status === 'NOTIFIED') {
       await new sql.Request(transaction)
-        .input('CopyId', sql.Int, reservation.CopyId)
+        .input('CopyId', sql.Int, copyId)
         .query(`
           UPDATE BookCopies
           SET Status = 'AVAILABLE',
@@ -374,31 +405,90 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
   }
 }
 
+// @spec FR-FE08-019, BR-FE08-015 - expiration locks sorted copies before reservation rows.
 async function expireOverdueHolds(now) {
   const pool = await getPool();
+  const candidateResult = await pool
+    .request()
+    .input('Now', sql.DateTime, now)
+    .query(`
+      SELECT ReservationId, CopyId
+      FROM Reservations
+      WHERE Status = 'NOTIFIED'
+        AND ExpiresAt IS NOT NULL
+        AND ExpiresAt < @Now
+      ORDER BY CopyId ASC, ReservationId ASC
+    `);
+  const candidates = candidateResult.recordset.map((row) => ({
+    reservationId: row.ReservationId,
+    copyId: row.CopyId,
+  }));
+
+  if (!candidates.length) {
+    return [];
+  }
+
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
 
   try {
-    const expiredResult = await new sql.Request(transaction)
-      .input('Now', sql.DateTime, now)
-      .query(`
-        UPDATE Reservations
-        SET Status = 'EXPIRED',
-            UpdatedAt = GETDATE()
-        OUTPUT INSERTED.ReservationId, INSERTED.CopyId
-        WHERE Status = 'NOTIFIED'
-          AND ExpiresAt IS NOT NULL
-          AND ExpiresAt < @Now
-      `);
+    const copyIds = [...new Set(candidates.map(({ copyId }) => copyId))].sort(
+      (left, right) => left - right
+    );
 
-    const expired = expiredResult.recordset.map((row) => ({
-      reservationId: row.ReservationId,
-      copyId: row.CopyId,
-    }));
+    for (const copyId of copyIds) {
+      await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT CopyId, Status
+          FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
+          WHERE CopyId = @CopyId
+        `);
+    }
 
-    for (const item of expired) {
+    const expired = [];
+
+    for (const candidate of candidates) {
+      const reservationResult = await new sql.Request(transaction)
+        .input('ReservationId', sql.Int, candidate.reservationId)
+        .input('CopyId', sql.Int, candidate.copyId)
+        .input('Now', sql.DateTime, now)
+        .query(`
+          SELECT ReservationId, CopyId
+          FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+          WHERE ReservationId = @ReservationId
+            AND CopyId = @CopyId
+            AND Status = 'NOTIFIED'
+            AND ExpiresAt IS NOT NULL
+            AND ExpiresAt < @Now
+        `);
+
+      if (!reservationResult.recordset.length) {
+        continue;
+      }
+
+      const expiredResult = await new sql.Request(transaction)
+        .input('ReservationId', sql.Int, candidate.reservationId)
+        .query(`
+          UPDATE Reservations
+          SET Status = 'EXPIRED',
+              UpdatedAt = GETDATE()
+          OUTPUT INSERTED.ReservationId, INSERTED.CopyId
+          WHERE ReservationId = @ReservationId
+            AND Status = 'NOTIFIED'
+        `);
+
+      if (!expiredResult.recordset.length) {
+        continue;
+      }
+
+      const item = {
+        reservationId: expiredResult.recordset[0].ReservationId,
+        copyId: expiredResult.recordset[0].CopyId,
+      };
+      expired.push(item);
+
       await new sql.Request(transaction)
         .input('CopyId', sql.Int, item.copyId)
         .query(`

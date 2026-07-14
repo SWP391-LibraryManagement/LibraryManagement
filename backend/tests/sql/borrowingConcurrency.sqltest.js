@@ -12,6 +12,7 @@ if (process.env.FE07_SQL_TEST_ALLOW_MUTATION !== 'true') {
 
 const { sql, getPool, resetPoolForTests } = require('../../src/config/db');
 const borrowingRepository = require('../../src/repositories/borrowingRepository');
+const reservationRepository = require('../../src/repositories/reservationRepository');
 const auditLogRepository = require('../../src/repositories/auditLogRepository');
 
 jest.setTimeout(30000);
@@ -135,6 +136,28 @@ async function insertBorrowDetail(seed, { requestId, copyId, status, dueDate = n
   return borrowDetailId;
 }
 
+async function insertReservation(
+  seed,
+  { userId, copyId, status, reservedAt, notifiedAt = null, expiresAt = null }
+) {
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('CopyId', sql.Int, copyId)
+    .input('Status', sql.NVarChar(20), status)
+    .input('ReservedAt', sql.DateTime, reservedAt)
+    .input('NotifiedAt', sql.DateTime, notifiedAt)
+    .input('ExpiresAt', sql.DateTime, expiresAt)
+    .query(`
+      INSERT INTO Reservations (UserId, CopyId, ReservedAt, NotifiedAt, ExpiresAt, Status)
+      OUTPUT INSERTED.ReservationId
+      VALUES (@UserId, @CopyId, @ReservedAt, @NotifiedAt, @ExpiresAt, @Status)
+    `);
+  const reservationId = result.recordset[0].ReservationId;
+  seed.reservationIds.push(reservationId);
+  return reservationId;
+}
+
 async function insertUnpaidFine(userId, borrowDetailId) {
   await pool
     .request()
@@ -161,10 +184,22 @@ function createSeed() {
     copyIds: [],
     requestIds: [],
     borrowDetailIds: [],
+    reservationIds: [],
   };
 }
 
 async function cleanSeed(seed) {
+  for (const reservationId of seed.reservationIds) {
+    await pool
+      .request()
+      .input('ReservationId', sql.Int, reservationId)
+      .query(`
+        DELETE FROM AuditLogs
+        WHERE TargetType = 'RESERVATION'
+          AND TargetId = @ReservationId
+      `);
+  }
+
   for (const requestId of seed.requestIds) {
     await pool
       .request()
@@ -203,6 +238,13 @@ async function cleanSeed(seed) {
       .request()
       .input('RequestId', sql.Int, requestId)
       .query('DELETE FROM BorrowRequests WHERE RequestId = @RequestId');
+  }
+
+  for (const reservationId of seed.reservationIds) {
+    await pool
+      .request()
+      .input('ReservationId', sql.Int, reservationId)
+      .query('DELETE FROM Reservations WHERE ReservationId = @ReservationId');
   }
 
   for (const copyId of seed.copyIds) {
@@ -343,6 +385,331 @@ afterAll(async () => {
   }
 
   resetPoolForTests();
+});
+
+test('active reservation queue blocks ordinary SQL approval before queue hold succeeds', async () => {
+  const seed = createSeed();
+
+  try {
+    const borrowerUserId = await insertUser(seed, 'queue-borrower');
+    const queueOwnerUserId = await insertUser(seed, 'queue-owner');
+    const actorUserId = await insertUser(seed, 'queue-actor');
+    await insertMember(borrowerUserId, actorUserId);
+    const bookId = await findExistingBookId();
+    const [copyId] = await insertCopies(seed, bookId, 1);
+    const requestId = await insertBorrowRequest(seed, {
+      userId: borrowerUserId,
+      createdBy: borrowerUserId,
+    });
+    await insertBorrowDetail(seed, { requestId, copyId, status: 'REQUESTED' });
+    const reservationId = await insertReservation(seed, {
+      userId: queueOwnerUserId,
+      copyId,
+      status: 'ACTIVE',
+      reservedAt: new Date('2026-07-12T00:00:00.000Z'),
+    });
+
+    await expect(approve(requestId, actorUserId)).resolves.toEqual({
+      outcome: 'RESERVATION_QUEUE_PRIORITY',
+    });
+    const held = await reservationRepository.holdReservation({
+      reservationId,
+      copyId,
+      notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
+      expiresAt: new Date('2026-07-15T00:00:00.000Z'),
+    });
+
+    expect(held).toMatchObject({ reservationId, status: 'NOTIFIED' });
+    const requestRow = await pool
+      .request()
+      .input('RequestId', sql.Int, requestId)
+      .query('SELECT Status FROM BorrowRequests WHERE RequestId = @RequestId');
+    expect(requestRow.recordset[0].Status).toBe('PENDING');
+    const copyRow = await pool
+      .request()
+      .input('CopyId', sql.Int, copyId)
+      .query('SELECT Status FROM BookCopies WHERE CopyId = @CopyId');
+    expect(copyRow.recordset[0].Status).toBe('RESERVED');
+  } finally {
+    await cleanSeed(seed);
+  }
+});
+
+test('held owner SQL approval fulfills the reservation atomically', async () => {
+  const seed = createSeed();
+
+  try {
+    const borrowerUserId = await insertUser(seed, 'held-owner');
+    const actorUserId = await insertUser(seed, 'held-actor');
+    await insertMember(borrowerUserId, actorUserId);
+    const bookId = await findExistingBookId();
+    const [copyId] = await insertCopies(seed, bookId, 1);
+    await setCopyStatus(copyId, 'RESERVED');
+    const reservationId = await insertReservation(seed, {
+      userId: borrowerUserId,
+      copyId,
+      status: 'NOTIFIED',
+      reservedAt: new Date('2026-07-12T00:00:00.000Z'),
+      notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
+      expiresAt: new Date('2026-07-15T00:00:00.000Z'),
+    });
+    const requestId = await insertBorrowRequest(seed, {
+      userId: borrowerUserId,
+      createdBy: borrowerUserId,
+    });
+    await insertBorrowDetail(seed, { requestId, copyId, status: 'REQUESTED' });
+
+    const result = await approve(requestId, actorUserId);
+
+    expect(result.outcome).toBe('APPROVED');
+    expect(result.fulfilledReservationIds).toEqual([reservationId]);
+    const state = await pool
+      .request()
+      .input('RequestId', sql.Int, requestId)
+      .input('CopyId', sql.Int, copyId)
+      .input('ReservationId', sql.Int, reservationId)
+      .query(`
+        SELECT
+          (SELECT Status FROM BorrowRequests WHERE RequestId = @RequestId) AS RequestStatus,
+          (SELECT Status FROM BookCopies WHERE CopyId = @CopyId) AS CopyStatus,
+          (SELECT Status FROM Reservations WHERE ReservationId = @ReservationId) AS ReservationStatus
+      `);
+    expect(state.recordset[0]).toMatchObject({
+      RequestStatus: 'APPROVED',
+      CopyStatus: 'BORROWED',
+      ReservationStatus: 'FULFILLED',
+    });
+  } finally {
+    await cleanSeed(seed);
+  }
+});
+
+test('two SQL approvals for one held copy allow exactly one success', async () => {
+  const seed = createSeed();
+
+  try {
+    const borrowerUserId = await insertUser(seed, 'held-race-owner');
+    const actorUserId = await insertUser(seed, 'held-race-actor');
+    await insertMember(borrowerUserId, actorUserId);
+    const bookId = await findExistingBookId();
+    const [copyId] = await insertCopies(seed, bookId, 1);
+    await setCopyStatus(copyId, 'RESERVED');
+    const reservationId = await insertReservation(seed, {
+      userId: borrowerUserId,
+      copyId,
+      status: 'NOTIFIED',
+      reservedAt: new Date('2026-07-12T00:00:00.000Z'),
+      notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
+      expiresAt: new Date('2026-07-15T00:00:00.000Z'),
+    });
+    const requestIds = [];
+
+    for (let index = 0; index < 2; index += 1) {
+      const requestId = await insertBorrowRequest(seed, {
+        userId: borrowerUserId,
+        createdBy: borrowerUserId,
+      });
+      await insertBorrowDetail(seed, { requestId, copyId, status: 'REQUESTED' });
+      requestIds.push(requestId);
+    }
+
+    const results = await Promise.all(requestIds.map((requestId) => approve(requestId, actorUserId)));
+
+    expect(results.filter(({ outcome }) => outcome === 'APPROVED')).toHaveLength(1);
+    expect(results.filter(({ outcome }) => outcome !== 'APPROVED')).toHaveLength(1);
+    const requestRows = await pool
+      .request()
+      .input('FirstRequestId', sql.Int, requestIds[0])
+      .input('SecondRequestId', sql.Int, requestIds[1])
+      .query(`
+        SELECT Status
+        FROM BorrowRequests
+        WHERE RequestId IN (@FirstRequestId, @SecondRequestId)
+        ORDER BY RequestId ASC
+      `);
+    expect(requestRows.recordset.map(({ Status }) => Status).sort()).toEqual([
+      'APPROVED',
+      'PENDING',
+    ]);
+    const finalState = await pool
+      .request()
+      .input('CopyId', sql.Int, copyId)
+      .input('ReservationId', sql.Int, reservationId)
+      .query(`
+        SELECT
+          (SELECT Status FROM BookCopies WHERE CopyId = @CopyId) AS CopyStatus,
+          (SELECT Status FROM Reservations WHERE ReservationId = @ReservationId) AS ReservationStatus,
+          (SELECT COUNT(*) FROM BorrowDetails WHERE CopyId = @CopyId AND Status = 'BORROWED') AS BorrowedCount
+      `);
+    expect(finalState.recordset[0]).toMatchObject({
+      CopyStatus: 'BORROWED',
+      ReservationStatus: 'FULFILLED',
+      BorrowedCount: 1,
+    });
+  } finally {
+    await cleanSeed(seed);
+  }
+});
+
+test.each(['cancel', 'expire'])(
+  '%s release versus SQL approval serializes without bypassing the remaining queue',
+  async (releaseAction) => {
+    const seed = createSeed();
+
+    try {
+      const borrowerUserId = await insertUser(seed, `${releaseAction}-owner`);
+      const nextUserId = await insertUser(seed, `${releaseAction}-next`);
+      const actorUserId = await insertUser(seed, `${releaseAction}-actor`);
+      await insertMember(borrowerUserId, actorUserId);
+      const bookId = await findExistingBookId();
+      const [copyId] = await insertCopies(seed, bookId, 1);
+      await setCopyStatus(copyId, 'RESERVED');
+      const heldReservationId = await insertReservation(seed, {
+        userId: borrowerUserId,
+        copyId,
+        status: 'NOTIFIED',
+        reservedAt: new Date('2026-07-11T00:00:00.000Z'),
+        notifiedAt: new Date('2026-07-12T00:00:00.000Z'),
+        expiresAt: new Date('2026-07-12T12:00:00.000Z'),
+      });
+      const nextReservationId = await insertReservation(seed, {
+        userId: nextUserId,
+        copyId,
+        status: 'ACTIVE',
+        reservedAt: new Date('2026-07-12T01:00:00.000Z'),
+      });
+      const requestId = await insertBorrowRequest(seed, {
+        userId: borrowerUserId,
+        createdBy: borrowerUserId,
+      });
+      await insertBorrowDetail(seed, { requestId, copyId, status: 'REQUESTED' });
+      const release =
+        releaseAction === 'cancel'
+          ? reservationRepository.cancelReservation(heldReservationId)
+          : reservationRepository.expireOverdueHolds(new Date('2026-07-13T00:00:00.000Z'));
+
+      const settlements = await Promise.allSettled([approve(requestId, actorUserId), release]);
+
+      expect(settlements.map(({ status }) => status)).toEqual(['fulfilled', 'fulfilled']);
+      const approvalResult = settlements[0].value;
+      const state = await pool
+        .request()
+        .input('RequestId', sql.Int, requestId)
+        .input('CopyId', sql.Int, copyId)
+        .input('HeldReservationId', sql.Int, heldReservationId)
+        .input('NextReservationId', sql.Int, nextReservationId)
+        .query(`
+          SELECT
+            (SELECT Status FROM BorrowRequests WHERE RequestId = @RequestId) AS RequestStatus,
+            (SELECT Status FROM BookCopies WHERE CopyId = @CopyId) AS CopyStatus,
+            (SELECT Status FROM Reservations WHERE ReservationId = @HeldReservationId) AS HeldStatus,
+            (SELECT Status FROM Reservations WHERE ReservationId = @NextReservationId) AS NextStatus
+        `);
+      const finalState = state.recordset[0];
+
+      expect(finalState.NextStatus).toBe('ACTIVE');
+      if (approvalResult.outcome === 'APPROVED') {
+        expect(finalState).toMatchObject({
+          RequestStatus: 'APPROVED',
+          CopyStatus: 'BORROWED',
+          HeldStatus: 'FULFILLED',
+        });
+      } else {
+        expect(approvalResult.outcome).toBe('RESERVATION_QUEUE_PRIORITY');
+        expect(finalState).toMatchObject({
+          RequestStatus: 'PENDING',
+          CopyStatus: 'AVAILABLE',
+          HeldStatus: releaseAction === 'cancel' ? 'CANCELLED' : 'EXPIRED',
+        });
+      }
+    } finally {
+      await cleanSeed(seed);
+    }
+  }
+);
+
+test('SQL reservation audit failure rolls back borrowing and fulfillment state', async () => {
+  const seed = createSeed();
+
+  try {
+    const borrowerUserId = await insertUser(seed, 'reservation-audit-owner');
+    const actorUserId = await insertUser(seed, 'reservation-audit-actor');
+    await insertMember(borrowerUserId, actorUserId);
+    const bookId = await findExistingBookId();
+    const [copyId] = await insertCopies(seed, bookId, 1);
+    await setCopyStatus(copyId, 'RESERVED');
+    const reservationId = await insertReservation(seed, {
+      userId: borrowerUserId,
+      copyId,
+      status: 'NOTIFIED',
+      reservedAt: new Date('2026-07-12T00:00:00.000Z'),
+      notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
+      expiresAt: new Date('2026-07-15T00:00:00.000Z'),
+    });
+    const requestId = await insertBorrowRequest(seed, {
+      userId: borrowerUserId,
+      createdBy: borrowerUserId,
+    });
+    const borrowDetailId = await insertBorrowDetail(seed, {
+      requestId,
+      copyId,
+      status: 'REQUESTED',
+    });
+    const reservationAuditFailingRepository = {
+      create: jest.fn(async (entry) => {
+        await auditLogRepository.create(entry);
+        if (entry.action === 'RESERVATION_FULFILL') {
+          throw new Error('SQL reservation audit failure');
+        }
+      }),
+    };
+
+    await expect(
+      borrowingRepository.approveBorrowRequest({
+        requestId,
+        approvedBy: actorUserId,
+        approvalDate: new Date('2026-07-13T00:00:00.000Z'),
+        dueDate: new Date('2026-07-27T00:00:00.000Z'),
+        auditLogRepository: reservationAuditFailingRepository,
+        auditEntry: {
+          userId: actorUserId,
+          action: 'BORROW_REQUEST_APPROVE',
+          targetType: 'BORROWING',
+          targetId: requestId,
+          metadata: { source: 'FE07_SQL_RESERVATION_AUDIT_ROLLBACK' },
+          ipAddress: null,
+          userAgent: 'fe07-sql-reservation-audit-rollback',
+        },
+      })
+    ).rejects.toThrow('SQL reservation audit failure');
+
+    expect(reservationAuditFailingRepository.create).toHaveBeenCalledTimes(2);
+    const state = await pool
+      .request()
+      .input('RequestId', sql.Int, requestId)
+      .input('BorrowDetailId', sql.Int, borrowDetailId)
+      .input('CopyId', sql.Int, copyId)
+      .input('ReservationId', sql.Int, reservationId)
+      .query(`
+        SELECT
+          (SELECT Status FROM BorrowRequests WHERE RequestId = @RequestId) AS RequestStatus,
+          (SELECT Status FROM BorrowDetails WHERE BorrowDetailId = @BorrowDetailId) AS DetailStatus,
+          (SELECT Status FROM BookCopies WHERE CopyId = @CopyId) AS CopyStatus,
+          (SELECT Status FROM Reservations WHERE ReservationId = @ReservationId) AS ReservationStatus,
+          (SELECT COUNT(*) FROM AuditLogs WHERE
+             (Action = 'BORROW_REQUEST_APPROVE' AND TargetId = @RequestId)
+             OR (Action = 'RESERVATION_FULFILL' AND TargetId = @ReservationId)) AS AuditCount
+      `);
+    expect(state.recordset[0]).toMatchObject({
+      RequestStatus: 'PENDING',
+      DetailStatus: 'REQUESTED',
+      CopyStatus: 'RESERVED',
+      ReservationStatus: 'NOTIFIED',
+      AuditCount: 0,
+    });
+  } finally {
+    await cleanSeed(seed);
+  }
 });
 
 test('approval does not approve a pending request whose member row is missing', async () => {
