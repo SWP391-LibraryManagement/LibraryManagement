@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { fetchHeaderProfile } from "../../api/profileApi";
 import { logoutAccount } from "../../api/authApi";
 import UserMenuPopup from "./UserMenuPopup";
+import LogoutConfirmModal from "./LogoutConfirmModal";
 
 export const SIDEBAR_WIDTH = 260;
 
@@ -45,6 +46,8 @@ export default function Header() {
   const storedUser = getStoredAuthUser();
   const [anchorEl, setAnchorEl] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [showLogout, setShowLogout] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,6 +96,7 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
     const refreshToken = localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
 
@@ -109,6 +113,8 @@ export default function Header() {
         storage.removeItem("authUser");
       }
       navigate("/login");
+      setShowLogout(false);
+      setIsLoggingOut(false);
     }
   };
 
@@ -151,8 +157,15 @@ export default function Header() {
         onAccountInfo={handleAccountInfo}
         onBorrowingHistory={handleBorrowingHistory}
         onMembership={handleMembership}
-        onLogout={handleLogout}
+        onLogout={() => setShowLogout(true)}
       />
+      {showLogout && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogout(false)}
+          onConfirm={handleLogout}
+          busy={isLoggingOut}
+        />
+      )}
     </header>
   );
 }

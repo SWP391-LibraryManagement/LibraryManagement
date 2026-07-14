@@ -33,6 +33,7 @@ import {
 
 import { getFineRecords, saveFineRecords } from '../utils/libraryWorkflow';
 import { adminApi } from '../api/adminApi';
+import LogoutConfirmModal from '../component/layout/LogoutConfirmModal';
 import {
   createManagedUser,
   deactivateManagedUser,
@@ -654,6 +655,7 @@ function UserManagement() {
   const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', fromDate: '', toDate: '' });
   const [viewRequest, setViewRequest] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const hasActiveFilters = search.trim() || roleFilter !== 'ALL' || statusFilter !== 'ALL';
   const isUserDirectorySection = activeSection === 'users';
   const sectionMeta = {
@@ -1128,7 +1130,7 @@ function UserManagement() {
         activeSection={activeSection}
         currentUser={currentAdmin}
         onSectionChange={handleSectionChange}
-        onLogout={handleLogout}
+        onLogout={() => setShowLogoutConfirm(true)}
         onNavigate={(path) => navigate(path)}
       />
 
@@ -1786,6 +1788,12 @@ function UserManagement() {
       )}
 
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleLogout}
+        />
+      )}
 
       <style>{`
         .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: Inter, system-ui, sans-serif; }

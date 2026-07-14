@@ -11,6 +11,7 @@
  *  - children: nội dung trang
  */
 
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -26,8 +27,11 @@ import {
   BarChart2,
   Boxes,
   UserCog,
+  User,
   LogOut,
 } from 'lucide-react';
+
+import LogoutConfirmModal from './LogoutConfirmModal';
 
 const NAV_GROUPS = [
   {
@@ -73,13 +77,34 @@ function getCurrentRoles() {
   }
 }
 
+function getCurrentUser() {
+  try {
+    const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function AppLayout({ active, title, subtitle, actions, children }) {
   const navigate = useNavigate();
+  const [showLogout, setShowLogout] = useState(false);
+  const currentUser = getCurrentUser();
   const roles = getCurrentRoles();
+  const avatarInitial = String(currentUser?.email || 'TV').charAt(0).toUpperCase();
   // Chỉ hiển thị nhóm menu mà vai trò hiện tại được phép xem (khớp RBAC backend).
   const visibleGroups = NAV_GROUPS.filter((group) =>
     group.roles.some((role) => roles.includes(role))
   );
+
+  function handleLogout() {
+    for (const storage of [localStorage, sessionStorage]) {
+      storage.removeItem('accessToken');
+      storage.removeItem('refreshToken');
+      storage.removeItem('authUser');
+    }
+    navigate('/login');
+  }
 
   return (
     <div className="app-shell">
@@ -111,10 +136,20 @@ export default function AppLayout({ active, title, subtitle, actions, children }
             <LayoutDashboard size={18} />
             <span>Home</span>
           </button>
+          <button
+            type="button"
+            className={`app-nav-item${active === 'profile' ? ' active' : ''}`}
+            onClick={() => navigate('/profile')}
+            aria-label="Thông tin cá nhân"
+            aria-current={active === 'profile' ? 'page' : undefined}
+          >
+            <User size={18} />
+            <span>Thông tin cá nhân</span>
+          </button>
 
           {visibleGroups.map((group) => (
             <div className="app-nav-group" key={group.label}>
-              <div className="app-nav-label">{group.label}</div>
+              {group.label !== 'Member' && <div className="app-nav-label">{group.label}</div>}
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = item.key === active;
@@ -137,7 +172,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
         </nav>
 
         <div className="app-sidebar-footer">
-          <button type="button" className="app-nav-item" onClick={() => navigate('/login')} aria-label="Logout">
+          <button type="button" className="app-nav-item" onClick={() => setShowLogout(true)} aria-label="Logout">
             <LogOut size={18} />
             <span>Logout</span>
           </button>
@@ -151,7 +186,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
             <input type="text" placeholder="Search books, members, loans..." aria-label="Search" />
           </div>
           <div className="app-topbar-actions">
-            <div className="app-avatar">N</div>
+            <div className="app-avatar app-layout-avatar">{avatarInitial}</div>
           </div>
         </header>
 
@@ -168,6 +203,7 @@ export default function AppLayout({ active, title, subtitle, actions, children }
           {children}
         </main>
       </div>
+      {showLogout && <LogoutConfirmModal onClose={() => setShowLogout(false)} onConfirm={handleLogout} />}
     </div>
   );
 }
