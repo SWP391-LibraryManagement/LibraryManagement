@@ -24,10 +24,10 @@ free allowance or the approved Azure for Students credit.
 | Resource | Name | Region/SKU |
 | --- | --- | --- |
 | Resource group | `rg-library-staging` | Southeast Asia |
-| App Service plan | `plan-library-staging` | Linux, F1 Free |
-| Backend web app | `app-library-api-staging-nhat714` | Node.js 20 LTS |
+| App Service plan | `plan-library-staging` | Malaysia West, Linux, F1 Free |
+| Backend web app | `app-library-api-staging-nhat714` | Malaysia West, Node.js 22 LTS |
 | Static Web App | `swa-library-staging-nhat714` | East Asia, Free |
-| SQL logical server | `sql-library-staging-nhat714` | Southeast Asia |
+| SQL logical server | `sql-library-staging-nhat714` | Malaysia West |
 | SQL database | `LibraryManagementStaging` | Portal-confirmed free/student-credit configuration |
 | SQL administrator | `libraryadmin` | Password entered privately by the operator |
 
@@ -64,7 +64,7 @@ az group create --name rg-library-staging --location southeastasia
 az appservice plan create `
   --name plan-library-staging `
   --resource-group rg-library-staging `
-  --location southeastasia `
+  --location malaysiawest `
   --is-linux `
   --sku F1
 
@@ -72,7 +72,7 @@ az webapp create `
   --name app-library-api-staging-nhat714 `
   --resource-group rg-library-staging `
   --plan plan-library-staging `
-  --runtime "NODE:20-lts"
+  --runtime "NODE:22-lts"
 
 az webapp config set `
   --name app-library-api-staging-nhat714 `
@@ -109,7 +109,7 @@ Do not store the deployment token in a local file, shell profile, document, scre
 
 Use Azure Portal so the operator can review the displayed cost before creation:
 
-1. Create SQL server `sql-library-staging-nhat714` in `rg-library-staging`, Southeast Asia.
+1. Create SQL server `sql-library-staging-nhat714` in `rg-library-staging`, Malaysia West.
 2. Set SQL administrator username to `libraryadmin` and generate a new staging-only password.
 3. Create database `LibraryManagementStaging`.
 4. On the compute/storage page, choose a free allowance when Azure offers it. Otherwise confirm the

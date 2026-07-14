@@ -66,7 +66,8 @@ Cost policy:
 
 Default region:
 
-- App Service and Azure SQL: Southeast Asia.
+- App Service and Azure SQL: Malaysia West, the nearest region allowed by the Azure for Students
+  subscription policy observed during provisioning.
 - Static Web Apps: East Asia when Southeast Asia is not offered by the free plan.
 
 Resource names use a stable project prefix plus a short uniqueness suffix:

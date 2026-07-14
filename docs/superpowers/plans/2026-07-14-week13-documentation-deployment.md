@@ -375,7 +375,7 @@ Backend web app: app-library-api-staging-nhat714
 Static Web App: swa-library-staging-nhat714
 SQL logical server: sql-library-staging-nhat714
 Database: LibraryManagementStaging
-App/SQL region: southeastasia
+App/SQL region: malaysiawest
 Static Web Apps region: eastasia
 SQL administrator username: libraryadmin
 ```
@@ -1156,14 +1156,14 @@ az group create --name rg-library-staging --location southeastasia
 az appservice plan create `
   --name plan-library-staging `
   --resource-group rg-library-staging `
-  --location southeastasia `
+  --location malaysiawest `
   --is-linux `
   --sku F1
 az webapp create `
   --name app-library-api-staging-nhat714 `
   --resource-group rg-library-staging `
   --plan plan-library-staging `
-  --runtime "NODE:20-lts"
+  --runtime "NODE:22-lts"
 az webapp config set `
   --name app-library-api-staging-nhat714 `
   --resource-group rg-library-staging `
@@ -1202,7 +1202,7 @@ Do not paste the generated value into chat, source files, command history, or ev
 
 In Azure Portal:
 
-1. Create logical server `sql-library-staging-nhat714` in `rg-library-staging`, Southeast Asia.
+1. Create logical server `sql-library-staging-nhat714` in `rg-library-staging`, Malaysia West.
 2. Use administrator username `libraryadmin` and a newly generated password.
 3. Create database `LibraryManagementStaging` only after the cost page shows free allowance or
    confirms coverage by Azure for Students credit.
