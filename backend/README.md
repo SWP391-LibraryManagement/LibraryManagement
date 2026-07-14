@@ -2,6 +2,9 @@
 
 Approved stack: Node.js + Express.js.
 
+Project-level setup, architecture, quality gates, and Azure staging instructions live in the root
+[`README.md`](../README.md).
+
 ## Local Environment
 
 Copy `.env.example` to `.env`, then replace `JWT_SECRET` with a generated local secret:

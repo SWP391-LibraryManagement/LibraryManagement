@@ -434,6 +434,7 @@ git commit -m "docs: add azure staging configuration guide"
 - Create: `scripts/prepare-azure-schema.js`
 - Create: `tests/deployment/azureSchema.test.js`
 - Modify: `package.json`
+- Modify: `README.md`
 
 **Interfaces:**
 - Consumes: canonical `database/Librarymanagement.sql`.
@@ -564,6 +565,9 @@ Add to `package.json`:
 "test:deployment": "node --test tests/deployment/*.test.js"
 ```
 
+Add `npm.cmd run schema:azure:prepare` and `npm.cmd run test:deployment` to the root README command
+list after the scripts exist.
+
 - [ ] **Step 5: Verify GREEN and generated output**
 
 Run:
@@ -593,6 +597,7 @@ git commit -m "chore: add azure schema preparation"
 - Create: `scripts/smoke-staging.js`
 - Create: `tests/deployment/smokeStaging.test.js`
 - Modify: `package.json`
+- Modify: `README.md`
 
 **Interfaces:**
 - Consumes: `STAGING_FRONTEND_URL`, `STAGING_API_URL`, and Fetch-compatible HTTP responses.
@@ -783,6 +788,8 @@ Add to root `package.json`:
 "smoke:staging": "node scripts/smoke-staging.js"
 ```
 
+Add `npm.cmd run smoke:staging` to the Azure staging command section in the root README.
+
 - [ ] **Step 5: Verify GREEN**
 
 ```powershell
@@ -808,6 +815,7 @@ git commit -m "test: add staging smoke checks"
 - Create: `docs/user-manual.md`
 - Create generated images under: `docs/assets/user-manual/`
 - Modify: `package.json`
+- Modify: `README.md`
 
 **Interfaces:**
 - Consumes: deterministic Playwright actors and the existing browser golden path.
@@ -875,6 +883,8 @@ Add to root `package.json`:
 ```json
 "docs:screenshots": "playwright test tests/e2e/system-golden-path.spec.js --project=chromium && node scripts/promote-doc-screenshots.js"
 ```
+
+Add `npm.cmd run docs:screenshots` to the documentation command list in the root README.
 
 - [ ] **Step 4: Run the browser flow and generate images**
 
