@@ -8,8 +8,8 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import { authorizedRequest } from '../api/libraryFeatureApi';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 const DEFAULT_FORM = {
   title: '',
   isbn: '',
@@ -20,31 +20,20 @@ const DEFAULT_FORM = {
   pages: '',
   rating: '0',
   status: 'ACTIVE',
+  copyStatus: '',
   coverUrl: '',
   description: '',
 };
 
-function getToken() {
-  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken') || '';
-}
-
 async function apiRequest(path, options = {}) {
-  const token = getToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
-  const result = await response.json().catch(() => ({}));
+  const body = options.body ? JSON.parse(options.body) : undefined;
 
-  if (!response.ok || result.success === false) {
-    throw new Error(result.error?.message || result.message || 'Không thể xử lý yêu cầu.');
-  }
-
-  return result;
+  return authorizedRequest({
+    method: options.method || 'GET',
+    url: path,
+    data: body,
+    headers: options.headers,
+  }, 'Không thể xử lý yêu cầu.');
 }
 
 function toForm(book) {
@@ -60,6 +49,7 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
     status: book.status || 'ACTIVE',
+    copyStatus: Number(book.availableCopies || 0) > 0 ? 'AVAILABLE' : 'BORROWED',
     coverUrl: book.cover || '',
     description: book.description || '',
   };
@@ -116,10 +106,6 @@ function makePayload(form) {
 }
 
 function getBookAvailability(book) {
-  if (book.status === 'INACTIVE') {
-    return { key: 'inactive', label: 'INACTIVE' };
-  }
-
   return Number(book.availableCopies || 0) > 0
     ? { key: 'available', label: 'Còn sách' }
     : { key: 'borrowed', label: 'Đã mượn' };
@@ -140,7 +126,16 @@ function FieldError({ message }) {
   return message ? <span className="bm-field-error">{message}</span> : null;
 }
 
-function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disabled, showAvailabilityStatus = false }) {
+function BookForm({
+  form,
+  setForm,
+  metadata,
+  errors,
+  submitLabel,
+  onSubmit,
+  disabled,
+  showAvailabilityStatus = false,
+}) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
   return (
@@ -198,7 +193,10 @@ function BookForm({ form, setForm, metadata, errors, submitLabel, onSubmit, disa
       {showAvailabilityStatus && (
         <label>
           <span>Tình trạng</span>
-          <select value={form.copyStatus} onChange={(event) => update('copyStatus', event.target.value)}>
+          <select
+            value={form.copyStatus}
+            onChange={(event) => update('copyStatus', event.target.value)}
+          >
             <option value="AVAILABLE">Còn sách</option>
             <option value="BORROWED">Đã mượn</option>
           </select>
@@ -233,7 +231,7 @@ export default function BookManagement() {
   const [detailBook, setDetailBook] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [addForm, setAddForm] = useState(DEFAULT_FORM);
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
@@ -263,9 +261,9 @@ export default function BookManagement() {
     });
   };
 
-  const loadBooks = useCallback(async () => {
+  const loadBooks = useCallback(async ({ status = statusFilter } = {}) => {
     const params = new URLSearchParams({ limit: '100' });
-    if (statusFilter) params.set('status', statusFilter);
+    if (status) params.set('status', status);
     if (categoryFilter) params.set('categoryId', categoryFilter);
     const result = await apiRequest(`/books/management?${params.toString()}`);
     const nextBooks = result.data || [];
@@ -440,9 +438,11 @@ export default function BookManagement() {
 
     try {
       setSaving(true);
-      const result = await apiRequest(`/books/${selectedBook.id}/deactivate`, { method: 'PATCH', body: JSON.stringify({}) });
-      await loadBooks();
-      setDetailBook(result.data);
+      await apiRequest(`/books/${selectedBook.id}/deactivate`, { method: 'PATCH', body: JSON.stringify({}) });
+      setStatusFilter('ACTIVE');
+      await loadBooks({ status: 'ACTIVE' });
+      setSelectedBookId('');
+      setDetailBook(null);
       setDeleteConfirmed(false);
       showToast('Book deleted from the public catalog. It is now hidden from homepage search.');
     } catch (error) {
@@ -712,7 +712,6 @@ export default function BookManagement() {
         .bm-table-wrap tr.selected td { background: #ecfdf9; }
         .bm-status { display: inline-flex; min-width: 78px; justify-content: center; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 800; }
         .bm-status.active { background: #dcfce7; color: #166534; }
-        .bm-status.inactive { background: #fee2e2; color: #991b1b; }
         .bm-status.available { background: #dcfce7; color: #166534; }
         .bm-status.borrowed { background: #fee2e2; color: #991b1b; }
         .bm-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

@@ -115,7 +115,9 @@ function getErrorMessage(error, fallback = 'Request failed. Please try again.') 
 
 export async function fetchUsers(params = {}) {
   try {
-    const response = await api.get('/users', {
+    const response = await authorizedRequest({
+      method: 'get',
+      url: '/users',
       params,
     });
     return response.data;
@@ -126,7 +128,10 @@ export async function fetchUsers(params = {}) {
 
 export async function fetchRoles() {
   try {
-    const response = await api.get('/users/roles');
+    const response = await authorizedRequest({
+      method: 'get',
+      url: '/users/roles',
+    });
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Could not load roles.'), { cause: error });
