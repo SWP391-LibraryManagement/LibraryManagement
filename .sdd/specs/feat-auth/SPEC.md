@@ -1,12 +1,12 @@
 ﻿# SPEC.md - FE02 Authentication
 
-# Version: 0.3.0
+# Version: 0.4.0
 
 # Status: APPROVED
 
 # Owner: Dat
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-07-14
 
 # Feature ID: FE02
 
@@ -86,16 +86,16 @@ The feature can only start when:
 3. The system validates input and checks for duplicate email.
 4. The system hashes the password with bcrypt.
 5. The system creates a user record with status `INACTIVE`.
-6. The system generates a verification token with 24-hour expiration.
-7. The system sends verification email to the user's email address.
-8. The system shows success message and asks user to check email.
+6. The system generates a six-digit email verification OTP with 24-hour expiration and stores only its hash.
+7. The system sends the verification OTP to the user's email address.
+8. The system shows the OTP verification step and asks the user to check their inbox.
 
 ### MF-FE02-002: Email Verification (Registration)
 
-1. User clicks the verification link in the email (includes verification token).
-2. The system validates the token (format, expiration, matches user record).
+1. User enters the six-digit verification OTP together with the registered email. Legacy verification-link tokens remain accepted for compatibility.
+2. The system validates the OTP or legacy token (format, expiration, matches user record).
 3. If valid, the system sets user status to `ACTIVE`.
-4. The system invalidates the verification token.
+4. The system invalidates the OTP/token.
 5. The system shows success message and redirects to login.
 
 ### MF-FE02-003: User Login
@@ -144,22 +144,22 @@ The feature can only start when:
 1. Unauthenticated user accesses forgot password form.
 2. User enters their email address.
 3. The system looks up the user by email.
-4. The system generates a password reset token with 15-minute expiration.
-5. The system stores the reset token in the database.
-6. The system sends password reset email with token link.
+4. The system generates a six-digit password reset OTP with 15-minute expiration.
+5. The system stores only the OTP hash in the database.
+6. The system sends the password reset OTP by email.
 7. The system shows success message (regardless of whether email found or not, to prevent user enumeration).
 
 ### MF-FE02-008: Reset Password
 
-1. User clicks the password reset link in email (includes reset token).
-2. The system validates the reset token (format, expiration, matches user record).
+1. User enters the six-digit reset OTP together with the requested email. Legacy reset/setup tokens remain accepted for compatibility and FE11 account setup.
+2. The system validates the OTP or legacy token (format, expiration, matches user record).
 3. If valid, the system shows password reset form.
 4. User enters new password (twice).
 5. The system validates new password meets complexity requirements.
 6. The system hashes the new password.
 7. The system updates the user's password.
 8. If the token purpose is password setup for an admin-created inactive account, the system sets the user status to `ACTIVE`.
-9. The system invalidates the reset/setup token.
+9. The system invalidates the reset OTP/setup token.
 10. The system writes an audit log: password reset or password setup completed.
 11. The system shows success message and redirects to login.
 
@@ -251,8 +251,8 @@ Use these stable IDs for tasks and tests.
 ## 7. Functional Requirements
 
 - FR-FE02-001: When a guest submits valid registration data, the system shall create a new user with `INACTIVE` status.
-- FR-FE02-002: When a user is registered, the system shall send a verification email with a time-limited token.
-- FR-FE02-003: When a user clicks a valid verification link, the system shall activate the user account and invalidate the token.
+- FR-FE02-002: When a user is registered, the system shall send a six-digit verification OTP with a 24-hour expiry; legacy verification tokens remain accepted for compatibility.
+- FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, the system shall activate the user account and invalidate the OTP/token.
 - FR-FE02-004: When a user submits login form with valid credentials and active account, the system shall create a session/token and return it to the client.
 - FR-FE02-005: When a user submits login form with invalid email or password, the system shall reject the request and not reveal whether the email exists.
 - FR-FE02-006: When a user exceeds failed login attempts threshold, the system shall lock the account.
@@ -260,8 +260,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE02-008: When a user makes a protected request, the system shall validate the session/token before allowing the request.
 - FR-FE02-009: When a session/token expires, the system shall return 401 Unauthorized for subsequent requests using that token.
 - FR-FE02-010: When an authenticated user submits change password form, the system shall verify current password and update to new password.
-- FR-FE02-011: When a guest submits forgot password form, the system shall send a password reset email with a time-limited token.
-- FR-FE02-012: When a user clicks a valid password reset/setup link and submits new password, the system shall update the password, activate admin-created setup accounts if applicable, and invalidate the token.
+- FR-FE02-011: When a guest submits forgot password form, the system shall send a six-digit password reset OTP with a 15-minute expiry without revealing whether the email exists.
+- FR-FE02-012: When a user submits a valid reset OTP and email, or a valid legacy password reset/setup token, with a new password, the system shall update the password, activate admin-created setup accounts if applicable, and invalidate the OTP/token.
 - FR-FE02-013: When a user's account is created, the system shall assign default role(s) based on user type (member, librarian, admin).
 - FR-FE02-014: When checking user permissions, the system shall retrieve roles from `UserRoles` table.
 
@@ -270,9 +270,9 @@ Use these stable IDs for tasks and tests.
 The following requirements formalize the error-handling and abnormal-condition branches already described in Sections 5 (Alternative Flows), 6 (Business Rules), and 9 (Edge Cases). Each is expressed in EARS Unwanted syntax (`IF ...` / `WHERE ...`) and traces back to a source AF/EC/BR.
 
 - FR-FE02-015: IF a guest submits registration data with an email that is already registered, the system shall reject the registration and return the message "Email is already registered. Please login or use forgot password." without creating a new user record. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
-- FR-FE02-016: IF a user submits an email verification token that is expired, malformed, or does not match any user record, the system shall reject activation, keep the account `INACTIVE`, and offer to resend a new verification email. (Source: AF-FE02-002, BR-FE02-004)
+- FR-FE02-016: IF a user submits an email verification OTP/token that is expired, malformed, or does not match any user record, the system shall reject activation, keep the account `INACTIVE`, and offer to resend a new verification email. (Source: AF-FE02-002, BR-FE02-004)
 - FR-FE02-017: IF a user attempts to log in to an account whose status is `LOCKED`, the system shall reject the login and return the account-lock message instructing the user to reset their password or contact support. (Source: AF-FE02-003, BR-FE02-009)
-- FR-FE02-018: IF a user submits a password reset/setup token that has already been used, expired, or does not match any user record, the system shall reject the request and return the message "This reset link is no longer valid. Request a new one." without changing any password. (Source: AF-FE02-005, BR-FE02-014)
+- FR-FE02-018: IF a user submits a password reset/setup OTP/token that has already been used, expired, or does not match any user record, the system shall reject the request and return a safe invalid-code message without changing any password. (Source: AF-FE02-005, BR-FE02-014)
 - FR-FE02-019: IF a submitted new password (during registration, change, or reset) does not meet the configured complexity policy, the system shall reject the operation and return a complexity-requirement error without persisting the password. (Source: AF-FE02-007, BR-FE02-005, Q-FE02-001)
 - FR-FE02-020: IF an authenticated user attempts to change their password to a value identical to the current password, the system shall reject the change and return the message "New password must be different from current password." (Source: AF-FE02-006)
 - FR-FE02-021: IF a protected request presents a session/token that is malformed, has an invalid signature, or has expired, the system shall reject the request with 401 Unauthorized and shall not process the requested operation. (Source: AF-FE02-004, EC-FE02-014, BR-FE02-012)
@@ -282,8 +282,8 @@ The following requirements formalize the error-handling and abnormal-condition b
 ## 8. Acceptance Criteria
 
 - AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user and sends verification email.
-- AC-FE02-002: Given a valid verification token in email link, when user clicks it, then the account is activated and user can login.
-- AC-FE02-003: Given an expired verification token, when user clicks the link, then the system rejects it and offers to resend.
+- AC-FE02-002: Given a valid six-digit verification OTP and registered email, when the user submits them, then the account is activated and the user can login; a valid legacy verification token produces the same result.
+- AC-FE02-003: Given an expired verification OTP/token, when the user submits it, then the system rejects it and offers to resend.
 - AC-FE02-004: Given valid email and password and active account, when user logs in, then the system returns a valid session/token.
 - AC-FE02-005: Given invalid email, when user logs in, then the system returns error without revealing email existence.
 - AC-FE02-006: Given valid email but invalid password, when user logs in, then the system returns error and increments failed attempt counter.
@@ -294,11 +294,11 @@ The following requirements formalize the error-handling and abnormal-condition b
 - AC-FE02-011: Given authenticated user, when user logs out, then the session/token is invalidated.
 - AC-FE02-012: Given authenticated user with correct current password, when user changes password, then the system updates password and returns success.
 - AC-FE02-013: Given authenticated user with incorrect current password, when user changes password, then the system rejects the change.
-- AC-FE02-014: Given valid registered email, when user requests password reset, then the system sends reset email.
+- AC-FE02-014: Given valid registered email, when user requests password reset, then the system sends a six-digit reset OTP email.
 - AC-FE02-015: Given invalid registered email, when user requests password reset, then the system returns success message (no user enumeration).
-- AC-FE02-016: Given valid reset/setup token, when user submits new password, then the system updates password, activates admin-created setup accounts if applicable, and invalidates token.
-- AC-FE02-017: Given expired reset token, when user submits new password, then the system rejects the request.
-- AC-FE02-018: Given reset token used once, when same token is reused, then the system rejects the request.
+- AC-FE02-016: Given a valid reset OTP and email, or a valid legacy reset/setup token, when the user submits a new password, then the system updates the password, activates admin-created setup accounts if applicable, and invalidates the OTP/token.
+- AC-FE02-017: Given an expired reset OTP/token, when the user submits a new password, then the system rejects the request.
+- AC-FE02-018: Given a reset OTP/token used once, when the same credential is reused, then the system rejects the request.
 
 ---
 
@@ -435,15 +435,15 @@ stateDiagram-v2
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/auth/register` | Guest | `{ email: string, password: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Sends verification email. |
-| POST | `/api/auth/verify-email` | Guest | `{ token: string }` | `{ message: "Account verified. You can now login." }` | Validates and uses verification token. |
+| POST | `/api/auth/register` | Guest | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Sends a six-digit verification OTP. |
+| POST | `/api/auth/verify-email` | Guest | `{ email: string, otp: string }` or `{ token: string }` | `{ message: "Account verified. You can now login." }` | Primary OTP flow plus legacy token compatibility. |
 | POST | `/api/auth/resend-verification` | Guest | `{ email: string }` | `{ message: "Verification email sent" }` | Resends verification email. |
 | POST | `/api/auth/login` | Guest | `{ email: string, password: string }` | `{ userId: number, token?: string, sessionId?: string, expiresIn: number }` | Returns token or sets session cookie. |
 | POST | `/api/auth/logout` | Authenticated | `{}` | `{ message: "Logged out" }` | Invalidates session/token. |
 | POST | `/api/auth/refresh-token` | Authenticated | `{ token: string }` | `{ token: string, expiresIn: number }` | Refreshes expired token (if using JWT). |
 | POST | `/api/auth/change-password` | Authenticated | `{ currentPassword: string, newPassword: string }` | `{ message: "Password changed" }` | Requires current password verification. |
-| POST | `/api/auth/forgot-password` | Guest | `{ email: string }` | `{ message: "Password reset email sent" }` | Sends reset email; no user enumeration. |
-| POST | `/api/auth/reset-password` | Guest | `{ token: string, newPassword: string }` | `{ message: "Password reset. You can now login." }` | Validates token and updates password. Also completes FE11 admin-created account setup when token purpose is password setup. |
+| POST | `/api/auth/forgot-password` | Guest | `{ email: string }` | `{ message: "Password reset email sent" }` | Sends a six-digit reset OTP for eligible accounts; no user enumeration. |
+| POST | `/api/auth/reset-password` | Guest | `{ email: string, otp: string, newPassword: string }` or `{ token: string, newPassword: string }` | `{ message: "Password reset. You can now login." }` | Primary OTP flow plus legacy reset/setup token compatibility. |
 | POST | `/api/auth/verify-session` | Authenticated | `{}` | `{ valid: boolean, userId: number, roles: string[] }` | Checks if session/token is still valid. |
 
 ---
@@ -496,6 +496,9 @@ stateDiagram-v2
 - NFR-FE02-UX-002: Registration and login forms must provide password strength indicators.
 - NFR-FE02-UX-003: Verification email must have clear call-to-action button and link.
 - NFR-FE02-UX-004: Password reset email must have clear call-to-action button and link.
+- NFR-FE02-UX-005: Registration shall show account-details and email-verification steps, preserve non-secret values after recoverable failures, and focus the OTP input when verification begins.
+- NFR-FE02-UX-006: The frontend shall prevent duplicate resend requests while pending and apply a visible 60-second cooldown after a successful verification or reset OTP resend.
+- NFR-FE02-UX-007: OTP controls shall accept exactly six digits and use a masked destination email in user-facing copy.
 
 ---
 
@@ -544,6 +547,7 @@ This feature does not include:
 | Q-FE02-008 | Inactive users cannot log in; inactive-user auto-lock job is out of scope for Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-009 | Use JWT access token plus refresh token. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-010 | Password reset requires verified email ownership through reset token only; no extra recovery checks in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-011 | The interactive frontend uses six-digit email OTPs for verification and reset, keeps legacy token payloads for compatibility, and applies a 60-second client resend cooldown. | Nhat confirmation 2026-07-14 | APPROVED |
 
 ---
 
@@ -563,6 +567,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE02-008 | Inactive users cannot log in; inactive-user auto-lock job is out of scope for Phase 1. | APPROVED |
 | Q-FE02-009 | Use JWT access token plus refresh token. | APPROVED |
 | Q-FE02-010 | Password reset requires verified email ownership through reset token only; no extra recovery checks in Phase 1. | APPROVED |
+| Q-FE02-011 | Six-digit OTP is the primary frontend flow; legacy token payloads remain compatible; successful resend starts a 60-second client cooldown. | APPROVED |
 
 ---
 

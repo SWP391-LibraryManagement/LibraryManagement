@@ -39,6 +39,11 @@ Owner: Dat
 | FE02-T021 | Add frontend API client stubs for auth endpoints. | API contract; UI integration | FE02-T019 | `frontend/src/api/authApi.js` exports endpoint functions; frontend build passes. |
 | FE02-T022 | Connect existing login/register/forgot password pages to auth API behind minimal user feedback. | UC05, UC06, UC09 | FE02-T021 | Forms call API; no sensitive values logged; frontend build passes. |
 | FE02-T023 | Update FE02 CHANGELOG and implementation notes. | Definition of Done | FE02-T020 | Changelog records implementation scope, tests, and remaining risks. |
+| FE02-T024 | Align FE02 and API documentation with the implemented six-digit OTP plus legacy token compatibility. | FR-FE02-002, FR-FE02-003, FR-FE02-011, FR-FE02-012; Q-FE02-011 | FE02-T023 | SPEC, PLAN, TASKS, CHANGELOG, and API examples agree with the implemented request shapes. |
+| FE02-T025 | Add pure frontend auth UX helpers and regression tests. | NFR-FE02-UX-002, NFR-FE02-UX-005 to NFR-FE02-UX-007 | FE02-T024 | Email masking, password guidance, field errors, six-digit OTP normalization, and 60-second cooldown are tested. |
+| FE02-T026 | Implement two-step registration and email verification UX. | AC-FE02-001 to AC-FE02-003; UX-FE-002 to UX-FE-005 | FE02-T025 | Safe values survive recoverable failures; OTP receives focus; resend prevents duplicates and shows cooldown. |
+| FE02-T027 | Align login and forgot/reset password UX with the shared auth patterns. | AC-FE02-004 to AC-FE02-008, AC-FE02-014 to AC-FE02-018 | FE02-T025 | Login routes through `/home`; recovery keeps generic feedback, masked email, OTP focus, password guidance, and completion action. |
+| FE02-T028 | Run the Authentication/OTP validation and human-review gate. | Definition of Done; AC-UX-001 to AC-UX-003, AC-UX-007, AC-UX-008 | FE02-T026, FE02-T027 | Targeted tests, lint, build, source checks, responsive review, and human acceptance are recorded. |
 
 ## Suggested Implementation Order
 
@@ -48,6 +53,7 @@ Owner: Dat
 4. FE02-T019 to FE02-T020: route wiring and integration tests.
 5. FE02-T021 to FE02-T022: frontend API integration.
 6. FE02-T023: documentation closeout.
+7. FE02-T024 to FE02-T028: approved Authentication/OTP UX hardening and validation.
 
 ## Minimum Sprint 1 Completion Slice
 

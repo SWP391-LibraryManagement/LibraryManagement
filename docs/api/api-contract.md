@@ -73,6 +73,7 @@ Request:
   "email": "user@example.test",
   "username": "user01",
   "password": "Password1!",
+  "confirmPassword": "Password1!",
   "fullName": "Demo User",
   "phoneNumber": "0900000000"
 }
@@ -97,7 +98,16 @@ Notes:
 
 Actor: Guest
 
-Request:
+Primary request (interactive OTP flow):
+
+```json
+{
+  "email": "user@example.test",
+  "otp": "123456"
+}
+```
+
+Compatibility request (legacy verification link):
 
 ```json
 {
@@ -133,7 +143,11 @@ Response `200`:
 }
 ```
 
-Notes: response must avoid email enumeration.
+Notes:
+
+- Response must avoid email enumeration.
+- A successful resend invalidates the previous active verification credential.
+- The frontend applies a visible 60-second cooldown after a successful resend and disables duplicate requests while one is pending.
 
 ### POST `/api/auth/login`
 
@@ -252,17 +266,30 @@ Response `200`:
 }
 ```
 
-Notes: response must avoid email enumeration.
+Notes:
+
+- Response must avoid email enumeration.
+- Eligible active accounts receive a six-digit reset OTP with the configured 15-minute expiry.
 
 ### POST `/api/auth/reset-password`
 
 Actor: Guest
 
-Request:
+Primary request (interactive OTP flow):
 
 ```json
 {
-  "token": "reset-token-from-email",
+  "email": "user@example.test",
+  "otp": "123456",
+  "newPassword": "NewPassword1!"
+}
+```
+
+Compatibility request (legacy reset or FE11 setup link):
+
+```json
+{
+  "token": "reset-or-setup-token-from-email",
   "newPassword": "NewPassword1!"
 }
 ```
