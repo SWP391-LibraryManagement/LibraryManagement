@@ -48,7 +48,7 @@ Workflow State: B8 FE07-FE08 borrowing-reservation integration in progress
 
 ## 3.1 FE07-FE08 Integration Tasks
 
-- [ ] FE07-T029 Enforce reservation-aware borrowability for create and approval. Trace: BR-FE07-023/024; AC-FE07-015/016. Dependency: FE08 queue state. Done when RED/GREEN route tests pass.
+- [x] FE07-T029 Enforce reservation-aware borrowability for create and approval. Trace: BR-FE07-023/024; AC-FE07-015/016. Dependency: FE08 queue state. Done when RED/GREEN route tests pass.
 - [ ] FE07-T030 Fulfill matching notified reservations in the approval transaction. Trace: BR-FE07-025; AC-FE07-017. Dependency: FE07-T029. Done when SQL and in-memory rollback tests pass.
 
 ## 4. Validation

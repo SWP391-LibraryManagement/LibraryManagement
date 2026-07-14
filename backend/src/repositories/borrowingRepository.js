@@ -82,6 +82,21 @@ function mapCopy(row) {
   };
 }
 
+function mapBorrowability(row) {
+  const copy = mapCopy(row);
+
+  if (!copy) {
+    return null;
+  }
+
+  return {
+    ...copy,
+    hasActiveReservation: Boolean(row.ActiveReservationId),
+    notifiedReservationId: row.NotifiedReservationId || null,
+    notifiedReservationUserId: row.NotifiedReservationUserId || null,
+  };
+}
+
 function mapMember(row) {
   return {
     userId: row.UserId,
@@ -187,7 +202,7 @@ async function getMemberEligibility(userId) {
   };
 }
 
-async function findCopiesByIds(copyIds) {
+async function findBorrowabilityByCopyIds(copyIds, userId) {
   if (!copyIds.length) {
     return [];
   }
@@ -207,13 +222,30 @@ async function findCopiesByIds(copyIds) {
       bc.Barcode,
       bc.Status AS CopyStatus,
       bc.Location,
-      b.Title
+      b.Title,
+      activeQueue.ReservationId AS ActiveReservationId,
+      notifiedHold.ReservationId AS NotifiedReservationId,
+      notifiedHold.UserId AS NotifiedReservationUserId
     FROM BookCopies bc
     INNER JOIN Books b ON bc.BookId = b.BookId
+    OUTER APPLY (
+      SELECT TOP 1 r.ReservationId
+      FROM Reservations r
+      WHERE r.CopyId = bc.CopyId
+        AND r.Status = 'ACTIVE'
+      ORDER BY r.ReservedAt ASC, r.ReservationId ASC
+    ) activeQueue
+    OUTER APPLY (
+      SELECT TOP 1 r.ReservationId, r.UserId
+      FROM Reservations r
+      WHERE r.CopyId = bc.CopyId
+        AND r.Status = 'NOTIFIED'
+      ORDER BY r.NotifiedAt ASC, r.ReservationId ASC
+    ) notifiedHold
     WHERE bc.CopyId IN (${inputs.join(', ')})
   `);
 
-  return result.recordset.map(mapCopy);
+  return result.recordset.map(mapBorrowability);
 }
 
 async function countActiveBorrowedCopies(userId) {
@@ -787,7 +819,7 @@ async function renewBorrowDetail({ borrowDetailId, newDueDate, auditLogRepositor
 
 module.exports = {
   getMemberEligibility,
-  findCopiesByIds,
+  findBorrowabilityByCopyIds,
   countActiveBorrowedCopies,
   hasBlockingFine,
   hasOverdueActiveLoans,

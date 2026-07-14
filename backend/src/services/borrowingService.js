@@ -156,10 +156,36 @@ function createBorrowingService({
     return normalizedCopyIds;
   }
 
-  // @spec FR-FE07-017, FR-FE07-018 — reject non-existent copies and copies no longer AVAILABLE at create/approve (BR-FE07-007/008, EC-FE07-004/005, AF-FE07-002)
-  // @spec FR-FE08-023 — a copy held (RESERVED) for a NOTIFIED reservation is not AVAILABLE, so it cannot be borrowed by another member (BR-FE08-011)
-  async function validateCopiesAvailable(copyIds) {
-    const copies = await borrowingRepository.findCopiesByIds(copyIds);
+  // @spec BR-FE07-023, FR-FE07-023, FR-FE07-024 - classify copy and reservation state for the borrowing member.
+  function classifyCopyBorrowability(copy, userId) {
+    if (copy.status === 'AVAILABLE' && copy.hasActiveReservation) {
+      throw errors.conflict(
+        'RESERVATION_QUEUE_PRIORITY',
+        'Reservation queue priority must be processed before borrowing.'
+      );
+    }
+
+    if (copy.status === 'AVAILABLE' && !copy.notifiedReservationId) {
+      return 'NORMAL_AVAILABLE';
+    }
+
+    if (
+      copy.status === 'RESERVED' &&
+      copy.notifiedReservationId &&
+      Number(copy.notifiedReservationUserId) === Number(userId)
+    ) {
+      return 'HELD_FOR_MEMBER';
+    }
+
+    if (copy.status === 'RESERVED' && !copy.notifiedReservationId) {
+      throw errors.conflict('RESERVATION_STATE_CONFLICT', 'Reserved copy state is inconsistent.');
+    }
+
+    throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
+  }
+
+  async function validateCopiesBorrowable(copyIds, userId) {
+    const copies = await borrowingRepository.findBorrowabilityByCopyIds(copyIds, userId);
     const foundIds = new Set(copies.map((copy) => copy.copyId));
 
     for (const copyId of copyIds) {
@@ -168,10 +194,8 @@ function createBorrowingService({
       }
     }
 
-    const unavailableCopy = copies.find((copy) => copy.status !== 'AVAILABLE');
-
-    if (unavailableCopy) {
-      throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
+    for (const copy of copies) {
+      classifyCopyBorrowability(copy, userId);
     }
 
     return copies;
@@ -198,7 +222,7 @@ function createBorrowingService({
     await ensureEligibleMember(userId);
     await ensureNoBorrowingBlockers(userId);
     await validateBorrowLimit(userId, copyIds.length);
-    await validateCopiesAvailable(copyIds);
+    await validateCopiesBorrowable(copyIds, userId);
 
     const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_CREATE', {
       userId,
@@ -282,7 +306,7 @@ function createBorrowingService({
     await ensureEligibleMember(borrowRequest.userId);
     await ensureNoBorrowingBlockers(borrowRequest.userId);
     await validateBorrowLimit(borrowRequest.userId, copyIds.length);
-    await validateCopiesAvailable(copyIds);
+    await validateCopiesBorrowable(copyIds, borrowRequest.userId);
 
     const approvalDate = clock();
     const dueDate = addDays(approvalDate, LOAN_DAYS);

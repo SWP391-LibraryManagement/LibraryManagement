@@ -207,6 +207,108 @@ describe('FE07 borrowing management', () => {
     expect(unavailableResponse.body.error.code).toBe('COPY_NOT_AVAILABLE');
   });
 
+  test('active reservation queue blocks ordinary borrow request creation', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'queue-blocked@example.test',
+    });
+    const queueOwner = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'queue-owner@example.test',
+    });
+
+    borrowingDependencies.state.reservations.push({
+      reservationId: 901,
+      userId: queueOwner.userId,
+      copyId: 1,
+      status: 'ACTIVE',
+      reservedAt: new Date('2026-06-09T00:00:00.000Z'),
+    });
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('RESERVATION_QUEUE_PRIORITY');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
+  test('notified owner can request their reserved copy', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'held-owner@example.test',
+    });
+    borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'RESERVED';
+    borrowingDependencies.state.reservations.push({
+      reservationId: 902,
+      userId: member.userId,
+      copyId: 1,
+      status: 'NOTIFIED',
+      notifiedAt: new Date('2026-06-09T00:00:00.000Z'),
+      expiresAt: new Date('2026-06-11T00:00:00.000Z'),
+    });
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.borrowRequest.details[0]).toMatchObject({
+      copyId: 1,
+      status: 'REQUESTED',
+    });
+    expect(borrowingDependencies.state.reservations[0].status).toBe('NOTIFIED');
+  });
+
+  test('another member cannot request a reserved copy without owner disclosure', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const holdOwnerEmail = 'held-private-owner@example.test';
+    const holdOwner = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: holdOwnerEmail,
+    });
+    const otherMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'held-other-member@example.test',
+    });
+    borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'RESERVED';
+    borrowingDependencies.state.reservations.push({
+      reservationId: 903,
+      userId: holdOwner.userId,
+      copyId: 1,
+      status: 'NOTIFIED',
+      notifiedAt: new Date('2026-06-09T00:00:00.000Z'),
+      expiresAt: new Date('2026-06-11T00:00:00.000Z'),
+    });
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(otherMember.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('COPY_NOT_AVAILABLE');
+    expect(response.body.error).not.toHaveProperty('userId');
+    expect(response.body.error).not.toHaveProperty('reservationOwnerId');
+    expect(JSON.stringify(response.body)).not.toContain(holdOwnerEmail);
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
   test('librarian approval uses the FE07-bound requester with the canonical due-date request', async () => {
     const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
     const member = await createVerifiedUser({

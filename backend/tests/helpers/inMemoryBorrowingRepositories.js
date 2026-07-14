@@ -127,6 +127,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       copies: copies.map((copy) => ({ ...copy })),
       borrowRequests: borrowRequests.map((request) => ({ ...request })),
       borrowDetails: borrowDetails.map((detail) => ({ ...detail })),
+      reservations: reservations.map((reservation) => ({ ...reservation })),
       auditLogs: authState.auditLogs.map((entry) => ({ ...entry })),
     };
   }
@@ -137,6 +138,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     copies.splice(0, copies.length, ...snapshot.copies);
     borrowRequests.splice(0, borrowRequests.length, ...snapshot.borrowRequests);
     borrowDetails.splice(0, borrowDetails.length, ...snapshot.borrowDetails);
+    reservations.splice(0, reservations.length, ...snapshot.reservations);
     authState.auditLogs.splice(0, authState.auditLogs.length, ...snapshot.auditLogs);
   }
 
@@ -157,8 +159,44 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       });
     },
 
-    async findCopiesByIds(copyIds) {
-      return copyIds.map((copyId) => mapCopy(getCopy(copyId))).filter(Boolean);
+    async findBorrowabilityByCopyIds(copyIds, userId) {
+      return copyIds
+        .map((copyId) => {
+          const copy = mapCopy(getCopy(copyId));
+
+          if (!copy) {
+            return null;
+          }
+
+          const activeReservation = reservations
+            .filter(
+              (reservation) =>
+                reservation.copyId === Number(copyId) && reservation.status === 'ACTIVE'
+            )
+            .sort(
+              (left, right) =>
+                new Date(left.reservedAt) - new Date(right.reservedAt) ||
+                left.reservationId - right.reservationId
+            )[0];
+          const notifiedReservation = reservations
+            .filter(
+              (reservation) =>
+                reservation.copyId === Number(copyId) && reservation.status === 'NOTIFIED'
+            )
+            .sort(
+              (left, right) =>
+                new Date(left.notifiedAt) - new Date(right.notifiedAt) ||
+                left.reservationId - right.reservationId
+            )[0];
+
+          return {
+            ...copy,
+            hasActiveReservation: Boolean(activeReservation),
+            notifiedReservationId: notifiedReservation?.reservationId || null,
+            notifiedReservationUserId: notifiedReservation?.userId || null,
+          };
+        })
+        .filter(Boolean);
     },
 
     async countActiveBorrowedCopies(userId) {
