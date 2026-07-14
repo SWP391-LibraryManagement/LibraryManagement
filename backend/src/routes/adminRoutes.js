@@ -6,19 +6,7 @@ function createAdminRoutes({ authService, adminService } = {}) {
   const router = express.Router();
   const controller = createAdminController(adminService);
   const authenticate = createAuthenticate(authService);
-  const allowDevAdminWithoutLogin = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
-  const authenticateOrDevAdmin = allowDevAdminWithoutLogin
-    ? function devAdmin(req, res, next) {
-        req.user = {
-          userId: null,
-          email: 'dev-admin@example.test',
-          username: 'dev_admin',
-          roles: ['ADMIN'],
-        };
-        return next();
-      }
-    : authenticate;
-  const requireAdmin = [authenticateOrDevAdmin, requireAnyRole('ADMIN')];
+  const requireAdmin = [authenticate, requireAnyRole('ADMIN')];
 
   router.get('/dashboard', requireAdmin, controller.dashboard);
   router.get('/library/books', requireAdmin, controller.listBooks);

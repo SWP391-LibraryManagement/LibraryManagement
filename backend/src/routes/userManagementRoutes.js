@@ -7,20 +7,7 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   const router = express.Router();
   const controller = createUserManagementController(userManagementService);
   const authenticate = createAuthenticate(authService);
-  const allowDevUserManagementWithoutLogin =
-    process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
-  const authenticateOrDevAdmin = allowDevUserManagementWithoutLogin
-    ? function devUserManagementAdmin(req, res, next) {
-        req.user = {
-          userId: null,
-          email: 'dev-admin@example.test',
-          username: 'dev_admin',
-          roles: ['ADMIN'],
-        };
-        return next();
-      }
-    : authenticate;
-  const requireAdmin = [authenticateOrDevAdmin, requireRole('ADMIN')];
+  const requireAdmin = [authenticate, requireRole('ADMIN')];
 
   router.get('/', requireAdmin, controller.listUsers);
   router.get('/roles', requireAdmin, controller.listRoles);

@@ -22,20 +22,7 @@ function requireAnyRole(...roleNames) {
 function createBookRoutes({ authService } = {}) {
   const router = express.Router();
   const authenticate = createAuthenticate(authService);
-  const allowDevBookManagementWithoutLogin =
-    process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
-  const authenticateOrDevLibrarian = allowDevBookManagementWithoutLogin
-    ? function devBookManagementLibrarian(req, res, next) {
-        req.user = {
-          userId: null,
-          email: 'dev-librarian@example.test',
-          username: 'dev_librarian',
-          roles: ['LIBRARIAN'],
-        };
-        return next();
-      }
-    : authenticate;
-  const requireBookManager = [authenticateOrDevLibrarian, requireAnyRole('LIBRARIAN', 'ADMIN')];
+  const requireBookManager = [authenticate, requireAnyRole('LIBRARIAN', 'ADMIN')];
 
   router.get('/', bookController.getHomeBooks);
   router.get('/categories', bookController.getCategories);

@@ -27,7 +27,7 @@ function errorHandler(error, req, res, next) {
     },
   };
 
-  if (error.details) {
+  if (statusCode < 500 && error.details) {
     payload.error.details = error.details;
   }
 

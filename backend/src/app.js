@@ -29,6 +29,24 @@ const { defaultProfileService } = require('./services/profileService');
 const { defaultFineManagementService } = require('./services/fineManagementService');
 const { defaultInventoryService } = require('./services/inventoryService');
 
+function corsOptionsFromEnvironment() {
+  if (process.env.NODE_ENV !== 'production') {
+    return {};
+  }
+
+  const allowedOrigins = String(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return {
+    origin(origin, callback) {
+      const allowed = !origin || allowedOrigins.includes(origin);
+      return callback(null, allowed);
+    },
+  };
+}
+
 function createApp({
   authService = defaultAuthService,
   borrowingService = defaultBorrowingService,
@@ -44,7 +62,7 @@ function createApp({
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+  app.use(cors(corsOptionsFromEnvironment()));
   app.use(compression());
   app.use(express.json());
   app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
