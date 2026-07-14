@@ -4,7 +4,7 @@ Branch: `test/system-integration`
 
 Plan: `docs/superpowers/plans/2026-07-14-system-integration-test-plan.md`
 
-Only observed results are marked `PASS`. Manual presentation rehearsals remain `NOT RUN` until Nhật performs them.
+Only observed results are marked `PASS`. The presentation rehearsals below used the automated fallback without a browser, so a final human visual check of the live UI is still recommended before presenting.
 
 | ID | Status | Command / action | Observed result | Cleanup |
 | --- | --- | --- | --- | --- |
@@ -33,9 +33,9 @@ Only observed results are marked `PASS`. Manual presentation rehearsals remain `
 | Traceability enforcement | PASS | `npm.cmd run trace:enforce`: 6 implemented features, 0 below the 70% threshold. |
 | Diff whitespace check | PASS | `git diff --check` exited 0; only line-ending conversion warnings were printed. |
 
-## Manual Rehearsals
+## Presentation Rehearsals
 
 | Rehearsal | Status | Required observation |
 | --- | --- | --- |
-| Normal pace | NOT RUN | Verify each visible state, role switch, and reset. |
-| Timed five-minute fallback | NOT RUN | Finish within five minutes using API/test evidence without claiming unobserved UI behavior. |
+| Normal pace | PASS | Automated fallback ran with verbose case names: SIT 9/9 and SQL 1/1 passed in 6.62 seconds; SQL cleanup assertions passed. No browser or live UI claim was used. |
+| Timed five-minute fallback | PASS | Automated fallback completed in 6.67 seconds, below the 300-second limit; SIT 9/9 and SQL 1/1 passed with cleanup. |
