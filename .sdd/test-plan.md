@@ -341,7 +341,7 @@ Do not merge if a required command fails unless the team lead documents an accep
 | Traceability gate enforced | CI runs `trace:enforce`; implemented features ≥70% | **Done (2026-06-25)** |
 | Week 11: `>=80%` coverage verified | Coverage report generated; gaps filled | **Done (2026-07-14)** |
 | Week 11: critical browser E2E | Playwright covers login -> borrow -> approve -> return -> fine -> report | **Done (2026-07-14)** |
-| Week 12: Security clean | No Critical/High vulns; dependency audit complete | Pending |
+| Week 12: Security clean | No Critical/High vulns; dependency audit complete | **Done (2026-07-14)** |
 
 ---
 
