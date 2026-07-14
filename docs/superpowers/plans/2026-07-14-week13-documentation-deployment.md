@@ -373,9 +373,10 @@ Resource group: rg-library-staging
 App Service plan: plan-library-staging
 Backend web app: app-library-api-staging-nhat714
 Static Web App: swa-library-staging-nhat714
-SQL logical server: sql-library-staging-nhat714
+SQL logical server: sql-library-staging-ea-nhat714
 Database: LibraryManagementStaging
-App/SQL region: malaysiawest
+App Service region: malaysiawest
+SQL region: eastasia
 Static Web Apps region: eastasia
 SQL administrator username: libraryadmin
 ```
@@ -1181,7 +1182,7 @@ az webapp config appsettings set `
   --settings `
     NODE_ENV=production `
     PORT=8080 `
-    DB_SERVER=sql-library-staging-nhat714.database.windows.net `
+    DB_SERVER=sql-library-staging-ea-nhat714.database.windows.net `
     DB_NAME=LibraryManagementStaging `
     DB_PORT=1433 `
     DB_ENCRYPT=true `
@@ -1202,7 +1203,9 @@ Do not paste the generated value into chat, source files, command history, or ev
 
 In Azure Portal:
 
-1. Create logical server `sql-library-staging-nhat714` in `rg-library-staging`, Malaysia West.
+1. Create logical server `sql-library-staging-ea-nhat714` in `rg-library-staging`, East Asia. The
+   free limit API rejected Malaysia West during observed provisioning even though the portal
+   displayed the offer.
 2. Use administrator username `libraryadmin` and a newly generated password.
 3. Create database `LibraryManagementStaging` only after the cost page shows free allowance or
    confirms coverage by Azure for Students credit.

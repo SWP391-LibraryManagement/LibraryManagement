@@ -27,7 +27,7 @@ free allowance or the approved Azure for Students credit.
 | App Service plan | `plan-library-staging` | Malaysia West, Linux, F1 Free |
 | Backend web app | `app-library-api-staging-nhat714` | Malaysia West, Node.js 22 LTS |
 | Static Web App | `swa-library-staging-nhat714` | East Asia, Free |
-| SQL logical server | `sql-library-staging-nhat714` | Malaysia West |
+| SQL logical server | `sql-library-staging-ea-nhat714` | East Asia |
 | SQL database | `LibraryManagementStaging` | Portal-confirmed free/student-credit configuration |
 | SQL administrator | `libraryadmin` | Password entered privately by the operator |
 
@@ -109,7 +109,8 @@ Do not store the deployment token in a local file, shell profile, document, scre
 
 Use Azure Portal so the operator can review the displayed cost before creation:
 
-1. Create SQL server `sql-library-staging-nhat714` in `rg-library-staging`, Malaysia West.
+1. Create SQL server `sql-library-staging-ea-nhat714` in `rg-library-staging`, East Asia. The free
+   limit API rejected Malaysia West during provisioning even though the portal displayed the offer.
 2. Set SQL administrator username to `libraryadmin` and generate a new staging-only password.
 3. Create database `LibraryManagementStaging`.
 4. On the compute/storage page, choose a free allowance when Azure offers it. Otherwise confirm the
@@ -174,7 +175,7 @@ az webapp config appsettings set `
   --settings `
     NODE_ENV=production `
     PORT=8080 `
-    DB_SERVER=sql-library-staging-nhat714.database.windows.net `
+    DB_SERVER=sql-library-staging-ea-nhat714.database.windows.net `
     DB_NAME=LibraryManagementStaging `
     DB_PORT=1433 `
     DB_ENCRYPT=true `
