@@ -375,6 +375,18 @@ async function updateBookAvailability(bookId, copyStatus, actorUserId = null) {
   });
 
   await request.query(`
+    IF @targetStatus = 'AVAILABLE'
+       AND NOT EXISTS (SELECT 1 FROM BookCopies WHERE BookId = @bookId)
+    BEGIN
+      INSERT INTO BookCopies (BookId, Barcode, Status, Location)
+      VALUES (
+        @bookId,
+        CONCAT('AUTO-B', @bookId, '-', REPLACE(CONVERT(NVARCHAR(36), NEWID()), '-', '')),
+        'AVAILABLE',
+        NULL
+      );
+    END;
+
     UPDATE BookCopies
     SET Status = @targetStatus,
         UpdatedAt = GETDATE()
