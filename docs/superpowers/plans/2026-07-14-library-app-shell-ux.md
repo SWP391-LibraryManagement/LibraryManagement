@@ -202,11 +202,12 @@ Append to `frontend/test/appShellFrontend.test.js`:
 ```js
 test('app layout exposes an accessible mobile navigation drawer', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
+  const header = await readFile(new URL('../src/component/layout/Header.jsx', import.meta.url), 'utf8');
   const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
 
   assert.match(source, /useLocation\(\)/);
-  assert.match(source, /aria-label="Mở điều hướng"/);
-  assert.match(source, /aria-expanded=\{navigationOpen\}/);
+  assert.match(header, /aria-label="Mở điều hướng"/);
+  assert.match(header, /aria-expanded=\{navigationOpen\}/);
   assert.match(source, /className=\{`app-sidebar\$\{navigationOpen \? ' app-sidebar-open' : ''\}`\}/);
   assert.match(source, /className="app-sidebar-backdrop"/);
   assert.match(styles, /@media \(max-width: 860px\)[\s\S]*\.app-sidebar-open/);
@@ -305,6 +306,24 @@ Render the shell with:
 
 Use `APP_NAV_GROUPS` and `activeKey`; remove the `active` prop as an active-state source while
 temporarily accepting it in the function signature to avoid breaking existing callers.
+Keep icon components in `AppLayout` through a local map so the pure navigation utility does
+not import React components:
+
+```jsx
+const NAV_ICONS = {
+  home: LayoutDashboard,
+  'borrow-request': BookMarked,
+  'borrowing-history': History,
+  'my-reservations': Bookmark,
+  'borrow-requests-admin': ClipboardList,
+  'process-returns': PackageCheck,
+  'reservations-librarian': CalendarClock,
+  'member-details': Users,
+  'borrowing-report': BarChart2,
+  'inventory-report': Boxes,
+  'user-statistics': UserCog,
+};
+```
 
 - [ ] **Step 5: Add responsive CSS**
 
@@ -391,7 +410,7 @@ git commit -m "feat: add responsive role-aware app shell"
 - Test: `frontend/test/appShellFrontend.test.js`
 
 **Interfaces:**
-- Consumes: `getDashboardAudience`, `borrowingApi`, `reservationApi`, and `reportApi`.
+- Consumes: `getDashboardAudience`, `hasStoredAuth`, `borrowingApi`, and `reservationApi`.
 - Produces: `HomeRoutePage`, `RoleDashboardPage({ audience, roles })`, `buildMemberSummary`, and `buildStaffSummary`.
 
 - [ ] **Step 1: Write failing dashboard mapping tests**
@@ -465,6 +484,7 @@ Create `HomeRoutePage.jsx`:
 
 ```jsx
 import HomePage from '../HomePage';
+import { hasStoredAuth } from '../../api/libraryFeatureApi';
 import { getDashboardAudience } from '../../utils/appNavigation';
 import RoleDashboardPage from './RoleDashboardPage';
 
@@ -479,7 +499,7 @@ function readStoredUser() {
 
 export default function HomeRoutePage() {
   const user = readStoredUser();
-  const audience = getDashboardAudience(user?.roles || []);
+  const audience = hasStoredAuth() ? getDashboardAudience(user?.roles || []) : 'guest';
   return audience === 'guest'
     ? <HomePage />
     : <RoleDashboardPage audience={audience} roles={user.roles || []} />;
@@ -630,4 +650,3 @@ Review the slice against:
 - `AC-UX-004`, `AC-UX-006`, `AC-UX-007`, `AC-UX-008`.
 
 Do not begin the Auth UX plan until this App Shell slice passes automated checks and human review.
-
