@@ -181,3 +181,21 @@ test('borrowing pagination wraps instead of hiding later pages on mobile', async
   assert.match(styles, /\.pagination\s*\{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(styles, /\.page-controls\s*\{[^}]*flex-wrap:\s*wrap;/s);
 });
+
+test('FE07 member pages use shared operational patterns without changing API calls', async () => {
+  const request = await readFile(new URL('../src/page/borrowing/BorrowRequestPage.jsx', import.meta.url), 'utf8');
+  const history = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(request, /DataToolbar/);
+  assert.match(request, /EmptyState/);
+  assert.doesNotMatch(request, /<div className="empty">/);
+  assert.match(request, /borrowingApi\.createRequest\(\[Number\(copyId\)\]\)/);
+
+  assert.match(history, /DataToolbar/);
+  assert.match(history, /DataTable/);
+  assert.match(history, /ConfirmAction/);
+  assert.match(history, /const \[renewing, setRenewing\] = useState\(false\)/);
+  assert.match(history, /data-label="Hạn trả"/);
+  assert.match(history, /await borrowingApi\.renewDetail\(renewRow\.borrowDetailId\)/);
+  assert.doesNotMatch(history, /<table className="lib-table"/);
+});

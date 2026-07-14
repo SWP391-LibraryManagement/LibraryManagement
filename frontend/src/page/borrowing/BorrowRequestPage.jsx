@@ -8,7 +8,8 @@ import { Search, BookOpen, MapPin, CheckCircle2, Star } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
-import { Toast, useToast, DataNotice } from '../../component/shared/Feedback';
+import { Toast, useToast, DataNotice, EmptyState } from '../../component/shared/Feedback';
+import { DataToolbar } from '../../component/shared/OperationalPatterns';
 import { DEMO_BORROW_CATALOG } from '../../utils/libraryFeatureViewModels';
 
 export default function BorrowRequestPage() {
@@ -59,14 +60,25 @@ export default function BorrowRequestPage() {
       <div className="split">
         <div>
           <div className="lib-card">
-            <div className="search-input" style={{ width: '100%' }}><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" /></div>
+            <DataToolbar
+              primary={(
+                <div className="search-input" style={{ width: '100%' }}>
+                  <Search size={18} />
+                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" />
+                </div>
+              )}
+            />
             <div className="queue-list" style={{ marginTop: 16 }}>
               {results.map((book) => {
                 const isActive = book.id === selected?.id;
                 const canBorrow = book.copies.length > 0;
                 return <button type="button" key={book.id} onClick={() => pickBook(book)} className={`queue-item${isActive ? ' head' : ''}`} style={{ cursor: 'pointer' }}><span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} /><span className="stack-sm" style={{ flex: 1, textAlign: 'left' }}><strong>{book.title}</strong><span className="muted" style={{ fontSize: 13 }}>{book.author}</span></span><span className={`badge badge-${canBorrow ? 'available' : 'overdue'}`}>{canBorrow ? `${book.copies.length} bản` : 'Hết'}</span></button>;
               })}
-              {results.length === 0 && <div className="empty"><BookOpen size={34} /><p>Không tìm thấy sách phù hợp.</p></div>}
+              {results.length === 0 && (
+                <EmptyState icon={BookOpen} title="Không tìm thấy sách phù hợp">
+                  Hãy thử tên sách hoặc tác giả khác.
+                </EmptyState>
+              )}
             </div>
           </div>
         </div>
@@ -82,7 +94,7 @@ export default function BorrowRequestPage() {
               <span className="field-hint">Hệ thống sẽ kiểm tra tư cách thành viên, giới hạn 5 sách, sách quá hạn, phí phạt và tình trạng bản sao.</span>
             </div>
             <div style={{ marginTop: 20 }}><button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={!available || submitting}><CheckCircle2 size={18} /> {submitting ? 'Đang gửi...' : 'Gửi yêu cầu mượn'}</button></div>
-          </> : <div className="empty"><BookOpen size={40} /><p>Chọn một cuốn sách để gửi yêu cầu mượn.</p></div>}
+          </> : <EmptyState icon={BookOpen} title="Chọn một cuốn sách để gửi yêu cầu mượn" />}
         </form>
       </div>
       <Toast toast={toast} onClose={clearToast} />
