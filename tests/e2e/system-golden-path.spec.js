@@ -4,11 +4,12 @@ const { test, expect } = require('@playwright/test');
 
 const FRONTEND_URL = 'http://127.0.0.1:4173';
 const BACKEND_URL = 'http://127.0.0.1:3100';
+const FIXED_NOW = new Date('2026-07-14T00:00:00.000Z');
 
 async function login(page, email, password, expectedPath) {
   await page.goto(`${FRONTEND_URL}/login`);
   await page.getByLabel('Tài khoản của bạn').fill(email);
-  await page.getByLabel('Mật khẩu').fill(password);
+  await page.getByRole('textbox', { name: 'Mật khẩu', exact: true }).fill(password);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(expectedPath);
 }
@@ -29,6 +30,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   const memberEmail = `e2e-member-${runId}@example.test`;
   const librarianEmail = `e2e-librarian-${runId}@example.test`;
   mkdirSync('output/playwright', { recursive: true });
+  await page.clock.setFixedTime(FIXED_NOW);
 
   const setupResponse = await request.post(`${BACKEND_URL}/__e2e__/setup`, {
     data: { memberEmail, librarianEmail, password },
@@ -39,7 +41,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   await expect(page.getByLabel('Tài khoản của bạn')).toBeVisible();
   await page.screenshot({ path: 'output/playwright/manual-login.png', fullPage: true });
 
-  await login(page, memberEmail, password, '/borrowing/history');
+  await login(page, memberEmail, password, '/home');
   await page.goto(`${FRONTEND_URL}/borrowing/new`);
   await page.getByRole('button', { name: /Gửi yêu cầu mượn/i }).click();
   await expect(page.getByText(/Yêu cầu #\d+ đã được tạo/i)).toBeVisible();
@@ -49,7 +51,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   });
 
   await clearSession(page);
-  await login(page, librarianEmail, password, '/librarian/fines');
+  await login(page, librarianEmail, password, '/home');
   await page.goto(`${FRONTEND_URL}/librarian/borrow-requests`);
   await expect(page.locator('tbody .badge-pending').first()).toBeVisible();
   await page.getByRole('button', { name: /^Duyệt$/i }).click();
