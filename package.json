@@ -9,6 +9,7 @@
     "test:system": "npm --prefix backend run test:integration:system",
     "test:deployment": "node --test tests/deployment/*.test.js",
     "schema:azure:prepare": "node scripts/prepare-azure-schema.js",
+    "smoke:staging": "node scripts/smoke-staging.js",
     "trace": "node scripts/check-traceability.js",
     "trace:enforce": "node scripts/check-traceability.js --enforce --min=70"
   },
