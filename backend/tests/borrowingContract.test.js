@@ -124,3 +124,17 @@ test('OpenAPI documents runtime fine candidate identifiers and selected-member n
     '#/components/responses/NotFound'
   );
 });
+
+test('OpenAPI documents reservation-priority conflicts on borrow create and approval', () => {
+  for (const [endpoint, method] of [
+    ['/api/borrow-requests', 'post'],
+    ['/api/borrow-requests/{requestId}/approve', 'patch'],
+  ]) {
+    const conflict = document.paths[endpoint][method].responses['409'];
+    expect(conflict.description).toContain('RESERVATION_QUEUE_PRIORITY');
+    expect(conflict.description).toContain('RESERVATION_STATE_CONFLICT');
+    expect(conflict.content['application/json'].schema.$ref).toBe(
+      '#/components/schemas/SafeError'
+    );
+  }
+});

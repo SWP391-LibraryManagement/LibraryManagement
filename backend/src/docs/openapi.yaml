@@ -366,7 +366,14 @@ paths:
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '409':
+          description: >
+            Borrowing conflict. RESERVATION_QUEUE_PRIORITY means staff must process the active
+            reservation queue first. RESERVATION_STATE_CONFLICT means the held-copy state no
+            longer matches a requester-owned notified reservation.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SafeError' }
     get:
       tags: [Borrowing]
       summary: Librarian/Admin lists borrow requests (FR-FE07-011)
@@ -424,7 +431,14 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '409':
+          description: >
+            Approval conflict. RESERVATION_QUEUE_PRIORITY means the active queue still owns
+            priority. RESERVATION_STATE_CONFLICT means the held reservation changed during
+            approval and the transaction made no changes.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SafeError' }
   /api/borrow-requests/{requestId}/reject:
     patch:
       tags: [Borrowing]
