@@ -132,6 +132,7 @@ npm.cmd run test:e2e                   # browser golden path
 npm.cmd run test:deployment            # deployment utility tests
 npm.cmd run schema:azure:prepare       # derive Azure SQL schema under tmp/
 npm.cmd run smoke:staging              # read-only checks against staging URLs
+npm.cmd run docs:screenshots           # regenerate synthetic user-manual images
 npm.cmd run trace:enforce              # FR @spec traceability gate
 ```
 
