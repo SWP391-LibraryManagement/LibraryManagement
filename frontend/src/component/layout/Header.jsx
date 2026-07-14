@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Avatar from "@mui/material/Avatar";
-import { Search } from "lucide-react";
-import { fetchHeaderProfile } from "../../api/profileApi";
-import { logoutAccount } from "../../api/authApi";
-import UserMenuPopup from "./UserMenuPopup";
+import Avatar from '@mui/material/Avatar';
+import { useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { logoutAccount } from '../../api/authApi';
+import { fetchHeaderProfile } from '../../api/profileApi';
+import UserMenuPopup from './UserMenuPopup';
 
 function getStoredAuthUser() {
   try {
-    const raw = localStorage.getItem("authUser") || sessionStorage.getItem("authUser");
+    const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -16,14 +17,14 @@ function getStoredAuthUser() {
 }
 
 function getRoleLabel(roles = []) {
-  if (roles.includes("ADMIN")) return "Admin";
-  if (roles.includes("LIBRARIAN")) return "Librarian";
-  if (roles.includes("MEMBER")) return "Member";
-  return "";
+  if (roles.includes('ADMIN')) return 'Quản trị viên';
+  if (roles.includes('LIBRARIAN')) return 'Thủ thư';
+  if (roles.includes('MEMBER')) return 'Thành viên';
+  return 'Người dùng';
 }
 
 function getInitials(name, email) {
-  const parts = String(name || "")
+  const parts = String(name || '')
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -31,14 +32,14 @@ function getInitials(name, email) {
   if (parts.length > 0) {
     return parts
       .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() || "")
-      .join("");
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('');
   }
 
-  return String(email || "").charAt(0).toUpperCase();
+  return String(email || '').charAt(0).toUpperCase();
 }
 
-export default function Header() {
+export default function Header({ onOpenNavigation, navigationOpen = false }) {
   const navigate = useNavigate();
   const storedUser = getStoredAuthUser();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -54,7 +55,7 @@ export default function Header() {
           setProfile(data);
         }
       } catch {
-        // ponytail: keep header usable with stored auth data if profile fetch fails.
+        // Keep the header usable with stored auth data when profile loading fails.
       }
     }
 
@@ -65,10 +66,10 @@ export default function Header() {
     };
   }, []);
 
-  const displayName = profile?.fullName || storedUser?.email || "";
+  const displayName = profile?.fullName || storedUser?.email || 'Tài khoản';
   const roleLabel = getRoleLabel(storedUser?.roles || []);
-  const initials = getInitials(profile?.fullName, storedUser?.email);
-  const avatarUrl = profile?.avatarUrl || "";
+  const initials = getInitials(profile?.fullName, storedUser?.email) || 'T';
+  const avatarUrl = profile?.avatarUrl || '';
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -79,42 +80,48 @@ export default function Header() {
   };
 
   const handleAccountInfo = () => {
-    navigate("/profile");
+    navigate('/profile');
   };
 
   const handleLogout = async () => {
-    const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-    const refreshToken = localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
+    const accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
 
     try {
       if (accessToken && refreshToken) {
         await logoutAccount({ accessToken, refreshToken });
       }
     } catch {
-      // ponytail: local sign-out still wins if the API logout call fails.
+      // Local sign-out still wins if the API logout call fails.
     } finally {
       for (const storage of [localStorage, sessionStorage]) {
-        storage.removeItem("accessToken");
-        storage.removeItem("refreshToken");
-        storage.removeItem("authUser");
+        storage.removeItem('accessToken');
+        storage.removeItem('refreshToken');
+        storage.removeItem('authUser');
       }
-      navigate("/login");
+      navigate('/login');
     }
   };
 
   return (
     <header className="app-topbar">
-      <div className="app-search">
-        <Search size={18} />
-        <input type="text" placeholder="Search books, members, loans..." aria-label="Search" />
-      </div>
+      <button
+        type="button"
+        className="app-icon-btn app-menu-trigger"
+        onClick={onOpenNavigation}
+        aria-label="Mở điều hướng"
+        aria-controls="app-navigation"
+        aria-expanded={navigationOpen}
+      >
+        <Menu size={20} />
+      </button>
 
       <div className="app-topbar-actions">
         <button
           type="button"
           className="app-user-trigger"
           onClick={handleOpenMenu}
-          aria-label="Open user menu"
+          aria-label="Mở menu tài khoản"
         >
           <div className="app-user-copy">
             <span className="app-user-name">{displayName}</span>

@@ -38,3 +38,31 @@ test('shared header has no decorative global search', async () => {
   assert.doesNotMatch(source, /placeholder="Search books, members, loans/);
   assert.doesNotMatch(source, /className="app-search"/);
 });
+
+test('app layout exposes an accessible mobile navigation drawer', async () => {
+  const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
+  const header = await readFile(new URL('../src/component/layout/Header.jsx', import.meta.url), 'utf8');
+  const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
+
+  assert.match(source, /useLocation\(\)/);
+  assert.match(header, /aria-label="Mở điều hướng"/);
+  assert.match(header, /aria-expanded=\{navigationOpen\}/);
+  assert.match(source, /className=\{`app-sidebar\$\{navigationOpen \? ' app-sidebar-open' : ''\}`\}/);
+  assert.match(source, /className="app-sidebar-backdrop"/);
+  assert.match(styles, /@media \(max-width: 860px\)[\s\S]*\.app-sidebar-open/);
+});
+
+test('app layout composes the shared profile header', async () => {
+  const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
+  assert.match(source, /import Header from '.\/Header';/);
+  assert.match(source, /<Header/);
+  assert.doesNotMatch(source, /<div className="app-avatar">N<\/div>/);
+});
+
+test('shared profile menu remains compatible with the header contract', async () => {
+  const source = await readFile(new URL('../src/component/layout/UserMenuPopup.jsx', import.meta.url), 'utf8');
+  assert.match(source, /export default function UserMenuPopup/);
+  assert.match(source, /onAccountInfo/);
+  assert.match(source, /onLogout/);
+  assert.doesNotMatch(source, /function BookCopies/);
+});
