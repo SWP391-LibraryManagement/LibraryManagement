@@ -23,6 +23,7 @@ function buildConfig() {
   const config = {
     server,
     database: DB_NAME,
+    connectionTimeout: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 60000),
     options: {
       encrypt: DB_ENCRYPT === 'true',
       trustServerCertificate: DB_TRUST_SERVER_CERTIFICATE !== 'false',
@@ -47,7 +48,10 @@ function buildConfig() {
 
 async function getPool() {
   if (!poolPromise) {
-    poolPromise = sql.connect(buildConfig());
+    poolPromise = sql.connect(buildConfig()).catch((error) => {
+      poolPromise = undefined;
+      throw error;
+    });
   }
 
   return poolPromise;
