@@ -83,14 +83,16 @@ fine calculation, notification triggers, reporting aggregation, input validation
 Frontend coverage is not yet enforced by component tests. Until frontend test tooling is added, every
 frontend PR must at minimum pass lint/build and include manual UI verification notes.
 
-### 1.3 Current Coverage Status (2026-06-25)
+### 1.3 Current Coverage Status (2026-07-14)
 
-- Backend Jest tests: `npm --prefix backend test` → **105 tests / 14 suites passing**.
+- Backend Jest tests: `npm --prefix backend test` -> **301 tests / 23 suites passing**.
+- Completed-module coverage: statements **93.02%**, branches **83.22%**, functions **96.37%**, lines **92.94%**.
+- Jest enforces a global 80 percent threshold for all four metrics through `npm --prefix backend run test:coverage:ci` and CI.
 - Frontend: `npm --prefix frontend run lint` and `npm --prefix frontend run build`.
 - Traceability gate: `npm run trace:enforce` (min 70% FR `@spec` coverage for implemented features) —
   **enforced in CI** (`.github/workflows/ci.yml`). Six implemented features are at 100%.
-- Not yet in place: a Jest line/branch coverage threshold, browser E2E, and a SQL-Server-backed
-  integration environment (TD-021). These are the Testing Sprint (Week 11) targets.
+- SQL Server shared-state integration is available through the mutation-gated local `test:sql:system` suite.
+- Browser E2E remains the final Week 11 target in this sprint.
 
 ---
 
@@ -337,7 +339,7 @@ Do not merge if a required command fails unless the team lead documents an accep
 | Week 6: Auth `>=80%` coverage | Auth unit/integration tests pass; coverage checked | Pending formal coverage threshold |
 | Week 10: Core features pass acceptance | Each implemented core feature has acceptance evidence mapped to `SPEC.md` | In progress (6 features implemented) |
 | Traceability gate enforced | CI runs `trace:enforce`; implemented features ≥70% | **Done (2026-06-25)** |
-| Week 11: `>=80%` coverage verified | Coverage report generated; gaps filled | Pending |
+| Week 11: `>=80%` coverage verified | Coverage report generated; gaps filled | **Done (2026-07-14)** |
 | Week 12: Security clean | No Critical/High vulns; dependency audit complete | Pending |
 
 ---

@@ -11,7 +11,8 @@
     "test:integration:system": "jest --runInBand --runTestsByPath tests/systemIntegration.test.js",
     "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
     "test:sql:system": "jest --runInBand --testMatch \"**/systemIntegration.sqltest.js\"",
-    "test:coverage": "jest --runInBand --coverage"
+    "test:coverage": "jest --runInBand --coverage",
+    "test:coverage:ci": "jest --runInBand --coverage --coverageReporters=text-summary"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,14 @@
       "src/routes/{borrowing,reservation,notification,report}Routes.js",
       "src/validators/{borrowing,reservation,notification,report}Validators.js"
     ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
     "coverageReporters": ["text-summary", "text"]
   },
   "dependencies": {

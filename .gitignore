@@ -16,6 +16,10 @@ obj/
 dist/
 build/
 out/
+coverage/
+playwright-report/
+test-results/
+output/playwright/
 
 # IDE
 .vscode/

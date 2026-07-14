@@ -41,6 +41,10 @@ jobs:
         run: npm run test:integration:system
         working-directory: backend
 
+      - name: Backend coverage threshold
+        run: npm run test:coverage:ci
+        working-directory: backend
+
       - name: Frontend lint
         run: npm run lint
         working-directory: frontend

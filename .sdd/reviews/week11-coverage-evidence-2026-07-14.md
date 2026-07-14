@@ -60,6 +60,16 @@ Key improvements:
 - `reportService.js` branch coverage: 65.95% -> 95.74%.
 - No production source file changed to obtain the result.
 
+## Enforced Gate
+
+`backend/package.json` now requires 80 percent globally for statements, branches, functions, and lines. CI runs:
+
+```powershell
+npm.cmd --prefix backend run test:coverage:ci
+```
+
+Observed result after enabling the threshold: 23 suites passed, 301 tests passed, and all four coverage metrics remained above 80 percent. The command exited 0.
+
 ## Generated Artifacts
 
-`backend/coverage/` is generated locally and must remain untracked. The sprint will add it to `.gitignore` before completion.
+`backend/coverage/` is generated locally and is ignored by the repository.
