@@ -16,6 +16,8 @@ export const APP_NAV_GROUPS = [
       { key: 'process-returns', label: 'Xử lý trả sách', path: '/librarian/returns' },
       { key: 'reservations-librarian', label: 'Quản lý đặt chỗ', path: '/librarian/reservations' },
       { key: 'member-details', label: 'Chi tiết thành viên', path: '/librarian/members' },
+      { key: 'inventory-management', label: 'Quản lý kho sách', path: '/librarian/inventory' },
+      { key: 'fine-management', label: 'Quản lý tiền phạt', path: '/librarian/fines' },
     ],
   },
   {

@@ -10,6 +10,7 @@ import {
   History,
   LayoutDashboard,
   PackageCheck,
+  ReceiptText,
   UserCog,
   Users,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
   getVisibleNavigation,
 } from '../../utils/appNavigation';
 import Header from './Header';
+import { PageHeader } from '../shared/OperationalPatterns';
 
 const NAV_ICONS = {
   home: LayoutDashboard,
@@ -31,6 +33,8 @@ const NAV_ICONS = {
   'process-returns': PackageCheck,
   'reservations-librarian': CalendarClock,
   'member-details': Users,
+  'inventory-management': Boxes,
+  'fine-management': ReceiptText,
   'borrowing-report': BarChart2,
   'inventory-report': Boxes,
   'user-statistics': UserCog,
@@ -169,15 +173,7 @@ export default function AppLayout({ title, subtitle, actions, children }) {
         />
 
         <main className="app-content">
-          {(title || actions) && (
-            <div className="ph">
-              <div>
-                {title && <h1 className="ph-title">{title}</h1>}
-                {subtitle && <p className="ph-sub">{subtitle}</p>}
-              </div>
-              {actions && <div className="ph-actions">{actions}</div>}
-            </div>
-          )}
+          <PageHeader title={title} subtitle={subtitle} actions={actions} />
           {children}
         </main>
       </div>

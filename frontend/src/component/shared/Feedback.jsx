@@ -20,7 +20,7 @@ export function Toast({ toast, onClose }) {
   const Icon = toast.type === 'error' ? AlertTriangle : toast.type === 'info' ? Info : CheckCircle2;
 
   return (
-    <div className={`lib-toast ${toast.type || 'success'}`} role="status">
+    <div className={`lib-toast ${toast.type || 'success'}`} role={toast.type === 'error' ? 'alert' : 'status'}>
       <Icon size={18} />
       <span>{toast.message}</span>
     </div>
@@ -109,6 +109,43 @@ export function Modal({ title, eyebrow, onClose, children, actions, width }) {
   );
 }
 
+export function ConfirmAction({
+  title,
+  eyebrow,
+  children,
+  cancelLabel = 'Hủy',
+  confirmLabel = 'Xác nhận',
+  pendingLabel = 'Đang xử lý...',
+  tone = 'primary',
+  pending = false,
+  confirmDisabled = false,
+  onCancel,
+  onConfirm,
+}) {
+  return (
+    <Modal
+      title={title}
+      eyebrow={eyebrow}
+      onClose={pending ? undefined : onCancel}
+      actions={(
+        <>
+          <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={pending}>{cancelLabel}</button>
+          <button
+            type="button"
+            className={`btn btn-${tone}`}
+            onClick={onConfirm}
+            disabled={pending || confirmDisabled}
+          >
+            {pending ? pendingLabel : confirmLabel}
+          </button>
+        </>
+      )}
+    >
+      {children}
+    </Modal>
+  );
+}
+
 /* -------- Badge -------- */
 export function Badge({ status, children }) {
   const key = String(status || 'default').toLowerCase().replace(/\s+/g, '-');
@@ -116,17 +153,23 @@ export function Badge({ status, children }) {
 }
 
 /* -------- Data state primitives -------- */
-export function DataNotice({ type = 'info', title, children }) {
-  const Icon = type === 'error' ? AlertTriangle : type === 'success' ? CheckCircle2 : Info;
+export function StatusNotice({ type = 'info', title, children, action }) {
+  const tone = type === 'warning' ? 'warn' : type;
+  const Icon = tone === 'error' ? AlertTriangle : tone === 'success' ? CheckCircle2 : Info;
   return (
-    <div className={`data-notice ${type}`} role={type === 'error' ? 'alert' : 'status'}>
+    <div className={`data-notice ${tone}`} role={tone === 'error' ? 'alert' : 'status'}>
       <Icon size={17} />
-      <div>
+      <div className="data-notice-content">
         {title && <strong>{title}</strong>}
         {children && <p>{children}</p>}
       </div>
+      {action && <div className="data-notice-action">{action}</div>}
     </div>
   );
+}
+
+export function DataNotice(props) {
+  return <StatusNotice {...props} />;
 }
 
 export function LoadingBlock({ rows = 3, label = 'Đang tải dữ liệu...' }) {
@@ -140,12 +183,13 @@ export function LoadingBlock({ rows = 3, label = 'Đang tải dữ liệu...' })
   );
 }
 
-export function EmptyState({ icon: Icon = Info, title = 'Chưa có dữ liệu', children }) {
+export function EmptyState({ icon: Icon = Info, title = 'Chưa có dữ liệu', children, action }) {
   return (
     <div className="empty">
       <Icon size={36} />
       <h3>{title}</h3>
       {children && <p>{children}</p>}
+      {action && <div className="empty-action">{action}</div>}
     </div>
   );
 }
