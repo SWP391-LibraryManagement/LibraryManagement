@@ -51,19 +51,14 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
     async function loadProfile() {
       try {
         const data = await fetchHeaderProfile();
-        if (isMounted) {
-          setProfile(data);
-        }
+        if (isMounted) setProfile(data);
       } catch {
         // Keep the header usable with stored auth data when profile loading fails.
       }
     }
 
     loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   const displayName = profile?.fullName || storedUser?.email || 'Tài khoản';
@@ -71,26 +66,12 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
   const initials = getInitials(profile?.fullName, storedUser?.email) || 'T';
   const avatarUrl = profile?.avatarUrl || '';
 
-  const handleOpenMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
-  const handleAccountInfo = () => {
-    navigate('/profile');
-  };
-
   const handleLogout = async () => {
     const accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
 
     try {
-      if (accessToken && refreshToken) {
-        await logoutAccount({ accessToken, refreshToken });
-      }
+      if (accessToken && refreshToken) await logoutAccount({ accessToken, refreshToken });
     } catch {
       // Local sign-out still wins if the API logout call fails.
     } finally {
@@ -120,7 +101,7 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
         <button
           type="button"
           className="app-user-trigger"
-          onClick={handleOpenMenu}
+          onClick={(event) => setAnchorEl(event.currentTarget)}
           aria-label="Mở menu tài khoản"
         >
           <div className="app-user-copy">
@@ -140,12 +121,14 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
       <UserMenuPopup
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
+        onClose={() => setAnchorEl(null)}
         name={displayName}
         role={roleLabel}
         initials={initials}
         avatarUrl={avatarUrl}
-        onAccountInfo={handleAccountInfo}
+        onAccountInfo={() => navigate('/profile')}
+        onBorrowingHistory={() => navigate('/borrowing/history')}
+        onMembership={() => navigate('/membership')}
         onLogout={handleLogout}
       />
     </header>

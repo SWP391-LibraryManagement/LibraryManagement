@@ -1,6 +1,5 @@
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import PersonIcon from "@mui/icons-material/Person";
 
 const statusConfig = {
   ACTIVE:   { label: "Hoạt động",       cls: "ph-badge-active"   },
@@ -18,6 +17,7 @@ export default function ProfileHeader({
 }) {
   const { label: statusLabel, cls: statusCls } = statusConfig[status] ?? statusConfig.INACTIVE;
   const isMember = membershipStatus === "APPROVED";
+  const initial = String(fullName || username || "U").charAt(0).toUpperCase();
 
   return (
     <div className="ph-card">
@@ -33,7 +33,7 @@ export default function ProfileHeader({
               {avatarUrl ? (
                 <img src={avatarUrl} alt={fullName} />
               ) : (
-                <PersonIcon className="ph-avatar-icon" />
+                <span className="ph-avatar-initial">{initial}</span>
               )}
             </div>
             {status === "ACTIVE" && <span className="ph-online-dot" />}

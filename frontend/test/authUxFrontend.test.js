@@ -77,12 +77,12 @@ test('registration fields use current MUI slots and accessible password controls
   assert.match(password, /aria-label=\{showPassword \? 'Ẩn mật khẩu' : 'Hiện mật khẩu'\}/);
 });
 
-test('login routes every authenticated role through the role-aware home route', async () => {
+test('login routes admins to user management and other roles through home', async () => {
   const source = await readFile(new URL('../src/page/LoginPage.jsx', import.meta.url), 'utf8');
   const form = await readFile(new URL('../src/component/login/LoginForm.jsx', import.meta.url), 'utf8');
 
-  assert.match(source, /navigate\('\/home'\)/);
-  assert.doesNotMatch(source, /navigate\('\/admin\/users'\)/);
+  assert.match(source, /getPostLoginPath\(result\.roles\)/);
+  assert.match(source, /includes\('ADMIN'\) \? '\/admin\/users' : '\/home'/);
   assert.doesNotMatch(source, /navigate\('\/librarian\/fines'\)/);
   assert.doesNotMatch(source, /navigate\('\/borrowing\/history'\)/);
   assert.match(form, /autoComplete: 'email'/);

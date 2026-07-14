@@ -33,6 +33,11 @@ import {
 
 import { getFineRecords, saveFineRecords } from '../utils/libraryWorkflow';
 import { adminApi } from '../api/adminApi';
+import { membershipApi } from '../api/libraryFeatureApi';
+import LogoutConfirmModal from '../component/layout/LogoutConfirmModal';
+import MembershipApplicationsTable from '../component/membership/MembershipApplicationsTable';
+import MembershipFilter from '../component/membership/MembershipFilter';
+import MembershipReviewModal from '../component/membership/MembershipReviewModal';
 import {
   createManagedUser,
   deactivateManagedUser,
@@ -129,6 +134,27 @@ const demoRequests = [
   { id: 1, requestDate: '2026-06-30T15:18:00', status: 'PENDING', memberName: 'Bích Hằng update', phone: '0912789876', email: 'bich@example.test', bookTitles: 'Gia đình, Bạn bè, Đất nước', categories: 'Chính trị 2', itemCount: 1 },
   { id: 2, requestDate: '2026-06-30T14:47:00', status: 'COMPLETED', memberName: 'Nguyen Lan An', phone: '84946789559', email: 'lan@example.test', bookTitles: 'Kết nối tri thức', categories: 'Test 6', itemCount: 1 },
 ];
+
+function normalizeMembershipApplication(application) {
+  const applicant = application?.applicant || {};
+  return {
+    ...application,
+    fullName: application.fullName || application.name || application.userName || applicant.fullName || applicant.username,
+    email: application.email || applicant.email,
+    phone: application.phone || applicant.phone,
+  };
+}
+
+function normalizeMembershipList(response) {
+  const rows = Array.isArray(response)
+    ? response
+    : response?.items || response?.applications || response?.data || [];
+
+  return {
+    items: rows.map(normalizeMembershipApplication),
+    totalPages: response?.totalPages || response?.pagination?.totalPages || 1,
+  };
+}
 
 function validateUserForm(form) {
   const errors = {};
@@ -442,6 +468,7 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
     { id: 'library', icon: Library, label: 'Thư viện' },
     { id: 'circulation', icon: BookCopy, label: 'Quản lý mượn trả' },
     { id: 'requests', icon: ClipboardList, label: 'Quản lý yêu cầu' },
+    { id: 'membership', icon: UserCog, label: 'Quản lý membership' },
     { id: 'users', icon: Users, label: 'All Users' },
     { id: 'roles', icon: Shield, label: 'Permissions' },
     { id: 'audit', icon: ClipboardList, label: 'Audit Logs' },
@@ -653,7 +680,12 @@ function UserManagement() {
   const [requests, setRequests] = useState(demoRequests);
   const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', fromDate: '', toDate: '' });
   const [viewRequest, setViewRequest] = useState(null);
+  const [membershipApplications, setMembershipApplications] = useState([]);
+  const [membershipFilter, setMembershipFilter] = useState({ status: 'PENDING', search: '', page: 1, totalPages: 1 });
+  const [membershipReview, setMembershipReview] = useState(null);
+  const [membershipSaving, setMembershipSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const hasActiveFilters = search.trim() || roleFilter !== 'ALL' || statusFilter !== 'ALL';
   const isUserDirectorySection = activeSection === 'users';
   const sectionMeta = {
@@ -664,6 +696,7 @@ function UserManagement() {
     library: { eyebrow: 'Library', title: 'Thư viện' },
     circulation: { eyebrow: 'Borrow Return', title: 'Quản lý mượn trả' },
     requests: { eyebrow: 'Request Management', title: 'Quản lý yêu cầu' },
+    membership: { eyebrow: 'Membership Review', title: 'Quản lý membership' },
     payments: { eyebrow: 'Payment Review', title: 'Confirm / Refuse Payment' },
   }[activeSection];
   const pendingPayments = paymentFines.filter((fine) => fine.paymentReviewStatus === 'PENDING');
@@ -767,6 +800,17 @@ function UserManagement() {
       background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
     };
   }, [roleSummary]);
+  const filteredMembershipApplications = useMemo(() => {
+    const keyword = membershipFilter.search.trim().toLowerCase();
+    if (!keyword) return membershipApplications;
+
+    return membershipApplications.filter((application) =>
+      `${application.applicationId || application.id || ''} ${application.fullName || ''} ${application.email || ''}`
+        .toLowerCase()
+        .includes(keyword)
+    );
+  }, [membershipApplications, membershipFilter.search]);
+
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
@@ -819,9 +863,12 @@ function UserManagement() {
     if (activeSection === 'requests') {
       loadRequests();
     }
+    if (activeSection === 'membership') {
+      loadMembershipApplications();
+    }
   // The loaders intentionally read current filters when the active admin section changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, libraryResource]);
+  }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status]);
 
   useEffect(() => {
     if (activeSection !== 'audit') {
@@ -979,6 +1026,58 @@ function UserManagement() {
     }
   }
 
+  async function loadMembershipApplications() {
+    try {
+      const result = normalizeMembershipList(await membershipApi.listApplications({
+        status: membershipFilter.status === 'ALL' ? undefined : membershipFilter.status,
+        page: membershipFilter.page,
+        limit: 10,
+      }));
+      setMembershipApplications(result.items);
+      setMembershipFilter((current) => ({ ...current, totalPages: result.totalPages }));
+    } catch (error) {
+      setMembershipApplications([]);
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function approveMembershipApplication(application) {
+    if (!application) return;
+
+    setMembershipSaving(true);
+    try {
+      await membershipApi.approve(application.applicationId || application.id);
+      setMembershipReview(null);
+      await loadMembershipApplications();
+      setToast({ type: 'success', message: 'Đã xác thực đơn membership.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setMembershipSaving(false);
+    }
+  }
+
+  async function rejectMembershipApplication(reason) {
+    if (!membershipReview) return;
+
+    if (!reason.trim()) {
+      setToast({ type: 'error', message: 'Lý do từ chối là bắt buộc.' });
+      return;
+    }
+
+    setMembershipSaving(true);
+    try {
+      await membershipApi.reject(membershipReview.applicationId || membershipReview.id, reason.trim());
+      setMembershipReview(null);
+      await loadMembershipApplications();
+      setToast({ type: 'success', message: 'Đã từ chối đơn membership.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setMembershipSaving(false);
+    }
+  }
+
   async function updateRequestStatus(requestId, status) {
     try {
       await adminApi.updateRequestStatus(requestId, status);
@@ -1128,7 +1227,7 @@ function UserManagement() {
         activeSection={activeSection}
         currentUser={currentAdmin}
         onSectionChange={handleSectionChange}
-        onLogout={handleLogout}
+        onLogout={() => setShowLogoutConfirm(true)}
         onNavigate={(path) => navigate(path)}
       />
 
@@ -1147,6 +1246,7 @@ function UserManagement() {
                 else if (activeSection === 'library') loadLibrary();
                 else if (activeSection === 'circulation') loadBorrowings();
                 else if (activeSection === 'requests') loadRequests();
+                else if (activeSection === 'membership') loadMembershipApplications();
                 else loadUsers();
               }}
             >
@@ -1349,6 +1449,35 @@ function UserManagement() {
               </table>
               {requests.length === 0 && <div className="um-empty">No requests found.</div>}
             </section>
+          </section>
+        )}
+
+        {activeSection === 'membership' && (
+          <section className="um-admin-section">
+            <div className="um-content" style={{ padding: 18 }}>
+              <div className="um-panel-title">
+                <div>
+                  <h2>Đơn đăng ký membership</h2>
+                  <p>Admin xác thực hoặc từ chối các đơn đang chờ duyệt.</p>
+                </div>
+              </div>
+              <MembershipFilter
+                status={membershipFilter.status}
+                search={membershipFilter.search}
+                loading={loading}
+                onStatusChange={(status) => setMembershipFilter((current) => ({ ...current, status, page: 1 }))}
+                onSearchChange={(searchValue) => setMembershipFilter((current) => ({ ...current, search: searchValue }))}
+                onReload={loadMembershipApplications}
+              />
+              <MembershipApplicationsTable
+                applications={filteredMembershipApplications}
+                page={membershipFilter.page}
+                totalPages={membershipFilter.totalPages}
+                onPageChange={(nextPage) => setMembershipFilter((current) => ({ ...current, page: nextPage }))}
+                onApprove={approveMembershipApplication}
+                onReject={setMembershipReview}
+              />
+            </div>
           </section>
         )}
 
@@ -1785,7 +1914,22 @@ function UserManagement() {
         </div>
       )}
 
+      <MembershipReviewModal
+        key={membershipReview?.applicationId || membershipReview?.id || 'membership-review'}
+        application={membershipReview}
+        saving={membershipSaving}
+        onApprove={() => approveMembershipApplication(membershipReview)}
+        onReject={rejectMembershipApplication}
+        onClose={() => setMembershipReview(null)}
+      />
+
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleLogout}
+        />
+      )}
 
       <style>{`
         .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: Inter, system-ui, sans-serif; }

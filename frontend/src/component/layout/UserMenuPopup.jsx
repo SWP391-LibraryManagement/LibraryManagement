@@ -1,4 +1,6 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -17,16 +19,13 @@ export default function UserMenuPopup({
   initials = '',
   avatarUrl = '',
   onAccountInfo,
+  onBorrowingHistory,
+  onMembership,
   onLogout,
 }) {
-  const handleAccountInfo = () => {
-    onClose();
-    onAccountInfo?.();
-  };
-
-  const handleLogout = () => {
-    onClose();
-    onLogout?.();
+  const handleClick = (action) => {
+    onClose?.();
+    action?.();
   };
 
   return (
@@ -77,10 +76,7 @@ export default function UserMenuPopup({
             {initials}
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
-            <Typography
-              noWrap
-              sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#241d16', lineHeight: 1.3 }}
-            >
+            <Typography noWrap sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#241d16', lineHeight: 1.3 }}>
               {name}
             </Typography>
             <Typography noWrap sx={{ fontSize: '0.75rem', color: '#6f6456', lineHeight: 1.3 }}>
@@ -92,14 +88,28 @@ export default function UserMenuPopup({
 
       <Divider sx={{ borderColor: '#ded1ba', mx: 1.5, mb: 0.75 }} />
 
-      <MenuItem onClick={handleAccountInfo}>
+      <MenuItem onClick={() => handleClick(onAccountInfo)}>
         <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
           <AccountCircleOutlinedIcon fontSize="small" />
         </ListItemIcon>
         Thông tin tài khoản
       </MenuItem>
 
-      <MenuItem onClick={handleLogout} sx={{ mb: 0.75 }}>
+      <MenuItem onClick={() => handleClick(onBorrowingHistory)}>
+        <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
+          <HistoryIcon fontSize="small" />
+        </ListItemIcon>
+        Lịch sử mượn sách
+      </MenuItem>
+
+      <MenuItem onClick={() => handleClick(onMembership)}>
+        <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
+          <CardMembershipIcon fontSize="small" />
+        </ListItemIcon>
+        Đăng ký hội viên
+      </MenuItem>
+
+      <MenuItem onClick={() => handleClick(onLogout)} sx={{ mb: 0.75 }}>
         <ListItemIcon sx={{ color: '#c1452f', minWidth: 32 }}>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>

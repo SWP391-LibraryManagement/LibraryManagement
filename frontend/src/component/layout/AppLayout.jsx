@@ -26,6 +26,7 @@ import { PageHeader } from '../shared/OperationalPatterns';
 
 const NAV_ICONS = {
   home: LayoutDashboard,
+  membership: UserCog,
   'borrow-request': BookMarked,
   'borrowing-history': History,
   'my-reservations': Bookmark,
