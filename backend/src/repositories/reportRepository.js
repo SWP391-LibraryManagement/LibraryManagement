@@ -60,7 +60,10 @@ async function getBorrowRows(filters = {}) {
     where.push('br.RequestDate < @ToDateExclusive');
   }
 
-  if (filters.status) {
+  if (filters.status === 'OVERDUE') {
+    where.push("bd.Status = 'BORROWED'");
+    where.push('bd.DueDate < CAST(GETDATE() AS DATE)');
+  } else if (filters.status) {
     request.input('Status', sql.NVarChar(20), filters.status);
     where.push('(br.Status = @Status OR bd.Status = @Status)');
   }

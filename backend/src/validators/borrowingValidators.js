@@ -5,6 +5,19 @@ const requestStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'CANCEL
 const detailStatuses = ['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE'];
 const returnConditions = ['NORMAL', 'DAMAGED', 'LOST'];
 
+function isDateOnly(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
+}
+
 const createBorrowRequestValidators = [
   body('copyIds')
     .isArray({ min: 1 })
@@ -29,12 +42,12 @@ const listBorrowRequestsValidators = [
     .toInt(),
   query('fromDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('From date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('From date must use YYYY-MM-DD.'),
   query('toDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('To date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('To date must use YYYY-MM-DD.'),
   handleValidationErrors,
 ];
 
@@ -50,12 +63,12 @@ const memberBorrowingsValidators = [
     .withMessage('Status is not supported.'),
   query('fromDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('From date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('From date must use YYYY-MM-DD.'),
   query('toDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('To date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('To date must use YYYY-MM-DD.'),
   handleValidationErrors,
 ];
 
@@ -105,8 +118,8 @@ const returnBorrowDetailValidators = [
     .withMessage('Return condition must be NORMAL, DAMAGED, or LOST.'),
   body('returnDate')
     .optional({ nullable: true, checkFalsy: true })
-    .isISO8601()
-    .withMessage('Return date must be a valid date.'),
+    .custom(isDateOnly)
+    .withMessage('Return date must use YYYY-MM-DD.'),
   body('notes')
     .optional({ nullable: true, checkFalsy: true })
     .trim()

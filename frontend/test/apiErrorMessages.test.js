@@ -16,7 +16,7 @@ const expectedMessages = {
   MEMBER_ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư/admin.',
   ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư/admin.',
   MEMBERSHIP_NOT_APPROVED: 'Membership của bạn chưa được duyệt. Vui lòng chờ thủ thư/admin duyệt trước khi mượn sách.',
-  MEMBER_NOT_FOUND: 'Tài khoản hiện tại chưa có hồ sơ thành viên. Vui lòng liên hệ thủ thư/admin để tạo membership.',
+    MEMBER_NOT_FOUND: 'Không tìm thấy hồ sơ thành viên được yêu cầu.',
   UNPAID_FINE_BLOCKS_BORROWING: 'Bạn còn khoản phạt chưa thanh toán nên chưa thể mượn hoặc gia hạn sách.',
   OVERDUE_LOAN_BLOCKS_BORROWING: 'Bạn còn sách quá hạn nên chưa thể mượn hoặc gia hạn sách.',
   BORROW_LIMIT_EXCEEDED: 'Bạn đã đạt giới hạn 5 bản sao đang mượn, nên chưa thể mượn thêm.',
@@ -55,7 +55,7 @@ test('keeps authentication, validation, backend, and network fallbacks', async (
   assert.equal(typeof getBorrowingErrorMessage, 'function');
   assert.equal(
     getBorrowingErrorMessage({ response: { status: 401, data: { error: {} } } }),
-    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.',
+    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.',
   );
   assert.equal(
     getBorrowingErrorMessage({ response: { status: 422, data: { error: { details: [{ message: 'copyIds must be an array.' }] } } } }),
@@ -71,11 +71,11 @@ test('keeps authentication, validation, backend, and network fallbacks', async (
   );
   assert.equal(
     getBorrowingErrorMessage({ response: { status: 403, data: { error: { code: 'UNKNOWN_ROLE_ERROR' } } } }),
-    'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.',
+    'Tài khoản hiện tại không có quyền xem dữ liệu mượn sách này.',
   );
   assert.equal(
     getBorrowingErrorMessage({}, 'Fallback'),
-    'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.',
+    'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.',
   );
 });
 

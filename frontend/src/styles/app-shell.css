@@ -280,29 +280,31 @@
 .field-hint { color: var(--lib-ink-2); font-size: 12px; }
 
 /* ---- Modal --------------------------------------------------------------- */
-.modal-backdrop {
+.lib-modal-backdrop {
   position: fixed; inset: 0; background: rgba(42, 33, 24, 0.45);
   display: grid; place-items: center; z-index: 50; padding: 20px;
 }
-.modal {
+.lib-modal {
   background: var(--lib-surface); border-radius: var(--lib-radius);
   width: min(560px, 100%); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px -15px rgba(0,0,0,.35);
 }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--lib-line); }
-.modal-title { font-family: var(--lib-heading); font-size: 19px; margin: 0; }
-.modal-body { padding: 22px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--lib-line); }
+.lib-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--lib-line); }
+.lib-modal-title { font-family: var(--lib-heading); font-size: 19px; margin: 0; }
+.lib-modal-body { padding: 22px; }
+.lib-modal-actions, .modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--lib-line); }
 .icon-btn { width: 34px; height: 34px; border-radius: 9px; border: 0; background: none; color: var(--lib-ink-2); display: grid; place-items: center; cursor: pointer; }
 .icon-btn:hover { background: var(--lib-cream-2); }
 
 /* ---- Detail panel (split layouts) --------------------------------------- */
 .split { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
+.split > * { min-width: 0; }
+.borrow-request-split { grid-template-columns: 1.15fr .85fr; }
 .panel { background: var(--lib-surface); border: 1px solid var(--lib-line); border-radius: var(--lib-radius); box-shadow: var(--lib-shadow); padding: 20px; }
 .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 
 /* ---- Pagination ---------------------------------------------------------- */
-.pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
-.page-controls { display: flex; gap: 6px; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+.page-controls { display: flex; gap: 6px; flex-wrap: wrap; }
 .page-btn {
   min-width: 34px; height: 34px; padding: 0 9px; border-radius: 9px;
   border: 1px solid var(--lib-line); background: #fff; color: var(--lib-ink); cursor: pointer; font-size: 13px;
