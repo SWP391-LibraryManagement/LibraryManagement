@@ -30,11 +30,11 @@
 - Consumes: existing Jest `collectCoverageFrom` configuration.
 - Produces: exact baseline percentages and a ranked list of uncovered files/branches.
 
-- [ ] Run `npm.cmd --prefix backend run test:coverage -- --coverageReporters=json-summary --coverageReporters=text`.
-- [ ] Record suite/test counts and all four global coverage metrics.
-- [ ] Rank files below 80 percent, prioritizing services and validators over route wiring.
-- [ ] Map each selected gap to the current feature SPEC/TEST_PLAN requirement.
-- [ ] Commit with `docs: record week 11 coverage baseline`.
+- [x] Run `npm.cmd --prefix backend run test:coverage -- --coverageReporters=json-summary --coverageReporters=text`.
+- [x] Record suite/test counts and all four global coverage metrics.
+- [x] Rank files below 80 percent, prioritizing services and validators over route wiring.
+- [x] Map each selected gap to the current feature SPEC/TEST_PLAN requirement.
+- [x] Commit with `docs: record week 11 coverage baseline`.
 
 ### Task 2: Close Meaningful Coverage Gaps
 
@@ -47,12 +47,12 @@
 - Consumes: Task 1 gap matrix.
 - Produces: tests for uncovered business, validation, authorization, and safe-error branches.
 
-- [ ] Add one failing test per selected uncovered behavior.
-- [ ] Run each focused test and confirm the expected red result.
-- [ ] Add only test/helper changes needed to exercise existing production behavior.
-- [ ] Re-run focused tests until green.
-- [ ] Re-run coverage and repeat until all configured metrics reach at least 80 percent or a documented exception is approved.
-- [ ] Commit in small feature-focused test commits.
+- [x] Add one failing test per selected uncovered behavior.
+- [x] Run each focused test and confirm the expected red result.
+- [x] Add only test/helper changes needed to exercise existing production behavior.
+- [x] Re-run focused tests until green.
+- [x] Re-run coverage and repeat until all configured metrics reach at least 80 percent or a documented exception is approved.
+- [x] Commit in small feature-focused test commits.
 
 ### Task 3: Enforce Coverage In CI
 
@@ -66,11 +66,11 @@
 - Consumes: green >=80 percent baseline from Task 2.
 - Produces: `test:coverage:ci` and a CI blocking step.
 
-- [ ] Add Jest `coverageThreshold.global` values of 80 for branches, functions, lines, and statements.
-- [ ] Add `test:coverage:ci` using `--coverage --coverageReporters=text-summary`.
-- [ ] Add a CI step after backend tests.
-- [ ] Mark the Week 11 milestone complete only after the command exits 0.
-- [ ] Commit with `test: enforce backend coverage threshold`.
+- [x] Add Jest `coverageThreshold.global` values of 80 for branches, functions, lines, and statements.
+- [x] Add `test:coverage:ci` using `--coverage --coverageReporters=text-summary`.
+- [x] Add a CI step after backend tests.
+- [x] Mark the Week 11 milestone complete only after the command exits 0.
+- [x] Commit with `test: enforce backend coverage threshold`.
 
 ### Task 4: Add Hybrid Playwright Golden Path
 
@@ -89,13 +89,13 @@
 - Vite listens on `127.0.0.1:4173` with `VITE_API_BASE_URL=http://127.0.0.1:3100/api`.
 - Playwright consumes runtime-generated actor credentials and safe IDs from `/__e2e__` controls.
 
-- [ ] Add `@playwright/test` as a root dev dependency and install Chromium.
-- [ ] Write the Playwright test first and confirm it fails because the test server/config is absent.
-- [ ] Add the test-only server with runtime actor seeding, overdue fixture control, and FE09 state synchronization.
-- [ ] Implement the browser/API journey: member login -> borrow -> librarian login -> approve -> overdue return -> FE09 calculate/paid -> FE12 report.
-- [ ] Capture trace and screenshot on failure; verify desktop and mobile report rendering without overlap.
-- [ ] Add `test:e2e` and a CI Chromium install/run step.
-- [ ] Commit with `test: add system browser golden path`.
+- [x] Add `@playwright/test` as a root dev dependency and install Chromium.
+- [x] Write the Playwright test first and confirm it fails because the test server/config is absent.
+- [x] Add the test-only server with runtime actor seeding, overdue fixture control, and FE09 state synchronization.
+- [x] Implement the browser/API journey: member login -> borrow -> librarian login -> approve -> overdue return -> FE09 calculate/paid -> FE12 report.
+- [x] Capture trace and screenshot on failure; verify desktop and mobile report rendering without overlap.
+- [x] Add `test:e2e` and a CI Chromium install/run step.
+- [x] Commit with `test: add system browser golden path`.
 
 ### Task 5: Complete Week 12 Security Audit
 
@@ -108,13 +108,13 @@
 - Consumes: npm lockfiles, protected route definitions, validators, safe error middleware, tracked source.
 - Produces: dependency counts, RBAC/validation inventory, secret scan result, findings and accepted risk table.
 
-- [ ] Run production audits for root, backend, and frontend using JSON output.
-- [ ] Trace every Critical/High finding to its direct dependency and runtime reachability.
-- [ ] Apply the smallest non-breaking dependency fix where required and re-run tests.
-- [ ] Scan tracked files for common credential/private-key patterns without printing `.env` values.
-- [ ] Verify protected routes use authentication/role middleware and input validators.
-- [ ] Verify 5xx responses and notification payloads do not expose stacks/secrets.
-- [ ] Record Medium/Low accepted risks with owner and follow-up; commit with `docs: record week 12 security audit`.
+- [x] Run production audits for root, backend, and frontend using JSON output.
+- [x] Trace every Critical/High finding to its direct dependency and runtime reachability.
+- [x] Apply the smallest non-breaking dependency fix where required and re-run tests.
+- [x] Scan tracked files for common credential/private-key patterns without printing `.env` values.
+- [x] Verify protected routes use authentication/role middleware and input validators.
+- [x] Verify 5xx responses and notification payloads do not expose stacks/secrets.
+- [x] Record Medium/Low accepted risks with owner and follow-up; commit with `docs: record week 12 security audit`.
 
 ### Task 6: Final Quality Gate And Review Handoff
 
@@ -125,11 +125,11 @@
 - Consumes: all commands and evidence from Tasks 1-5.
 - Produces: a clean reviewable branch.
 
-- [ ] Run `npm.cmd --prefix backend test`.
-- [ ] Run `npm.cmd --prefix backend run test:coverage:ci`.
-- [ ] Run the mutation-gated SQL system test against the explicit local environment.
-- [ ] Run `npm.cmd --prefix frontend test`, lint, and build.
-- [ ] Run `npm.cmd run test:e2e`.
-- [ ] Run `npm.cmd run trace:enforce` and `git diff --check`.
-- [ ] Confirm generated artifacts and local secrets are untracked/ignored.
-- [ ] Commit final evidence updates and present merge/push/keep/discard options.
+- [x] Run `npm.cmd --prefix backend test`.
+- [x] Run `npm.cmd --prefix backend run test:coverage:ci`.
+- [x] Run the mutation-gated SQL system test against the explicit local environment.
+- [x] Run `npm.cmd --prefix frontend test`, lint, and build.
+- [x] Run `npm.cmd run test:e2e`.
+- [x] Run `npm.cmd run trace:enforce` and `git diff --check`.
+- [x] Confirm generated artifacts and local secrets are untracked/ignored.
+- [x] Commit final evidence updates and present merge/push/keep/discard options.

@@ -85,10 +85,10 @@ frontend PR must at minimum pass lint/build and include manual UI verification n
 
 ### 1.3 Current Coverage Status (2026-07-14)
 
-- Backend Jest tests: `npm --prefix backend test` -> **301 tests / 23 suites passing**.
+- Backend Jest tests: `npm --prefix backend test` -> **307 tests / 24 suites passing**.
 - Completed-module coverage: statements **93.02%**, branches **83.22%**, functions **96.37%**, lines **92.94%**.
 - Jest enforces a global 80 percent threshold for all four metrics through `npm --prefix backend run test:coverage:ci` and CI.
-- Frontend: `npm --prefix frontend run lint` and `npm --prefix frontend run build`.
+- Frontend: **38 tests passing**; `npm --prefix frontend run lint` and `npm --prefix frontend run build` pass.
 - Traceability gate: `npm run trace:enforce` (min 70% FR `@spec` coverage for implemented features) —
   **enforced in CI** (`.github/workflows/ci.yml`). Six implemented features are at 100%.
 - SQL Server shared-state integration is available through the mutation-gated local `test:sql:system` suite.

@@ -43,7 +43,7 @@ npm.cmd run test:e2e
 Observed results:
 
 - Frontend: 38 tests passed.
-- Playwright Chromium: 1 test passed in 17.5 seconds.
+- Playwright Chromium: 1 test passed in 17.6 seconds during the final quality gate.
 - Desktop viewport: report rendered the completed request/detail state with no incoherent overlap.
 - Mobile viewport `390x844`: no horizontal overflow; filters and KPI cards remained readable.
 - Browser console after the MUI fix: no React `InputProps` error. SMTP-not-configured and `NO_COLOR` messages remained test-environment advisories.

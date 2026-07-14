@@ -70,6 +70,12 @@ npm.cmd --prefix backend run test:coverage:ci
 
 Observed result after enabling the threshold: 23 suites passed, 301 tests passed, and all four coverage metrics remained above 80 percent. The command exited 0.
 
+## Final Sprint Revalidation
+
+After the Week 12 security regression suite was added, the final quality gate passed 24 suites and
+307 tests. The configured coverage scope remained unchanged and repeated the same passing result:
+statements 93.02%, branches 83.22%, functions 96.37%, and lines 92.94%.
+
 ## Generated Artifacts
 
 `backend/coverage/` is generated locally and is ignored by the repository.
