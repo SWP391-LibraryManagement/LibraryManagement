@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import AppLayout from '../component/layout/AppLayout';
+import { StatusNotice } from '../component/shared/Feedback';
 import BookManagement from './BookManagement';
 import {
   DAILY_FINE_RATE,
@@ -15,20 +16,18 @@ import {
   BookOpen,
   Calculator,
   Check,
-  ChevronRight,
   ClipboardCheck,
   CreditCard,
   FileText,
   Filter,
-  Home,
   ListChecks,
-  LogOut,
   Plus,
   ReceiptText,
   Search,
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
+import '../styles/fine-management.css';
 
 const BANK_TRANSFER_METHOD = 'Chuyển khoản';
 
@@ -367,7 +366,6 @@ function getNextFineId(records) {
 }
 
 export default function FineManagement() {
-  const navigate = useNavigate();
   const staffUser = getStoredStaffUser();
   const [workspace, setWorkspace] = useState('fines');
   const [activeSection, setActiveSection] = useState('list');
@@ -766,97 +764,47 @@ export default function FineManagement() {
     showToast('Đã đánh dấu phiếu phạt là đã thanh toán.');
   }
 
-  function handleLogout() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('authUser');
-    sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('authUser');
-    navigate('/login');
-  }
-
   return (
-    <div className="fine-shell">
-      <aside className="fine-sidebar">
-        <div className="fine-brand">
-          <div className="fine-brand-mark"><BookOpen size={22} /></div>
-          <div>
-            <strong>Library LMS</strong>
-            <span>Bảng điều khiển thủ thư</span>
-          </div>
-        </div>
+    <AppLayout
+      active="fine-management"
+      title={workspace === 'books' ? 'Quản lý sách' : activeMeta.label}
+      subtitle={workspace === 'books' ? 'Theo dõi thông tin đầu sách hiện có.' : activeMeta.description}
+    >
+      <StatusNotice type="warning" title="Dữ liệu trình diễn">
+        Giao diện tiền phạt vẫn dùng dữ liệu mẫu và localStorage cho đến khi FE09-T012 được triển khai.
+      </StatusNotice>
 
-        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
-          <button onClick={() => navigate('/home')}>
-            <Home size={18} />Home
-          </button>
-          <span>Quản lý thư viện</span>
-          <button
-            className={workspace === 'books' ? 'active' : ''}
-            onClick={() => setWorkspace('books')}
-          >
-            <BookOpen size={18} />Book Management
-          </button>
-        </nav>
+      <div className="tabs" aria-label="Không gian nghiệp vụ">
+        <button type="button" className={`tab${workspace === 'books' ? ' active' : ''}`} onClick={() => setWorkspace('books')}>
+          <BookOpen size={14} /> Quản lý sách
+        </button>
+        <button type="button" className={`tab${workspace === 'fines' ? ' active' : ''}`} onClick={() => setWorkspace('fines')}>
+          <ReceiptText size={14} /> Quản lý tiền phạt
+        </button>
+      </div>
 
-        <nav className="fine-workflow-nav" aria-label="Nghiệp vụ tiền phạt">
-          <span>Nghiệp vụ tiền phạt</span>
-          {fineSections.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                className={workspace === 'fines' && activeSection === item.key ? 'active' : ''}
-                onClick={() => {
-                  setWorkspace('fines');
-                  setActiveSection(item.key);
-                }}
-              >
-                <Icon size={18} />
-                <span>{item.label}</span>
-                <ChevronRight size={15} />
-              </button>
-            );
-          })}
-        </nav>
+      <div className="tabs" aria-label="Nghiệp vụ tiền phạt" hidden={workspace !== 'fines'}>
+        {fineSections.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button type="button" key={item.key} className={`tab${activeSection === item.key ? ' active' : ''}`} onClick={() => setActiveSection(item.key)}>
+              <Icon size={14} /> {item.label}
+            </button>
+          );
+        })}
+      </div>
 
-        <nav className="fine-app-nav" aria-label="Điều hướng thủ thư">
-          <span>Quản lý thư viện</span>
-          <button
-            className={workspace === 'books' ? 'active' : ''}
-            onClick={() => setWorkspace('books')}
-          >
-            <BookOpen size={18} />Book Management
-          </button>
-        </nav>
-
-        <div className="fine-session">
-          <span>Đang đăng nhập với</span>
-          <strong>{staffUser?.email || 'librarian.demo@library.test'}</strong>
-          <button onClick={handleLogout}><LogOut size={17} />Đăng xuất</button>
-        </div>
-      </aside>
-
-      <main className="fine-main">
         {workspace === 'books' ? (
           <BookManagement />
         ) : (
           <>
-        <header className="fine-header">
-          <div>
-            <p>FE09 Quản lý tiền phạt</p>
-            <h1>{activeMeta.label}</h1>
-            <span>{activeMeta.description}</span>
-          </div>
-          <div className="fine-policy">
+        <div className="fine-policy" style={{ marginBottom: 18 }}>
             <ShieldCheck size={20} />
             <div>
               <strong>Chính sách giai đoạn 1</strong>
               <span>Chỉ xử lý phạt quá hạn. Bản chính thức phải tính tiền phạt và phân quyền ở máy chủ.</span>
             </div>
-          </div>
-        </header>
+        </div>
 
         <section className="fine-stats">
           {stats.map((item) => {
@@ -1227,131 +1175,8 @@ export default function FineManagement() {
         )}
           </>
         )}
-      </main>
-
       {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
-
-      <style>{`
-        .fine-shell { min-height: 100vh; background: #f6f7fb; color: #17202a; display: flex; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .fine-sidebar { width: 284px; background: #17202a; color: #edf2f7; padding: 22px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; }
-        .fine-brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px; }
-        .fine-brand-mark { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; background: #0f766e; color: #fff; }
-        .fine-brand strong, .fine-brand span { display: block; }
-        .fine-brand strong { font-size: 17px; }
-        .fine-brand span { color: #94a3b8; font-size: 12px; margin-top: 3px; }
-        .fine-workflow-nav, .fine-app-nav, .fine-session { display: flex; flex-direction: column; gap: 8px; }
-        .fine-workflow-nav > span, .fine-app-nav > span { color: #94a3b8; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px 2px; }
-        .fine-workflow-nav button, .fine-app-nav button, .fine-session button { min-height: 44px; border-radius: 8px; border: 0; background: transparent; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-size: 14px; text-align: left; }
-        .fine-workflow-nav button span { flex: 1; }
-        .fine-workflow-nav button:hover, .fine-app-nav button:hover, .fine-session button:hover, .fine-workflow-nav button.active, .fine-app-nav button.active { background: #243244; color: #fff; }
-        .fine-workflow-nav button.active, .fine-app-nav button.active { box-shadow: inset 3px 0 0 #2dd4bf; }
-        .fine-app-nav button:first-of-type { margin-bottom: 10px; }
-        .fine-app-nav button:first-of-type + span { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .fine-workflow-nav { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .fine-session { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .fine-session span { color: #94a3b8; font-size: 12px; }
-        .fine-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
-        .fine-main { flex: 1; padding: 28px; min-width: 0; }
-        .fine-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
-        .fine-header p, .fine-panel-head p { color: #0f766e; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
-        .fine-header h1, .fine-panel-head h2, .fine-guide-panel h2 { margin: 0; color: #111827; letter-spacing: 0; }
-        .fine-header h1 { font-size: 32px; line-height: 1.1; }
-        .fine-header span { color: #64748b; font-size: 14px; line-height: 1.55; }
-        .fine-policy { max-width: 420px; display: flex; gap: 12px; padding: 14px 16px; border: 1px solid #ccfbf1; border-radius: 8px; background: #f0fdfa; color: #0f766e; }
-        .fine-policy strong, .fine-policy span { display: block; }
-        .fine-policy span { color: #475569; font-size: 13px; margin-top: 3px; }
-        .fine-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
-        .fine-stat, .fine-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 30px rgba(15, 23, 42, .05); }
-        .fine-stat { padding: 18px; display: grid; gap: 8px; }
-        .fine-stat div { width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; }
-        .fine-stat span { color: #64748b; font-size: 13px; }
-        .fine-stat strong { color: #111827; font-size: 22px; }
-        .fine-stat.danger div { background: #fee2e2; color: #b91c1c; }
-        .fine-stat.warning div { background: #fef3c7; color: #b45309; }
-        .fine-stat.success div { background: #dcfce7; color: #15803d; }
-        .fine-stat.neutral div { background: #e0f2fe; color: #0369a1; }
-        .fine-grid, .fine-section-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
-        .fine-panel { padding: 18px; }
-        .fine-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
-        .fine-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 12px; margin-bottom: 14px; }
-        .fine-search, .fine-select { min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; gap: 9px; padding: 0 12px; color: #64748b; background: #fff; }
-        .fine-search input, .fine-select select, .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { width: 100%; border: 0; outline: 0; color: #111827; background: transparent; font: inherit; }
-        .fine-table-wrap { overflow-x: auto; }
-        .fine-crud-form { border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; padding: 14px; margin-bottom: 14px; display: grid; gap: 12px; }
-        .fine-crud-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .fine-crud-head strong { color: #111827; font-size: 15px; }
-        .fine-crud-head div { display: flex; gap: 8px; }
-        .fine-crud-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-        .fine-crud-grid label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; }
-        .fine-crud-grid input, .fine-crud-grid select { min-height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; font: inherit; color: #111827; background: #fff; }
-        .fine-crud-grid label span { color: #b91c1c; font-size: 11px; }
-        .fine-light-button, .fine-danger-button, .fine-save-button { min-height: 36px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-weight: 800; padding: 0 11px; }
-        .fine-danger-button { border-color: #fecaca; color: #b91c1c; background: #fff5f5; }
-        .fine-save-button { justify-self: start; background: #0f766e; border-color: #0f766e; color: #fff; }
-        .fine-light-button:disabled, .fine-danger-button:disabled, .fine-save-button:disabled { opacity: .6; cursor: not-allowed; }
-        .fine-table { width: 100%; border-collapse: collapse; min-width: 780px; }
-        .fine-table th { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 11px 10px; border-bottom: 1px solid #e2e8f0; }
-        .fine-table td { padding: 13px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: 14px; }
-        .fine-table tr { cursor: pointer; }
-        .fine-table tr:hover, .fine-table tr.selected { background: #f8fafc; }
-        .fine-table td strong, .fine-table td span { display: block; }
-        .fine-table td span { color: #64748b; font-size: 12px; margin-top: 3px; }
-        .fine-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
-        .status-unpaid { background: #fee2e2; color: #b91c1c; }
-        .status-paid { background: #dcfce7; color: #15803d; }
-        .status-waived { background: #e0e7ff; color: #3730a3; }
-        .fine-detail-panel { position: sticky; top: 20px; }
-        .fine-detail-card { display: grid; gap: 12px; margin-bottom: 16px; }
-        .fine-detail-card > div { border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; }
-        .fine-detail-card span, .fine-details dt, .fine-paid-preview span, .fine-preview-grid span { color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
-        .fine-detail-card strong { display: block; margin-top: 5px; color: #111827; font-size: 18px; }
-        .fine-detail-card small { color: #64748b; display: block; margin-top: 4px; }
-        .fine-details { display: grid; gap: 10px; margin: 0; }
-        .fine-details div { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 9px; }
-        .fine-details dd { margin: 0; color: #111827; text-align: right; }
-        .fine-form-panel { display: flex; flex-direction: column; gap: 15px; }
-        .fine-form-panel label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 800; }
-        .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 11px 12px; resize: vertical; min-height: 42px; }
-        .fine-form-panel textarea { min-height: 90px; }
-        .fine-form-panel button { min-height: 44px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .fine-form-panel button:hover { background: #115e59; }
-        .fine-form-panel button:disabled { background: #cbd5e1; cursor: not-allowed; }
-        .fine-note { border-radius: 8px; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
-        .fine-transfer-card { display: grid; gap: 14px; padding: 14px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff; }
-        .fine-transfer-head { display: flex; align-items: flex-start; gap: 10px; color: #1d4ed8; }
-        .fine-transfer-head strong, .fine-transfer-head span { display: block; }
-        .fine-transfer-head span { color: #475569; font-size: 13px; margin-top: 3px; line-height: 1.45; }
-        .fine-transfer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-        .fine-transfer-grid div, .fine-copy-line { background: #fff; border: 1px solid #dbeafe; border-radius: 8px; padding: 11px 12px; }
-        .fine-transfer-grid span, .fine-copy-line span { display: block; color: #64748b; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-        .fine-transfer-grid strong, .fine-copy-line strong { color: #111827; overflow-wrap: anywhere; }
-        .fine-copy-line strong { color: #1d4ed8; font-size: 16px; }
-        .fine-preview-grid, .fine-paid-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .fine-preview-grid div, .fine-paid-preview { padding: 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
-        .fine-preview-grid strong, .fine-paid-preview strong { display: block; margin-top: 5px; color: #111827; }
-        .fine-paid-preview { grid-template-columns: 1fr auto; }
-        .fine-paid-preview strong { text-align: right; margin-top: 0; }
-        .fine-guide-panel h2 { font-size: 20px; margin-bottom: 14px; }
-        .fine-guide-panel ol { margin: 0; padding-left: 20px; color: #475569; line-height: 1.7; }
-        .fine-empty { min-height: 120px; display: grid; place-items: center; gap: 8px; color: #64748b; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 18px; }
-        .fine-toast { position: fixed; right: 24px; bottom: 24px; border: 0; border-radius: 8px; padding: 13px 16px; color: #fff; background: #0f766e; display: flex; align-items: center; gap: 10px; box-shadow: 0 18px 40px rgba(15, 23, 42, .18); cursor: pointer; z-index: 50; }
-        .fine-toast.error { background: #b91c1c; }
-        @media (max-width: 1180px) {
-          .fine-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .fine-grid, .fine-section-layout { grid-template-columns: 1fr; }
-          .fine-detail-panel { position: static; }
-        }
-        @media (max-width: 820px) {
-          .fine-shell { flex-direction: column; }
-          .fine-sidebar { width: 100%; height: auto; position: static; }
-          .fine-workflow-nav, .fine-app-nav, .fine-session { flex-direction: row; flex-wrap: wrap; }
-          .fine-workflow-nav > span, .fine-app-nav > span { width: 100%; }
-          .fine-main { padding: 18px; }
-          .fine-header { flex-direction: column; }
-          .fine-stats, .fine-toolbar, .fine-preview-grid, .fine-transfer-grid, .fine-crud-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
-    </div>
+    </AppLayout>
   );
 }
 
