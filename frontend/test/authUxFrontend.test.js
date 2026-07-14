@@ -76,3 +76,32 @@ test('registration fields use current MUI slots and accessible password controls
   assert.match(input, /slotProps/);
   assert.match(password, /aria-label=\{showPassword \? 'Ẩn mật khẩu' : 'Hiện mật khẩu'\}/);
 });
+
+test('login routes every authenticated role through the role-aware home route', async () => {
+  const source = await readFile(new URL('../src/page/LoginPage.jsx', import.meta.url), 'utf8');
+  const form = await readFile(new URL('../src/component/login/LoginForm.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /navigate\('\/home'\)/);
+  assert.doesNotMatch(source, /navigate\('\/admin\/users'\)/);
+  assert.doesNotMatch(source, /navigate\('\/librarian\/fines'\)/);
+  assert.doesNotMatch(source, /navigate\('\/borrowing\/history'\)/);
+  assert.match(form, /autoComplete: 'email'/);
+  assert.match(form, /autoComplete: 'current-password'/);
+  assert.match(form, /aria-label=\{showPassword \? 'Ẩn mật khẩu' : 'Hiện mật khẩu'\}/);
+});
+
+test('password recovery masks email and exposes accessible OTP resend states', async () => {
+  const source = await readFile(new URL('../src/component/forgotpassword/ForgotPasswordForm.jsx', import.meta.url), 'utf8');
+  const input = await readFile(new URL('../src/component/forgotpassword/FormInput.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /maskEmail/);
+  assert.match(source, /RESEND_COOLDOWN_SECONDS/);
+  assert.match(source, /autoComplete: 'one-time-code'/);
+  assert.match(source, /inputMode: 'numeric'/);
+  assert.match(source, /Gửi lại mã/);
+  assert.match(source, /Quay lại đăng nhập/);
+  assert.doesNotMatch(source, /window\.location\.href/);
+  assert.match(input, /inputRef=\{inputRef\}/);
+  assert.match(input, /htmlInput: inputProps/);
+  assert.match(input, /disabled=\{disabled\}/);
+});

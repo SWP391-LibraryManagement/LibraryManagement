@@ -1,93 +1,150 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
-import EmailIcon from '@mui/icons-material/Email';
-import LockResetIcon from '@mui/icons-material/LockReset';
-import LockIcon from '@mui/icons-material/Lock';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import FormInput from './FormInput';
-import AuthCard from './AuthCard';
-import '../../styles/forgot-password.css';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import LockResetIcon from '@mui/icons-material/LockReset';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+
 import { forgotPassword, resetPassword } from '../../api/authApi';
+import {
+  RESEND_COOLDOWN_SECONDS,
+  getPasswordRequirements,
+  maskEmail,
+  normalizeOtp,
+} from '../../utils/authUx';
+import '../../styles/forgot-password.css';
+import AuthCard from './AuthCard';
+import FormInput from './FormInput';
 
-const STEP_EMAIL = "email";
-const STEP_OTP = "otp";
-const STEP_DONE = "done";
+const STEP_EMAIL = 'email';
+const STEP_OTP = 'otp';
+const STEP_DONE = 'done';
 
-const ForgotPasswordForm = () => {
+const GENERIC_REQUEST_MESSAGE =
+  'Nếu email khớp với một tài khoản hợp lệ, hệ thống sẽ gửi mã OTP để đặt lại mật khẩu.';
+const GENERIC_REQUEST_ERROR =
+  'Không thể gửi yêu cầu lúc này. Vui lòng thử lại sau.';
+const PASSWORD_REQUIREMENT_LABELS = {
+  minLength: 'Ít nhất 8 ký tự',
+  uppercase: 'Có chữ hoa',
+  lowercase: 'Có chữ thường',
+  number: 'Có chữ số',
+  special: 'Có ký tự đặc biệt',
+};
+
+export default function ForgotPasswordForm() {
+  const navigate = useNavigate();
+  const otpInputRef = useRef(null);
   const [step, setStep] = useState(STEP_EMAIL);
-  
-  // Step 1 state
   const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  
-  // Step 2 state
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otpError, setOtpError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-
+  const [fieldErrors, setFieldErrors] = useState({});
   const [feedback, setFeedback] = useState(null);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+  useEffect(() => {
+    if (step !== STEP_OTP) return undefined;
+    const timer = window.setTimeout(() => otpInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [step]);
+
+  useEffect(() => {
+    if (resendCooldown === 0) return undefined;
+    const timer = window.setTimeout(() => {
+      setResendCooldown((current) => Math.max(current - 1, 0));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const passwordRequirements = getPasswordRequirements(newPassword);
+  const maskedEmail = maskEmail(email);
+
+  const clearFieldError = (field) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
   };
 
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    setFeedback(null);
+  const handleSendOtp = async (event) => {
+    event.preventDefault();
+    const normalizedEmail = email.trim();
 
-    if (!email || !validateEmail(email)) {
-      setEmailError(true);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setFieldErrors({ email: 'Vui lòng nhập địa chỉ email hợp lệ.' });
       return;
     }
 
-    setEmailError(false);
+    setEmail(normalizedEmail);
+    setFieldErrors({});
+    setFeedback(null);
     setIsSendingOtp(true);
 
     try {
-      await forgotPassword(email);
+      await forgotPassword(normalizedEmail);
       setStep(STEP_OTP);
-      setFeedback({ severity: 'success', message: 'Mã OTP đã được gửi đến email của bạn.' });
-    } catch (error) {
-      setFeedback({ severity: 'error', message: error.message });
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setFeedback({ severity: 'success', message: GENERIC_REQUEST_MESSAGE });
+    } catch {
+      setFeedback({ severity: 'error', message: GENERIC_REQUEST_ERROR });
     } finally {
       setIsSendingOtp(false);
     }
   };
 
-  const handleConfirmOtp = async (e) => {
-    e.preventDefault();
+  const handleResendOtp = async () => {
+    if (isResending || resendCooldown > 0) return;
+
     setFeedback(null);
-    let hasError = false;
+    setIsResending(true);
+    try {
+      await forgotPassword(email);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setFeedback({ severity: 'success', message: GENERIC_REQUEST_MESSAGE });
+    } catch {
+      setFeedback({ severity: 'error', message: GENERIC_REQUEST_ERROR });
+    } finally {
+      setIsResending(false);
+    }
+  };
 
-    if (!otp || otp.length !== 6) {
-      setOtpError(true);
-      hasError = true;
-    } else {
-      setOtpError(false);
+  const handleConfirmOtp = async (event) => {
+    event.preventDefault();
+    const nextErrors = {};
+
+    if (otp.length !== 6) {
+      nextErrors.otp = 'Vui lòng nhập đúng mã OTP gồm 6 chữ số.';
+    }
+    if (Object.values(passwordRequirements).some((met) => !met)) {
+      nextErrors.newPassword = 'Mật khẩu chưa đáp ứng đủ yêu cầu.';
+    }
+    if (confirmPassword !== newPassword) {
+      nextErrors.confirmPassword = 'Xác nhận mật khẩu không khớp.';
     }
 
-    if (!newPassword || newPassword.length < 8 || newPassword !== confirmPassword) {
-      setPasswordError(true);
-      hasError = true;
-    } else {
-      setPasswordError(false);
-    }
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
-    if (hasError) return;
-
+    setFeedback(null);
     setIsConfirming(true);
-
     try {
       await resetPassword({ email, otp, newPassword });
+      setOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setFieldErrors({});
       setStep(STEP_DONE);
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
@@ -99,136 +156,74 @@ const ForgotPasswordForm = () => {
   if (step === STEP_DONE) {
     return (
       <AuthCard>
-        <Box className="success-state fade-in">
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <CheckCircleIcon
-              sx={{
-                fontSize: 80,
-                color: '#4CAF50',
-                mb: 2,
-                animation: 'slideUp 0.5s ease-out',
-              }}
-            />
-          </Box>
-
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              textAlign: 'center',
-              color: '#4E342E',
-              fontWeight: 600,
-              mb: 2,
-            }}
-          >
-            Đổi Mật Khẩu Thành Công
+        <Box className="recovery-success" role="status">
+          <CheckCircleIcon className="recovery-success-icon" aria-hidden="true" />
+          <Typography variant="h4" component="h1">
+            Đổi mật khẩu thành công
           </Typography>
-
-          <Typography
-            variant="body1"
-            sx={{
-              textAlign: 'center',
-              color: '#7A7A7A',
-              mb: 4,
-              lineHeight: 1.6,
-            }}
-          >
-            Mật khẩu của bạn đã được thay đổi thành công. Bây giờ bạn có thể sử dụng mật khẩu mới để đăng nhập.
+          <Typography>
+            Bạn có thể đăng nhập bằng mật khẩu mới vừa tạo.
           </Typography>
-
           <Button
+            type="button"
             variant="contained"
             fullWidth
-            onClick={() => (window.location.href = '/login')}
-            sx={{
-              background: 'linear-gradient(135deg, #4CAF50, #66BB6A)',
-              color: '#fff',
-              padding: '14px',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #45a049, #5cb860)',
-                boxShadow: '0 6px 20px rgba(76, 175, 80, 0.4)',
-                transform: 'translateY(-2px)',
-              },
-            }}
+            className="reset-button recovery-success-button"
+            onClick={() => navigate('/login')}
           >
-            Quay lại Đăng nhập
+            Quay lại đăng nhập
           </Button>
         </Box>
       </AuthCard>
     );
   }
 
+  const resendDisabled = isResending || isConfirming || resendCooldown > 0;
+
   return (
     <AuthCard>
-      <Box className="fade-in">
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <LockResetIcon
-            sx={{
-              fontSize: 64,
-              color: '#8B6B4A',
-              mb: 2,
-            }}
-          />
+      <Box className="recovery-card-content">
+        <Box className="recovery-header">
+          <LockResetIcon className="recovery-header-icon" aria-hidden="true" />
+          <Typography variant="h4" component="h1">
+            {step === STEP_EMAIL ? 'Quên mật khẩu?' : 'Đặt lại mật khẩu'}
+          </Typography>
+          <Typography variant="body2">
+            {step === STEP_EMAIL
+              ? 'Nhập email đã đăng ký để nhận mã OTP đặt lại mật khẩu.'
+              : <>Mã OTP gồm 6 chữ số đã được yêu cầu gửi tới <strong>{maskedEmail}</strong>.</>}
+          </Typography>
         </Box>
 
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            textAlign: 'center',
-            color: '#4E342E',
-            fontWeight: 600,
-            mb: 1,
-          }}
-        >
-          {step === STEP_EMAIL ? 'Quên Mật Khẩu?' : 'Khôi phục Mật Khẩu'}
-        </Typography>
-
-        <Typography
-          variant="body2"
-          sx={{
-            textAlign: 'center',
-            color: '#7A7A7A',
-            mb: 4,
-            lineHeight: 1.6,
-          }}
-        >
-          {step === STEP_EMAIL 
-            ? "Nhập địa chỉ email của bạn và chúng tôi sẽ gửi mã OTP để khôi phục mật khẩu."
-            : `Nhập mã OTP 6 chữ số được gửi tới ${email} cùng mật khẩu mới của bạn.`}
-        </Typography>
+        <div className="recovery-stepper" aria-label="Tiến trình đặt lại mật khẩu">
+          <span className={step === STEP_EMAIL ? 'active' : 'complete'}>1. Xác nhận email</span>
+          <span className={step === STEP_OTP ? 'active' : ''}>2. Tạo mật khẩu mới</span>
+        </div>
 
         {feedback?.message && (
-          <Alert severity={feedback.severity || 'info'} sx={{ mb: 3 }}>
+          <Alert severity={feedback.severity || 'info'} className="recovery-feedback">
             {feedback.message}
           </Alert>
         )}
 
-        {step === STEP_EMAIL && (
-          <Box component="form" onSubmit={handleSendOtp} noValidate>
-            <Box sx={{ mb: 3 }}>
-              <FormInput
-                label="Địa chỉ Email"
-                type="email"
-                placeholder="Nhập địa chỉ email của bạn"
-                icon={EmailIcon}
-                required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setEmailError(false);
-                }}
-                error={emailError}
-                helperText={emailError ? "Vui lòng nhập địa chỉ email hợp lệ" : ""}
-                disabled={isSendingOtp}
-              />
-            </Box>
+        {step === STEP_EMAIL ? (
+          <Box component="form" className="recovery-form" onSubmit={handleSendOtp} noValidate>
+            <FormInput
+              label="Địa chỉ email"
+              type="email"
+              placeholder="tenban@example.com"
+              icon={EmailIcon}
+              required
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearFieldError('email');
+              }}
+              error={Boolean(fieldErrors.email)}
+              helperText={fieldErrors.email}
+              disabled={isSendingOtp}
+              inputProps={{ autoComplete: 'email' }}
+            />
 
             <Button
               type="submit"
@@ -236,151 +231,125 @@ const ForgotPasswordForm = () => {
               fullWidth
               className="reset-button"
               disabled={isSendingOtp}
-              sx={{
-                background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
-                color: '#fff',
-                padding: '14px',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                boxShadow: '0 4px 12px rgba(139, 107, 74, 0.3)',
-                transition: 'all 0.3s ease',
-                mb: 3,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #6d5239, #a86f30)',
-                  boxShadow: '0 6px 20px rgba(139, 107, 74, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
-              }}
             >
-              {isSendingOtp ? 'Đang gửi OTP...' : 'Gửi mã OTP'}
+              {isSendingOtp ? 'Đang gửi mã...' : 'Gửi mã OTP'}
+            </Button>
+
+            <Button type="button" variant="text" onClick={() => navigate('/login')}>
+              Quay lại đăng nhập
             </Button>
           </Box>
-        )}
+        ) : (
+          <Box component="form" className="recovery-form" onSubmit={handleConfirmOtp} noValidate>
+            <FormInput
+              label="Mã OTP 6 chữ số"
+              placeholder="123456"
+              icon={VpnKeyIcon}
+              required
+              value={otp}
+              onChange={(event) => {
+                setOtp(normalizeOtp(event.target.value));
+                clearFieldError('otp');
+              }}
+              error={Boolean(fieldErrors.otp)}
+              helperText={fieldErrors.otp || 'Bạn có thể dán trực tiếp mã từ email.'}
+              disabled={isConfirming}
+              inputRef={otpInputRef}
+              inputProps={{
+                inputMode: 'numeric',
+                autoComplete: 'one-time-code',
+                maxLength: 6,
+                pattern: '[0-9]*',
+              }}
+            />
 
-        {step === STEP_OTP && (
-          <Box component="form" onSubmit={handleConfirmOtp} noValidate>
-            <Box sx={{ mb: 3 }}>
-              <FormInput
-                label="Mã OTP 6 chữ số"
-                type="text"
-                placeholder="123456"
-                icon={VpnKeyIcon}
-                required
-                value={otp}
-                onChange={(e) => {
-                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
-                  setOtpError(false);
-                }}
-                error={otpError}
-                helperText={otpError ? "Vui lòng nhập đúng mã OTP 6 chữ số" : ""}
-                disabled={isConfirming}
-              />
-            </Box>
+            <FormInput
+              label="Mật khẩu mới"
+              type="password"
+              placeholder="Tạo mật khẩu an toàn"
+              icon={LockIcon}
+              required
+              value={newPassword}
+              onChange={(event) => {
+                setNewPassword(event.target.value);
+                clearFieldError('newPassword');
+              }}
+              error={Boolean(fieldErrors.newPassword)}
+              helperText={fieldErrors.newPassword}
+              disabled={isConfirming}
+              inputProps={{ autoComplete: 'new-password' }}
+            />
 
-            <Box sx={{ mb: 3 }}>
-              <FormInput
-                label="Mật khẩu mới"
-                type="password"
-                placeholder="Tối thiểu 8 ký tự"
-                icon={LockIcon}
-                required
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value);
-                  setPasswordError(false);
-                }}
-                error={passwordError}
-                disabled={isConfirming}
-              />
-            </Box>
+            <ul className="recovery-requirements" aria-label="Yêu cầu mật khẩu">
+              {Object.entries(PASSWORD_REQUIREMENT_LABELS).map(([key, label]) => (
+                <li className={passwordRequirements[key] ? 'met' : ''} key={key}>
+                  {label}
+                </li>
+              ))}
+            </ul>
 
-            <Box sx={{ mb: 3 }}>
-              <FormInput
-                label="Xác nhận Mật khẩu mới"
-                type="password"
-                placeholder="Phải khớp với mật khẩu mới"
-                icon={LockIcon}
-                required
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setPasswordError(false);
-                }}
-                error={passwordError}
-                helperText={passwordError ? "Mật khẩu không khớp hoặc chưa đủ 8 ký tự" : ""}
-                disabled={isConfirming}
-              />
-            </Box>
+            <FormInput
+              label="Xác nhận mật khẩu mới"
+              type="password"
+              placeholder="Nhập lại mật khẩu mới"
+              icon={LockIcon}
+              required
+              value={confirmPassword}
+              onChange={(event) => {
+                setConfirmPassword(event.target.value);
+                clearFieldError('confirmPassword');
+              }}
+              error={Boolean(fieldErrors.confirmPassword)}
+              helperText={fieldErrors.confirmPassword}
+              disabled={isConfirming}
+              inputProps={{ autoComplete: 'new-password' }}
+            />
 
             <Button
               type="submit"
               variant="contained"
               fullWidth
               className="reset-button"
-              disabled={isConfirming || otp.length !== 6}
-              sx={{
-                background: 'linear-gradient(135deg, #8B6B4A, #C78A3B)',
-                color: '#fff',
-                padding: '14px',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                boxShadow: '0 4px 12px rgba(139, 107, 74, 0.3)',
-                transition: 'all 0.3s ease',
-                mb: 3,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #6d5239, #a86f30)',
-                  boxShadow: '0 6px 20px rgba(139, 107, 74, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
-              }}
+              disabled={isConfirming}
             >
-              {isConfirming ? 'Đang đổi mật khẩu...' : 'Khôi phục Mật khẩu'}
+              {isConfirming ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
             </Button>
-            
-            <Box sx={{ textAlign: 'center', mb: 1 }}>
-              <Button 
-                variant="text" 
+
+            <div className="recovery-resend-row">
+              <span>Không nhận được mã?</span>
+              <Button
+                type="button"
+                variant="text"
+                onClick={handleResendOtp}
+                disabled={resendDisabled}
+              >
+                {isResending
+                  ? 'Đang gửi lại...'
+                  : resendCooldown > 0
+                    ? `Gửi lại mã sau ${resendCooldown}s`
+                    : 'Gửi lại mã'}
+              </Button>
+            </div>
+
+            <div className="recovery-secondary-actions">
+              <Button
+                type="button"
+                variant="text"
                 onClick={() => {
                   setStep(STEP_EMAIL);
                   setFeedback(null);
                 }}
                 disabled={isConfirming}
-                sx={{ color: '#8B6B4A', textTransform: 'none', fontWeight: 600 }}
               >
-                Quay lại bước nhập Email
+                Đổi email
               </Button>
-            </Box>
+              <Button type="button" variant="text" onClick={() => navigate('/login')}>
+                Quay lại đăng nhập
+              </Button>
+            </div>
           </Box>
         )}
-
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography
-            variant="body2"
-            sx={{ color: '#7A7A7A', display: 'inline' }}
-          >
-            Bạn đã nhớ mật khẩu?{' '}
-          </Typography>
-
-          <a
-            href="/login"
-            style={{
-              color: '#8B6B4A',
-              textDecoration: 'none',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-            className="login-link"
-          >
-            Đăng nhập
-          </a>
-        </Box>
       </Box>
     </AuthCard>
   );
-};
-
-export default ForgotPasswordForm;
+}

@@ -54,6 +54,9 @@ export default function LoginForm({
         onChange={(e) => setEmail(e.target.value)}
         required
         slotProps={{
+          htmlInput: {
+            autoComplete: 'email',
+          },
           input: {
             startAdornment: (
               <InputAdornment position="start">
@@ -75,6 +78,9 @@ export default function LoginForm({
         onChange={(e) => setPassword(e.target.value)}
         required
         slotProps={{
+          htmlInput: {
+            autoComplete: 'current-password',
+          },
           input: {
             startAdornment: (
               <InputAdornment position="start">
@@ -84,9 +90,10 @@ export default function LoginForm({
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton
+                  type="button"
                   onClick={handleTogglePasswordVisibility}
                   edge="end"
-                  aria-label="toggle password visibility"
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? (
                     <VisibilityOff sx={{ color: '#8b5a2b' }} />

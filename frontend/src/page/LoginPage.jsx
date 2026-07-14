@@ -38,14 +38,7 @@ export default function LoginPage() {
         roles: result.roles,
       }));
       setFeedback({ severity: 'success', message: 'Đăng nhập thành công.' });
-      if (result.roles?.includes('ADMIN')) {
-        navigate('/admin/users');
-      } else if (result.roles?.includes('LIBRARIAN')) {
-        navigate('/librarian/fines');
-      } else {
-        // Member: vào thẳng khu vực có sidebar để truy cập mượn/đặt trước (FE07/FE08)
-        navigate('/borrowing/history');
-      }
+      navigate('/home');
     } catch (error) {
       setFeedback({ severity: 'error', message: error.message });
     } finally {
