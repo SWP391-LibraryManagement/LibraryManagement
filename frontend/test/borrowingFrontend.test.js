@@ -69,7 +69,7 @@ test('FE07 mutations always call the backend instead of simulating demo success'
   assert.match(history, /await borrowingApi\.renewDetail\(renewRow\.borrowDetailId\)/);
   assert.match(requests, /await borrowingApi\.approve\(approveTarget\.requestId/);
   assert.match(requests, /await borrowingApi\.reject\(selected\.requestId/);
-  assert.match(returns, /await borrowingApi\.returnDetail\(selected\.borrowDetailId/);
+  assert.match(returns, /await borrowingApi\.returnDetail\(returnTarget\.borrowDetailId/);
   for (const source of [history, requests, returns]) {
     assert.doesNotMatch(source, /if \(!isDemo\)/);
   }
@@ -159,7 +159,7 @@ test('approval UI does not invent audit notes or eligibility evidence', async ()
 test('return UI omits the client UTC date and does not claim a fine handoff occurred', async () => {
   const source = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
 
-  assert.match(source, /returnDetail\(selected\.borrowDetailId,\s*\{\s*condition,?\s*\}\)/s);
+  assert.match(source, /returnDetail\(returnTarget\.borrowDetailId,\s*\{\s*condition,?\s*\}\)/s);
   assert.doesNotMatch(source, /returnDate:\s*new Date\(\)\.toISOString\(\)/);
   assert.doesNotMatch(source, /đã được chuyển cho quản lý phí phạt/i);
 });
@@ -198,4 +198,26 @@ test('FE07 member pages use shared operational patterns without changing API cal
   assert.match(history, /data-label="Hạn trả"/);
   assert.match(history, /await borrowingApi\.renewDetail\(renewRow\.borrowDetailId\)/);
   assert.doesNotMatch(history, /<table className="lib-table"/);
+});
+
+test('FE07 staff pages use shared tables and pending confirmations', async () => {
+  const requests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
+  const returns = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
+  const member = await readFile(new URL('../src/page/borrowing/MemberBorrowingDetailsPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(requests, /DataTable/);
+  assert.match(requests, /ConfirmAction/);
+  assert.match(requests, /const \[actionPending, setActionPending\] = useState\(false\)/);
+  assert.match(requests, /await borrowingApi\.approve\(approveTarget\.requestId\)/);
+  assert.match(requests, /await borrowingApi\.reject\(selected\.requestId, rejectReason\.trim\(\)\)/);
+
+  assert.match(returns, /DataToolbar/);
+  assert.match(returns, /DataTable/);
+  assert.match(returns, /ConfirmAction/);
+  assert.match(returns, /const \[returnTarget, setReturnTarget\] = useState\(null\)/);
+  assert.match(returns, /returnDetail\(returnTarget\.borrowDetailId, \{ condition \}\)/);
+
+  assert.match(member, /DataToolbar/);
+  assert.match(member, /DataTable/);
+  assert.doesNotMatch(member, /<table className="lib-table"/);
 });
