@@ -1,34 +1,15 @@
+import { Badge } from '../shared/Feedback';
+
 const STATUS_CONFIG = {
-  AVAILABLE: { label: "Có sẵn", bg: "#198754", color: "#fff" },
-  BORROWED: { label: "Đang mượn", bg: "#ffc107", color: "#212529" },
-  RESERVED: { label: "Đã đặt trước", bg: "#0d6efd", color: "#fff" },
-  DAMAGED: { label: "Hư hỏng", bg: "#fd7e14", color: "#fff" },
-  LOST: { label: "Thất lạc", bg: "#842029", color: "#fff" },
-  INACTIVE: { label: "Ngừng lưu hành", bg: "#6c757d", color: "#fff" },
+  AVAILABLE: { tone: 'available', label: 'Có sẵn' },
+  BORROWED: { tone: 'borrowed', label: 'Đang mượn' },
+  RESERVED: { tone: 'info', label: 'Đã đặt trước' },
+  DAMAGED: { tone: 'pending', label: 'Hư hỏng' },
+  LOST: { tone: 'overdue', label: 'Thất lạc' },
+  INACTIVE: { tone: 'inactive', label: 'Ngừng lưu hành' },
 };
 
 export default function StatusBadge({ status }) {
-  const config = STATUS_CONFIG[status] ?? {
-    label: status,
-    bg: "#6c757d",
-    color: "#fff",
-  };
-
-  return (
-    <span
-      style={{
-        backgroundColor: config.bg,
-        color: config.color,
-        padding: "3px 10px",
-        borderRadius: 4,
-        fontSize: 12,
-        fontWeight: 600,
-        letterSpacing: 0.2,
-        display: "inline-block",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {config.label}
-    </span>
-  );
+  const config = STATUS_CONFIG[status] || { tone: 'default', label: status };
+  return <Badge status={config.tone}>{config.label}</Badge>;
 }
