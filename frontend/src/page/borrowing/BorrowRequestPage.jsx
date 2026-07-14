@@ -8,7 +8,7 @@ import { Search, BookOpen, MapPin, Calendar, FileText, CheckCircle2, Star } from
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
-import { Toast, useToast, DataNotice } from '../../component/shared/Feedback';
+import { Toast, useToast } from '../../component/shared/Feedback';
 import { DEMO_BORROW_CATALOG } from '../../utils/libraryFeatureViewModels';
 
 function todayPlus(days) {
@@ -25,7 +25,6 @@ export default function BorrowRequestPage() {
   const [dueDate, setDueDate] = useState(todayPlus(14));
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState('Catalog tạm dùng dữ liệu demo vì FE01/FE06 chưa có API browse copy công khai trong scope này. Khi submit sẽ gửi POST /api/borrow-requests bằng copyId thật nếu có đăng nhập member.');
   const [toast, showToast, clearToast] = useToast();
 
   const results = useMemo(() => {
@@ -48,12 +47,10 @@ export default function BorrowRequestPage() {
     }
     setSubmitting(true);
     try {
-      const data = await borrowingApi.createRequest([Number(copyId)]);
-      setNotice(`Backend đã tạo yêu cầu #${data.borrowRequest?.requestId || 'mới'} với trạng thái PENDING.`);
+      await borrowingApi.createRequest([Number(copyId)]);
       showToast(`Đã gửi yêu cầu mượn "${selected.title}". Vui lòng chờ thủ thư duyệt.`, 'success');
       setNotes('');
     } catch (error) {
-      setNotice(error.message);
       showToast(error.message, 'error');
     } finally {
       setSubmitting(false);
@@ -62,7 +59,6 @@ export default function BorrowRequestPage() {
 
   return (
     <AppLayout active="borrow-request" title="Tạo yêu cầu mượn" subtitle="Tìm sách và gửi yêu cầu mượn tới thủ thư.">
-      <DataNotice type="info" title="API integration">{notice}</DataNotice>
       <div className="split">
         <div>
           <div className="lib-card">
@@ -97,3 +93,4 @@ export default function BorrowRequestPage() {
     </AppLayout>
   );
 }
+

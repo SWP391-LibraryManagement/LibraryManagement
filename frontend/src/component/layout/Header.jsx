@@ -6,6 +6,8 @@ import { fetchHeaderProfile } from "../../api/profileApi";
 import { logoutAccount } from "../../api/authApi";
 import UserMenuPopup from "./UserMenuPopup";
 
+export const SIDEBAR_WIDTH = 260;
+
 function getStoredAuthUser() {
   try {
     const raw = localStorage.getItem("authUser") || sessionStorage.getItem("authUser");
@@ -82,6 +84,14 @@ export default function Header() {
     navigate("/profile");
   };
 
+  const handleBorrowingHistory = () => {
+    navigate("/borrowing/history");
+  };
+
+  const handleMembership = () => {
+    navigate("/membership");
+  };
+
   const handleLogout = async () => {
     const accessToken = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
     const refreshToken = localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
@@ -139,6 +149,8 @@ export default function Header() {
         initials={initials}
         avatarUrl={avatarUrl}
         onAccountInfo={handleAccountInfo}
+        onBorrowingHistory={handleBorrowingHistory}
+        onMembership={handleMembership}
         onLogout={handleLogout}
       />
     </header>

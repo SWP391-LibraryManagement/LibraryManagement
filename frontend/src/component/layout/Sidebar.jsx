@@ -142,11 +142,15 @@ export default function Sidebar({ activeItem: controlled, onItemClick }) {
                 </ListItemIcon>
                 <ListItemText
                   primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? BEIGE : "#D7CCC8",
-                    letterSpacing: isActive ? "0.01em" : "normal",
+                  slotProps={{
+                    primary: {
+                      sx: {
+                        fontSize: "0.875rem",
+                        fontWeight: isActive ? 700 : 400,
+                        color: isActive ? BEIGE : "#D7CCC8",
+                        letterSpacing: isActive ? "0.01em" : "normal",
+                      },
+                    },
                   }}
                 />
                 {/* Active accent bar */}

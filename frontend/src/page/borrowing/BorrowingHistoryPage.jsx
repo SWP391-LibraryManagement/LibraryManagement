@@ -5,7 +5,7 @@ import { Search, RefreshCw, ChevronLeft, ChevronRight, History, AlertTriangle, C
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
-import { Toast, useToast, Modal, Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
+import { Toast, useToast, Modal, Badge, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DEMO_BORROW_ROWS, fmtDate, mapBorrowRequestsToHistoryRows } from '../../utils/libraryFeatureViewModels';
 
 const TABS = [{ key: 'all', label: 'Tất cả' }, { key: 'active', label: 'Đang mượn' }, { key: 'overdue', label: 'Quá hạn' }, { key: 'returned', label: 'Đã trả' }];
@@ -25,7 +25,6 @@ export default function BorrowingHistoryPage() {
   const [page, setPage] = useState(1);
   const [renewRow, setRenewRow] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review UI lịch sử mượn.');
   const [isDemo, setIsDemo] = useState(true);
   const [toast, showToast, clearToast] = useToast();
 
@@ -35,11 +34,9 @@ export default function BorrowingHistoryPage() {
       const data = await borrowingApi.listMine();
       setRows(mapBorrowRequestsToHistoryRows(data.borrowRequests || []));
       setIsDemo(false);
-      setNotice('Đã kết nối backend thật qua GET /api/borrow-requests/me.');
-    } catch (error) {
+    } catch {
       setRows(DEMO_BORROW_ROWS);
       setIsDemo(true);
-      setNotice(error.message);
     } finally {
       setLoading(false);
     }
@@ -79,7 +76,6 @@ export default function BorrowingHistoryPage() {
 
   return (
     <AppLayout active="borrowing-history" title="Lịch sử mượn sách" subtitle="Theo dõi sách đã mượn và gửi yêu cầu gia hạn khi cần." actions={<button className="btn btn-outline" onClick={loadHistory} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}>
-      <DataNotice type={isDemo ? 'warn' : 'success'} title={isDemo ? 'Demo fallback' : 'Backend connected'}>{notice}</DataNotice>
       <div className="tabs">{TABS.map((t) => <button key={t.key} className={`tab${tab === t.key ? ' active' : ''}`} onClick={() => { setTab(t.key); setPage(1); }}>{t.label}</button>)}<span style={{ flex: 1 }} /><div className="search-input"><Search size={16} /><input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm sách..." aria-label="Tìm" /></div></div>
       {loading ? <LoadingBlock rows={4} /> : <><div className="lib-table-wrap"><table className="lib-table"><caption className="sr-only">Borrowing history table</caption><thead><tr><th scope="col">Sách</th><th scope="col">Ngày mượn</th><th scope="col">Hạn trả</th><th scope="col">Ngày trả</th><th scope="col">Trạng thái</th><th scope="col" style={{ textAlign: 'right' }}>Thao tác</th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.id} className={row.status === 'Overdue' ? 'row-overdue' : ''}><td><div className="row-flex"><span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} /><div className="stack-sm"><strong>{row.title}</strong><span className="muted" style={{ fontSize: 13 }}>{row.author}</span></div></div></td><td>{fmtDate(row.borrowDate)}</td><td>{fmtDate(row.dueDate)}</td><td>{fmtDate(row.returnDate)}</td><td><Badge status={row.status} /></td><td style={{ textAlign: 'right' }}>{canRenew(row) && <button className="btn btn-outline btn-sm" onClick={() => setRenewRow(row)}><RefreshCw size={14} /> Gia hạn</button>}</td></tr>)}</tbody></table>{pageRows.length === 0 && <EmptyState icon={History} title="Không có bản ghi nào" />}</div><div className="pagination"><span className="muted">{filtered.length} bản ghi • trang {safePage}/{totalPages}</span><div className="page-controls"><button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>{Array.from({ length: totalPages }, (_, i) => <button key={i} className={`page-btn${safePage === i + 1 ? ' active' : ''}`} onClick={() => setPage(i + 1)}>{i + 1}</button>)}<button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Next page"><ChevronRight size={16} /></button></div></div></>}
       {renewRow && <RenewModal row={renewRow} onClose={() => setRenewRow(null)} onConfirm={confirmRenew} />}

@@ -9,6 +9,7 @@ import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
 import InventoryPage from './page/InventoryPage';
 import ForbiddenPage from './page/error/ForbiddenPage';
+import MembershipPage from './page/MembershipPage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -58,6 +59,8 @@ function App() {
       <Route path="/reports/inventory" element={<InventoryReportPage />} />
       <Route path="/reports/users" element={<UserStatisticsPage />} />
       <Route path="/profile" element={<UserProfilePage />} />
+      <Route path="/membership" element={<MembershipPage />} />
+      <Route path="/librarian/membership" element={<MembershipPage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

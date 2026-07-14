@@ -180,3 +180,21 @@ export const inventoryApi = {
     return authorizedRequest({ method: 'delete', url: `/book-copies/${copyId}` }, 'Không thể ngừng sử dụng bản sao.');
   },
 };
+
+export const membershipApi = {
+  getMyStatus() {
+    return authorizedRequest({ method: 'get', url: '/membership/status/me' }, 'Khong the tai trang thai membership.');
+  },
+  apply(data = {}) {
+    return authorizedRequest({ method: 'post', url: '/membership/applications', data }, 'Khong the nop don membership.');
+  },
+  listApplications(params = {}) {
+    return authorizedRequest({ method: 'get', url: '/membership/applications', params }, 'Khong the tai danh sach don membership.');
+  },
+  approve(applicationId) {
+    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/approve`, data: {} }, 'Khong the duyet don membership.');
+  },
+  reject(applicationId, reason) {
+    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/reject`, data: { reason } }, 'Khong the tu choi don membership.');
+  },
+};

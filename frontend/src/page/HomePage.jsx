@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+﻿import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash, Clock, ChevronLeft } from 'lucide-react';
 import {
@@ -974,6 +974,8 @@ const HomePage = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showMembership, setShowMembership] = useState(false);
   const [showBorrow, setShowBorrow] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [authState, setAuthState] = useState(getStoredAuthState);
   const isLoggedIn = authState.isLoggedIn;
   const authUser = authState.authUser;
@@ -1012,14 +1014,16 @@ const HomePage = () => {
       sessionStorage.removeItem(key);
     }
     setAuthState({ isLoggedIn: false, authUser: null });
+    setShowUserMenu(false);
+    setShowLogoutConfirm(false);
   };
 
   const markDemoLoggedIn = () => {
     setAuthState((current) => ({ ...current, isLoggedIn: true }));
   };
 
-  const goToMemberArea = () => {
-    navigate('/borrowing/history');
+  const goToMembership = () => {
+    navigate(isLoggedIn ? '/membership' : '/login');
   };
 
   const openReviews = (event, book) => {
@@ -1193,24 +1197,41 @@ const HomePage = () => {
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {isLoggedIn ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#7A5C44' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              {showUserMenu && <button type="button" aria-label="Đóng menu tài khoản" onClick={() => setShowUserMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 240, border: 0, background: 'transparent', cursor: 'default' }} />}
+              <button
+                type="button"
+                onClick={() => setShowUserMenu((open) => !open)}
+                aria-label="Mở menu tài khoản"
+                aria-expanded={showUserMenu}
+                style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(199,138,59,0.35)', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#7A5C44', cursor: 'pointer', position: 'relative', zIndex: 260 }}
+              >
                 {(authUser?.email || 'TV').charAt(0).toUpperCase()}
-              </div>
-              <span style={{ fontSize: 13, color: '#4E342E', fontWeight: 600, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {authUser?.email || 'Thành viên'}
-              </span>
-              <button onClick={goToMemberArea} style={{
-                padding: '7px 16px', borderRadius: 6, border: 'none',
-                background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 600, fontSize: 13,
-                transition: 'background 0.2s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
-              >Khu vực của tôi</button>
-              <button onClick={handleLogout} style={{ padding: '5px 12px', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 12, fontFamily: 'Lato, sans-serif' }}>
-                Đăng xuất
               </button>
+              {showUserMenu && (
+                <div style={{ position: 'absolute', top: 46, right: 0, zIndex: 260, width: 220, background: '#FFFDF8', border: '1px solid rgba(78,52,46,0.14)', borderRadius: 12, boxShadow: '0 18px 48px rgba(44,26,14,0.18)', padding: 8 }}>
+                  {[
+                    { label: 'Thông tin cá nhân', action: () => navigate('/profile') },
+                    { label: 'Lịch sử mượn sách', action: () => navigate('/borrowing/history') },
+                    { label: 'Đăng kí hội viên', action: () => navigate('/membership') },
+                    { label: 'Đăng xuất', action: () => setShowLogoutConfirm(true), danger: true },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        item.action();
+                      }}
+                      style={{ width: '100%', padding: '10px 12px', border: 0, borderRadius: 8, background: 'transparent', color: item.danger ? '#C1452F' : '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 600, fontFamily: 'Lato, sans-serif' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = item.danger ? '#FBE9E6' : '#F5EFE6'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -1222,7 +1243,7 @@ const HomePage = () => {
                 onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
               >Đăng nhập</button>
-              <button onClick={goToRegister} style={{
+              <button onClick={goToMembership} style={{
                 padding: '7px 18px', borderRadius: 6, border: 'none',
                 background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 600, fontSize: 13,
                 transition: 'background 0.2s',
@@ -1643,6 +1664,47 @@ const HomePage = () => {
 
       {/* -- MEMBERSHIP MODAL -- */}
       {showMembership && <MembershipModal onClose={() => setShowMembership(false)} />}
+
+      {showLogoutConfirm && (
+        <div
+          role="presentation"
+          onClick={() => setShowLogoutConfirm(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(30,18,10,0.55)', display: 'grid', placeItems: 'center', padding: 24 }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: 'min(420px, 100%)', background: '#FAF7F2', borderRadius: 14, boxShadow: '0 24px 80px rgba(30,18,10,0.32)', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '22px 24px', borderBottom: '1px solid rgba(78,52,46,0.12)' }}>
+              <h2 id="logout-confirm-title" style={{ margin: '0 0 8px', fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#2C1A0E' }}>
+                Xác nhận đăng xuất
+              </h2>
+              <p style={{ margin: 0, color: '#7A5C44', fontSize: 14, lineHeight: 1.6 }}>
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: 18 }}>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{ padding: '10px 16px', borderRadius: 8, border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontWeight: 700 }}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 700 }}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* -- BOOK INFO PANEL -- */}
       {selectedBook && !showDetails && !showBorrow && (
