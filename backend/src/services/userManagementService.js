@@ -5,6 +5,7 @@ const { addHours, generateRandomToken, hashToken } = require('../utils/tokenUtil
 const { hashPassword } = require('../utils/passwordPolicy');
 
 const ACCOUNT_SETUP_TTL_HOURS = 24;
+const ACCOUNT_SETUP_RESEND_COOLDOWN_SECONDS = 60;
 
 const ROLE_BY_TYPE = {
   member: 'MEMBER',
@@ -271,6 +272,76 @@ function createUserManagementService({
     };
   }
 
+  // @spec BR-FE11-021..025, FR-FE11-036..038 - Admin resend rotates first, then delivers.
+  async function resendSetup(userId, context = {}) {
+    const parsedUserId = Number(userId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      throw errors.badRequest('INVALID_USER_ID', 'User id is invalid.');
+    }
+
+    const now = clock();
+    const setupToken = generateRandomToken();
+    const rotation = await accountSetupRepository.rotateSetupToken({
+      userId: parsedUserId,
+      tokenHash: hashToken(setupToken),
+      expiresAt: addHours(now, ACCOUNT_SETUP_TTL_HOURS),
+      adminUserId: context.adminUserId,
+      ip: context.ip || null,
+      userAgent: context.userAgent || null,
+      now,
+      cooldownSeconds: ACCOUNT_SETUP_RESEND_COOLDOWN_SECONDS,
+    });
+
+    if (rotation.outcome === 'MISSING') {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
+    }
+
+    if (rotation.outcome === 'NOT_ELIGIBLE') {
+      throw errors.badRequest(
+        'ACCOUNT_SETUP_NOT_ELIGIBLE',
+        'Account setup cannot be resent for this user.'
+      );
+    }
+
+    if (rotation.outcome === 'COOLDOWN') {
+      throw errors.tooManyRequests(
+        'ACCOUNT_SETUP_RESEND_COOLDOWN',
+        'Password setup email was requested too recently.',
+        { retryAfterSeconds: rotation.retryAfterSeconds }
+      );
+    }
+
+    const setupLink = `${env.frontendBaseUrl.replace(/\/$/, '')}/forgot-password?token=${encodeURIComponent(
+      setupToken
+    )}`;
+    let setupDeliveryStatus = 'FAILED';
+
+    try {
+      const delivery = await notificationRequester.createNotificationRequest({
+        type: 'ACCOUNT_SETUP',
+        recipientEmail: rotation.user.email,
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink, expiresInHours: ACCOUNT_SETUP_TTL_HOURS },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: rotation.tokenId,
+        idempotencyKey: `FE11:ACCOUNT_SETUP:${rotation.tokenId}`,
+      });
+      setupDeliveryStatus = delivery?.status === 'SENT' ? 'SENT' : 'FAILED';
+    } catch {
+      setupDeliveryStatus = 'FAILED';
+    }
+
+    return {
+      userId: rotation.user.userId,
+      status: 'INACTIVE',
+      setupDeliveryStatus,
+      message:
+        setupDeliveryStatus === 'SENT'
+          ? 'Password setup email sent.'
+          : 'Password setup email delivery failed.',
+    };
+  }
+
   async function updateUser(userId, input, context = {}) {
     const existing = await getExistingUser(userId);
     const updates = {
@@ -371,6 +442,7 @@ function createUserManagementService({
     listRoles,
     listAuditLogs,
     createUser,
+    resendSetup,
     updateUser,
     updateStatus,
     assignRole,

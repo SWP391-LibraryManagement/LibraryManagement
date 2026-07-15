@@ -230,7 +230,130 @@ async function completeSetup({ tokenHash, passwordHash, now = new Date(), contex
   }
 }
 
+// @spec BR-FE11-021..025, FR-FE11-036..038 - resend rotates setup state atomically.
+async function rotateSetupToken({
+  userId,
+  tokenHash,
+  expiresAt,
+  adminUserId,
+  ip,
+  userAgent,
+  now = new Date(),
+  cooldownSeconds = 60,
+}) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const setupHistoryResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(`
+        SELECT
+          u.UserId,
+          u.Email,
+          u.Status,
+          t.TokenId,
+          t.CreatedAt,
+          t.UsedAt,
+          t.RevokedAt
+        FROM Users u WITH (UPDLOCK, HOLDLOCK)
+        LEFT JOIN AuthTokens t WITH (UPDLOCK, HOLDLOCK)
+          ON t.UserId = u.UserId
+         AND t.TokenType = 'ACCOUNT_SETUP'
+        WHERE u.UserId = @UserId
+        ORDER BY t.CreatedAt DESC, t.TokenId DESC
+      `);
+
+    const rows = setupHistoryResult.recordset;
+    if (!rows.length) {
+      await transaction.rollback();
+      return { outcome: 'MISSING' };
+    }
+
+    const target = rows[0];
+    const setupHistory = rows.filter((row) => row.TokenId !== null && row.TokenId !== undefined);
+    const completed = setupHistory.some((token) => token.UsedAt);
+
+    if (target.Status !== 'INACTIVE' || !setupHistory.length || completed) {
+      await transaction.rollback();
+      return { outcome: 'NOT_ELIGIBLE' };
+    }
+
+    const cooldownMs = cooldownSeconds * 1000;
+    const latestIssuedAt = new Date(setupHistory[0].CreatedAt);
+    const elapsedMs = now.getTime() - latestIssuedAt.getTime();
+
+    if (elapsedMs < cooldownMs) {
+      await transaction.rollback();
+      return {
+        outcome: 'COOLDOWN',
+        retryAfterSeconds: Math.ceil((cooldownMs - elapsedMs) / 1000),
+      };
+    }
+
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE AuthTokens
+        SET RevokedAt = @Now
+        WHERE UserId = @UserId
+          AND TokenType = 'ACCOUNT_SETUP'
+          AND UsedAt IS NULL
+          AND RevokedAt IS NULL
+      `);
+
+    const tokenResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('TokenHash', sql.NVarChar(255), tokenHash)
+      .input('ExpiresAt', sql.DateTime, expiresAt)
+      .input('CreatedByIp', sql.NVarChar(50), ip || null)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        INSERT INTO AuthTokens
+          (UserId, TokenType, TokenHash, ExpiresAt, CreatedByIp, CreatedAt)
+        OUTPUT INSERTED.TokenId
+        VALUES
+          (@UserId, 'ACCOUNT_SETUP', @TokenHash, @ExpiresAt, @CreatedByIp, @Now)
+      `);
+
+    const tokenId = tokenResult.recordset[0].TokenId;
+
+    await new sql.Request(transaction)
+      .input('AdminUserId', sql.Int, adminUserId)
+      .input('TargetId', sql.Int, userId)
+      .input('Metadata', sql.NVarChar(sql.MAX), JSON.stringify({ tokenId }))
+      .input('IpAddress', sql.NVarChar(50), ip || null)
+      .input('UserAgent', sql.NVarChar(255), userAgent || null)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        INSERT INTO AuditLogs
+          (UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)
+        VALUES
+          (@AdminUserId, 'USER_ACCOUNT_SETUP_RESEND', 'USER', @TargetId, @Metadata,
+           @IpAddress, @UserAgent, @Now)
+      `);
+
+    await transaction.commit();
+    return {
+      outcome: 'ROTATED',
+      user: {
+        userId: target.UserId,
+        email: target.Email,
+        status: target.Status,
+      },
+      tokenId,
+    };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
 module.exports = {
   createPendingAccount,
   completeSetup,
+  rotateSetupToken,
 };

@@ -20,8 +20,8 @@ function conflict(code, message, details) {
   return new AppException(409, code, message, details);
 }
 
-function tooManyRequests(code, message) {
-  return new AppException(429, code, message);
+function tooManyRequests(code, message, details) {
+  return new AppException(429, code, message, details);
 }
 
 function internal(code = 'INTERNAL_ERROR', message = 'Internal server error.') {

@@ -11,7 +11,11 @@ function makeInMemoryAuthDependencies() {
   const tokens = [];
   const auditLogs = [];
   const notifications = [];
-  const accountSetupControl = { failureStage: null, completionFailureStage: null };
+  const accountSetupControl = {
+    failureStage: null,
+    completionFailureStage: null,
+    resendFailureStage: null,
+  };
 
   const userRepository = {
     async findByEmail(email) {
@@ -380,6 +384,91 @@ function makeInMemoryAuthDependencies() {
       auditLogs.push(audit);
 
       return { matched: true, outcome: 'COMPLETED', userId: user.userId };
+    },
+
+    async rotateSetupToken({
+      userId,
+      tokenHash,
+      expiresAt,
+      adminUserId,
+      ip,
+      userAgent,
+      now,
+      cooldownSeconds,
+    }) {
+      const user = users.find((item) => item.userId === Number(userId));
+      if (!user) {
+        return { outcome: 'MISSING' };
+      }
+
+      const setupHistory = tokens
+        .filter((item) => item.userId === user.userId && item.tokenType === 'ACCOUNT_SETUP')
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() ||
+            right.tokenId - left.tokenId
+        );
+
+      if (
+        user.status !== 'INACTIVE' ||
+        !setupHistory.length ||
+        setupHistory.some((item) => item.usedAt)
+      ) {
+        return { outcome: 'NOT_ELIGIBLE' };
+      }
+
+      const cooldownMs = cooldownSeconds * 1000;
+      const elapsedMs = now.getTime() - new Date(setupHistory[0].createdAt).getTime();
+      if (elapsedMs < cooldownMs) {
+        return {
+          outcome: 'COOLDOWN',
+          retryAfterSeconds: Math.ceil((cooldownMs - elapsedMs) / 1000),
+        };
+      }
+
+      const newToken = {
+        tokenId: nextTokenId,
+        userId: user.userId,
+        tokenType: 'ACCOUNT_SETUP',
+        tokenHash,
+        expiresAt,
+        usedAt: null,
+        revokedAt: null,
+        createdAt: now,
+        createdByIp: ip || null,
+      };
+      const audit = {
+        userId: adminUserId,
+        action: 'USER_ACCOUNT_SETUP_RESEND',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: { tokenId: newToken.tokenId },
+        ipAddress: ip || null,
+        userAgent: userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.resendFailureStage === 'token') {
+        throw new Error('token insert failed');
+      }
+      if (accountSetupControl.resendFailureStage === 'audit') {
+        throw new Error('audit insert failed');
+      }
+
+      setupHistory
+        .filter((item) => !item.usedAt && !item.revokedAt)
+        .forEach((item) => {
+          item.revokedAt = now;
+        });
+      nextTokenId += 1;
+      tokens.push(newToken);
+      auditLogs.push(audit);
+
+      return clone({
+        outcome: 'ROTATED',
+        user: { userId: user.userId, email: user.email, status: user.status },
+        tokenId: newToken.tokenId,
+      });
     },
   };
 
