@@ -162,6 +162,7 @@ function createNotificationService({
   userRepository,
   auditLogRepository,
   emailProvider,
+  emailService,
 } = {}) {
   if (!notificationRepository) {
     notificationRepository = require('../repositories/notificationRepository');
@@ -176,9 +177,19 @@ function createNotificationService({
   }
 
   if (!emailProvider) {
+    if (!emailService) {
+      emailService = require('./emailService');
+    }
+
     emailProvider = {
-      async send() {
-        return { providerMessageId: `mock-${Date.now()}` };
+      async send(message) {
+        const result = await emailService.sendNotificationEmail(message);
+
+        if (!result || result.sent !== true) {
+          throw new Error('Notification email delivery failed.');
+        }
+
+        return { providerMessageId: result.providerMessageId || null };
       },
     };
   }

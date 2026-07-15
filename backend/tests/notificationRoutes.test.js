@@ -2047,4 +2047,51 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(0);
     expect(emailProviderMessages).toHaveLength(0);
   });
+
+  test.each([
+    ['sent:true', { sent: true, providerMessageId: 'smtp-message-1' }, 'SENT'],
+    ['sent:false', { sent: false, reason: 'SMTP_NOT_CONFIGURED' }, 'FAILED'],
+  ])(
+    'delegates default sensitive delivery to the configured email adapter and records %s safely',
+    async (_, adapterResult, expectedStatus) => {
+      const authDependencies = makeInMemoryAuthDependencies();
+      const notificationDependencies = makeInMemoryNotificationDependencies();
+      const sendNotificationEmail = jest.fn().mockResolvedValue(adapterResult);
+      const notificationService = createNotificationService({
+        notificationRepository: notificationDependencies.notificationRepository,
+        userRepository: authDependencies.userRepository,
+        auditLogRepository: authDependencies.auditLogRepository,
+        emailService: { sendNotificationEmail },
+      });
+      const requester = notificationService.createSourceNotificationRequester('FE11');
+      const setupLink = 'https://example.test/forgot-password?token=default-provider-only-token';
+
+      const result = await requester.createNotificationRequest({
+        type: 'ACCOUNT_SETUP',
+        recipientEmail: 'configured-provider@example.test',
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink, expiresInHours: 24 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: 457,
+        idempotencyKey: 'FE11:ACCOUNT_SETUP:457',
+      });
+
+      expect(result).toEqual({ notificationId: expect.any(Number), status: expectedStatus });
+      expect(sendNotificationEmail).toHaveBeenCalledWith({
+        to: 'configured-provider@example.test',
+        subject: 'Set up your library account',
+        body: `Setup link: ${setupLink}. Expires in 24 hours.`,
+      });
+      expect(notificationDependencies.state.notifications[0]).toMatchObject({
+        status: expectedStatus,
+        title: null,
+        body: null,
+        lastErrorMessage:
+          expectedStatus === 'FAILED' ? 'Notification delivery failed.' : null,
+      });
+      if (adapterResult.reason) {
+        expect(JSON.stringify(notificationDependencies.state)).not.toContain(adapterResult.reason);
+      }
+    }
+  );
 });
