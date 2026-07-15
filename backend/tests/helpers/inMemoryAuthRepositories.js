@@ -11,7 +11,7 @@ function makeInMemoryAuthDependencies() {
   const tokens = [];
   const auditLogs = [];
   const notifications = [];
-  const accountSetupControl = { failureStage: null };
+  const accountSetupControl = { failureStage: null, completionFailureStage: null };
 
   const userRepository = {
     async findByEmail(email) {
@@ -312,6 +312,74 @@ function makeInMemoryAuthDependencies() {
       auditLogs.push(audit);
 
       return clone({ user, tokenId: token.tokenId });
+    },
+
+    async completeSetup({ tokenHash, passwordHash, now, context = {} }) {
+      const token = tokens.find(
+        (item) => item.tokenType === 'ACCOUNT_SETUP' && item.tokenHash === tokenHash
+      );
+
+      if (!token) {
+        return { matched: false };
+      }
+
+      const user = users.find((item) => item.userId === token.userId);
+
+      if (token.usedAt || token.revokedAt || !user || user.status !== 'INACTIVE') {
+        return { matched: true, outcome: 'INVALID' };
+      }
+
+      if (new Date(token.expiresAt).getTime() <= now.getTime()) {
+        return { matched: true, outcome: 'EXPIRED' };
+      }
+
+      const updatedUser = {
+        ...user,
+        passwordHash,
+        status: 'ACTIVE',
+        emailVerifiedAt: user.emailVerifiedAt || now,
+        failedLoginCount: 0,
+        lockedUntil: null,
+        updatedAt: now,
+      };
+      const updatedTokens = tokens.map((item) => {
+        if (item.tokenId === token.tokenId) {
+          return { ...item, usedAt: now };
+        }
+
+        if (
+          item.userId === user.userId &&
+          item.tokenType === 'ACCOUNT_SETUP' &&
+          !item.usedAt &&
+          !item.revokedAt
+        ) {
+          return { ...item, revokedAt: now };
+        }
+
+        return item;
+      });
+      const audit = {
+        userId: user.userId,
+        action: 'AUTH_ACCOUNT_SETUP_COMPLETE',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: null,
+        ipAddress: context.ip || null,
+        userAgent: context.userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.completionFailureStage) {
+        throw new Error(`${accountSetupControl.completionFailureStage} update failed`);
+      }
+
+      Object.assign(user, updatedUser);
+      updatedTokens.forEach((updatedToken, index) => {
+        tokens[index] = updatedToken;
+      });
+      auditLogs.push(audit);
+
+      return { matched: true, outcome: 'COMPLETED', userId: user.userId };
     },
   };
 

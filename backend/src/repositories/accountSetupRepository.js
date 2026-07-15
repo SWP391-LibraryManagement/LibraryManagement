@@ -114,6 +114,123 @@ async function createPendingAccount({
   }
 }
 
+// @spec BR-FE02-024, FR-FE02-024, FR-FE02-025 - one locked transaction owns setup consumption.
+async function completeSetup({ tokenHash, passwordHash, now = new Date(), context = {} }) {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const setupResult = await new sql.Request(transaction)
+      .input('TokenHash', sql.NVarChar(255), tokenHash)
+      .query(`
+        SELECT TOP 1
+          t.TokenId,
+          t.UserId,
+          t.ExpiresAt,
+          t.UsedAt,
+          t.RevokedAt,
+          u.Status
+        FROM AuthTokens t WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN Users u WITH (UPDLOCK, HOLDLOCK) ON u.UserId = t.UserId
+        WHERE t.TokenType = 'ACCOUNT_SETUP'
+          AND t.TokenHash = @TokenHash
+      `);
+
+    const setup = setupResult.recordset[0];
+
+    if (!setup) {
+      await transaction.rollback();
+      return { matched: false };
+    }
+
+    if (setup.UsedAt || setup.RevokedAt || setup.Status !== 'INACTIVE') {
+      await transaction.rollback();
+      return { matched: true, outcome: 'INVALID' };
+    }
+
+    if (new Date(setup.ExpiresAt).getTime() <= now.getTime()) {
+      await transaction.rollback();
+      return { matched: true, outcome: 'EXPIRED' };
+    }
+
+    const userUpdate = await new sql.Request(transaction)
+      .input('UserId', sql.Int, setup.UserId)
+      .input('PasswordHash', sql.NVarChar(255), passwordHash)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE Users
+        SET PasswordHash = @PasswordHash,
+            Status = 'ACTIVE',
+            EmailVerifiedAt = COALESCE(EmailVerifiedAt, @Now),
+            FailedLoginCount = 0,
+            LockedUntil = NULL,
+            UpdatedAt = @Now
+        OUTPUT INSERTED.UserId
+        WHERE UserId = @UserId
+          AND Status = 'INACTIVE'
+      `);
+
+    if (!userUpdate.recordset.length) {
+      await transaction.rollback();
+      return { matched: true, outcome: 'INVALID' };
+    }
+
+    const tokenUpdate = await new sql.Request(transaction)
+      .input('TokenId', sql.Int, setup.TokenId)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE AuthTokens
+        SET UsedAt = @Now
+        OUTPUT INSERTED.TokenId
+        WHERE TokenId = @TokenId
+          AND UsedAt IS NULL
+          AND RevokedAt IS NULL
+      `);
+
+    if (!tokenUpdate.recordset.length) {
+      await transaction.rollback();
+      return { matched: true, outcome: 'INVALID' };
+    }
+
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, setup.UserId)
+      .input('TokenId', sql.Int, setup.TokenId)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE AuthTokens
+        SET RevokedAt = @Now
+        WHERE UserId = @UserId
+          AND TokenType = 'ACCOUNT_SETUP'
+          AND TokenId <> @TokenId
+          AND UsedAt IS NULL
+          AND RevokedAt IS NULL
+      `);
+
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, setup.UserId)
+      .input('Metadata', sql.NVarChar(sql.MAX), JSON.stringify({ tokenId: setup.TokenId }))
+      .input('IpAddress', sql.NVarChar(50), context.ip || null)
+      .input('UserAgent', sql.NVarChar(255), context.userAgent || null)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        INSERT INTO AuditLogs
+          (UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)
+        VALUES
+          (@UserId, 'AUTH_ACCOUNT_SETUP_COMPLETE', 'USER', @UserId, @Metadata,
+           @IpAddress, @UserAgent, @Now)
+      `);
+
+    await transaction.commit();
+    return { matched: true, outcome: 'COMPLETED', userId: setup.UserId };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
 module.exports = {
   createPendingAccount,
+  completeSetup,
 };

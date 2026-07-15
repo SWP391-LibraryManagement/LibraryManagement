@@ -58,6 +58,7 @@ function createAuthService({
   auditLogRepository,
   notificationRepository,
   emailService,
+  accountSetupRepository,
   clock = () => new Date(),
   exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
@@ -79,6 +80,10 @@ function createAuthService({
 
   if (!emailService) {
     emailService = require('./emailService');
+  }
+
+  if (!accountSetupRepository) {
+    accountSetupRepository = require('../repositories/accountSetupRepository');
   }
 
   // --- Internal helpers ---
@@ -628,8 +633,37 @@ function createAuthService({
     validateNewPassword(input.newPassword);
 
     if (input.token) {
+      const tokenHash = hashToken(String(input.token || '').trim());
+      const setupCandidate = await authTokenRepository.findActiveTokenByHash(
+        'ACCOUNT_SETUP',
+        tokenHash
+      );
+
+      if (setupCandidate) {
+        // @spec FR-FE02-024, FR-FE02-025 - setup activation is purpose-bound and atomic.
+        const setupResult = await accountSetupRepository.completeSetup({
+          tokenHash,
+          passwordHash: await hashPassword(input.newPassword),
+          now: clock(),
+          context,
+        });
+
+        if (setupResult.outcome === 'EXPIRED') {
+          throw errors.badRequest(
+            'EXPIRED_RESET_TOKEN',
+            'Password setup link expired. Request a new one.'
+          );
+        }
+
+        if (setupResult.outcome !== 'COMPLETED') {
+          throw errors.badRequest('INVALID_RESET_TOKEN', 'Invalid or expired reset token.');
+        }
+
+        return { message: 'Password reset successful' };
+      }
+
       // @spec FR-FE02-018 — reject an already-used/expired/non-matching reset token without changing any password (AF-FE02-005, BR-FE02-014)
-      const tokenRecord = await validateLegacyToken(['PASSWORD_RESET', 'ACCOUNT_SETUP'], input.token, {
+      const tokenRecord = await validateLegacyToken(['PASSWORD_RESET'], input.token, {
         invalidCode: 'INVALID_RESET_TOKEN',
         invalidMessage: 'Invalid or expired reset token.',
         expiredCode: 'EXPIRED_RESET_TOKEN',
@@ -637,20 +671,11 @@ function createAuthService({
       });
       const user = await userRepository.findById(tokenRecord.userId);
 
-      if (!user || (tokenRecord.tokenType !== 'ACCOUNT_SETUP' && user.status !== 'ACTIVE')) {
+      if (!user || user.status !== 'ACTIVE') {
         throw errors.badRequest('INVALID_RESET_TOKEN', 'Invalid or expired reset token.');
       }
 
-      const passwordHash = await hashPassword(input.newPassword);
-      if (
-        tokenRecord.tokenType === 'ACCOUNT_SETUP' &&
-        typeof userRepository.updatePasswordAndActivate === 'function'
-      ) {
-        await userRepository.updatePasswordAndActivate(user.userId, passwordHash);
-      } else {
-        await userRepository.updatePassword(user.userId, passwordHash);
-      }
-
+      await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
       await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
       await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', { userId: user.userId, targetId: user.userId });
 
