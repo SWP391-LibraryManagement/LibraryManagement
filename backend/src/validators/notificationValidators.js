@@ -1,9 +1,11 @@
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
+const errors = require('../utils/safeErrors');
 
 const notificationTypes = [
   'ACCOUNT_VERIFICATION',
   'PASSWORD_RESET',
+  'ACCOUNT_SETUP',
   'RESERVATION_AVAILABLE',
   'DUE_DATE_REMINDER',
   'OVERDUE_NOTICE',
@@ -12,7 +14,11 @@ const notificationTypes = [
 ];
 
 const channels = ['EMAIL'];
-const sourceFeatures = ['FE02', 'FE07', 'FE08', 'FE09', 'SYSTEM'];
+const sensitiveNotificationTypes = new Set([
+  'ACCOUNT_VERIFICATION',
+  'PASSWORD_RESET',
+  'ACCOUNT_SETUP',
+]);
 const unsafeSourceEntityTypeFragments = [
   'template',
   'link',
@@ -29,7 +35,32 @@ function normalizeSourceEntityType(value) {
     .replace(/[_\-\s]/g, '');
 }
 
+function enforceHttpNotificationBoundary(req, res, next) {
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, 'sourceFeature')) {
+    return next(
+      errors.badRequest(
+        'SOURCE_FEATURE_HTTP_FORBIDDEN',
+        'Notification source cannot be supplied through HTTP.'
+      )
+    );
+  }
+
+  const type = String(req.body?.type || '').trim().toUpperCase();
+
+  if (sensitiveNotificationTypes.has(type)) {
+    return next(
+      errors.forbidden(
+        'SENSITIVE_NOTIFICATION_INTERNAL_ONLY',
+        'Sensitive authentication notifications must be requested internally.'
+      )
+    );
+  }
+
+  return next();
+}
+
 const createNotificationRequestValidators = [
+  enforceHttpNotificationBoundary,
   body('type')
     .isString()
     .trim()
@@ -64,13 +95,6 @@ const createNotificationRequestValidators = [
     .optional({ nullable: true })
     .isObject()
     .withMessage('Template data must be an object.'),
-  body('sourceFeature')
-    .optional({ nullable: true, checkFalsy: true })
-    .isString()
-    .trim()
-    .toUpperCase()
-    .isIn(sourceFeatures)
-    .withMessage('Source feature must be one of FE02, FE07, FE08, FE09, SYSTEM.'),
   body('sourceEntityType')
     .optional({ nullable: true, checkFalsy: true })
     .isString()
@@ -80,6 +104,10 @@ const createNotificationRequestValidators = [
     .matches(/^[a-zA-Z][a-zA-Z0-9_]*$/)
     .withMessage('Source entity type must be a safe identifier of at most 50 characters.')
     .custom((value) => {
+      if (value === 'AuthToken') {
+        return true;
+      }
+
       if (
         unsafeSourceEntityTypeFragments.some((fragment) =>
           normalizeSourceEntityType(value).includes(fragment)

@@ -256,6 +256,7 @@ CREATE TABLE Notifications (
     SentAt DATETIME NULL,
     FOREIGN KEY (TemplateId) REFERENCES NotificationTemplates(TemplateId),
     FOREIGN KEY (UserId) REFERENCES Users(UserId),
+    CONSTRAINT CK_Notifications_Type CHECK (NotificationType IS NULL OR NotificationType IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'RESERVATION_AVAILABLE', 'DUE_DATE_REMINDER', 'OVERDUE_NOTICE', 'FINE_NOTICE', 'GENERAL_SYSTEM')),
     CONSTRAINT CK_Notifications_Channel CHECK (Channel IN ('EMAIL')),
     CONSTRAINT CK_Notifications_Status CHECK (Status IN ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'))
 );
@@ -580,6 +581,7 @@ INSERT INTO NotificationTemplates (TemplateCode, Subject, Body)
 VALUES
 ('ACCOUNT_VERIFICATION','Verify your account','Please verify your library account: {{verificationLink}}.'),
 ('PASSWORD_RESET','Reset your password','Please reset your library account password: {{resetLink}}.'),
+('ACCOUNT_SETUP','Set up your library account','Complete your library account setup: {{setupLink}}. This link expires in {{expiresInHours}} hours.'),
 ('RESERVATION_READY','Book reservation ready','Your reserved book is ready.'),
 ('DUE_DATE_REMINDER','Library due date reminder','Please review your borrowing due date.'),
 ('OVERDUE_NOTICE','Library overdue notice','Please review your overdue borrowing item.'),

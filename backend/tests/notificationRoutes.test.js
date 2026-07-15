@@ -88,6 +88,27 @@ function authHeader(accessToken) {
   return `Bearer ${accessToken}`;
 }
 
+function makeSensitiveRequestInput({
+  type,
+  recipientEmail,
+  templateData,
+  userId,
+  sourceEntityId = 1,
+}) {
+  const sourceFeature = type === 'ACCOUNT_SETUP' ? 'FE11' : 'FE02';
+
+  return {
+    type,
+    userId,
+    recipientEmail,
+    templateKey: type,
+    templateData,
+    sourceEntityType: 'AuthToken',
+    sourceEntityId,
+    idempotencyKey: `${sourceFeature}:${type}:${sourceEntityId}`,
+  };
+}
+
 describe('FE10 notification management', () => {
   test.each(['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'])(
     'replays one non-sensitive notification across the %s idempotency status',
@@ -126,40 +147,27 @@ describe('FE10 notification management', () => {
     }
   );
 
-  test('replays a failed sensitive notification through its HMAC key without another provider send', async () => {
-    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.failed-sensitive.replay@example.test',
-      role: 'ADMIN',
-    });
-    const payload = {
+  test('replays a failed sensitive notification through its exact source key without another provider send', async () => {
+    const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
+    const payload = makeSensitiveRequestInput({
       type: 'ACCOUNT_VERIFICATION',
       recipientEmail: 'fail-sensitive-replay@example.test',
-      templateKey: 'ACCOUNT_VERIFICATION',
       templateData: { name: 'Reader', verificationLink: 'https://example.test/verify/replay-secret' },
-      idempotencyKey: 'sensitive-failed-replay',
-    };
+      sourceEntityId: 101,
+    });
 
-    const created = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload)
-      .expect(201);
-    expect(created.body.status).toBe('FAILED');
+    const created = await requester.createNotificationRequest(payload);
+    expect(created.status).toBe('FAILED');
 
-    const replay = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload);
+    const replay = await requester.createNotificationRequest(payload);
 
-    expect(replay.status).toBe(200);
-    expect(replay.body).toEqual(created.body);
+    expect(replay).toEqual(created);
     expect(notificationDependencies.state.notifications).toHaveLength(1);
     expect(emailProviderMessages).toHaveLength(1);
-    expect(notificationDependencies.state.notifications[0].idempotencyKey).toMatch(/^sensitive-hmac-sha256:/);
-    expect(JSON.stringify(replay.body)).not.toContain(payload.idempotencyKey);
+    expect(notificationDependencies.state.notifications[0].idempotencyKey).toBe(
+      'FE02:ACCOUNT_VERIFICATION:101'
+    );
   });
 
   test('retries one failed non-sensitive record without sending, changing history, or exposing delivery data', async () => {
@@ -343,7 +351,6 @@ describe('FE10 notification management', () => {
       templateData: {
         dueDate: '2026-07-20',
       },
-      sourceFeature: 'FE07',
       sourceEntityType: 'BORROW_REQUEST',
       sourceEntityId: member.userId,
       idempotencyKey: 'fe07-due-date-member',
@@ -371,7 +378,7 @@ describe('FE10 notification management', () => {
   });
 
   test('rejects missing template variables and retains a fixed password reset payload summary', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const { app, authDependencies, notificationDependencies, notificationService } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
       authDependencies,
@@ -393,27 +400,25 @@ describe('FE10 notification management', () => {
     expect(missingDataResponse.body.error.code).toBe('TEMPLATE_DATA_MISSING');
     expect(notificationDependencies.state.notifications).toHaveLength(0);
 
-    const resetResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send({
+    const requester = notificationService.createSourceNotificationRequester('FE02');
+    const resetResponse = await requester.createNotificationRequest(
+      makeSensitiveRequestInput({
         type: 'PASSWORD_RESET',
         recipientEmail: 'reader@example.test',
-        templateKey: 'PASSWORD_RESET',
         templateData: {
           resetLink: 'https://example.test/reset?token=secret-token',
           resetToken: 'secret-token',
         },
-        sourceFeature: 'FE02',
-      });
+        sourceEntityId: 102,
+      })
+    );
 
-    expect(resetResponse.status).toBe(201);
-    expect(resetResponse.body).toEqual({
+    expect(resetResponse).toEqual({
       notificationId: expect.any(Number),
       status: 'SENT',
     });
     expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
-    expect(JSON.stringify(resetResponse.body)).not.toContain('secret-token');
+    expect(JSON.stringify(resetResponse)).not.toContain('secret-token');
   });
 
   test('processes queued non-sensitive notifications and excludes sensitive pending fixtures', async () => {
@@ -433,7 +438,6 @@ describe('FE10 notification management', () => {
         recipientEmail: 'ok@example.test',
         templateKey: 'DUE_DATE_REMINDER',
         templateData: { dueDate: '2026-06-24' },
-        sourceFeature: 'FE07',
       })
       .expect(201);
 
@@ -456,7 +460,6 @@ describe('FE10 notification management', () => {
         recipientEmail: 'fail@example.test',
         templateKey: 'FINE_NOTICE',
         templateData: { amount: '5000' },
-        sourceFeature: 'FE09',
       })
       .expect(201);
 
@@ -626,11 +629,11 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'ACCOUNT_VERIFICATION',
+        type: 'DUE_DATE_REMINDER',
         channel: 'SMS',
         recipientEmail: 'reader@example.test',
-        templateKey: 'ACCOUNT_VERIFICATION',
-        templateData: { name: 'Reader', purpose: 'VERIFY' },
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
       });
     expect(badChannel.status).toBe(400);
     expect(badChannel.body.error.code).toBe('VALIDATION_ERROR');
@@ -699,7 +702,7 @@ describe('FE10 notification management', () => {
   // FE10-H09, BR-FE10-005, NFR-FE10-SEC-001: HTTP source metadata is validated before
   // service work can create records or audits, and its rejected value never crosses the boundary.
   test.each([
-    ['sourceFeature', 'FE99', 'Source feature must be one of FE02, FE07, FE08, FE09, SYSTEM.'],
+    ['sourceFeature', 'FE99', 'Notification source cannot be supplied through HTTP.'],
     [
       'sourceEntityType',
       'reset_token',
@@ -727,13 +730,22 @@ describe('FE10 notification management', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: 'Invalid request.',
-        details: [{ field, message }],
-      },
-    });
+    expect(response.body).toEqual(
+      field === 'sourceFeature'
+        ? {
+            error: {
+              code: 'SOURCE_FEATURE_HTTP_FORBIDDEN',
+              message,
+            },
+          }
+        : {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid request.',
+              details: [{ field, message }],
+            },
+          }
+    );
     expect(notificationDependencies.state.notifications).toHaveLength(0);
     expect(notificationDependencies.state.attempts).toHaveLength(0);
     expect(authDependencies.state.auditLogs).toHaveLength(auditLogCount);
@@ -744,7 +756,7 @@ describe('FE10 notification management', () => {
   // FE10-H09, BR-FE10-005: service validation remains mandatory if an HTTP caller bypasses
   // express-validator, so unsafe metadata cannot be persisted or audited through that path.
   test.each([
-    ['sourceFeature', 'FE99', 'INVALID_SOURCE_FEATURE'],
+    ['sourceFeature', 'FE99', 'SOURCE_FEATURE_HTTP_FORBIDDEN'],
     ['sourceEntityType', 'reset_token', 'INVALID_SOURCE_ENTITY_TYPE'],
   ])('rejects unsafe HTTP %s at the service boundary without side effects', async (field, value, code) => {
     const { notificationService, notificationDependencies, authDependencies, emailProviderMessages } =
@@ -769,7 +781,7 @@ describe('FE10 notification management', () => {
     expect(emailProviderMessages).toHaveLength(0);
   });
 
-  test('normalizes an allowed HTTP sourceFeature before persistence and audit', async () => {
+  test('rejects an allowlisted sourceFeature supplied through HTTP', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
@@ -788,14 +800,9 @@ describe('FE10 notification management', () => {
         templateData: { dueDate: '2026-07-20' },
         sourceFeature: ' fe07 ',
       })
-      .expect(201);
+      .expect(400);
 
-    expect(notificationDependencies.state.notifications[0].sourceFeature).toBe('FE07');
-    expect(authDependencies.state.auditLogs).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ metadata: expect.objectContaining({ sourceFeature: 'FE07' }) }),
-      ])
-    );
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
   });
 
   // BR-FE10-002: a template key outside the canonical pair is rejected before lookup.
@@ -837,9 +844,9 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'ACCOUNT_VERIFICATION',
-        templateKey: 'ACCOUNT_VERIFICATION',
-        templateData: { name: 'Reader', purpose: 'VERIFY' },
+        type: 'DUE_DATE_REMINDER',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
       });
     expect(noRecipient.status).toBe(400);
     expect(noRecipient.body.error.code).toBe('RECIPIENT_REQUIRED');
@@ -848,10 +855,10 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'ACCOUNT_VERIFICATION',
+        type: 'DUE_DATE_REMINDER',
         userId: 999999,
-        templateKey: 'ACCOUNT_VERIFICATION',
-        templateData: { name: 'Reader', purpose: 'VERIFY' },
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
       });
     expect(missingUser.status).toBe(404);
     expect(missingUser.body.error.code).toBe('RECIPIENT_NOT_FOUND');
@@ -877,25 +884,21 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'ACCOUNT_VERIFICATION',
+        type: 'DUE_DATE_REMINDER',
         userId: member.userId,
-        templateKey: 'ACCOUNT_VERIFICATION',
-        templateData: {
-          name: 'Member',
-          purpose: 'VERIFY',
-          verificationLink: 'https://example.test/verify/member',
-        },
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-20' },
       });
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       notificationId: expect.any(Number),
-      status: 'SENT',
+      status: 'PENDING',
     });
     expect(notificationDependencies.state.notifications[0]).toMatchObject({
       userId: member.userId,
       recipientEmail: 'notif.audit.member@example.test',
-      status: 'SENT',
+      status: 'PENDING',
     });
     expect(authDependencies.state.auditLogs).toEqual(
       expect.arrayContaining([
@@ -962,13 +965,37 @@ describe('FE10 notification management', () => {
       { name: 'Reader', verificationLink: 'https://example.test/verify' },
     ],
     ['PASSWORD_RESET', 'PASSWORD_RESET', { resetLink: 'https://example.test/reset' }],
+    [
+      'ACCOUNT_SETUP',
+      'ACCOUNT_SETUP',
+      { setupLink: 'https://example.test/setup', expiresInHours: 24 },
+    ],
     ['RESERVATION_AVAILABLE', 'RESERVATION_READY', { copyId: 'COPY-001' }],
     ['DUE_DATE_REMINDER', 'DUE_DATE_REMINDER', { dueDate: '2026-07-20' }],
     ['OVERDUE_NOTICE', 'OVERDUE_NOTICE', { dueDate: '2026-07-01' }],
     ['FINE_NOTICE', 'FINE_NOTICE', { amount: '5000' }],
     ['GENERAL_SYSTEM', 'MEMBERSHIP_RESULT', { membershipStatus: 'APPROVED' }],
   ])('accepts the canonical %s -> %s pair', async (type, templateKey, templateData) => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const { app, authDependencies, notificationDependencies, notificationService } = makeTestApp();
+    const isSensitive = ['ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP'].includes(type);
+
+    if (isSensitive) {
+      const sourceFeature = type === 'ACCOUNT_SETUP' ? 'FE11' : 'FE02';
+      const requester = notificationService.createSourceNotificationRequester(sourceFeature);
+      const result = await requester.createNotificationRequest(
+        makeSensitiveRequestInput({
+          type,
+          recipientEmail: 'reader@example.test',
+          templateData,
+          sourceEntityId: 201,
+        })
+      );
+
+      expect(result).toEqual({ notificationId: expect.any(Number), status: 'SENT' });
+      expect(notificationDependencies.state.notifications).toHaveLength(1);
+      return;
+    }
+
     const admin = await createVerifiedUser({
       app,
       authDependencies,
@@ -1014,21 +1041,23 @@ describe('FE10 notification management', () => {
   ])(
     'sends %s synchronously without persisting or returning its rendered sensitive content',
     async (type, templateKey, recipientEmail, templateData, renderedSubject, renderedBody, rawLink) => {
-      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
-      const admin = await createVerifiedUser({
-        app,
+      const {
+        notificationService,
         authDependencies,
-        email: `notif.sensitive.${type.toLowerCase()}@example.test`,
-        role: 'ADMIN',
-      });
+        notificationDependencies,
+        emailProviderMessages,
+      } = makeTestApp();
+      const requester = notificationService.createSourceNotificationRequester('FE02');
+      const result = await requester.createNotificationRequest(
+        makeSensitiveRequestInput({
+          type,
+          recipientEmail,
+          templateData,
+          sourceEntityId: type === 'ACCOUNT_VERIFICATION' ? 202 : 203,
+        })
+      );
 
-      const response = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send({ type, recipientEmail, templateKey, templateData, sourceFeature: 'FE02' });
-
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({
+      expect(result).toEqual({
         notificationId: expect.any(Number),
         status: 'SENT',
       });
@@ -1039,13 +1068,13 @@ describe('FE10 notification management', () => {
       const notification = notificationDependencies.state.notifications[0];
       expect(notification).toMatchObject({ status: 'SENT', title: null, body: null });
       expect(notification.safePayload).toEqual({ redacted: true });
-      expect(notification).toMatchObject({ sourceFeature: null, sourceEntityType: null });
+      expect(notification).toMatchObject({ sourceFeature: 'FE02', sourceEntityType: 'AuthToken' });
       expect(notificationDependencies.state.attempts).toEqual([
         expect.objectContaining({ status: 'SENT', providerMessageId: null }),
       ]);
 
       const persistedAndExposed = JSON.stringify({
-        response: response.body,
+        result,
         notification,
         attempts: notificationDependencies.state.attempts,
         auditLogs: authDependencies.state.auditLogs,
@@ -1078,27 +1107,23 @@ describe('FE10 notification management', () => {
   ])(
     'records a safe synchronous failure for %s without leaking provider or rendered content',
     async (type, templateKey, templateData, renderedSubject, renderedBody, rawLink) => {
-      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
-      const admin = await createVerifiedUser({
-        app,
+      const {
+        notificationService,
         authDependencies,
-        email: `notif.sensitive.failure.${type.toLowerCase()}@example.test`,
-        role: 'ADMIN',
-      });
-
-      const response = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send({
+        notificationDependencies,
+        emailProviderMessages,
+      } = makeTestApp();
+      const requester = notificationService.createSourceNotificationRequester('FE02');
+      const result = await requester.createNotificationRequest(
+        makeSensitiveRequestInput({
           type,
           recipientEmail: `fail-${type.toLowerCase()}@example.test`,
-          templateKey,
           templateData,
-          sourceFeature: 'FE02',
-        });
+          sourceEntityId: type === 'ACCOUNT_VERIFICATION' ? 204 : 205,
+        })
+      );
 
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({
+      expect(result).toEqual({
         notificationId: expect.any(Number),
         status: 'FAILED',
       });
@@ -1118,7 +1143,7 @@ describe('FE10 notification management', () => {
       ]);
 
       const persistedAndExposed = JSON.stringify({
-        response: response.body,
+        result,
         notification,
         attempts: notificationDependencies.state.attempts,
         auditLogs: authDependencies.state.auditLogs,
@@ -1148,13 +1173,13 @@ describe('FE10 notification management', () => {
   ])(
     'preserves accepted %s delivery when its post-delivery audit write fails safely',
     async (type, templateKey, recipientEmail, templateData, expectedStatus) => {
-      const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
-      const admin = await createVerifiedUser({
-        app,
+      const {
+        notificationService,
         authDependencies,
-        email: `notif.sensitive.audit.${type.toLowerCase()}@example.test`,
-        role: 'ADMIN',
-      });
+        notificationDependencies,
+        emailProviderMessages,
+      } = makeTestApp();
+      const requester = notificationService.createSourceNotificationRequester('FE02');
       const rawLink = Object.values(templateData)[Object.values(templateData).length - 1];
       const auditError = `audit write failed with sensitive data: ${rawLink}`;
       authDependencies.auditLogRepository.create = async () => {
@@ -1162,21 +1187,24 @@ describe('FE10 notification management', () => {
       };
 
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      let response;
+      let result;
       let capturedLogs;
 
       try {
-        response = await request(app)
-          .post('/api/notifications/requests')
-          .set('Authorization', authHeader(admin.accessToken))
-          .send({ type, recipientEmail, templateKey, templateData });
+        result = await requester.createNotificationRequest(
+          makeSensitiveRequestInput({
+            type,
+            recipientEmail,
+            templateData,
+            sourceEntityId: type === 'ACCOUNT_VERIFICATION' ? 206 : 207,
+          })
+        );
       } finally {
         capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
         consoleErrorSpy.mockRestore();
       }
 
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({
+      expect(result).toEqual({
         notificationId: expect.any(Number),
         status: expectedStatus,
       });
@@ -1207,97 +1235,59 @@ describe('FE10 notification management', () => {
     }
   );
 
-  // FE10-H03 follow-up: sensitive caller metadata is replaced with a fixed summary and a
-  // keyed idempotency representation, while raw template data remains provider-only.
-  test('contains sensitive caller metadata and HMAC idempotency data while replaying once', async () => {
-    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.sensitive.idempotency@example.test',
-      role: 'ADMIN',
-    });
+  // FE10-S03: trusted token metadata remains traceable while raw template data stays provider-only.
+  test('persists safe sensitive source metadata and exact token idempotency while replaying once', async () => {
+    const { notificationService, authDependencies, notificationDependencies, emailProviderMessages } =
+      makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
     const rawLink = 'https://example.test/verify/replay-link';
-    const rawSourceFeature = 'FE02';
-    const rawSourceEntityType = 'AUTH_EVENT';
-    const rawIdempotencyKey = '123456';
-    const payload = {
+    const payload = makeSensitiveRequestInput({
       type: 'ACCOUNT_VERIFICATION',
       recipientEmail: 'reader@example.test',
-      templateKey: 'ACCOUNT_VERIFICATION',
       templateData: {
         name: 'Reader',
         verificationLink: rawLink,
         [rawLink]: 'caller-controlled-value',
       },
-      sourceFeature: rawSourceFeature,
-      sourceEntityType: rawSourceEntityType,
       sourceEntityId: 91,
-      idempotencyKey: rawIdempotencyKey,
-    };
+    });
 
-    const createResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload);
-    const replayResponse = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send(payload);
+    const created = await requester.createNotificationRequest(payload);
+    const replay = await requester.createNotificationRequest(payload);
 
-    expect(createResponse.status).toBe(201);
-    expect(replayResponse.status).toBe(200);
-    expect(createResponse.body).toEqual({
+    expect(created).toEqual({
       notificationId: expect.any(Number),
       status: 'SENT',
     });
-    expect(replayResponse.body).toEqual(createResponse.body);
+    expect(replay).toEqual(created);
     expect(emailProviderMessages).toHaveLength(1);
     expect(emailProviderMessages[0].body).toContain(rawLink);
 
     const notification = notificationDependencies.state.notifications[0];
     expect(notification).toMatchObject({
       templateKey: 'ACCOUNT_VERIFICATION',
-      sourceFeature: null,
-      sourceEntityType: null,
+      sourceFeature: 'FE02',
+      sourceEntityType: 'AuthToken',
       sourceEntityId: 91,
-      idempotencyKey: expect.stringMatching(/^sensitive-hmac-sha256:[a-f0-9]{64}$/),
+      idempotencyKey: 'FE02:ACCOUNT_VERIFICATION:91',
       safePayload: { redacted: true },
     });
-    expect(notification.idempotencyKey).not.toBe(rawIdempotencyKey);
-    expect(notification.idempotencyKey).toBe(
-      `sensitive-hmac-sha256:${crypto
-        .createHmac('sha256', process.env.JWT_SECRET)
-        .update(rawIdempotencyKey)
-        .digest('hex')}`
-    );
-    expect(notification.idempotencyKey).not.toBe(
-      `sensitive-hmac-sha256:${crypto.createHash('sha256').update(rawIdempotencyKey).digest('hex')}`
-    );
 
     const persistedAndExposed = JSON.stringify({
-      createResponse: createResponse.body,
-      replayResponse: replayResponse.body,
+      created,
+      replay,
       notification,
       attempts: notificationDependencies.state.attempts,
       auditLogs: authDependencies.state.auditLogs,
     });
     expect(persistedAndExposed).not.toContain(rawLink);
-    expect(persistedAndExposed).not.toContain(rawIdempotencyKey);
-    expect(persistedAndExposed).not.toContain(rawSourceFeature);
-    expect(persistedAndExposed).not.toContain(rawSourceEntityType);
   });
 
   // FE10-H03 follow-up: a persistence transition failure is not a provider failure and must
-  // be replaced before it reaches error-handler logging.
+  // remain a safe internal error without recording a false provider failure.
   test('contains sensitive markSent failures without recording a false provider failure', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.sensitive.transition@example.test',
-      role: 'ADMIN',
-    });
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
     let markFailedCalled = false;
     const rawLink = 'https://example.test/reset/transition-link';
     const repositoryError = `notification transition storage failed: ${rawLink}`;
@@ -1310,50 +1300,36 @@ describe('FE10 notification management', () => {
     };
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    let response;
-    let capturedLogs;
+    let thrownError;
 
     try {
-      response = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send({
+      await requester.createNotificationRequest(
+        makeSensitiveRequestInput({
           type: 'PASSWORD_RESET',
           recipientEmail: 'reader@example.test',
-          templateKey: 'PASSWORD_RESET',
           templateData: { resetLink: rawLink },
-          sourceFeature: 'FE02',
-        });
+          sourceEntityId: 208,
+        })
+      );
+    } catch (error) {
+      thrownError = error;
     } finally {
-      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
       consoleErrorSpy.mockRestore();
     }
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: {
-        code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
-        message: 'Internal server error.',
-      },
+    expect(thrownError).toMatchObject({
+      statusCode: 500,
+      code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
+      message: 'Notification delivery state could not be recorded.',
+      stack: undefined,
     });
     expect(markFailedCalled).toBe(false);
     expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
-    expect(capturedLogs).toEqual([
-      expect.arrayContaining([
-        '[api error]',
-        expect.objectContaining({
-          code: 'NOTIFICATION_DELIVERY_TRANSITION_FAILED',
-          message: 'Notification delivery state could not be recorded.',
-          stack: undefined,
-        }),
-      ]),
-    ]);
     const safeBoundaries = JSON.stringify({
-      response: response.body,
+      error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
       notification: notificationDependencies.state.notifications[0],
       attempts: notificationDependencies.state.attempts,
-      capturedLogs,
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawLink);
@@ -1361,13 +1337,8 @@ describe('FE10 notification management', () => {
 
   // FE10-H03: a provider failure remains distinct from a subsequent failed-state persistence error.
   test('contains a sensitive markFailed persistence failure without recording a false attempt', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.sensitive.failed-transition@example.test',
-      role: 'ADMIN',
-    });
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
     const rawLink = 'https://example.test/reset/failed-transition-link';
     const repositoryError = `failed notification transition storage: ${rawLink}`;
     let markFailedCalled = false;
@@ -1377,118 +1348,65 @@ describe('FE10 notification management', () => {
     };
 
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    let response;
-    let capturedLogs;
+    let thrownError;
 
     try {
-      response = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send({
+      await requester.createNotificationRequest(
+        makeSensitiveRequestInput({
           type: 'PASSWORD_RESET',
           recipientEmail: 'fail-mark-failed@example.test',
-          templateKey: 'PASSWORD_RESET',
           templateData: { resetLink: rawLink },
-        });
+          sourceEntityId: 209,
+        })
+      );
+    } catch (error) {
+      thrownError = error;
     } finally {
-      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
       consoleErrorSpy.mockRestore();
     }
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: {
-        code: 'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
-        message: 'Internal server error.',
-      },
+    expect(thrownError).toMatchObject({
+      statusCode: 500,
+      code: 'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
+      message: 'Notification delivery failure could not be recorded.',
+      stack: undefined,
     });
     expect(markFailedCalled).toBe(true);
     expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
-    expect(capturedLogs).toEqual([
-      expect.arrayContaining([
-        '[api error]',
-        expect.objectContaining({
-          code: 'NOTIFICATION_DELIVERY_FAILURE_TRANSITION_FAILED',
-          message: 'Notification delivery failure could not be recorded.',
-          stack: undefined,
-        }),
-      ]),
-    ]);
     const safeBoundaries = JSON.stringify({
-      response: response.body,
+      error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
       notification: notificationDependencies.state.notifications[0],
       attempts: notificationDependencies.state.attempts,
-      capturedLogs,
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawLink);
   });
 
-  test('contains missing JWT_SECRET failures before sensitive notification side effects', async () => {
-    const { app, authService, authDependencies, notificationDependencies, emailProviderMessages } =
+  test('rejects a sensitive idempotency key that does not match the AuthToken event', async () => {
+    const { notificationService, authDependencies, notificationDependencies, emailProviderMessages } =
       makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.sensitive.config@example.test',
-      role: 'ADMIN',
+    const requester = notificationService.createSourceNotificationRequester('FE02');
+    const input = makeSensitiveRequestInput({
+      type: 'ACCOUNT_VERIFICATION',
+      recipientEmail: 'reader@example.test',
+      templateData: {
+        name: 'Reader',
+        verificationLink: 'https://example.test/verify/config-link',
+      },
+      sourceEntityId: 210,
     });
-    const rawLink = 'https://example.test/verify/config-link';
-    const rawIdempotencyKey = 'config-secret-123456';
-    const originalJwtSecret = process.env.JWT_SECRET;
-    const auditLogCount = authDependencies.state.auditLogs.length;
+    input.idempotencyKey = 'FE02:ACCOUNT_VERIFICATION:999';
 
-    // Keep the already-authenticated test actor available while exercising FE10 with no JWT secret.
-    authService.authenticateToken = async () => ({ userId: admin.userId, roles: ['ADMIN'] });
-
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    let response;
-    let capturedLogs;
-
-    try {
-      delete process.env.JWT_SECRET;
-      response = await request(app)
-        .post('/api/notifications/requests')
-        .set('Authorization', authHeader(admin.accessToken))
-        .send({
-          type: 'ACCOUNT_VERIFICATION',
-          recipientEmail: 'reader@example.test',
-          templateKey: 'ACCOUNT_VERIFICATION',
-          templateData: { name: 'Reader', verificationLink: rawLink },
-          idempotencyKey: rawIdempotencyKey,
-        });
-    } finally {
-      capturedLogs = consoleErrorSpy.mock.calls.map((call) => [...call]);
-      if (originalJwtSecret === undefined) {
-        delete process.env.JWT_SECRET;
-      } else {
-        process.env.JWT_SECRET = originalJwtSecret;
-      }
-      consoleErrorSpy.mockRestore();
-    }
-
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      error: { code: 'NOTIFICATION_CONFIG_ERROR', message: 'Internal server error.' },
+    await expect(requester.createNotificationRequest(input)).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+      message: 'Sensitive authentication notification idempotency key is invalid.',
     });
     expect(notificationDependencies.state.notifications).toEqual([]);
     expect(notificationDependencies.state.attempts).toEqual([]);
     expect(emailProviderMessages).toEqual([]);
-    expect(authDependencies.state.auditLogs).toHaveLength(auditLogCount);
-    expect(capturedLogs).toEqual([
-      expect.arrayContaining([
-        '[api error]',
-        expect.objectContaining({
-          code: 'NOTIFICATION_CONFIG_ERROR',
-          message: 'Notification configuration is incomplete.',
-          stack: undefined,
-        }),
-      ]),
-    ]);
-    const safeBoundaries = JSON.stringify({ response: response.body, capturedLogs });
-    expect(safeBoundaries).not.toContain(rawLink);
-    expect(safeBoundaries).not.toContain(rawIdempotencyKey);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
   });
 
   // EC-FE10-004: a valid but non-canonical template must not reach persistence.
@@ -1549,21 +1467,13 @@ describe('FE10 notification management', () => {
 
   // FE10-H03: sensitive requests retain a fixed safe payload summary, not caller-controlled shape.
   test('stores only the fixed safe payload summary for nested sensitive request data', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
-    const admin = await createVerifiedUser({
-      app,
-      authDependencies,
-      email: 'notif.redaction.admin@example.test',
-      role: 'ADMIN',
-    });
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
 
-    const response = await request(app)
-      .post('/api/notifications/requests')
-      .set('Authorization', authHeader(admin.accessToken))
-      .send({
+    const result = await requester.createNotificationRequest(
+      makeSensitiveRequestInput({
         type: 'PASSWORD_RESET',
         recipientEmail: 'reader@example.test',
-        templateKey: 'PASSWORD_RESET',
         templateData: {
           resetLink: 'https://example.test/reset',
           context: [
@@ -1576,9 +1486,11 @@ describe('FE10 notification management', () => {
             },
           ],
         },
-      });
+        sourceEntityId: 211,
+      })
+    );
 
-    expect(response.status).toBe(201);
+    expect(result).toEqual({ notificationId: expect.any(Number), status: 'SENT' });
     expect(notificationDependencies.state.notifications[0].safePayload).toEqual({ redacted: true });
   });
 
@@ -1988,8 +1900,9 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'ACCOUNT_VERIFICATION',
         templateData: { name: 'Reader', verificationLink: rawLink },
-        sourceEntityType: 'AUTH_EVENT',
+        sourceEntityType: 'AuthToken',
         sourceEntityId: 9,
+        idempotencyKey: 'FE02:ACCOUNT_VERIFICATION:9',
       },
       { userId: 456, ip: '127.0.0.1' }
     );
@@ -2007,9 +1920,10 @@ describe('FE10 notification management', () => {
       title: null,
       body: null,
       safePayload: { redacted: true },
-      sourceFeature: null,
-      sourceEntityType: null,
+      sourceFeature: 'FE02',
+      sourceEntityType: 'AuthToken',
       sourceEntityId: 9,
+      idempotencyKey: 'FE02:ACCOUNT_VERIFICATION:9',
     });
     expect(authDependencies.state.auditLogs).toEqual([
       expect.objectContaining({
@@ -2018,7 +1932,7 @@ describe('FE10 notification management', () => {
         targetId: result.notificationId,
         metadata: expect.objectContaining({
           sourceFeature: 'FE02',
-          sourceEntityType: 'AUTH_EVENT',
+          sourceEntityType: 'AuthToken',
           sourceEntityId: 9,
         }),
       }),
@@ -2033,5 +1947,104 @@ describe('FE10 notification management', () => {
     expect(storedOrAudited).not.toContain(rawLink);
     expect(storedOrAudited).not.toContain('Verify Reader');
     expect(storedOrAudited).not.toContain('Verification link:');
+  });
+
+  test('allows only the FE11-bound requester to deliver account setup with safe source metadata', async () => {
+    const { notificationService, notificationDependencies, authDependencies, emailProviderMessages } =
+      makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE11');
+    const setupLink = 'https://example.test/forgot-password?token=provider-only-setup-token';
+
+    const result = await requester.createNotificationRequest({
+      type: 'ACCOUNT_SETUP',
+      recipientEmail: 'new.member@example.test',
+      templateKey: 'ACCOUNT_SETUP',
+      templateData: { setupLink, expiresInHours: 24 },
+      sourceEntityType: 'AuthToken',
+      sourceEntityId: 456,
+      idempotencyKey: 'FE11:ACCOUNT_SETUP:456',
+    });
+
+    expect(result).toEqual({ notificationId: expect.any(Number), status: 'SENT' });
+    expect(emailProviderMessages).toEqual([
+      expect.objectContaining({
+        to: 'new.member@example.test',
+        subject: 'Set up your library account',
+        body: `Setup link: ${setupLink}. Expires in 24 hours.`,
+      }),
+    ]);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
+      type: 'ACCOUNT_SETUP',
+      status: 'SENT',
+      title: null,
+      body: null,
+      safePayload: { redacted: true },
+      sourceFeature: 'FE11',
+      sourceEntityType: 'AuthToken',
+      sourceEntityId: 456,
+      idempotencyKey: 'FE11:ACCOUNT_SETUP:456',
+    });
+
+    const persisted = JSON.stringify({
+      notifications: notificationDependencies.state.notifications,
+      attempts: notificationDependencies.state.attempts,
+      audits: authDependencies.state.auditLogs,
+      result,
+    });
+    expect(persisted).not.toContain(setupLink);
+    expect(persisted).not.toContain('provider-only-setup-token');
+  });
+
+  test('rejects account setup from a requester not bound to FE11', async () => {
+    const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE02');
+
+    await expect(
+      requester.createNotificationRequest({
+        type: 'ACCOUNT_SETUP',
+        recipientEmail: 'new.member@example.test',
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink: 'https://example.test/setup', expiresInHours: 24 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: 456,
+        idempotencyKey: 'FE11:ACCOUNT_SETUP:456',
+      })
+    ).rejects.toMatchObject({
+      code: 'SENSITIVE_NOTIFICATION_INTERNAL_ONLY',
+      message: 'Sensitive authentication notifications must be requested internally.',
+    });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
+  });
+
+  test('rejects account setup through the staff HTTP boundary', async () => {
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'setup-admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({
+        type: 'ACCOUNT_SETUP',
+        recipientEmail: 'new.member@example.test',
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink: 'https://example.test/setup', expiresInHours: 24 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: 456,
+        idempotencyKey: 'FE11:ACCOUNT_SETUP:456',
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toMatchObject({
+      code: 'SENSITIVE_NOTIFICATION_INTERNAL_ONLY',
+      message: 'Sensitive authentication notifications must be requested internally.',
+    });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
   });
 });
