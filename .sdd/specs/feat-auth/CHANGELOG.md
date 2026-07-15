@@ -1,5 +1,24 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-15 - FE11 Account Setup Consumption Revision
+
+- Bumped `SPEC.md` to 0.6.0 and marked the combined OTP/account-setup revision ready for review.
+- Separated password reset from canonical FE11 account setup while preserving the existing token request shape.
+- Defined FE02 as the setup-token consumer and atomic activation owner; FE11 remains issuer/resend owner and FE10 remains delivery owner.
+- Added BR-FE02-023..025, FR-FE02-024..025, AC-FE02-020..021, EC-FE02-016..017, Q-FE02-013, and NFR-FE02-TXN-005.
+- Added FE02-T034..T037 for RED tests, atomic implementation, and cross-feature validation.
+
+## 2026-07-15 - FE10 OTP Delivery Ownership Alignment
+
+- Bumped `SPEC.md` from version `0.4.0` to `0.5.0` and aligned `CONTEXT.md` with ADR-004.
+- Kept FE02 as the owner of verification/reset OTP generation, hashing, expiry, revocation, validation, and legacy-token compatibility.
+- Made the FE10 requester bound to `FE02` the single delivery boundary for account-verification and password-reset OTP email.
+- Defined `AuthTokens.TokenId` source traceability and idempotency; resend creates a new token ID and notification key.
+- Prohibited duplicate direct email sends and direct notification-record writes for verification/reset while retaining direct FE02 email for `CHANGE_PASSWORD_OTP`.
+- Prohibited `debugOtp`, `debugVerificationToken`, and `debugResetToken` HTTP response fields; implementation tests must capture deterministic OTPs through injected dependencies.
+- Defined non-blocking FE10 failure semantics: user/token state and generic public responses remain valid, no OTP is exposed, and resend remains available.
+- Replaced conceptual token tables/fields in the data section with the actual shared `AuthTokens` contract.
+
 ## 2026-07-15 - Authentication/OTP UX B7 Closeout
 
 - Recorded human acceptance and merge evidence for `FE02-T024` through `FE02-T028`.

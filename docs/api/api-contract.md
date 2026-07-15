@@ -302,6 +302,12 @@ Response `200`:
 }
 ```
 
+Rules for canonical FE11 `ACCOUNT_SETUP` tokens:
+
+- The target account must be `INACTIVE` and have incomplete FE11 setup-token history.
+- Completion atomically updates password hash, `EmailVerifiedAt`, lock fields, status, token usage/revocation, and audit.
+- Password-reset credentials cannot activate ordinary inactive accounts.
+
 ### GET `/api/auth/me`
 
 Actor: Authenticated
@@ -404,9 +410,44 @@ Response `201`:
   "email": "new.librarian@example.test",
   "status": "INACTIVE",
   "roles": ["LIBRARIAN"],
-  "message": "User created. Account setup email sent when notification provider is available."
+  "setupDeliveryStatus": "SENT",
+  "message": "User created. Password setup email sent."
 }
 ```
+
+Notes:
+
+- User, profile, role, hashed setup token, and audit commit atomically before FE10 delivery.
+- Delivery failure returns `setupDeliveryStatus: "FAILED"`; the account remains `INACTIVE` and no provider detail or setup credential is returned.
+- The Admin never submits or receives a password, raw token, setup link, or debug credential.
+
+### POST `/api/users/{userId}/resend-setup`
+
+Actor: Admin
+
+Request:
+
+```json
+{}
+```
+
+Response `200`:
+
+```json
+{
+  "userId": 10,
+  "status": "INACTIVE",
+  "setupDeliveryStatus": "SENT",
+  "message": "Password setup email sent."
+}
+```
+
+Rules:
+
+- Only incomplete admin-created accounts are eligible.
+- FE11 revokes prior active setup tokens and creates a new 24-hour token/event/key.
+- A 60-second server-side cooldown applies per target account.
+- Active, locked, self-registered inactive, completed-setup, or cooldown-limited accounts are rejected without issuing a credential.
 
 ### PUT `/api/users/{userId}`
 

@@ -1,7 +1,7 @@
 ﻿# TASKS.md - FE02 Authentication
 
-Status: READY FOR REVIEW
-Date: 2026-06-10
+Status: READY FOR REVIEW - OTP DELIVERY FOLLOW-UP
+Date: 2026-07-15
 Owner: Dat
 
 ## Task Rules
@@ -45,6 +45,8 @@ Owner: Dat
 | FE02-T027 | Align login and forgot/reset password UX with the shared auth patterns. | AC-FE02-004 to AC-FE02-008, AC-FE02-014 to AC-FE02-018 | FE02-T025 | Login routes through `/home`; recovery keeps generic feedback, masked email, OTP focus, password guidance, and completion action. |
 | FE02-T028 | Run the Authentication/OTP validation and human-review gate. | Definition of Done; AC-UX-001 to AC-UX-003, AC-UX-007, AC-UX-008 | FE02-T026, FE02-T027 | Targeted tests, lint, build, source checks, responsive review, and human acceptance are recorded. |
 
+`FE02-T008` is retained as historical evidence for the initial mock/direct-delivery slice. ADR-004 and the follow-up tasks below supersede it for account-verification and password-reset OTP delivery.
+
 ## Suggested Implementation Order
 
 1. FE02-T001 to FE02-T009: foundation, config, validation, repositories, utilities.
@@ -75,3 +77,52 @@ Password reset and frontend integration may follow only if the team explicitly s
 - [x] B7 evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
 
 This evidence closes the Authentication/OTP UX task group only and does not change the overall FE02 `READY FOR REVIEW` status.
+
+## FE02/FE10 OTP Delivery Follow-up Tasks
+
+- [x] **FE02-T029 - Normalize the approved OTP delivery contract.**
+  - Maps to: BR-FE02-020 to BR-FE02-022; FR-FE02-002, FR-FE02-011, FR-FE02-022, FR-FE02-023; AC-FE02-001, AC-FE02-014, AC-FE02-019; ADR-004.
+  - Files: `.sdd/specs/feat-auth/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`, `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`.
+  - DoD: FE02 and FE10 agree on OTP variables, source ownership, token-ID idempotency, single delivery ownership, non-blocking failure, resend semantics, and `CHANGE_PASSWORD_OTP` exclusion; no implementation files change.
+
+- [ ] **FE02-T030 - Add RED requester-integration tests.**
+  - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022; AC-FE02-001, AC-FE02-014.
+  - Files: `backend/tests/authRoutes.test.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`.
+  - DoD: failing tests prove register, resend verification, and forgot password make exactly one FE10 requester call containing `otp`, `expiresInMinutes`, `AuthToken`, token ID, and token-ID idempotency; tests reject direct notification writes, direct verification/reset email sends, and `debugOtp`/`debugVerificationToken`/`debugResetToken` HTTP fields.
+
+- [ ] **FE02-T031 - Migrate verification/reset delivery to FE10.**
+  - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022.
+  - Dependencies: FE10-S02 and FE10-S03.
+  - Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
+  - DoD: `createOtpToken` returns the persisted token record; verification/reset call only the requester bound to `FE02`; duplicate direct notification/email paths and HTTP debug-token fields are removed; tests capture OTPs through injected dependencies; legacy token acceptance and direct `CHANGE_PASSWORD_OTP` email remain unchanged.
+
+- [ ] **FE02-T032 - Lock non-blocking failure and resend behavior.**
+  - Maps to: BR-FE02-022; FR-FE02-023; AC-FE02-019; EC-FE02-009.
+  - Files: `backend/tests/authRoutes.test.js`, `backend/src/services/authService.js`.
+  - DoD: FE10 `FAILED` status or safe exception does not roll back user/token state or alter generic forgot-password semantics; no OTP reaches logs/audits/responses; resend creates a new token ID and notification key.
+
+- [ ] **FE02-T033 - Pass the cross-feature validation gate.**
+  - Maps to: ADR-004 verification contract and all FE02 follow-up requirements.
+  - Dependencies: FE02-T030 to FE02-T032; FE10-S02 to FE10-S04.
+  - Files: `.sdd/specs/feat-auth/TASKS.md`, `.sdd/specs/feat-auth/CHANGELOG.md`; implementation files change only for review fixes.
+  - DoD: focused FE02/FE10 tests and affected integration tests pass; traceability and secret scans pass; `git diff --check` passes; human review confirms `CHANGE_PASSWORD_OTP` and legacy-token behavior were not widened.
+
+## FE02/FE11 Account Setup Tasks
+
+- [x] **FE02-T034 - Draft the canonical setup-consumption contract.**
+  - Maps to: BR-FE02-023..025; FR-FE02-024..025; AC-FE02-020..021; ADR-005.
+  - DoD: FE02, FE10, and FE11 agree on inactive initial state, ownership, atomic completion, failure, resend, and credential exposure; implementation files remain unchanged.
+  - Review state: drafted, awaiting Nhat review.
+
+- [ ] **FE02-T035 - Add RED setup-completion tests.**
+  - Files: `backend/tests/authRoutes.test.js`, auth test repositories/helpers.
+  - DoD: failing tests prove valid atomic activation and rejection of expired, used, revoked, ineligible, reset-purpose, and concurrently consumed credentials.
+
+- [ ] **FE02-T036 - Implement atomic setup completion.**
+  - Dependencies: FE02-T035, FE11-S04.
+  - Files: auth service and user/token/audit repositories.
+  - DoD: one transaction updates password, verification/status/lock fields, token usage/revocation, and audit; password-reset behavior cannot activate inactive accounts.
+
+- [ ] **FE02-T037 - Validate the account-setup boundary.**
+  - Dependencies: FE02-T036, FE11-S03..S06.
+  - DoD: focused cross-feature tests, traceability, secret scans, and `git diff --check` pass; Nhat completes human review.

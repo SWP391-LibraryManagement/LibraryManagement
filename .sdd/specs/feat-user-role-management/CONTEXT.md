@@ -1,12 +1,12 @@
 # CONTEXT.md - FE11 User & Role Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: READY FOR REVIEW - ACCOUNT SETUP REVISION
 
 # Owner: Dung
 
-# Last Updated: 2026-06-09
+# Last Updated: 2026-07-15
 
 # Feature folder: `.sdd/specs/feat-user-role-management/`
 
@@ -20,7 +20,7 @@ This feature must keep three things consistent:
 
 - User account information (email, name, contact details).
 - User role assignments and permissions.
-- User status lifecycle (active, inactive, locked, deleted).
+- User status lifecycle (`INACTIVE` during admin-created setup, `ACTIVE` after setup, and later deactivation/lock states).
 
 Because user/role data controls access to all other features, this feature is treated as a Full Spec feature.
 
@@ -58,6 +58,7 @@ FE11 includes:
 - Deactivate librarian accounts.
 - Manage user role assignments (assign/revoke roles).
 - Initiate password setup emails for newly created users without exposing passwords or tokens to admins.
+- Resend an incomplete admin-created account setup email through an Admin-only action.
 
 FE11 does not include:
 
@@ -86,10 +87,11 @@ The current SQL script should include:
 
 Potential issues to review:
 
-- `Users.Status` field must support values: `ACTIVE`, `INACTIVE`, `LOCKED`, `DELETED`.
+- Admin-created users start `INACTIVE`; FE02 changes them to `ACTIVE` only after successful setup-token consumption.
 - `Users` table needs `LastLoginAt` for tracking active users.
 - `Users` table needs `FailedLoginCount` and `LockedUntil` fields for account lockout management.
-- Admin-created users must use the FE02 password setup flow. If the SQL schema keeps `PasswordHash NOT NULL`, the system must store an unusable placeholder hash until the user completes setup.
+- Admin-created users must use the FE02 password setup flow. If SQL keeps `PasswordHash NOT NULL`, FE11 stores an unusable bcrypt hash of a discarded random value; fixed literal placeholders are forbidden.
+- FE11 stores only the hash of a 24-hour `ACCOUNT_SETUP` token in `AuthTokens` and uses its token ID for FE10 source traceability/idempotency.
 - `UserRoles` table allows multiple roles per user; system must ensure at least one role per user.
 - `AuditLogs` must capture what changed and by whom; simple action text is insufficient.
 - Need to prevent removal of Admin role if only one admin remains.
@@ -155,6 +157,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | FE03 User Profile | User profile info (name, phone, address) overlaps with user management. |
 | FE07 Borrowing Management | Member user accounts created in FE11 can borrow books in FE07. |
 | FE09 Fine Management | May query user status to determine if user with unpaid fines can be deactivated. |
+| FE10 Notification Management | Renders and delivers `ACCOUNT_SETUP` only for the requester bound to `FE11`; persists no setup token/link. |
 
 ---
 
@@ -166,18 +169,20 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-005 | FE11 requests one-time setup-link delivery through FE10 after source commit; deployed environments use the configured provider and tests use a mock. | Review packet 2026-06-10; ADR-005 refinement 2026-07-15 | APPROVED |
 | Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-014 | Admin-created accounts start `INACTIVE` and activate only after FE02 setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
+| Q-FE11-015 | FE11 issues setup tokens, FE10 delivers canonical `ACCOUNT_SETUP`, and FE02 consumes/activates. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-016 | Admin-only resend rotates the setup token/event/key and enforces a 60-second cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 
 ---
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- Do not implement the account-setup revision until Nhat reviews `SPEC.md`, ADR-005, `PLAN.md`, and `TASKS.md`.
 - Use database transactions for user creation and role assignment.
 - Invalidate all active sessions when user is deactivated.
 - Enforce email uniqueness with case-insensitive constraint.

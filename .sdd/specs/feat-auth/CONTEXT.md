@@ -1,12 +1,12 @@
 # CONTEXT.md - FE02 Authentication
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-15
 
 # Feature folder: `.sdd/specs/feat-auth/`
 
@@ -40,10 +40,10 @@ The typical small/medium library authentication workflow:
 8. For subsequent requests, the client includes the session/token in the request header.
 9. The system validates the token and allows or denies access based on role.
 10. When the user logs out, the system invalidates the session/token.
-11. If the user forgets their password, they can request a reset link via email.
-12. The system generates a time-limited reset token and sends it.
-13. The user clicks the reset link, sets a new password, and confirms.
-14. The system updates the password and invalidates the reset token.
+11. If the user forgets their password, they can request a six-digit reset OTP by email.
+12. FE02 generates the time-limited OTP, stores only its hash, and asks FE10 to deliver it through the requester bound to `FE02`.
+13. The user enters the reset OTP and sets a new password; legacy password-reset links remain compatible, while canonical FE11 setup links use `ACCOUNT_SETUP`.
+14. The system updates the password and invalidates the OTP/token.
 
 ---
 
@@ -56,8 +56,8 @@ FE02 includes:
 - User logout and session termination.
 - Password change (authenticated user).
 - Forgot password request.
-- Password reset via email link.
-- Password setup via email link for admin-created FE11 accounts.
+- Password reset via six-digit email OTP, with legacy reset-link compatibility.
+- Password setup completion for admin-created FE11 accounts through a hashed, single-use `ACCOUNT_SETUP` token.
 - Session/token validation for subsequent requests.
 - Session timeout management.
 
@@ -67,7 +67,7 @@ FE02 does not include:
 - User role and permission management. That belongs to FE11.
 - Multi-factor authentication (MFA). Out of scope for Phase 1.
 - OAuth/SSO integration. Out of scope for Phase 1.
-- Notification sending. That belongs to FE10.
+- Account-verification and password-reset notification rendering/delivery. That belongs to FE10; FE02 owns OTP generation/validation and retains direct delivery only for `CHANGE_PASSWORD_OTP` until a separate FE10 type is approved.
 
 ---
 
@@ -85,10 +85,11 @@ Potential issues to review:
 
 - Password storage must use bcrypt or similar hashing, not plain text or simple MD5.
 - Session/token strategy must be defined: JWT, session cookies, or both?
-- Reset/setup token should have expiration time (e.g., reset: 1 hour, admin-created account setup: 24 hours).
+- Reset/setup credentials have approved expiry: password-reset OTP 15 minutes; admin-created account setup token 24 hours.
 - Login attempt rate limiting to prevent brute force attacks.
 - Email verification mechanism for registration and password reset.
-- Admin-created accounts from FE11 should remain unable to login until password setup is completed.
+- Admin-created accounts from FE11 remain `INACTIVE` and unable to login until FE02 atomically completes password setup and activates them.
+- FE11 owns setup-token issuance/resend, FE10 owns setup-link delivery, and FE02 owns setup-token consumption/password activation.
 - User status field (active/inactive/locked) needed to block suspended accounts.
 - Password history is not currently supported by the SQL script and should remain out of scope unless the team extends the schema.
 - AuditLogs should capture login success/failure, logout, password reset attempts.
@@ -144,10 +145,11 @@ These must be resolved before implementation.
 | Dependency | Why It Matters |
 | ---------- | -------------- |
 | FE03 User Profile | After authentication, users can manage their profile data. |
-| FE10 Notification Management | Sends verification emails, password reset links, and login notifications. |
-| FE11 User & Role Management | Uses role information to control permissions after authentication. |
+| FE10 Notification Management | Sends account-verification and password-reset OTP emails through the requester bound to `FE02`; staff HTTP cannot submit these sensitive types. |
+| FE11 User & Role Management | Uses role information after authentication and owns admin-created account/setup-token issuance and resend. |
+| FE10 Notification Management | Delivers verification/reset OTPs for FE02 and delivers FE11-owned account-setup links through separate source/type ownership. |
 | Database (SQL Server) | Stores user credentials and session state. |
-| Email Service | Delivers verification and password reset tokens. |
+| Email Provider Adapter | FE10 uses the configured provider adapter for verification/reset delivery; FE02 still uses direct email only for `CHANGE_PASSWORD_OTP`. |
 
 ---
 
@@ -157,14 +159,15 @@ These must be resolved before implementation.
 | -- | ----------------- | ------ | ------ |
 | Q-FE02-001 | Password requires at least 8 chars, 1 uppercase, 1 number, and 1 special char. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-002 | Access token expires after 15 minutes; refresh token expires after 7 days. | Review packet 2026-06-10 | APPROVED |
-| Q-FE02-003 | Email verification is required if email/mock provider is available; otherwise it is marked as mock/planned for Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-003 | Email verification is required. FE02 generates the OTP and FE10 delivers it through a configured provider adapter; tests inject a mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
 | Q-FE02-004 | Multiple concurrent sessions are allowed in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-005 | Failed login attempts are rate-limited with a simple measurable server-side rule. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-006 | Password reset token expires after 15 minutes. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-007 | Password change attempts and failed login attempts are logged. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-008 | Inactive users cannot log in; inactive-user auto-lock job is out of scope for Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-009 | Use JWT access token plus refresh token. | Review packet 2026-06-10 | APPROVED |
-| Q-FE02-010 | Password reset requires verified email ownership through reset token only; no extra recovery checks in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-010 | Password reset requires verified email ownership through a six-digit reset OTP; legacy password-reset tokens remain accepted for compatibility. | Review packet 2026-06-10; OTP alignment 2026-07-14 | APPROVED |
+| Q-FE02-013 | Canonical FE11 `ACCOUNT_SETUP` tokens are consumed by FE02; valid completion atomically updates password, email verification, token usage, audit, and `INACTIVE -> ACTIVE`. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 
 ---
 

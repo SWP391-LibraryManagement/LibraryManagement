@@ -1,5 +1,23 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-15 - FE11 Account Setup Delivery Revision
+
+- Bumped `SPEC.md` to 0.4.0 and marked the combined OTP/account-setup revision ready for review.
+- Added canonical sensitive pair `ACCOUNT_SETUP -> ACCOUNT_SETUP` with `setupLink` and `expiresInHours`.
+- Added FE11 to the internal requester allowlist while preserving FE02-only ownership of verification/reset OTPs.
+- Required FE11-only source ownership, `AuthToken` token-ID traceability, `FE11:ACCOUNT_SETUP:<tokenId>` idempotency, synchronous provider delivery, and no persisted setup credential/content.
+- Added MF-FE10-005, FR-FE10-010, AC-FE10-010, EC-FE10-016, Q-FE10-008, G11, and FE10-S06..S08.
+
+## 2026-07-15 - OTP Security Boundary Contract Approved
+
+- Bumped `SPEC.md` from version `0.2.0` to `0.3.0` and recorded ADR-004 plus Nhat's approval of G8-G10.
+- Replaced the deferred verification/reset link contract with the implemented FE02 six-digit OTP contract: `otp`, `expiresInMinutes`, and `AuthTokens.TokenId` source traceability.
+- Restricted `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` to the requester bound to `FE02`; staff HTTP and other source requesters return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`.
+- Removed caller-controlled `sourceFeature` from the HTTP request contract.
+- Defined FE10 as the single rendering/delivery/status owner for UC45/UC46 while FE02 remains the OTP generation/validation owner.
+- Kept OTPs and rendered sensitive content out of persistence, logs, audits, and responses; delivery failure remains non-blocking and resend creates a new token event.
+- Kept `CHANGE_PASSWORD_OTP`, legacy token acceptance, FE09 caller integration, frontend work, and retry UI outside this follow-up.
+
 ## 2026-06-09
 
 - Created FE10 Notification Management feature specification structure.

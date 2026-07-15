@@ -1,8 +1,8 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.2.0
-Status: READY FOR REVIEW
-Last Updated: 2026-06-25
+Version: 0.3.0
+Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
+Last Updated: 2026-07-15
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
 Feature IDs: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -19,6 +19,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 - Password hashing and password comparison.
 - Token creation, verification, and expiry handling.
 - OTP/reset token validation.
+- FE11 account-setup token validation and atomic activation.
 - Invalid email/password format validation.
 - Account status checks (inactive/locked/auto-unlock).
 
@@ -32,6 +33,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 - `POST /auth/logout`: happy path, invalid token.
 - `POST /auth/change-password` (+ `/request-otp`, `/confirm`): happy path, wrong old password, reused password, invalid OTP, unauthenticated.
 - `POST /auth/forgot-password`, `/reset-password`: happy path, invalid/expired token.
+- `POST /auth/reset-password` with `ACCOUNT_SETUP`: atomic activation, invalid/used/revoked/ineligible/concurrent token rejection, and no reset-purpose activation.
 - `GET /auth/me`: authenticated happy path, unauthenticated error.
 
 ## 4. E2E / Manual Acceptance Flow
