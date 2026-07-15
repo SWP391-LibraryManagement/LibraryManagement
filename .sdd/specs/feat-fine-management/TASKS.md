@@ -2,7 +2,7 @@
 
 Status: READY FOR REVIEW
 
-Owner: Dung (server-side layer implemented by Nhat on 2026-06-25)
+Owner: Dung 
 
 > Tasks decomposed from PLAN.md. This iteration delivers the server-side fine workflow (TD-001/002/003);
 > the legacy prototype is kept and frontend alignment (TD-004) remains a follow-up.
