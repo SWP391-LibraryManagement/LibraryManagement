@@ -7,7 +7,7 @@
 - Added Admin-only setup resend with eligibility checks, row locks, 60-second cooldown, prior-token revocation, new token/event/key, and transactional audit.
 - Added frontend setup-link consumption through the existing FE02 reset endpoint without email/OTP controls.
 - Task 7 automated evidence passed: 170/170 affected backend tests, 75/75 frontend tests, lint, build, traceability, credential scan, and diff checks.
-- `FE11-S07` remains open until Nhat reviews the final cross-feature validation packet; all unrelated FE11 work remains deferred.
+- Nhat confirmed the final cross-feature validation packet; `FE11-S07` is complete and all unrelated FE11 work remains deferred.
 
 ## 2026-07-15 - Account Setup Contract Revision
 

@@ -1,6 +1,6 @@
 # Auth Account Setup Boundary Validation Review - 2026-07-15
 
-Status: READY FOR HUMAN REVIEW
+Status: COMPLETE - HUMAN REVIEW CONFIRMED
 
 Branch: `fix/auth-account-setup-boundary`
 
@@ -60,7 +60,7 @@ No live SQL suite or unrelated full SQL suite was run, matching the approved Tas
 
 ## Human Review History
 
-Nhat reviewed the implementation incrementally through Task 6. Task 7 still requires explicit review of this combined evidence before FE02-T037, FE10-S08, and FE11-S07 can be closed or the branch can be merged.
+Nhat reviewed the implementation incrementally through Task 6 and explicitly confirmed `đã review` for this Task 7 packet on 2026-07-15. This closes FE02-T037, FE10-S08, and FE11-S07; it does not itself select a merge or push option.
 
 ## Residual Risks
 
@@ -77,4 +77,4 @@ Nhat reviewed the implementation incrementally through Task 6. Task 7 still requ
 4. Confirm an invalid/expired/used setup link shows the safe frontend error and does not activate the account.
 5. Confirm the existing verification/reset OTP and `CHANGE_PASSWORD_OTP` behaviors were not widened by ADR-005 work.
 
-Verdict: **Automated Task 7 validation is complete. Final human review is required before merge.**
+Verdict: **Task 7 validation and human review are complete. The branch is ready for an integration decision.**

@@ -7,7 +7,7 @@
 - Added the `/forgot-password?token=...` frontend mode with password-only setup, safe invalid-link feedback, and no token rendering, logging, or storage.
 - Password-reset credentials remain unable to activate inactive accounts.
 - Task 7 automated evidence passed: 170/170 affected backend tests, 75/75 frontend tests, touched-file lint, production build, traceability, credential scan, and diff checks.
-- `FE02-T037` remains open until Nhat reviews the final cross-feature validation packet.
+- Nhat confirmed the final cross-feature validation packet; `FE02-T037` is complete.
 
 ## 2026-07-15 - FE11 Account Setup Consumption Revision
 

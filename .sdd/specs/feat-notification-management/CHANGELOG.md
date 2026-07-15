@@ -6,7 +6,7 @@
 - Added configured-provider delivery with only safe `AuthToken` source metadata and exact `FE11:ACCOUNT_SETUP:<tokenId>` idempotency.
 - Kept raw setup tokens, links, and rendered sensitive content out of persistence, audits, logs, and HTTP responses.
 - Verified non-blocking delivery failure for account creation and Admin resend.
-- Task 7 automated evidence passed across FE02/FE10/FE11 and affected integration tests; `FE10-S08` remains open until Nhat reviews the final packet.
+- Task 7 automated evidence passed across FE02/FE10/FE11 and affected integration tests; Nhat confirmed the final packet and `FE10-S08` is complete.
 
 ## 2026-07-15 - FE11 Account Setup Delivery Revision
 

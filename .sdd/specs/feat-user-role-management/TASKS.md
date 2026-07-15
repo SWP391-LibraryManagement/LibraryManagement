@@ -40,10 +40,10 @@ Owner: Dung
   - DoD: only eligible incomplete accounts pass; prior active tokens are revoked; 60-second cooldown is enforced; each resend uses a new token ID/event/key; delivery failure stays safe/non-blocking.
   - Evidence: implemented through TDD in `d80b8f2`; frontend setup-link consumption added in `fa63acc`.
 
-- [ ] **FE11-S07 - Pass the account-setup validation gate.**
+- [x] **FE11-S07 - Pass the account-setup validation gate.**
   - Dependencies: FE11-S02..S06.
   - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; Nhat confirms human review.
-  - Automated state: PASS on 2026-07-15; final Task 7 human review is pending.
+  - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
 
 ## Deferred FE11 Work
 

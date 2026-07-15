@@ -125,7 +125,7 @@ This evidence closes the Authentication/OTP UX task group only and does not chan
   - DoD: one transaction updates password, verification/status/lock fields, token usage/revocation, and audit; password-reset behavior cannot activate inactive accounts.
   - Evidence: implementation commit `57068d2`; affected backend validation passed 170/170 tests.
 
-- [ ] **FE02-T037 - Validate the account-setup boundary.**
+- [x] **FE02-T037 - Validate the account-setup boundary.**
   - Dependencies: FE02-T036, FE11-S03..S06.
   - DoD: focused cross-feature tests, traceability, secret scans, and `git diff --check` pass; Nhat completes human review.
-  - Automated state: PASS on 2026-07-15; final Task 7 human review is pending.
+  - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
