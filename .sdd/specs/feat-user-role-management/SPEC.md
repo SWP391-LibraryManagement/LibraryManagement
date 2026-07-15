@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.3.0
+# Version: 0.4.0
 
-# Status: APPROVED
+# Status: READY FOR REVIEW - ACCOUNT SETUP REVISION
 
 # Owner: Dung
 
-# Last Updated: 2026-06-30
+# Last Updated: 2026-07-15
 
 # Feature ID: FE11
 
@@ -15,6 +15,8 @@
 > Source of truth for FE11 User & Role Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE11 is critical to system access control and administration.
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+>
+> The admin-created account setup revision is proposed through `ADR-005-admin-created-account-setup-boundary.md` and requires Nhat's review before implementation.
 
 ---
 
@@ -103,12 +105,12 @@ The feature can only start when:
 2. Admin selects user type: Member or another non-librarian user type approved by the team.
 3. Admin enters required fields: email, full name, phone (optional), address (optional).
 4. The system validates email format and checks for duplicate email.
-5. The system creates a new user record with status `ACTIVE`, assigns Member role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
-6. The system generates a one-time password setup token (valid for 24 hours).
-7. The system sends a password setup link to the user's email via the notification system (FE02/FE10).
-8. The user account is visible as active immediately; password-based login requires the user to complete password setup through FE02.
-9. The system writes an audit log entry.
-10. The system shows success message and displays the new user ID.
+5. In one transaction, the system creates a new user record with status `INACTIVE`, assigns the Member role, stores an unusable bcrypt hash of a discarded server-generated value, creates a hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the FE11 audit entry.
+6. After the source transaction commits, FE11 requests `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using `AuthToken` source metadata and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
+7. FE10 renders and sends the setup link without persisting or returning the raw token, link, or rendered sensitive content.
+8. Password-based login remains unavailable while the account is `INACTIVE`.
+9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
+10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
 
 ### MF-FE11-004: Update User Information
 
@@ -138,12 +140,12 @@ The feature can only start when:
 2. Admin selects user type: Librarian.
 3. Admin enters required fields: email, full name, department (optional), specialization (optional).
 4. The system validates email format and checks for duplicate email.
-5. The system creates a new user record with status `ACTIVE`, assigns Librarian role, and stores an unusable placeholder password hash if the current database requires `PasswordHash NOT NULL`.
-6. The system generates a one-time password setup token (valid for 24 hours).
-7. The system sends a password setup link to the user's email via the notification system (FE02/FE10).
-8. The librarian account is visible as active immediately; password-based login requires the user to complete password setup through FE02.
-9. The system writes an audit log entry.
-10. The system shows success message.
+5. In one transaction, the system creates a new user record with status `INACTIVE`, assigns the Librarian role, stores an unusable bcrypt hash of a discarded server-generated value, creates a hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the FE11 audit entry.
+6. After the source transaction commits, FE11 requests `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using `AuthToken` source metadata and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
+7. FE10 renders and sends the setup link without persisting or returning the raw token, link, or rendered sensitive content.
+8. Password-based login remains unavailable while the account is `INACTIVE`.
+9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
+10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
 
 ### MF-FE11-007: Update Librarian Account
 
@@ -174,6 +176,15 @@ The feature can only start when:
 6. The system updates the UserRoles mapping.
 7. The system writes an audit log entry with role change details.
 8. The system shows success message.
+
+### MF-FE11-014: Resend Password Setup Email
+
+1. Admin opens an admin-created account whose password setup is incomplete.
+2. Admin requests a new setup email.
+3. The system confirms that the target account is `INACTIVE`, has `ACCOUNT_SETUP` token history, has not completed setup, and is outside the 60-second issuance cooldown.
+4. In one transaction, FE11 revokes prior active setup tokens, creates a new hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the resend audit entry.
+5. FE11 requests a new `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using the new token ID and idempotency key.
+6. The system returns safe `SENT` or `FAILED` delivery status without returning the token or setup link.
 
 ### MF-FE11-010: View Admin Dashboard And Console Navigation
 
@@ -217,8 +228,8 @@ The feature can only start when:
 
 1. Admin attempts to deactivate a user who has active borrowed books.
 2. The system detects active borrowings.
-3. The system shows warning: "This user has [N] active borrowed items. Deactivate anyway?"
-4. Admin can choose to proceed or cancel.
+3. The system rejects deactivation and reports: "This user has [N] active borrowed items."
+4. Admin must resolve the active borrowing lifecycle before retrying deactivation.
 
 ### AF-FE11-003: Cannot Remove Last Admin
 
@@ -240,7 +251,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-002: Only authenticated Admin users can create new users.
 - BR-FE11-003: Users cannot be permanently deleted; only deactivated (set to INACTIVE status).
 - BR-FE11-004: Each user must have a unique email address in the system.
-- BR-FE11-005: When an admin creates a user, the account must start with `ACTIVE` status while password-based login remains unavailable until the user completes password setup through FE02.
+- BR-FE11-005: When an Admin creates a user, the account must start with `INACTIVE` status and remain unable to authenticate until FE02 completes password setup and atomically activates it.
 - BR-FE11-006: When a user account is deactivated, all active sessions/tokens for that user must be invalidated.
 - BR-FE11-007: Every user must have at least one role assigned (Member, Librarian, or Admin).
 - BR-FE11-008: A user can have multiple roles assigned simultaneously (e.g., Librarian and Admin).
@@ -256,6 +267,11 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
 - BR-FE11-019: Admin Request Management may show FE07 request data, but completed requests are read-only; only pending requests may expose action controls.
 - BR-FE11-020: Admin Dashboard may aggregate operational counts/charts, but detailed report generation remains owned by FE12 Reporting & Statistics.
+- BR-FE11-021: FE11 owns issuance and revocation of admin-created `ACCOUNT_SETUP` tokens; FE02 owns token consumption, password hashing, and activation; FE10 owns setup-link rendering and delivery.
+- BR-FE11-022: FE11 must request setup delivery only through `createSourceNotificationRequester('FE11')` using canonical pair `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `sourceEntityType: AuthToken`, persisted token ID, and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
+- BR-FE11-023: Raw setup tokens and links may exist only in process memory for the active request and must never appear in persistence, logs, audits, Admin responses, or test-only HTTP fields.
+- BR-FE11-024: User, profile, initial role, setup token, and FE11 audit creation must commit or roll back together; FE10 provider delivery occurs after this source transaction and remains non-blocking.
+- BR-FE11-025: Admin resend is allowed only for an `INACTIVE` admin-created account with incomplete setup token history; each resend revokes prior active setup tokens and creates a new token/event/key after a 60-second cooldown.
 
 ---
 
@@ -263,13 +279,13 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE11-001: When admin opens user list, the system shall display all users with pagination and support for filtering/searching.
 - FR-FE11-002: When admin views user details, the system shall display all user information and related data.
-- FR-FE11-003: When admin creates a new user account with valid data, the system shall create an `ACTIVE` user record with the selected approved role and send a password setup link.
+- FR-FE11-003: When Admin creates a new user account with valid data, the system shall atomically create an `INACTIVE` user, profile, approved role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
 - FR-FE11-004: When admin updates user information, the system shall validate email uniqueness before updating.
 - FR-FE11-005: When admin submits a create user form with duplicate email, the system shall reject the request with clear error message.
 - FR-FE11-006: The system shall never require admin to enter a password when creating users; password setup must happen through a one-time FE02 token flow.
 - FR-FE11-007: When admin updates user information, the system shall update the UpdatedAt timestamp.
 - FR-FE11-008: When admin deactivates a user account, the system shall set status to INACTIVE and invalidate active sessions.
-- FR-FE11-009: When admin creates a new librarian account with valid data, the system shall create an `ACTIVE` user record with Librarian role and send a password setup link.
+- FR-FE11-009: When Admin creates a new librarian account with valid data, the system shall atomically create an `INACTIVE` user, profile, Librarian role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
 - FR-FE11-010: When admin updates librarian account information, the system shall validate and save librarian-specific fields such as department and specialization.
 - FR-FE11-011: When admin deactivates a librarian account, the system shall set status to INACTIVE and invalidate active sessions.
 - FR-FE11-012: When admin assigns a role to a user, the system shall create an entry in UserRoles table.
@@ -281,6 +297,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries.
 - FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/export controls and view detail.
 - FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
+- FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery.
+- FR-FE11-037: IF FE10 setup delivery fails during create or resend, FE11 shall preserve the committed `INACTIVE` account/token state and return only safe `FAILED` delivery status.
+- FR-FE11-038: IF setup resend targets an ineligible account or occurs within 60 seconds of the latest setup-token issuance, FE11 shall reject the request without issuing or exposing a new credential.
 
 ### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
 
@@ -308,14 +327,14 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 
 - AC-FE11-001: Given admin access, when viewing user list, then system displays paginated list with filtering and search.
 - AC-FE11-002: Given admin access, when viewing a user detail page, then all user information is displayed.
-- AC-FE11-003: Given valid user data, when admin creates new user account, then an active user record is created with an approved role and setup link is sent.
+- AC-FE11-003: Given valid user data, when Admin creates a new user account, then an inactive user, approved role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-004: Given existing user, when admin updates user information, then changes are saved and UpdatedAt is updated.
 - AC-FE11-005: Given duplicate email, when admin creates new user, then system rejects with error message.
-- AC-FE11-006: Given admin creates new member or librarian, then NO password field is required or shown and password-based login is unavailable until setup is completed.
+- AC-FE11-006: Given Admin creates a new member or librarian, then no password/token/link field is required or shown, the account stays `INACTIVE`, and login remains unavailable until FE02 setup completion.
 - AC-FE11-007: Given active user, when admin deactivates account, then status changes to INACTIVE.
 - AC-FE11-008: Given duplicate email in update, when admin updates user, then system rejects the update.
 - AC-FE11-009: Given user with active session, when admin deactivates account, then session is invalidated.
-- AC-FE11-010: Given valid librarian data, when admin creates new librarian account, then an active user record is created with Librarian role and setup link is sent.
+- AC-FE11-010: Given valid librarian data, when Admin creates a new librarian account, then an inactive user, Librarian role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-011: Given existing librarian account, when admin updates librarian information, then changes are saved and UpdatedAt is updated.
 - AC-FE11-012: Given active librarian account, when admin deactivates librarian account, then status changes to INACTIVE and active sessions are invalidated.
 - AC-FE11-013: Given user without Admin role, when admin assigns Admin role, then UserRoles table is updated.
@@ -325,6 +344,9 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-017: Given admin opens Permissions, then role counts and permission matrix are displayed using FE11 role data.
 - AC-FE11-018: Given admin opens Audit Logs, then log rows can be reviewed without exposing sensitive credential/token fields.
 - AC-FE11-019: Given admin opens Request Management, then pending requests can expose approved action controls and completed requests are view-only.
+- AC-FE11-020: Given setup delivery fails after account creation commits, then the account remains `INACTIVE`, no credential is exposed, and the response reports safe `FAILED` status.
+- AC-FE11-021: Given an eligible incomplete setup account outside cooldown, when Admin resends setup, then prior active tokens are revoked and a new FE10 event uses a new token ID/idempotency key.
+- AC-FE11-022: Given an active, locked, self-registered inactive, completed-setup, or cooldown-limited account, when Admin requests setup resend, then the system rejects it without creating a credential.
 
 ---
 
@@ -337,8 +359,8 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | EC-FE11-003 | Email contains SQL injection payload | Sanitize input and validate email format; reject if invalid. |
 | EC-FE11-004 | Email address with special characters | Validate email format strictly according to RFC standards. |
 | EC-FE11-005 | Password with very long length (>1000 chars) | Set reasonable max length (e.g., 255) and reject. |
-| EC-FE11-006 | Attempting to deactivate self (admin) | May allow or show warning; decision depends on team policy. |
-| EC-FE11-007 | Concurrent updates to same user | Last write wins or use optimistic locking with version field. |
+| EC-FE11-006 | Attempting to deactivate self (admin) | Reject the action. |
+| EC-FE11-007 | Concurrent updates to same user | Reject stale updates through optimistic concurrency using the current `UpdatedAt` value. |
 | EC-FE11-008 | Database update fails during user creation | Roll back transaction; return error to user. |
 | EC-FE11-009 | Invalidating sessions for deactivated user fails | Log error but allow deactivation to proceed. |
 | EC-FE11-010 | Role does not exist when assigning | Return not found error. |
@@ -347,9 +369,12 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | EC-FE11-013 | User has no role after revocation | Reject; user must have at least one role. |
 | EC-FE11-014 | Email update to same email | Allow (no-op) or accept without complaint. |
 | EC-FE11-015 | Librarian-specific field is too long or invalid | Reject the update and return a validation error. |
-| EC-FE11-016 | Removed admin sidebar item is requested directly | Return not-found or redirect to the approved admin dashboard. |
+| EC-FE11-016 | Removed admin sidebar item is requested directly | Return `404 Not Found`; do not expose or redirect to a removed workflow. |
 | EC-FE11-017 | Completed request action attempted from admin request view | Reject action and keep request unchanged. |
 | EC-FE11-018 | Audit log detail contains sensitive token/password fields | Redact those fields before response/display. |
+| EC-FE11-019 | Setup provider delivery fails after source transaction commits | Keep account `INACTIVE`; return safe `FAILED`; allow Admin resend after cooldown. |
+| EC-FE11-020 | Setup resend requested for self-registered or completed account | Reject with `ACCOUNT_SETUP_NOT_ELIGIBLE`; create no token/notification. |
+| EC-FE11-021 | Setup resend requested within 60 seconds | Reject with `ACCOUNT_SETUP_RESEND_COOLDOWN`; include safe retry timing only. |
 
 ---
 
@@ -372,7 +397,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | userId | integer | Yes | Primary key, auto-increment. |
 | email | string | Yes | Unique, valid email format, max 255 chars. |
 | username | string | No | Optional alternative login field. |
-| passwordHash | string | Yes | bcrypt hash, never store plaintext. Admin-created accounts may store an unusable placeholder hash until the user completes password setup through FE02, matching the current SQL `PasswordHash NOT NULL` constraint. |
+| passwordHash | string | Yes | bcrypt hash, never plaintext. Before setup, store an unusable bcrypt hash of a server-generated random value that is immediately discarded; fixed literal placeholders are forbidden. |
 | fullName | string | Yes | User's display name, max 255 chars. |
 | phoneNumber | string | No | User's phone number. |
 | address | string | No | User's address. |
@@ -383,8 +408,11 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | updatedAt | datetime | Yes | Last update timestamp. |
 | lastLoginAt | datetime | No | Last successful login timestamp. |
 | lastPasswordChangedAt | datetime | No | Last password change timestamp. |
-| passwordSetupToken | string | No | One-time token for password setup. Expires after 24 hours or first use. Token value must not be exposed to admin. |
-| passwordSetupTokenExpiresAt | datetime | No | Expiration timestamp for password setup token. |
+| setupTokenId | integer | Conditional | Persisted `AuthTokens.TokenId` for token type `ACCOUNT_SETUP`; used for source traceability and idempotency. |
+| setupTokenHash | string | Conditional | Cryptographic hash only; raw token is never persisted. |
+| setupTokenExpiresAt | datetime | Conditional | Expires 24 hours after issuance. |
+| setupTokenUsedAt | datetime | No | Set by FE02 when password setup completes successfully. |
+| setupTokenRevokedAt | datetime | No | Set when FE11 resends setup or otherwise revokes an incomplete credential. |
 | lockedUntil | datetime | No | Timestamp when account will auto-unlock (if locked). |
 
 ---
@@ -397,11 +425,12 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/users` | Admin | Query: page, limit, status, role, search | List of users with pagination | Supports filtering and search. |
 | GET | `/api/users/{userId}` | Admin | - | User detail information | Includes roles and related data. |
-| POST | `/api/users` | Admin | `{ email: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | Created active user with ID and setup link sent to email | Creates new user without admin-entered password; sends password setup link to email via FE02/FE10. |
+| POST | `/api/users` | Admin | `{ email: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | `201 { userId, email, status: "INACTIVE", roles, setupDeliveryStatus, message }` | Creates source state atomically, then requests FE10 delivery; never returns password/token/link. |
 | PUT | `/api/users/{userId}` | Admin | `{ fullName?: string, phone?: string, address?: string, department?: string }` | Updated user | Updates user information. |
 | PATCH | `/api/users/{userId}/status` | Admin | `{ status: "INACTIVE" }` | Updated user status | Deactivate user or librarian account. |
 | POST | `/api/users/{userId}/roles` | Admin | `{ roleId: number }` | User with updated roles | Assign role to user. |
 | DELETE | `/api/users/{userId}/roles/{roleId}` | Admin | - | User with updated roles | Revoke role from user. |
+| POST | `/api/users/{userId}/resend-setup` | Admin | `{}` | `200 { userId, status: "INACTIVE", setupDeliveryStatus, message }` | Eligible incomplete account only; revokes prior active token and enforces 60-second cooldown. |
 | GET | `/api/admin/dashboard` | Admin | - | Dashboard summary/cards/chart data | Read-only aggregation; detailed reports belong to FE12. |
 | GET | `/api/admin/permissions` | Admin | - | Role summary and permission matrix | Read-only matrix unless using role assignment endpoints. |
 | GET | `/api/admin/audit-logs` | Admin | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Audit log list | Redacts sensitive fields. |
@@ -424,10 +453,11 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 
 ### 12.2 Transaction Integrity
 
-- NFR-FE11-TXN-001: Creating a user must be atomic: user record, default role assignment, and audit log must succeed together or roll back.
+- NFR-FE11-TXN-001: Creating a user must be atomic: user record, profile, default role, hashed setup token, and audit log must succeed together or roll back.
 - NFR-FE11-TXN-002: Deactivating a user must be atomic: user status, session invalidation, and audit log must succeed together or roll back.
 - NFR-FE11-TXN-003: Role assignment must be atomic: UserRoles update and audit log must succeed together or roll back.
-- NFR-FE11-TXN-004: Password setup notification queuing must not convert an otherwise valid admin-created account into an internal server error when optional notification content columns or templates are unavailable; the account creation response must remain safe and traceable.
+- NFR-FE11-TXN-004: FE10 setup delivery runs after the FE11 source transaction; provider/requester failure must not roll back the account or token and must return only safe delivery status.
+- NFR-FE11-TXN-005: Setup resend token revocation, new token creation, and audit logging must commit or roll back together.
 
 ### 12.3 Performance
 
@@ -472,6 +502,7 @@ This feature does not include:
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | User/role info is used for access control. |
 | FE03 User Profile | Internal | User profile updates here relate to user data. |
+| FE10 Notification Management | Internal | Only the requester bound to `FE11` renders and delivers canonical `ACCOUNT_SETUP` links using safe `AuthToken` source metadata. |
 | SQL Server database | Technical | Stores Users, Roles, UserRoles, and AuditLogs tables. |
 
 ---
@@ -484,7 +515,7 @@ This feature does not include:
 | Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE11-005 | FE11 always requests one-time setup-link delivery through FE10 after source commit; configured deployments use the provider adapter and tests use a mock. Delivery may safely return `FAILED`. | Review packet 2026-06-10; ADR-005 refinement 2026-07-15 | APPROVED |
 | Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
@@ -493,6 +524,9 @@ This feature does not include:
 | Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs; Confirm Payment and Confirm Borrow are removed from sidebar. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-012 | Admin Reports content is consolidated into Dashboard for this prototype; detailed reporting remains FE12. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-013 | Admin Request Management is read-only for completed requests and action-enabled only for pending/chờ xác nhận requests. | User correction 2026-06-30 | APPROVED |
+| Q-FE11-014 | Admin-created accounts start `INACTIVE` and become `ACTIVE` only after valid FE02 password setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
+| Q-FE11-015 | FE11 issues `ACCOUNT_SETUP`; FE10 delivers it only through the requester bound to `FE11`; FE02 consumes it and activates the account. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-016 | Admin-only resend revokes the prior setup credential, creates a new token/event/key, and enforces a 60-second server cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 
 ---
 
@@ -506,11 +540,14 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE11-002 | Prevent deactivation of users with active borrowings. | APPROVED |
 | Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | APPROVED |
 | Q-FE11-004 | Email is case-insensitive for login and uniqueness. | APPROVED |
-| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | APPROVED |
+| Q-FE11-005 | FE11 requests setup-link delivery through FE10 after source commit; tests use a provider mock and safe failure is allowed. | APPROVED |
 | Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | APPROVED |
 | Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | APPROVED |
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | APPROVED |
+| Q-FE11-014 | Admin-created accounts start `INACTIVE` until FE02 completes setup. | APPROVED |
+| Q-FE11-015 | FE11 issues setup tokens, FE10 delivers `ACCOUNT_SETUP`, and FE02 consumes/activates. | APPROVED |
+| Q-FE11-016 | Setup resend is Admin-only, rotates the token/event/key, and uses a 60-second cooldown. | APPROVED |
 
 ---
 
@@ -522,19 +559,22 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
 | AC-FE11-001 | Admin accesses user list -> system displays paginated list with filtering and search | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FT50 | Not Started |
 | AC-FE11-002 | Admin accesses user detail page -> all user information displayed | FR-FE11-002 | BR-FE11-001, BR-FE11-010 | FT51 | Not Started |
-| AC-FE11-003 | Valid user data submitted by admin -> active user record created with approved role and setup link sent | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007 | FT52 | Not Started |
+| AC-FE11-003 | Valid user data -> inactive user/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | FT52 | Ready for review |
 | AC-FE11-004 | Admin updates user information -> changes saved, UpdatedAt timestamp updated | FR-FE11-004, FR-FE11-007 | BR-FE11-010, BR-FE11-014 | FT53 | Not Started |
 | AC-FE11-005 | Duplicate email submitted when creating user -> system rejects with error message | FR-FE11-005 | BR-FE11-004 | FT52 | Not Started |
-| AC-FE11-006 | Admin creates new user -> no password field required or shown; password-based login unavailable until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013 | FT52, FT55 | Not Started |
+| AC-FE11-006 | Admin creates user -> no password/token/link is shown; account stays inactive until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FT52, FT55 | Ready for review |
 | AC-FE11-007 | Active user deactivated by admin -> status changes to INACTIVE | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | FT54 | Not Started |
 | AC-FE11-008 | Admin updates user email to duplicate -> system rejects the update | FR-FE11-004 | BR-FE11-004 | FT53 | Not Started |
 | AC-FE11-009 | User with active session deactivated by admin -> session invalidated | FR-FE11-008 | BR-FE11-006 | FT54 | Not Started |
-| AC-FE11-010 | Valid librarian data submitted by admin -> active user record created with Librarian role and setup link sent | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015 | FT55 | Not Started |
+| AC-FE11-010 | Valid librarian data -> inactive librarian/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | FT55 | Ready for review |
 | AC-FE11-011 | Admin updates librarian information -> changes saved, UpdatedAt timestamp updated | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015 | FT56 | Not Started |
 | AC-FE11-012 | Active librarian account deactivated by admin -> status changes to INACTIVE and sessions are invalidated | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | FT57 | Not Started |
 | AC-FE11-013 | User without Admin role receives Admin role assignment -> UserRoles updated | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FT58 | Not Started |
 | AC-FE11-014 | User with Admin role has role revoked (not last admin) -> UserRoles updated | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FT58 | Not Started |
 | AC-FE11-015 | Last remaining admin attempts to revoke Admin role -> system rejects action | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FT58 | Not Started |
+| AC-FE11-020 | Setup delivery failure leaves committed account inactive and exposes no credential | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FT52, FT55 | Ready for review |
+| AC-FE11-021 | Eligible Admin resend rotates setup token/event/key after cooldown | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | FE11-S06 | Ready for review |
+| AC-FE11-022 | Ineligible/cooldown-limited resend is rejected without credential creation | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S06 | Ready for review |
 
 ### FE11 Unwanted-Behavior Requirements to Sources to Tests
 
@@ -548,7 +588,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-020 | Update email to a duplicate address -> rejected | BR-FE11-004 | AF-FE11-004 | FT53 | Not Started |
 | FR-FE11-021 | Malformed / injection / oversized email -> sanitized and rejected | BR-FE11-004 | EC-FE11-003, EC-FE11-004, EC-FE11-005 | TBD | Not Started |
 | FR-FE11-022 | DB error during user creation -> rollback, no partial record | BR-FE11-010 | EC-FE11-008 | TBD | Not Started |
-| FR-FE11-023 | Concurrent updates to same user -> integrity preserved (last-write-wins/optimistic lock) | BR-FE11-014 | EC-FE11-007 | TBD | Not Started |
+| FR-FE11-023 | Concurrent stale update -> rejected through optimistic concurrency using `UpdatedAt` | BR-FE11-014 | EC-FE11-007 | FT53 + future service concurrency case | Not Started |
 | FR-FE11-024 | Assign a non-existent role -> not-found error, mapping unchanged | BR-FE11-007 | EC-FE11-010 | TBD | Not Started |
 | FR-FE11-025 | Assign a role the user already holds -> rejected | BR-FE11-008 | EC-FE11-011 | TBD | Not Started |
 | FR-FE11-026 | Revoke a role the user does not hold -> not-found error | BR-FE11-007 | EC-FE11-012 | TBD | Not Started |
@@ -561,16 +601,15 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-033 | Audit logs are searchable/filterable and redacted | BR-FE11-018 | EC-FE11-018 | TBD | Ready for review |
 | FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | TBD | Ready for review |
 | FR-FE11-035 | Completed request actions are disabled/rejected | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | TBD | Ready for review |
+| FR-FE11-037 | FE10 setup delivery failure preserves inactive source state and returns safe status | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FT52, FT55 | Ready for review |
+| FR-FE11-038 | Ineligible or cooldown-limited setup resend creates no credential | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S06 | Ready for review |
 
 ### Coverage Summary (FE11)
-- **Total AC**: 15 (AC-FE11-001 to AC-FE11-015) ✓ All mapped
-- **Total FR**: 29 (FR-FE11-001 to FR-FE11-029) ✓ All mapped
-- **Unwanted FR**: 18 of 29 (~62%) — FR-FE11-005, 006, 014, 015-029
-- **Total BR**: 15 (BR-FE11-001 to BR-FE11-015) ✓ All mapped
-- **Total Tests**: 9 (FT50 to FT58) - aligned with assignment sheet; new Unwanted FRs marked TBD pending test allocation
 
-
-2026-06-30 addendum: after admin-console updates, the current FE11 totals are 19 AC (AC-FE11-001..019), 35 FR (FR-FE11-001..035), 20 BR (BR-FE11-001..020), and 19 unwanted FRs. The new admin-console/request requirements are mapped above and remain pending dedicated tests.
+- **Total AC**: 22 (AC-FE11-001 to AC-FE11-022); account-setup ACs map to FT52/FT55 and FE11-S02/S06.
+- **Total FR**: 38 (FR-FE11-001 to FR-FE11-038); FR-FE11-036 maps through AC-FE11-021 and FE11-S06, while FR-FE11-037..038 are mapped above.
+- **Total BR**: 25 (BR-FE11-001 to BR-FE11-025).
+- **Assignment tests**: FT50 to FT58 remain the external baseline; focused account-setup service/integration tests are mandatory before implementation can close.
 
 ### External Assignment Traceability (Excel UC IDs)
 

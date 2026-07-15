@@ -18,6 +18,7 @@ function makeApp({ roles = ['ADMIN'], userManagementService } = {}) {
       listUsers: jest.fn(async () => ({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } })),
       getUser: jest.fn(),
       createUser: jest.fn(),
+      resendSetup: jest.fn(),
       updateUser: jest.fn(),
       updateStatus: jest.fn(),
       assignRole: jest.fn(),
@@ -112,8 +113,10 @@ describe('FE11 user management routes', () => {
       createUser: jest.fn(async () => ({
         userId: 2,
         email: 'new@example.test',
-        status: 'ACTIVE',
+        status: 'INACTIVE',
         roles: ['LIBRARIAN'],
+        setupDeliveryStatus: 'SENT',
+        message: 'User created. Password setup email sent.',
       })),
     };
     const app = makeApp({ userManagementService });
@@ -130,12 +133,89 @@ describe('FE11 user management routes', () => {
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({
       userId: 2,
-      status: 'ACTIVE',
+      status: 'INACTIVE',
       roles: ['LIBRARIAN'],
+      setupDeliveryStatus: 'SENT',
     });
     expect(userManagementService.createUser).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'new@example.test' }),
       expect.objectContaining({ adminUserId: 99 })
     );
+  });
+
+  test('POST /api/users/:userId/resend-setup passes validated target and Admin context', async () => {
+    const userManagementService = {
+      resendSetup: jest.fn(async () => ({
+        userId: 2,
+        status: 'INACTIVE',
+        setupDeliveryStatus: 'SENT',
+        message: 'Password setup email sent.',
+      })),
+    };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .post('/api/users/2/resend-setup')
+      .set('Authorization', 'Bearer token')
+      .send({});
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      userId: 2,
+      status: 'INACTIVE',
+      setupDeliveryStatus: 'SENT',
+      message: 'Password setup email sent.',
+    });
+    expect(userManagementService.resendSetup).toHaveBeenCalledWith(
+      2,
+      expect.objectContaining({ adminUserId: 99 })
+    );
+  });
+
+  test('POST /api/users/:userId/resend-setup requires authentication', async () => {
+    const userManagementService = { resendSetup: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app).post('/api/users/2/resend-setup').send({});
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('UNAUTHORIZED');
+    expect(userManagementService.resendSetup).not.toHaveBeenCalled();
+  });
+
+  test('POST /api/users/:userId/resend-setup requires Admin role', async () => {
+    const userManagementService = { resendSetup: jest.fn() };
+    const app = makeApp({ roles: ['LIBRARIAN'], userManagementService });
+
+    const response = await request(app)
+      .post('/api/users/2/resend-setup')
+      .set('Authorization', 'Bearer token')
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.resendSetup).not.toHaveBeenCalled();
+  });
+
+  test.each(['0', '-1', 'not-a-user'])('rejects invalid resend target %s', async (userId) => {
+    const userManagementService = { resendSetup: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .post(`/api/users/${userId}/resend-setup`)
+      .set('Authorization', 'Bearer token')
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'userId',
+          message: 'User ID must be a positive integer.',
+        }),
+      ])
+    );
+    expect(userManagementService.resendSetup).not.toHaveBeenCalled();
   });
 });

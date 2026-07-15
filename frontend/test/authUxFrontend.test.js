@@ -5,8 +5,10 @@ import test from 'node:test';
 import {
   RESEND_COOLDOWN_SECONDS,
   getPasswordRequirements,
+  getAccountSetupErrorMessage,
   maskEmail,
   normalizeOtp,
+  validatePasswordSetupFields,
   validateRegistrationFields,
 } from '../src/utils/authUx.js';
 
@@ -104,4 +106,67 @@ test('password recovery masks email and exposes accessible OTP resend states', a
   assert.match(input, /inputRef=\{inputRef\}/);
   assert.match(input, /htmlInput: inputProps/);
   assert.match(input, /disabled=\{disabled\}/);
+});
+
+test('account setup validates both password fields and maps invalid links safely', () => {
+  assert.deepEqual(
+    validatePasswordSetupFields({
+      newPassword: 'weak',
+      confirmPassword: 'different',
+    }),
+    {
+      newPassword: 'Mật khẩu chưa đáp ứng đủ yêu cầu.',
+      confirmPassword: 'Xác nhận mật khẩu không khớp.',
+    },
+  );
+  assert.deepEqual(
+    validatePasswordSetupFields({
+      newPassword: 'SetupPassword1!',
+      confirmPassword: 'SetupPassword1!',
+    }),
+    {},
+  );
+
+  const invalidLinkError = new Error('Invalid or expired reset token.', {
+    cause: {
+      response: {
+        data: { error: { code: 'INVALID_RESET_TOKEN' } },
+      },
+    },
+  });
+  assert.equal(
+    getAccountSetupErrorMessage(invalidLinkError),
+    'Liên kết thiết lập mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng liên hệ quản trị viên để được gửi lại.',
+  );
+});
+
+test('password recovery enters token-query setup mode without email or OTP submission', async () => {
+  const formSource = await readFile(
+    new URL('../src/component/forgotpassword/ForgotPasswordForm.jsx', import.meta.url),
+    'utf8',
+  );
+  const apiSource = await readFile(new URL('../src/api/authApi.js', import.meta.url), 'utf8');
+
+  assert.match(formSource, /useSearchParams/);
+  assert.match(formSource, /searchParams\.get\('token'\)/);
+  assert.match(formSource, /isSetupMode/);
+  assert.match(formSource, /!isSetupMode && step === STEP_EMAIL/);
+  assert.match(
+    formSource,
+    /\{!isSetupMode && \(\s*<FormInput[\s\S]*?label="Mã OTP 6 chữ số"/,
+  );
+  assert.match(
+    formSource,
+    /\{!isSetupMode && \(\s*<div className="recovery-resend-row">/,
+  );
+  assert.match(formSource, /resetPasswordWithToken\(\{ token: setupToken, newPassword \}\)/);
+  assert.match(formSource, /Thiết lập mật khẩu/);
+  assert.match(formSource, /Hoàn tất thiết lập/);
+  assert.match(formSource, /getAccountSetupErrorMessage/);
+  assert.doesNotMatch(formSource, /localStorage|sessionStorage|console\./);
+  assert.doesNotMatch(formSource, /value=\{setupToken\}|\{setupToken\}/);
+
+  assert.match(apiSource, /export async function resetPasswordWithToken/);
+  assert.match(apiSource, /api\.post\('\/auth\/reset-password', \{ token, newPassword \}\)/);
+  assert.doesNotMatch(apiSource, /console\./);
 });

@@ -6,10 +6,16 @@ function makeInMemoryAuthDependencies() {
   let nextUserId = 1;
   let nextTokenId = 1;
   const users = [];
+  const profiles = [];
   const rolesByUserId = new Map();
   const tokens = [];
   const auditLogs = [];
   const notifications = [];
+  const accountSetupControl = {
+    failureStage: null,
+    completionFailureStage: null,
+    resendFailureStage: null,
+  };
 
   const userRepository = {
     async findByEmail(email) {
@@ -48,6 +54,29 @@ function makeInMemoryAuthDependencies() {
       delete safeUser.passwordHash;
       safeUser.roles = clone(rolesByUserId.get(Number(userId)) || []);
       return safeUser;
+    },
+
+    async getManagedUserById(userId) {
+      const user = users.find((item) => item.userId === Number(userId));
+
+      if (!user) {
+        return null;
+      }
+
+      const profile = profiles.find((item) => item.userId === Number(userId)) || {};
+      return clone({
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        fullName: profile.fullName || null,
+        address: profile.address || null,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        roles: rolesByUserId.get(Number(userId)) || [],
+      });
     },
 
     async createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName }) {
@@ -215,17 +244,248 @@ function makeInMemoryAuthDependencies() {
     },
   };
 
+  const accountSetupRepository = {
+    async createPendingAccount(input) {
+      const now = input.now || new Date();
+      const user = {
+        userId: nextUserId,
+        username: input.username,
+        email: input.email,
+        passwordHash: input.passwordHash,
+        phone: input.phone || null,
+        status: 'INACTIVE',
+        emailVerifiedAt: null,
+        failedLoginCount: 0,
+        lockedUntil: null,
+        lastLoginAt: null,
+        createdAt: now,
+        updatedAt: null,
+      };
+
+      if (accountSetupControl.failureStage === 'profile') {
+        throw new Error('profile insert failed');
+      }
+
+      const profile = {
+        userId: user.userId,
+        fullName: input.fullName,
+        address: input.address || null,
+      };
+
+      if (accountSetupControl.failureStage === 'role') {
+        throw new Error('role assignment failed');
+      }
+
+      const token = {
+        tokenId: nextTokenId,
+        userId: user.userId,
+        tokenType: 'ACCOUNT_SETUP',
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+        usedAt: null,
+        revokedAt: null,
+        createdAt: now,
+        createdByIp: input.ip || null,
+      };
+
+      if (accountSetupControl.failureStage === 'token') {
+        throw new Error('token insert failed');
+      }
+
+      const audit = {
+        userId: input.adminUserId,
+        action: 'USER_CREATE',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: { email: user.email, roleName: input.roleName },
+        ipAddress: input.ip || null,
+        userAgent: input.userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.failureStage === 'audit') {
+        throw new Error('audit insert failed');
+      }
+
+      nextUserId += 1;
+      nextTokenId += 1;
+      users.push(user);
+      profiles.push(profile);
+      rolesByUserId.set(user.userId, [input.roleName]);
+      tokens.push(token);
+      auditLogs.push(audit);
+
+      return clone({ user, tokenId: token.tokenId });
+    },
+
+    async completeSetup({ tokenHash, passwordHash, now, context = {} }) {
+      const token = tokens.find(
+        (item) => item.tokenType === 'ACCOUNT_SETUP' && item.tokenHash === tokenHash
+      );
+
+      if (!token) {
+        return { matched: false };
+      }
+
+      const user = users.find((item) => item.userId === token.userId);
+
+      if (token.usedAt || token.revokedAt || !user || user.status !== 'INACTIVE') {
+        return { matched: true, outcome: 'INVALID' };
+      }
+
+      if (new Date(token.expiresAt).getTime() <= now.getTime()) {
+        return { matched: true, outcome: 'EXPIRED' };
+      }
+
+      const updatedUser = {
+        ...user,
+        passwordHash,
+        status: 'ACTIVE',
+        emailVerifiedAt: user.emailVerifiedAt || now,
+        failedLoginCount: 0,
+        lockedUntil: null,
+        updatedAt: now,
+      };
+      const updatedTokens = tokens.map((item) => {
+        if (item.tokenId === token.tokenId) {
+          return { ...item, usedAt: now };
+        }
+
+        if (
+          item.userId === user.userId &&
+          item.tokenType === 'ACCOUNT_SETUP' &&
+          !item.usedAt &&
+          !item.revokedAt
+        ) {
+          return { ...item, revokedAt: now };
+        }
+
+        return item;
+      });
+      const audit = {
+        userId: user.userId,
+        action: 'AUTH_ACCOUNT_SETUP_COMPLETE',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: null,
+        ipAddress: context.ip || null,
+        userAgent: context.userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.completionFailureStage) {
+        throw new Error(`${accountSetupControl.completionFailureStage} update failed`);
+      }
+
+      Object.assign(user, updatedUser);
+      updatedTokens.forEach((updatedToken, index) => {
+        tokens[index] = updatedToken;
+      });
+      auditLogs.push(audit);
+
+      return { matched: true, outcome: 'COMPLETED', userId: user.userId };
+    },
+
+    async rotateSetupToken({
+      userId,
+      tokenHash,
+      expiresAt,
+      adminUserId,
+      ip,
+      userAgent,
+      now,
+      cooldownSeconds,
+    }) {
+      const user = users.find((item) => item.userId === Number(userId));
+      if (!user) {
+        return { outcome: 'MISSING' };
+      }
+
+      const setupHistory = tokens
+        .filter((item) => item.userId === user.userId && item.tokenType === 'ACCOUNT_SETUP')
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() ||
+            right.tokenId - left.tokenId
+        );
+
+      if (
+        user.status !== 'INACTIVE' ||
+        !setupHistory.length ||
+        setupHistory.some((item) => item.usedAt)
+      ) {
+        return { outcome: 'NOT_ELIGIBLE' };
+      }
+
+      const cooldownMs = cooldownSeconds * 1000;
+      const elapsedMs = now.getTime() - new Date(setupHistory[0].createdAt).getTime();
+      if (elapsedMs < cooldownMs) {
+        return {
+          outcome: 'COOLDOWN',
+          retryAfterSeconds: Math.ceil((cooldownMs - elapsedMs) / 1000),
+        };
+      }
+
+      const newToken = {
+        tokenId: nextTokenId,
+        userId: user.userId,
+        tokenType: 'ACCOUNT_SETUP',
+        tokenHash,
+        expiresAt,
+        usedAt: null,
+        revokedAt: null,
+        createdAt: now,
+        createdByIp: ip || null,
+      };
+      const audit = {
+        userId: adminUserId,
+        action: 'USER_ACCOUNT_SETUP_RESEND',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: { tokenId: newToken.tokenId },
+        ipAddress: ip || null,
+        userAgent: userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.resendFailureStage === 'token') {
+        throw new Error('token insert failed');
+      }
+      if (accountSetupControl.resendFailureStage === 'audit') {
+        throw new Error('audit insert failed');
+      }
+
+      setupHistory
+        .filter((item) => !item.usedAt && !item.revokedAt)
+        .forEach((item) => {
+          item.revokedAt = now;
+        });
+      nextTokenId += 1;
+      tokens.push(newToken);
+      auditLogs.push(audit);
+
+      return clone({
+        outcome: 'ROTATED',
+        user: { userId: user.userId, email: user.email, status: user.status },
+        tokenId: newToken.tokenId,
+      });
+    },
+  };
+
   return {
     userRepository,
     authTokenRepository,
     auditLogRepository,
     notificationRepository,
+    accountSetupRepository,
     state: {
       users,
+      profiles,
       tokens,
       auditLogs,
       notifications,
       rolesByUserId,
+      accountSetupControl,
     },
   };
 }

@@ -1,12 +1,12 @@
 # CONTEXT.md - FE10 Notification Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: APPROVED
+# Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-13
+# Last Updated: 2026-07-15
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
@@ -22,6 +22,7 @@ This feature must keep four things consistent:
 - Notification content rendered from approved templates.
 - Delivery status for email and in-app notifications.
 - Safe delivery records for failed or skipped delivery attempts.
+- Construction-bound ownership for sensitive FE02 OTP and FE11 account-setup delivery.
 
 FE10 is a Standard Spec feature because it supports many workflows, but it should not own the business decision of when an account, reservation, loan, or fine changes state.
 
@@ -46,10 +47,10 @@ The typical library notification workflow:
 
 FE10 includes:
 
-- Receiving notification requests from approved internal features.
+- Receiving notification requests from approved construction-bound internal features.
 - Sending account verification, password reset, reservation, due date, overdue, and fine notifications.
 - Creating in-app notifications.
-- Sending email notifications through a configured provider or mock provider.
+- Sending email notifications through a configured provider adapter or injected mock provider.
 - Using approved notification templates and required template variables.
 - Tracking notification status and failed delivery reasons.
 
@@ -84,7 +85,8 @@ Potential issues to review:
 
 - Email addresses live in `Users.Email`; FE10 must not duplicate user account data unnecessarily.
 - Email provider secrets must come from environment/configuration, not committed files.
-- FE02 owns token generation; FE10 only receives links or safe template data to deliver.
+- FE02 owns OTP/token generation and validation; FE10 receives raw OTP template data only through the requester bound to `FE02`, uses it only in provider memory, and persists no OTP or rendered sensitive content.
+- Staff HTTP callers cannot submit sensitive auth notifications; only FE02 may submit verification/reset and only FE11 may submit account setup.
 - FE10 should be idempotent enough to avoid duplicate messages for the same source event.
 - Failed sends should not roll back already-completed business transactions in FE02/FE07/FE08/FE09.
 - In-app notification read/unread state is out of the current assignment scope unless the team adds it later.
@@ -130,12 +132,12 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 
 | Dependency | Why It Matters |
 | ---------- | -------------- |
-| FE02 Authentication | Provides account verification and password reset links and auth for protected notification APIs. |
+| FE02 Authentication | Creates verification/reset OTP tokens and requests their delivery through the requester bound to `FE02`. |
 | FE07 Borrowing Management | May request due date reminders and borrow/return status notifications. |
 | FE08 Reservation Management | Requests book available and reservation status notifications. |
 | FE09 Fine Management | Requests overdue and fine notifications. |
 | SQL Server database | Stores notification templates, records, and attempts. |
-| Email provider or mock provider | Delivers email notifications. |
+| Configured email provider adapter or injected mock provider | Delivers email notifications in deployed and test environments. |
 
 ---
 
@@ -143,22 +145,24 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
-| Q-FE10-001 | Phase 1 required channel is email with mock provider. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
 | Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-003 | Required templates: verification, password reset, due reminder, overdue notice, reservation ready, membership result. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-005 | Retry failed sends manually only in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-008 | FE11-owned `ACCOUNT_SETUP` is delivered only through the FE11-bound requester and persists no raw setup token/link. | ADR-005; Nhat approval 2026-07-15 | APPROVED |
 | Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | Review packet 2026-06-10 | APPROVED |
 
 ---
 
 ## 10. Current Hardening Status
 
-- `SPEC.md` version 0.2.0 is approved, and FE10-H01 through FE10-H08 are implemented on `feat/fe10-hardening`.
-- `PLAN.md` and `TASKS.md` track B5 implementation and B6 validation as complete.
+- `SPEC.md` version 0.3.0 incorporates the ADR-004 OTP/internal-only contract approved by Nhat on 2026-07-15.
+- FE10-H01 through FE10-H09 remain completed historical work; the new FE10-S01 through FE10-S05 follow-up is specification-ready and awaits implementation review.
 - Use environment variables or deployment configuration for email provider credentials.
 - Do not log raw tokens, full reset links, or provider secrets.
 - Keep FE10 APIs role-protected and server-side validated.
+- Keep verification/reset internal to the requester bound to `FE02` and account setup internal to the requester bound to `FE11`; HTTP and non-owning sources receive safe `403`.
 - Use idempotency keys or source event identifiers to prevent duplicate notification records.
 - Keep message rendering centralized so templates are testable.

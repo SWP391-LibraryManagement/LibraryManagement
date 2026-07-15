@@ -57,6 +57,18 @@ async function sendMail({ to, subject, text, html }) {
   };
 }
 
+async function sendNotificationEmail({ to, subject, body }) {
+  const text = String(body ?? '');
+  const html = escapeHtml(text).replace(/\r?\n/g, '<br>');
+
+  return sendMail({
+    to,
+    subject,
+    text,
+    html: `<p>${html}</p>`,
+  });
+}
+
 async function sendVerificationOtpEmail({ to, otp, expiresInMinutes }) {
   const safeOtp = escapeHtml(otp);
   const safeMinutes = escapeHtml(expiresInMinutes);
@@ -156,6 +168,7 @@ async function sendChangePasswordOtpEmail({ to, otp, expiresInMinutes }) {
 
 module.exports = {
   isSmtpConfigured,
+  sendNotificationEmail,
   sendVerificationOtpEmail,
   sendPasswordResetEmail,
   sendPasswordResetOtpEmail,

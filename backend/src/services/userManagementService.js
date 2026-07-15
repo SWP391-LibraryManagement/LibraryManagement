@@ -2,6 +2,10 @@ const crypto = require('crypto');
 const env = require('../config/env');
 const errors = require('../utils/safeErrors');
 const { addHours, generateRandomToken, hashToken } = require('../utils/tokenUtils');
+const { hashPassword } = require('../utils/passwordPolicy');
+
+const ACCOUNT_SETUP_TTL_HOURS = 24;
+const ACCOUNT_SETUP_RESEND_COOLDOWN_SECONDS = 60;
 
 const ROLE_BY_TYPE = {
   member: 'MEMBER',
@@ -68,9 +72,9 @@ function createUserManagementService({
   userRepository,
   authTokenRepository,
   auditLogRepository,
-  notificationRepository,
+  accountSetupRepository,
+  notificationRequester,
   clock = () => new Date(),
-  exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
   if (!userRepository) {
     userRepository = require('../repositories/userRepository');
@@ -84,8 +88,13 @@ function createUserManagementService({
     auditLogRepository = require('../repositories/auditLogRepository');
   }
 
-  if (!notificationRepository) {
-    notificationRepository = require('../repositories/notificationRepository');
+  if (!accountSetupRepository) {
+    accountSetupRepository = require('../repositories/accountSetupRepository');
+  }
+
+  if (!notificationRequester) {
+    const { defaultNotificationService } = require('./notificationService');
+    notificationRequester = defaultNotificationService.createSourceNotificationRequester('FE11');
   }
 
   async function writeAudit(context, action, targetId, metadata) {
@@ -201,6 +210,7 @@ function createUserManagementService({
     };
   }
 
+  // @spec FR-FE11-003, FR-FE11-009, FR-FE11-037 - create inactive state, then deliver non-blockingly.
   async function createUser(input, context = {}) {
     const normalized = validateCreateInput(input);
 
@@ -214,44 +224,122 @@ function createUserManagementService({
       throw errors.conflict('USERNAME_ALREADY_EXISTS', 'Username is already in use.');
     }
 
-    const createdUser = await userRepository.createAdminManagedUser({
-      ...normalized,
-      passwordHash: 'ACCOUNT_SETUP_PENDING',
-    });
-
+    const now = clock();
+    const passwordHash = await hashPassword(generateRandomToken());
     const setupToken = generateRandomToken();
-
-    await authTokenRepository.createToken({
-      userId: createdUser.userId,
-      tokenType: 'ACCOUNT_SETUP',
+    const expiresAt = addHours(now, ACCOUNT_SETUP_TTL_HOURS);
+    const { user: createdUser, tokenId } = await accountSetupRepository.createPendingAccount({
+      ...normalized,
+      passwordHash,
       tokenHash: hashToken(setupToken),
-      expiresAt: addHours(clock(), env.emailVerificationTtlHours),
-      createdByIp: context.ip || null,
+      expiresAt,
+      adminUserId: context.adminUserId,
+      ip: context.ip || null,
+      userAgent: context.userAgent || null,
+      now,
     });
 
-    if (notificationRepository && typeof notificationRepository.createNotification === 'function') {
-      await notificationRepository.createNotification({
-        userId: createdUser.userId,
+    const setupLink = `${env.frontendBaseUrl.replace(/\/$/, '')}/forgot-password?token=${encodeURIComponent(
+      setupToken
+    )}`;
+    let setupDeliveryStatus = 'FAILED';
+
+    try {
+      const delivery = await notificationRequester.createNotificationRequest({
+        type: 'ACCOUNT_SETUP',
         recipientEmail: createdUser.email,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        sourceFeature: 'FE11',
-        safePayload: { purpose: 'ACCOUNT_SETUP' },
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink, expiresInHours: ACCOUNT_SETUP_TTL_HOURS },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: tokenId,
+        idempotencyKey: `FE11:ACCOUNT_SETUP:${tokenId}`,
       });
+      setupDeliveryStatus = delivery?.status === 'SENT' ? 'SENT' : 'FAILED';
+    } catch {
+      setupDeliveryStatus = 'FAILED';
     }
 
-    await writeAudit(context, 'USER_CREATE', createdUser.userId, {
+    return {
+      userId: createdUser.userId,
       email: createdUser.email,
-      roleName: normalized.roleName,
+      status: 'INACTIVE',
+      roles: [normalized.roleName],
+      setupDeliveryStatus,
+      message:
+        setupDeliveryStatus === 'SENT'
+          ? 'User created. Password setup email sent.'
+          : 'User created. Password setup email delivery failed.',
+    };
+  }
+
+  // @spec BR-FE11-021..025, FR-FE11-036..038 - Admin resend rotates first, then delivers.
+  async function resendSetup(userId, context = {}) {
+    const parsedUserId = Number(userId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      throw errors.badRequest('INVALID_USER_ID', 'User id is invalid.');
+    }
+
+    const now = clock();
+    const setupToken = generateRandomToken();
+    const rotation = await accountSetupRepository.rotateSetupToken({
+      userId: parsedUserId,
+      tokenHash: hashToken(setupToken),
+      expiresAt: addHours(now, ACCOUNT_SETUP_TTL_HOURS),
+      adminUserId: context.adminUserId,
+      ip: context.ip || null,
+      userAgent: context.userAgent || null,
+      now,
+      cooldownSeconds: ACCOUNT_SETUP_RESEND_COOLDOWN_SECONDS,
     });
 
-    const response = await userRepository.getManagedUserById(createdUser.userId);
-    response.message = 'Active account created. Password setup email queued.';
-
-    if (exposeDebugTokens) {
-      response.debugSetupToken = setupToken;
+    if (rotation.outcome === 'MISSING') {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
     }
 
-    return response;
+    if (rotation.outcome === 'NOT_ELIGIBLE') {
+      throw errors.badRequest(
+        'ACCOUNT_SETUP_NOT_ELIGIBLE',
+        'Account setup cannot be resent for this user.'
+      );
+    }
+
+    if (rotation.outcome === 'COOLDOWN') {
+      throw errors.tooManyRequests(
+        'ACCOUNT_SETUP_RESEND_COOLDOWN',
+        'Password setup email was requested too recently.',
+        { retryAfterSeconds: rotation.retryAfterSeconds }
+      );
+    }
+
+    const setupLink = `${env.frontendBaseUrl.replace(/\/$/, '')}/forgot-password?token=${encodeURIComponent(
+      setupToken
+    )}`;
+    let setupDeliveryStatus = 'FAILED';
+
+    try {
+      const delivery = await notificationRequester.createNotificationRequest({
+        type: 'ACCOUNT_SETUP',
+        recipientEmail: rotation.user.email,
+        templateKey: 'ACCOUNT_SETUP',
+        templateData: { setupLink, expiresInHours: ACCOUNT_SETUP_TTL_HOURS },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: rotation.tokenId,
+        idempotencyKey: `FE11:ACCOUNT_SETUP:${rotation.tokenId}`,
+      });
+      setupDeliveryStatus = delivery?.status === 'SENT' ? 'SENT' : 'FAILED';
+    } catch {
+      setupDeliveryStatus = 'FAILED';
+    }
+
+    return {
+      userId: rotation.user.userId,
+      status: 'INACTIVE',
+      setupDeliveryStatus,
+      message:
+        setupDeliveryStatus === 'SENT'
+          ? 'Password setup email sent.'
+          : 'Password setup email delivery failed.',
+    };
   }
 
   async function updateUser(userId, input, context = {}) {
@@ -354,6 +442,7 @@ function createUserManagementService({
     listRoles,
     listAuditLogs,
     createUser,
+    resendSetup,
     updateUser,
     updateStatus,
     assignRole,

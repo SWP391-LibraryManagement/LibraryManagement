@@ -1,10 +1,9 @@
-const crypto = require('crypto');
-const env = require('../config/env');
 const errors = require('../utils/safeErrors');
 
 const supportedTypes = [
   'ACCOUNT_VERIFICATION',
   'PASSWORD_RESET',
+  'ACCOUNT_SETUP',
   'RESERVATION_AVAILABLE',
   'DUE_DATE_REMINDER',
   'OVERDUE_NOTICE',
@@ -15,6 +14,7 @@ const supportedTypes = [
 const canonicalTemplateKeys = {
   ACCOUNT_VERIFICATION: 'ACCOUNT_VERIFICATION',
   PASSWORD_RESET: 'PASSWORD_RESET',
+  ACCOUNT_SETUP: 'ACCOUNT_SETUP',
   RESERVATION_AVAILABLE: 'RESERVATION_READY',
   DUE_DATE_REMINDER: 'DUE_DATE_REMINDER',
   OVERDUE_NOTICE: 'OVERDUE_NOTICE',
@@ -22,13 +22,26 @@ const canonicalTemplateKeys = {
   GENERAL_SYSTEM: 'MEMBERSHIP_RESULT',
 };
 
-const sensitiveNotificationTypes = new Set(['ACCOUNT_VERIFICATION', 'PASSWORD_RESET']);
+const sensitiveTypeOwners = {
+  ACCOUNT_VERIFICATION: 'FE02',
+  PASSWORD_RESET: 'FE02',
+  ACCOUNT_SETUP: 'FE11',
+};
+const sensitiveNotificationTypes = new Set(Object.keys(sensitiveTypeOwners));
 const sensitiveQueueIdentifiers = new Set([
   'ACCOUNT_VERIFICATION',
   'PASSWORD_RESET',
+  'ACCOUNT_SETUP',
   'EMAIL_VERIFY',
 ]);
-const sensitiveKeyFragments = ['token', 'otp', 'password', 'verificationlink', 'resetlink'];
+const sensitiveKeyFragments = [
+  'token',
+  'otp',
+  'password',
+  'verificationlink',
+  'resetlink',
+  'setuplink',
+];
 const unsafeSourceEntityTypeFragments = [
   'template',
   'link',
@@ -38,7 +51,7 @@ const unsafeSourceEntityTypeFragments = [
   'password',
   'otp',
 ];
-const allowedSourceFeatures = new Set(['FE02', 'FE07', 'FE08', 'FE09', 'SYSTEM']);
+const allowedSourceFeatures = new Set(['FE02', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM']);
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -123,21 +136,6 @@ function isSensitiveQueueNotification(notification) {
   );
 }
 
-function deriveSensitiveIdempotencyKey(idempotencyKey) {
-  let jwtSecret;
-
-  try {
-    jwtSecret = env.requiredEnv('JWT_SECRET');
-  } catch (error) {
-    throw safeInternalError('NOTIFICATION_CONFIG_ERROR', 'Notification configuration is incomplete.');
-  }
-
-  return `sensitive-hmac-sha256:${crypto
-    .createHmac('sha256', jwtSecret)
-    .update(String(idempotencyKey))
-    .digest('hex')}`;
-}
-
 function extractVariables(templateText) {
   const variables = new Set();
   const pattern = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
@@ -164,6 +162,7 @@ function createNotificationService({
   userRepository,
   auditLogRepository,
   emailProvider,
+  emailService,
 } = {}) {
   if (!notificationRepository) {
     notificationRepository = require('../repositories/notificationRepository');
@@ -178,9 +177,19 @@ function createNotificationService({
   }
 
   if (!emailProvider) {
+    if (!emailService) {
+      emailService = require('./emailService');
+    }
+
     emailProvider = {
-      async send() {
-        return { providerMessageId: `mock-${Date.now()}` };
+      async send(message) {
+        const result = await emailService.sendNotificationEmail(message);
+
+        if (!result || result.sent !== true) {
+          throw new Error('Notification email delivery failed.');
+        }
+
+        return { providerMessageId: result.providerMessageId || null };
       },
     };
   }
@@ -319,9 +328,12 @@ function createNotificationService({
 
       sourceEntityType = input.sourceEntityType.trim();
       const normalizedSourceEntityType = normalizePayloadKey(sourceEntityType);
-      const isUnsafeSourceEntityType = unsafeSourceEntityTypeFragments.some((fragment) =>
-        normalizedSourceEntityType.includes(fragment)
-      );
+      const isAuthTokenSource = sourceEntityType === 'AuthToken';
+      const isUnsafeSourceEntityType =
+        !isAuthTokenSource &&
+        unsafeSourceEntityTypeFragments.some((fragment) =>
+          normalizedSourceEntityType.includes(fragment)
+        );
 
       if (
         !sourceEntityType ||
@@ -455,6 +467,14 @@ function createNotificationService({
     const channel = String(requestInput.channel || 'EMAIL').toUpperCase();
     const templateKey = String(requestInput.templateKey || '').trim();
     const rawTemplateData = requestInput.templateData || {};
+    const sensitiveOwner = sensitiveTypeOwners[type] || null;
+
+    if (sensitiveOwner && (!isInternal || effectiveSourceFeature !== sensitiveOwner)) {
+      throw errors.forbidden(
+        'SENSITIVE_NOTIFICATION_INTERNAL_ONLY',
+        'Sensitive authentication notifications must be requested internally.'
+      );
+    }
 
     if (!supportedTypes.includes(type)) {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
@@ -479,19 +499,40 @@ function createNotificationService({
     }
 
     const isSensitiveNotification = sensitiveNotificationTypes.has(type);
+
+    if (isSensitiveNotification) {
+      if (requestInput.sourceEntityType !== 'AuthToken') {
+        throw errors.badRequest(
+          'INVALID_SOURCE_ENTITY_TYPE',
+          'Sensitive authentication notifications require an AuthToken source.'
+        );
+      }
+
+      if (!Number.isInteger(requestInput.sourceEntityId) || requestInput.sourceEntityId <= 0) {
+        throw errors.badRequest(
+          'INVALID_SOURCE_ENTITY_ID',
+          'Sensitive authentication notifications require a positive AuthToken ID.'
+        );
+      }
+
+      const expectedIdempotencyKey = `${sensitiveOwner}:${type}:${requestInput.sourceEntityId}`;
+
+      if (requestInput.idempotencyKey !== expectedIdempotencyKey) {
+        throw errors.badRequest(
+          'INVALID_IDEMPOTENCY_KEY',
+          'Sensitive authentication notification idempotency key is invalid.'
+        );
+      }
+    }
+
     const templateData = isSensitiveNotification
       ? { redacted: true }
       : sanitizePayload(rawTemplateData);
-    const persistedSourceFeature = isSensitiveNotification ? null : effectiveSourceFeature || null;
-    const auditSourceFeature =
-      isSensitiveNotification && !isInternal ? null : effectiveSourceFeature || null;
-    const sourceEntityType = isSensitiveNotification ? null : requestInput.sourceEntityType || null;
+    const persistedSourceFeature = effectiveSourceFeature || null;
+    const auditSourceFeature = effectiveSourceFeature || null;
+    const sourceEntityType = requestInput.sourceEntityType || null;
     const sourceEntityId = requestInput.sourceEntityId ?? null;
-    const idempotencyKey = requestInput.idempotencyKey
-      ? isSensitiveNotification
-        ? deriveSensitiveIdempotencyKey(requestInput.idempotencyKey)
-        : requestInput.idempotencyKey
-      : null;
+    const idempotencyKey = requestInput.idempotencyKey || null;
 
     if (idempotencyKey) {
       const existing = await notificationRepository.findByIdempotencyKey(idempotencyKey);
@@ -605,6 +646,13 @@ function createNotificationService({
 
   async function createNotificationRequest(input, actor, context = {}) {
     requireInternalActor(actor);
+
+    if (Object.prototype.hasOwnProperty.call(input || {}, 'sourceFeature')) {
+      throw errors.badRequest(
+        'SOURCE_FEATURE_HTTP_FORBIDDEN',
+        'Notification source cannot be supplied through HTTP.'
+      );
+    }
 
     return createNotificationRequestWithSource(
       input,

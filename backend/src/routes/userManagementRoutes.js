@@ -2,6 +2,7 @@ const express = require('express');
 const { createUserManagementController } = require('../controllers/userManagementController');
 const { createAuthenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/requireRole');
+const { resendSetupValidators } = require('../validators/userManagementValidators');
 
 function createUserManagementRoutes({ authService, userManagementService } = {}) {
   const router = express.Router();
@@ -14,6 +15,12 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   router.get('/audit-logs', requireAdmin, controller.listAuditLogs);
   router.get('/:userId', requireAdmin, controller.getUser);
   router.post('/', requireAdmin, controller.createUser);
+  router.post(
+    '/:userId/resend-setup',
+    ...requireAdmin,
+    resendSetupValidators,
+    controller.resendSetup
+  );
   router.put('/:userId', requireAdmin, controller.updateUser);
   router.patch('/:userId/status', requireAdmin, controller.updateStatus);
   router.post('/:userId/roles', requireAdmin, controller.assignRole);

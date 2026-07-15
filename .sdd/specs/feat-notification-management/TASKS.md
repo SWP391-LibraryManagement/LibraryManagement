@@ -1,10 +1,10 @@
 # TASKS.md - FE10 Notification Management
 
-Status: COMPLETE
+Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP FOLLOW-UP
 
 Owner: Nhat
 
-Updated: 2026-07-13
+Updated: 2026-07-15
 
 ---
 
@@ -108,7 +108,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 - Dependencies: FE10-H04.
 - Maps to: G3; BR-FE10-001, BR-FE10-002, BR-FE10-004, BR-FE10-005, BR-FE10-011 to BR-FE10-013; FR-FE10-003 to FR-FE10-005; AC-FE10-003, AC-FE10-004, AC-FE10-006, AC-FE10-009; NFR-FE10-SEC-001, NFR-FE10-SEC-006, NFR-FE10-REL-002.
 - Exact files: `backend/src/services/notificationService.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: `createSourceNotificationRequester(sourceFeature)` binds one allowlisted source from `FE02`, `FE07`, `FE08`, `FE09`, `SYSTEM`; callers cannot override it in payload; internal requests pass through the same type/template, sensitive-delivery, recursive queued-payload, redaction, idempotency, and validation rules as HTTP; source audits use `userId: null` plus safe source metadata; HTTP routes stay Librarian/Admin protected.
+- Definition of Done: `createSourceNotificationRequester(sourceFeature)` binds one allowlisted source from `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; callers cannot override it; source/type ownership, sensitive delivery, redaction, idempotency, and validation are shared; source audits use `userId: null`; HTTP stays Librarian/Admin protected for non-sensitive requests.
 - Verification: unit/route-level service tests cover allowlist rejection, source override prevention, shared policy enforcement, null-user audit metadata, and safe errors; FE02 and FE09 callers remain untouched.
 
 ### FE10-H06 Migrate FE07 Borrowing Notifications
@@ -187,4 +187,74 @@ Validation evidence recorded on 2026-07-13:
 
 Conservative parallel opportunity: after FE10-H05 is complete and reviewed, FE10-H06 and FE10-H07 may run in parallel because they own disjoint source-service and test files. All other tasks remain ordered because they share FE10 contracts, service/repository code, route tests, or validation evidence.
 
-FE02 implementation and FE09 caller integration are explicitly out of this hardening task set. FE02 remains owner-deferred until its OTP/link and `EMAIL_VERIFY`/canonical-key drift is resolved; FE09 has no current caller/integration to migrate.
+For the completed G1-G7 hardening set, FE02 implementation and FE09 caller integration were explicitly out of scope. ADR-004 and FE10-S01 to FE10-S05 now supersede the FE02 deferral; FE09 still has no current caller/integration to migrate.
+
+## 9. FE10 OTP Security Follow-up Tasks
+
+The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 and G8-G10 supersede only the old link-template and FE02-deferral portions.
+
+### FE10-S01 Normalize The Cross-Feature Contract
+
+- [x] Status: DRAFT COMPLETE - AWAITING HUMAN REVIEW
+- Maps to: G8-G10; ADR-004; BR-FE10-003 to BR-FE10-005, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007, AC-FE10-009.
+- Files: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`, `.agents/CLAUDE.md`, FE10 and FE02 `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`.
+- DoD: FE02/FE10 agree on OTP variables, FE02-only sensitive ownership, no HTTP source override, token-ID idempotency, configured-provider abstraction, non-blocking failure, resend semantics, and explicit `CHANGE_PASSWORD_OTP` exclusion; no implementation file changes.
+
+### FE10-S02 Add RED Boundary And OTP Contract Tests
+
+- [ ] Status: PENDING
+- Dependencies: FE10-S01 human approval.
+- Maps to: BR-FE10-002 to BR-FE10-005, BR-FE10-010, BR-FE10-011; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006.
+- Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/integration.test.js`.
+- DoD: focused tests fail for staff HTTP sensitive submission, HTTP `sourceFeature`, non-FE02 sensitive requester use, missing/invalid OTP variables, and old link variables; tests characterize the accepted FE02-bound OTP request and exact safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` error.
+
+### FE10-S03 Implement Sensitive Source Ownership And Provider Delivery
+
+- [ ] Status: PENDING
+- Dependencies: FE10-S02 RED evidence.
+- Maps to: G8, G9; BR-FE10-003, BR-FE10-004, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007.
+- Files: `backend/src/services/notificationService.js`, `backend/src/validators/notificationValidators.js`, `backend/src/services/emailService.js`, `backend/src/controllers/notificationController.js`, `database/Librarymanagement.sql`, `backend/src/docs/openapi.yaml`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`, `backend/tests/integration.test.js`.
+- DoD: only FE02-bound requester accepts sensitive types; HTTP cannot set `sourceFeature`; OTP templates require `otp`/`expiresInMinutes`; configured provider adapter sends rendered content; persistence/audit/log/response contain no OTP or rendered sensitive content; source metadata uses `FE02`/`AuthToken`/token ID.
+
+### FE10-S04 Integrate FE02 Without Duplicate Delivery
+
+- [ ] Status: PENDING
+- Dependencies: FE10-S03; FE02-T030 RED evidence.
+- Maps to: G10; BR-FE10-005, BR-FE10-006, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-008; AC-FE10-001, AC-FE10-002, AC-FE10-008, AC-FE10-009; FE02-T031, FE02-T032.
+- Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
+- DoD: verification/reset create one FE10 request per persisted token ID; direct notification writes, direct verification/reset email calls, and HTTP debug-token fields are removed; tests capture OTPs through injected dependencies; `CHANGE_PASSWORD_OTP` and legacy token acceptance remain; FE10 failure is non-blocking and resend creates a new event/key.
+
+### FE10-S05 Pass Cross-Feature Validation And Human Review
+
+- [ ] Status: PENDING
+- Dependencies: FE10-S02 to FE10-S04; FE02-T030 to FE02-T032.
+- Maps to: ADR-004 verification contract and all G8-G10 traceability rows.
+- Files: FE10/FE02 `TASKS.md` and `CHANGELOG.md`; implementation files only for approved review fixes.
+- DoD: focused FE10/FE02 and affected integration tests pass; old link/deferred contract scans have no active matches; OTP leakage scan passes; traceability and `git diff --check` pass; diff contains no frontend, FE09 caller, new dependency, schema-table/index migration, or `CHANGE_PASSWORD_OTP` migration; human review is recorded before commit/merge.
+
+## 10. FE11 Account Setup Follow-up Tasks
+
+### FE10-S06 Add RED FE11 Account Setup Boundary Tests
+
+- [x] Status: COMPLETE (`547f986`)
+- Dependencies: ADR-005 and FE11-S01 human approval.
+- Maps to: G11; FR-FE10-005, FR-FE10-009, FR-FE10-010; AC-FE10-006, AC-FE10-010.
+- Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`.
+- DoD: tests fail for staff HTTP `ACCOUNT_SETUP`, non-FE11 requester use, missing/invalid `setupLink` or `expiresInHours`, source override, reused wrong canonical pair, and credential persistence/response leakage; accepted FE11 request uses `AuthToken` token ID and exact idempotency key.
+
+### FE10-S07 Implement FE11-Owned Sensitive Setup Delivery
+
+- [x] Status: COMPLETE (`547f986`, `3e25875`)
+- Dependencies: FE10-S06 RED evidence and FE10-S03 shared provider boundary.
+- Maps to: G11; BR-FE10-002, BR-FE10-004 to BR-FE10-013; FR-FE10-010; AC-FE10-010.
+- Files: notification service/validators/provider adapter, SQL template/type constraints, OpenAPI, focused tests.
+- DoD: `FE11` is allowlisted without weakening FE02 ownership; only FE11 can send `ACCOUNT_SETUP`; provider receives rendered setup content in memory; persistence/audit/log/response contain no setup token/link/rendered content; result is minimal `SENT`/`FAILED` summary.
+
+### FE10-S08 Pass FE11 Setup Integration Review
+
+- [x] Status: COMPLETE - HUMAN REVIEW CONFIRMED
+- Dependencies: FE10-S07, FE11-S04..S06, FE02-T035..T036.
+- Maps to: ADR-005 verification contract.
+- Files: FE10/FE11/FE02 task/changelog files and approved review fixes only.
+- DoD: creation, failure, completion, resend, ownership, idempotency, and leakage tests pass; OTP behavior remains unchanged; traceability, secret scans, and `git diff --check` pass; Nhat records human review before commit/merge.
+- Validation state: PASS on 2026-07-15 with 170/170 affected backend tests, 75/75 frontend tests, traceability enforcement, changed-line credential scan, and diff checks. Nhat confirmed the final Task 7 human review.

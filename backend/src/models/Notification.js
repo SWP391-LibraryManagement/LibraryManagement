@@ -6,7 +6,7 @@ module.exports = defineModel({
   primaryKey: 'notificationId',
   columns: [
     { attribute: 'notificationId', name: 'NotificationId', type: 'INT', primaryKey: true, identity: true },
-    { attribute: 'type', name: 'NotificationType', type: 'NVARCHAR(50)', nullable: true },
+    { attribute: 'type', name: 'NotificationType', type: 'NVARCHAR(50)', nullable: true, allowedValues: ['ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'RESERVATION_AVAILABLE', 'DUE_DATE_REMINDER', 'OVERDUE_NOTICE', 'FINE_NOTICE', 'GENERAL_SYSTEM'] },
     { attribute: 'templateId', name: 'TemplateId', type: 'INT', nullable: true, references: { table: 'NotificationTemplates', column: 'TemplateId' } },
     { attribute: 'templateKey', name: 'TemplateKey', type: 'NVARCHAR(100)', nullable: true },
     { attribute: 'userId', name: 'UserId', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },

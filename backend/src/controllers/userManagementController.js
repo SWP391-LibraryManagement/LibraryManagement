@@ -55,6 +55,19 @@ function createUserManagementController(userManagementService = defaultUserManag
       }
     },
 
+    resendSetup: async (req, res, next) => {
+      try {
+        // @spec FR-FE11-036, FR-FE11-038
+        const result = await userManagementService.resendSetup(
+          req.params.userId,
+          requestContext(req)
+        );
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     updateUser: async (req, res, next) => {
       try {
         const result = await userManagementService.updateUser(req.params.userId, req.body, requestContext(req));

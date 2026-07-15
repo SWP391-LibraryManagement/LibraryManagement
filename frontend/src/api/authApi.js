@@ -128,6 +128,18 @@ export async function resetPassword({ email, otp, newPassword }) {
   }
 }
 
+// @spec FR-FE02-024, FR-FE02-025 - consume an FE11 setup token without exposing it.
+export async function resetPasswordWithToken({ token, newPassword }) {
+  try {
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Không thể hoàn tất thiết lập tài khoản.'), {
+      cause: error,
+    });
+  }
+}
+
 export async function getCurrentUser(accessToken) {
   try {
     const response = await api.get('/auth/me', {

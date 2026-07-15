@@ -1,16 +1,18 @@
 # PLAN.md - FE10 Notification Management
 
-Status: COMPLETE
+Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP FOLLOW-UP
 
 Owner: Nhat
 
-Updated: 2026-07-13
+Updated: 2026-07-15
 
-Approval: G1-G7 approved by Nhat on 2026-07-13
+Approval: G1-G7 approved by Nhat on 2026-07-13; G8-G10 and ADR-004 approved by Nhat on 2026-07-15; G11/ADR-005 drafted and awaiting final written-spec review
 
-Workflow State: B5 implementation, B6 validation, and B7 integration complete
+Workflow State: G1-G7 B5/B6/B7 complete; G8-G10 specification and B4 decomposition ready for human review
 
 ---
+
+> Sections 1-8 preserve the completed G1-G7 hardening history. Section 9 is the current plan and supersedes historical verification-link, mock-only provider, and FE02-migration-deferral statements.
 
 ## B3 Approval And B4 Task Decomposition Authorization
 
@@ -28,7 +30,7 @@ Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval fir
 | CORE | Non-sensitive queued delivery | Reservation, due-date, overdue, fine, and general notifications remain queued. Render and persist their queued title/body at request creation, then deliver through `process-pending`, which selects only non-sensitive `PENDING` records. Traverse `templateData` objects and arrays recursively; normalize each key by lowercasing and removing underscores, hyphens, and whitespace; reject a queued request when any normalized key contains `token`, `otp`, `password`, `verificationlink`, or `resetlink`. This catches `OTP`, `reset_token`, `verification-link`, and nested object/array values before a non-sensitive type can smuggle a secret into persisted `Body`. Apply that same normalized recursive traversal when redacting `safePayload`. |
 | CORE | Type/template contract | Server-side code, not a caller-provided flag, enforces these pairs: `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`; `PASSWORD_RESET -> PASSWORD_RESET`; `RESERVATION_AVAILABLE -> RESERVATION_READY`; `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`; `OVERDUE_NOTICE -> OVERDUE_NOTICE`; `FINE_NOTICE -> FINE_NOTICE`; `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. Reject every mismatch. `DUE_OR_FINE_NOTICE` is not canonical unless separately approved. |
 | CORE | Public API response contract | Create/process currently expose full records, including content and safe payload. Validation/template errors retain normal safe 4xx responses. Sensitive provider success persists `SENT` notification/attempt and returns `201 { notificationId, status: "SENT" }`; sensitive provider failure persists `FAILED` notification/attempt with a safe reason and still returns `201 { notificationId, status: "FAILED" }`, because the request was accepted and source flow must not roll back. Non-sensitive creation returns the same minimal DTO with its persisted status. Any idempotent replay returns `200 { notificationId, status }` for the existing status; process returns `200 { processed, failed }`. No full object or array is returned. |
-| CORE | Internal actor and source boundary | System/Scheduler is approved as internal, not a login role, while current routes/service only accept login roles and callers bypass FE10. Recommended contract: `createSourceNotificationRequester(sourceFeature)` creates an in-process requester for fixed allowlisted sources `FE02`, `FE07`, `FE08`, `FE09`, and `SYSTEM`; the feature is bound at construction rather than trusted from input. The requester uses the same server-side type/template and sensitive-payload checks as HTTP. Source audit entries use `userId: null` plus source metadata and safe errors; source callers catch errors so source business flow does not roll back. HTTP routes remain `LIBRARIAN`/`ADMIN`. |
+| CORE | Internal actor and source boundary | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, or `SYSTEM`; the source is construction-bound rather than trusted from input. Source/type ownership is enforced before rendering or persistence. HTTP routes remain `LIBRARIAN`/`ADMIN` for non-sensitive types. |
 | CORE | Retry and idempotency state model | Q-FE10-005 promises manual retry but no transition exists, and the database index is all-status while lookup is active-only. Recommended policy: one record per idempotency key across all statuses; lookup covers all statuses; retain the current all-status unique index; retry reuses the same non-sensitive queued record/key/history. |
 | CORE | Source-reference type and template keys | The data contract says integer/string but every source PK and FE10 execution layer is `INT`; live FE02 uses `EMAIL_VERIFY` while canonical SQL/spec keys include `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. Recommended Phase 1 decision is integer-only, with a FE10 SPEC correction. Define `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` as canonical keys; do not add an undocumented `EMAIL_VERIFY` alias. |
 | SHELL | HTTP/controller/validator plumbing | These implement the approved response and retry contract but do not decide authorization or business rules. Keep routes thin. |
@@ -41,7 +43,7 @@ Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval fir
 | --- | --- | --- | --- |
 | G1: sensitive delivery architecture | Sanitization runs before rendering; the FE10 review checklist forbids storing sensitive links; processing normally needs persisted queued content. | Split by server-enforced type/template pair. SQL/test fixtures require `ACCOUNT_VERIFICATION` to contain `{{verificationLink}}` and `PASSWORD_RESET` to contain `{{resetLink}}`; synchronously render/send them and store only redacted summary/`safePayload`, delivery status, and attempt. Do not persist rendered sensitive title/body or raw values. Queue only canonical non-sensitive pairs; recursively traverse objects/arrays, normalize keys by lowercasing and removing `_`, `-`, and whitespace, and reject if a normalized key contains `token`, `otp`, `password`, `verificationlink`, or `resetlink`. Use the same normalized recursive rule to redact `safePayload`. | Plaintext queued sensitive body requires a SPEC revision plus an explicit database access-control standard and named owner. Encrypted short-lived payload is rejected as over-engineered for Phase 1. |
 | G2: minimal responses | Controllers return service results containing full notifications/arrays. | Keep validation/template errors as normal safe 4xx responses. Sensitive provider success persists `SENT` plus an attempt and returns `201 { notificationId, status: "SENT" }`; sensitive provider failure persists `FAILED` plus a safe attempt reason and returns `201 { notificationId, status: "FAILED" }`. Non-sensitive creation returns its minimal persisted status. An idempotent replay returns `200 { notificationId, status }` for any existing status; process returns `200 { processed, failed }`; never return full objects/arrays. | Retaining full objects contradicts the current SPEC and leaves content exposure. |
-| G3: internal requester | Routes/service require `LIBRARIAN`/`ADMIN`; FE02/FE07/FE08 bypass the service through the repository. | Add `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`/`FE07`/`FE08`/`FE09`/`SYSTEM`, construction-bound source metadata, `userId: null` source audits, safe errors, and caller-side non-blocking catch. It must apply the same type/template map, normalized recursive object/array sensitive-key rejection, `safePayload` redaction, and delivery split as HTTP. HTTP routes remain role-protected. FE07/FE08 migration is authorized after the requester task is reviewed; FE09 is allowlisted with implementation deferred. | Authenticated internal HTTP is viable but needs a configured service credential and more boundary/test work. Retaining direct repository writes duplicates policy and is not recommended. Do not invent a `SYSTEM` login role. |
+| G3: internal requester | Routes/service require `LIBRARIAN`/`ADMIN`; source features need a trusted in-process boundary. | Use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`/`FE07`/`FE08`/`FE09`/`FE11`/`SYSTEM`, construction-bound metadata, source/type ownership, `userId: null` source audits, safe errors, and caller-side non-blocking catch. | Authenticated internal HTTP would require service credentials and more boundary work. Do not invent a `SYSTEM` login role. |
 | G4: source entity ID | SPEC allows integer/string; validator/repository/model/SQL are `INT`, and current source primary keys are integers. | Phase 1 is integer-only; revise FE10 SPEC data requirements from integer/string to integer. | String support requires a coordinated schema migration and validator/model/repository updates. Do not silently widen/narrow the contract. |
 | G5: manual retry | No retry route/service/repository behavior exists; `FAILED` is never reselected by pending processing. | Add protected `POST /api/notifications/{id}/retry` for `LIBRARIAN`/`ADMIN`. It permits only a `FAILED` non-sensitive queued notification to transition to `PENDING`, retaining the same record, idempotency key, and attempt history; return `200 { notificationId, status }` and `409` otherwise. Retry of `ACCOUNT_VERIFICATION` or `PASSWORD_RESET` returns the standard safe `409` error body with code `REISSUE_REQUIRED` and a generic message instructing creation of a new source event; include no secret or provider detail. | An operator workflow without an endpoint is possible only if its actor, mechanism, transition, audit, and response contract are added to SPEC. No retry is executable until one option is approved. |
 | G6: terminal-state idempotency | SQL unique index applies to all statuses; service lookup checks only active statuses, so a terminal record can block a new insert unexpectedly. | One record per key across all statuses: change lookup semantics to all statuses, keep the existing all-status unique index, and make non-sensitive retry reuse the record. | A filtered active-only unique index permits a new record after a terminal state, but requires schema/index change and weakens source-event uniqueness. Do not alter lookup alone. |
@@ -153,3 +155,66 @@ No frontend files, provider credentials, real SMTP code, new dependencies, retry
 ## B4 Complete; B5 Implemented; B6 And B7 Complete
 
 This section originally stopped work after B4 until the documentation was reviewed and deliberately moved to an implementation branch. That gate was satisfied; FE10-H01 through FE10-H08 were implemented and independently reviewed on `feat/fe10-hardening`, and FE10-H09 passed final validation and whole-branch review. Nhat then approved integration, commit `9185a9a` reached `main`, and same-commit CI passed in run `29236572558`.
+
+## 9. G8-G10 OTP Security Boundary Follow-up
+
+### 9.1 Goal And Scope
+
+Implement ADR-004 as the smallest coherent cross-feature correction:
+
+- FE02 owns verification/reset OTP credentials.
+- FE10 owns rendering, configured-provider delivery, status, attempts, and safe source metadata.
+- Only the requester bound to `FE02` may submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`.
+- Only the requester bound to `FE11` may submit `ACCOUNT_SETUP` with `setupLink`, `expiresInHours`, and `AuthToken` source metadata.
+- HTTP cannot submit sensitive authentication types or caller-controlled `sourceFeature`.
+- Verification/reset direct notification writes and direct email sends are removed from FE02.
+- `CHANGE_PASSWORD_OTP`, legacy token acceptance, FE09 integration, frontend changes, and unrelated refactors remain out of scope.
+
+### 9.2 Approved Contract
+
+| Gate | Approved decision |
+| --- | --- |
+| G8 | Replace `verificationLink`/`resetLink` with required `otp` and `expiresInMinutes`. FE10 uses raw OTP only in provider memory and persists no OTP or rendered sensitive content. |
+| G9 | Staff HTTP and non-FE02 requesters are denied FE02 verification/reset; ADR-005 also denies non-FE11 account-setup requesters. HTTP cannot provide `sourceFeature`. |
+| G11 | FE11-bound `ACCOUNT_SETUP` sends synchronously, stores no setup credential/content, and uses token-ID source/idempotency semantics. |
+
+## FE11 Account Setup Follow-up
+
+1. Add `FE11` to the construction-bound requester allowlist without weakening FE02 ownership.
+2. Add canonical `ACCOUNT_SETUP -> ACCOUNT_SETUP` with required `setupLink` and `expiresInHours`.
+3. Reject staff HTTP and every non-FE11 requester for `ACCOUNT_SETUP`.
+4. Send synchronously through the configured provider and persist only safe `AuthToken` metadata, status, generic failure summary, and attempt.
+5. Require FE11 resend to create a new token ID and `FE11:ACCOUNT_SETUP:<tokenId>` key; manual retry remains `REISSUE_REQUIRED`.
+| G10 | FE02 uses `AuthTokens.TokenId` for source reference and idempotency, makes one FE10 request per OTP token, preserves source state on failure, and creates a new event on resend. |
+
+### 9.3 Expected Files
+
+- `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
+- `.agents/CLAUDE.md`
+- `.sdd/specs/feat-notification-management/{CONTEXT,SPEC,PLAN,TASKS,CHANGELOG}.md`
+- `.sdd/specs/feat-auth/{CONTEXT,SPEC,PLAN,TASKS,CHANGELOG}.md`
+- `backend/src/services/notificationService.js`
+- `backend/src/services/authService.js`
+- `backend/src/services/emailService.js`
+- `backend/src/repositories/authTokenRepository.js`
+- `backend/src/validators/notificationValidators.js`
+- `backend/src/controllers/notificationController.js`
+- `backend/src/docs/openapi.yaml`
+- `database/Librarymanagement.sql`
+- `backend/tests/notificationRoutes.test.js`
+- `backend/tests/authRoutes.test.js`
+- `backend/tests/helpers/inMemoryNotificationRepositories.js`
+- `backend/tests/helpers/inMemoryAuthRepositories.js`
+- `backend/tests/integration.test.js`
+
+No frontend file, database table/index migration, new dependency, retry UI, inbox UI, FE09 caller, or `CHANGE_PASSWORD_OTP` migration is planned.
+
+### 9.4 Ordered TDD Slices
+
+1. Add RED FE10 tests for HTTP/non-FE02 sensitive rejection, HTTP source override rejection, and FE02-bound OTP acceptance.
+2. Implement source/type ownership and OTP template validation, then wire the configured provider adapter while preserving provider injection in tests.
+3. Prove OTP provider-memory-only delivery and safe source metadata/idempotency persistence.
+4. Add RED FE02 tests for one requester call, token-ID payload/idempotency, absence of direct verification/reset notification/email calls, and absence of HTTP debug-token fields.
+5. Migrate FE02 verification/reset only, capture test OTPs through injected dependencies, and retain legacy token acceptance plus direct `CHANGE_PASSWORD_OTP` delivery.
+6. Lock non-blocking `FAILED`/exception behavior and new-token resend semantics.
+7. Run focused FE10/FE02 tests, affected integration tests, traceability, leakage/contradiction scans, and `git diff --check`; then stop for human review.

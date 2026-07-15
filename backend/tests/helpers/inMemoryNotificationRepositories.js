@@ -5,6 +5,7 @@ function clone(value) {
 const sensitiveQueueIdentifiers = new Set([
   'ACCOUNT_VERIFICATION',
   'PASSWORD_RESET',
+  'ACCOUNT_SETUP',
   'EMAIL_VERIFY',
 ]);
 
@@ -33,34 +34,41 @@ function makeInMemoryNotificationDependencies() {
     },
     {
       templateId: 3,
+      templateCode: 'ACCOUNT_SETUP',
+      subject: 'Set up your library account',
+      body: 'Setup link: {{setupLink}}. Expires in {{expiresInHours}} hours.',
+      status: 'ACTIVE',
+    },
+    {
+      templateId: 4,
       templateCode: 'RESERVATION_READY',
       subject: 'Reservation ready',
       body: 'Copy {{copyId}} is ready.',
       status: 'ACTIVE',
     },
     {
-      templateId: 4,
+      templateId: 5,
       templateCode: 'DUE_DATE_REMINDER',
       subject: 'Due date reminder',
       body: 'Due date: {{dueDate}}',
       status: 'ACTIVE',
     },
     {
-      templateId: 5,
+      templateId: 6,
       templateCode: 'FINE_NOTICE',
       subject: 'Fine notice',
       body: 'Fine amount: {{amount}}',
       status: 'ACTIVE',
     },
     {
-      templateId: 6,
+      templateId: 7,
       templateCode: 'OVERDUE_NOTICE',
       subject: 'Overdue notice',
       body: 'Overdue since: {{dueDate}}',
       status: 'ACTIVE',
     },
     {
-      templateId: 7,
+      templateId: 8,
       templateCode: 'MEMBERSHIP_RESULT',
       subject: 'Membership result',
       body: 'Membership status: {{membershipStatus}}',

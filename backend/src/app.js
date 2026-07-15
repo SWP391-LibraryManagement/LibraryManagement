@@ -30,6 +30,7 @@ const { defaultProfileService } = require('./services/profileService');
 const { defaultFineManagementService } = require('./services/fineManagementService');
 const { defaultInventoryService } = require('./services/inventoryService');
 const { defaultMembershipService } = require('./services/membershipService');
+const { createUserManagementService } = require('./services/userManagementService');
 
 function corsOptionsFromEnvironment() {
   if (process.env.NODE_ENV !== 'production') {
@@ -62,6 +63,14 @@ function createApp({
   userManagementService,
   adminService,
 } = {}) {
+  if (!userManagementService) {
+    const notificationRequester =
+      typeof notificationService?.createSourceNotificationRequester === 'function'
+        ? notificationService.createSourceNotificationRequester('FE11')
+        : undefined;
+    userManagementService = createUserManagementService({ notificationRequester });
+  }
+
   const app = express();
 
   app.use(helmet());

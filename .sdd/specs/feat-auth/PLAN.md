@@ -1,7 +1,7 @@
 ﻿# PLAN.md - FE02 Authentication
 
-Status: READY FOR REVIEW
-Date: 2026-06-10
+Status: READY FOR REVIEW - OTP DELIVERY FOLLOW-UP
+Date: 2026-07-15
 Owner: Dat
 
 ## 1. Purpose
@@ -14,6 +14,8 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 
 - `.sdd/specs/feat-auth/SPEC.md`
 - `.sdd/rfcs/ADR-003-authentication-approach.md`
+- `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
+- `.sdd/rfcs/ADR-005-admin-created-account-setup-boundary.md`
 - `.sdd/rfcs/ADR-002-database-design.md`
 - `docs/api/api-contract.md`
 - `database/Librarymanagement.sql`
@@ -48,6 +50,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 - Social login.
 - Full FE11 admin user management.
 - Unrelated frontend redesign outside the approved Authentication/OTP UX slice.
+- Migrating `CHANGE_PASSWORD_OTP` into FE10 without a separately approved notification type/use case.
 
 ## 4. Approved Technical Decisions
 
@@ -57,10 +60,11 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Access token | JWT, 15-minute expiry. |
 | Refresh token | Random token, stored as hash in `AuthTokens`, 7-day expiry. |
 | Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 24-hour expiry; legacy token links remain accepted. |
-| Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy reset/setup tokens remain accepted. |
-| Account setup token | Shared storage through `AuthTokens`; FE11 owns admin-created account flow. |
+| Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy password-reset tokens remain accepted. |
+| Account setup token | FE11 issues/rotates it; FE10 delivers it through the FE11-bound requester; FE02 consumes it and atomically activates the account. |
 | Roles | Flat roles from `Roles`/`UserRoles`. |
-| Email delivery | Mock notification record or safe stub until FE10 service exists. |
+| Verification/reset email delivery | FE02 creates/validates OTPs and calls the FE10 requester bound to `FE02`; FE10 exclusively renders, sends, and records status/attempts. |
+| Change-password OTP delivery | Remains a direct FE02 email flow until a separate FE10 notification type/use case is approved. |
 | Rate limiting | Simple server-side failed-login counter using `Users.FailedLoginCount` and `Users.LockedUntil`. |
 
 ## 5. Database Dependencies
@@ -71,7 +75,7 @@ Required tables/fields exist in `database/Librarymanagement.sql` and passed loca
 - `Roles`, `UserRoles`.
 - `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`.
 - `AuditLogs`.
-- `NotificationTemplates`, `Notifications`, `NotificationAttempts` for optional/mock notification integration.
+- `NotificationTemplates`, `Notifications`, `NotificationAttempts` are FE10-owned delivery records; FE02 references its persisted `AuthTokens.TokenId` but does not write notification records directly.
 
 ## 6. API Endpoints
 
@@ -103,7 +107,8 @@ backend/src/services/authService.js
 backend/src/repositories/userRepository.js
 backend/src/repositories/authTokenRepository.js
 backend/src/repositories/auditLogRepository.js
-backend/src/repositories/notificationRepository.js
+backend/src/services/notificationService.js
+backend/src/services/emailService.js
 backend/src/middleware/authMiddleware.js
 backend/src/middleware/errorHandler.js
 backend/src/validators/authValidators.js
@@ -178,3 +183,22 @@ The frontend hardening slice `FE02-T024` through `FE02-T028` completed automated
 The first same-commit CI run exposed stale golden-path assumptions. Commit `232ee4c` aligned the E2E password locator, `/home` login destination, and browser clock with the approved UX/runtime contracts. Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
 
 Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes only the approved Authentication/OTP UX hardening slice; the overall FE02 plan remains `READY FOR REVIEW` until the Core feature's full completion criteria are closed.
+
+## 13. FE02/FE10 OTP Delivery Follow-up
+
+ADR-004 and Nhat's 2026-07-15 approval authorize the following ordered implementation slice:
+
+1. Add failing FE10 boundary tests proving staff HTTP and non-FE02 requesters cannot submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`.
+2. Add failing FE10 OTP tests proving the FE02-bound requester accepts `otp`, `expiresInMinutes`, and `AuthToken` source metadata while no OTP crosses persistence/log/audit/response boundaries.
+3. Update FE10 templates/provider wiring and source/type policy with the smallest implementation that passes the focused tests.
+4. Add failing FE02 tests proving verification/reset sends use one FE10 requester call, token-ID idempotency, no direct notification write, and no direct duplicate email.
+5. Migrate only verification/reset delivery in `authService`; retain direct `CHANGE_PASSWORD_OTP` email and legacy token acceptance.
+6. Verify non-blocking FE10 failure, new-token resend semantics, focused FE02/FE10 tests, affected integration tests, traceability, and `git diff --check`.
+
+## 14. FE02/FE11 Account Setup Follow-up
+
+1. Add failing tests proving FE02 accepts only valid FE11 `ACCOUNT_SETUP` credentials for inactive admin-created accounts.
+2. Prove setup completion atomically updates password, `EmailVerifiedAt`, lock fields, `Status`, token usage/revocation, and audit.
+3. Prove password-reset credentials cannot activate ordinary inactive accounts.
+4. Preserve the existing `/api/auth/reset-password` compatibility shape while separating reset and setup business branches.
+5. Validate expired, used, revoked, ineligible, and concurrent setup attempts without partial persistence.

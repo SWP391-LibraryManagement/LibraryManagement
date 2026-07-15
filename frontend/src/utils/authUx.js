@@ -21,6 +21,32 @@ export function getPasswordRequirements(password) {
   };
 }
 
+export function validatePasswordSetupFields(values = {}) {
+  const errors = {};
+  const newPassword = String(values.newPassword || '');
+  const confirmPassword = String(values.confirmPassword || '');
+  const passwordRequirements = getPasswordRequirements(newPassword);
+
+  if (Object.values(passwordRequirements).some((met) => !met)) {
+    errors.newPassword = 'Mật khẩu chưa đáp ứng đủ yêu cầu.';
+  }
+  if (confirmPassword !== newPassword) {
+    errors.confirmPassword = 'Xác nhận mật khẩu không khớp.';
+  }
+
+  return errors;
+}
+
+export function getAccountSetupErrorMessage(error) {
+  const code = error?.cause?.response?.data?.error?.code;
+
+  if (code === 'INVALID_RESET_TOKEN' || code === 'EXPIRED_RESET_TOKEN') {
+    return 'Liên kết thiết lập mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng liên hệ quản trị viên để được gửi lại.';
+  }
+
+  return error?.message || 'Không thể hoàn tất thiết lập tài khoản. Vui lòng thử lại.';
+}
+
 export function normalizeOtp(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 6);
 }

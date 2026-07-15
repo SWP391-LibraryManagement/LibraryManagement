@@ -3,17 +3,42 @@ process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 process.env.AUTH_EXPOSE_TEST_TOKENS = 'true';
 
 const request = require('supertest');
+const bcrypt = require('bcrypt');
 const { createApp } = require('../src/app');
 const { createAuthService } = require('../src/services/authService');
 const { hashToken, generateRandomToken } = require('../src/utils/tokenUtils');
 const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthRepositories');
 
-function makeTestApp() {
+const FIXED_NOW = new Date('2026-07-15T02:00:00.000Z');
+
+function makeTestApp({ clock } = {}) {
   const dependencies = makeInMemoryAuthDependencies();
-  const authService = createAuthService(dependencies);
+  const authService = createAuthService({ ...dependencies, clock });
   const app = createApp({ authService });
 
   return { app, dependencies };
+}
+
+async function createPendingSetupAccount(dependencies, overrides = {}) {
+  const rawToken = overrides.rawToken || generateRandomToken();
+  const passwordHash = await bcrypt.hash('DiscardedPlaceholder1!', 4);
+  const result = await dependencies.accountSetupRepository.createPendingAccount({
+    username: overrides.username || 'setup.account',
+    email: overrides.email || 'setup@example.test',
+    passwordHash,
+    phone: null,
+    fullName: 'Setup Account',
+    address: null,
+    roleName: 'MEMBER',
+    tokenHash: hashToken(rawToken),
+    expiresAt: overrides.expiresAt || new Date(FIXED_NOW.getTime() + 24 * 60 * 60 * 1000),
+    adminUserId: 99,
+    ip: '127.0.0.1',
+    userAgent: 'jest',
+    now: FIXED_NOW,
+  });
+
+  return { rawToken, passwordHash, ...result };
 }
 
 async function registerAndVerify(app, email = 'member@example.test', password = 'Password1!') {
@@ -409,37 +434,207 @@ describe('FE02 auth vertical slice', () => {
     expect(response.body.error.code).toBe('EXPIRED_RESET_TOKEN');
   });
 
-  test('account setup token activates inactive account when password is set', async () => {
-    const { app, dependencies } = makeTestApp();
-    await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: 'setup@example.test',
-        password: 'Password1!',
-        confirmPassword: 'Password1!',
-      });
-    const setupToken = generateRandomToken();
-
+  test('account setup completion atomically activates, consumes one token, revokes siblings, and audits', async () => {
+    const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
+    const setup = await createPendingSetupAccount(dependencies);
+    dependencies.state.users[0].failedLoginCount = 4;
+    dependencies.state.users[0].lockedUntil = new Date('2026-07-15T03:00:00.000Z');
+    const siblingToken = generateRandomToken();
     await dependencies.authTokenRepository.createToken({
-      userId: 1,
+      userId: setup.user.userId,
       tokenType: 'ACCOUNT_SETUP',
-      tokenHash: hashToken(setupToken),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      tokenHash: hashToken(siblingToken),
+      expiresAt: new Date(FIXED_NOW.getTime() + 24 * 60 * 60 * 1000),
       createdByIp: null,
     });
 
     const response = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: setupToken,
+        token: setup.rawToken,
         newPassword: 'SetupPassword1!',
       });
 
     expect(response.status).toBe(200);
-    expect(dependencies.state.users[0].status).toBe('ACTIVE');
+    expect(response.body).toEqual({ message: 'Password reset successful' });
+    expect(dependencies.state.users[0]).toMatchObject({
+      status: 'ACTIVE',
+      emailVerifiedAt: FIXED_NOW,
+      failedLoginCount: 0,
+      lockedUntil: null,
+      updatedAt: FIXED_NOW,
+    });
+    expect(await bcrypt.compare('SetupPassword1!', dependencies.state.users[0].passwordHash)).toBe(true);
+    expect(dependencies.state.tokens[0].usedAt).toEqual(FIXED_NOW);
+    expect(dependencies.state.tokens[1].revokedAt).toEqual(FIXED_NOW);
+    expect(dependencies.state.auditLogs.at(-1)).toMatchObject({
+      userId: setup.user.userId,
+      action: 'AUTH_ACCOUNT_SETUP_COMPLETE',
+      targetId: setup.user.userId,
+    });
+    expect(
+      JSON.stringify({
+        user: dependencies.state.users[0],
+        tokens: dependencies.state.tokens,
+        audits: dependencies.state.auditLogs,
+        response: response.body,
+      })
+    ).not.toContain(setup.rawToken);
 
     const loginResponse = await login(app, 'setup@example.test', 'SetupPassword1!');
     expect(loginResponse.status).toBe(200);
+  });
+
+  test('rejects expired, used, revoked, active-account, and wrong-purpose setup credentials', async () => {
+    const cases = [
+      {
+        name: 'expired',
+        mutate({ dependencies }) {
+          dependencies.state.tokens[0].expiresAt = new Date(FIXED_NOW.getTime() - 1);
+        },
+        code: 'EXPIRED_RESET_TOKEN',
+      },
+      {
+        name: 'used',
+        mutate({ dependencies }) {
+          dependencies.state.tokens[0].usedAt = FIXED_NOW;
+        },
+        code: 'INVALID_RESET_TOKEN',
+      },
+      {
+        name: 'revoked',
+        mutate({ dependencies }) {
+          dependencies.state.tokens[0].revokedAt = FIXED_NOW;
+        },
+        code: 'INVALID_RESET_TOKEN',
+      },
+      {
+        name: 'active-account',
+        mutate({ dependencies }) {
+          dependencies.state.users[0].status = 'ACTIVE';
+        },
+        code: 'INVALID_RESET_TOKEN',
+      },
+      {
+        name: 'wrong-purpose',
+        mutate({ dependencies }) {
+          dependencies.state.tokens[0].tokenType = 'PASSWORD_RESET';
+        },
+        code: 'INVALID_RESET_TOKEN',
+      },
+    ];
+
+    for (const testCase of cases) {
+      const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
+      const setup = await createPendingSetupAccount(dependencies, {
+        email: `${testCase.name}@example.test`,
+        username: `${testCase.name}.setup`,
+      });
+      const originalPasswordHash = dependencies.state.users[0].passwordHash;
+      testCase.mutate({ dependencies });
+
+      const response = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: setup.rawToken, newPassword: 'SetupPassword1!' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe(testCase.code);
+      expect(dependencies.state.users[0].status).toBe(
+        testCase.name === 'active-account' ? 'ACTIVE' : 'INACTIVE'
+      );
+      expect(dependencies.state.users[0].passwordHash).toBe(originalPasswordHash);
+      expect(
+        dependencies.state.auditLogs.filter(
+          (entry) => entry.action === 'AUTH_ACCOUNT_SETUP_COMPLETE'
+        )
+      ).toHaveLength(0);
+    }
+  });
+
+  test('allows exactly one concurrent setup completion for the same token', async () => {
+    const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
+    const setup = await createPendingSetupAccount(dependencies, {
+      email: 'concurrent-setup@example.test',
+      username: 'concurrent.setup',
+    });
+
+    const responses = await Promise.all([
+      request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: setup.rawToken, newPassword: 'SetupPassword1!' }),
+      request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: setup.rawToken, newPassword: 'OtherPassword1!' }),
+    ]);
+
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
+    expect(dependencies.state.users[0].status).toBe('ACTIVE');
+    expect(
+      dependencies.state.auditLogs.filter((entry) => entry.action === 'AUTH_ACCOUNT_SETUP_COMPLETE')
+    ).toHaveLength(1);
+  });
+
+  test('rolls back every setup-completion change when the transaction fails', async () => {
+    const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
+    const setup = await createPendingSetupAccount(dependencies, {
+      email: 'atomic-failure@example.test',
+      username: 'atomic.failure',
+    });
+    const originalPasswordHash = dependencies.state.users[0].passwordHash;
+    dependencies.state.accountSetupControl.completionFailureStage = 'audit';
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let response;
+
+    try {
+      response = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: setup.rawToken, newPassword: 'SetupPassword1!' });
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' },
+    });
+    expect(dependencies.state.users[0]).toMatchObject({
+      status: 'INACTIVE',
+      passwordHash: originalPasswordHash,
+      emailVerifiedAt: null,
+    });
+    expect(dependencies.state.tokens[0]).toMatchObject({ usedAt: null, revokedAt: null });
+    expect(
+      dependencies.state.auditLogs.filter((entry) => entry.action === 'AUTH_ACCOUNT_SETUP_COMPLETE')
+    ).toHaveLength(0);
+  });
+
+  test('password-reset credentials cannot activate an inactive account', async () => {
+    const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'inactive-reset@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+    const resetToken = generateRandomToken();
+    await dependencies.authTokenRepository.createToken({
+      userId: 1,
+      tokenType: 'PASSWORD_RESET',
+      tokenHash: hashToken(resetToken),
+      expiresAt: new Date(FIXED_NOW.getTime() + 15 * 60 * 1000),
+      createdByIp: null,
+    });
+    const originalPasswordHash = dependencies.state.users[0].passwordHash;
+
+    const response = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: resetToken, newPassword: 'ResetPassword1!' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('INVALID_RESET_TOKEN');
+    expect(dependencies.state.users[0].status).toBe('INACTIVE');
+    expect(dependencies.state.users[0].passwordHash).toBe(originalPasswordHash);
   });
 
   test('malformed access token is rejected on protected route', async () => {
