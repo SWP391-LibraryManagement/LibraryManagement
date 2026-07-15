@@ -112,17 +112,20 @@ This evidence closes the Authentication/OTP UX task group only and does not chan
 - [x] **FE02-T034 - Draft the canonical setup-consumption contract.**
   - Maps to: BR-FE02-023..025; FR-FE02-024..025; AC-FE02-020..021; ADR-005.
   - DoD: FE02, FE10, and FE11 agree on inactive initial state, ownership, atomic completion, failure, resend, and credential exposure; implementation files remain unchanged.
-  - Review state: drafted, awaiting Nhat review.
+  - Review state: Nhat reviewed the approved contract before implementation.
 
-- [ ] **FE02-T035 - Add RED setup-completion tests.**
+- [x] **FE02-T035 - Add RED setup-completion tests.**
   - Files: `backend/tests/authRoutes.test.js`, auth test repositories/helpers.
   - DoD: failing tests prove valid atomic activation and rejection of expired, used, revoked, ineligible, reset-purpose, and concurrently consumed credentials.
+  - Evidence: RED coverage was implemented with the atomic completion slice and committed in `57068d2`.
 
-- [ ] **FE02-T036 - Implement atomic setup completion.**
+- [x] **FE02-T036 - Implement atomic setup completion.**
   - Dependencies: FE02-T035, FE11-S04.
   - Files: auth service and user/token/audit repositories.
   - DoD: one transaction updates password, verification/status/lock fields, token usage/revocation, and audit; password-reset behavior cannot activate inactive accounts.
+  - Evidence: implementation commit `57068d2`; affected backend validation passed 170/170 tests.
 
 - [ ] **FE02-T037 - Validate the account-setup boundary.**
   - Dependencies: FE02-T036, FE11-S03..S06.
   - DoD: focused cross-feature tests, traceability, secret scans, and `git diff --check` pass; Nhat completes human review.
+  - Automated state: PASS on 2026-07-15; final Task 7 human review is pending.

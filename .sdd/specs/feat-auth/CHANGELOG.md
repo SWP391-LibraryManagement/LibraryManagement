@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-15 - Account Setup Implementation And Validation
+
+- Added atomic FE11 `ACCOUNT_SETUP` consumption for eligible inactive admin-created accounts.
+- Setup completion now stores the chosen password, verifies/activates the account, resets lock fields, consumes one token, revokes siblings, and writes the auth audit in one transaction.
+- Added the `/forgot-password?token=...` frontend mode with password-only setup, safe invalid-link feedback, and no token rendering, logging, or storage.
+- Password-reset credentials remain unable to activate inactive accounts.
+- Task 7 automated evidence passed: 170/170 affected backend tests, 75/75 frontend tests, touched-file lint, production build, traceability, credential scan, and diff checks.
+- `FE02-T037` remains open until Nhat reviews the final cross-feature validation packet.
+
 ## 2026-07-15 - FE11 Account Setup Consumption Revision
 
 - Bumped `SPEC.md` to 0.6.0 and marked the combined OTP/account-setup revision ready for review.

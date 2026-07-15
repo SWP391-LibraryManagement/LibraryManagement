@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-15 - Account Setup Slice Implemented And Validation Ready
+
+- Admin-created Member/Librarian accounts now commit as `INACTIVE` with profile, role, hashed 24-hour setup token, and audit in one transaction.
+- FE10 delivery runs after commit and returns only safe `SENT`/`FAILED` status.
+- Added Admin-only setup resend with eligibility checks, row locks, 60-second cooldown, prior-token revocation, new token/event/key, and transactional audit.
+- Added frontend setup-link consumption through the existing FE02 reset endpoint without email/OTP controls.
+- Task 7 automated evidence passed: 170/170 affected backend tests, 75/75 frontend tests, lint, build, traceability, credential scan, and diff checks.
+- `FE11-S07` remains open until Nhat reviews the final cross-feature validation packet; all unrelated FE11 work remains deferred.
+
 ## 2026-07-15 - Account Setup Contract Revision
 
 - Bumped `SPEC.md` to 0.4.0 and marked the revision ready for human review.

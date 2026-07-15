@@ -236,7 +236,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S06 Add RED FE11 Account Setup Boundary Tests
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`547f986`)
 - Dependencies: ADR-005 and FE11-S01 human approval.
 - Maps to: G11; FR-FE10-005, FR-FE10-009, FR-FE10-010; AC-FE10-006, AC-FE10-010.
 - Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`.
@@ -244,7 +244,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S07 Implement FE11-Owned Sensitive Setup Delivery
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE (`547f986`, `3e25875`)
 - Dependencies: FE10-S06 RED evidence and FE10-S03 shared provider boundary.
 - Maps to: G11; BR-FE10-002, BR-FE10-004 to BR-FE10-013; FR-FE10-010; AC-FE10-010.
 - Files: notification service/validators/provider adapter, SQL template/type constraints, OpenAPI, focused tests.
@@ -252,8 +252,9 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S08 Pass FE11 Setup Integration Review
 
-- [ ] Status: PENDING
+- [ ] Status: READY FOR HUMAN REVIEW
 - Dependencies: FE10-S07, FE11-S04..S06, FE02-T035..T036.
 - Maps to: ADR-005 verification contract.
 - Files: FE10/FE11/FE02 task/changelog files and approved review fixes only.
 - DoD: creation, failure, completion, resend, ownership, idempotency, and leakage tests pass; OTP behavior remains unchanged; traceability, secret scans, and `git diff --check` pass; Nhat records human review before commit/merge.
+- Automated state: PASS on 2026-07-15 with 170/170 affected backend tests, 75/75 frontend tests, traceability enforcement, changed-line credential scan, and diff checks. Final Task 7 human review is pending.
