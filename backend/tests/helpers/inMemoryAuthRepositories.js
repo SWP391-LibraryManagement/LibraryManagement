@@ -6,10 +6,12 @@ function makeInMemoryAuthDependencies() {
   let nextUserId = 1;
   let nextTokenId = 1;
   const users = [];
+  const profiles = [];
   const rolesByUserId = new Map();
   const tokens = [];
   const auditLogs = [];
   const notifications = [];
+  const accountSetupControl = { failureStage: null };
 
   const userRepository = {
     async findByEmail(email) {
@@ -48,6 +50,29 @@ function makeInMemoryAuthDependencies() {
       delete safeUser.passwordHash;
       safeUser.roles = clone(rolesByUserId.get(Number(userId)) || []);
       return safeUser;
+    },
+
+    async getManagedUserById(userId) {
+      const user = users.find((item) => item.userId === Number(userId));
+
+      if (!user) {
+        return null;
+      }
+
+      const profile = profiles.find((item) => item.userId === Number(userId)) || {};
+      return clone({
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        fullName: profile.fullName || null,
+        address: profile.address || null,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        roles: rolesByUserId.get(Number(userId)) || [],
+      });
     },
 
     async createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName }) {
@@ -215,17 +240,95 @@ function makeInMemoryAuthDependencies() {
     },
   };
 
+  const accountSetupRepository = {
+    async createPendingAccount(input) {
+      const now = input.now || new Date();
+      const user = {
+        userId: nextUserId,
+        username: input.username,
+        email: input.email,
+        passwordHash: input.passwordHash,
+        phone: input.phone || null,
+        status: 'INACTIVE',
+        emailVerifiedAt: null,
+        failedLoginCount: 0,
+        lockedUntil: null,
+        lastLoginAt: null,
+        createdAt: now,
+        updatedAt: null,
+      };
+
+      if (accountSetupControl.failureStage === 'profile') {
+        throw new Error('profile insert failed');
+      }
+
+      const profile = {
+        userId: user.userId,
+        fullName: input.fullName,
+        address: input.address || null,
+      };
+
+      if (accountSetupControl.failureStage === 'role') {
+        throw new Error('role assignment failed');
+      }
+
+      const token = {
+        tokenId: nextTokenId,
+        userId: user.userId,
+        tokenType: 'ACCOUNT_SETUP',
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+        usedAt: null,
+        revokedAt: null,
+        createdAt: now,
+        createdByIp: input.ip || null,
+      };
+
+      if (accountSetupControl.failureStage === 'token') {
+        throw new Error('token insert failed');
+      }
+
+      const audit = {
+        userId: input.adminUserId,
+        action: 'USER_CREATE',
+        targetType: 'USER',
+        targetId: user.userId,
+        metadata: { email: user.email, roleName: input.roleName },
+        ipAddress: input.ip || null,
+        userAgent: input.userAgent || null,
+        createdAt: now,
+      };
+
+      if (accountSetupControl.failureStage === 'audit') {
+        throw new Error('audit insert failed');
+      }
+
+      nextUserId += 1;
+      nextTokenId += 1;
+      users.push(user);
+      profiles.push(profile);
+      rolesByUserId.set(user.userId, [input.roleName]);
+      tokens.push(token);
+      auditLogs.push(audit);
+
+      return clone({ user, tokenId: token.tokenId });
+    },
+  };
+
   return {
     userRepository,
     authTokenRepository,
     auditLogRepository,
     notificationRepository,
+    accountSetupRepository,
     state: {
       users,
+      profiles,
       tokens,
       auditLogs,
       notifications,
       rolesByUserId,
+      accountSetupControl,
     },
   };
 }

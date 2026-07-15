@@ -112,8 +112,10 @@ describe('FE11 user management routes', () => {
       createUser: jest.fn(async () => ({
         userId: 2,
         email: 'new@example.test',
-        status: 'ACTIVE',
+        status: 'INACTIVE',
         roles: ['LIBRARIAN'],
+        setupDeliveryStatus: 'SENT',
+        message: 'User created. Password setup email sent.',
       })),
     };
     const app = makeApp({ userManagementService });
@@ -130,8 +132,9 @@ describe('FE11 user management routes', () => {
     expect(response.status).toBe(201);
     expect(response.body).toMatchObject({
       userId: 2,
-      status: 'ACTIVE',
+      status: 'INACTIVE',
       roles: ['LIBRARIAN'],
+      setupDeliveryStatus: 'SENT',
     });
     expect(userManagementService.createUser).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'new@example.test' }),
