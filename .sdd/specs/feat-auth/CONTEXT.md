@@ -2,7 +2,7 @@
 
 # Version: 0.2.0
 
-# Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
@@ -51,7 +51,7 @@ The typical small/medium library authentication workflow:
 
 FE02 includes:
 
-- User registration with email verification.
+- User self-registration with email verification and exactly the `Member` role; Librarian/Admin account creation belongs to FE11.
 - User login with credentials.
 - User logout and session termination.
 - Password change (authenticated user).
@@ -85,7 +85,7 @@ Potential issues to review:
 
 - Password storage must use bcrypt or similar hashing, not plain text or simple MD5.
 - Session/token strategy must be defined: JWT, session cookies, or both?
-- Reset/setup credentials have approved expiry: password-reset OTP 15 minutes; admin-created account setup token 24 hours.
+- Reset/setup credentials have approved expiry: password-reset OTP 15 minutes; admin-created account setup token exactly 24 hours after issuance.
 - Login attempt rate limiting to prevent brute force attacks.
 - Email verification mechanism for registration and password reset.
 - Admin-created accounts from FE11 remain `INACTIVE` and unable to login until FE02 atomically completes password setup and activates them.

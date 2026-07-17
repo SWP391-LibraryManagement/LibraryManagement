@@ -1,6 +1,6 @@
 # PLAN.md - FE12 Reporting & Statistics
 
-Status: COMPLETE
+Status: APPROVED - BASELINE 2026-07-17; DETERMINISTIC POLICY IMPLEMENTATION FOLLOW-UP PENDING
 
 Owner: Nhat
 
@@ -44,6 +44,9 @@ Not included:
 | Report dates use the OpenAPI `date` contract | Backend accepts exact `YYYY-MM-DD` values and rejects timestamps or impossible dates. |
 | CSV/PDF export is out of scope | No export route is added. |
 | Report access writes audit logs | Successful views and safe access failures are audited without tokens, query values, or internal errors. |
+| Unknown well-formed IDs | Return zero aggregates and empty rows; malformed IDs remain validation errors. |
+| Unknown source statuses | Group as `UNKNOWN` and retain them in reproducible totals. |
+| Detailed rows | Use page 1, limit 20, limit max 100, and the report-specific stable ordering in `SPEC.md`. |
 
 ---
 
@@ -84,7 +87,7 @@ Not included:
 ## 4. Review Notes
 
 - The slice is read-only and does not modify source data.
-- Any future export or dashboard work should stay outside this approved scope.
+- Export remains strictly outside Phase 1; deterministic policy implementation/verification follows only after v0.1.5 review.
 
 ## 5. B6 Validation And B7 Integration Status
 

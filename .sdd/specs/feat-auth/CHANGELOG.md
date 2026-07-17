@@ -1,5 +1,31 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE02 specification and implementation contract as the Phase 1 baseline; OTP delivery follow-up remains implementation-pending.
+- Clarified that the baseline review is complete while implementation changes still require focused validation and human review before merge.
+
+## 2026-07-17 - Final Lifecycle And Contract Audit
+
+- Restricted lock recovery to successful password reset or automatic expiry; Phase 1 has no admin-unlock action.
+- Defined password-reset eligibility for `ACTIVE`/`LOCKED` accounts and documented compatibility-only `CHANGE_PASSWORD_OTP` behavior.
+- Replaced non-deterministic performance and resend wording with explicit Phase 1 contract rules.
+
+## 2026-07-17 - Auth Policy And Account Lifecycle Hardening
+
+- Bumped `SPEC.md` to 0.6.2.
+- Fixed lockout to 5 consecutive failures in 15 minutes, 10 login requests per IP in 15 minutes, and 30-minute automatic unlock.
+- Defined refresh-token rotation, logout revocation, and password-change revocation of other sessions.
+- Aligned persisted account statuses with SQL and introduced nullable `Users.DeactivatedAt` as a required migration for FE11 deactivation semantics.
+
+## 2026-07-17 - Deterministic Registration, Setup, And Refresh Contract
+
+- Bumped `SPEC.md` to 0.6.1 and kept the revision `READY FOR REVIEW`.
+- Made self-registration assign exactly the `Member` role; FE11 exclusively owns Librarian/Admin account creation.
+- Fixed `ACCOUNT_SETUP` expiry at exactly 24 hours and removed the stale password-reset activation transition.
+- Clarified that refresh-token exchange validates the refresh token itself and does not require an access token.
+- Added deterministic acceptance and traceability coverage for role assignment, server-side role checks, and HTTPS enforcement.
+
 ## 2026-07-15 - Account Setup Implementation And Validation
 
 - Added atomic FE11 `ACCOUNT_SETUP` consumption for eligible inactive admin-created accounts.

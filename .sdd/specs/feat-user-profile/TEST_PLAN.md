@@ -1,7 +1,7 @@
 ﻿# FE03 Test Plan - User Profile
 
 Version: 0.2.0
-Status: DRAFT - avatar upload revision / manual verification pending
+Status: READY FOR REVIEW - SPEC NORMALIZED; IMPLEMENTATION FOLLOW-UP PENDING
 Last Updated: 2026-06-25
 
 Source Spec: `.sdd/specs/feat-user-profile/SPEC.md`
@@ -26,7 +26,9 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 - `GET /profile/me`: authenticated happy path, unauthenticated error.
 - `PUT /profile/me`: happy path with approved fields.
 - `PUT /profile/me`: rejects forbidden fields.
-- `PUT /profile/me`: invalid phone/name, empty body.
+- `PUT /profile/me`: invalid phone/name, empty body, protected/unknown field, and direct `avatarUrl` rejection.
+- Missing profile: exactly one blank profile row is auto-created and returned through the normal DTO.
+- Successful profile/avatar database update: safe audit entry is mandatory and excludes raw personal values and file/path secrets.
 - `POST /profile/me/avatar`: happy path.
 - `POST /profile/me/avatar`: missing file, invalid type, oversize, unauthenticated.
 

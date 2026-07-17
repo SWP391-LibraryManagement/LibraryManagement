@@ -1,5 +1,29 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE11 account lifecycle, role, no-op update, user-list, concurrency, and account-setup boundary as the Phase 1 baseline; remaining implementation is deferred where documented.
+
+## 2026-07-17 - Final User List And No-Op Contract Audit
+
+- Defined same-email/no-op update behavior: HTTP `200`, unchanged `UpdatedAt`, and no success audit when nothing changes.
+- Made user-list defaults, bounds, filters, stable order, and safe search fields explicit.
+
+## 2026-07-17 - Account Lifecycle And Role Concurrency Hardening
+
+- Bumped `SPEC.md` to 0.4.2.
+- Made deactivation atomic with `deactivatedAt`, credential invalidation, and audit logging.
+- Added serialized last-Admin checks and optimistic concurrency to deactivation.
+- Restricted account creation types to `member` and `librarian`; nullable `Users.DeactivatedAt` requires a database migration before implementation.
+
+## 2026-07-17 - Safe DTO And Deterministic Concurrency Revision
+
+- Bumped `SPEC.md` to 0.4.1 and kept the revision `READY FOR REVIEW`.
+- Replaced broad "all user information" wording with the explicit `UserManagementView` allowlist and forbidden-field boundary.
+- Standardized updates on `expectedUpdatedAt` optimistic concurrency with `409 STALE_USER_STATE`; removed the last-write-wins alternative.
+- Added missing AC-FE11-016..019 traceability, AC-FE11-023, and concrete planned test intent for every previously `TBD` mapping.
+- Corrected task/test status: the account-setup slice is complete while all other FE11 implementation remains deferred.
+
 ## 2026-07-15 - Account Setup Slice Implemented And Validation Ready
 
 - Admin-created Member/Librarian accounts now commit as `INACTIVE` with profile, role, hashed 24-hour setup token, and audit in one transaction.

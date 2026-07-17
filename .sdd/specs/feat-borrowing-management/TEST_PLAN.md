@@ -1,7 +1,7 @@
 # FE07 Test Plan - Borrowing Management
 
 Version: 0.2.3
-Status: COMPLETE
+Status: BASE VALIDATION COMPLETE; HISTORY CONTRACT CASE PLANNED
 Last Updated: 2026-07-14
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
@@ -13,6 +13,8 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 ## 1. Test Scope
 
 Borrow request creation, approval/rejection, member borrowing history, return flow, renewal flow, and core circulation business rules.
+
+History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`, `limit?`, `page=1`, `limit=20`, maximum 100, inclusive business dates, pre-query rejection, member scope, and stable `BorrowDate DESC`/`BorrowDetailId DESC` ordering for both member and staff endpoints.
 
 ## 2. Unit / Service Test Targets
 

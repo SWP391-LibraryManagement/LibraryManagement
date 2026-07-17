@@ -2,11 +2,11 @@
 
 # Version: 0.2.0
 
-# Status: DRAFT - AVATAR UPLOAD REVISION IMPLEMENTED, MANUAL VERIFY PENDING
+# Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 
 # Owner: Dat
 
-# Last Updated: 2026-06-20
+# Last Updated: 2026-07-17
 
 ---
 
@@ -175,6 +175,19 @@ Traceability: MF-FE03-003, NFR-FE03-UX-003
 - [ ] Manually verify invalid file type and oversized file errors.
 
 Traceability: Definition of Done, `.agents/AGENTS.md` Testing Rules
+
+---
+
+## Deterministic Contract Follow-up For Code Owner
+
+### T-FE03-016 - Align Profile PUT And Audit Behavior
+
+- [ ] Remove `avatarUrl` from allowed `PUT /api/profile/me` fields and reject protected, unknown, or read-only fields atomically.
+- [ ] Require one safe audit entry for every successful profile-field and avatar database update.
+- [ ] Confirm missing-profile creation remains deterministic and account `status` remains read-only in the safe DTO.
+- [ ] Add focused tests for AC-FE03-012..014 without changing unrelated FE03 behavior.
+
+Traceability: BR-FE03-016..017, FR-FE03-001, FR-FE03-006, FR-FE03-010, AC-FE03-012..014
 
 ---
 

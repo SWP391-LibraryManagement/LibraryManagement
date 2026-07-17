@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: NOT STARTED - ACCOUNT SETUP SLICE READY FOR REVIEW
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -44,6 +44,11 @@ Owner: Dung
   - Dependencies: FE11-S02..S06.
   - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; Nhat confirms human review.
   - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
+
+- [x] **FE11-S08 - Normalize the remaining FE11 specification contract.**
+  - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.
+  - DoD: list/detail/update responses use an explicit safe DTO, stale updates deterministically return `409 STALE_USER_STATE`, every AC is traceable, and no test mapping remains `TBD`.
+  - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17. This task does not start deferred implementation.
 
 ## Deferred FE11 Work
 

@@ -1,18 +1,22 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: IN PROGRESS
+Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 
-Workflow State: B8 FE07-FE08 borrowing-reservation integration in progress
+Workflow State: SPEC v0.5.0 and reconciliation plan approved; FE07-T031 through FE07-T038 not started
 
 ---
 
 ## 1. Scope
 
-Implement and harden the Phase 2 FE07 slice from the approved `SPEC.md`.
+Reconcile and harden the existing Phase 2 FE07 slice against approved `SPEC.md` v0.5.0.
+
+## Revision Drift Note
+
+The existing FE07 implementation and completed B7/B8 tasks predate `SPEC.md` v0.5.0. The approved revision requires dedicated reconciliation for canonical `Members` eligibility, parent-book guards, the member-scoped five-copy lock, persisted approval/borrow metadata, `Asia/Ho_Chi_Minh` date policy, future-return rejection, and mandatory rejection reasons. Existing passing results remain historical evidence, not evidence for these new requirements.
 
 Included:
 
@@ -47,6 +51,12 @@ Not included:
 | Notified owner may borrow the held copy | FE07 accepts the normal request and revalidates reservation ownership during approval. |
 | FE07 approval fulfills the hold | Request, details, copy, matching reservation, and audits commit atomically. |
 | FE07 does not create fines | Return response exposes `fineCandidate`; no `Fines` insert is performed. |
+| Canonical eligibility is active account plus approved membership | Create, approval, and renewal require `Users.Status = ACTIVE` and `Members.Status = APPROVED`. |
+| Parent book must remain active | Create and approval reject inactive parent books with `BOOK_INACTIVE`. |
+| Approval uses a member-scoped five-copy lock | Lock order is `member -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; count occurs after locks. |
+| Approval metadata is transaction history | Store `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is borrow date +14 calendar days. |
+| Business dates use `Asia/Ho_Chi_Minh` | Return dates before borrow date or after the current business date are rejected. |
+| Rejection reason is mandatory | Trimmed length is 1..500 and the reason is stored in rejection audit metadata. |
 
 ---
 
@@ -89,6 +99,7 @@ Not included:
 
 - Keep borrowing-specific error messages scoped to `borrowingApi` so other feature APIs retain generic handling.
 - Translate FE07 role, eligibility, borrowing-limit, copy, return-state, and renewal-conflict codes into actionable Vietnamese messages.
+- Validate and implement the exact borrowing-history query contract: `status?`, `fromDate?`, `toDate?`, `page?`, `limit?`, defaults/bounds, inclusive date semantics, and stable ordering.
 - Preserve authentication, validation-detail, backend-message, and network fallbacks.
 
 ### 3.7 FE07-FE08 Integration
@@ -101,6 +112,34 @@ Not included:
 - Fulfill matching notified reservations in the approval transaction.
 - Preserve manual FE08 queue processing, current endpoint shapes, and the existing database schema.
 
+### 3.8 V0.5.0 Reconciliation Slice
+
+#### Files
+
+| Area | Files | Reconciliation responsibility |
+| --- | --- | --- |
+| Boundary | `backend/src/routes/borrowingRoutes.js`, `backend/src/controllers/borrowingController.js`, `backend/src/validators/borrowingValidators.js` | Required rejection reason, strict return date, IDs/statuses, and safe error contract. |
+| Business rules | `backend/src/services/borrowingService.js`, create `backend/src/utils/libraryBusinessTime.js` | Canonical eligibility, parent-book guard, five-copy formula, and deterministic Ho Chi Minh business dates. |
+| Persistence | `backend/src/repositories/borrowingRepository.js`, `backend/src/repositories/auditLogRepository.js` | Member-scoped lock, approved lock order, metadata, atomic reservation/audit updates, and rollback outcomes. |
+| Schema/model/API | `database/Librarymanagement.sql`, `backend/src/models/BorrowRequest.js`, `backend/src/models/BorrowDetail.js`, `backend/src/docs/openapi.yaml` | Verify approved columns/enums and align runtime/API metadata without introducing unapproved states. |
+| Backend tests | `backend/tests/borrowingRoutes.test.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`, `backend/tests/borrowingRepository.test.js`, `backend/tests/borrowingContract.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js` | RED/GREEN eligibility, inactive parent, same-member limit race, metadata, timezone/date, reason, rollback, and traceability evidence. |
+| Frontend | `frontend/src/page/borrowing/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/borrowingFrontend.test.js` | Actionable v0.5.0 errors and truthful mutation state. |
+
+#### Ordered Strategy
+
+1. Add missing RED route/repository/SQL tests for canonical eligibility and inactive parent checks at both create and approval.
+2. Add a two-request same-member concurrency test proving approvals cannot move a member from four to six active copies.
+3. Reconcile repository locking so the member-scoped lock precedes `BookCopies`, then request/detail rows, then reservations; calculate active count only after locks.
+4. Reconcile `CreatedBy`, `ApprovedAt`, `ApprovedBy`, `BorrowDate`, and due-date writes in the approval transaction.
+5. Centralize `Asia/Ho_Chi_Minh` business-date conversion, reject future/pre-borrow returns, and require rejection reason length 1..500.
+6. Align OpenAPI/model/SQL metadata and frontend error behavior, then run focused validation and human review.
+
+#### Explicit Non-Goals
+
+- Do not relabel FE07-T01 through FE07-T030 or the B7 evidence as v0.5.0 completion.
+- Do not persist `OVERDUE`, implement `CANCELLED`, create fines, automate reservation queues, or add new endpoint shapes.
+- Do not change FE06/FE08 copy/reservation ownership or the approved lock-order suffix.
+
 ---
 
 ## 4. Review Notes
@@ -109,3 +148,22 @@ Not included:
 - FE07 frontend screens and error states are implemented under FE07-T20 to FE07-T27.
 - Nhat confirmed human review; PR #19 merged implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` into `main` as `aeed0dfecb764e6cbe63d7074727f318700e59ea`.
 - GitHub Actions CI run `29308540692` passed for the merge commit. Detailed B7 evidence is recorded in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
+- These records close the earlier baseline only. FE07-T031 through FE07-T038 must be implemented and reviewed before v0.5.0 is considered reconciled.
+
+## 5. V0.5.0 Verification Gates
+
+| Gate | Command | Expected result |
+| --- | --- | --- |
+| FE07 routes/repository | `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js tests/borrowingContract.test.js` | New eligibility, metadata, date, reason, and contract cases pass. |
+| FE07 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/borrowingConcurrency.sqltest.js` | Same-member limit serialization, lock order, rollback, and metadata cases pass when SQL configuration is available. |
+| FE07 frontend | `node --test frontend/test/borrowingFrontend.test.js` | v0.5.0 error and truthful-state checks pass. |
+| Traceability | `npm.cmd run trace:enforce` | New v0.5.0 changed implementation files meet the repository threshold. |
+| Diff hygiene | `git diff --check` | No whitespace errors. |
+
+## 6. V0.5.0 Human Review Gate
+
+- [x] Confirm the member-scoped lock mechanism works on SQL Server and precedes all copy/request/reservation locks.
+- [x] Confirm active-count and parent-book/reservation revalidation occur only after relevant locks are held.
+- [x] Confirm all business dates are deterministic in `Asia/Ho_Chi_Minh`.
+- [x] Confirm rejection reason and approval metadata are persisted/audited exactly as approved.
+- [x] Approve FE07-T031 through FE07-T038 before implementation starts.

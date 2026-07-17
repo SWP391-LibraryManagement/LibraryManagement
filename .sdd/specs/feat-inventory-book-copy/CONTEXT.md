@@ -1,12 +1,12 @@
 # CONTEXT.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-16
 
 # Feature folder: `.sdd/specs/feat-inventory-book-copy/`
 
@@ -33,7 +33,7 @@ The typical inventory workflow:
 1. A librarian views inventory for a book or the whole library.
 2. The system shows physical copies, barcodes, locations, and statuses.
 3. A librarian checks the status of one copy.
-4. A librarian updates copy availability or condition when the copy changes state outside normal borrow/return flow.
+4. A librarian updates copy status when the copy changes state outside normal borrow/return flow.
 5. A librarian/admin adds, updates, or deactivates physical copies.
 6. FE07 and FE08 use the copy status to decide whether the copy can be borrowed or reserved.
 
@@ -63,20 +63,21 @@ FE06 does not include:
 
 The current SQL script includes:
 
-- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl)`
-- `BookCopies(CopyId, BookId, Barcode, Status, Location)`
+- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Status)`
+- `BookCopies(CopyId, BookId, Barcode, Status, Location, CreatedAt, UpdatedAt)`
 - `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
 - `Reservations(ReservationId, UserId, CopyId, ReservedAt, Status)`
 
-Potential issues to review:
+Implementation reconciliation points:
 
-- Copy status values need to be standardized across FE06, FE07, and FE08.
-- Current SQL has no `Condition`, `CreatedAt`, `UpdatedAt`, or `DeactivatedAt` fields for copies.
+- Copy status values are standardized across FE06, FE07, and FE08.
+- Current SQL has `CreatedAt`/`UpdatedAt`; FE06 additionally requires SQL `rowversion` for deterministic `If-Match` concurrency.
 - Barcode uniqueness is defined in SQL and must be preserved.
 - Direct manual status updates must not conflict with active borrow/reservation records.
-- Availability counts should be derived from copies rather than manually stored.
+- Effective availability is derived from `BookCopies.Status = AVAILABLE` plus parent `Books.Status = ACTIVE`; FE05/FE01 never mutate copy state.
+- Manual reservation release always rejects with `RESERVATION_STATE_CONFLICT`; location validation rejects invalid values rather than normalizing them.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+These decisions are reflected in `SPEC.md` v0.4.0 and must be reconciled against the existing prototype before implementation can be considered complete.
 
 ---
 
@@ -144,8 +145,8 @@ Owner column reflects the current team redistribution.
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- Existing FE06 backend/tests are prototype artifacts and must be reconciled only after revision v0.4.0 is reviewed.
+- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until the revised contract is approved and decomposed.
 - Barcode uniqueness must be enforced.
 - Status transitions must be checked against FE07 and FE08 active records.
 - Availability should be derived from copy statuses, not guessed in UI.

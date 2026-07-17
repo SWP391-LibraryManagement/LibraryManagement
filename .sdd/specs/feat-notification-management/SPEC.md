@@ -1,22 +1,22 @@
 # SPEC.md - FE10 Notification Management
 
-# Version: 0.4.0
+# Version: 0.4.1
 
-# Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-15
+# Last Updated: 2026-07-17
 
 # Feature ID: FE10
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
-> Source of truth for FE10 Notification Management. This spec is approved for the OTP security-boundary follow-up.
+> Source of truth for FE10 Notification Management. The OTP, account-setup, and membership-result boundary revision is approved as the 2026-07-17 baseline.
 >
 > Initial Phase 1 decisions were approved on 2026-06-10. G1-G7 were approved on 2026-07-13. G8-G10 and ADR-004 were approved by Nhat on 2026-07-15 and supersede the deferred OTP/link contract.
 >
-> ADR-005 adds canonical FE11 account-setup delivery and requires final human review before implementation.
+> ADR-005 adds canonical FE11 account-setup delivery. Nhat approved the combined FE10 baseline on 2026-07-17; implementation changes still require focused validation and human review before merge.
 
 ---
 
@@ -28,7 +28,7 @@ Notification Management
 
 ### 1.2 Business Context
 
-The Library Management System must notify users about important account and library events such as account verification, password reset, reservation availability, upcoming due dates, overdue books, and fine status. Without reliable notifications, members may miss important deadlines, librarians may receive more manual questions, and account recovery flows may be blocked.
+The Library Management System must notify users about the approved account-verification, password-reset, account-setup, reservation-ready, due-date, overdue, fine, and membership-result events. Without reliable notifications, members may miss important deadlines, librarians may receive more manual questions, and account recovery flows may be blocked.
 
 Notification Management provides a central place to create, send, store, and track these messages while keeping business decisions in the source features that create notification requests.
 
@@ -39,9 +39,9 @@ The system shall:
 - Accept notification requests from approved internal features.
 - Send sensitive authentication OTP email synchronously through the configured provider adapter, with injected mocks in tests, without persisting rendered sensitive content.
 - Queue non-sensitive email notifications for worker processing.
-- Track notification status: `PENDING`, `SENT`, `DELIVERED`, `FAILED`, or `SKIPPED`.
+- Track Phase 1 notification status using only `PENDING`, `SENT`, and `FAILED`; compatibility values `DELIVERED`, `SKIPPED`, and `CANCELLED` have no Phase 1 transition.
 - Keep non-sensitive content and all delivery attempts traceable without persisting, logging, auditing, or returning secrets or rendered sensitive authentication content.
-- Support the four assigned Phase 1 notification use cases: account verification, password reset, book reservation, and due date/fine notification.
+- Support the eight canonical Phase 1 type/template pairs for verification, password reset, account setup, reservation readiness, due-date reminders, overdue notices, fine notices, and membership results.
 
 ### 1.4 Scope Level
 
@@ -70,7 +70,7 @@ The system shall:
 
 The feature can only start when:
 
-- PRE-FE10-001: The source feature has determined that a notification should be sent.
+- PRE-FE10-001: The source feature has determined that a notification is required and submits a request through an approved FE10 boundary.
 - PRE-FE10-002: The recipient user exists, or the source feature provides a safe guest email for account-related flows.
 - PRE-FE10-003: The notification type and template key form an approved canonical pair.
 - PRE-FE10-004: The requested Phase 1 channel is `EMAIL`; in-app delivery remains future work.
@@ -128,6 +128,13 @@ The feature can only start when:
 5. FE10 persists only safe source metadata, `SENT` or `FAILED` status, generic failure summary, and attempt data.
 6. FE10 returns `{ notificationId, status }` without returning the setup token, link, rendered title/body, or provider detail.
 
+### MF-FE10-006: Queue Membership Result Notification
+
+1. FE04 commits an approval or rejection decision and requests `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` through the requester bound to `FE04`.
+2. FE10 validates FE04 ownership, recipient, integer application source reference, canonical pair, required non-sensitive template data, and idempotency key.
+3. FE10 creates exactly one `PENDING` notification for a new idempotency key and returns `{ notificationId, status }`.
+4. The worker later records `SENT` or `FAILED` and a safe delivery attempt; delivery failure never changes the committed FE04 decision.
+
 ---
 
 ## 5. Alternative Flows
@@ -160,9 +167,8 @@ The feature can only start when:
 
 ### AF-FE10-005: Optional Notification Disabled
 
-1. Source feature requests an optional notification.
-2. Recipient preference disables that type/channel.
-3. FE10 records the request as `SKIPPED` or does not create it, depending on approved policy.
+1. Optional notification preferences and notification suppression are out of scope for Phase 1.
+2. FE10 does not evaluate `UserNotificationPreferences` and does not create a `SKIPPED` record in Phase 1.
 
 ### AF-FE10-006: Sensitive Authentication Type Submitted Through The Wrong Boundary
 
@@ -180,13 +186,13 @@ Use these stable IDs for tasks and tests.
 - BR-FE10-002: FE10 must validate recipient, `EMAIL` channel, integer source reference, required template data, and the server-enforced canonical type/template pair before creating or sending a notification. The canonical pairs are `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE`, and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`.
 - BR-FE10-003: FE10 must not generate or validate authentication OTPs or legacy verification/reset tokens.
 - BR-FE10-004: FE10 must not persist, log, audit, or return raw tokens, OTP values, passwords, verification/reset/setup links, rendered sensitive authentication title/body, provider credentials/details, or internal stack traces. Queued non-sensitive `templateData` and stored `safePayload` must recursively traverse objects/arrays and normalize keys by lowercasing and removing `_`, `-`, and whitespace. A queued request is rejected when a normalized key contains `token`, `otp`, `password`, `verificationlink`, `resetlink`, or `setuplink`; the same keys are redacted from `safePayload`.
-- BR-FE10-005: A notification request should include a source feature and source entity reference when available; `sourceEntityId`, when supplied in Phase 1, must be an integer. Internal requesters bind `sourceFeature` at construction and callers cannot override it.
+- BR-FE10-005: Every in-process source request shall include construction-bound `sourceFeature`, `sourceEntityType`, integer `sourceEntityId`, and an idempotency key; callers cannot override bound metadata. HTTP requests use the separate protected contract and cannot provide `sourceFeature`.
 - BR-FE10-006: One idempotency key maps to one notification record across all statuses. A duplicate request must replay the existing record summary and must not create or send a duplicate.
 - BR-FE10-007: FE10 must support the eight approved Phase 1 type/template pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; no undocumented alias or pair is supported.
 - BR-FE10-008: Failed notification delivery must be recorded with safe failure reason and attempt count. Only failed non-sensitive queued notifications may be manually retried on the same record; failed sensitive authentication delivery requires a new source event.
 - BR-FE10-009: Email provider credentials must be stored outside source code.
 - BR-FE10-010: Notification templates must define required variables, enforce the canonical pair, and must not render missing required data silently. `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` each require `otp` and `expiresInMinutes`; `ACCOUNT_SETUP` requires `setupLink` and `expiresInHours`.
-- BR-FE10-011: Notification HTTP endpoints must remain protected from public/member callers and allow only `LIBRARIAN`/`ADMIN` for non-sensitive types. HTTP callers cannot provide `sourceFeature` and must receive safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` for `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`. In-process source requests use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; only FE02 may submit verification/reset and only FE11 may submit account setup; `SYSTEM` is not a login role.
+- BR-FE10-011: Notification HTTP endpoints must remain protected from public/member callers and allow only `LIBRARIAN`/`ADMIN` for non-sensitive types. HTTP callers cannot provide `sourceFeature` and must receive safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` for `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`. In-process source requests use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; only FE02 may submit verification/reset, only FE04 may submit `MEMBERSHIP_RESULT`, and only FE11 may submit account setup; `SYSTEM` is not a login role.
 - BR-FE10-012: Notification delivery failure must not automatically roll back the source business transaction.
 - BR-FE10-013: Notification status changes and source-request audits must be traceable with safe metadata. Source audits use `userId: null` plus bound source metadata; retry preserves the same notification ID, idempotency key, and attempt history.
 
@@ -196,10 +202,10 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE10-001: When the requester bound to `FE02` submits canonical account-verification OTP data with `otp`, `expiresInMinutes`, and an `AuthToken` source reference, FE10 shall synchronously render/send through the configured provider adapter, persist only safe source metadata plus a redacted `SENT` or `FAILED` summary and attempt, and return `{ notificationId, status }` without generating, validating, persisting, logging, auditing, or returning the OTP.
 - FR-FE10-002: When the requester bound to `FE02` submits canonical password-reset OTP data with `otp`, `expiresInMinutes`, and an `AuthToken` source reference, FE10 shall synchronously render/send through the configured provider adapter, persist only safe source metadata plus a redacted `SENT` or `FAILED` summary and attempt, and return `{ notificationId, status }` without exposing raw or rendered sensitive content.
-- FR-FE10-003: When FE08 requests canonical book reservation delivery with valid non-sensitive data, FE10 shall create a queued `PENDING` notification without deciding reservation eligibility; the worker later processes it.
+- FR-FE10-003: When FE04 requests canonical membership-result delivery or FE08 requests canonical reservation-ready delivery with valid non-sensitive data, FE10 shall create one queued `PENDING` notification without deciding the source feature's business outcome; the worker later processes it.
 - FR-FE10-004: When FE07 or a future FE09 caller requests canonical due date, overdue, or fine delivery with valid non-sensitive data, FE10 shall create a queued `PENDING` notification without calculating fines or changing borrowing state. FE09 caller integration remains deferred.
 - FR-FE10-005: When required fields, integer source reference, canonical mapping, recipient, source/type ownership, HTTP source override, or queued-payload safety checks fail, FE10 shall reject the request safely before persistence or delivery.
-- FR-FE10-006: When a notification is delivered successfully, the system shall update delivery status and timestamp.
+- FR-FE10-006: When the configured provider accepts a Phase 1 email send, FE10 shall set status `SENT`, set `sentAt` to the server timestamp, and record the successful attempt; Phase 1 never transitions the record to `DELIVERED`.
 - FR-FE10-007: When delivery fails, FE10 shall record attempt details and a safe reason without rolling back source flow. Manual retry changes only a failed non-sensitive queued record from `FAILED` to `PENDING`; sensitive retry returns safe `409 REISSUE_REQUIRED`.
 - FR-FE10-008: When a duplicate source event is submitted with the same idempotency key, FE10 shall return `200 { notificationId, status }` for the existing record across any status and shall not create or send a duplicate.
 - FR-FE10-009: FE10 shall recognize all eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. A missing/inactive template, missing required sensitive variable, mismatched pair, unauthorized sensitive source, HTTP source override, or recursively detected secret-like queued key shall return a safe 4xx before persistence without leaking the submitted value.
@@ -211,7 +217,7 @@ Use these stable IDs for tasks and tests.
 
 - AC-FE10-001: Given the requester bound to `FE02` submits canonical account-verification OTP data, when FE10 sends synchronously, then it returns `{ notificationId, status }` with `SENT` or `FAILED`, persists safe `AuthToken` source metadata, and persists no OTP or rendered sensitive content.
 - AC-FE10-002: Given the requester bound to `FE02` submits canonical password-reset OTP data, when FE10 sends synchronously, then it returns `{ notificationId, status }` with `SENT` or `FAILED`, persists safe `AuthToken` source metadata, and persists no OTP or rendered sensitive content.
-- AC-FE10-003: Given FE08 submits canonical reservation-ready data, when FE10 accepts it, then one non-sensitive `PENDING` notification is queued without FE10 deciding reservation eligibility.
+- AC-FE10-003: Given FE04 submits canonical membership-result data or FE08 submits canonical reservation-ready data, when FE10 accepts it, then exactly one non-sensitive `PENDING` notification is queued without FE10 deciding or changing the source business outcome.
 - AC-FE10-004: Given FE07 submits canonical due-date data, when FE10 accepts it, then one non-sensitive `PENDING` reminder is queued without FE10 changing borrowing state.
 - AC-FE10-005: Given a future FE09 caller submits canonical overdue/fine data, when FE10 accepts it, then one non-sensitive `PENDING` notification is queued without FE10 calculating fines; current FE09 caller integration remains deferred.
 - AC-FE10-006: Given each of the eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, when FE10 validates a complete request from an authorized boundary, then mapping validation succeeds. Given a missing recipient/variable, string source ID, mismatched pair, unknown template, HTTP source override, unauthorized sensitive source, or queued nested secret key, validation returns a safe 4xx before request content is persisted or delivered.
@@ -235,7 +241,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE10-007 | Missing required template variable | Return safe `400`; create no notification or attempt. |
 | EC-FE10-008 | Duplicate idempotency key in any status | Return `200 { notificationId, status }` for the existing record without duplicate send. |
 | EC-FE10-009 | Email provider timeout | Record `FAILED` plus an attempt and safe reason; sensitive content remains provider-memory-only. |
-| EC-FE10-010 | Template contains unsafe HTML/script | Reject template or sanitize rendered output. |
+| EC-FE10-010 | Template contains unsafe HTML/script | Reject the template before rendering or persistence with a safe validation error. |
 | EC-FE10-011 | Source transaction completed but delivery failed or requester throws | Keep source transaction completed; record/catch FE10 failure safely. Only failed non-sensitive queued records may retry to `PENDING`. |
 | EC-FE10-012 | Provider returns sensitive details, caller overrides bound source, or sensitive retry is requested | Store only a sanitized summary; reject source override; sensitive retry returns `409 REISSUE_REQUIRED`. |
 | EC-FE10-013 | Staff HTTP or a requester without ownership submits a sensitive authentication notification | Return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`; FE02 exclusively owns verification/reset and FE11 exclusively owns account setup. |
@@ -270,13 +276,13 @@ Use these stable IDs for tasks and tests.
 | title | string | No | Rendered title for non-sensitive queued notifications only; sensitive auth title is not persisted. |
 | body | string | No | Rendered body for non-sensitive queued notifications only; sensitive auth body is not persisted. Must not contain unsafe script. |
 | safePayload | object | No | Recursively redacted safe metadata only; normalized secret-like keys are removed/redacted using the same rule as queued request validation. Sensitive authentication records contain no OTP and may retain only a redaction marker. |
-| status | enum | Yes | Values: `PENDING`, `SENT`, `DELIVERED`, `FAILED`, `SKIPPED`. Sensitive create ends `SENT`/`FAILED`; non-sensitive create starts `PENDING`; retry permits only non-sensitive `FAILED -> PENDING`. |
-| sourceFeature | string | No | Bound internal values: `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP callers cannot provide this field. Verification/reset use FE02; account setup uses FE11. |
+| status | enum | Yes | Phase 1 lifecycle uses `PENDING`, `SENT`, and `FAILED`. Sensitive create ends `SENT`/`FAILED`; non-sensitive create starts `PENDING`; retry permits only non-sensitive `FAILED -> PENDING`. `DELIVERED`, `SKIPPED`, and `CANCELLED` are retained only as database compatibility values and have no Phase 1 transition. |
+| sourceFeature | string | Required for in-process requests | Bound internal values: `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP callers cannot provide this field. Verification/reset use FE02; membership result uses FE04; account setup uses FE11. |
 | sourceEntityType | string | No | Example: `AuthToken`, `Reservation`, `Fine`, `BorrowDetail`. Sensitive authentication requests require `AuthToken`. |
 | sourceEntityId | integer | No | Phase 1 reference to source record; strings are rejected. Sensitive authentication requests use the persisted `AuthTokens.TokenId`. |
 | idempotencyKey | string | No | Maps one source event to one notification record across all statuses. FE02 derives sensitive keys from type plus `AuthTokens.TokenId`, never from the OTP. Retry reuses the same key. |
 | createdAt | datetime | Yes | Notification creation timestamp. |
-| sentAt | datetime | No | Email send timestamp or in-app delivery timestamp. |
+| sentAt | datetime | No | Server timestamp set when the Phase 1 email provider accepts the send; null while `PENDING` and after a failed attempt. |
 | attemptNo | integer | No | Delivery attempt count. |
 | errorMessage | string | No | Sanitized failure reason only; no provider detail or submitted sensitive value. |
 
@@ -295,18 +301,25 @@ Use these stable IDs for tasks and tests.
 
 Every other pair is rejected. `EMAIL_VERIFY` and `DUE_OR_FINE_NOTICE` are not aliases.
 
+### 10.4 Phase 1 Status Lifecycle
+
+- Non-sensitive notification: `PENDING -> SENT` or `PENDING -> FAILED`.
+- Failed non-sensitive notification: `FAILED -> PENDING` only through the protected manual retry endpoint, then `PENDING -> SENT` or `PENDING -> FAILED`.
+- Sensitive authentication/setup notification: `[*] -> SENT` or `[*] -> FAILED`; retry always requires a new source event and new idempotency key.
+- `DELIVERED`, `SKIPPED`, and `CANCELLED` are not created or transitioned by Phase 1 flows. Their future use requires a reviewed SPEC revision.
+
 ---
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated API contract document.
+> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | POST | `/api/notifications/requests` | `LIBRARIAN`, `ADMIN` | `{ type, channel, userId?, recipientEmail?, templateKey, templateData, sourceEntityType?, sourceEntityId?, idempotencyKey? }` | New request: `201 { notificationId, status }`; idempotent replay: `200 { notificationId, status }`; sensitive type: safe `403` | Role-protected non-sensitive HTTP boundary. `sourceFeature` is not accepted. All sensitive auth types return `SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. Never returns full content or `safePayload`. |
 | POST | `/api/notifications/process-pending` | `LIBRARIAN`, `ADMIN` | `{ limit?: number }` | `200 { processed, failed }` | Processes only non-sensitive `PENDING` records; not public. |
 | POST | `/api/notifications/{id}/retry` | `LIBRARIAN`, `ADMIN` | None | Success: `200 { notificationId, status }`; conflict: safe `409` | Only failed non-sensitive queued records return to `PENDING`. Sensitive auth returns `409 { code: "REISSUE_REQUIRED", message: "Create a new notification from the source event." }`. |
-| In-process | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Same notification request without caller-controlled `sourceFeature` | Same minimal summary semantics | Construction-bound ownership: FE02 verification/reset, FE11 account setup. Source audit uses `userId: null`. |
+| In-process | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Same notification request without caller-controlled `sourceFeature` | Same minimal summary semantics | Construction-bound ownership: FE02 verification/reset, FE04 membership result, FE11 account setup. Source audit uses `userId: null`. |
 
 Validation and template errors use safe 4xx bodies. Invalid retry states use safe `409` bodies. No response includes rendered content, raw input secrets, provider details, or internal stack traces.
 
@@ -333,8 +346,8 @@ The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_IN
 
 ### 12.3 Performance
 
-- NFR-FE10-PERF-001: Creating a queued non-sensitive notification should return within 500ms p95 in normal local/dev conditions. Synchronous sensitive authentication delivery is exempt from this queue-only target and is bounded by configured-provider latency.
-- NFR-FE10-PERF-002: Notification lookup by status, type, source feature, and created date should use indexed fields where practical.
+- NFR-FE10-PERF-001: Creating a queued non-sensitive notification must return within 500 ms at p95 in the project's documented local/dev performance environment. Synchronous sensitive authentication delivery is exempt from this queue-only target and is bounded by configured-provider latency.
+- NFR-FE10-PERF-002: Notification lookup must apply status, type, source-feature, and created-date filters in the database query before materializing rows; application-layer full-history filtering is not permitted.
 
 ### 12.4 Logging and Audit
 
@@ -368,7 +381,7 @@ This feature does not include:
 - Building a full email design editor.
 - Storing real email provider credentials in the repository.
 - Plaintext or encrypted queued sensitive authentication content.
-- FE02 `CHANGE_PASSWORD_OTP` delivery, which remains a direct FE02 email flow until a separate FE10 notification type/use case is approved.
+- Compatibility-only FE02 `CHANGE_PASSWORD_OTP` delivery; it is outside the canonical Phase 1 FE10 contract until a separate notification type/use case, expiry, response, and retry contract is approved.
 - A new FE09 notification caller or integration.
 - Expiry metadata, retry UI, or unrelated frontend/backend refactors.
 
@@ -378,9 +391,10 @@ This feature does not include:
 
 | Dependency | Type | Notes |
 | ---------- | ---- | ----- |
-| FE02 Authentication | Internal | Owns OTP/token generation and validation, then requests account-verification and password-reset OTP delivery through the requester bound to `FE02`. Legacy token acceptance and `CHANGE_PASSWORD_OTP` remain FE02-owned. |
+| FE02 Authentication | Internal | Owns OTP/token generation and validation, then requests account-verification and password-reset OTP delivery through the requester bound to `FE02`. Legacy token acceptance and compatibility-only `CHANGE_PASSWORD_OTP` remain FE02-owned. |
 | FE07 Borrowing Management | Internal | May request due date reminders and borrow/return status notifications. |
 | FE08 Reservation Management | Internal | Requests reservation available notifications. |
+| FE04 Membership Management | Internal | Owns `MEMBERSHIP_RESULT` source events and uses the FE04-bound requester after review commit. |
 | FE09 Fine Management | Internal | Approved/allowlisted for overdue and fine notifications, but no current caller integration is implemented in this slice. |
 | FE11 User & Role Management | Internal | Owns admin-created setup-token issuance/resend and requests canonical `ACCOUNT_SETUP` through the requester bound to `FE11`. |
 | SQL Server database | Technical | Stores notification records, templates, attempts, and preferences. |
@@ -401,6 +415,9 @@ This feature does not include:
 | Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-007 | System/Scheduler may trigger through a requester bound to `SYSTEM`; internal sources are allowlisted and are not login roles. | G3 approval 2026-07-13 | APPROVED |
 | Q-FE10-008 | `ACCOUNT_SETUP` is FE11-owned sensitive delivery; only the FE11-bound requester may submit it and FE10 persists no setup token/link/rendered content. | ADR-005; Nhat approval 2026-07-15 | APPROVED |
+| Q-FE10-009 | `MEMBERSHIP_RESULT` is FE04-owned; FE04 submits it through the FE04-bound requester after the membership decision commits. | FE04 cross-feature audit 2026-07-17 | APPROVED |
+| Q-FE10-010 | Phase 1 notification statuses are `PENDING`, `SENT`, and `FAILED`; `DELIVERED`, `SKIPPED`, and `CANCELLED` have no Phase 1 transitions. | Notification lifecycle normalization 2026-07-17 | APPROVED |
+| Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
 
 ---
 
@@ -420,7 +437,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Q-FE10-008 | Account setup is synchronous sensitive delivery owned by the FE11-bound requester. | APPROVED |
 | G1 | Sensitive auth sends synchronously without persisted rendered content; non-sensitive delivery remains queued with recursive normalized secret-key protection and matching `safePayload` redaction. | APPROVED 2026-07-13 |
 | G2 | Create/replay/process/retry return only the approved minimal DTOs. | APPROVED 2026-07-13 |
-| G3 | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP remains `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; extended by ADR-005 2026-07-15 |
+| G3 | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP remains `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; extended by ADR-005 2026-07-15 and FE04 audit 2026-07-17 |
 | G4 | `sourceEntityId` is integer-only in Phase 1. | APPROVED 2026-07-13 |
 | G5 | Manual retry is protected and applies only to failed non-sensitive queued records; sensitive retry returns `REISSUE_REQUIRED`. | APPROVED 2026-07-13 |
 | G6 | One record exists per idempotency key across all statuses; retry reuses the same history. | APPROVED 2026-07-13 |
@@ -429,6 +446,9 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | G9 | Staff HTTP and non-FE02 source requesters cannot submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`; HTTP cannot provide `sourceFeature`; violations return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. | APPROVED 2026-07-15 |
 | G10 | Sensitive idempotency and source traceability use `AuthTokens.TokenId`; FE02 removes duplicate verification/reset notification writes and direct sends, while failure remains non-blocking and resend creates a new source event. | APPROVED 2026-07-15 |
 | G11 | FE11 owns `ACCOUNT_SETUP` source events; FE10 validates `setupLink`/`expiresInHours`, sends synchronously, stores only safe metadata/status/attempts, and requires new token/event/key for resend. | APPROVED 2026-07-15; ADR-005 |
+| G12 | FE04 owns `MEMBERSHIP_RESULT` source events; FE10 accepts them only from the FE04-bound requester and keeps delivery failure non-blocking. | APPROVED 2026-07-17 |
+| Q-FE10-010 | Phase 1 statuses are `PENDING`, `SENT`, and `FAILED`; compatibility statuses have no Phase 1 transitions. | APPROVED |
+| Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
 
 ---
 
@@ -438,7 +458,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | ----- | -------------------- | ---------- | ---------- | --------------- | -------------- | ------ |
 | AC-FE10-001 | FE02-bound account-verification OTP sends synchronously with safe source metadata and no persisted sensitive content | FR-FE10-001 | BR-FE10-001 to BR-FE10-004, BR-FE10-005, BR-FE10-007 to BR-FE10-011 | FT46 | FE10-S01 to FE10-S04 | Approved for implementation |
 | AC-FE10-002 | FE02-bound password-reset OTP sends synchronously with safe source metadata and no persisted sensitive content | FR-FE10-002 | BR-FE10-003 to BR-FE10-005, BR-FE10-007 to BR-FE10-011 | FT47 | FE10-S01 to FE10-S04 | Approved for implementation |
-| AC-FE10-003 | FE08 reservation notification is queued without FE10 deciding eligibility | FR-FE10-003 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT48 | FE10-H02, FE10-H05, FE10-H07 | Approved for implementation |
+| AC-FE10-003 | FE04 membership-result and FE08 reservation-ready notifications are queued without FE10 changing source outcomes | FR-FE10-003 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-011, BR-FE10-012 | FT48 plus planned FE04 requester case | FE10-H02, FE10-H05, FE10-H07, G12 | Approved for implementation |
 | AC-FE10-004 | FE07 due-date notification is queued without changing borrowing state | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H02, FE10-H05, FE10-H06 | Approved for implementation |
 | AC-FE10-005 | FE09 overdue/fine contract is approved without FE10 calculating fines; caller integration is deferred | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H01, FE10-H02, FE10-H05 | Approved; integration deferred |
 | AC-FE10-006 | All eight canonical pairs validate; invalid recipient, variable, source ID, mapping, template, source ownership, HTTP source override, or recursively detected queued secret returns safe 4xx before persistence | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 to FT49 | FE10-H02, FE10-H04, FE10-S02, FE10-S06 | Approved for implementation |
@@ -453,6 +473,15 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 - Total FR: 10 (FR-FE10-001 to FR-FE10-010) - all mapped.
 - Total BR: 13 (BR-FE10-001 to BR-FE10-013) - all mapped.
 - Assignment tests remain FT46 to FT49. Hardening implementation is traced to FE10-H02 through FE10-H08 and validated by FE10-H09.
+
+### Supplemental BR/FR Traceability
+
+| Requirement ID | Test Intent | Status |
+| -------------- | ----------- | ------ |
+| BR-FE10-009 | Provider credential source/configuration scan | Planned |
+| FR-FE10-003 | FE04 membership-result and FE08 reservation-ready requests create one pending record without changing source outcomes | Planned FE04 requester and reservation queue cases |
+| FR-FE10-006 | Provider acceptance sets `SENT`, `sentAt`, and a successful attempt | Planned |
+| BR-FE10-011 / Q-FE10-009 | FE04-bound membership-result ownership and protected HTTP boundary | Planned |
 
 
 ### External Assignment Traceability (Excel UC IDs)

@@ -30,6 +30,8 @@ Registration, email verification, login, token refresh/logout, current-user look
 - `POST /auth/resend-verification`: happy path, invalid user/state.
 - `POST /auth/login`: happy path, wrong password, unverified user, inactive user, locked account.
 - `POST /auth/refresh-token`: happy path, expired token, invalid token.
+- Registration role assignment: self-registration creates exactly one `Member` assignment and cannot create Librarian/Admin roles.
+- Authorization and transport: protected actions use current `UserRoles`; deployed HTTP auth requests are redirected or rejected before credential processing.
 - `POST /auth/logout`: happy path, invalid token.
 - `POST /auth/change-password` (+ `/request-otp`, `/confirm`): happy path, wrong old password, reused password, invalid OTP, unauthenticated.
 - `POST /auth/forgot-password`, `/reset-password`: happy path, invalid/expired token.

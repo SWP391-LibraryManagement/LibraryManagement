@@ -1,5 +1,43 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE08 queue, fulfillment, cancellation, terminal timestamp, and FE07 handoff contract as the Phase 1 baseline; implementation follow-up remains pending.
+- Closed the documentation review gates in `PLAN.md` and `TASKS.md`; normalization implementation tasks remain not started.
+
+## 2026-07-17 - Return Handoff Priority Contract
+
+- Clarified that an `ACTIVE` queue claim remains enforced when FE07 returns the copy to stored `AVAILABLE`.
+- Preserved manual FE08 queue ownership and deterministic queue-order display requirements.
+
+## 2026-07-17 - Open Reservation And Queue Contract Hardening
+
+- Counted `ACTIVE` and `NOTIFIED` as open reservations for the limit and duplicate rule.
+- Made `queuePosition` derived and retained only one canonical Phase 1 queue-processing endpoint.
+- Aligned the reservation caller with FE10's `RESERVATION_AVAILABLE -> RESERVATION_READY` contract.
+
+## 2026-07-17 - Terminal Timestamp History - v0.4.3
+
+- Preserved `NotifiedAt` and `ExpiresAt` as immutable history after `NOTIFIED -> FULFILLED`, `EXPIRED`, or `CANCELLED`.
+- Defined those fields as null only for reservations that never reached `NOTIFIED` and restricted `CancelledAt` to `CANCELLED` rows.
+- Updated state invariants, traceability, test targets, and FE08-T030 reconciliation scope; no implementation file changed.
+
+## 2026-07-17 - Deterministic Contract Normalization (v0.4.2)
+
+- Closed the remaining policy alternatives: ineligible reservations are skipped for the current run and remain `ACTIVE`; an empty queue returns no selection and leaves state unchanged; FE10 failure keeps the committed hold and writes a failure audit.
+- Standardized `CopyId`-only queue processing, pagination defaults/bounds, stable ordering, and `QueuePosition`/notification timestamp semantics.
+- Added FE08-T028 through FE08-T033 as unchecked normalization tasks; historical B7 implementation evidence remains separate from this review.
+- Updated `TEST_PLAN.md` with contract-level queue, fulfillment, pagination, failure, and concurrency targets; replaced the last `TBD` traceability entry with FE08-T11.
+- Removed remaining non-contractual date-range/notification wording and made the physical-copy target explicit in the lifecycle and review gate.
+- Locked queue ordering to `ReservedAt ASC, ReservationId ASC` and invalid cancellation to `409 RESERVATION_NOT_ACTIVE` with unchanged state.
+- Added the missing AC-FE08-001 through AC-FE08-010 traceability rows and kept normalized pagination evidence explicitly pending.
+- Added explicit test-plan mappings for all FE08 security, transaction, performance, logging, and usability NFR IDs.
+
+## 2026-07-15 - Canonical Membership Dependency (v0.4.1)
+
+- Replaced optional `MembershipApplications` eligibility reads with canonical `Members.Status = APPROVED` plus active user status from FE04.
+- No reservation lifecycle, queue, API, or implementation behavior changed.
+
 ## 2026-07-15 - FE07 Fulfillment Handoff Contract (v0.4.0)
 
 - Confirmed physical `CopyId` as the required Phase 1 reservation target and removed the remaining book-level ambiguity.
@@ -56,7 +94,7 @@
 - No new logic introduced: every new FR promotes an existing error/abnormal branch from Edge Cases (EC-*), Business Rules (BR-*), Alternative Flows (AF-*), or approved decisions (Q-*), each carrying a source trace.
 - Covered branches: member not found, inactive account, membership not approved, book/copy not found, reservation limit reached, cancel-not-owner, repeat cancellation, member ineligible at queue time, reservation expiry, empty eligible queue, notification service failure/retry, concurrent queue selection, held-copy borrow block, FE07 renewal block.
 - Raised Unwanted FR ratio from ~30% (3/10) to ~68% (15/22), exceeding the 30% target.
-- Updated `16. Traceability Matrix`: added rows for every new FR (mapping source EC/BR/AF/Q and Test Case, `TBD` where no test exists yet) and backfilled previously missing FR-FE08-001/002/003/006/007/009/010 rows.
+- Updated `16. Traceability Matrix`: added rows for every new FR (mapping source EC/BR/AF/Q and provisional test references) and backfilled previously missing FR-FE08-001/002/003/006/007/009/010 rows.
 
 ## 2026-06-20 - Frontend UI Implemented and Accessibility Validated
 

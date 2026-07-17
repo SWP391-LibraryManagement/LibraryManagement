@@ -1,5 +1,46 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE07 borrowing, return, renewal, history, and reservation-priority contract as the Phase 1 baseline; reconciliation implementation remains pending.
+
+## 2026-07-17 - Return And Reservation Priority Contract
+
+- Made normal return atomic with FE08 reservation-claim revalidation and the shared lock order.
+- Clarified that an `AVAILABLE` returned copy remains unavailable to ordinary borrowing while an `ACTIVE` reservation queue claim exists.
+
+## 2026-07-17 - Borrowing History Contract - v0.5.1
+
+- Changed `SPEC.md` to `READY FOR REVIEW` while preserving the v0.5.0 reconciliation decisions.
+- Defined the shared member/staff history query contract, including status/date filters, page/limit defaults and bounds, inclusive date semantics, validation-before-query, and stable ordering.
+- Added traceability for BR-FE07-028, FR-FE07-028, AC-FE07-022, and the focused implementation task; no code was changed.
+
+## 2026-07-16 - Reconciliation Planning Human Review Approval
+
+- Nhat approved the FE07 v0.5.0 reconciliation plan and FE07-T031 through FE07-T038.
+- Marked the reconciliation `PLAN.md` and `TASKS.md` as `APPROVED`; the new implementation tasks and validation gates remain unchecked.
+
+## 2026-07-16 - V0.5.0 Reconciliation Planning
+
+- Changed `PLAN.md` and `TASKS.md` to `READY FOR REVIEW - v0.5.0 RECONCILIATION` after SPEC approval.
+- Preserved all historical checked tasks and B7 evidence, then added FE07-T031 through FE07-T038 for canonical eligibility, parent-book guards, member-scoped limit locking, approval metadata, Ho Chi Minh business dates, future-return rejection, mandatory rejection reasons, frontend errors, and focused verification.
+- Added exact file paths, RED/GREEN gates, dependency order, SQL concurrency expectations, and supplemental v0.5.0 traceability without claiming the historical implementation already satisfies the revised contract.
+
+## 2026-07-16 - Human Review Approval
+
+- Nhat confirmed human review of revision v0.5.0.
+- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+
+## 2026-07-15 - Eligibility, Limit, and Date Contract (v0.5.0)
+
+- Required canonical `Members.Status = APPROVED` and parent `Books.Status = ACTIVE` at create/approval.
+- Defined the five-copy formula at create/approval and a member-scoped approval lock that prevents concurrent limit overflow.
+- Required `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is `BorrowDate + 14 calendar days`.
+- Standardized borrow/return/overdue business dates on `Asia/Ho_Chi_Minh` and rejected future return dates.
+- Made rejection reason mandatory in audit metadata and added traceability for every new BR/FR/AC.
+- Aligned approval locking with FE06 using `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; active-count and reservation-aware checks run only after relevant rows are locked.
+- Updated `CONTEXT.md` from the superseded Phase 1 draft assumptions to the v0.5.0 review/reconciliation decisions.
+
 ## 2026-07-15 - Reservation-Aware Borrowing Contract (v0.4.0)
 
 - Approved FE07 as the owner of borrow request creation and approval for both ordinary copies and requester-owned notified holds.
