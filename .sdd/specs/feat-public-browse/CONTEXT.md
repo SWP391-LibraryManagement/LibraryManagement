@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
@@ -78,7 +78,7 @@ Potential issues to review:
 - Availability may need to be calculated from `BookCopies.Status = AVAILABLE`.
 - Public responses must not expose internal inventory fields such as exact barcode policy if the team decides barcode is staff-only.
 - Search behavior needs approved matching rules: title only, author/category/publisher, ISBN, or all.
-- Pagination and empty-result behavior should be consistent with FE05.
+- Pagination defaults to `page=1`, `limit=20`, with `page>=1`, `limit=1..100`; invalid values are rejected. Empty search returns the default first page ordered by `Title ASC, BookId ASC`.
 
 These are not blockers for drafting, but they must be resolved before implementation.
 
@@ -135,8 +135,9 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-002 | Guests see simple availability only: Available/Unavailable, not exact copy count. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-004 | ISBN is visible to guests when available. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-004 | A non-null ISBN is visible to guests; a missing ISBN is returned as `null`. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-008 | Missing optional catalog metadata returns `null` without excluding a public-visible book. | Spec normalization 2026-07-17 | APPROVED |
 
 ---
 

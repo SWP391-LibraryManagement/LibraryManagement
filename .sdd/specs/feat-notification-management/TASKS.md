@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Notification Management
 
-Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP FOLLOW-UP
+Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 
 Owner: Nhat
 
@@ -78,7 +78,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 - Dependencies: FE10-H01.
 - Maps to: G1, G4, G7; BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010; FR-FE10-005, FR-FE10-009; AC-FE10-006, AC-FE10-007; EC-FE10-004, EC-FE10-006, EC-FE10-007; NFR-FE10-SEC-001, NFR-FE10-SEC-004.
 - Exact files: `backend/src/services/notificationService.js`, `database/Librarymanagement.sql`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: server code enforces all approved type/template pairs and rejects mismatches; SQL and test fixtures use `{{verificationLink}}` and `{{resetLink}}`; queued non-sensitive `templateData` recursively traverses objects/arrays, normalizes key case and separators, rejects `token`/`otp`/`password`/`verificationlink`/`resetlink`, and applies the same traversal to `safePayload`; integer source references are characterized for the later boundary task; no `EMAIL_VERIFY` or `DUE_OR_FINE_NOTICE` alias is added.
+- Definition of Done: server code enforces all approved type/template pairs and rejects mismatches; SQL and test fixtures use `{{otp}}` and `{{expiresInMinutes}}`; queued non-sensitive `templateData` recursively traverses objects/arrays, normalizes key case and separators, rejects `token`/`otp`/`password`/`verificationlink`/`resetlink`, and applies the same traversal to `safePayload`; integer source references are characterized for the later boundary task; no `EMAIL_VERIFY` or `DUE_OR_FINE_NOTICE` alias is added.
 - Verification: focused route tests cover every canonical pair, mismatch rejection, nested arrays/objects, `OTP`, `reset_token`, and `verification-link`; run `npm test -- notificationRoutes.test.js` in `backend`.
 
 ### FE10-H03 Deliver Sensitive Auth Notifications Synchronously
@@ -88,7 +88,7 @@ The completed FE10-T01 to FE10-T17 tasks above remain historical evidence for th
 - Dependencies: FE10-H02.
 - Maps to: G1, G2; BR-FE10-003, BR-FE10-004, BR-FE10-008 to BR-FE10-010, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006, FR-FE10-007; AC-FE10-001, AC-FE10-002, AC-FE10-007, AC-FE10-009; NFR-FE10-REL-001, NFR-FE10-REL-002, NFR-FE10-LOG-001, NFR-FE10-LOG-002.
 - Exact files: `backend/src/services/notificationService.js`, `backend/src/repositories/notificationRepository.js`, `backend/src/models/Notification.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`.
-- Definition of Done: `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` render from raw request data only in memory and send through the mock provider synchronously; success persists `SENT` plus an attempt, failure persists `FAILED` plus a safe reason; persisted notification, attempt, audit, logs, and HTTP data contain no raw link/token or rendered sensitive title/body; non-sensitive records remain queued and `process-pending` excludes sensitive types.
+- Definition of Done: `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` render `otp` and `expiresInMinutes` from raw request data only in memory and send through the configured provider adapter synchronously; success persists `SENT` plus an attempt, failure persists `FAILED` plus a safe reason; persisted notification, attempt, audit, logs, and HTTP data contain no raw OTP or rendered sensitive title/body; non-sensitive records remain queued and `process-pending` excludes sensitive types.
 - Verification: focused tests prove both sensitive success/failure paths, provider-only link rendering, redacted persistence, safe attempts, no API/audit/log leakage, and unchanged non-sensitive queue processing; run the focused FE10 test file.
 
 ### FE10-H04 Contain HTTP Responses And Align The Contract Surface
@@ -195,7 +195,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S01 Normalize The Cross-Feature Contract
 
-- [x] Status: DRAFT COMPLETE - AWAITING HUMAN REVIEW
+- [x] Status: DOCUMENTATION COMPLETE - HUMAN REVIEW CONFIRMED BY NHAT 2026-07-17
 - Maps to: G8-G10; ADR-004; BR-FE10-003 to BR-FE10-005, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007, AC-FE10-009.
 - Files: `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`, `.agents/CLAUDE.md`, FE10 and FE02 `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`.
 - DoD: FE02/FE10 agree on OTP variables, FE02-only sensitive ownership, no HTTP source override, token-ID idempotency, configured-provider abstraction, non-blocking failure, resend semantics, and explicit `CHANGE_PASSWORD_OTP` exclusion; no implementation file changes.
@@ -258,3 +258,12 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 - Files: FE10/FE11/FE02 task/changelog files and approved review fixes only.
 - DoD: creation, failure, completion, resend, ownership, idempotency, and leakage tests pass; OTP behavior remains unchanged; traceability, secret scans, and `git diff --check` pass; Nhat records human review before commit/merge.
 - Validation state: PASS on 2026-07-15 with 170/170 affected backend tests, 75/75 frontend tests, traceability enforcement, changed-line credential scan, and diff checks. Nhat confirmed the final Task 7 human review.
+
+## 11. FE04 Membership Result Follow-up
+
+### FE10-S09 Add FE04 Membership-Result Source Boundary
+
+- [ ] Status: READY FOR IMPLEMENTATION - BASELINE APPROVED
+- Dependency: FE04/FE10 requester contract revision.
+- Maps to: Q-FE10-009, BR-FE10-005, BR-FE10-011, FR-FE10-006, FR-FE10-009.
+- DoD: FE04 is accepted by the construction-bound allowlist, only FE04 may submit `MEMBERSHIP_RESULT`, status/timestamp behavior is tested, and delivery failure remains non-blocking after the membership decision commits.

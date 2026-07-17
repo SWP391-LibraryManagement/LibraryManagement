@@ -1,12 +1,12 @@
 # CONTEXT.md - FE09 Fine Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-17
 
 # Feature folder: `.sdd/specs/feat-fine-management/`
 
@@ -65,7 +65,7 @@ FE09 does not include:
 
 The current SQL script includes:
 
-- `Fines(FineId, UserId, BorrowDetailId, Amount, Reason, Status, PaidAt)`
+- `Fines(FineId, UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, PaidAmount, Reason, Status, CalculatedAt, PaidAt, CreatedBy, CollectedBy, PaymentMethod, CreatedAt, UpdatedAt)`
 - `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
 - `BorrowRequests(RequestId, UserId, RequestDate, Status)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
@@ -80,13 +80,15 @@ Project baseline decisions include:
 
 Potential issues to review:
 
-- Current SQL does not store payment amount, collected by, or collection note separately.
+- Current SQL stores `PaidAmount`, `CollectedBy`, and `PaymentMethod`; it does not have a separate collection-note column.
 - Current SQL does not define damaged/lost fine policy.
 - Current SQL does not prevent duplicate fine records for the same borrow detail.
-- Fine calculation date source must be server-controlled, not client-controlled.
-- Status values need to be standardized.
+- Fine calculation date source is the server business date in `Asia/Ho_Chi_Minh`, not client input.
+- Status values are `UNPAID`, `PAID`, `WAIVED`, and `CANCELLED`; all except `UNPAID` are terminal.
+- Phase 1 has no partial payment: full offline collection sets `PaidAmount = Amount`, `CollectedBy`, `PaymentMethod`, `PaidAt`, and `Status = PAID` atomically.
+- Collection notes are audit metadata because the current schema has no collection-note column.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+These decisions are closed in SPEC v0.4.0 and must be reconciled against the existing server-side prototype before implementation is considered complete.
 
 ---
 
@@ -150,14 +152,18 @@ Owner column reflects the current team redistribution.
 | Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | Review packet 2026-06-10 | APPROVED |
 | Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | Review packet 2026-06-10 | APPROVED |
+| Q-FE09-007 | Prototype UI may store fine records locally for demo continuity, but final FE09 behavior must use server-side calculation and persistence. | User correction 2026-06-21 | APPROVED |
+| Q-FE09-008 | Phase 1 librarian collection resolves a full offline-paid overdue fine directly; no partial payment or admin confirmation/refusal step is required. | User correction 2026-06-30 | APPROVED |
+| Q-FE09-009 | Librarian fine list defaults to stable FineId ascending order. | User correction 2026-06-30 | APPROVED |
+| Q-FE09-010 | Overdue-day calculation uses the current server business date in `Asia/Ho_Chi_Minh`. | Nhat normalization review 2026-07-17 | APPROVED |
 
 ---
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
-- Use server-side dates for calculation.
-- Do not trust client-provided fine amount for calculation.
-- Avoid duplicate active fines for the same borrow detail and reason.
+- `SPEC.md` v0.4.0 is baseline-approved; implementation must follow the reconciled plan/tasks and remains pending.
+- Use `Asia/Ho_Chi_Minh` server business dates for calculation.
+- Do not trust client-provided amount or overdue-day values.
+- Avoid duplicate active fines for the same borrow detail and reason under a database lock.
+- Record full offline collection only; partial payment is not a Phase 1 state.
 - Keep online payment out of scope.

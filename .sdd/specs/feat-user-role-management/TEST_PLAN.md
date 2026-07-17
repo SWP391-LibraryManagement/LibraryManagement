@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
 Version: 0.3.0
-Status: DRAFT - ACCOUNT SETUP SLICE READY FOR REVIEW; implementation not started
+Status: ACCOUNT SETUP SLICE COMPLETE; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-15
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -33,7 +33,8 @@ User administration, role listing, role assignment/revocation, account status ma
 - `POST /users`: admin creates user, duplicate, invalid fields.
 - `POST /users`: inactive state, valid unusable bcrypt hash, atomic rollback, FE10 safe delivery status.
 - `POST /users/:userId/resend-setup`: eligibility, cooldown, rotation, safe provider failure, authorization.
-- `PUT /users/:userId`: admin updates user, forbidden fields rejected.
+- `GET /users` and `GET /users/:userId`: only `UserManagementView` fields and approved related summaries are returned; credential/token/session/link fields are absent.
+- `PUT /users/:userId`: matching `expectedUpdatedAt` updates allowed fields; stale state returns `409 STALE_USER_STATE`; forbidden fields are rejected.
 - `PATCH /users/:userId/status`: valid transition, invalid transition.
 - `POST /users/:userId/roles`: assign role, invalid role, duplicate, forbidden.
 - `DELETE /users/:userId/roles/:roleId`: revoke role, invalid role, forbidden.

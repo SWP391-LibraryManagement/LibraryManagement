@@ -1,5 +1,25 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE10 lifecycle, sensitive-source ownership, OTP boundary, membership-result boundary, and deferred integration scope as the Phase 1 baseline.
+- Synchronized FE10 `PLAN.md` and `TASKS.md` with the OTP contract, canonical template variables, and approved G12 execution status.
+
+## 2026-07-17 - Final Lifecycle And Membership Contract
+
+- Limited Phase 1 statuses to `PENDING`, `SENT`, and `FAILED` and defined `sentAt` for successful provider acceptance.
+- Added the FE04 `MEMBERSHIP_RESULT` queue flow and made the Phase 1 performance/filter requirements deterministic.
+
+## 2026-07-17 - Status Lifecycle And Source Contract Hardening
+
+- Defined the Phase 1 status lifecycle and removed the unresolved `SKIPPED`/preference branch.
+- Standardized FE04 and FE08 caller contracts on canonical notification type/template pairs.
+
+## 2026-07-17 - FE04 Membership Result Boundary
+
+- Added FE04 to the construction-bound source requester allowlist for `MEMBERSHIP_RESULT`.
+- Added a pending documentation/implementation gate for FE04 ownership; HTTP notification permissions remain unchanged.
+
 ## 2026-07-15 - FE11 Account Setup Delivery Implemented And Validated
 
 - Enforced FE11-only ownership for canonical `ACCOUNT_SETUP -> ACCOUNT_SETUP` delivery while preserving FE02 ownership of verification/reset OTP types.

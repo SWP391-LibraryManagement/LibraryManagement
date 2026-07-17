@@ -1,7 +1,7 @@
 # FE12 Test Plan - Reporting & Statistics
 
 Version: 0.7.0
-Status: COMPLETE
+Status: BASE VALIDATION COMPLETE; NORMALIZATION CASES PLANNED
 Last Updated: 2026-07-13
 
 Source Spec: `.sdd/specs/feat-reporting-statistics/SPEC.md`
@@ -13,6 +13,8 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 ## 1. Test Scope
 
 Read-only borrowing, inventory, and user/statistics reports for authorized staff.
+
+Normalization follow-up covers Librarian access to all three reports, well-formed unknown IDs returning empty reports, `UNKNOWN` status grouping, deterministic pagination/order, mandatory successful-view audit, and absence of export endpoints/controls.
 
 ## 2. Unit Test Targets
 

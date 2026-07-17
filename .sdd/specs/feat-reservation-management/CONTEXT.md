@@ -1,12 +1,12 @@
 # CONTEXT.md - FE08 Reservation Management
 
-# Version: 0.1.0
+# Version: 0.2.1
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-17
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
@@ -26,7 +26,7 @@ The feature prevents ad-hoc manual waiting lists and helps librarians know who s
 2. The member creates a reservation.
 3. The system places the reservation into a queue.
 4. A copy later becomes available, usually after return.
-5. The system or librarian selects the next eligible reservation.
+5. A librarian/admin manually selects the next eligible reservation for a specific available copy.
 6. The system triggers a book available notification.
 7. The member borrows the book within the allowed time or the reservation expires/cancels.
 
@@ -60,8 +60,8 @@ The current SQL script has:
 
 Potential issue to review:
 
-- Current schema reserves by `CopyId`, but real reservation is often by `BookId`, because the member usually waits for any copy of a book. The team must decide whether to keep copy-level reservation or change to book-level reservation.
-- Current schema has no `ExpiresAt`, `NotifiedAt`, or `FulfilledAt` fields.
+- Phase 1 intentionally reserves by physical `CopyId`; book-level reservation is deferred.
+- Current schema includes `QueuePosition`, `ExpiresAt`, `NotifiedAt`, `CancelledAt`, and `Status`; notification/expiry timestamps remain immutable history after terminal transitions, `CancelledAt` is cancellation-only, and fulfillment uses `Status = FULFILLED` with no separate `FulfilledAt` field.
 - Current schema has no cancellation reason field.
 
 ---
@@ -91,8 +91,8 @@ Potential issue to review:
 ## 7. Key Risks
 
 - Queue order can become unfair if reservation ordering is unclear.
-- Reservation by `CopyId` may be too strict if any copy of the book should satisfy the reservation.
-- A copy can be accidentally borrowed by another member after it should be held for the reservation.
+- Copy-level reservation is a deliberate Phase 1 constraint; reserving any copy of a book is deferred.
+- A held copy is protected by FE07 priority checks and may be borrowed only by the notified reservation owner.
 - Renewal in FE07 can conflict with active reservations if policy is not defined.
 - Notification failure can leave members unaware that the book is available.
 
@@ -120,12 +120,16 @@ Potential issue to review:
 | Q-FE08-003 | Maximum 3 active reservations per member. | Review packet 2026-06-10 | APPROVED |
 | Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | Review packet 2026-06-10 | APPROVED |
 | Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | Review packet 2026-06-10 | APPROVED |
+| Q-FE08-006 | Ineligible active reservations are skipped for the current run and remain active for a later manual retry. | Nhat normalization review 2026-07-17 | APPROVED |
+| Q-FE08-007 | No eligible queue entry returns no selection and leaves copy/reservation state unchanged. | Nhat normalization review 2026-07-17 | APPROVED |
+| Q-FE08-008 | FE10 notification failure preserves the committed hold and writes a failure audit; no automatic retry worker is in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
+| Q-FE08-009 | Notification/expiry timestamps survive terminal transitions; only cancelled rows have `CancelledAt`. | Spec normalization 2026-07-17 | APPROVED |
 
 ---
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- `SPEC.md` v0.4.2 is baseline-approved; implementation must follow the approved plan/tasks and remains pending.
+- `PLAN.md` and `TASKS.md` must record the historical B7 slice separately from the v0.4.2 normalization tasks.
 - Queue processing should be transactional.
 - Members must never cancel another member's reservation.

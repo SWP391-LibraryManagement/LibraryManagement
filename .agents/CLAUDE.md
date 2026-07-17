@@ -1,10 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.0
+# Version: 0.3.1
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
-# Last Updated: 2026-07-15
+# Last Updated: 2026-07-17
 
 # Project: SWP391 Library Management System
 
@@ -19,17 +19,15 @@
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 - **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server (Sequelize ORM) database, RESTful API.
-- **Current SDD scope**: all 12 Phase 1 feature `SPEC.md` files are **APPROVED**. `PLAN.md` + `TASKS.md` are **READY FOR REVIEW** (implemented vertical slice) for 3 features:
-  - FE02 `feat-auth`, FE08 `feat-reservation-management`, and FE09 `feat-fine-management`.
+- **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. This approval locks the normalized contracts as the source of truth; it does not claim that implementation, tests, or deferred follow-up tasks are complete.
+  - FE01 remains implementation `NOT STARTED`. FE04/FE05/FE06 have decomposed implementation tasks that are not yet executed. FE02/FE07/FE08/FE09/FE10 have follow-up reconciliation tasks. FE11's account-setup slice is complete while remaining FE11 work is deferred. FE12's B7 base slice is complete while deterministic-policy follow-up remains pending.
   - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
-  - FE07 `feat-borrowing-management` is **COMPLETE** through B7: Nhat confirmed human review, implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` reached `main` through PR #19 / merge commit `aeed0dfecb764e6cbe63d7074727f318700e59ea`, and GitHub Actions CI run `29308540692` passed. See `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
-  - FE08 also has B7 evidence: human review confirmed in the Codex task before merge, commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`, and GitHub Actions CI run `29217437981` passed. See `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
-  - FE10 `feat-notification-management` completed the historical G1-G7 slice through B7: human integration review was confirmed, commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` is in `main`, and GitHub Actions CI run `29236572558` passed. ADR-004/G8-G10 define the pending FE02 OTP security follow-up; ADR-005/G11 define pending FE11-owned `ACCOUNT_SETUP` delivery. Both specification/task revisions await final written review; implementation has not started.
-  - FE12 `feat-reporting-statistics` is **COMPLETE** through B7: Nhat confirmed human review, commit `58747bc10657ed1accb44950ae0c5edbd178a242` is in `main` and `origin/main`, and GitHub Actions CI run `29249491818` passed. See `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
-  - FE01 `feat-public-browse`, FE04 `feat-membership-management`, FE05 `feat-book-management`, and FE06 `feat-inventory-book-copy` have `PLAN.md` / `TASKS.md` marked **NOT STARTED**. FE11 now has a reviewable account-setup slice only; all remaining FE11 work stays unplanned.
-  - FE03 `feat-user-profile` uses legacy `# Status:` headings (`DRAFT - AVATAR UPLOAD REVISION` / manual verification pending) instead of the canonical unprefixed `Status:` field.
+  - FE07 B7 evidence (merge `aeed0df`, CI `29308540692`) remains historical baseline evidence; it does not prove the v0.5.1 history contract.
+  - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; v0.4.3 timestamp normalization is pending.
+  - FE10 historical G1-G7 and FE11 `ACCOUNT_SETUP` delivery are complete; ADR-004/G8-G10 OTP implementation and G12 FE04 membership-result integration remain pending.
+  - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; v0.1.5 deterministic policy follow-up is pending.
 - **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories → Sequelize models`) with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, and report pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
-- **Known drift to reconcile**: some features (e.g. FE05 book) have prototype code while their `PLAN.md` / `TASKS.md` are still `NOT STARTED`. Do not treat such code as spec-driven/source-of-truth until the matching PLAN/TASKS are decomposed and approved. See [`.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`](../.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md).
+- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. Treat completed B7 evidence as baseline-only whenever a feature now has pending reconciliation tasks; do not claim conformance until the matching revision is reviewed and its follow-up tasks/tests close. See [`.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`](../.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md).
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---

@@ -1,5 +1,44 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE05 specification, plan, and task boundary as the Phase 1 baseline; implementation tasks remain pending.
+
+## 2026-07-17 - Final Contract Audit
+
+- Made the staff book-list flow use the approved query filters and sort/order contract.
+- Replaced non-verifiable search-performance wording with a database-filtering requirement.
+
+## 2026-07-17 - Detail Contract Wording - v0.5.1
+
+- Clarified that staff detail reads may return both `ACTIVE` and `INACTIVE` books; public callers still receive only active public-safe detail or `404`.
+- Marked SPEC/PLAN/TASKS ready for human re-review; no implementation behavior or code changed.
+
+## 2026-07-16 - Planning Human Review Approval
+
+- Nhat approved the FE05 prototype-reconciliation plan and ordered task decomposition.
+- Marked `PLAN.md` and `TASKS.md` as `APPROVED`; implementation tasks remain unchecked and have not started.
+
+## 2026-07-16 - Implementation Planning Decomposition
+
+- Replaced placeholder `PLAN.md` and `TASKS.md` with a `READY FOR REVIEW` reconciliation plan for approved SPEC v0.5.0.
+- Added ordered RED/GREEN tasks for deterministic queries, metadata validation, SQL `rowversion`/`If-Match`, atomic audit writes, and dedicated deactivate/reactivate commands.
+- Made removal of FE05 copy-status mutation ownership and replacement of prototype frontend expectations explicit, with all 61 BR/FR/AC requirements mapped to concrete tasks and verification gates.
+
+## 2026-07-16 - Human Review Approval
+
+- Nhat confirmed human review of revision v0.5.0.
+- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+
+## 2026-07-15 - Catalog Ownership and Deterministic Contract (v0.5.0)
+
+- Removed FE05 copy-status mutation ownership and deleted the `/api/books/{bookId}/availability` contract.
+- Defined public availability as a read-only aggregation of `Books.Status` and FE06-owned copy states.
+- Formalized `ACTIVE`/`INACTIVE` deactivation/reactivation without rewriting copy, borrow, reservation, or history rows.
+- Added SQL `rowversion`/`If-Match` stale-write protection, deterministic search/pagination/sort rules, and explicit rejection criteria for invalid pages/rating.
+- Standardized the derived unavailable display label as `Không khả dụng` so reserved/damaged/lost/inactive copies are not mislabeled as borrowed.
+- Added complete BR/FR/AC traceability with concrete planned test intents.
+
 ## 2026-06-02
 
 - Created initial FE05 Book Management specification.

@@ -1,6 +1,6 @@
 ﻿# PLAN.md - FE02 Authentication
 
-Status: READY FOR REVIEW - OTP DELIVERY FOLLOW-UP
+Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 Date: 2026-07-15
 Owner: Dat
 
@@ -61,7 +61,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Refresh token | Random token, stored as hash in `AuthTokens`, 7-day expiry. |
 | Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 24-hour expiry; legacy token links remain accepted. |
 | Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy password-reset tokens remain accepted. |
-| Account setup token | FE11 issues/rotates it; FE10 delivers it through the FE11-bound requester; FE02 consumes it and atomically activates the account. |
+| Account setup token | FE11 issues/rotates it with an exact 24-hour expiry; FE10 delivers it through the FE11-bound requester; FE02 consumes it and atomically activates the account. |
 | Roles | Flat roles from `Roles`/`UserRoles`. |
 | Verification/reset email delivery | FE02 creates/validates OTPs and calls the FE10 requester bound to `FE02`; FE10 exclusively renders, sends, and records status/attempts. |
 | Change-password OTP delivery | Remains a direct FE02 email flow until a separate FE10 notification type/use case is approved. |
@@ -87,7 +87,7 @@ Implement the FE02 endpoints from `docs/api/api-contract.md`:
 | POST | `/api/auth/verify-email` | Verify email with OTP/email or legacy token. |
 | POST | `/api/auth/resend-verification` | Resend verification OTP safely. |
 | POST | `/api/auth/login` | Login and return access/refresh tokens. |
-| POST | `/api/auth/refresh-token` | Exchange refresh token for new access token. |
+| POST | `/api/auth/refresh-token` | Exchange a valid refresh token for a new access token without requiring a valid access token. |
 | POST | `/api/auth/logout` | Revoke refresh token. |
 | POST | `/api/auth/change-password` | Change password for authenticated user. |
 | POST | `/api/auth/forgot-password` | Request reset OTP without email enumeration. |
@@ -117,7 +117,7 @@ backend/src/utils/tokenUtils.js
 backend/src/utils/safeErrors.js
 ```
 
-Existing placeholder files under `backend/src/Controller/Authentication` and `backend/src/Service/...` may either be migrated into the new architecture or kept as compatibility stubs, but new implementation should follow ADR-001 folder structure.
+Do not add new implementation under legacy placeholder paths such as `backend/src/Controller/Authentication` or `backend/src/Service/...`; leave existing placeholders untouched until a separately approved cleanup task, and place all new work in the ADR-001 architecture.
 
 ## 8. Frontend File Plan
 
@@ -182,7 +182,7 @@ The frontend hardening slice `FE02-T024` through `FE02-T028` completed automated
 
 The first same-commit CI run exposed stale golden-path assumptions. Commit `232ee4c` aligned the E2E password locator, `/home` login destination, and browser clock with the approved UX/runtime contracts. Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
 
-Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes only the approved Authentication/OTP UX hardening slice; the overall FE02 plan remains `READY FOR REVIEW` until the Core feature's full completion criteria are closed.
+Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes only the approved Authentication/OTP UX hardening slice; the FE02 baseline is approved while Core implementation follow-up remains pending until the full completion criteria are closed.
 
 ## 13. FE02/FE10 OTP Delivery Follow-up
 

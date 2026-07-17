@@ -1,12 +1,12 @@
 # CONTEXT.md - FE04 Membership Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-16
 
 # Feature folder: `.sdd/specs/feat-membership-management/`
 
@@ -35,9 +35,10 @@ The typical membership workflow:
 2. The system creates a membership application with status `PENDING`.
 3. A librarian/admin reviews pending applications.
 4. The librarian/admin approves or rejects the application.
-5. The system records approval/rejection status and timestamp.
-6. The member can view membership status.
-7. FE07 and FE08 later use approved membership status to decide borrowing/reservation eligibility.
+5. The system atomically updates application history, the canonical `Members` projection, reviewer metadata, and audit data.
+6. After commit, FE04 requests a non-blocking FE10 membership-result notification.
+7. The member can view canonical membership status and current/latest application information.
+8. FE07 and FE08 require `Users.Status = ACTIVE` and `Members.Status = APPROVED`.
 
 ---
 
@@ -49,7 +50,7 @@ FE04 includes:
 - Approve membership application.
 - Reject membership application.
 - View membership status.
-- Maintain membership application status and review timestamps.
+- Maintain immutable application history and a canonical current `Members` eligibility projection.
 
 FE04 does not include:
 
@@ -66,18 +67,19 @@ FE04 does not include:
 The current SQL script includes:
 
 - `Users(UserId, Username, Email, PasswordHash, Phone, Status, CreatedAt)`
-- `MembershipApplications(ApplicationId, UserId, Status, AppliedAt, ApprovedAt)`
+- `Members(MemberId, UserId, Status, ApprovedAt, ApprovedBy, CreatedAt, UpdatedAt)`
+- `MembershipApplications(ApplicationId, UserId, Status, AppliedAt, ApprovedAt, ReviewedBy, ReviewNote)`
 - `UserRoles(UserId, RoleId)`
 
-Potential issues to review:
+Implementation reconciliation requirements:
 
-- The current table has `ApprovedAt` but no `RejectedAt`, `ReviewedBy`, or rejection reason.
+- The current table has no separate `RejectedAt`; Phase 1 uses the required audit timestamp for rejection traceability.
 - The current schema does not separately store membership expiry or membership number.
-- The current schema does not define whether one user can submit multiple applications over time.
-- The current schema does not define a final membership status separate from latest application status.
-- FE07/FE08 need a stable way to determine whether membership is approved.
+- A user may have multiple historical applications but at most one pending application.
+- `Members.Status` is the canonical eligibility source; application history never substitutes for this projection.
+- Rejection uses `MembershipApplications.ReviewNote`; approval/rejection update `ReviewedBy` and write an audit entry.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+Implementation must preserve these approved decisions when reconciling the current schema and prototype behavior.
 
 ---
 
