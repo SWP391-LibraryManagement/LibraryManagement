@@ -10,7 +10,7 @@ Method: SDD Full, RED-GREEN TDD, security review, and B1-B7 evidence
 
 The bounded implementation passed automated validation and human implementation review. Evidence covers the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, and traceability gate.
 
-FE11 remains whole-feature `DEFERRED`. This record does not claim completion of user detail/update/deactivation, librarian fields, Admin UI, audit-log UI, or the remaining FE11 requirements.
+Remaining FE11 work stays deferred. This record does not claim completion of user detail/update/deactivation, librarian fields, Admin UI, audit-log UI, or the remaining FE11 requirements.
 
 ## L1 Automated Evidence
 
@@ -20,9 +20,8 @@ FE11 remains whole-feature `DEFERRED`. This record does not claim completion of 
 | `npm.cmd --prefix backend test` | PASS; 399/399 tests, 29/29 suites |
 | `npm.cmd --prefix backend run test:coverage:ci` | PASS; 92.47% statements, 82.35% branches, 97.1% functions, 92.4% lines |
 | Focused repository Jest coverage | PASS; 100% statements, 90.24% branches, 100% functions, 100% lines |
-| `npm.cmd run test:traceability-state` | PASS; 4/4 tests |
-| `npm.cmd run trace:enforce` | PASS; five enforced PARTIAL features remain above 70%; FE11 reports 13/38 tagged FRs (34%) as whole-feature `DEFERRED` |
-| `git diff --check 4e677eb..HEAD` | PASS |
+| `npm.cmd run trace:enforce` | PASS; FE11 reports 13/38 tagged FRs (34%). The current `main` checker reads the top status as `APPROVED` and does not enforce FE11; that pre-existing status-heuristic limitation is outside this FE11-only PR. |
+| `git diff --check origin/main...HEAD` | PASS |
 
 Observed RED evidence:
 
@@ -60,6 +59,7 @@ Residual risks:
 - The safe managed-user readback occurs after commit; a rare post-commit read failure can return an error after the mutation has committed.
 - Remaining FE11 user update/deactivation and acting-admin semantics are tracked by `TD-012`, `TD-014`, and `TD-015`.
 - The frontend development bypass risk remains tracked separately as `TD-017`.
+- The current `main` traceability checker derives enforcement from the human-readable top status; a repository-wide state-metadata correction remains outside this FE11-only PR.
 
 ## Files Changed
 

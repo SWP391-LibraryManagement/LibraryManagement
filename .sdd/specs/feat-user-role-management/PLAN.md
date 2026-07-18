@@ -136,4 +136,4 @@ database/Librarymanagement.sql
 
 - Focused RED-GREEN tests prove each repository outcome and API mapping.
 - Full backend tests and `trace:enforce` pass.
-- FE11 remains whole-feature `DEFERRED`; completed role-slice evidence is recorded separately.
+- Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.

@@ -12,7 +12,7 @@
 
 - Approved stack remains Node.js + Express.js, React + Bootstrap, SQL Server, and RESTful API.
 - Implement only `BR-FE11-001`, `BR-FE11-007..010`, `FR-FE11-012..017`, `FR-FE11-024..027`, `AC-FE11-013..015`, `NFR-FE11-SEC-001..005`, `NFR-FE11-TXN-003`, and `NFR-FE11-TXN-006` for this slice.
-- Keep FE11 `Implementation State: DEFERRED`; record this completed slice separately because the global checker applies 70% to all 38 FE11 FRs.
+- Keep FE11's remaining work deferred and record this completed slice separately. Do not modify the repository-wide traceability checker in this FE11-only plan.
 - Do not change database schema, public endpoint paths, role hierarchy, user update/deactivation behavior, librarian fields, or Admin UI.
 - Authenticate and authorize before exposing input-validation details.
 - Use only parameterized SQL; never persist or return credentials, tokens, sessions, or setup links.
@@ -42,7 +42,7 @@ Ensure the design status is:
 Status: APPROVED BY HUMAN - 2026-07-18
 ```
 
-Its traceability section must state that whole-feature state remains `DEFERRED` until feature-wide evidence reaches the existing gate or a separately approved scoped-denominator contract exists.
+Its traceability section must state that remaining whole-feature work stays deferred and that the current `main` checker still uses its existing top-status heuristic.
 
 - [ ] **Step 2: Add the bounded role slice to FE11 PLAN.md**
 
@@ -69,7 +69,7 @@ Append this scope after the account-setup plan:
 
 - Focused RED-GREEN tests prove each repository outcome and API mapping.
 - Full backend tests and `trace:enforce` pass.
-- FE11 remains whole-feature `DEFERRED`; completed role-slice evidence is recorded separately.
+- Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.
 ```
 
 Update the top status to mention that account setup is complete, the transactional role slice is approved for implementation, and remaining FE11 work is deferred.
@@ -117,12 +117,11 @@ Add the approved role slice to Current Evidence/Gaps and add a dated changelog e
 Run:
 
 ```powershell
-npm.cmd run test:traceability-state
 npm.cmd run trace:enforce
 git diff --check -- docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md .sdd/specs/feat-user-role-management
 ```
 
-Expected: 4/4 traceability-state tests pass; traceability remains PASS with five enforced PARTIAL features; Markdown diff check is clean.
+Expected: traceability reports FE11 coverage and remains PASS under the current `main` status heuristic; Markdown diff check is clean.
 
 - [ ] **Step 6: Commit the approved planning checkpoint**
 
@@ -673,11 +672,10 @@ git commit -m "fix: enforce deterministic FE11 role errors"
 npm.cmd --prefix backend test -- --runTestsByPath tests/userRoleRepository.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js
 npm.cmd --prefix backend test
 npm.cmd --prefix backend run test:coverage:ci
-npm.cmd run test:traceability-state
 npm.cmd run trace:enforce
 ```
 
-Expected: focused and full backend suites pass; existing coverage thresholds pass; traceability remains PASS because FE11 is explicitly whole-feature `DEFERRED` while its role slice evidence is recorded in tasks/review.
+Expected: focused and full backend suites pass; existing coverage thresholds pass; traceability reports FE11's tagged FRs and remains PASS under the current `main` status heuristic.
 
 - [ ] **Step 2: Run security and diff hygiene checks**
 

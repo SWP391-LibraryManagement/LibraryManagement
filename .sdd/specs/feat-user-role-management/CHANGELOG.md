@@ -16,7 +16,7 @@
 - Approved the bounded FE11 role assignment/revocation design and implementation plan.
 - Locked deterministic error semantics for missing actor/target/role, duplicate assignment, absent mapping, final user role, and last active Admin.
 - Required one parameterized SQL transaction for role mutation plus audit with `UPDLOCK, HOLDLOCK`.
-- Kept whole-feature `Implementation State: DEFERRED` because the global traceability gate measures all 38 FE11 FRs; the role slice is tracked separately as `FE11-R01..R05`.
+- Kept remaining FE11 work deferred and added forward-compatible `Implementation State: DEFERRED` metadata for this feature; the role slice is tracked separately as `FE11-R01..R05`.
 - No implementation evidence is claimed by this planning entry.
 
 ## 2026-07-17 - Phase 1 Baseline Approved

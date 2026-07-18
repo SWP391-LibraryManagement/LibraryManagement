@@ -197,8 +197,8 @@ Implementation follows strict RED-GREEN TDD.
 
 When implementation begins:
 
-- Keep FE11 `Implementation State: DEFERRED` at the whole-feature gate and record this role slice explicitly in the task group. The current checker applies its 70% threshold to all 38 FE11 FRs, so `PARTIAL` would misrepresent this bounded slice as a feature-wide implementation claim and block CI at the current 13% coverage.
-- Revisit `PARTIAL` only when FE11 has enough feature-wide implementation evidence or a separately approved scoped-traceability contract exists.
+- Keep FE11's remaining whole-feature work explicitly deferred and record this completed role slice in the task group. The current `main` checker reports FE11's 38-FR coverage but still derives enforcement from the human-readable top status, so this FE11-only slice does not change the checker contract.
+- Keep the forward-compatible `Implementation State: DEFERRED` metadata local to FE11 until a separate repository-wide traceability change is reviewed.
 - Add a separately reviewable task group for this role-management slice to FE11 `PLAN.md` and `TASKS.md`.
 - Update FE11 `TEST_PLAN.md` and `CHANGELOG.md`.
 - Add `@spec` tags to the transactional repository and service branches.
