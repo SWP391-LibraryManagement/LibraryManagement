@@ -1,6 +1,6 @@
 # FE11 Transactional Role Management Design
 
-Status: DESIGN APPROVED; WRITTEN SPEC REVIEW PENDING - 2026-07-18
+Status: APPROVED BY HUMAN - 2026-07-18
 
 Feature: FE11 User & Role Management
 
@@ -197,7 +197,8 @@ Implementation follows strict RED-GREEN TDD.
 
 When implementation begins:
 
-- Change FE11 `Implementation State` from `DEFERRED` to `PARTIAL`.
+- Keep FE11 `Implementation State: DEFERRED` at the whole-feature gate and record this role slice explicitly in the task group. The current checker applies its 70% threshold to all 38 FE11 FRs, so `PARTIAL` would misrepresent this bounded slice as a feature-wide implementation claim and block CI at the current 13% coverage.
+- Revisit `PARTIAL` only when FE11 has enough feature-wide implementation evidence or a separately approved scoped-traceability contract exists.
 - Add a separately reviewable task group for this role-management slice to FE11 `PLAN.md` and `TASKS.md`.
 - Update FE11 `TEST_PLAN.md` and `CHANGELOG.md`.
 - Add `@spec` tags to the transactional repository and service branches.
