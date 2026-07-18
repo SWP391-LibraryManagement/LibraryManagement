@@ -143,10 +143,11 @@ Owner: Dung
   - DoD: the complete diff is validated before requests, assignments precede revocations, non-editable roles are preserved, and no-op saves send no mutation.
   - Evidence: RED exposed direct role-name loops with no preflight/no-op branch; GREEN passes 5/5 focused frontend tests with numeric assignments before numeric revocations.
 
-- [ ] **FE11-UIR04 - Reconcile partial failures to server state.**
+- [x] **FE11-UIR04 - Reconcile partial failures to server state.**
   - Maps to: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.
   - Depends on: FE11-UIR03.
   - DoD: the first failed mutation stops the sequence; target detail is reloaded into the open modal; failed reconciliation disables Save and never reports success.
+  - Evidence: RED lacked mutation-failure reload and modal synchronization; GREEN passes 6/6 focused UI tests with authoritative reload, local error display, and Save lock after reconciliation failure.
 
 - [ ] **FE11-UIR05 - Pass the Admin role UI validation and integration gates.**
   - Depends on: FE11-UIR01..UIR04.

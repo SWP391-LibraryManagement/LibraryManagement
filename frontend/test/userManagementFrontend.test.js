@@ -58,3 +58,15 @@ test('FE11 role saves validate the full plan and assign before revoking', async 
   assert.ok(saveRoles.indexOf('of assignments') < saveRoles.indexOf('of revocations'));
   assert.match(saveRoles, /assignments\.length === 0 && revocations\.length === 0/);
 });
+
+test('FE11 partial role failure reloads the target and keeps the modal authoritative', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /catch \(error\) \{[\s\S]*?await fetchManagedUser\(roleUser\.userId\)/);
+  assert.match(source, /setRoleUser\(refreshedUser\)/);
+  assert.match(source, /setRoleSyncBlocked\(true\)/);
+  assert.match(source, /useEffect\(\(\) => \{[\s\S]*?setSelectedRoles\(new Set\(user\.roles \|\| \[\]\)\)/);
+  assert.match(source, /\}, \[user\]\);/);
+  assert.match(source, /savingBlocked=\{rolesLoading \|\| roleSyncBlocked\}/);
+  assert.match(source, /catch \(error\) \{\s*setError\(error\.message\)/);
+});

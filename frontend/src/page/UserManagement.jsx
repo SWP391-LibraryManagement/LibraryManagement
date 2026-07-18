@@ -395,11 +395,20 @@ function UserModal({ mode, user, onClose, onSubmit }) {
   );
 }
 
-function RoleModal({ user, roles, onClose, onSave }) {
+function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
   const [selectedRoles, setSelectedRoles] = useState(() => new Set(user.roles || []));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const availableRoles = roles;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSelectedRoles(new Set(user.roles || []));
+      setError('');
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [user]);
 
   function toggleRole(roleName) {
     const nextRoles = new Set(selectedRoles);
@@ -417,28 +426,36 @@ function RoleModal({ user, roles, onClose, onSave }) {
   async function handleSave(event) {
     event.preventDefault();
 
+    if (savingBlocked) {
+      setError('Không thể lưu cho đến khi trạng thái vai trò được tải lại.');
+      return;
+    }
+
     if (selectedRoles.size === 0) {
       setError('Every user must keep at least one role.');
       return;
     }
 
     setSaving(true);
+    setError('');
     try {
       await onSave(Array.from(selectedRoles));
+    } catch (error) {
+      setError(error.message);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="um-modal-backdrop" onMouseDown={onClose}>
+    <div className="um-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={handleSave}>
         <div className="um-modal-header">
           <div>
             <p>FE11 roles</p>
             <h2>Quản lý vai trò</h2>
           </div>
-          <button type="button" className="um-icon-button" onClick={onClose} aria-label="Close">
+          <button type="button" className="um-icon-button" disabled={saving} onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -468,10 +485,10 @@ function RoleModal({ user, roles, onClose, onSave }) {
         </div>
 
         <div className="um-modal-actions">
-          <button type="button" className="um-secondary-button" onClick={onClose}>
+          <button type="button" className="um-secondary-button" disabled={saving} onClick={onClose}>
             Hủy
           </button>
-          <button type="submit" className="um-primary-button" disabled={saving}>
+          <button type="submit" className="um-primary-button" disabled={saving || savingBlocked}>
             {saving ? 'Đang lưu...' : 'Lưu vai trò'}
           </button>
         </div>
@@ -1405,19 +1422,33 @@ function UserManagement() {
       return;
     }
 
-    for (const { roleId } of assignments) {
-      await assignManagedUserRole(roleUser.userId, roleId);
-    }
+    try {
+      for (const { roleId } of assignments) {
+        await assignManagedUserRole(roleUser.userId, roleId);
+      }
 
-    for (const { roleId } of revocations) {
-      await revokeManagedUserRole(roleUser.userId, roleId);
-    }
+      for (const { roleId } of revocations) {
+        await revokeManagedUserRole(roleUser.userId, roleId);
+      }
 
-    setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
-    setRoleUser(null);
-    setRoleSyncBlocked(false);
-    setSelectedUser(null);
-    await loadUsers();
+      setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
+      setRoleUser(null);
+      setRoleSyncBlocked(false);
+      setSelectedUser(null);
+      await loadUsers();
+    } catch (error) {
+      try {
+        const refreshedUser = await fetchManagedUser(roleUser.userId);
+        setRoleUser(refreshedUser);
+        setRoleSyncBlocked(false);
+        if (selectedUser?.userId === refreshedUser.userId) {
+          setSelectedUser(refreshedUser);
+        }
+      } catch {
+        setRoleSyncBlocked(true);
+      }
+      throw error;
+    }
   }
 
   return (
@@ -2160,7 +2191,10 @@ function UserManagement() {
           user={roleUser}
           roles={roles}
           savingBlocked={rolesLoading || roleSyncBlocked}
-          onClose={() => setRoleUser(null)}
+          onClose={() => {
+            setRoleUser(null);
+            setRoleSyncBlocked(false);
+          }}
           onSave={saveRoles}
         />
       )}
