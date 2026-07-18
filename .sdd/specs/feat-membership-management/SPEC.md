@@ -263,7 +263,7 @@ Use these stable IDs for tasks and tests.
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | POST | `/api/membership/applications` | Registered User | `{}` | Created application and canonical `PENDING` status | Active account only; preserves prior history. |
 | GET | `/api/membership/status/me` | Registered User | - | `{ membershipStatusView, memberStatus, currentApplication }` | `NONE`/`null` values are returned deterministically before the first application; otherwise canonical status comes from `Members`. |
-| GET | `/api/membership/applications` | Librarian/Admin | Query: `status?, page?, limit?` | Paginated applications | Protected review list. |
+| GET | `/api/membership/applications` | Librarian/Admin | Query: `q?, status?, page?, limit?` | `{ applications, page, limit, total, totalPages }` | Protected review list; `q` searches application ID, name, username, or email. |
 | PATCH | `/api/membership/applications/{applicationId}/approve` | Librarian/Admin | `{ note?: string }` | Approved application + safe delivery status | Pending only; application/member/audit commit together. |
 | PATCH | `/api/membership/applications/{applicationId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected application + safe delivery status | Pending only; reason required, trimmed, max 500. |
 
@@ -285,7 +285,7 @@ Use these stable IDs for tasks and tests.
 
 ### 12.3 Performance
 
-- NFR-FE04-PERF-001: Membership application list must apply status filtering and pagination in the database query before materializing rows.
+- NFR-FE04-PERF-001: Membership application list must apply search, status filtering, counting, and pagination in the database query before materializing rows.
 
 ### 12.4 Logging and Audit
 

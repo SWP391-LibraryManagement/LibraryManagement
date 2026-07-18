@@ -195,6 +195,9 @@ function createBorrowingService({
     }
 
     for (const copy of copies) {
+      if (copy.bookStatus === 'INACTIVE') {
+        throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be borrowed.');
+      }
       classifyCopyBorrowability(copy, userId);
     }
 

@@ -14,6 +14,10 @@ function makeHarness({
   initialNow = FIXED_NOW,
 } = {}) {
   const dependencies = makeInMemoryAuthDependencies();
+  dependencies.auditLogRepository.listRecent = jest.fn(async ({ page, limit }) => ({
+    data: [],
+    pagination: { page, limit, total: 0, totalPages: 1 },
+  }));
   dependencies.state.accountSetupControl.failureStage = failureStage;
   let currentNow = initialNow;
   const notificationRequester = {
@@ -44,6 +48,25 @@ function makeHarness({
     },
   };
 }
+
+describe('FE11 audit log listing', () => {
+  test('passes normalized server-side pagination to the audit repository', async () => {
+    const { service, dependencies } = makeHarness();
+
+    const result = await service.listAuditLogs({ page: '2', limit: '8' });
+
+    expect(dependencies.auditLogRepository.listRecent).toHaveBeenCalledWith({ page: 2, limit: 8 });
+    expect(result.pagination).toEqual({ page: 2, limit: 8, total: 0, totalPages: 1 });
+  });
+
+  test('bounds invalid audit pagination values', async () => {
+    const { service, dependencies } = makeHarness();
+
+    await service.listAuditLogs({ page: '-5', limit: '1000' });
+
+    expect(dependencies.auditLogRepository.listRecent).toHaveBeenCalledWith({ page: 1, limit: 100 });
+  });
+});
 
 describe('FE11 transactional account setup creation', () => {
   test.each([

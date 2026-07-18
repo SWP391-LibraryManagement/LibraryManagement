@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-18 - Admin Circulation Alignment
+
+- Made the admin circulation table read-only and routed approve/return work to canonical FE07 screens.
+- Removed unsafe admin-only direct inserts and updates of borrowing details.
+- Derived `OVERDUE` from `BORROWED` plus due date, and added refresh/loading feedback and canonical database export.
+- Removed demo circulation transactions from the baseline SQL seed.
+- Added a coherent canonical circulation seed with one active loan and one completed return so the admin read model can be verified without frontend fallback data.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE07 borrowing, return, renewal, history, and reservation-priority contract as the Phase 1 baseline; reconciliation implementation remains pending.
@@ -152,3 +160,26 @@
 - (B) BorrowDetail lifecycle: states REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE — with Mermaid `stateDiagram-v2`, descriptions, valid transitions, forbidden transitions, and invariants INV-FE07-B1..B8.
 - All state values reuse the enums declared in Section 10.2 (no new status invented). Transitions trace to existing MF-*, FR-*, BR-*, AF-*, and EC-* sources.
 - Documented enum-declared states without an explicit flow (request `CANCELLED`, detail `OVERDUE`) as modeled per the declared enum with their dependency on FE09 / Phase 2 confirmation noted.
+## 2026-07-18 - Librarian Borrow Request Review Polish
+
+- Corrected Vietnamese labels and improved the request list/detail layout for the librarian review screen.
+- Added canonical request-status filtering and a visible last-updated indicator.
+- Made manual refresh provide loading/success/error feedback and reload canonical API state after approval or rejection.
+- Exposed the member profile, canonical member ID, phone, barcode, author, location, and every requested copy from the existing database relationships.
+- Sorted librarian request IDs in ascending order, added eight-row pagination, and refined the summary/filter toolbar.
+- Replaced the heading font fallback that rendered some Vietnamese combining marks incorrectly.
+- Added accent-insensitive search across request code, member identity, book, author, and barcode; search results now feed the same pagination used by the canonical status filter.
+- Added an explicit Search submit action with Enter-key support and separated draft input from the applied query so results update only after user confirmation.
+- Rebuilt the librarian return workspace with canonical approved-loan loading, explicit refresh/search feedback, complete member/copy fields, pagination, and canonical reload after return mutations.
+## 2026-07-18 - Librarian row actions made explicit
+
+- Added status-aware row actions to borrow requests: pending requests expose approve/reject, while terminal requests expose detail viewing.
+- Added an explicit return-processing action to each active loan row while retaining the condition review and confirmation panel.
+- Kept all mutations connected to the existing FE07 API and canonical server reload flow.
+
+## 2026-07-18 - Member borrowing details workspace
+
+- Replaced the ambiguous manual user-ID lookup with an API-backed member directory that automatically loads the first available member.
+- Added accent-insensitive member and transaction search, canonical status filtering, eight-row pagination, summary counters, and responsive profile/table layouts.
+- Displayed canonical member, contact, book, copy, barcode, location, loan, due, return, and status fields from the existing FE07 database relationships.
+- Kept the screen restricted to Librarian/Admin and connected it to the shared borrow-request and member-borrowing endpoints without demo fallback data.

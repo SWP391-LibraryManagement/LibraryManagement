@@ -49,13 +49,13 @@ test('FE07 API-backed pages use empty canonical state after load failures', asyn
     ['../src/page/borrowing/BorrowingHistoryPage.jsx', /setRows\(\[\]\)/],
     ['../src/page/borrowing/BorrowRequestsAdminPage.jsx', /setRequests\(\[\]\)/],
     ['../src/page/borrowing/ProcessReturnsPage.jsx', /setLoans\(\[\]\)/],
-    ['../src/page/borrowing/MemberBorrowingDetailsPage.jsx', /setMemberView\(null\)/],
+    ['../src/page/borrowing/MemberBorrowingDetailsPage.jsx', /setRows\(\[\]\)/],
   ];
 
   for (const [path, emptyStatePattern] of cases) {
     const source = await readFile(new URL(path, import.meta.url), 'utf8');
     assert.match(source, emptyStatePattern, path);
-    assert.match(source, /setNotice\(error\.message\)/, path);
+    assert.match(source, /setNotice\(error\.message(?:\s*\|\|[^)]*)?\)/, path);
     assert.doesNotMatch(source, /DEMO_BORROW_ROWS|DEMO_ADMIN_REQUESTS|DEMO_MEMBERS|DEMO_RETURN_ROWS/, path);
     assert.doesNotMatch(source, /\bisDemo\b|Demo fallback/, path);
   }
@@ -95,8 +95,8 @@ test('borrow request helper copy is readable Vietnamese', async () => {
   assert.match(source, /Hệ thống sẽ kiểm tra tư cách thành viên, giới hạn 5 sách, sách quá hạn, phí phạt và tình trạng bản sao\./);
   assert.doesNotMatch(source, /Backend mới l-|Chon mot cu-n/);
   assert.doesNotMatch(adminSource, /backend re-check|Backend sẽ re-check/);
-  assert.match(memberSource, /placeholder="Nhập mã thành viên\.\.\."/);
-  assert.doesNotMatch(memberSource, /placeholder="Nhập userId/);
+  assert.match(memberSource, /placeholder="Tìm tên, email, mã\.\.\."/);
+  assert.doesNotMatch(memberSource, /placeholder="Nhập (?:mã thành viên|userId)/);
 });
 
 test('borrow request review layout yields to the single-column mobile breakpoint', async () => {
@@ -156,6 +156,41 @@ test('approval UI does not invent audit notes or eligibility evidence', async ()
   assert.match(source, /borrowingApi\.approve\(approveTarget\.requestId\)/);
 });
 
+test('librarian borrow request review filters and refreshes canonical API state', async () => {
+  const { mapBorrowRequestsToAdminRows } = await loadBorrowingViewModels();
+  const source = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
+  const [row] = mapBorrowRequestsToAdminRows([{
+    requestId: 9,
+    userId: 3,
+    status: 'PENDING',
+    member: { memberId: 7, fullName: 'Nguyễn Minh An', username: 'member_an', phone: '0900000003' },
+    details: [{ copyId: 2, copy: { title: 'Clean Code', author: 'Robert Martin', barcode: 'BC2', location: 'A2', status: 'AVAILABLE' } }],
+  }]);
+
+  assert.equal(row.rawStatus, 'PENDING');
+  assert.equal(row.member, 'Nguyễn Minh An');
+  assert.equal(row.memberId, 7);
+  assert.equal(row.phone, '0900000003');
+  assert.equal(row.details[0].barcode, 'BC2');
+  assert.match(source, /borrowingApi\.listAll\(params\)/);
+  assert.match(source, /await loadRequests\(\)/);
+  assert.match(source, /value=\{statusFilter\}/);
+  assert.match(source, /value=\{searchInput\}/);
+  assert.match(source, /onSubmit=\{handleSearch\}/);
+  assert.match(source, /type="submit" className="btn btn-primary"/);
+  assert.match(source, /setSearchQuery\(searchInput\.trim\(\)\)/);
+  assert.match(source, /normalizeSearchValue/);
+  assert.match(source, /row\.details\.flatMap/);
+  assert.match(source, /filteredRequests\.slice/);
+  assert.match(source, /selected\.rawStatus === 'PENDING'/);
+  assert.match(source, /Number\(left\.requestId\) - Number\(right\.requestId\)/);
+  assert.match(source, /const PAGE_SIZE = 8/);
+  assert.match(source, /pagedRequests\.map/);
+  assert.match(source, /aria-label="Phân trang yêu cầu mượn"/);
+  assert.match(source, /title="Yêu cầu mượn sách"/);
+  assert.doesNotMatch(source, /YÃªu|yÃªu|mÆ°á»£n|Tráº¡ng/);
+});
+
 test('return UI omits the client UTC date and does not claim a fine handoff occurred', async () => {
   const source = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
 
@@ -180,6 +215,7 @@ test('borrowing pagination wraps instead of hiding later pages on mobile', async
 
   assert.match(styles, /\.pagination\s*\{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(styles, /\.page-controls\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(styles, /--lib-heading:\s*'Times New Roman',\s*'Noto Serif',\s*serif;/);
 });
 
 test('FE07 member pages use shared operational patterns without changing API calls', async () => {
@@ -211,13 +247,21 @@ test('FE07 staff pages use shared tables and pending confirmations', async () =>
   assert.match(requests, /await borrowingApi\.approve\(approveTarget\.requestId\)/);
   assert.match(requests, /await borrowingApi\.reject\(selected\.requestId, rejectReason\.trim\(\)\)/);
 
-  assert.match(returns, /DataToolbar/);
   assert.match(returns, /DataTable/);
   assert.match(returns, /ConfirmAction/);
   assert.match(returns, /const \[returnTarget, setReturnTarget\] = useState\(null\)/);
   assert.match(returns, /returnDetail\(returnTarget\.borrowDetailId, \{ condition \}\)/);
+  assert.match(returns, /borrowingApi\.listAll\(\{ status: 'APPROVED' \}\)/);
+  assert.match(returns, /onSubmit=\{handleSearch\}/);
+  assert.match(returns, /await loadLoans\(\)/);
+  assert.match(returns, /className="split return-workspace"/);
+  assert.doesNotMatch(returns, /DataToolbar/);
 
-  assert.match(member, /DataToolbar/);
   assert.match(member, /DataTable/);
+  assert.match(member, /borrowingApi\.listAll\(\)/);
+  assert.match(member, /borrowingApi\.listMemberBorrowings\(userId\)/);
+  assert.match(member, /const PAGE_SIZE = 8/);
+  assert.match(member, /value=\{statusFilter\}/);
+  assert.match(member, /visibleMembers\.map/);
   assert.doesNotMatch(member, /<table className="lib-table"/);
 });

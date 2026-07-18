@@ -11,6 +11,8 @@ const ROLE_BY_TYPE = {
   member: 'MEMBER',
   librarian: 'LIBRARIAN',
 };
+const VALID_ROLE_NAMES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
+const VALID_USER_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -200,12 +202,26 @@ function createUserManagementService({
   async function listUsers(query = {}) {
     const page = Math.max(Number(query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
+    const status = normalizeFilter(query.status);
+    const role = normalizeFilter(query.role);
+    const search = cleanString(query.search);
+
+    if (status && !VALID_USER_STATUSES.has(status)) {
+      throw errors.badRequest('INVALID_STATUS', 'User status filter is not supported.');
+    }
+    if (role && !VALID_ROLE_NAMES.has(role)) {
+      throw errors.badRequest('INVALID_ROLE', 'User role filter is not supported.');
+    }
+    if (search && search.length > 150) {
+      throw errors.badRequest('SEARCH_TOO_LONG', 'Search text must be at most 150 characters.');
+    }
+
     const result = await userRepository.listManagedUsers({
       page,
       limit,
-      status: normalizeFilter(query.status),
-      role: normalizeFilter(query.role),
-      search: cleanString(query.search),
+      status,
+      role,
+      search,
     });
 
     return result;
@@ -222,9 +238,9 @@ function createUserManagementService({
   }
 
   async function listAuditLogs(query = {}) {
-    return {
-      data: await auditLogRepository.listRecent(query.limit),
-    };
+    const page = Math.max(Number(query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(query.limit) || 8, 1), 100);
+    return auditLogRepository.listRecent({ page, limit });
   }
 
   // @spec FR-FE11-003, FR-FE11-009, FR-FE11-037 - create inactive state, then deliver non-blockingly.

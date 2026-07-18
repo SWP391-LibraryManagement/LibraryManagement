@@ -96,17 +96,23 @@ CREATE INDEX IX_AuthTokens_TokenHash ON AuthTokens(TokenHash);
 
 CREATE TABLE Categories (
     CategoryId INT IDENTITY PRIMARY KEY,
-    CategoryName NVARCHAR(100) NOT NULL UNIQUE
+    CategoryName NVARCHAR(100) NOT NULL UNIQUE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 
 CREATE TABLE Authors (
     AuthorId INT IDENTITY PRIMARY KEY,
-    AuthorName NVARCHAR(100) NOT NULL UNIQUE
+    AuthorName NVARCHAR(100) NOT NULL UNIQUE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 
 CREATE TABLE Publishers (
     PublisherId INT IDENTITY PRIMARY KEY,
-    PublisherName NVARCHAR(100) NOT NULL UNIQUE
+    PublisherName NVARCHAR(100) NOT NULL UNIQUE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 
 CREATE TABLE Books (
@@ -302,7 +308,7 @@ INSERT INTO Users (Username, Email, PasswordHash, Phone, Status, EmailVerifiedAt
 VALUES
 ('demo_admin', 'demo.admin@example.test', '$2b$10$placeholderHashForDemoAdminOnly00000000000000000000000000', '0900000001', 'ACTIVE', GETDATE()),
 ('demo_librarian', 'demo.librarian@example.test', '$2b$10$placeholderHashForDemoLibrarianOnly000000000000000000000', '0900000002', 'ACTIVE', GETDATE()),
-('demo_member', 'demo.member@example.test', '$2b$10$placeholderHashForDemoMemberOnly00000000000000000000000', '0900000003', 'ACTIVE', GETDATE());
+('member_an', 'member.an@example.test', '$2b$10$placeholderHashForSeedMemberOnly00000000000000000000000', '0900000003', 'ACTIVE', GETDATE());
 
 INSERT INTO UserRoles (UserId, RoleId) VALUES
 (1,1),(2,2),(3,3);
@@ -311,11 +317,19 @@ INSERT INTO UserProfiles (UserId, FullName, Address, DateOfBirth)
 VALUES
 (1,'Demo Admin','Hanoi','2000-01-01'),
 (2,'Demo Librarian','Hanoi','2000-02-02'),
-(3,'Demo Member','Hanoi','2001-03-03');
+(3,N'Nguyễn Minh An',N'Hà Nội','2001-03-03');
+
+DECLARE @SeedMembershipApprovedAt DATETIME = GETDATE();
 
 INSERT INTO Members (UserId, Status, ApprovedAt, ApprovedBy)
 VALUES
-(3, 'APPROVED', GETDATE(), 1);
+(3, 'APPROVED', @SeedMembershipApprovedAt, 1);
+
+-- Keep the immutable application history consistent with the canonical
+-- approved Members projection used by borrowing and reservation eligibility.
+INSERT INTO MembershipApplications (UserId, Status, AppliedAt, ApprovedAt, ReviewedBy, ReviewNote)
+VALUES
+(3, 'APPROVED', DATEADD(DAY, -1, @SeedMembershipApprovedAt), @SeedMembershipApprovedAt, 1, N'Hồ sơ hội viên đã được duyệt.');
 
 INSERT INTO Categories (CategoryName) VALUES
 ('Programming'),('Database'),('AI'),('Novel');
@@ -546,36 +560,40 @@ VALUES
 (1, 'BC2', 'BORROWED', N'A1'),
 (2, 'BC3', 'AVAILABLE', N'A2'),
 (3, 'BC4', 'AVAILABLE', N'B1'),
-(4, 'BC5', 'RESERVED', N'B2'),
+(4, 'BC5', 'AVAILABLE', N'B2'),
 (5, 'BC6', 'AVAILABLE', N'AI-01'),
 (6, 'BC7', 'AVAILABLE', N'AI-02'),
-(7, 'BC8', 'BORROWED', N'AI-03'),
+(7, 'BC8', 'AVAILABLE', N'AI-03'),
 (8, 'BC9', 'AVAILABLE', N'PR-01'),
 (9, 'BC10', 'AVAILABLE', N'PR-02'),
 (10, 'BC11', 'AVAILABLE', N'DB-01'),
-(11, 'BC12', 'BORROWED', N'DB-02'),
-(12, 'BC13', 'RESERVED', N'PR-03'),
+(11, 'BC12', 'AVAILABLE', N'DB-02'),
+(12, 'BC13', 'AVAILABLE', N'PR-03'),
 (13, 'BC14', 'AVAILABLE', N'NV-01'),
 (14, 'BC15', 'AVAILABLE', N'NV-02'),
-(15, 'BC16', 'RESERVED', N'NV-03');
+(15, 'BC16', 'AVAILABLE', N'NV-03');
 
+/* Canonical circulation seed: one active loan and one completed return. */
 INSERT INTO BorrowRequests (UserId, Status, CreatedBy, ApprovedBy, ApprovedAt, ProcessedAt)
 VALUES
-(3,'APPROVED',2,2,GETDATE(),GETDATE());
+(3, 'APPROVED', 3, 2, DATEADD(DAY, -7, GETDATE()), DATEADD(DAY, -7, GETDATE())),
+(3, 'COMPLETED', 3, 2, DATEADD(DAY, -30, GETDATE()), DATEADD(DAY, -15, GETDATE()));
 
-INSERT INTO BorrowDetails (RequestId, CopyId, BorrowDate, DueDate, Status)
+INSERT INTO BorrowDetails
+(RequestId, CopyId, BorrowDate, DueDate, ReturnDate, RenewalCount, Status)
 VALUES
-(1,2,'2026-05-27','2026-06-10','BORROWED');
+(1, 2, CAST(DATEADD(DAY, -7, GETDATE()) AS DATE), CAST(DATEADD(DAY, 7, GETDATE()) AS DATE), NULL, 0, 'BORROWED'),
+(2, 3, CAST(DATEADD(DAY, -30, GETDATE()) AS DATE), CAST(DATEADD(DAY, -16, GETDATE()) AS DATE), CAST(DATEADD(DAY, -15, GETDATE()) AS DATE), 1, 'RETURNED');
 
-INSERT INTO Reservations (UserId, CopyId, QueuePosition, Status)
-VALUES
-(3, 5, 1, 'ACTIVE'),
-(3, 13, 2, 'ACTIVE'),
-(3, 16, 3, 'ACTIVE');
-
-INSERT INTO Fines (UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, Reason, Status, CreatedBy)
-VALUES
-(3,1,2,5000,10000,'Late return','UNPAID',2);
+/* Canonical FE09 seed: the completed return above is one day overdue. */
+INSERT INTO Fines
+(UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, PaidAmount, Reason, Status, CalculatedAt, CreatedBy)
+SELECT br.UserId, bd.BorrowDetailId, 1, 5000, 5000, 0, 'OVERDUE', 'UNPAID', GETDATE(), 2
+FROM BorrowDetails bd
+JOIN BorrowRequests br ON br.RequestId = bd.RequestId
+WHERE bd.RequestId = 2
+  AND bd.CopyId = 3
+  AND bd.Status = 'RETURNED';
 
 INSERT INTO NotificationTemplates (TemplateCode, Subject, Body)
 VALUES
@@ -592,5 +610,7 @@ INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata)
 VALUES
 (1,'Init DB','Database',NULL,'{"seed":"phase1-demo"}'),
 (2,'Add demo books','Books',NULL,'{"count":4}'),
-(3,'Borrow demo book','BorrowDetails',1,'{"copyId":2}');
+(2,'BORROW_REQUEST_APPROVE','BORROW_REQUEST',1,'{"seed":"canonical-circulation"}'),
+(2,'BORROW_DETAIL_RETURN','BORROW_DETAIL',2,'{"condition":"NORMAL","seed":"canonical-circulation"}'),
+(2,'FINE_CALCULATE','FINE',1,'{"borrowDetailId":2,"overdueDays":1,"ratePerDay":5000,"amount":5000,"seed":"canonical-fine"}');
 GO

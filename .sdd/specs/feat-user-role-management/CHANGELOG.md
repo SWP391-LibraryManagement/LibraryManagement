@@ -25,6 +25,14 @@
 - Kept remaining FE11 work deferred and added forward-compatible `Implementation State: DEFERRED` metadata for this feature; the role slice is tracked separately as `FE11-R01..R05`.
 - No implementation evidence is claimed by this planning entry.
 
+## 2026-07-18 - Admin Audit Log Pagination And Display Fix
+
+- Added Admin-only server-side pagination for audit logs with stable `CreatedAt DESC, LogId DESC` ordering.
+- Fixed the Admin refresh action so Audit Logs reloads its own data instead of reloading the user directory.
+- Restricted user-target joins to user/account audit events so borrowing, notification, catalog, and membership target IDs are not mislabeled as users.
+- Updated the audit table to show actor identity, target type/ID, IP, full timestamp, total records, last refresh time, and shared Admin pagination.
+- Added service and route coverage for pagination normalization and Admin-only authorization.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE11 account lifecycle, role, no-op update, user-list, concurrency, and account-setup boundary as the Phase 1 baseline; remaining implementation is deferred where documented.

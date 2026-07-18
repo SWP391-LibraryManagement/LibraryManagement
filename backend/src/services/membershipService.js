@@ -20,10 +20,15 @@ function toPositiveInteger(value, fieldName) {
 }
 
 function toStatusResponse(application, member) {
-  const status = application?.status || member?.status || 'NONE';
+  // Members is the canonical eligibility projection consumed by FE07/FE08.
+  // Application status is only a fallback before a canonical member row exists.
+  const status = member?.status || application?.status || 'NONE';
 
   return {
     status,
+    membershipStatusView: status,
+    memberStatus: member?.status || null,
+    currentApplication: application || null,
     applicationId: application?.applicationId || null,
     userId: application?.userId || member?.userId || null,
     appliedAt: application?.appliedAt || null,
@@ -38,6 +43,7 @@ function toStatusResponse(application, member) {
 function createMembershipService({
   membershipRepository,
   auditLogRepository,
+  notificationRequester,
 } = {}) {
   if (!membershipRepository) {
     membershipRepository = require('../repositories/membershipRepository');
@@ -59,6 +65,33 @@ function createMembershipService({
       ipAddress: context?.ip || null,
       userAgent: context?.userAgent || null,
     });
+  }
+
+  async function notifyMembershipResult(application) {
+    if (!notificationRequester || typeof notificationRequester.createNotificationRequest !== 'function') {
+      return 'NOT_CONFIGURED';
+    }
+
+    try {
+      const delivery = await notificationRequester.createNotificationRequest({
+        type: 'GENERAL_SYSTEM',
+        channel: 'EMAIL',
+        templateKey: 'MEMBERSHIP_RESULT',
+        userId: application.userId,
+        recipientEmail: application.applicant?.email,
+        templateData: {
+          applicationId: application.applicationId,
+          membershipStatus: application.status,
+          rejectionReason: application.rejectionReason || null,
+        },
+        sourceEntityType: 'MEMBERSHIP_APPLICATION',
+        sourceEntityId: application.applicationId,
+        idempotencyKey: `FE04:MEMBERSHIP_RESULT:${application.applicationId}:${application.status}`,
+      });
+      return delivery?.status === 'SENT' ? 'SENT' : 'FAILED';
+    } catch {
+      return 'FAILED';
+    }
   }
 
   function requireMember(actor) {
@@ -122,6 +155,7 @@ function createMembershipService({
     }
 
     return membershipRepository.listApplications({
+      q: String(filters.q || '').trim(),
       status,
       page: filters.page,
       limit: filters.limit,
@@ -141,7 +175,8 @@ function createMembershipService({
     }
 
     await writeAudit(context, 'MEMBERSHIP_APPLICATION_APPROVED', actor, result);
-    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'APPROVED', approvedAt: result.approvedAt }) };
+    const notificationStatus = await notifyMembershipResult(result);
+    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'APPROVED', approvedAt: result.approvedAt }), notificationStatus };
   }
 
   async function reject(applicationIdInput, reason, actor, context = {}) {
@@ -166,7 +201,8 @@ function createMembershipService({
     }
 
     await writeAudit(context, 'MEMBERSHIP_APPLICATION_REJECTED', actor, result, { reason: cleanReason });
-    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'REJECTED' }) };
+    const notificationStatus = await notifyMembershipResult(result);
+    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'REJECTED' }), notificationStatus };
   }
 
   return {

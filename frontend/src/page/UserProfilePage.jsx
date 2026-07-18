@@ -1,10 +1,11 @@
 import UserProfile from "../component/userProfile/UserProfile";
-import AppLayout from "../component/layout/AppLayout";
+import Header from "../component/layout/Header";
 
 export default function App() {
   return (
-    <AppLayout active="profile" title="Thông tin cá nhân">
+    <div className="profile-route-shell">
+      <Header />
       <UserProfile />
-    </AppLayout>
+    </div>
   );
 }

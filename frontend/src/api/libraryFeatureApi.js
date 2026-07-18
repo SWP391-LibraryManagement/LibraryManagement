@@ -186,20 +186,41 @@ export const inventoryApi = {
   },
 };
 
+export const fineApi = {
+  list(params = {}) {
+    return authorizedRequest({ method: 'get', url: '/fines', params }, 'Không thể tải danh sách phiếu phạt.');
+  },
+  calculate(borrowDetailId) {
+    return authorizedRequest({ method: 'post', url: '/fines/calculate', data: { borrowDetailId } }, 'Không thể tính tiền phạt.');
+  },
+  collect(fineId, data) {
+    return authorizedRequest({ method: 'post', url: `/fines/${fineId}/collections`, data }, 'Không thể ghi nhận thu tiền.');
+  },
+  markPaid(fineId, data) {
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/paid`, data }, 'Không thể đánh dấu phiếu phạt đã thanh toán.');
+  },
+  waive(fineId, reason) {
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/waive`, data: { reason } }, 'Không thể miễn phiếu phạt.');
+  },
+  cancel(fineId, reason) {
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/cancel`, data: { reason } }, 'Không thể hủy phiếu phạt.');
+  },
+};
+
 export const membershipApi = {
   getMyStatus() {
-    return authorizedRequest({ method: 'get', url: '/membership/status/me' }, 'Khong the tai trang thai membership.');
+    return authorizedRequest({ method: 'get', url: '/membership/status/me' }, 'Không thể tải trạng thái hội viên.');
   },
   apply(data = {}) {
-    return authorizedRequest({ method: 'post', url: '/membership/applications', data }, 'Khong the nop don membership.');
+    return authorizedRequest({ method: 'post', url: '/membership/applications', data }, 'Không thể nộp đơn đăng ký hội viên.');
   },
   listApplications(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/membership/applications', params }, 'Khong the tai danh sach don membership.');
+    return authorizedRequest({ method: 'get', url: '/membership/applications', params }, 'Không thể tải danh sách đơn đăng ký hội viên.');
   },
   approve(applicationId) {
-    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/approve`, data: {} }, 'Khong the duyet don membership.');
+    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/approve`, data: {} }, 'Không thể duyệt đơn đăng ký hội viên.');
   },
   reject(applicationId, reason) {
-    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/reject`, data: { reason } }, 'Khong the tu choi don membership.');
+    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/reject`, data: { reason } }, 'Không thể từ chối đơn đăng ký hội viên.');
   },
 };

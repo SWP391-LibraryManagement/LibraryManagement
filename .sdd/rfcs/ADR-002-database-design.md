@@ -39,6 +39,8 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Email/username uniqueness must match FE02/FE11 approved rules.
 - Refresh/reset/setup tokens must not be stored as raw secrets if implementation stores tokens; store hashed tokens where feasible.
 - Book availability must derive from approved copy/status data, not only a loose display field.
+- Categories, authors, and publishers store a database-generated `CreatedAt` timestamp so protected catalog-management reads do not invent creation dates.
+- Categories, authors, and publishers use `ACTIVE`/`INACTIVE` status instead of physical deletion; existing book references are preserved.
 - Copy statuses must align with approved Phase 1 statuses: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`.
 - Borrowing must record member, copy/book, borrow date, due date, status, and creator.
 - Fine calculation must be traceable: overdue days, rate, amount, related borrow/copy, calculation date.

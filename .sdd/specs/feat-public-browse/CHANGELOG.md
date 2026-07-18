@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-18 - Librarian Homepage Navigation
+
+- Added a dedicated `Home` sidebar item for Librarian/Admin staff that opens the authenticated public library homepage at `/homepage`.
+- Preserved `/home` as the role-aware `Tổng quan` dashboard so the two navigation destinations remain distinct.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE01 public visibility, search, pagination, safe-detail, and availability contract as the Phase 1 baseline; plan and task decomposition remain pending.

@@ -140,13 +140,34 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
     SELECT *
     FROM ManagedUsers
     ORDER BY CreatedAt DESC, UserId DESC
-    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+
+    SELECT
+      COUNT_BIG(1) AS Total,
+      SUM(CASE WHEN u.Status = 'ACTIVE' THEN 1 ELSE 0 END) AS Active,
+      SUM(CASE WHEN u.Status = 'INACTIVE' THEN 1 ELSE 0 END) AS Inactive,
+      SUM(CASE WHEN librarianUsers.UserId IS NOT NULL THEN 1 ELSE 0 END) AS Librarians
+    FROM Users u
+    LEFT JOIN (
+      SELECT DISTINCT ur.UserId
+      FROM UserRoles ur
+      INNER JOIN Roles r ON r.RoleId = ur.RoleId
+      WHERE r.RoleName = 'LIBRARIAN'
+    ) librarianUsers ON librarianUsers.UserId = u.UserId;
   `);
 
-  const total = result.recordset[0]?.TotalCount || 0;
+  const rows = result.recordsets[0] || [];
+  const total = rows[0]?.TotalCount || 0;
+  const summaryRow = result.recordsets[1]?.[0] || {};
 
   return {
-    data: result.recordset.map(mapManagedUser),
+    data: rows.map(mapManagedUser),
+    summary: {
+      total: Number(summaryRow.Total || 0),
+      active: Number(summaryRow.Active || 0),
+      inactive: Number(summaryRow.Inactive || 0),
+      librarians: Number(summaryRow.Librarians || 0),
+    },
     pagination: {
       page,
       limit,

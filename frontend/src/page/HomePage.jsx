@@ -5,6 +5,7 @@ import {
   addBorrowRecord,
   getMemberUnpaidFineSummary,
 } from '../utils/libraryWorkflow';
+import { fetchHeaderProfile } from '../api/profileApi';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
 
@@ -46,6 +47,19 @@ const getStoredAuthState = () => {
     isLoggedIn: false,
     authUser: null,
   };
+};
+
+const getHomeRoleLabel = (roles = []) => {
+  if (roles.includes('ADMIN')) return 'Quản trị viên';
+  if (roles.includes('LIBRARIAN')) return 'Thủ thư';
+  if (roles.includes('MEMBER')) return 'Thành viên';
+  return 'Người dùng';
+};
+
+const getHomeInitials = (name, email) => {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length) return parts.slice(-2).map((part) => part[0]?.toUpperCase() || '').join('');
+  return String(email || 'TV').charAt(0).toUpperCase();
 };
 
 
@@ -977,6 +991,7 @@ const HomePage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [authState, setAuthState] = useState(getStoredAuthState);
+  const [headerProfile, setHeaderProfile] = useState(null);
   const isLoggedIn = authState.isLoggedIn;
   const authUser = authState.authUser;
   const [books, setBooks] = useState([]);
@@ -990,6 +1005,13 @@ const HomePage = () => {
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState(null);
   const [selectedReviewBook, setSelectedReviewBook] = useState(null);
+  const displayName = headerProfile?.fullName || authUser?.email || 'Tài khoản';
+  const roleLabel = getHomeRoleLabel(authUser?.roles || []);
+  const showMemberAccountActions = roleLabel === 'Thành viên';
+  const showAdminConsoleAction = roleLabel === 'Quản trị viên';
+  const showLibrarianConsoleAction = roleLabel === 'Thủ thư';
+  const avatarUrl = headerProfile?.avatarUrl || '';
+  const initials = getHomeInitials(headerProfile?.fullName, authUser?.email);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -1014,6 +1036,7 @@ const HomePage = () => {
       sessionStorage.removeItem(key);
     }
     setAuthState({ isLoggedIn: false, authUser: null });
+    setHeaderProfile(null);
     setShowUserMenu(false);
     setShowLogoutConfirm(false);
   };
@@ -1031,6 +1054,23 @@ const HomePage = () => {
     setSelectedReviewBook(book);
   };
 
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return undefined;
+    }
+
+    let active = true;
+    fetchHeaderProfile()
+      .then((profile) => {
+        if (active) setHeaderProfile(profile);
+      })
+      .catch(() => {
+        // Stored authentication data keeps the account control usable.
+      });
+
+    return () => { active = false; };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -1187,7 +1227,7 @@ const HomePage = () => {
             { label: 'Thành viên', id: 'section-cta' },
             { label: 'Giới thiệu', id: 'section-footer' },
             { label: 'Liên hệ', id: 'section-footer' },
-          ].map(item => (
+          ].filter((item) => !isLoggedIn || item.id !== 'section-cta').map(item => (
             <button key={item.label} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A3E36', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s', fontFamily: 'Lato, sans-serif', padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.color = '#C78A3B')}
               onMouseLeave={e => (e.currentTarget.style.color = '#5A3E36')}
@@ -1204,16 +1244,32 @@ const HomePage = () => {
                 onClick={() => setShowUserMenu((open) => !open)}
                 aria-label="Mở menu tài khoản"
                 aria-expanded={showUserMenu}
-                style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(199,138,59,0.35)', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#7A5C44', cursor: 'pointer', position: 'relative', zIndex: 260 }}
+                style={{ border: 0, background: 'transparent', display: 'flex', alignItems: 'center', gap: 10, color: '#4E342E', cursor: 'pointer', position: 'relative', zIndex: 260, padding: 0 }}
               >
-                {(authUser?.email || 'TV').charAt(0).toUpperCase()}
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0 }}>
+                  <span style={{ maxWidth: 190, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: 700 }}>{displayName}</span>
+                  <span style={{ color: '#7A5C44', fontSize: 12 }}>{roleLabel}</span>
+                </span>
+                <span style={{ width: 38, height: 38, borderRadius: '50%', border: '1.5px solid rgba(199,138,59,0.35)', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontSize: 13, fontWeight: 700, color: '#7A5C44', flexShrink: 0 }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials}
+                </span>
               </button>
               {showUserMenu && (
                 <div style={{ position: 'absolute', top: 46, right: 0, zIndex: 260, width: 220, background: '#FFFDF8', border: '1px solid rgba(78,52,46,0.14)', borderRadius: 12, boxShadow: '0 18px 48px rgba(44,26,14,0.18)', padding: 8 }}>
                   {[
                     { label: 'Thông tin cá nhân', action: () => navigate('/profile') },
-                    { label: 'Lịch sử mượn sách', action: () => navigate('/borrowing/history') },
-                    { label: 'Đăng kí hội viên', action: () => navigate('/membership') },
+                    ...(showAdminConsoleAction ? [
+                      { label: 'Trang quản trị', action: () => navigate('/admin/users') },
+                    ] : []),
+                    ...(showLibrarianConsoleAction ? [
+                      { label: 'Khu vực thủ thư', action: () => navigate('/home') },
+                    ] : []),
+                    ...(showMemberAccountActions ? [
+                      { label: 'Lịch sử mượn sách', action: () => navigate('/borrowing/history') },
+                      { label: 'Đăng kí hội viên', action: () => navigate('/membership') },
+                    ] : []),
                     { label: 'Đăng xuất', action: () => setShowLogoutConfirm(true), danger: true },
                   ].map((item) => (
                     <button
@@ -1539,7 +1595,7 @@ const HomePage = () => {
       </section>
 
       {/* -- CTA -- */}
-      <section id="section-cta" style={{ background: '#EDE0CE', padding: '72px 80px' }}>
+      {!isLoggedIn && <section id="section-cta" style={{ background: '#EDE0CE', padding: '72px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           {/* Left */}
           <div>
@@ -1598,7 +1654,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* -- FOOTER -- */}
       <footer id="section-footer" style={{ background: '#1E120A' }}>

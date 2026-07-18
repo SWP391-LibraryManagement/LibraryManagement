@@ -1,8 +1,7 @@
-import Inventory2Icon from '@mui/icons-material/Inventory2';
 import { Navigate } from 'react-router-dom';
 
-import InventoryManagement from '../component/inventory/InventoryManagement';
 import AppLayout from '../component/layout/AppLayout';
+import BookManagement from './BookManagement';
 
 function getCurrentRoles() {
   try {
@@ -14,25 +13,20 @@ function getCurrentRoles() {
   }
 }
 
-export default function InventoryPage() {
+export default function BookManagementPage() {
   const roles = getCurrentRoles();
 
-  if (!roles) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!roles) return <Navigate to="/login" replace />;
   if (!roles.some((role) => ['ADMIN', 'LIBRARIAN'].includes(role))) {
     return <Navigate to="/home" replace />;
   }
 
   return (
     <AppLayout
-      active="inventory-management"
-      title="Quản lí kho"
-      subtitle="Theo dõi đầu sách, bản sao vật lý, barcode, vị trí và trạng thái lưu thông."
-      actions={<span className="stat-chip"><Inventory2Icon fontSize="small" /> FE06</span>}
+      title="Quản lý sách"
+      subtitle="Quản lý thông tin đầu sách, tác giả, danh mục và nhà xuất bản."
     >
-      <InventoryManagement />
+      <BookManagement />
     </AppLayout>
   );
 }

@@ -15,7 +15,10 @@ const borrowRequestSelect = `
     br.UpdatedAt AS RequestUpdatedAt,
     u.Username,
     u.Email,
+    u.Phone,
     u.Status AS UserStatus,
+    up.FullName,
+    m.MemberId,
     bd.BorrowDetailId,
     bd.CopyId,
     bd.BorrowDate,
@@ -29,12 +32,16 @@ const borrowRequestSelect = `
     bc.Barcode,
     bc.Status AS CopyStatus,
     bc.Location,
-    b.Title
+    b.Title,
+    a.AuthorName
   FROM BorrowRequests br
   INNER JOIN Users u ON br.UserId = u.UserId
+  LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+  LEFT JOIN Members m ON u.UserId = m.UserId
   LEFT JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
   LEFT JOIN BookCopies bc ON bd.CopyId = bc.CopyId
   LEFT JOIN Books b ON bc.BookId = b.BookId
+  LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
 `;
 
 const borrowDetailSelect = `
@@ -45,7 +52,10 @@ const borrowDetailSelect = `
     br.Status AS RequestStatus,
     u.Username,
     u.Email,
+    u.Phone,
     u.Status AS UserStatus,
+    up.FullName,
+    m.MemberId,
     bd.BorrowDetailId,
     bd.CopyId,
     bd.BorrowDate,
@@ -59,12 +69,16 @@ const borrowDetailSelect = `
     bc.Barcode,
     bc.Status AS CopyStatus,
     bc.Location,
-    b.Title
+    b.Title,
+    a.AuthorName
   FROM BorrowDetails bd
   INNER JOIN BorrowRequests br ON bd.RequestId = br.RequestId
   INNER JOIN Users u ON br.UserId = u.UserId
+  LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+  LEFT JOIN Members m ON u.UserId = m.UserId
   INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
   INNER JOIN Books b ON bc.BookId = b.BookId
+  LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
 `;
 
 function mapCopy(row) {
@@ -77,8 +91,10 @@ function mapCopy(row) {
     bookId: row.BookId,
     barcode: row.Barcode,
     status: row.CopyStatus,
+    bookStatus: row.BookStatus,
     location: row.Location,
     title: row.Title,
+    author: row.AuthorName,
   };
 }
 
@@ -101,7 +117,10 @@ function mapMember(row) {
   return {
     userId: row.UserId,
     username: row.Username,
+    fullName: row.FullName,
     email: row.Email,
+    phone: row.Phone,
+    memberId: row.MemberId,
     status: row.UserStatus,
   };
 }
@@ -222,6 +241,7 @@ async function findBorrowabilityByCopyIds(copyIds, userId) {
       bc.Barcode,
       bc.Status AS CopyStatus,
       bc.Location,
+      b.Status AS BookStatus,
       b.Title,
       activeQueue.ReservationId AS ActiveReservationId,
       notifiedHold.ReservationId AS NotifiedReservationId,

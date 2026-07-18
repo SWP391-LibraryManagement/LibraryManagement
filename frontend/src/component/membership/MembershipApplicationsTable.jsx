@@ -6,15 +6,15 @@ export default function MembershipApplicationsTable({ applications, page, totalP
     <>
       <div className="lib-table-wrap">
         <table className="lib-table">
-          <caption className="sr-only">Membership applications</caption>
+          <caption className="sr-only">Danh sách đơn đăng ký hội viên</caption>
           <thead>
             <tr>
-              <th>Ma don</th>
-              <th>Nguoi nop</th>
+              <th>Mã đơn</th>
+              <th>Người nộp</th>
               <th>Email</th>
-              <th>Ngay nop</th>
-              <th>Trang thai</th>
-              <th style={{ textAlign: 'right' }}>Thao tac</th>
+              <th>Ngày nộp</th>
+              <th>Trạng thái</th>
+              <th style={{ textAlign: 'right' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>

@@ -14,9 +14,16 @@ function readStoredUser() {
 
 export default function HomeRoutePage() {
   const user = readStoredUser();
-  const audience = hasStoredAuth() ? getDashboardAudience(user?.roles || []) : 'guest';
+  const roles = user?.roles || [];
+  const audience = hasStoredAuth() ? getDashboardAudience(roles) : 'guest';
+
+  // The Admin Console owns its dashboard. Its Home navigation returns to the
+  // public library homepage instead of opening a second staff dashboard.
+  if (roles.includes('ADMIN')) {
+    return <HomePage />;
+  }
 
   return audience === 'guest'
     ? <HomePage />
-    : <RoleDashboardPage audience={audience} roles={user?.roles || []} />;
+    : <RoleDashboardPage audience={audience} roles={roles} />;
 }

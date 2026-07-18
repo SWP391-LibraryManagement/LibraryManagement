@@ -8,7 +8,7 @@ export default function ApplicationTableBody({ applications, onApprove, onReject
     return (
       <tr>
         <td colSpan={6}>
-          <EmptyState icon={ClipboardList} title="Khong co don membership" />
+          <EmptyState icon={ClipboardList} title="Không có đơn đăng ký hội viên" />
         </td>
       </tr>
     );

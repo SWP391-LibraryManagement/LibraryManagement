@@ -12,7 +12,11 @@ function makeApp({ roles = ['LIBRARIAN'] } = {}) {
     })),
   };
 
-  return createApp({ authService });
+  const fineManagementService = {
+    listFines: jest.fn(async () => ({ fines: [{ fineId: 1, status: 'UNPAID' }] })),
+  };
+
+  return createApp({ authService, fineManagementService });
 }
 
 function staffPayload(overrides = {}) {
@@ -60,8 +64,7 @@ describe('fine routes', () => {
       .set('Authorization', 'Bearer token');
 
     expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.length).toBeGreaterThan(0);
+    expect(response.body.fines.length).toBeGreaterThan(0);
   });
 
   test('creates, updates, and deletes a fine with validation', async () => {
