@@ -1,6 +1,7 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; TRANSACTIONAL ROLE SLICE IN PROGRESS; REMAINING WORK DEFERRED
+Implementation State: DEFERRED
 
 Date: 2026-07-15
 
@@ -49,6 +50,28 @@ Owner: Dung
   - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.
   - DoD: list/detail/update responses use an explicit safe DTO, stale updates deterministically return `409 STALE_USER_STATE`, every AC is traceable, and no test mapping remains `TBD`.
   - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17. This task does not start deferred implementation.
+
+## Transactional Role Management Tasks
+
+- [ ] **FE11-R01 - Validate role mutation request IDs.**
+  - Maps to: NFR-FE11-SEC-004; FR-FE11-012..013, FR-FE11-024..026.
+  - DoD: authenticated Admin requests receive normalized positive integer IDs; invalid IDs return `400 VALIDATION_ERROR` before the service is called.
+
+- [ ] **FE11-R02 - Add RED transactional repository tests.**
+  - Maps to: BR-FE11-007..010; FR-FE11-014, FR-FE11-017, FR-FE11-024..027; NFR-FE11-TXN-003/006.
+  - DoD: failing tests cover actor/target/role lookup, duplicate/missing mapping, final-role guards, locked Admin count, atomic audit, and rollback.
+
+- [ ] **FE11-R03 - Implement transactional role mutation.**
+  - Dependencies: FE11-R02.
+  - DoD: one parameterized SQL transaction returns deterministic outcomes, uses required lock hints, and commits or rolls back mapping plus audit together.
+
+- [ ] **FE11-R04 - Map repository outcomes through the FE11 service.**
+  - Dependencies: FE11-R03.
+  - DoD: service-level RED-GREEN tests prove safe status/code/message mapping and successful safe-user readback without a second audit.
+
+- [ ] **FE11-R05 - Pass the transactional role-management validation gate.**
+  - Dependencies: FE11-R01..R04.
+  - DoD: focused/full backend tests, traceability, diff hygiene, security review, documentation, debt reconciliation, and human review evidence are complete.
 
 ## Deferred FE11 Work
 

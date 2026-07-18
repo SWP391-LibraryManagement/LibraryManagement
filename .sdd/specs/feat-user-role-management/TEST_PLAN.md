@@ -1,8 +1,8 @@
 ﻿# FE11 Test Plan - User & Role Management
 
 Version: 0.3.0
-Status: ACCOUNT SETUP SLICE COMPLETE; REMAINING FE11 TESTS PLANNED
-Last Updated: 2026-07-15
+Status: ACCOUNT SETUP SLICE COMPLETE; TRANSACTIONAL ROLE SLICE APPROVED; REMAINING FE11 TESTS PLANNED
+Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
@@ -49,14 +49,24 @@ User administration, role listing, role assignment/revocation, account status ma
 ## 5. Current Evidence
 
 - `backend/tests/userManagementRoutes.test.js`
+- `backend/tests/userManagementService.test.js` for the completed account-setup slice.
+- Approved role-slice design: `docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md`.
+- Approved role-slice plan: `docs/superpowers/plans/2026-07-18-fe11-transactional-role-management.md`.
 
 ## 6. Gaps
 
 - The account-setup slice has reviewable `PLAN.md`/`TASKS.md`; all remaining FE11 slices still need approved planning.
 - Tests should be reconciled with approved spec and role/audit edge cases.
-- Open debt (Validation Gate): TD-012 (department/specialization persistence), TD-013 (assign-existing / remove-missing role no-op), TD-014 (404 vs 400 for not-found), TD-015 (no service-level tests — `userManagementService.test.js` missing), TD-017 (dev-bypass guard).
+- Open debt (Validation Gate): TD-012 (department/specialization persistence), TD-013 (assign-existing / remove-missing role no-op), TD-014 (404 vs 400 for not-found), TD-015 (service-level coverage exists for account setup but remains missing for most FE11 business rules), TD-017 (dev-bypass guard).
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Transactional Role Slice
+
+- Route tests validate Admin-first authorization and positive-integer user/role IDs.
+- Service tests map deterministic repository outcomes to safe HTTP errors.
+- Repository tests prove locked actor/target/role state, duplicate/missing mapping errors, final-role guards, atomic audit, and rollback.
+- SQL Server-backed concurrent acceptance remains an explicit environment-dependent follow-up.
+
+## 8. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test
