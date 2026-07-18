@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Transactional Role Management Integrated (B7)
+
+- PR #25 merged into `main` as commit `0e1ef8f67e2d7a454e96b8b5d6878d31ed03eae0`.
+- Post-merge GitHub Actions run `29631406399` passed all `foundation-checks`, including backend/system tests, coverage, frontend lint/tests/build, browser E2E, and backend health import.
+- B7 integration is complete for `FE11-R01..R05`; remaining FE11 work stays deferred.
+
 ## 2026-07-18 - Transactional Role Management Implemented And Validation Ready
 
 - Added Admin-first positive-integer validation for role assignment and revocation endpoints.

@@ -78,7 +78,8 @@ Owner: Dung
   - DoD: focused/full backend tests, traceability, diff hygiene, security review, documentation, debt reconciliation, and human review evidence are complete.
   - Automated evidence: 70/70 focused tests; 399/399 full backend tests; repository coverage 100% statements/lines/functions and 90.24% branches; project coverage and traceability gates pass.
   - Review state: human implementation review approved on 2026-07-18.
+  - Integration state: PR #25 merged as `0e1ef8f`; post-merge CI run `29631406399` passed.
 
 ## Deferred FE11 Work
 
-All user-list, update, deactivation, role-management, audit-log, admin-console, and remaining FE11 debt stays outside this slice until a separately reviewed plan/task group is approved.
+All user-list, update, deactivation, role-management work outside transactional assignment/revocation, audit-log, admin-console, and remaining FE11 debt stays outside this slice until a separately reviewed plan/task group is approved.
