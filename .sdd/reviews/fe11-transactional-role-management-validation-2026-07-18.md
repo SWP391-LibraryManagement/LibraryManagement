@@ -8,7 +8,7 @@ Method: SDD Full, RED-GREEN TDD, security review, and B1-B7 evidence
 
 ## Decision
 
-The bounded implementation is ready for human review. Automated evidence passes for the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, and traceability gate.
+The bounded implementation passed automated validation and human implementation review. Evidence covers the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, and traceability gate.
 
 FE11 remains whole-feature `DEFERRED`. This record does not claim completion of user detail/update/deactivation, librarian fields, Admin UI, audit-log UI, or the remaining FE11 requirements.
 
@@ -50,7 +50,9 @@ Observed RED evidence:
 
 ## L4 Acceptance And Residual Risks
 
-Human implementation review is pending, so `FE11-R05` remains open.
+Human implementation review was approved on 2026-07-18. `FE11-R05` is complete for this bounded slice.
+
+Branch merge/push remains a separate integration action and is not claimed by this validation record.
 
 Residual risks:
 
