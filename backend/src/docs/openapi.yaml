@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: >
     API documentation for FE07 Borrowing, FE08 Reservation, FE10 Notification,
-    FE11 Admin Audit Logs, and FE12 Reporting.
+    FE11 Admin Audit Logs and Permissions, and FE12 Reporting.
     All endpoints require a Bearer JWT obtained from /api/auth/login.
 servers:
   - url: /
@@ -20,6 +20,8 @@ tags:
     description: FE12 — read-only aggregate reports
   - name: Admin Audit
     description: FE11 — Admin-only searchable and redacted audit log view
+  - name: Admin Permissions
+    description: FE11 — Admin-only canonical read-only permission policy
 components:
   securitySchemes:
     bearerAuth:
@@ -145,6 +147,42 @@ components:
           properties:
             code: { type: string, example: ROLE_REQUIRED }
             message: { type: string, example: Access is denied. }
+    AdminPermissionRole:
+      type: object
+      additionalProperties: false
+      required: [roleName, label]
+      properties:
+        roleName: { type: string, enum: [ADMIN, LIBRARIAN, MEMBER] }
+        label: { type: string }
+    AdminPermissionRule:
+      type: object
+      additionalProperties: false
+      required: [permissionKey, label, moduleKey, moduleLabel, allowedRoles]
+      properties:
+        permissionKey: { type: string }
+        label: { type: string }
+        moduleKey: { type: string }
+        moduleLabel: { type: string }
+        allowedRoles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, enum: [ADMIN, LIBRARIAN, MEMBER] }
+    AdminPermissionsResponse:
+      type: object
+      additionalProperties: false
+      required: [roles, permissions]
+      properties:
+        roles:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { $ref: '#/components/schemas/AdminPermissionRole' }
+        permissions:
+          type: array
+          minItems: 15
+          maxItems: 15
+          items: { $ref: '#/components/schemas/AdminPermissionRule' }
     AuditLogActor:
       type: object
       additionalProperties: false
@@ -442,6 +480,19 @@ components:
 security:
   - bearerAuth: []
 paths:
+  /api/admin/permissions:
+    get:
+      tags: [Admin Permissions]
+      summary: Read the canonical FE11 Phase 1 permission matrix (FR-FE11-032)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Canonical read-only roles and permission policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminPermissionsResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/admin/audit-logs:
     get:
       tags: [Admin Audit]
