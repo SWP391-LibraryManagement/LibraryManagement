@@ -14,3 +14,8 @@ export function buildManagedUserListParams({ page, limit, role, status, search }
 
   return params;
 }
+
+export function isManagedUserNotFound(error) {
+  const response = error?.cause?.response;
+  return response?.status === 404 || response?.data?.error?.code === 'USER_NOT_FOUND';
+}

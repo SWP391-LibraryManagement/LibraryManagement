@@ -61,3 +61,37 @@ test('FE11 Admin UI reads phoneNumber instead of response phone', async () => {
   assert.match(source, /selectedUser\.phoneNumber\s*\|\|\s*'-'/);
   assert.doesNotMatch(source, /user\?\.phone\s*\|\|/);
 });
+
+test('FE11 detail 404 classifier reads the wrapped Axios cause safely', async () => {
+  const source = await readFile(queryHelperPath, 'utf8');
+  const functionMatch = source.match(
+    /export function isManagedUserNotFound\([^]*?\n}\r?\n/,
+  );
+
+  assert.ok(functionMatch, 'isManagedUserNotFound must be exported');
+  const createHelper = new Function(
+    `${functionMatch[0].replace('export ', '')}; return isManagedUserNotFound;`,
+  );
+  const isManagedUserNotFound = createHelper();
+
+  assert.equal(
+    isManagedUserNotFound({ cause: { response: { status: 404 } } }),
+    true,
+  );
+  assert.equal(
+    isManagedUserNotFound({
+      cause: { response: { status: 400, data: { error: { code: 'USER_NOT_FOUND' } } } },
+    }),
+    true,
+  );
+  assert.equal(isManagedUserNotFound(new Error('network failed')), false);
+});
+
+test('FE11 detail request uses the authorized request flow', async () => {
+  const source = await readFile(apiPath, 'utf8');
+
+  assert.match(
+    source,
+    /export async function fetchManagedUser\(userId\)[\s\S]*?authorizedRequest\(\{[\s\S]*?url: `\/users\/\$\{userId\}`/,
+  );
+});

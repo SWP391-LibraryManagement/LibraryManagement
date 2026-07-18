@@ -102,9 +102,10 @@ Owner: Dung
   - DoD: Admin authorization precedes validation; invalid IDs return `400 VALIDATION_ERROR`; valid missing IDs return `404 USER_NOT_FOUND`.
   - Evidence: RED exposed string route IDs and the old `400` path; 105/105 focused route/service/repository/role tests pass with dedicated detail read and `404 USER_NOT_FOUND`.
 
-- [ ] **FE11-U05 - Consume the safe list/detail contract in the Admin UI.**
+- [x] **FE11-U05 - Consume the safe list/detail contract in the Admin UI.**
   - Maps to: AC-FE11-001, AC-FE11-002.
   - DoD: UI omits `ALL`/empty search, reads `phoneNumber`, fetches detail on row selection, renders summaries, and reloads a stale list after detail 404.
+  - Evidence: four frontend RED failures covered the missing detail flow; 81/81 frontend tests, lint, and production build now pass with authorized detail fetch and stale-row recovery.
 
 - [ ] **FE11-U06 - Pass the safe list/detail validation gate.**
   - Dependencies: FE11-U01..U05.

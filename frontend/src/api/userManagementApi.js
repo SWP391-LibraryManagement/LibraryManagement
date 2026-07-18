@@ -127,6 +127,18 @@ export async function fetchUsers(params = {}) {
   }
 }
 
+export async function fetchManagedUser(userId) {
+  try {
+    const response = await authorizedRequest({
+      method: 'get',
+      url: `/users/${userId}`,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not load user details.'), { cause: error });
+  }
+}
+
 export async function fetchRoles() {
   try {
     const response = await authorizedRequest({
