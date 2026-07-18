@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
 Version: 0.3.1
-Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING FE11 TESTS PLANNED
+Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -17,6 +17,9 @@ User administration, role listing, role assignment/revocation, account status ma
 ## 2. Unit Test Targets
 
 - Role assignment/revocation rules.
+- Admin role API helpers send only numeric `roleId` values from the authenticated role catalog.
+- The role modal validates a complete editable catalog before mutation, assigns before revoking, and preserves non-editable roles.
+- Partial mutation failure stops later requests and reloads the target user's authoritative roles into the open modal.
 - Account status transition rules.
 - Protected admin action validation.
 - Audit log creation for important admin actions.
@@ -65,7 +68,7 @@ User administration, role listing, role assignment/revocation, account status ma
 ## 6. Gaps
 
 - Account setup, transactional backend role mutation, and safe list/detail are complete through human review, merge, and post-merge CI.
-- The Admin role-action UI still sends role names instead of numeric role IDs, so the completed backend role slice has no conforming Admin UI acceptance path (`TD-022`).
+- The Admin role-action UI numeric-ID reconciliation is active under `FE11-UIR01..UIR05`; implementation evidence is not yet claimed (`TD-022`).
 - Audit Log tests prove Admin authorization and pagination only; canonical boundary validation, filters, redaction, and endpoint ownership remain unvalidated (`TD-024`).
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
 - Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.

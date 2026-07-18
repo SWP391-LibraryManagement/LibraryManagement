@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -163,3 +163,25 @@ database/Librarymanagement.sql
 - List items have no `relatedSummary`; detail has exactly three deterministic numeric summary fields.
 - Focused/full backend and frontend checks plus `trace:enforce` pass.
 - Remaining FE11 work stays deferred and is not reported as complete.
+
+## 12. Admin Role UI Contract Slice
+
+### In Scope
+
+- Load `{ roleId, roleName }` from the authenticated FE11 role catalog.
+- Keep checkbox state by role name while mapping every mutation to a positive numeric role ID.
+- Send canonical assignment/revocation requests, with assignments before revocations.
+- Block invalid catalogs before mutation and reconcile authoritative user roles after partial failure.
+- Add focused frontend RED-GREEN tests and affected regression checks.
+
+### Out Of Scope
+
+- Backend role transaction/validators, schema changes, role creation/editing, and permission editing.
+- Navigation, Permissions, Audit Logs, Request Management, update, deactivation, and all other FE11 debt.
+
+### Validation Gate
+
+- API adapter tests prove no role name enters a mutation request.
+- UI contract tests prove catalog validation, assignment-before-revocation, no-op behavior, and partial-failure reconciliation.
+- Full frontend tests/lint/build, focused backend role regression, traceability, and diff hygiene pass.
+- Remaining FE11 work stays deferred and human review is required before merge.

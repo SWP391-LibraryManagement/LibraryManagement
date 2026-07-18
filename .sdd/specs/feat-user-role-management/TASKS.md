@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -124,6 +124,31 @@ Owner: Dung
   - Result: documentation reconciliation complete; no Admin Console implementation slice is approved or reopened by this task.
   - Review state: human review confirmed on 2026-07-18; `FE11-C01` is closed.
 
+## Admin Role UI Contract Tasks
+
+- [ ] **FE11-UIR01 - Send numeric role IDs from the frontend API adapter.**
+  - Maps to: FR-FE11-012..013; AC-FE11-013..014; FE11 API §11.
+  - DoD: assignment sends `{ roleId }`, revocation uses `/{roleId}`, and focused RED-GREEN tests exclude role-name mutation requests.
+
+- [ ] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
+  - Maps to: PRE-FE11-004; NFR-FE11-SEC-004; TD-022.
+  - Depends on: FE11-UIR01.
+  - DoD: only positive IDs for ADMIN/LIBRARIAN/MEMBER enable the modal; invalid/missing catalog data sends no mutation and no hardcoded fallback exists.
+
+- [ ] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
+  - Maps to: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.
+  - Depends on: FE11-UIR02.
+  - DoD: the complete diff is validated before requests, assignments precede revocations, non-editable roles are preserved, and no-op saves send no mutation.
+
+- [ ] **FE11-UIR04 - Reconcile partial failures to server state.**
+  - Maps to: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.
+  - Depends on: FE11-UIR03.
+  - DoD: the first failed mutation stops the sequence; target detail is reloaded into the open modal; failed reconciliation disables Save and never reports success.
+
+- [ ] **FE11-UIR05 - Pass the Admin role UI validation and integration gates.**
+  - Depends on: FE11-UIR01..UIR04.
+  - DoD: focused/full frontend, lint/build, focused backend role regression, traceability, diff/security review, documentation, human review, merge, and post-merge CI evidence are complete.
+
 ## Deferred FE11 Work
 
-The only completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, and safe user list/detail `FE11-U01..U06`. Update/deactivation, librarian fields, the Admin role-action UI contract, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of FE11 conformance.
+The only completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, and safe user list/detail `FE11-U01..U06`. The bounded Admin role-action UI contract is active only through `FE11-UIR01..UIR05`. Update/deactivation, librarian fields, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of FE11 conformance.

@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Admin Role UI Contract Slice Approved
+
+- Approved the bounded `TD-022` design and implementation plan for mapping Admin role selections to numeric role IDs from the authenticated FE11 role catalog.
+- Required catalog validation before mutation, assignments before revocations, no hardcoded role IDs, and authoritative target-user reload after partial failure.
+- Added `FE11-UIR01..UIR05`; no implementation or validation evidence is claimed by this planning checkpoint.
+- Backend role behavior, `SPEC.md`, schema, and all unrelated FE11 work remain unchanged and deferred.
+
 ## 2026-07-18 - FE11 Admin Console Context And Drift Reconciled
 
 - Audited FE11/Admin Console changes from base `66642b5` to `origin/main@8da84bd` with separate Standards and Spec reviews.
