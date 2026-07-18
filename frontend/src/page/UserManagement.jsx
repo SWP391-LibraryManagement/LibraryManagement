@@ -67,7 +67,55 @@ const statusLabels = {
   LOCKED: 'Locked',
 };
 const editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER'];
+const ROLE_CATALOG_ERROR = 'Không thể tải danh mục vai trò. Vui lòng thử lại.';
 const allowDevUserManagementWithoutLogin = import.meta.env.MODE !== 'production';
+
+function normalizeEditableRoleCatalog(roleCatalog = []) {
+  const seenNames = new Set();
+  const seenIds = new Set();
+  const normalized = [];
+
+  for (const role of roleCatalog) {
+    const roleName = String(role?.roleName || '').trim().toUpperCase();
+    if (!editableRoles.includes(roleName)) continue;
+
+    const roleId = Number(role?.roleId);
+    const hasValidRoleId = Number.isInteger(roleId) && roleId > 0;
+    if (!hasValidRoleId || seenNames.has(roleName) || seenIds.has(roleId)) {
+      throw new Error(ROLE_CATALOG_ERROR);
+    }
+
+    seenNames.add(roleName);
+    seenIds.add(roleId);
+    normalized.push({ roleId, roleName });
+  }
+
+  if (normalized.length !== editableRoles.length) {
+    throw new Error(ROLE_CATALOG_ERROR);
+  }
+
+  return normalized;
+}
+
+function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog) {
+  const editableCatalog = normalizeEditableRoleCatalog(roleCatalog);
+  const currentRoles = new Set(currentRoleNames || []);
+  const selectedRoles = new Set(selectedRoleNames || []);
+  const assignments = [];
+  const revocations = [];
+
+  for (const { roleId, roleName } of editableCatalog) {
+    if (selectedRoles.has(roleName) && !currentRoles.has(roleName)) {
+      assignments.push({ roleName, roleId });
+    }
+    if (currentRoles.has(roleName) && !selectedRoles.has(roleName)) {
+      revocations.push({ roleName, roleId });
+    }
+  }
+
+  return { assignments, revocations };
+}
+
 const permissionRows = [
   { name: 'View users', admin: true, librarian: false, member: false },
   { name: 'Create accounts', admin: true, librarian: false, member: false },
@@ -347,11 +395,20 @@ function UserModal({ mode, user, onClose, onSubmit }) {
   );
 }
 
-function RoleModal({ user, roles, onClose, onSave }) {
+function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
   const [selectedRoles, setSelectedRoles] = useState(() => new Set(user.roles || []));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const availableRoles = roles.length > 0 ? roles : editableRoles.map((roleName) => ({ roleName }));
+  const availableRoles = roles;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSelectedRoles(new Set(user.roles || []));
+      setError('');
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [user]);
 
   function toggleRole(roleName) {
     const nextRoles = new Set(selectedRoles);
@@ -369,28 +426,36 @@ function RoleModal({ user, roles, onClose, onSave }) {
   async function handleSave(event) {
     event.preventDefault();
 
+    if (savingBlocked) {
+      setError('Không thể lưu cho đến khi trạng thái vai trò được tải lại.');
+      return;
+    }
+
     if (selectedRoles.size === 0) {
       setError('Every user must keep at least one role.');
       return;
     }
 
     setSaving(true);
+    setError('');
     try {
       await onSave(Array.from(selectedRoles));
+    } catch (error) {
+      setError(error.message);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="um-modal-backdrop" onMouseDown={onClose}>
+    <div className="um-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={handleSave}>
         <div className="um-modal-header">
           <div>
             <p>FE11 roles</p>
             <h2>Quản lý vai trò</h2>
           </div>
-          <button type="button" className="um-icon-button" onClick={onClose} aria-label="Close">
+          <button type="button" className="um-icon-button" disabled={saving} onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -420,10 +485,10 @@ function RoleModal({ user, roles, onClose, onSave }) {
         </div>
 
         <div className="um-modal-actions">
-          <button type="button" className="um-secondary-button" onClick={onClose}>
+          <button type="button" className="um-secondary-button" disabled={saving} onClick={onClose}>
             Hủy
           </button>
-          <button type="submit" className="um-primary-button" disabled={saving}>
+          <button type="submit" className="um-primary-button" disabled={saving || savingBlocked}>
             {saving ? 'Đang lưu...' : 'Lưu vai trò'}
           </button>
         </div>
@@ -641,6 +706,9 @@ function UserManagement() {
   const [modal, setModal] = useState(null);
   const [roleUser, setRoleUser] = useState(null);
   const [roles, setRoles] = useState([]);
+  const [rolesError, setRolesError] = useState('');
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [roleSyncBlocked, setRoleSyncBlocked] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
@@ -745,9 +813,39 @@ function UserManagement() {
     }
   }
 
+  async function loadRoles() {
+    setRolesLoading(true);
+    setRolesError('');
+
+    try {
+      const result = await fetchRoles();
+      const catalog = normalizeEditableRoleCatalog(result.data || []);
+      setRoles(catalog);
+      return catalog;
+    } catch (error) {
+      setRoles([]);
+      setRolesError(ROLE_CATALOG_ERROR);
+      throw new Error(ROLE_CATALOG_ERROR, { cause: error });
+    } finally {
+      setRolesLoading(false);
+    }
+  }
+
   async function openRoleModal(user) {
-    if (await requireAdminSession()) {
+    if (!(await requireAdminSession())) return;
+
+    try {
+      let catalog;
+      if (rolesError || roles.length === 0) {
+        catalog = await loadRoles();
+      } else {
+        catalog = normalizeEditableRoleCatalog(roles);
+      }
+      buildRoleMutationPlan(user.roles || [], user.roles || [], catalog);
+      setRoleSyncBlocked(false);
       setRoleUser(user);
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
     }
   }
 
@@ -859,9 +957,12 @@ function UserManagement() {
   }, [search, roleFilter, statusFilter]);
 
   useEffect(() => {
-    fetchRoles()
-      .then((result) => setRoles(result.data || []))
-      .catch(() => setRoles(editableRoles.map((roleName) => ({ roleName }))));
+    const timer = setTimeout(() => {
+      loadRoles().catch(() => {});
+    }, 0);
+
+    return () => clearTimeout(timer);
+  // The timer keeps state-setting catalog work outside the synchronous effect body.
   }, []);
 
   useEffect(() => {
@@ -1303,36 +1404,49 @@ function UserManagement() {
   }
 
   async function saveRoles(nextRoles) {
-    if (!roleUser) {
-      return;
-    }
+    if (!roleUser) return;
 
     if (!(await requireAdminSession())) {
       throw new Error('Admin login required.');
     }
 
-    try {
-      const currentRoles = new Set(roleUser.roles || []);
-      const desiredRoles = new Set(nextRoles);
+    const { assignments, revocations } = buildRoleMutationPlan(
+      roleUser.roles || [],
+      nextRoles,
+      roles,
+    );
 
-      for (const roleName of desiredRoles) {
-        if (!currentRoles.has(roleName)) {
-          await assignManagedUserRole(roleUser.userId, roleName);
-        }
+    if (assignments.length === 0 && revocations.length === 0) {
+      setRoleUser(null);
+      setRoleSyncBlocked(false);
+      return;
+    }
+
+    try {
+      for (const { roleId } of assignments) {
+        await assignManagedUserRole(roleUser.userId, roleId);
       }
 
-      for (const roleName of currentRoles) {
-        if (!desiredRoles.has(roleName)) {
-          await revokeManagedUserRole(roleUser.userId, roleName);
-        }
+      for (const { roleId } of revocations) {
+        await revokeManagedUserRole(roleUser.userId, roleId);
       }
 
       setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
       setRoleUser(null);
+      setRoleSyncBlocked(false);
       setSelectedUser(null);
       await loadUsers();
     } catch (error) {
-      setToast({ type: 'error', message: error.message });
+      try {
+        const refreshedUser = await fetchManagedUser(roleUser.userId);
+        setRoleUser(refreshedUser);
+        setRoleSyncBlocked(false);
+        if (selectedUser?.userId === refreshedUser.userId) {
+          setSelectedUser(refreshedUser);
+        }
+      } catch {
+        setRoleSyncBlocked(true);
+      }
       throw error;
     }
   }
@@ -2076,7 +2190,11 @@ function UserManagement() {
         <RoleModal
           user={roleUser}
           roles={roles}
-          onClose={() => setRoleUser(null)}
+          savingBlocked={rolesLoading || roleSyncBlocked}
+          onClose={() => {
+            setRoleUser(null);
+            setRoleSyncBlocked(false);
+          }}
           onSave={saveRoles}
         />
       )}

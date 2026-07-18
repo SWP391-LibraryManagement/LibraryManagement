@@ -95,3 +95,21 @@ test('FE11 detail request uses the authorized request flow', async () => {
     /export async function fetchManagedUser\(userId\)[\s\S]*?authorizedRequest\(\{[\s\S]*?url: `\/users\/\$\{userId\}`/,
   );
 });
+
+test('FE11 role mutations send numeric role IDs through the canonical contract', async () => {
+  const source = await readFile(apiPath, 'utf8');
+
+  assert.match(
+    source,
+    /export async function assignManagedUserRole\(userId, roleId\)[\s\S]*?url: `\/users\/\$\{userId\}\/roles`[\s\S]*?data: \{ roleId \}/,
+  );
+  assert.match(
+    source,
+    /export async function revokeManagedUserRole\(userId, roleId\)[\s\S]*?url: `\/users\/\$\{userId\}\/roles\/\$\{roleId\}`/,
+  );
+  assert.doesNotMatch(
+    source,
+    /export async function (?:assign|revoke)ManagedUserRole\(userId, roleName\)/,
+  );
+  assert.doesNotMatch(source, /data: \{ roleName \}/);
+});

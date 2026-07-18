@@ -218,12 +218,12 @@ export async function deactivateManagedUser(userId) {
   }
 }
 
-export async function assignManagedUserRole(userId, roleName) {
+export async function assignManagedUserRole(userId, roleId) {
   try {
     const response = await authorizedRequest({
       method: 'post',
       url: `/users/${userId}/roles`,
-      data: { roleName },
+      data: { roleId },
     });
     return response.data;
   } catch (error) {
@@ -231,11 +231,11 @@ export async function assignManagedUserRole(userId, roleName) {
   }
 }
 
-export async function revokeManagedUserRole(userId, roleName) {
+export async function revokeManagedUserRole(userId, roleId) {
   try {
     const response = await authorizedRequest({
       method: 'delete',
-      url: `/users/${userId}/roles/${roleName}`,
+      url: `/users/${userId}/roles/${roleId}`,
     });
     return response.data;
   } catch (error) {
