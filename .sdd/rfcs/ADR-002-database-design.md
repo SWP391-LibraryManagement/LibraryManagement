@@ -1,7 +1,8 @@
 # ADR-002: Database Design
 
-Status: Approved for Week 4 schema review
+Status: APPROVED - FE11 FINALIZATION MIGRATION ACTIVE; IMPLEMENTATION PENDING
 Date: 2026-06-10
+Last Updated: 2026-07-19
 
 ## Context
 
@@ -54,6 +55,33 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Any schema change affecting behavior must update the related `SPEC.md` or ADR before implementation.
 - For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
 - Seed data must not include real personal data, passwords, tokens, or secrets.
+
+## FE11 Finalization Migration Decision
+
+The approved FE11 Finalization Batch activates one reviewable, idempotent SQL Server script at
+`database/migrations/2026-07-19-fe11-finalization.sql`. Product implementation has not started at
+this governance checkpoint.
+
+The migration must synchronize these five existing-table columns with the baseline schema and
+application contracts:
+
+| Table | Column | Target definition |
+| --- | --- | --- |
+| `Users` | `Email` | `NVARCHAR(255) NOT NULL` |
+| `Users` | `DeactivatedAt` | `DATETIME NULL` |
+| `UserProfiles` | `Department` | `NVARCHAR(100) NULL` |
+| `UserProfiles` | `Specialization` | `NVARCHAR(100) NULL` |
+| `Notifications` | `RecipientEmail` | `NVARCHAR(255) NOT NULL` |
+
+`Users.Email` uses deterministic unique index `UX_Users_Email`. Before altering it, the script must
+fail safely when any email exceeds 255 characters or when case-insensitive duplicates exist. The
+script must preserve data, use deterministic object names, contain no seed identity or credential,
+and be safe to execute twice without duplicate columns, constraints, indexes, or data mutation.
+
+Review requires static contract checks plus two successful executions against a disposable SQL
+Server database when that environment is available. If live SQL Server is unavailable, only that
+execution evidence may remain recorded under `TD-021`; the script, baseline, models, bindings, and
+static idempotence checks remain mandatory.
 
 ## Configuration
 

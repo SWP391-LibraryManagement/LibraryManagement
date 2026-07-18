@@ -1,16 +1,16 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, FAST-TRACK BATCH 1, AND ADMIN NAVIGATION/PERMISSIONS COMPLETE THROUGH B7; REMAINING WORK DEFERRED
+Status: APPROVED - FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; PRODUCT IMPLEMENTATION NOT STARTED
 
-Date: 2026-07-15
+Date: 2026-07-19
 
 Owner: Dung
 
 ## 1. Purpose
 
-Implement the smallest approved FE11 slice that normalizes admin-created account setup across FE02, FE10, FE11, the API contract, and SQL behavior.
+Preserve the completed bounded FE11 slices and govern the remaining user-lifecycle and Admin Request Management work through the approved Finalization Batch. Sections 3-14 retain historical slice scope/evidence; Section 15 is the active execution boundary.
 
-The rest of FE11 remains unplanned and must not be treated as complete through this slice.
+Whole FE11 remains incomplete until the Finalization closeout records all required H2/H3, merge, exact `main` CI, and acceptance evidence.
 
 ## 2. Source Documents
 
@@ -23,6 +23,8 @@ The rest of FE11 remains unplanned and must not be treated as complete through t
 - `docs/api/api-contract.md`
 - `database/Librarymanagement.sql`
 - `.sdd/constraints/safety.md`
+- `docs/superpowers/specs/2026-07-19-fe11-finalization-batch-design.md`
+- `docs/superpowers/plans/2026-07-19-fe11-finalization-batch.md`
 
 ## 3. Slice Scope
 
@@ -196,7 +198,7 @@ Integration State: COMPLETE THROUGH B7
 2. `TD-026` / `FE11-ENV01`: restore `{ data, pagination }` and reuse FE12 `/api/reports/users` for counters.
 3. `TD-027` / `FE11-META01`: apply the approved evidence matrix after TD-026 merges.
 
-`TD-023` and `TD-025` remain outside Batch 1. `TD-023` is now active only under Section 14; `TD-025` remains `OPEN`. Whole FE11 remains deferred.
+At Batch 1 close, `TD-023` and `TD-025` remained outside that batch. Section 14 later completed `TD-023`; Section 15 now activates `TD-025` and the remaining FE11 finalization scope.
 
 ### Gates
 
@@ -210,7 +212,7 @@ Integration State: COMPLETE THROUGH B7
 - `TD-024` / `FE11-AUD01`: PR #33, merge `3c88e432`, post-merge CI `29651173195`.
 - `TD-026` / `FE11-ENV01`: PR #34, merge `411fa25a`, post-merge CI `29652243809`.
 - `TD-027` / `FE11-META01`: PR #35, merge `c286cd9b`, post-merge CI `29652617587`.
-- Batch 1 did not authorize `TD-023` or `TD-025`; Section 14 separately activates `TD-023`, while `TD-025` and whole FE11 remain deferred.
+- Batch 1 did not authorize `TD-023` or `TD-025`; Section 14 separately completed `TD-023`, and Section 15 now governs `TD-025` plus the remaining finalization work.
 
 ## 14. Admin Navigation And Permissions Slice
 
@@ -239,4 +241,41 @@ Integration State: COMPLETE THROUGH B7
 - H2 approved the unchanged implementation diff on 2026-07-19; H3 approved PR #37 for merge on 2026-07-19.
 - PR #37 passed `foundation-checks` in run `29654621448` and merged into `main` as `356130e4905a59d219bae8e9b369f7690348cba2`.
 - Exact post-merge `main` CI run `29655548150` passed all `foundation-checks`.
-- `TD-023` is resolved by this bounded slice; `TD-025` and whole-feature `Implementation State: DEFERRED` remain unchanged.
+- At this bounded slice close, `TD-023` was resolved while `TD-025` and whole FE11 remained deferred; Section 15 now supersedes that deferred state with governance-only activation.
+
+## 15. FE11 Finalization Batch
+
+Implementation State: GOVERNANCE ACTIVE; PRODUCT IMPLEMENTATION NOT STARTED
+
+### Approved Sources
+
+- `docs/superpowers/specs/2026-07-19-fe11-finalization-batch-design.md`
+- `docs/superpowers/plans/2026-07-19-fe11-finalization-batch.md`
+- `.sdd/rfcs/ADR-002-database-design.md`
+- FE02/FE03/FE10/FE11 synchronized contracts and `docs/api/api-contract.md`
+
+### Delivery Shape
+
+1. Governance activation PR: contracts, tasks, validation commands, and debt state only.
+2. Wave A: schema/email synchronization, Librarian fields, transactional create/resend hardening, optimistic/no-op updates, atomic deactivation, FE07 serialization dependency, and Admin access hardening.
+3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, CSV, Dashboard evidence, and FE11 browser acceptance.
+4. Documentation closeout: exact PR/merge/main-CI evidence and whole-feature B7 state.
+
+### Core Contracts
+
+- `Users.Email` and `Notifications.RecipientEmail` are `NVARCHAR(255)`.
+- `UserProfiles.Department` and `UserProfiles.Specialization` are nullable `NVARCHAR(100)` and FE11-admin-managed only.
+- `fullName` remains maximum 100 characters.
+- `UserManagementView.updatedAt` is `COALESCE(Users.UpdatedAt, Users.CreatedAt)` and the same value is compared by update/deactivation.
+- FE11 create and setup resend revalidate the active acting Admin inside their source transactions; duplicate email is transaction-authoritative and safe.
+- `INACTIVE` plus null `DeactivatedAt` is pending activation and returns `409 ACCOUNT_PENDING_ACTIVATION` from deactivation.
+- FE07 remains the sole approve/reject mutation owner; FE11 owns only the Admin request read DTOs and presentation.
+- Admin request queries are `page`, `limit`, `q`, `status`, `from`, and `to`; list responses contain exactly `data` and `pagination`.
+
+### Gates
+
+- Product work is blocked until the governance PR passes checks, receives H3, and merges into `main`.
+- Wave A and Wave B generated changes remain uncommitted until their H2 reviews.
+- Every PR requires H3 after checks and before merge.
+- Only the closeout PR may transition whole FE11 to `COMPLETE THROUGH B7`.
+- All finalization task checkboxes remain open at governance activation; this section records authorization, not implementation evidence.

@@ -1,12 +1,12 @@
 # SPEC.md - FE03 User Profile
 
-# Version: 0.3.3
+# Version: 0.3.4
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature ID: FE03
 
@@ -246,6 +246,8 @@ Use these stable IDs for tasks and tests.
 | avatarUrl | string | No | Read-only server-generated public path/URL (for example `/uploads/avatars/{generated}.png`); changed only by avatar upload, never by profile PUT. |
 | avatarFile | file | No | Upload-only field. Accepted extensions: JPG, JPEG, PNG, WebP. Maximum size: 2 MB. Stored using a server-generated filename. |
 | status | string | No | Included in the safe profile DTO as read-only account state; never editable by FE03. |
+| department | string | No | Nullable `UserProfiles.Department`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
+| specialization | string | No | Nullable `UserProfiles.Specialization`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
 
 ---
 
@@ -394,3 +396,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Avatar upload storage policy revision is reviewed and approved (Q-FE03-004: local filesystem, approved 2026-06-25).
 - [x] Privacy and response DTO rules are reviewed.
 - [x] Every acceptance criterion can become a test.
+- [x] FE11-owned `department` and `specialization` columns are excluded from the FE03 safe DTO and PUT allowlist.

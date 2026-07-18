@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - FE11 Finalization Schema Contract Activated
+
+- Bumped `SPEC.md` to 0.6.3 and activated the shared FE11 migration dependency without changing FE02 login, registration, OTP, refresh, or setup-consumption behavior.
+- Confirmed `Users.Email` at 255 characters and documented FE11's non-null managed-user concurrency version as `COALESCE(UpdatedAt, CreatedAt)` for nullable legacy rows.
+- Kept schema implementation and live migration evidence pending the FE11 Finalization Wave A gate.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE02 specification and implementation contract as the Phase 1 baseline; OTP delivery follow-up remains implementation-pending.

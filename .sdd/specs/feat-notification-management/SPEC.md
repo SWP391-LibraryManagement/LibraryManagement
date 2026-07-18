@@ -1,12 +1,12 @@
 # SPEC.md - FE10 Notification Management
 
-# Version: 0.4.1
+# Version: 0.4.2
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature ID: FE10
 
@@ -269,7 +269,7 @@ Use these stable IDs for tasks and tests.
 | ----- | ---- | -------- | ------------------ |
 | notificationId | integer | Yes | Primary key. |
 | userId | integer | No | Required for in-app and member-specific notifications. |
-| recipientEmail | string | No | Required for guest/account email flows if no user ID is available. |
+| recipientEmail | string | Conditional | Required for email delivery and persisted as `Notifications.RecipientEmail NVARCHAR(255) NOT NULL` to match FE02/FE11 email width. |
 | type | enum | Yes | Values: `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `RESERVATION_AVAILABLE`, `DUE_DATE_REMINDER`, `OVERDUE_NOTICE`, `FINE_NOTICE`, `GENERAL_SYSTEM`. |
 | channel | enum | Yes | Phase 1 hardening accepts `EMAIL`; `IN_APP` remains future work. |
 | templateKey | string | Yes | Must be active and match the canonical type/template map. |
