@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.4
-Status: AUDIT LOG IMPLEMENTATION H2-READY; PRIOR SLICES COMPLETE THROUGH B7; FAST-TRACK BATCH 1 ACTIVE; REMAINING FE11 TESTS PLANNED
+Version: 0.3.5
+Status: FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -79,15 +79,17 @@ User administration, role listing, role assignment/revocation, account status ma
 - Approved Audit Log plan: `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`.
 - `backend/tests/adminAuditLogRoutes.test.js`, `backend/tests/auditLogRepository.test.js`, and `backend/tests/adminAuditLogService.test.js` prove canonical ownership, Admin-first validation, typed filtered SQL pagination, stable order, and action-aware default-deny projection.
 - `frontend/test/adminApi.test.js`, `frontend/test/userManagementApi.test.js`, and `frontend/test/userManagementFrontend.test.js` prove canonical endpoint consumption, legacy adapter removal, filter construction, and nested safe DTO rendering.
-- Audit Log H2 evidence: 246/246 focused backend, 598/598 full backend, 111/111 frontend, coverage/lint/build/OpenAPI/traceability/diff/security/scope checks PASS.
+- Audit Log B7 evidence: 246/246 focused backend, 598/598 full backend, 111/111 frontend, coverage/lint/build/OpenAPI/traceability/diff/security/scope checks PASS; PR #33 and post-merge CI `29651173195` passed.
+- User-list envelope B7 evidence: 95/95 focused backend, 600/600 full backend, 113/113 frontend, lint/build/traceability/diff/security checks PASS; PR #34 and post-merge CI `29652243809` passed.
+- Evidence-metadata B7 evidence: exactly 22 approved Test Case/Status rows changed, all deferred rows stayed `Not Started`, and full regression/CI passed; PR #35 and post-merge CI `29652617587` passed.
 
 ## 6. Gaps
 
 - Account setup, transactional backend role mutation, safe list/detail, and Admin role-action UI are complete through human review, merge, and post-merge CI.
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
-- Audit Log implementation is H2-ready with local L1-L4 evidence; `TD-024` remains `IN PROGRESS` and `FE11-AUD01` remains unchecked until H2 approval, PR checks, H3, merge, and post-merge CI.
+- Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
-- Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.
+- Open debt still includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, and Request Management TD-025.
 
 ## 7. Transactional Role Slice
 

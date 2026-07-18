@@ -1,6 +1,6 @@
 # FE11 Evidence Metadata Validation
 
-Status: H2 APPROVED BY HUMAN - UNCOMMITTED
+Status: B7 INTEGRATION COMPLETE
 
 Date: 2026-07-18
 
@@ -41,3 +41,10 @@ Base integration evidence:
 ## H2 Review Boundary
 
 Human H2 review was approved on 2026-07-18. This evidence-only diff does not mark FE11 complete and does not authorize `TD-023` or `TD-025`.
+
+## B7 Integration Evidence
+
+- Human H3 review was approved on 2026-07-18.
+- PR #35 merged into `main` as `c286cd9b98fc669ce6f140b75bd151483238c908`.
+- Post-merge CI run `29652617587` completed successfully.
+- `TD-027` / `FE11-META01` is complete through B7; whole FE11 remains deferred.

@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE; FAST-TRACK BATCH 1 ACTIVE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -188,6 +188,8 @@ database/Librarymanagement.sql
 
 ## 13. Fast-Track Batch 1
 
+Integration State: COMPLETE THROUGH B7
+
 ### Scope And Order
 
 1. `TD-024` / `FE11-AUD01`: canonical Admin Audit Logs read boundary.
@@ -202,3 +204,10 @@ database/Librarymanagement.sql
 - H2 is required before each generated implementation or SPEC-evidence diff is committed and pushed.
 - H3 is required after checks and before every PR merge.
 - TD-027 analysis may run in parallel, but its `SPEC.md` edit is serialized after TD-026.
+
+### Integration Evidence
+
+- `TD-024` / `FE11-AUD01`: PR #33, merge `3c88e432`, post-merge CI `29651173195`.
+- `TD-026` / `FE11-ENV01`: PR #34, merge `411fa25a`, post-merge CI `29652243809`.
+- `TD-027` / `FE11-META01`: PR #35, merge `c286cd9b`, post-merge CI `29652617587`.
+- `TD-023` and `TD-025` remain open; whole FE11 remains `Implementation State: DEFERRED`.

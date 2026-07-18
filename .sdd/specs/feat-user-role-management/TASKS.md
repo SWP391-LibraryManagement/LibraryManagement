@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE; FAST-TRACK BATCH 1 ACTIVE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -162,19 +162,22 @@ Owner: Dung
   - Scope: TD-024, TD-026, TD-027.
   - Evidence: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md` and the merged governance activation PR.
 
-- [ ] **FE11-AUD01 - Implement the canonical Admin Audit Log boundary.**
+- [x] **FE11-AUD01 - Implement the canonical Admin Audit Log boundary.**
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018; TD-024.
   - DoD: SPEC query names, Admin-first validation, cross-feature action-aware default-deny projection, stable filtered SQL pagination, frontend migration, legacy `404 NOT_FOUND`, L1-L4 evidence.
+  - Integration state: PR #33 merged as `3c88e432`; post-merge CI run `29651173195` passed.
 
-- [ ] **FE11-ENV01 - Restore the canonical user-list envelope using FE12 statistics.**
+- [x] **FE11-ENV01 - Restore the canonical user-list envelope using FE12 statistics.**
   - Maps to: FR-FE11-001; AC-FE11-001; TD-026.
   - DoD: `/api/users` returns only `data` and `pagination`; Admin counters map from `/api/reports/users`; global counts are independent from page rows.
+  - Integration state: PR #34 merged as `411fa25a`; post-merge CI run `29652243809` passed.
 
-- [ ] **FE11-META01 - Reconcile completed FE11 evidence metadata.**
+- [x] **FE11-META01 - Reconcile completed FE11 evidence metadata.**
   - Maps to: TD-027.
   - Depends on: TD-026 merge and a serial Integration Lead `SPEC.md` writer window.
   - DoD: only approved existing Test Case/Status cells change; requirements and deferred rows remain unchanged; H2, checks, H3, merge, and integration evidence pass.
+  - Integration state: PR #35 merged as `c286cd9b`; post-merge CI run `29652617587` passed.
 
 ## Deferred FE11 Work
 
-The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, and the bounded Admin role-action UI contract `FE11-UIR01..UIR05`. Update/deactivation, librarian fields, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
+The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, and Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`. Update/deactivation, librarian fields, Admin Console navigation/permissions/request behavior, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
