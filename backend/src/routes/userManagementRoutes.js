@@ -2,6 +2,7 @@ const express = require('express');
 const { createUserManagementController } = require('../controllers/userManagementController');
 const { createAuthenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/requireRole');
+const errors = require('../utils/safeErrors');
 const {
   listUsersValidators,
   getUserValidators,
@@ -18,7 +19,9 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
 
   router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
   router.get('/roles', requireAdmin, controller.listRoles);
-  router.get('/audit-logs', requireAdmin, controller.listAuditLogs);
+  router.get('/audit-logs', (req, res, next) => (
+    next(errors.notFound('NOT_FOUND', 'Resource not found.'))
+  ));
   router.get('/:userId', ...requireAdmin, getUserValidators, controller.getUser);
   router.post('/', requireAdmin, controller.createUser);
   router.post(

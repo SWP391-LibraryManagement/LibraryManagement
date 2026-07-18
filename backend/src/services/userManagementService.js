@@ -295,12 +295,6 @@ function createUserManagementService({
     };
   }
 
-  async function listAuditLogs(query = {}) {
-    const page = Math.max(Number(query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(query.limit) || 8, 1), 100);
-    return auditLogRepository.listRecent({ page, limit });
-  }
-
   // @spec FR-FE11-003, FR-FE11-009, FR-FE11-037 - create inactive state, then deliver non-blockingly.
   async function createUser(input, context = {}) {
     const normalized = validateCreateInput(input);
@@ -546,7 +540,6 @@ function createUserManagementService({
     listUsers,
     getUser,
     listRoles,
-    listAuditLogs,
     createUser,
     resendSetup,
     updateUser,

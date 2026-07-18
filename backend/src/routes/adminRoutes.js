@@ -1,6 +1,7 @@
 const express = require('express');
 const { createAdminController } = require('../controllers/adminController');
 const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
+const { auditLogQueryValidators } = require('../validators/adminValidators');
 
 function createAdminRoutes({ authService, adminService } = {}) {
   const router = express.Router();
@@ -8,6 +9,13 @@ function createAdminRoutes({ authService, adminService } = {}) {
   const authenticate = createAuthenticate(authService);
   const requireAdmin = [authenticate, requireAnyRole('ADMIN')];
 
+  // @spec FR-FE11-033
+  router.get(
+    '/audit-logs',
+    ...requireAdmin,
+    auditLogQueryValidators,
+    controller.listAuditLogs
+  );
   router.get('/dashboard', requireAdmin, controller.dashboard);
   router.get('/library/books', requireAdmin, controller.listBooks);
   router.get('/library/:resource', requireAdmin, controller.listResource);
