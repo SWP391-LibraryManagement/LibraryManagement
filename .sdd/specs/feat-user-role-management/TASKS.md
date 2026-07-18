@@ -137,10 +137,11 @@ Owner: Dung
   - DoD: only positive IDs for ADMIN/LIBRARIAN/MEMBER enable the modal; invalid/missing catalog data sends no mutation and no hardcoded fallback exists.
   - Evidence: RED failed 2 catalog-contract tests before validation/planning existed; GREEN passes 4/4 focused frontend tests and ESLint is clean.
 
-- [ ] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
+- [x] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
   - Maps to: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.
   - Depends on: FE11-UIR02.
   - DoD: the complete diff is validated before requests, assignments precede revocations, non-editable roles are preserved, and no-op saves send no mutation.
+  - Evidence: RED exposed direct role-name loops with no preflight/no-op branch; GREEN passes 5/5 focused frontend tests with numeric assignments before numeric revocations.
 
 - [ ] **FE11-UIR04 - Reconcile partial failures to server state.**
   - Maps to: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.

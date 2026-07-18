@@ -1387,38 +1387,37 @@ function UserManagement() {
   }
 
   async function saveRoles(nextRoles) {
-    if (!roleUser) {
-      return;
-    }
+    if (!roleUser) return;
 
     if (!(await requireAdminSession())) {
       throw new Error('Admin login required.');
     }
 
-    try {
-      const currentRoles = new Set(roleUser.roles || []);
-      const desiredRoles = new Set(nextRoles);
+    const { assignments, revocations } = buildRoleMutationPlan(
+      roleUser.roles || [],
+      nextRoles,
+      roles,
+    );
 
-      for (const roleName of desiredRoles) {
-        if (!currentRoles.has(roleName)) {
-          await assignManagedUserRole(roleUser.userId, roleName);
-        }
-      }
-
-      for (const roleName of currentRoles) {
-        if (!desiredRoles.has(roleName)) {
-          await revokeManagedUserRole(roleUser.userId, roleName);
-        }
-      }
-
-      setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
+    if (assignments.length === 0 && revocations.length === 0) {
       setRoleUser(null);
-      setSelectedUser(null);
-      await loadUsers();
-    } catch (error) {
-      setToast({ type: 'error', message: error.message });
-      throw error;
+      setRoleSyncBlocked(false);
+      return;
     }
+
+    for (const { roleId } of assignments) {
+      await assignManagedUserRole(roleUser.userId, roleId);
+    }
+
+    for (const { roleId } of revocations) {
+      await revokeManagedUserRole(roleUser.userId, roleId);
+    }
+
+    setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
+    setRoleUser(null);
+    setRoleSyncBlocked(false);
+    setSelectedUser(null);
+    await loadUsers();
   }
 
   return (

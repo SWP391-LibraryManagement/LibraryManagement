@@ -42,3 +42,19 @@ test('FE11 role mutation plan preserves names for UI and emits catalog IDs', asy
   assert.match(source, /assignments\.push\(\{ roleName, roleId \}\)/);
   assert.match(source, /revocations\.push\(\{ roleName, roleId \}\)/);
 });
+
+test('FE11 role saves validate the full plan and assign before revoking', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  const saveRoles = source.match(/async function saveRoles\(nextRoles\)[\s\S]*?\r?\n {2}}\r?\n\r?\n {2}return \(/)?.[0] || '';
+
+  assert.match(
+    saveRoles,
+    /buildRoleMutationPlan\(\s*roleUser\.roles \|\| \[\],\s*nextRoles,\s*roles,\s*\)/,
+  );
+  assert.match(saveRoles, /for \(const \{ roleId \} of assignments\)/);
+  assert.match(saveRoles, /assignManagedUserRole\(roleUser\.userId, roleId\)/);
+  assert.match(saveRoles, /for \(const \{ roleId \} of revocations\)/);
+  assert.match(saveRoles, /revokeManagedUserRole\(roleUser\.userId, roleId\)/);
+  assert.ok(saveRoles.indexOf('of assignments') < saveRoles.indexOf('of revocations'));
+  assert.match(saveRoles, /assignments\.length === 0 && revocations\.length === 0/);
+});
