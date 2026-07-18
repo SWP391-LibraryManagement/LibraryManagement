@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; TRANSACTIONAL ROLE SLICE IN PROGRESS; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; TRANSACTIONAL ROLE SLICE AUTOMATED VALIDATION PASS; HUMAN REVIEW PENDING; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -76,6 +76,8 @@ Owner: Dung
 - [ ] **FE11-R05 - Pass the transactional role-management validation gate.**
   - Dependencies: FE11-R01..R04.
   - DoD: focused/full backend tests, traceability, diff hygiene, security review, documentation, debt reconciliation, and human review evidence are complete.
+  - Automated evidence: 70/70 focused tests; 399/399 full backend tests; repository coverage 100% statements/lines/functions and 90.24% branches; project coverage and traceability gates pass.
+  - Review state: human implementation review is pending.
 
 ## Deferred FE11 Work
 

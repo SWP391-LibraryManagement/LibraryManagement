@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Transactional Role Management Implemented And Validation Ready
+
+- Added Admin-first positive-integer validation for role assignment and revocation endpoints.
+- Added a locked SQL transaction that revalidates the active acting Admin, target user, requested role, target mappings, and active Admin holders.
+- Role mutation and audit now commit or roll back together; duplicate assignment and absent revocation return deterministic errors.
+- Added last-user-role and last-active-Admin protection under `UPDLOCK, HOLDLOCK`.
+- Added route, service, and repository RED-GREEN tests: 70/70 focused and 399/399 full backend tests pass.
+- Repository coverage is 100% statements/lines/functions and 90.24% branches; project coverage and traceability gates pass.
+- Human implementation review remains pending; remaining FE11 work stays deferred.
+
 ## 2026-07-18 - Transactional Role Management Slice Approved
 
 - Approved the bounded FE11 role assignment/revocation design and implementation plan.
