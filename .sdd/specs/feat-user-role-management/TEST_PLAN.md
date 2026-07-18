@@ -1,6 +1,6 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.0
+Version: 0.3.1
 Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
@@ -28,7 +28,7 @@ User administration, role listing, role assignment/revocation, account status ma
 
 - `GET /users`: list users with authorization.
 - `GET /users/roles`: list roles.
-- `GET /users/audit-logs`: admin only.
+- `GET /admin/audit-logs`: Admin-only search/filter/date/pagination with sensitive metadata redaction.
 - `GET /users/:userId`: happy path, not found, forbidden.
 - `POST /users`: admin creates user, duplicate, invalid fields.
 - `POST /users`: inactive state, valid unusable bcrypt hash, atomic rollback, FE10 safe delivery status.
@@ -64,9 +64,11 @@ User administration, role listing, role assignment/revocation, account status ma
 
 ## 6. Gaps
 
-- The account-setup and transactional role slices are complete; the safe list/detail automated validation gate passes and awaits human implementation review.
-- Tests should be reconciled with approved spec and role/audit edge cases.
-- Open debt (Validation Gate): TD-012 (department/specialization persistence), remaining non-role portions of TD-014 (not-found/acting-admin semantics), remaining TD-015 service coverage, and TD-017 (dev-bypass guard).
+- Account setup, transactional backend role mutation, and safe list/detail are complete through human review, merge, and post-merge CI.
+- The Admin role-action UI still sends role names instead of numeric role IDs, so the completed backend role slice has no conforming Admin UI acceptance path (`TD-022`).
+- Audit Log tests prove Admin authorization and pagination only; canonical boundary validation, filters, redaction, and endpoint ownership remain unvalidated (`TD-024`).
+- Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
+- Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.
 
 ## 7. Transactional Role Slice
 
