@@ -120,12 +120,11 @@ Add the approved design and implementation plan under Current Evidence. Add a `2
 - [ ] **Step 4: Run documentation checks**
 
 ```powershell
-npm.cmd run test:traceability-state
 npm.cmd run trace:enforce
 git diff --check -- .sdd/specs/feat-user-role-management
 ```
 
-Expected: traceability-state tests pass, traceability enforcement remains PASS with FE11 whole-feature `DEFERRED`, and the Markdown diff is clean.
+Expected: traceability enforcement remains PASS with FE11 whole-feature `DEFERRED`, and the Markdown diff is clean. Do not add or modify traceability-checker scripts in this slice.
 
 - [ ] **Step 5: Commit the planning checkpoint**
 
@@ -1303,7 +1302,6 @@ npm.cmd --prefix backend run test:coverage:ci
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
-npm.cmd run test:traceability-state
 npm.cmd run trace:enforce
 ```
 
