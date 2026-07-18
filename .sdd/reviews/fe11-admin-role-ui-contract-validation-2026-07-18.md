@@ -4,7 +4,7 @@ Date: 2026-07-18
 
 Scope: FE11-UIR01..UIR05 / TD-022 only
 
-Status: VALIDATION READY - HUMAN REVIEW PENDING
+Status: HUMAN REVIEW APPROVED - INTEGRATION PENDING
 
 ## L1 Automated Evidence
 
@@ -77,7 +77,7 @@ git diff --check origin/main...HEAD
 
 ## Human Review Gate
 
-Pending. `FE11-UIR05` remains unchecked until the human reviewer approves the implementation, automated evidence, scope boundary, and residual multi-request recovery risk.
+Approved on 2026-07-18. The human reviewer approved the implementation, automated evidence, bounded scope, and documented multi-request reconciliation risk. `FE11-UIR05` remains unchecked until merge and post-merge CI complete the integration gate.
 
 ## Integration State
 
