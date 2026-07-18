@@ -1,6 +1,6 @@
 # FE11 Finalization Batch Design
 
-Status: WRITTEN SPEC REVIEW
+Status: APPROVED FOR GOVERNANCE PREPARATION
 
 Date: 2026-07-19
 
@@ -63,6 +63,8 @@ project memory.
 - Direct FE10 recipient-email persistence synchronization required by the 255-character user email
   contract.
 - Librarian field persistence on create, list/detail, and update.
+- Transactional active-Admin revalidation and deterministic duplicate handling for FE11 create and
+  setup-resend mutations, preserving the completed setup/delivery boundary.
 - Canonical email length of 255 characters.
 - Optimistic-concurrency and no-op user updates.
 - Atomic user/librarian deactivation with credential invalidation and audit.
@@ -146,6 +148,9 @@ columns are FE11-admin-managed and are not part of the self-profile read/update 
 - They are omitted for non-Librarian targets, not returned as invented `null` placeholders.
 - `deactivatedAt` remains an internal lifecycle field unless the approved FE11 SPEC safe DTO is
   explicitly revised before governance activation.
+- `updatedAt` is the non-null concurrency version exposed as
+  `COALESCE(Users.UpdatedAt, Users.CreatedAt)`. This supports legacy and newly created rows whose
+  nullable storage column has not yet received an update without adding a backfill migration.
 - Credential, token, session, provider, link, and secret audit fields remain forbidden.
 
 ### 6.2 Input Normalization
@@ -160,6 +165,28 @@ columns are FE11-admin-managed and are not part of the self-profile read/update 
 - A non-Librarian target that receives `department` or `specialization` returns
   `400 VALIDATION_ERROR`; the server never silently discards the fields.
 - All validation executes on the server before persistence.
+
+### 6.3 Account Setup Source Mutation Hardening
+
+The existing FE11 create and setup-resend delivery boundary remains unchanged: FE11 commits source
+state first, then requests FE10 delivery. The source transactions become authoritative for actor and
+duplicate decisions:
+
+1. Authentication, Admin authorization, and boundary validation run before the repository call.
+2. The transaction locks and revalidates the acting user and current Admin role before any target or
+   setup-source mutation.
+3. A missing actor returns `404 ADMIN_NOT_FOUND`; an inactive or non-Admin actor returns
+   `403 ADMIN_REQUIRED`. Neither outcome writes user, token, or audit state.
+4. Create performs locked normalized email and username checks before inserts. A duplicate email,
+   including a concurrent conflict from deterministic index `UX_Users_Email`, returns
+   `409 EMAIL_ALREADY_EXISTS` without setup delivery. Unrelated constraint failures must not be
+   misclassified as email conflicts.
+5. Resend locks the target and setup-token history only after the acting Admin passes revalidation.
+6. FE10 delivery is requested only after a committed create or token rotation. Actor, validation,
+   duplicate, cooldown, missing-target, and ineligible outcomes create no delivery request.
+
+This hardening does not change FE02 token consumption, FE10 rendering/delivery ownership, the
+24-hour setup TTL, or the 60-second resend cooldown.
 
 ## 7. Optimistic Update Contract
 
@@ -177,7 +204,8 @@ columns are FE11-admin-managed and are not part of the self-profile read/update 
 }
 ```
 
-Only `expectedUpdatedAt` is always required. At least one editable field must be present.
+Only `expectedUpdatedAt` is always required. It must equal the `updatedAt` effective version loaded
+from the safe DTO. At least one editable field must be present.
 
 The transaction order is:
 
@@ -186,7 +214,7 @@ The transaction order is:
 3. Lock and revalidate the active acting Admin.
 4. Lock and load the target safe state and current roles.
 5. Return `404 USER_NOT_FOUND` when the target is absent.
-6. Compare stored `UpdatedAt` with `expectedUpdatedAt`.
+6. Compare `COALESCE(Users.UpdatedAt, Users.CreatedAt)` with `expectedUpdatedAt`.
 7. Return `409 STALE_USER_STATE` before any field or audit mutation when stale.
 8. Validate Librarian-only fields against the locked roles.
 9. Check normalized email uniqueness against other users inside the transaction.
@@ -424,8 +452,12 @@ All implementation follows RED-GREEN TDD.
 ### 14.1 Wave A
 
 - Static/idempotence tests for the migration script and baseline/model synchronization.
+- Safe DTO tests proving `updatedAt` falls back to `createdAt` only when storage `UpdatedAt` is
+  null, and optimistic update/deactivation compare the same effective value.
 - Repository tests for locked actor/target state, stale update, duplicate email, no-op, Librarian
   field persistence, active-borrowing block, token revocation, audit, commit, and rollback.
+- Account setup/resend regression tests proving the acting Admin is revalidated inside each source
+  transaction and duplicate email remains a safe deterministic conflict.
 - A concurrency test for deactivation versus FE07 approval proving both cannot commit for the same
   user and the final account/borrowing state remains valid.
 - Service tests for deterministic safe error mapping and DTO allowlists.
@@ -482,7 +514,7 @@ The governance activation adds these bounded tasks:
 | --- | --- | --- |
 | `FE11-FIN01` | Activate the approved Finalization Batch contract | all batch debt |
 | `FE11-LIFE01` | Add the reviewable schema migration and synchronized contracts | TD-012, TD-016 |
-| `FE11-LIFE02` | Persist and return Librarian fields safely | TD-012 |
+| `FE11-LIFE02` | Persist/return Librarian fields and harden setup actor checks | TD-012, TD-014 |
 | `FE11-LIFE03` | Implement optimistic/no-op user updates | TD-014, TD-015, TD-016 |
 | `FE11-LIFE04` | Implement atomic deactivation and credential invalidation | TD-014, TD-015, TD-016 |
 | `FE11-LIFE05` | Align the Admin UI and remove implicit dev Admin access | TD-017 |
@@ -611,8 +643,8 @@ The human approved:
 - Canonical request list `from`/`to` plus server pagination alignment.
 - The four-PR delivery sequence and final B7 closeout.
 
-Written-file review remains required before implementation planning begins.
-
-That review must explicitly confirm the self-review corrections discovered after the earlier
-section approvals: FE10 recipient-email width synchronization, FE11 `fullName` max 100 alignment
-with FE03, the pending-activation deactivation rejection, and the minimum FE07 lock-order dependency.
+Nhat confirmed written-file review on 2026-07-19, including the self-review corrections discovered
+after the earlier section approvals: FE10 recipient-email width synchronization, FE11 `fullName`
+max 100 alignment with FE03, the pending-activation deactivation rejection, the minimum FE07
+lock-order dependency, the non-null `COALESCE(UpdatedAt, CreatedAt)` concurrency version, and
+transactional acting-Admin revalidation for FE11 create/setup-resend mutations.
