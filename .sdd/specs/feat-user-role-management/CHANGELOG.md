@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Admin Role UI Contract Integrated (B7)
+
+- PR #30 merged into `main` as commit `c20d3251254467a1543355f18c705590724f5b55`.
+- PR CI run `29643619999` and post-merge GitHub Actions run `29644292781` passed `foundation-checks`, including backend/system tests, coverage, frontend lint/tests/build, browser E2E, and backend health import.
+- B7 integration is complete for `FE11-UIR01..UIR05`; `TD-022` is resolved.
+- Whole-feature `Implementation State: DEFERRED` and all unrelated FE11 work remain unchanged.
+
 ## 2026-07-18 - Admin Role UI Contract Implemented And Validation Ready
 
 - Updated the frontend role API adapter to send numeric `roleId` in the canonical assignment body and revocation path.
