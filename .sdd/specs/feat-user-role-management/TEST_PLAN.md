@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
 Version: 0.3.0
-Status: ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE APPROVED; REMAINING FE11 TESTS PLANNED
+Status: ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE VALIDATION READY; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -55,11 +55,16 @@ User administration, role listing, role assignment/revocation, account status ma
 - Approved role-slice plan: `docs/superpowers/plans/2026-07-18-fe11-transactional-role-management.md`.
 - Automated role-slice evidence: 70/70 focused tests and 399/399 full backend tests.
 - Approved safe-read design: `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md`.
-- Approved safe-read plan: `docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md`; implementation evidence is not yet claimed.
+- Approved safe-read plan: `docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md`.
+- `backend/tests/userRepository.test.js` for safe DTO mapping, approved search SQL, aggregate predicates, zero defaults, and hostile-column exclusion.
+- `backend/tests/userManagementService.test.js` for strict list normalization and detail `404 USER_NOT_FOUND`.
+- `backend/tests/userManagementRoutes.test.js` for Admin-first list/detail validation.
+- `frontend/test/userManagementApi.test.js` and `frontend/test/userManagementFrontend.test.js` for query omission, `phoneNumber`, detail loading, summaries, and stale-row recovery.
+- Automated safe-read evidence: 105/105 focused backend, 434/434 full backend, 81/81 frontend, coverage/lint/build/traceability PASS.
 
 ## 6. Gaps
 
-- The account-setup and transactional role slices are complete; the safe list/detail slice has approved planning and is pending implementation evidence.
+- The account-setup and transactional role slices are complete; the safe list/detail automated validation gate passes and awaits human implementation review.
 - Tests should be reconciled with approved spec and role/audit edge cases.
 - Open debt (Validation Gate): TD-012 (department/specialization persistence), remaining non-role portions of TD-014 (not-found/acting-admin semantics), remaining TD-015 service coverage, and TD-017 (dev-bypass guard).
 
@@ -71,7 +76,16 @@ User administration, role listing, role assignment/revocation, account status ma
 - Repository coverage: 100% statements, 90.24% branches, 100% functions, and 100% lines.
 - SQL Server-backed concurrent acceptance remains an explicit environment-dependent follow-up.
 
-## 8. Required Commands / Evidence Before Merge
+## 8. Safe User List And Detail Slice
+
+- Route tests prove Admin-first authorization and strict list/detail validation.
+- Service tests prove defaults-only-when-omitted, enum/search normalization, direct-input rejection, dedicated detail read, and `404 USER_NOT_FOUND`.
+- Repository tests prove the explicit `UserManagementView` allowlist, `phoneNumber`, deterministic roles, approved search fields/order, three aggregate predicates, and zero defaults.
+- Frontend tests prove `ALL`/empty-search omission, authorized detail fetch, real detail drawer data, and stale-row recovery after 404.
+- Full evidence: 434/434 backend tests, 81/81 frontend tests, 92.47% statement coverage, 82.35% branch coverage, lint/build/traceability PASS.
+- Real SQL Server aggregate execution and browser-level drawer interaction remain environment-dependent residual checks; emitted SQL and frontend contracts are automated.
+
+## 9. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test

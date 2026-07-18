@@ -1,5 +1,16 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Safe User List And Detail Implemented And Validation Ready
+
+- Added Admin-first validation for page, limit, status, role, search, and detail user IDs; invalid supplied values are rejected instead of clamped.
+- Replaced FE11 managed-user responses with the explicit allowlist, `phoneNumber`, and deterministic uppercase roles; hostile extra columns are excluded.
+- Restricted list search to email, full name, and user ID while preserving `CreatedAt DESC, UserId DESC` ordering.
+- Added a detail-only parameterized query for persisted `BORROWED`, `UNPAID` outstanding balance, and `ACTIVE`/`NOTIFIED` reservation summaries with numeric zero defaults.
+- Missing detail users now return `404 USER_NOT_FOUND`; update/deactivation not-found behavior remains deferred.
+- Admin UI now omits `ALL`/empty query values, fetches real detail, renders all summaries, and reloads stale list data after detail 404.
+- Automated evidence: 105/105 focused backend, 434/434 full backend, 81/81 frontend, 92.47% statements, 82.35% branches, lint/build/traceability/security/diff checks PASS.
+- Human implementation review is pending; no schema migration occurred and `TD-012` remains open.
+
 ## 2026-07-18 - Safe User List And Detail Slice Approved
 
 - Approved the explicit `UserManagementView` allowlist with `phoneNumber` and detail-only `relatedSummary`.

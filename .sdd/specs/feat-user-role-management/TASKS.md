@@ -110,6 +110,8 @@ Owner: Dung
 - [ ] **FE11-U06 - Pass the safe list/detail validation gate.**
   - Dependencies: FE11-U01..U05.
   - DoD: focused/full tests, coverage, frontend lint/build, traceability, diff hygiene, security review, debt reconciliation, validation record, and human review evidence are complete.
+  - Automated evidence: 105/105 focused backend tests; 434/434 full backend tests; 92.47% statements and 82.35% branches; 81/81 frontend tests; lint, build, traceability, security scan, and diff checks pass.
+  - Review state: pending human implementation review; do not mark complete before approval.
 
 ## Deferred FE11 Work
 
