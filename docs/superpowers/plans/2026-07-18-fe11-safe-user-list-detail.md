@@ -144,6 +144,7 @@ git commit -m "docs: activate FE11 safe user reads"
 - Modify: `backend/tests/userManagementService.test.js`
 - Modify: `backend/src/validators/userManagementValidators.js`
 - Modify: `backend/src/routes/userManagementRoutes.js`
+- Modify: `backend/src/controllers/userManagementController.js`
 - Modify: `backend/src/services/userManagementService.js`
 - Modify: `backend/src/repositories/userRepository.js`
 - Modify: `frontend/test/userManagementApi.test.js`
@@ -153,7 +154,7 @@ git commit -m "docs: activate FE11 safe user reads"
 
 **Interfaces:**
 - Consumes: existing `handleValidationErrors`, Admin-first middleware, `listManagedUsers({ page, limit, status, role, search })`, and current pagination envelope.
-- Produces: `listUsersValidators`, canonical service filters, `buildManagedUserListParams(input)`, and safe list items with `phoneNumber` and no `relatedSummary`.
+- Produces: `listUsersValidators`, `req.validatedListQuery`, canonical service filters, `buildManagedUserListParams(input)`, and safe list items with `phoneNumber` and no `relatedSummary`.
 
 - [ ] **Step 1: Write failing list route tests**
 
@@ -456,10 +457,10 @@ Expected: backend failures show missing list validators, silent service clamping
 
 - [ ] **Step 6: Implement list validators and route wiring**
 
-Update `backend/src/validators/userManagementValidators.js`:
+Update `backend/src/validators/userManagementValidators.js`. Express 5 exposes `req.query` through a getter that reparses the URL, so store express-validator's sanitized result on a dedicated request property:
 
 ```js
-const { body, param, query } = require('express-validator');
+const { body, matchedData, param, query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
 
 const LIST_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED'];
@@ -467,6 +468,11 @@ const LIST_ROLES = ['MEMBER', 'LIBRARIAN', 'ADMIN'];
 
 function uppercaseTrimmed(value) {
   return String(value).trim().toUpperCase();
+}
+
+function assignValidatedListQuery(req, res, next) {
+  req.validatedListQuery = matchedData(req, { locations: ['query'] });
+  return next();
 }
 
 const listUsersValidators = [
@@ -496,6 +502,7 @@ const listUsersValidators = [
     .isLength({ min: 1, max: 200 })
     .withMessage('Search must be between 1 and 200 characters.'),
   handleValidationErrors,
+  assignValidatedListQuery,
 ];
 ```
 
@@ -510,6 +517,12 @@ const {
 } = require('../validators/userManagementValidators');
 
 router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
+```
+
+Update the controller boundary:
+
+```js
+const result = await userManagementService.listUsers(req.validatedListQuery || req.query);
 ```
 
 - [ ] **Step 7: Implement canonical service list parsing**
@@ -723,7 +736,7 @@ Expected: focused backend/frontend tests pass; lint and production build pass; e
 - [ ] **Step 11: Mark FE11-U01/U02 complete and commit**
 
 ```powershell
-git add -- backend/tests/userRepository.test.js backend/tests/userManagementRoutes.test.js backend/tests/userManagementService.test.js backend/src/validators/userManagementValidators.js backend/src/routes/userManagementRoutes.js backend/src/services/userManagementService.js backend/src/repositories/userRepository.js frontend/src/utils/userManagementQuery.js frontend/test/userManagementApi.test.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md
+git add -- backend/tests/userRepository.test.js backend/tests/userManagementRoutes.test.js backend/tests/userManagementService.test.js backend/src/validators/userManagementValidators.js backend/src/routes/userManagementRoutes.js backend/src/controllers/userManagementController.js backend/src/services/userManagementService.js backend/src/repositories/userRepository.js frontend/src/utils/userManagementQuery.js frontend/test/userManagementApi.test.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx .sdd/specs/feat-user-role-management/TASKS.md docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md
 git commit -m "feat: enforce safe FE11 user list contract"
 ```
 

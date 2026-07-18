@@ -551,3 +551,74 @@ describe('FE11 transactional role service', () => {
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
   });
 });
+
+function makeReadHarness(userRepositoryOverrides = {}) {
+  const userRepository = {
+    listManagedUsers: jest.fn(async (query) => ({
+      data: [],
+      pagination: { ...query, total: 0, totalPages: 0 },
+    })),
+    getManagedUserById: jest.fn(),
+    ...userRepositoryOverrides,
+  };
+  const service = createUserManagementService({
+    userRepository,
+    userRoleRepository: {},
+    authTokenRepository: {},
+    auditLogRepository: {},
+    accountSetupRepository: {},
+    notificationRequester: { createNotificationRequest: jest.fn() },
+  });
+  return { service, userRepository };
+}
+
+describe('FE11 safe managed-user reads', () => {
+  test('listUsers applies defaults only when values are omitted', async () => {
+    const { service, userRepository } = makeReadHarness();
+
+    await service.listUsers({});
+
+    expect(userRepository.listManagedUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      status: null,
+      role: null,
+      search: null,
+    });
+  });
+
+  test('listUsers normalizes approved filters before repository access', async () => {
+    const { service, userRepository } = makeReadHarness();
+
+    await service.listUsers({
+      page: '2',
+      limit: '50',
+      status: ' active ',
+      role: ' librarian ',
+      search: '  user@example.test  ',
+    });
+
+    expect(userRepository.listManagedUsers).toHaveBeenCalledWith({
+      page: 2,
+      limit: 50,
+      status: 'ACTIVE',
+      role: 'LIBRARIAN',
+      search: 'user@example.test',
+    });
+  });
+
+  test.each([
+    [{ page: 0 }, 'INVALID_PAGE'],
+    [{ page: 1.5 }, 'INVALID_PAGE'],
+    [{ limit: 101 }, 'INVALID_LIMIT'],
+    [{ status: 'DELETED' }, 'INVALID_USER_STATUS'],
+    [{ role: 'GUEST' }, 'INVALID_USER_ROLE'],
+    [{ search: '   ' }, 'INVALID_USER_SEARCH'],
+    [{ search: 'x'.repeat(201) }, 'INVALID_USER_SEARCH'],
+  ])('listUsers rejects invalid direct input %j', async (query, code) => {
+    const { service, userRepository } = makeReadHarness();
+
+    await expect(service.listUsers(query)).rejects.toMatchObject({ statusCode: 400, code });
+    expect(userRepository.listManagedUsers).not.toHaveBeenCalled();
+  });
+});

@@ -277,7 +277,7 @@ function UserModal({ mode, user, onClose, onSubmit }) {
     type: user?.roles?.includes('LIBRARIAN') ? 'librarian' : 'member',
     fullName: user?.fullName || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: user?.phoneNumber || '',
     address: user?.address || '',
   });
   const [saving, setSaving] = useState(false);
@@ -1549,7 +1549,7 @@ function UserManagement() {
                     </div>
                   </td>
                   <td>{user.username || '-'}</td>
-                  <td>{user.phone || '-'}</td>
+                  <td>{user.phoneNumber || '-'}</td>
                   <td>
                     <div className="um-badge-row">
                       {(user.roles || []).map((role) => (
@@ -1824,7 +1824,7 @@ function UserManagement() {
             </p>
             <p>
               <Phone size={16} />
-              {selectedUser.phone || '-'}
+              {selectedUser.phoneNumber || '-'}
             </p>
             <p>{selectedUser.address || '-'}</p>
             <p>

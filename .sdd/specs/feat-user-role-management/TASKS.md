@@ -82,13 +82,15 @@ Owner: Dung
 
 ## Safe User List And Detail Tasks
 
-- [ ] **FE11-U01 - Enforce the canonical user-list contract.**
+- [x] **FE11-U01 - Enforce the canonical user-list contract.**
   - Maps to: FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-004, NFR-FE11-PERF-001.
   - DoD: omitted values use page 1/limit 20; invalid supplied values are rejected; status/role/search are normalized; search uses only email, full name, and user ID; order stays `CreatedAt DESC, UserId DESC`.
+  - Evidence: RED exposed missing route validators and silent service clamping; 78/78 focused backend tests pass with Admin-first validation and canonical query parsing.
 
-- [ ] **FE11-U02 - Return the explicit safe managed-user allowlist.**
+- [x] **FE11-U02 - Return the explicit safe managed-user allowlist.**
   - Maps to: BR-FE11-026, FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-006.
   - DoD: list/readback responses use `phoneNumber`, deterministic uppercase roles, and no credential/token/session/link/audit-secret fields.
+  - Evidence: hostile-column repository tests and frontend contract tests pass; frontend full suite is 77/77 with lint/build green.
 
 - [ ] **FE11-U03 - Add the detail-only related summary query.**
   - Maps to: FR-FE11-002, AC-FE11-002.

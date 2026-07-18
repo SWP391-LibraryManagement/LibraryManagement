@@ -34,6 +34,18 @@ function mapSafeUser(row, roles = []) {
   return user;
 }
 
+function mapManagedRoles(value) {
+  if (!value) {
+    return [];
+  }
+
+  return String(value)
+    .split(',')
+    .map((role) => role.trim().toUpperCase())
+    .filter(Boolean)
+    .sort();
+}
+
 function mapManagedUser(row) {
   if (!row) {
     return null;
@@ -43,17 +55,18 @@ function mapManagedUser(row) {
     userId: row.UserId,
     username: row.Username,
     email: row.Email,
-    phone: row.Phone,
+    phoneNumber: row.Phone,
     status: row.Status,
     fullName: row.FullName,
     address: row.Address,
     lastLoginAt: row.LastLoginAt,
     createdAt: row.CreatedAt,
     updatedAt: row.UpdatedAt,
-    roles: row.Roles ? String(row.Roles).split(',').filter(Boolean) : [],
+    roles: mapManagedRoles(row.Roles),
   };
 }
 
+// @spec FR-FE11-001, BR-FE11-026
 async function listManagedUsers({ page = 1, limit = 20, status, role, search } = {}) {
   const pool = await getPool();
   const offset = (page - 1) * limit;
@@ -83,14 +96,10 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
   }
 
   if (search) {
-    request.input('Search', sql.NVarChar(150), `%${search}%`);
+    request.input('Search', sql.NVarChar(202), `%${search}%`);
     where.push(`(
       LOWER(u.Email) LIKE LOWER(@Search)
-      OR LOWER(u.Username) LIKE LOWER(@Search)
       OR LOWER(up.FullName) LIKE LOWER(@Search)
-      OR u.Phone LIKE @Search
-      OR LOWER(up.Address) LIKE LOWER(@Search)
-      OR LOWER(roleList.Roles) LIKE LOWER(@Search)
       OR CONVERT(NVARCHAR(20), u.UserId) LIKE @Search
     )`);
   }
