@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
 Version: 0.3.0
-Status: ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; REMAINING FE11 TESTS PLANNED
+Status: ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE APPROVED; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -54,10 +54,12 @@ User administration, role listing, role assignment/revocation, account status ma
 - Approved role-slice design: `docs/superpowers/specs/2026-07-18-fe11-transactional-role-management-design.md`.
 - Approved role-slice plan: `docs/superpowers/plans/2026-07-18-fe11-transactional-role-management.md`.
 - Automated role-slice evidence: 70/70 focused tests and 399/399 full backend tests.
+- Approved safe-read design: `docs/superpowers/specs/2026-07-18-fe11-safe-user-list-detail-design.md`.
+- Approved safe-read plan: `docs/superpowers/plans/2026-07-18-fe11-safe-user-list-detail.md`; implementation evidence is not yet claimed.
 
 ## 6. Gaps
 
-- The account-setup and transactional role slices have reviewable `PLAN.md`/`TASKS.md`; all remaining FE11 slices still need approved planning.
+- The account-setup and transactional role slices are complete; the safe list/detail slice has approved planning and is pending implementation evidence.
 - Tests should be reconciled with approved spec and role/audit edge cases.
 - Open debt (Validation Gate): TD-012 (department/specialization persistence), remaining non-role portions of TD-014 (not-found/acting-admin semantics), remaining TD-015 service coverage, and TD-017 (dev-bypass guard).
 

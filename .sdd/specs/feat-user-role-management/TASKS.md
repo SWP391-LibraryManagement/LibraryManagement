@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE APPROVED FOR IMPLEMENTATION; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -79,6 +79,32 @@ Owner: Dung
   - Automated evidence: 70/70 focused tests; 399/399 full backend tests; repository coverage 100% statements/lines/functions and 90.24% branches; project coverage and traceability gates pass.
   - Review state: human implementation review approved on 2026-07-18.
   - Integration state: PR #25 merged as `0e1ef8f`; post-merge CI run `29631406399` passed.
+
+## Safe User List And Detail Tasks
+
+- [ ] **FE11-U01 - Enforce the canonical user-list contract.**
+  - Maps to: FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-004, NFR-FE11-PERF-001.
+  - DoD: omitted values use page 1/limit 20; invalid supplied values are rejected; status/role/search are normalized; search uses only email, full name, and user ID; order stays `CreatedAt DESC, UserId DESC`.
+
+- [ ] **FE11-U02 - Return the explicit safe managed-user allowlist.**
+  - Maps to: BR-FE11-026, FR-FE11-001, AC-FE11-001, NFR-FE11-SEC-006.
+  - DoD: list/readback responses use `phoneNumber`, deterministic uppercase roles, and no credential/token/session/link/audit-secret fields.
+
+- [ ] **FE11-U03 - Add the detail-only related summary query.**
+  - Maps to: FR-FE11-002, AC-FE11-002.
+  - DoD: one parameterized detail query returns active borrowing count, outstanding unpaid-fine total, and open reservation count with numeric zero defaults.
+
+- [ ] **FE11-U04 - Return deterministic detail validation and not-found errors.**
+  - Maps to: FR-FE11-015, FR-FE11-016, NFR-FE11-SEC-001/002/004.
+  - DoD: Admin authorization precedes validation; invalid IDs return `400 VALIDATION_ERROR`; valid missing IDs return `404 USER_NOT_FOUND`.
+
+- [ ] **FE11-U05 - Consume the safe list/detail contract in the Admin UI.**
+  - Maps to: AC-FE11-001, AC-FE11-002.
+  - DoD: UI omits `ALL`/empty search, reads `phoneNumber`, fetches detail on row selection, renders summaries, and reloads a stale list after detail 404.
+
+- [ ] **FE11-U06 - Pass the safe list/detail validation gate.**
+  - Dependencies: FE11-U01..U05.
+  - DoD: focused/full tests, coverage, frontend lint/build, traceability, diff hygiene, security review, debt reconciliation, validation record, and human review evidence are complete.
 
 ## Deferred FE11 Work
 

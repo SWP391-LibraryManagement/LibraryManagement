@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Safe User List And Detail Slice Approved
+
+- Approved the explicit `UserManagementView` allowlist with `phoneNumber` and detail-only `relatedSummary`.
+- Required strict list/detail input validation, approved search fields, stable ordering, and deterministic `404 USER_NOT_FOUND`.
+- Locked aggregate semantics to persisted FE07 `BORROWED`, FE09 `UNPAID` outstanding balance, and FE08 `ACTIVE`/`NOTIFIED` reservations.
+- Kept `department`/`specialization` under `TD-012`; this slice has no schema change and returns no fake null placeholders.
+- Required route, service, repository, and frontend RED-GREEN tests; no implementation evidence is claimed by this planning entry.
+
 ## 2026-07-18 - Transactional Role Management Integrated (B7)
 
 - PR #25 merged into `main` as commit `0e1ef8f67e2d7a454e96b8b5d6878d31ed03eae0`.
