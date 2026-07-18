@@ -4,7 +4,7 @@ Date: 2026-07-18
 
 Scope: FE11-U01..U06 only
 
-Status: VALIDATION COMPLETE - HUMAN IMPLEMENTATION REVIEW APPROVED
+Status: B7 INTEGRATION COMPLETE
 
 ## L1 Automated Evidence
 
@@ -19,6 +19,7 @@ Status: VALIDATION COMPLETE - HUMAN IMPLEMENTATION REVIEW APPROVED
 | Traceability enforcement | PASS; FE11 tagged FR count increased from 13 to 16 while whole-feature state remains deferred |
 | Diff check | PASS |
 | Sensitive-name review | PASS; matches are pre-existing auth/setup code or explicit forbidden-field assertions |
+| GitHub Actions run `29639933730` on merge commit `ed6bd717` | PASS; `foundation-checks` completed successfully, including backend tests, system integration, coverage, frontend lint/tests/build, browser E2E, and backend health import |
 
 Focused command:
 
@@ -84,4 +85,4 @@ git diff --check
 
 Human implementation review was approved on 2026-07-18. The reviewer confirmed the safe DTO, aggregate semantics, frontend behavior, scope boundary, and documented residual risks; `FE11-U06` is complete for this bounded slice.
 
-Branch merge/push remains a separate integration action and is not claimed by this validation record.
+PR #27 merged into `main` as `ed6bd71714bf506ae838305e5946e3bbd9380102`. Post-merge CI run `29639933730` passed, so B7 integration is complete for this bounded slice.
