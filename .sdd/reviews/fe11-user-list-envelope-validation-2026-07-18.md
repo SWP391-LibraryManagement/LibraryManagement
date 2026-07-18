@@ -1,6 +1,6 @@
 # FE11 User-List Envelope Validation
 
-Status: H2 APPROVED BY HUMAN - UNCOMMITTED
+Status: B7 INTEGRATION COMPLETE
 
 Date: 2026-07-18
 
@@ -42,3 +42,10 @@ Scope: `TD-026` / `FE11-ENV01`
 ## H2 Review Boundary
 
 Human H2 review was approved on 2026-07-18. The FE12 report read model remains the approved source for global Admin counters, and `TD-027` stays serialized until this slice is merged.
+
+## B7 Integration Evidence
+
+- Human H3 review was approved on 2026-07-18.
+- PR #34 merged into `main` as `411fa25ab60bb38c195307d983392ce362c1d633`.
+- Post-merge CI run `29652243809` completed successfully.
+- `TD-026` / `FE11-ENV01` is complete through B7; no new summary endpoint was introduced.

@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Fast-Track Batch 1 Integrated (B7)
+
+- Closed `TD-024` through PR #33 (`3c88e432`) with post-merge CI `29651173195`.
+- Closed `TD-026` through PR #34 (`411fa25a`) with post-merge CI `29652243809`.
+- Closed `TD-027` through PR #35 (`c286cd9b`) with post-merge CI `29652617587`.
+- Marked `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` complete and moved the three debt records to resolved traceability.
+- Preserved `TD-023` and `TD-025` as open and kept whole FE11 at `Implementation State: DEFERRED`.
+
 ## 2026-07-18 - Canonical Admin Audit Log Implementation H2-Ready
 
 - Added Admin-only `GET /api/admin/audit-logs` with canonical query validation for `page`, `limit`, `q`, `action`, `actorId`, `from`, and `to`; authentication and authorization run before detailed validation.
