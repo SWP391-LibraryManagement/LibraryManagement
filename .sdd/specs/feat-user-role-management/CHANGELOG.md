@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Safe User List And Detail Integrated (B7)
+
+- PR #27 merged into `main` as commit `ed6bd71714bf506ae838305e5946e3bbd9380102`.
+- Post-merge GitHub Actions run `29639933730` passed all `foundation-checks`, including backend/system tests, coverage, frontend lint/tests/build, browser E2E, and backend health import.
+- B7 integration is complete for `FE11-U01..U06`; remaining FE11 work stays deferred.
+
 ## 2026-07-18 - Safe User List And Detail Implemented And Validation Ready
 
 - Added Admin-first validation for page, limit, status, role, search, and detail user IDs; invalid supplied values are rejected instead of clamped.
