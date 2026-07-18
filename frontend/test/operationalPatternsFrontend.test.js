@@ -41,6 +41,7 @@ test('staff navigation includes separate Books, Inventory and Fines pages', asyn
       'process-returns',
       'reservations-librarian',
       'member-details',
+      'membership-review',
       'book-management',
       'inventory-management',
       'fine-management',
