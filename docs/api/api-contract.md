@@ -543,6 +543,64 @@ Rules:
 - Roles are flat in Phase 1.
 - Last remaining Admin role must not be revoked.
 
+### GET `/api/admin/audit-logs`
+
+Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.
+
+| Query | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `page` | integer | No | Default `1`; minimum `1` |
+| `limit` | integer | No | Default `20`; range `1..100` |
+| `q` | string | No | Trimmed `1..100`; searches action, actor email/full name, target type, and target ID text |
+| `action` | string | No | Trimmed exact action, `1..100` |
+| `actorId` | integer | No | Positive user ID |
+| `from` | date | No | Inclusive `YYYY-MM-DD` lower bound |
+| `to` | date | No | Inclusive `YYYY-MM-DD` upper bound; must not precede `from` |
+
+Response `200`:
+
+```json
+{
+  "data": [
+    {
+      "logId": 10,
+      "action": "USER_ROLE_ASSIGN",
+      "actor": {
+        "userId": 7,
+        "email": "admin@example.test",
+        "fullName": "Admin User"
+      },
+      "target": {
+        "type": "USER",
+        "id": 15,
+        "label": "member@example.test"
+      },
+      "details": {
+        "roleId": 2,
+        "roleName": "LIBRARIAN"
+      },
+      "ipAddress": "203.0.113.10",
+      "createdAt": "2026-07-18T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Rules:
+
+- Rows are ordered by `CreatedAt DESC, LogId DESC`; filtering and pagination run in SQL with typed parameters.
+- `details` is an action-aware allowlist. Raw `Metadata`, `UserAgent`, passwords, hashes, tokens, OTPs, sessions, credentials, setup/reset links, raw notes/reasons/emails/identifiers, raw paths, and nested objects are not returned.
+- Invalid JSON, top-level arrays/scalars, unknown actions, and invalid projected field shapes return `details: {}`.
+- Only targets with type `USER`, `USERS`, or `ACCOUNT` may receive a joined user label. Other target types return `label: null`.
+- An empty result returns `totalPages: 0`.
+- The retired `GET /api/users/audit-logs` path always returns `404 NOT_FOUND` and is not a compatibility alias.
+
 ---
 
 ## Implementation Notes For Week 4

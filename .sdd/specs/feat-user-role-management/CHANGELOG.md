@@ -1,5 +1,16 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Canonical Admin Audit Log Implementation H2-Ready
+
+- Added Admin-only `GET /api/admin/audit-logs` with canonical query validation for `page`, `limit`, `q`, `action`, `actorId`, `from`, and `to`; authentication and authorization run before detailed validation.
+- Replaced prototype audit pagination with typed parameterized SQL filtering, escaped LIKE search, shared data/count scope, stable `CreatedAt DESC, LogId DESC` ordering, and `totalPages: 0` for empty results.
+- Added action-aware default-deny projection across the approved cross-feature action matrix; raw metadata, user agent, credential concepts, raw notes/reasons/paths, and unrelated identifiers are not returned.
+- Migrated the Admin UI to `adminApi.auditLogs`, canonical nested actor/target/details DTOs, filter controls, limit 20 pagination, and React text-only safe detail rendering.
+- Retired `GET /api/users/audit-logs` as unconditional `404 NOT_FOUND` without authentication or service invocation; no compatibility alias remains.
+- RED-GREEN evidence: route, repository, service, and frontend contract failures were observed before implementation; 246/246 focused backend, 598/598 full backend, and 111/111 frontend tests pass.
+- Coverage is 92.51% statements, 82.46% branches, 97.1% functions, and 92.44% lines; lint, build, OpenAPI parse, traceability, diff, scope, and sensitive-data scans pass.
+- Implementation is H2-ready and remains uncommitted. `TD-024` stays `IN PROGRESS`, `FE11-AUD01` stays unchecked, and whole FE11 remains deferred until H2/H3/merge/post-merge evidence.
+
 ## 2026-07-18 - Fast-Track Batch 1 Activated
 
 - Approved H1-001..H1-006 for TD-024, TD-026, and TD-027.
