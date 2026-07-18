@@ -58,13 +58,15 @@ Owner: Dung
   - DoD: authenticated Admin requests receive normalized positive integer IDs; invalid IDs return `400 VALIDATION_ERROR` before the service is called.
   - Evidence: 25/25 focused route tests pass after the observed RED failures for missing validators and string IDs.
 
-- [ ] **FE11-R02 - Add RED transactional repository tests.**
+- [x] **FE11-R02 - Add RED transactional repository tests.**
   - Maps to: BR-FE11-007..010; FR-FE11-014, FR-FE11-017, FR-FE11-024..027; NFR-FE11-TXN-003/006.
   - DoD: failing tests cover actor/target/role lookup, duplicate/missing mapping, final-role guards, locked Admin count, atomic audit, and rollback.
+  - Evidence: RED observed because `userRoleRepository.js` did not exist; the suite could not resolve the required module.
 
-- [ ] **FE11-R03 - Implement transactional role mutation.**
+- [x] **FE11-R03 - Implement transactional role mutation.**
   - Dependencies: FE11-R02.
   - DoD: one parameterized SQL transaction returns deterministic outcomes, uses required lock hints, and commits or rolls back mapping plus audit together.
+  - Evidence: 14/14 repository tests pass, including lock-hint, parameterization, deterministic outcome, and audit-rollback cases.
 
 - [ ] **FE11-R04 - Map repository outcomes through the FE11 service.**
   - Dependencies: FE11-R03.
