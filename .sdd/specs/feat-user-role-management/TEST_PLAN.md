@@ -1,8 +1,8 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.5
-Status: FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING FE11 TESTS PLANNED
-Last Updated: 2026-07-18
+Version: 0.3.6
+Status: FAST-TRACK BATCH 1 COMPLETE THROUGH B7; TD-023 IN PROGRESS; REMAINING FE11 TESTS PLANNED
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
@@ -48,6 +48,14 @@ User administration, role listing, role assignment/revocation, account status ma
 - User list envelope: no top-level `summary`; Admin counters reuse FE12 `/api/reports/users` with numeric zero defaults.
 - Evidence metadata: only approved existing Test Case/Status cells change in a serial post-TD-026 window.
 
+## 3.2 TD-023 Current Targets
+
+- Exact eight-entry Admin Console sidebar and reachable Permissions section.
+- Admin-first `GET /api/admin/permissions` with exact role/permission DTO keys and 15 canonical rows.
+- Fresh response objects, valid/deduplicated role arrays, and no repository/write dependency.
+- FE12 `usersByRole` counts composed independently from FE11 matrix data.
+- Derived module coverage/matrix cells, retryable isolated errors, and no hardcoded frontend matrix fallback.
+
 ## 4. E2E / Manual Acceptance Flow
 
 - Admin creates user.
@@ -82,6 +90,7 @@ User administration, role listing, role assignment/revocation, account status ma
 - Audit Log B7 evidence: 246/246 focused backend, 598/598 full backend, 111/111 frontend, coverage/lint/build/OpenAPI/traceability/diff/security/scope checks PASS; PR #33 and post-merge CI `29651173195` passed.
 - User-list envelope B7 evidence: 95/95 focused backend, 600/600 full backend, 113/113 frontend, lint/build/traceability/diff/security checks PASS; PR #34 and post-merge CI `29652243809` passed.
 - Evidence-metadata B7 evidence: exactly 22 approved Test Case/Status rows changed, all deferred rows stayed `Not Started`, and full regression/CI passed; PR #35 and post-merge CI `29652617587` passed.
+- TD-023 H2-ready evidence: backend policy/service RED-GREEN and Admin-first route tests; frontend exact-sidebar/API/derivation/isolation RED-GREEN; 606/606 backend, 120/120 frontend, coverage/lint/build/OpenAPI/health/traceability/browser regression PASS.
 
 ## 6. Gaps
 
@@ -89,7 +98,7 @@ User administration, role listing, role assignment/revocation, account status ma
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
-- Open debt still includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, and Request Management TD-025.
+- TD-023 implementation is H2-ready but remains `IN PROGRESS` until H2/H3, merge, post-merge CI, and closeout; open debt still includes TD-012, remaining TD-014/015, TD-017, and Request Management TD-025.
 
 ## 7. Transactional Role Slice
 

@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; ADMIN NAVIGATION/PERMISSIONS IN PROGRESS; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -178,6 +178,37 @@ Owner: Dung
   - DoD: only approved existing Test Case/Status cells change; requirements and deferred rows remain unchanged; H2, checks, H3, merge, and integration evidence pass.
   - Integration state: PR #35 merged as `c286cd9b`; post-merge CI run `29652617587` passed.
 
+## Admin Navigation And Permissions Tasks
+
+- [x] **FE11-PERM01 - Activate the approved TD-023 contract.**
+  - Maps to: TD-023; FR-FE11-030/032; AC-FE11-016/017.
+  - DoD: PLAN/TASKS/TEST_PLAN/CHANGELOG and debt state name the bounded scope; whole FE11 remains deferred.
+  - Evidence: governance artifacts name the bounded slice, `TD-023` is `IN PROGRESS`, `TD-025` stays open, and whole FE11 remains deferred.
+
+- [x] **FE11-PERM02 - Add the canonical permission policy and fresh service DTO.**
+  - Maps to: FR-FE11-032; BR-FE11-017; AC-FE11-017.
+  - DoD: backend owns exactly 3 roles and 15 permissions; every call returns independent allowlisted objects with stable order.
+  - Evidence: service RED failed because `getPermissions` was absent; GREEN plus Audit Service regression passes 132/132 tests.
+
+- [x] **FE11-PERM03 - Expose Admin-only GET /api/admin/permissions.**
+  - Maps to: BR-FE11-001/011/012/017; FR-FE11-015/032; AC-FE11-017; NFR-FE11-SEC-001/002.
+  - DoD: authentication and Admin authorization run before controller invocation; Admin receives exactly `{ roles, permissions }`.
+  - Evidence: route RED returned 404 for all four cases; GREEN security-focused regression passes 28/28 tests with 401/403 before controller use.
+
+- [x] **FE11-PERM04 - Align Admin navigation and consume the permission API.**
+  - Maps to: BR-FE11-016/017; FR-FE11-030/032; AC-FE11-016/017.
+  - DoD: sidebar has exactly eight approved entries; Permissions is reachable; Membership remains untouched outside the sidebar; no frontend matrix constant remains.
+  - Evidence: focused frontend RED exposed the missing adapter/sidebar and hardcoded matrix; GREEN proves the exact eight-entry navigation and canonical adapter.
+
+- [x] **FE11-PERM05 - Compose FE11 permissions with independent FE12 counts.**
+  - Maps to: FR-FE11-032; AC-FE11-017; TD-026 ownership decision.
+  - DoD: role cards use FE12 `usersByRole`; coverage/cells derive from FE11 `allowedRoles`; independent failures preserve last success and expose retry controls.
+  - Evidence: helper RED failed 3/3 expected assertions; GREEN focused frontend passes 38/38, full frontend passes 120/120, lint/build pass.
+
+- [ ] **FE11-PERM06 - Pass H2/H3/B7 and close TD-023.**
+  - Depends on: FE11-PERM01..FE11-PERM05.
+  - DoD: L1-L4 evidence, human reviews, implementation PR merge, post-merge main CI, closeout PR, and final main CI are recorded; TD-023 is resolved while TD-025 and whole FE11 remain deferred.
+
 ## Deferred FE11 Work
 
-The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, and Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`. Update/deactivation, librarian fields, Admin Console navigation/permissions/request behavior, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
+The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, and Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`. Admin navigation/permissions is active only through `FE11-PERM01..FE11-PERM06`. Update/deactivation, librarian fields, Request Management, and remaining FE11 debt stay deferred until separately reviewed task groups are approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.

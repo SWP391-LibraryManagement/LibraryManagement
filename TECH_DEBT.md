@@ -11,7 +11,7 @@
 > Priority: **P1** = should fix before the feature is considered "done" / Full-Spec compliant.
 > **P2** = improvement or follow-up; not blocking. **Risk** notes money/security/data sensitivity.
 
-Last Updated: 2026-07-18
+Last Updated: 2026-07-19
 
 > Traceability note: every implemented feature now meets the Validation-Gate L2 bar (FR `@spec`
 > coverage ≥ 70%). FE07 and FE08 are at 100%, FE02 was completed to 100%, and the CI workflow now runs
@@ -35,7 +35,7 @@ Last Updated: 2026-07-18
 | TD-019 | FE02 Auth | P2 | IP-based rate limiting (NFR-FE02-SEC-005) is not implemented (only per-user lockout). Confirm whether per-user is sufficient for Phase 1. | VG FE02 P2 | OPEN |
 | TD-020 | FE02 Auth | P2 (decision) | Login returns `ACCOUNT_INACTIVE` (403) for existing-but-unverified accounts, which is a mild user-enumeration signal vs NFR-SEC-010. Confirm intended vs generic message. | VG FE02 P2 | OPEN |
 | TD-021 | Cross-feature | P2 | **Partial.** API-level integration tests prove the in-scope cross-feature flows and the CI now runs a Playwright browser golden path. Still missing: feature-specific FE11 Admin Console browser acceptance and a SQL-Server-backed integration run (no MSSQL instance in CI). | Integration map; CI run `29639933730` | PARTIAL |
-| TD-023 | FE11 Admin Console | P1 | Sidebar omits Permissions and adds Membership Management outside the approved FE11 section list. The permissions view remains unreachable and uses a hardcoded matrix; `/api/admin/permissions` is absent. TD-026 now supplies authoritative FE12 role counts, but the FE11 navigation/matrix boundary remains open. | FE11 context drift audit; FR-FE11-030/032 | OPEN |
+| TD-023 | FE11 Admin Console | P1 | Sidebar omits Permissions and adds Membership Management outside the approved FE11 section list. The permissions view remains unreachable and uses a hardcoded matrix; `/api/admin/permissions` is absent. TD-026 now supplies authoritative FE12 role counts, but the FE11 navigation/matrix boundary remains open. | FE11 context drift audit; FR-FE11-030/032 | IN PROGRESS |
 | TD-025 | FE11 Request Management | P1 | List/search/filter/export and pending UI actions exist, but the canonical request-detail endpoint is absent and no focused acceptance test proves terminal requests are immutable at the server boundary. | FE11 context drift audit; FR-FE11-034/035 | OPEN |
 
 ---

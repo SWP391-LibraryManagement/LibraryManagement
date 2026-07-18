@@ -146,3 +146,48 @@ test('FE11 Audit renders only the nested safe DTO as React text', async () => {
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(source, /log\.(?:actorName|actorEmail|targetName|targetEmail|targetType|targetId)/);
 });
+
+test('FE11 Admin sidebar exposes exactly the approved eight entries in order', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  const sidebar = source.match(/function Sidebar\([^]*?\n}\r?\n\r?\nfunction AdminLineChart/)?.[0] || '';
+  const entries = [...sidebar.matchAll(/\{ id: '([^']+)'[^\n]+label: '([^']+)'/g)]
+    .map((match) => [match[1], match[2]]);
+
+  assert.deepEqual(entries, [
+    ['home', 'Trang chủ'],
+    ['dashboard', 'Tổng quan'],
+    ['library', 'Thư viện'],
+    ['circulation', 'Quản lý mượn trả'],
+    ['requests', 'Quản lý yêu cầu'],
+    ['users', 'Quản lý người dùng'],
+    ['permissions', 'Phân quyền'],
+    ['audit', 'Nhật ký hoạt động'],
+  ]);
+  assert.doesNotMatch(sidebar, /membership|Confirm Payment|Confirm Borrow/);
+});
+
+test('FE11 Permissions loads FE11 matrix and FE12 counts independently', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(source, /async function loadPermissions\(\{ announce = false \} = \{\}\)/);
+  assert.match(source, /const result = await adminApi\.permissions\(\)/);
+  assert.match(source, /if \(activeSection !== 'permissions'\) return/);
+  assert.match(source, /loadPermissions\(\)/);
+  assert.match(source, /loadUserStatistics\(\)/);
+  assert.match(source, /setPermissionsError\(error\.message\)/);
+  assert.match(source, /setUserStatsError\(error\.message\)/);
+
+  const permissionsBlock = source.match(/async function loadPermissions\([^]*?\n {2}\}/)?.[0] || '';
+  assert.doesNotMatch(permissionsBlock, /catch \(error\)[^]*?setPermissionPolicy\(/);
+  const statisticsBlock = source.match(/async function loadUserStatistics\([^]*?\n {2}\}/)?.[0] || '';
+  assert.doesNotMatch(statisticsBlock, /catch \(error\)[^]*?setUserStats\(/);
+});
+
+test('FE11 Permissions derives the view from server data without a hardcoded matrix fallback', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(source, /buildPermissionRoleSummary\(permissionPolicy\.roles, userStats\.usersByRole\)/);
+  assert.match(source, /buildPermissionModuleCoverage\(permissionPolicy\.roles, permissionPolicy\.permissions\)/);
+  assert.match(source, /roleAllowsPermission\(permission, role\.roleName\)/);
+  assert.match(source, /permissionPolicy\.permissions\.map/);
+  assert.doesNotMatch(source, /const permissionRows =/);
+  assert.doesNotMatch(source, /const permissionModules =/);
+});

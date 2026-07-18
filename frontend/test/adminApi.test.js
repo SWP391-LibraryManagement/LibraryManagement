@@ -12,3 +12,11 @@ test('FE11 Audit Logs use the canonical Admin endpoint and authorized wrapper', 
   );
   assert.doesNotMatch(source, /\/users\/audit-logs/);
 });
+
+test('FE11 Permissions use the canonical Admin endpoint and authorized wrapper', async () => {
+  const source = await readFile(apiPath, 'utf8');
+  assert.match(
+    source,
+    /permissions\(\)[\s\S]*?authorizedRequest\([\s\S]*?url: '\/admin\/permissions'/,
+  );
+});

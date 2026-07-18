@@ -543,6 +543,37 @@ Rules:
 - Roles are flat in Phase 1.
 - Last remaining Admin role must not be revoked.
 
+### GET `/api/admin/permissions`
+
+Actor: authenticated Admin. Authentication and Admin authorization execute before controller handling. The endpoint accepts no body or query parameters and performs no mutation.
+
+Response `200` has exactly two top-level fields:
+
+- `roles`: ordered `ADMIN`, `LIBRARIAN`, `MEMBER`; each object contains only `roleName` and `label`.
+- `permissions`: the 15 ordered Phase 1 rules below; each object contains only `permissionKey`, `label`, `moduleKey`, `moduleLabel`, and `allowedRoles`.
+
+Allowed role values are `ADMIN`, `LIBRARIAN`, and `MEMBER`; arrays are deterministic and contain no duplicates. FE12 `GET /api/reports/users` remains the owner of global `usersByRole` counts and the frontend joins the two responses by `roleName` only.
+
+| Module | Permission key | Label | Allowed roles |
+| --- | --- | --- | --- |
+| User & Role | `USER_VIEW` | View users | ADMIN |
+| User & Role | `USER_CREATE` | Create accounts | ADMIN |
+| User & Role | `USER_UPDATE` | Update accounts | ADMIN |
+| User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
+| User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
+| User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |
+| Library | `CATALOG_MANAGE` | Manage library catalog | ADMIN, LIBRARIAN |
+| Library | `METADATA_MANAGE` | Manage authors/publishers/categories | ADMIN |
+| Borrow/Return | `BORROW_APPROVE_REJECT` | Approve/reject borrow requests | ADMIN, LIBRARIAN |
+| Borrow/Return | `RETURN_RENEW_PROCESS` | Process returns and renewals | ADMIN, LIBRARIAN |
+| Fine | `FINE_CALCULATE_COLLECT` | Calculate and collect fines | ADMIN, LIBRARIAN |
+| Fine | `FINE_WAIVE_CANCEL` | Waive or cancel fines | ADMIN |
+| Reports | `REPORT_VIEW` | View reports | ADMIN, LIBRARIAN |
+| Borrow/Return | `BORROW_REQUEST_CREATE` | Create borrow request | MEMBER |
+| Borrow/Return | `BORROW_HISTORY_VIEW_OWN` | View own borrowing history | MEMBER |
+
+Errors: `401` for missing/invalid authentication and `403` for authenticated non-Admin callers.
+
 ### GET `/api/admin/audit-logs`
 
 Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.

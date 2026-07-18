@@ -16,6 +16,8 @@ function createAdminRoutes({ authService, adminService } = {}) {
     auditLogQueryValidators,
     controller.listAuditLogs
   );
+  // @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
+  router.get('/permissions', ...requireAdmin, controller.permissions);
   router.get('/dashboard', requireAdmin, controller.dashboard);
   router.get('/library/books', requireAdmin, controller.listBooks);
   router.get('/library/:resource', requireAdmin, controller.listResource);

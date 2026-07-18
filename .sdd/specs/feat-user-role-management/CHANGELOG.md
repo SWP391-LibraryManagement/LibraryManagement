@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-19 - Admin Navigation And Permissions H2-Ready
+
+- Added immutable FE11 ownership of the exact three-role, 15-permission Phase 1 policy and fresh allowlisted service DTOs.
+- Added Admin-first `GET /api/admin/permissions` with focused 401/403/200 route coverage and no repository or mutation dependency.
+- Aligned the Admin Console to the exact eight approved sidebar entries and replaced the hardcoded matrix with FE11 data plus independent FE12 `usersByRole` counts.
+- Added dynamic module coverage, matrix cells, independent retry/error state, strict API/OpenAPI docs, and focused frontend derivation tests.
+- RED-GREEN evidence is complete; full validation passes 606/606 backend and 120/120 frontend tests plus coverage, lint, build, OpenAPI, health, traceability, and browser regression.
+- Implementation remains uncommitted pending H2. `TD-023` stays `IN PROGRESS`, `FE11-PERM06` stays open, `TD-025` stays open, and whole FE11 remains deferred.
+
+## 2026-07-19 - Admin Navigation And Permissions Slice Approved
+
+- Approved Hybrid SDD + ADD Standard-depth design and implementation plan for `TD-023`.
+- Locked the exact eight-entry Admin Console sidebar, Admin-only `GET /api/admin/permissions`, canonical 15-row FE11 policy, and independent FE12 role counts.
+- Activated `FE11-PERM01..FE11-PERM06` and marked `TD-023` in progress without claiming product implementation.
+- Preserved FE04 Membership, TD-025, and whole-feature `Implementation State: DEFERRED`.
+
 ## 2026-07-18 - Fast-Track Batch 1 Integrated (B7)
 
 - Closed `TD-024` through PR #33 (`3c88e432`) with post-merge CI `29651173195`.

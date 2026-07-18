@@ -1,5 +1,6 @@
 const adminRepository = require('../repositories/adminRepository');
 const auditLogRepository = require('../repositories/auditLogRepository');
+const { adminPermissionPolicy } = require('../policies/adminPermissionPolicy');
 const errors = require('../utils/safeErrors');
 
 const RESOURCE_NAMES = new Set(['authors', 'publishers', 'categories']);
@@ -472,6 +473,20 @@ function normalizeName(body = {}) {
   return name;
 }
 
+// @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
+function getPermissions() {
+  return {
+    roles: adminPermissionPolicy.roles.map(({ roleName, label }) => ({ roleName, label })),
+    permissions: adminPermissionPolicy.permissions.map((permission) => ({
+      permissionKey: permission.permissionKey,
+      label: permission.label,
+      moduleKey: permission.moduleKey,
+      moduleLabel: permission.moduleLabel,
+      allowedRoles: [...permission.allowedRoles],
+    })),
+  };
+}
+
 async function getDashboard() {
   return adminRepository.getDashboard();
 }
@@ -558,6 +573,7 @@ async function listRequests(filters = {}) {
 }
 
 module.exports = {
+  getPermissions,
   getDashboard,
   listAuditLogs,
   listBooks,

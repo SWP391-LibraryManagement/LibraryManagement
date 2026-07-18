@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; ADMIN NAVIGATION/PERMISSIONS IN PROGRESS; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -196,7 +196,7 @@ Integration State: COMPLETE THROUGH B7
 2. `TD-026` / `FE11-ENV01`: restore `{ data, pagination }` and reuse FE12 `/api/reports/users` for counters.
 3. `TD-027` / `FE11-META01`: apply the approved evidence matrix after TD-026 merges.
 
-`TD-023` and `TD-025` remain outside Batch 1 and `OPEN`. Whole FE11 remains deferred.
+`TD-023` and `TD-025` remain outside Batch 1. `TD-023` is now active only under Section 14; `TD-025` remains `OPEN`. Whole FE11 remains deferred.
 
 ### Gates
 
@@ -210,4 +210,26 @@ Integration State: COMPLETE THROUGH B7
 - `TD-024` / `FE11-AUD01`: PR #33, merge `3c88e432`, post-merge CI `29651173195`.
 - `TD-026` / `FE11-ENV01`: PR #34, merge `411fa25a`, post-merge CI `29652243809`.
 - `TD-027` / `FE11-META01`: PR #35, merge `c286cd9b`, post-merge CI `29652617587`.
-- `TD-023` and `TD-025` remain open; whole FE11 remains `Implementation State: DEFERRED`.
+- Batch 1 did not authorize `TD-023` or `TD-025`; Section 14 separately activates `TD-023`, while `TD-025` and whole FE11 remain deferred.
+
+## 14. Admin Navigation And Permissions Slice
+
+Integration State: IN PROGRESS
+
+### In Scope
+
+- Align the Admin Console sidebar to the approved eight entries.
+- Add Admin-only `GET /api/admin/permissions` with the canonical 15-row Phase 1 policy.
+- Compose FE11 permission data with independent FE12 `usersByRole` counts in the frontend.
+- Derive module coverage and matrix cells from `allowedRoles`; keep the view read-only.
+
+### Out Of Scope
+
+- Permission editing, role hierarchy/CRUD, schema changes, FE04 removal, FE12 production changes, and TD-025.
+
+### Validation Gate
+
+- Backend policy/service/route tests prove exact DTOs, fresh objects, and Admin-first authorization.
+- Frontend tests prove exact sidebar order, canonical API usage, no hardcoded matrix fallback, FE12 counts, derived coverage, and isolated retries/errors.
+- Full tests, coverage, lint, build, browser E2E, OpenAPI parse, health import, traceability, diff hygiene, scope scan, and secret scan pass.
+- H2 precedes commit/push; H3 precedes merge; TD-023 closes only after post-merge main CI and closeout evidence.
