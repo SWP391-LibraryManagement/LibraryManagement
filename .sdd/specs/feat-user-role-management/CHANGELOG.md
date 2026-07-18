@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-19 - Finalization Batch Governance Activated
+
+- Bumped `SPEC.md` to 0.4.3 and activated the approved Full-depth Hybrid SDD+ADD Finalization Batch; product implementation has not started.
+- Synchronized FE02/FE03/FE10/FE11, ADR-002, and the shared API contract for 255-character email persistence, 100-character Librarian/profile fields, and idempotent migration ownership.
+- Locked `UserManagementView.updatedAt` to `COALESCE(Users.UpdatedAt, Users.CreatedAt)`, pending-activation deactivation rejection, transactional create/resend acting-Admin revalidation, and deterministic duplicate-email conflicts.
+- Activated `FE11-FIN01..FE11-FIN02`, Wave A/Wave B validation targets, and debt states for TD-012/014/015/016/017/025 while keeping every new task unchecked.
+- Preserved historical account-setup B7 evidence while marking AC-FE11-003/010/021 `PARTIAL` only for the newly approved acting-Admin and Librarian-field hardening that Wave A must prove.
+- Preserved FE07 as the sole approve/reject mutation owner and locked canonical Admin request list/detail, server pagination, CSV, Dashboard evidence, and browser acceptance scope.
+- Product work remains blocked until the governance PR passes checks, receives H3, and merges into `main`.
+
 ## 2026-07-19 - Admin Navigation And Permissions Integrated (B7)
 
 - H2 and H3 were approved on 2026-07-19 for the unchanged implementation diff and final PR integration review.

@@ -1,7 +1,8 @@
 # API Contract - Phase 1 Baseline
 
-Status: Draft for Week 4 planning
+Status: PHASE 1 BASELINE; FE11 FINALIZATION GOVERNANCE ACTIVE
 Date: 2026-06-10
+Last Updated: 2026-07-19
 
 ## Scope
 
@@ -372,7 +373,7 @@ Response `200`:
 }
 ```
 
-The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response.
+The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response. `updatedAt` is always the effective `COALESCE(Users.UpdatedAt, Users.CreatedAt)` value. `department` and `specialization` are included only for a current `LIBRARIAN` role.
 
 ### GET `/api/users/{userId}`
 
@@ -399,7 +400,7 @@ Response `200`:
 }
 ```
 
-Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
+Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. `updatedAt` is the effective `COALESCE(Users.UpdatedAt, Users.CreatedAt)` value. Current Librarian targets may include nullable `department` and `specialization`; non-Librarian targets omit them. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
 
 ### POST `/api/users`
 
@@ -434,6 +435,9 @@ Response `201`:
 Notes:
 
 - User, profile, role, hashed setup token, and audit commit atomically before FE10 delivery.
+- Authentication/Admin authorization and validated normalized input precede the repository call; `email` is maximum 255, `fullName` is maximum 100, and Librarian fields are maximum 100.
+- The source transaction revalidates the active acting Admin and performs authoritative normalized email/username uniqueness checks before inserts.
+- Duplicate normalized email returns `409 EMAIL_ALREADY_EXISTS`, persists no partial source state, and requests no FE10 delivery.
 - Delivery failure returns `setupDeliveryStatus: "FAILED"`; the account remains `INACTIVE` and no provider detail or setup credential is returned.
 - The Admin never submits or receives a password, raw token, setup link, or debug credential.
 
@@ -461,6 +465,7 @@ Response `200`:
 Rules:
 
 - Only incomplete admin-created accounts are eligible.
+- The source transaction revalidates the active acting Admin before locking target setup history.
 - FE11 revokes prior active setup tokens and creates a new 24-hour token/event/key.
 - A 60-second server-side cooldown applies per target account.
 - Active, locked, self-registered inactive, completed-setup, or cooldown-limited accounts are rejected without issuing a credential.
@@ -471,20 +476,19 @@ Request:
 
 ```json
 {
+  "expectedUpdatedAt": "2026-07-18T08:00:00.000Z",
   "fullName": "Updated Name",
   "phone": "0900000010",
   "address": "Updated Address",
-  "department": "Reference"
+  "email": "updated@example.test",
+  "department": "Reference",
+  "specialization": "Research Support"
 }
 ```
 
 Response `200`:
 
-```json
-{
-  "message": "User updated"
-}
-```
+The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`; duplicate normalized email returns `409 EMAIL_ALREADY_EXISTS`.
 
 ### PATCH `/api/users/{userId}/status`
 
@@ -492,23 +496,23 @@ Request:
 
 ```json
 {
-  "status": "INACTIVE"
+  "status": "INACTIVE",
+  "expectedUpdatedAt": "2026-07-18T08:00:00.000Z"
 }
 ```
 
 Response `200`:
 
-```json
-{
-  "message": "User status updated"
-}
-```
+The response is the authoritative `UserManagementView`.
 
 Rules:
 
 - Admin cannot deactivate themselves.
+- Only `ACTIVE` and `LOCKED` accounts transition to `INACTIVE`.
+- `INACTIVE` with null `deactivatedAt` returns `409 ACCOUNT_PENDING_ACTIVATION`; already-deactivated state is an idempotent no-op.
+- `expectedUpdatedAt` is compared with `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; stale state returns `409 STALE_USER_STATE` without lifecycle, credential, or audit mutation.
 - Users with active borrowings cannot be deactivated.
-- Deactivation does not permanently delete data.
+- Deactivation atomically sets `deactivatedAt`, revokes active `REFRESH` credentials, writes the audit, and does not permanently delete data.
 
 ### POST `/api/users/{userId}/roles`
 
@@ -632,10 +636,109 @@ Rules:
 - An empty result returns `totalPages: 0`.
 - The retired `GET /api/users/audit-logs` path always returns `404 NOT_FOUND` and is not a compatibility alias.
 
+### GET `/api/admin/requests`
+
+Actor: authenticated Admin. Authentication and Admin authorization run before detailed query validation.
+
+| Query | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `page` | integer | No | Default `1`; minimum `1` |
+| `limit` | integer | No | Default `20`; range `1..100` |
+| `q` | string | No | Trimmed `1..100`; searches only book title, member full name, and member email |
+| `status` | string | No | `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED` |
+| `from` | date | No | Inclusive `YYYY-MM-DD` lower bound on `RequestDate` |
+| `to` | date | No | Inclusive `YYYY-MM-DD` upper bound; must not precede `from` |
+
+Response `200` contains exactly `data` and `pagination`:
+
+```json
+{
+  "data": [
+    {
+      "requestId": 25,
+      "requestDate": "2026-07-19T08:00:00.000Z",
+      "status": "PENDING",
+      "member": {
+        "userId": 10,
+        "fullName": "Member Name",
+        "email": "member@example.test",
+        "phoneNumber": "0900000000"
+      },
+      "itemCount": 2,
+      "bookTitles": ["Book A", "Book B"],
+      "categories": ["Category A"]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Rules:
+
+- Rows are ordered by `RequestDate DESC, RequestId DESC`; count and data queries share the same typed, escaped filter scope.
+- Pagination applies to distinct `BorrowRequests` headers before child detail rows are joined.
+- `bookTitles` preserves one non-null title per detail in `BorrowDetailId ASC` order; `categories` contains unique non-null names in first-occurrence order.
+- Valid commas in titles/categories must not be parsed by splitting `STRING_AGG` output.
+- The frontend uses server pagination and canonical `from`/`to`; legacy `fromDate`/`toDate` and client slicing are not part of the contract.
+
+### GET `/api/admin/requests/{requestId}`
+
+Actor: authenticated Admin. Authorization runs before positive-integer path validation. Invalid IDs return `400 VALIDATION_ERROR`; missing requests return `404 BORROW_REQUEST_NOT_FOUND`.
+
+Response `200`:
+
+```json
+{
+  "requestId": 25,
+  "requestDate": "2026-07-19T08:00:00.000Z",
+  "status": "PENDING",
+  "createdAt": "2026-07-19T08:00:00.000Z",
+  "updatedAt": null,
+  "member": {
+    "userId": 10,
+    "memberId": 7,
+    "fullName": "Member Name",
+    "email": "member@example.test",
+    "phoneNumber": "0900000000",
+    "status": "ACTIVE"
+  },
+  "items": [
+    {
+      "borrowDetailId": 80,
+      "copyId": 44,
+      "barcode": "BC-0044",
+      "title": "Book A",
+      "author": "Author A",
+      "location": "Shelf A",
+      "status": "REQUESTED"
+    }
+  ],
+  "lifecycle": {
+    "approvedAt": null,
+    "rejectedAt": null,
+    "processedAt": null
+  }
+}
+```
+
+FE11 projects this DTO from the FE07 read boundary and adds no duplicate request-detail SQL or mutation logic. Passwords, tokens, sessions, credentials, raw audit metadata, and unrelated profile fields are forbidden.
+
+Request mutations remain exclusively FE07-owned:
+
+- `PATCH /api/borrow-requests/{requestId}/approve`
+- `PATCH /api/borrow-requests/{requestId}/reject`
+
+No `/api/admin/requests/{requestId}/approve` or `/reject` aliases exist. Only `PENDING` requests expose controls; every non-`PENDING` direct mutation returns `409 BORROW_REQUEST_NOT_PENDING` without success state or audit changes.
+
 ---
 
 ## Implementation Notes For Week 4
 
 - This file is a planning contract, not implementation approval by itself.
-- FE02 and FE11 still require approved `PLAN.md` and `TASKS.md` before coding.
+- FE11 Finalization design/plan/tasks are approved for governance; product work remains blocked until the governance PR passes checks, receives H3, and merges.
 - Backend tests must cover validation, authorization, and security-sensitive error behavior.

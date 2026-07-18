@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-19 - FE11 Librarian Column Ownership Activated
+
+- Bumped `SPEC.md` to 0.3.4 and recorded nullable `UserProfiles.Department` and `UserProfiles.Specialization` at 100 characters as FE11-admin-managed fields.
+- Kept both fields outside FE03 self-profile read/update DTOs and preserved the existing `fullName` maximum of 100 characters.
+- Product schema/model implementation remains pending FE11 Finalization Wave A.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE03 profile, protected-field, avatar cleanup, audit, and failure-compensation contract as the Phase 1 baseline; implementation follow-up remains pending.

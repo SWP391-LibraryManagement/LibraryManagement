@@ -1,12 +1,12 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.2
+# Version: 0.6.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature ID: FE02
 
@@ -380,7 +380,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | address | string | No | User's address. |
 | status | enum | Yes | Values: `ACTIVE`, `INACTIVE`, `LOCKED`, matching the current Users table constraint. |
 | createdAt | datetime | Yes | Account creation timestamp. |
-| updatedAt | datetime | Yes | Last update timestamp. |
+| updatedAt | datetime | No | Nullable storage remains compatible with legacy rows. FE11 managed-user responses expose the non-null concurrency version `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; FE02 authentication behavior is unchanged. |
 | lastLoginAt | datetime | No | Last successful login timestamp (for audit). |
 | failedLoginCount | integer | No | Counter for failed login attempts. |
 | lockedUntil | datetime | No | Timestamp when account will auto-unlock. |
@@ -688,7 +688,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Password policy (length, complexity) matches approved decision from Section 15.1.
 - [x] Session timeout duration matches approved decision from Section 15.1.
 - [x] Session management strategy (JWT vs cookies vs refresh tokens) is confirmed in Section 15.1 approved decision.
-- [ ] Database schema for Users, Roles, UserRoles, token storage, and nullable `Users.DeactivatedAt` is confirmed; migration is required before implementation.
+- [ ] Database schema for Users, Roles, UserRoles, token storage, `Users.Email NVARCHAR(255)`, and nullable `Users.DeactivatedAt` is confirmed; the approved FE11 finalization migration is active but not yet implemented/validated.
 - [x] FE02/FE10 OTP requester and configured-provider integration approach is confirmed through ADR-004.
 - [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
 - [x] FE03, FE10, FE11 dependencies are checked for conflicts.

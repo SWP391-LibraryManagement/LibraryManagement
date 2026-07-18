@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-19 - Recipient Email Width Synchronization Activated
+
+- Bumped `SPEC.md` to 0.4.2 and set the persisted `recipientEmail` contract to 255 characters so FE11 account-setup delivery cannot truncate a valid user email.
+- Preserved FE10 delivery ownership, sensitive-source allowlists, idempotency, rendering, and non-blocking failure semantics.
+- Schema/model/repository synchronization remains pending FE11 Finalization Wave A.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE10 lifecycle, sensitive-source ownership, OTP boundary, membership-result boundary, and deferred integration scope as the Phase 1 baseline.

@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.7
-Status: FAST-TRACK BATCH 1 AND TD-023 COMPLETE THROUGH B7; REMAINING FE11 TESTS PLANNED
+Version: 0.3.8
+Status: FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; WAVE A/WAVE B TESTS PLANNED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -56,10 +56,34 @@ User administration, role listing, role assignment/revocation, account status ma
 - FE12 `usersByRole` counts composed independently from FE11 matrix data.
 - Derived module coverage/matrix cells, retryable isolated errors, and no hardcoded frontend matrix fallback.
 
+## 3.3 Finalization Wave A Targets
+
+- Idempotent static migration checks for the five approved columns, deterministic `UX_Users_Email`, baseline/model/binding synchronization, and optional live execution twice.
+- `UserManagementView.updatedAt` falls back to `CreatedAt` only when storage `UpdatedAt` is null; update/deactivation compare that same effective value.
+- Create and setup resend lock/revalidate the active acting Admin inside their source transactions; create duplicate email maps safely and requests no delivery.
+- Create-route validation covers type/email/name/optional-field lengths, Librarian-only fields, normalized payloads, and Admin-first authorization.
+- Librarian fields persist on create/read/update, remain maximum 100 characters, and are omitted for non-Librarian targets.
+- Update tests cover stale state, duplicate email, no-op, effective change, audit allowlist, and rollback.
+- Deactivation tests cover pending activation, already-deactivated idempotence, `ACTIVE`/`LOCKED`, self-target, active borrowings, REFRESH revocation, audit, rollback, and FE07 approval serialization.
+- Frontend tests cover effective `expectedUpdatedAt`, Librarian fields, authoritative reload, `ACCOUNT_PENDING_ACTIVATION`, and removal of implicit development Admin access.
+
+## 3.4 Finalization Wave B Targets
+
+- Admin-first request list/detail validation for `page`, `limit`, `q`, `status`, `from`, and `to`.
+- Distinct-header server pagination, stable `RequestDate DESC, RequestId DESC` order, matching count/data filters, and safe array grouping without comma splitting.
+- Dedicated safe request detail with deterministic `400 VALIDATION_ERROR` and `404 BORROW_REQUEST_NOT_FOUND`.
+- FE07 remains the only approve/reject owner; every non-`PENDING` direct mutation returns `409 BORROW_REQUEST_NOT_PENDING` without success writes/audit.
+- Frontend server pagination, authoritative detail loading, safe all-page CSV export, terminal controls, and failure preservation.
+- Evidence-only Admin Dashboard service/route/browser coverage for FR-FE11-031 without production redesign.
+- Feature-specific Playwright coverage for Admin access, Librarian update/deactivation, Permissions, request pagination/detail/terminal behavior, and CSV.
+
 ## 4. E2E / Manual Acceptance Flow
 
 - Admin creates user.
+- Admin updates Librarian fields and deactivates an `ACTIVE`/`LOCKED` fixture using the loaded effective version.
 - Admin assigns/removes role.
+- Admin reviews Dashboard operational summaries and canonical Request Management across more than one server page.
+- Pending requests expose FE07-owned actions; terminal requests remain view-only; CSV contains all filtered pages safely.
 - Non-admin cannot access admin screens/actions.
 - Audit log shows admin action.
 
@@ -99,8 +123,8 @@ User administration, role listing, role assignment/revocation, account status ma
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
-- Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
-- Open FE11 debt still includes TD-012, remaining TD-014/015, TD-017, and Request Management TD-025; whole FE11 remains deferred.
+- The approved Finalization Batch now governs TD-012, remaining TD-014/015/016, TD-017, TD-025, and feature-specific FE11 browser acceptance; product implementation has not started.
+- `TD-021` stays `PARTIAL` only for unavailable live SQL Server migration/concurrency evidence; static contracts, code, and browser acceptance cannot be deferred.
 
 ## 7. Transactional Role Slice
 
@@ -132,10 +156,15 @@ User administration, role listing, role assignment/revocation, account status ma
 
 ```powershell
 npm.cmd --prefix backend test
+npm.cmd --prefix backend run test:coverage:ci
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
+npm.cmd run test:e2e
+node -e "require('yamljs').load('backend/src/docs/openapi.yaml'); console.log('openapi ok')"
+node -e "require('./backend/src/app'); console.log('backend import ok')"
+git diff --check
 ```
 
 ## 11. Audit Log H2-Ready Slice
