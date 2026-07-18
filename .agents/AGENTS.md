@@ -103,6 +103,29 @@ For non-trivial tasks:
 
 ---
 
+## 5.1 Fast-Track Hybrid Batch Mode
+
+Fast-Track mode is opt-in and applies only when a human-approved design names the active batch and scope.
+
+- H1 approves the batch contract, dependency order, file ownership, plan/task boundaries, validation commands, and allowed agent lanes.
+- H1 authorizes worktrees, read-only parallel analysis, and uncommitted RED-GREEN implementation inside the approved scope. It does not authorize committing generated implementation changes, pushing product-code branches, or merging.
+- If H1 includes the exact governance activation diff, H1 authorizes only that reviewed documentation commit and PR publication; the activation PR still requires checks and H3 before merge.
+- For a batch requiring governance activation, H1's product-work authorization becomes usable only after the activation PR merges into `main`.
+- H2 reviews the complete local diff plus L1-L4 evidence before generated implementation changes are committed. H2 authorizes the reviewed commit set, branch push, draft PR publication, and ready-for-review transition after required checks pass.
+- H2 is the local pre-commit AI-output review. It is distinct from the final PR integration review required by the Constitution.
+- H3 performs final integration review and approves merge after required checks pass and the branch remains mergeable. H3 also authorizes exact post-merge CI monitoring and pre-reviewed mechanical closeout substitutions.
+- H3 applies to governance, implementation, evidence-only, and closeout PR merges.
+- H1 occurs once per approved batch. H2 occurs once per generated implementation or SPEC-evidence PR, except the exact H1-reviewed governance activation diff. H3 occurs once before every PR merge.
+- Only one Builder may edit shared Core production files for the active slice. Other lanes prepare the next contract or independently verify the current slice.
+- Parallel evidence preparation must remain read-only when another slice owns the same SPEC file; the Integration Lead schedules the actual SPEC edit serially.
+- Task and debt activation become authoritative only after the reviewed governance activation PR merges into `main`.
+- Stop immediately for contract ambiguity, overlapping Core drift, secret exposure, permission/schema/API expansion, incompatible agent assumptions, or a failed required check.
+- A deterministic failure receives at most three total attempts. A suspected E2E flake may be rerun once with evidence.
+
+The authoritative design is `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`.
+
+---
+
 ## 6. Project Business Context
 
 The system helps librarians and administrators manage:
@@ -124,7 +147,7 @@ Core library rules include:
 - Fine calculation must be traceable and testable.
 - Protected actions require proper role-based authorization.
 
-## 5.1 Approved Technical Stack
+## 6.1 Approved Technical Stack
 
 Agents must follow this stack unless the Constitution and related specs are explicitly updated:
 

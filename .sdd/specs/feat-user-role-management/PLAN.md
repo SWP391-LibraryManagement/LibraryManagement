@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE; FAST-TRACK BATCH 1 ACTIVE; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -184,4 +184,21 @@ database/Librarymanagement.sql
 - API adapter tests prove no role name enters a mutation request.
 - UI contract tests prove catalog validation, assignment-before-revocation, no-op behavior, and partial-failure reconciliation.
 - Full frontend tests/lint/build, focused backend role regression, traceability, and diff hygiene pass.
-- Remaining FE11 work stays deferred and human review is required before merge.
+- Human review, PR #30, and post-merge CI `29644292781` passed; remaining FE11 work stays deferred.
+
+## 13. Fast-Track Batch 1
+
+### Scope And Order
+
+1. `TD-024` / `FE11-AUD01`: canonical Admin Audit Logs read boundary.
+2. `TD-026` / `FE11-ENV01`: restore `{ data, pagination }` and reuse FE12 `/api/reports/users` for counters.
+3. `TD-027` / `FE11-META01`: apply the approved evidence matrix after TD-026 merges.
+
+`TD-023` and `TD-025` remain outside Batch 1 and `OPEN`. Whole FE11 remains deferred.
+
+### Gates
+
+- H1 locks Batch 1 and the exact governance activation diff.
+- H2 is required before each generated implementation or SPEC-evidence diff is committed and pushed.
+- H3 is required after checks and before every PR merge.
+- TD-027 analysis may run in parallel, but its `SPEC.md` edit is serialized after TD-026.

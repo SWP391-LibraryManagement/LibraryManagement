@@ -1,6 +1,6 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.3
+# Version: 0.3.4
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
@@ -26,6 +26,7 @@
   - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; v0.4.3 timestamp normalization is pending.
   - FE10 historical G1-G7 and FE11 `ACCOUNT_SETUP` delivery are complete; ADR-004/G8-G10 OTP implementation and G12 FE04 membership-result integration remain pending.
   - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; v0.1.5 deterministic policy follow-up is pending.
+- **Current delivery mode**: Fast-Track Hybrid is the approved bounded-batch workflow. Use the three-lane pipeline and H1/H2/H3 authority model from `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`. The first activation batch covers FE11 `TD-024`, `TD-026`, and `TD-027`; its task/debt state and product-work authorization become usable only when the governance activation PR reaches `main`.
 - **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories`) using `mssql` repositories and SQL-oriented models, with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, report, and Admin pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
 - **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. The Admin role-action UI drift (`TD-022`) was resolved through PR #30 and post-merge CI run `29644292781`. Remaining FE11 drift includes navigation/permissions, Audit Logs, Request Management, the extra user-list `summary` envelope, and stale evidence metadata (`TD-023..TD-027`). Treat completed B7 evidence as bounded-slice evidence only; do not claim whole-feature conformance. See [`.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`](../.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md).
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
@@ -71,6 +72,20 @@ For every feature change Claude follows the same loop:
 6. **Hand back a diff plus a short explanation** mentioning which spec IDs are now covered and which are still pending.
 
 If the user asks for code without an approved spec, default to drafting or updating the spec first.
+
+---
+
+## 3.1 Fast-Track Execution Rules
+
+- The Integration Lead owns shared contracts, fan-in, commits, PR publication, and CI association.
+- The Builder owns RED-GREEN changes for one active slice and leaves generated implementation changes uncommitted until H2.
+- The Verifier independently checks L2/L3/L4 and does not rewrite Builder production files concurrently.
+- H2 is a local pre-commit AI-output review; H3 is the final PR integration review after required checks pass.
+- The H1-reviewed governance activation diff may be committed and published directly after H1, but it still requires required checks and H3 before merge.
+- Shared `SPEC.md` edits are serialized even when their read-only analysis ran in parallel.
+- Batch task/debt activation is authoritative only after the governance activation PR reaches `main`.
+- Draft publication after H2 and post-merge monitoring after H3 do not require additional permission prompts.
+- Batched closeout may replace per-slice closeout only when the H3-reviewed template permits exact evidence substitutions and no new behavior claim.
 
 ---
 
