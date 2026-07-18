@@ -114,6 +114,16 @@ Owner: Dung
   - Review state: human implementation review approved on 2026-07-18.
   - Integration state: PR #27 merged as `ed6bd717`; post-merge CI run `29639933730` passed.
 
+## Context And Drift Reconciliation
+
+- [x] **FE11-C01 - Audit FE11 Admin Console context drift at a fixed point.**
+  - Fixed point: base `66642b5`; target `origin/main@8da84bd`.
+  - Scope: FE11/User Management/Admin Console/Audit Logs only.
+  - DoD: run separate Standards and Spec reviews; classify bounded B7 evidence versus deferred/non-conforming behavior; reconcile project memory, API/test records, and technical debt without changing product behavior or approved requirements.
+  - Evidence: `.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`.
+  - Result: documentation reconciliation complete; no Admin Console implementation slice is approved or reopened by this task.
+  - Review state: human review confirmed on 2026-07-18; `FE11-C01` is closed.
+
 ## Deferred FE11 Work
 
-All user-list, update, deactivation, role-management work outside transactional assignment/revocation, audit-log, admin-console, and remaining FE11 debt stays outside this slice until a separately reviewed plan/task group is approved.
+The only completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, and safe user list/detail `FE11-U01..U06`. Update/deactivation, librarian fields, the Admin role-action UI contract, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of FE11 conformance.

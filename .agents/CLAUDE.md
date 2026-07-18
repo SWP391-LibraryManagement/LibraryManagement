@@ -1,10 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.1
+# Version: 0.3.2
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-18
 
 # Project: SWP391 Library Management System
 
@@ -18,16 +18,16 @@
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 - **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
-- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server (Sequelize ORM) database, RESTful API.
+- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server through the `mssql` package with parameterized queries, RESTful API.
 - **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. This approval locks the normalized contracts as the source of truth; it does not claim that implementation, tests, or deferred follow-up tasks are complete.
-  - FE01 remains implementation `NOT STARTED`. FE04/FE05/FE06 have decomposed implementation tasks that are not yet executed. FE02/FE07/FE08/FE09/FE10 have follow-up reconciliation tasks. FE11's account-setup slice is complete while remaining FE11 work is deferred. FE12's B7 base slice is complete while deterministic-policy follow-up remains pending.
+  - FE01 remains implementation `NOT STARTED`. FE04/FE05/FE06 have decomposed implementation tasks that are not yet executed. FE02/FE07/FE08/FE09/FE10 have follow-up reconciliation tasks. FE11 account setup (`FE11-S01..S07`), transactional backend role mutation (`FE11-R01..R05`), and safe user list/detail (`FE11-U01..U06`) are complete through B7; update/deactivation, the Admin role-action UI contract, Admin Console/Permissions/Audit/Request Management, and remaining FE11 debt stay deferred. FE12's B7 base slice is complete while deterministic-policy follow-up remains pending.
   - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
   - FE07 B7 evidence (merge `aeed0df`, CI `29308540692`) remains historical baseline evidence; it does not prove the v0.5.1 history contract.
   - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; v0.4.3 timestamp normalization is pending.
   - FE10 historical G1-G7 and FE11 `ACCOUNT_SETUP` delivery are complete; ADR-004/G8-G10 OTP implementation and G12 FE04 membership-result integration remain pending.
   - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; v0.1.5 deterministic policy follow-up is pending.
-- **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories → Sequelize models`) with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, and report pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
-- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. Treat completed B7 evidence as baseline-only whenever a feature now has pending reconciliation tasks; do not claim conformance until the matching revision is reviewed and its follow-up tasks/tests close. See [`.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`](../.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md).
+- **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories`) using `mssql` repositories and SQL-oriented models, with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, report, and Admin pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
+- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. The 2026-07-18 FE11 context audit found that Admin role actions, navigation/permissions, Audit Logs, Request Management, and the extra user-list `summary` envelope do not yet conform to the approved FE11 contract. Treat completed B7 evidence as bounded-slice evidence only; do not claim whole-feature conformance. See [`.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`](../.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md).
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---

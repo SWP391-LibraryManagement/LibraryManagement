@@ -341,27 +341,38 @@ Query:
 | page | number | No | Default 1 |
 | limit | number | No | Default 20 |
 | status | string | No | `ACTIVE`, `INACTIVE`, `LOCKED` |
-| role | string | No | `ADMIN`, `LIBRARIAN`, `MEMBER`, `GUEST` |
-| search | string | No | username/email/full name search |
+| role | string | No | `ADMIN`, `LIBRARIAN`, `MEMBER`; case-insensitive input is normalized |
+| search | string | No | Trimmed email/full-name/user-ID search; 1..200 characters when supplied |
 
 Response `200`:
 
 ```json
 {
-  "items": [
+  "data": [
     {
       "userId": 1,
       "username": "demo_admin",
       "email": "demo.admin@example.test",
+      "phoneNumber": "0900000001",
+      "fullName": "Demo Admin",
+      "address": "Hanoi",
       "status": "ACTIVE",
-      "roles": ["ADMIN"]
+      "roles": ["ADMIN"],
+      "createdAt": "2026-07-01T08:00:00.000Z",
+      "updatedAt": "2026-07-18T08:00:00.000Z",
+      "lastLoginAt": "2026-07-18T07:30:00.000Z"
     }
   ],
-  "page": 1,
-  "limit": 20,
-  "total": 1
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
 }
 ```
+
+The approved list envelope contains only `data` and `pagination`. The current implementation's extra top-level `summary` is non-contract behavior tracked by `TD-026`.
 
 ### GET `/api/users/{userId}`
 
@@ -372,18 +383,23 @@ Response `200`:
   "userId": 1,
   "username": "demo_admin",
   "email": "demo.admin@example.test",
-  "phone": "0900000001",
+  "phoneNumber": "0900000001",
+  "fullName": "Demo Admin",
+  "address": "Hanoi",
   "status": "ACTIVE",
   "roles": ["ADMIN"],
-  "profile": {
-    "fullName": "Demo Admin",
-    "address": "Hanoi",
-    "dateOfBirth": "2000-01-01"
+  "createdAt": "2026-07-01T08:00:00.000Z",
+  "updatedAt": "2026-07-18T08:00:00.000Z",
+  "lastLoginAt": "2026-07-18T07:30:00.000Z",
+  "relatedSummary": {
+    "activeBorrowingCount": 0,
+    "unpaidFineTotal": 0,
+    "openReservationCount": 0
   }
 }
 ```
 
-Notes: must never return password hash, reset tokens, refresh tokens, or raw token values.
+Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
 
 ### POST `/api/users`
 
