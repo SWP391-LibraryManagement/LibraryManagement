@@ -467,28 +467,6 @@ async function updateManagedUserStatus(userId, status) {
     `);
 }
 
-async function findRoleById(roleId) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('RoleId', sql.Int, roleId)
-    .query('SELECT TOP 1 RoleId, RoleName FROM Roles WHERE RoleId = @RoleId');
-
-  const row = result.recordset[0];
-  return row ? { roleId: row.RoleId, roleName: row.RoleName } : null;
-}
-
-async function findRoleByName(roleName) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('RoleName', sql.NVarChar(50), roleName)
-    .query('SELECT TOP 1 RoleId, RoleName FROM Roles WHERE UPPER(RoleName) = UPPER(@RoleName)');
-
-  const row = result.recordset[0];
-  return row ? { roleId: row.RoleId, roleName: row.RoleName } : null;
-}
-
 async function listRoles() {
   const pool = await getPool();
   const result = await pool
@@ -499,60 +477,6 @@ async function listRoles() {
     roleId: row.RoleId,
     roleName: row.RoleName,
   }));
-}
-
-async function assignRole(userId, roleId) {
-  const pool = await getPool();
-  await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .input('RoleId', sql.Int, roleId)
-    .query(`
-      IF EXISTS (SELECT 1 FROM Roles WHERE RoleId = @RoleId)
-      BEGIN
-        INSERT INTO UserRoles (UserId, RoleId)
-        SELECT @UserId, @RoleId
-        WHERE NOT EXISTS (
-          SELECT 1 FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId
-        )
-      END
-    `);
-}
-
-async function revokeRole(userId, roleId) {
-  const pool = await getPool();
-  await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .input('RoleId', sql.Int, roleId)
-    .query('DELETE FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId');
-}
-
-async function countUsersByRole(roleName) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('RoleName', sql.NVarChar(50), roleName)
-    .query(`
-      SELECT COUNT(DISTINCT ur.UserId) AS RoleCount
-      FROM UserRoles ur
-      INNER JOIN Roles r ON ur.RoleId = r.RoleId
-      INNER JOIN Users u ON ur.UserId = u.UserId
-      WHERE r.RoleName = @RoleName
-        AND u.Status = 'ACTIVE'
-    `);
-
-  return result.recordset[0]?.RoleCount || 0;
-}
-
-async function countRolesByUserId(userId) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .query('SELECT COUNT(*) AS RoleCount FROM UserRoles WHERE UserId = @UserId');
-
-  return result.recordset[0]?.RoleCount || 0;
 }
 
 async function countActiveBorrowingsByUserId(userId) {
@@ -682,13 +606,7 @@ module.exports = {
   createAdminManagedUser,
   updateManagedUser,
   updateManagedUserStatus,
-  findRoleById,
-  findRoleByName,
   listRoles,
-  assignRole,
-  revokeRole,
-  countUsersByRole,
-  countRolesByUserId,
   countActiveBorrowingsByUserId,
   markEmailVerified,
   updateFailedLogin,

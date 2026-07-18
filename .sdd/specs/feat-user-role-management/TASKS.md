@@ -68,9 +68,10 @@ Owner: Dung
   - DoD: one parameterized SQL transaction returns deterministic outcomes, uses required lock hints, and commits or rolls back mapping plus audit together.
   - Evidence: 14/14 repository tests pass, including lock-hint, parameterization, deterministic outcome, and audit-rollback cases.
 
-- [ ] **FE11-R04 - Map repository outcomes through the FE11 service.**
+- [x] **FE11-R04 - Map repository outcomes through the FE11 service.**
   - Dependencies: FE11-R03.
   - DoD: service-level RED-GREEN tests prove safe status/code/message mapping and successful safe-user readback without a second audit.
+  - Evidence: RED exposed the old `userRepository.findRoleById` path; 70/70 focused route/service/repository tests now pass through the transactional outcome contract.
 
 - [ ] **FE11-R05 - Pass the transactional role-management validation gate.**
   - Dependencies: FE11-R01..R04.
