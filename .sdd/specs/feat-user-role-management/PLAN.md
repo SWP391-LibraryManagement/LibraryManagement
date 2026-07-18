@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP SLICE COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -115,3 +115,25 @@ database/Librarymanagement.sql
 - Resend proves cooldown and new token/event/idempotency semantics.
 - FE02 verification/reset OTP behavior from ADR-004 remains unchanged.
 - Nhat completes human review before commit/merge.
+
+## 10. Transactional Role Management Slice
+
+### In Scope
+
+- Validate positive-integer target and role IDs.
+- Revalidate the acting active Admin under the SQL transaction.
+- Assign/revoke role mappings with deterministic duplicate/missing errors.
+- Protect the final user role and last active Admin under `UPDLOCK, HOLDLOCK`.
+- Commit role mutation and audit together.
+- Add route, service, and repository tests.
+
+### Out Of Scope
+
+- User update/deactivation, librarian fields, safe detail DTO reconciliation, and Admin UI.
+- Schema changes, role creation/editing, permission editing, and role hierarchy.
+
+### Validation Gate
+
+- Focused RED-GREEN tests prove each repository outcome and API mapping.
+- Full backend tests and `trace:enforce` pass.
+- Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.
