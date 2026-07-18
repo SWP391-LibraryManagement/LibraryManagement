@@ -126,9 +126,10 @@ Owner: Dung
 
 ## Admin Role UI Contract Tasks
 
-- [ ] **FE11-UIR01 - Send numeric role IDs from the frontend API adapter.**
+- [x] **FE11-UIR01 - Send numeric role IDs from the frontend API adapter.**
   - Maps to: FR-FE11-012..013; AC-FE11-013..014; FE11 API §11.
   - DoD: assignment sends `{ roleId }`, revocation uses `/{roleId}`, and focused RED-GREEN tests exclude role-name mutation requests.
+  - Evidence: RED failed on the legacy `roleName` body/path; GREEN passes 6/6 focused API tests with numeric `roleId` helpers.
 
 - [ ] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
   - Maps to: PRE-FE11-004; NFR-FE11-SEC-004; TD-022.
