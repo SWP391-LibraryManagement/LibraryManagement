@@ -8,7 +8,7 @@ Method: SDD Full, RED-GREEN TDD, security review, and B1-B7 evidence
 
 ## Decision
 
-The bounded implementation passed automated validation and human implementation review. Evidence covers the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, and traceability gate.
+The bounded implementation passed automated validation, human implementation review, merge, and post-merge CI. Evidence covers the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, traceability gate, and integration into `main`.
 
 Remaining FE11 work stays deferred. This record does not claim completion of user detail/update/deactivation, librarian fields, Admin UI, audit-log UI, or the remaining FE11 requirements.
 
@@ -22,6 +22,7 @@ Remaining FE11 work stays deferred. This record does not claim completion of use
 | Focused repository Jest coverage | PASS; 100% statements, 90.24% branches, 100% functions, 100% lines |
 | `npm.cmd run trace:enforce` | PASS; FE11 reports 13/38 tagged FRs (34%). The current `main` checker reads the top status as `APPROVED` and does not enforce FE11; that pre-existing status-heuristic limitation is outside this FE11-only PR. |
 | `git diff --check origin/main...HEAD` | PASS |
+| GitHub Actions run `29631406399` on merge commit `0e1ef8f` | PASS; `foundation-checks` completed successfully, including backend tests, system integration, coverage, frontend lint/tests/build, browser E2E, and backend health import. |
 
 Observed RED evidence:
 
@@ -51,7 +52,7 @@ Observed RED evidence:
 
 Human implementation review was approved on 2026-07-18. `FE11-R05` is complete for this bounded slice.
 
-Branch merge/push remains a separate integration action and is not claimed by this validation record.
+PR #25 merged into `main` as `0e1ef8f67e2d7a454e96b8b5d6878d31ed03eae0`. Post-merge CI run `29631406399` passed, so B7 integration is complete for this bounded slice.
 
 Residual risks:
 
