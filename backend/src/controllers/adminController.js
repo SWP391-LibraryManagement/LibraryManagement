@@ -2,6 +2,13 @@ const adminService = require('../services/adminService');
 
 function createAdminController(service = adminService) {
   return {
+    permissions: async (req, res, next) => {
+      try {
+        return res.status(200).json(await service.getPermissions());
+      } catch (error) {
+        return next(error);
+      }
+    },
     listAuditLogs: async (req, res, next) => {
       try {
         return res.status(200).json(
