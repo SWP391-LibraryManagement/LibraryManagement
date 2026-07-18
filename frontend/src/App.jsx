@@ -56,8 +56,8 @@ function App() {
       <Route path="/librarian/members" element={<BorrowingRouteGuard audience="staff"><MemberBorrowingDetailsPage /></BorrowingRouteGuard>} />
 
       {/* FE08 · Reservation Management */}
-      <Route path="/reservations/mine" element={<MyReservationsPage />} />
-      <Route path="/librarian/reservations" element={<ReservationsLibrarianPage />} />
+      <Route path="/reservations/mine" element={<BorrowingRouteGuard audience="member"><MyReservationsPage /></BorrowingRouteGuard>} />
+      <Route path="/librarian/reservations" element={<BorrowingRouteGuard audience="staff"><ReservationsLibrarianPage /></BorrowingRouteGuard>} />
 
       {/* FE12 · Reporting & Statistics */}
       <Route path="/reports/borrowing" element={<ReportRouteGuard><BorrowingReportPage /></ReportRouteGuard>} />
