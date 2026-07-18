@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.3
-Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE THROUGH B7; FAST-TRACK BATCH 1 TARGETS ACTIVE; REMAINING FE11 TESTS PLANNED
+Version: 0.3.4
+Status: AUDIT LOG IMPLEMENTATION H2-READY; PRIOR SLICES COMPLETE THROUGH B7; FAST-TRACK BATCH 1 ACTIVE; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -75,12 +75,17 @@ User administration, role listing, role assignment/revocation, account status ma
 - `frontend/test/userManagementApi.test.js` proves numeric assignment bodies and revocation paths with no role-name mutation contract.
 - `frontend/test/userManagementFrontend.test.js` proves catalog validation, numeric mutation planning, assignment-before-revocation order, no-op behavior, reconciliation, and Save lock.
 - Automated Admin role UI evidence: 12/12 focused frontend, 101/101 full frontend, 105/105 focused backend role regression, lint/build/traceability/diff/security PASS.
+- Approved Audit Log design: `docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md`.
+- Approved Audit Log plan: `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`.
+- `backend/tests/adminAuditLogRoutes.test.js`, `backend/tests/auditLogRepository.test.js`, and `backend/tests/adminAuditLogService.test.js` prove canonical ownership, Admin-first validation, typed filtered SQL pagination, stable order, and action-aware default-deny projection.
+- `frontend/test/adminApi.test.js`, `frontend/test/userManagementApi.test.js`, and `frontend/test/userManagementFrontend.test.js` prove canonical endpoint consumption, legacy adapter removal, filter construction, and nested safe DTO rendering.
+- Audit Log H2 evidence: 246/246 focused backend, 598/598 full backend, 111/111 frontend, coverage/lint/build/OpenAPI/traceability/diff/security/scope checks PASS.
 
 ## 6. Gaps
 
 - Account setup, transactional backend role mutation, safe list/detail, and Admin role-action UI are complete through human review, merge, and post-merge CI.
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
-- Audit Log tests prove Admin authorization and pagination only; canonical boundary validation, filters, redaction, and endpoint ownership remain unvalidated (`TD-024`).
+- Audit Log implementation is H2-ready with local L1-L4 evidence; `TD-024` remains `IN PROGRESS` and `FE11-AUD01` remains unchecked until H2 approval, PR checks, H3, merge, and post-merge CI.
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
 - Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.
 
@@ -119,3 +124,11 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
+
+## 11. Audit Log H2-Ready Slice
+
+- Route tests prove authentication and Admin authorization run before detailed validation, canonical query values are normalized, and the retired user-management route always returns `404 NOT_FOUND` without service invocation.
+- Repository tests prove typed parameters, escaped LIKE search, one shared filter scope, stable `CreatedAt DESC, LogId DESC` order, restricted user-target joins, and zero-page empty results.
+- Service tests cover the approved cross-feature action matrix, hostile and malformed metadata, safe actor/target mapping, non-user labels, and omission of raw metadata/user-agent fields.
+- Frontend tests prove filter application/reset/refresh, canonical Admin API ownership, and React text rendering from nested `actor`, `target`, and `details` only.
+- Real SQL Server execution and browser interaction remain explicit environment-dependent H2 review items; no schema, dependency, authentication, audit-write, or TD-026 behavior changed.

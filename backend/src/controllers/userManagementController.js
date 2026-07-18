@@ -37,15 +37,6 @@ function createUserManagementController(userManagementService = defaultUserManag
       }
     },
 
-    listAuditLogs: async (req, res, next) => {
-      try {
-        const result = await userManagementService.listAuditLogs(req.query);
-        return res.status(200).json(result);
-      } catch (error) {
-        return next(error);
-      }
-    },
-
     createUser: async (req, res, next) => {
       try {
         const result = await userManagementService.createUser(req.body, requestContext(req));

@@ -113,3 +113,9 @@ test('FE11 role mutations send numeric role IDs through the canonical contract',
   );
   assert.doesNotMatch(source, /data: \{ roleName \}/);
 });
+
+test('FE11 user-management API no longer owns Audit Logs', async () => {
+  const source = await readFile(apiPath, 'utf8');
+  assert.doesNotMatch(source, /export async function fetchAuditLogs/);
+  assert.doesNotMatch(source, /\/users\/audit-logs/);
+});
