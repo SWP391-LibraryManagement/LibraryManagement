@@ -149,12 +149,13 @@ Owner: Dung
   - DoD: the first failed mutation stops the sequence; target detail is reloaded into the open modal; failed reconciliation disables Save and never reports success.
   - Evidence: RED lacked mutation-failure reload and modal synchronization; GREEN passes 6/6 focused UI tests with authoritative reload, local error display, and Save lock after reconciliation failure.
 
-- [ ] **FE11-UIR05 - Pass the Admin role UI validation and integration gates.**
+- [x] **FE11-UIR05 - Pass the Admin role UI validation and integration gates.**
   - Depends on: FE11-UIR01..UIR04.
   - DoD: focused/full frontend, lint/build, focused backend role regression, traceability, diff/security review, documentation, human review, merge, and post-merge CI evidence are complete.
   - Automated evidence: 12/12 focused frontend; 101/101 full frontend; 3 suites and 105/105 focused backend role tests; lint, build, traceability, diff, scope, and security checks PASS.
-  - Review state: human implementation review approved on 2026-07-18; integration evidence is not yet claimed.
+  - Review state: human implementation review approved on 2026-07-18.
+  - Integration state: PR #30 merged as `c20d3251`; PR CI run `29643619999` and post-merge `main` CI run `29644292781` passed.
 
 ## Deferred FE11 Work
 
-The only completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, and safe user list/detail `FE11-U01..U06`. The bounded Admin role-action UI contract is active only through `FE11-UIR01..UIR05`. Update/deactivation, librarian fields, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of FE11 conformance.
+The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, and the bounded Admin role-action UI contract `FE11-UIR01..UIR05`. Update/deactivation, librarian fields, Admin Console navigation/permissions/audit/request behavior, the list-summary envelope drift, and remaining FE11 debt stay deferred until a separately reviewed plan/task group is approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.

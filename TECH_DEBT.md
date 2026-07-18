@@ -35,7 +35,6 @@ Last Updated: 2026-07-18
 | TD-019 | FE02 Auth | P2 | IP-based rate limiting (NFR-FE02-SEC-005) is not implemented (only per-user lockout). Confirm whether per-user is sufficient for Phase 1. | VG FE02 P2 | OPEN |
 | TD-020 | FE02 Auth | P2 (decision) | Login returns `ACCOUNT_INACTIVE` (403) for existing-but-unverified accounts, which is a mild user-enumeration signal vs NFR-SEC-010. Confirm intended vs generic message. | VG FE02 P2 | OPEN |
 | TD-021 | Cross-feature | P2 | **Partial.** API-level integration tests prove the in-scope cross-feature flows and the CI now runs a Playwright browser golden path. Still missing: feature-specific FE11 Admin Console browser acceptance and a SQL-Server-backed integration run (no MSSQL instance in CI). | Integration map; CI run `29639933730` | PARTIAL |
-| TD-022 | FE11 User & Role | P1 | Numeric catalog-backed role assignment/revocation, deterministic ordering/no-op behavior, and partial-failure reconciliation are implemented and locally validated. Keep open until human review, merge, and post-merge CI complete the B7 gate. | FE11-UIR01..UIR05; validation record 2026-07-18 | IN PROGRESS |
 | TD-023 | FE11 Admin Console | P1 | Sidebar omits Permissions and adds Membership Management outside the approved FE11 section list. The permissions view is unreachable, uses a hardcoded matrix, and derives counts from only the loaded user page; `/api/admin/permissions` is absent. | FE11 context drift audit; FR-FE11-030/032 | OPEN |
 | TD-024 | FE11 Audit Logs | P1 (security) | Existing `/api/users/audit-logs` behavior covers Admin authorization and pagination only. Canonical `/api/admin/audit-logs` search/action/actor/date filters, boundary validation, and server-side sensitive-metadata redaction are missing. | FE11 context drift audit; FR-FE11-033 | OPEN |
 | TD-025 | FE11 Request Management | P1 | List/search/filter/export and pending UI actions exist, but the canonical request-detail endpoint is absent and no focused acceptance test proves terminal requests are immutable at the server boundary. | FE11 context drift audit; FR-FE11-034/035 | OPEN |
@@ -48,6 +47,7 @@ Last Updated: 2026-07-18
 
 | Feature | What was fixed | Commit |
 | ------- | -------------- | ------ |
+| FE11 | TD-022: Admin role actions now use numeric IDs from the authenticated catalog, validate the full diff, assign before revoke, preserve no-op/non-editable roles, and reconcile partial failures. PR #30 merged as `c20d3251`; post-merge CI `29644292781` passed. | c20d3251 |
 | FE07 | TD-006: added tests for FR-FE07-019 (no double-borrow on concurrent approve), FR-FE07-016 (unpaid-fine block), FR-FE07-020 (overdue renewal block); tagged FR-FE07-014..022 with `@spec` → 100% traceability | 16e8134 |
 | FE07 | TD-008: synced `models/BorrowDetail.js` `allowedValues` + default to the SQL CHECK set (`REQUESTED..DAMAGED`) | 3ae1d82 |
 | FE08 | TD-010: `cancelReservation` now returns the current reservation state (`{reservationId, status}`) alongside the 409 (`safeErrors.conflict` + errorHandler carry `details`) | 3ae1d82 |

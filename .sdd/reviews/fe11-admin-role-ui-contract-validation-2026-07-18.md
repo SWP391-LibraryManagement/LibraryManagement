@@ -4,7 +4,7 @@ Date: 2026-07-18
 
 Scope: FE11-UIR01..UIR05 / TD-022 only
 
-Status: HUMAN REVIEW APPROVED - INTEGRATION PENDING
+Status: B7 INTEGRATION COMPLETE
 
 ## L1 Automated Evidence
 
@@ -19,6 +19,8 @@ Status: HUMAN REVIEW APPROVED - INTEGRATION PENDING
 | Diff check | PASS against `origin/main...HEAD` |
 | Scope check | PASS - backend, database, FE11 `SPEC.md`, and dependencies are unchanged |
 | Security scan | PASS - no added secret assignment, key material, hardcoded role ID, or role-name mutation fallback |
+| PR #30 CI run `29643619999` | PASS - `foundation-checks` completed successfully before merge |
+| Post-merge `main` CI run `29644292781` | PASS - `foundation-checks` completed successfully on merge commit `c20d3251` |
 
 Observed RED-GREEN evidence:
 
@@ -77,8 +79,8 @@ git diff --check origin/main...HEAD
 
 ## Human Review Gate
 
-Approved on 2026-07-18. The human reviewer approved the implementation, automated evidence, bounded scope, and documented multi-request reconciliation risk. `FE11-UIR05` remains unchecked until merge and post-merge CI complete the integration gate.
+Approved on 2026-07-18. The human reviewer approved the implementation, automated evidence, bounded scope, and documented multi-request reconciliation risk. PR #30 and post-merge CI now satisfy the remaining integration gate, so `FE11-UIR05` is complete.
 
 ## Integration State
 
-Not integrated. The branch has not been pushed, no PR has been opened, and no merge or post-merge CI evidence exists. `TD-022` remains `IN PROGRESS`.
+Complete. PR #30 merged into `main` as `c20d3251254467a1543355f18c705590724f5b55`; post-merge CI run `29644292781` passed all `foundation-checks`. `TD-022` is resolved for this bounded slice. Whole-feature `Implementation State: DEFERRED` and unrelated FE11 debt remain unchanged.
