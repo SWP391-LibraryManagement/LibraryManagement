@@ -46,11 +46,13 @@ import {
   assignManagedUserRole,
   ensureManagedUserAccess,
   fetchAuditLogs,
+  fetchManagedUser,
   fetchRoles,
   fetchUsers,
   revokeManagedUserRole,
   updateManagedUser,
 } from '../api/userManagementApi';
+import { isManagedUserNotFound } from '../utils/userManagementQuery';
 
 const roleLabels = {
   ADMIN: 'Admin',
@@ -246,7 +248,7 @@ function UserModal({ mode, user, onClose, onSubmit }) {
     type: user?.roles?.includes('LIBRARIAN') ? 'librarian' : 'member',
     fullName: user?.fullName || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: user?.phoneNumber || '',
     address: user?.address || '',
   });
   const [saving, setSaving] = useState(false);
@@ -746,6 +748,21 @@ function UserManagement() {
   async function openRoleModal(user) {
     if (await requireAdminSession()) {
       setRoleUser(user);
+    }
+  }
+
+  async function openUserDetail(userId) {
+    setSelectedUser(null);
+
+    try {
+      const detail = await fetchManagedUser(userId);
+      setSelectedUser(detail);
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+
+      if (isManagedUserNotFound(error)) {
+        await loadUsers(pagination.page);
+      }
     }
   }
 
@@ -1695,7 +1712,7 @@ function UserManagement() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.userId} onClick={() => setSelectedUser(user)}>
+                <tr key={user.userId} onClick={() => openUserDetail(user.userId)}>
                   <td>
                     <div className="um-user-cell">
                       <div className={`um-avatar ${getPrimaryRole(user).toLowerCase()}`}>
@@ -1708,7 +1725,7 @@ function UserManagement() {
                     </div>
                   </td>
                   <td>{user.username || '-'}</td>
-                  <td>{user.phone || '-'}</td>
+                  <td>{user.phoneNumber || '-'}</td>
                   <td>
                     <div className="um-badge-row">
                       {(user.roles || []).map((role) => (
@@ -2000,13 +2017,30 @@ function UserManagement() {
             </p>
             <p>
               <Phone size={16} />
-              {selectedUser.phone || '-'}
+              {selectedUser.phoneNumber || '-'}
             </p>
             <p>{selectedUser.address || '-'}</p>
             <p>
               <Calendar size={16} />
               Ngày tạo {formatDate(selectedUser.createdAt)}
             </p>
+          </div>
+          <div className="um-related-summary">
+            <div>
+              <BookCopy size={17} />
+              <span>Active borrowings</span>
+              <strong>{selectedUser.relatedSummary?.activeBorrowingCount ?? 0}</strong>
+            </div>
+            <div>
+              <Banknote size={17} />
+              <span>Unpaid fines</span>
+              <strong>{formatCurrency(selectedUser.relatedSummary?.unpaidFineTotal ?? 0)}</strong>
+            </div>
+            <div>
+              <ClipboardList size={17} />
+              <span>Open reservations</span>
+              <strong>{selectedUser.relatedSummary?.openReservationCount ?? 0}</strong>
+            </div>
           </div>
           <div className="um-drawer-actions">
             <button className="um-primary-button" onClick={() => openEditModal(selectedUser)}>
@@ -2273,6 +2307,9 @@ function UserManagement() {
         .um-drawer h2 { font-size: 22px; margin: 0 0 12px; letter-spacing: 0; }
         .um-detail-list { margin: 24px 0; display: grid; gap: 12px; }
         .um-detail-list p { margin: 0; display: flex; gap: 10px; align-items: center; color: #475569; }
+        .um-related-summary { display: grid; gap: 8px; margin: 0 0 24px; }
+        .um-related-summary > div { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f8fafc; color: #475569; }
+        .um-related-summary strong { color: #0f172a; }
         .um-modal-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,0.45); display: grid; place-items: center; padding: 20px; }
         .um-modal { width: min(560px, 100%); background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 24px 80px rgba(15,23,42,0.24); }
         .um-modal-header { padding: 18px 22px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }

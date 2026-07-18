@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { buildManagedUserListParams } from '../utils/userManagementQuery';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -133,11 +134,23 @@ export async function fetchUsers(params = {}) {
     const response = await authorizedRequest({
       method: 'get',
       url: '/users',
-      params,
+      params: buildManagedUserListParams(params),
     });
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Could not load users.'), { cause: error });
+  }
+}
+
+export async function fetchManagedUser(userId) {
+  try {
+    const response = await authorizedRequest({
+      method: 'get',
+      url: `/users/${userId}`,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not load user details.'), { cause: error });
   }
 }
 

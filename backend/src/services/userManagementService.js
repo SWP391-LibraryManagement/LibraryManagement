@@ -11,8 +11,8 @@ const ROLE_BY_TYPE = {
   member: 'MEMBER',
   librarian: 'LIBRARIAN',
 };
-const VALID_ROLE_NAMES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
-const VALID_USER_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
+const USER_LIST_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
+const USER_LIST_ROLES = new Set(['MEMBER', 'LIBRARIAN', 'ADMIN']);
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -21,6 +21,48 @@ function normalizeEmail(email) {
 function cleanString(value) {
   const cleaned = String(value || '').trim();
   return cleaned || null;
+}
+
+function parseListInteger(value, { defaultValue, min, max, code, message }) {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || (max !== undefined && parsed > max)) {
+    throw errors.badRequest(code, message);
+  }
+
+  return parsed;
+}
+
+function normalizeListEnum(value, allowed, code, message) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim().toUpperCase();
+  if (!allowed.has(normalized)) {
+    throw errors.badRequest(code, message);
+  }
+
+  return normalized;
+}
+
+function normalizeListSearch(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  if (normalized.length < 1 || normalized.length > 200) {
+    throw errors.badRequest(
+      'INVALID_USER_SEARCH',
+      'Search must be between 1 and 200 characters.'
+    );
+  }
+
+  return normalized;
 }
 
 function deriveUsername(email) {
@@ -200,35 +242,51 @@ function createUserManagementService({
   }
 
   async function listUsers(query = {}) {
-    const page = Math.max(Number(query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
-    const status = normalizeFilter(query.status);
-    const role = normalizeFilter(query.role);
-    const search = cleanString(query.search);
-
-    if (status && !VALID_USER_STATUSES.has(status)) {
-      throw errors.badRequest('INVALID_STATUS', 'User status filter is not supported.');
-    }
-    if (role && !VALID_ROLE_NAMES.has(role)) {
-      throw errors.badRequest('INVALID_ROLE', 'User role filter is not supported.');
-    }
-    if (search && search.length > 150) {
-      throw errors.badRequest('SEARCH_TOO_LONG', 'Search text must be at most 150 characters.');
-    }
-
-    const result = await userRepository.listManagedUsers({
-      page,
-      limit,
-      status,
-      role,
-      search,
+    // @spec FR-FE11-001, AC-FE11-001
+    return userRepository.listManagedUsers({
+      page: parseListInteger(query.page, {
+        defaultValue: 1,
+        min: 1,
+        code: 'INVALID_PAGE',
+        message: 'Page must be a positive integer.',
+      }),
+      limit: parseListInteger(query.limit, {
+        defaultValue: 20,
+        min: 1,
+        max: 100,
+        code: 'INVALID_LIMIT',
+        message: 'Limit must be an integer between 1 and 100.',
+      }),
+      status: normalizeListEnum(
+        query.status,
+        USER_LIST_STATUSES,
+        'INVALID_USER_STATUS',
+        'Status must be ACTIVE, INACTIVE, or LOCKED.'
+      ),
+      role: normalizeListEnum(
+        query.role,
+        USER_LIST_ROLES,
+        'INVALID_USER_ROLE',
+        'Role must be MEMBER, LIBRARIAN, or ADMIN.'
+      ),
+      search: normalizeListSearch(query.search),
     });
-
-    return result;
   }
 
   async function getUser(userId) {
-    return getExistingUser(userId);
+    // @spec FR-FE11-002, FR-FE11-016
+    const parsedUserId = parsePositiveId(
+      userId,
+      'INVALID_USER_ID',
+      'User id is invalid.'
+    );
+    const user = await userRepository.getManagedUserDetailById(parsedUserId);
+
+    if (!user) {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
+    }
+
+    return user;
   }
 
   async function listRoles() {

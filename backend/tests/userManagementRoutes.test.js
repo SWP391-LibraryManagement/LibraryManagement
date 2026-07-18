@@ -78,6 +78,68 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.listUsers).toHaveBeenCalledWith(expect.objectContaining({ search: 'member' }));
   });
 
+  test('GET /api/users normalizes the approved list query', async () => {
+    const userManagementService = {
+      listUsers: jest.fn(async () => ({
+        data: [],
+        pagination: { page: 2, limit: 50, total: 0, totalPages: 0 },
+      })),
+    };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .get('/api/users?page=2&limit=50&status=active&role=member&search=%20Alice%20')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(userManagementService.listUsers).toHaveBeenCalledWith({
+      page: 2,
+      limit: 50,
+      status: 'ACTIVE',
+      role: 'MEMBER',
+      search: 'Alice',
+    });
+  });
+
+  test.each([
+    ['/api/users?page=0', 'page'],
+    ['/api/users?page=1.5', 'page'],
+    ['/api/users?page=abc', 'page'],
+    ['/api/users?limit=0', 'limit'],
+    ['/api/users?limit=101', 'limit'],
+    ['/api/users?status=DELETED', 'status'],
+    ['/api/users?role=GUEST', 'role'],
+    [`/api/users?search=${'x'.repeat(201)}`, 'search'],
+    ['/api/users?search=%20%20%20', 'search'],
+  ])('GET %s rejects invalid %s', async (url, field) => {
+    const userManagementService = { listUsers: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .get(url)
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field })])
+    );
+    expect(userManagementService.listUsers).not.toHaveBeenCalled();
+  });
+
+  test('GET /api/users authorizes before validating the query', async () => {
+    const userManagementService = { listUsers: jest.fn() };
+    const app = makeApp({ roles: ['MEMBER'], userManagementService });
+
+    const response = await request(app)
+      .get('/api/users?page=0')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.listUsers).not.toHaveBeenCalled();
+  });
+
   test('GET /api/users requires authentication', async () => {
     const app = makeApp();
 
@@ -108,6 +170,44 @@ describe('FE11 user management routes', () => {
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('ADMIN_REQUIRED');
   });
+
+  test('GET /api/users/:userId passes a normalized positive ID', async () => {
+    const detail = {
+      userId: 7,
+      email: 'detail@example.test',
+      relatedSummary: {
+        activeBorrowingCount: 1,
+        unpaidFineTotal: 5000,
+        openReservationCount: 2,
+      },
+    };
+    const userManagementService = { getUser: jest.fn(async () => detail) };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .get('/api/users/7')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(detail);
+    expect(userManagementService.getUser).toHaveBeenCalledWith(7);
+  });
+
+  test.each(['0', '-1', '1.5', 'not-a-user'])(
+    'GET /api/users/%s rejects an invalid user ID',
+    async (userId) => {
+      const userManagementService = { getUser: jest.fn() };
+      const app = makeApp({ userManagementService });
+
+      const response = await request(app)
+        .get(`/api/users/${userId}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(userManagementService.getUser).not.toHaveBeenCalled();
+    }
+  );
 
   test('POST /api/users still requires authentication', async () => {
     const app = makeApp();

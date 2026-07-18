@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -137,3 +137,29 @@ database/Librarymanagement.sql
 - Focused RED-GREEN tests prove each repository outcome and API mapping.
 - Full backend tests and `trace:enforce` pass.
 - Remaining FE11 work stays deferred; completed role-slice evidence is recorded separately.
+
+## 11. Safe User List And Detail Slice
+
+### In Scope
+
+- Validate list pagination, status, role, search, and detail user ID.
+- Return only the explicit `UserManagementView` allowlist with `phoneNumber`.
+- Restrict search to email, full name, and user ID with stable ordering.
+- Return detail-only borrowing, unpaid-fine, and open-reservation summaries.
+- Return `404 USER_NOT_FOUND` for a missing detail user.
+- Make the Admin UI fetch and render the real detail response.
+- Add route, service, repository, and frontend RED-GREEN tests.
+
+### Out Of Scope
+
+- Schema changes and librarian `department`/`specialization` persistence.
+- Update/deactivation, account setup, role mutation, audit-log, dashboard, and request-management behavior.
+- Feature-wide traceability-checker policy changes.
+
+### Validation Gate
+
+- Invalid supplied list/detail values are rejected instead of clamped.
+- Hostile extra database columns never appear in the safe DTO.
+- List items have no `relatedSummary`; detail has exactly three deterministic numeric summary fields.
+- Focused/full backend and frontend checks plus `trace:enforce` pass.
+- Remaining FE11 work stays deferred and is not reported as complete.

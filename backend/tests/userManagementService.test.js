@@ -574,3 +574,121 @@ describe('FE11 transactional role service', () => {
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
   });
 });
+
+function makeReadHarness(userRepositoryOverrides = {}) {
+  const userRepository = {
+    listManagedUsers: jest.fn(async (query) => ({
+      data: [],
+      pagination: { ...query, total: 0, totalPages: 0 },
+    })),
+    getManagedUserById: jest.fn(),
+    ...userRepositoryOverrides,
+  };
+  const service = createUserManagementService({
+    userRepository,
+    userRoleRepository: {},
+    authTokenRepository: {},
+    auditLogRepository: {},
+    accountSetupRepository: {},
+    notificationRequester: { createNotificationRequest: jest.fn() },
+  });
+  return { service, userRepository };
+}
+
+describe('FE11 safe managed-user reads', () => {
+  test('listUsers applies defaults only when values are omitted', async () => {
+    const { service, userRepository } = makeReadHarness();
+
+    await service.listUsers({});
+
+    expect(userRepository.listManagedUsers).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      status: null,
+      role: null,
+      search: null,
+    });
+  });
+
+  test('listUsers normalizes approved filters before repository access', async () => {
+    const { service, userRepository } = makeReadHarness();
+
+    await service.listUsers({
+      page: '2',
+      limit: '50',
+      status: ' active ',
+      role: ' librarian ',
+      search: '  user@example.test  ',
+    });
+
+    expect(userRepository.listManagedUsers).toHaveBeenCalledWith({
+      page: 2,
+      limit: 50,
+      status: 'ACTIVE',
+      role: 'LIBRARIAN',
+      search: 'user@example.test',
+    });
+  });
+
+  test.each([
+    [{ page: 0 }, 'INVALID_PAGE'],
+    [{ page: 1.5 }, 'INVALID_PAGE'],
+    [{ limit: 101 }, 'INVALID_LIMIT'],
+    [{ status: 'DELETED' }, 'INVALID_USER_STATUS'],
+    [{ role: 'GUEST' }, 'INVALID_USER_ROLE'],
+    [{ search: '   ' }, 'INVALID_USER_SEARCH'],
+    [{ search: 'x'.repeat(201) }, 'INVALID_USER_SEARCH'],
+  ])('listUsers rejects invalid direct input %j', async (query, code) => {
+    const { service, userRepository } = makeReadHarness();
+
+    await expect(service.listUsers(query)).rejects.toMatchObject({ statusCode: 400, code });
+    expect(userRepository.listManagedUsers).not.toHaveBeenCalled();
+  });
+
+  test('getUser returns the dedicated detail projection', async () => {
+    const detail = {
+      userId: 7,
+      phoneNumber: '0900000000',
+      roles: ['MEMBER'],
+      relatedSummary: {
+        activeBorrowingCount: 1,
+        unpaidFineTotal: 5000,
+        openReservationCount: 2,
+      },
+    };
+    const { service, userRepository } = makeReadHarness({
+      getManagedUserDetailById: jest.fn(async () => detail),
+    });
+
+    await expect(service.getUser(7)).resolves.toEqual(detail);
+    expect(userRepository.getManagedUserDetailById).toHaveBeenCalledWith(7);
+    expect(userRepository.getManagedUserById).not.toHaveBeenCalled();
+  });
+
+  test('getUser returns 404 USER_NOT_FOUND for a missing valid ID', async () => {
+    const { service } = makeReadHarness({
+      getManagedUserDetailById: jest.fn(async () => null),
+    });
+
+    await expect(service.getUser(404)).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'USER_NOT_FOUND',
+      message: 'User was not found.',
+    });
+  });
+
+  test.each([0, -1, 1.5, 'not-a-user'])(
+    'getUser rejects invalid direct ID %p before repository access',
+    async (userId) => {
+      const { service, userRepository } = makeReadHarness({
+        getManagedUserDetailById: jest.fn(),
+      });
+
+      await expect(service.getUser(userId)).rejects.toMatchObject({
+        statusCode: 400,
+        code: 'INVALID_USER_ID',
+      });
+      expect(userRepository.getManagedUserDetailById).not.toHaveBeenCalled();
+    }
+  );
+});

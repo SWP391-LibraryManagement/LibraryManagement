@@ -12,7 +12,7 @@ function createUserManagementController(userManagementService = defaultUserManag
   return {
     listUsers: async (req, res, next) => {
       try {
-        const result = await userManagementService.listUsers(req.query);
+        const result = await userManagementService.listUsers(req.validatedListQuery || req.query);
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
