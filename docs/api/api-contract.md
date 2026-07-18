@@ -372,7 +372,7 @@ Response `200`:
 }
 ```
 
-The approved list envelope contains only `data` and `pagination`. The current implementation's extra top-level `summary` is non-contract behavior tracked by `TD-026`.
+The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response.
 
 ### GET `/api/users/{userId}`
 

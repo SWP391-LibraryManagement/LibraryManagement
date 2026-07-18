@@ -72,6 +72,7 @@ describe('FE11 user management routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
+    expect(Object.keys(response.body).sort()).toEqual(['data', 'pagination']);
     expect(userManagementService.listUsers).toHaveBeenCalledWith(expect.objectContaining({ search: 'member' }));
   });
 

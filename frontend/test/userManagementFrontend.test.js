@@ -71,6 +71,29 @@ test('FE11 partial role failure reloads the target and keeps the modal authorita
   assert.match(source, /catch \(error\) \{\s*setError\(error\.message\)/);
 });
 
+test('FE11 user cards use independent FE12 statistics instead of list summaries', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /import \{ borrowingApi, membershipApi, reportApi \} from '\.\.\/api\/libraryFeatureApi';/);
+  assert.match(source, /async function loadUserStatistics\(\)/);
+  assert.match(source, /const result = await reportApi\.users\(\)/);
+  assert.match(source, /totals\.users/);
+  assert.match(source, /usersByStatus\.ACTIVE/);
+  assert.match(source, /usersByStatus\.INACTIVE/);
+  assert.match(source, /usersByRole\.LIBRARIAN/);
+  assert.doesNotMatch(source, /result\.summary/);
+  assert.doesNotMatch(source, /users\.filter\(\(user\) => user\.roles/);
+});
+
+test('FE11 list and statistics failures are stored independently', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /async function loadUsers\([^]*?setUsersError\(error\.message\)/);
+  assert.match(source, /async function loadUserStatistics\(\)[^]*?setUserStatsError\(error\.message\)/);
+  const statisticsBlock = source.match(/async function loadUserStatistics\(\)[\s\S]*?\n {2}\}/)?.[0] || '';
+  assert.doesNotMatch(statisticsBlock, /setUsers\(/);
+});
+
 test('FE11 Audit query builder omits blanks and preserves nonblank server validation input', async () => {
   const source = await readFile(pagePath, 'utf8');
   const functionMatch = source.match(/function buildAuditLogParams\([^]*?\n}\r?\n/);

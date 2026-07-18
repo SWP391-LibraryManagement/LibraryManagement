@@ -35,7 +35,7 @@ import {
 
 import { getFineRecords, saveFineRecords } from '../utils/libraryWorkflow';
 import { adminApi } from '../api/adminApi';
-import { borrowingApi, membershipApi } from '../api/libraryFeatureApi';
+import { borrowingApi, membershipApi, reportApi } from '../api/libraryFeatureApi';
 import LogoutConfirmModal from '../component/layout/LogoutConfirmModal';
 import MembershipApplicationsTable from '../component/membership/MembershipApplicationsTable';
 import MembershipFilter from '../component/membership/MembershipFilter';
@@ -730,7 +730,13 @@ function UserManagement() {
   const currentAdmin = getStoredAdminUser();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [users, setUsers] = useState([]);
-  const [userSummary, setUserSummary] = useState({ total: 0, active: 0, librarians: 0, inactive: 0 });
+  const [userStats, setUserStats] = useState({
+    total: 0,
+    active: 0,
+    librarians: 0,
+    inactive: 0,
+    usersByRole: {},
+  });
   const [pagination, setPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
@@ -738,6 +744,8 @@ function UserManagement() {
   const [loading, setLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
   const [usersUpdatedAt, setUsersUpdatedAt] = useState(null);
+  const [userStatsLoading, setUserStatsLoading] = useState(false);
+  const [userStatsError, setUserStatsError] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [modal, setModal] = useState(null);
   const [roleUser, setRoleUser] = useState(null);
@@ -815,6 +823,7 @@ function UserManagement() {
     payments: { eyebrow: 'Xét duyệt thanh toán', title: 'Xác nhận thanh toán' },
   }[activeSection];
   const pendingPayments = paymentFines.filter((fine) => fine.paymentReviewStatus === 'PENDING');
+  const userDirectoryLoading = loading || userStatsLoading;
 
   function handleLogout() {
     localStorage.removeItem('accessToken');
@@ -923,12 +932,12 @@ function UserManagement() {
 
   const stats = useMemo(
     () => [
-      { label: 'Tổng người dùng', value: userSummary.total, icon: Users },
-      { label: 'Hoạt động', value: userSummary.active, icon: Check },
-      { label: 'Thủ thư', value: userSummary.librarians, icon: UserCog },
-      { label: 'Chưa kích hoạt / Vô hiệu', value: userSummary.inactive, icon: PowerOff },
+      { label: 'Tổng người dùng', value: userStats.total, icon: Users },
+      { label: 'Hoạt động', value: userStats.active, icon: Check },
+      { label: 'Thủ thư', value: userStats.librarians, icon: UserCog },
+      { label: 'Chưa kích hoạt / Vô hiệu', value: userStats.inactive, icon: PowerOff },
     ],
-    [userSummary]
+    [userStats]
   );
   const roleSummary = useMemo(
     () =>
@@ -936,9 +945,9 @@ function UserManagement() {
         .filter((role) => role.roleName !== 'GUEST')
         .map((role) => ({
           ...role,
-          count: users.filter((user) => user.roles?.includes(role.roleName)).length,
+          count: Number(userStats.usersByRole?.[role.roleName]) || 0,
         })),
-    [roles, users]
+    [roles, userStats.usersByRole]
   );
   const roleChart = useMemo(() => {
     const colors = ['#7c3aed', '#0f766e', '#2f80ed'];
@@ -960,6 +969,38 @@ function UserManagement() {
       background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
     };
   }, [roleSummary]);
+
+  async function loadUserStatistics() {
+    setUserStatsLoading(true);
+    setUserStatsError('');
+
+    try {
+      const result = await reportApi.users();
+      const toCount = (value) => {
+        const count = Number(value);
+        return Number.isFinite(count) && count >= 0 ? count : 0;
+      };
+      const totals = result?.totals || {};
+      const usersByStatus = result?.usersByStatus || {};
+      const usersByRole = Object.fromEntries(
+        Object.entries(result?.usersByRole || {}).map(([roleName, count]) => [roleName, toCount(count)])
+      );
+
+      setUserStats({
+        total: toCount(totals.users),
+        active: toCount(usersByStatus.ACTIVE),
+        inactive: toCount(usersByStatus.INACTIVE),
+        librarians: toCount(usersByRole.LIBRARIAN),
+        usersByRole,
+      });
+    } catch (error) {
+      setUserStatsError(error.message);
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setUserStatsLoading(false);
+    }
+  }
+
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
@@ -976,7 +1017,6 @@ function UserManagement() {
         search: nextSearch.trim(),
       });
       setUsers(result.data || []);
-      setUserSummary(result.summary || { total: result.pagination?.total || 0, active: 0, librarians: 0, inactive: 0 });
       setPagination(result.pagination || { page, limit: pagination.limit, total: 0, totalPages: 1 });
       setUsersUpdatedAt(new Date());
       if (overrides.announce) setToast({ type: 'success', message: 'Đã làm mới danh sách người dùng.' });
@@ -988,6 +1028,13 @@ function UserManagement() {
     }
   }
 
+  async function refreshUserDirectory(page = pagination.page, overrides = {}) {
+    await Promise.all([
+      loadUsers(page, overrides),
+      loadUserStatistics(),
+    ]);
+  }
+
   useEffect(() => {
     const timer = setTimeout(() => {
       loadUsers(1);
@@ -997,6 +1044,14 @@ function UserManagement() {
   // loadUsers reads the latest filter state through this effect's dependency list.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadUserStatistics();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1431,7 +1486,7 @@ function UserManagement() {
 
       setModal(null);
       setSelectedUser(null);
-      await loadUsers(1);
+      await refreshUserDirectory(1);
     } catch (error) {
       setToast({ type: 'error', message: error.message });
       throw error;
@@ -1451,7 +1506,7 @@ function UserManagement() {
       await deactivateManagedUser(user.userId);
       setToast({ type: 'success', message: 'Đã vô hiệu hóa tài khoản người dùng.' });
       setSelectedUser(null);
-      await loadUsers();
+      await refreshUserDirectory();
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     }
@@ -1489,7 +1544,7 @@ function UserManagement() {
       setRoleUser(null);
       setRoleSyncBlocked(false);
       setSelectedUser(null);
-      await loadUsers();
+      await refreshUserDirectory();
     } catch (error) {
       try {
         const refreshedUser = await fetchManagedUser(roleUser.userId);
@@ -1524,7 +1579,7 @@ function UserManagement() {
           <div className="um-actions">
             <button
               className="um-secondary-button"
-              disabled={(activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)}
+              disabled={(activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)}
               onClick={() => {
                 if (activeSection === 'payments') setPaymentFines(getFineRecords());
                 else if (activeSection === 'dashboard') loadDashboard({ announce: true });
@@ -1535,11 +1590,11 @@ function UserManagement() {
                 else if (activeSection === 'audit') {
                   loadAuditLogs(auditPagination.page, { announce: true, filters: auditFilters });
                 }
-                else loadUsers(pagination.page, { announce: true });
+                else refreshUserDirectory(pagination.page, { announce: true });
               }}
             >
-              <RefreshCw size={16} className={((activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'is-spinning' : ''} />
-              {((activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'Đang tải...' : 'Làm mới'}
+              <RefreshCw size={16} className={((activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'is-spinning' : ''} />
+              {((activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'Đang tải...' : 'Làm mới'}
             </button>
             {isUserDirectorySection && (
               <button className="um-primary-button" onClick={openCreateModal}>
@@ -1825,6 +1880,7 @@ function UserManagement() {
         {isUserDirectorySection && <div className="um-dashboard-status" aria-live="polite">
           <span>{usersUpdatedAt ? `Cập nhật lần cuối lúc ${usersUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải danh sách người dùng.'}</span>
           {usersError && <strong>Không thể tải dữ liệu: {usersError}</strong>}
+          {userStatsError && <strong>Không thể tải thống kê người dùng: {userStatsError}</strong>}
         </div>}
 
         {isUserDirectorySection && <section className="um-toolbar">
