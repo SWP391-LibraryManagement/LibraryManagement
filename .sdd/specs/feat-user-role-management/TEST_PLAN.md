@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.1
-Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING FE11 TESTS PLANNED
+Version: 0.3.2
+Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT VALIDATION READY; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -64,11 +64,16 @@ User administration, role listing, role assignment/revocation, account status ma
 - `backend/tests/userManagementRoutes.test.js` for Admin-first list/detail validation.
 - `frontend/test/userManagementApi.test.js` and `frontend/test/userManagementFrontend.test.js` for query omission, `phoneNumber`, detail loading, summaries, and stale-row recovery.
 - Automated safe-read evidence: 105/105 focused backend, 434/434 full backend, 81/81 frontend, coverage/lint/build/traceability PASS.
+- Approved Admin role UI design: `docs/superpowers/specs/2026-07-18-fe11-admin-role-ui-contract-design.md`.
+- Approved Admin role UI plan: `docs/superpowers/plans/2026-07-18-fe11-admin-role-ui-contract.md`.
+- `frontend/test/userManagementApi.test.js` proves numeric assignment bodies and revocation paths with no role-name mutation contract.
+- `frontend/test/userManagementFrontend.test.js` proves catalog validation, numeric mutation planning, assignment-before-revocation order, no-op behavior, reconciliation, and Save lock.
+- Automated Admin role UI evidence: 12/12 focused frontend, 101/101 full frontend, 105/105 focused backend role regression, lint/build/traceability/diff/security PASS.
 
 ## 6. Gaps
 
 - Account setup, transactional backend role mutation, and safe list/detail are complete through human review, merge, and post-merge CI.
-- The Admin role-action UI numeric-ID reconciliation is active under `FE11-UIR01..UIR05`; implementation evidence is not yet claimed (`TD-022`).
+- The Admin role-action UI numeric-ID reconciliation is validation-ready under `FE11-UIR01..UIR05`; human review, merge, and post-merge CI remain pending, so `TD-022` stays `IN PROGRESS`.
 - Audit Log tests prove Admin authorization and pagination only; canonical boundary validation, filters, redaction, and endpoint ownership remain unvalidated (`TD-024`).
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
 - Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.
@@ -90,10 +95,20 @@ User administration, role listing, role assignment/revocation, account status ma
 - Full evidence: 434/434 backend tests, 81/81 frontend tests, 92.47% statement coverage, 82.35% branch coverage, lint/build/traceability PASS.
 - Real SQL Server aggregate execution and browser-level drawer interaction remain environment-dependent residual checks; emitted SQL and frontend contracts are automated.
 
-## 9. Required Commands / Evidence Before Merge
+## 9. Admin Role UI Contract Slice
+
+- The API adapter accepts only numeric `roleId` for assignment and revocation.
+- The page accepts IDs only from the authenticated catalog and rejects missing, duplicate, zero, or invalid editable entries before mutation.
+- The complete diff is planned before the first request; assignments run before revocations and no-op saves send no mutation.
+- The first mutation failure stops the sequence and reloads the authoritative target into the open modal; failed reconciliation disables Save.
+- Role-specific browser interaction remains a residual acceptance check; existing browser E2E stays the CI regression boundary.
+- Real SQL Server concurrent last-Admin execution remains environment-dependent and is covered locally by the unchanged focused backend contract tests.
+
+## 10. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test
+npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
