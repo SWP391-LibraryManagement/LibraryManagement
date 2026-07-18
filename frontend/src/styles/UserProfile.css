@@ -20,9 +20,16 @@
 }
 
 /* ---------- Page shell ---------- */
+.profile-route-shell {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(168, 117, 50, 0.08), transparent 32%),
+    var(--up-bg);
+}
+
 .up-page {
-  min-height: 100vh;
-  background: var(--up-bg);
+  min-height: calc(100dvh - 64px);
+  background: transparent;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -48,14 +55,14 @@
 /* ---------- Main content area ---------- */
 .up-main {
   flex: 1;
-  max-width: 1100px;
+  max-width: 1180px;
   width: 100%;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
+  margin: 1.5rem auto;
+  padding: 0 1.25rem;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 1.25rem;
+  gap: 1.125rem;
 }
 
 /* Full-width row (header card) */
@@ -71,12 +78,13 @@
 /* 1/3 width (actions sidebar) */
 .up-col-1 {
   grid-column: span 1;
+  align-self: start;
 }
 
 /* ---------- Footer ---------- */
 .up-footer {
   text-align: center;
-  padding: 1.25rem;
+  padding: 1rem;
   font-size: 0.75rem;
   color: var(--up-muted);
   border-top: 1px solid var(--up-border);
@@ -109,14 +117,14 @@
 }
 
 .ph-banner {
-  height: 9rem;
+  height: 7.5rem;
   width: 100%;
   background: linear-gradient(135deg, #1B3A6B 0%, #0D2247 60%, #C9752A 100%);
 }
 
 .ph-body {
-  padding: 0 2rem 2rem;
-  margin-top: -3.5rem;
+  padding: 0 1.75rem 1.5rem;
+  margin-top: -3rem;
 }
 
 .ph-identity-row {
@@ -133,8 +141,8 @@
 }
 
 .ph-avatar {
-  width: 6rem;
-  height: 6rem;
+  width: 5.5rem;
+  height: 5.5rem;
   border-radius: 50%;
   border: 1.5px solid rgba(199,138,59,0.35);
   box-shadow: 0 0 0 4px var(--up-card), var(--up-shadow-lg);
@@ -246,7 +254,7 @@
   border-radius: var(--up-radius-2xl);
   border: 1px solid var(--up-border);
   box-shadow: var(--up-shadow-sm);
-  padding: 1.5rem;
+  padding: 1.375rem 1.5rem;
   height: 100%;
   box-sizing: border-box;
 }
@@ -329,8 +337,8 @@
   border-radius: var(--up-radius-2xl);
   border: 1px solid var(--up-border);
   box-shadow: var(--up-shadow-sm);
-  padding: 1.5rem;
-  height: 100%;
+  padding: 1.375rem;
+  height: auto;
   box-sizing: border-box;
 }
 

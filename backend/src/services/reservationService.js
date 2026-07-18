@@ -129,6 +129,10 @@ function createReservationService({
       throw errors.notFound('COPY_NOT_FOUND', 'Book copy was not found.');
     }
 
+    if (copy.bookStatus === 'INACTIVE') {
+      throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be reserved.');
+    }
+
     await ensureEligibleMember(userId);
 
     if (copy.status === 'AVAILABLE') {

@@ -23,9 +23,16 @@ const fineSelect = `
     f.CreatedAt,
     f.UpdatedAt,
     u.Username,
-    u.Email
+    u.Email,
+    up.FullName,
+    b.Title AS BookTitle,
+    bc.Barcode
   FROM Fines f
   INNER JOIN Users u ON f.UserId = u.UserId
+  LEFT JOIN UserProfiles up ON f.UserId = up.UserId
+  INNER JOIN BorrowDetails bd ON f.BorrowDetailId = bd.BorrowDetailId
+  INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
+  INNER JOIN Books b ON bc.BookId = b.BookId
 `;
 
 function mapFine(row) {
@@ -48,12 +55,15 @@ function mapFine(row) {
     createdBy: row.CreatedBy,
     collectedBy: row.CollectedBy,
     paymentMethod: row.PaymentMethod,
+    bookTitle: row.BookTitle,
+    barcode: row.Barcode,
     createdAt: row.CreatedAt,
     updatedAt: row.UpdatedAt,
     member: {
       userId: row.UserId,
       username: row.Username,
       email: row.Email,
+      fullName: row.FullName,
     },
   };
 }
@@ -156,7 +166,7 @@ async function listFines({ userId, status, limit = 50, offset = 0 } = {}) {
   const result = await request.query(`
     ${fineSelect}
     ${whereClause}
-    ORDER BY f.CreatedAt DESC, f.FineId DESC
+    ORDER BY f.FineId ASC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
   `);
 

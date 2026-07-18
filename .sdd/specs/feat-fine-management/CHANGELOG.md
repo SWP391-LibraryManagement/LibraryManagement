@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-18 - Librarian Fine Page Restored
+
+- Restored the `Quản lý tiền phạt` sidebar item and `/librarian/fines` page after clarifying that only the redundant embedded book workspace should be removed.
+- Kept FE05 book management on its separate `/librarian/books` route.
+
+## 2026-07-18 - Librarian Fine Navigation Separation
+
+- Kept `/librarian/fines` as the dedicated FE09 workspace and preserved its Librarian sidebar entry.
+- Removed the embedded FE05 book-management workspace from the fine page because FE05 now has its own `/librarian/books` sidebar route.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE09 accrual, payment, terminal-state, and server-boundary contract as the Phase 1 baseline; implementation follow-up remains pending.
@@ -79,3 +89,10 @@
 - Added stable fine-list ordering guidance: librarian fine list defaults to fine ID ascending.
 - Added BR-FE09-017..018, FR-FE09-011..013, AC-FE09-011..012, EC-FE09-011, and Q-FE09-008..009.
 - Updated the `/api/fines` API contract to include `q?` and `sort?` with default fine ID ascending order.
+## 2026-07-18 - Librarian layout alignment
+
+- Aligned fine statistics, policy guidance, forms, detail cards, and action buttons with the shared librarian cream-and-brown visual system.
+- Improved component spacing and hierarchy without changing FE09 calculation or persistence behavior.
+- Replaced the browser-storage demonstration screen with the canonical FE09 server workflow and removed the demonstration-data notice.
+- Connected the staff list to SQL-backed fine, member, borrowing-detail, book, and barcode fields with ascending FineId ordering, search, status filtering, refresh, and pagination.
+- Replaced arbitrary edit/delete controls with traceable state transitions: calculate, full offline collection/mark-paid, plus Admin-only waive/cancel with a required reason.

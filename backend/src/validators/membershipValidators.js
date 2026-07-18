@@ -11,6 +11,11 @@ const applicationIdParamValidator = [
 ];
 
 const listApplicationsValidators = [
+  query('q')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Search text must be at most 100 characters.'),
   query('status')
     .optional({ nullable: true, checkFalsy: true })
     .trim()

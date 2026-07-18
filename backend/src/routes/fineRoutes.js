@@ -18,8 +18,8 @@ function createFineRoutes({ authService, fineManagementService } = {}) {
   router.patch('/:fineId/cancel', authenticate, fineManagement.cancel);
   router.get('/:fineId', authenticate, fineManagement.getOne);
 
-  // --- Legacy prototype CRUD (kept so the current FineManagement.jsx demo keeps working). ---
-  router.get('/', requireStaff, fineController.listFines);
+  // Canonical FE09 list. Legacy write routes remain isolated for backward compatibility only.
+  router.get('/', requireStaff, fineManagement.listAll);
   router.post('/', requireStaff, fineController.createFine);
   router.put('/:fineId', requireStaff, fineController.updateFine);
   router.delete('/:fineId', requireStaff, fineController.deleteFine);

@@ -1,11 +1,11 @@
 export const MEMBERSHIP_STATUS_LABELS = {
-  NONE: 'Chua nop don',
-  PENDING: 'Dang cho duyet',
-  APPROVED: 'Da duyet',
-  REJECTED: 'Da tu choi',
-  EXPIRED: 'Het han',
+  NONE: 'Chưa nộp đơn',
+  PENDING: 'Đang chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Đã từ chối',
+  INACTIVE: 'Ngừng hoạt động',
 };
 
 export function membershipStatusLabel(status) {
-  return MEMBERSHIP_STATUS_LABELS[String(status || 'NONE').toUpperCase()] || status || 'Chua ro';
+  return MEMBERSHIP_STATUS_LABELS[String(status || 'NONE').toUpperCase()] || status || 'Chưa rõ';
 }

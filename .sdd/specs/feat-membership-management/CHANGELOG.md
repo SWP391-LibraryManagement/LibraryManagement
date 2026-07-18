@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-18 - Admin Review List Alignment
+
+- Added database-backed search by application ID, applicant name, username, or email.
+- Added canonical `total` and `totalPages` metadata to the protected review-list response.
+- Aligned the admin refresh, loading, filter, pagination, and Vietnamese review copy with the FE04 workflow.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE04 membership lifecycle, canonical member projection, approval timestamps, and FE10 boundary as the Phase 1 baseline; implementation remains pending.

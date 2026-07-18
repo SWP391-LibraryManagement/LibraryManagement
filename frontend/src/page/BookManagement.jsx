@@ -25,6 +25,8 @@ const DEFAULT_FORM = {
   description: '',
 };
 
+const PAGE_SIZE = 8;
+
 async function apiRequest(path, options = {}) {
   const body = options.body ? JSON.parse(options.body) : undefined;
 
@@ -233,6 +235,7 @@ export default function BookManagement() {
   const [searchResults, setSearchResults] = useState([]);
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [page, setPage] = useState(1);
   const [addForm, setAddForm] = useState(DEFAULT_FORM);
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
   const [addErrors, setAddErrors] = useState({});
@@ -246,6 +249,9 @@ export default function BookManagement() {
     () => books.find((book) => Number(book.id) === Number(selectedBookId)) || null,
     [books, selectedBookId]
   );
+  const totalPages = Math.max(1, Math.ceil(books.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedBooks = books.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -261,10 +267,10 @@ export default function BookManagement() {
     });
   };
 
-  const loadBooks = useCallback(async ({ status = statusFilter } = {}) => {
+  const loadBooks = useCallback(async ({ status = statusFilter, categoryId = categoryFilter } = {}) => {
     const params = new URLSearchParams({ limit: '100' });
     if (status) params.set('status', status);
-    if (categoryFilter) params.set('categoryId', categoryFilter);
+    if (categoryId) params.set('categoryId', categoryId);
     const result = await apiRequest(`/books/management?${params.toString()}`);
     const nextBooks = result.data || [];
     setBooks(nextBooks);
@@ -275,6 +281,7 @@ export default function BookManagement() {
 
       return nextBooks.length ? currentSelectedBookId : '';
     });
+    return nextBooks;
   }, [categoryFilter, statusFilter]);
 
   useEffect(() => {
@@ -307,8 +314,9 @@ export default function BookManagement() {
   const handleRefreshList = async () => {
     try {
       setLoading(true);
-      await loadBooks();
-      showToast('Book list refreshed.');
+      await Promise.all([loadMetadata(), loadBooks()]);
+      setPage(1);
+      showToast('Đã tải lại dữ liệu sách.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -335,7 +343,7 @@ export default function BookManagement() {
       const params = new URLSearchParams({ q: keyword });
       const result = await apiRequest(`/books?${params.toString()}`);
       setSearchResults(result.data || []);
-      showToast(`Found ${result.data?.length || 0} active book(s).`);
+      showToast(`Tìm thấy ${result.data?.length || 0} sách đang hoạt động.`);
     } catch (error) {
       showToast(error.message, 'error');
       setSearchResults([]);
@@ -379,10 +387,14 @@ export default function BookManagement() {
         body: JSON.stringify(makePayload(addForm)),
       });
       setAddForm(DEFAULT_FORM);
-      await loadBooks();
+      setStatusFilter('ACTIVE');
+      setCategoryFilter('');
+      const nextBooks = await loadBooks({ status: 'ACTIVE', categoryId: '' });
       setSelectedBookId(String(result.data.id));
       setDetailBook(result.data);
-      showToast('Add book successfully. Refresh homepage to see the newest active book first.');
+      const createdIndex = nextBooks.findIndex((book) => Number(book.id) === Number(result.data.id));
+      setPage(createdIndex >= 0 ? Math.floor(createdIndex / PAGE_SIZE) + 1 : 1);
+      showToast('Đã thêm sách và chuyển đến vị trí của sách trong danh sách.');
     } catch (error) {
       if (/isbn/i.test(error.message)) {
         setAddErrors((current) => ({ ...current, isbn: 'ISBN already exists. Please use a unique ISBN or leave it blank.' }));
@@ -416,8 +428,9 @@ export default function BookManagement() {
         body: JSON.stringify({ copyStatus: updateForm.copyStatus }),
       });
       await loadBooks();
+      setPage(1);
       setDetailBook(availabilityResult.data || result.data);
-      showToast('Book information and availability updated. Homepage will show the new status.');
+      showToast('Đã cập nhật thông tin sách. Trạng thái mới sẽ được đồng bộ với trang chủ.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -444,7 +457,7 @@ export default function BookManagement() {
       setSelectedBookId('');
       setDetailBook(null);
       setDeleteConfirmed(false);
-      showToast('Book deleted from the public catalog. It is now hidden from homepage search.');
+      showToast('Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -452,12 +465,12 @@ export default function BookManagement() {
     }
   };
 
-  const renderBookTable = (items) => (
+  const renderBookTable = (items, startIndex = 0) => (
     <div className="bm-table-wrap">
       <table>
         <thead>
           <tr>
-            <th>ID</th>
+            <th>STT</th>
             <th>Title</th>
             <th>ISBN</th>
             <th>Category</th>
@@ -472,9 +485,9 @@ export default function BookManagement() {
           </tr>
         </thead>
         <tbody>
-          {items.map((book) => (
+          {items.map((book, index) => (
             <tr key={book.id} className={Number(selectedBookId) === Number(book.id) ? 'selected' : ''}>
-              <td>#{book.id}</td>
+              <td title={`ID dữ liệu: #${book.id}`}>#{startIndex + index + 1}</td>
               <td>{book.title}</td>
               <td>{book.isbn || '-'}</td>
               <td>{book.category}</td>
@@ -500,7 +513,18 @@ export default function BookManagement() {
           ))}
         </tbody>
       </table>
-      {!items.length && <div className="bm-empty">No books found.</div>}
+      {!items.length && <div className="bm-empty">Không tìm thấy sách phù hợp.</div>}
+    </div>
+  );
+
+  const renderPagination = () => (
+    <div className="bm-pagination" aria-label="Phân trang danh sách sách">
+      <span>Trang {safePage}/{totalPages} • {books.length} sách</span>
+      <div>
+        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage === 1}>Trước</button>
+        <span className="bm-page-current">{safePage}</span>
+        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={safePage === totalPages}>Sau</button>
+      </div>
     </div>
   );
 
@@ -548,52 +572,48 @@ export default function BookManagement() {
     <div className="bm-module">
       <Toast toast={toast} onClose={() => setToast(null)} />
       <main className="bm-main">
-        <header className="bm-header">
-          <div>
-            <p>FE05 Book Management</p>
-            <h1>Book Management</h1>
-            <span>Manage catalog records and keep ACTIVE books visible on the public homepage.</span>
-          </div>
+        <div className="bm-top-actions">
           <button className="bm-soft" onClick={handleRefreshList} disabled={loading}>
             <RefreshCw size={16} />
-            Refresh
+            {loading ? 'Đang tải...' : 'Tải lại'}
           </button>
-        </header>
+        </div>
 
         <section className="bm-summary">
-          <div><span>Total</span><strong>{books.length}</strong></div>
-          <div><span>Active</span><strong>{books.filter((book) => book.status === 'ACTIVE').length}</strong></div>
-          <div><span>Inactive</span><strong>{books.filter((book) => book.status === 'INACTIVE').length}</strong></div>
+          <div><span>Tổng số sách</span><strong>{books.length}</strong></div>
+          <div><span>Đang hoạt động</span><strong>{books.filter((book) => book.status === 'ACTIVE').length}</strong></div>
+          <div><span>Ngừng hoạt động</span><strong>{books.filter((book) => book.status === 'INACTIVE').length}</strong></div>
         </section>
 
         <section className="bm-panel">
           <div className="bm-panel-head">
-            <div><p>Public search</p><h2>Search Books</h2></div>
+            <div><p>Tra cứu nhanh</p><h2>Tìm kiếm sách</h2></div>
           </div>
           <form className="bm-search-row" onSubmit={handleSearch}>
-            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={100} placeholder="Search by title, ISBN, author, category..." />
-            <button className="bm-primary" type="submit"><Search size={17} />Search</button>
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={100} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." />
+            <button className="bm-primary" type="submit"><Search size={17} />Tìm kiếm</button>
           </form>
           {searchResults.length > 0 && renderBookTable(searchResults)}
         </section>
 
         <section className="bm-panel">
           <div className="bm-panel-head">
-            <div><p>Management list</p><h2>View Book List</h2></div>
+            <div><p>Danh mục quản lý</p><h2>Danh sách sách</h2></div>
             <div className="bm-filters">
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="">All status</option>
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+                <option value="">Tất cả trạng thái</option>
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="INACTIVE">INACTIVE</option>
               </select>
-              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-                <option value="">All categories</option>
+              <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(1); }}>
+                <option value="">Tất cả danh mục</option>
                 {metadata.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
-              <button className="bm-soft" onClick={handleRefreshList}>Apply</button>
+              <button className="bm-soft" onClick={handleRefreshList}>Áp dụng</button>
             </div>
           </div>
-          {renderBookTable(books)}
+          {renderBookTable(pagedBooks, (safePage - 1) * PAGE_SIZE)}
+          {renderPagination()}
         </section>
 
         {renderDetails()}
@@ -637,25 +657,25 @@ export default function BookManagement() {
 
         <section className="bm-panel">
           <div className="bm-panel-head">
-            <div><p>Catalog removal</p><h2>Delete Book</h2></div>
+            <div><p>Quản lý trạng thái</p><h2>Ngừng hoạt động sách</h2></div>
           </div>
           {selectedBook ? (
             <div className="bm-danger-box">
               <AlertTriangle size={22} />
               <div>
                 <h3>{selectedBook.title}</h3>
-                <p>Deleting a book removes it from homepage search and public book lists. The staff catalog keeps the record for audit history.</p>
+                <p>Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.</p>
                 <label className="bm-confirm-line">
                   <input
                     type="checkbox"
                     checked={deleteConfirmed}
                     onChange={(event) => setDeleteConfirmed(event.target.checked)}
                   />
-                  <span>I understand this book will be hidden from members and guests.</span>
+                  <span>Tôi xác nhận sách sẽ bị ẩn với thành viên và khách.</span>
                 </label>
                 <button className="bm-danger" onClick={handleDeleteBook} disabled={saving || selectedBook.status === 'INACTIVE'}>
                   <Trash2 size={17} />
-                  {selectedBook.status === 'INACTIVE' ? 'Already Deleted' : 'Delete Book'}
+                  {selectedBook.status === 'INACTIVE' ? 'Đã ngừng hoạt động' : 'Ngừng hoạt động'}
                 </button>
               </div>
             </div>
@@ -666,7 +686,7 @@ export default function BookManagement() {
       </main>
 
       <style>{`
-        .bm-module { color: #172033; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .bm-module { --bm-accent: #b67a2a; --bm-accent-dark: #8a581d; --bm-border: #e6d5bb; --bm-soft-bg: #f7efe2; color: #2b2118; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .bm-shell { min-height: 100vh; background: #f6f7fb; color: #172033; display: flex; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .bm-sidebar { width: 286px; min-height: 100vh; position: sticky; top: 0; align-self: flex-start; background: #14202e; color: #e5edf7; padding: 22px 16px; display: flex; flex-direction: column; gap: 20px; }
         .bm-brand { display: flex; gap: 12px; align-items: center; padding: 6px 8px 12px; }
@@ -685,31 +705,33 @@ export default function BookManagement() {
         .bm-session span { color: #9fb0c5; font-size: 12px; }
         .bm-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
         .bm-main { flex: 1; padding: 0; min-width: 0; display: grid; gap: 18px; }
+        .bm-top-actions { display: flex; justify-content: flex-end; margin-top: -66px; margin-bottom: 22px; min-height: 44px; align-items: center; }
         .bm-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
-        .bm-header p, .bm-panel-head p { margin: 0 0 6px; color: #2aa198; font-size: 12px; font-weight: 800; text-transform: uppercase; }
-        .bm-header h1, .bm-panel-head h2 { margin: 0; color: #172033; }
-        .bm-header span { display: block; color: #607087; margin-top: 7px; font-size: 14px; }
+        .bm-header p, .bm-panel-head p { margin: 0 0 6px; color: var(--bm-accent-dark); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+        .bm-header h1, .bm-panel-head h2 { margin: 0; color: #24170d; font-family: var(--lib-heading, Georgia, serif); }
+        .bm-header span { display: block; color: #765f49; margin-top: 7px; font-size: 14px; }
         .bm-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-        .bm-summary div, .bm-panel { background: #fff; border: 1px solid #dde5ef; border-radius: 8px; box-shadow: 0 12px 28px rgba(20,32,46,0.06); }
-        .bm-summary div { padding: 16px; }
-        .bm-summary span { display: block; color: #607087; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .bm-summary div, .bm-panel { background: #fffdfa; border: 1px solid var(--bm-border); border-radius: 16px; box-shadow: 0 12px 28px rgba(84,56,27,0.07); }
+        .bm-summary div { padding: 18px 20px; border-top: 3px solid var(--bm-accent); }
+        .bm-summary span { display: block; color: #765f49; font-size: 12px; font-weight: 700; text-transform: uppercase; }
         .bm-summary strong { display: block; font-size: 28px; margin-top: 5px; }
         .bm-form label > span { color: #42526a; font-size: 12px; font-weight: 800; text-transform: uppercase; }
-        .bm-panel { padding: 18px; }
+        .bm-panel { padding: 20px; }
         .bm-panel-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
-        .bm-soft, .bm-primary, .bm-danger, .bm-table-wrap button { min-height: 38px; border-radius: 8px; border: 1px solid #c9d5e4; background: #fff; color: #26354a; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-weight: 700; }
-        .bm-primary { background: #2aa198; border-color: #2aa198; color: #fff; }
+        .bm-soft, .bm-primary, .bm-danger, .bm-table-wrap button { min-height: 42px; border-radius: 11px; border: 1px solid var(--bm-border); background: #fffdfa; color: #3d2b1c; padding: 0 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-weight: 700; }
+        .bm-primary { background: var(--bm-accent); border-color: var(--bm-accent); color: #fff; }
+        .bm-primary:hover { background: var(--bm-accent-dark); border-color: var(--bm-accent-dark); }
         .bm-danger { background: #dc2626; border-color: #dc2626; color: #fff; margin-top: 12px; }
         .bm-danger:disabled, .bm-primary:disabled, .bm-soft:disabled { opacity: .6; cursor: not-allowed; }
         input, select, textarea { border: 1px solid #cbd6e2; border-radius: 8px; min-height: 40px; padding: 0 11px; font: inherit; color: #172033; background: #fff; }
         textarea { padding-top: 10px; resize: vertical; }
         .bm-search-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 16px; }
         .bm-filters { display: flex; flex-wrap: wrap; gap: 8px; }
-        .bm-table-wrap { overflow-x: auto; border: 1px solid #e4ebf3; border-radius: 8px; }
+        .bm-table-wrap { overflow-x: auto; border: 1px solid var(--bm-border); border-radius: 12px; }
         .bm-table-wrap table { width: 100%; border-collapse: collapse; min-width: 1120px; background: #fff; }
         .bm-table-wrap th, .bm-table-wrap td { padding: 12px 13px; text-align: left; border-bottom: 1px solid #edf2f7; font-size: 14px; }
-        .bm-table-wrap th { color: #607087; font-size: 12px; text-transform: uppercase; background: #f8fafc; }
-        .bm-table-wrap tr.selected td { background: #ecfdf9; }
+        .bm-table-wrap th { color: #705536; font-size: 12px; text-transform: uppercase; background: #f2e7d5; }
+        .bm-table-wrap tr.selected td { background: var(--bm-soft-bg); }
         .bm-status { display: inline-flex; min-width: 78px; justify-content: center; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 800; }
         .bm-status.active { background: #dcfce7; color: #166534; }
         .bm-status.available { background: #dcfce7; color: #166534; }
@@ -735,10 +757,14 @@ export default function BookManagement() {
         .bm-confirm-line { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px; color: #7f1d1d; font-weight: 700; }
         .bm-confirm-line input { width: 18px; min-height: 18px; padding: 0; accent-color: #dc2626; }
         .bm-empty { padding: 26px; text-align: center; color: #607087; }
+        .bm-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 16px; color: #765f49; }
+        .bm-pagination > div { display: flex; align-items: center; gap: 8px; }
+        .bm-page-current { min-width: 40px; min-height: 40px; display: grid; place-items: center; border-radius: 10px; background: var(--bm-accent); color: #fff; font-weight: 800; }
         .bm-toast { position: fixed; right: 22px; top: 18px; z-index: 20; border: 0; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 9px; box-shadow: 0 16px 36px rgba(20,32,46,0.18); color: #fff; cursor: pointer; }
         .bm-toast.success { background: #0f766e; }
         .bm-toast.error { background: #b91c1c; }
         @media (max-width: 900px) {
+          .bm-top-actions { margin-top: 0; margin-bottom: 0; }
           .bm-shell { flex-direction: column; }
           .bm-sidebar { width: 100%; min-height: auto; position: static; }
           .bm-main-nav, .bm-other-nav, .bm-session { flex-direction: row; flex-wrap: wrap; }

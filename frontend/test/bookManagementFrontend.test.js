@@ -36,3 +36,26 @@ test('FE05 book management requests use the shared token refresh flow', async ()
   assert.match(source, /return authorizedRequest\(\{/);
   assert.doesNotMatch(source, /const token = getToken\(\)/);
 });
+
+test('FE05 librarian list refreshes canonical data and paginates management rows', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /const PAGE_SIZE = 8/);
+  assert.match(source, /const pagedBooks = books\.slice/);
+  assert.match(source, /renderBookTable\(pagedBooks, \(safePage - 1\) \* PAGE_SIZE\)/);
+  assert.match(source, /aria-label="Phân trang danh sách sách"/);
+  assert.match(source, /await Promise\.all\(\[loadMetadata\(\), loadBooks\(\)\]\)/);
+  assert.doesNotMatch(source, /<h1>Kho dữ liệu sách<\/h1>/);
+  assert.match(source, /\/books\/\$\{selectedBook\.id\}\/deactivate/);
+});
+
+test('FE05 reveals a newly created book and renders continuous display numbers', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /const createdIndex = nextBooks\.findIndex/);
+  assert.match(source, /setPage\(createdIndex >= 0 \? Math\.floor\(createdIndex \/ PAGE_SIZE\) \+ 1 : 1\)/);
+  assert.match(source, /loadBooks\(\{ status: 'ACTIVE', categoryId: '' \}\)/);
+  assert.match(source, /renderBookTable\(pagedBooks, \(safePage - 1\) \* PAGE_SIZE\)/);
+  assert.match(source, /#\{startIndex \+ index \+ 1\}/);
+  assert.match(source, /title=\{`ID dữ liệu: #\$\{book\.id\}`\}/);
+});

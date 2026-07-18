@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
+  Activity,
+  BarChart2,
   Banknote,
   BookOpen,
   Calendar,
+  Clock3,
   Check,
   ClipboardList,
   Eye,
@@ -25,7 +28,6 @@ import {
   Search,
   Shield,
   Tags,
-  Trash2,
   UserCog,
   Users,
   X,
@@ -33,7 +35,7 @@ import {
 
 import { getFineRecords, saveFineRecords } from '../utils/libraryWorkflow';
 import { adminApi } from '../api/adminApi';
-import { membershipApi } from '../api/libraryFeatureApi';
+import { borrowingApi, membershipApi } from '../api/libraryFeatureApi';
 import LogoutConfirmModal from '../component/layout/LogoutConfirmModal';
 import MembershipApplicationsTable from '../component/membership/MembershipApplicationsTable';
 import MembershipFilter from '../component/membership/MembershipFilter';
@@ -96,47 +98,16 @@ const libraryResources = [
   { id: 'publishers', label: 'Nhà xuất bản', icon: Building2 },
   { id: 'categories', label: 'Quản lý danh mục', icon: Tags },
 ];
-const borrowingStatuses = ['ALL', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'];
+const borrowingStatuses = ['ALL', 'REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED'];
 const requestStatuses = ['ALL', 'PENDING', 'APPROVED', 'COMPLETED', 'REJECTED', 'CANCELLED'];
-const demoDashboard = {
-  summary: { totalBooks: 67, totalMembers: 23, totalAuthors: 26, totalBorrowed: 0, overdueBorrowed: 62 },
-  charts: {
-    mostBorrowed: [
-      { label: 'Clean Code', value: 11 }, { label: 'Java', value: 8 }, { label: 'CSDL', value: 6 },
-      { label: 'React', value: 5 }, { label: 'Node', value: 4 }, { label: 'SQL', value: 4 },
-      { label: 'Design', value: 4 }, { label: 'Testing', value: 3 }, { label: 'UX', value: 3 }, { label: 'API', value: 3 },
-    ],
-    overdue: [
-      { label: 'Java', value: 9 }, { label: 'C#', value: 7 }, { label: 'JS', value: 5 }, { label: 'SQL', value: 4 },
-    ],
-    returnedToday: [
-      { label: 'Clean Code', value: 4 }, { label: 'DDD', value: 3 }, { label: 'React', value: 2 }, { label: 'Node', value: 1 },
-    ],
-  },
+const requestStatusLabels = {
+  ALL: 'Tất cả',
+  PENDING: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  COMPLETED: 'Hoàn thành',
+  REJECTED: 'Từ chối',
+  CANCELLED: 'Đã hủy',
 };
-const demoLibraryRows = {
-  books: [
-    { id: 1, title: 'Clean Code', isbn: '9780132350884', category: 'Programming', author: 'Robert C. Martin', publisher: 'Prentice Hall', publishYear: 2008, totalCopies: 5, availableCopies: 3, status: 'ACTIVE' },
-    { id: 2, title: 'Javaa', isbn: 'JAVA-001', category: 'Technology', author: 'James Gosling', publisher: 'Demo Press', publishYear: 2020, totalCopies: 2, availableCopies: 1, status: 'ACTIVE' },
-  ],
-  authors: [{ id: 1, name: 'Robert C. Martin', status: 'ACTIVE' }, { id: 2, name: 'James Gosling', status: 'ACTIVE' }],
-  publishers: [{ id: 1, name: 'Prentice Hall', status: 'ACTIVE' }, { id: 2, name: 'Demo Press', status: 'ACTIVE' }],
-  categories: [{ id: 1, name: 'Programming', status: 'ACTIVE' }, { id: 2, name: 'Technology', status: 'ACTIVE' }],
-};
-const demoBookMetadata = {
-  categories: demoLibraryRows.categories,
-  authors: demoLibraryRows.authors,
-  publishers: demoLibraryRows.publishers,
-};
-const demoBorrowings = [
-  { id: 332, requestId: 101, userId: 6, memberName: 'dat', email: '3eesfcs@gmail.com', bookTitle: 'Javaa', copyId: 233, barcode: 'BC-233', borrowDate: '2026-06-01', dueDate: '2026-06-02', returnDate: '', status: 'BORROWED' },
-  { id: 333, requestId: 102, userId: 7, memberName: 'Nguyen Lan An', email: 'lan@example.test', bookTitle: 'Clean Code', copyId: 12, barcode: 'BC-012', borrowDate: '2026-06-16', dueDate: '2026-06-30', returnDate: '2026-06-30', status: 'RETURNED' },
-];
-const demoRequests = [
-  { id: 1, requestDate: '2026-06-30T15:18:00', status: 'PENDING', memberName: 'Bích Hằng update', phone: '0912789876', email: 'bich@example.test', bookTitles: 'Gia đình, Bạn bè, Đất nước', categories: 'Chính trị 2', itemCount: 1 },
-  { id: 2, requestDate: '2026-06-30T14:47:00', status: 'COMPLETED', memberName: 'Nguyen Lan An', phone: '84946789559', email: 'lan@example.test', bookTitles: 'Kết nối tri thức', categories: 'Test 6', itemCount: 1 },
-];
-
 function normalizeMembershipApplication(application) {
   const applicant = application?.applicant || {};
   return {
@@ -155,6 +126,7 @@ function normalizeMembershipList(response) {
   return {
     items: rows.map(normalizeMembershipApplication),
     totalPages: response?.totalPages || response?.pagination?.totalPages || 1,
+    total: response?.total || response?.pagination?.total || rows.length,
   };
 }
 
@@ -166,23 +138,23 @@ function validateUserForm(form) {
   const address = form.address.trim();
 
   if (!fullName) {
-    errors.fullName = 'Full name is required.';
+    errors.fullName = 'Họ và tên là bắt buộc.';
   } else if (fullName.length > 100) {
-    errors.fullName = 'Full name must be at most 100 characters.';
+    errors.fullName = 'Họ và tên không được vượt quá 100 ký tự.';
   }
 
   if (!email) {
-    errors.email = 'Email is required.';
+    errors.email = 'Email là bắt buộc.';
   } else if (email.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = 'Enter a valid email address.';
+    errors.email = 'Vui lòng nhập email hợp lệ.';
   }
 
   if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
-    errors.phone = 'Phone number is invalid.';
+    errors.phone = 'Số điện thoại không hợp lệ.';
   }
 
   if (address.length > 255) {
-    errors.address = 'Address must be at most 255 characters.';
+    errors.address = 'Địa chỉ không được vượt quá 255 ký tự.';
   }
 
   return errors;
@@ -232,23 +204,20 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-function toDateInput(value) {
-  return value ? String(value).slice(0, 10) : '';
-}
-
 function downloadCsv(filename, rows) {
   const dataRows = Array.isArray(rows) ? rows : [];
-  if (!dataRows.length) return;
+  if (!dataRows.length) return false;
   const columns = Object.keys(dataRows[0]);
   const escapeCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
   const csv = [columns.join(','), ...dataRows.map((row) => columns.map((column) => escapeCell(row[column])).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+  return true;
 }
 
 function RoleBadge({ role }) {
@@ -285,7 +254,7 @@ function UserModal({ mode, user, onClose, onSubmit }) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const title = isEdit ? 'Update User' : 'Create User';
+  const title = isEdit ? 'Cập nhật người dùng' : 'Thêm người dùng';
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -310,10 +279,10 @@ function UserModal({ mode, user, onClose, onSubmit }) {
       <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={handleSubmit}>
         <div className="um-modal-header">
           <div>
-            <p>{isEdit ? 'FE11 update' : 'FE11 create'}</p>
+            <p>{isEdit ? 'Cập nhật thông tin' : 'Tạo tài khoản FE11'}</p>
             <h2>{title}</h2>
           </div>
-          <button type="button" className="um-icon-button" onClick={onClose} aria-label="Close">
+          <button type="button" className="um-icon-button" onClick={onClose} aria-label="Đóng">
             <X size={18} />
           </button>
         </div>
@@ -321,16 +290,16 @@ function UserModal({ mode, user, onClose, onSubmit }) {
         <div className="um-modal-body">
           {!isEdit && (
             <label>
-              Account type
+              Loại tài khoản
               <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
-                <option value="member">Member</option>
-                <option value="librarian">Librarian</option>
+                <option value="member">Thành viên</option>
+                <option value="librarian">Thủ thư</option>
               </select>
             </label>
           )}
 
           <label>
-            Full name
+            Họ và tên
             <input
               value={form.fullName}
               onChange={(event) => setForm({ ...form, fullName: event.target.value })}
@@ -349,28 +318,28 @@ function UserModal({ mode, user, onClose, onSubmit }) {
           </label>
 
           <label>
-            Phone
+            Số điện thoại
             <input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
             {errors.phone && <span className="um-field-error">{errors.phone}</span>}
           </label>
 
           <label>
-            Address
+            Địa chỉ
             <textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
             {errors.address && <span className="um-field-error">{errors.address}</span>}
           </label>
 
           <div className="um-note">
-            Admin-created accounts are active immediately. Password setup can be completed later.
+            Tài khoản mới ở trạng thái chưa kích hoạt. Người dùng phải hoàn tất thiết lập mật khẩu qua email trước khi đăng nhập.
           </div>
         </div>
 
         <div className="um-modal-actions">
           <button type="button" className="um-secondary-button" onClick={onClose}>
-            Cancel
+            Hủy
           </button>
           <button type="submit" className="um-primary-button" disabled={saving}>
-            {saving ? 'Saving...' : isEdit ? 'Save changes' : 'Create account'}
+            {saving ? 'Đang lưu...' : isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản'}
           </button>
         </div>
       </form>
@@ -419,7 +388,7 @@ function RoleModal({ user, roles, onClose, onSave }) {
         <div className="um-modal-header">
           <div>
             <p>FE11 roles</p>
-            <h2>Manage Roles</h2>
+            <h2>Quản lý vai trò</h2>
           </div>
           <button type="button" className="um-icon-button" onClick={onClose} aria-label="Close">
             <X size={18} />
@@ -452,10 +421,10 @@ function RoleModal({ user, roles, onClose, onSave }) {
 
         <div className="um-modal-actions">
           <button type="button" className="um-secondary-button" onClick={onClose}>
-            Cancel
+            Hủy
           </button>
           <button type="submit" className="um-primary-button" disabled={saving}>
-            {saving ? 'Saving...' : 'Save roles'}
+            {saving ? 'Đang lưu...' : 'Lưu vai trò'}
           </button>
         </div>
       </form>
@@ -465,15 +434,14 @@ function RoleModal({ user, roles, onClose, onSave }) {
 
 function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavigate }) {
   const items = [
-    { id: 'home', icon: Home, label: 'Home', path: '/home' },
-    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'home', icon: Home, label: 'Trang chủ', path: '/home' },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
     { id: 'library', icon: Library, label: 'Thư viện' },
     { id: 'circulation', icon: BookCopy, label: 'Quản lý mượn trả' },
     { id: 'requests', icon: ClipboardList, label: 'Quản lý yêu cầu' },
-    { id: 'membership', icon: UserCog, label: 'Quản lý membership' },
-    { id: 'users', icon: Users, label: 'All Users' },
-    { id: 'roles', icon: Shield, label: 'Permissions' },
-    { id: 'audit', icon: ClipboardList, label: 'Audit Logs' },
+    { id: 'membership', icon: UserCog, label: 'Quản lý hội viên' },
+    { id: 'users', icon: Users, label: 'Quản lý người dùng' },
+    { id: 'audit', icon: ClipboardList, label: 'Nhật ký hoạt động' },
   ];
 
   return (
@@ -483,8 +451,8 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
           <BookOpen size={22} />
         </div>
         <div>
-          <strong>LibraryMS</strong>
-          <span>Admin Console</span>
+          <strong>Quản lý thư viện</strong>
+          <span>Khu vực quản trị</span>
         </div>
       </div>
 
@@ -504,12 +472,12 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
 
       <div className="um-sidebar-footer">
         <div className="um-session">
-          <span>Dang dang nhap voi</span>
-          <strong>{currentUser?.email || 'admin.demo@library.test'}</strong>
+          <span>Đang đăng nhập với</span>
+          <strong>{currentUser?.email || 'Tài khoản quản trị'}</strong>
         </div>
         <button type="button" onClick={onLogout}>
           <LogOut size={18} />
-          <span>Dang xuat</span>
+          <span>Đăng xuất</span>
         </button>
       </div>
     </aside>
@@ -517,7 +485,22 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
 }
 
 function AdminLineChart({ title, rows }) {
-  const data = rows?.length ? rows : [{ label: 'No data', value: 0 }];
+  const data = rows || [];
+  if (data.length === 0) {
+    return (
+      <div className="um-panel chart is-empty">
+        <div className="um-chart-head">
+          <h2>{title}</h2>
+          <span>0 lượt</span>
+        </div>
+        <div className="um-chart-empty">
+          <BarChart2 size={28} />
+          <strong>Chưa có dữ liệu</strong>
+          <span>Dữ liệu sẽ xuất hiện khi có giao dịch phù hợp.</span>
+        </div>
+      </div>
+    );
+  }
   const maxValue = Math.max(...data.map((item) => Number(item.value) || 0), 1);
   const width = 720;
   const height = 230;
@@ -538,14 +521,21 @@ function AdminLineChart({ title, rows }) {
       <svg className="um-line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title}>
         {[0, 1, 2, 3, 4].map((line) => {
           const y = pad + (line * (height - pad * 2)) / 4;
-          return <line key={line} x1={pad} x2={width - pad} y1={y} y2={y} />;
+          const tickValue = Number((maxValue * (1 - line / 4)).toFixed(maxValue < 4 ? 2 : 0));
+          return (
+            <g key={line}>
+              <line x1={pad} x2={width - pad} y1={y} y2={y} />
+              <text className="axis-label" x={pad - 9} y={y + 3}>{tickValue}</text>
+            </g>
+          );
         })}
-        {points.map((point) => <line key={`v-${point.label}`} x1={point.x} x2={point.x} y1={pad} y2={height - pad} />)}
+        {points.map((point) => <line className="vertical-grid" key={`v-${point.label}`} x1={point.x} x2={point.x} y1={pad} y2={height - pad} />)}
         <path d={path} />
         {points.map((point) => (
           <g key={point.label}>
+            <title>{`${point.label}: ${point.value} lượt`}</title>
             <circle cx={point.x} cy={point.y} r="4" />
-            <text className="value" x={point.x} y={Math.max(point.y - 10, 14)}>{point.value}</text>
+            <text className="value" x={point.x} y={Math.max(point.y - 9, 14)}>{point.value}</text>
             <text x={point.x} y={height - 9}>{String(point.label).slice(0, 12)}</text>
           </g>
         ))}
@@ -572,7 +562,6 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
     publisherId: item?.publisherId || metadata.publishers?.[0]?.id || '',
     publishYear: item?.publishYear || item?.year || '',
     pages: item?.pages || '',
-    status: item?.status || 'ACTIVE',
     description: item?.description || '',
   } : { name: item?.name || '' });
 
@@ -600,7 +589,6 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
               <label>Nhà xuất bản<select value={form.publisherId} onChange={(e) => update('publisherId', e.target.value)}>{metadata.publishers.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
               <label>Năm xuất bản<input type="number" value={form.publishYear} onChange={(e) => update('publishYear', e.target.value)} /></label>
               <label>Số trang<input type="number" value={form.pages} onChange={(e) => update('pages', e.target.value)} /></label>
-              <label>Trạng thái<select value={form.status} onChange={(e) => update('status', e.target.value)}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
               <label className="span-2">Mô tả<textarea value={form.description} onChange={(e) => update('description', e.target.value)} /></label>
             </div>
           ) : (
@@ -616,37 +604,22 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
   );
 }
 
-function BorrowingModal({ item, onClose, onSubmit }) {
-  const [form, setForm] = useState(() => ({
-    userId: item?.userId || '',
-    copyId: item?.copyId || '',
-    borrowDate: toDateInput(item?.borrowDate),
-    dueDate: toDateInput(item?.dueDate),
-    returnDate: toDateInput(item?.returnDate),
-    status: item?.status || 'BORROWED',
-  }));
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+const ADMIN_TABLE_PAGE_SIZE = 8;
+
+function AdminTablePagination({ page, totalItems, onPageChange }) {
+  const totalPages = Math.max(Math.ceil(totalItems / ADMIN_TABLE_PAGE_SIZE), 1);
+  if (totalPages <= 1) return null;
 
   return (
-    <div className="um-modal-backdrop" onMouseDown={onClose}>
-      <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); onSubmit(form); }}>
-        <div className="um-modal-header">
-          <div><p>{item ? 'Update' : 'Create'}</p><h2>Quản lý mượn trả</h2></div>
-          <button type="button" className="um-icon-button" onClick={onClose}><X size={18} /></button>
-        </div>
-        <div className="um-modal-body">
-          {!item && <label>User ID<input value={form.userId} onChange={(e) => update('userId', e.target.value)} required /></label>}
-          {!item && <label>Copy ID<input value={form.copyId} onChange={(e) => update('copyId', e.target.value)} required /></label>}
-          <label>Ngày mượn<input type="date" value={form.borrowDate} onChange={(e) => update('borrowDate', e.target.value)} /></label>
-          <label>Ngày hạn<input type="date" value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} required /></label>
-          <label>Ngày trả<input type="date" value={form.returnDate} onChange={(e) => update('returnDate', e.target.value)} /></label>
-          <label>Trạng thái<select value={form.status} onChange={(e) => update('status', e.target.value)}>{borrowingStatuses.filter((status) => status !== 'ALL').map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
-        </div>
-        <div className="um-modal-actions">
-          <button type="button" className="um-secondary-button" onClick={onClose}>Cancel</button>
-          <button type="submit" className="um-primary-button">Save</button>
-        </div>
-      </form>
+    <div className="um-table-pagination" aria-label="Phân trang">
+      <span>Trang {page}/{totalPages} · {totalItems} bản ghi</span>
+      <div>
+        <button type="button" className="um-secondary-button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Trước</button>
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((item) => (
+          <button type="button" key={item} className={item === page ? 'active' : ''} onClick={() => onPageChange(item)} aria-current={item === page ? 'page' : undefined}>{item}</button>
+        ))}
+        <button type="button" className="um-secondary-button" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Sau</button>
+      </div>
     </div>
   );
 }
@@ -656,11 +629,14 @@ function UserManagement() {
   const currentAdmin = getStoredAdminUser();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [users, setUsers] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
+  const [userSummary, setUserSummary] = useState({ total: 0, active: 0, librarians: 0, inactive: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [usersUpdatedAt, setUsersUpdatedAt] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modal, setModal] = useState(null);
   const [roleUser, setRoleUser] = useState(null);
@@ -668,38 +644,65 @@ function UserManagement() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
+  const [auditUpdatedAt, setAuditUpdatedAt] = useState(null);
+  const [auditPagination, setAuditPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
   const [paymentFines, setPaymentFines] = useState(() => getFineRecords());
-  const [dashboardData, setDashboardData] = useState(demoDashboard);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState('');
+  const [dashboardUpdatedAt, setDashboardUpdatedAt] = useState(null);
   const [libraryResource, setLibraryResource] = useState('books');
-  const [libraryRows, setLibraryRows] = useState(demoLibraryRows.books);
+  const [libraryRows, setLibraryRows] = useState([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState('');
+  const [libraryUpdatedAt, setLibraryUpdatedAt] = useState(null);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [libraryStatus, setLibraryStatus] = useState('ALL');
   const [libraryModal, setLibraryModal] = useState(null);
-  const [bookMetadata, setBookMetadata] = useState(demoBookMetadata);
-  const [borrowings, setBorrowings] = useState(demoBorrowings);
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [bookMetadata, setBookMetadata] = useState({ categories: [], authors: [], publishers: [] });
+  const [borrowings, setBorrowings] = useState([]);
+  const [borrowingsLoading, setBorrowingsLoading] = useState(false);
+  const [borrowingsError, setBorrowingsError] = useState('');
+  const [borrowingsUpdatedAt, setBorrowingsUpdatedAt] = useState(null);
   const [borrowingFilter, setBorrowingFilter] = useState({ q: '', status: 'ALL' });
-  const [borrowingModal, setBorrowingModal] = useState(null);
-  const [requests, setRequests] = useState(demoRequests);
+  const [borrowingAction, setBorrowingAction] = useState(null);
+  const [returnCondition, setReturnCondition] = useState('NORMAL');
+  const [borrowingActionSaving, setBorrowingActionSaving] = useState(false);
+  const [borrowingPage, setBorrowingPage] = useState(1);
+  const [requests, setRequests] = useState([]);
   const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', fromDate: '', toDate: '' });
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState('');
+  const [requestsUpdatedAt, setRequestsUpdatedAt] = useState(null);
   const [viewRequest, setViewRequest] = useState(null);
+  const [requestRejectionReason, setRequestRejectionReason] = useState('');
+  const [requestActionSaving, setRequestActionSaving] = useState(false);
+  const [requestPage, setRequestPage] = useState(1);
   const [membershipApplications, setMembershipApplications] = useState([]);
-  const [membershipFilter, setMembershipFilter] = useState({ status: 'PENDING', search: '', page: 1, totalPages: 1 });
+  const [membershipFilter, setMembershipFilter] = useState({ status: 'ALL', search: '', page: 1, totalPages: 1 });
+  const [membershipLoading, setMembershipLoading] = useState(false);
+  const [membershipError, setMembershipError] = useState('');
+  const [membershipUpdatedAt, setMembershipUpdatedAt] = useState(null);
   const [membershipReview, setMembershipReview] = useState(null);
   const [membershipSaving, setMembershipSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const hasActiveFilters = search.trim() || roleFilter !== 'ALL' || statusFilter !== 'ALL';
   const isUserDirectorySection = activeSection === 'users';
+  const pagedLibraryRows = libraryRows.slice((libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE, libraryPage * ADMIN_TABLE_PAGE_SIZE);
+  const pagedBorrowings = borrowings.slice((borrowingPage - 1) * ADMIN_TABLE_PAGE_SIZE, borrowingPage * ADMIN_TABLE_PAGE_SIZE);
+  const pagedRequests = requests.slice((requestPage - 1) * ADMIN_TABLE_PAGE_SIZE, requestPage * ADMIN_TABLE_PAGE_SIZE);
   const sectionMeta = {
-    dashboard: { eyebrow: 'Admin Overview', title: 'Dashboard' },
-    users: { eyebrow: 'User Directory', title: 'All Users' },
-    roles: { eyebrow: 'Access Control', title: 'Permissions' },
-    audit: { eyebrow: 'System Trace', title: 'Audit Logs' },
-    library: { eyebrow: 'Library', title: 'Thư viện' },
-    circulation: { eyebrow: 'Borrow Return', title: 'Quản lý mượn trả' },
-    requests: { eyebrow: 'Request Management', title: 'Quản lý yêu cầu' },
-    membership: { eyebrow: 'Membership Review', title: 'Quản lý membership' },
-    payments: { eyebrow: 'Payment Review', title: 'Confirm / Refuse Payment' },
+    dashboard: { eyebrow: 'Tổng quan quản trị', title: 'Dashboard' },
+    users: { eyebrow: 'Danh sách tài khoản', title: 'Quản lý người dùng' },
+    roles: { eyebrow: 'Kiểm soát truy cập', title: 'Phân quyền' },
+    audit: { eyebrow: 'Theo dõi hệ thống', title: 'Nhật ký hoạt động' },
+    library: { eyebrow: 'Dữ liệu thư viện', title: 'Thư viện' },
+    circulation: { eyebrow: 'Nghiệp vụ mượn trả', title: 'Quản lý mượn trả' },
+    requests: { eyebrow: 'Xử lý yêu cầu', title: 'Quản lý yêu cầu' },
+    membership: { eyebrow: 'Xét duyệt hội viên', title: 'Quản lý hội viên' },
+    payments: { eyebrow: 'Xét duyệt thanh toán', title: 'Xác nhận thanh toán' },
   }[activeSection];
   const pendingPayments = paymentFines.filter((fine) => fine.paymentReviewStatus === 'PENDING');
 
@@ -780,12 +783,12 @@ function UserManagement() {
 
   const stats = useMemo(
     () => [
-      { label: 'Total', value: pagination.total, icon: Users },
-      { label: 'Active', value: users.filter((user) => user.status === 'ACTIVE').length, icon: Check },
-      { label: 'Librarians', value: users.filter((user) => user.roles?.includes('LIBRARIAN')).length, icon: UserCog },
-      { label: 'Inactive', value: users.filter((user) => user.status === 'INACTIVE').length, icon: PowerOff },
+      { label: 'Tổng người dùng', value: userSummary.total, icon: Users },
+      { label: 'Hoạt động', value: userSummary.active, icon: Check },
+      { label: 'Thủ thư', value: userSummary.librarians, icon: UserCog },
+      { label: 'Chưa kích hoạt / Vô hiệu', value: userSummary.inactive, icon: PowerOff },
     ],
-    [pagination.total, users]
+    [userSummary]
   );
   const roleSummary = useMemo(
     () =>
@@ -817,23 +820,13 @@ function UserManagement() {
       background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
     };
   }, [roleSummary]);
-  const filteredMembershipApplications = useMemo(() => {
-    const keyword = membershipFilter.search.trim().toLowerCase();
-    if (!keyword) return membershipApplications;
-
-    return membershipApplications.filter((application) =>
-      `${application.applicationId || application.id || ''} ${application.fullName || ''} ${application.email || ''}`
-        .toLowerCase()
-        .includes(keyword)
-    );
-  }, [membershipApplications, membershipFilter.search]);
-
   async function loadUsers(page = pagination.page, overrides = {}) {
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
     const nextSearch = overrides.search ?? search;
 
     setLoading(true);
+    setUsersError('');
     try {
       const result = await fetchUsers({
         page,
@@ -843,8 +836,12 @@ function UserManagement() {
         search: nextSearch.trim(),
       });
       setUsers(result.data || []);
+      setUserSummary(result.summary || { total: result.pagination?.total || 0, active: 0, librarians: 0, inactive: 0 });
       setPagination(result.pagination || { page, limit: pagination.limit, total: 0, totalPages: 1 });
+      setUsersUpdatedAt(new Date());
+      if (overrides.announce) setToast({ type: 'success', message: 'Đã làm mới danh sách người dùng.' });
     } catch (error) {
+      setUsersError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
       setLoading(false);
@@ -887,33 +884,36 @@ function UserManagement() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status]);
 
-  useEffect(() => {
-    if (activeSection !== 'audit') {
+  async function loadAuditLogs(page = auditPagination.page, { announce = false } = {}) {
+    if (!getStoredAdminUser()) {
+      setAuditLogs([]);
+      setAuditError('Vui lòng đăng nhập bằng tài khoản quản trị viên để xem nhật ký hoạt động.');
       return;
     }
 
-    if (!getStoredAdminUser()) {
-      const timer = setTimeout(() => {
-        setAuditLogs([]);
-        setAuditError('Login with an Admin account to view audit logs.');
-      }, 0);
-      return () => clearTimeout(timer);
+    setAuditLoading(true);
+    setAuditError('');
+    try {
+      const result = await fetchAuditLogs({ page, limit: ADMIN_TABLE_PAGE_SIZE });
+      setAuditLogs(result.data || []);
+      setAuditPagination(result.pagination || { page, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
+      setAuditUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Đã làm mới nhật ký hoạt động.' });
+    } catch (error) {
+      setAuditError(error.message);
+      if (announce) setToast({ type: 'error', message: error.message });
+    } finally {
+      setAuditLoading(false);
     }
+  }
 
-    const timer = setTimeout(() => {
-      setAuditLoading(true);
-      setAuditError('');
-    }, 0);
-
-    fetchAuditLogs(30)
-      .then((result) => {
-        setAuditLogs(result.data || []);
-        setAuditError('');
-      })
-      .catch((error) => setAuditError(error.message))
-      .finally(() => setAuditLoading(false));
+  useEffect(() => {
+    if (activeSection !== 'audit') return;
+    const timer = setTimeout(() => loadAuditLogs(1), 0);
 
     return () => clearTimeout(timer);
+  // The loader intentionally reads the current pagination state only when invoked.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
 
   useEffect(() => {
@@ -932,16 +932,25 @@ function UserManagement() {
     loadUsers(1, { search: '', role: 'ALL', status: 'ALL' });
   }
 
-  async function loadDashboard() {
+  async function loadDashboard({ announce = false } = {}) {
+    setDashboardLoading(true);
+    setDashboardError('');
     try {
-      setDashboardData(await adminApi.dashboard());
+      const result = await adminApi.dashboard();
+      setDashboardData(result);
+      setDashboardUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Dashboard đã được cập nhật.' });
     } catch (error) {
-      setDashboardData(demoDashboard);
+      setDashboardError(error.message);
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setDashboardLoading(false);
     }
   }
 
-  async function loadLibrary(resource = libraryResource) {
+  async function loadLibrary(resource = libraryResource, { announce = false } = {}) {
+    setLibraryLoading(true);
+    setLibraryError('');
     try {
       const params = {
         q: libraryQuery.trim(),
@@ -951,16 +960,22 @@ function UserManagement() {
         ? await adminApi.libraryBooks(params)
         : await adminApi.libraryResource(resource, params);
       setLibraryRows(result.data || []);
+      setLibraryPage(1);
       if (resource === 'books') {
         const metadata = await adminApi.bookMetadata();
         setBookMetadata(metadata.data || { categories: [], authors: [], publishers: [] });
       }
+      setLibraryUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Dữ liệu thư viện đã được làm mới.' });
     } catch (error) {
-      setLibraryRows(demoLibraryRows[resource] || []);
+      setLibraryRows([]);
       if (resource === 'books') {
-        setBookMetadata(demoBookMetadata);
+        setBookMetadata({ categories: [], authors: [], publishers: [] });
       }
+      setLibraryError(error.message);
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setLibraryLoading(false);
     }
   }
 
@@ -985,50 +1000,94 @@ function UserManagement() {
     }
   }
 
-  async function deleteLibraryItem(row) {
-    if (!window.confirm(`Delete ${row.title || row.name}?`)) return;
+  async function deactivateBook(row) {
+    if (row.status === 'INACTIVE') return;
+    if (!window.confirm(`Vô hiệu hóa sách “${row.title}”? Sách sẽ không còn xuất hiện với bạn đọc.`)) return;
     try {
-      if (libraryResource === 'books') {
-        await adminApi.deactivateBook(row.id);
-      } else {
-        await adminApi.deleteResource(libraryResource, row.id);
-      }
+      await adminApi.deactivateBook(row.id);
       await loadLibrary();
-      setToast({ type: 'success', message: 'Item deleted.' });
+      setToast({ type: 'success', message: 'Sách đã được vô hiệu hóa.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     }
   }
 
-  async function loadBorrowings() {
+  async function deactivateMetadata(row) {
+    if (row.status === 'INACTIVE') return;
+    if (!window.confirm(`Vô hiệu hóa “${row.name}”? Mục này sẽ không còn được dùng cho sách mới.`)) return;
+    try {
+      await adminApi.deactivateResource(libraryResource, row.id);
+      await loadLibrary();
+      setToast({ type: 'success', message: 'Dữ liệu đã được vô hiệu hóa.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    }
+  }
+
+  async function loadBorrowings({ announce = false } = {}) {
+    setBorrowingsLoading(true);
+    setBorrowingsError('');
     try {
       const result = await adminApi.borrowings({
         q: borrowingFilter.q.trim(),
         status: borrowingFilter.status === 'ALL' ? '' : borrowingFilter.status,
       });
       setBorrowings(result.data || []);
+      setBorrowingPage(1);
+      setBorrowingsUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Đã làm mới dữ liệu mượn trả.' });
     } catch (error) {
-      setBorrowings(demoBorrowings);
+      setBorrowings([]);
+      setBorrowingsError(error.message);
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setBorrowingsLoading(false);
     }
   }
 
-  async function saveBorrowing(form) {
+  async function renewBorrowing(row) {
+    if (!row || row.status !== 'BORROWED' || Number(row.renewalCount) >= 1) return;
+    if (!window.confirm(`Gia hạn sách “${row.bookTitle}” thêm 14 ngày?`)) return;
+    setBorrowingActionSaving(true);
     try {
-      if (borrowingModal?.item) {
-        await adminApi.updateBorrowing(borrowingModal.item.id, form);
-      } else {
-        await adminApi.createBorrowing(form);
-      }
-      setBorrowingModal(null);
+      await borrowingApi.renewDetail(row.id);
       await loadBorrowings();
-      setToast({ type: 'success', message: 'Borrowing saved.' });
+      setToast({ type: 'success', message: 'Đã gia hạn lượt mượn.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setBorrowingActionSaving(false);
     }
   }
 
-  async function loadRequests() {
+  async function returnBorrowing() {
+    if (!borrowingAction || borrowingActionSaving) return;
+    setBorrowingActionSaving(true);
+    try {
+      const result = await borrowingApi.returnDetail(borrowingAction.id, { condition: returnCondition });
+      setBorrowingAction(null);
+      setReturnCondition('NORMAL');
+      await loadBorrowings();
+      setToast({
+        type: 'success',
+        message: result.fineCandidate?.needsFineReview
+          ? 'Đã ghi nhận trả sách; dữ liệu đã được chuyển cho phần xem xét tiền phạt.'
+          : 'Đã ghi nhận trả sách.',
+      });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setBorrowingActionSaving(false);
+    }
+  }
+
+  async function loadRequests({ announce = false } = {}) {
+    if (requestFilter.fromDate && requestFilter.toDate && requestFilter.fromDate > requestFilter.toDate) {
+      setToast({ type: 'error', message: 'Ngày bắt đầu không được sau ngày kết thúc.' });
+      return;
+    }
+    setRequestsLoading(true);
+    setRequestsError('');
     try {
       const result = await adminApi.requests({
         q: requestFilter.q.trim(),
@@ -1037,24 +1096,38 @@ function UserManagement() {
         toDate: requestFilter.toDate,
       });
       setRequests(result.data || []);
+      setRequestPage(1);
+      setRequestsUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Đã làm mới danh sách yêu cầu.' });
     } catch (error) {
-      setRequests(demoRequests);
+      setRequests([]);
+      setRequestsError(error.message);
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setRequestsLoading(false);
     }
   }
 
-  async function loadMembershipApplications() {
+  async function loadMembershipApplications({ announce = false, page = membershipFilter.page } = {}) {
+    setMembershipLoading(true);
+    setMembershipError('');
     try {
       const result = normalizeMembershipList(await membershipApi.listApplications({
+        q: membershipFilter.search.trim() || undefined,
         status: membershipFilter.status === 'ALL' ? undefined : membershipFilter.status,
-        page: membershipFilter.page,
+        page,
         limit: 10,
       }));
       setMembershipApplications(result.items);
-      setMembershipFilter((current) => ({ ...current, totalPages: result.totalPages }));
+      setMembershipFilter((current) => ({ ...current, page, totalPages: result.totalPages }));
+      setMembershipUpdatedAt(new Date());
+      if (announce) setToast({ type: 'success', message: 'Đã làm mới danh sách đơn đăng ký hội viên.' });
     } catch (error) {
       setMembershipApplications([]);
+      setMembershipError(error.message);
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setMembershipLoading(false);
     }
   }
 
@@ -1066,7 +1139,7 @@ function UserManagement() {
       await membershipApi.approve(application.applicationId || application.id);
       setMembershipReview(null);
       await loadMembershipApplications();
-      setToast({ type: 'success', message: 'Đã xác thực đơn membership.' });
+      setToast({ type: 'success', message: 'Đã duyệt đơn đăng ký hội viên.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     } finally {
@@ -1087,7 +1160,7 @@ function UserManagement() {
       await membershipApi.reject(membershipReview.applicationId || membershipReview.id, reason.trim());
       setMembershipReview(null);
       await loadMembershipApplications();
-      setToast({ type: 'success', message: 'Đã từ chối đơn membership.' });
+      setToast({ type: 'success', message: 'Đã từ chối đơn đăng ký hội viên.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     } finally {
@@ -1095,14 +1168,40 @@ function UserManagement() {
     }
   }
 
-  async function updateRequestStatus(requestId, status) {
+  async function approveBorrowRequest() {
+    if (!viewRequest || requestActionSaving) return;
+    setRequestActionSaving(true);
     try {
-      await adminApi.updateRequestStatus(requestId, status);
+      await borrowingApi.approve(viewRequest.id);
       setViewRequest(null);
       await loadRequests();
-      setToast({ type: 'success', message: 'Request status updated.' });
+      await loadBorrowings();
+      setToast({ type: 'success', message: 'Đã duyệt yêu cầu mượn.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
+    } finally {
+      setRequestActionSaving(false);
+    }
+  }
+
+  async function rejectBorrowRequest() {
+    if (!viewRequest || requestActionSaving) return;
+    const reason = requestRejectionReason.trim();
+    if (!reason) {
+      setToast({ type: 'error', message: 'Vui lòng nhập lý do từ chối.' });
+      return;
+    }
+    setRequestActionSaving(true);
+    try {
+      await borrowingApi.reject(viewRequest.id, reason);
+      setViewRequest(null);
+      setRequestRejectionReason('');
+      await loadRequests();
+      setToast({ type: 'success', message: 'Đã từ chối yêu cầu mượn.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setRequestActionSaving(false);
     }
   }
 
@@ -1163,7 +1262,7 @@ function UserManagement() {
           phone: form.phone.trim(),
           address: form.address.trim(),
         });
-        setToast({ type: 'success', message: 'User information updated.' });
+        setToast({ type: 'success', message: 'Đã cập nhật thông tin người dùng.' });
       } else {
         await createManagedUser({
           type: form.type,
@@ -1172,7 +1271,7 @@ function UserManagement() {
           phone: form.phone.trim(),
           address: form.address.trim(),
         });
-        setToast({ type: 'success', message: 'Active account created and setup email queued.' });
+        setToast({ type: 'success', message: 'Đã tạo tài khoản chưa kích hoạt và gửi email thiết lập mật khẩu.' });
       }
 
       setModal(null);
@@ -1189,13 +1288,13 @@ function UserManagement() {
       return;
     }
 
-    if (!window.confirm(`Deactivate ${user.fullName || user.email}?`)) {
+    if (!window.confirm(`Vô hiệu hóa tài khoản ${user.fullName || user.email}? Người dùng sẽ không thể đăng nhập.`)) {
       return;
     }
 
     try {
       await deactivateManagedUser(user.userId);
-      setToast({ type: 'success', message: 'User account deactivated.' });
+      setToast({ type: 'success', message: 'Đã vô hiệu hóa tài khoản người dùng.' });
       setSelectedUser(null);
       await loadUsers();
     } catch (error) {
@@ -1228,7 +1327,7 @@ function UserManagement() {
         }
       }
 
-      setToast({ type: 'success', message: 'Roles updated.' });
+      setToast({ type: 'success', message: 'Đã cập nhật vai trò người dùng.' });
       setRoleUser(null);
       setSelectedUser(null);
       await loadUsers();
@@ -1257,23 +1356,25 @@ function UserManagement() {
           <div className="um-actions">
             <button
               className="um-secondary-button"
+              disabled={(activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)}
               onClick={() => {
                 if (activeSection === 'payments') setPaymentFines(getFineRecords());
-                else if (activeSection === 'dashboard') loadDashboard();
-                else if (activeSection === 'library') loadLibrary();
-                else if (activeSection === 'circulation') loadBorrowings();
-                else if (activeSection === 'requests') loadRequests();
-                else if (activeSection === 'membership') loadMembershipApplications();
-                else loadUsers();
+                else if (activeSection === 'dashboard') loadDashboard({ announce: true });
+                else if (activeSection === 'library') loadLibrary(libraryResource, { announce: true });
+                else if (activeSection === 'circulation') loadBorrowings({ announce: true });
+                else if (activeSection === 'requests') loadRequests({ announce: true });
+                else if (activeSection === 'membership') loadMembershipApplications({ announce: true });
+                else if (activeSection === 'audit') loadAuditLogs(auditPagination.page, { announce: true });
+                else loadUsers(pagination.page, { announce: true });
               }}
             >
-              <RefreshCw size={16} />
-              Refresh
+              <RefreshCw size={16} className={((activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'is-spinning' : ''} />
+              {((activeSection === 'users' && loading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'Đang tải...' : 'Làm mới'}
             </button>
             {isUserDirectorySection && (
               <button className="um-primary-button" onClick={openCreateModal}>
                 <Plus size={16} />
-                Add user
+                Thêm người dùng
               </button>
             )}
           </div>
@@ -1293,6 +1394,16 @@ function UserManagement() {
 
         {activeSection === 'dashboard' && (
           <>
+            <div className="um-dashboard-status" aria-live="polite">
+              <span>
+                {dashboardUpdatedAt
+                  ? `Cập nhật lần cuối lúc ${dashboardUpdatedAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                  : dashboardLoading ? 'Đang tải dữ liệu dashboard...' : 'Chưa tải dữ liệu dashboard.'}
+              </span>
+              {dashboardError && <strong>Không thể làm mới: {dashboardError}</strong>}
+            </div>
+            {!dashboardData && dashboardLoading && <div className="um-dashboard-loading">Đang đồng bộ dữ liệu từ hệ thống...</div>}
+            {dashboardData && <>
             <section className="um-stats dashboard">
               {[
                 { label: 'Tổng số sách', value: dashboardData.summary?.totalBooks || 0, icon: BookOpen },
@@ -1311,15 +1422,22 @@ function UserManagement() {
               ))}
             </section>
             <section className="um-chart-grid">
-              <AdminLineChart title="Sách được mượn nhiều nhất" rows={dashboardData.charts?.mostBorrowed} />
-              <AdminLineChart title="Danh sách mượn quá hạn" rows={dashboardData.charts?.overdue} />
-              <AdminLineChart title="Danh sách trả lại hôm nay" rows={dashboardData.charts?.returnedToday} />
+              <AdminLineChart title="Top sách được mượn" rows={dashboardData.charts?.mostBorrowed} />
+              <div className="um-chart-grid-secondary">
+                <AdminLineChart title="Sách đang mượn quá hạn" rows={dashboardData.charts?.overdue} />
+                <AdminLineChart title="Sách trả trong hôm nay" rows={dashboardData.charts?.returnedToday} />
+              </div>
             </section>
+            </>}
           </>
         )}
 
         {activeSection === 'library' && (
           <section className="um-admin-section">
+            <div className="um-dashboard-status" aria-live="polite">
+              <span>{libraryUpdatedAt ? `Cập nhật lần cuối lúc ${libraryUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải dữ liệu thư viện.'}</span>
+              {libraryError && <strong>Không thể tải dữ liệu: {libraryError}</strong>}
+            </div>
             <div className="um-tabs">
               {libraryResources.map(({ id, label, icon: Icon }) => (
                 <button
@@ -1330,6 +1448,7 @@ function UserManagement() {
                     setLibraryResource(id);
                     setLibraryQuery('');
                     setLibraryStatus('ALL');
+                    setLibraryPage(1);
                   }}
                 >
                   <Icon size={16} />
@@ -1349,9 +1468,9 @@ function UserManagement() {
                   <option value="INACTIVE">INACTIVE</option>
                 </select>
               )}
-              <button className="um-secondary-button" onClick={() => loadLibrary()}>Search</button>
-              <button className="um-secondary-button" onClick={() => downloadCsv(`${libraryResource}.csv`, libraryRows)}><FileDown size={16} /> Export</button>
-              <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Add</button>
+              <button className="um-secondary-button" disabled={libraryLoading} onClick={() => loadLibrary()}>Tìm kiếm</button>
+              <button className="um-secondary-button" disabled={libraryLoading || libraryRows.length === 0} onClick={() => downloadCsv(`${libraryResource}.csv`, libraryRows)}><FileDown size={16} /> Xuất CSV</button>
+              <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Thêm mới</button>
             </div>
             <section className="um-content">
               <table className="um-table">
@@ -1363,7 +1482,7 @@ function UserManagement() {
                   )}
                 </thead>
                 <tbody>
-                  {libraryRows.map((row, index) => libraryResource === 'books' ? (
+                  {pagedLibraryRows.map((row, index) => libraryResource === 'books' ? (
                     <tr key={row.id}>
                       <td>#{row.id}</td>
                       <td><strong>{row.title}</strong></td>
@@ -1374,120 +1493,155 @@ function UserManagement() {
                       <td>{row.publishYear || row.year || '-'}</td>
                       <td>{row.availableCopies || 0}/{row.totalCopies || 0}</td>
                       <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
-                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" onClick={() => deleteLibraryItem(row)}><Trash2 size={16} /></button></div></td>
+                      <td><div className="um-row-actions"><button className="um-icon-button" title="Chỉnh sửa" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" title="Vô hiệu hóa" disabled={row.status === 'INACTIVE'} onClick={() => deactivateBook(row)}><PowerOff size={16} /></button></div></td>
                     </tr>
                   ) : (
                     <tr key={row.id}>
-                      <td>{index + 1}</td>
+                      <td>{(libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE + index + 1}</td>
                       <td><strong>{row.name}</strong></td>
-                      <td>{row.createdAt || 'Không lưu trong DB'}</td>
-                      <td><span className="um-badge status-active">{row.status || 'ACTIVE'}</span></td>
-                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" onClick={() => deleteLibraryItem(row)}><Trash2 size={16} /></button></div></td>
+                      <td>{formatDate(row.createdAt)}</td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><div className="um-row-actions"><button className="um-icon-button" title="Chỉnh sửa" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" title="Vô hiệu hóa" disabled={row.status === 'INACTIVE'} onClick={() => deactivateMetadata(row)}><PowerOff size={16} /></button></div></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {libraryRows.length === 0 && <div className="um-empty">No library data found.</div>}
+              <AdminTablePagination page={libraryPage} totalItems={libraryRows.length} onPageChange={setLibraryPage} />
             </section>
           </section>
         )}
 
         {activeSection === 'circulation' && (
           <section className="um-admin-section">
+            <div className="um-dashboard-status" aria-live="polite">
+              <span>{borrowingsUpdatedAt ? `Cập nhật lần cuối lúc ${borrowingsUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải dữ liệu mượn trả.'}</span>
+              {borrowingsError && <strong>Không thể tải dữ liệu: {borrowingsError}</strong>}
+            </div>
             <div className="um-toolbar">
-              <div className="um-search"><Search size={18} /><input value={borrowingFilter.q} placeholder="Search member, book, barcode..." onChange={(event) => setBorrowingFilter((current) => ({ ...current, q: event.target.value }))} /></div>
+              <div className="um-search"><Search size={18} /><input value={borrowingFilter.q} placeholder="Tìm thành viên, sách hoặc barcode..." onKeyDown={(event) => { if (event.key === 'Enter') loadBorrowings(); }} onChange={(event) => setBorrowingFilter((current) => ({ ...current, q: event.target.value }))} /></div>
               <select value={borrowingFilter.status} onChange={(event) => setBorrowingFilter((current) => ({ ...current, status: event.target.value }))}>
                 {borrowingStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
               </select>
-              <button className="um-secondary-button" onClick={loadBorrowings}>Search</button>
-              <button className="um-secondary-button" onClick={() => downloadCsv('borrowings.csv', borrowings)}><FileDown size={16} /> Export</button>
-              <button className="um-primary-button" onClick={() => setBorrowingModal({ item: null })}><Plus size={16} /> Add</button>
+              <button className="um-secondary-button" disabled={borrowingsLoading} onClick={() => loadBorrowings()}>Tìm kiếm</button>
+              <button className="um-secondary-button" disabled={borrowingsLoading || borrowings.length === 0} onClick={() => downloadCsv('borrowings.csv', borrowings)}><FileDown size={16} /> Xuất CSV</button>
+              <button className="um-primary-button" onClick={() => setActiveSection('requests')}>Xử lý yêu cầu</button>
             </div>
             <section className="um-content">
               <table className="um-table">
-                <thead><tr><th>ID</th><th>Thành viên</th><th>Sách</th><th>Barcode</th><th>Ngày mượn</th><th>Ngày hạn</th><th>Ngày trả</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <thead><tr><th>Mã lượt</th><th>Mã yêu cầu</th><th>Thành viên</th><th>Sách</th><th>Barcode</th><th>Ngày mượn</th><th>Ngày hạn</th><th>Ngày trả</th><th>Gia hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>
-                  {borrowings.map((row) => (
+                  {pagedBorrowings.map((row) => (
                     <tr key={row.id}>
                       <td>#{row.id}</td>
-                      <td><strong>{row.memberName}</strong><span>{row.email}</span></td>
+                      <td>#{row.requestId}</td>
+                      <td><strong>{row.memberName}</strong></td>
                       <td>{row.bookTitle}</td>
                       <td>{row.barcode || `Copy #${row.copyId}`}</td>
                       <td>{formatDate(row.borrowDate)}</td>
                       <td>{formatDate(row.dueDate)}</td>
                       <td>{formatDate(row.returnDate)}</td>
+                      <td>{row.renewalCount || 0}/1</td>
                       <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status}</span></td>
-                      <td><div className="um-row-actions"><button className="um-icon-button" onClick={() => setBorrowingModal({ item: row })}><Edit2 size={16} /></button></div></td>
+                      <td>
+                        <div className="um-row-actions">
+                          {row.status === 'REQUESTED' && <button className="um-secondary-button" onClick={() => setActiveSection('requests')}>Xử lý yêu cầu</button>}
+                          {['BORROWED', 'OVERDUE'].includes(row.status) && <button className="um-primary-button" disabled={borrowingActionSaving} onClick={() => { setReturnCondition('NORMAL'); setBorrowingAction(row); }}>Trả sách</button>}
+                          {row.status === 'BORROWED' && Number(row.renewalCount) < 1 && <button className="um-secondary-button" disabled={borrowingActionSaving} onClick={() => renewBorrowing(row)}>Gia hạn</button>}
+                          {['RETURNED', 'DAMAGED', 'LOST'].includes(row.status) && <span className="um-muted">Đã hoàn tất</span>}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {borrowings.length === 0 && <div className="um-empty">No borrowing records found.</div>}
+              {borrowings.length === 0 && !borrowingsLoading && (
+                <div className="um-empty">
+                  <strong>Chưa có giao dịch mượn trả trong database.</strong>
+                  <span>Giao dịch sẽ xuất hiện sau khi Member gửi yêu cầu và Admin/Librarian duyệt theo đúng quy trình.</span>
+                </div>
+              )}
+              {borrowingsLoading && <div className="um-empty">Đang tải dữ liệu...</div>}
+              <AdminTablePagination page={borrowingPage} totalItems={borrowings.length} onPageChange={setBorrowingPage} />
             </section>
           </section>
         )}
 
         {activeSection === 'requests' && (
           <section className="um-admin-section">
+            <div className="um-dashboard-status" aria-live="polite">
+              <span>{requestsUpdatedAt ? `Cập nhật lần cuối lúc ${requestsUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải danh sách yêu cầu.'}</span>
+              {requestsError && <strong>Không thể tải dữ liệu: {requestsError}</strong>}
+            </div>
             <div className="um-toolbar requests">
-              <div className="um-search"><Search size={18} /><input value={requestFilter.q} placeholder="Tìm theo tên sách hoặc tài khoản..." onChange={(event) => setRequestFilter((current) => ({ ...current, q: event.target.value }))} /></div>
-              <select value={requestFilter.status} onChange={(event) => setRequestFilter((current) => ({ ...current, status: event.target.value }))}>{requestStatuses.map((status) => <option key={status} value={status}>{status === 'PENDING' ? 'Chờ xác nhận' : status === 'COMPLETED' ? 'Hoàn thành' : status}</option>)}</select>
-              <input type="date" value={requestFilter.fromDate} onChange={(event) => setRequestFilter((current) => ({ ...current, fromDate: event.target.value }))} />
-              <input type="date" value={requestFilter.toDate} onChange={(event) => setRequestFilter((current) => ({ ...current, toDate: event.target.value }))} />
-              <button className="um-secondary-button" onClick={loadRequests}>Search</button>
-              <button className="um-primary-button" onClick={() => downloadCsv('requests.csv', requests)}><FileDown size={16} /> Xuất dữ liệu</button>
+              <div className="um-search"><Search size={18} /><input value={requestFilter.q} placeholder="Tìm theo tên sách, tên hoặc email thành viên..." onKeyDown={(event) => { if (event.key === 'Enter') loadRequests(); }} onChange={(event) => setRequestFilter((current) => ({ ...current, q: event.target.value }))} /></div>
+              <select aria-label="Lọc trạng thái" value={requestFilter.status} onChange={(event) => setRequestFilter((current) => ({ ...current, status: event.target.value }))}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select>
+              <input aria-label="Từ ngày" type="date" value={requestFilter.fromDate} onChange={(event) => setRequestFilter((current) => ({ ...current, fromDate: event.target.value }))} />
+              <input aria-label="Đến ngày" type="date" value={requestFilter.toDate} onChange={(event) => setRequestFilter((current) => ({ ...current, toDate: event.target.value }))} />
+              <button className="um-secondary-button" disabled={requestsLoading} onClick={() => loadRequests()}>Tìm kiếm</button>
+              <button className="um-primary-button" disabled={requestsLoading || requests.length === 0} onClick={() => downloadCsv('requests.csv', requests)}><FileDown size={16} /> Xuất CSV</button>
             </div>
             <section className="um-content">
               <table className="um-table request-table">
                 <thead><tr><th>STT</th><th>Tên sách</th><th>Tài khoản</th><th>Số điện thoại</th><th>Thể loại</th><th>Thời gian đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>
-                  {requests.map((row, index) => (
+                  {pagedRequests.map((row, index) => (
                     <tr key={row.id}>
-                      <td>{index + 1}</td>
-                      <td><strong>{row.bookTitles || '-'}</strong><span>{row.itemCount || 0} sách</span></td>
+                      <td>{(requestPage - 1) * ADMIN_TABLE_PAGE_SIZE + index + 1}</td>
+                      <td><strong>{row.bookTitles || '-'}</strong></td>
                       <td>{row.memberName}</td>
                       <td>{row.phone || '-'}</td>
                       <td>{row.categories || '-'}</td>
                       <td>{formatDate(row.requestDate)}</td>
-                      <td><span className={`um-badge status-${String(row.status || '').toLowerCase()}`}>{row.status === 'PENDING' ? 'Chờ xác nhận' : row.status === 'COMPLETED' ? 'Hoàn thành' : row.status}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || '').toLowerCase()}`}>{requestStatusLabels[row.status] || row.status}</span></td>
                       <td>
-                        <button
-                          className="um-icon-button"
-                          disabled={row.status !== 'PENDING'}
-                          title={row.status === 'PENDING' ? 'Cập nhật yêu cầu' : 'Yêu cầu đã hoàn thành, không thể sửa'}
-                          onClick={() => setViewRequest(row)}
-                        >
-                          <Eye size={16} />
-                        </button>
+                        <div className="um-row-actions">
+                          {row.status === 'PENDING' && (
+                            <button className="um-primary-button" onClick={() => { setRequestRejectionReason(''); setViewRequest(row); }}><Eye size={16} /> Xử lý</button>
+                          )}
+                          {row.status === 'APPROVED' && (
+                            <button className="um-secondary-button" onClick={() => setActiveSection('circulation')}><BookCopy size={16} /> Mượn trả</button>
+                          )}
+                          {['COMPLETED', 'REJECTED', 'CANCELLED'].includes(row.status) && (
+                            <button className="um-secondary-button" onClick={() => { setRequestRejectionReason(''); setViewRequest(row); }}><Eye size={16} /> Chi tiết</button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {requests.length === 0 && <div className="um-empty">No requests found.</div>}
+              {requests.length === 0 && !requestsLoading && <div className="um-empty">Không tìm thấy yêu cầu mượn sách.</div>}
+              {requestsLoading && <div className="um-empty">Đang tải danh sách yêu cầu...</div>}
+              <AdminTablePagination page={requestPage} totalItems={requests.length} onPageChange={setRequestPage} />
             </section>
           </section>
         )}
 
         {activeSection === 'membership' && (
           <section className="um-admin-section">
+            <div className="um-dashboard-status" aria-live="polite">
+              <span>{membershipUpdatedAt ? `Cập nhật lần cuối lúc ${membershipUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải danh sách đơn đăng ký hội viên.'}</span>
+              {membershipError && <strong>Không thể tải dữ liệu: {membershipError}</strong>}
+            </div>
             <div className="um-content" style={{ padding: 18 }}>
               <div className="um-panel-title">
                 <div>
-                  <h2>Đơn đăng ký membership</h2>
-                  <p>Admin xác thực hoặc từ chối các đơn đang chờ duyệt.</p>
+                  <h2>Đơn đăng ký hội viên</h2>
+                  <p>Admin hoặc thủ thư xét duyệt các đơn đăng ký theo trạng thái.</p>
                 </div>
               </div>
               <MembershipFilter
                 status={membershipFilter.status}
                 search={membershipFilter.search}
-                loading={loading}
+                loading={membershipLoading}
                 onStatusChange={(status) => setMembershipFilter((current) => ({ ...current, status, page: 1 }))}
                 onSearchChange={(searchValue) => setMembershipFilter((current) => ({ ...current, search: searchValue }))}
-                onReload={loadMembershipApplications}
+                onSearch={() => loadMembershipApplications({ page: 1 })}
+                onReload={() => loadMembershipApplications({ announce: true })}
               />
               <MembershipApplicationsTable
-                applications={filteredMembershipApplications}
+                applications={membershipApplications}
                 page={membershipFilter.page}
                 totalPages={membershipFilter.totalPages}
                 onPageChange={(nextPage) => setMembershipFilter((current) => ({ ...current, page: nextPage }))}
@@ -1498,12 +1652,17 @@ function UserManagement() {
           </section>
         )}
 
+        {isUserDirectorySection && <div className="um-dashboard-status" aria-live="polite">
+          <span>{usersUpdatedAt ? `Cập nhật lần cuối lúc ${usersUpdatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải danh sách người dùng.'}</span>
+          {usersError && <strong>Không thể tải dữ liệu: {usersError}</strong>}
+        </div>}
+
         {isUserDirectorySection && <section className="um-toolbar">
           <div className="um-search">
             <Search size={18} />
             <input
               value={search}
-              placeholder="Search name, email, username, ID"
+              placeholder="Tìm theo tên, email, username, số điện thoại hoặc ID..."
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -1514,26 +1673,26 @@ function UserManagement() {
           </div>
 
           <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="ALL">All roles</option>
+            <option value="ALL">Tất cả vai trò</option>
             <option value="ADMIN">Admin</option>
             <option value="LIBRARIAN">Librarian</option>
             <option value="MEMBER">Member</option>
           </select>
 
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="ALL">All statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-            <option value="LOCKED">Locked</option>
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Hoạt động</option>
+            <option value="INACTIVE">Chưa kích hoạt / Vô hiệu</option>
+            <option value="LOCKED">Bị khóa</option>
           </select>
 
           <button className="um-secondary-button" onClick={() => loadUsers(1)}>
-            Search
+            Tìm kiếm
           </button>
           {hasActiveFilters && (
             <button className="um-secondary-button" onClick={clearFilters}>
               <FilterX size={16} />
-              Clear
+              Xóa lọc
             </button>
           )}
         </section>}
@@ -1542,13 +1701,13 @@ function UserManagement() {
           <table className="um-table">
             <thead>
               <tr>
-                <th>User</th>
+                <th>Người dùng</th>
                 <th>Username</th>
-                <th>Phone</th>
-                <th>Roles</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th>Số điện thoại</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -1560,7 +1719,7 @@ function UserManagement() {
                         {(user.fullName || user.email || '?').slice(0, 1).toUpperCase()}
                       </div>
                       <div>
-                        <strong>{user.fullName || 'No name'}</strong>
+                        <strong>{user.fullName || 'Chưa cập nhật tên'}</strong>
                         <span>#{user.userId} - {user.email}</span>
                       </div>
                     </div>
@@ -1580,15 +1739,15 @@ function UserManagement() {
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
                     <div className="um-row-actions" onClick={(event) => event.stopPropagation()}>
-                      <button className="um-icon-button" title="Edit" onClick={() => openEditModal(user)}>
+                      <button className="um-icon-button" title="Chỉnh sửa" onClick={() => openEditModal(user)}>
                         <Edit2 size={16} />
                       </button>
-                      <button className="um-icon-button" title="Manage roles" onClick={() => openRoleModal(user)}>
+                      <button className="um-icon-button" title="Quản lý vai trò" onClick={() => openRoleModal(user)}>
                         <Shield size={16} />
                       </button>
                       <button
                         className="um-icon-button danger"
-                        title="Deactivate"
+                        title="Vô hiệu hóa"
                         disabled={user.status !== 'ACTIVE'}
                         onClick={() => deactivateUser(user)}
                       >
@@ -1601,29 +1760,10 @@ function UserManagement() {
             </tbody>
           </table>
 
-          {!loading && users.length === 0 && <div className="um-empty">No users match your filters.</div>}
-          {loading && <div className="um-empty">Loading users...</div>}
+          {!loading && users.length === 0 && <div className="um-empty">Không tìm thấy người dùng phù hợp.</div>}
+          {loading && <div className="um-empty">Đang tải danh sách người dùng...</div>}
+          <AdminTablePagination page={pagination.page} totalItems={pagination.total} onPageChange={(page) => loadUsers(page)} />
         </section>}
-
-        {isUserDirectorySection && <footer className="um-pagination">
-          <button
-            className="um-secondary-button"
-            disabled={pagination.page <= 1}
-            onClick={() => loadUsers(pagination.page - 1)}
-          >
-            Previous
-          </button>
-          <span>
-            Page {pagination.page} of {pagination.totalPages || 1}
-          </span>
-          <button
-            className="um-secondary-button"
-            disabled={pagination.page >= pagination.totalPages}
-            onClick={() => loadUsers(pagination.page + 1)}
-          >
-            Next
-          </button>
-        </footer>}
 
         {activeSection === 'payments' && (
           <section className="um-content">
@@ -1741,39 +1881,75 @@ function UserManagement() {
         )}
 
         {activeSection === 'audit' && (
-          <section className="um-content">
-            <table className="um-table">
+          <section className="um-content um-audit-content">
+            <div className="um-audit-summary">
+              <article>
+                <span className="um-audit-summary-icon"><Activity size={20} /></span>
+                <div>
+                  <small>Tổng sự kiện</small>
+                  <strong>{auditPagination.total}</strong>
+                  <span>Hoạt động đã ghi nhận</span>
+                </div>
+              </article>
+              <article>
+                <span className="um-audit-summary-icon"><ClipboardList size={20} /></span>
+                <div>
+                  <small>Trang hiện tại</small>
+                  <strong>{auditPagination.page}<em>/{auditPagination.totalPages}</em></strong>
+                  <span>{auditLogs.length} bản ghi đang hiển thị</span>
+                </div>
+              </article>
+              <article>
+                <span className="um-audit-summary-icon"><Clock3 size={20} /></span>
+                <div>
+                  <small>Cập nhật gần nhất</small>
+                  <strong className="time">{auditUpdatedAt ? auditUpdatedAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</strong>
+                  <span>{auditUpdatedAt ? auditUpdatedAt.toLocaleDateString('vi-VN') : 'Chưa có dữ liệu'}</span>
+                </div>
+              </article>
+            </div>
+            <div className="um-audit-table-heading">
+              <div>
+                <h2>Danh sách hoạt động</h2>
+                <p>Theo dõi các thao tác quan trọng trong hệ thống</p>
+              </div>
+              <span>Chỉ đọc</span>
+            </div>
+            <div className="um-table-wrap">
+            <table className="um-table um-audit-table">
               <thead>
                 <tr>
-                  <th>Action</th>
-                  <th>Actor</th>
-                  <th>Target</th>
+                  <th>Hành động</th>
+                  <th>Người thực hiện</th>
+                  <th>Đối tượng</th>
                   <th>IP</th>
-                  <th>Time</th>
+                  <th>Thời gian</th>
                 </tr>
               </thead>
               <tbody>
                 {auditLogs.map((log) => (
                   <tr key={log.logId}>
-                    <td>{log.action}</td>
-                    <td>{log.actorName || log.actorEmail || '-'}</td>
-                    <td>{log.targetName || log.targetEmail || log.targetId || '-'}</td>
-                    <td>{log.ipAddress || '-'}</td>
-                    <td>{formatDate(log.createdAt)}</td>
+                    <td><span className="um-audit-action">{log.action}</span></td>
+                    <td><strong>{log.actorName || log.actorEmail || 'Hệ thống'}</strong>{log.actorName && log.actorEmail && <small>{log.actorEmail}</small>}</td>
+                    <td><strong>{log.targetName || log.targetEmail || (log.targetId ? `#${log.targetId}` : '-')}</strong>{log.targetType && <small>{log.targetType}</small>}</td>
+                    <td><code>{log.ipAddress || '-'}</code></td>
+                    <td>{new Date(log.createdAt).toLocaleString('vi-VN')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {auditLoading && <div className="um-empty">Loading audit logs...</div>}
+            {auditLoading && <div className="um-empty">Đang tải nhật ký hoạt động...</div>}
             {!auditLoading && auditError && (
               <div className="um-empty">
-                <strong>Audit logs unavailable</strong>
+                <strong>Không thể tải nhật ký hoạt động</strong>
                 <span>{auditError}</span>
               </div>
             )}
             {!auditLoading && !auditError && auditLogs.length === 0 && (
-              <div className="um-empty">No audit log entries yet.</div>
+              <div className="um-empty">Chưa có sự kiện nào được ghi nhận.</div>
             )}
+            {!auditLoading && !auditError && <AdminTablePagination page={auditPagination.page} totalItems={auditPagination.total} onPageChange={loadAuditLogs} />}
+            </div>
           </section>
         )}
 
@@ -1846,7 +2022,7 @@ function UserManagement() {
             <p>{selectedUser.address || '-'}</p>
             <p>
               <Calendar size={16} />
-              Created {formatDate(selectedUser.createdAt)}
+              Ngày tạo {formatDate(selectedUser.createdAt)}
             </p>
           </div>
           <div className="um-related-summary">
@@ -1873,7 +2049,7 @@ function UserManagement() {
             </button>
             <button className="um-secondary-button" onClick={() => openRoleModal(selectedUser)}>
               <Shield size={16} />
-              Roles
+              Vai trò
             </button>
             <button
               className="um-danger-button"
@@ -1881,7 +2057,7 @@ function UserManagement() {
               onClick={() => deactivateUser(selectedUser)}
             >
               <PowerOff size={16} />
-              Deactivate
+              Vô hiệu hóa
             </button>
           </div>
         </aside>
@@ -1915,20 +2091,13 @@ function UserManagement() {
         />
       )}
 
-      {borrowingModal && (
-        <BorrowingModal
-          item={borrowingModal.item}
-          onClose={() => setBorrowingModal(null)}
-          onSubmit={saveBorrowing}
-        />
-      )}
 
       {viewRequest && (
-        <div className="um-modal-backdrop" onMouseDown={() => setViewRequest(null)}>
-          <div className="um-modal" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="um-modal-backdrop" onMouseDown={() => { if (!requestActionSaving) setViewRequest(null); }}>
+          <div className="um-modal" role="dialog" aria-modal="true" aria-labelledby="request-detail-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="um-modal-header">
-              <div><p>Request detail</p><h2>Yêu cầu #{viewRequest.id}</h2></div>
-              <button type="button" className="um-icon-button" onClick={() => setViewRequest(null)}><X size={18} /></button>
+              <div><p>Chi tiết yêu cầu</p><h2 id="request-detail-title">Yêu cầu #{viewRequest.id}</h2></div>
+              <button type="button" className="um-icon-button" disabled={requestActionSaving} onClick={() => setViewRequest(null)} aria-label="Đóng"><X size={18} /></button>
             </div>
             <div className="um-modal-body detail">
               <p><strong>Tài khoản:</strong> {viewRequest.memberName} - {viewRequest.email}</p>
@@ -1936,14 +2105,45 @@ function UserManagement() {
               <p><strong>Sách:</strong> {viewRequest.bookTitles || '-'}</p>
               <p><strong>Thể loại:</strong> {viewRequest.categories || '-'}</p>
               <p><strong>Thời gian đặt:</strong> {formatDate(viewRequest.requestDate)}</p>
-              <p><strong>Trạng thái:</strong> {viewRequest.status}</p>
+              <p><strong>Trạng thái:</strong> {requestStatusLabels[viewRequest.status] || viewRequest.status}</p>
+              {viewRequest.status === 'PENDING' && (
+                <label>Lý do từ chối
+                  <textarea maxLength={500} value={requestRejectionReason} onChange={(event) => setRequestRejectionReason(event.target.value)} placeholder="Chỉ cần nhập khi từ chối yêu cầu" />
+                </label>
+              )}
             </div>
             {viewRequest.status === 'PENDING' && (
               <div className="um-modal-actions">
-                <button className="um-secondary-button" onClick={() => updateRequestStatus(viewRequest.id, 'REJECTED')}>Từ chối</button>
-                <button className="um-primary-button" onClick={() => updateRequestStatus(viewRequest.id, 'COMPLETED')}>Hoàn thành</button>
+                <button className="um-secondary-button" disabled={requestActionSaving} onClick={rejectBorrowRequest}>Từ chối</button>
+                <button className="um-primary-button" disabled={requestActionSaving} onClick={approveBorrowRequest}>{requestActionSaving ? 'Đang xử lý...' : 'Duyệt yêu cầu'}</button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {borrowingAction && (
+        <div className="um-modal-backdrop" onMouseDown={() => { if (!borrowingActionSaving) setBorrowingAction(null); }}>
+          <div className="um-modal" role="dialog" aria-modal="true" aria-labelledby="return-borrowing-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="um-modal-header">
+              <div><p>FE07 • Trả sách</p><h2 id="return-borrowing-title">Xác nhận trả sách</h2></div>
+              <button type="button" className="um-icon-button" disabled={borrowingActionSaving} onClick={() => setBorrowingAction(null)} aria-label="Đóng"><X size={18} /></button>
+            </div>
+            <div className="um-modal-body">
+              <p><strong>Thành viên:</strong> {borrowingAction.memberName}</p>
+              <p><strong>Sách:</strong> {borrowingAction.bookTitle} ({borrowingAction.barcode})</p>
+              <label>Tình trạng sách
+                <select value={returnCondition} onChange={(event) => setReturnCondition(event.target.value)}>
+                  <option value="NORMAL">Bình thường</option>
+                  <option value="DAMAGED">Hư hỏng</option>
+                  <option value="LOST">Mất sách</option>
+                </select>
+              </label>
+            </div>
+            <div className="um-modal-actions">
+              <button type="button" className="um-secondary-button" disabled={borrowingActionSaving} onClick={() => setBorrowingAction(null)}>Hủy</button>
+              <button type="button" className="um-primary-button" disabled={borrowingActionSaving} onClick={returnBorrowing}>{borrowingActionSaving ? 'Đang xử lý...' : 'Ghi nhận trả sách'}</button>
+            </div>
           </div>
         </div>
       )}
@@ -2011,20 +2211,32 @@ function UserManagement() {
         .um-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; }
         .um-panel h2 { font-size: 18px; margin: 0 0 14px; letter-spacing: 0; }
         .um-chart-grid { display: grid; gap: 18px; }
+        .um-chart-grid-secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
         .um-panel.chart { overflow: hidden; }
         .um-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
         .um-chart-head h2 { margin: 0; }
         .um-chart-head span { color: #64748b; font-size: 13px; font-weight: 800; }
-        .um-line-chart { width: 100%; height: 260px; }
+        .um-line-chart { width: 100%; height: 260px; overflow: visible; }
         .um-line-chart line { stroke: #d8dee8; stroke-width: 1; }
-        .um-line-chart path { fill: none; stroke: #9ca3af; stroke-width: 2.2; }
+        .um-line-chart line.vertical-grid { stroke: #e4e8ee; }
+        .um-line-chart path { fill: none; stroke: #9ca3af; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
         .um-line-chart circle { fill: #dc2626; stroke: #fff; stroke-width: 1.5; }
         .um-line-chart text { fill: #475569; font-size: 10px; text-anchor: middle; }
-        .um-line-chart text.value { fill: #111827; font-size: 11px; font-weight: 800; }
+        .um-line-chart text.axis-label { fill: #7a7165; font-size: 9px; text-anchor: end; }
+        .um-line-chart text.value { fill: #2a2118; font-size: 11px; font-weight: 800; }
         .um-chart-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; border-top: 1px solid #eef2f7; padding-top: 12px; }
         .um-chart-list div { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 8px 10px; }
         .um-chart-list span { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .um-chart-list strong { color: #1d4ed8; }
+        .um-chart-empty { min-height: 180px; display: grid; place-items: center; align-content: center; gap: 7px; color: #6b6153; text-align: center; }
+        .um-chart-empty svg { color: #a87532; }
+        .um-chart-empty strong { color: #2a2118; }
+        .um-chart-empty span { font-size: 13px; }
+        .um-dashboard-status { min-height: 32px; margin: -4px 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #6b6153; font-size: 12px; }
+        .um-dashboard-status strong { color: #c1452f; font-weight: 600; }
+        .um-dashboard-loading { min-height: 240px; display: grid; place-items: center; color: #6b6153; background: #fffdf8; border: 1px solid #e7ddca; border-radius: 16px; }
+        .is-spinning { animation: um-spin .8s linear infinite; }
+        @keyframes um-spin { to { transform: rotate(360deg); } }
         .um-admin-section { display: grid; gap: 16px; }
         .um-permission-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
         .um-permission-cards button { min-height: 96px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; padding: 14px; display: grid; gap: 8px; align-content: center; justify-items: start; cursor: pointer; }
@@ -2119,6 +2331,195 @@ function UserManagement() {
         .um-toast { position: fixed; right: 24px; bottom: 24px; z-index: 80; min-height: 44px; padding: 0 16px; border-radius: 8px; color: #fff; display: flex; align-items: center; gap: 10px; box-shadow: 0 14px 36px rgba(15,23,42,0.24); }
         .um-toast.success { background: #15803d; }
         .um-toast.error { background: #dc2626; }
+
+        /* Admin console visual alignment with the shared librarian shell.
+           Content, navigation entries, permissions, and data flows stay unchanged. */
+        .um-shell {
+          --um-accent: #a87532;
+          --um-accent-dark: #7b5528;
+          --um-accent-soft: rgba(168, 117, 50, 0.12);
+          --um-canvas: #faf6ef;
+          --um-surface: #fffdf8;
+          --um-line: #e7ddca;
+          --um-ink: #2a2118;
+          --um-muted: #6b6153;
+          background: var(--um-canvas);
+          color: var(--um-ink);
+          font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        .um-sidebar {
+          background: var(--um-surface);
+          color: var(--um-ink);
+          border-right: 1px solid var(--um-line);
+          padding: 18px 14px;
+          gap: 18px;
+        }
+        .um-brand {
+          border-bottom: 0;
+          padding: 6px 8px 16px;
+        }
+        .um-brand-mark {
+          width: 38px;
+          height: 38px;
+          border-radius: 11px;
+          background: var(--um-accent);
+        }
+        .um-brand strong {
+          color: var(--um-ink);
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 17px;
+        }
+        .um-brand span,
+        .um-session span { color: var(--um-muted); }
+        .um-nav { gap: 6px; }
+        .um-nav button,
+        .um-sidebar-footer button {
+          min-height: 42px;
+          border-radius: 10px;
+          color: var(--um-muted);
+          font-size: 14px;
+        }
+        .um-nav button.active,
+        .um-nav button:hover,
+        .um-sidebar-footer button:hover {
+          background: var(--um-accent-soft);
+          color: var(--um-accent-dark);
+        }
+        .um-sidebar-footer {
+          border-top-color: var(--um-line);
+        }
+        .um-session { color: var(--um-muted); }
+        .um-session strong { color: var(--um-ink); }
+        .um-main { padding: 28px 32px 60px; }
+        .um-topbar,
+        .um-toolbar,
+        .um-content,
+        .um-stat,
+        .um-panel {
+          background: var(--um-surface);
+          border-color: var(--um-line);
+          border-radius: 16px;
+          box-shadow: 0 6px 20px -8px rgba(80, 60, 20, 0.18);
+        }
+        .um-topbar {
+          padding: 18px 20px;
+          margin-bottom: 20px;
+        }
+        .um-topbar p,
+        .um-modal-header p { color: var(--um-accent-dark); }
+        .um-topbar h1,
+        .um-panel h2,
+        .um-modal-header h2,
+        .um-drawer h2 {
+          color: var(--um-ink);
+          /* Georgia on Windows/Chrome renders some precomposed Vietnamese
+             characters (notably "ầ" in "yêu cầu") with a displaced mark. */
+          font-family: 'Times New Roman', 'Noto Serif', serif;
+        }
+        .um-primary-button {
+          background: var(--um-accent);
+        }
+        .um-primary-button:hover { background: var(--um-accent-dark); }
+        .um-secondary-button,
+        .um-icon-button,
+        .um-search,
+        .um-toolbar select,
+        .um-toolbar input[type="date"],
+        .um-modal input,
+        .um-modal textarea,
+        .um-modal select {
+          border-color: var(--um-line);
+          color: var(--um-ink);
+        }
+        .um-stat svg,
+        .um-chart-list strong { color: var(--um-accent-dark); }
+        .um-stat.dashboard-card svg {
+          background: var(--um-accent-soft);
+          border-radius: 11px;
+        }
+        .um-stat span,
+        .um-chart-head span,
+        .um-user-cell span { color: var(--um-muted); }
+        .um-tabs button.active {
+          background: var(--um-accent);
+          border-color: var(--um-accent);
+        }
+        .um-table th { background: #f4ecdd; color: var(--um-muted); border-color: var(--um-line); }
+        .um-table td { color: var(--um-ink); border-color: var(--um-line); }
+        .um-table tr:hover { background: #faf6ef; }
+        .um-audit-content { display: grid; gap: 18px; overflow: visible; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+        .um-audit-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .um-audit-summary article { min-height: 112px; padding: 18px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--um-line); border-radius: 16px; background: var(--um-surface); box-shadow: 0 6px 18px rgba(77, 52, 31, 0.06); }
+        .um-audit-summary-icon { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border-radius: 13px; color: var(--um-accent-dark); background: var(--um-accent-soft); }
+        .um-audit-summary article div { min-width: 0; display: grid; gap: 2px; }
+        .um-audit-summary small { color: var(--um-muted); font-size: 12px; font-weight: 700; }
+        .um-audit-summary strong { color: var(--um-ink); font-size: 25px; line-height: 1.2; }
+        .um-audit-summary strong.time { font-size: 22px; }
+        .um-audit-summary strong em { margin-left: 3px; color: var(--um-muted); font-size: 14px; font-style: normal; font-weight: 600; }
+        .um-audit-summary article div > span { overflow: hidden; color: var(--um-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+        .um-audit-table-heading { margin-bottom: -18px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--um-line); border-bottom: 0; border-radius: 16px 16px 0 0; background: var(--um-surface); }
+        .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: 'Times New Roman', 'Noto Serif', serif; font-size: 21px; }
+        .um-audit-table-heading p { margin: 0; color: var(--um-muted); font-size: 13px; }
+        .um-audit-table-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--um-accent-dark); background: var(--um-accent-soft); font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .um-table-wrap { overflow: hidden; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }
+        .um-audit-table { min-width: 960px; }
+        .um-audit-table th:nth-child(1) { width: 23%; }
+        .um-audit-table th:nth-child(2) { width: 26%; }
+        .um-audit-table th:nth-child(3) { width: 22%; }
+        .um-audit-table th:nth-child(4) { width: 8%; }
+        .um-audit-table th:nth-child(5) { width: 21%; }
+        .um-audit-table td { vertical-align: middle; }
+        .um-audit-table td strong, .um-audit-table td small { display: block; }
+        .um-audit-table td small { margin-top: 4px; color: var(--um-muted); font-size: 12px; }
+        .um-audit-table code { color: var(--um-muted); font-family: inherit; }
+        .um-audit-action { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: var(--um-accent-soft); color: var(--um-accent-dark); font-size: 12px; font-weight: 700; }
+        .um-table-pagination {
+          padding: 14px 16px;
+          border-top: 1px solid var(--um-line);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          color: var(--um-muted);
+          font-size: 14px;
+        }
+        .um-table-pagination > div { display: flex; align-items: center; gap: 6px; }
+        .um-table-pagination button {
+          min-width: 36px;
+          min-height: 36px;
+          padding: 0 10px;
+          border: 1px solid var(--um-line);
+          border-radius: 8px;
+          background: var(--um-surface);
+          color: var(--um-ink);
+          cursor: pointer;
+        }
+        .um-table-pagination button.active { background: var(--um-accent); border-color: var(--um-accent); color: #fff; }
+        .um-table-pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
+        .um-panel,
+        .um-permission-cards button,
+        .um-mini-list button,
+        .um-shortcuts button,
+        .um-role-summary button,
+        .um-role-summary.compact div { border-color: var(--um-line); }
+        .um-modal,
+        .um-drawer { background: var(--um-surface); }
+        .um-modal-header,
+        .um-modal-actions { border-color: var(--um-line); }
+        .um-note { background: var(--um-accent-soft); border-color: var(--um-line); color: var(--um-accent-dark); }
+        .um-admin-section .membership-toolbar {
+          margin: 18px 0 16px;
+          padding: 14px;
+          border: 1px solid var(--um-line);
+          border-radius: 12px;
+          background: #fffaf2;
+          gap: 10px;
+        }
+        .um-admin-section .membership-toolbar .search-input {
+          min-width: 280px;
+          flex: 1 1 420px;
+        }
+        .um-admin-section .membership-toolbar .btn { white-space: nowrap; }
         @media (max-width: 900px) {
           .um-shell { display: block; }
           .um-sidebar { width: 100%; height: auto; position: static; }
@@ -2126,8 +2527,15 @@ function UserManagement() {
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }
           .um-stats, .um-stats.dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .um-panel-grid, .um-role-summary { grid-template-columns: 1fr; }
+          .um-chart-grid-secondary { grid-template-columns: 1fr; }
+          .um-audit-summary { grid-template-columns: 1fr; }
+          .um-audit-table-heading { align-items: flex-start; }
           .um-chart-card { grid-template-columns: 1fr; justify-items: center; }
           .um-toolbar.requests, .um-form-grid { grid-template-columns: 1fr; }
+          .um-admin-section .membership-toolbar { align-items: stretch; }
+          .um-admin-section .membership-toolbar .search-input { min-width: 0; }
+          .um-table-pagination { align-items: flex-start; flex-direction: column; }
+          .um-table-pagination > div { max-width: 100%; flex-wrap: wrap; }
           .um-form-grid .span-2 { grid-column: auto; }
         }
       `}</style>

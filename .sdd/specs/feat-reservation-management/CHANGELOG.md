@@ -104,3 +104,12 @@
 - Added loading, empty, and error states on all reviewed screens.
 - Validated: `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, `npm.cmd --prefix backend test`.
 - Merged via PR #7 into `feat/fe07-fe08-fe10-fe12-ui-polish`.
+## 2026-07-18 - Librarian reservation operations aligned with canonical API data
+
+- Rebuilt the librarian reservation screen with valid Vietnamese copy, clearer list/queue layouts, explicit search, book/status filters, and eight-row pagination.
+- Removed the staff demo-data fallback and the persistent successful-refresh notice; loading, empty, and API-error states now represent canonical server state only.
+- Reloaded reservations after queue processing and hold expiration so UI state remains synchronized with FE07/FE08/FE10 transitions.
+- Enriched reservation list fields with member full name, email, author, barcode, copy status, and location from the existing database relations.
+- Kept manual queue processing in stable reservation-time order and retained the Phase 1 manual expired-hold workflow.
+- Verified focused FE08 backend tests, frontend lint, frontend reservation tests, and production build.
+- Added a visible row action for opening the selected book queue; the hold/notify action is enabled only after the target copy becomes `AVAILABLE`.

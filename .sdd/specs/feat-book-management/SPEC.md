@@ -308,6 +308,8 @@ Use these stable IDs for tasks and tests.
 | availabilityStatus | string | Derived/read-only | Values: `AVAILABLE`, `UNAVAILABLE`; computed from `Books.Status` and FE06-owned copy states according to BR-FE05-013. |
 | actionReason | string | Required for deactivate/reactivate | Trimmed, 1..500 characters; stored in audit metadata. |
 | version | opaque string | Yes for existing-book mutation | API representation of SQL Server `rowversion`; supplied through `If-Match` and advanced on every mutation. |
+| metadataCreatedAt | datetime | Yes for category/author/publisher records | Database-generated creation timestamp returned by protected metadata-management reads. |
+| metadataStatus | string | Yes for category/author/publisher records | `ACTIVE` or `INACTIVE`; inactive metadata remains on existing books but cannot be assigned by new book mutations. |
 
 ### 10.3 Book State Model
 

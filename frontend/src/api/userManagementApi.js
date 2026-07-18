@@ -111,6 +111,21 @@ function getErrorMessage(error, fallback = 'Request failed. Please try again.') 
     return 'Your account does not have Admin permission for this action.';
   }
 
+  const messages = {
+    EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng bởi tài khoản khác.',
+    USERNAME_ALREADY_EXISTS: 'Username đã tồn tại.',
+    INVALID_EMAIL: 'Email không hợp lệ.',
+    INVALID_PHONE: 'Số điện thoại không hợp lệ.',
+    FULL_NAME_REQUIRED: 'Họ và tên là bắt buộc.',
+    ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
+    CANNOT_DEACTIVATE_SELF: 'Admin không thể tự vô hiệu hóa tài khoản của mình.',
+    LAST_ADMIN_ROLE: 'Không thể gỡ vai trò Admin cuối cùng.',
+    LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
+    STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
+  };
+
+  if (messages[code]) return messages[code];
+
   return error.response?.data?.error?.message || fallback;
 }
 
@@ -151,12 +166,12 @@ export async function fetchRoles() {
   }
 }
 
-export async function fetchAuditLogs(limit = 30) {
+export async function fetchAuditLogs(params = {}) {
   try {
     const response = await authorizedRequest({
       method: 'get',
       url: '/users/audit-logs',
-      params: { limit },
+      params,
     });
     return response.data;
   } catch (error) {

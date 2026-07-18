@@ -62,7 +62,10 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
   }, []);
 
   const displayName = profile?.fullName || storedUser?.email || 'Tài khoản';
-  const roleLabel = getRoleLabel(storedUser?.roles || []);
+  const storedRoles = storedUser?.roles || [];
+  const roleLabel = getRoleLabel(storedRoles);
+  const showMemberActions = storedRoles.includes('MEMBER')
+    && !storedRoles.some((role) => ['ADMIN', 'LIBRARIAN'].includes(role));
   const initials = getInitials(profile?.fullName, storedUser?.email) || 'T';
   const avatarUrl = profile?.avatarUrl || '';
 
@@ -86,16 +89,18 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
 
   return (
     <header className="app-topbar">
-      <button
-        type="button"
-        className="app-icon-btn app-menu-trigger"
-        onClick={onOpenNavigation}
-        aria-label="Mở điều hướng"
-        aria-controls="app-navigation"
-        aria-expanded={navigationOpen}
-      >
-        <Menu size={20} />
-      </button>
+      {onOpenNavigation && (
+        <button
+          type="button"
+          className="app-icon-btn app-menu-trigger"
+          onClick={onOpenNavigation}
+          aria-label="Mở điều hướng"
+          aria-controls="app-navigation"
+          aria-expanded={navigationOpen}
+        >
+          <Menu size={20} />
+        </button>
+      )}
 
       <div className="app-topbar-actions">
         <button
@@ -126,7 +131,10 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
         role={roleLabel}
         initials={initials}
         avatarUrl={avatarUrl}
+        showMemberActions={showMemberActions}
         onAccountInfo={() => navigate('/profile')}
+        onAdminConsole={storedRoles.includes('ADMIN') ? () => navigate('/admin/users') : undefined}
+        onLibrarianConsole={storedRoles.includes('LIBRARIAN') && !storedRoles.includes('ADMIN') ? () => navigate('/home') : undefined}
         onBorrowingHistory={() => navigate('/borrowing/history')}
         onMembership={() => navigate('/membership')}
         onLogout={handleLogout}

@@ -100,16 +100,19 @@ async function getMetadata() {
     pool.request().query(`
       SELECT CategoryId AS id, CategoryName AS name
       FROM Categories
+      WHERE Status = 'ACTIVE'
       ORDER BY CategoryName;
     `),
     pool.request().query(`
       SELECT AuthorId AS id, AuthorName AS name
       FROM Authors
+      WHERE Status = 'ACTIVE'
       ORDER BY AuthorName;
     `),
     pool.request().query(`
       SELECT PublisherId AS id, PublisherName AS name
       FROM Publishers
+      WHERE Status = 'ACTIVE'
       ORDER BY PublisherName;
     `),
   ]);
@@ -275,7 +278,7 @@ async function referenceExists(tableName, idColumn, id) {
   const pool = await getPool();
   const result = await pool.request()
     .input('id', sql.Int, id)
-    .query(`SELECT TOP 1 ${idColumn} FROM ${tableName} WHERE ${idColumn} = @id;`);
+    .query(`SELECT TOP 1 ${idColumn} FROM ${tableName} WHERE ${idColumn} = @id AND Status = 'ACTIVE';`);
 
   return result.recordset.length > 0;
 }

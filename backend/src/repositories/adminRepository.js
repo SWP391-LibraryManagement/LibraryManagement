@@ -17,8 +17,8 @@ async function getDashboard() {
       (SELECT COUNT(*) FROM Books WHERE Status = 'ACTIVE') AS totalBooks,
       (SELECT COUNT(*) FROM Members WHERE Status = 'APPROVED') AS totalMembers,
       (SELECT COUNT(*) FROM Authors) AS totalAuthors,
-      (SELECT COUNT(*) FROM BorrowDetails WHERE Status IN ('BORROWED', 'OVERDUE')) AS totalBorrowed,
-      (SELECT COUNT(*) FROM BorrowDetails WHERE Status IN ('BORROWED', 'OVERDUE') AND DueDate < CAST(GETDATE() AS DATE)) AS overdueBorrowed;
+      (SELECT COUNT(*) FROM BorrowDetails WHERE Status = 'BORROWED') AS totalBorrowed,
+      (SELECT COUNT(*) FROM BorrowDetails WHERE Status = 'BORROWED' AND DueDate < CAST(GETDATE() AS DATE)) AS overdueBorrowed;
   `);
 
   const [mostBorrowed, overdue, returnedToday] = await Promise.all([
@@ -41,7 +41,7 @@ async function getDashboard() {
       FROM BorrowDetails bd
       INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
       INNER JOIN Books b ON bc.BookId = b.BookId
-      WHERE bd.Status IN ('BORROWED', 'OVERDUE') AND bd.DueDate < CAST(GETDATE() AS DATE)
+      WHERE bd.Status = 'BORROWED' AND bd.DueDate < CAST(GETDATE() AS DATE)
       GROUP BY b.BookId, b.Title
       ORDER BY value DESC, b.Title ASC;
     `),
@@ -155,8 +155,8 @@ async function listResource(resource, filters = {}) {
     SELECT
       ${config.id} AS id,
       ${config.name} AS name,
-      'ACTIVE' AS status,
-      N'Không lưu trong DB' AS createdAt
+      Status AS status,
+      CreatedAt AS createdAt
     FROM ${config.table}
     WHERE ${where.join(' AND ')}
     ORDER BY ${config.id} ASC;
@@ -172,7 +172,8 @@ async function createResource(resource, name) {
     .input('name', sql.NVarChar(100), name)
     .query(`
       INSERT INTO ${config.table} (${config.name})
-      OUTPUT INSERTED.${config.id} AS id, INSERTED.${config.name} AS name
+      OUTPUT INSERTED.${config.id} AS id, INSERTED.${config.name} AS name,
+             INSERTED.Status AS status, INSERTED.CreatedAt AS createdAt
       VALUES (@name);
     `);
 
@@ -194,14 +195,15 @@ async function updateResource(resource, id, name) {
   return { id, name };
 }
 
-async function deleteResource(resource, id) {
+async function deactivateResource(resource, id) {
   const config = getResourceConfig(resource);
   const pool = await getPool();
   const result = await pool.request()
     .input('id', sql.Int, id)
     .query(`
-      DELETE FROM ${config.table}
-      WHERE ${config.id} = @id;
+      UPDATE ${config.table}
+      SET Status = 'INACTIVE'
+      WHERE ${config.id} = @id AND Status = 'ACTIVE';
       SELECT @@ROWCOUNT AS affectedRows;
     `);
 
@@ -224,8 +226,12 @@ async function listBorrowings(filters = {}) {
   }
 
   if (filters.status) {
-    request.input('status', sql.NVarChar(20), filters.status);
-    where.push('bd.Status = @status');
+    if (filters.status === 'OVERDUE') {
+      where.push("bd.Status = 'BORROWED' AND bd.DueDate < CAST(GETDATE() AS DATE)");
+    } else {
+      request.input('status', sql.NVarChar(20), filters.status);
+      where.push('bd.Status = @status');
+    }
   }
 
   const result = await request.query(`
@@ -241,7 +247,10 @@ async function listBorrowings(filters = {}) {
       bd.BorrowDate AS borrowDate,
       bd.DueDate AS dueDate,
       bd.ReturnDate AS returnDate,
-      bd.Status AS status,
+      CASE
+        WHEN bd.Status = 'BORROWED' AND bd.DueDate < CAST(GETDATE() AS DATE) THEN 'OVERDUE'
+        ELSE bd.Status
+      END AS status,
       bd.RenewalCount AS renewalCount
     FROM BorrowDetails bd
     INNER JOIN BorrowRequests br ON bd.RequestId = br.RequestId
@@ -250,73 +259,10 @@ async function listBorrowings(filters = {}) {
     INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
     INNER JOIN Books b ON bc.BookId = b.BookId
     WHERE ${where.join(' AND ')}
-    ORDER BY bd.BorrowDetailId DESC;
+    ORDER BY bd.BorrowDetailId ASC;
   `);
 
   return result.recordset;
-}
-
-async function createBorrowing(payload = {}) {
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-  await transaction.begin();
-
-  try {
-    const requestResult = await new sql.Request(transaction)
-      .input('userId', sql.Int, payload.userId)
-      .query(`
-        INSERT INTO BorrowRequests (UserId, Status, ApprovedAt, ProcessedAt)
-        OUTPUT INSERTED.RequestId AS requestId
-        VALUES (@userId, 'APPROVED', GETDATE(), GETDATE());
-      `);
-    const requestId = requestResult.recordset[0].requestId;
-
-    const detailResult = await new sql.Request(transaction)
-      .input('requestId', sql.Int, requestId)
-      .input('copyId', sql.Int, payload.copyId)
-      .input('borrowDate', sql.Date, payload.borrowDate || null)
-      .input('dueDate', sql.Date, payload.dueDate)
-      .input('returnDate', sql.Date, payload.returnDate || null)
-      .input('status', sql.NVarChar(20), payload.status)
-      .query(`
-        INSERT INTO BorrowDetails (RequestId, CopyId, BorrowDate, DueDate, ReturnDate, Status)
-        OUTPUT INSERTED.BorrowDetailId AS id
-        VALUES (@requestId, @copyId, @borrowDate, @dueDate, @returnDate, @status);
-      `);
-
-    if (payload.status === 'BORROWED' || payload.status === 'OVERDUE') {
-      await new sql.Request(transaction)
-        .input('copyId', sql.Int, payload.copyId)
-        .query(`UPDATE BookCopies SET Status = 'BORROWED', UpdatedAt = GETDATE() WHERE CopyId = @copyId;`);
-    }
-
-    await transaction.commit();
-    return { id: detailResult.recordset[0].id, requestId, ...payload };
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
-}
-
-async function updateBorrowing(id, payload = {}) {
-  const pool = await getPool();
-  await pool.request()
-    .input('id', sql.Int, id)
-    .input('borrowDate', sql.Date, payload.borrowDate || null)
-    .input('dueDate', sql.Date, payload.dueDate || null)
-    .input('returnDate', sql.Date, payload.returnDate || null)
-    .input('status', sql.NVarChar(20), payload.status)
-    .query(`
-      UPDATE BorrowDetails
-      SET BorrowDate = @borrowDate,
-          DueDate = @dueDate,
-          ReturnDate = @returnDate,
-          Status = @status,
-          UpdatedAt = GETDATE()
-      WHERE BorrowDetailId = @id;
-    `);
-
-  return { id, ...payload };
 }
 
 async function listRequests(filters = {}) {
@@ -375,34 +321,6 @@ async function listRequests(filters = {}) {
   return result.recordset;
 }
 
-async function updateRequestStatus(id, status) {
-  const pool = await getPool();
-  const request = pool.request()
-    .input('id', sql.Int, id)
-    .input('status', sql.NVarChar(20), status);
-  const timestampColumn = status === 'COMPLETED'
-    ? 'ProcessedAt'
-    : status === 'REJECTED'
-      ? 'RejectedAt'
-      : status === 'APPROVED'
-        ? 'ApprovedAt'
-        : null;
-  const timestampSql = timestampColumn ? `, ${timestampColumn} = GETDATE()` : '';
-
-  const result = await request.query(`
-    UPDATE BorrowRequests
-    SET Status = @status,
-        UpdatedAt = GETDATE()
-        ${timestampSql}
-    WHERE RequestId = @id
-      AND Status = 'PENDING';
-
-    SELECT @@ROWCOUNT AS affectedRows;
-  `);
-
-  return result.recordset[0]?.affectedRows || 0;
-}
-
 module.exports = {
   getDashboard,
   listBooks,
@@ -410,10 +328,7 @@ module.exports = {
   listResource,
   createResource,
   updateResource,
-  deleteResource,
+  deactivateResource,
   listBorrowings,
-  createBorrowing,
-  updateBorrowing,
   listRequests,
-  updateRequestStatus,
 };

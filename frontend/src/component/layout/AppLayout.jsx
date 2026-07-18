@@ -8,6 +8,7 @@ import {
   CalendarClock,
   ClipboardList,
   History,
+  Home,
   LayoutDashboard,
   PackageCheck,
   ReceiptText,
@@ -25,6 +26,7 @@ import Header from './Header';
 import { PageHeader } from '../shared/OperationalPatterns';
 
 const NAV_ICONS = {
+  'library-home': Home,
   home: LayoutDashboard,
   membership: UserCog,
   'borrow-request': BookMarked,
@@ -34,6 +36,7 @@ const NAV_ICONS = {
   'process-returns': PackageCheck,
   'reservations-librarian': CalendarClock,
   'member-details': Users,
+  'book-management': BookOpen,
   'inventory-management': Boxes,
   'fine-management': ReceiptText,
   'borrowing-report': BarChart2,
@@ -51,7 +54,7 @@ function getCurrentRoles() {
   }
 }
 
-export default function AppLayout({ title, subtitle, actions, children }) {
+export default function AppLayout({ title, subtitle, actions, children, showSidebar = true }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [navigationOpenState, setNavigationOpen] = useState(false);
@@ -95,11 +98,14 @@ export default function AppLayout({ title, subtitle, actions, children }) {
   }
 
   const HomeIcon = NAV_ICONS.home;
+  const LibraryHomeIcon = NAV_ICONS['library-home'];
+  const showLibraryHome = visibleNavigationKeys.has('library-home');
+  const libraryHomeIsActive = activeKey === 'library-home';
   const homeIsActive = activeKey === 'home';
 
   return (
     <div className="app-shell">
-      <aside
+      {showSidebar && <aside
         id="app-navigation"
         className={`app-sidebar${navigationOpen ? ' app-sidebar-open' : ''}`}
       >
@@ -114,6 +120,19 @@ export default function AppLayout({ title, subtitle, actions, children }) {
         </button>
 
         <nav className="app-nav" aria-label="Điều hướng chính">
+          {showLibraryHome && (
+            <button
+              type="button"
+              className={`app-nav-item${libraryHomeIsActive ? ' active' : ''}`}
+              onClick={() => navigateFromShell('/homepage')}
+              aria-label="Home"
+              aria-current={libraryHomeIsActive ? 'page' : undefined}
+            >
+              <LibraryHomeIcon size={18} />
+              <span>Home</span>
+            </button>
+          )}
+
           <button
             type="button"
             className={`app-nav-item${homeIsActive ? ' active' : ''}`}
@@ -148,9 +167,9 @@ export default function AppLayout({ title, subtitle, actions, children }) {
             </div>
           ))}
         </nav>
-      </aside>
+      </aside>}
 
-      {navigationOpen && (
+      {showSidebar && navigationOpen && (
         <button
           type="button"
           className="app-sidebar-backdrop"
@@ -161,7 +180,7 @@ export default function AppLayout({ title, subtitle, actions, children }) {
 
       <div className="app-main">
         <Header
-          onOpenNavigation={(event) => {
+          onOpenNavigation={showSidebar ? (event) => {
             menuTriggerRef.current = event.currentTarget;
             if (navigationOpen) {
               closeNavigation();
@@ -169,7 +188,7 @@ export default function AppLayout({ title, subtitle, actions, children }) {
               setNavigationPath(location.pathname);
               setNavigationOpen(true);
             }
-          }}
+          } : undefined}
           navigationOpen={navigationOpen}
         />
 

@@ -28,6 +28,38 @@ function makeApp({ roles = ['ADMIN'], userManagementService } = {}) {
 }
 
 describe('FE11 user management routes', () => {
+  test('GET /api/users/audit-logs returns paginated audit data for Admin', async () => {
+    const userManagementService = {
+      listAuditLogs: jest.fn(async () => ({
+        data: [{ logId: 11, action: 'USER_UPDATE', targetType: 'USER', targetId: 2 }],
+        pagination: { page: 2, limit: 8, total: 12, totalPages: 2 },
+      })),
+    };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .get('/api/users/audit-logs?page=2&limit=8')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.body.pagination).toEqual({ page: 2, limit: 8, total: 12, totalPages: 2 });
+    expect(userManagementService.listAuditLogs).toHaveBeenCalledWith(
+      expect.objectContaining({ page: '2', limit: '8' })
+    );
+  });
+
+  test('GET /api/users/audit-logs rejects non-Admin roles', async () => {
+    const userManagementService = { listAuditLogs: jest.fn() };
+    const app = makeApp({ roles: ['LIBRARIAN'], userManagementService });
+
+    const response = await request(app)
+      .get('/api/users/audit-logs')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(403);
+    expect(userManagementService.listAuditLogs).not.toHaveBeenCalled();
+  });
+
   test('GET /api/users returns paginated users from service', async () => {
     const userManagementService = {
       listUsers: jest.fn(async () => ({

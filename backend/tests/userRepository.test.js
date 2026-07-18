@@ -20,7 +20,7 @@ function useRecordset(recordset) {
         },
         async query(query) {
           capture.query = query;
-          return { recordset };
+          return { recordset, recordsets: [recordset, []] };
         },
       };
     },

@@ -207,6 +207,20 @@ describe('FE08 reservation service coverage', () => {
     });
   });
 
+  test('rejects a new reservation when the parent book is inactive', async () => {
+    const { service, reservationRepository } = makeService({
+      repository: {
+        findCopyById: jest.fn(async (copyId) => ({ copyId, status: 'BORROWED', bookStatus: 'INACTIVE' })),
+      },
+    });
+
+    await expect(service.createReservation({ copyId: 7 }, MEMBER, {})).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'BOOK_INACTIVE',
+    });
+    expect(reservationRepository.createReservation).not.toHaveBeenCalled();
+  });
+
   // FR-FE08-019: expiration promotes only when a next eligible reservation exists.
   test('expires holds and promotes only the copies that still have a queue', async () => {
     const expired = [

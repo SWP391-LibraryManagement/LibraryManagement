@@ -13,12 +13,9 @@ function createAdminRoutes({ authService, adminService } = {}) {
   router.get('/library/:resource', requireAdmin, controller.listResource);
   router.post('/library/:resource', requireAdmin, controller.createResource);
   router.put('/library/:resource/:id', requireAdmin, controller.updateResource);
-  router.delete('/library/:resource/:id', requireAdmin, controller.deleteResource);
+  router.patch('/library/:resource/:id/deactivate', requireAdmin, controller.deactivateResource);
   router.get('/borrowings', requireAdmin, controller.listBorrowings);
-  router.post('/borrowings', requireAdmin, controller.createBorrowing);
-  router.put('/borrowings/:id', requireAdmin, controller.updateBorrowing);
   router.get('/requests', requireAdmin, controller.listRequests);
-  router.patch('/requests/:id/status', requireAdmin, controller.updateRequestStatus);
 
   return router;
 }

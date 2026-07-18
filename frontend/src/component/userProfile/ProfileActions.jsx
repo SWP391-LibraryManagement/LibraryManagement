@@ -325,8 +325,8 @@ function LogoutDialog({ onClose, onConfirm, isLoggingOut }) {
           <LogoutIcon />
         </div>
 
-        <h3 className="ld-heading">Đăng xuất?</h3>
-        <p className="ld-desc">Bạn sẽ được chuyển về trang đăng nhập. Mọi phiên làm việc hiện tại sẽ kết thúc.</p>
+        <h3 className="ld-heading">Xác nhận đăng xuất</h3>
+        <p className="ld-desc">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?</p>
 
         <div className="ld-actions">
           <button className="ld-btn ld-btn-cancel" onClick={onClose} disabled={isLoggingOut}>Hủy</button>
@@ -364,10 +364,10 @@ export default function ProfileActions({ onEditProfile }) {
       // Xoá token khỏi storage dù có lỗi hay không
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      localStorage.removeItem("authUser");
       sessionStorage.removeItem("accessToken");
       sessionStorage.removeItem("refreshToken");
-      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("authUser");
 
       setIsLoggingOut(false);
       setShowLogout(false);

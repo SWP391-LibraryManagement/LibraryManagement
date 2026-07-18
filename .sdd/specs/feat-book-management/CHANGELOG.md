@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-18 - Librarian Book Management Navigation
+
+- Added the dedicated Librarian sidebar entry and route `/librarian/books` for FE05 book management.
+- Removed the previous redirect from `/librarian/books` to the FE09 fine page.
+- Kept FE05 available only to authenticated Librarian/Admin roles through its dedicated page shell.
+
+## 2026-07-18 - Catalog Metadata Creation Timestamps
+
+- Added database-owned `CreatedAt` timestamps to categories, authors, and publishers.
+- Updated protected metadata-management reads and creates to return the persisted timestamp.
+- Replaced the admin UI placeholder with the formatted database timestamp.
+- Enforced the existing inactive-book rule in FE07 borrowing and FE08 reservation creation while preserving inventory and historical reads.
+- Added status-based deactivation for categories, authors, and publishers without cascading changes to existing books.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE05 specification, plan, and task boundary as the Phase 1 baseline; implementation tasks remain pending.
@@ -89,3 +103,11 @@
   - FR-FE05-019: Prevent borrowing and hide INACTIVE books from public search while preserving history (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
 - Updated Section 16 Traceability Matrix with the 9 new FRs (Test Case marked TBD).
 - Result: total FRs 10 -> 19; Unwanted FRs 0 -> 9 (~47.4%).
+## 2026-07-18 - Librarian layout alignment
+
+- Aligned the librarian book-management workspace with the shared cream-and-brown visual system.
+- Clarified summary cards, search, filters, tables, buttons, and Vietnamese section labels without changing FE05 API behavior.
+- Removed the duplicated inner module heading, made refresh reload both catalog metadata and book rows, and added eight-row management pagination.
+- Renamed the destructive-looking Delete area to the actual soft-deactivation behavior while preserving catalog and workflow history.
+- After creation, reset incompatible management filters and navigate to the page containing the new canonical book record.
+- Display continuous row numbers across pages while retaining the immutable database BookId for API calls and cross-feature relationships.

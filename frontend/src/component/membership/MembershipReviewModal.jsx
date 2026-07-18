@@ -19,7 +19,7 @@ export default function MembershipReviewModal({ application, saving, onApprove, 
 
   return (
     <Modal
-      title={`Từ chối đơn membership #${application.applicationId || application.id}`}
+      title={`Xét duyệt đơn hội viên #${application.applicationId || application.id}`}
       eyebrow={fullName || email}
       onClose={onClose}
       width={640}
@@ -30,7 +30,7 @@ export default function MembershipReviewModal({ application, saving, onApprove, 
             <X size={16} /> Từ chối
           </button>
           <button type="button" className="btn btn-success" onClick={onApprove} disabled={saving}>
-            <Check size={16} /> Xác thực
+            <Check size={16} /> Duyệt đơn
           </button>
         </>
       )}

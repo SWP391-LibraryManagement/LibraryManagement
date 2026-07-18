@@ -29,7 +29,7 @@ const { defaultReservationService } = require('./services/reservationService');
 const { defaultProfileService } = require('./services/profileService');
 const { defaultFineManagementService } = require('./services/fineManagementService');
 const { defaultInventoryService } = require('./services/inventoryService');
-const { defaultMembershipService } = require('./services/membershipService');
+const { createMembershipService } = require('./services/membershipService');
 const { createUserManagementService } = require('./services/userManagementService');
 
 function corsOptionsFromEnvironment() {
@@ -59,10 +59,18 @@ function createApp({
   profileService = defaultProfileService,
   fineManagementService = defaultFineManagementService,
   inventoryService = defaultInventoryService,
-  membershipService = defaultMembershipService,
+  membershipService,
   userManagementService,
   adminService,
 } = {}) {
+  if (!membershipService) {
+    const notificationRequester =
+      typeof notificationService?.createSourceNotificationRequester === 'function'
+        ? notificationService.createSourceNotificationRequester('FE04')
+        : undefined;
+    membershipService = createMembershipService({ notificationRequester });
+  }
+
   if (!userManagementService) {
     const notificationRequester =
       typeof notificationService?.createSourceNotificationRequester === 'function'

@@ -157,17 +157,16 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   const loadReservationsEnd = source.indexOf('\n  useEffect(', loadReservationsStart);
   const loadReservationsSource = source.slice(loadReservationsStart, loadReservationsEnd);
 
-  assert.match(source, /async function loadReservations\(\{ fallbackToDemo = true \} = \{\}\)/);
-  assert.match(
-    loadReservationsSource,
-    /if \(!fallbackToDemo\) \{\s*throw error;\s*\}\s*setRows\(DEMO_ALL_RESERVATIONS\)/,
-  );
+  assert.match(source, /async function loadReservations\(\)/);
+  assert.match(loadReservationsSource, /const data = await reservationApi\.listAll\(\)/);
+  assert.match(loadReservationsSource, /setRows\(\[\]\)/);
+  assert.doesNotMatch(source, /DEMO_ALL_RESERVATIONS/);
   assert.match(source, /runHoldExpirationWorkflow/);
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);
   assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
-  assert.match(source, /disabled=\{loading \|\| expiringHolds \|\| isDemo\}/);
+  assert.match(source, /disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /onClick=\{loadReservations\} disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /POST \/api\/reservations\/expire-holds/);
   assert.doesNotMatch(source, /function fulfill\(/);
@@ -177,17 +176,18 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /item\.status !== 'Ready to pick up'/);
 });
 
-test('FE08 pages adopt shared operational patterns and preserve demo fallback boundaries', async () => {
+test('FE08 pages adopt shared operational patterns and staff page uses canonical API data', async () => {
   const mine = await readFile(new URL('../src/page/reservation/MyReservationsPage.jsx', import.meta.url), 'utf8');
   const staff = await readFile(new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url), 'utf8');
 
+  assert.match(mine, /DataToolbar/);
   for (const source of [mine, staff]) {
-    assert.match(source, /DataToolbar/);
     assert.match(source, /DataTable/);
     assert.match(source, /ConfirmAction/);
   }
   assert.match(mine, /setReservations\(DEMO_MY_RESERVATIONS\)/);
-  assert.match(staff, /setRows\(DEMO_ALL_RESERVATIONS\)/);
+  assert.doesNotMatch(staff, /DEMO_ALL_RESERVATIONS/);
+  assert.match(staff, /reservationApi\.listAll\(\)/);
   assert.match(mine, /pending=\{cancelling\}/);
   assert.match(staff, /pending=\{notifying\}/);
   assert.doesNotMatch(mine, /<table className="lib-table"/);
