@@ -53,9 +53,10 @@ Owner: Dung
 
 ## Transactional Role Management Tasks
 
-- [ ] **FE11-R01 - Validate role mutation request IDs.**
+- [x] **FE11-R01 - Validate role mutation request IDs.**
   - Maps to: NFR-FE11-SEC-004; FR-FE11-012..013, FR-FE11-024..026.
   - DoD: authenticated Admin requests receive normalized positive integer IDs; invalid IDs return `400 VALIDATION_ERROR` before the service is called.
+  - Evidence: 25/25 focused route tests pass after the observed RED failures for missing validators and string IDs.
 
 - [ ] **FE11-R02 - Add RED transactional repository tests.**
   - Maps to: BR-FE11-007..010; FR-FE11-014, FR-FE11-017, FR-FE11-024..027; NFR-FE11-TXN-003/006.

@@ -218,4 +218,130 @@ describe('FE11 user management routes', () => {
     );
     expect(userManagementService.resendSetup).not.toHaveBeenCalled();
   });
+
+  test('POST /api/users/:userId/roles passes normalized IDs and Admin context', async () => {
+    const updatedUser = { userId: 7, roles: ['LIBRARIAN', 'MEMBER'] };
+    const userManagementService = { assignRole: jest.fn(async () => updatedUser) };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .post('/api/users/7/roles')
+      .set('Authorization', 'Bearer token')
+      .send({ roleId: 3 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(updatedUser);
+    expect(userManagementService.assignRole).toHaveBeenCalledWith(
+      7,
+      { roleId: 3 },
+      expect.objectContaining({ adminUserId: 99 })
+    );
+  });
+
+  test('DELETE /api/users/:userId/roles/:roleId passes normalized IDs and Admin context', async () => {
+    const updatedUser = { userId: 7, roles: ['MEMBER'] };
+    const userManagementService = { revokeRole: jest.fn(async () => updatedUser) };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .delete('/api/users/7/roles/3')
+      .set('Authorization', 'Bearer token');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(updatedUser);
+    expect(userManagementService.revokeRole).toHaveBeenCalledWith(
+      7,
+      3,
+      expect.objectContaining({ adminUserId: 99 })
+    );
+  });
+
+  test.each(['0', '-1', 'not-a-user'])(
+    'rejects invalid role-assignment target %s',
+    async (userId) => {
+      const userManagementService = { assignRole: jest.fn() };
+      const app = makeApp({ userManagementService });
+
+      const response = await request(app)
+        .post(`/api/users/${userId}/roles`)
+        .set('Authorization', 'Bearer token')
+        .send({ roleId: 3 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'userId',
+            message: 'User ID must be a positive integer.',
+          }),
+        ])
+      );
+      expect(userManagementService.assignRole).not.toHaveBeenCalled();
+    }
+  );
+
+  test.each([
+    ['zero', { roleId: 0 }, 'Role ID must be a positive integer.'],
+    ['negative', { roleId: -1 }, 'Role ID must be a positive integer.'],
+    ['missing', {}, 'Role ID is required.'],
+  ])('rejects %s assignment role ID', async (_, body, message) => {
+    const userManagementService = { assignRole: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .post('/api/users/7/roles')
+      .set('Authorization', 'Bearer token')
+      .send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'roleId',
+          message,
+        }),
+      ])
+    );
+    expect(userManagementService.assignRole).not.toHaveBeenCalled();
+  });
+
+  test.each(['0', '-1', 'not-a-role'])(
+    'rejects invalid revocation role %s',
+    async (roleId) => {
+      const userManagementService = { revokeRole: jest.fn() };
+      const app = makeApp({ userManagementService });
+
+      const response = await request(app)
+        .delete(`/api/users/7/roles/${roleId}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'roleId',
+            message: 'Role ID must be a positive integer.',
+          }),
+        ])
+      );
+      expect(userManagementService.revokeRole).not.toHaveBeenCalled();
+    }
+  );
+
+  test('keeps Admin authorization ahead of role body validation', async () => {
+    const userManagementService = { assignRole: jest.fn() };
+    const app = makeApp({ roles: ['MEMBER'], userManagementService });
+
+    const response = await request(app)
+      .post('/api/users/7/roles')
+      .set('Authorization', 'Bearer token')
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.assignRole).not.toHaveBeenCalled();
+  });
 });
