@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.6
-Status: FAST-TRACK BATCH 1 COMPLETE THROUGH B7; TD-023 IN PROGRESS; REMAINING FE11 TESTS PLANNED
+Version: 0.3.7
+Status: FAST-TRACK BATCH 1 AND TD-023 COMPLETE THROUGH B7; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -91,14 +91,16 @@ User administration, role listing, role assignment/revocation, account status ma
 - User-list envelope B7 evidence: 95/95 focused backend, 600/600 full backend, 113/113 frontend, lint/build/traceability/diff/security checks PASS; PR #34 and post-merge CI `29652243809` passed.
 - Evidence-metadata B7 evidence: exactly 22 approved Test Case/Status rows changed, all deferred rows stayed `Not Started`, and full regression/CI passed; PR #35 and post-merge CI `29652617587` passed.
 - TD-023 H2-ready evidence: backend policy/service RED-GREEN and Admin-first route tests; frontend exact-sidebar/API/derivation/isolation RED-GREEN; 606/606 backend, 120/120 frontend, coverage/lint/build/OpenAPI/health/traceability/browser regression PASS.
+- TD-023 B7 evidence: H2/H3 approved on 2026-07-19; PR #37 passed `foundation-checks` run `29654621448`, merged as `356130e4`, and exact post-merge `main` CI run `29655548150` passed.
 
 ## 6. Gaps
 
 - Account setup, transactional backend role mutation, safe list/detail, and Admin role-action UI are complete through human review, merge, and post-merge CI.
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
+- Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
-- TD-023 implementation is H2-ready but remains `IN PROGRESS` until H2/H3, merge, post-merge CI, and closeout; open debt still includes TD-012, remaining TD-014/015, TD-017, and Request Management TD-025.
+- Open FE11 debt still includes TD-012, remaining TD-014/015, TD-017, and Request Management TD-025; whole FE11 remains deferred.
 
 ## 7. Transactional Role Slice
 

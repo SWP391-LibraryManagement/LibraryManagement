@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; ADMIN NAVIGATION/PERMISSIONS IN PROGRESS; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, FAST-TRACK BATCH 1, AND ADMIN NAVIGATION/PERMISSIONS COMPLETE THROUGH B7; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -205,10 +205,11 @@ Owner: Dung
   - DoD: role cards use FE12 `usersByRole`; coverage/cells derive from FE11 `allowedRoles`; independent failures preserve last success and expose retry controls.
   - Evidence: helper RED failed 3/3 expected assertions; GREEN focused frontend passes 38/38, full frontend passes 120/120, lint/build pass.
 
-- [ ] **FE11-PERM06 - Pass H2/H3/B7 and close TD-023.**
+- [x] **FE11-PERM06 - Pass H2/H3/B7 and close TD-023.**
   - Depends on: FE11-PERM01..FE11-PERM05.
   - DoD: L1-L4 evidence, human reviews, implementation PR merge, post-merge main CI, closeout PR, and final main CI are recorded; TD-023 is resolved while TD-025 and whole FE11 remain deferred.
+  - Integration state: H2/H3 approved on 2026-07-19; PR #37 passed CI run `29654621448`, merged as `356130e4`, and post-merge `main` CI run `29655548150` passed. This documentation-only closeout publishes the B7 record; its merge and final CI are reported in the final handoff.
 
 ## Deferred FE11 Work
 
-The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, and Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`. Admin navigation/permissions is active only through `FE11-PERM01..FE11-PERM06`. Update/deactivation, librarian fields, Request Management, and remaining FE11 debt stay deferred until separately reviewed task groups are approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
+The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`, and Admin navigation/permissions `FE11-PERM01..FE11-PERM06`. Update/deactivation, librarian fields, Request Management, and remaining FE11 debt stay deferred until separately reviewed task groups are approved. Existing prototype behavior is not evidence of whole-feature FE11 conformance.

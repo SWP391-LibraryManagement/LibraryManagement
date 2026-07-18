@@ -1,8 +1,8 @@
 # FE11 Admin Navigation And Permissions Validation - 2026-07-19
 
-Status: H2 REVIEW READY
+Status: B7 INTEGRATION COMPLETE
 
-Scope: `FE11-PERM01..FE11-PERM05` / `TD-023` only
+Scope: `FE11-PERM01..FE11-PERM06` / `TD-023` only
 
 Decision: Hybrid SDD + ADD, Standard depth. Core is Admin-first authorization, exact policy/API ownership, FE11/FE12 ownership, and failure isolation; Shell is the read-only responsive presentation.
 
@@ -82,16 +82,24 @@ No FE04, FE12 production, schema, permission-mutation, role-CRUD, or TD-025 requ
 - Later FE11 or FE12 failures preserve the corresponding last successful data and expose independent retry controls.
 - Chromium golden-path regression passes on desktop/mobile. A signed-in feature-specific Permissions browser interaction remains a residual manual H2 check.
 
+## Integration Evidence
+
+- H2 approved the unchanged reviewed diff on 2026-07-19; frozen diff hash: `8616b3624ce792d42693903d42a5f3396f54db65`.
+- Implementation PR: https://github.com/SWP391-LibraryManagement/LibraryManagement/pull/37.
+- PR `foundation-checks` run `29654621448` passed against head `216f4cc5c0d54c6092852e2a9ecf7541f5ed393a`.
+- H3 approved final integration and merge on 2026-07-19.
+- PR #37 merged into `main` as `356130e4905a59d219bae8e9b369f7690348cba2`.
+- Exact post-merge `main` CI run `29655548150` completed successfully.
+
 ## Residual Risks
 
 - The browser suite emitted pre-existing `/api/profile/me` SQL-configuration errors because local SQL Server variables are absent; the golden path still passed 1/1 and TD-023 performs no SQL access.
 - The frontend production build retains the existing non-blocking chunk-size warning.
 - The current automated browser flow does not open the new Permissions section; focused source contracts, full frontend tests, lint, and build cover this slice locally.
-- GitHub PR checks, H3, implementation merge, post-merge main CI, and documentation closeout remain pending.
+- GitHub Actions reports a non-blocking Node.js 20 action-runtime deprecation annotation; the workflow is forced to Node.js 24 and passes.
 
-## H2 Review Boundary
+## B7 Closeout Boundary
 
-- Review only the TD-023 governance, backend policy/service/route/tests, frontend adapter/helper/page/tests, API/OpenAPI contract, and this validation record.
-- `TD-023` remains `IN PROGRESS`; `FE11-PERM06` remains unchecked.
-- H2 may authorize only the unchanged reviewed commit set, push, and draft PR publication. H3 remains required before merge.
+- `FE11-PERM01..FE11-PERM06` are complete and `TD-023` is resolved through the recorded implementation PR and post-merge CI evidence.
+- This closeout changes only FE11 planning, task, test, changelog, validation, and debt records; no product code or approved requirement changes.
 - Whole FE11 remains `Implementation State: DEFERRED`, and `TD-025` remains open.

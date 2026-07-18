@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-19 - Admin Navigation And Permissions Integrated (B7)
+
+- H2 and H3 were approved on 2026-07-19 for the unchanged implementation diff and final PR integration review.
+- PR #37 passed `foundation-checks` run `29654621448` and merged into `main` as `356130e4905a59d219bae8e9b369f7690348cba2`.
+- Exact post-merge `main` CI run `29655548150` passed backend/system tests, coverage, frontend lint/tests/build, browser E2E, and backend health import.
+- Closed `FE11-PERM01..FE11-PERM06` and resolved `TD-023` without changing FE04, FE12 production behavior, schema, permission mutation, or role CRUD.
+- `TD-025` remains open and whole FE11 remains `Implementation State: DEFERRED`.
+
 ## 2026-07-19 - Admin Navigation And Permissions H2-Ready
 
 - Added immutable FE11 ownership of the exact three-role, 15-permission Phase 1 policy and fresh allowlisted service DTOs.
