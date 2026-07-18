@@ -1,6 +1,6 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, AND FAST-TRACK BATCH 1 COMPLETE THROUGH B7; ADMIN NAVIGATION/PERMISSIONS IN PROGRESS; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, ADMIN ROLE UI, FAST-TRACK BATCH 1, AND ADMIN NAVIGATION/PERMISSIONS COMPLETE THROUGH B7; REMAINING WORK DEFERRED
 
 Date: 2026-07-15
 
@@ -214,7 +214,7 @@ Integration State: COMPLETE THROUGH B7
 
 ## 14. Admin Navigation And Permissions Slice
 
-Integration State: IN PROGRESS
+Integration State: COMPLETE THROUGH B7
 
 ### In Scope
 
@@ -233,3 +233,10 @@ Integration State: IN PROGRESS
 - Frontend tests prove exact sidebar order, canonical API usage, no hardcoded matrix fallback, FE12 counts, derived coverage, and isolated retries/errors.
 - Full tests, coverage, lint, build, browser E2E, OpenAPI parse, health import, traceability, diff hygiene, scope scan, and secret scan pass.
 - H2 precedes commit/push; H3 precedes merge; TD-023 closes only after post-merge main CI and closeout evidence.
+
+### Integration Evidence
+
+- H2 approved the unchanged implementation diff on 2026-07-19; H3 approved PR #37 for merge on 2026-07-19.
+- PR #37 passed `foundation-checks` in run `29654621448` and merged into `main` as `356130e4905a59d219bae8e9b369f7690348cba2`.
+- Exact post-merge `main` CI run `29655548150` passed all `foundation-checks`.
+- `TD-023` is resolved by this bounded slice; `TD-025` and whole-feature `Implementation State: DEFERRED` remain unchanged.
