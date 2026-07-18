@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP AND TRANSACTIONAL ROLE SLICES COMPLETE; SAFE LIST/DETAIL SLICE APPROVED FOR IMPLEMENTATION; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -107,11 +107,11 @@ Owner: Dung
   - DoD: UI omits `ALL`/empty search, reads `phoneNumber`, fetches detail on row selection, renders summaries, and reloads a stale list after detail 404.
   - Evidence: four frontend RED failures covered the missing detail flow; 81/81 frontend tests, lint, and production build now pass with authorized detail fetch and stale-row recovery.
 
-- [ ] **FE11-U06 - Pass the safe list/detail validation gate.**
+- [x] **FE11-U06 - Pass the safe list/detail validation gate.**
   - Dependencies: FE11-U01..U05.
   - DoD: focused/full tests, coverage, frontend lint/build, traceability, diff hygiene, security review, debt reconciliation, validation record, and human review evidence are complete.
   - Automated evidence: 105/105 focused backend tests; 434/434 full backend tests; 92.47% statements and 82.35% branches; 81/81 frontend tests; lint, build, traceability, security scan, and diff checks pass.
-  - Review state: pending human implementation review; do not mark complete before approval.
+  - Review state: human implementation review approved on 2026-07-18.
 
 ## Deferred FE11 Work
 

@@ -9,7 +9,8 @@
 - Missing detail users now return `404 USER_NOT_FOUND`; update/deactivation not-found behavior remains deferred.
 - Admin UI now omits `ALL`/empty query values, fetches real detail, renders all summaries, and reloads stale list data after detail 404.
 - Automated evidence: 105/105 focused backend, 434/434 full backend, 81/81 frontend, 92.47% statements, 82.35% branches, lint/build/traceability/security/diff checks PASS.
-- Human implementation review is pending; no schema migration occurred and `TD-012` remains open.
+- Human implementation review was approved on 2026-07-18; `FE11-U06` is complete.
+- No schema migration occurred and `TD-012` remains open; remaining FE11 work stays deferred.
 
 ## 2026-07-18 - Safe User List And Detail Slice Approved
 
