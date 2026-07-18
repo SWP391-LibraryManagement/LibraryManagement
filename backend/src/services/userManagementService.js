@@ -274,7 +274,19 @@ function createUserManagementService({
   }
 
   async function getUser(userId) {
-    return getExistingUser(userId);
+    // @spec FR-FE11-002, FR-FE11-016
+    const parsedUserId = parsePositiveId(
+      userId,
+      'INVALID_USER_ID',
+      'User id is invalid.'
+    );
+    const user = await userRepository.getManagedUserDetailById(parsedUserId);
+
+    if (!user) {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
+    }
+
+    return user;
   }
 
   async function listRoles() {

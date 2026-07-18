@@ -50,6 +50,11 @@ const listUsersValidators = [
   assignValidatedListQuery,
 ];
 
+const getUserValidators = [
+  positiveIdParam('userId', 'User ID'),
+  handleValidationErrors,
+];
+
 const resendSetupValidators = [
   positiveIdParam('userId', 'User ID'),
   handleValidationErrors,
@@ -75,6 +80,7 @@ const revokeRoleValidators = [
 
 module.exports = {
   listUsersValidators,
+  getUserValidators,
   resendSetupValidators,
   assignRoleValidators,
   revokeRoleValidators,

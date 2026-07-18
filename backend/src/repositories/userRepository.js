@@ -66,6 +66,22 @@ function mapManagedUser(row) {
   };
 }
 
+function mapManagedUserDetail(row) {
+  const user = mapManagedUser(row);
+  if (!user) {
+    return null;
+  }
+
+  return {
+    ...user,
+    relatedSummary: {
+      activeBorrowingCount: Number(row.ActiveBorrowingCount || 0),
+      unpaidFineTotal: Number(row.UnpaidFineTotal || 0),
+      openReservationCount: Number(row.OpenReservationCount || 0),
+    },
+  };
+}
+
 // @spec FR-FE11-001, BR-FE11-026
 async function listManagedUsers({ page = 1, limit = 20, status, role, search } = {}) {
   const pool = await getPool();
@@ -211,6 +227,62 @@ async function getManagedUserById(userId) {
     `);
 
   return mapManagedUser(result.recordset[0]);
+}
+
+// @spec FR-FE11-002, BR-FE11-026
+async function getManagedUserDetailById(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      SELECT
+        u.UserId,
+        u.Username,
+        u.Email,
+        u.Phone,
+        u.Status,
+        u.LastLoginAt,
+        u.CreatedAt,
+        u.UpdatedAt,
+        up.FullName,
+        up.Address,
+        roleList.Roles,
+        COALESCE((
+          SELECT COUNT(*)
+          FROM BorrowRequests br
+          INNER JOIN BorrowDetails bd ON bd.RequestId = br.RequestId
+          WHERE br.UserId = u.UserId
+            AND bd.Status = 'BORROWED'
+        ), 0) AS ActiveBorrowingCount,
+        COALESCE((
+          SELECT SUM(f.Amount - f.PaidAmount)
+          FROM Fines f
+          WHERE f.UserId = u.UserId
+            AND f.Status = 'UNPAID'
+        ), 0) AS UnpaidFineTotal,
+        COALESCE((
+          SELECT COUNT(*)
+          FROM Reservations r
+          WHERE r.UserId = u.UserId
+            AND r.Status IN ('ACTIVE', 'NOTIFIED')
+        ), 0) AS OpenReservationCount
+      FROM Users u
+      LEFT JOIN UserProfiles up ON up.UserId = u.UserId
+      OUTER APPLY (
+        SELECT STUFF((
+          SELECT ',' + r.RoleName
+          FROM UserRoles ur
+          INNER JOIN Roles r ON r.RoleId = ur.RoleId
+          WHERE ur.UserId = u.UserId
+          ORDER BY r.RoleName
+          FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS Roles
+      ) roleList
+      WHERE u.UserId = @UserId
+    `);
+
+  return mapManagedUserDetail(result.recordset[0]);
 }
 
 async function findByEmail(email) {
@@ -605,6 +677,7 @@ async function updatePasswordAndActivate(userId, passwordHash) {
 module.exports = {
   listManagedUsers,
   getManagedUserById,
+  getManagedUserDetailById,
   findByEmail,
   findByUsername,
   findByEmailOrUsername,

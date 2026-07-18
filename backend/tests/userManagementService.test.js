@@ -621,4 +621,51 @@ describe('FE11 safe managed-user reads', () => {
     await expect(service.listUsers(query)).rejects.toMatchObject({ statusCode: 400, code });
     expect(userRepository.listManagedUsers).not.toHaveBeenCalled();
   });
+
+  test('getUser returns the dedicated detail projection', async () => {
+    const detail = {
+      userId: 7,
+      phoneNumber: '0900000000',
+      roles: ['MEMBER'],
+      relatedSummary: {
+        activeBorrowingCount: 1,
+        unpaidFineTotal: 5000,
+        openReservationCount: 2,
+      },
+    };
+    const { service, userRepository } = makeReadHarness({
+      getManagedUserDetailById: jest.fn(async () => detail),
+    });
+
+    await expect(service.getUser(7)).resolves.toEqual(detail);
+    expect(userRepository.getManagedUserDetailById).toHaveBeenCalledWith(7);
+    expect(userRepository.getManagedUserById).not.toHaveBeenCalled();
+  });
+
+  test('getUser returns 404 USER_NOT_FOUND for a missing valid ID', async () => {
+    const { service } = makeReadHarness({
+      getManagedUserDetailById: jest.fn(async () => null),
+    });
+
+    await expect(service.getUser(404)).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'USER_NOT_FOUND',
+      message: 'User was not found.',
+    });
+  });
+
+  test.each([0, -1, 1.5, 'not-a-user'])(
+    'getUser rejects invalid direct ID %p before repository access',
+    async (userId) => {
+      const { service, userRepository } = makeReadHarness({
+        getManagedUserDetailById: jest.fn(),
+      });
+
+      await expect(service.getUser(userId)).rejects.toMatchObject({
+        statusCode: 400,
+        code: 'INVALID_USER_ID',
+      });
+      expect(userRepository.getManagedUserDetailById).not.toHaveBeenCalled();
+    }
+  );
 });

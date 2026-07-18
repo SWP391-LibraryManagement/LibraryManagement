@@ -4,6 +4,7 @@ const { createAuthenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/requireRole');
 const {
   listUsersValidators,
+  getUserValidators,
   resendSetupValidators,
   assignRoleValidators,
   revokeRoleValidators,
@@ -18,7 +19,7 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
   router.get('/roles', requireAdmin, controller.listRoles);
   router.get('/audit-logs', requireAdmin, controller.listAuditLogs);
-  router.get('/:userId', requireAdmin, controller.getUser);
+  router.get('/:userId', ...requireAdmin, getUserValidators, controller.getUser);
   router.post('/', requireAdmin, controller.createUser);
   router.post(
     '/:userId/resend-setup',

@@ -92,13 +92,15 @@ Owner: Dung
   - DoD: list/readback responses use `phoneNumber`, deterministic uppercase roles, and no credential/token/session/link/audit-secret fields.
   - Evidence: hostile-column repository tests and frontend contract tests pass; frontend full suite is 77/77 with lint/build green.
 
-- [ ] **FE11-U03 - Add the detail-only related summary query.**
+- [x] **FE11-U03 - Add the detail-only related summary query.**
   - Maps to: FR-FE11-002, AC-FE11-002.
   - DoD: one parameterized detail query returns active borrowing count, outstanding unpaid-fine total, and open reservation count with numeric zero defaults.
+  - Evidence: RED proved the detail repository method was absent; repository tests now verify the three predicates, numeric conversion, zero defaults, and summary-free mutation readback boundary.
 
-- [ ] **FE11-U04 - Return deterministic detail validation and not-found errors.**
+- [x] **FE11-U04 - Return deterministic detail validation and not-found errors.**
   - Maps to: FR-FE11-015, FR-FE11-016, NFR-FE11-SEC-001/002/004.
   - DoD: Admin authorization precedes validation; invalid IDs return `400 VALIDATION_ERROR`; valid missing IDs return `404 USER_NOT_FOUND`.
+  - Evidence: RED exposed string route IDs and the old `400` path; 105/105 focused route/service/repository/role tests pass with dedicated detail read and `404 USER_NOT_FOUND`.
 
 - [ ] **FE11-U05 - Consume the safe list/detail contract in the Admin UI.**
   - Maps to: AC-FE11-001, AC-FE11-002.
