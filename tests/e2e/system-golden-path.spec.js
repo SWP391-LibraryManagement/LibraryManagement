@@ -76,7 +76,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   await expect(page.locator('.panel').getByText('14 ngày', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Xác nhận trả/i }).click();
   await page.getByRole('button', { name: /^Ghi nhận trả sách$/i }).click();
-  await expect(page.getByText(/Có dữ liệu cần FE09 xem xét phí phạt/i)).toBeVisible();
+  await expect(page.getByText(/Có dữ liệu cần xem xét tiền phạt/i)).toBeVisible();
 
   const syncResponse = await request.post(`${BACKEND_URL}/__e2e__/sync-fines`);
   expect(syncResponse.ok()).toBeTruthy();
