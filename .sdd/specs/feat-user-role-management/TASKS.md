@@ -131,10 +131,11 @@ Owner: Dung
   - DoD: assignment sends `{ roleId }`, revocation uses `/{roleId}`, and focused RED-GREEN tests exclude role-name mutation requests.
   - Evidence: RED failed on the legacy `roleName` body/path; GREEN passes 6/6 focused API tests with numeric `roleId` helpers.
 
-- [ ] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
+- [x] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
   - Maps to: PRE-FE11-004; NFR-FE11-SEC-004; TD-022.
   - Depends on: FE11-UIR01.
   - DoD: only positive IDs for ADMIN/LIBRARIAN/MEMBER enable the modal; invalid/missing catalog data sends no mutation and no hardcoded fallback exists.
+  - Evidence: RED failed 2 catalog-contract tests before validation/planning existed; GREEN passes 4/4 focused frontend tests and ESLint is clean.
 
 - [ ] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
   - Maps to: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.

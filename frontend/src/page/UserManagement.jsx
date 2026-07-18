@@ -67,7 +67,55 @@ const statusLabels = {
   LOCKED: 'Locked',
 };
 const editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER'];
+const ROLE_CATALOG_ERROR = 'Không thể tải danh mục vai trò. Vui lòng thử lại.';
 const allowDevUserManagementWithoutLogin = import.meta.env.MODE !== 'production';
+
+function normalizeEditableRoleCatalog(roleCatalog = []) {
+  const seenNames = new Set();
+  const seenIds = new Set();
+  const normalized = [];
+
+  for (const role of roleCatalog) {
+    const roleName = String(role?.roleName || '').trim().toUpperCase();
+    if (!editableRoles.includes(roleName)) continue;
+
+    const roleId = Number(role?.roleId);
+    const hasValidRoleId = Number.isInteger(roleId) && roleId > 0;
+    if (!hasValidRoleId || seenNames.has(roleName) || seenIds.has(roleId)) {
+      throw new Error(ROLE_CATALOG_ERROR);
+    }
+
+    seenNames.add(roleName);
+    seenIds.add(roleId);
+    normalized.push({ roleId, roleName });
+  }
+
+  if (normalized.length !== editableRoles.length) {
+    throw new Error(ROLE_CATALOG_ERROR);
+  }
+
+  return normalized;
+}
+
+function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog) {
+  const editableCatalog = normalizeEditableRoleCatalog(roleCatalog);
+  const currentRoles = new Set(currentRoleNames || []);
+  const selectedRoles = new Set(selectedRoleNames || []);
+  const assignments = [];
+  const revocations = [];
+
+  for (const { roleId, roleName } of editableCatalog) {
+    if (selectedRoles.has(roleName) && !currentRoles.has(roleName)) {
+      assignments.push({ roleName, roleId });
+    }
+    if (currentRoles.has(roleName) && !selectedRoles.has(roleName)) {
+      revocations.push({ roleName, roleId });
+    }
+  }
+
+  return { assignments, revocations };
+}
+
 const permissionRows = [
   { name: 'View users', admin: true, librarian: false, member: false },
   { name: 'Create accounts', admin: true, librarian: false, member: false },
@@ -351,7 +399,7 @@ function RoleModal({ user, roles, onClose, onSave }) {
   const [selectedRoles, setSelectedRoles] = useState(() => new Set(user.roles || []));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const availableRoles = roles.length > 0 ? roles : editableRoles.map((roleName) => ({ roleName }));
+  const availableRoles = roles;
 
   function toggleRole(roleName) {
     const nextRoles = new Set(selectedRoles);
@@ -641,6 +689,9 @@ function UserManagement() {
   const [modal, setModal] = useState(null);
   const [roleUser, setRoleUser] = useState(null);
   const [roles, setRoles] = useState([]);
+  const [rolesError, setRolesError] = useState('');
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [roleSyncBlocked, setRoleSyncBlocked] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
@@ -745,9 +796,39 @@ function UserManagement() {
     }
   }
 
+  async function loadRoles() {
+    setRolesLoading(true);
+    setRolesError('');
+
+    try {
+      const result = await fetchRoles();
+      const catalog = normalizeEditableRoleCatalog(result.data || []);
+      setRoles(catalog);
+      return catalog;
+    } catch (error) {
+      setRoles([]);
+      setRolesError(ROLE_CATALOG_ERROR);
+      throw new Error(ROLE_CATALOG_ERROR, { cause: error });
+    } finally {
+      setRolesLoading(false);
+    }
+  }
+
   async function openRoleModal(user) {
-    if (await requireAdminSession()) {
+    if (!(await requireAdminSession())) return;
+
+    try {
+      let catalog;
+      if (rolesError || roles.length === 0) {
+        catalog = await loadRoles();
+      } else {
+        catalog = normalizeEditableRoleCatalog(roles);
+      }
+      buildRoleMutationPlan(user.roles || [], user.roles || [], catalog);
+      setRoleSyncBlocked(false);
       setRoleUser(user);
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
     }
   }
 
@@ -859,9 +940,12 @@ function UserManagement() {
   }, [search, roleFilter, statusFilter]);
 
   useEffect(() => {
-    fetchRoles()
-      .then((result) => setRoles(result.data || []))
-      .catch(() => setRoles(editableRoles.map((roleName) => ({ roleName }))));
+    const timer = setTimeout(() => {
+      loadRoles().catch(() => {});
+    }, 0);
+
+    return () => clearTimeout(timer);
+  // The timer keeps state-setting catalog work outside the synchronous effect body.
   }, []);
 
   useEffect(() => {
@@ -2076,6 +2160,7 @@ function UserManagement() {
         <RoleModal
           user={roleUser}
           roles={roles}
+          savingBlocked={rolesLoading || roleSyncBlocked}
           onClose={() => setRoleUser(null)}
           onSave={saveRoles}
         />

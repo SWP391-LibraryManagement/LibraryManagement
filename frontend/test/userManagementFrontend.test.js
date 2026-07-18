@@ -22,3 +22,23 @@ test('FE11 drawer renders all approved related summaries', async () => {
   assert.match(source, /selectedUser\.relatedSummary\?\.openReservationCount/);
   assert.match(source, /isManagedUserNotFound\(error\)[\s\S]*?await loadUsers\(pagination\.page\)/);
 });
+
+test('FE11 role editing requires a complete numeric role catalog', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /function normalizeEditableRoleCatalog\(roleCatalog = \[\]\)/);
+  assert.match(source, /Number\.isInteger\(roleId\) && roleId > 0/);
+  assert.match(source, /seenIds\.has\(roleId\)/);
+  assert.match(source, /normalized\.length !== editableRoles\.length/);
+  assert.match(source, /async function loadRoles\(\)/);
+  assert.match(source, /async function openRoleModal\(user\)[\s\S]*?await loadRoles\(\)/);
+  assert.doesNotMatch(source, /editableRoles\.map\(\(roleName\) => \(\{ roleName \}\)\)/);
+});
+
+test('FE11 role mutation plan preserves names for UI and emits catalog IDs', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /function buildRoleMutationPlan\(currentRoleNames, selectedRoleNames, roleCatalog\)/);
+  assert.match(source, /assignments\.push\(\{ roleName, roleId \}\)/);
+  assert.match(source, /revocations\.push\(\{ roleName, roleId \}\)/);
+});
