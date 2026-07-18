@@ -45,7 +45,6 @@ import {
   deactivateManagedUser,
   assignManagedUserRole,
   ensureManagedUserAccess,
-  fetchAuditLogs,
   fetchManagedUser,
   fetchRoles,
   fetchUsers,
@@ -670,9 +669,46 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
 }
 
 const ADMIN_TABLE_PAGE_SIZE = 8;
+const AUDIT_TABLE_PAGE_SIZE = 20;
+const EMPTY_AUDIT_FILTERS = { q: '', action: '', actorId: '', from: '', to: '' };
 
-function AdminTablePagination({ page, totalItems, onPageChange }) {
-  const totalPages = Math.max(Math.ceil(totalItems / ADMIN_TABLE_PAGE_SIZE), 1);
+function buildAuditLogParams({ page = 1, limit = AUDIT_TABLE_PAGE_SIZE, ...filters } = {}) {
+  const params = { page, limit };
+  const q = String(filters.q || '').trim();
+  const action = String(filters.action || '').trim();
+  const actorIdText = String(filters.actorId ?? '').trim();
+  if (q) params.q = q;
+  if (action) params.action = action;
+  if (actorIdText) {
+    params.actorId = /^\d+$/.test(actorIdText) ? Number(actorIdText) : actorIdText;
+  }
+  if (filters.from) params.from = filters.from;
+  if (filters.to) params.to = filters.to;
+  return params;
+}
+
+function formatAuditDetailEntries(details) {
+  return Object.entries(details || {}).filter(([, value]) => (
+    ['string', 'number', 'boolean'].includes(typeof value)
+    || (Array.isArray(value) && value.every((item) => (
+      item === null || ['string', 'number', 'boolean'].includes(typeof item)
+    )))
+  ));
+}
+
+function formatAuditDetailValue(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
+  if (typeof value === 'boolean') return value ? 'Có' : 'Không';
+  return String(value);
+}
+
+function AdminTablePagination({
+  page,
+  totalItems,
+  onPageChange,
+  pageSize = ADMIN_TABLE_PAGE_SIZE,
+}) {
+  const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
   if (totalPages <= 1) return null;
 
   return (
@@ -713,7 +749,13 @@ function UserManagement() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditUpdatedAt, setAuditUpdatedAt] = useState(null);
-  const [auditPagination, setAuditPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
+  const [auditFilters, setAuditFilters] = useState(EMPTY_AUDIT_FILTERS);
+  const [auditPagination, setAuditPagination] = useState({
+    page: 1,
+    limit: AUDIT_TABLE_PAGE_SIZE,
+    total: 0,
+    totalPages: 0,
+  });
   const [paymentFines, setPaymentFines] = useState(() => getFineRecords());
   const [dashboardData, setDashboardData] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
@@ -985,7 +1027,10 @@ function UserManagement() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status]);
 
-  async function loadAuditLogs(page = auditPagination.page, { announce = false } = {}) {
+  async function loadAuditLogs(
+    page = auditPagination.page,
+    { announce = false, filters = auditFilters } = {}
+  ) {
     if (!getStoredAdminUser()) {
       setAuditLogs([]);
       setAuditError('Vui lòng đăng nhập bằng tài khoản quản trị viên để xem nhật ký hoạt động.');
@@ -995,9 +1040,18 @@ function UserManagement() {
     setAuditLoading(true);
     setAuditError('');
     try {
-      const result = await fetchAuditLogs({ page, limit: ADMIN_TABLE_PAGE_SIZE });
+      const result = await adminApi.auditLogs(buildAuditLogParams({
+        ...filters,
+        page,
+        limit: AUDIT_TABLE_PAGE_SIZE,
+      }));
       setAuditLogs(result.data || []);
-      setAuditPagination(result.pagination || { page, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
+      setAuditPagination(result.pagination || {
+        page,
+        limit: AUDIT_TABLE_PAGE_SIZE,
+        total: 0,
+        totalPages: 0,
+      });
       setAuditUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới nhật ký hoạt động.' });
     } catch (error) {
@@ -1478,7 +1532,9 @@ function UserManagement() {
                 else if (activeSection === 'circulation') loadBorrowings({ announce: true });
                 else if (activeSection === 'requests') loadRequests({ announce: true });
                 else if (activeSection === 'membership') loadMembershipApplications({ announce: true });
-                else if (activeSection === 'audit') loadAuditLogs(auditPagination.page, { announce: true });
+                else if (activeSection === 'audit') {
+                  loadAuditLogs(auditPagination.page, { announce: true, filters: auditFilters });
+                }
                 else loadUsers(pagination.page, { announce: true });
               }}
             >
@@ -2022,6 +2078,82 @@ function UserManagement() {
                 </div>
               </article>
             </div>
+            <div className="um-toolbar audit">
+              <div className="um-search">
+                <Search size={18} />
+                <input
+                  aria-label="Tìm nhật ký"
+                  value={auditFilters.q}
+                  maxLength={100}
+                  placeholder="Tìm hành động, actor hoặc đối tượng..."
+                  onChange={(event) => setAuditFilters((current) => ({
+                    ...current,
+                    q: event.target.value,
+                  }))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') loadAuditLogs(1, { filters: auditFilters });
+                  }}
+                />
+              </div>
+              <input
+                aria-label="Lọc hành động"
+                value={auditFilters.action}
+                maxLength={100}
+                placeholder="AUTH_LOGIN_SUCCESS"
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  action: event.target.value,
+                }))}
+              />
+              <input
+                aria-label="Actor ID"
+                type="number"
+                min="1"
+                step="1"
+                value={auditFilters.actorId}
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  actorId: event.target.value,
+                }))}
+              />
+              <input
+                aria-label="Từ ngày"
+                type="date"
+                value={auditFilters.from}
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  from: event.target.value,
+                }))}
+              />
+              <input
+                aria-label="Đến ngày"
+                type="date"
+                value={auditFilters.to}
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  to: event.target.value,
+                }))}
+              />
+              <button
+                type="button"
+                className="um-secondary-button"
+                disabled={auditLoading}
+                onClick={() => loadAuditLogs(1, { filters: auditFilters })}
+              >
+                Áp dụng
+              </button>
+              <button
+                type="button"
+                className="um-secondary-button"
+                disabled={auditLoading}
+                onClick={() => {
+                  setAuditFilters(EMPTY_AUDIT_FILTERS);
+                  loadAuditLogs(1, { filters: EMPTY_AUDIT_FILTERS });
+                }}
+              >
+                <FilterX size={16} /> Xóa lọc
+              </button>
+            </div>
             <div className="um-audit-table-heading">
               <div>
                 <h2>Danh sách hoạt động</h2>
@@ -2036,6 +2168,7 @@ function UserManagement() {
                   <th>Hành động</th>
                   <th>Người thực hiện</th>
                   <th>Đối tượng</th>
+                  <th>Chi tiết an toàn</th>
                   <th>IP</th>
                   <th>Thời gian</th>
                 </tr>
@@ -2044,8 +2177,26 @@ function UserManagement() {
                 {auditLogs.map((log) => (
                   <tr key={log.logId}>
                     <td><span className="um-audit-action">{log.action}</span></td>
-                    <td><strong>{log.actorName || log.actorEmail || 'Hệ thống'}</strong>{log.actorName && log.actorEmail && <small>{log.actorEmail}</small>}</td>
-                    <td><strong>{log.targetName || log.targetEmail || (log.targetId ? `#${log.targetId}` : '-')}</strong>{log.targetType && <small>{log.targetType}</small>}</td>
+                    <td>
+                      <strong>{log.actor?.fullName || log.actor?.email || 'Hệ thống'}</strong>
+                      {log.actor?.fullName && log.actor?.email && <small>{log.actor.email}</small>}
+                    </td>
+                    <td>
+                      <strong>{log.target?.label || (log.target?.id ? `#${log.target.id}` : '-')}</strong>
+                      {log.target?.type && <small>{log.target.type}</small>}
+                    </td>
+                    <td>
+                      {formatAuditDetailEntries(log.details).length === 0 ? '-' : (
+                        <dl className="um-audit-details">
+                          {formatAuditDetailEntries(log.details).map(([key, value]) => (
+                            <div key={key}>
+                              <dt>{key}</dt>
+                              <dd>{formatAuditDetailValue(value)}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </td>
                     <td><code>{log.ipAddress || '-'}</code></td>
                     <td>{new Date(log.createdAt).toLocaleString('vi-VN')}</td>
                   </tr>
@@ -2062,7 +2213,14 @@ function UserManagement() {
             {!auditLoading && !auditError && auditLogs.length === 0 && (
               <div className="um-empty">Chưa có sự kiện nào được ghi nhận.</div>
             )}
-            {!auditLoading && !auditError && <AdminTablePagination page={auditPagination.page} totalItems={auditPagination.total} onPageChange={loadAuditLogs} />}
+            {!auditLoading && !auditError && (
+              <AdminTablePagination
+                page={auditPagination.page}
+                totalItems={auditPagination.total}
+                pageSize={auditPagination.limit || AUDIT_TABLE_PAGE_SIZE}
+                onPageChange={(page) => loadAuditLogs(page, { filters: auditFilters })}
+              />
+            )}
             </div>
           </section>
         )}
@@ -2364,6 +2522,8 @@ function UserManagement() {
         .um-tabs button { min-height: 38px; border-radius: 8px; border: 1px solid #d7dee8; background: #fff; color: #334155; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; cursor: pointer; font-weight: 800; }
         .um-tabs button.active { background: #2f80ed; color: #fff; border-color: #2f80ed; }
         .um-toolbar.requests { grid-template-columns: minmax(260px, 1fr) 170px 150px 150px auto auto; }
+        .um-toolbar.audit { display: grid; grid-template-columns: minmax(260px, 1fr) 190px 100px 150px 150px auto auto; margin-bottom: 0; }
+        .um-toolbar.audit > input { min-width: 0; min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-toolbar input[type="date"] { min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
         .um-form-grid .span-2 { grid-column: span 2; }
@@ -2580,17 +2740,22 @@ function UserManagement() {
         .um-audit-table-heading p { margin: 0; color: var(--um-muted); font-size: 13px; }
         .um-audit-table-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--um-accent-dark); background: var(--um-accent-soft); font-size: 12px; font-weight: 700; white-space: nowrap; }
         .um-table-wrap { overflow: hidden; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }
-        .um-audit-table { min-width: 960px; }
-        .um-audit-table th:nth-child(1) { width: 23%; }
-        .um-audit-table th:nth-child(2) { width: 26%; }
-        .um-audit-table th:nth-child(3) { width: 22%; }
-        .um-audit-table th:nth-child(4) { width: 8%; }
-        .um-audit-table th:nth-child(5) { width: 21%; }
+        .um-audit-table { min-width: 1180px; }
+        .um-audit-table th:nth-child(1) { width: 17%; }
+        .um-audit-table th:nth-child(2) { width: 19%; }
+        .um-audit-table th:nth-child(3) { width: 16%; }
+        .um-audit-table th:nth-child(4) { width: 25%; }
+        .um-audit-table th:nth-child(5) { width: 8%; }
+        .um-audit-table th:nth-child(6) { width: 15%; }
         .um-audit-table td { vertical-align: middle; }
         .um-audit-table td strong, .um-audit-table td small { display: block; }
         .um-audit-table td small { margin-top: 4px; color: var(--um-muted); font-size: 12px; }
         .um-audit-table code { color: var(--um-muted); font-family: inherit; }
         .um-audit-action { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: var(--um-accent-soft); color: var(--um-accent-dark); font-size: 12px; font-weight: 700; }
+        .um-audit-details { margin: 0; display: grid; gap: 4px; }
+        .um-audit-details div { display: grid; grid-template-columns: minmax(90px, auto) 1fr; gap: 8px; }
+        .um-audit-details dt { color: var(--um-muted); font-size: 11px; font-weight: 800; }
+        .um-audit-details dd { margin: 0; overflow-wrap: anywhere; font-size: 12px; }
         .um-table-pagination {
           padding: 14px 16px;
           border-top: 1px solid var(--um-line);
@@ -2649,7 +2814,7 @@ function UserManagement() {
           .um-audit-summary { grid-template-columns: 1fr; }
           .um-audit-table-heading { align-items: flex-start; }
           .um-chart-card { grid-template-columns: 1fr; justify-items: center; }
-          .um-toolbar.requests, .um-form-grid { grid-template-columns: 1fr; }
+          .um-toolbar.requests, .um-toolbar.audit, .um-form-grid { grid-template-columns: 1fr; }
           .um-admin-section .membership-toolbar { align-items: stretch; }
           .um-admin-section .membership-toolbar .search-input { min-width: 0; }
           .um-table-pagination { align-items: flex-start; flex-direction: column; }

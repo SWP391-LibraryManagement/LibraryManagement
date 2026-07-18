@@ -166,19 +166,6 @@ export async function fetchRoles() {
   }
 }
 
-export async function fetchAuditLogs(params = {}) {
-  try {
-    const response = await authorizedRequest({
-      method: 'get',
-      url: '/users/audit-logs',
-      params,
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load audit logs.'), { cause: error });
-  }
-}
-
 export async function createManagedUser(payload) {
   try {
     const response = await authorizedRequest({
