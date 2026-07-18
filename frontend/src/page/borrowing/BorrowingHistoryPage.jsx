@@ -94,6 +94,7 @@ export default function BorrowingHistoryPage() {
     >
       {notice && <DataNotice type="error" title="Không thể tải lịch sử">{notice}</DataNotice>}
 
+      <section className="lib-card member-history-card">
       <DataToolbar
         primary={(
           <div className="tabs" style={{ marginBottom: 0 }}>
@@ -162,6 +163,7 @@ export default function BorrowingHistoryPage() {
           </div>
         </div>
       )}
+      </section>
 
       {renewRow && (
         <RenewConfirmation row={renewRow} pending={renewing} onClose={() => setRenewRow(null)} onConfirm={confirmRenew} />

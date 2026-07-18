@@ -12,11 +12,11 @@ import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/das
 test('navigation visibility follows stored roles', () => {
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
-    ['home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
+    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
-    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics'],
+    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'membership-review', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics'],
   );
 });
 
@@ -74,7 +74,7 @@ test('shared profile menu remains compatible with the header contract', async ()
   assert.doesNotMatch(source, /function BookCopies/);
 });
 
-test('staff sidebar renders Home above the role dashboard overview', async () => {
+test('authenticated sidebar renders Home above the role dashboard overview', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
 
   const homePosition = source.indexOf("onClick={() => navigateFromShell('/homepage')}");

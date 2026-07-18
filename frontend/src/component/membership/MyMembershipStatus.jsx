@@ -17,15 +17,15 @@ export default function MyMembershipStatus({ status }) {
       <div className="panel-header">
         <span className="kpi-icon"><UserCheck size={18} /></span>
         <div>
-          <h2 className="lib-card-title" style={{ margin: 0 }}>Membership cua toi</h2>
-          <p className="ph-sub">Trang thai hien tai: {membershipStatusLabel(statusKey)}</p>
+          <h2 className="lib-card-title" style={{ margin: 0 }}>Trạng thái hội viên</h2>
+          <p className="ph-sub">Trạng thái hiện tại: {membershipStatusLabel(statusKey)}</p>
         </div>
         <span style={{ marginLeft: 'auto' }}><MembershipStatusBadge status={statusKey} /></span>
       </div>
 
       <div className="info-list">
-        <div className="info-row"><CalendarClock size={16} /> Ngay nop: <strong>{formatDate(current.appliedAt)}</strong></div>
-        <div className="info-row"><CalendarClock size={16} /> Ngay duyet: <strong>{formatDate(current.approvedAt)}</strong></div>
+        <div className="info-row"><CalendarClock size={16} /> Ngày nộp: <strong>{formatDate(current.appliedAt)}</strong></div>
+        <div className="info-row"><CalendarClock size={16} /> Ngày duyệt: <strong>{formatDate(current.approvedAt)}</strong></div>
         {current.rejectionReason && <div className="alert-box danger">{current.rejectionReason}</div>}
       </div>
     </section>

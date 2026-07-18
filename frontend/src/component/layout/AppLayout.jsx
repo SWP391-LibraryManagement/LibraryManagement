@@ -36,6 +36,7 @@ const NAV_ICONS = {
   'process-returns': PackageCheck,
   'reservations-librarian': CalendarClock,
   'member-details': Users,
+  'membership-review': UserCog,
   'book-management': BookOpen,
   'inventory-management': Boxes,
   'fine-management': ReceiptText,
@@ -149,7 +150,7 @@ export default function AppLayout({ title, subtitle, actions, children, showSide
               <div className="app-nav-label">{group.label}</div>
               {group.items.map((item) => {
                 const Icon = NAV_ICONS[item.key];
-                const isActive = item.key === activeKey;
+                const isActive = item.path === location.pathname;
                 return (
                   <button
                     key={item.key}

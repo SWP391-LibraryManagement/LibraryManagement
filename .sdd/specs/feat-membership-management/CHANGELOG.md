@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-18 - Member And Librarian UI Integration
+
+- Exposed the existing FE04 review workspace in Librarian navigation while preserving the Admin Console review integration.
+- Removed fabricated membership applications on API failure and displayed the canonical FE04 error state instead.
+- Aligned the member application UI with the approved empty-body contract and refreshed the responsive member layout.
+
 ## 2026-07-18 - Admin Review List Alignment
 
 - Added database-backed search by application ID, applicant name, username, or email.

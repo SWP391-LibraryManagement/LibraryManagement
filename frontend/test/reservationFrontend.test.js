@@ -185,7 +185,9 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
     assert.match(source, /DataTable/);
     assert.match(source, /ConfirmAction/);
   }
-  assert.match(mine, /setReservations\(DEMO_MY_RESERVATIONS\)/);
+  assert.doesNotMatch(mine, /DEMO_MY_RESERVATIONS|RS-DEMO|Backend chưa nhận yêu cầu/);
+  assert.match(mine, /setReservations\(\[\]\)/);
+  assert.match(mine, /await reservationApi\.cancel\(cancelTarget\.reservationId/);
   assert.doesNotMatch(staff, /DEMO_ALL_RESERVATIONS/);
   assert.match(staff, /reservationApi\.listAll\(\)/);
   assert.match(mine, /pending=\{cancelling\}/);

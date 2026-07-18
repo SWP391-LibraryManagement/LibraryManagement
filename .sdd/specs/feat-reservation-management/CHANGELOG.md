@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-18 - Truthful Member Reservation State
+
+- Removed member-side demo reservation substitution, simulated create success, and local-only cancellation success when FE08 APIs fail.
+- Kept the member list synchronized with canonical `/api/reservations/me` state and improved the responsive catalog/list card hierarchy.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE08 queue, fulfillment, cancellation, terminal timestamp, and FE07 handoff contract as the Phase 1 baseline; implementation follow-up remains pending.

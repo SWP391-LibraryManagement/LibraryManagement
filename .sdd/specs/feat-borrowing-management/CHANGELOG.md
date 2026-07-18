@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-18 - Member Workspace Layout Polish
+
+- Clarified the member borrow-selection hierarchy and responsive two-column layout without changing FE07 mutation APIs.
+- Consolidated borrowing history filters, table, and pagination into one responsive operational card.
+
 ## 2026-07-18 - Admin Circulation Alignment
 
 - Made the admin circulation table read-only and routed approve/return work to canonical FE07 screens.

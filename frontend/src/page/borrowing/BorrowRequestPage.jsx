@@ -57,9 +57,9 @@ export default function BorrowRequestPage() {
   return (
     <AppLayout active="borrow-request" title="Tạo yêu cầu mượn" subtitle="Tìm sách và gửi yêu cầu mượn tới thủ thư.">
       <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể gửi yêu cầu' : 'Kiểm tra điều kiện'}>{notice}</DataNotice>
-      <div className="split">
+      <div className="split member-borrow-grid">
         <div>
-          <div className="lib-card">
+          <div className="lib-card member-catalog-card">
             <DataToolbar
               primary={(
                 <div className="search-input" style={{ width: '100%' }}>
@@ -83,7 +83,7 @@ export default function BorrowRequestPage() {
           </div>
         </div>
 
-        <form className="panel" onSubmit={handleSubmit}>
+        <form className="panel member-selection-panel" onSubmit={handleSubmit}>
           {selected ? <>
             <div className="row-flex" style={{ alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
               <span className="book-cover"><BookOpen size={30} /></span>

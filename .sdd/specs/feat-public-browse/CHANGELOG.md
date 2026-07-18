@@ -1,8 +1,8 @@
 # CHANGELOG.md - FE01 Public / Browse
 
-## 2026-07-18 - Librarian Homepage Navigation
+## 2026-07-18 - Authenticated Homepage Navigation
 
-- Added a dedicated `Home` sidebar item for Librarian/Admin staff that opens the authenticated public library homepage at `/homepage`.
+- Added a dedicated `Home` sidebar item for Member/Librarian/Admin users that opens the authenticated public library homepage at `/homepage`.
 - Preserved `/home` as the role-aware `Tổng quan` dashboard so the two navigation destinations remain distinct.
 
 ## 2026-07-17 - Phase 1 Baseline Approved
