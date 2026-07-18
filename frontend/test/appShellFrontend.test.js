@@ -180,21 +180,23 @@ test('admin console keeps its sections while using the warm librarian visual sys
     'Thư viện',
     'Quản lý mượn trả',
     'Quản lý yêu cầu',
-    'Quản lý hội viên',
+    'Phân quyền',
     'Quản lý người dùng',
     'Nhật ký hoạt động',
   ]) {
     assert.match(source, new RegExp(`label: '${label}'`));
   }
 
+  assert.doesNotMatch(source, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
+
   assert.match(source, /--um-accent: #a87532/);
   assert.match(source, /--um-canvas: #faf6ef/);
   assert.match(source, /\.um-sidebar \{[\s\S]*background: var\(--um-surface\)/);
   assert.match(source, /loadDashboard\(\{ announce: true \}\)/);
-  assert.match(source, /activeSection === 'dashboard' && dashboardLoading/);
-  assert.match(source, /activeSection === 'library' && libraryLoading/);
-  assert.match(source, /activeSection === 'circulation' && borrowingsLoading/);
-  assert.match(source, /\? 'Đang tải\.\.\.' : 'Làm mới'/);
+  assert.match(source, /dashboard: dashboardLoading/);
+  assert.match(source, /library: libraryLoading/);
+  assert.match(source, /circulation: borrowingsLoading/);
+  assert.match(source, /activeSectionLoading \? 'Đang tải\.\.\.' : 'Làm mới'/);
   assert.match(source, /setDashboardUpdatedAt\(new Date\(\)\)/);
   assert.doesNotMatch(source, /setDashboardData\(demoDashboard\)/);
   assert.doesNotMatch(source, /demoLibraryRows|demoBookMetadata|demoBorrowings|demoRequests/);
@@ -213,7 +215,7 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.doesNotMatch(source, /adminApi\.updateRequestStatus/);
   assert.match(source, /<td><strong>\{row\.bookTitles \|\| '-'\}<\/strong><\/td>/);
   assert.doesNotMatch(source, /row\.itemCount \|\| 0/);
-  assert.match(source, /activeSection === 'requests' && requestsLoading/);
+  assert.match(source, /requests: requestsLoading/);
   assert.match(source, /row\.status === 'PENDING'/);
   assert.match(source, /row\.status === 'APPROVED'/);
   assert.match(source, /\['COMPLETED', 'REJECTED', 'CANCELLED'\]\.includes\(row\.status\)/);

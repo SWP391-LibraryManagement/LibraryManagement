@@ -51,6 +51,11 @@ import {
   revokeManagedUserRole,
   updateManagedUser,
 } from '../api/userManagementApi';
+import {
+  buildPermissionModuleCoverage,
+  buildPermissionRoleSummary,
+  roleAllowsPermission,
+} from '../utils/adminPermissions';
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
 
 const roleLabels = {
@@ -115,30 +120,6 @@ function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog)
   return { assignments, revocations };
 }
 
-const permissionRows = [
-  { name: 'View users', admin: true, librarian: false, member: false },
-  { name: 'Create accounts', admin: true, librarian: false, member: false },
-  { name: 'Update accounts', admin: true, librarian: false, member: false },
-  { name: 'Deactivate accounts', admin: true, librarian: false, member: false },
-  { name: 'Manage roles', admin: true, librarian: false, member: false },
-  { name: 'View audit logs', admin: true, librarian: false, member: false },
-  { name: 'Manage library catalog', admin: true, librarian: true, member: false },
-  { name: 'Manage authors/publishers/categories', admin: true, librarian: false, member: false },
-  { name: 'Approve/reject borrow requests', admin: true, librarian: true, member: false },
-  { name: 'Process returns and renewals', admin: true, librarian: true, member: false },
-  { name: 'Calculate and collect fines', admin: true, librarian: true, member: false },
-  { name: 'Waive or cancel fines', admin: true, librarian: false, member: false },
-  { name: 'View reports', admin: true, librarian: true, member: false },
-  { name: 'Create borrow request', admin: false, librarian: false, member: true },
-  { name: 'View own borrowing history', admin: false, librarian: false, member: true },
-];
-const permissionModules = [
-  { module: 'User & Role', admin: 6, librarian: 0, member: 0 },
-  { module: 'Library', admin: 4, librarian: 2, member: 1 },
-  { module: 'Borrow/Return', admin: 5, librarian: 5, member: 2 },
-  { module: 'Fine', admin: 4, librarian: 3, member: 1 },
-  { module: 'Reports', admin: 3, librarian: 2, member: 0 },
-];
 const libraryResources = [
   { id: 'books', label: 'Kho sách', icon: BookOpen },
   { id: 'authors', label: 'Tác giả', icon: Users },
@@ -497,14 +478,15 @@ function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
 }
 
 function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavigate }) {
+  // @spec FR-FE11-030, BR-FE11-016, AC-FE11-016
   const items = [
     { id: 'home', icon: Home, label: 'Trang chủ', path: '/home' },
     { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
     { id: 'library', icon: Library, label: 'Thư viện' },
     { id: 'circulation', icon: BookCopy, label: 'Quản lý mượn trả' },
     { id: 'requests', icon: ClipboardList, label: 'Quản lý yêu cầu' },
-    { id: 'membership', icon: UserCog, label: 'Quản lý hội viên' },
     { id: 'users', icon: Users, label: 'Quản lý người dùng' },
+    { id: 'permissions', icon: Shield, label: 'Phân quyền' },
     { id: 'audit', icon: ClipboardList, label: 'Nhật ký hoạt động' },
   ];
 
@@ -746,6 +728,10 @@ function UserManagement() {
   const [usersUpdatedAt, setUsersUpdatedAt] = useState(null);
   const [userStatsLoading, setUserStatsLoading] = useState(false);
   const [userStatsError, setUserStatsError] = useState('');
+  const [permissionPolicy, setPermissionPolicy] = useState({ roles: [], permissions: [] });
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState('');
+  const [permissionsUpdatedAt, setPermissionsUpdatedAt] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modal, setModal] = useState(null);
   const [roleUser, setRoleUser] = useState(null);
@@ -814,7 +800,7 @@ function UserManagement() {
   const sectionMeta = {
     dashboard: { eyebrow: 'Tổng quan quản trị', title: 'Dashboard' },
     users: { eyebrow: 'Danh sách tài khoản', title: 'Quản lý người dùng' },
-    roles: { eyebrow: 'Kiểm soát truy cập', title: 'Phân quyền' },
+    permissions: { eyebrow: 'Kiểm soát truy cập', title: 'Phân quyền' },
     audit: { eyebrow: 'Theo dõi hệ thống', title: 'Nhật ký hoạt động' },
     library: { eyebrow: 'Dữ liệu thư viện', title: 'Thư viện' },
     circulation: { eyebrow: 'Nghiệp vụ mượn trả', title: 'Quản lý mượn trả' },
@@ -824,6 +810,16 @@ function UserManagement() {
   }[activeSection];
   const pendingPayments = paymentFines.filter((fine) => fine.paymentReviewStatus === 'PENDING');
   const userDirectoryLoading = loading || userStatsLoading;
+  const activeSectionLoading = {
+    users: userDirectoryLoading,
+    dashboard: dashboardLoading,
+    library: libraryLoading,
+    circulation: borrowingsLoading,
+    requests: requestsLoading,
+    membership: membershipLoading,
+    permissions: permissionsLoading || userStatsLoading,
+    audit: auditLoading,
+  }[activeSection] || false;
 
   function handleLogout() {
     localStorage.removeItem('accessToken');
@@ -949,6 +945,14 @@ function UserManagement() {
         })),
     [roles, userStats.usersByRole]
   );
+  const permissionRoleSummary = useMemo(
+    () => buildPermissionRoleSummary(permissionPolicy.roles, userStats.usersByRole),
+    [permissionPolicy.roles, userStats.usersByRole]
+  );
+  const permissionModuleCoverage = useMemo(
+    () => buildPermissionModuleCoverage(permissionPolicy.roles, permissionPolicy.permissions),
+    [permissionPolicy.roles, permissionPolicy.permissions]
+  );
   const roleChart = useMemo(() => {
     const colors = ['#7c3aed', '#0f766e', '#2f80ed'];
     const total = Math.max(roleSummary.reduce((sum, role) => sum + role.count, 0), 1);
@@ -969,6 +973,28 @@ function UserManagement() {
       background: chart.segments.length ? `conic-gradient(${chart.segments.join(', ')})` : '#e5e7eb',
     };
   }, [roleSummary]);
+
+  async function loadPermissions({ announce = false } = {}) {
+    setPermissionsLoading(true);
+    setPermissionsError('');
+
+    try {
+      const result = await adminApi.permissions();
+      setPermissionPolicy({
+        roles: result.roles || [],
+        permissions: result.permissions || [],
+      });
+      setPermissionsUpdatedAt(new Date());
+      if (announce) {
+        setToast({ type: 'success', message: 'Đã làm mới ma trận phân quyền.' });
+      }
+    } catch (error) {
+      setPermissionsError(error.message);
+      if (announce) setToast({ type: 'error', message: error.message });
+    } finally {
+      setPermissionsLoading(false);
+    }
+  }
 
   async function loadUserStatistics() {
     setUserStatsLoading(true);
@@ -1081,6 +1107,17 @@ function UserManagement() {
   // The loaders intentionally read current filters when the active admin section changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status]);
+
+  useEffect(() => {
+    if (activeSection !== 'permissions') return;
+    const timer = setTimeout(() => {
+      loadPermissions();
+      loadUserStatistics();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  // Each loader owns its own state and retry lifecycle.
+  }, [activeSection]);
 
   async function loadAuditLogs(
     page = auditPagination.page,
@@ -1579,7 +1616,7 @@ function UserManagement() {
           <div className="um-actions">
             <button
               className="um-secondary-button"
-              disabled={(activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)}
+              disabled={activeSectionLoading}
               onClick={() => {
                 if (activeSection === 'payments') setPaymentFines(getFineRecords());
                 else if (activeSection === 'dashboard') loadDashboard({ announce: true });
@@ -1587,14 +1624,18 @@ function UserManagement() {
                 else if (activeSection === 'circulation') loadBorrowings({ announce: true });
                 else if (activeSection === 'requests') loadRequests({ announce: true });
                 else if (activeSection === 'membership') loadMembershipApplications({ announce: true });
+                else if (activeSection === 'permissions') {
+                  loadPermissions({ announce: true });
+                  loadUserStatistics();
+                }
                 else if (activeSection === 'audit') {
                   loadAuditLogs(auditPagination.page, { announce: true, filters: auditFilters });
                 }
                 else refreshUserDirectory(pagination.page, { announce: true });
               }}
             >
-              <RefreshCw size={16} className={((activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'is-spinning' : ''} />
-              {((activeSection === 'users' && userDirectoryLoading) || (activeSection === 'dashboard' && dashboardLoading) || (activeSection === 'library' && libraryLoading) || (activeSection === 'circulation' && borrowingsLoading) || (activeSection === 'requests' && requestsLoading) || (activeSection === 'membership' && membershipLoading) || (activeSection === 'audit' && auditLoading)) ? 'Đang tải...' : 'Làm mới'}
+              <RefreshCw size={16} className={activeSectionLoading ? 'is-spinning' : ''} />
+              {activeSectionLoading ? 'Đang tải...' : 'Làm mới'}
             </button>
             {isUserDirectorySection && (
               <button className="um-primary-button" onClick={openCreateModal}>
@@ -2049,38 +2090,60 @@ function UserManagement() {
           </section>
         )}
 
-        {activeSection === 'roles' && (
+        {activeSection === 'permissions' && (
           <section className="um-admin-section">
+            <div className="um-permission-status-grid" aria-live="polite">
+              <article>
+                <strong>Ma trận FE11</strong>
+                <span>
+                  {permissionsLoading
+                    ? 'Đang tải...'
+                    : permissionsError || (permissionsUpdatedAt
+                      ? `Cập nhật lúc ${permissionsUpdatedAt.toLocaleTimeString('vi-VN')}`
+                      : 'Chưa tải dữ liệu.')}
+                </span>
+                {permissionsError && (
+                  <button type="button" className="um-secondary-button" onClick={() => loadPermissions()}>
+                    Thử lại ma trận
+                  </button>
+                )}
+              </article>
+              <article>
+                <strong>Thống kê FE12</strong>
+                <span>{userStatsLoading ? 'Đang tải...' : userStatsError || 'Đã tải số lượng vai trò.'}</span>
+                {userStatsError && (
+                  <button type="button" className="um-secondary-button" onClick={() => loadUserStatistics()}>
+                    Thử lại thống kê
+                  </button>
+                )}
+              </article>
+            </div>
             <div className="um-permission-cards">
-              {roleSummary.map((role) => (
-                <button
-                  type="button"
-                  key={role.roleName}
-                  onClick={() => {
-                    setActiveSection('users');
-                    setRoleFilter(role.roleName);
-                    setStatusFilter('ALL');
-                    setSearch('');
-                  }}
-                >
+              {permissionRoleSummary.map((role) => (
+                <article key={role.roleName}>
                   <RoleBadge role={role.roleName} />
                   <strong>{role.count}</strong>
-                  <span>assigned accounts</span>
-                </button>
+                  <span>{role.label} accounts</span>
+                </article>
               ))}
             </div>
             <section className="um-panel-grid permissions">
               <div className="um-panel">
                 <h2>Module Coverage</h2>
                 <table className="um-permission-table compact">
-                  <thead><tr><th>Module</th><th>Admin</th><th>Librarian</th><th>Member</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Module</th>
+                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{role.label}</th>)}
+                    </tr>
+                  </thead>
                   <tbody>
-                    {permissionModules.map((row) => (
-                      <tr key={row.module}>
-                        <td>{row.module}</td>
-                        <td>{row.admin} rules</td>
-                        <td>{row.librarian} rules</td>
-                        <td>{row.member} rules</td>
+                    {permissionModuleCoverage.map((module) => (
+                      <tr key={module.moduleKey}>
+                        <td>{module.moduleLabel}</td>
+                        {permissionPolicy.roles.map((role) => (
+                          <td key={role.roleName}>{module.counts[role.roleName] || 0} rules</td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
@@ -2089,14 +2152,21 @@ function UserManagement() {
               <div className="um-panel">
                 <h2>Permission Matrix</h2>
                 <table className="um-permission-table">
-                  <thead><tr><th>Permission</th><th>Admin</th><th>Librarian</th><th>Member</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Permission</th>
+                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{role.label}</th>)}
+                    </tr>
+                  </thead>
                   <tbody>
-                    {permissionRows.map((permission) => (
-                      <tr key={permission.name}>
-                        <td>{permission.name}</td>
-                        <td>{permission.admin ? 'Yes' : '-'}</td>
-                        <td>{permission.librarian ? 'Yes' : '-'}</td>
-                        <td>{permission.member ? 'Yes' : '-'}</td>
+                    {permissionPolicy.permissions.map((permission) => (
+                      <tr key={permission.permissionKey}>
+                        <td>{permission.label}</td>
+                        {permissionPolicy.roles.map((role) => (
+                          <td key={role.roleName}>
+                            {roleAllowsPermission(permission, role.roleName) ? 'Yes' : '-'}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
@@ -2570,8 +2640,10 @@ function UserManagement() {
         .is-spinning { animation: um-spin .8s linear infinite; }
         @keyframes um-spin { to { transform: rotate(360deg); } }
         .um-admin-section { display: grid; gap: 16px; }
+        .um-permission-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .um-permission-status-grid article { padding: 14px; display: grid; gap: 8px; border: 1px solid var(--um-line); border-radius: 12px; background: var(--um-surface); }
         .um-permission-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-        .um-permission-cards button { min-height: 96px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; padding: 14px; display: grid; gap: 8px; align-content: center; justify-items: start; cursor: pointer; }
+        .um-permission-cards article { min-height: 96px; border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; padding: 14px; display: grid; gap: 8px; align-content: center; justify-items: start; }
         .um-permission-cards strong { font-size: 28px; }
         .um-permission-cards span:last-child { color: #64748b; }
         .um-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -2836,7 +2908,7 @@ function UserManagement() {
         .um-table-pagination button.active { background: var(--um-accent); border-color: var(--um-accent); color: #fff; }
         .um-table-pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
         .um-panel,
-        .um-permission-cards button,
+        .um-permission-cards article,
         .um-mini-list button,
         .um-shortcuts button,
         .um-role-summary button,
@@ -2865,6 +2937,7 @@ function UserManagement() {
           .um-nav, .um-sidebar-footer { flex-direction: row; flex-wrap: wrap; }
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }
           .um-stats, .um-stats.dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .um-permission-status-grid { grid-template-columns: 1fr; }
           .um-panel-grid, .um-role-summary { grid-template-columns: 1fr; }
           .um-chart-grid-secondary { grid-template-columns: 1fr; }
           .um-audit-summary { grid-template-columns: 1fr; }
