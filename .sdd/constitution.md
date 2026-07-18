@@ -1,6 +1,6 @@
 # Constitution — Library Management System
 
-# Version: 0.1.0
+# Version: 0.1.1
 
 # Status: DRAFT
 
@@ -112,7 +112,9 @@ Commit convention:
 - Work should happen on feature, fix, docs, refactor, test, or chore branches.
 - Pull requests must identify the related SPEC.md, PLAN.md, and TASKS.md item when changing core feature behavior.
 - Do not merge core feature work when PLAN.md or TASKS.md is missing or marked NOT STARTED.
-- Every pull request must pass the available automated checks before human review.
+- AI-generated changes may receive a required local human output review before they are committed or published as a pull request.
+- Every pull request must pass the available automated checks before final human integration review and merge approval.
+- A local output review never authorizes merge; merge approval remains a separate post-check integration decision.
 
 ## 8.2 Continuous Integration
 

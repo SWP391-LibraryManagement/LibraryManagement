@@ -1,6 +1,6 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT SLICE ACTIVE; REMAINING WORK DEFERRED
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE; FAST-TRACK BATCH 1 ACTIVE; REMAINING WORK DEFERRED
 Implementation State: DEFERRED
 
 Date: 2026-07-15
@@ -155,6 +155,25 @@ Owner: Dung
   - Automated evidence: 12/12 focused frontend; 101/101 full frontend; 3 suites and 105/105 focused backend role tests; lint, build, traceability, diff, scope, and security checks PASS.
   - Review state: human implementation review approved on 2026-07-18.
   - Integration state: PR #30 merged as `c20d3251`; PR CI run `29643619999` and post-merge `main` CI run `29644292781` passed.
+
+## Fast-Track Batch 1 Tasks
+
+- [x] **FE11-FT01 - Approve and activate Batch 1 governance.**
+  - Scope: TD-024, TD-026, TD-027.
+  - Evidence: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md` and the merged governance activation PR.
+
+- [ ] **FE11-AUD01 - Implement the canonical Admin Audit Log boundary.**
+  - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018; TD-024.
+  - DoD: SPEC query names, Admin-first validation, cross-feature action-aware default-deny projection, stable filtered SQL pagination, frontend migration, legacy `404 NOT_FOUND`, L1-L4 evidence.
+
+- [ ] **FE11-ENV01 - Restore the canonical user-list envelope using FE12 statistics.**
+  - Maps to: FR-FE11-001; AC-FE11-001; TD-026.
+  - DoD: `/api/users` returns only `data` and `pagination`; Admin counters map from `/api/reports/users`; global counts are independent from page rows.
+
+- [ ] **FE11-META01 - Reconcile completed FE11 evidence metadata.**
+  - Maps to: TD-027.
+  - Depends on: TD-026 merge and a serial Integration Lead `SPEC.md` writer window.
+  - DoD: only approved existing Test Case/Status cells change; requirements and deferred rows remain unchanged; H2, checks, H3, merge, and integration evidence pass.
 
 ## Deferred FE11 Work
 

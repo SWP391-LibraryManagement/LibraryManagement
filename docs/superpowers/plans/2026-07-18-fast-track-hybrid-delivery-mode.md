@@ -2,571 +2,272 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Activate the approved Fast-Track governance model and prepare a human-reviewable H1 package for FE11 `TD-024`, `TD-026`, and `TD-027` without changing product behavior.
+**Goal:** Activate the corrected Fast-Track governance model through a reviewed documentation PR and prepare FE11 Batch 1 for TD-024, TD-026, and TD-027 without changing product behavior.
 
-**Architecture:** The Integration Lead is the only writer in the control worktree. Two subagents run read-only analysis in parallel and return exact contract/evidence recommendations. The Lead writes three independent H1 artifacts, fans them into one approval packet, and keeps every generated change uncommitted until H1 review.
+**Architecture:** The Integration Lead is the only writer in the control worktree. Read-only lanes inventory contracts and evidence in parallel. H1 reviews the exact governance activation package; H2 reviews later generated implementation or SPEC-evidence diffs before commit; H3 performs final integration review after required PR checks.
 
-**Tech Stack:** Markdown SDD artifacts, Git worktrees/branches, PowerShell, `rg`, Node.js traceability checker, existing FE11 source documents.
+**Tech Stack:** Markdown SDD artifacts, Git worktrees/branches, PowerShell, `rg`, Node.js traceability checker, GitHub CLI, existing FE11/FE12 contracts and evidence.
 
 ## Global Constraints
 
 - Baseline is `origin/main@1eb426196ebbc80339e2aed4558270967cd7269e` unless a newer non-overlapping `main` commit is explicitly accepted.
-- This plan changes governance and planning/evidence files only; do not modify backend, frontend, database, schema, package files, or FE11 requirements.
+- This plan changes governance, planning, and evidence files only; it does not change backend, frontend, database, schema, dependencies, or runtime configuration.
 - Keep whole-feature FE11 `Implementation State: DEFERRED`.
-- Keep `TD-023` and `TD-025` `OPEN`; only `TD-024`, `TD-026`, and `TD-027` enter Batch 1.
+- Batch 1 scope is only `TD-024`, `TD-026`, and `TD-027`.
+- Keep `TD-023` and `TD-025` `OPEN`; their order is dependency forecasting, not implementation authorization.
 - Use up to three lanes, but only the Integration Lead writes files in the control worktree.
-- Do not commit or push generated Batch 1 artifacts before H1 human review.
-- Do not start TD-024/026/027 product implementation in this plan.
-- Do not silently resolve endpoint ownership, envelope shape, redaction, or evidence-status ambiguity outside the H1 packet.
-- Every artifact must contain concrete recommendations and explicit human decisions; unresolved placeholder markers are forbidden.
-- If incoming `main` drift overlaps FE11 Admin/user-management Core files or source contracts, stop and return to the user.
+- H2 is local pre-commit AI-output review. H3 is final PR integration review after required checks.
+- Do not commit or push the governance activation diff before H1 approval.
+- Do not start product implementation before the governance activation PR merges into `main`.
+- Prepare TD-027 read-only in parallel, but serialize its actual `SPEC.md` edit after TD-026 merges.
+- Stop immediately for contract ambiguity, overlapping Core drift, secret exposure, permission/schema/auth/API expansion, incompatible agent assumptions, or a failed required check.
 
 ---
 
-### Task 1: Activate The Fast-Track Agent Contract In The Local Review Diff
+### Task 1: Reconcile Governance Authority
 
 **Files:**
+- Modify: `.sdd/constitution.md`
 - Modify: `.agents/AGENTS.md`
 - Modify: `.agents/CLAUDE.md`
+- Modify: `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`
 
 **Interfaces:**
-- Consumes: approved design `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`.
-- Produces: repository-visible H1/H2/H3 rules that later agents must follow.
+- Consumes: approved Fast-Track concept and pre-H1 verifier findings.
+- Produces: one non-conflicting H1/H2/H3 authority model.
 
-- [ ] **Step 1: Confirm the approved design and clean branch**
-
-Run:
-
-```powershell
-git status --short --branch
-rg -n "Status: APPROVED BY HUMAN|## 7\. Three Human Gates|## 10\. Retry And Stop Rules" docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md
-```
-
-Expected: the branch is clean before task edits and the three design markers are present.
-
-- [ ] **Step 2: Add the Fast-Track section to `.agents/AGENTS.md`**
-
-Insert after Section 5 `Working Style` and before Section 6:
-
-```markdown
-## 5.1 Fast-Track Hybrid Batch Mode
-
-Fast-Track mode is opt-in and applies only when a human-approved design names the active batch and scope.
-
-- H1 approves the batch contract, dependency order, file ownership, plan/task boundaries, validation commands, and allowed agent lanes.
-- H1 authorizes worktrees, read-only parallel analysis, and uncommitted RED-GREEN implementation inside the approved scope. It does not authorize committing generated implementation changes, pushing product-code branches, or merging.
-- H2 reviews the complete local diff plus L1-L4 evidence before generated implementation changes are committed. H2 authorizes the reviewed commit set, branch push, draft PR publication, and ready-for-review transition after required checks pass.
-- H3 approves merge after required checks pass and the branch remains mergeable. H3 also authorizes exact post-merge CI monitoring and pre-reviewed mechanical closeout substitutions.
-- H1 occurs once per approved batch. H2 and H3 occur once per implementation PR.
-- Only one Builder may edit shared Core production files for the active slice. Other lanes prepare the next contract or independently verify the current slice.
-- Stop immediately for contract ambiguity, overlapping Core drift, secret exposure, permission/schema/API expansion, incompatible agent assumptions, or a failed required check.
-- A deterministic failure receives at most three total attempts. A suspected E2E flake may be rerun once with evidence.
-
-The authoritative design is `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`.
-
----
-```
-
-- [ ] **Step 3: Update `.agents/CLAUDE.md`**
-
-Change the version header from `0.3.3` to `0.3.4`.
-
-Add after the `Current SDD scope` block:
-
-```markdown
-- **Current delivery mode**: Fast-Track Hybrid is approved for bounded batches. Use the three-lane pipeline and H1/H2/H3 authority model from `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`. The first preparation batch covers FE11 `TD-024`, `TD-026`, and `TD-027`; no product implementation starts before H1 approval.
-```
-
-Add after Section 3 `Spec-First Workflow`:
-
-```markdown
-## 3.1 Fast-Track Execution Rules
-
-- The Integration Lead owns shared contracts, fan-in, commits, PR publication, and CI association.
-- The Builder owns RED-GREEN changes for one active slice and leaves generated implementation changes uncommitted until H2.
-- The Verifier independently checks L2/L3/L4 and does not rewrite Builder production files concurrently.
-- Draft publication after H2 and post-merge monitoring after H3 do not require additional permission prompts.
-- Batched closeout may replace per-slice closeout only when the H3-reviewed template permits exact evidence substitutions and no new behavior claim.
-```
-
-- [ ] **Step 4: Validate the local policy diff**
+- [x] **Step 1: Preserve the isolated baseline**
 
 Run:
 
 ```powershell
-rg -n "Fast-Track Hybrid Batch Mode|H1 approves|H2 reviews|H3 approves|three-lane pipeline|generated implementation changes uncommitted" .agents/AGENTS.md .agents/CLAUDE.md
-git diff --check -- .agents/AGENTS.md .agents/CLAUDE.md
+git rev-parse --show-toplevel
+git branch --show-current
+git rev-parse origin/main
 ```
 
-Expected: all policy markers are present and the diff check is empty.
+Expected: linked worktree `fe11-role-ui-contract`, branch `docs/fast-track-delivery-mode`, and baseline `1eb426196ebbc80339e2aed4558270967cd7269e`.
 
-- [ ] **Step 5: Leave changes uncommitted for H1**
+- [x] **Step 2: Correct Constitution review ordering**
+
+Use version `0.1.1` and require:
+
+```markdown
+- AI-generated changes may receive a required local human output review before they are committed or published as a pull request.
+- Every pull request must pass the available automated checks before final human integration review and merge approval.
+- A local output review never authorizes merge; merge approval remains a separate post-check integration decision.
+```
+
+- [x] **Step 3: Correct the Fast-Track design and agent rules**
+
+Lock these meanings:
+
+- H1 reviews the batch and the exact documentation-only activation diff.
+- H1 authorizes the reviewed activation commit/PR, not its merge.
+- H2 reviews later local generated implementation or SPEC-evidence diffs before commit.
+- H3 applies before every PR merge after required checks.
+- Task/debt activation becomes authoritative only on `main`.
+- Shared `SPEC.md` edits are serialized.
+
+- [x] **Step 4: Validate governance consistency**
 
 Run:
 
 ```powershell
-git status --short
+rg -n "local human output review|final human integration review|H2 - Local|H3 - Final|governance activation|authoritative only after" .sdd/constitution.md .agents/AGENTS.md .agents/CLAUDE.md docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md
+git diff --check -- .sdd/constitution.md .agents/AGENTS.md .agents/CLAUDE.md docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md
 ```
 
-Expected: only `.agents/AGENTS.md` and `.agents/CLAUDE.md` are modified at this checkpoint. Do not commit.
+Expected: all authority markers exist and diff check is empty.
 
 ---
 
-### Task 2: Prepare The TD-024 Audit Log Contract Design
+### Task 2: Lock The TD-024 Audit Contract
 
 **Files:**
 - Create: `docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md`
 
 **Interfaces:**
-- Consumes: `FR-FE11-033`, `AC-FE11-018`, `BR-FE11-018`, `BR-FE11-026`, current `/api/users/audit-logs` behavior, and `TD-024`.
-- Produces: a concrete recommended `/api/admin/audit-logs` contract for H1 approval and the later TD-024 implementation plan.
+- Consumes: FE11 `q/action/actorId/from/to/page/limit` contract and every current AuditLogs writer.
+- Produces: exact Admin endpoint, projection, retirement, tests, and ownership for TD-024.
 
-- [ ] **Step 1: Run the read-only Audit contract inventory**
-
-Run in a verifier lane or locally:
-
-```powershell
-rg -n -A 45 -B 15 "FR-FE11-033|AC-FE11-018|EC-FE11-018|/api/admin/audit-logs" .sdd/specs/feat-user-role-management/SPEC.md docs/api/api-contract.md
-rg -n -A 80 -B 10 "audit-logs|listAuditLogs|fetchAuditLogs|Metadata" backend/src frontend/src backend/tests frontend/test
-```
-
-Expected: evidence shows the canonical Admin endpoint requirement and the current user-management route/pagination/raw-metadata drift.
-
-- [ ] **Step 2: Create the Audit contract design with this complete content**
-
-```markdown
-# FE11 Audit Log Contract Design
-
-Status: H1 REVIEW READY
-
-Date: 2026-07-18
-
-Scope: `TD-024`, `FR-FE11-033`, `AC-FE11-018` only
-
-## Decision Requested
-
-Approve the canonical Admin-owned read-only endpoint and remove the legacy FE11 UI dependency on `/api/users/audit-logs` in the same implementation slice.
-
-## Canonical Endpoint
-
-`GET /api/admin/audit-logs`
-
-Authentication and authorization remain server-side. Only authenticated active Admin users may access the endpoint.
-
-## Query Contract
-
-| Field | Contract |
-| --- | --- |
-| `page` | Optional positive integer; default `1` |
-| `limit` | Optional integer `1..100`; default `20` |
-| `search` | Optional trimmed string, maximum 100 characters; searches action, actor email/full name, target type, and target ID text |
-| `action` | Optional trimmed exact action string, maximum 100 characters |
-| `actorId` | Optional positive integer |
-| `fromDate` | Optional ISO `YYYY-MM-DD` inclusive lower bound |
-| `toDate` | Optional ISO `YYYY-MM-DD` inclusive upper bound; must not precede `fromDate` |
-
-Invalid supplied values return HTTP `400` with code `VALIDATION_ERROR`. Authorization precedes detailed validation.
-
-## Response Contract
-
-```json
-{
-  "data": [
-    {
-      "logId": 1,
-      "action": "USER_ROLE_ASSIGNED",
-      "actor": { "userId": 7, "email": "admin@example.com", "fullName": "Admin User" },
-      "target": { "type": "USER", "id": 15, "label": "member@example.com" },
-      "details": { "roleId": 2, "roleName": "LIBRARIAN", "outcome": "SUCCESS" },
-      "ipAddress": "203.0.113.10",
-      "createdAt": "2026-07-18T10:00:00.000Z"
-    }
-  ],
-  "pagination": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
-}
-```
-
-## Safe Detail Allowlist
-
-`details` may contain only these keys with primitive values or arrays of strings:
-
-- `changedFields`
-- `previousStatus`
-- `newStatus`
-- `roleId`
-- `roleName`
-- `entityType`
-- `entityId`
-- `requestId`
-- `reason`
-- `outcome`
-
-Every other metadata key is omitted. Keys matching password, hash, token, authorization, cookie, secret, session, reset, setup, or API-key concepts are never returned even if persisted.
-
-## Ordering And SQL Boundary
-
-- Stable order is `CreatedAt DESC, LogId DESC`.
-- Pagination is applied in SQL.
-- All search/filter inputs use typed `mssql` parameters.
-- No raw metadata object is spread into the response.
-
-## Compatibility Decision
-
-Recommended: migrate the Admin frontend to `/api/admin/audit-logs` and remove `/api/users/audit-logs` from the public route table in the same slice. No compatibility alias is retained because the route is internal prototype drift and has no approved external contract.
-
-## Tests Required After H1
-
-- Admin-first authorization.
-- Invalid page/limit/search/action/actor/date boundaries.
-- `fromDate <= toDate` validation.
-- Stable pagination/order and typed parameters.
-- Search and each filter independently and in combination.
-- Sensitive metadata removal with hostile persisted keys.
-- Frontend canonical endpoint, query omission, filter wiring, and safe rendering.
-- Legacy route absence.
-
-## Out Of Scope
-
-- Audit writes, audit deletion/update, export, schema changes, dashboard analytics, and non-FE11 audit policy changes.
-
-## H1 Recommendation
-
-Approve the contract exactly as written. Any alternate compatibility or metadata policy requires an explicit H1 revision before implementation.
-```
-
-- [ ] **Step 3: Validate the Audit design**
+- [x] **Step 1: Inventory current writers and readers**
 
 Run:
 
 ```powershell
-rg -n "GET /api/admin/audit-logs|VALIDATION_ERROR|Safe Detail Allowlist|Legacy route absence|H1 Recommendation" docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md
+rg -n "GET.*api/admin/audit-logs|q\?|actorId\?|from\?|to\?" .sdd/specs/feat-user-role-management/SPEC.md
+rg -n "action:\s*'[^']+'|writeAudit\([^\r\n]*'[^']+'|INSERT INTO AuditLogs" backend/src/services backend/src/repositories --glob '*.js'
+rg -n "audit-logs|listAuditLogs|fetchAuditLogs|Metadata" backend/src frontend/src backend/tests frontend/test
+```
+
+Expected: canonical query names, cross-feature actions, prototype route, page/limit-only behavior, and raw metadata drift are visible.
+
+- [x] **Step 2: Lock the action-aware default-deny design**
+
+The design must state:
+
+- `GET /api/admin/audit-logs` only.
+- Query names remain `q`, `action`, `actorId`, `from`, `to`, `page`, `limit`.
+- All persisted rows are eligible; `action` narrows them.
+- Invalid JSON, scalar/array metadata, unknown actions, and invalid shapes return `details: {}`.
+- Each current action has an explicit projector.
+- Raw email, identifier, token IDs, nested objects, notes, reasons, messages, and paths are omitted.
+- Free text is replaced only by `notesProvided`, `reasonProvided`, or `noteProvided` booleans.
+- A recursive credential/secret veto runs after projection.
+- The legacy route returns `404 NOT_FOUND` without invoking a service.
+- `frontend/test/adminApi.test.js` owns the direct Admin API contract.
+
+- [x] **Step 3: Validate the Audit design**
+
+Run:
+
+```powershell
+rg -n 'Status: H1 REVIEW READY|`q`|`from`|Action-Aware Safe Projection|details: \{\}|404.*NOT_FOUND|frontend/test/adminApi.test.js' docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md
 git diff --check -- docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md
 ```
 
-Expected: every marker is present and the diff check is empty. Do not commit.
+Expected: every corrected contract marker is present. Do not commit.
 
 ---
 
-### Task 3: Prepare The TD-026 User-List Envelope Decision
+### Task 3: Lock The TD-026 FE12 Reuse Decision
 
 **Files:**
 - Create: `docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md`
 
 **Interfaces:**
-- Consumes: approved `GET /api/users` `{ data, pagination }` envelope, current undocumented `summary`, `TD-026`, dashboard counters, and future `TD-023` Permissions counts.
-- Produces: one explicit H1 decision and a dependency boundary for TD-026/TD-023.
+- Consumes: FE11 `{ data, pagination }`, undocumented `summary`, and completed FE12 `/api/reports/users`.
+- Produces: one non-duplicating summary source and TD-023 dependency forecast.
 
-- [ ] **Step 1: Inventory the current envelope consumers**
-
-Run:
-
-```powershell
-rg -n -A 35 -B 10 "summary|fetchUsers|listUsers|pagination" backend/src/repositories/userRepository.js backend/src/services/userManagementService.js backend/src/controllers/userManagementController.js frontend/src/api/userManagementApi.js frontend/src/page/UserManagement.jsx backend/tests frontend/test docs/api/api-contract.md .sdd/specs/feat-user-role-management/SPEC.md
-```
-
-Expected: repository-produced `summary`, frontend `setUserSummary`, and the approved list envelope are visible.
-
-- [ ] **Step 2: Create the decision record with this complete content**
-
-```markdown
-# FE11 User List Envelope Decision
-
-Status: H1 REVIEW READY
-
-Date: 2026-07-18
-
-Scope: `TD-026` and the data dependency for `TD-023`
-
-## Current Conflict
-
-The approved `GET /api/users` response is `{ data, pagination }`. The implementation also emits top-level `summary`, and the Admin page consumes it for user counters. Permissions currently derives role counts from only the loaded page, which is not authoritative.
-
-## Option A - Formalize `summary` In `GET /api/users`
-
-- Smallest implementation change.
-- Requires an approved FE11 SPEC/API contract change.
-- Couples list pagination with global aggregates and encourages Permissions to reuse the wrong boundary.
-
-Result: not recommended.
-
-## Option B - Remove `summary` And Derive Counts From The Loaded Page
-
-- Preserves the documented envelope.
-- Produces incorrect global counts whenever pagination/filtering is active.
-
-Result: rejected because it cannot satisfy `AC-FE11-017`.
-
-## Option C - Separate Read Models
-
-- Keep `GET /api/users` exactly `{ data, pagination }`.
-- Add Admin-only `GET /api/admin/user-summary` for global user counters: `total`, `active`, `inactive`, and `librarians`.
-- Let future `GET /api/admin/permissions` own role counts and the read-only permission matrix for `TD-023`.
-- Migrate the Admin page to the summary endpoint before removing the undocumented list `summary` in the same TD-026 slice.
-- Update FE11/API documentation before product implementation because `/api/admin/user-summary` is a new public contract.
-
-Result: recommended.
-
-## Recommended Response
-
-```json
-{
-  "data": {
-    "total": 120,
-    "active": 100,
-    "inactive": 15,
-    "librarians": 5
-  }
-}
-```
-
-## Validation Required After H1
-
-- Admin-first authorization and safe error mapping.
-- One parameterized aggregate query with numeric zero defaults.
-- `GET /api/users` repository/service/route tests assert no top-level `summary`.
-- Frontend loads list and summary independently and does not derive global counts from page rows.
-- `TD-023` consumes its own Permissions contract rather than the user-list page.
-
-## H1 Decision
-
-Recommended approval: Option C. Approval authorizes the required FE11/API documentation delta and a later detailed TD-026 implementation plan. No code changes occur in the H1 preparation phase.
-```
-
-- [ ] **Step 3: Validate the decision record**
+- [x] **Step 1: Verify FE12 ownership and response**
 
 Run:
 
 ```powershell
-rg -n "Option A|Option B|Option C|GET /api/admin/user-summary|Recommended approval: Option C|no top-level `summary`" docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md
+rg -n "BR-FE12-006|usersByStatus|usersByRole|/api/reports/users|B7 integration" .sdd/specs/feat-reporting-statistics/SPEC.md .sdd/specs/feat-reporting-statistics/TASKS.md .sdd/specs/feat-reporting-statistics/CHANGELOG.md backend/src/repositories/reportRepository.js backend/src/docs/openapi.yaml
+rg -n "summary|setUserSummary|usersByRole|permissions" backend/src/repositories/userRepository.js frontend/src/page/UserManagement.jsx docs/api/api-contract.md
+```
+
+Expected: FE12 already supplies authoritative total/status/role counts and FE11 list still emits undocumented summary.
+
+- [x] **Step 2: Select Option C**
+
+Lock this mapping:
+
+```text
+total      <- totals.users
+active     <- usersByStatus.ACTIVE || 0
+inactive   <- usersByStatus.INACTIVE || 0
+librarians <- usersByRole.LIBRARIAN || 0
+```
+
+Keep `GET /api/users` exactly `{ data, pagination }`. Do not create `/api/admin/user-summary`. TD-023 remains outside Batch 1 and must not derive counts from paginated rows.
+
+- [x] **Step 3: Validate the decision**
+
+Run:
+
+```powershell
+rg -n 'Option A|Option B|Option C|GET /api/reports/users|Do not create `/api/admin/user-summary`|TD-023 remains outside Batch 1' docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md
 git diff --check -- docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md
 ```
 
-Expected: all alternatives, recommendation, and validation boundary are present. Do not commit.
+Expected: FE12 reuse, no new endpoint, and dependency boundary are explicit. Do not commit.
 
 ---
 
-### Task 4: Prepare The TD-027 Evidence Metadata Matrix
+### Task 4: Correct The TD-027 Evidence Matrix
 
 **Files:**
 - Create: `.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md`
+- Modify: `.sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md`
 
 **Interfaces:**
-- Consumes: merged B7 evidence for account setup, transactional roles, safe list/detail, and Admin role UI.
-- Produces: exact status-only changes that a later TD-027 docs task may apply without altering requirements.
+- Consumes: actual FE11 traceability-table structure and merged B7 evidence.
+- Produces: exact existing cells for a later evidence-only PR.
 
-- [ ] **Step 1: Inventory stale status cells and merged evidence**
-
-Run:
-
-```powershell
-rg -n "Ready for review|Not Started|AC-FE11-00[1-3]|AC-FE11-006|AC-FE11-010|AC-FE11-013|AC-FE11-014|AC-FE11-015|AC-FE11-020|AC-FE11-021|AC-FE11-022|FR-FE11-00[1-3]|FR-FE11-006|FR-FE11-009|FR-FE11-012|FR-FE11-013|FR-FE11-014|FR-FE11-024|FR-FE11-025|FR-FE11-026|FR-FE11-027|FR-FE11-036|FR-FE11-037|FR-FE11-038" .sdd/specs/feat-user-role-management/SPEC.md
-rg -n "Integration state|post-merge CI|PR #" .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/CHANGELOG.md .sdd/reviews/fe11-*-validation-2026-07-18.md
-```
-
-Expected: stale SPEC statuses and exact B7 records are both visible.
-
-- [ ] **Step 2: Create the evidence matrix with this complete content**
-
-```markdown
-# FE11 Evidence Metadata Reconciliation Matrix
-
-Status: H1 REVIEW READY
-
-Date: 2026-07-18
-
-Scope: `TD-027`; status/evidence metadata only
-
-## Rules
-
-- Do not change requirement wording, IDs, actors, flows, business rules, API behavior, or acceptance criteria.
-- Change only traceability/evidence status cells supported by merged B7 records.
-- Use `COMPLETE (B7)` for fully satisfied requirement rows.
-- Use `PARTIAL` when a requirement spans deferred behavior beyond the completed slice.
-- Keep all unimplemented Admin Console, Audit, Request Management, update/deactivation, and librarian-field rows unchanged.
-
-## Complete Account-Setup Rows
-
-| Type | IDs | Evidence |
-| --- | --- | --- |
-| FR | `FR-FE11-003`, `006`, `009`, `036..038` | `FE11-S01..S07`, merged account-setup B7 evidence |
-| AC | `AC-FE11-003`, `006`, `010`, `020..022` | `FE11-S01..S07`, merged account-setup B7 evidence |
-
-Intended status: `COMPLETE (B7)`.
-
-## Complete Role Rows
-
-| Type | IDs | Evidence |
-| --- | --- | --- |
-| FR | `FR-FE11-012..014`, `024..027` | `FE11-R01..R05`, `FE11-UIR01..UIR05`, PR #30, post-merge CI `29644292781` |
-| AC | `AC-FE11-013..015` | backend role B7 plus Admin role UI B7 |
-
-Intended status: `COMPLETE (B7)`.
-
-## Complete Safe-Read Rows
-
-| Type | IDs | Evidence |
-| --- | --- | --- |
-| FR | `FR-FE11-001`, `002`, `015` | `FE11-U01..U06`, PR #27, post-merge CI `29639933730` |
-| AC | `AC-FE11-001`, `002` | `FE11-U01..U06` validation and integration records |
-
-Intended status: `COMPLETE (B7)`.
-
-## Partial Rows
-
-| ID | Intended status | Reason |
-| --- | --- | --- |
-| `FR-FE11-016` | `PARTIAL` | Safe detail `404 USER_NOT_FOUND` is complete; update/deactivation and other target actions remain deferred |
-
-## Rows That Must Remain Not Started
-
-- `FR-FE11-030..035`
-- `AC-FE11-004`, `007..009`, `011`, `012`, `016..019`, `023`
-- Update/deactivation, librarian-field, Admin Console, Audit Log, and Request Management mappings not covered by a merged bounded slice
-
-## H1 Recommendation
-
-Approve this matrix as the sole authority for a later status-only `SPEC.md` maintenance diff. Any requirement wording change is out of scope and requires separate spec review.
-```
-
-- [ ] **Step 3: Validate the evidence matrix**
+- [x] **Step 1: Verify missing account-setup B7 evidence**
 
 Run:
 
 ```powershell
-rg -n "COMPLETE \(B7\)|FR-FE11-016|PARTIAL|Rows That Must Remain Not Started|sole authority" .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md
-git diff --check -- .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md
+git show -s --format='%H %P %s' c7f7821
+git show -s --format='%H %P %s' e8f467c
+git merge-base --is-ancestor c7f7821 e8f467c
+gh run view 29392143926 --json databaseId,headSha,conclusion,status,name,url
 ```
 
-Expected: complete, partial, and unchanged groups are explicit. Do not commit.
+Expected: `c7f7821` is contained by `e8f467c`; CI `29392143926` is successful on `e8f467c`.
+
+- [x] **Step 2: Add the account-setup B7 integration record**
+
+Record the two commits and CI run in the existing review. Do not claim whole-feature completion.
+
+- [x] **Step 3: Lock exact TD-027 rows**
+
+Use these groups:
+
+```text
+COMPLETE AC: 001, 002, 003, 006, 010, 013..015, 020..022
+COMPLETE unwanted FR: 015, 022, 024..027, 029, 037, 038
+PARTIAL unwanted FR: 016, 017
+UNCHANGED AC: 004, 005, 007..009, 011, 012, 016..019, 023
+UNCHANGED unwanted FR: 018..021, 023, 028, 030..035
+```
+
+Update both `Test Case` and `Status` cells later. Do not add desired-FR status cells. Apply the actual `SPEC.md` edit only after TD-026 merges.
+
+- [x] **Step 4: Validate the matrix and B7 evidence**
+
+Run:
+
+```powershell
+rg -n 'COMPLETE \(B7\)|FR-FE11-016|FR-FE11-017|PARTIAL|Rows That Must Remain Not Started|serial writer window|sole authority' .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md
+rg -n 'B7 Integration Evidence|c7f7821|e8f467c|29392143926' .sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md
+git diff --check -- .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md .sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md
+```
+
+Expected: actual cells, serial ownership, and exact integration evidence are present. Do not commit.
 
 ---
 
-### Task 5: Fan In The FE11 Batch 1 H1 Review Packet
+### Task 5: Fan In The Corrected H1 Packet
 
 **Files:**
 - Create: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`
+- Modify: `docs/superpowers/plans/2026-07-18-fast-track-hybrid-delivery-mode.md`
 
 **Interfaces:**
-- Consumes: Tasks 1-4 local diffs/artifacts.
-- Produces: the single H1 decision package and approved dependency/file-ownership boundary for later implementation plans.
+- Consumes: Tasks 1-4.
+- Produces: H1-001..H1-006, exact activation scope, ownership, validation, and stop rules.
 
-- [ ] **Step 1: Create the H1 packet with this complete content**
+- [x] **Step 1: Create the H1 packet**
 
-```markdown
-# FE11 Fast-Track Batch 1 H1 Review
+The packet must lock:
 
-Status: H1 REVIEW READY
+- H1-001 corrected governance authority.
+- H1-002 corrected Audit contract.
+- H1-003 FE12 reuse and no summary endpoint.
+- H1-004 actual TD-027 cells.
+- H1-005 `TD-024 -> TD-026 -> TD-027`; TD-023/025 forecast only.
+- H1-006 activation docs PR + checks + H3 + merge.
 
-Date: 2026-07-18
-
-Baseline: `origin/main@1eb426196ebbc80339e2aed4558270967cd7269e`
-
-Batch scope: `TD-024`, `TD-026`, `TD-027`
-
-## H1 Decisions
-
-| ID | Decision | Recommendation |
-| --- | --- | --- |
-| H1-001 | Activate Fast-Track H1/H2/H3 agent rules | APPROVE |
-| H1-002 | Adopt canonical `GET /api/admin/audit-logs` contract and remove the legacy public route in the same slice | APPROVE |
-| H1-003 | Adopt TD-026 Option C: separate `/api/admin/user-summary`, preserve `{ data, pagination }`, and reserve `/api/admin/permissions` for TD-023 | APPROVE |
-| H1-004 | Use the TD-027 evidence matrix for status-only SPEC maintenance | APPROVE |
-| H1-005 | Implementation order `TD-024 -> TD-026 -> TD-023`; design TD-025 only after FE07 contract lock | APPROVE |
-
-## Core And Shell
-
-- Core: Audit authorization, filters, redaction, API ownership; list/summary API contracts; SPEC evidence truthfulness.
-- Shell: Audit filter controls/rendering, mechanical endpoint adapters, evidence formatting.
-
-## File Ownership After H1
-
-### TD-024 Builder-owned files
-
-- `.sdd/specs/feat-user-role-management/SPEC.md` API/detail clarification only if H1 requires it
-- `docs/api/api-contract.md`
-- `backend/src/docs/openapi.yaml`
-- `backend/src/routes/adminRoutes.js`
-- `backend/src/routes/userManagementRoutes.js`
-- `backend/src/controllers/adminController.js`
-- `backend/src/controllers/userManagementController.js`
-- `backend/src/services/adminService.js`
-- `backend/src/services/userManagementService.js`
-- `backend/src/repositories/auditLogRepository.js`
-- `backend/src/validators/adminValidators.js` (new)
-- `backend/tests/adminAuditLogRoutes.test.js` (new)
-- `backend/tests/adminAuditLogService.test.js` (new)
-- `backend/tests/auditLogRepository.test.js` (new)
-- `backend/tests/userManagementRoutes.test.js`
-- `backend/tests/userManagementService.test.js`
-- `frontend/src/api/adminApi.js`
-- `frontend/src/api/userManagementApi.js`
-- `frontend/src/page/UserManagement.jsx`
-- `frontend/test/userManagementApi.test.js`
-- `frontend/test/userManagementFrontend.test.js`
-
-### TD-026 Builder-owned files
-
-- `.sdd/specs/feat-user-role-management/SPEC.md`
-- `docs/api/api-contract.md`
-- `backend/src/docs/openapi.yaml`
-- `backend/src/routes/adminRoutes.js`
-- `backend/src/controllers/adminController.js`
-- `backend/src/services/adminService.js`
-- `backend/src/repositories/userRepository.js`
-- `backend/tests/adminUserSummaryRoutes.test.js` (new)
-- `backend/tests/adminUserSummaryService.test.js` (new)
-- `backend/tests/userRepository.test.js`
-- `backend/tests/userManagementRoutes.test.js`
-- `backend/tests/userManagementService.test.js`
-- `frontend/src/api/adminApi.js`
-- `frontend/src/page/UserManagement.jsx`
-- `frontend/test/userManagementApi.test.js`
-- `frontend/test/userManagementFrontend.test.js`
-
-TD-024 and TD-026 are sequential because they share Admin route/API/page files.
-
-### TD-027 docs owner files
-
-- `.sdd/specs/feat-user-role-management/SPEC.md` status cells only
-- `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
-- `.sdd/specs/feat-user-role-management/CHANGELOG.md`
-- `TECH_DEBT.md`
-- `.agents/CLAUDE.md`
-
-## Validation Gates
-
-- L1: focused/full tests as affected, lint/build, traceability, diff, secret/security scans, PR CI.
-- L2: requirement-to-task/code/test/evidence mapping.
-- L3: Admin-first authorization, typed validation, redaction, no secret/schema drift.
-- L4: Admin Audit filter/read flow, independent summary counters, and evidence-status review.
-
-## Stop Rules
-
-- Stop if H1 changes any recommended contract.
-- Stop for overlapping Core drift after this packet is approved.
-- Stop if the audit metadata allowlist cannot represent required accepted actions without exposing sensitive fields.
-- Stop if `/api/admin/user-summary` conflicts with another approved feature owner.
-
-## H1 Approval Effect
-
-Approval authorizes the agent-policy/documentation commit, marks `TD-024`, `TD-026`, and `TD-027` `IN PROGRESS`, and permits automatic generation of detailed per-slice plans within these contracts. It does not authorize product-code commit/push or merge; those remain H2/H3.
-```
-
-- [ ] **Step 2: Run fan-in consistency checks**
+- [x] **Step 2: Run cross-artifact checks**
 
 Run:
 
 ```powershell
-rg -n "H1-001|H1-002|H1-003|H1-004|H1-005|TD-024 -> TD-026 -> TD-023|H1 Approval Effect" .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
-rg -n "GET /api/admin/audit-logs" docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
-rg -n "Option C|/api/admin/user-summary" docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
-rg -n "FR-FE11-016.*PARTIAL|Rows That Must Remain Not Started" .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md
+rg -n 'H1-001|H1-002|H1-003|H1-004|H1-005|H1-006|TD-024 -> TD-026 -> TD-027|H1 Approval Effect' .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
+rg -n 'GET /api/admin/audit-logs|q.*action.*actorId.*from.*to|404.*NOT_FOUND' docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
+rg -n 'Option C|/api/reports/users|no `/api/admin/user-summary`|no summary endpoint' docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
+rg -n 'FR-FE11-016|FR-FE11-017|serial.*TD-026|existing.*Status' .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
 git diff --check
 ```
 
-Expected: every decision and cross-artifact contract matches exactly; diff check is empty.
+Expected: every decision matches across artifacts and diff check is empty.
 
-- [ ] **Step 3: Run repository policy checks**
+- [x] **Step 3: Run repository policy validation**
 
 Run:
 
@@ -574,138 +275,158 @@ Run:
 npm.cmd run trace:enforce
 git status --short
 git diff --name-only
+git ls-files --others --exclude-standard
 ```
 
-Expected: traceability PASS. Only these files are changed/untracked:
-
-```text
-.agents/AGENTS.md
-.agents/CLAUDE.md
-.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md
-.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md
-docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md
-docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md
-```
-
-Do not commit before H1 approval.
+Expected: traceability PASS. Only the reviewed governance/H1 files are changed or untracked. Do not commit.
 
 ---
 
-### Task 6: Apply H1 Approval And Activate Batch 1
+### Task 6: Apply H1, Publish Activation PR, And Reach H3
 
 **Files:**
-- Modify: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`
-- Modify: `docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md`
-- Modify: `docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md`
-- Modify: `.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md`
+- Modify: the four H1 artifact status lines
 - Modify: `.sdd/specs/feat-user-role-management/PLAN.md`
 - Modify: `.sdd/specs/feat-user-role-management/TASKS.md`
 - Modify: `.sdd/specs/feat-user-role-management/TEST_PLAN.md`
 - Modify: `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 - Modify: `TECH_DEBT.md`
-- Modify: `.agents/AGENTS.md`
-- Modify: `.agents/CLAUDE.md`
 
 **Interfaces:**
-- Consumes: explicit human H1 approval of Task 5.
-- Produces: committed/active Batch 1 governance and stable task IDs used by the later TD-024/026/027 implementation plans.
+- Consumes: explicit human approval of H1-001..H1-006.
+- Produces: activation docs PR, H3 merge gate, authoritative Batch 1 state on `main`, and a detailed TD-024 plan.
 
-- [ ] **Step 1: Stop for H1 human review**
+- [x] **Step 1: Stop for explicit H1 approval**
 
-Present the six-file local diff, H1 decisions, dependency order, file ownership, and validation result. Do not continue until the human explicitly approves H1.
+Present the complete local diff, H1 decisions, activation file list, dependency order, ownership, and validation results. Do not continue until the human explicitly approves H1-001..H1-006.
 
-- [ ] **Step 2: Mark the H1 artifacts approved**
+- [x] **Step 2: Mark H1 artifacts approved**
 
-After approval, change each artifact status:
+Change:
 
 ```text
 H1 REVIEW READY -> APPROVED BY HUMAN - 2026-07-18
 ```
 
-In the H1 packet, add:
+in:
+
+- `docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md`
+- `docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md`
+- `.sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md`
+- `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`
+
+Also change the Fast-Track design status:
+
+```text
+APPROVED CONCEPT - H1 REVISION REVIEW READY -> APPROVED BY HUMAN - 2026-07-18
+```
+
+Add to the H1 packet:
 
 ```markdown
 ## Human Approval
 
-Approved on 2026-07-18. H1-001..H1-005 are locked for Batch 1.
+Approved on 2026-07-18. H1-001..H1-006 are locked for Batch 1.
 ```
 
-- [ ] **Step 3: Add Batch 1 to FE11 `PLAN.md`**
+- [x] **Step 3: Correct FE11 slice state and append Batch 1 to `PLAN.md`**
+
+Change the top status to:
+
+```text
+Status: APPROVED - BASELINE 2026-07-17; ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE; FAST-TRACK BATCH 1 ACTIVE; REMAINING WORK DEFERRED
+```
 
 Append:
 
 ```markdown
 ## 13. Fast-Track Batch 1
 
-### Scope
+### Scope And Order
 
-- `TD-024`: canonical Admin Audit Logs contract, validation, filtering, redaction, and frontend migration.
-- `TD-026`: separate Admin user-summary boundary and restore the canonical user-list envelope.
-- `TD-027`: status/evidence metadata reconciliation only.
+1. `TD-024` / `FE11-AUD01`: canonical Admin Audit Logs read boundary.
+2. `TD-026` / `FE11-ENV01`: restore `{ data, pagination }` and reuse FE12 `/api/reports/users` for counters.
+3. `TD-027` / `FE11-META01`: apply the approved evidence matrix after TD-026 merges.
 
-### Order
+`TD-023` and `TD-025` remain outside Batch 1 and `OPEN`. Whole FE11 remains deferred.
 
-1. TD-024 Audit Logs.
-2. TD-026 user-list envelope and summary boundary.
-3. TD-027 evidence metadata may run in the verifier/docs lane but cannot alter requirements.
+### Gates
 
-TD-023 follows TD-026. TD-025 waits for a separately locked FE07 request contract.
-
-### Fast-Track Gates
-
-- H1: approved Batch 1 contracts, ownership, plans, and validation boundaries.
-- H2: required before each generated implementation diff is committed/pushed.
-- H3: required before each merge.
+- H1 locks Batch 1 and the exact governance activation diff.
+- H2 is required before each generated implementation or SPEC-evidence diff is committed and pushed.
+- H3 is required after checks and before every PR merge.
+- TD-027 analysis may run in parallel, but its `SPEC.md` edit is serialized after TD-026.
 ```
 
-- [ ] **Step 4: Add Batch 1 task groups to FE11 `TASKS.md`**
+- [x] **Step 4: Add Fast-Track tasks to `TASKS.md`**
 
-Insert before Deferred FE11 Work:
+Change the top status to match `PLAN.md`. Keep:
+
+```text
+Implementation State: DEFERRED
+```
+
+Insert before `## Deferred FE11 Work`:
 
 ```markdown
 ## Fast-Track Batch 1 Tasks
 
-- [x] **FE11-FT01 - Approve Batch 1 contracts and Fast-Track ownership.**
+- [x] **FE11-FT01 - Approve and activate Batch 1 governance.**
   - Scope: TD-024, TD-026, TD-027.
-  - Evidence: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md`.
+  - Evidence: `.sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md` and the merged governance activation PR.
 
 - [ ] **FE11-AUD01 - Implement the canonical Admin Audit Log boundary.**
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018; TD-024.
-  - DoD: Admin-first canonical endpoint, complete boundary validation, typed filtering/pagination, stable order, safe metadata allowlist, frontend migration, legacy route removal, L1-L4 evidence.
+  - DoD: SPEC query names, Admin-first validation, cross-feature action-aware default-deny projection, stable filtered SQL pagination, frontend migration, legacy `404 NOT_FOUND`, L1-L4 evidence.
 
-- [ ] **FE11-ENV01 - Restore the canonical user-list envelope and separate user summary.**
-  - Maps to: FR-FE11-001; AC-FE11-001; TD-026; H1-approved Admin user-summary API delta.
-  - Depends on: H1 Option C approval.
-  - DoD: `/api/users` returns only `data` and `pagination`; Admin summary is independently authorized and loaded; global counts are not derived from page rows.
+- [ ] **FE11-ENV01 - Restore the canonical user-list envelope using FE12 statistics.**
+  - Maps to: FR-FE11-001; AC-FE11-001; TD-026.
+  - DoD: `/api/users` returns only `data` and `pagination`; Admin counters map from `/api/reports/users`; global counts are independent from page rows.
 
 - [ ] **FE11-META01 - Reconcile completed FE11 evidence metadata.**
   - Maps to: TD-027.
-  - DoD: only approved status/evidence cells change; requirements and deferred rows remain unchanged; traceability/diff/human review pass.
+  - Depends on: TD-026 merge and a serial Integration Lead `SPEC.md` writer window.
+  - DoD: only approved existing Test Case/Status cells change; requirements and deferred rows remain unchanged; H2, checks, H3, merge, and integration evidence pass.
 ```
 
-- [ ] **Step 5: Update TEST_PLAN, CHANGELOG, and debt state**
+- [x] **Step 5: Update `TEST_PLAN.md` and `CHANGELOG.md`**
 
-Add to `TEST_PLAN.md` Current Targets:
+Set `TEST_PLAN.md` version to `0.3.3` and status to:
+
+```text
+Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE THROUGH B7; FAST-TRACK BATCH 1 TARGETS ACTIVE; REMAINING FE11 TESTS PLANNED
+```
+
+Replace the stale Admin Role UI gap with:
 
 ```markdown
-- Canonical Admin Audit Logs: Admin-first authorization, page/limit/search/action/actor/date validation, typed filters, stable order, safe metadata allowlist, and frontend filter/read flow.
-- User list envelope: no top-level `summary`; independently authorized Admin user summary with numeric zero defaults; frontend list/summary ownership is separate.
-- Evidence metadata: completed/partial/deferred status changes match merged B7 records without requirement edits.
+- Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
+```
+
+Add current targets:
+
+```markdown
+- Canonical Admin Audit Logs: SPEC query names, Admin-first authorization, typed validation/filtering, stable order, action-aware default-deny projection, and legacy 404 retirement.
+- User list envelope: no top-level `summary`; Admin counters reuse FE12 `/api/reports/users` with numeric zero defaults.
+- Evidence metadata: only approved existing Test Case/Status cells change in a serial post-TD-026 window.
 ```
 
 Add to the top of `CHANGELOG.md`:
 
 ```markdown
-## 2026-07-18 - Fast-Track Batch 1 Approved
+## 2026-07-18 - Fast-Track Batch 1 Activated
 
-- Approved H1 contracts and ownership for TD-024, TD-026, and TD-027.
-- Locked Audit Logs to the canonical Admin endpoint with validation, filtering, and allowlisted metadata.
-- Selected TD-026 Option C: separate Admin user summary and preserve the canonical user-list envelope.
-- Approved status-only TD-027 evidence reconciliation.
-- Product implementation remains pending H2 review and H3 merge gates.
+- Approved H1-001..H1-006 for TD-024, TD-026, and TD-027.
+- Corrected H1/H2/H3 authority and required the activation docs PR to pass checks and H3 before merge.
+- Locked Audit Logs to SPEC query names and action-aware default-deny projection.
+- Selected FE12 `/api/reports/users` for Admin counters and preserved the FE11 list envelope.
+- Approved the exact existing-cell TD-027 matrix and serial post-TD-026 SPEC ownership.
+- Product implementation remains pending per-slice H2 and H3 gates; whole FE11 remains deferred.
 ```
 
-In `TECH_DEBT.md`, change only:
+- [x] **Step 6: Activate debt rows prospectively in the PR diff**
+
+Change only:
 
 ```text
 TD-024 OPEN -> IN PROGRESS
@@ -713,9 +434,9 @@ TD-026 OPEN -> IN PROGRESS
 TD-027 OPEN -> IN PROGRESS
 ```
 
-Keep TD-023 and TD-025 `OPEN`.
+Keep `TD-023` and `TD-025` `OPEN`. The new states become authoritative only after the activation PR merges.
 
-- [ ] **Step 6: Validate the approved activation diff**
+- [x] **Step 7: Validate the exact activation diff**
 
 Run:
 
@@ -724,24 +445,61 @@ npm.cmd run trace:enforce
 git diff --check
 rg -n "FE11-FT01|FE11-AUD01|FE11-ENV01|FE11-META01" .sdd/specs/feat-user-role-management/TASKS.md
 rg -n "TD-024.*IN PROGRESS|TD-026.*IN PROGRESS|TD-027.*IN PROGRESS|TD-023.*OPEN|TD-025.*OPEN" TECH_DEBT.md
+rg -n "Admin role-action UI.*complete through B7|29644292781" .sdd/specs/feat-user-role-management/TEST_PLAN.md
 git status --short
 ```
 
-Expected: traceability and diff checks PASS, stable task IDs exist, only the approved governance/FE11 documentation files are changed.
+Expected: traceability and diff checks PASS; only approved documentation/evidence files are changed.
 
-- [ ] **Step 7: Commit the human-reviewed H1 package**
+- [ ] **Step 8: Commit and publish the H1-reviewed activation PR**
+
+Run:
 
 ```powershell
-git add -- .agents/AGENTS.md .agents/CLAUDE.md .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md
+git add -- .sdd/constitution.md .agents/AGENTS.md .agents/CLAUDE.md docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md docs/superpowers/plans/2026-07-18-fast-track-hybrid-delivery-mode.md docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md docs/superpowers/specs/2026-07-18-fe11-user-list-envelope-decision.md .sdd/reviews/fe11-evidence-metadata-reconciliation-2026-07-18.md .sdd/reviews/fe11-fast-track-batch-1-h1-2026-07-18.md .sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md .sdd/specs/feat-user-role-management/PLAN.md .sdd/specs/feat-user-role-management/TASKS.md .sdd/specs/feat-user-role-management/TEST_PLAN.md .sdd/specs/feat-user-role-management/CHANGELOG.md TECH_DEBT.md
 git commit -m "docs: activate fast-track FE11 batch 1"
+git push -u origin docs/fast-track-delivery-mode
+gh pr create --base main --head docs/fast-track-delivery-mode --title "docs: activate fast-track FE11 batch 1" --body "Activates the H1-reviewed Fast-Track governance package for TD-024, TD-026, and TD-027. No product code or runtime behavior changes."
 ```
 
-- [ ] **Step 8: Transition automatically to the TD-024 detailed plan**
+Expected: one documentation-only PR is published. No additional permission prompt is needed because H1 reviewed the exact commit set.
 
-Invoke `writing-plans` to create `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md` from the approved Audit design. The detailed plan may add bite-sized implementation steps but must not change H1-002, file ownership, or validation boundaries. If it discovers a material ambiguity, stop and return to H1 instead of implementing.
+- [ ] **Step 9: Generate the TD-024 detailed plan in a separate docs worktree while activation checks run**
+
+Create or reuse a separate docs worktree/branch that does not modify the activation PR worktree. Use `writing-plans` there to create `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`. It may refine implementation steps but must not change H1-002, file ownership, query names, row scope, projector policy, legacy 404 behavior, or validation boundaries. Do not start product implementation, and do not add the new plan to the activation PR.
+
+- [ ] **Step 10: Require checks and stop for H3**
+
+Run:
+
+```powershell
+gh pr checks --watch
+gh pr view --json number,state,mergeable,headRefOid,statusCheckRollup
+```
+
+Expected: required checks pass and the PR is mergeable. Present the PR/check evidence and stop for explicit H3 approval.
+
+- [ ] **Step 11: Merge only after H3 and verify `main`**
+
+After explicit H3 approval:
+
+```powershell
+gh pr merge --merge
+git fetch origin main
+gh run list --branch main --workflow CI --limit 5 --json databaseId,headSha,status,conclusion,url
+```
+
+Associate the exact post-merge `main` SHA with its CI run and wait for success. Only then report Batch 1 authoritative and permit TD-024 implementation to begin under its detailed plan and H2 boundary.
 
 ---
 
 ## Plan Completion Boundary
 
-This plan is complete only when H1 is approved, the reviewed governance/Batch 1 package is committed, and the TD-024 detailed implementation plan is ready. No backend/frontend product code is part of this plan.
+This plan is complete only when:
+
+- H1-001..H1-006 are approved.
+- The exact governance activation PR passes required checks, receives H3, merges, and has successful post-merge `main` CI.
+- Batch 1 state is authoritative on `main`.
+- The detailed TD-024 implementation plan is ready.
+
+No backend/frontend product code belongs to this plan.

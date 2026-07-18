@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-18 - Fast-Track Batch 1 Activated
+
+- Approved H1-001..H1-006 for TD-024, TD-026, and TD-027.
+- Corrected H1/H2/H3 authority and required the activation docs PR to pass checks and H3 before merge.
+- Locked Audit Logs to SPEC query names and action-aware default-deny projection.
+- Selected FE12 `/api/reports/users` for Admin counters and preserved the FE11 list envelope.
+- Approved the exact existing-cell TD-027 matrix and serial post-TD-026 SPEC ownership.
+- Product implementation remains pending per-slice H2 and H3 gates; whole FE11 remains deferred.
+
 ## 2026-07-18 - Admin Role UI Contract Integrated (B7)
 
 - PR #30 merged into `main` as commit `c20d3251254467a1543355f18c705590724f5b55`.

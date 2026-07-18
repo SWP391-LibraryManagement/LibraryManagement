@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.2
-Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, AND SAFE LIST/DETAIL SLICES COMPLETE; ADMIN ROLE UI CONTRACT VALIDATION READY; REMAINING FE11 TESTS PLANNED
+Version: 0.3.3
+Status: ACCOUNT SETUP, TRANSACTIONAL ROLE, SAFE LIST/DETAIL, AND ADMIN ROLE UI SLICES COMPLETE THROUGH B7; FAST-TRACK BATCH 1 TARGETS ACTIVE; REMAINING FE11 TESTS PLANNED
 Last Updated: 2026-07-18
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -42,6 +42,12 @@ User administration, role listing, role assignment/revocation, account status ma
 - `POST /users/:userId/roles`: assign role, invalid role, duplicate, forbidden.
 - `DELETE /users/:userId/roles/:roleId`: revoke role, invalid role, forbidden.
 
+## 3.1 Fast-Track Batch 1 Current Targets
+
+- Canonical Admin Audit Logs: SPEC query names, Admin-first authorization, typed validation/filtering, stable order, action-aware default-deny projection, and legacy 404 retirement.
+- User list envelope: no top-level `summary`; Admin counters reuse FE12 `/api/reports/users` with numeric zero defaults.
+- Evidence metadata: only approved existing Test Case/Status cells change in a serial post-TD-026 window.
+
 ## 4. E2E / Manual Acceptance Flow
 
 - Admin creates user.
@@ -72,8 +78,8 @@ User administration, role listing, role assignment/revocation, account status ma
 
 ## 6. Gaps
 
-- Account setup, transactional backend role mutation, and safe list/detail are complete through human review, merge, and post-merge CI.
-- The Admin role-action UI numeric-ID reconciliation is validation-ready under `FE11-UIR01..UIR05`; human review, merge, and post-merge CI remain pending, so `TD-022` stays `IN PROGRESS`.
+- Account setup, transactional backend role mutation, safe list/detail, and Admin role-action UI are complete through human review, merge, and post-merge CI.
+- Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Audit Log tests prove Admin authorization and pagination only; canonical boundary validation, filters, redaction, and endpoint ownership remain unvalidated (`TD-024`).
 - Request Management lacks the canonical detail endpoint and a focused terminal-state immutability acceptance test (`TD-025`).
 - Open debt also includes TD-012, remaining TD-014/015, TD-017, Admin Console drift TD-023, list-envelope drift TD-026, and stale SPEC evidence metadata TD-027.

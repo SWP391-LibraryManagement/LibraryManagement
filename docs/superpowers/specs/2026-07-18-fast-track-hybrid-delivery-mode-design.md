@@ -6,7 +6,9 @@ Date: 2026-07-18
 
 Baseline: `origin/main@1eb426196ebbc80339e2aed4558270967cd7269e`
 
-Scope: Project delivery workflow for the remaining SDD/ADD backlog; the first application is FE11 `TD-023..TD-027`.
+Scope: Project delivery workflow for the remaining SDD/ADD backlog; the first activation batch is FE11 `TD-024`, `TD-026`, and `TD-027`, with `TD-023` and `TD-025` retained as dependency forecasts only.
+
+Revision note: Nhat approved the pre-H1 correction direction on 2026-07-18. The exact Constitution, contract, ownership, and activation diff remains subject to H1 review before commit.
 
 ## 1. Decision
 
@@ -114,9 +116,13 @@ H1 grants standing authorization for the approved batch to:
 
 H1 does not authorize committing generated implementation changes, pushing product-code branches, merge, schema expansion, contract changes, or security waivers.
 
-### H2 - Implementation Package Approval
+When the H1 package includes the exact Fast-Track governance activation diff, H1 also acts as the pre-commit output review for that documentation-only diff. It authorizes the Integration Lead to commit and publish the governance activation PR. That PR still requires automated checks and H3 before merge, and Batch 1 state becomes authoritative only after the activation PR reaches `main`.
 
-The human reviews one consolidated local package before generated implementation changes are committed:
+For a batch that requires a governance activation PR, H1's standing product-work authorization becomes usable only after that activation PR merges. Planning may continue in a separate docs worktree while activation checks run, but product implementation must wait.
+
+### H2 - Local Implementation Package Approval
+
+The human reviews one consolidated local AI-output package before generated implementation or SPEC-evidence changes are committed:
 
 - Diff and changed files.
 - RED-GREEN history.
@@ -127,9 +133,11 @@ The human reviews one consolidated local package before generated implementation
 
 H2 authorizes the Integration Lead to create the approved commits, push the slice branch, open the draft PR, and mark it ready after required PR checks pass. It does not authorize merge.
 
-### H3 - Integration Approval
+H2 is a local pre-commit output review, not the Constitution's final PR integration review. It can occur before a PR exists. Required PR checks run after publication and before H3.
 
-The human approves merge after required PR checks pass and the branch remains mergeable.
+### H3 - Final Integration Approval
+
+The human performs the final PR integration review and approves merge after required PR checks pass and the branch remains mergeable.
 
 H3 authorizes the agent to:
 
@@ -140,11 +148,14 @@ H3 authorizes the agent to:
 
 Any new behavior, changed requirement, non-mechanical documentation claim, failed required check, or new security risk requires another approval.
 
+H3 applies to every merge, including the Fast-Track governance activation PR, implementation PRs, TD-027 evidence-only PRs, and the final mechanical batch-closeout PR.
+
 H1 occurs once for the approved two- or three-slice batch. H2 and H3 occur once per implementation PR because each generated diff and merge result must be reviewed independently. No additional confirmations are requested for individual tests, worktrees, commands, commits already covered by H2, draft publication, or post-merge monitoring.
 
 ## 8. Branch, Worktree, And PR Strategy
 
 - Use one isolated worktree and one implementation branch per active slice.
+- Publish the exact H1-reviewed governance activation diff as a documentation PR; Batch 1 task/debt activation is authoritative only after that PR passes checks, receives H3, and merges.
 - Use one implementation PR per slice; include design, plan, tasks, tests, code, and validation-ready evidence.
 - Keep generated production/test changes uncommitted in the isolated worktree until H2 review. After H2, create the reviewed commit set and publish the PR without another permission prompt.
 - Do not run sibling implementation branches against the same shared Core files.
@@ -181,37 +192,44 @@ After H2 approval, draft PR publication is automatic when local focused checks, 
 ### Parallel Preparation
 
 - Lead: lock the canonical `TD-024` Audit Logs endpoint, filters, validation, redaction allowlist, and ownership.
-- Verifier/docs lane: reconcile `TD-027` evidence metadata without changing requirements.
-- Analysis lane: resolve the `TD-026` user-list envelope decision and its impact on role counts/Permissions.
+- Verifier/docs lane: prepare the read-only `TD-027` evidence matrix without changing `SPEC.md`.
+- Analysis lane: resolve the `TD-026` user-list envelope decision by reusing the FE12 user-statistics read model and define its impact on role counts/Permissions.
 
 ### Sequential Implementation Order
 
 1. `TD-024` Audit Logs, first because it is P1 security and independently implementable after its contract is locked.
-2. `TD-026` user-list envelope, after the approved decision selects removal, formalization, or a separate summary boundary.
-3. `TD-023` Admin Console/Permissions, after the role-count/data source is authoritative.
-4. `TD-025` Request Management, only after FE07 ownership, detail contract, and terminal-state enforcement are locked.
+2. `TD-026` user-list envelope, preserving `{ data, pagination }` and migrating Admin counters to the completed FE12 `/api/reports/users` read model.
+3. `TD-027` status/evidence metadata, in a serial `SPEC.md` writer window after TD-026 merges.
 
-`TD-027` may complete in parallel as evidence-only maintenance, but it must not alter FE11 requirements.
+Forecast outside Batch 1:
+
+4. `TD-023` Admin Console/Permissions, after the FE12-backed role-count source and FE11 permission-matrix ownership are explicit.
+5. `TD-025` Request Management, only after FE07 ownership, detail contract, and terminal-state enforcement are locked.
+
+`TD-027` analysis may run in parallel, but its actual `SPEC.md` edit is serialized after TD-026 and must not alter FE11 requirements.
 
 ## 12. Dependency Rules
 
 ```text
-TD-027 ------------------------------ independent evidence lane
+TD-027 matrix preparation ----------- independent read-only evidence lane
+
+TD-026 merge --> TD-027 SPEC edit --- single Integration Lead writer
 
 TD-024 ------------------------------ security-first independent slice
 
-TD-026 --> TD-023 ------------------- authoritative summary/count source first
+TD-026 --> TD-023 ------------------- FE12-backed summary/count source first
 
 FE07 request contract --> TD-025 ----- server terminal-state ownership first
 ```
 
-`TD-023`, `TD-024`, and `TD-025` must not be implemented concurrently on sibling branches because they overlap Admin frontend and backend integration files.
+`TD-023` and `TD-025` are dependency forecasts outside Batch 1 and receive no implementation authorization from Batch 1 H1. `TD-023`, `TD-024`, and `TD-025` must not be implemented concurrently on sibling branches because they overlap Admin frontend and backend integration files.
 
 ## 13. Required Artifacts
 
 For each batch:
 
 - One approved batch design.
+- One governance activation PR with required checks and H3 merge approval.
 - One implementation plan with dependency order and file ownership.
 - Atomic task groups with stable IDs and DoD.
 - Per-slice validation records with L1-L4 evidence.
@@ -228,6 +246,8 @@ For each batch:
 | Fewer approvals hide scope expansion | H1 grants only explicit batch scope; Core drift stops immediately |
 | Batched closeout leaves evidence briefly pending | Use a pre-reviewed template and close the batch immediately after its final post-merge CI |
 | Draft PRs publish unreviewed generated work | Require local validation and H2 review before commit/push; keep the PR draft until required checks pass |
+| H2 is confused with final PR review | Define H2 as local pre-commit output review and H3 as the post-check Constitution integration review |
+| Evidence maintenance conflicts with contract work | Prepare TD-027 read-only in parallel, but serialize its SPEC edit after TD-026 merges |
 | Base branch changes during work | Auto-sync only non-overlapping drift; overlapping Core drift escalates |
 | CI path filtering skips regressions | No path filtering in this design; future CI optimization needs separate review |
 
@@ -235,7 +255,7 @@ For each batch:
 
 Fast-Track mode succeeds when:
 
-- Work uses only H1, H2, and H3 gate types: H1 once per batch, then H2/H3 once per slice PR.
+- Work uses only H1, H2, and H3 gate types: H1 once per batch, then H2/H3 once per generated slice PR; the exact H1-reviewed governance diff proceeds directly to its required H3 merge gate.
 - Agents do not request permission for each test run, worktree, reviewed commit set, draft publication, or mechanical closeout step already authorized by a gate.
 - At least two lanes remain productive without concurrent edits to shared Core files.
 - Every merged slice has L1-L4 evidence and exact post-merge CI association.
@@ -245,4 +265,4 @@ Fast-Track mode succeeds when:
 
 ## 16. Open Questions
 
-None. The human approved the Fast-Track concept, written design, three-lane pipeline, three gate types, automatic draft publication after H2, and batched mechanical closeout on 2026-07-18. Implementation planning is authorized.
+None at the design-direction level. Nhat approved the correction direction on 2026-07-18. The exact H1 package must still be reviewed before the governance activation commit/PR and before Batch 1 becomes active.
