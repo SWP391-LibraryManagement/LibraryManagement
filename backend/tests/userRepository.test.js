@@ -53,6 +53,7 @@ test('listManagedUsers returns only the approved base DTO', async () => {
 
   const result = await userRepository.listManagedUsers({ page: 1, limit: 20 });
 
+  expect(Object.keys(result).sort()).toEqual(['data', 'pagination']);
   expect(result.data[0]).toEqual({
     userId: 7,
     username: 'safe.user',
@@ -68,6 +69,15 @@ test('listManagedUsers returns only the approved base DTO', async () => {
   });
   expect(result.data[0]).not.toHaveProperty('relatedSummary');
   expect(JSON.stringify(result.data[0])).not.toContain('forbidden-');
+});
+
+test('listManagedUsers does not execute a global summary aggregate query', async () => {
+  const capture = useRecordset([]);
+
+  await userRepository.listManagedUsers({ page: 1, limit: 20 });
+
+  expect(capture.query).not.toContain('COUNT_BIG(1) AS Total');
+  expect(capture.query).not.toContain("SUM(CASE WHEN u.Status = 'ACTIVE'");
 });
 
 test('listManagedUsers uses only approved search fields and stable ordering', async () => {

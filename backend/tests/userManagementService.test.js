@@ -573,6 +573,19 @@ function makeReadHarness(userRepositoryOverrides = {}) {
 }
 
 describe('FE11 safe managed-user reads', () => {
+  test('listUsers forwards the canonical envelope without a summary field', async () => {
+    const result = {
+      data: [{ userId: 7 }],
+      pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+    };
+    const { service } = makeReadHarness({
+      listManagedUsers: jest.fn(async () => result),
+    });
+
+    await expect(service.listUsers({})).resolves.toEqual(result);
+    expect(Object.keys(await service.listUsers({})).sort()).toEqual(['data', 'pagination']);
+  });
+
   test('listUsers applies defaults only when values are omitted', async () => {
     const { service, userRepository } = makeReadHarness();
 
