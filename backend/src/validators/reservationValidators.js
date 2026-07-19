@@ -38,6 +38,27 @@ const listMyReservationsValidators = [
   handleValidationErrors,
 ];
 
+const listReservationCandidatesValidators = [
+  query('q')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Search query must be at most 200 characters.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
+  handleValidationErrors,
+];
+
 const listReservationsValidators = [
   query('bookId')
     .optional({ nullable: true, checkFalsy: true })
@@ -112,6 +133,7 @@ const processQueueValidators = [
 
 module.exports = {
   createReservationValidators,
+  listReservationCandidatesValidators,
   listMyReservationsValidators,
   listReservationsValidators,
   cancelReservationValidators,

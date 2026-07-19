@@ -1,5 +1,9 @@
 const { sql, getPool } = require('../config/db');
 
+function escapeLikePattern(value) {
+  return String(value).replace(/[\\%_[\]]/g, (match) => `\\${match}`);
+}
+
 const reservationSelect = `
   SELECT
     r.ReservationId,
@@ -73,6 +77,21 @@ function mapReservation(row) {
       status: row.UserStatus,
     },
     copy: mapCopy(row),
+  };
+}
+
+function mapReservationCandidate(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    copyId: row.CopyId,
+    bookId: row.BookId,
+    title: row.Title,
+    authorName: row.AuthorName || null,
+    copyStatus: row.CopyStatus,
+    activeReservationCount: Number(row.ActiveReservationCount || 0),
   };
 }
 
@@ -172,6 +191,56 @@ async function findReservationById(reservationId) {
     `);
 
   return mapReservation(result.recordset[0]);
+}
+
+// @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+async function listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) {
+  const pool = await getPool();
+  const request = pool.request();
+  const normalizedQuery = String(q).trim();
+  const offset = (Number(page) - 1) * Number(limit);
+
+  request
+    .input(
+      'Search',
+      sql.NVarChar(402),
+      normalizedQuery ? `%${escapeLikePattern(normalizedQuery)}%` : null
+    )
+    .input('Offset', sql.Int, offset)
+    .input('Limit', sql.Int, Number(limit));
+
+  const result = await request.query(`
+    SELECT
+      bc.CopyId,
+      bc.BookId,
+      b.Title,
+      a.AuthorName,
+      bc.Status AS CopyStatus,
+      (
+        SELECT COUNT(*)
+        FROM Reservations activeReservation
+        WHERE activeReservation.CopyId = bc.CopyId
+          AND activeReservation.Status = 'ACTIVE'
+      ) AS ActiveReservationCount,
+      COUNT(*) OVER() AS TotalRows
+    FROM BookCopies bc
+    INNER JOIN Books b ON b.BookId = bc.BookId
+    LEFT JOIN Authors a ON a.AuthorId = b.AuthorId
+    WHERE b.Status = 'ACTIVE'
+      AND bc.Status IN ('BORROWED', 'RESERVED')
+      AND (
+        @Search IS NULL
+        OR b.Title LIKE @Search ESCAPE '\\'
+        OR COALESCE(a.AuthorName, '') LIKE @Search ESCAPE '\\'
+      )
+    ORDER BY b.Title ASC, b.BookId ASC, bc.CopyId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+  `);
+
+  return {
+    rows: result.recordset.map(mapReservationCandidate),
+    total: Number(result.recordset[0]?.TotalRows || 0),
+  };
 }
 
 async function createReservation({ userId, copyId }) {
@@ -533,6 +602,7 @@ module.exports = {
   countActiveReservationsForUser,
   findActiveReservationByUserAndCopy,
   findReservationById,
+  listReservationCandidates,
   createReservation,
   listReservations,
   cancelReservation,

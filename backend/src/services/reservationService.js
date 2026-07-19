@@ -167,6 +167,30 @@ function createReservationService({
     };
   }
 
+  // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+  async function listReservationCandidates(filters = {}, actor) {
+    requireMember(actor);
+
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const result = await reservationRepository.listReservationCandidates({
+      q: typeof filters.q === 'string' ? filters.q.trim() : '',
+      page,
+      limit,
+    });
+    const total = Number(result.total || 0);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+      },
+    };
+  }
+
   async function listMyReservations(filters, actor) {
     requireMember(actor);
 
@@ -390,6 +414,7 @@ function createReservationService({
 
   return {
     createReservation,
+    listReservationCandidates,
     listMyReservations,
     cancelReservation,
     listReservations,
