@@ -25,9 +25,12 @@ function getRepositoryFunctionSource(functionName, nextFunctionName) {
   return reservationRepositorySource.slice(start, end);
 }
 
-function makeTestApp({ notificationService, auditLogRepository } = {}) {
+function makeTestApp({ notificationService, auditLogRepository, reservationState } = {}) {
   const authDependencies = makeInMemoryAuthDependencies();
-  const reservationDependencies = makeInMemoryReservationDependencies(authDependencies.state);
+  const reservationDependencies = makeInMemoryReservationDependencies(
+    authDependencies.state,
+    reservationState
+  );
   const authService = createAuthService(authDependencies);
   const reservationService = createReservationService({
     reservationRepository: reservationDependencies.reservationRepository,
@@ -102,6 +105,137 @@ function makeNotificationServiceDouble(createNotificationRequest = jest.fn()) {
 }
 
 describe('FE08 reservation management', () => {
+  // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+  test('member reads a paginated redacted candidate catalog without mutation', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate.second@example.test',
+    });
+    const reader = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate.reader@example.test',
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    const reservationsBefore = JSON.stringify(reservationDependencies.state.reservations);
+    const auditCountBefore = authDependencies.state.auditLogs.length;
+    const response = await request(app)
+      .get('/api/reservations/candidates')
+      .query({ q: 'clean', page: 1, limit: 1 })
+      .set('Authorization', authHeader(reader.accessToken))
+      .expect(200);
+
+    expect(response.body.pagination).toEqual({ page: 1, limit: 1, total: 2, totalPages: 2 });
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toEqual({
+      copyId: 1,
+      bookId: 1,
+      title: 'Clean Code',
+      authorName: 'Robert C. Martin',
+      copyStatus: 'BORROWED',
+      activeReservationCount: 2,
+    });
+    expect(Object.keys(response.body.data[0]).sort()).toEqual([
+      'activeReservationCount',
+      'authorName',
+      'bookId',
+      'copyId',
+      'copyStatus',
+      'title',
+    ]);
+    expect(JSON.stringify(response.body)).not.toMatch(/barcode|location|owner|email|reservedAt|version/i);
+    expect(JSON.stringify(reservationDependencies.state.reservations)).toBe(reservationsBefore);
+    expect(authDependencies.state.auditLogs.length).toBe(auditCountBefore);
+  });
+
+  // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-PERF-003
+  test('candidate catalog filters active books and eligible copy statuses in stable order', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp({
+      reservationState: {
+        books: [
+          { bookId: 10, title: 'Zeta', authorName: 'Author Z', status: 'ACTIVE' },
+          { bookId: 11, title: 'Alpha', authorName: 'Author A', status: 'ACTIVE' },
+          { bookId: 12, title: 'Hidden', authorName: 'Author H', status: 'INACTIVE' },
+        ],
+        copies: [
+          { copyId: 20, bookId: 10, barcode: 'C20', status: 'BORROWED', location: 'A1' },
+          { copyId: 21, bookId: 11, barcode: 'C21', status: 'RESERVED', location: 'A2' },
+          { copyId: 22, bookId: 11, barcode: 'C22', status: 'AVAILABLE', location: 'A3' },
+          { copyId: 23, bookId: 12, barcode: 'C23', status: 'BORROWED', location: 'A4' },
+          { copyId: 24, bookId: 10, barcode: 'C24', status: 'DAMAGED', location: 'A5' },
+        ],
+      },
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate-filter.member@example.test',
+    });
+
+    const response = await request(app)
+      .get('/api/reservations/candidates')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(response.body.data.map((item) => item.copyId)).toEqual([21, 20]);
+    expect(response.body.pagination).toEqual({ page: 1, limit: 20, total: 2, totalPages: 1 });
+  });
+
+  // @spec NFR-FE08-SEC-004
+  test('candidate catalog enforces member role and query bounds', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate-role.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'candidate-role.member@example.test',
+    });
+
+    await request(app)
+      .get('/api/reservations/candidates')
+      .expect(401);
+    await request(app)
+      .get('/api/reservations/candidates')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .expect(403);
+    const invalid = await request(app)
+      .get('/api/reservations/candidates')
+      .query({ page: 0, limit: 101, q: 'x'.repeat(201) })
+      .set('Authorization', authHeader(member.accessToken));
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   test('member creates reservations only for unavailable copies within the active limit', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
     const member = await createVerifiedUser({
