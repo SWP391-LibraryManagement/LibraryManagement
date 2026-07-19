@@ -75,7 +75,7 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
     display: 'flex', flexDirection: 'column', overflowY: 'auto',
   }}>
     <div style={{ background: '#4E342E', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <span style={{ color: '#FAF7F2', fontFamily: 'Playfair Display, serif', fontSize: 17, fontWeight: 600 }}>
+      <span style={{ color: '#FAF7F2', fontFamily: 'var(--heading)', fontSize: 17, fontWeight: 600 }}>
         Thông tin sách
       </span>
       <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4A882' }}>
@@ -103,7 +103,7 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
         </span>
       </div>
 
-      <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#2C1A0E', margin: '0 0 6px', lineHeight: 1.3 }}>
+      <h2 style={{ fontFamily: 'var(--heading)', fontSize: 22, fontWeight: 700, color: '#2C1A0E', margin: '0 0 6px', lineHeight: 1.3 }}>
         {book.title}
       </h2>
       <p style={{ color: '#7A5C44', fontSize: 14, margin: '0 0 12px' }}>Tác giả: {book.authorName || 'Không rõ tác giả'}</p>
@@ -139,7 +139,7 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
           width: '100%', padding: '12px', borderRadius: 8, border: 'none',
           background: '#C78A3B', color: '#FFF', cursor: detailLoading ? 'wait' : 'pointer',
           fontSize: 14, fontWeight: 700, transition: 'background 0.2s',
-          fontFamily: 'Lato, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontFamily: 'var(--sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
         onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
         onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
@@ -152,7 +152,7 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
           width: '100%', padding: '12px', borderRadius: 8, marginTop: 10,
           border: '1.5px solid #8B6B4A', background: 'transparent',
           color: '#8B6B4A', cursor: 'pointer', fontSize: 14, fontWeight: 700,
-          transition: 'all 0.2s', fontFamily: 'Lato, sans-serif',
+          transition: 'all 0.2s', fontFamily: 'var(--sans)',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
@@ -181,7 +181,7 @@ const MembershipModal = ({ onClose }) => (
       <div style={{ background: '#4E342E', padding: '22px 32px', borderRadius: '16px 16px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <p style={{ fontSize: 11, color: '#C78A3B', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>Gói thành viên</p>
-          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#FAF7F2' }}>
+          <span style={{ fontFamily: 'var(--heading)', fontSize: 20, fontWeight: 700, color: '#FAF7F2' }}>
             Quyền lợi dành cho thành viên
           </span>
         </div>
@@ -224,7 +224,7 @@ const MembershipModal = ({ onClose }) => (
                 }}>PHỔ BIẾN NHẤT</div>
               )}
               <p style={{ fontSize: 11, color: plan.color, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>{plan.name}</p>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 4px' }}>{plan.price}</div>
+              <div style={{ fontFamily: 'var(--heading)', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 4px' }}>{plan.price}</div>
               <p style={{ fontSize: 13, color: '#7A5C44', margin: '0 0 20px' }}>{plan.desc}</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {plan.features.map(f => (
@@ -238,7 +238,7 @@ const MembershipModal = ({ onClose }) => (
                 width: '100%', padding: '11px', borderRadius: 8, border: 'none',
                 background: plan.highlight ? '#C78A3B' : '#4E342E',
                 color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                fontFamily: 'Lato, sans-serif', transition: 'background 0.2s',
+                fontFamily: 'var(--sans)', transition: 'background 0.2s',
               }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
                 onMouseLeave={e => (e.currentTarget.style.background = plan.highlight ? '#C78A3B' : '#4E342E')}
@@ -250,7 +250,7 @@ const MembershipModal = ({ onClose }) => (
         </div>
 
         {/* FAQ */}
-        <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: '#2C1A0E', margin: '0 0 16px' }}>
+        <h3 style={{ fontFamily: 'var(--heading)', fontSize: 18, fontWeight: 700, color: '#2C1A0E', margin: '0 0 16px' }}>
           Câu hỏi thường gặp
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -290,7 +290,7 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
           <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#C4A882', borderRadius: 6, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
             <ChevronLeft size={14} /> Quay lại
           </button>
-          <span style={{ color: '#FAF7F2', fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 600 }}>
+          <span style={{ color: '#FAF7F2', fontFamily: 'var(--heading)', fontSize: 18, fontWeight: 600 }}>
             Chi tiết sách
           </span>
         </div>
@@ -310,7 +310,7 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
               <button style={{
                 padding: '10px', borderRadius: 8, border: 'none', background: '#EDE0CE',
                 color: '#A08060', cursor: 'not-allowed', fontSize: 13, fontWeight: 700,
-                fontFamily: 'Lato, sans-serif',
+                fontFamily: 'var(--sans)',
               }} disabled>
                 Không khả dụng
               </button>
@@ -318,7 +318,7 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
             <button onClick={onAction} style={{
               padding: '10px', borderRadius: 8, border: '1.5px solid rgba(78,52,46,0.25)',
               background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
+              fontFamily: 'var(--sans)', transition: 'all 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; }}
@@ -343,7 +343,7 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
             </span>
           </div>
 
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 8px', lineHeight: 1.2 }}>
+          <h2 style={{ fontFamily: 'var(--heading)', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 8px', lineHeight: 1.2 }}>
             {book.title}
           </h2>
           <p style={{ color: '#7A5C44', fontSize: 15, margin: '0 0 14px' }}>Tác giả: {book.authorName || 'Không rõ tác giả'}</p>
@@ -569,7 +569,7 @@ const HomePage = () => {
   };
 
   return (
-    <div style={{ fontFamily: 'Lato, sans-serif', background: '#FAF7F2', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ fontFamily: 'var(--sans)', background: '#FAF7F2', minHeight: '100vh', overflowX: 'hidden' }}>
       {loadingBooks && (
         <div style={{
           position: 'fixed',
@@ -623,7 +623,7 @@ const HomePage = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <BookOpen size={22} color="#C78A3B" />
-          <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 21, color: '#4E342E' }}>
+          <span style={{ fontFamily: 'var(--heading)', fontWeight: 700, fontSize: 21, color: '#4E342E' }}>
             Quản Lý Thư Viện
           </span>
         </div>
@@ -635,7 +635,7 @@ const HomePage = () => {
             { label: 'Giới thiệu', id: 'section-footer' },
             { label: 'Liên hệ', id: 'section-footer' },
           ].filter((item) => !isLoggedIn || item.id !== 'section-cta').map(item => (
-            <button key={item.label} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A3E36', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s', fontFamily: 'Lato, sans-serif', padding: 0 }}
+            <button key={item.label} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A3E36', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s', fontFamily: 'var(--sans)', padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.color = '#C78A3B')}
               onMouseLeave={e => (e.currentTarget.style.color = '#5A3E36')}
             >{item.label}</button>
@@ -686,7 +686,7 @@ const HomePage = () => {
                         setShowUserMenu(false);
                         item.action();
                       }}
-                      style={{ width: '100%', padding: '10px 12px', border: 0, borderRadius: 8, background: 'transparent', color: item.danger ? '#C1452F' : '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 600, fontFamily: 'Lato, sans-serif' }}
+                      style={{ width: '100%', padding: '10px 12px', border: 0, borderRadius: 8, background: 'transparent', color: item.danger ? '#C1452F' : '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 600, fontFamily: 'var(--sans)' }}
                       onMouseEnter={e => { e.currentTarget.style.background = item.danger ? '#FBE9E6' : '#F5EFE6'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                     >
@@ -729,7 +729,7 @@ const HomePage = () => {
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 520 }}>
         <div style={{ padding: '72px 64px 72px 80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <h1 style={{
-            fontFamily: 'Playfair Display, serif', fontSize: 52, fontWeight: 700,
+            fontFamily: 'var(--heading)', fontSize: 52, fontWeight: 700,
             color: '#2C1A0E', lineHeight: 1.15, margin: '0 0 18px', letterSpacing: '-0.5px',
           }}>
             Nơi Mỗi<br />
@@ -756,7 +756,7 @@ const HomePage = () => {
               placeholder="Tìm theo tên sách, tác giả hoặc ISBN..."
               style={{
                 flex: 1, padding: '13px 0', border: 'none', outline: 'none',
-                fontSize: 14, color: '#2C1A0E', background: 'transparent', fontFamily: 'Lato, sans-serif',
+                fontSize: 14, color: '#2C1A0E', background: 'transparent', fontFamily: 'var(--sans)',
               }}
             />
             <button onClick={handleSearch} style={{
@@ -787,7 +787,7 @@ const HomePage = () => {
               <p style={{ fontSize: 11, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>
                 {isLoggedIn ? 'Tìm kiếm thành viên' : 'Tìm kiếm khách'} - Cơ sở dùng {isLoggedIn ? '19' : '18'}
               </p>
-              <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--heading)', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>
                 Kết quả cho "{activeSearch}"
                 <span style={{ fontSize: 15, fontWeight: 400, color: '#A08060', marginLeft: 12 }}>
                   {searchResults.length} sách được tìm thấy
@@ -797,7 +797,7 @@ const HomePage = () => {
             <button onClick={() => { setActiveSearch(''); setSearchQuery(''); setSearchResults([]); setSearchError(''); }} style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8,
               border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#7A5C44',
-              cursor: 'pointer', fontSize: 13, fontFamily: 'Lato, sans-serif',
+              cursor: 'pointer', fontSize: 13, fontFamily: 'var(--sans)',
             }}>
               <X size={14} /> Xóa tìm kiếm
             </button>
@@ -810,7 +810,7 @@ const HomePage = () => {
               </span>
               <button onClick={goToLogin} style={{
                 padding: '7px 18px', borderRadius: 6, border: 'none', background: '#C78A3B',
-                color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'Lato, sans-serif',
+                color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'var(--sans)',
               }}>Đăng nhập</button>
             </div>
           )}
@@ -839,12 +839,12 @@ const HomePage = () => {
           {searchingBooks ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>...</div>
-              <p style={{ fontSize: 16, color: '#7A5C44', margin: 0, fontFamily: 'Playfair Display, serif', fontWeight: 600 }}>Đang tìm kiếm sách...</p>
+              <p style={{ fontSize: 16, color: '#7A5C44', margin: 0, fontFamily: 'var(--heading)', fontWeight: 600 }}>Đang tìm kiếm sách...</p>
             </div>
           ) : searchResults.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>--</div>
-              <p style={{ fontSize: 16, color: '#7A5C44', margin: '0 0 6px', fontFamily: 'Playfair Display, serif', fontWeight: 600 }}>Không tìm thấy sách</p>
+              <p style={{ fontSize: 16, color: '#7A5C44', margin: '0 0 6px', fontFamily: 'var(--heading)', fontWeight: 600 }}>Không tìm thấy sách</p>
               <p style={{ fontSize: 13, color: '#A08060', margin: 0 }}>Hãy thử tên sách hoặc tên tác giả khác.</p>
             </div>
           ) : (
@@ -872,10 +872,10 @@ const HomePage = () => {
                   </div>
                   <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.categoryName || 'Chưa phân loại')}</p>
-                    <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
+                    <h3 style={{ fontFamily: 'var(--heading)', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
                     <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
-                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
+                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'var(--sans)', transition: 'all 0.2s' }}
                     >{getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label}</button>
                   </div>
                 </div>
@@ -892,12 +892,12 @@ const HomePage = () => {
             <p style={{ fontSize: 11, color: '#C78A3B', letterSpacing: '0.1em', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>
               Tuyển chọn nổi bật
             </p>
-            <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 32, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>
+            <h2 style={{ fontFamily: 'var(--heading)', fontSize: 32, fontWeight: 700, color: '#2C1A0E', margin: 0 }}>
               Sách nổi bật
             </h2>
           </div>
           <button onClick={() => { setShowAll(v => !v); setActiveCategory('Tất cả'); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#C78A3B', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14, fontFamily: 'Lato, sans-serif', transition: 'gap 0.2s', padding: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#C78A3B', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14, fontFamily: 'var(--sans)', transition: 'gap 0.2s', padding: 0 }}
             onMouseEnter={e => (e.currentTarget.style.gap = '10px')}
             onMouseLeave={e => (e.currentTarget.style.gap = '6px')}
           >
@@ -914,7 +914,7 @@ const HomePage = () => {
               background: activeCategory === tab ? '#C78A3B' : 'transparent',
               color: activeCategory === tab ? '#FFF' : '#7A5C44',
               cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
-              fontFamily: 'Lato, sans-serif',
+              fontFamily: 'var(--sans)',
             }}>{getCategoryLabel(tab)}</button>
           ))}
         </div>
@@ -949,7 +949,7 @@ const HomePage = () => {
                 <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>
                   {getCategoryLabel(book.categoryName || 'Chưa phân loại')}
                 </p>
-                <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>
+                <h3 style={{ fontFamily: 'var(--heading)', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>
                   {book.title}
                 </h3>
                 <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
@@ -958,7 +958,7 @@ const HomePage = () => {
                   style={{
                     marginTop: 22, width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)',
                     background: 'transparent', color: '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                    fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
+                    fontFamily: 'var(--sans)', transition: 'all 0.2s',
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.2)'; }}
@@ -980,7 +980,7 @@ const HomePage = () => {
               Trở thành thành viên
             </p>
             <h2 style={{
-              fontFamily: 'Playfair Display, serif', fontSize: 42, fontWeight: 700,
+              fontFamily: 'var(--heading)', fontSize: 42, fontWeight: 700,
               color: '#2C1A0E', margin: '0 0 18px', lineHeight: 1.18,
             }}>
               Mở Khóa Trọn Vẹn<br />
@@ -994,7 +994,7 @@ const HomePage = () => {
                 padding: '13px 28px', borderRadius: 8, border: 'none',
                 background: '#4E342E', color: '#FAF7F2', cursor: 'pointer',
                 fontWeight: 700, fontSize: 14, transition: 'background 0.2s',
-                fontFamily: 'Lato, sans-serif',
+                fontFamily: 'var(--sans)',
               }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#C78A3B')}
                 onMouseLeave={e => (e.currentTarget.style.background = '#4E342E')}
@@ -1021,7 +1021,7 @@ const HomePage = () => {
                 onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 <div style={{ fontSize: 24, marginBottom: 12 }}>{item.icon}</div>
-                <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 700, color: '#2C1A0E', marginBottom: 6 }}>
+                <div style={{ fontFamily: 'var(--heading)', fontSize: 14, fontWeight: 700, color: '#2C1A0E', marginBottom: 6 }}>
                   {item.title}
                 </div>
                 <div style={{ fontSize: 12, color: '#7A5C44', lineHeight: 1.65 }}>
@@ -1040,7 +1040,7 @@ const HomePage = () => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <BookOpen size={20} color="#C78A3B" />
-                <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 19, fontWeight: 700, color: '#FAF7F2' }}>Quản Lý Thư Viện</span>
+                <span style={{ fontFamily: 'var(--heading)', fontSize: 19, fontWeight: 700, color: '#FAF7F2' }}>Quản Lý Thư Viện</span>
               </div>
               <p style={{ fontSize: 13, lineHeight: 1.7, maxWidth: 260, color: '#7A6050', margin: 0 }}>
                 Hệ thống quản lý thư viện hiện đại, kết nối độc giả với những đầu sách giá trị.
@@ -1067,11 +1067,11 @@ const HomePage = () => {
               ]},
             ].map(col => (
               <div key={col.title}>
-                <h4 style={{ fontFamily: 'Playfair Display, serif', color: '#FAF7F2', margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>{col.title}</h4>
+                <h4 style={{ fontFamily: 'var(--heading)', color: '#FAF7F2', margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>{col.title}</h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {col.links.map(link => (
                     <li key={link.label}>
-                      <button onClick={link.action} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A6050', textDecoration: 'none', fontSize: 13, transition: 'color 0.2s', fontFamily: 'Lato, sans-serif', padding: 0 }}
+                      <button onClick={link.action} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7A6050', textDecoration: 'none', fontSize: 13, transition: 'color 0.2s', fontFamily: 'var(--sans)', padding: 0 }}
                         onMouseEnter={e => (e.currentTarget.style.color = '#C78A3B')}
                         onMouseLeave={e => (e.currentTarget.style.color = '#7A6050')}
                       >{link.label}</button>
@@ -1112,7 +1112,7 @@ const HomePage = () => {
             style={{ width: 'min(420px, 100%)', background: '#FAF7F2', borderRadius: 14, boxShadow: '0 24px 80px rgba(30,18,10,0.32)', overflow: 'hidden' }}
           >
             <div style={{ padding: '22px 24px', borderBottom: '1px solid rgba(78,52,46,0.12)' }}>
-              <h2 id="logout-confirm-title" style={{ margin: '0 0 8px', fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#2C1A0E' }}>
+              <h2 id="logout-confirm-title" style={{ margin: '0 0 8px', fontFamily: 'var(--heading)', fontSize: 22, color: '#2C1A0E' }}>
                 Xác nhận đăng xuất
               </h2>
               <p style={{ margin: 0, color: '#7A5C44', fontSize: 14, lineHeight: 1.6 }}>

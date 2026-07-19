@@ -2656,7 +2656,7 @@ function UserManagement() {
       )}
 
       <style>{`
-        .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: Inter, system-ui, sans-serif; }
+        .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: var(--sans); }
         .um-sidebar { width: 248px; background: #17202a; color: #edf2f7; padding: 22px 16px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; }
         .um-brand { display: flex; gap: 12px; align-items: center; padding: 4px 6px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .um-brand-mark { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; background: #2f80ed; color: #fff; }
@@ -2860,7 +2860,7 @@ function UserManagement() {
         }
         .um-brand strong {
           color: var(--um-ink);
-          font-family: Georgia, 'Times New Roman', serif;
+          font-family: var(--heading);
           font-size: 17px;
         }
         .um-brand span,
@@ -2906,9 +2906,8 @@ function UserManagement() {
         .um-modal-header h2,
         .um-drawer h2 {
           color: var(--um-ink);
-          /* Georgia on Windows/Chrome renders some precomposed Vietnamese
-             characters (notably "ầ" in "yêu cầu") with a displaced mark. */
-          font-family: 'Times New Roman', 'Noto Serif', serif;
+          /* Use the shared Unicode-capable heading font for Vietnamese diacritics. */
+          font-family: var(--heading);
         }
         .um-primary-button {
           background: var(--um-accent);
@@ -2952,7 +2951,7 @@ function UserManagement() {
         .um-audit-summary strong em { margin-left: 3px; color: var(--um-muted); font-size: 14px; font-style: normal; font-weight: 600; }
         .um-audit-summary article div > span { overflow: hidden; color: var(--um-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
         .um-audit-table-heading { margin-bottom: -18px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--um-line); border-bottom: 0; border-radius: 16px 16px 0 0; background: var(--um-surface); }
-        .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: 'Times New Roman', 'Noto Serif', serif; font-size: 21px; }
+        .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: var(--heading); font-size: 21px; }
         .um-audit-table-heading p { margin: 0; color: var(--um-muted); font-size: 13px; }
         .um-audit-table-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--um-accent-dark); background: var(--um-accent-soft); font-size: 12px; font-weight: 700; white-space: nowrap; }
         .um-table-wrap { overflow: hidden; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }

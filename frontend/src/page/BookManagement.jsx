@@ -713,8 +713,8 @@ export default function BookManagement() {
       </main>
 
       <style>{`
-        .bm-module { --bm-accent: #b67a2a; --bm-accent-dark: #8a581d; --bm-border: #e6d5bb; --bm-soft-bg: #f7efe2; color: #2b2118; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .bm-shell { min-height: 100vh; background: #f6f7fb; color: #172033; display: flex; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .bm-module { --bm-accent: #b67a2a; --bm-accent-dark: #8a581d; --bm-border: #e6d5bb; --bm-soft-bg: #f7efe2; color: #2b2118; font-family: var(--sans); }
+        .bm-shell { min-height: 100vh; background: #f6f7fb; color: #172033; display: flex; font-family: var(--sans); }
         .bm-sidebar { width: 286px; min-height: 100vh; position: sticky; top: 0; align-self: flex-start; background: #14202e; color: #e5edf7; padding: 22px 16px; display: flex; flex-direction: column; gap: 20px; }
         .bm-brand { display: flex; gap: 12px; align-items: center; padding: 6px 8px 12px; }
         .bm-brand > div { width: 42px; height: 42px; display: grid; place-items: center; background: #2aa198; color: #fff; border-radius: 8px; }
