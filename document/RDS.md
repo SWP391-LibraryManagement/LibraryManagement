@@ -289,26 +289,30 @@ flowchart TB
   class Root,Login,Register,ForgotPassword,Home,PublicHome,Profile,Membership,BorrowNew,BorrowHistory,MyReservations,AdminUsers,FineManagement,Inventory,BookManagement,BorrowRequests,ProcessReturns,MemberBorrowing,ReservationsAdmin,BorrowingReport,InventoryReport,UserStatistics,NotFound screen;
 ```
 
-| Screen | Route | Main Actor(s) | Purpose |
-| ------ | ----- | ------------- | ------- |
-| Login | `/login` | Guest, Member, Librarian, Admin | Authenticate an existing user. |
-| Register | `/register` | Guest | Create a new user account. |
-| Forgot Password | `/forgot-password` | Guest, Member, Librarian, Admin | Request password reset support. |
-| Home | `/home` | Guest, Member, Librarian, Admin | Route users to the proper home experience. |
-| Public Book Homepage | `/homepage` | Guest, Member | Browse public book information. |
-| User Profile | `/profile` | Member, Librarian, Admin | View and update personal profile information. |
-| Membership | `/membership` | Member, Librarian, Admin | Submit or review membership-related information. |
-| Admin User Management | `/admin/users` | Admin | Manage users, roles, permissions, audit logs, and admin console sections. |
-| Fine Management | `/librarian/fines` | Librarian, Admin | Manage fine list, collection, paid status, and resolution. |
-| Inventory | `/librarian/inventory` | Librarian, Admin | Manage physical book copies and availability. |
-| Book Management | `/librarian/books` | Librarian, Admin | Manage catalog book records. |
-| Create Borrow Request | `/borrowing/new` | Member | Create a new borrow request. |
-| Borrowing History | `/borrowing/history` | Member | View personal borrowing history. |
-| Borrow Requests | `/librarian/borrow-requests` | Librarian, Admin | Review and process borrow requests. |
-| Process Returns | `/librarian/returns` | Librarian, Admin | Process returned borrowed copies. |
-| Member Borrowing Details | `/librarian/members` | Librarian, Admin | View member borrowing details. |
-| My Reservations | `/reservations/mine` | Member | View and manage personal reservations. |
-| Reservation Management | `/librarian/reservations` | Librarian, Admin | Manage reservation queues and staff reservation operations. |
-| Borrowing Report | `/reports/borrowing` | Librarian, Admin | View borrowing report data. |
-| Inventory Report | `/reports/inventory` | Librarian, Admin | View inventory report data. |
-| User Statistics | `/reports/users` | Librarian, Admin | View user statistics. |
+### 2.2 Screen Descriptions
+
+This section describes the screens shown in the Screens Flow above.
+
+| # | Feature | Screen | Description |
+| - | ------- | ------ | ----------- |
+| 1 | Authentication | Login | Allows a user to sign in with account credentials and enter the system according to their role. |
+| 2 | Authentication | Register | Allows a guest to create a new account before using member functions. |
+| 3 | Authentication | Forgot Password | Allows a user to request password reset support through email. |
+| 4 | Public / Browse | Home | Routes the user to the proper home experience after opening the system or signing in. |
+| 5 | Public / Browse | Public Book Homepage | Shows public book information, searchable catalog content, and book availability. |
+| 6 | User Profile | User Profile | Allows an authenticated user to view and update profile information. |
+| 7 | Membership Management | Membership | Allows a member to submit or view membership status and allows authorized staff to review membership information. |
+| 8 | Book Management | Book Management | Allows librarian or admin users to create, update, deactivate, reactivate, search, and view book records. |
+| 9 | Inventory / Book Copy Management | Inventory | Allows librarian or admin users to manage physical book copies, barcode, status, location, and availability. |
+| 10 | Borrowing Management | Create Borrow Request | Allows a member to create a request to borrow available books. |
+| 11 | Borrowing Management | Borrowing History | Allows a member to view their borrowing requests, active borrowings, returns, and renewal-related information. |
+| 12 | Borrowing Management | Borrow Requests | Allows librarian or admin users to review, approve, or reject member borrow requests. |
+| 13 | Borrowing Management | Process Returns | Allows librarian or admin users to process returned book copies and update borrowing status. |
+| 14 | Borrowing Management | Member Borrowing Details | Allows librarian or admin users to view borrowing details for library members. |
+| 15 | Reservation Management | My Reservations | Allows a member to view or cancel their own reservations. |
+| 16 | Reservation Management | Reservation Management | Allows librarian or admin users to manage reservation queues and staff reservation actions. |
+| 17 | Fine Management | Fine Management | Allows librarian or admin users to view, calculate, collect, mark paid, or resolve fines. |
+| 18 | Reporting & Statistics | Borrowing Report | Shows borrowing report data for operational review. |
+| 19 | Reporting & Statistics | Inventory Report | Shows inventory and availability report data. |
+| 20 | Reporting & Statistics | User Statistics | Shows user statistics for administrative review. |
+| 21 | User & Role Management | Admin User Management | Allows admin users to manage user accounts, librarian accounts, roles, permissions, audit logs, and admin console sections. |
