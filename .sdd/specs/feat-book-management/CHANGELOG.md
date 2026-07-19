@@ -9,6 +9,12 @@
 - Passed focused backend 45/45, FE05 SQL 7/7, frontend 6/6, traceability 26/26, diff hygiene, and the aggregate 61/61 SQL gate with cleanup.
 - Browser acceptance and human integration gates remain open.
 
+## 2026-07-19 - Copy Ownership And Route Reconciliation In Progress
+
+- Removed the FE05 availability mutation route and stopped the Book Management UI from changing physical-copy state.
+- Added the canonical protected `/api/admin/books` list route and explicit deactivate/reactivate commands with required reasons.
+- Changed public unavailable copy text to `Không khả dụng`; rowversion, atomic audit, deterministic queries, and remaining task evidence stay pending.
+
 ## 2026-07-18 - Librarian Book Management Navigation
 
 - Added the dedicated Librarian sidebar entry and route `/librarian/books` for FE05 book management.

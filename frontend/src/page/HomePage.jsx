@@ -467,10 +467,6 @@ const HomePage = () => {
     setShowLogoutConfirm(false);
   };
 
-  const markDemoLoggedIn = () => {
-    setAuthState((current) => ({ ...current, isLoggedIn: true }));
-  };
-
   const goToMembership = () => {
     navigate(isLoggedIn ? '/membership' : '/login');
   };
@@ -1060,8 +1056,8 @@ const HomePage = () => {
               { title: 'Tài khoản', links: [
                 { label: 'Đăng nhập', action: () => {} },
                 { label: 'Đăng ký', action: () => {} },
-                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : markDemoLoggedIn() },
-                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : markDemoLoggedIn() },
+                { label: 'Sách đang mượn', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
+                { label: 'Lịch sử đọc', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
               ]},
               { title: 'Hỗ trợ', links: [
                 { label: 'Trung tâm trợ giúp', action: () => showToast('Trung tâm trợ giúp sẽ sớm ra mắt!') },

@@ -6,26 +6,26 @@ Owner: Dung
 
 Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.0 normalized; historical T001-T011 evidence remains separate and FE09-T013 through FE09-T020 are agent-side complete
+Workflow State: SPEC v0.4.1 normalized; historical T001-T011 evidence remains separate and FE09-T013 through FE09-T020 are agent-side complete
 
 ---
 
 ## Historical Server-Side Tasks
 
-The checked tasks below are historical TD-001/002/003 implementation evidence. They are not v0.4.0 completion evidence.
+The checked tasks below are historical TD-001/002/003 implementation evidence. They are not v0.4.1 completion evidence.
 
 | ID | Historical task | Status |
 | --- | --- | --- |
 | FE09-T001 | Fine repository: borrow-detail lookup, fine CRUD, and transaction foundation | [x] DONE |
 | FE09-T002 | Server-side overdue calculation from stored dates | [x] DONE |
 | FE09-T003 | Duplicate-fine prevention | [x] DONE |
-| FE09-T004 | Historical collection workflow | [x] DONE - requires v0.4.0 no-partial reconciliation |
-| FE09-T005 | Mark paid and admin waive/cancel service paths | [x] DONE - requires v0.4.0 contract reconciliation |
+| FE09-T004 | Historical collection workflow | [x] DONE - reconciled by the v0.4.1 no-partial contract |
+| FE09-T005 | Mark paid and admin waive/cancel service paths | [x] DONE - reconciled by the v0.4.1 contract |
 | FE09-T006 | Fine visibility and owner/staff access | [x] DONE - expanded by FE09-T018 |
 | FE09-T007 | Authorization for collection/paid/waive | [x] DONE |
 | FE09-T008 | Audit logs for fine actions | [x] DONE - atomicity expanded by FE09-T016/017 |
-| FE09-T009 | Routes and app wiring while retaining legacy CRUD | [x] DONE - production boundary reconciled by FE09-T014 |
-| FE09-T010 | In-memory server-side route tests | [x] DONE - v0.4.0 cases expanded by FE09-T013 |
+| FE09-T009 | Historical routes and app wiring | [x] DONE - legacy mutation routes were removed from the v0.4.1 production boundary by FE09-T014 |
+| FE09-T010 | In-memory server-side route tests | [x] DONE - v0.4.1 cases expanded by FE09-T013 |
 | FE09-T011 | SQL `Fines` status check update | [x] DONE |
 | FE09-T012 | Frontend alignment | [ ] DEFERRED - canonical API ownership verified; full browser/L4 migration remains TD-004 |
 
@@ -36,16 +36,16 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Files: `backend/tests/fineManagementRoutes.test.js`, create `backend/tests/fineContract.test.js`, create `backend/tests/sql/fineConcurrency.sqltest.js`, create `backend/tests/helpers/inMemoryFineRepositories.js`.
   - Dependency: historical FE09-T001 through FE09-T011.
   - RED: add tests for no partial amount, full payment metadata, timezone boundary, list pagination/order, admin waive/cancel, invalid reason/query, terminal conflicts, and atomic audit failure.
-  - Verify RED: focused backend/SQL commands fail only on v0.4.0 behavior not covered by the historical slice.
-  - DoD: every v0.4.0 acceptance criterion has a concrete assertion.
+  - Verify RED: focused backend/SQL commands fail only on v0.4.1 behavior not covered by the historical slice.
+  - DoD: every v0.4.1 acceptance criterion has a concrete assertion.
 
 - [x] **FE09-T014 - Reconcile schema, model, API, and legacy boundary.**
   - Maps to: BR-FE09-010, BR-FE09-016 through BR-FE09-019; FR-FE09-002, FR-FE09-007, FR-FE09-010, FR-FE09-011, FR-FE09-014 through FR-FE09-016; AC-FE09-002, AC-FE09-006, AC-FE09-011, AC-FE09-013/014.
   - Files: `database/Librarymanagement.sql`, `backend/src/models/Fine.js`, `backend/src/routes/fineRoutes.js`, `backend/src/controllers/fineManagementController.js`, `backend/src/docs/openapi.yaml`, `backend/tests/fineContract.test.js`.
   - Dependency: FE09-T013.
-  - GREEN: expose server-side list, waive, and cancel routes; remove `collectedAmount` from the production contract; retain legacy CRUD only as explicitly deferred demo behavior.
+  - GREEN: expose server-side list, waive, and cancel routes; remove `collectedAmount` from the production contract; leave legacy create/update/delete mutations unregistered with explicit `404` tests.
   - Verify: contract tests assert exact actors, payloads, status codes, pagination, and safe errors.
-  - DoD: schema/model fields match the approved payment metadata, canonical OpenAPI operations are documented, and legacy CRUD is explicitly outside production completion evidence.
+  - DoD: schema/model fields match the approved payment metadata, canonical OpenAPI operations are documented, and legacy mutation routes cannot be mistaken for production behavior.
 
 - [x] **FE09-T015 - Reconcile calculation and duplicate prevention.**
   - Maps to: BR-FE09-005 through BR-FE09-009, BR-FE09-019; FR-FE09-003 through FR-FE09-006, FR-FE09-017; AC-FE09-003 through AC-FE09-005, AC-FE09-015; NFR-FE09-SEC-004, NFR-FE09-TXN-001, NFR-FE09-PERF-002.
@@ -77,7 +77,7 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Dependency: FE09-T014 through FE09-T017.
   - GREEN: route `/api/fines` to server-side list, enforce owner/staff isolation, apply page/limit/status/user filters, order `FineId ASC`, and expose resolved/unpaid state consistently to FE07/FE12.
   - Verify: focused tests cover guest/member/staff roles, unknown IDs, invalid filters, pagination, ordering, and borrowing-block readback.
-  - DoD: legacy CRUD cannot be mistaken for the production list contract.
+  - DoD: legacy mutation routes return `404` and cannot be mistaken for the production list contract.
 
 - [x] **FE09-T019 - Record the frontend migration boundary.**
   - Maps to: BR-FE09-016, AC-FE09-001 through AC-FE09-012, NFR-FE09-UX-001/002.
@@ -101,7 +101,7 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
 - [x] Traceability and `git diff --check` pass.
 - [x] Live SQL passes 9/9 FE09 cases on disposable SQL Server with cleanup evidence.
 - [ ] Browser/L4 and human B7 acceptance gates pass.
-- [x] Human review of SPEC v0.4.0 and this reconciliation plan was confirmed by Nhat on 2026-07-17.
+- [x] Human review of SPEC v0.4.0 and the reconciliation plan was confirmed by Nhat on 2026-07-17; approved v0.4.1 production-boundary updates from `origin/main@3f63a13` are integrated.
 
 ## Out Of This Iteration
 

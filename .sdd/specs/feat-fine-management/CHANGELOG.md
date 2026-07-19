@@ -9,6 +9,12 @@
 - Passed all 9/9 FE09 SQL cases on disposable SQL Server, including concurrent duplicate calculation, one-winner collection, eligibility, and audit rollback; cleanup evidence is recorded in the full-reconciliation Live SQL review.
 - Recorded the frontend boundary: canonical API ownership is verified, while fully server-controlled list presentation and browser/L4 acceptance remain deferred TD-004 and project gates.
 
+## 2026-07-19 - Production Boundary Reconciliation In Progress
+
+- Removed legacy create/update/delete fine routes from the production router and converted their tests to assert `404`.
+- Enforced Phase 1 full-only offline collection by rejecting every client-supplied `collectedAmount`.
+- Reconciled `TEST_PLAN.md` and the approved v0.4.1 review-gate decisions; timezone, pagination, concurrency, atomic audit, and full traceability tasks remain open.
+
 ## 2026-07-18 - Librarian Fine Page Restored
 
 - Restored the `Quản lý tiền phạt` sidebar item and `/librarian/fines` page after clarifying that only the redundant embedded book workspace should be removed.

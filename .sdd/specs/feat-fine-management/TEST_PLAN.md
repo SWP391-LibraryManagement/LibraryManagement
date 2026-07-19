@@ -1,10 +1,10 @@
 # FE09 Test Plan - Fine Management
 
-Version: 0.3.0
+Version: 0.3.1
 Status: READY FOR HUMAN/INTEGRATION REVIEW
 Last Updated: 2026-07-19
 
-Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.0
+Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -14,8 +14,8 @@ Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this
 
 Server-side overdue fine calculation, duplicate prevention, full offline collection, paid/waived/
 cancelled terminal states, audit logging, FE07 eligibility readback, deterministic fine lists, and
-role-protected visibility. The legacy prototype CRUD (`fineService.js`) is kept only for the demo UI
-and is covered separately by `fineRoutes.test.js`; it is not production completion evidence.
+role-protected visibility. Legacy `POST`/`PUT`/`DELETE /api/fines` CRUD routes are not part of the
+production contract and must remain unregistered; `fineRoutes.test.js` verifies that boundary.
 
 FE09-T013 through FE09-T020 now have agent-side RED/GREEN and live SQL evidence. Browser/L4 and
 project human acceptance remain release gates.
@@ -55,7 +55,7 @@ project human acceptance remain release gates.
 ## 5. Current Evidence
 
 - `backend/tests/fineManagementRoutes.test.js` contains the reconciled server-side route coverage (21 tests; AC-FE09-001..015 plus transaction and validation cases).
-- `backend/tests/fineRoutes.test.js` covers the retained legacy prototype CRUD separately.
+- `backend/tests/fineRoutes.test.js` verifies staff list RBAC and that legacy CRUD mutation routes return `404`.
 - `backend/tests/fineContract.test.js` covers the eight canonical OpenAPI operations and the timezone boundary.
 - `backend/tests/sql/fineConcurrency.sqltest.js` passes all three static transaction/contract checks and six mutable SQL cases on the disposable SQL Server runtime.
 - `frontend/test/fineManagementFrontend.test.js` covers canonical API ownership, no demo storage, and the deferred UI boundary.

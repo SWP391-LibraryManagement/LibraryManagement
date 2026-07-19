@@ -12,7 +12,7 @@ jest.mock('../src/controllers/bookController', () => {
     createBook: (req, res) => res.status(201).json({ ok: true }),
     updateBook: ok,
     deactivateBook: ok,
-    updateBookAvailability: ok,
+    reactivateBook: ok,
   };
 });
 

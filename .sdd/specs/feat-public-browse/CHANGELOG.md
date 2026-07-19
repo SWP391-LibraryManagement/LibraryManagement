@@ -7,6 +7,12 @@
 - Replaced HomePage fallback/fake actions with canonical public API state and safe null/unavailable/error rendering.
 - Passed FE01 backend 9/9, frontend 4/4, traceability 13/13, diff hygiene, and disposable SQL availability evidence; human integration remains open.
 
+## 2026-07-19 - Public Safety Reconciliation In Progress
+
+- Replaced the copy-state-revealing `Đã mượn` label with the approved public-safe `Không khả dụng` label.
+- Removed fake homepage login behavior and routed authenticated borrowing-history links to the real role-protected workflow.
+- Public pagination, safe DTO projection, API adapter, and focused FE01 task evidence remain pending.
+
 ## 2026-07-18 - Authenticated Homepage Navigation
 
 - Added a dedicated `Home` sidebar item for Member/Librarian/Admin users that opens the authenticated public library homepage at `/homepage`.

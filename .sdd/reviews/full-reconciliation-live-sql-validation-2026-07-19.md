@@ -4,6 +4,8 @@ Status: PASS
 
 Scope: FE01-FE12 reconciliation SQL-backed validation on local SQL Server.
 
+Final rerun boundary: repeated successfully after integrating `origin/main@3f63a13` into draft PR #40.
+
 ## Isolated Runtime
 
 - Disposable database: `LibraryManagementReconciliationTest`

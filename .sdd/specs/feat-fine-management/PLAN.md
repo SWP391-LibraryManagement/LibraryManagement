@@ -6,7 +6,7 @@ Owner: Dung
 
 Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.0 approved; FE09-T013 through FE09-T020 and live SQL are agent-side complete, with L4 and human review gates open
+Workflow State: SPEC v0.4.1 approved; FE09-T013 through FE09-T020 and live SQL are agent-side complete, with L4 and human review gates open
 
 > **For implementation agents:** Execute the reconciliation tasks after the historical slice review. Treat the approved fine contract as the source of truth: server dates, no client amount, no partial payment, terminal states, and atomic audit/payment updates.
 
@@ -14,11 +14,11 @@ Workflow State: SPEC v0.4.0 approved; FE09-T013 through FE09-T020 and live SQL a
 
 ## 1. Goal
 
-Reconcile the existing FE09 server-side fine workflow and retained prototype UI with the deterministic v0.4.0 contract for overdue calculation, full offline collection, paid/waived/cancelled states, list filtering, timezone, audit, and FE07/FE12 visibility.
+Reconcile the existing FE09 server-side fine workflow and deferred prototype UI with the deterministic v0.4.1 contract for overdue calculation, full offline collection, paid/waived/cancelled states, list filtering, timezone, audit, and FE07/FE12 visibility.
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-fine-management/SPEC.md` v0.4.0.
+- `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1.
 - `.sdd/specs/feat-fine-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-fine-management/TEST_PLAN.md`.
 - `.sdd/specs/feat-borrowing-management/SPEC.md` v0.5.0.
@@ -38,7 +38,7 @@ Reconcile the existing FE09 server-side fine workflow and retained prototype UI 
 | FE09 production behavior is server-side | Resolved for state ownership: the UI calls canonical APIs; deferred TD-004 covers fully server-controlled list presentation and browser acceptance. |
 | Every state/payment change is atomic and audited | Resolved: calculation, collection, paid, waive, and cancel use one mutation/audit transaction with rollback evidence. |
 
-Historical T001-T011 results prove the earlier server-side slice only. They do not close v0.4.0 reconciliation tasks.
+Historical T001-T011 results prove the earlier server-side slice only. They do not close v0.4.1 reconciliation tasks.
 
 ## 4. Scope
 
@@ -66,11 +66,11 @@ Historical T001-T011 results prove the earlier server-side slice only. They do n
 | Area | Files | Responsibility |
 | --- | --- | --- |
 | Data/schema | `database/Librarymanagement.sql`, `backend/src/models/Fine.js`, `.sdd/rfcs/ADR-002-database-design.md` | Verify `OverdueDays`, `RatePerDay`, `PaidAmount`, `PaidAt`, `CollectedBy`, `PaymentMethod`, and terminal status check. |
-| HTTP boundary | `backend/src/routes/fineRoutes.js`, `backend/src/controllers/fineManagementController.js`, `backend/src/controllers/fineController.js` | Route server-side list/detail/calculation/collection/paid/waive/cancel and isolate legacy CRUD. |
+| HTTP boundary | `backend/src/routes/fineRoutes.js`, `backend/src/controllers/fineManagementController.js` | Route server-side list/detail/calculation/collection/paid/waive/cancel; legacy create/update/delete mutations remain unregistered and return `404`. |
 | Business rules | `backend/src/services/fineManagementService.js`, create `backend/src/utils/libraryBusinessTime.js` | Timezone-aware calculation, full collection, terminal states, role/reason validation, and safe errors. |
 | Persistence | `backend/src/repositories/fineRepository.js`, `backend/src/repositories/auditLogRepository.js` | Locked duplicate detection, atomic state/payment/audit writes, list pagination/filter/order. |
 | API docs | `backend/src/docs/openapi.yaml`, `.sdd/specs/feat-fine-management/SPEC.md` | Exact request/response/error contracts. |
-| Backend tests | `backend/tests/fineManagementRoutes.test.js`, `backend/tests/fineRoutes.test.js`, create `backend/tests/fineContract.test.js`, create `backend/tests/sql/fineConcurrency.sqltest.js`, `backend/tests/helpers/inMemoryFineRepositories.js` | Reconciliation tests and historical prototype coverage. |
+| Backend tests | `backend/tests/fineManagementRoutes.test.js`, `backend/tests/fineRoutes.test.js`, create `backend/tests/fineContract.test.js`, create `backend/tests/sql/fineConcurrency.sqltest.js`, `backend/tests/helpers/inMemoryFineRepositories.js` | Reconciliation tests plus explicit legacy-mutation `404` coverage. |
 | Frontend boundary | `frontend/src/page/FineManagement.jsx`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/fineManagementFrontend.test.js` | Canonical API ownership is verified; fully server-controlled list presentation remains deferred TD-004 and is not claimed as complete. |
 
 ## 6. Approved Interfaces
@@ -97,8 +97,8 @@ Resolved fine collection conflicts return `409 FINE_NOT_COLLECTIBLE`; resolved p
 
 ### 7.2 Schema/API Reconciliation
 
-- Verify existing SQL fields and `CK_Fines_Status`; update ADR/OpenAPI only for confirmed v0.4.0 contract gaps.
-- Route management list to server-side service and keep legacy CRUD explicitly outside production completion evidence.
+- Verify existing SQL fields and `CK_Fines_Status`; update ADR/OpenAPI only for confirmed v0.4.1 contract gaps.
+- Route management list to the server-side service and keep legacy create/update/delete mutations outside the production router.
 
 ### 7.3 Calculation And Eligibility Contract
 
@@ -132,7 +132,7 @@ Resolved fine collection conflicts return `409 FINE_NOT_COLLECTIBLE`; resolved p
 
 | Gate | Command | Expected result |
 | --- | --- | --- |
-| FE09 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/fineManagementRoutes.test.js tests/fineRoutes.test.js tests/fineContract.test.js` | Server-side API, legacy isolation, contract, terminal, and permission cases pass. |
+| FE09 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/fineManagementRoutes.test.js tests/fineRoutes.test.js tests/fineContract.test.js` | Server-side API, legacy mutation `404`, contract, terminal, and permission cases pass. |
 | FE09 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/fineConcurrency.sqltest.js` | Duplicate calculation and atomic payment/audit cases pass when SQL configuration is available. |
 | FE09 frontend boundary | `node --test frontend/test/fineManagementFrontend.test.js` | Canonical API ownership, no browser-storage fallback, and deferred TD-004 boundary are verified. |
 | Traceability | `npm.cmd run trace:enforce` | FE09 changed implementation files satisfy the traceability threshold. |
@@ -144,6 +144,6 @@ Resolved fine collection conflicts return `409 FINE_NOT_COLLECTIBLE`; resolved p
 - [x] Nhat confirmed full collection and paid reconciliation use the same payment metadata rules on 2026-07-17.
 - [x] Nhat confirmed waive/cancel ownership and reason length on 2026-07-17.
 - [x] Nhat confirmed the `Asia/Ho_Chi_Minh` calculation boundary on 2026-07-17.
-- [x] Nhat confirmed legacy frontend CRUD remains explicitly deferred and is not production completion evidence on 2026-07-17.
+- [x] Nhat confirmed the prototype frontend is not production completion evidence on 2026-07-17; upstream v0.4.1 removes its legacy create/update/delete server mutations.
 
 Agent-side implementation evidence is recorded in `.sdd/reviews/fe09-fine-reconciliation-validation-2026-07-19.md`; live SQL evidence is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`. Neither substitutes for browser/L4 or project B7 acceptance.

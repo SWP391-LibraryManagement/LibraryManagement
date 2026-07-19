@@ -91,7 +91,7 @@ test('does not leak borrowing-specific messages into other feature APIs', async 
   );
   assert.equal(
     getLibraryFeatureErrorMessage({ response: { status: 403, data: { error: { code: 'MEMBERSHIP_NOT_APPROVED' } } } }),
-    'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.',
+    'Tài khoản hiện tại không có quyền xem dữ liệu này.',
   );
 });
 
@@ -170,11 +170,11 @@ test('keeps FE08 generic error precedence and fallbacks', async () => {
     getReservationErrorMessage({
       response: { status: 401, data: { error: { code: 'ACTIVE_RESERVATION_LIMIT' } } },
     }),
-    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.',
+    'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.',
   );
   assert.equal(
     getReservationErrorMessage({}, 'Reservation fallback.'),
-    'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.',
+    'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.',
   );
   assert.equal(
     getReservationErrorMessage({

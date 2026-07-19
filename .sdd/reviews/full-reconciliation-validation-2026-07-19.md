@@ -4,7 +4,9 @@ Status: LOCAL AUTOMATED, SPEC, AND SAFETY GATES PASS; PR/CI AND HUMAN ACCEPTANCE
 
 Branch: `feat/full-reconciliation`
 
-Baseline: `origin/main@b2ad9b1`
+Initial baseline: `origin/main@b2ad9b1`
+
+Integrated upstream: `origin/main@3f63a13`
 
 ## Decision
 
@@ -26,7 +28,7 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 
 | Gate | Command boundary | Result |
 | --- | --- | --- |
-| Backend regression | `backend`: `npm test` | PASS - 52/52 suites, 891/891 tests |
+| Backend regression | `backend`: `npm test` | PASS - 52/52 suites, 888/888 tests after v0.4.1 removes three legacy mutation cases |
 | Backend coverage | `backend`: `npm run test:coverage:ci` | PASS - 92.69% statements, 81.79% branches, 96.55% functions, 92.62% lines |
 | Frontend regression | `frontend`: `npm test` | PASS - 145/145 tests |
 | Frontend lint | `frontend`: `npm run lint` | PASS |
@@ -44,9 +46,18 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 | Product drift scan | obsolete shared demo exports | PASS - only documented `DEMO_BORROW_CATALOG` and tracked-debt `DEMO_RESERVABLE` remain |
 | Diff hygiene | `git diff --check` | PASS |
 
+## Upstream Integration
+
+After draft PR #40 was opened, `origin/main` had advanced to `3f63a13`. The feature branch merged that state without force-pushing or discarding the new release/RDS/SDS documents.
+
+- FE01/FE05 conflicts kept the reconciliation's canonical public envelope, no-category-endpoint decision, server-owned management pagination, rowversion `If-Match`, transactional audit, and public-safe availability projection.
+- FE09 integrated the newer v0.4.1 production boundary from main: legacy create/update/delete fine mutations remain unregistered and return `404`, while the reconciliation's timezone, pagination, concurrency, full-payment, and atomic audit implementation remains authoritative.
+- Focused post-merge checks passed: 77/77 backend tests, 17/17 frontend tests, and FE01-FE12 traceability at 100%.
+- Full post-merge checks passed: backend 888/888, frontend 145/145, system integration 10/10, deployment 7/7, Playwright 2/2, coverage/lint/build/traceability, and dependency/security/scope scans.
+
 ## Live SQL Gate
 
-The final rerun used a disposable local SQL Server database and SQL login. The credential existed only in process memory and was never written to a file or output.
+The final rerun, repeated after integrating `origin/main@3f63a13`, used a disposable local SQL Server database and SQL login. The credential existed only in process memory and was never written to a file or output.
 
 - Canonical `database/Librarymanagement.sql`: PASS.
 - Five reconciliation migrations in canonical order: PASS on execution 1/2 and 2/2.
@@ -83,4 +94,4 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 
 ## Execution Boundary
 
-Local implementation and validation may proceed to an intentional commit, branch push, and draft PR. The work must not be merged or marked complete until the exact PR checks pass and a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.
+Draft PR #40 targets `main`. The work must not be merged or marked complete until the updated merge commit passes the full local gates and exact PR checks, and a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.

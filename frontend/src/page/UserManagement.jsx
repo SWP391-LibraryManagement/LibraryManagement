@@ -1571,7 +1571,7 @@ function UserManagement() {
             paidAt: now,
             paymentReviewStatus: 'CONFIRMED',
             paymentReviewedAt: now,
-            paymentReviewedBy: currentAdmin?.email || 'admin.demo@library.test',
+            paymentReviewedBy: currentAdmin?.email || null,
           }
         : fine
     );
@@ -1590,7 +1590,7 @@ function UserManagement() {
             collectedAt: '',
             paymentReviewStatus: 'REFUSED',
             paymentReviewedAt: now,
-            paymentReviewedBy: currentAdmin?.email || 'admin.demo@library.test',
+            paymentReviewedBy: currentAdmin?.email || null,
           }
         : fine
     );
