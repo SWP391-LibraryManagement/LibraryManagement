@@ -7,9 +7,9 @@ export default function BackgroundPanel() {
 
       <div className="background-content">
         <div className="library-quote">
-          <h2>Welcome Back</h2>
+          <h2>Chào mừng trở lại</h2>
           <p>
-            Reset your password to continue accessing our library resources
+            Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện
           </p>
         </div>
       </div>

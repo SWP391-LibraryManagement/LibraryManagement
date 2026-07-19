@@ -4,6 +4,7 @@ import { Search, BookOpen, ArrowRight, Menu, X, Calendar, User, Tag, ChevronLeft
 import { publicBrowseApi } from '../api/libraryFeatureApi';
 import { fetchHeaderProfile } from '../api/profileApi';
 import { getHomeBookAction } from '../utils/homeBookActions';
+import { getRoleLabel } from '../utils/uiLabels';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
 const BOOK_COVER_FALLBACK = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=420&fit=crop&auto=format';
@@ -44,13 +45,6 @@ const getStoredAuthState = () => {
     isLoggedIn: false,
     authUser: null,
   };
-};
-
-const getHomeRoleLabel = (roles = []) => {
-  if (roles.includes('ADMIN')) return 'Quản trị viên';
-  if (roles.includes('LIBRARIAN')) return 'Thủ thư';
-  if (roles.includes('MEMBER')) return 'Thành viên';
-  return 'Người dùng';
 };
 
 const getHomeInitials = (name, email) => {
@@ -406,7 +400,9 @@ const HomePage = () => {
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState(null);
   const displayName = headerProfile?.fullName || authUser?.email || 'Tài khoản';
-  const roleLabel = getHomeRoleLabel(authUser?.roles || []);
+  const storedRoles = authUser?.roles || [];
+  const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
+  const roleLabel = getRoleLabel(primaryRole);
   const showMemberAccountActions = roleLabel === 'Thành viên';
   const showAdminConsoleAction = roleLabel === 'Quản trị viên';
   const showLibrarianConsoleAction = roleLabel === 'Thủ thư';

@@ -63,3 +63,18 @@ test('major surfaces no longer hardcode superseded UI fonts', async () => {
   const source = (await Promise.all(files.map((file) => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n');
   assert.doesNotMatch(source, /Playfair Display|Lato, sans-serif|Inter, system-ui|DM Serif Display|Times New Roman|system-ui, 'Segoe UI', Roboto, Arial, sans-serif/);
 });
+
+test('shared shell and recovery surfaces use Vietnamese copy', async () => {
+  const navigation = await readFile(new URL('../src/utils/appNavigation.js', import.meta.url), 'utf8');
+  const layout = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
+  const feedback = await readFile(new URL('../src/component/shared/Feedback.jsx', import.meta.url), 'utf8');
+  const recovery = await readFile(new URL('../src/component/forgotpassword/BackgroundPanel.jsx', import.meta.url), 'utf8');
+
+  assert.match(navigation, /label: 'Thư viện'/);
+  assert.doesNotMatch(navigation, /label: 'Home'/);
+  assert.match(layout, /aria-label="Thư viện"/);
+  assert.doesNotMatch(layout, />Home</);
+  assert.match(feedback, /aria-label="Đóng"/);
+  assert.match(recovery, /Chào mừng trở lại/);
+  assert.match(recovery, /Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện/);
+});

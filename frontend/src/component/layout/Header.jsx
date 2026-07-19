@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { logoutAccount } from '../../api/authApi';
 import { fetchHeaderProfile } from '../../api/profileApi';
+import { getRoleLabel } from '../../utils/uiLabels';
 import UserMenuPopup from './UserMenuPopup';
 
 function getStoredAuthUser() {
@@ -14,13 +15,6 @@ function getStoredAuthUser() {
   } catch {
     return null;
   }
-}
-
-function getRoleLabel(roles = []) {
-  if (roles.includes('ADMIN')) return 'Quản trị viên';
-  if (roles.includes('LIBRARIAN')) return 'Thủ thư';
-  if (roles.includes('MEMBER')) return 'Thành viên';
-  return 'Người dùng';
 }
 
 function getInitials(name, email) {
@@ -63,7 +57,8 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
 
   const displayName = profile?.fullName || storedUser?.email || 'Tài khoản';
   const storedRoles = storedUser?.roles || [];
-  const roleLabel = getRoleLabel(storedRoles);
+  const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
+  const roleLabel = getRoleLabel(primaryRole);
   const showMemberActions = storedRoles.includes('MEMBER')
     && !storedRoles.some((role) => ['ADMIN', 'LIBRARIAN'].includes(role));
   const initials = getInitials(profile?.fullName, storedUser?.email) || 'T';

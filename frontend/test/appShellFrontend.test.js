@@ -74,7 +74,7 @@ test('shared profile menu remains compatible with the header contract', async ()
   assert.doesNotMatch(source, /function BookCopies/);
 });
 
-test('authenticated sidebar renders Home above the role dashboard overview', async () => {
+test('authenticated sidebar renders Thư viện above the role dashboard overview', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
 
   const homePosition = source.indexOf("onClick={() => navigateFromShell('/homepage')}");
@@ -82,6 +82,8 @@ test('authenticated sidebar renders Home above the role dashboard overview', asy
   assert.ok(homePosition >= 0);
   assert.ok(overviewPosition > homePosition);
   assert.match(source, /showLibraryHome &&/);
+  assert.match(source, /<span>Thư viện<\/span>/);
+  assert.match(source, /aria-label="Thư viện"/);
 });
 
 test('account menus hide member-only actions from admin and librarian roles', async () => {

@@ -126,11 +126,11 @@ export default function AppLayout({ title, subtitle, actions, children, showSide
               type="button"
               className={`app-nav-item${libraryHomeIsActive ? ' active' : ''}`}
               onClick={() => navigateFromShell('/homepage')}
-              aria-label="Home"
+              aria-label="Thư viện"
               aria-current={libraryHomeIsActive ? 'page' : undefined}
             >
               <LibraryHomeIcon size={18} />
-              <span>Home</span>
+              <span>Thư viện</span>
             </button>
           )}
 
