@@ -121,76 +121,95 @@ A use case describes a sequence of interactions between an external actor and th
 
 ```mermaid
 flowchart LR
-  subgraph TopRow[" "]
-    direction LR
-    subgraph LeftActors[" "]
-      direction TB
-      Guest[Guest]
-      Member[Member]
+  subgraph LeftActors[" "]
+    direction TB
+    Guest[Guest]
+    Member[Member]
+  end
+
+  subgraph LMS[Library Management System]
+    direction TB
+    subgraph PublicAccount["Public and account services"]
+      direction LR
+      UC01(("UC-01<br/>Browse Books"))
+      UC02(("UC-02<br/>Manage Account Access"))
+      UC03(("UC-03<br/>Manage Profile"))
     end
 
-    subgraph LMS[Library Management System]
-      direction TB
-      UC02(("Manage<br/>Account<br/>Access"))
-      UC03(("Manage<br/>Profile"))
-      UC01(("Browse<br/>Books"))
-      UC04(("Apply For<br/>Membership"))
-      UC07(("Borrow<br/>Books"))
-      UC08(("Reserve<br/>Books"))
-      UC09(("Manage<br/>Fines"))
-      UC05(("Manage<br/>Books"))
-      UC06(("Manage<br/>Book Copies"))
-      UC10(("Send<br/>Notifications"))
-      UC11(("Manage Users<br/>And Roles"))
-      UC12(("Generate<br/>Reports"))
+    subgraph MemberServices["Membership and circulation services"]
+      direction LR
+      UC04(("UC-04<br/>Apply For Membership"))
+      UC07(("UC-07<br/>Borrow Books"))
+      UC08(("UC-08<br/>Reserve Books"))
+      UC09(("UC-09<br/>Manage Fines"))
     end
 
-    subgraph RightActors[" "]
-      direction TB
-      Librarian[Librarian]
-      Admin[Admin]
+    subgraph StaffServices["Staff and administration services"]
+      direction LR
+      UC05(("UC-05<br/>Manage Books"))
+      UC06(("UC-06<br/>Manage Book Copies"))
+      UC10(("UC-10<br/>Send Notifications"))
+      UC11(("UC-11<br/>Manage Users And Roles"))
+      UC12(("UC-12<br/>Generate Reports"))
     end
   end
 
-  EmailService[EmailService]
+  subgraph RightActors[" "]
+    direction TB
+    Librarian[Librarian]
+    Admin[Admin]
+    EmailService[EmailService]
+  end
 
-  Guest --> UC01
-  Guest --> UC02
+  Guest --- UC01
+  Guest --- UC02
 
-  Member --> UC01
-  Member --> UC02
-  Member --> UC03
-  Member --> UC04
-  Member --> UC07
-  Member --> UC08
-  Member --> UC09
+  Member --- UC01
+  Member --- UC02
+  Member --- UC03
+  Member ---|"submit / view status"| UC04
+  Member ---|"request / view history / renew"| UC07
+  Member ---|"create / cancel / view own"| UC08
+  Member ---|"view own fines"| UC09
 
-  Librarian --> UC04
-  Librarian --> UC05
-  Librarian --> UC06
-  Librarian --> UC07
-  Librarian --> UC08
-  Librarian --> UC09
-  Librarian --> UC10
-  Librarian --> UC12
+  UC02 --- Librarian
+  UC03 --- Librarian
+  UC04 ---|"approve / reject"| Librarian
+  UC05 --- Librarian
+  UC06 --- Librarian
+  UC07 ---|"approve / reject / process return"| Librarian
+  UC08 ---|"manage queue / fulfill"| Librarian
+  UC09 ---|"calculate / collect / resolve"| Librarian
+  UC10 --- Librarian
+  UC12 --- Librarian
 
-  Admin --> UC04
-  Admin --> UC05
-  Admin --> UC06
-  Admin --> UC07
-  Admin --> UC08
-  Admin --> UC09
-  Admin --> UC10
-  Admin --> UC11
-  Admin --> UC12
+  UC02 --- Admin
+  UC03 --- Admin
+  UC04 ---|"approve / reject"| Admin
+  UC05 --- Admin
+  UC06 --- Admin
+  UC07 ---|"approve / reject / process return"| Admin
+  UC08 ---|"manage queue / fulfill"| Admin
+  UC09 ---|"calculate / collect / resolve"| Admin
+  UC10 --- Admin
+  UC11 --- Admin
+  UC12 --- Admin
 
-  EmailService --> UC10
+  UC10 ---|"deliver email"| EmailService
+
+  UC02 -. "&lt;&lt;include&gt;&gt;" .-> UC10
+  UC04 -. "&lt;&lt;include&gt;&gt;" .-> UC10
+  UC07 -. "&lt;&lt;include&gt;&gt;" .-> UC06
+  UC09 -. "&lt;&lt;extend&gt;&gt; overdue / lost / damaged" .-> UC07
+  UC08 -. "&lt;&lt;include&gt;&gt;" .-> UC06
+  UC08 -. "&lt;&lt;include&gt;&gt;" .-> UC10
+  UC09 -. "&lt;&lt;include&gt;&gt;" .-> UC10
+  UC11 -. "&lt;&lt;include&gt;&gt; account setup" .-> UC10
 
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
   class Guest,Member,Librarian,Admin,EmailService actor;
-  style TopRow fill:transparent,stroke:transparent;
   style LeftActors fill:transparent,stroke:transparent;
   style RightActors fill:transparent,stroke:transparent;
 ```
@@ -200,8 +219,8 @@ flowchart LR
 | UC ID | Use Case Name | Primary Actor(s) | Supporting Actor(s) | Outcome |
 | ----- | ------------- | ---------------- | ------------------- | ------- |
 | UC-01 | Browse Books | Guest, Member | - | Actor can search, browse, and view public book information and current availability. |
-| UC-02 | Manage Account Access | Guest, Member, Admin-created user | EmailService | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
-| UC-03 | Manage Profile | Member | - | Member can view and update profile information, including avatar where supported. |
+| UC-02 | Manage Account Access | Guest, Member, Librarian, Admin | EmailService | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
+| UC-03 | Manage Profile | Member, Librarian, Admin | - | Authenticated actor can view and update personal profile information, including avatar where supported. |
 | UC-04 | Apply For Membership | Member, Librarian, Admin | EmailService | Member can submit a membership application and authorized staff can approve or reject it. |
 | UC-05 | Manage Books | Librarian, Admin | - | Authorized staff can create, update, deactivate, reactivate, search, and view book catalog records. |
 | UC-06 | Manage Book Copies | Librarian, Admin | - | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
@@ -221,7 +240,7 @@ Internal database dependency: `UC-01` to `UC-12` read from or write to SQL Serve
 | UC-02 includes UC-10 | Account registration, verification, password reset, and admin-created account setup require notification delivery. |
 | UC-04 includes UC-10 | Membership approval or rejection can queue a membership result notification. |
 | UC-07 includes UC-06 | Borrowing and returning depend on current physical copy status and availability. |
-| UC-07 extends UC-09 | Returning an overdue, lost, or damaged copy may trigger fine calculation or fine management. |
+| UC-09 extends UC-07 | Returning an overdue, lost, or damaged copy may trigger fine calculation or fine management. |
 | UC-08 includes UC-06 | Reservation queue processing depends on physical copy availability. |
 | UC-08 includes UC-10 | Reservation availability and queue events can trigger notifications. |
 | UC-09 includes UC-10 | Fine and overdue events can trigger due date or fine notifications. |
