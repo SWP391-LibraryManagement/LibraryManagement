@@ -109,7 +109,7 @@ A use case describes a sequence of interactions between an external actor and th
 ##### Figure 1. Overall Use Case Diagram
 
 ```mermaid
-flowchart TB
+flowchart LR
   subgraph TopRow[" "]
     direction LR
     subgraph LeftActors[" "]
@@ -120,18 +120,18 @@ flowchart TB
 
     subgraph LMS[Library Management System]
       direction TB
-      UC01{"Browse<br/>Books"}
-      UC02{"Manage<br/>Account<br/>Access"}
-      UC03{"Manage<br/>Profile"}
-      UC04{"Apply For<br/>Membership"}
-      UC05{"Manage<br/>Books"}
-      UC06{"Manage<br/>Book Copies"}
-      UC07{"Borrow<br/>Books"}
-      UC08{"Reserve<br/>Books"}
-      UC09{"Manage<br/>Fines"}
-      UC10{"Send<br/>Notifications"}
-      UC11{"Manage Users<br/>And Roles"}
-      UC12{"Generate<br/>Reports"}
+      UC02(("Manage<br/>Account<br/>Access"))
+      UC03(("Manage<br/>Profile"))
+      UC01(("Browse<br/>Books"))
+      UC04(("Apply For<br/>Membership"))
+      UC07(("Borrow<br/>Books"))
+      UC08(("Reserve<br/>Books"))
+      UC09(("Manage<br/>Fines"))
+      UC05(("Manage<br/>Books"))
+      UC06(("Manage<br/>Book Copies"))
+      UC10(("Send<br/>Notifications"))
+      UC11(("Manage Users<br/>And Roles"))
+      UC12(("Generate<br/>Reports"))
     end
 
     subgraph RightActors[" "]
@@ -176,7 +176,9 @@ flowchart TB
   EmailService --> UC10
 
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
+  class Guest,Member,Librarian,Admin,EmailService actor;
   style TopRow fill:transparent,stroke:transparent;
   style LeftActors fill:transparent,stroke:transparent;
   style RightActors fill:transparent,stroke:transparent;
