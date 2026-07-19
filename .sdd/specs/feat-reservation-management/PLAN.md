@@ -1,12 +1,12 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: APPROVED - V0.4.4 CANDIDATE CONTRACT; IMPLEMENTATION IN PROGRESS
+Status: APPROVED - V0.4.4 CANDIDATE AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-19
 
-Workflow State: FE08-T028 through FE08-T034 are agent-side complete; FE08-T035 through FE08-T039 implement approved TD-028; final repository/human integration remains open
+Workflow State: FE08-T028 through FE08-T039 are agent-side complete; final repository/human integration remains open
 
 ---
 
@@ -127,8 +127,8 @@ Not included:
 - This plan covers the approved backend and frontend reservation slice.
 - Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
 - FE07 approval may fulfill only the matching notified reservation; automatic queue processing after return remains out of scope for Phase 1.
-- The v0.4.2 contract normalization is not implementation completion evidence; FE08-T028 through FE08-T033 remain pending.
-- The v0.4.4 candidate contract was explicitly approved on 2026-07-19; it does not close TD-028 until FE08-T035 through FE08-T039 and all validation gates pass.
+- The v0.4.2/v0.4.3 reconciliation tasks are implemented and retain their historical evidence boundary.
+- The v0.4.4 candidate contract was explicitly approved and passes focused/full automated gates; final H3, merge, and post-merge `main` CI remain open.
 
 ## 5. B7 Closeout Evidence
 
@@ -160,5 +160,6 @@ Not included:
 - [x] User approved TD-028 Option A on 2026-07-19.
 - [x] User approved `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md` on 2026-07-19.
 - [x] Implementation plan recorded in `docs/superpowers/plans/2026-07-19-fe08-reservation-candidate-catalog.md`.
-- [ ] FE08-T035 through FE08-T039 implementation and evidence pass.
-- [ ] Decision Gate A and final H3 packet are updated against the final green PR head.
+- [x] FE08-T035 through FE08-T039 implementation and evidence pass.
+- [x] Decision Gate A records the approved Option A contract.
+- [ ] Decision Gate B / H3 is updated against the final green PR head and CI after the human walkthrough.

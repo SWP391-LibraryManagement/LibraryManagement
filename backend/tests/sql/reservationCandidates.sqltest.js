@@ -154,7 +154,13 @@ runtimeDescribe('FE08 live SQL reservation candidate catalog', () => {
       `);
     seed.reservationIds.push(terminalReservation.recordset[0].ReservationId);
 
-    const result = await reservationRepository.listReservationCandidates({ page: 1, limit: 20 });
+    // Scope the catalog query to this run so canonical baseline rows cannot
+    // change the expected ordering or page contents.
+    const result = await reservationRepository.listReservationCandidates({
+      q: seed.key,
+      page: 1,
+      limit: 20,
+    });
     expect(result.rows.map((row) => row.copyId)).toEqual([reservedCopyId, borrowedCopyId]);
     expect(result.rows).toEqual(expect.arrayContaining([
       expect.objectContaining({ copyId: borrowedCopyId, copyStatus: 'BORROWED', activeReservationCount: 1 }),

@@ -4,7 +4,7 @@ Status: PASS
 
 Scope: FE01-FE12 reconciliation SQL-backed validation on local SQL Server.
 
-Final rerun boundary: repeated successfully after integrating `origin/main@3f63a13` into draft PR #40.
+Final rerun boundary: repeated successfully after integrating the approved FE08 reservation candidate catalog into draft PR #40.
 
 ## Isolated Runtime
 
@@ -38,10 +38,11 @@ Command boundary: Jest `**/*.sqltest.js` with the feature mutation flags enabled
 | `backend/tests/sql/bookConcurrency.sqltest.js` | PASS |
 | `backend/tests/sql/inventoryConcurrency.sqltest.js` | PASS |
 | `backend/tests/sql/borrowingConcurrency.sqltest.js` | PASS |
+| `backend/tests/sql/reservationCandidates.sqltest.js` | PASS |
 | `backend/tests/sql/fineConcurrency.sqltest.js` | PASS |
 | `backend/tests/sql/systemIntegration.sqltest.js` | PASS |
 
-Aggregate result: **8/8 suites, 61/61 tests passed**.
+Aggregate result: **9/9 suites, 63/63 tests passed**.
 
 ## Defects Exposed During Live Validation
 
@@ -50,6 +51,7 @@ Aggregate result: **8/8 suites, 61/61 tests passed**.
 3. FE12 system SQL assertions expected stale payload fields and were aligned to the deterministic contract.
 4. The FE07 concurrency barrier conflicted with the intentional member-scoped `sp_getapplock`; the test now accepts only the approved serialized outcomes.
 5. FE05 compared a canonical 16-character rowversion hex string with an 8-byte binary string returned by the `mssql` driver for `CONVERT(VARCHAR, RowVersion, 2)`, so every valid update/deactivate/reactivate was classified as stale. FE05 now reads raw rowversion buffers and normalizes both comparison operands through one hex encoder.
+6. The FE08 candidate suite initially assumed an empty candidate baseline, but the canonical seed already contains a borrowed copy. The fixture query is now scoped by its generated search key so it validates projection, filtering, counts, ordering, and pagination without treating valid baseline candidates as test-owned rows.
 
 ## Cleanup Evidence
 

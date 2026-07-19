@@ -20,14 +20,14 @@ until a named reviewer records an explicit decision.
 
 | Gate | Evidence |
 | --- | --- |
-| Backend regression | 52/52 suites, 893/893 tests |
-| Backend coverage | 92.69% statements, 81.79% branches, 96.55% functions, 92.62% lines |
-| Frontend regression | 146/146 tests |
+| Backend regression | 52/52 suites, 896/896 tests |
+| Backend coverage | 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
+| Frontend regression | 147/147 tests |
 | Frontend quality | lint PASS; production build PASS with the known non-blocking chunk warning |
 | System integration | 10/10 tests |
-| Live SQL | baseline PASS; five migrations twice; 8/8 suites, 61/61 tests; `DB_CLEAN`, `LOGIN_CLEAN` |
-| Browser/L4 | FE09, FE11, and system golden path 3/3 on isolated ports `4185/3101` |
-| Traceability | FE01-FE12 all 100%; enforcement PASS |
+| Live SQL | baseline PASS; five migrations twice; 9/9 suites, 63/63 tests; FE08 candidate `2/2`; `DB_CLEAN`, `LOGIN_CLEAN` |
+| Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
+| Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
 | Pull request | PR #40 is draft, clean, mergeable, and CI run `29680968800` passes on the recorded head |
 
@@ -35,6 +35,7 @@ Authoritative consolidated evidence:
 
 - `.sdd/reviews/full-reconciliation-validation-2026-07-19.md`
 - `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`
+- `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`
 - `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`
 - `.sdd/reviews/fe09-fine-reconciliation-validation-2026-07-19.md`
 - `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`
@@ -42,24 +43,23 @@ Authoritative consolidated evidence:
 
 ## Decision Gate A - FE08 Reservation Candidate Contract
 
-`TD-028` remains open. `MyReservationsPage` still uses hardcoded `DEMO_RESERVABLE` copy candidates
-because the current contracts intentionally provide no member-safe source of physical `CopyId`
-targets:
+`TD-028` is resolved for agent-side implementation and validation. The approved member-only
+candidate contract now replaces `DEMO_RESERVABLE` with a SQL-backed safe projection:
 
 - FE08 requires physical `CopyId` for reservation creation.
 - FE01 public browse exposes only high-level availability and hides physical copy identifiers.
 - FE06 direct copy reads are Librarian/Admin-only.
 
 No implementation may invent or widen this cross-feature contract without explicit human approval.
-Record the approved option or requested revision here before implementation:
+The requestor approved Option A and the written design as follows:
 
-Reviewer:
+Reviewer: Human requestor (chat approval)
 
-Date:
+Date: 2026-07-19
 
-Decision: APPROVED / CHANGES REQUIRED
+Decision: APPROVED - Option A
 
-Approved contract reference or notes:
+Approved contract reference or notes: `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md`; member-only `GET /api/reservations/candidates`, six-field redacted rows, server-owned search/pagination, and authoritative `POST /api/reservations { copyId }`.
 
 ## Human Product Walkthrough
 

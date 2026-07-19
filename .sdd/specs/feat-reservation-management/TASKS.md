@@ -1,12 +1,12 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: APPROVED - V0.4.3 RECONCILIATION AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
+Status: APPROVED - V0.4.4 CANDIDATE AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-17
+Updated: 2026-07-19
 
-Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repository/human integration remains open
+Workflow State: FE08-T028 through FE08-T039 are agent-side complete; final repository/human integration remains open
 
 ---
 
@@ -110,27 +110,31 @@ Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repos
   - Files: FE08 `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`; candidate design and implementation plan.
   - DoD: Option A and the written design are explicitly human-approved; query, projection, role, ordering, and non-goals are unambiguous.
 
-- [ ] **FE08-T036 - Implement and validate the backend candidate API.**
+- [x] **FE08-T036 - Implement and validate the backend candidate API.**
   - Maps to: FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003.
   - Files: FE08 validators/routes/controller/service/repository, OpenAPI, in-memory helper, route tests, and `backend/tests/sql/reservationCandidates.sqltest.js`.
   - RED: role, query, safe-key, status, search, ordering, pagination, active-count, and no-mutation cases fail before the route exists.
   - GREEN: member-only `{ data, pagination }` projection passes focused Jest and disposable SQL Server suites.
+  - Validation: backend candidate contract `23/23`; focused SQL `2/2`; aggregate SQL `9/9` suites and `63/63` tests.
 
-- [ ] **FE08-T037 - Replace `DEMO_RESERVABLE` with canonical server candidates.**
+- [x] **FE08-T037 - Replace `DEMO_RESERVABLE` with canonical server candidates.**
   - Maps to: FR-FE08-029, AC-FE08-015/016, NFR-FE08-PERF-003.
   - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`, `frontend/src/utils/libraryFeatureViewModels.js`, `frontend/test/reservationFrontend.test.js`.
   - RED: source tests fail while the page imports the demo catalog or lacks `reservationApi.listCandidates`.
   - GREEN: server search/page state, loading/empty/error states, real `copyId` mutation, and post-mutation refresh pass without invented ETA or availability counts.
+  - Validation: frontend `147/147`, lint PASS, build PASS, and no `DEMO_RESERVABLE` reference remains.
 
-- [ ] **FE08-T038 - Add isolated browser acceptance for candidate selection.**
+- [x] **FE08-T038 - Add isolated browser acceptance for candidate selection.**
   - Maps to: FR-FE08-029, AC-FE08-015/016.
   - Files: `tests/e2e/fe08-reservation-candidate-catalog.spec.js` and deterministic E2E support only if required.
   - DoD: member catalog, search query, safe payload, real reservation creation, canonical refresh, and mobile overflow pass on isolated ports.
+  - Validation: focused FE08 browser `1/1`; full Playwright `4/4` on `4185/3101`.
 
-- [ ] **FE08-T039 - Close TD-028 with full validation evidence.**
+- [x] **FE08-T039 - Close TD-028 with full validation evidence.**
   - Maps to: all v0.4.4 candidate IDs.
   - Files: `TECH_DEBT.md`, focused validation review, full acceptance packet, and PR evidence.
   - DoD: focused/full backend/frontend/coverage/integration/SQL/E2E/traceability/safety gates pass; TD-028 moves to RESOLVED; final H3 remains explicit.
+  - Validation: evidence recorded in `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`; H3 and post-merge `main` CI remain human gates.
 
 ## 5. Validation
 
@@ -147,12 +151,12 @@ Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repos
 - [x] `git diff --check` passes.
 - [x] Nhat confirmed human review of the normalized contract on 2026-07-17.
 
-### 5.2 Pending V0.4.4 Candidate Validation
+### 5.2 Completed V0.4.4 Candidate Validation
 
-- [ ] FE08-T036 backend route and SQL tests pass.
-- [ ] FE08-T037 frontend tests, lint, and build pass with no `DEMO_RESERVABLE` reference.
-- [ ] FE08-T038 isolated browser acceptance passes.
-- [ ] FE08-T039 full regression, traceability, safety, evidence, PR CI, and human acceptance closeout pass.
+- [x] FE08-T036 backend route and SQL tests pass: focused backend `23/23`; SQL aggregate `9/9` suites, `63/63` tests.
+- [x] FE08-T037 frontend tests, lint, and build pass with no `DEMO_RESERVABLE` reference.
+- [x] FE08-T038 isolated browser acceptance passes: focused `1/1`; full Playwright `4/4` on `4185/3101`.
+- [x] FE08-T039 full regression, traceability, safety, and evidence gates pass; final H3, merge, and post-merge `main` CI remain open.
 
 ## 6. Traceability
 

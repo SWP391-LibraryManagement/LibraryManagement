@@ -6,7 +6,14 @@
 - Locked the safe projection to `copyId`, `bookId`, title, nullable author, `BORROWED`/`RESERVED` status, and active queue count.
 - Preserved FE01 public redaction, FE06 staff inventory access, and `POST /api/reservations { copyId }` mutation semantics.
 - Added server-owned `q`/page/limit behavior, deterministic ordering, implementation tasks FE08-T035 through FE08-T039, and SQL/browser validation gates.
-- Implementation remains in progress; `TD-028` stays open until all focused/full evidence and human integration gates pass.
+- User approved Option A and the written design on 2026-07-19; implementation and focused/full automated validation are now complete, while human H3 integration remains open.
+
+## 2026-07-19 - V0.4.4 Candidate Catalog Validated
+
+- Added the member-only SQL-backed candidate catalog and migrated the member page off `DEMO_RESERVABLE`.
+- Validated the redacted six-field projection, eligible statuses, server search/pagination, real `copyId` mutation, and canonical refresh through backend, frontend, SQL, and browser gates.
+- Aggregate disposable SQL validation passes `9/9` suites and `63/63` tests after two migration passes; cleanup leaves no disposable database or login.
+- Closed `TD-028` for agent-side validation; final H3, merge, and post-merge `main` CI remain human gates.
 
 ## 2026-07-19 - Reservation Candidate Drift Recorded
 
