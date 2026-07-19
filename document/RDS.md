@@ -443,25 +443,27 @@ erDiagram
   Users ||--o{ AuditLogs : "acts in"
 ```
 
-| Table | Purpose | Main Relationship(s) |
-| ----- | ------- | -------------------- |
-| Roles | Stores system role definitions. | One role can be assigned to many UserRoles. |
-| Users | Stores login account and account status data. | One user can have roles, profile, member record, auth tokens, borrow requests, reservations, fines, notifications, and audit logs. |
-| UserRoles | Maps users to roles. | Many-to-many join between Users and Roles. |
-| UserProfiles | Stores personal profile data. | One profile belongs to one user. |
-| Members | Stores library member status. | One member record belongs to one user and may be approved by another user. |
-| MembershipApplications | Stores membership application and review records. | Each application belongs to one user and may be reviewed by another user. |
-| AuthTokens | Stores verification, reset, refresh, and setup tokens. | Each token belongs to one user. |
-| Categories | Stores book categories. | One category can group many books. |
-| Authors | Stores author information. | One author can be linked to many books. |
-| Publishers | Stores publisher information. | One publisher can be linked to many books. |
-| Books | Stores catalog metadata. | Each book belongs to one category, author, publisher, and can have many physical copies. |
-| BookCopies | Stores physical copy, barcode, location, and status. | Each copy belongs to one book and can be used by borrow details or reservations. |
-| BorrowRequests | Stores borrowing request headers. | Each request belongs to a user and contains borrow details. |
-| BorrowDetails | Stores per-copy borrow, return, and status data. | Each detail belongs to one borrow request and one book copy. |
-| Reservations | Stores reservation queue records. | Each reservation belongs to one user and one book copy. |
-| Fines | Stores fine records and paid status. | Each fine belongs to one user and may be linked to one borrow detail. |
-| NotificationTemplates | Stores reusable notification templates. | One template can render many notifications. |
-| Notifications | Stores notification requests and status. | Each notification may belong to a user and template, and can have delivery attempts. |
-| NotificationAttempts | Stores delivery attempt results. | Each attempt belongs to one notification. |
-| AuditLogs | Stores important administrative action logs. | Each audit log may be linked to the user who performed the action. |
+#### b. Table Descriptions
+
+| No | Table | Description |
+| -- | ----- | ----------- |
+| 01 | Roles | Stores system role definitions.<br/>- Primary keys: RoleId<br/>- Foreign keys: None |
+| 02 | Users | Stores login account, email, password hash, phone, account status, and login tracking data.<br/>- Primary keys: UserId<br/>- Foreign keys: None |
+| 03 | UserRoles | Stores many-to-many assignments between users and roles.<br/>- Primary keys: UserId, RoleId<br/>- Foreign keys: UserId, RoleId |
+| 04 | UserProfiles | Stores personal profile information for a user.<br/>- Primary keys: ProfileId<br/>- Foreign keys: UserId |
+| 05 | Members | Stores library membership status for a user.<br/>- Primary keys: MemberId<br/>- Foreign keys: UserId, ApprovedBy |
+| 06 | MembershipApplications | Stores membership application and review records.<br/>- Primary keys: ApplicationId<br/>- Foreign keys: UserId, ReviewedBy |
+| 07 | AuthTokens | Stores refresh, password reset, email verification, and account setup token hashes.<br/>- Primary keys: TokenId<br/>- Foreign keys: UserId |
+| 08 | Categories | Stores book category information.<br/>- Primary keys: CategoryId<br/>- Foreign keys: None |
+| 09 | Authors | Stores author information.<br/>- Primary keys: AuthorId<br/>- Foreign keys: None |
+| 10 | Publishers | Stores publisher information.<br/>- Primary keys: PublisherId<br/>- Foreign keys: None |
+| 11 | Books | Stores catalog metadata such as title, ISBN, category, author, publisher, cover, rating, pages, and status.<br/>- Primary keys: BookId<br/>- Foreign keys: CategoryId, AuthorId, PublisherId, CreatedBy, UpdatedBy |
+| 12 | BookCopies | Stores physical copy records, barcode, status, and location.<br/>- Primary keys: CopyId<br/>- Foreign keys: BookId |
+| 13 | BorrowRequests | Stores borrow request header data, request status, approval data, and processing timestamps.<br/>- Primary keys: RequestId<br/>- Foreign keys: UserId, CreatedBy, ApprovedBy |
+| 14 | BorrowDetails | Stores per-copy borrow data, borrow date, due date, return date, renewal count, and copy-level status.<br/>- Primary keys: BorrowDetailId<br/>- Foreign keys: RequestId, CopyId |
+| 15 | Reservations | Stores reservation queue records for users and book copies.<br/>- Primary keys: ReservationId<br/>- Foreign keys: UserId, CopyId |
+| 16 | Fines | Stores fine amount, overdue days, paid amount, reason, status, payment method, and collection data.<br/>- Primary keys: FineId<br/>- Foreign keys: UserId, BorrowDetailId, CreatedBy, CollectedBy |
+| 17 | NotificationTemplates | Stores reusable email notification templates.<br/>- Primary keys: TemplateId<br/>- Foreign keys: None |
+| 18 | Notifications | Stores notification requests, recipient email, delivery status, source metadata, and safe payload.<br/>- Primary keys: NotificationId<br/>- Foreign keys: TemplateId, UserId |
+| 19 | NotificationAttempts | Stores individual notification delivery attempt results.<br/>- Primary keys: AttemptId<br/>- Foreign keys: NotificationId |
+| 20 | AuditLogs | Stores administrative action logs, target metadata, IP address, user agent, and creation time.<br/>- Primary keys: LogId<br/>- Foreign keys: UserId |
