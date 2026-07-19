@@ -1,38 +1,53 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import LoginPage from './page/LoginPage';
-import RegisterPage from './page/RegisterPage';
-import ForgotPasswordPage from './page/ForgotPasswordPage';
-import HomeRoutePage from './page/dashboard/HomeRoutePage';
-import UserManagement from './page/UserManagement';
-import FineManagement from './page/FineManagement';
-import UserProfilePage from './page/UserProfilePage';
-import InventoryPage from './page/InventoryPage';
-import BookManagementPage from './page/BookManagementPage';
 import ReportRouteGuard from './component/report/ReportRouteGuard';
 import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
-import MembershipPage from './page/MembershipPage';
-import HomePage from './page/HomePage';
-import ForbiddenPage from './page/error/ForbiddenPage';
+
+const LoginPage = lazy(() => import('./page/LoginPage'));
+const RegisterPage = lazy(() => import('./page/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./page/ForgotPasswordPage'));
+const HomeRoutePage = lazy(() => import('./page/dashboard/HomeRoutePage'));
+const UserManagement = lazy(() => import('./page/UserManagement'));
+const FineManagement = lazy(() => import('./page/FineManagement'));
+const UserProfilePage = lazy(() => import('./page/UserProfilePage'));
+const InventoryPage = lazy(() => import('./page/InventoryPage'));
+const BookManagementPage = lazy(() => import('./page/BookManagementPage'));
+const MembershipPage = lazy(() => import('./page/MembershipPage'));
+const HomePage = lazy(() => import('./page/HomePage'));
+const ForbiddenPage = lazy(() => import('./page/error/ForbiddenPage'));
 
 // FE07 · Borrowing Management
-import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
-import BorrowingHistoryPage from './page/borrowing/BorrowingHistoryPage';
-import BorrowRequestsAdminPage from './page/borrowing/BorrowRequestsAdminPage';
-import ProcessReturnsPage from './page/borrowing/ProcessReturnsPage';
-import MemberBorrowingDetailsPage from './page/borrowing/MemberBorrowingDetailsPage';
+const BorrowRequestPage = lazy(() => import('./page/borrowing/BorrowRequestPage'));
+const BorrowingHistoryPage = lazy(() => import('./page/borrowing/BorrowingHistoryPage'));
+const BorrowRequestsAdminPage = lazy(() => import('./page/borrowing/BorrowRequestsAdminPage'));
+const ProcessReturnsPage = lazy(() => import('./page/borrowing/ProcessReturnsPage'));
+const MemberBorrowingDetailsPage = lazy(() => import('./page/borrowing/MemberBorrowingDetailsPage'));
 // FE08 · Reservation Management
-import MyReservationsPage from './page/reservation/MyReservationsPage';
-import ReservationsLibrarianPage from './page/reservation/ReservationsLibrarianPage';
+const MyReservationsPage = lazy(() => import('./page/reservation/MyReservationsPage'));
+const ReservationsLibrarianPage = lazy(() => import('./page/reservation/ReservationsLibrarianPage'));
 // FE12 · Reporting & Statistics
-import BorrowingReportPage from './page/report/BorrowingReportPage';
-import InventoryReportPage from './page/report/InventoryReportPage';
-import UserStatisticsPage from './page/report/UserStatisticsPage';
+const BorrowingReportPage = lazy(() => import('./page/report/BorrowingReportPage'));
+const InventoryReportPage = lazy(() => import('./page/report/InventoryReportPage'));
+const UserStatisticsPage = lazy(() => import('./page/report/UserStatisticsPage'));
 
+function RouteLoadingFallback() {
+  return (
+    <div
+      className="d-flex min-vh-100 align-items-center justify-content-center gap-3"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="spinner-border" aria-hidden="true" />
+      <span>Đang tải trang...</span>
+    </div>
+  );
+}
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
 
       <Route path="/login" element={<LoginPage />} />
@@ -67,7 +82,8 @@ function App() {
       <Route path="/membership" element={<MembershipPage />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

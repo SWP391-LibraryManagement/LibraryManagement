@@ -11,6 +11,7 @@
     "schema:azure:prepare": "node scripts/prepare-azure-schema.js",
     "smoke:staging": "node scripts/smoke-staging.js",
     "docs:screenshots": "playwright test tests/e2e/system-golden-path.spec.js --project=chromium && node scripts/promote-doc-screenshots.js",
+    "phase3:performance": "node scripts/phase3-performance.js",
     "test:traceability-state": "node --test scripts/traceability-state.test.js",
     "trace": "node scripts/check-traceability.js",
     "trace:enforce": "node scripts/check-traceability.js --enforce --min=70"
