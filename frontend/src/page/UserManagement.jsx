@@ -706,6 +706,20 @@ function formatAuditDetailEntries(details) {
   ));
 }
 
+function getAuditTarget(log) {
+  const targetType = log.target?.type || '';
+  const reportType = targetType.toUpperCase() === 'REPORT' ? log.details?.reportType : null;
+  return {
+    label: reportType || log.target?.label || (log.target?.id ? `#${log.target.id}` : '-'),
+    type: targetType,
+  };
+}
+
+function getAuditDetailEntries(log) {
+  if (log.target?.type?.toUpperCase() !== 'REPORT') return formatAuditDetailEntries(log.details);
+  return formatAuditDetailEntries(log.details).filter(([key]) => key !== 'reportType');
+}
+
 function formatAuditDetailValue(value) {
   if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
   if (typeof value === 'boolean') return value ? 'Có' : 'Không';
@@ -1667,6 +1681,9 @@ function UserManagement() {
   if (!access.authenticated) return <Navigate to="/login" replace />;
   if (!access.isAdmin) return <Navigate to="/home" replace />;
 
+  const showAuditDetails = activeSection === 'audit'
+    && auditLogs.some((log) => getAuditDetailEntries(log).length > 0);
+
   return (
     <div className="um-shell">
       <Sidebar
@@ -2289,27 +2306,6 @@ function UserManagement() {
                 />
               </div>
               <input
-                aria-label="Lọc hành động"
-                value={auditFilters.action}
-                maxLength={100}
-                placeholder="AUTH_LOGIN_SUCCESS"
-                onChange={(event) => setAuditFilters((current) => ({
-                  ...current,
-                  action: event.target.value,
-                }))}
-              />
-              <input
-                aria-label="Actor ID"
-                type="number"
-                min="1"
-                step="1"
-                value={auditFilters.actorId}
-                onChange={(event) => setAuditFilters((current) => ({
-                  ...current,
-                  actorId: event.target.value,
-                }))}
-              />
-              <input
                 aria-label="Từ ngày"
                 type="date"
                 value={auditFilters.from}
@@ -2361,7 +2357,7 @@ function UserManagement() {
                   <th>Hành động</th>
                   <th>Người thực hiện</th>
                   <th>Đối tượng</th>
-                  <th>Chi tiết an toàn</th>
+                  {showAuditDetails && <th>Chi tiết an toàn</th>}
                   <th>IP</th>
                   <th>Thời gian</th>
                 </tr>
@@ -2375,13 +2371,13 @@ function UserManagement() {
                       {log.actor?.fullName && log.actor?.email && <small>{log.actor.email}</small>}
                     </td>
                     <td>
-                      <strong>{log.target?.label || (log.target?.id ? `#${log.target.id}` : '-')}</strong>
-                      {log.target?.type && <small>{log.target.type}</small>}
+                      <strong>{getAuditTarget(log).label}</strong>
+                      {getAuditTarget(log).type && <small>{getAuditTarget(log).type}</small>}
                     </td>
-                    <td>
-                      {formatAuditDetailEntries(log.details).length === 0 ? '-' : (
+                    {showAuditDetails && <td>
+                      {getAuditDetailEntries(log).length === 0 ? '-' : (
                         <dl className="um-audit-details">
-                          {formatAuditDetailEntries(log.details).map(([key, value]) => (
+                          {getAuditDetailEntries(log).map(([key, value]) => (
                             <div key={key}>
                               <dt>{key}</dt>
                               <dd>{formatAuditDetailValue(value)}</dd>
@@ -2389,7 +2385,7 @@ function UserManagement() {
                           ))}
                         </dl>
                       )}
-                    </td>
+                    </td>}
                     <td><code>{log.ipAddress || '-'}</code></td>
                     <td>{new Date(log.createdAt).toLocaleString('vi-VN')}</td>
                   </tr>
@@ -2721,7 +2717,7 @@ function UserManagement() {
         .um-tabs button { min-height: 38px; border-radius: 8px; border: 1px solid #d7dee8; background: #fff; color: #334155; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; cursor: pointer; font-weight: 800; }
         .um-tabs button.active { background: #2f80ed; color: #fff; border-color: #2f80ed; }
         .um-toolbar.requests { grid-template-columns: minmax(260px, 1fr) 170px 150px 150px auto auto; }
-        .um-toolbar.audit { display: grid; grid-template-columns: minmax(260px, 1fr) 190px 100px 150px 150px auto auto; margin-bottom: 0; }
+        .um-toolbar.audit { display: grid; grid-template-columns: minmax(260px, 1fr) 150px 150px auto auto; margin-bottom: 0; }
         .um-toolbar.audit > input { min-width: 0; min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-toolbar input[type="date"] { min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
