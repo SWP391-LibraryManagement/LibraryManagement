@@ -19,12 +19,15 @@ Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product r
 ## External Submission Items
 
 - Demonstration video/link: not published in the repository.
-- Authenticated Azure Member/Librarian observation: not observed because no safe
-  staging credential was created or disclosed.
-- Real SMTP inbox delivery: not observed because provider delivery was not run.
+- Authenticated Azure Admin/Member/Librarian observation: PASS in live run
+  `c6e0c46421f0`, including protected reads and borrow request/approval/return.
+- Real SMTP inbox delivery: PASS in live run `c6e0c46421f0`; notification `8`
+  was accepted by the provider and observed through Gmail IMAP search.
 
-These external/provider items remain explicit evidence boundaries. They do not
-silently reopen Phase 3 or invalidate the verified public staging release.
+The demonstration video remains an explicit evidence boundary. The observed
+provider checks do not silently reopen Phase 3 or invalidate the verified
+public staging release; sanitized details are recorded in the Phase 3 evidence
+packet.
 
 Any future product work requires a separately approved Phase 4 scope, SPEC,
 plan, tasks, and validation contract.

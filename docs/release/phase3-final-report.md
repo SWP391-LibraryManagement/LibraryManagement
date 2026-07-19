@@ -36,6 +36,8 @@ traceability; route guards and backend authorization remain authoritative.
 | Frontend bundle | Initial entry reduced from 999,203 to 320,688 bytes (-67.9%); 57 route-level assets. |
 | Local auth timing | Login p95 66.95 ms; `/auth/me` p95 1.45 ms with bcrypt cost 10. |
 | Azure staging | Frontend, health, SQL catalog, exact CORS allow/deny, and anonymous protected-route checks pass. |
+| Authenticated Azure | Live run `c6e0c46421f0` passed Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
+| SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
 
 ## Live SQL and migration result
 
@@ -48,10 +50,15 @@ was removed and SQL connection policy restored to `Default`.
 
 ## Acceptance boundaries
 
-The public staging surface is observed as passing. Authenticated Azure
-Member/Librarian acceptance and real SMTP inbox delivery are `NOT OBSERVED`, not
-inferred from local synthetic tests. Durable avatar storage, shared SQL CI, and
-production SLA remain documented limitations.
+The public staging surface, authenticated Azure role flow, and real SMTP inbox
+delivery are observed as passing. The live run used ephemeral synthetic
+fixtures; cleanup returned zero auth, book, and notification fixtures. Durable
+avatar storage, shared SQL CI, and production SLA remain documented
+limitations.
+
+The SMTP issue was traced to a malformed `SMTP_USER` configuration shape. The
+App Service setting was corrected to the valid `MAIL_FROM` address and the app
+was restarted; no credential or message content is included in this report.
 
 ## Reproduction commands
 

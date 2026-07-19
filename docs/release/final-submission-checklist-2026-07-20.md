@@ -19,8 +19,8 @@ canonical source release is `v1.0.0-final-release` on `main`.
 | Automated quality | PASS | 916 backend tests, 151 frontend tests, coverage gate, lint, build, and 4/4 browser E2E. |
 | Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
 | Demonstration video/link | NOT PUBLISHED | No external video URL was provided or fabricated. |
-| Authenticated Azure user observation | NOT OBSERVED | No safe Member/Librarian staging credential was created or disclosed. |
-| Real SMTP inbox delivery | NOT OBSERVED | Provider delivery was not executed. |
+| Authenticated Azure user observation | PASS | Live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
+| Real SMTP inbox delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search were observed. |
 
 ## Final operator checks
 

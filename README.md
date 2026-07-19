@@ -202,8 +202,11 @@ Observed Phase 3 staging origins:
 - backend health: `https://app-library-api-staging-nhat714.azurewebsites.net/health`.
 
 The independent six-check smoke passed frontend HTML, health, SQL-backed catalog,
-strict CORS allow/deny, and anonymous protected-route rejection. Authenticated
-Azure acceptance remains `NOT OBSERVED`.
+strict CORS allow/deny, and anonymous protected-route rejection. Live run
+`c6e0c46421f0` additionally passed authenticated Admin/Member/Librarian role
+flows, protected reads, borrow request/approval/return, and real SMTP inbox
+delivery. Sanitized evidence is recorded in
+`docs/release/phase3-staging-evidence-2026-07-19.md`.
 
 - [Azure staging guide](docs/deployment/azure-staging-guide.md)
 - [Week 13 design](docs/superpowers/specs/2026-07-14-week13-documentation-deployment-design.md)
@@ -223,7 +226,9 @@ Azure acceptance remains `NOT OBSERVED`.
 - SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
 - Deployed authentication transport must set `NODE_ENV=production`; set `TRUST_PROXY=true` only behind a trusted TLS-terminating proxy, and optionally set `HTTPS_REDIRECT=true` with a validated `HTTPS_CANONICAL_HOST` to redirect plain HTTP auth requests.
 - Route-level code splitting reduced the initial JavaScript entry from 999,203 to 320,688 bytes; further total-byte optimization is optional.
-- SMTP delivery is unavailable unless a staging mail provider is configured.
+- SMTP delivery requires a valid staging mail provider configuration; the
+  configured provider path was observed in live run `c6e0c46421f0` after a
+  malformed `SMTP_USER` shape was corrected without recording its value.
 
 ## Security Notes
 

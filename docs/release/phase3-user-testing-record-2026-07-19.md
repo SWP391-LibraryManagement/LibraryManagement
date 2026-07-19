@@ -2,14 +2,11 @@
 
 ## Evidence boundary
 
-Only observed outcomes are marked `PASS`. The authenticated workflow used
-fresh synthetic local identities and the deterministic in-memory E2E server.
-The Azure staging record proves public frontend/backend/SQL readiness, but no
-safe live Member/Librarian credential was available; authenticated Azure rows
-therefore remain `NOT OBSERVED`.
-
-The requestor's standing approval authorized autonomous execution and
-integration. It is not substituted for an unperformed live-user observation.
+Only observed outcomes are marked `PASS`. The local authenticated workflow used
+fresh synthetic identities and the deterministic in-memory E2E server. A
+separate live run (`c6e0c46421f0`) also verified authenticated Azure role flows
+and real SMTP delivery with ephemeral fixtures. Credentials, tokens, provider
+responses, and message bodies are not retained in this record.
 
 ## Test environment
 
@@ -21,6 +18,7 @@ integration. It is not substituted for an unperformed live-user observation.
 | Browser | Playwright Chromium |
 | Data | Synthetic `example.test` users; recreated by the E2E setup endpoint |
 | Command | `npm.cmd run test:e2e` with the documented alternate port variables |
+| Live Azure evidence | Run `c6e0c46421f0`; synthetic fixtures cleaned after observation |
 
 ## Automated user-flow results
 
@@ -64,8 +62,8 @@ operator evidence, not a claim that an external end user tested Azure staging.
 | Azure SQL public catalog | PASS | `/api/books?page=1&limit=1` returned the canonical envelope after migration reconciliation. |
 | Strict CORS | PASS | Exact frontend origin allowed; untrusted origin blocked. |
 | Anonymous protected route | PASS | `/api/auth/me` returned `401`. |
-| Authenticated Member/Librarian Azure flow | NOT OBSERVED | No safe staging credentials were created or disclosed. |
-| Real SMTP delivery | NOT OBSERVED | Provider delivery was not executed. |
+| Authenticated Member/Librarian Azure flow | PASS | Live run `c6e0c46421f0` verified role login, protected reads, borrow request, approval, and return. |
+| Real SMTP delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP search were observed. |
 
 Full operational evidence: [`phase3-staging-evidence-2026-07-19.md`](phase3-staging-evidence-2026-07-19.md).
 
@@ -87,6 +85,9 @@ Full operational evidence: [`phase3-staging-evidence-2026-07-19.md`](phase3-stag
   to documentation, screenshots, or command output.
 - The temporary Azure SQL operator firewall rule used for migration validation
   was removed and rechecked.
+- The live observation fixtures were removed and rechecked: `AuthFixtures=0`,
+  `BookFixtures=0`, and `NotificationFixtures=0`.
+- No `phase3-live-observation*` SQL firewall rules remained after cleanup.
 - SMTP bodies, raw OTP values, provider responses, database passwords, and
   connection strings are absent from this record.
 
