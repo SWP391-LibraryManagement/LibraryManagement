@@ -467,3 +467,102 @@ erDiagram
 | 18 | Notifications | Stores notification requests, recipient email, delivery status, source metadata, and safe payload.<br/>- Primary keys: NotificationId<br/>- Foreign keys: TemplateId, UserId |
 | 19 | NotificationAttempts | Stores individual notification delivery attempt results.<br/>- Primary keys: AttemptId<br/>- Foreign keys: NotificationId |
 | 20 | AuditLogs | Stores administrative action logs, target metadata, IP address, user agent, and creation time.<br/>- Primary keys: LogId<br/>- Foreign keys: UserId |
+
+### 3.2 Code Packages
+
+This section describes the main code packages used by the Library Management System. The current implementation is organized as a React frontend, an Express backend, and a SQL Server database schema.
+
+```mermaid
+flowchart TB
+  subgraph Frontend[frontend/src]
+    FEApp[App.jsx and main.jsx]
+    Pages[page]
+    Components[component]
+    Api[api]
+    FEUtils[utils]
+    Styles[styles]
+    Assets[assets]
+  end
+
+  subgraph Backend[backend/src]
+    App[app.js and index.js]
+    Routes[routes]
+    Controllers[controllers]
+    Validators[validators]
+    Middleware[middleware]
+    Services[services]
+    Repositories[repositories]
+    Models[models]
+    Policies[policies]
+    BEUtils[utils]
+    Config[config]
+    Exceptions[CustomException]
+  end
+
+  subgraph Database[database]
+    Schema[Librarymanagement.sql]
+    Migrations[migrations]
+  end
+
+  FEApp --> Pages
+  Pages --> Components
+  Pages --> Api
+  Pages --> FEUtils
+  Pages --> Styles
+  Components --> FEUtils
+  Api --> Routes
+
+  App --> Routes
+  Routes --> Middleware
+  Routes --> Validators
+  Routes --> Controllers
+  Controllers --> Services
+  Services --> Repositories
+  Services --> Policies
+  Services --> BEUtils
+  Services --> Exceptions
+  Repositories --> Models
+  Models --> Schema
+  Migrations --> Schema
+  Config --> App
+```
+
+| # | Sub-system | Package | Description |
+| - | ---------- | ------- | ----------- |
+| 1 | Frontend | `frontend/src/App.jsx`, `frontend/src/main.jsx` | Defines React app startup and route registration. |
+| 2 | Frontend | `frontend/src/page` | Contains route-level screens such as Login, Register, Home, Membership, Inventory, Borrowing, Reservation, Report, Profile, and Admin User Management. |
+| 3 | Frontend | `frontend/src/component` | Contains reusable UI components, layout components, feature widgets, route guards, and shared display elements. |
+| 4 | Frontend | `frontend/src/api` | Contains client-side API callers used by pages and components to call backend REST endpoints. |
+| 5 | Frontend | `frontend/src/utils` | Contains frontend helper functions, access checks, view-state helpers, and feature view-model logic. |
+| 6 | Frontend | `frontend/src/styles` | Contains CSS files for page and layout styling. |
+| 7 | Frontend | `frontend/src/assets` | Contains static frontend assets. |
+| 8 | Backend | `backend/src/app.js`, `backend/src/index.js` | Creates the Express application, mounts routes, and starts the backend server. |
+| 9 | Backend | `backend/src/routes` | Defines REST route paths and connects HTTP requests to middleware, validators, and controllers. |
+| 10 | Backend | `backend/src/controllers` | Handles request/response mapping and delegates business work to services. |
+| 11 | Backend | `backend/src/validators` | Validates request parameters and request body data at the API boundary. |
+| 12 | Backend | `backend/src/middleware` | Provides shared Express middleware such as authentication, authorization, and error handling. |
+| 13 | Backend | `backend/src/services` | Contains business logic for authentication, profile, membership, books, inventory, borrowing, reservation, fine, notification, report, and user management. |
+| 14 | Backend | `backend/src/repositories` | Encapsulates database access for feature services. |
+| 15 | Backend | `backend/src/models` | Contains Sequelize model definitions for database tables. |
+| 16 | Backend | `backend/src/policies` | Contains reusable business or access policy logic. |
+| 17 | Backend | `backend/src/utils` | Contains backend helper functions such as token, password, avatar, and safe error utilities. |
+| 18 | Backend | `backend/src/config` | Contains backend environment and database configuration. |
+| 19 | Backend | `backend/src/CustomException` | Contains application-specific exception classes. |
+| 20 | Database | `database/Librarymanagement.sql` | Defines the SQL Server database schema and safe demo seed data. |
+| 21 | Database | `database/migrations` | Contains schema migration scripts used after the initial schema. |
+
+#### Package Naming Conventions
+
+| Code Area | Naming Convention | Example |
+| --------- | ----------------- | ------- |
+| Frontend pages | PascalCase React component filename ending with `Page` where applicable. | `UserProfilePage.jsx`, `BorrowRequestPage.jsx` |
+| Frontend components | PascalCase React component filename. | `BorrowingRouteGuard.jsx`, `MembershipReviewModal.jsx` |
+| Frontend API modules | camelCase feature name ending with `Api` where applicable. | `membershipApi.js`, `libraryFeatureApi.js` |
+| Frontend utilities | camelCase descriptive helper filename. | `borrowingAccess.js`, `reportFilters.js` |
+| Backend routes | camelCase feature name ending with `Routes`. | `authRoutes.js`, `borrowingRoutes.js` |
+| Backend controllers | camelCase feature name ending with `Controller`. | `authController.js`, `inventoryController.js` |
+| Backend services | camelCase feature name ending with `Service`. | `authService.js`, `fineService.js` |
+| Backend repositories | camelCase feature name ending with `Repository`. | `userRepository.js`, `reservationRepository.js` |
+| Backend validators | camelCase feature name ending with `Validators`. | `authValidators.js`, `reportValidators.js` |
+| Backend models | PascalCase table/entity name. | `User.js`, `AuditLog.js` |
+| Database tables | PascalCase plural table names. | `Users`, `BorrowRequests`, `NotificationAttempts` |
