@@ -527,42 +527,25 @@ flowchart TB
   Config --> App
 ```
 
-| # | Sub-system | Package | Description |
-| - | ---------- | ------- | ----------- |
-| 1 | Frontend | `frontend/src/App.jsx`, `frontend/src/main.jsx` | Defines React app startup and route registration. |
-| 2 | Frontend | `frontend/src/page` | Contains route-level screens such as Login, Register, Home, Membership, Inventory, Borrowing, Reservation, Report, Profile, and Admin User Management. |
-| 3 | Frontend | `frontend/src/component` | Contains reusable UI components, layout components, feature widgets, route guards, and shared display elements. |
-| 4 | Frontend | `frontend/src/api` | Contains client-side API callers used by pages and components to call backend REST endpoints. |
-| 5 | Frontend | `frontend/src/utils` | Contains frontend helper functions, access checks, view-state helpers, and feature view-model logic. |
-| 6 | Frontend | `frontend/src/styles` | Contains CSS files for page and layout styling. |
-| 7 | Frontend | `frontend/src/assets` | Contains static frontend assets. |
-| 8 | Backend | `backend/src/app.js`, `backend/src/index.js` | Creates the Express application, mounts routes, and starts the backend server. |
-| 9 | Backend | `backend/src/routes` | Defines REST route paths and connects HTTP requests to middleware, validators, and controllers. |
-| 10 | Backend | `backend/src/controllers` | Handles request/response mapping and delegates business work to services. |
-| 11 | Backend | `backend/src/validators` | Validates request parameters and request body data at the API boundary. |
-| 12 | Backend | `backend/src/middleware` | Provides shared Express middleware such as authentication, authorization, and error handling. |
-| 13 | Backend | `backend/src/services` | Contains business logic for authentication, profile, membership, books, inventory, borrowing, reservation, fine, notification, report, and user management. |
-| 14 | Backend | `backend/src/repositories` | Encapsulates database access for feature services. |
-| 15 | Backend | `backend/src/models` | Contains Sequelize model definitions for database tables. |
-| 16 | Backend | `backend/src/policies` | Contains reusable business or access policy logic. |
-| 17 | Backend | `backend/src/utils` | Contains backend helper functions such as token, password, avatar, and safe error utilities. |
-| 18 | Backend | `backend/src/config` | Contains backend environment and database configuration. |
-| 19 | Backend | `backend/src/CustomException` | Contains application-specific exception classes. |
-| 20 | Database | `database/Librarymanagement.sql` | Defines the SQL Server database schema and safe demo seed data. |
-| 21 | Database | `database/migrations` | Contains schema migration scripts used after the initial schema. |
+#### Package descriptions
 
-#### Package Naming Conventions
-
-| Code Area | Naming Convention | Example |
-| --------- | ----------------- | ------- |
-| Frontend pages | PascalCase React component filename ending with `Page` where applicable. | `UserProfilePage.jsx`, `BorrowRequestPage.jsx` |
-| Frontend components | PascalCase React component filename. | `BorrowingRouteGuard.jsx`, `MembershipReviewModal.jsx` |
-| Frontend API modules | camelCase feature name ending with `Api` where applicable. | `membershipApi.js`, `libraryFeatureApi.js` |
-| Frontend utilities | camelCase descriptive helper filename. | `borrowingAccess.js`, `reportFilters.js` |
-| Backend routes | camelCase feature name ending with `Routes`. | `authRoutes.js`, `borrowingRoutes.js` |
-| Backend controllers | camelCase feature name ending with `Controller`. | `authController.js`, `inventoryController.js` |
-| Backend services | camelCase feature name ending with `Service`. | `authService.js`, `fineService.js` |
-| Backend repositories | camelCase feature name ending with `Repository`. | `userRepository.js`, `reservationRepository.js` |
-| Backend validators | camelCase feature name ending with `Validators`. | `authValidators.js`, `reportValidators.js` |
-| Backend models | PascalCase table/entity name. | `User.js`, `AuditLog.js` |
-| Database tables | PascalCase plural table names. | `Users`, `BorrowRequests`, `NotificationAttempts` |
+| No | Package | Description |
+| -- | ------- | ----------- |
+| 01 | `frontend/src/page` | Contains route-level React screens for authentication, home, profile, membership, book management, inventory, borrowing, reservation, fine management, reporting, and admin user management. |
+| 02 | `frontend/src/component` | Contains reusable UI components, layout components, feature components, modals, tables, filters, and route guards. |
+| 03 | `frontend/src/api` | Contains frontend API client functions used to call backend REST endpoints. |
+| 04 | `frontend/src/utils` | Contains frontend helper logic such as navigation helpers, access checks, filters, workflow helpers, and view-model helpers. |
+| 05 | `frontend/src/styles` | Contains CSS files for page-level and shared frontend styling. |
+| 06 | `frontend/src/assets` | Contains static assets used by the frontend. |
+| 07 | `backend/src/routes` | Defines Express route modules and maps HTTP endpoints to middleware, validators, and controllers. |
+| 08 | `backend/src/controllers` | Handles HTTP request and response logic, then delegates business processing to service modules. |
+| 09 | `backend/src/validators` | Validates request parameters and request body data before controller logic runs. |
+| 10 | `backend/src/middleware` | Contains shared Express middleware such as authentication, authorization, and error handling. |
+| 11 | `backend/src/services` | Contains business logic for authentication, profile, membership, books, inventory, borrowing, reservation, fine, notification, reporting, and user management. |
+| 12 | `backend/src/repositories` | Contains database access logic used by services. |
+| 13 | `backend/src/models` | Contains Sequelize model definitions that map application entities to database tables. |
+| 14 | `backend/src/policies` | Contains reusable authorization or business policy checks. |
+| 15 | `backend/src/utils` | Contains backend utility functions for tokens, password policy, avatar storage, and safe errors. |
+| 16 | `backend/src/config` | Contains backend configuration files such as database configuration. |
+| 17 | `backend/src/CustomException` | Contains custom application exception classes. |
+| 18 | `database` | Contains the SQL Server schema and migration scripts for the Library Management database. |
