@@ -6,9 +6,9 @@ Branch: `feat/full-reconciliation`
 
 Draft PR: #40
 
-Recorded head: `cdd464134fbe73abc50b80781a00eaf3f56fd8ea`
+Recorded head: `f23027fb07c11cc3a5e6286dff1c4ec5647af64b`
 
-Recorded CI: `29680741963` - PASS
+Recorded CI: `29680968800` - PASS
 
 ## Purpose
 
@@ -29,7 +29,7 @@ until a named reviewer records an explicit decision.
 | Browser/L4 | FE09, FE11, and system golden path 3/3 on isolated ports `4185/3101` |
 | Traceability | FE01-FE12 all 100%; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 is draft, clean, mergeable, and CI run `29680741963` passes on the recorded head |
+| Pull request | PR #40 is draft, clean, mergeable, and CI run `29680968800` passes on the recorded head |
 
 Authoritative consolidated evidence:
 
