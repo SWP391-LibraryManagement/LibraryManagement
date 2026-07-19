@@ -1,10 +1,10 @@
 # Phase 2 Full Exit Validation - 2026-07-19
 
-Status: LOCAL PASS - PHASE 2 EXIT PR AND EXACT POST-MERGE MAIN CI PENDING
+Status: COMPLETE - PHASE 2 EXIT PR MERGED; EXACT POST-MERGE MAIN CI PASS
 
-Branch: `docs/phase2-full-exit-closeout`
+Branch: `main`
 
-Baseline: `origin/main@a0b732f4ee481c8e4b200ee2c0fd457a9d0f8756`
+Baseline: `origin/main@1e7431ae9ecf9d79ad909d85a79af9d9af36e5a3`
 
 ## Decision
 
@@ -89,4 +89,9 @@ The FE01-FE12 human walkthrough, Option A, FE10 design, and final H3 decisions a
 
 ## Exit Gate
 
-Local Phase 2 exit validation is complete. The remaining gate is mechanical integration of this closeout: required PR CI, merge, exact post-merge `main` CI, and a final stale-state/worktree audit. Phase 3 becomes authoritative on `main` only after those gates pass.
+Phase 2 exit integration is complete:
+
+- PR #45 passed foundation CI `29690486632` and merged as `1e7431ae9ecf9d79ad909d85a79af9d9af36e5a3`.
+- Exact post-merge `main` CI `29690585950` passed traceability, backend tests/coverage, frontend lint/tests/build, Playwright E2E, and backend import health.
+- `origin/main` now records Phase 3 - Polish and Delivery as the single current phase.
+- Final stale-state and worktree audit passed after merge.

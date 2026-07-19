@@ -170,26 +170,26 @@ Confirm the diff contains only traceability tooling, SDD/status documentation, a
 **Files:**
 - Modify only approved review-fix files if PR checks expose a real defect.
 
-- [ ] **Step 1: Commit and push the reviewed closeout**
+- [x] **Step 1: Commit and push the reviewed closeout**
 
 Use focused commits for traceability tooling, feature metadata, and Phase 2 exit evidence.
 
-- [ ] **Step 2: Open the Phase 2 exit PR**
+- [x] **Step 2: Open the Phase 2 exit PR**
 
 The PR body must list the canonical evidence, deferred boundaries, exact changed-file scope, and standing human approval.
 
-- [ ] **Step 3: Require PR CI and merge**
+- [x] **Step 3: Require PR CI and merge**
 
 Merge only after required CI succeeds.
 
-- [ ] **Step 4: Require exact post-merge `main` CI**
+- [x] **Step 4: Require exact post-merge `main` CI**
 
 Record the merge commit and exact successful `main` workflow run.
 
-- [ ] **Step 5: Run the final repository audit**
+- [x] **Step 5: Run the final repository audit**
 
 Confirm `origin/main`, PR state, CI result, phase metadata, feature implementation states, worktree cleanliness, and no active Phase 2 pending wording.
 
-- [ ] **Step 6: Complete the goal**
+- [x] **Step 6: Complete the goal**
 
 Mark the goal complete only when all prior steps pass and Phase 3 is the single current phase in repository context.
