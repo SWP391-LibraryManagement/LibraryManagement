@@ -552,7 +552,7 @@ flowchart TB
 
 # II. Requirement Specifications
 
-## 1. Core System Use Cases
+## 1. Core System Use Cases By Feature Owner
 
 ### 1.1 UC-01 Browse Books
 
@@ -561,7 +561,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-01 Browse Books |
-| Created By | Project Team |
+| Created By | Dung |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member |
 | Secondary Actors | Internal database |
@@ -585,7 +585,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-02 Manage Account Access |
-| Created By | Project Team |
+| Created By | Dat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member, Librarian, Admin |
 | Secondary Actors | EmailService, Internal database |
@@ -609,7 +609,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-03 Manage Profile |
-| Created By | Project Team |
+| Created By | Dat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member, Librarian, Admin |
 | Secondary Actors | Internal database |
@@ -633,7 +633,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-04 Apply For Membership |
-| Created By | Project Team |
+| Created By | Dat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
 | Secondary Actors | Librarian, Admin, EmailService, Internal database |
@@ -657,7 +657,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-05 Manage Books |
-| Created By | Project Team |
+| Created By | Dung |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
 | Secondary Actors | Internal database |
@@ -681,7 +681,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-06 Manage Book Copies |
-| Created By | Project Team |
+| Created By | Dat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
 | Secondary Actors | Internal database |
@@ -705,7 +705,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-07 Borrow Books |
-| Created By | Project Team |
+| Created By | Nhat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
 | Secondary Actors | Librarian, Admin, EmailService, Internal database |
@@ -729,7 +729,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-08 Reserve Books |
-| Created By | Project Team |
+| Created By | Nhat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
 | Secondary Actors | Librarian, Admin, EmailService, Internal database |
@@ -753,7 +753,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-09 Manage Fines |
-| Created By | Project Team |
+| Created By | Dung |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
 | Secondary Actors | Member, EmailService, Internal database |
@@ -777,7 +777,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-10 Send Notifications |
-| Created By | Project Team |
+| Created By | Nhat |
 | Date Created | 2026-07-19 |
 | Primary Actor | EmailService |
 | Secondary Actors | Source feature, Librarian, Admin, Internal database |
@@ -801,7 +801,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-11 Manage Users And Roles |
-| Created By | Project Team |
+| Created By | Dung |
 | Date Created | 2026-07-19 |
 | Primary Actor | Admin |
 | Secondary Actors | EmailService, Internal database |
@@ -825,7 +825,7 @@ flowchart TB
 | Field | Description |
 | ----- | ----------- |
 | UC ID and Name | UC-12 Generate Reports |
-| Created By | Project Team |
+| Created By | Nhat |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
 | Secondary Actors | Internal database |
