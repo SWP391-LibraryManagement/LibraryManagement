@@ -24,8 +24,8 @@ test('FE07 route access redirects guests and wrong roles', async () => {
   assert.equal(typeof getBorrowingRouteRedirect, 'function');
   assert.equal(getBorrowingRouteRedirect({ authenticated: false, roles: [] }, 'member'), '/login');
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER'] }, 'member'), null);
-  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }, 'member'), '/forbidden');
-  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER'] }, 'staff'), '/forbidden');
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }, 'member'), '/home');
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER'] }, 'staff'), '/home');
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }, 'staff'), null);
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['ADMIN'] }, 'staff'), null);
 });

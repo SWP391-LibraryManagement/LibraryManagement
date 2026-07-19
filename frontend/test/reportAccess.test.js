@@ -15,7 +15,7 @@ test('report routes allow staff and redirect unauthenticated or member users', a
 
   assert.equal(typeof getReportRouteRedirect, 'function');
   assert.equal(getReportRouteRedirect({ authenticated: false, roles: [] }), '/login');
-  assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['MEMBER'] }), '/forbidden');
+  assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['MEMBER'] }), '/home');
   assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }), null);
   assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['ADMIN'] }), null);
 });
