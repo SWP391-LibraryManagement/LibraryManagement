@@ -9,24 +9,24 @@ documentation, and review.
 
 ## Implemented Scope
 
-The current production-aligned reconciliation candidate tracks all twelve approved feature specs. The table separates automated slice evidence from remaining human integration gates:
+The production-aligned FE01-FE12 reconciliation baseline is merged and accepted. The table preserves the approved Phase 1 scope and documented non-blocking limitations:
 
 | Feature | Scope | Status boundary |
 | --- | --- | --- |
-| FE01 Public / Browse | Public catalog search, detail, and availability summary | Automated slice complete; owner/staging confirmation pending |
-| FE02 Authentication | Register, verification, login, refresh, logout, password change/reset, token validation | Ready for human staging acceptance |
-| FE03 User Profile | Profile read/update, avatar, validation, and ownership boundaries | Automated/live SQL/browser pass; human review pending |
-| FE04 Membership | Member application, status, approval/rejection, role boundaries | Focused reconciliation pass; owner/H3 pending |
-| FE05 Book Management | Catalog reads, metadata, versioned status commands, derived availability | Focused reconciliation pass; owner/H3 pending |
-| FE06 Inventory | Copy metadata/status, rowversion, locked workflow/parent checks, audit | Focused/live SQL pass; owner/H3 pending |
-| FE07 Borrowing | Member requests, staff approval/rejection, return, renewal, member history | Complete; staging recheck required |
-| FE08 Reservation | Member reservation lifecycle and staff queue/hold processing | Ready for human staging acceptance |
-| FE09 Fine | Server-side overdue calculation, collection, paid/waive/cancel, owner/staff access | Backend ready; legacy frontend is not release evidence |
-| FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit | Complete backend; inbox UI is deferred |
-| FE11 User & Role | Admin users, role actions, lifecycle, permissions, and audit surfaces | Named reconciliation slices complete; whole-feature/H3 pending |
-| FE12 Reporting | Borrowing, inventory, and user aggregate reports | Complete; staging recheck required |
+| FE01 Public / Browse | Public catalog search, detail, and availability summary | Accepted in PR #40 |
+| FE02 Authentication | Register, verification, login, refresh, logout, password change/reset, token validation | Accepted in PR #40 |
+| FE03 User Profile | Profile read/update, avatar, validation, and ownership boundaries | Accepted in PR #40 |
+| FE04 Membership | Member application, status, approval/rejection, role boundaries | Accepted in PR #40 |
+| FE05 Book Management | Catalog reads, metadata, versioned status commands, derived availability | Accepted in PR #40 |
+| FE06 Inventory | Copy metadata/status, rowversion, locked workflow/parent checks, audit | Accepted in PR #40 |
+| FE07 Borrowing | Member requests, staff approval/rejection, return, renewal, member history | Accepted in PR #40 |
+| FE08 Reservation | Member reservation lifecycle and staff queue/hold processing | Accepted; TD-028 Option A complete |
+| FE09 Fine | Server-side overdue calculation, collection, paid/waive/cancel, owner/staff access | Accepted server boundary; legacy frontend remains non-authoritative |
+| FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit | Accepted backend boundary; inbox UI remains deferred |
+| FE11 User & Role | Admin users, role actions, lifecycle, permissions, and audit surfaces | Accepted approved Phase 1 scope |
+| FE12 Reporting | Borrowing, inventory, and user aggregate reports | Accepted in PR #40 |
 
-Features marked `NOT STARTED` or `DRAFT` in the project test plan are outside this release candidate.
+Explicitly deferred work remains outside the approved Phase 1 release scope.
 
 ## Architecture
 
