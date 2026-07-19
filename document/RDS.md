@@ -962,7 +962,7 @@ flowchart TB
 | Exceptions | 2.0.E1 System cannot authenticate the user<br/>1. System shows a safe error message.<br/>2. User may retry login.<br/>3. User may click Forgot Password and continue with password reset.<br/>4. User may click Register and continue with account registration.<br/><br/>2.0.E2 Account is not verified<br/>1. System rejects login.<br/>2. System instructs user to verify email or request a new verification code.<br/><br/>2.0.E3 Account is locked<br/>1. System rejects login until the lock expires or a supported recovery flow is completed. |
 | Priority | Must Have |
 | Frequency of Use | High, multiple times per day |
-| Business Rules | FR1, FR2, FR3, FR4 |
+| Business Rules | BR-CF-LOGIN-001, BR-CF-LOGIN-002, BR-CF-LOGIN-003, BR-CF-LOGIN-004 |
 | Other Information | Google Login and Facebook Login are not included in the current Phase 1 implementation. |
 | Assumptions | User logs in with system account credentials using email and password. |
 
@@ -970,10 +970,10 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Password Hashing | User password must be hashed with bcrypt before storage. |
-| FR2 | Invalid Login | User cannot be authenticated if login details are incorrect, email is not verified, account is inactive, or account is locked. |
-| FR3 | Account Locking | If a known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the account is locked for 30 minutes. |
-| FR4 | Session Validation | Every protected request must validate the session/token before processing. |
+| BR-CF-LOGIN-001 | Password Hashing | User password must be hashed with bcrypt before storage. |
+| BR-CF-LOGIN-002 | Invalid Login | User cannot be authenticated if login details are incorrect, email is not verified, account is inactive, or account is locked. |
+| BR-CF-LOGIN-003 | Account Locking | If a known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the account is locked for 30 minutes. |
+| BR-CF-LOGIN-004 | Session Validation | Every protected request must validate the session/token before processing. |
 
 ### 2.2 UC-3_Register User Account
 
@@ -995,7 +995,7 @@ flowchart TB
 | Exceptions | 3.0.E1 Email already registered: system rejects registration without creating a user.<br/>3.0.E2 Invalid password: system rejects registration and displays password policy message.<br/>3.0.E3 Invalid input: system displays validation errors. |
 | Priority | Must Have |
 | Frequency of Use | Medium, daily or weekly |
-| Business Rules | FR1, FR2, FR3, FR4 |
+| Business Rules | BR-CF-REGISTER-001, BR-CF-REGISTER-002, BR-CF-REGISTER-003, BR-CF-REGISTER-004 |
 | Other Information | Account cannot be used for login until email verification is completed. |
 | Assumptions | Guest registers using email and password. |
 
@@ -1003,10 +1003,10 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Required Registration Data | Guest must provide valid email, password, and required confirmation fields. |
-| FR2 | Unique Email | Registration must reject an email that is already registered. |
-| FR3 | Password Hashing | User password must be hashed with bcrypt before storage. |
-| FR4 | Email Verification Required | New registered account must be verified by email before activation. |
+| BR-CF-REGISTER-001 | Required Registration Data | Guest must provide valid email, password, and required confirmation fields. |
+| BR-CF-REGISTER-002 | Unique Email | Registration must reject an email that is already registered. |
+| BR-CF-REGISTER-003 | Password Hashing | User password must be hashed with bcrypt before storage. |
+| BR-CF-REGISTER-004 | Email Verification Required | New registered account must be verified by email before activation. |
 
 ### 2.3 UC-4_Verify Email
 
@@ -1028,7 +1028,7 @@ flowchart TB
 | Exceptions | 4.0.E1 Expired credential: system rejects verification and offers resend.<br/>4.0.E2 Invalid credential: system rejects verification safely.<br/>4.0.E3 Token already used: system rejects verification and asks user to request a new credential if needed. |
 | Priority | Must Have |
 | Frequency of Use | Medium, daily or weekly |
-| Business Rules | FR1, FR2, FR3 |
+| Business Rules | BR-CF-VERIFY-001, BR-CF-VERIFY-002, BR-CF-VERIFY-003 |
 | Other Information | Verification responses must not expose sensitive token hash data. |
 | Assumptions | Verification is delivered through EmailService. |
 
@@ -1036,9 +1036,9 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Email Verification Required | A registered user account must be verified via email before activation. |
-| FR2 | Verification Credential Expiry | Expired, malformed, used, or mismatched verification credentials must be rejected. |
-| FR3 | Safe Verification Response | Verification failure must not expose token hash or sensitive account internals. |
+| BR-CF-VERIFY-001 | Email Verification Required | A registered user account must be verified via email before activation. |
+| BR-CF-VERIFY-002 | Verification Credential Expiry | Expired, malformed, used, or mismatched verification credentials must be rejected. |
+| BR-CF-VERIFY-003 | Safe Verification Response | Verification failure must not expose token hash or sensitive account internals. |
 
 ### 2.4 UC-5_Reset Password
 
@@ -1060,7 +1060,7 @@ flowchart TB
 | Exceptions | 5.0.E1 Invalid or expired credential: system rejects reset without changing password.<br/>5.0.E2 New password fails policy: system rejects reset and displays validation message.<br/>5.0.E3 Ineligible inactive account: system rejects reset without activating account. |
 | Priority | Must Have |
 | Frequency of Use | Medium, weekly |
-| Business Rules | FR1, FR2, FR3, FR4 |
+| Business Rules | BR-CF-RESET-001, BR-CF-RESET-002, BR-CF-RESET-003, BR-CF-RESET-004 |
 | Other Information | Password reset must not activate ordinary inactive accounts. |
 | Assumptions | Reset instruction is delivered through EmailService. |
 
@@ -1068,10 +1068,10 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | No Account Enumeration | Forgot password response must not reveal whether the submitted email is registered. |
-| FR2 | Reset Credential Required | Password reset must prove email ownership through a valid purpose-specific credential. |
-| FR3 | Reset Token Expiry | Password reset credentials expire after the configured reset window. |
-| FR4 | Password Hashing | New password must be hashed with bcrypt before storage. |
+| BR-CF-RESET-001 | No Account Enumeration | Forgot password response must not reveal whether the submitted email is registered. |
+| BR-CF-RESET-002 | Reset Credential Required | Password reset must prove email ownership through a valid purpose-specific credential. |
+| BR-CF-RESET-003 | Reset Token Expiry | Password reset credentials expire after the configured reset window. |
+| BR-CF-RESET-004 | Password Hashing | New password must be hashed with bcrypt before storage. |
 
 ### 2.5 UC-6_Change Password
 
@@ -1093,7 +1093,7 @@ flowchart TB
 | Exceptions | 6.0.E1 Current password is incorrect: system rejects the change.<br/>6.0.E2 New password fails complexity policy: system rejects the change.<br/>6.0.E3 New password matches old password: system rejects the change. |
 | Priority | Should Have |
 | Frequency of Use | Low, monthly or less |
-| Business Rules | FR1, FR2, FR3 |
+| Business Rules | BR-CF-CHANGE-001, BR-CF-CHANGE-002, BR-CF-CHANGE-003 |
 | Other Information | Current code baseline does not revoke all other active refresh/session credentials after password change. |
 | Assumptions | User is already authenticated before changing password. |
 
@@ -1101,9 +1101,9 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Authenticated Change Only | User may change password only when authenticated. |
-| FR2 | Current Password Required | Password change must require entry and validation of current password. |
-| FR3 | Password Hashing | New password must be hashed with bcrypt before storage. |
+| BR-CF-CHANGE-001 | Authenticated Change Only | User may change password only when authenticated. |
+| BR-CF-CHANGE-002 | Current Password Required | Password change must require entry and validation of current password. |
+| BR-CF-CHANGE-003 | Password Hashing | New password must be hashed with bcrypt before storage. |
 
 ### 2.6 UC-7_Logout System
 
@@ -1125,7 +1125,7 @@ flowchart TB
 | Exceptions | 7.0.E1 Logout request fails: client clears local authentication state and protected requests remain subject to token validation. |
 | Priority | Must Have |
 | Frequency of Use | High, daily |
-| Business Rules | FR1, FR2 |
+| Business Rules | BR-CF-LOGOUT-001, BR-CF-LOGOUT-002 |
 | Other Information | Logout must not expose token contents in logs or responses. |
 | Assumptions | User has an active authenticated session before logout. |
 
@@ -1133,8 +1133,8 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Refresh Credential Revocation | Logout must revoke the submitted/current refresh-session credential. |
-| FR2 | Protected Access After Logout | Subsequent protected requests associated with the revoked credential must fail authorization. |
+| BR-CF-LOGOUT-001 | Refresh Credential Revocation | Logout must revoke the submitted/current refresh-session credential. |
+| BR-CF-LOGOUT-002 | Protected Access After Logout | Subsequent protected requests associated with the revoked credential must fail authorization. |
 
 ### 2.7 UC-8_Validate Protected Access
 
@@ -1156,7 +1156,7 @@ flowchart TB
 | Exceptions | 8.0.E1 Malformed token: system rejects the request with unauthorized response.<br/>8.0.E2 Expired token: system rejects the request or requires refresh flow.<br/>8.0.E3 User disabled or locked: system rejects protected access. |
 | Priority | Must Have |
 | Frequency of Use | Very High, every protected request |
-| Business Rules | FR1, FR2, FR3 |
+| Business Rules | BR-CF-AUTHZ-001, BR-CF-AUTHZ-002, BR-CF-AUTHZ-003 |
 | Other Information | Client-side route guards improve navigation UX, but server-side authorization remains required for protected APIs. |
 | Assumptions | Sensitive operations verify roles from trusted server-side data. |
 
@@ -1164,6 +1164,6 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| FR1 | Token Validation | Every protected request must validate the session/token before processing. |
-| FR2 | Server-Side Roles | User roles are determined by UserRoles and must be verified on sensitive operations. |
-| FR3 | Forbidden Access | Authenticated users without the required role must be denied access to protected operations. |
+| BR-CF-AUTHZ-001 | Token Validation | Every protected request must validate the session/token before processing. |
+| BR-CF-AUTHZ-002 | Server-Side Roles | User roles are determined by UserRoles and must be verified on sensitive operations. |
+| BR-CF-AUTHZ-003 | Forbidden Access | Authenticated users without the required role must be denied access to protected operations. |
