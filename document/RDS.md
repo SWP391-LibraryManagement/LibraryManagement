@@ -114,9 +114,9 @@ flowchart LR
   Guest[Guest]
   Member[Member]
   NotificationService[Notification Service]
-  DatabaseSystem[Database System]
 
   subgraph LMS[Library Management System]
+    direction TB
     UC01((Browse Books))
     UC02((Manage Account Access))
     UC03((Manage Profile))
@@ -125,7 +125,6 @@ flowchart LR
     UC08((Reserve Books))
     UC09A((View Fines))
     UC10A((Receive Notifications))
-    UCDB((Persist Library Data))
   end
 
   Guest --> UC01
@@ -139,21 +138,6 @@ flowchart LR
   Member --> UC09A
   Member --> UC10A
   NotificationService --> UC10A
-
-  UC02 -. "<<include>>" .-> UC10A
-  UC04 -. "<<include>>" .-> UC10A
-  UC07 -. "<<include>>" .-> UC10A
-  UC08 -. "<<include>>" .-> UC10A
-  UC09A -. "<<include>>" .-> UC10A
-
-  UC01 -. "<<include>>" .-> UCDB
-  UC02 -. "<<include>>" .-> UCDB
-  UC03 -. "<<include>>" .-> UCDB
-  UC04 -. "<<include>>" .-> UCDB
-  UC07 -. "<<include>>" .-> UCDB
-  UC08 -. "<<include>>" .-> UCDB
-  UC09A -. "<<include>>" .-> UCDB
-  DatabaseSystem --> UCDB
 ```
 
 ##### Figure 2. Librarian And Admin Use Cases
@@ -163,9 +147,9 @@ flowchart LR
   Librarian[Librarian]
   Admin[Admin]
   NotificationService[Notification Service]
-  DatabaseSystem[Database System]
 
   subgraph LMS[Library Management System]
+    direction TB
     UC05((Manage Books))
     UC06((Manage Book Copies))
     UC07B((Process Borrowing))
@@ -174,7 +158,6 @@ flowchart LR
     UC10B((Send Notifications))
     UC11((Manage Users And Roles))
     UC12((Generate Reports))
-    UCDB((Persist Library Data))
   end
 
   Librarian --> UC05
@@ -193,22 +176,28 @@ flowchart LR
   Admin --> UC11
   Admin --> UC12
   NotificationService --> UC10B
+```
 
-  UC07B -. "<<include>>" .-> UC06
-  UC08B -. "<<include>>" .-> UC06
-  UC07B -. "<<extend>>" .-> UC09B
-  UC09B -. "<<include>>" .-> UC10B
-  UC11 -. "<<include>>" .-> UC10B
+##### Figure 3. Use Case Relationship Overview
 
-  UC05 -. "<<include>>" .-> UCDB
-  UC06 -. "<<include>>" .-> UCDB
-  UC07B -. "<<include>>" .-> UCDB
-  UC08B -. "<<include>>" .-> UCDB
-  UC09B -. "<<include>>" .-> UCDB
-  UC10B -. "<<include>>" .-> UCDB
-  UC11 -. "<<include>>" .-> UCDB
-  UC12 -. "<<include>>" .-> UCDB
-  DatabaseSystem --> UCDB
+```mermaid
+flowchart LR
+  subgraph Notifications[Notification Includes]
+    direction TB
+    UC02((Manage Account Access)) -. "<<include>>" .-> UC10((Send Notifications))
+    UC04((Apply For Membership)) -. "<<include>>" .-> UC10
+    UC08((Reserve Books)) -. "<<include>>" .-> UC10
+    UC09((Manage Fines)) -. "<<include>>" .-> UC10
+    UC11((Manage Users And Roles)) -. "<<include>>" .-> UC10
+  end
+
+  subgraph Operations[Operational Dependencies]
+    direction TB
+    UC07((Borrow Books)) -. "<<include>>" .-> UC06((Manage Book Copies))
+    UC08B((Reserve Books)) -. "<<include>>" .-> UC06
+    UC07 -. "<<extend>>" .-> UC09B((Manage Fines))
+  end
+
 ```
 
 #### b. Use Case List
