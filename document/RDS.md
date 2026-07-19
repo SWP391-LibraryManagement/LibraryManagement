@@ -397,3 +397,71 @@ This section describes system functions that run behind the screens, through ser
 | 24 | Reporting & Statistics | Aggregate Borrowing Report Data | Builds borrowing report summaries from borrowing records. |
 | 25 | Reporting & Statistics | Aggregate Inventory Report Data | Builds inventory report summaries from book and copy records. |
 | 26 | Reporting & Statistics | Aggregate User Statistics | Builds user statistics from account, role, and member data. |
+
+## 3. System High Level Design
+
+### 3.1 Database Design
+
+#### a. Database Schema
+
+The database schema is based on `database/Librarymanagement.sql`. The diagram below shows the main table relationships used by the Library Management System.
+
+```mermaid
+erDiagram
+  Roles ||--o{ UserRoles : "assigned in"
+  Users ||--o{ UserRoles : "has"
+  Users ||--o| UserProfiles : "has"
+  Users ||--o| Members : "may be"
+  Users ||--o{ MembershipApplications : "submits"
+  Users ||--o{ AuthTokens : "owns"
+
+  Categories ||--o{ Books : "groups"
+  Authors ||--o{ Books : "writes"
+  Publishers ||--o{ Books : "publishes"
+  Users ||--o{ Books : "creates"
+  Users ||--o{ Books : "updates"
+  Books ||--o{ BookCopies : "has"
+
+  Users ||--o{ BorrowRequests : "requests"
+  Users ||--o{ BorrowRequests : "creates"
+  Users ||--o{ BorrowRequests : "approves"
+  BorrowRequests ||--o{ BorrowDetails : "contains"
+  BookCopies ||--o{ BorrowDetails : "borrowed as"
+
+  Users ||--o{ Reservations : "places"
+  BookCopies ||--o{ Reservations : "reserved as"
+
+  Users ||--o{ Fines : "owes"
+  Users ||--o{ Fines : "creates"
+  Users ||--o{ Fines : "collects"
+  BorrowDetails ||--o{ Fines : "incurs"
+
+  NotificationTemplates ||--o{ Notifications : "renders"
+  Users ||--o{ Notifications : "receives"
+  Notifications ||--o{ NotificationAttempts : "delivered by"
+
+  Users ||--o{ AuditLogs : "acts in"
+```
+
+| Table | Purpose | Main Relationship(s) |
+| ----- | ------- | -------------------- |
+| Roles | Stores system role definitions. | One role can be assigned to many UserRoles. |
+| Users | Stores login account and account status data. | One user can have roles, profile, member record, auth tokens, borrow requests, reservations, fines, notifications, and audit logs. |
+| UserRoles | Maps users to roles. | Many-to-many join between Users and Roles. |
+| UserProfiles | Stores personal profile data. | One profile belongs to one user. |
+| Members | Stores library member status. | One member record belongs to one user and may be approved by another user. |
+| MembershipApplications | Stores membership application and review records. | Each application belongs to one user and may be reviewed by another user. |
+| AuthTokens | Stores verification, reset, refresh, and setup tokens. | Each token belongs to one user. |
+| Categories | Stores book categories. | One category can group many books. |
+| Authors | Stores author information. | One author can be linked to many books. |
+| Publishers | Stores publisher information. | One publisher can be linked to many books. |
+| Books | Stores catalog metadata. | Each book belongs to one category, author, publisher, and can have many physical copies. |
+| BookCopies | Stores physical copy, barcode, location, and status. | Each copy belongs to one book and can be used by borrow details or reservations. |
+| BorrowRequests | Stores borrowing request headers. | Each request belongs to a user and contains borrow details. |
+| BorrowDetails | Stores per-copy borrow, return, and status data. | Each detail belongs to one borrow request and one book copy. |
+| Reservations | Stores reservation queue records. | Each reservation belongs to one user and one book copy. |
+| Fines | Stores fine records and paid status. | Each fine belongs to one user and may be linked to one borrow detail. |
+| NotificationTemplates | Stores reusable notification templates. | One template can render many notifications. |
+| Notifications | Stores notification requests and status. | Each notification may belong to a user and template, and can have delivery attempts. |
+| NotificationAttempts | Stores delivery attempt results. | Each attempt belongs to one notification. |
+| AuditLogs | Stores important administrative action logs. | Each audit log may be linked to the user who performed the action. |
