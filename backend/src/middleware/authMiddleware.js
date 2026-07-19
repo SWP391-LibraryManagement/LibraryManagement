@@ -5,10 +5,11 @@ function createAuthenticate(authService = defaultAuthService) {
   return async function authenticate(req, res, next) {
     try {
       // @spec FR-FE02-008, FR-FE02-009
-      const authorization = req.headers.authorization || '';
-      const [scheme, token] = authorization.split(' ');
+      const authorization = String(req.headers.authorization || '').trim();
+      const match = /^Bearer\s+(\S+)$/i.exec(authorization);
+      const token = match?.[1];
 
-      if (scheme !== 'Bearer' || !token) {
+      if (!token) {
         throw errors.unauthorized();
       }
 

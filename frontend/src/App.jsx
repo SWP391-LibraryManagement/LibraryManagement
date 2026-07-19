@@ -6,6 +6,7 @@ import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
 
 const LoginPage = lazy(() => import('./page/LoginPage'));
 const RegisterPage = lazy(() => import('./page/RegisterPage'));
+const VerifyEmailPage = lazy(() => import('./page/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('./page/ForgotPasswordPage'));
 const HomeRoutePage = lazy(() => import('./page/dashboard/HomeRoutePage'));
 const UserManagement = lazy(() => import('./page/UserManagement'));
@@ -52,6 +53,7 @@ function App() {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
