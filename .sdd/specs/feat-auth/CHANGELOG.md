@@ -41,7 +41,7 @@
 
 ## 2026-07-17 - Phase 1 Baseline Approved
 
-- Nhật approved the normalized FE02 specification and implementation contract as the Phase 1 baseline; OTP delivery follow-up remains implementation-pending.
+- Nhật approved the normalized FE02 specification and implementation contract as the Phase 1 baseline; at that historical checkpoint, OTP delivery follow-up remained implementation-pending and was later superseded by the FE02/FE10 implementation recorded on 2026-07-19.
 - Clarified that the baseline review is complete while implementation changes still require focused validation and human review before merge.
 
 ## 2026-07-17 - Final Lifecycle And Contract Audit
