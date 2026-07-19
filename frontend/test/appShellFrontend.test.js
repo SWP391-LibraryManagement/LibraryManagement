@@ -241,7 +241,7 @@ test('home route shows the homepage for admins and role dashboards for other aut
   const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const routeSource = await readFile(new URL('../src/page/dashboard/HomeRoutePage.jsx', import.meta.url), 'utf8');
 
-  assert.match(appSource, /import HomeRoutePage from '.\/page\/dashboard\/HomeRoutePage';/);
+  assert.match(appSource, /const HomeRoutePage = lazy\(\(\) => import\('.\/page\/dashboard\/HomeRoutePage'\)\);/);
   assert.match(appSource, /<Route path="\/home" element=\{<HomeRoutePage \/>\}/);
   assert.match(routeSource, /hasStoredAuth/);
   assert.match(routeSource, /getDashboardAudience/);

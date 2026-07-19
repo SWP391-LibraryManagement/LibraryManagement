@@ -4,7 +4,11 @@ const assert = require('node:assert/strict');
 
 const { runStagingSmoke } = require('../../scripts/smoke-staging');
 
-async function startFixture({ permissiveCors = false, protectedStatus = 401 } = {}) {
+async function startFixture({
+  permissiveCors = false,
+  protectedStatus = 401,
+  catalogStatus = 200,
+} = {}) {
   let allowedOrigin = '';
   const server = http.createServer((req, res) => {
     const origin = req.headers.origin;
@@ -19,6 +23,11 @@ async function startFixture({ permissiveCors = false, protectedStatus = 401 } = 
     if (req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok' }));
+      return;
+    }
+    if (req.url === '/api/books?page=1&limit=1') {
+      res.writeHead(catalogStatus, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ data: [], pagination: { page: 1, limit: 1, total: 0 } }));
       return;
     }
     if (req.url === '/api/auth/me') {
@@ -36,7 +45,7 @@ async function startFixture({ permissiveCors = false, protectedStatus = 401 } = 
   return { baseUrl, close: () => new Promise((resolve) => server.close(resolve)) };
 }
 
-test('passes for healthy frontend, API, strict CORS, and protected auth route', async () => {
+test('passes for healthy frontend, API, SQL catalog, strict CORS, and protected auth route', async () => {
   const fixture = await startFixture();
   try {
     const result = await runStagingSmoke({
@@ -44,7 +53,26 @@ test('passes for healthy frontend, API, strict CORS, and protected auth route', 
       apiUrl: fixture.baseUrl,
     });
     assert.equal(result.status, 'PASS');
-    assert.equal(result.checks.length, 5);
+    assert.deepEqual(result.checks, [
+      'frontend',
+      'health',
+      'sql-catalog',
+      'allowed-cors',
+      'blocked-cors',
+      'protected-route',
+    ]);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test('fails when the SQL-backed public catalog is unavailable', async () => {
+  const fixture = await startFixture({ catalogStatus: 503 });
+  try {
+    await assert.rejects(
+      runStagingSmoke({ frontendUrl: fixture.baseUrl, apiUrl: fixture.baseUrl }),
+      /SQL-backed catalog check failed with HTTP 503/i
+    );
   } finally {
     await fixture.close();
   }

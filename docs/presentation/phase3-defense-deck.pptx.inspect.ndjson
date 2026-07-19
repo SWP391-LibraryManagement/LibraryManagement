@@ -1,0 +1,150 @@
+{"kind":"deck","id":"pr/htu1c3","name":"Deck"}
+{"kind":"layout","layoutId":"b00a8c5c-d977-4317-a9bc-365903731fcf","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"3e9bf714-6044-471a-a499-8e44d7caaef3","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/rtdwoj","slide":1,"title":"SWP391 • LIBRARY MANAGEMENT SYSTEM","textShapes":4}
+{"kind":"textbox","id":"sh/wbypsnih","slide":1,"text":"SWP391 • LIBRARY MANAGEMENT SYSTEM","textPreview":"SWP391 • LIBRARY MANAGEMENT SYSTEM","textChars":34,"textLines":1,"bbox":[42,42,650,34]}
+{"kind":"textbox","id":"sh/bap8z2hw","slide":1,"text":"Phase 3 makes the\nrelease defendable","textPreview":"Phase 3 makes the | release defendable","textChars":36,"textLines":2,"bbox":[42,176,1010,260]}
+{"kind":"textbox","id":"sh/a9g7qx0b","slide":1,"text":"Staging • Live SQL • Performance • User testing • Delivery evidence","textPreview":"Staging • Live SQL • Performance • User testing • Delivery evidence","textChars":67,"textLines":1,"bbox":[42,500,1050,50]}
+{"kind":"textbox","id":"sh/987qxszq","slide":1,"text":"19 July 2026","textPreview":"19 July 2026","textChars":12,"textLines":1,"bbox":[42,575,360,36]}
+{"kind":"notes","id":"nt/rtdwoj","slide":1,"text":""}
+{"kind":"slide","id":"sl/eym7cd","slide":2,"title":"Phase 3 adds confidence—not new business scope","textShapes":15}
+{"kind":"textbox","id":"sh/p8j6pob6","slide":2,"name":"slide-2-title","text":"Phase 3 adds confidence—not new business scope","textPreview":"Phase 3 adds confidence—not new business scope","textChars":46,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/2ls7e9sv","slide":2,"name":"slide-2-number","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"textbox","id":"sh/3m1onetg","slide":2,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[42,190,180,74]}
+{"kind":"textbox","id":"sh/gjapcjap","slide":2,"text":"features complete","textPreview":"features complete","textChars":17,"textLines":1,"bbox":[232,194,390,45]}
+{"kind":"textbox","id":"sh/1kj6l4ba","slide":2,"text":"FE01–FE12 retain the accepted Phase 2 contracts.","textPreview":"FE01–FE12 retain the accepted Phase 2 contracts.","textChars":48,"textLines":1,"bbox":[232,246,390,82]}
+{"kind":"textbox","id":"sh/eh87a9sj","slide":2,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[650,190,180,74]}
+{"kind":"textbox","id":"sh/fi1ojet4","slide":2,"text":"role audiences","textPreview":"role audiences","textChars":14,"textLines":1,"bbox":[840,194,390,45]}
+{"kind":"textbox","id":"sh/sfqp8zat","slide":2,"text":"Guest, Member, Librarian, and Admin stay server-authorized.","textPreview":"Guest, Member, Librarian, and Admin stay server-authorized.","textChars":59,"textLines":1,"bbox":[840,246,390,82]}
+{"kind":"textbox","id":"sh/tgz6h4be","slide":2,"text":"100%","textPreview":"100%","textChars":4,"textLines":1,"bbox":[42,420,180,74]}
+{"kind":"textbox","id":"sh/hs32pk3i","slide":2,"text":"FR traceability","textPreview":"FR traceability","textChars":15,"textLines":1,"bbox":[232,424,390,45]}
+{"kind":"textbox","id":"sh/grulgf2x","slide":2,"text":"Every implemented feature maps source rules to code evidence.","textPreview":"Every implemented feature maps source rules to code evidence.","textChars":61,"textLines":1,"bbox":[232,476,390,82]}
+{"kind":"textbox","id":"sh/f61knulc","slide":2,"text":"4 layers","textPreview":"4 layers","textChars":8,"textLines":1,"bbox":[650,420,180,74]}
+{"kind":"textbox","id":"sh/u5s3epkr","slide":2,"text":"validation required","textPreview":"validation required","textChars":19,"textLines":1,"bbox":[840,424,390,45]}
+{"kind":"textbox","id":"sh/t4j2lk3m","slide":2,"text":"Automated, spec, safety, and acceptance evidence all remain mandatory.","textPreview":"Automated, spec, safety, and acceptance evidence all remain mandatory.","textChars":70,"textLines":1,"bbox":[840,476,390,82]}
+{"kind":"textbox","id":"sh/s3alcfm1","slide":2,"name":"source-note","text":"Source: Phase 2 exit validation; Phase 3 design and plan.","textPreview":"Source: Phase 2 exit validation; Phase 3 design and plan.","textChars":57,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"notes","id":"nt/eym7cd","slide":2,"text":""}
+{"kind":"slide","id":"sl/tvcinj","slide":3,"title":"Every deployed boundary is observable","textShapes":15}
+{"kind":"textbox","id":"sh/8ny9cni1","slide":3,"name":"slide-3-title","text":"Every deployed boundary is observable","textPreview":"Every deployed boundary is observable","textChars":37,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/7mps3i1g","slide":3,"name":"slide-3-number","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"shape","id":"sh/mlgrad0b","slide":3,"bbox":[130,165,1020,72]}
+{"kind":"textbox","id":"sh/lk7a18jq","slide":3,"text":"GitHub Actions  →  quality gate  →  backend/frontend deploy  →  staging smoke","textPreview":"GitHub Actions  →  quality gate  →  backend/frontend deploy  →  staging smoke","textChars":77,"textLines":1,"bbox":[160,184,960,36]}
+{"kind":"shape","id":"sh/kje98ni5","slide":3,"name":"architecture-React","bbox":[80,315,290,205]}
+{"kind":"shape","id":"sh/zy5szi1k","slide":3,"name":"architecture-Express API","bbox":[455,315,290,205]}
+{"kind":"shape","id":"sh/yxwr6d0z","slide":3,"name":"architecture-SQL Server","bbox":[830,315,290,205]}
+{"kind":"shape","id":"sh/5gradcju","slide":3,"bbox":[370,417.5,85,0]}
+{"kind":"shape","id":"sh/4fitk7i9","slide":3,"bbox":[745,417.5,85,0]}
+{"kind":"textbox","id":"sh/q9obq5cr","slide":3,"text":"React","textPreview":"React","textChars":5,"textLines":1,"bbox":[104,345,242,48]}
+{"kind":"textbox","id":"sh/raxszatc","slide":3,"text":"Azure Static Web Apps","textPreview":"Azure Static Web Apps","textChars":21,"textLines":1,"bbox":[104,405,242,36]}
+{"kind":"textbox","id":"sh/cb6tsfux","slide":3,"text":"HTML + responsive UI","textPreview":"HTML + responsive UI","textChars":20,"textLines":1,"bbox":[104,462,242,34]}
+{"kind":"textbox","id":"sh/dcfa1kb2","slide":3,"text":"Express API","textPreview":"Express API","textChars":11,"textLines":1,"bbox":[479,345,242,48]}
+{"kind":"textbox","id":"sh/254rmlcf","slide":3,"text":"Azure App Service","textPreview":"Azure App Service","textChars":17,"textLines":1,"bbox":[479,405,242,36]}
+{"kind":"textbox","id":"sh/36xsvqt0","slide":3,"text":"CORS + protected 401","textPreview":"CORS + protected 401","textChars":20,"textLines":1,"bbox":[479,462,242,34]}
+{"kind":"textbox","id":"sh/4769ovul","slide":3,"text":"SQL Server","textPreview":"SQL Server","textChars":10,"textLines":1,"bbox":[854,345,242,48]}
+{"kind":"textbox","id":"sh/p8fax0b6","slide":3,"text":"Azure SQL","textPreview":"Azure SQL","textChars":9,"textLines":1,"bbox":[854,405,242,36]}
+{"kind":"textbox","id":"sh/m18bypcz","slide":3,"text":"public catalog query","textPreview":"public catalog query","textChars":20,"textLines":1,"bbox":[854,462,242,34]}
+{"kind":"textbox","id":"sh/n2hs7utk","slide":3,"text":"Frontend: lemon-wave-04db51100.7.azurestaticapps.net","textPreview":"Frontend: lemon-wave-04db51100.7.azurestaticapps.net","textChars":52,"textLines":1,"bbox":[80,565,545,30]}
+{"kind":"textbox","id":"sh/jmt8jm9w","slide":3,"text":"API: app-library-api-staging-nhat714.azurewebsites.net","textPreview":"API: app-library-api-staging-nhat714.azurewebsites.net","textChars":54,"textLines":1,"bbox":[650,565,550,30]}
+{"kind":"textbox","id":"sh/il07qhsb","slide":3,"name":"source-note","text":"Source: phase3-staging-evidence-2026-07-19.md","textPreview":"Source: phase3-staging-evidence-2026-07-19.md","textChars":45,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"notes","id":"nt/tvcinj","slide":3,"text":""}
+{"kind":"slide","id":"sl/ghc4fp","slide":4,"title":"Release readiness is measured, not declared","textShapes":13}
+{"kind":"textbox","id":"sh/snilsf6x","slide":4,"name":"slide-4-title","text":"Release readiness is measured, not declared","textPreview":"Release readiness is measured, not declared","textChars":43,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/rm9kzupc","slide":4,"name":"slide-4-number","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"textbox","id":"sh/6l03qpor","slide":4,"text":"Coverage remains above 80% • deployment utilities 8/8 • browser E2E 4/4","textPreview":"Coverage remains above 80% • deployment utilities 8/8 • browser E2E 4/4","textChars":71,"textLines":1,"bbox":[42,135,1160,48]}
+{"kind":"shape","id":"sh/1sbm547e","slide":4,"bbox":[42,270,374,250]}
+{"kind":"textbox","id":"sh/grilwz6t","slide":4,"text":"916","textPreview":"916","textChars":3,"textLines":1,"bbox":[70,300,318,90]}
+{"kind":"textbox","id":"sh/fq943up8","slide":4,"text":"backend tests","textPreview":"backend tests","textChars":13,"textLines":1,"bbox":[70,396,318,42]}
+{"kind":"textbox","id":"sh/ep03upon","slide":4,"text":"53 suites passed","textPreview":"53 suites passed","textChars":16,"textLines":1,"bbox":[70,446,318,48]}
+{"kind":"shape","id":"sh/xw72t07a","slide":4,"bbox":[453,270,374,250]}
+{"kind":"textbox","id":"sh/wvylkvqp","slide":4,"text":"151","textPreview":"151","textChars":3,"textLines":1,"bbox":[481,300,318,90]}
+{"kind":"textbox","id":"sh/mlsradkj","slide":4,"text":"frontend tests","textPreview":"frontend tests","textChars":14,"textLines":1,"bbox":[481,396,318,42]}
+{"kind":"textbox","id":"sh/nm1sjy14","slide":4,"text":"route and UI contracts passed","textPreview":"route and UI contracts passed","textChars":29,"textLines":1,"bbox":[481,446,318,48]}
+{"kind":"shape","id":"sh/8na9c32p","slide":4,"bbox":[864,270,374,250]}
+{"kind":"textbox","id":"sh/9o3al8ja","slide":4,"text":"100%","textPreview":"100%","textChars":4,"textLines":1,"bbox":[892,300,318,90]}
+{"kind":"textbox","id":"sh/apcredkv","slide":4,"text":"FR traceability","textPreview":"FR traceability","textChars":15,"textLines":1,"bbox":[892,396,318,42]}
+{"kind":"textbox","id":"sh/vqlsni1g","slide":4,"text":"12 of 12 feature packages complete","textPreview":"12 of 12 feature packages complete","textChars":34,"textLines":1,"bbox":[892,446,318,48]}
+{"kind":"textbox","id":"sh/wru9gn21","slide":4,"name":"source-note","text":"Source: local baseline verification and Phase 2 exit evidence.","textPreview":"Source: local baseline verification and Phase 2 exit evidence.","textChars":62,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"notes","id":"nt/ghc4fp","slide":4,"text":""}
+{"kind":"slide","id":"sl/yph678","slide":5,"title":"The SQL-aware smoke test closed the real staging gap","textShapes":12}
+{"kind":"textbox","id":"sh/axczel4f","slide":5,"name":"slide-5-title","text":"The SQL-aware smoke test closed the real staging gap","textPreview":"The SQL-aware smoke test closed the real staging gap","textChars":52,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/xk3y90nq","slide":5,"name":"slide-5-number","text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"shape","id":"sh/wzuhgvm5","slide":5,"bbox":[42,165,374,380]}
+{"kind":"textbox","id":"sh/jmlgba5w","slide":5,"text":"DETECT","textPreview":"DETECT","textChars":6,"textLines":1,"bbox":[70,198,318,32]}
+{"kind":"textbox","id":"sh/ilczi54b","slide":5,"text":"Health looked green","textPreview":"Health looked green","textChars":19,"textLines":1,"bbox":[70,255,318,96]}
+{"kind":"textbox","id":"sh/5onidkn2","slide":5,"text":"/health returned 200, but the first SQL-backed catalog check returned 500.","textPreview":"/health returned 200, but the first SQL-backed catalog check returned 500.","textChars":74,"textLines":1,"bbox":[70,382,318,116]}
+{"kind":"shape","id":"sh/knuhkfmh","slide":5,"bbox":[453,165,374,380]}
+{"kind":"textbox","id":"sh/7q50fa5s","slide":5,"text":"DIAGNOSE","textPreview":"DIAGNOSE","textChars":8,"textLines":1,"bbox":[481,198,318,32]}
+{"kind":"textbox","id":"sh/6pwzm547","slide":5,"text":"Schema drift was concrete","textPreview":"Schema drift was concrete","textChars":25,"textLines":1,"bbox":[481,255,318,96]}
+{"kind":"textbox","id":"sh/8jyxgv6l","slide":5,"text":"Books.RowVersion was missing; the legacy ISBN index then blocked the migration.","textPreview":"Books.RowVersion was missing; the legacy ISBN index then blocked the migration.","textChars":79,"textLines":1,"bbox":[481,382,318,116]}
+{"kind":"shape","id":"sh/tk7ep0n6","slide":5,"bbox":[864,165,374,380]}
+{"kind":"textbox","id":"sh/6hwvelov","slide":5,"text":"PROVE","textPreview":"PROVE","textChars":5,"textLines":1,"bbox":[892,198,318,32]}
+{"kind":"textbox","id":"sh/7ipwnq5g","slide":5,"text":"The fix is repeatable","textPreview":"The fix is repeatable","textChars":21,"textLines":1,"bbox":[892,255,318,96]}
+{"kind":"textbox","id":"sh/gnyxkv6x","slide":5,"text":"Five migrations ran twice; 20 tables validated; six-check smoke passed.","textPreview":"Five migrations ran twice; 20 tables validated; six-check smoke passed.","textChars":71,"textLines":1,"bbox":[892,382,318,116]}
+{"kind":"shape","id":"sh/ho7et0ni","slide":5,"bbox":[42,590,1196,0]}
+{"kind":"shape","id":"sh/ulgfilor","slide":5,"bbox":[42,583,14,14]}
+{"kind":"shape","id":"sh/vmpwrq5c","slide":5,"bbox":[453,583,14,14]}
+{"kind":"shape","id":"sh/4bixof6t","slide":5,"bbox":[864,583,14,14]}
+{"kind":"textbox","id":"sh/5crexkne","slide":5,"name":"source-note","text":"Source: Azure staging diagnosis, FE05 migration RED-GREEN, and six-check smoke.","textPreview":"Source: Azure staging diagnosis, FE05 migration RED-GREEN, and six-check smoke.","textChars":79,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"notes","id":"nt/yph678","slide":5,"text":""}
+{"kind":"slide","id":"sl/no1dg8","slide":6,"title":"Code-splitting cuts initial JavaScript by 67.9%","textShapes":9}
+{"kind":"textbox","id":"sh/pcz6lsfa","slide":6,"name":"slide-6-title","text":"Code-splitting cuts initial JavaScript by 67.9%","textPreview":"Code-splitting cuts initial JavaScript by 67.9%","textChars":47,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/298nadgj","slide":6,"name":"slide-6-number","text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"shape","id":"sh/nahojix4","slide":6,"bbox":[42,125,575,520]}
+{"kind":"textbox","id":"sh/xgj6psf6","slide":6,"text":"The first page no longer downloads every operational screen.","textPreview":"The first page no longer downloads every operational screen.","textChars":60,"textLines":1,"bbox":[675,168,540,100]}
+{"kind":"textbox","id":"sh/ad8nexgv","slide":6,"text":"57","textPreview":"57","textChars":2,"textLines":1,"bbox":[675,335,180,72]}
+{"kind":"textbox","id":"sh/behon2xg","slide":6,"text":"route-level chunks","textPreview":"route-level chunks","textChars":18,"textLines":1,"bbox":[675,410,220,38]}
+{"kind":"textbox","id":"sh/sj6543yh","slide":6,"text":"66.95 ms","textPreview":"66.95 ms","textChars":8,"textLines":1,"bbox":[965,335,230,72]}
+{"kind":"textbox","id":"sh/dkfmd8z2","slide":6,"text":"login p95 • bcrypt cost 10","textPreview":"login p95 • bcrypt cost 10","textChars":26,"textLines":1,"bbox":[965,410,250,52]}
+{"kind":"textbox","id":"sh/9onupgvm","slide":6,"text":"Session validation p95: 1.45 ms","textPreview":"Session validation p95: 1.45 ms","textChars":31,"textLines":1,"bbox":[675,520,540,42]}
+{"kind":"textbox","id":"sh/8netwbuh","slide":6,"name":"source-note","text":"Source: phase3-performance-report-2026-07-19.md. Local deterministic timing; Azure SQL/network excluded.","textPreview":"Source: phase3-performance-report-2026-07-19.md. Local deterministic timing; Azure SQL/network excluded.","textChars":104,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"chart","id":"ch/wrm5sfih","slide":6,"name":"","chartType":"bar","bbox":[72,165,515,420]}
+{"kind":"notes","id":"nt/no1dg8","slide":6,"text":""}
+{"kind":"slide","id":"sl/3emri8","slide":7,"title":"The golden path still works after delivery polish","textShapes":4}
+{"kind":"textbox","id":"sh/kvi14rmx","slide":7,"name":"slide-7-title","text":"The golden path still works after delivery polish","textPreview":"The golden path still works after delivery polish","textChars":49,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/ju90bmlc","slide":7,"name":"slide-7-number","text":"7","textPreview":"7","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"shape","id":"sh/ytgj2h4r","slide":7,"bbox":[42,135,810,480]}
+{"kind":"shape","id":"sh/wry107ml","slide":7,"bbox":[892,135,245,430]}
+{"kind":"textbox","id":"sh/apgjyx4f","slide":7,"text":"4/4 browser flows • 24.4 s","textPreview":"4/4 browser flows • 24.4 s","textChars":26,"textLines":1,"bbox":[885,585,320,36]}
+{"kind":"textbox","id":"sh/hob2lg3a","slide":7,"name":"source-note","text":"Source: phase3-user-testing-record-2026-07-19.md","textPreview":"Source: phase3-user-testing-record-2026-07-19.md","textChars":48,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"image","id":"im/s7e94rih","slide":7,"name":"","geometry":"roundRect","alt":"Desktop borrowing report after the synthetic golden path","bbox":[54,147,786,456]}
+{"kind":"image","id":"im/6lcr2h0b","slide":7,"name":"","geometry":"roundRect","alt":"Mobile borrowing report without horizontal overflow","bbox":[904,147,221,406]}
+{"kind":"notes","id":"nt/3emri8","slide":7,"text":""}
+{"kind":"slide","id":"sl/k3pvcl","slide":8,"title":"What is proven—and what is deliberately not claimed","textShapes":4}
+{"kind":"textbox","id":"sh/zmh4judk","slide":8,"name":"slide-8-title","text":"What is proven—and what is deliberately not claimed","textPreview":"What is proven—and what is deliberately not claimed","textChars":51,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/knqlczu5","slide":8,"name":"slide-8-number","text":"8","textPreview":"8","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"textbox","id":"sh/lozml4vq","slide":8,"text":"Explicit boundaries keep the final report credible.","textPreview":"Explicit boundaries keep the final report credible.","textChars":51,"textLines":1,"bbox":[42,118,1100,34]}
+{"kind":"textbox","id":"sh/byxkfudo","slide":8,"name":"source-note","text":"Source: Phase 3 staging and user-testing evidence.","textPreview":"Source: Phase 3 staging and user-testing evidence.","textChars":50,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"table","id":"tb/nqlcr614","slide":8,"name":"","rows":7,"cols":3,"preview":"Evidence area | Status | Release meaning","bbox":[42,175,1196,430]}
+{"kind":"notes","id":"nt/k3pvcl","slide":8,"text":""}
+{"kind":"slide","id":"sl/i4zbjc","slide":9,"title":"The defense demo follows one repeatable five-minute path","textShapes":16}
+{"kind":"textbox","id":"sh/sr6xsrux","slide":9,"name":"slide-9-title","text":"The defense demo follows one repeatable five-minute path","textPreview":"The defense demo follows one repeatable five-minute path","textChars":56,"textLines":1,"bbox":[42,36,1180,82]}
+{"kind":"textbox","id":"sh/rqxgjmdc","slide":9,"name":"slide-9-number","text":"9","textPreview":"9","textChars":1,"textLines":1,"bbox":[1190,665,48,20]}
+{"kind":"shape","id":"sh/qpofqhcr","slide":9,"bbox":[95,310,1090,0]}
+{"kind":"shape","id":"sh/5ofyhcv6","slide":9,"bbox":[90,276,68,68]}
+{"kind":"textbox","id":"sh/4nmxorul","slide":9,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[90,289,68,40]}
+{"kind":"textbox","id":"sh/3mdgfmdg","slide":9,"text":"Login","textPreview":"Login","textChars":5,"textLines":1,"bbox":[50,370,148,44]}
+{"kind":"shape","id":"sh/il4fmhcv","slide":9,"bbox":[300,276,68,68]}
+{"kind":"textbox","id":"sh/hkvydcva","slide":9,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[300,289,68,40]}
+{"kind":"textbox","id":"sh/wzmxk7up","slide":9,"text":"Borrow","textPreview":"Borrow","textChars":6,"textLines":1,"bbox":[260,370,148,44]}
+{"kind":"shape","id":"sh/upc3q5cj","slide":9,"bbox":[510,276,68,68]}
+{"kind":"textbox","id":"sh/vq54jat4","slide":9,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[510,289,68,40]}
+{"kind":"textbox","id":"sh/grelsfup","slide":9,"text":"Approve","textPreview":"Approve","textChars":7,"textLines":1,"bbox":[470,370,148,44]}
+{"kind":"shape","id":"sh/hsnml0ba","slide":9,"bbox":[720,276,68,68]}
+{"kind":"textbox","id":"sh/61c3mlcn","slide":9,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[720,289,68,40]}
+{"kind":"textbox","id":"sh/7mlkfqt8","slide":9,"text":"Return","textPreview":"Return","textChars":6,"textLines":1,"bbox":[680,370,148,44]}
+{"kind":"shape","id":"sh/8nulovud","slide":9,"bbox":[930,276,68,68]}
+{"kind":"textbox","id":"sh/to3mh0by","slide":9,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[930,289,68,40]}
+{"kind":"textbox","id":"sh/yxs3ilcb","slide":9,"text":"Pay fine","textPreview":"Pay fine","textChars":8,"textLines":1,"bbox":[890,370,148,44]}
+{"kind":"shape","id":"sh/jy1kbqtw","slide":9,"bbox":[1140,276,68,68]}
+{"kind":"textbox","id":"sh/n2h0jm9o","slide":9,"text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[1140,289,68,40]}
+{"kind":"textbox","id":"sh/m18jqhs3","slide":9,"text":"Report","textPreview":"Report","textChars":6,"textLines":1,"bbox":[1100,370,148,44]}
+{"kind":"shape","id":"sh/94zilwru","slide":9,"bbox":[135,480,1010,105]}
+{"kind":"textbox","id":"sh/o3q1sra9","slide":9,"text":"Fallback evidence:  six-check staging smoke   •   test:system   •   verified screenshots","textPreview":"Fallback evidence:  six-check staging smoke   •   test:system   •   verified screenshots","textChars":88,"textLines":1,"bbox":[170,514,940,38]}
+{"kind":"textbox","id":"sh/b6h0nm90","slide":9,"name":"source-note","text":"Source: system-integration-demo-runbook.md","textPreview":"Source: system-integration-demo-runbook.md","textChars":42,"textLines":1,"bbox":[42,664,1080,20]}
+{"kind":"notes","id":"nt/i4zbjc","slide":9,"text":""}
+{"kind":"slide","id":"sl/yqzbau","slide":10,"title":"RELEASE DECISION","textShapes":4}
+{"kind":"textbox","id":"sh/u9wvip4b","slide":10,"text":"RELEASE DECISION","textPreview":"RELEASE DECISION","textChars":16,"textLines":1,"bbox":[42,42,360,34]}
+{"kind":"textbox","id":"sh/hcned4nm","slide":10,"text":"Phase 3 is ready\nfor integration","textPreview":"Phase 3 is ready | for integration","textChars":32,"textLines":2,"bbox":[42,185,1000,250]}
+{"kind":"textbox","id":"sh/gbedkzmh","slide":10,"text":"Merge the branch, require CI, then rerun the six-check staging deployment.","textPreview":"Merge the branch, require CI, then rerun the six-check staging deployment.","textChars":74,"textLines":1,"bbox":[42,520,1080,48]}
+{"kind":"textbox","id":"sh/76lw7u5k","slide":10,"text":"Keep authenticated Azure acceptance and real SMTP delivery open until they are actually observed.","textPreview":"Keep authenticated Azure acceptance and real SMTP delivery open until they are actually observed.","textChars":97,"textLines":1,"bbox":[42,586,1050,48]}
+{"kind":"notes","id":"nt/yqzbau","slide":10,"text":""}

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-19 - Phase 3 Azure staging migration hardening
+
+- Reproduced the staging schema drift where the deployed FE05 catalog query failed because `Books.RowVersion` was missing.
+- Updated the approved FE05 reconciliation migration to drop and recreate `UX_Books_ISBN_NotNull` while narrowing legacy `Books.ISBN`, avoiding SQL Server error 4922 from the dependent filtered index.
+- Applied all five approved reconciliation migrations twice to `LibraryManagementStaging`; the public catalog and the SQL-aware staging smoke check then passed.
+
 ## 2026-07-19 - Phase 2 Exit Closeout
 
 - feat-book-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
