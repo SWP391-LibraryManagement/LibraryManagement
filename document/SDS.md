@@ -190,3 +190,59 @@ flowchart LR
 | 13 | frontend/src/page | Contains React page-level screens for member, librarian, and admin workflows. |
 | 14 | frontend/src/styles | Stores shared frontend styling assets and CSS. |
 | 15 | frontend/src/utils | Provides shared frontend helper functions used by UI and API layers. |
+
+## 2. Database Design
+
+The approved project database is SQL Server. Table names below follow the current schema in `database/Librarymanagement.sql`.
+
+### a. Database Schema
+
+```mermaid
+erDiagram
+  Users ||--o{ UserRoles : has
+  Roles ||--o{ UserRoles : assigned
+  Users ||--o| UserProfiles : owns
+  Users ||--o| Members : becomes
+  Users ||--o{ MembershipApplications : submits
+  Users ||--o{ AuthTokens : owns
+  Categories ||--o{ Books : categorizes
+  Authors ||--o{ Books : writes
+  Publishers ||--o{ Books : publishes
+  Books ||--o{ BookCopies : has
+  Users ||--o{ BorrowRequests : creates
+  BorrowRequests ||--o{ BorrowDetails : contains
+  BookCopies ||--o{ BorrowDetails : borrowed_as
+  Users ||--o{ Reservations : places
+  BookCopies ||--o{ Reservations : reserved_as
+  Users ||--o{ Fines : owes
+  BorrowDetails ||--o{ Fines : generates
+  NotificationTemplates ||--o{ Notifications : formats
+  Users ||--o{ Notifications : receives
+  Notifications ||--o{ NotificationAttempts : attempts
+  Users ||--o{ AuditLogs : performs
+```
+
+### b. Table Description
+
+| No | Table | Description |
+| --- | --- | --- |
+| 01 | Roles | Stores system roles such as ADMIN, LIBRARIAN, MEMBER, and GUEST. |
+| 02 | Users | Stores login accounts, email, password hash, account status, and security timestamps. |
+| 03 | UserRoles | Maps users to one or more roles. |
+| 04 | UserProfiles | Stores profile details for a user, including full name, address, date of birth, and avatar URL. |
+| 05 | Members | Stores the approved member projection used for borrowing and reservation eligibility. |
+| 06 | MembershipApplications | Stores membership application history, review status, reviewer, and review note. |
+| 07 | AuthTokens | Stores hashed authentication tokens for refresh, email verification, password reset, account setup, and OTP flows. |
+| 08 | Categories | Stores book categories used by catalog and inventory features. |
+| 09 | Authors | Stores book author records. |
+| 10 | Publishers | Stores book publisher records. |
+| 11 | Books | Stores catalog metadata including title, ISBN, category, author, publisher, status, and audit ownership. |
+| 12 | BookCopies | Stores physical copy records, barcode, location, and availability status. |
+| 13 | BorrowRequests | Stores borrowing request headers, requester, processing status, and approval metadata. |
+| 14 | BorrowDetails | Stores individual borrowed copy lines, due dates, return dates, renewal count, and item status. |
+| 15 | Reservations | Stores reservation queue records for users and book copies. |
+| 16 | Fines | Stores overdue fine calculation, payment, waiver/cancel status, and collection metadata. |
+| 17 | NotificationTemplates | Stores reusable notification subject/body templates. |
+| 18 | Notifications | Stores queued and sent notification records, recipient email, status, source feature, and safe payload. |
+| 19 | NotificationAttempts | Stores delivery attempt history for each notification. |
+| 20 | AuditLogs | Stores administrative/user action audit records with target metadata and request context. |
