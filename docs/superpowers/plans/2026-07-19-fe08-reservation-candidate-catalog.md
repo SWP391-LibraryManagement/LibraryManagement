@@ -275,7 +275,7 @@ Assert active-book borrowed/reserved copies are present, all other statuses are 
 - [ ] **Step 4: Run the focused SQL suite.**
 
 ```powershell
-npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/sql/reservationCandidates.sqltest.js
+npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidates.sqltest.js"
 ```
 
 Expected: all candidate SQL cases pass and cleanup leaves `DB_CLEAN`/synthetic rows clean.
@@ -406,7 +406,8 @@ git commit -m "test: add FE08 reservation candidate browser acceptance"
 - [ ] **Step 1: Run focused gates.**
 
 ```powershell
-npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js tests/sql/reservationCandidates.sqltest.js
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
+npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidates.sqltest.js"
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
