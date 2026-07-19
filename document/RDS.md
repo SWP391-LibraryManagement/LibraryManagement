@@ -49,6 +49,7 @@
 | 1.0 | 2026-07-19 | M | DatDT | FE03 FE11 librarian column ownership activated. |
 | 1.0 | 2026-07-19 | M | NhatNHA | FE10 recipient email width synchronization activated. |
 | 1.0 | 2026-07-19 | M | DungTH | FE11 admin navigation permissions and finalization governance activated. |
+| 1.0 | 2026-07-19 | M | DatDT | System access login and setting management screen details completed. |
 
 ***A - Added M - Modified D - Deleted**
 
@@ -68,8 +69,8 @@
     - 3.1 Database Design
     - 3.2 Code Packages
 - II. Requirement Specifications
-  - 1. `<<Feature Name>>`
-    - 1.1 `<<UseCaseCode_UC Name>>`
+  - 1. Core System Use Cases By Feature Owner
+    - 1.1 UC-01 Browse Books
   - 2. Common Functions
     - 2.1 UC-2 Login System
   - 3. Member Feature
@@ -79,9 +80,16 @@
     - 3.4 UC-MEM-04 Manage Own Reservations
     - 3.5 UC-MEM-05 View Borrowing And Fines
 - III. Design Specifications
-  - 1. `<<Feature Name>>`
-    - 1.1 `<<SubFeature Name>>`
-    - 1.2 System Access
+  - 1. Authentication
+    - 1.1 Account Access
+  - 2. Public / Browse
+  - 3. User Profile
+  - 4. Membership Management
+  - 5. Book And Inventory Management
+  - 6. Borrowing And Reservation
+  - 7. Fine Management
+  - 8. User And Role Management
+  - 9. Reporting And Statistics
 - IV. Appendix
   - 1. Assumptions & Dependencies
   - 2. Limitations & Exclusions
@@ -1215,16 +1223,16 @@ flowchart TB
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
 | Secondary Actors | Librarian, Admin, EmailService, Internal database |
-| Description | A member submits a membership application and later views approval or rejection status. |
-| Trigger | Member opens Membership screen and submits an application. |
-| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member does not already have approved membership.<br/>PRE-3: Member has no duplicate pending application. |
-| Postconditions | POST-1: Membership application is stored.<br/>POST-2: Member can view application status.<br/>POST-3: Review result notification may be sent. |
-| Normal Flow | MEM-02.0 Apply For Membership<br/>1. Member opens Membership screen.<br/>2. System displays current membership status.<br/>3. Member submits application.<br/>4. System validates application eligibility.<br/>5. System stores pending application.<br/>6. Staff reviews the application.<br/>7. System updates application result.<br/>8. Member views updated status. |
-| Alternative Flows | MEM-02.1 Application is rejected: member can re-apply after correcting information.<br/>MEM-02.2 Application is pending: system prevents duplicate pending submission. |
-| Exceptions | MEM-02.0.E1 Already approved: system blocks new application.<br/>MEM-02.0.E2 Unauthorized review action: system denies staff action. |
+| Description | A member submits a membership application so the account can become an approved library member for borrowing and reservation eligibility. Librarian or Admin reviews the application and the system stores the final decision. |
+| Trigger | Member requests to apply for membership, or Librarian/Admin opens pending membership applications for review. |
+| Preconditions | PRE-1: Member is logged in and has an active account.<br/>PRE-2: Member does not already have `Members.Status = APPROVED`.<br/>PRE-3: Member has no existing `PENDING` membership application.<br/>PRE-4: Review actor has Librarian or Admin permission. |
+| Postconditions | POST-1: New membership application is stored with status `PENDING`.<br/>POST-2: On approval, application and canonical member status are updated to `APPROVED`.<br/>POST-3: On rejection, application and canonical member status are updated to `REJECTED` with a rejection reason.<br/>POST-4: Review result notification may be requested through EmailService after the decision commits. |
+| Normal Flow | MEM-02.0 Apply For Membership<br/>1. Member opens the Membership screen.<br/>2. System loads current canonical membership status and latest application.<br/>3. Member submits membership application.<br/>4. System verifies that the member has no approved membership and no pending application.<br/>5. System creates a new application with status `PENDING` and updates canonical member projection to `PENDING`.<br/>6. Librarian or Admin opens pending membership applications.<br/>7. Librarian or Admin reviews applicant information.<br/>8. Librarian or Admin approves the application.<br/>9. System verifies the application is still `PENDING`.<br/>10. System updates application status and canonical member status to `APPROVED` in one transaction.<br/>11. System records reviewer and approval timestamp.<br/>12. System requests membership result notification when notification requester is configured.<br/>13. Member opens Membership screen and sees approved status. |
+| Alternative Flows | MEM-02.1 Reject Membership Application<br/>1. Steps 1-7 follow normal flow.<br/>2. Librarian or Admin enters rejection reason.<br/>3. Librarian or Admin rejects the application.<br/>4. System verifies the application is still `PENDING`.<br/>5. System updates application and canonical member status to `REJECTED` and stores rejection reason.<br/>6. System requests membership result notification when configured.<br/><br/>MEM-02.2 Reapply After Rejection<br/>1. Member with `REJECTED` status opens Membership screen.<br/>2. Member submits a new application after correcting information.<br/>3. System creates a new `PENDING` application and keeps previous application history unchanged. |
+| Exceptions | MEM-02.0.E1 Guest attempts to apply: system requires login.<br/>MEM-02.0.E2 Member already has approved membership: system rejects new application.<br/>MEM-02.0.E3 Member already has pending application: system rejects duplicate pending application.<br/>MEM-02.0.E4 Unauthorized actor attempts approval/rejection: system denies access.<br/>MEM-02.1.E1 Missing, blank, or overlength rejection reason: system rejects rejection without changing application/member state.<br/>MEM-02.0.E5 Application already reviewed by another staff user: system rejects invalid state transition.<br/>MEM-02.0.E6 Notification delivery fails after decision: system keeps committed membership decision and records safe delivery status. |
 | Priority | High |
 | Frequency of Use | Medium, daily or weekly |
-| Business Rules | BR-MEM-MEMBER-001, BR-MEM-MEMBER-002, BR-MEM-MEMBER-003 |
+| Business Rules | BR-FE04-001, BR-FE04-002, BR-FE04-003, BR-FE04-004, BR-FE04-005, BR-FE04-006, BR-FE04-007, BR-FE04-008, BR-FE04-010, BR-FE04-011, BR-FE04-014, BR-FE04-016, BR-FE04-018 |
 | Other Information | Membership payment and points are out of scope for Phase 1. |
 | Assumptions | Approval/rejection does not change the user's login role. |
 
@@ -1232,9 +1240,19 @@ flowchart TB
 
 | ID | Business Rule | Business Rule Description |
 | -- | ------------- | ------------------------- |
-| BR-MEM-MEMBER-001 | No Duplicate Pending Application | Member cannot create a new application while another application is pending. |
-| BR-MEM-MEMBER-002 | Approved Member Cannot Reapply | Member with approved membership cannot submit another active membership application. |
-| BR-MEM-MEMBER-003 | Rejection Reason Required | Staff must provide a rejection reason when rejecting an application. |
+| BR-FE04-001 | Member Authentication Required | Guests cannot apply for membership until authenticated with the `MEMBER` role. |
+| BR-FE04-002 | Active Member Application Only | Only authenticated users with the `MEMBER` role and `Users.Status = ACTIVE` may apply. |
+| BR-FE04-003 | No Duplicate Pending Application | A user cannot have more than one pending membership application. |
+| BR-FE04-004 | Approved Member Cannot Reapply | A user with `Members.Status = APPROVED` cannot submit another application in Phase 1. |
+| BR-FE04-005 | Pending Initial State | New applications must start with status `PENDING`. |
+| BR-FE04-006 | Approval Authorization | Only librarians/admins may approve membership applications. |
+| BR-FE04-007 | Rejection Authorization | Only librarians/admins may reject membership applications. |
+| BR-FE04-008 | Pending Review Only | Only `PENDING` applications can be approved or rejected. |
+| BR-FE04-010 | Rejection Reason | Rejection must record a non-empty rejection reason of at most 500 characters. |
+| BR-FE04-011 | Own Status Visibility | Authenticated members may view only their own membership status. |
+| BR-FE04-014 | Canonical Membership Source | `Members.Status` is the canonical membership eligibility source for borrowing and reservation. |
+| BR-FE04-016 | Reapply After Rejection | A rejected user may re-apply; the new application starts `PENDING` and previous applications remain unchanged. |
+| BR-FE04-018 | Membership Result Notification | After approval/rejection commits, FE04 requests one membership result notification when configured; delivery failure is non-blocking. |
 
 ### 3.3 UC-MEM-03 Create Borrow Request
 
@@ -1332,3 +1350,619 @@ flowchart TB
 | BR-MEM-HISTORY-001 | Own Data Only | Member can view only their own borrowing, reservation, and fine data. |
 | BR-MEM-HISTORY-002 | Return Updates Borrowing | Every return transaction must update the related borrowing transaction. |
 | BR-MEM-HISTORY-003 | Traceable Fine | Fine calculation must be traceable and testable. |
+
+# III. Design Specifications
+
+## 1. Authentication
+
+### 1.1 Account Access
+
+#### a. Login Screen / Login Function
+
+The Login screen allows users to authenticate with email and password. Related use cases: `UC-2_Login System`, `UC-02 Manage Account Access`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Email | Text input | User enters registered email address. | Login Form |
+| Password | Password input | User enters account password. | Login Form |
+| Login | Button | Submits login request. | Login Form |
+| Forgot Password | Link | Navigates to password reset screen. | Login Links |
+| Register | Link | Navigates to registration screen. | Login Links |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Users | R, U | Read account by email; update failed login count, lock state, and last login timestamp. |
+| UserRoles | R | Read assigned roles after successful authentication. |
+| Roles | R | Resolve role names for authorization and navigation. |
+| AuthTokens | C | Create refresh/session token record when login succeeds. |
+| AuditLogs | C | Record login success or failure where audit logging is enabled. |
+
+##### SQL Commands
+
+```sql
+SELECT UserId, Email, PasswordHash, Status, EmailVerifiedAt, FailedLoginCount, LockedUntil
+FROM Users
+WHERE Email = @Email;
+
+SELECT r.RoleName
+FROM UserRoles ur
+JOIN Roles r ON r.RoleId = ur.RoleId
+WHERE ur.UserId = @UserId;
+
+UPDATE Users
+SET FailedLoginCount = @FailedLoginCount,
+    LockedUntil = @LockedUntil,
+    LastLoginAt = @LastLoginAt,
+    UpdatedAt = GETDATE()
+WHERE UserId = @UserId;
+
+INSERT INTO AuthTokens (UserId, TokenType, TokenHash, ExpiresAt, CreatedAt)
+VALUES (@UserId, 'REFRESH', @TokenHash, @ExpiresAt, GETDATE());
+```
+
+### 1.2 System Access
+
+#### a. User Login
+
+This screen allows a user to be authenticated to system screens and functionalities. Related use case: `UC02_Login System`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Email | Text box | User inputs a valid email address for logging in. | Login Form |
+| Password | Password box | User inputs password for logging in. | Login Form |
+| Login | Button | User clicks to authenticate into the system with the provided email and password. | Login Form |
+| Register | Button/Link | User clicks to redirect to the User Register page for registering a new account. | Login Links |
+| Forgot Password? | Hyperlink | User clicks to redirect to the Password Reset page. | Login Links |
+| Login with Google | Hyperlink | Allows user to login with Google account when social login is enabled. | Social Login |
+| Login with Facebook | Hyperlink | Allows user to login with Facebook account when social login is enabled. | Social Login |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Users | R, U | Verify email and password hash; update failed-login tracking and last login time. |
+| UserProfiles | R | Read full name and avatar data for the logged-in user where available. |
+| UserRoles | R | Read role mappings for authorization. |
+| Roles | R | Resolve authorization role names. |
+
+##### SQL Commands
+
+```sql
+SELECT u.UserId, up.FullName, u.Email, up.AvatarUrl, u.Status,
+       u.PasswordHash, u.EmailVerifiedAt, u.FailedLoginCount, u.LockedUntil
+FROM Users u
+LEFT JOIN UserProfiles up ON up.UserId = u.UserId
+WHERE u.Email = @Email;
+
+SELECT r.RoleName
+FROM UserRoles ur
+JOIN Roles r ON r.RoleId = ur.RoleId
+WHERE ur.UserId = @UserId;
+```
+
+#### b. Setting List
+
+The Setting List screen allows authorized users to view, search, filter, activate, and deactivate system master data settings.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Setting Type | Combo box | Single-choice filter filled with the list of current active setting types. Default value is `All Types`. | Search Fields |
+| Setting Status | Combo box | Values: `All Statuses`, `Active`, and `Inactive`. Default value is `All Statuses`. | Search Fields |
+| Search Phrase | Text box | String(30). Allows searching by setting name or mapped values. Default value is blank. | Search Fields |
+| Search | Button | Refreshes the list with the defined filters and search phrase. | Actions |
+| Add New | Hyperlink | Opens the Setting Details page for adding a new setting. | Actions |
+| ID | Integer | Auto-increased identifier of the setting. | Data Table |
+| Name | Text | Name of the setting. | Data Table |
+| Mapped Values | Text | Supplementary information for the setting. | Data Table |
+| Type | Text | Type of the setting. | Data Table |
+| Order | Integer | Display order among settings with the same type. | Data Table |
+| Edit | Icon | Opens the Setting Details page for updating the setting. | Data Actions |
+| Activate | Icon | Shown when status is inactive; activates the setting. | Data Actions |
+| Deactivate | Icon | Shown when status is active; deactivates the setting. | Data Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Settings | R, U | Query the current setting list and update status of a specific setting. |
+
+##### SQL Commands
+
+```sql
+SELECT s.SettingId, s.SettingName, s.MappedValues, s.TypeId, s.DisplayOrder, s.Status
+FROM Settings s
+WHERE (@SettingType IS NULL OR s.TypeId = @SettingType)
+  AND (@Status IS NULL OR s.Status = @Status)
+  AND (
+    @SearchPhrase IS NULL
+    OR s.SettingName LIKE '%' + @SearchPhrase + '%'
+    OR s.MappedValues LIKE '%' + @SearchPhrase + '%'
+  )
+ORDER BY s.TypeId, s.DisplayOrder, s.SettingName;
+
+UPDATE Settings
+SET Status = @Status,
+    UpdatedAt = GETDATE()
+WHERE SettingId = @SettingId;
+```
+
+#### c. Setting Details
+
+The Setting Details screen allows authorized users to create or update a system master data setting.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Name | Text box | String(20). Name of the setting. | Setting Form |
+| Type | Combo box | Single-choice setting type, filled with the list of setting types. Default value is the first type in the list. | Setting Form |
+| Mapped Values | Text box | String(50). Supplementary information for the setting, if any. | Setting Form |
+| Order | Text box | Integer >= 0. Display order among settings with the same type. | Setting Form |
+| Status | On/Off button | Status of the setting: Active or Inactive. Default value is Active. | Setting Form |
+| Description | Text area | String(200). Description of the setting. | Setting Form |
+| Submit | Button | Stores new or updated setting details. | Actions |
+| Reset | Button | Resets field changes back to the values loaded when the screen opened. | Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Settings | C, R, U | Read setting detail, create new setting, and update existing setting fields. |
+| Settings | R | Read active setting types for the Type combo box. |
+
+##### SQL Commands
+
+```sql
+SELECT SettingId, SettingName, MappedValues, TypeId, DisplayOrder, Status, Description
+FROM Settings
+WHERE SettingId = @SettingId;
+
+SELECT SettingId, SettingName
+FROM Settings
+WHERE SettingType = 'SETTING_TYPE'
+  AND Status = 'ACTIVE'
+ORDER BY DisplayOrder, SettingName;
+
+INSERT INTO Settings (SettingName, MappedValues, TypeId, DisplayOrder, Status, Description, CreatedAt)
+VALUES (@SettingName, @MappedValues, @TypeId, @DisplayOrder, @Status, @Description, GETDATE());
+
+UPDATE Settings
+SET SettingName = @SettingName,
+    MappedValues = @MappedValues,
+    TypeId = @TypeId,
+    DisplayOrder = @DisplayOrder,
+    Status = @Status,
+    Description = @Description,
+    UpdatedAt = GETDATE()
+WHERE SettingId = @SettingId;
+```
+
+## 2. Public / Browse
+
+### 2.1 Book Discovery
+
+#### a. Public Book Homepage
+
+The Public Book Homepage allows guests and members to search books and view public book availability. Related use cases: `UC-01 Browse Books`, `UC-MEM-01 Browse Book Catalog`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Search Keyword | Text input | Searches by book title or related catalog keyword. | Search Toolbar |
+| Category Filter | Select | Filters books by category where available. | Search Toolbar |
+| Book List | Data list | Displays active book cards or rows. | Results |
+| Book Detail | Detail panel/page | Displays selected public book metadata and availability summary. | Results |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Books | R | Read active/public-visible book metadata. |
+| Categories | R | Read category names for display and filtering. |
+| Authors | R | Read author names for display and filtering. |
+| Publishers | R | Read publisher names for display. |
+| BookCopies | R | Read copy statuses to derive public availability summary. |
+
+##### SQL Commands
+
+```sql
+SELECT b.BookId, b.Title, b.ISBN, c.CategoryName, a.AuthorName, p.PublisherName,
+       b.PublishYear, b.CoverUrl, b.Rating, b.Pages, b.Description,
+       SUM(CASE WHEN bc.Status = 'AVAILABLE' THEN 1 ELSE 0 END) AS AvailableCopies
+FROM Books b
+LEFT JOIN Categories c ON c.CategoryId = b.CategoryId
+LEFT JOIN Authors a ON a.AuthorId = b.AuthorId
+LEFT JOIN Publishers p ON p.PublisherId = b.PublisherId
+LEFT JOIN BookCopies bc ON bc.BookId = b.BookId
+WHERE b.Status = 'ACTIVE'
+  AND (@Keyword IS NULL OR b.Title LIKE '%' + @Keyword + '%')
+GROUP BY b.BookId, b.Title, b.ISBN, c.CategoryName, a.AuthorName, p.PublisherName,
+         b.PublishYear, b.CoverUrl, b.Rating, b.Pages, b.Description
+ORDER BY b.Title;
+```
+
+## 3. User Profile
+
+### 3.1 Profile Management
+
+#### a. User Profile Screen
+
+The User Profile screen allows authenticated users to view and update their own profile information. Related use case: `UC-03 Manage Profile`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Full Name | Text input | User profile full name. | Profile Form |
+| Address | Text input | User contact address. | Profile Form |
+| Date of Birth | Date input | User date of birth. | Profile Form |
+| Avatar | File upload/image | Uploads and displays user avatar. | Profile Form |
+| Save | Button | Submits profile updates. | Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Users | R | Read account identity for the current user. |
+| UserProfiles | R, U | Read and update personal profile fields. |
+
+##### SQL Commands
+
+```sql
+SELECT u.UserId, u.Email, p.FullName, p.Address, p.DateOfBirth, p.AvatarUrl
+FROM Users u
+LEFT JOIN UserProfiles p ON p.UserId = u.UserId
+WHERE u.UserId = @UserId;
+
+UPDATE UserProfiles
+SET FullName = @FullName,
+    Address = @Address,
+    DateOfBirth = @DateOfBirth,
+    AvatarUrl = @AvatarUrl,
+    UpdatedAt = GETDATE()
+WHERE UserId = @UserId;
+```
+
+## 4. Membership Management
+
+### 4.1 Membership Application
+
+#### a. Membership Screen
+
+The Membership screen allows members to apply for membership and authorized staff to review applications. Related use cases: `UC-04 Apply For Membership`, `UC-MEM-02 Apply For Membership`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Current Status | Text/Badge | Displays current membership status. | Status |
+| Apply | Button | Creates a pending membership application. | Member Actions |
+| Application List | Table | Displays applications for staff review. | Staff Review |
+| Rejection Reason | Textarea | Required reason when staff rejects an application. | Staff Review |
+| Approve / Reject | Buttons | Staff decision actions. | Staff Review |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Members | R, C, U | Read and update canonical membership status. |
+| MembershipApplications | R, C, U | Store application history and review decision. |
+| Users | R | Validate applicant and reviewer identities. |
+| Notifications | C | Create membership result notification request when configured. |
+| AuditLogs | C | Record membership apply/review actions. |
+
+##### SQL Commands
+
+```sql
+SELECT TOP 1 *
+FROM MembershipApplications
+WHERE UserId = @UserId
+ORDER BY AppliedAt DESC, ApplicationId DESC;
+
+INSERT INTO MembershipApplications (UserId, Status, AppliedAt)
+VALUES (@UserId, 'PENDING', GETDATE());
+
+MERGE Members AS target
+USING (SELECT @UserId AS UserId) AS source
+ON target.UserId = source.UserId
+WHEN MATCHED THEN
+  UPDATE SET Status = 'PENDING', UpdatedAt = GETDATE()
+WHEN NOT MATCHED THEN
+  INSERT (UserId, Status, CreatedAt)
+  VALUES (@UserId, 'PENDING', GETDATE());
+
+UPDATE MembershipApplications
+SET Status = @FinalStatus,
+    ReviewedBy = @ReviewedBy,
+    ApprovedAt = @ReviewedAt,
+    ReviewNote = @ReviewNote
+WHERE ApplicationId = @ApplicationId
+  AND Status = 'PENDING';
+```
+
+## 5. Book And Inventory Management
+
+### 5.1 Catalog And Copy Management
+
+#### a. Book Management / Inventory Screens
+
+Book Management maintains catalog data, while Inventory manages physical book copies. Related use cases: `UC-05 Manage Books`, `UC-06 Manage Book Copies`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Title | Text input | Book title. | Book Form |
+| ISBN | Text input | Optional unique ISBN. | Book Form |
+| Category | Select | Book category. | Book Form |
+| Author | Select/Text | Book author. | Book Form |
+| Publisher | Select/Text | Book publisher. | Book Form |
+| Barcode | Text input | Unique physical copy barcode. | Copy Form |
+| Copy Status | Select | Copy status such as AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, or INACTIVE. | Copy Form |
+| Location | Text input | Physical shelf/location data. | Copy Form |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Books | C, R, U | Create, read, update, deactivate, or reactivate catalog records. |
+| Categories | R | Read categories for book metadata. |
+| Authors | R | Read authors for book metadata. |
+| Publishers | R | Read publishers for book metadata. |
+| BookCopies | C, R, U | Create, read, update, and deactivate physical copy records. |
+| AuditLogs | C | Record staff/admin catalog and inventory actions. |
+
+##### SQL Commands
+
+```sql
+INSERT INTO Books (Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, Status, CreatedBy, CreatedAt)
+VALUES (@Title, @ISBN, @CategoryId, @AuthorId, @PublisherId, @PublishYear, @Description, 'ACTIVE', @CreatedBy, GETDATE());
+
+UPDATE Books
+SET Title = @Title,
+    ISBN = @ISBN,
+    CategoryId = @CategoryId,
+    AuthorId = @AuthorId,
+    PublisherId = @PublisherId,
+    UpdatedBy = @UpdatedBy,
+    UpdatedAt = GETDATE()
+WHERE BookId = @BookId;
+
+INSERT INTO BookCopies (BookId, Barcode, Status, Location, CreatedAt)
+VALUES (@BookId, @Barcode, 'AVAILABLE', @Location, GETDATE());
+
+UPDATE BookCopies
+SET Status = @Status,
+    Location = @Location,
+    UpdatedAt = GETDATE()
+WHERE CopyId = @CopyId;
+```
+
+## 6. Borrowing And Reservation
+
+### 6.1 Borrowing And Reservation Operations
+
+#### a. Borrow Request / Reservation Screens
+
+Borrowing and reservation screens allow members to request books, reserve copies, and allow staff to process requests and queues. Related use cases: `UC-07 Borrow Books`, `UC-08 Reserve Books`, `UC-MEM-03 Create Borrow Request`, `UC-MEM-04 Manage Own Reservations`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Book/Copy Selection | Select/List | Member selects available or reservable books/copies. | Request Form |
+| Borrow Request List | Table | Staff reviews pending borrow requests. | Staff Processing |
+| Return List | Table | Staff processes returned copies. | Staff Processing |
+| Reservation List | Table | Member/staff views reservation status and queue information. | Reservation |
+| Approve / Reject / Return / Cancel | Buttons | Executes workflow transition. | Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| BorrowRequests | C, R, U | Store request header and approval/rejection/completion status. |
+| BorrowDetails | C, R, U | Store per-copy borrow, due date, return date, renewal, and status data. |
+| BookCopies | R, U | Check and update copy availability/status. |
+| Reservations | C, R, U | Store reservation queue and cancellation/fulfillment state. |
+| Members | R | Check approved membership eligibility. |
+| Fines | R | Check unpaid fine blocker. |
+| Notifications | C | Create due date or reservation availability notification. |
+| AuditLogs | C | Record workflow actions. |
+
+##### SQL Commands
+
+```sql
+INSERT INTO BorrowRequests (UserId, RequestDate, Status, CreatedBy, CreatedAt)
+VALUES (@UserId, GETDATE(), 'PENDING', @CreatedBy, GETDATE());
+
+INSERT INTO BorrowDetails (RequestId, CopyId, Status, CreatedAt)
+VALUES (@RequestId, @CopyId, 'REQUESTED', GETDATE());
+
+UPDATE BorrowRequests
+SET Status = 'APPROVED',
+    ApprovedBy = @ApprovedBy,
+    ApprovedAt = GETDATE(),
+    UpdatedAt = GETDATE()
+WHERE RequestId = @RequestId
+  AND Status = 'PENDING';
+
+UPDATE BorrowDetails
+SET BorrowDate = @BorrowDate,
+    DueDate = @DueDate,
+    Status = 'BORROWED',
+    UpdatedAt = GETDATE()
+WHERE RequestId = @RequestId;
+
+UPDATE BookCopies
+SET Status = @CopyStatus,
+    UpdatedAt = GETDATE()
+WHERE CopyId = @CopyId;
+
+INSERT INTO Reservations (UserId, CopyId, ReservedAt, QueuePosition, Status, CreatedAt)
+VALUES (@UserId, @CopyId, GETDATE(), @QueuePosition, 'ACTIVE', GETDATE());
+```
+
+## 7. Fine Management
+
+### 7.1 Fine Processing
+
+#### a. Fine Management Screen
+
+The Fine Management screen allows staff to calculate, collect, mark paid, waive, or cancel fines. Related use cases: `UC-09 Manage Fines`, `UC-MEM-05 View Borrowing And Fines`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Fine List | Table | Displays fine records and status. | Fine Data |
+| Status Filter | Select | Filters by unpaid, paid, waived, or cancelled. | Filter |
+| Payment Method | Select/Text | Records offline collection method. | Payment |
+| Resolve Reason | Textarea | Required reason for waive/cancel actions where applicable. | Resolution |
+| Mark Paid / Resolve | Buttons | Updates fine state. | Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Fines | C, R, U | Create calculated fine and update payment/resolution status. |
+| BorrowDetails | R | Read due date, return date, and copy-level status for calculation. |
+| Users | R | Resolve member and staff identities. |
+| AuditLogs | C | Record fine calculation and payment/resolution actions. |
+| Notifications | C | Create fine or overdue notification when requested. |
+
+##### SQL Commands
+
+```sql
+SELECT BorrowDetailId, BorrowDate, DueDate, ReturnDate, Status
+FROM BorrowDetails
+WHERE BorrowDetailId = @BorrowDetailId;
+
+INSERT INTO Fines (UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, Status, CalculatedAt, CreatedBy, CreatedAt)
+VALUES (@UserId, @BorrowDetailId, @OverdueDays, @RatePerDay, @Amount, 'UNPAID', GETDATE(), @CreatedBy, GETDATE());
+
+UPDATE Fines
+SET PaidAmount = Amount,
+    Status = 'PAID',
+    PaidAt = GETDATE(),
+    CollectedBy = @CollectedBy,
+    PaymentMethod = @PaymentMethod,
+    UpdatedAt = GETDATE()
+WHERE FineId = @FineId
+  AND Status = 'UNPAID';
+```
+
+## 8. User And Role Management
+
+### 8.1 Admin User Management
+
+#### a. Admin User Management Screen
+
+The Admin User Management screen allows admin users to manage users, librarian accounts, roles, permissions, and audit logs. Related use case: `UC-11 Manage Users And Roles`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| User List | Table | Displays searchable user account list. | User Data |
+| Search / Filter | Text input/Select | Filters user list by keyword, role, or status. | Filter |
+| User Detail | Detail panel | Displays selected safe user data. | Detail |
+| Role Selection | Checkbox/Select | Assigns or updates user roles. | Role Management |
+| Audit Log List | Table | Displays redacted admin audit events. | Audit |
+| Create / Update / Deactivate | Buttons | Executes admin user lifecycle actions. | Actions |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| Users | C, R, U | Create, read, update, and deactivate user accounts. |
+| Roles | R | Read available system roles. |
+| UserRoles | C, R, U, D | Read and update role assignments. |
+| UserProfiles | C, R, U | Create or update related profile data. |
+| AuthTokens | C, U | Create or rotate account setup tokens. |
+| AuditLogs | C, R | Write administrative events and read redacted audit list. |
+| Notifications | C | Create account setup notification requests. |
+
+##### SQL Commands
+
+```sql
+SELECT u.UserId, u.Email, u.Username, u.Status, u.CreatedAt, u.UpdatedAt,
+       STRING_AGG(r.RoleName, ',') AS Roles
+FROM Users u
+LEFT JOIN UserRoles ur ON ur.UserId = u.UserId
+LEFT JOIN Roles r ON r.RoleId = ur.RoleId
+WHERE (@Keyword IS NULL OR u.Email LIKE '%' + @Keyword + '%' OR u.Username LIKE '%' + @Keyword + '%')
+GROUP BY u.UserId, u.Email, u.Username, u.Status, u.CreatedAt, u.UpdatedAt;
+
+INSERT INTO Users (Username, Email, PasswordHash, Status, CreatedAt)
+VALUES (@Username, @Email, @PasswordHash, @Status, GETDATE());
+
+INSERT INTO UserRoles (UserId, RoleId, CreatedAt)
+VALUES (@UserId, @RoleId, GETDATE());
+
+UPDATE Users
+SET Status = @Status,
+    UpdatedAt = GETDATE()
+WHERE UserId = @UserId;
+
+INSERT INTO AuditLogs (UserId, Action, TargetType, TargetId, Metadata, CreatedAt)
+VALUES (@ActorUserId, @Action, @TargetType, @TargetId, @Metadata, GETDATE());
+```
+
+## 9. Reporting And Statistics
+
+### 9.1 Operational Reports
+
+#### a. Report Screens
+
+Report screens provide read-only operational summaries for borrowing, inventory, and users. Related use case: `UC-12 Generate Reports`.
+
+##### UI Design
+
+| Field Name | Field Type | Description | Field Group Name |
+| ---------- | ---------- | ----------- | ---------------- |
+| Date From | Date input | Start date filter for date-based reports. | Filters |
+| Date To | Date input | End date filter for date-based reports. | Filters |
+| Report Type | Navigation/Tab | Opens borrowing, inventory, or user statistics report. | Report Navigation |
+| Summary Cards | Cards | Shows aggregate counts and key metrics. | Report Output |
+| Report Table | Table | Displays detailed report rows. | Report Output |
+
+##### Database Access
+
+| Table | CRUD | Description |
+| ----- | ---- | ----------- |
+| BorrowRequests | R | Read borrowing request summary data. |
+| BorrowDetails | R | Read loan and return detail data. |
+| BookCopies | R | Read inventory status data. |
+| Books | R | Read catalog metadata for inventory summaries. |
+| Users | R | Read account/user statistics. |
+| Members | R | Read membership status statistics. |
+| Fines | R | Read fine status and amount summaries where report requires it. |
+
+##### SQL Commands
+
+```sql
+SELECT br.Status, COUNT(*) AS TotalRequests
+FROM BorrowRequests br
+WHERE br.RequestDate >= @DateFrom
+  AND br.RequestDate < DATEADD(day, 1, @DateTo)
+GROUP BY br.Status;
+
+SELECT bc.Status, COUNT(*) AS TotalCopies
+FROM BookCopies bc
+GROUP BY bc.Status;
+
+SELECT r.RoleName, COUNT(DISTINCT u.UserId) AS TotalUsers
+FROM Users u
+JOIN UserRoles ur ON ur.UserId = u.UserId
+JOIN Roles r ON r.RoleId = ur.RoleId
+GROUP BY r.RoleName;
+```
