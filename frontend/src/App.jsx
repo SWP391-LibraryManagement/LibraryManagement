@@ -9,7 +9,6 @@ import FineManagement from './page/FineManagement';
 import UserProfilePage from './page/UserProfilePage';
 import InventoryPage from './page/InventoryPage';
 import BookManagementPage from './page/BookManagementPage';
-import ForbiddenPage from './page/error/ForbiddenPage';
 import ReportRouteGuard from './component/report/ReportRouteGuard';
 import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
 import MembershipPage from './page/MembershipPage';
@@ -38,7 +37,6 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route path="/home" element={<HomeRoutePage />} />
       <Route path="/homepage" element={<HomePage />} />

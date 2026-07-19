@@ -9,5 +9,5 @@ export function getReportRouteRedirect({ authenticated, roles = [] }) {
     ? roles.map((role) => String(role).toUpperCase())
     : [];
 
-  return normalizedRoles.some((role) => REPORT_ROLES.includes(role)) ? null : '/forbidden';
+  return normalizedRoles.some((role) => REPORT_ROLES.includes(role)) ? null : '/home';
 }

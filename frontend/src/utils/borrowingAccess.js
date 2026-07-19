@@ -14,5 +14,5 @@ export function getBorrowingRouteRedirect({ authenticated, roles = [] }, audienc
     ? roles.map((role) => String(role).toUpperCase())
     : [];
 
-  return normalizedRoles.some((role) => allowedRoles.includes(role)) ? null : '/forbidden';
+  return normalizedRoles.some((role) => allowedRoles.includes(role)) ? null : '/home';
 }
