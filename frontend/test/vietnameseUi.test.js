@@ -117,3 +117,33 @@ test('librarian and report surfaces remove known English interface copy', async 
   assert.match(files.userReport, /caption="Tổng hợp thống kê người dùng"/);
   assert.doesNotMatch(files.userReport, /User ID|Membership|User statistics/);
 });
+
+test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', async () => {
+  const adminApi = await readFile(new URL('../src/api/adminApi.js', import.meta.url), 'utf8');
+  const authApi = await readFile(new URL('../src/api/authApi.js', import.meta.url), 'utf8');
+  const profileApi = await readFile(new URL('../src/api/profileApi.js', import.meta.url), 'utf8');
+  const userManagementApi = await readFile(new URL('../src/api/userManagementApi.js', import.meta.url), 'utf8');
+  const userManagement = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const apiSources = [authApi, profileApi, userManagementApi].join('\n');
+  const userFacingSources = [adminApi, apiSources, userManagement].join('\n');
+
+  for (const message of [
+    'Không thể tải tổng quan quản trị.',
+    'Không thể tải kho sách.',
+    'Không thể tải dữ liệu thư viện.',
+    'Không thể thêm dữ liệu.',
+    'Không thể cập nhật dữ liệu.',
+    'Không thể vô hiệu hóa dữ liệu.',
+    'Không thể tải dữ liệu mượn trả.',
+    'Không thể tải danh sách yêu cầu.',
+    'Không thể tải chi tiết yêu cầu.',
+    'Không thể tải ma trận phân quyền.',
+    'Không thể tải nhật ký hoạt động.',
+  ]) {
+    assert.match(adminApi, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  assert.doesNotMatch(userFacingSources, /Could not|Please login|Request failed|Admin login required/);
+  assert.doesNotMatch(apiSources, /return apiError\?\.message|return error\.response\?\.data\?\.error\?\.message/);
+  assert.doesNotMatch(apiSources, /details\.map\(\(item\) => item\.message\)/);
+});

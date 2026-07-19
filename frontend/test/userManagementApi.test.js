@@ -133,3 +133,26 @@ test('FE11 deactivation sends the loaded effective version and maps pending acti
   );
   assert.match(source, /ACCOUNT_PENDING_ACTIVATION:/);
 });
+
+test('FE11 user-management errors keep safe Vietnamese fallbacks and wrapped causes', async () => {
+  const source = await readFile(apiPath, 'utf8');
+
+  for (const message of [
+    'Yêu cầu thất bại. Vui lòng thử lại.',
+    'Vui lòng đăng nhập bằng tài khoản quản trị viên để thực hiện thao tác này.',
+    'Tài khoản của bạn không có quyền quản trị viên cho thao tác này.',
+    'Không thể tải danh sách người dùng.',
+    'Không thể tải chi tiết người dùng.',
+    'Không thể tải danh sách vai trò.',
+    'Không thể tạo người dùng.',
+    'Không thể cập nhật người dùng.',
+    'Không thể vô hiệu hóa người dùng.',
+    'Không thể gán vai trò.',
+    'Không thể gỡ vai trò.',
+  ]) {
+    assert.match(source, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  assert.doesNotMatch(source, /return error\.response\?\.data\?\.error\?\.message/);
+  assert.match(source, /throw new Error\(getErrorMessage\([^]*?\{ cause: error \}\)/);
+});

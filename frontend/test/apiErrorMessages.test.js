@@ -10,12 +10,12 @@ async function loadApiErrorMessages() {
 }
 
 const expectedMessages = {
-  MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới gửi được yêu cầu mượn sách. Hãy đăng nhập bằng tài khoản Member.',
-  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc admin mới được thực hiện thao tác này.',
+  MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới gửi được yêu cầu mượn sách. Hãy đăng nhập bằng tài khoản thành viên.',
+  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc quản trị viên mới được thực hiện thao tác này.',
   ROLE_REQUIRED: 'Tài khoản hiện tại không có quyền thực hiện thao tác này.',
-  MEMBER_ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư/admin.',
-  ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư/admin.',
-  MEMBERSHIP_NOT_APPROVED: 'Membership của bạn chưa được duyệt. Vui lòng chờ thủ thư/admin duyệt trước khi mượn sách.',
+  MEMBER_ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư hoặc quản trị viên.',
+  ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt. Vui lòng xác minh email hoặc liên hệ thủ thư hoặc quản trị viên.',
+  MEMBERSHIP_NOT_APPROVED: 'Đơn hội viên của bạn chưa được duyệt. Vui lòng chờ thủ thư hoặc quản trị viên duyệt trước khi mượn sách.',
     MEMBER_NOT_FOUND: 'Không tìm thấy hồ sơ thành viên được yêu cầu.',
   UNPAID_FINE_BLOCKS_BORROWING: 'Bạn còn khoản phạt chưa thanh toán nên chưa thể mượn hoặc gia hạn sách.',
   OVERDUE_LOAN_BLOCKS_BORROWING: 'Bạn còn sách quá hạn nên chưa thể mượn hoặc gia hạn sách.',
@@ -60,12 +60,12 @@ test('keeps authentication, validation, backend, and network fallbacks', async (
     'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.',
   );
   assert.equal(
-    getBorrowingErrorMessage({ response: { status: 422, data: { error: { details: [{ message: 'copyIds must be an array.' }] } } } }),
-    'copyIds must be an array.',
+    getBorrowingErrorMessage({ response: { status: 422, data: { error: { details: [{ message: 'copyIds must be an array.' }] } } } }, 'Không thể gửi yêu cầu mượn.'),
+    'Không thể gửi yêu cầu mượn.',
   );
   assert.equal(
-    getBorrowingErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Fallback'),
-    'Backend error',
+    getBorrowingErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Không thể tải dữ liệu mượn sách.'),
+    'Không thể tải dữ liệu mượn sách.',
   );
   assert.equal(
     getBorrowingErrorMessage({ response: { status: 403, data: { error: { code: 'BORROW_DETAIL_OWNER_REQUIRED' } } } }),
@@ -87,7 +87,7 @@ test('does not leak borrowing-specific messages into other feature APIs', async 
   assert.equal(typeof getLibraryFeatureErrorMessage, 'function');
   assert.equal(
     getLibraryFeatureErrorMessage({ response: { status: 404, data: { error: { code: 'COPY_NOT_FOUND', message: 'Book copy was not found.' } } } }),
-    'Book copy was not found.',
+    'Không thể tải dữ liệu từ backend.',
   );
   assert.equal(
     getLibraryFeatureErrorMessage({ response: { status: 403, data: { error: { code: 'MEMBERSHIP_NOT_APPROVED' } } } }),
@@ -112,18 +112,18 @@ test('keeps FE12 report errors truthful without claiming demo fallback data', as
     'Tài khoản hiện tại không có quyền xem báo cáo này.',
   );
   assert.equal(
-    getReportErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Report fallback.'),
-    'Backend error',
+    getReportErrorMessage({ response: { status: 500, data: { error: { message: 'Backend error' } } } }, 'Không thể tải báo cáo.'),
+    'Không thể tải báo cáo.',
   );
 });
 
 const expectedReservationMessages = {
   MEMBER_ROLE_REQUIRED: 'Chỉ tài khoản thành viên mới được đặt chỗ sách.',
-  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc admin mới được quản lý hàng đợi đặt chỗ.',
+  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc quản trị viên mới được quản lý hàng đợi đặt chỗ.',
   ROLE_REQUIRED: 'Tài khoản hiện tại không có quyền thực hiện thao tác đặt chỗ này.',
-  MEMBER_NOT_FOUND: 'Tài khoản hiện tại chưa có hồ sơ thành viên. Vui lòng liên hệ thủ thư/admin.',
+  MEMBER_NOT_FOUND: 'Tài khoản hiện tại chưa có hồ sơ thành viên. Vui lòng liên hệ thủ thư hoặc quản trị viên.',
   MEMBER_ACCOUNT_INACTIVE: 'Tài khoản của bạn chưa được kích hoạt nên chưa thể đặt chỗ sách.',
-  MEMBERSHIP_NOT_APPROVED: 'Membership của bạn chưa được duyệt nên chưa thể đặt chỗ sách.',
+  MEMBERSHIP_NOT_APPROVED: 'Đơn hội viên của bạn chưa được duyệt nên chưa thể đặt chỗ sách.',
   COPY_NOT_FOUND: 'Không tìm thấy bản sao sách này. Vui lòng tải lại dữ liệu và thử lại.',
   COPY_AVAILABLE: 'Bản sao này đang sẵn có. Vui lòng mượn sách thay vì đặt chỗ.',
   RESERVATION_NOT_ALLOWED: 'Không thể đặt chỗ bản sao ở trạng thái hiện tại.',
@@ -159,8 +159,8 @@ test('keeps FE08 messages isolated from borrowing and generic feature APIs', asy
     },
   };
 
-  assert.equal(getBorrowingErrorMessage(error, 'Fallback'), 'Backend reservation message.');
-  assert.equal(getLibraryFeatureErrorMessage(error, 'Fallback'), 'Backend reservation message.');
+  assert.equal(getBorrowingErrorMessage(error, 'Không thể xử lý mượn sách.'), 'Không thể xử lý mượn sách.');
+  assert.equal(getLibraryFeatureErrorMessage(error, 'Không thể tải dữ liệu thư viện.'), 'Không thể tải dữ liệu thư viện.');
 });
 
 test('keeps FE08 generic error precedence and fallbacks', async () => {
@@ -179,8 +179,8 @@ test('keeps FE08 generic error precedence and fallbacks', async () => {
   assert.equal(
     getReservationErrorMessage({
       response: { status: 409, data: { error: { code: 'UNKNOWN_RESERVATION_ERROR', message: 'Backend reservation message.' } } },
-    }, 'Reservation fallback.'),
-    'Backend reservation message.',
+    }, 'Không thể xử lý đặt chỗ.'),
+    'Không thể xử lý đặt chỗ.',
   );
   assert.equal(
     getReservationErrorMessage({

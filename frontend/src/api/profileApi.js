@@ -31,7 +31,7 @@ function authHeaders() {
   return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
-function getErrorMessage(error, fallback = 'Could not load profile.') {
+function getErrorMessage(error, fallback = 'Không thể tải hồ sơ cá nhân.') {
   if (!error.response) {
     return 'Không kết nối được backend. Hãy kiểm tra server API đang chạy ở http://localhost:3000.';
   }
@@ -40,7 +40,7 @@ function getErrorMessage(error, fallback = 'Could not load profile.') {
     return 'Vui lòng đăng nhập để xem hồ sơ.';
   }
 
-  return error.response?.data?.error?.message || fallback;
+  return fallback;
 }
 
 // @spec BR-FE03-016 FR-FE03-006
@@ -80,7 +80,7 @@ export async function updateMyProfile(profile) {
     });
     return normalizeProfile(response.data);
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not update profile.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể cập nhật hồ sơ cá nhân.'), { cause: error });
   }
 }
 
@@ -97,7 +97,7 @@ export async function uploadMyAvatar(file) {
     });
     return normalizeProfile(response.data);
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not upload avatar.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể tải ảnh đại diện lên.'), { cause: error });
   }
 }
 
