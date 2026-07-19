@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: APPROVED - OTP/FE02/FE04/SCHEMA RECONCILIATION AUTOMATED PASS; HUMAN CLOSEOUT PENDING
+Status: APPROVED - OTP/FE02 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING; FE04/SCHEMA EVIDENCE UNCHANGED
 
 Owner: Nhat
 
@@ -8,7 +8,7 @@ Updated: 2026-07-19
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
-Workflow State: G1-G12 implementation is fanned into the reconciliation worktree; FE10-S03/S04/S09 and disposable SQL migration evidence are GREEN, with FE10-S05 final human closeout open
+Workflow State: G1-G12 implementation is on `main`; FE10-S03/S04/S09 and disposable SQL migration evidence are GREEN. FE10-S05 human acceptance is approved, with the integration PR and exact post-merge `main` CI still required.
 
 ---
 

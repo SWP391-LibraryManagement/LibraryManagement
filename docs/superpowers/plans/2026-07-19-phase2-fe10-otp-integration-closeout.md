@@ -242,9 +242,11 @@ Expected: all suites and tests PASS with zero snapshots or skipped failures.
 **Files:**
 - Modify: `.sdd/specs/feat-auth/PLAN.md`
 - Modify: `.sdd/specs/feat-auth/TASKS.md`
+- Modify: `.sdd/specs/feat-auth/TEST_PLAN.md`
 - Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-notification-management/PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/TASKS.md`
+- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
 - Modify: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
 - Modify: `docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md`
@@ -261,6 +263,7 @@ Use these boundaries:
 - `TASKS.md`: keep the task unchecked or `[~]`, but replace `FINAL HUMAN CLOSEOUT PENDING` with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
 - FE02 `PLAN.md`/`TASKS.md`: replace the stale OTP delivery implementation/human-closeout pending statements with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`, while leaving unrelated refresh, HTTPS, legacy-token, and future-scope boundaries unchanged.
 - FE02 `CHANGELOG.md`: prepend the same focused evidence and standing-approval record without claiming integration.
+- FE02/FE10 `TEST_PLAN.md`: replace obsolete suite/count/gap statements with the fresh 170/916 evidence and the remaining PR/main-CI boundary.
 - `CHANGELOG.md`: prepend a 2026-07-19 entry describing the expanded ownership/reset-event evidence and standing approval.
 - Validation review: replace obsolete 131/623 counts and old missing-schema/FE02/SQL statements with fresh commands/results; set L4 to approved for injected-provider scope while leaving integration pending.
 - Design: record the final requirement audit result and any production gap or `no product correction required` conclusion.
@@ -298,9 +301,21 @@ npm.cmd run trace:enforce
 npm.cmd run test:system
 npm.cmd run test:deployment
 npm.cmd run test:e2e
-node -e "require('yamljs').load('backend/src/docs/openapi.yaml'); console.log('openapi ok')"
-node -e "require('./backend/src/app'); console.log('backend import ok')"
+Push-Location backend
+node -e "require('yamljs').load('src/docs/openapi.yaml'); console.log('openapi ok')"
+node -e "require('./src/app'); console.log('backend import ok')"
+Pop-Location
 git diff --check
+```
+
+Run browser E2E on isolated ports if the defaults are occupied by another worktree:
+
+```powershell
+$env:E2E_FRONTEND_PORT = '4187'
+$env:E2E_BACKEND_PORT = '3102'
+$env:E2E_FRONTEND_URL = 'http://127.0.0.1:4187'
+$env:E2E_BACKEND_URL = 'http://127.0.0.1:3102'
+npm.cmd run test:e2e
 ```
 
 Expected: all configured suites and checks PASS. The known non-blocking Vite chunk advisory may remain.
@@ -321,7 +336,7 @@ Expected: only planned FE10/FE02 tests and evidence files; no credentials, front
 Record the diff hash and validation results in the review packet. Then:
 
 ```powershell
-git add -- backend/tests/notificationRoutes.test.js backend/tests/authRoutes.test.js .sdd/specs/feat-auth/PLAN.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md
+git add -- backend/tests/notificationRoutes.test.js backend/tests/authRoutes.test.js .sdd/specs/feat-auth/PLAN.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-auth/TEST_PLAN.md .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/TEST_PLAN.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md docs/superpowers/plans/2026-07-19-phase2-fe10-otp-integration-closeout.md
 git commit -m "test(fe10): close OTP integration evidence"
 git push -u origin feat/phase2-fe10-otp-integration
 ```
@@ -337,9 +352,11 @@ Create a draft PR summarizing ADR-004 coverage and no scope expansion. Mark read
 **Files:**
 - Modify: `.sdd/specs/feat-auth/PLAN.md`
 - Modify: `.sdd/specs/feat-auth/TASKS.md`
+- Modify: `.sdd/specs/feat-auth/TEST_PLAN.md`
 - Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-notification-management/PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/TASKS.md`
+- Modify: `.sdd/specs/feat-notification-management/TEST_PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
 - Modify: `.sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md`
 - Modify: `.agents/CLAUDE.md` only if its FE10 pending sentence remains stale after Task 5.

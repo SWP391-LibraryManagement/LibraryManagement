@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - OTP Delivery Acceptance And Boundary Evidence
+
+- Expanded ADR-004 evidence so every allowlisted non-FE02 requester is rejected for both verification and reset types with no persistence, attempt, audit, or provider side effects.
+- Added repeated forgot-password coverage proving a new token ID and idempotency key are created without a direct FE02 email path.
+- Focused FE02/FE10 validation passes 170/170; full backend passes 916/916 with coverage above configured thresholds; traceability remains 26/26.
+- The user approved the FE10 OTP design and granted standing human acceptance for the injected-provider scope. Integration PR and exact post-merge `main` CI remain required before B7 closeout.
+
 ## 2026-07-19 - HTTPS transport enforcement
 
 - Added a deployment-aware HTTPS middleware before JSON parsing and auth route dispatch.

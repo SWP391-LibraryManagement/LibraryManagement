@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
-Version: 0.3.2
-Status: OTP/FE02/FE04/SCHEMA AUTOMATED AND SQL PASS; HUMAN CLOSEOUT PENDING
+Version: 0.3.3
+Status: OTP/FE02 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -46,15 +46,16 @@ Notification requests, source/type ownership, sensitive in-memory delivery, temp
 - `backend/tests/integration.test.js`
 - `backend/tests/fe10OtpTemplateMigration.test.js`
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
-- Fresh OTP boundary gate: 3 suites / 131 tests passed.
-- Full backend regression gate: 39 suites / 623 tests passed.
-- Coverage: 92.57% statements, 82.72% branches, 97.12% functions, 92.50% lines.
+- Fresh OTP boundary gate: 4 suites / 170 tests passed.
+- Full backend regression gate: 53 suites / 916 tests passed.
+- Coverage: 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines.
+- Expanded ownership evidence covers both FE02-sensitive types against every other allowlisted requester, exact HTTP source-override errors, and repeated reset-token event rotation.
 
 ## 6. Gaps
 
 - `database/Librarymanagement.sql`, FE11-owned shared widths, and the FE10 OTP migration are synchronized; the migration passed two disposable SQL Server executions.
 - FE10-S04 FE02 requester integration and FE10-S09 FE04 membership-result integration are fanned into this worktree.
-- Focused FE02/FE10/integration validation passes 154/154. Real provider acceptance and final human review remain pending.
+- Focused FE02/FE10/integration validation passes 170/170. Human acceptance is approved for the injected-provider scope; real provider delivery remains out of scope. Integration PR and exact post-merge `main` CI remain required.
 
 ## 7. Required Commands / Evidence Before Merge
 

@@ -134,3 +134,12 @@ The slice is complete only when:
 - Existing product behavior is retained when it already satisfies the approved contract; this slice does not manufacture a production diff merely to appear active.
 - Real SMTP delivery remains outside the acceptance claim; deterministic injected-provider evidence is authoritative for this slice.
 - On 2026-07-19, the user approved this design and granted standing approval to execute the plan, validation, PR, merge, post-merge monitoring, and exact evidence-only closeout without pausing for additional approval prompts.
+
+## 12. Requirement Audit Result
+
+- ADR-004 items 1-7 have direct automated evidence in `notificationRoutes.test.js` and `authRoutes.test.js`.
+- The ownership matrix now covers both FE02-sensitive notification types against every other allowlisted requester.
+- HTTP source override evidence now asserts the exact safe error and absence of persistence, attempt, provider, and audit side effects.
+- Repeated password-reset requests now prove token rotation, new idempotency keys, and absence of direct FE02 delivery.
+- All added assertions passed against the existing implementation, so no production correction was required.
+- Human acceptance is approved for the injected-provider contract. PR integration and exact post-merge `main` CI remain mandatory before the design DoD is complete.
