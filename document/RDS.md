@@ -105,17 +105,19 @@ An actor is a person, role, or external service that interacts with the Library 
 
 | # | Actor | Description |
 | - | ----- | ----------- |
-| 1 | Guest | Unauthenticated visitor who can browse public book information and register/login to use member functions. |
-| 2 | Member | Registered library user who can manage profile information, browse books, request membership, borrow books, reserve books, view borrowing/reservation history, and view fines. |
+| 1 | Guest | Unauthenticated visitor who can register, login, recover a forgotten password, browse books, and view book details. |
+| 2 | Member | Authenticated registered user who can manage their own profile, membership application, borrowing, reservations, borrowing history, and fines. |
 | 3 | Librarian | Library staff who manages book copies, borrowing requests, returns, reservations, membership review support, and fine-related operations. |
 | 4 | Admin | System administrator who manages users, roles, permissions, audit logs, system dashboards, and administrative library operations. |
-| 5 | EmailService | Internal/external delivery service used by the system to send verification, password reset, account setup, borrowing, reservation, membership, and fine notifications. |
+| 5 | EmailService | External email delivery service used to send verification, password reset, account setup, borrowing, reservation, membership, and fine notifications. |
 
 ### 1.2 Use Cases
 
 A use case describes a sequence of interactions between an external actor and the Library Management System that helps the actor achieve a business outcome. The use cases below are derived from the approved Phase 1 feature list and feature specifications.
 
 #### a. Diagram(s)
+
+Figure 1 shows the system-wide actor-to-goal view. Figures 2 to 4 decompose the grouped business areas so mandatory `<<include>>` behavior and conditional `<<extend>>` behavior remain readable.
 
 ##### Figure 1. Overall Use Case Diagram
 
@@ -128,29 +130,38 @@ flowchart LR
   end
 
   subgraph LMS[Library Management System]
-    direction TB
-    subgraph PublicAccount["Public and account services"]
-      direction LR
-      UC01(("UC-01<br/>Browse Books"))
-      UC02(("UC-02<br/>Manage Account Access"))
-      UC03(("UC-03<br/>Manage Profile"))
+    direction LR
+    subgraph AccessGroup["Authentication, public browsing, and profile"]
+      direction TB
+      Register(["Register Account"])
+      Login(["Log In"])
+      RecoverPassword(["Recover Password"])
+      BrowseBooks(["Browse Books"])
+      ViewBookDetails(["View Book Details"])
+      UpdateProfile(["Update Profile"])
     end
 
-    subgraph MemberServices["Membership and circulation services"]
-      direction LR
-      UC04(("UC-04<br/>Apply For Membership"))
-      UC07(("UC-07<br/>Borrow Books"))
-      UC08(("UC-08<br/>Reserve Books"))
-      UC09(("UC-09<br/>Manage Fines"))
+    subgraph MemberGroup["Membership, borrowing, reservation, and fines"]
+      direction TB
+      ApplyMembership(["Apply for Membership"])
+      CreateBorrowRequest(["Create Borrow Request"])
+      ManageOwnReservations(["Manage Own Reservations"])
+      ViewBorrowingHistory(["View Borrowing History"])
+      ViewFines(["View Fines"])
+      ReviewMembership(["Review Membership Applications"])
+      ReviewBorrowRequests(["Review Borrow Requests"])
+      ProcessReturn(["Process Return"])
+      ManageReservationQueue(["Manage Reservation Queue"])
+      ManageFines(["Manage Fines"])
     end
 
-    subgraph StaffServices["Staff and administration services"]
-      direction LR
-      UC05(("UC-05<br/>Manage Books"))
-      UC06(("UC-06<br/>Manage Book Copies"))
-      UC10(("UC-10<br/>Send Notifications"))
-      UC11(("UC-11<br/>Manage Users And Roles"))
-      UC12(("UC-12<br/>Generate Reports"))
+    subgraph StaffGroup["Catalog, inventory, administration, and reporting"]
+      direction TB
+      ManageBooks(["Manage Books"])
+      ManageBookCopies(["Manage Book Copies"])
+      SendNotifications(["Send Notifications"])
+      ManageUsersRoles(["Manage Users and Roles"])
+      GenerateReports(["Generate Reports"])
     end
   end
 
@@ -161,57 +172,302 @@ flowchart LR
     EmailService[EmailService]
   end
 
-  Guest --- UC01
-  Guest --- UC02
+  Guest --- Register
+  Guest --- Login
+  Guest --- RecoverPassword
+  Guest --- BrowseBooks
+  Guest --- ViewBookDetails
 
-  Member --- UC01
-  Member --- UC02
-  Member --- UC03
-  Member ---|"submit / view status"| UC04
-  Member ---|"request / view history / renew"| UC07
-  Member ---|"create / cancel / view own"| UC08
-  Member ---|"view own fines"| UC09
+  Member --- BrowseBooks
+  Member --- ViewBookDetails
+  Member --- UpdateProfile
+  Member --- ApplyMembership
+  Member --- CreateBorrowRequest
+  Member --- ManageOwnReservations
+  Member --- ViewBorrowingHistory
+  Member --- ViewFines
 
-  UC02 --- Librarian
-  UC03 --- Librarian
-  UC04 ---|"approve / reject"| Librarian
-  UC05 --- Librarian
-  UC06 --- Librarian
-  UC07 ---|"approve / reject / process return"| Librarian
-  UC08 ---|"manage queue / fulfill"| Librarian
-  UC09 ---|"calculate / collect / resolve"| Librarian
-  UC10 --- Librarian
-  UC12 --- Librarian
+  UpdateProfile --- Librarian
+  ReviewMembership --- Librarian
+  ReviewBorrowRequests --- Librarian
+  ProcessReturn --- Librarian
+  ManageReservationQueue --- Librarian
+  ManageFines --- Librarian
+  ManageBooks --- Librarian
+  ManageBookCopies --- Librarian
+  SendNotifications --- Librarian
+  GenerateReports --- Librarian
 
-  UC02 --- Admin
-  UC03 --- Admin
-  UC04 ---|"approve / reject"| Admin
-  UC05 --- Admin
-  UC06 --- Admin
-  UC07 ---|"approve / reject / process return"| Admin
-  UC08 ---|"manage queue / fulfill"| Admin
-  UC09 ---|"calculate / collect / resolve"| Admin
-  UC10 --- Admin
-  UC11 --- Admin
-  UC12 --- Admin
+  UpdateProfile --- Admin
+  ReviewMembership --- Admin
+  ReviewBorrowRequests --- Admin
+  ProcessReturn --- Admin
+  ManageReservationQueue --- Admin
+  ManageFines --- Admin
+  ManageBooks --- Admin
+  ManageBookCopies --- Admin
+  SendNotifications --- Admin
+  ManageUsersRoles --- Admin
+  GenerateReports --- Admin
 
-  UC10 ---|"deliver email"| EmailService
-
-  UC02 -. "&lt;&lt;include&gt;&gt;" .-> UC10
-  UC04 -. "&lt;&lt;include&gt;&gt;" .-> UC10
-  UC07 -. "&lt;&lt;include&gt;&gt;" .-> UC06
-  UC09 -. "&lt;&lt;extend&gt;&gt; overdue / lost / damaged" .-> UC07
-  UC08 -. "&lt;&lt;include&gt;&gt;" .-> UC06
-  UC08 -. "&lt;&lt;include&gt;&gt;" .-> UC10
-  UC09 -. "&lt;&lt;include&gt;&gt;" .-> UC10
-  UC11 -. "&lt;&lt;include&gt;&gt; account setup" .-> UC10
+  SendNotifications --- EmailService
 
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
-  class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
+  class Register,Login,RecoverPassword,BrowseBooks,ViewBookDetails,UpdateProfile,ApplyMembership,CreateBorrowRequest,ManageOwnReservations,ViewBorrowingHistory,ViewFines,ReviewMembership,ReviewBorrowRequests,ProcessReturn,ManageReservationQueue,ManageFines,ManageBooks,ManageBookCopies,SendNotifications,ManageUsersRoles,GenerateReports usecase;
   class Guest,Member,Librarian,Admin,EmailService actor;
+  style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
+  style AccessGroup fill:#f8fafc,stroke:#94a3b8;
+  style MemberGroup fill:#f8fafc,stroke:#94a3b8;
+  style StaffGroup fill:#f8fafc,stroke:#94a3b8;
   style LeftActors fill:transparent,stroke:transparent;
   style RightActors fill:transparent,stroke:transparent;
+```
+
+##### Figure 2. Authentication, Public Browsing, Profile, And Membership Use Cases
+
+```mermaid
+flowchart LR
+  subgraph LeftActors[" "]
+    direction TB
+    Guest[Guest]
+    Member[Member]
+  end
+
+  subgraph LMS[Library Management System]
+    direction TB
+    subgraph Authentication["Authentication"]
+      direction LR
+      Register(["Register Account"])
+      VerifyEmail(["Verify Email"])
+      Login(["Log In"])
+      RecoverPassword(["Recover Password"])
+    end
+    subgraph PublicBrowsing["Public Book Browsing"]
+      direction LR
+      BrowseBooks(["Browse Books"])
+      ViewBookDetails(["View Book Details"])
+    end
+    subgraph ProfileMembership["Profile and Membership Management"]
+      direction LR
+      ViewProfile(["View Profile"])
+      UpdateProfile(["Update Profile"])
+      UploadAvatar(["Upload Avatar"])
+      ApplyMembership(["Apply for Membership"])
+      ViewMembershipStatus(["View Membership Status"])
+      ApproveMembership(["Approve Membership Application"])
+      RejectMembership(["Reject Membership Application"])
+      SendNotifications(["Send Notifications"])
+    end
+  end
+
+  subgraph RightActors[" "]
+    direction TB
+    Librarian[Librarian]
+    Admin[Admin]
+    EmailService[EmailService]
+  end
+
+  Guest --- Register
+  Guest --- VerifyEmail
+  Guest --- Login
+  Guest --- RecoverPassword
+  Guest --- BrowseBooks
+  Guest --- ViewBookDetails
+
+  Member --- BrowseBooks
+  Member --- ViewBookDetails
+  Member --- ViewProfile
+  Member --- UpdateProfile
+  Member --- UploadAvatar
+  Member --- ApplyMembership
+  Member --- ViewMembershipStatus
+
+  ViewProfile --- Librarian
+  UpdateProfile --- Librarian
+  UploadAvatar --- Librarian
+  ApproveMembership --- Librarian
+  RejectMembership --- Librarian
+
+  ViewProfile --- Admin
+  UpdateProfile --- Admin
+  UploadAvatar --- Admin
+  ApproveMembership --- Admin
+  RejectMembership --- Admin
+
+  SendNotifications --- EmailService
+
+  Register -. "&lt;&lt;include&gt;&gt;" .-> SendNotifications
+  RecoverPassword -. "&lt;&lt;include&gt;&gt;" .-> SendNotifications
+  ApproveMembership -. "&lt;&lt;include&gt;&gt;" .-> SendNotifications
+  RejectMembership -. "&lt;&lt;include&gt;&gt;" .-> SendNotifications
+
+  classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  class Register,VerifyEmail,Login,RecoverPassword,BrowseBooks,ViewBookDetails,ViewProfile,UpdateProfile,UploadAvatar,ApplyMembership,ViewMembershipStatus,ApproveMembership,RejectMembership,SendNotifications usecase;
+  class Guest,Member,Librarian,Admin,EmailService actor;
+  style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
+  style Authentication fill:#f8fafc,stroke:#94a3b8;
+  style PublicBrowsing fill:#f8fafc,stroke:#94a3b8;
+  style ProfileMembership fill:#f8fafc,stroke:#94a3b8;
+  style LeftActors fill:transparent,stroke:transparent;
+  style RightActors fill:transparent,stroke:transparent;
+```
+
+##### Figure 3. Borrowing, Reservation, And Fine Use Cases
+
+```mermaid
+flowchart LR
+  subgraph LeftActors[" "]
+    direction TB
+    Member[Member]
+  end
+
+  subgraph LMS[Library Management System]
+    direction TB
+    subgraph MemberCirculation["Member Circulation"]
+      direction LR
+      CreateBorrowRequest(["Create Borrow Request"])
+      ViewBorrowingHistory(["View Borrowing History"])
+      RenewBorrowing(["Renew Borrowing"])
+      CreateReservation(["Create Reservation"])
+      CancelReservation(["Cancel Reservation"])
+      ViewOwnReservations(["View Own Reservations"])
+      ViewFines(["View Fines"])
+    end
+    subgraph StaffCirculation["Staff Circulation"]
+      direction LR
+      ApproveBorrowRequest(["Approve Borrow Request"])
+      RejectBorrowRequest(["Reject Borrow Request"])
+      ProcessReturn(["Process Return"])
+      ProcessReservationQueue(["Process Reservation Queue"])
+      ManageFines(["Manage Fines"])
+      ManageBookCopies(["Manage Book Copies"])
+      SendNotifications(["Send Notifications"])
+    end
+    subgraph RequiredChecks["Required Business Checks"]
+      direction LR
+      CheckBorrowingEligibility(["Check Borrowing Eligibility"])
+      CheckCopyBorrowability(["Check Copy Borrowability"])
+      CheckReservationEligibility(["Check Reservation Eligibility"])
+      CheckCopyAvailability(["Check Copy Availability"])
+    end
+  end
+
+  subgraph RightActors[" "]
+    direction TB
+    Librarian[Librarian]
+    Admin[Admin]
+    EmailService[EmailService]
+  end
+
+  Member --- CreateBorrowRequest
+  Member --- ViewBorrowingHistory
+  Member --- RenewBorrowing
+  Member --- CreateReservation
+  Member --- CancelReservation
+  Member --- ViewOwnReservations
+  Member --- ViewFines
+
+  ApproveBorrowRequest --- Librarian
+  RejectBorrowRequest --- Librarian
+  ProcessReturn --- Librarian
+  RenewBorrowing --- Librarian
+  ViewBorrowingHistory --- Librarian
+  ProcessReservationQueue --- Librarian
+  ManageFines --- Librarian
+  ManageBookCopies --- Librarian
+
+  ApproveBorrowRequest --- Admin
+  RejectBorrowRequest --- Admin
+  ProcessReturn --- Admin
+  RenewBorrowing --- Admin
+  ViewBorrowingHistory --- Admin
+  ProcessReservationQueue --- Admin
+  ManageFines --- Admin
+  ManageBookCopies --- Admin
+
+  SendNotifications --- EmailService
+
+  CreateBorrowRequest -. "&lt;&lt;include&gt;&gt;" .-> CheckBorrowingEligibility
+  CreateBorrowRequest -. "&lt;&lt;include&gt;&gt;" .-> CheckCopyBorrowability
+  ApproveBorrowRequest -. "&lt;&lt;include&gt;&gt;" .-> CheckBorrowingEligibility
+  ApproveBorrowRequest -. "&lt;&lt;include&gt;&gt;" .-> CheckCopyBorrowability
+  CreateReservation -. "&lt;&lt;include&gt;&gt;" .-> CheckReservationEligibility
+  ProcessReservationQueue -. "&lt;&lt;include&gt;&gt;" .-> CheckCopyAvailability
+  SendNotifications -. "&lt;&lt;extend&gt;&gt;<br/>[eligible reservation found]" .-> ProcessReservationQueue
+  ProcessReturn -. "&lt;&lt;include&gt;&gt;" .-> ManageBookCopies
+  ManageFines -. "&lt;&lt;extend&gt;&gt;<br/>[overdue, lost, or damaged]" .-> ProcessReturn
+
+  classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  class CreateBorrowRequest,ViewBorrowingHistory,RenewBorrowing,CreateReservation,CancelReservation,ViewOwnReservations,ViewFines,ApproveBorrowRequest,RejectBorrowRequest,ProcessReturn,ProcessReservationQueue,ManageFines,ManageBookCopies,SendNotifications,CheckBorrowingEligibility,CheckCopyBorrowability,CheckReservationEligibility,CheckCopyAvailability usecase;
+  class Member,Librarian,Admin,EmailService actor;
+  style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
+  style MemberCirculation fill:#f8fafc,stroke:#94a3b8;
+  style StaffCirculation fill:#f8fafc,stroke:#94a3b8;
+  style RequiredChecks fill:#f8fafc,stroke:#94a3b8;
+  style LeftActors fill:transparent,stroke:transparent;
+  style RightActors fill:transparent,stroke:transparent;
+```
+
+##### Figure 4. Catalog, Inventory, Administration, Notification, And Reporting Use Cases
+
+```mermaid
+flowchart LR
+  subgraph LeftActors[" "]
+    direction TB
+    Librarian[Librarian]
+    Admin[Admin]
+  end
+
+  subgraph LMS[Library Management System]
+    direction TB
+    subgraph CatalogInventory["Book and Inventory Management"]
+      direction LR
+      ManageBooks(["Manage Books"])
+      ManageBookCopies(["Manage Book Copies"])
+    end
+    subgraph Administration["User and Role Management"]
+      direction LR
+      ManageUsersRoles(["Manage Users and Roles"])
+      CreateUserAccount(["Create User Account"])
+      ViewAuditLogs(["View Audit Logs"])
+    end
+    subgraph ReportingNotification["Reporting and Notification Management"]
+      direction LR
+      GenerateReports(["Generate Reports"])
+      SendNotifications(["Send Notifications"])
+    end
+  end
+
+  EmailService[EmailService]
+
+  Librarian --- ManageBooks
+  Librarian --- ManageBookCopies
+  Librarian --- GenerateReports
+  Librarian --- SendNotifications
+
+  Admin --- ManageBooks
+  Admin --- ManageBookCopies
+  Admin --- ManageUsersRoles
+  Admin --- CreateUserAccount
+  Admin --- ViewAuditLogs
+  Admin --- GenerateReports
+  Admin --- SendNotifications
+
+  SendNotifications --- EmailService
+  CreateUserAccount -. "&lt;&lt;include&gt;&gt;" .-> SendNotifications
+
+  classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  class ManageBooks,ManageBookCopies,ManageUsersRoles,CreateUserAccount,ViewAuditLogs,GenerateReports,SendNotifications usecase;
+  class Librarian,Admin,EmailService actor;
+  style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
+  style CatalogInventory fill:#f8fafc,stroke:#94a3b8;
+  style Administration fill:#f8fafc,stroke:#94a3b8;
+  style ReportingNotification fill:#f8fafc,stroke:#94a3b8;
+  style LeftActors fill:transparent,stroke:transparent;
 ```
 
 #### b. Use Case List
@@ -237,14 +493,20 @@ Internal database dependency: `UC-01` to `UC-12` read from or write to SQL Serve
 
 | Relationship | Description |
 | ------------ | ----------- |
-| UC-02 includes UC-10 | Account registration, verification, password reset, and admin-created account setup require notification delivery. |
-| UC-04 includes UC-10 | Membership approval or rejection can queue a membership result notification. |
-| UC-07 includes UC-06 | Borrowing and returning depend on current physical copy status and availability. |
-| UC-09 extends UC-07 | Returning an overdue, lost, or damaged copy may trigger fine calculation or fine management. |
-| UC-08 includes UC-06 | Reservation queue processing depends on physical copy availability. |
-| UC-08 includes UC-10 | Reservation availability and queue events can trigger notifications. |
-| UC-09 includes UC-10 | Fine and overdue events can trigger due date or fine notifications. |
-| UC-11 includes UC-10 | Admin-created user accounts can trigger account setup notifications. |
+| Register Account includes Send Notifications | Registration always requests delivery of the account-verification message. |
+| Recover Password includes Send Notifications | Password recovery always requests delivery of reset instructions. |
+| Approve Membership Application includes Send Notifications | A successful approval requests delivery of the membership result. |
+| Reject Membership Application includes Send Notifications | A successful rejection requests delivery of the membership result. |
+| Create Borrow Request includes Check Borrowing Eligibility | Every borrow request validates active account, approved membership, borrow limit, overdue books, and unpaid fines. |
+| Create Borrow Request includes Check Copy Borrowability | Every borrow request validates the reservation-aware status of each requested copy. |
+| Approve Borrow Request includes Check Borrowing Eligibility | Approval revalidates the member because eligibility may have changed after request creation. |
+| Approve Borrow Request includes Check Copy Borrowability | Approval revalidates each requested copy before changing it to borrowed. |
+| Create Reservation includes Check Reservation Eligibility | Every reservation validates membership, reservation limit, and the selected unavailable copy. |
+| Process Reservation Queue includes Check Copy Availability | Queue processing requires the selected copy to be available. |
+| Send Notifications extends Process Reservation Queue | Notification occurs only when an eligible reservation is selected and a hold is committed. |
+| Process Return includes Manage Book Copies | Every return updates the physical copy to available, damaged, or lost. |
+| Manage Fines extends Process Return | Fine handling occurs only when the returned copy is overdue, lost, or damaged. |
+| Create User Account includes Send Notifications | Admin-created accounts require delivery of account-setup instructions. |
 
 ## 2. Overall Functionalities
 
