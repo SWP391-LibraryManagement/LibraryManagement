@@ -72,9 +72,12 @@
     - 1.1 `<<UseCaseCode_UC Name>>`
   - 2. Common Functions
     - 2.1 UC-2 Login System
-  - 3. Patron Feature
-    - 3.1 UC-5 Order a Meal
-    - 3.2 UC-6 Register for Payroll Deduction
+  - 3. Member Feature
+    - 3.1 UC-MEM-01 Browse Book Catalog
+    - 3.2 UC-MEM-02 Apply For Membership
+    - 3.3 UC-MEM-03 Create Borrow Request
+    - 3.4 UC-MEM-04 Manage Own Reservations
+    - 3.5 UC-MEM-05 View Borrowing And Fines
 - III. Design Specifications
   - 1. `<<Feature Name>>`
     - 1.1 `<<SubFeature Name>>`
@@ -1167,3 +1170,165 @@ flowchart TB
 | BR-CF-AUTHZ-001 | Token Validation | Every protected request must validate the session/token before processing. |
 | BR-CF-AUTHZ-002 | Server-Side Roles | User roles are determined by UserRoles and must be verified on sensitive operations. |
 | BR-CF-AUTHZ-003 | Forbidden Access | Authenticated users without the required role must be denied access to protected operations. |
+
+## 3. Member Feature
+
+### 3.1 UC-MEM-01 Browse Book Catalog
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-MEM-01 Browse Book Catalog |
+| Created By | DungTH |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Internal database |
+| Description | A member views the library catalog, searches for books, and opens book details before borrowing or reserving. |
+| Trigger | Member opens the public book homepage or searches for a book. |
+| Preconditions | PRE-1: Catalog data exists.<br/>PRE-2: Book browse screen is available. |
+| Postconditions | POST-1: Matching active books are shown.<br/>POST-2: Selected book details and public availability are displayed. |
+| Normal Flow | MEM-01.0 Browse Book Catalog<br/>1. Member opens the book homepage.<br/>2. System displays active books.<br/>3. Member enters keyword or filter criteria.<br/>4. System displays matching books.<br/>5. Member selects a book.<br/>6. System displays public book details and availability. |
+| Alternative Flows | MEM-01.1 No keyword entered: system displays default active book list.<br/>MEM-01.2 No matching result: system displays an empty result message. |
+| Exceptions | MEM-01.0.E1 Catalog data cannot be loaded: system displays a safe error message. |
+| Priority | High |
+| Frequency of Use | High, multiple times per day |
+| Business Rules | BR-MEM-CATALOG-001, BR-MEM-CATALOG-002 |
+| Other Information | Member cannot see staff-only copy barcode, location, or borrower information. |
+| Assumptions | Public availability is derived from active book and copy status. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-MEM-CATALOG-001 | Active Books Only | Member can browse only active/public-visible books. |
+| BR-MEM-CATALOG-002 | Safe Availability | Member sees availability summary, not internal copy management data. |
+
+### 3.2 UC-MEM-02 Apply For Membership
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-MEM-02 Apply For Membership |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Description | A member submits a membership application and later views approval or rejection status. |
+| Trigger | Member opens Membership screen and submits an application. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member does not already have approved membership.<br/>PRE-3: Member has no duplicate pending application. |
+| Postconditions | POST-1: Membership application is stored.<br/>POST-2: Member can view application status.<br/>POST-3: Review result notification may be sent. |
+| Normal Flow | MEM-02.0 Apply For Membership<br/>1. Member opens Membership screen.<br/>2. System displays current membership status.<br/>3. Member submits application.<br/>4. System validates application eligibility.<br/>5. System stores pending application.<br/>6. Staff reviews the application.<br/>7. System updates application result.<br/>8. Member views updated status. |
+| Alternative Flows | MEM-02.1 Application is rejected: member can re-apply after correcting information.<br/>MEM-02.2 Application is pending: system prevents duplicate pending submission. |
+| Exceptions | MEM-02.0.E1 Already approved: system blocks new application.<br/>MEM-02.0.E2 Unauthorized review action: system denies staff action. |
+| Priority | High |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | BR-MEM-MEMBER-001, BR-MEM-MEMBER-002, BR-MEM-MEMBER-003 |
+| Other Information | Membership payment and points are out of scope for Phase 1. |
+| Assumptions | Approval/rejection does not change the user's login role. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-MEM-MEMBER-001 | No Duplicate Pending Application | Member cannot create a new application while another application is pending. |
+| BR-MEM-MEMBER-002 | Approved Member Cannot Reapply | Member with approved membership cannot submit another active membership application. |
+| BR-MEM-MEMBER-003 | Rejection Reason Required | Staff must provide a rejection reason when rejecting an application. |
+
+### 3.3 UC-MEM-03 Create Borrow Request
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-MEM-03 Create Borrow Request |
+| Created By | NhatNHA |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Librarian, Admin, Internal database |
+| Description | A member selects available copies and creates a borrow request for staff approval. |
+| Trigger | Member clicks borrow action for one or more available books. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible to borrow.<br/>PRE-3: Selected copies are available and borrowable. |
+| Postconditions | POST-1: Borrow request is stored with pending status.<br/>POST-2: Borrow request details are stored for selected copies. |
+| Normal Flow | MEM-03.0 Create Borrow Request<br/>1. Member opens Create Borrow Request screen.<br/>2. System displays borrowable books/copies.<br/>3. Member selects copies.<br/>4. Member submits request.<br/>5. System checks eligibility, borrow limit, unpaid fines, overdue status, and copy availability.<br/>6. System stores pending borrow request.<br/>7. System displays request result to member. |
+| Alternative Flows | MEM-03.1 Member removes selected copy before submitting: system recalculates request list.<br/>MEM-03.2 Request is later rejected by staff: member sees rejected status in history. |
+| Exceptions | MEM-03.0.E1 Borrow limit exceeded: system rejects request.<br/>MEM-03.0.E2 Copy unavailable: system rejects selected copy.<br/>MEM-03.0.E3 Member has unpaid fine or overdue item: system blocks request. |
+| Priority | High |
+| Frequency of Use | High, daily |
+| Business Rules | BR-MEM-BORROW-001, BR-MEM-BORROW-002, BR-MEM-BORROW-003, BR-MEM-BORROW-004 |
+| Other Information | Staff approval is required before the loan becomes active. |
+| Assumptions | Default loan duration is 14 calendar days after approval. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-MEM-BORROW-001 | Available Copy Required | A book cannot be borrowed if available quantity is 0. |
+| BR-MEM-BORROW-002 | Borrow Limit | Member cannot have more than 5 active borrowed copies at the same time. |
+| BR-MEM-BORROW-003 | Fine And Overdue Blocker | Member with overdue books or unpaid fines may be restricted from borrowing. |
+| BR-MEM-BORROW-004 | Borrow Record Required | Every borrow transaction must store member, book/copy, borrow date, due date, status, and creator. |
+
+### 3.4 UC-MEM-04 Manage Own Reservations
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-MEM-04 Manage Own Reservations |
+| Created By | NhatNHA |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | EmailService, Internal database |
+| Description | A member creates, views, or cancels their own reservations and receives availability notification when applicable. |
+| Trigger | Member opens My Reservations screen or reserves a book. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible for reservation.<br/>PRE-3: Target copy exists. |
+| Postconditions | POST-1: Reservation is created, cancelled, notified, fulfilled, expired, or left active.<br/>POST-2: Availability notification may be sent when a held copy is ready. |
+| Normal Flow | MEM-04.0 Manage Own Reservations<br/>1. Member opens reservation function.<br/>2. System displays member reservations.<br/>3. Member creates a reservation or cancels an existing reservation.<br/>4. System validates ownership and reservation rules.<br/>5. System saves reservation state.<br/>6. System updates reservation list. |
+| Alternative Flows | MEM-04.1 Copy becomes available: system processes queue and triggers notification.<br/>MEM-04.2 Member borrows held copy: reservation is fulfilled through borrowing workflow. |
+| Exceptions | MEM-04.0.E1 Duplicate reservation: system rejects request.<br/>MEM-04.0.E2 Cancel-not-owner: system denies cancellation.<br/>MEM-04.0.E3 Notification failure: committed reservation state remains unchanged and failure is recorded. |
+| Priority | Medium |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | BR-MEM-RES-001, BR-MEM-RES-002, BR-MEM-RES-003 |
+| Other Information | Automatic retry worker for failed notifications is out of scope for Phase 1. |
+| Assumptions | Reservation queue uses copy availability and stable queue order. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-MEM-RES-001 | Own Reservation Only | Member can view or cancel only their own reservations. |
+| BR-MEM-RES-002 | Queue Processing | Reservation queue processing must select an eligible reservation before holding a copy. |
+| BR-MEM-RES-003 | Notification Failure Boundary | Notification failure must not roll back committed reservation hold state. |
+
+### 3.5 UC-MEM-05 View Borrowing And Fines
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-MEM-05 View Borrowing And Fines |
+| Created By | NhatNHA, DungTH |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Internal database |
+| Description | A member views borrowing history and fine information related to their account. |
+| Trigger | Member opens Borrowing History, My Reservations, or fine information view. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Borrowing or fine records may exist for the member. |
+| Postconditions | POST-1: Member borrowing history is displayed.<br/>POST-2: Member fine information is displayed when available.<br/>POST-3: No other member's private borrowing or fine data is exposed. |
+| Normal Flow | MEM-05.0 View Borrowing And Fines<br/>1. Member opens Borrowing History or fine-related view.<br/>2. System validates member identity.<br/>3. System loads records owned by the member.<br/>4. System displays request status, loan status, due dates, return data, and fine status where available. |
+| Alternative Flows | MEM-05.1 No borrowing records exist: system displays empty history state.<br/>MEM-05.2 No fines exist: system displays no-fine state. |
+| Exceptions | MEM-05.0.E1 Unauthorized access: system rejects access.<br/>MEM-05.0.E2 Data loading failure: system displays safe error message. |
+| Priority | High |
+| Frequency of Use | Medium, weekly |
+| Business Rules | BR-MEM-HISTORY-001, BR-MEM-HISTORY-002, BR-MEM-HISTORY-003 |
+| Other Information | Fine payment is recorded by staff; online payment is out of scope for Phase 1. |
+| Assumptions | Member data ownership is determined by authenticated user identity. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-MEM-HISTORY-001 | Own Data Only | Member can view only their own borrowing, reservation, and fine data. |
+| BR-MEM-HISTORY-002 | Return Updates Borrowing | Every return transaction must update the related borrowing transaction. |
+| BR-MEM-HISTORY-003 | Traceable Fine | Fine calculation must be traceable and testable. |
