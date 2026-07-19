@@ -147,3 +147,29 @@ test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', 
   assert.doesNotMatch(apiSources, /return apiError\?\.message|return error\.response\?\.data\?\.error\?\.message/);
   assert.doesNotMatch(apiSources, /details\.map\(\(item\) => item\.message\)/);
 });
+
+const forbiddenCopyByFile = new Map([
+  ['../src/component/forgotpassword/BackgroundPanel.jsx', [/Welcome Back/, /Reset your password/]],
+  ['../src/component/layout/AppLayout.jsx', [/aria-label="Home"/, />Home</]],
+  ['../src/component/shared/Feedback.jsx', [/aria-label="Close"/]],
+  ['../src/page/BookManagement.jsx', [/Book title is required/, /Add Book/, /Save Changes/, /Select a book/, /No description/]],
+  ['../src/page/borrowing/BorrowingHistoryPage.jsx', [/Borrowing history table/, /Previous page/, /Next page/]],
+  ['../src/page/reservation/MyReservationsPage.jsx', [/My reservations table/]],
+  ['../src/component/inventory/BookCopies.jsx', [/Book copies table/]],
+  ['../src/component/inventory/InventoryManagement.jsx', [/Inventory copies table/]],
+  ['../src/page/report/BorrowingReportPage.jsx', [/Borrowing report detail rows/, /From date/, /To date/]],
+  ['../src/page/report/InventoryReportPage.jsx', [/Low inventory books table/, /Inventory report detail rows/, /Book ID/]],
+  ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /Membership/]],
+  ['../src/page/UserManagement.jsx', [/Every user must keep at least one role/, /Status Report/, /Role Distribution/, /Close details/, /No name/, /Active borrowings/, /Unpaid fines/, /Search library data/]],
+  ['../src/api/userManagementApi.js', [/Request failed\. Please try again/, /Could not /, /Please login with an Admin account/]],
+  ['../src/api/profileApi.js', [/Could not load profile/, /Could not update profile/, /Could not upload avatar/]],
+]);
+
+test('audited frontend surfaces do not contain known English interface copy', async () => {
+  for (const [file, patterns] of forbiddenCopyByFile) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8');
+    for (const pattern of patterns) {
+      assert.doesNotMatch(source, pattern, `${file}: ${pattern}`);
+    }
+  }
+});

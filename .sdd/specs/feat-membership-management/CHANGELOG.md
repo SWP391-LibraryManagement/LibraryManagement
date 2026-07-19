@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-20 - Vietnamese UI localization and typography
+
+- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
+- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
+- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+
 ## 2026-07-19 - Phase 2 Exit Closeout
 
 - feat-membership-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
