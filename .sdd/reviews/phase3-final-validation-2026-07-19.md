@@ -6,9 +6,10 @@ Validation commit: `80d81e4`
 
 Phase 3 is **integrated and validated** on `main` at merge commit `4d02fc4`.
 The package satisfies the four Hybrid SDD validation layers for the observed
-scope. Authenticated Azure acceptance, real SMTP inbox delivery, durable avatar
-storage, shared SQL CI, and production SLA remain explicit residual boundaries;
-none is marked as passed by inference.
+scope. Authenticated Azure acceptance and real SMTP inbox delivery were later
+verified in live run `c6e0c46421f0`. Durable avatar storage, shared SQL CI, and
+production SLA remain explicit residual boundaries; none is marked as passed
+by inference.
 
 ## L1 - Automated checks
 
@@ -56,6 +57,9 @@ the Phase 3 deliverables.
   untrusted origin; anonymous protected access returns a safe `401` envelope.
 - App Service `TRUST_PROXY=true` is documented as non-secret configuration for
   correct HTTPS enforcement behind Azure's proxy.
+- The live SMTP issue was configuration shape, not an application code change:
+  malformed `SMTP_USER` input was corrected to the valid `MAIL_FROM` address;
+  no secret value is present in the evidence.
 
 ## L4 - Acceptance verification
 
@@ -69,8 +73,8 @@ Observed acceptance is intentionally split by evidence boundary:
 | Anonymous protected route | PASS | `/api/auth/me` returned `401`. |
 | Synthetic local authenticated golden path | PASS | 4/4 Playwright suites; login -> borrow -> approve -> return -> fine -> report. |
 | Responsive layout evidence | PASS | Desktop/mobile screenshots and no horizontal overflow assertion. |
-| Authenticated Azure Member/Librarian flow | NOT OBSERVED | No safe staging credential was created or disclosed. |
-| Real SMTP inbox delivery | NOT OBSERVED | Provider delivery was not executed. |
+| Authenticated Azure Member/Librarian flow | PASS | Live run `c6e0c46421f0` verified three role logins, protected reads, borrow request, approval, and return. |
+| Real SMTP inbox delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP search were observed. |
 | Durable avatar storage | LIMITATION | App Service filesystem is not production-durable storage. |
 | Shared SQL CI | LIMITATION | CI does not provide a disposable SQL Server service. |
 | Production SLA | OUT OF SCOPE | Student-credit staging environment only. |
@@ -90,3 +94,7 @@ The branch was merged as PR #48. Post-merge `main` CI run `29696519912` passed,
 and fresh staging workflow `29696612260` passed the quality gate, both deploys,
 and the current six-check SQL-aware smoke. Historical run `29694280002` remains
 context only because it predates the SQL-aware smoke assertion.
+
+The authenticated/SMTP observation used ephemeral fixtures and completed
+cleanup with zero remaining auth, book, or notification fixtures and no
+temporary `phase3-live-observation*` firewall rules.

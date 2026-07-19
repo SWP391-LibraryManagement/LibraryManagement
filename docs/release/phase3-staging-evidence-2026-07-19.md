@@ -4,9 +4,10 @@
 
 Current deployment status: **PASS WITH EXPLICIT ACCEPTANCE BOUNDARIES**.
 
-The public frontend, backend runtime, SQL-backed catalog, strict CORS, and
-anonymous protected-route rejection are observed. Authenticated live-user
-flows and real SMTP inbox delivery are not claimed by this record.
+The public frontend, backend runtime, SQL-backed catalog, strict CORS,
+anonymous protected-route rejection, authenticated role flows, and real SMTP
+inbox delivery are observed. Evidence is limited to the recorded live run and
+does not retain credentials, tokens, message bodies, or provider secrets.
 
 ## Deployed baseline
 
@@ -97,6 +98,31 @@ protected-route
 
 Post-merge workflow `29696612260` ran from merge commit `4d02fc423c2fc06374d71ec945b7593dfd10c7e6` and passed its quality gate, backend deploy, frontend deploy, and six-check `smoke-test` job. This is the current SQL-aware staging acceptance evidence.
 
+## Authenticated Azure and SMTP observation
+
+Final live observation run: `c6e0c46421f0`.
+
+| Scenario | Observed result | Status |
+| --- | --- | --- |
+| Role login | Synthetic Admin, Member, and Librarian logins completed. | PASS |
+| Role verification | `/api/auth/me` returned the expected role for each login. | PASS |
+| Member protected read | Member borrowing-history endpoint returned the protected response. | PASS |
+| Librarian protected read | Librarian queue endpoint returned the protected response. | PASS |
+| Borrow lifecycle | Member request, Librarian approval, and Librarian return completed. | PASS |
+| SMTP notification | Notification `8` reached `SENT` in one attempt; 2 processed and 0 failed. | PASS |
+| Provider acceptance | SMTP provider accepted the delivery. | PASS |
+| Inbox observation | Gmail IMAP search observed the message (`MESSAGE_SEARCHED`). | PASS |
+
+The SMTP investigation found a malformed `SMTP_USER` configuration shape with
+two `@` characters. The App Service setting was corrected to the valid sender
+address already configured as `MAIL_FROM`, then the app was restarted and
+health was rechecked. No email address, password, OTP, token, message body,
+or connection string is recorded here.
+
+The run used ephemeral synthetic fixtures. Final cleanup verification returned
+`AuthFixtures=0`, `BookFixtures=0`, and `NotificationFixtures=0`; all temporary
+`phase3-live-observation*` SQL firewall rules were deleted.
+
 ## Acceptance boundaries
 
 | Boundary | Status | Reason |
@@ -104,8 +130,8 @@ Post-merge workflow `29696612260` ran from merge commit `4d02fc423c2fc06374d71ec
 | Public frontend/backend/SQL | PASS | Observed by the six-check read-only smoke run. |
 | Strict CORS | PASS | Exact staging frontend allowed; untrusted origin blocked. |
 | Anonymous protected route | PASS | `/api/auth/me` returned `401`. |
-| Authenticated Azure golden path | NOT OBSERVED | No safe staging member/librarian credential was created or disclosed for this run. |
-| Real SMTP inbox delivery | NOT OBSERVED | Provider delivery was not executed; settings existence is not delivery evidence. |
+| Authenticated Azure golden path | PASS | Live run `c6e0c46421f0` verified role login, protected reads, borrow request, approval, and return. |
+| Real SMTP inbox delivery | PASS | Notification `8` was `SENT`; provider acceptance and Gmail IMAP message search were observed. |
 | Durable avatar storage | LIMITATION | App Service filesystem is not production-durable storage. |
 | Production SLA | OUT OF SCOPE | Student-credit staging has no production availability commitment. |
 

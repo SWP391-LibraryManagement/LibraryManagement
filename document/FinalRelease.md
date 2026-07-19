@@ -256,8 +256,10 @@ Observed Phase 3 staging endpoints and checks are recorded in
 `docs/release/phase3-staging-evidence-2026-07-19.md`. The public frontend,
 backend health, SQL-backed catalog query, exact CORS allow/deny behavior, and
 anonymous protected-route rejection passed the independent six-check smoke.
-Authenticated Azure Member/Librarian acceptance and real SMTP inbox delivery
-remain `NOT OBSERVED`.
+Live run `c6e0c46421f0` additionally passed authenticated Admin/Member/Librarian
+role flows, protected reads, the borrow request/approval/return lifecycle, and
+real SMTP inbox delivery. Credentials, tokens, and message content are not part
+of the release document.
 
 ## III. User Manual
 
@@ -522,7 +524,7 @@ Release limitation:
 | --- | --- |
 | 1 | FE09 legacy frontend is not authoritative release evidence; use server API evidence. |
 | 2 | FE10 notification inbox UI is deferred. |
-| 3 | SMTP delivery requires a configured provider; without SMTP, actual inbox delivery is not proven. |
+| 3 | SMTP delivery remains dependent on a valid provider configuration; the configured staging path was observed in live run `c6e0c46421f0`. |
 | 4 | SQL integration testing is local/manual because CI does not provide a shared disposable SQL Server service. |
 | 5 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
 | 6 | Route-level code splitting resolves the prior entry-chunk advisory; total JavaScript remains a future optimization target if browser telemetry requires it. |
@@ -540,8 +542,8 @@ Release limitation:
 | Security dependency audit | No unresolved Critical/High production dependency findings. |
 | Traceability gate | All twelve feature specs report 100% FR tag coverage. |
 | Public staging acceptance | PASS: frontend, health, SQL catalog, strict CORS, and anonymous protected route. |
-| Authenticated staging acceptance | NOT OBSERVED: no safe staging Member/Librarian credentials were created or disclosed. |
-| Real SMTP inbox delivery | NOT OBSERVED: provider delivery was not executed. |
+| Authenticated staging acceptance | PASS: live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
+| Real SMTP inbox delivery | PASS: notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search were observed. |
 | Historical Phase 2 merge and CI | PR #40 and Phase 2 closeout PR #45/#46 merged; `main` CI `29690856461` passed. |
 | Phase 3 merge and post-merge CI | PR #48 merged as `4d02fc4`; `main` CI `29696519912` and staging workflow `29696612260` passed. |
 
