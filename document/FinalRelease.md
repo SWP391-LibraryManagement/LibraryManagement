@@ -19,7 +19,7 @@ This section lists the final source code, database scripts, documents, test evid
 | No. | File / Folder | Version | Notes |
 | --- | --- | --- | --- |
 | 1 | `database/Librarymanagement.sql` | 1.0 | Final SQL Server database script, including the canonical table structures for users, roles, profiles, members, books, book copies, borrowing, reservations, fines, notifications, and audit logs. |
-| 2 | `database/migrations/add_change_password_otp_token_type.sql` | 1.0 | Migration script for authentication token type support related to change-password OTP behavior. |
+| 2 | `database/migrations/` | 1.0 | Idempotent SQL Server migration scripts for change-password OTP token type, membership concurrency, book/book-copy rowversion, FE10 OTP templates, and FE11 finalization schema synchronization. |
 | 3 | `document/RDS.md` | 1.0 | Final Requirement & Design Specification document covering user requirements, use cases, screen flow, authorization, feature requirements, business rules, assumptions, dependencies, limitations, and references. |
 | 4 | `document/SDS.md` | 1.0 | Final Software Design Specification document covering code packages, database design, class-level design, sequence diagrams, and representative SQL queries. |
 | 5 | `document/FinalRelease.md` | 1.0 | Final release document for deliverable package, installation guide, and user manual overview. |
@@ -73,15 +73,15 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 | Feature | Roles | Final Status | Notes |
 | --- | --- | --- | --- |
 | FE01 Public / Browse | Guest, Member, Librarian, Admin | Accepted in PR #40 | Public catalog browsing, search, detail, and availability summary. |
-| FE02 Authentication | Guest, Member, Librarian, Admin | Accepted in PR #40 | Register, email verification, login, logout, refresh token, password change/reset, account setup support. |
+| FE02 Authentication | Guest, Member, Librarian, Admin | Accepted in PR #40; OTP follow-up in PR #42-#44 | Register, OTP/legacy email verification, login, logout, refresh token, password change/reset, account setup support. |
 | FE03 User Profile | Member, Librarian, Admin | Accepted in PR #40 | Profile view/update and avatar support; email changes remain outside FE03. |
 | FE04 Membership Management | Member, Librarian, Admin | Accepted in PR #40 | Member application and librarian/admin approval/rejection workflow. |
-| FE05 Book Management | Librarian, Admin | Accepted in PR #40 | Canonical BookManagement owns versioned catalog mutations; FE11 Library view is read-only. |
+| FE05 Book Management | Librarian, Admin | Accepted in PR #40 | Canonical BookManagement owns versioned book mutations; Admin library metadata endpoints manage category, author, and publisher records. |
 | FE06 Inventory / Book Copy Management | Librarian, Admin | Accepted in PR #40 | Physical copy management, rowversion, locked workflow/parent rechecks, audit, and availability ownership. |
 | FE07 Borrowing Management | Member, Librarian, Admin | Accepted in PR #40 | Member borrow request, staff approval/rejection, return, renewal, and borrowing history. |
 | FE08 Reservation Management | Member, Librarian, Admin | Accepted; TD-028 complete | Reservation creation, cancellation, queue management, hold/fulfillment workflow. |
 | FE09 Fine Management | Member, Librarian, Admin | Accepted with UI limitation | Server-side overdue fine calculation and offline payment recording; legacy frontend is not release evidence. |
-| FE10 Notification Management | System, Librarian, Admin | Accepted with UI limitation | Safe email notifications, templates, queue, retry, and delivery attempts; inbox UI deferred. |
+| FE10 Notification Management | Librarian, Admin; internal source features | Accepted with UI limitation; OTP follow-up in PR #42-#44 | Safe email notifications, templates, queue, retry, source-bound sensitive delivery, and delivery attempts; inbox UI deferred. |
 | FE11 User & Role Management | Admin | Accepted approved Phase 1 scope | User list/detail, role assignment, librarian account creation, permissions, and audit log access. |
 | FE12 Reporting & Statistics | Librarian, Admin | Accepted in PR #40 | Read-only borrowing, inventory, and user statistics reports. |
 
@@ -97,7 +97,7 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 ## II. Installation Guides
 
-This project is a web application, not a NetBeans 8.2 desktop project. It runs with Node.js, Express.js, React/Vite, and SQL Server.
+This project is a web application, not a NetBeans 8.2 desktop project. It runs with Node.js, Express.js, React/Vite, SQL Server, and the current frontend UI dependencies in `frontend/package.json` such as Bootstrap, Material UI, and lucide-react.
 
 ### 1. Prerequisites
 
@@ -152,7 +152,13 @@ Do not commit `.env` files or real credentials.
 1. Open SQL Server Management Studio or another SQL Server client.
 2. Create the target database if needed.
 3. Run `database/Librarymanagement.sql`.
-4. If change-password OTP support is needed on an older database, run `database/migrations/add_change_password_otp_token_type.sql`.
+4. For an existing/older database, review and run the applicable scripts in `database/migrations/` after the baseline script. Current release migrations include:
+   - `add_change_password_otp_token_type.sql`
+   - `2026-07-19-fe04-membership-concurrency.sql`
+   - `2026-07-19-fe05-book-rowversion.sql`
+   - `2026-07-19-fe06-bookcopy-rowversion.sql`
+   - `2026-07-19-fe10-otp-templates.sql`
+   - `2026-07-19-fe11-finalization.sql`
 5. Confirm that the backend `.env` points to the same database.
 
 ### 5. Run Locally
@@ -536,7 +542,8 @@ Release limitation:
 | Public staging acceptance | PASS: frontend, health, SQL catalog, strict CORS, and anonymous protected route. |
 | Authenticated staging acceptance | NOT OBSERVED: no safe staging Member/Librarian credentials were created or disclosed. |
 | Real SMTP inbox delivery | NOT OBSERVED: provider delivery was not executed. |
-| Merge and post-merge CI | Pending Phase 3 branch integration; do not treat historical Phase 2 CI as Phase 3 closure. |
+| Historical Phase 2 merge and CI | PR #40 and Phase 2 closeout PR #45/#46 merged; `main` CI `29690856461` passed. |
+| Phase 3 merge and post-merge CI | Pending PR #48 integration; dispatch a fresh staging workflow after merge. |
 
 ### 15. References
 

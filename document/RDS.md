@@ -199,18 +199,20 @@ flowchart LR
 
 | UC ID | Use Case Name | Primary Actor(s) | Supporting Actor(s) | Outcome |
 | ----- | ------------- | ---------------- | ------------------- | ------- |
-| UC-01 | Browse Books | Guest, Member | Internal database | Actor can search, browse, and view public book information and current availability. |
-| UC-02 | Manage Account Access | Guest, Member, Admin-created user | EmailService, Internal database | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
-| UC-03 | Manage Profile | Member | Internal database | Member can view and update profile information, including avatar where supported. |
-| UC-04 | Apply For Membership | Member, Librarian, Admin | EmailService, Internal database | Member can submit a membership application and authorized staff can approve or reject it. |
-| UC-05 | Manage Books | Librarian, Admin | Internal database | Authorized staff can create, update, deactivate, search, and view book catalog records; reactivation is an approved FE05 follow-up contract. |
-| UC-06 | Manage Book Copies | Librarian, Admin | Internal database | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
-| UC-07 | Borrow Books | Member, Librarian, Admin | EmailService, Internal database | Member can request borrowing; authorized staff can approve, reject, process returns, renew borrowing, and maintain borrowing history. |
-| UC-08 | Reserve Books | Member, Librarian, Admin | EmailService, Internal database | Member can reserve or cancel reservations; authorized staff can manage queues and fulfill held reservations. |
-| UC-09 | Manage Fines | Member, Librarian, Admin | EmailService, Internal database | Member can view fine information; authorized staff can calculate, collect, mark paid, or resolve fines. |
-| UC-10 | Send Notifications | EmailService, Librarian, Admin | Internal database | System can create and deliver account, reservation, due date, fine, membership, and account setup notifications. |
-| UC-11 | Manage Users And Roles | Admin | EmailService, Internal database | Admin can manage users, librarian accounts, roles, permissions, admin request review view, and audit logs. |
-| UC-12 | Generate Reports | Librarian, Admin | Internal database | Authorized staff can view borrowing reports, inventory reports, and user statistics. |
+| UC-01 | Browse Books | Guest, Member | - | Actor can search, browse, and view public book information and current availability. |
+| UC-02 | Manage Account Access | Guest, Member, Admin-created user | EmailService | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
+| UC-03 | Manage Profile | Member | - | Member can view and update profile information, including avatar where supported. |
+| UC-04 | Apply For Membership | Member, Librarian, Admin | EmailService | Member can submit a membership application and authorized staff can approve or reject it. |
+| UC-05 | Manage Books | Librarian, Admin | - | Authorized staff can create, update, deactivate, reactivate, search, and view book catalog records. |
+| UC-06 | Manage Book Copies | Librarian, Admin | - | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
+| UC-07 | Borrow Books | Member, Librarian, Admin | EmailService | Member can request borrowing; authorized staff can approve, reject, process returns, renew borrowing, and maintain borrowing history. |
+| UC-08 | Reserve Books | Member, Librarian, Admin | EmailService | Member can reserve or cancel reservations; authorized staff can manage queues and fulfill held reservations. |
+| UC-09 | Manage Fines | Member, Librarian, Admin | EmailService | Member can view fine information; authorized staff can calculate, collect, mark paid, or resolve fines. |
+| UC-10 | Send Notifications | Librarian, Admin | EmailService | Authorized staff can request non-sensitive notifications; internal feature boundaries can request source-owned account, reservation, due date, fine, membership, and account setup notifications. |
+| UC-11 | Manage Users And Roles | Admin | EmailService | Admin can manage users, librarian accounts, roles, permissions, admin request review view, and audit logs. |
+| UC-12 | Generate Reports | Librarian, Admin | - | Authorized staff can view borrowing reports, inventory reports, and user statistics. |
+
+Internal database dependency: `UC-01` to `UC-12` read from or write to SQL Server through backend repositories according to each feature data contract. The database is an internal component, not a supporting actor.
 
 #### c. Use Case Relationships
 
@@ -224,7 +226,6 @@ flowchart LR
 | UC-08 includes UC-10 | Reservation availability and queue events can trigger notifications. |
 | UC-09 includes UC-10 | Fine and overdue events can trigger due date or fine notifications. |
 | UC-11 includes UC-10 | Admin-created user accounts can trigger account setup notifications. |
-| UC-01 to UC-12 use internal database reads or persistence | Each use case reads from or writes to the database according to its feature data contract; the database is an internal component, not a use case actor in this diagram. |
 
 ## 2. Overall Functionalities
 
@@ -257,6 +258,7 @@ flowchart TB
   BorrowingReport["Borrowing Report"]
   InventoryReport["Inventory Report"]
   UserStatistics["User Statistics"]
+  Forbidden["Forbidden"]
   NotFound["Unknown Route"]
 
   Start --> Root
@@ -265,6 +267,7 @@ flowchart TB
   Login --> Home
   Register --> Login
   ForgotPassword --> Login
+  Home --> Forbidden
   NotFound --> Login
 
   Home --> PublicHome
@@ -297,7 +300,7 @@ flowchart TB
   classDef screen fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   classDef startEnd fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   class Start startEnd;
-  class Root,Login,Register,ForgotPassword,Home,PublicHome,Profile,Membership,BorrowNew,BorrowHistory,MyReservations,AdminUsers,FineManagement,Inventory,BookManagement,BorrowRequests,ProcessReturns,MemberBorrowing,ReservationsAdmin,BorrowingReport,InventoryReport,UserStatistics,NotFound screen;
+  class Root,Login,Register,ForgotPassword,Home,PublicHome,Profile,Membership,BorrowNew,BorrowHistory,MyReservations,AdminUsers,FineManagement,Inventory,BookManagement,BorrowRequests,ProcessReturns,MemberBorrowing,ReservationsAdmin,BorrowingReport,InventoryReport,UserStatistics,Forbidden,NotFound screen;
 ```
 
 ### 2.2 Screen Descriptions
@@ -313,7 +316,7 @@ This section describes the screens shown in the Screens Flow above.
 | 5 | Public / Browse | Public Book Homepage | Shows public book information, searchable catalog content, and book availability. |
 | 6 | User Profile | User Profile | Allows an authenticated user to view and update profile information. |
 | 7 | Membership Management | Membership | Allows a member to submit or view membership status and allows authorized staff to review membership information. |
-| 8 | Book Management | Book Management | Allows librarian or admin users to create, update, deactivate, search, and view book records; reactivation remains an approved FE05 follow-up. |
+| 8 | Book Management | Book Management | Allows librarian or admin users to create, update, deactivate, reactivate, search, and view book records. |
 | 9 | Inventory / Book Copy Management | Inventory | Allows librarian or admin users to manage physical book copies, barcode, status, location, and availability. |
 | 10 | Borrowing Management | Create Borrow Request | Allows a member to create a request to borrow available books. |
 | 11 | Borrowing Management | Borrowing History | Allows a member to view their borrowing requests, active borrowings, returns, and renewal-related information. |
@@ -327,6 +330,7 @@ This section describes the screens shown in the Screens Flow above.
 | 19 | Reporting & Statistics | Inventory Report | Shows inventory and availability report data. |
 | 20 | Reporting & Statistics | User Statistics | Shows user statistics for administrative review. |
 | 21 | User & Role Management | Admin User Management | Allows admin users to manage user accounts, librarian accounts, roles, permissions, audit logs, and admin console sections. |
+| 22 | Error / Access Control | Forbidden | Shows the access-denied screen when an authenticated user reaches a route or workflow they are not authorized to use. |
 
 ### 2.3 Screen Authorization
 
@@ -367,7 +371,8 @@ This section defines which system roles can access each screen or activity.
 | Fine Management |  |  | X | X |
 | View own fine information through API |  | X |  |  |
 | Calculate or update fine data |  |  | X | X |
-| Mark fine as paid or resolved |  |  | X | X |
+| Collect or mark fine as paid |  |  | X | X |
+| Waive or cancel fine |  |  |  | X |
 | Borrowing Report |  |  | X | X |
 | Inventory Report |  |  | X | X |
 | User Statistics |  |  | X | X |
@@ -469,7 +474,7 @@ erDiagram
 | 09 | Authors | Stores author information.<br/>- Primary keys: AuthorId<br/>- Foreign keys: None |
 | 10 | Publishers | Stores publisher information.<br/>- Primary keys: PublisherId<br/>- Foreign keys: None |
 | 11 | Books | Stores catalog metadata such as title, ISBN, category, author, publisher, cover, rating, pages, and status.<br/>- Primary keys: BookId<br/>- Foreign keys: CategoryId, AuthorId, PublisherId, CreatedBy, UpdatedBy |
-| 12 | BookCopies | Stores physical copy records, barcode, status, and location.<br/>- Primary keys: CopyId<br/>- Foreign keys: BookId |
+| 12 | BookCopies | Stores physical copy records, barcode, status, location, and opaque `Version` rowversion used for `If-Match` concurrency on existing-copy mutations.<br/>- Primary keys: CopyId<br/>- Foreign keys: BookId |
 | 13 | BorrowRequests | Stores borrow request header data, request status, approval data, and processing timestamps.<br/>- Primary keys: RequestId<br/>- Foreign keys: UserId, CreatedBy, ApprovedBy |
 | 14 | BorrowDetails | Stores per-copy borrow data, borrow date, due date, return date, renewal count, and copy-level status.<br/>- Primary keys: BorrowDetailId<br/>- Foreign keys: RequestId, CopyId |
 | 15 | Reservations | Stores reservation queue records for users and book copies.<br/>- Primary keys: ReservationId<br/>- Foreign keys: UserId, CopyId |
@@ -575,7 +580,7 @@ flowchart TB
 | Created By | DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Actor opens the home page, public book page, or search function. |
 | Description | Actor searches, browses, and views public book catalog information and availability. |
 | Preconditions | PRE-1: Book catalog data exists in the system.<br/>PRE-2: Public browse route is available. |
@@ -607,7 +612,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member, Librarian, Admin |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Trigger | Actor registers, logs in, logs out, changes password, requests password reset, verifies email, or completes account setup. |
 | Description | Actor manages account access securely through authentication and account recovery flows. |
 | Preconditions | PRE-1: Authentication service is available.<br/>PRE-2: Actor provides required account information.<br/>PRE-3: EmailService is available for email-based flows. |
@@ -640,7 +645,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member, Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authenticated actor opens profile screen or submits profile changes. |
 | Description | Actor views and updates personal profile information. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Profile route and profile service are available. |
@@ -671,7 +676,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Secondary Actors | Librarian, Admin, EmailService |
 | Trigger | Member opens membership screen and submits an application. |
 | Description | Member applies for membership; authorized staff reviews and approves or rejects the application. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member does not already have an approved active membership.<br/>PRE-3: No duplicate pending application blocks submission. |
@@ -703,13 +708,13 @@ flowchart TB
 | Created By | DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authorized staff opens book management screen or submits catalog changes. |
 | Description | Authorized staff manages catalog records for books. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Required category, author, or publisher data exists when referenced. |
-| Postconditions | POST-1: Current implementation supports book create, update, and deactivate; reactivation is an approved FE05 contract follow-up and requires the planned API/schema alignment before it is claimed as implemented.<br/>POST-2: Catalog changes are available to browse and inventory features. |
+| Postconditions | POST-1: Current implementation supports book create, update, deactivate, and reactivate with last-seen `If-Match` version checks.<br/>POST-2: Catalog changes are available to browse and inventory features. |
 | Normal Flow | 5.0.1 Actor opens book management screen.<br/>5.0.2 System displays book list.<br/>5.0.3 Actor creates or edits book data.<br/>5.0.4 System validates catalog fields.<br/>5.0.5 System persists the change and updates the list. |
-| Alternative Flows | 5.1 Actor searches or filters book records.<br/>5.2 Actor deactivates a book.<br/>5.3 Approved contract follow-up: actor reactivates a book after the FE05 reactivation endpoint, `If-Match`, and rowversion alignment are implemented. |
+| Alternative Flows | 5.1 Actor searches or filters book records.<br/>5.2 Actor deactivates a book.<br/>5.3 Actor reactivates an inactive book with a matching `If-Match` version and required reason. |
 | Exceptions | 5.0.E1 Duplicate ISBN: system rejects duplicate book ISBN.<br/>5.0.E2 Invalid reference data: system rejects unknown category, author, or publisher. |
 | Priority | High, Must Have |
 | Frequency of Use | High, daily |
@@ -724,7 +729,7 @@ flowchart TB
 | BR-FE05-002 | Add Book Authorization | Only librarians and admins may add books. |
 | BR-FE05-003 | Update Book Authorization | Only librarians and admins may update books. |
 | BR-FE05-005 | Unique ISBN | ISBN must be unique across all books. |
-| BR-FE05-010 | Book Audit | Current implementation must audit create, update, and deactivate actions; the approved reactivation follow-up must also be auditable before it is claimed as implemented. |
+| BR-FE05-010 | Book Audit | Current implementation must audit create, update, deactivate, and reactivate actions. |
 
 ### 1.6 UC-06 Manage Book Copies
 
@@ -736,7 +741,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authorized staff opens inventory screen or changes copy data/status. |
 | Description | Authorized staff manages physical copies, barcodes, locations, and availability status. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Related book exists. |
@@ -768,7 +773,7 @@ flowchart TB
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Secondary Actors | Librarian, Admin, EmailService |
 | Trigger | Member creates a borrow request or staff processes borrowing/returning. |
 | Description | Member requests books and authorized staff approves, rejects, renews, or processes returns. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible to borrow.<br/>PRE-3: Requested copies are available or processable according to status rules. |
@@ -802,7 +807,7 @@ flowchart TB
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Secondary Actors | Librarian, Admin, EmailService |
 | Trigger | Member reserves a book copy or staff processes reservation queue. |
 | Description | Member reserves books and staff manages reservation queue and fulfillment. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is allowed to reserve.<br/>PRE-3: Copy exists and supports reservation workflow. |
@@ -834,7 +839,7 @@ flowchart TB
 | Created By | DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
-| Secondary Actors | Member, EmailService, Internal database |
+| Secondary Actors | Member, EmailService |
 | Trigger | A return is overdue, a fine list is opened, or staff updates fine status. |
 | Description | System calculates fine records and authorized staff manages collection, payment, or resolution. |
 | Preconditions | PRE-1: Borrow detail exists.<br/>PRE-2: Fine calculation source data is available.<br/>PRE-3: Staff actor is authenticated for fine updates. |
@@ -865,8 +870,8 @@ flowchart TB
 | UC ID and Name | UC-10 Send Notifications |
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
-| Primary Actor | EmailService |
-| Secondary Actors | Source feature, Librarian, Admin, Internal database |
+| Primary Actor | Librarian, Admin |
+| Secondary Actors | EmailService |
 | Trigger | A source feature requests a notification or authorized staff submits a non-sensitive notification request. |
 | Description | System creates notification records and sends email notifications through EmailService. |
 | Preconditions | PRE-1: Notification template or safe notification content exists.<br/>PRE-2: Recipient email is valid.<br/>PRE-3: Source feature is allowed to request the notification type. |
@@ -877,6 +882,7 @@ flowchart TB
 | Priority | High, Must Have |
 | Frequency of Use | High, multiple times per day |
 | Business Rules | BR-GEN-003, BR-GEN-010 |
+| Internal Dependencies | Source-owned feature boundaries request notifications through the construction-bound in-process requester; they are internal dependencies, not use case actors. |
 | Other Information | Verification, reset, and setup notifications must be requested internally by the owning feature boundary. Canonical Phase 1 type/template pairs are `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE`, and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. |
 | Assumptions | Email is the only supported delivery channel in Phase 1. |
 
@@ -898,7 +904,7 @@ flowchart TB
 | Created By | DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Admin |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Trigger | Admin opens user management screen or performs account/role action. |
 | Description | Admin manages users, librarian accounts, roles, permissions, audit logs, and admin request review view. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Admin role.<br/>PRE-3: Target user exists for update/deactivation actions. |
@@ -930,7 +936,7 @@ flowchart TB
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
 | Primary Actor | Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authorized staff opens a report screen or applies report filters. |
 | Description | Authorized staff views borrowing, inventory, and user statistics reports. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Source data exists or system can return empty report safely. |
@@ -963,7 +969,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member, Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | User clicks the Login button from the login screen, or user accesses an authenticated feature directly by URL. |
 | Description | As a user, I want to log into the system so that I can use authenticated features and access my role-based account workspace. |
 | Preconditions | PRE-1: User account has been created.<br/>PRE-2: User account is active and email has been verified.<br/>PRE-3: User account is not locked. |
@@ -996,7 +1002,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Trigger | Guest clicks Register or submits the registration form. |
 | Description | As a guest, I want to register an account so that I can verify my email and use member features. |
 | Preconditions | PRE-1: Guest is not logged in.<br/>PRE-2: Registration screen is available.<br/>PRE-3: Submitted email is not already registered. |
@@ -1029,7 +1035,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Trigger | User submits verification OTP/code or opens verification link from email. |
 | Description | As a registered user, I want to verify my email so that my account can become active. |
 | Preconditions | PRE-1: User account exists.<br/>PRE-2: User account is not already verified.<br/>PRE-3: Verification credential exists and has not expired or been used. |
@@ -1061,7 +1067,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Guest, Member, Librarian, Admin |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Trigger | User clicks Forgot Password or submits reset credential and new password. |
 | Description | As a user, I want to reset my password when I cannot log in. |
 | Preconditions | PRE-1: User account exists and is eligible for password reset.<br/>PRE-2: Reset credential is valid, unused, and not expired.<br/>PRE-3: New password satisfies password policy. |
@@ -1094,7 +1100,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member, Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authenticated user opens account/profile security function and submits password change. |
 | Description | As an authenticated user, I want to change my password while logged in. |
 | Preconditions | PRE-1: User is authenticated.<br/>PRE-2: Current password is known by the user.<br/>PRE-3: New password satisfies password policy. |
@@ -1126,7 +1132,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member, Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | Authenticated user clicks Logout. |
 | Description | As an authenticated user, I want to log out so that my session can no longer be used. |
 | Preconditions | PRE-1: User is authenticated.<br/>PRE-2: Current refresh/session credential exists. |
@@ -1157,7 +1163,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member, Librarian, Admin |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Trigger | User opens a protected screen or submits a protected API request. |
 | Description | As the system, I need to validate identity and role before allowing protected operations. |
 | Preconditions | PRE-1: Request targets a protected route or API.<br/>PRE-2: Request includes session/token data where required. |
@@ -1191,7 +1197,7 @@ flowchart TB
 | Created By | DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Description | A member views the library catalog, searches for books, and opens book details before borrowing or reserving. |
 | Trigger | Member opens the public book homepage or searches for a book. |
 | Preconditions | PRE-1: Catalog data exists.<br/>PRE-2: Book browse screen is available. |
@@ -1222,7 +1228,7 @@ flowchart TB
 | Created By | DatDT |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Secondary Actors | Librarian, Admin, EmailService |
 | Description | A member submits a membership application so the account can become an approved library member for borrowing and reservation eligibility. Librarian or Admin reviews the application and the system stores the final decision. |
 | Trigger | Member requests to apply for membership, or Librarian/Admin opens pending membership applications for review. |
 | Preconditions | PRE-1: Member is logged in and has an active account.<br/>PRE-2: Member does not already have `Members.Status = APPROVED`.<br/>PRE-3: Member has no existing `PENDING` membership application.<br/>PRE-4: Review actor has Librarian or Admin permission. |
@@ -1264,7 +1270,7 @@ flowchart TB
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Librarian, Admin, Internal database |
+| Secondary Actors | Librarian, Admin |
 | Description | A member selects available copies and creates a borrow request for staff approval. |
 | Trigger | Member clicks borrow action for one or more available books. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible to borrow.<br/>PRE-3: Selected copies are available and borrowable. |
@@ -1297,7 +1303,7 @@ flowchart TB
 | Created By | NhatNHA |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | EmailService, Internal database |
+| Secondary Actors | EmailService |
 | Description | A member creates, views, or cancels their own reservations and receives availability notification when applicable. |
 | Trigger | Member opens My Reservations screen or reserves a book. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible for reservation.<br/>PRE-3: Target copy exists. |
@@ -1329,7 +1335,7 @@ flowchart TB
 | Created By | NhatNHA, DungTH |
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
-| Secondary Actors | Internal database |
+| Secondary Actors | None |
 | Description | A member views borrowing history and fine information related to their account. Borrowing history has a frontend route; own fine data is currently exposed by backend API and has no dedicated member fine screen in `frontend/src/App.jsx`. |
 | Trigger | Member opens Borrowing History, My Reservations, or an API-backed fine information capability. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Borrowing or fine records may exist for the member. |
@@ -1713,11 +1719,11 @@ Book Management maintains catalog data, while Inventory manages physical book co
 
 | Table | CRUD | Description |
 | ----- | ---- | ----------- |
-| Books | C, R, U | Create, read, update, and deactivate catalog records; approved reactivation requires the FE05 follow-up endpoint and concurrency alignment. |
+| Books | C, R, U | Create, read, update, deactivate, and reactivate catalog records; existing-book mutations require the caller's last-seen `If-Match` version. |
 | Categories | R | Read categories for book metadata. |
 | Authors | R | Read authors for book metadata. |
 | Publishers | R | Read publishers for book metadata. |
-| BookCopies | C, R, U | Create, read, update, and deactivate physical copy records. |
+| BookCopies | C, R, U | Create, read, update, and deactivate physical copy records; existing-copy mutations require `If-Match` against `BookCopies.Version`. |
 | AuditLogs | C | Record staff/admin catalog and inventory actions. |
 
 ##### SQL Commands
@@ -1736,6 +1742,13 @@ SET Title = @Title,
     UpdatedAt = GETDATE()
 WHERE BookId = @BookId;
 
+UPDATE Books
+SET Status = @Status,
+    UpdatedBy = @UpdatedBy,
+    UpdatedAt = GETDATE()
+WHERE BookId = @BookId
+  AND RowVersion = @ExpectedRowVersion;
+
 INSERT INTO BookCopies (BookId, Barcode, Status, Location, CreatedAt)
 VALUES (@BookId, @Barcode, 'AVAILABLE', @Location, GETDATE());
 
@@ -1743,7 +1756,8 @@ UPDATE BookCopies
 SET Status = @Status,
     Location = @Location,
     UpdatedAt = GETDATE()
-WHERE CopyId = @CopyId;
+WHERE CopyId = @CopyId
+  AND Version = @ExpectedVersion;
 ```
 
 ## 6. Borrowing And Reservation
