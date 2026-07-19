@@ -1,12 +1,12 @@
 # TASKS.md - FE09 Fine Management
 
-Status: READY FOR REVIEW - AGENT-SIDE RECONCILIATION AND LIVE SQL PASS; L4/HUMAN GATES PENDING
+Status: READY FOR REVIEW - AGENT-SIDE RECONCILIATION, LIVE SQL, AND L4 PASS; HUMAN GATE PENDING
 
 Owner: Dung
 
 Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.1 normalized; historical T001-T011 evidence remains separate and FE09-T013 through FE09-T020 are agent-side complete
+Workflow State: SPEC v0.4.1 normalized; historical T001-T011 evidence remains separate and FE09-T012 through FE09-T021 are agent-side complete
 
 ---
 
@@ -27,7 +27,7 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
 | FE09-T009 | Historical routes and app wiring | [x] DONE - legacy mutation routes were removed from the v0.4.1 production boundary by FE09-T014 |
 | FE09-T010 | In-memory server-side route tests | [x] DONE - v0.4.1 cases expanded by FE09-T013 |
 | FE09-T011 | SQL `Fines` status check update | [x] DONE |
-| FE09-T012 | Frontend alignment | [ ] DEFERRED - canonical API ownership verified; full browser/L4 migration remains TD-004 |
+| FE09-T012 | Frontend alignment | [x] DONE - canonical server query/pagination and browser/L4 completed by FE09-T021 |
 
 ## V0.4.0 Reconciliation Tasks
 
@@ -94,16 +94,24 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Verify: focused backend/SQL/contract/frontend-boundary checks, `npm.cmd run trace:enforce`, and `git diff --check` pass; full suites remain the merge gate.
   - DoD: no `TBD`, “optional if supported”, partial-payment policy, or missing implementation trace remains; L4/human gates stay explicitly open.
 
+- [x] **FE09-T021 - Complete server-controlled frontend listing and browser/L4 acceptance.**
+  - Maps to: BR-FE09-018; FR-FE09-002, FR-FE09-011, FR-FE09-016; AC-FE09-002, AC-FE09-011; NFR-FE09-PERF-001, NFR-FE09-UX-001/002.
+  - Files: `frontend/src/page/FineManagement.jsx`, `frontend/src/utils/fineListQuery.js`, `frontend/test/fineManagementFrontend.test.js`, `frontend/test/fineOperationalFrontend.test.js`, `tests/e2e/fe09-fine-management.spec.js`.
+  - RED: source tests fail because the query builder is absent; browser acceptance times out because `/api/fines` omits canonical `page`/`limit` parameters.
+  - GREEN: the UI sends trimmed `q`, optional non-`ALL` status, page, and limit; renders only server-returned rows; consumes `total`/`totalPages`; and labels page-scoped KPIs truthfully.
+  - Verify: focused frontend 6/6, FE09 Playwright 1/1, full frontend 146/146, lint/build, and the complete isolated browser suite 3/3 pass.
+  - DoD: `TD-004` is resolved without changing fine mutations, backend contracts, schema, or Phase 1 policy.
+
 ## Validation Status
 
 - Historical TD-001/002/003 evidence remains in the changelog and does not close FE09-T013 through FE09-T020.
 - [x] FE09-T013 through FE09-T019 focused validation passes agent-side.
 - [x] Traceability and `git diff --check` pass.
 - [x] Live SQL passes 9/9 FE09 cases on disposable SQL Server with cleanup evidence.
-- [ ] Browser/L4 and human B7 acceptance gates pass.
+- [x] Browser/L4 acceptance passes on isolated ports `4185/3101`.
+- [ ] Human B7 acceptance gate passes.
 - [x] Human review of SPEC v0.4.0 and the reconciliation plan was confirmed by Nhat on 2026-07-17; approved v0.4.1 production-boundary updates from `origin/main@3f63a13` are integrated.
 
 ## Out Of This Iteration
 
-- FE09-T012 frontend migration implementation remains deferred until separately approved.
 - Online payment gateway, partial payment, automatic scheduler, and lost/damaged fine policy remain out of scope.

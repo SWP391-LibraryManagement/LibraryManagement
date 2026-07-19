@@ -28,7 +28,7 @@ test('FE09 uses AppLayout with canonical API data ownership', async () => {
     /import \{ fineApi \} from '\.\.\/api\/libraryFeatureApi';/
   );
 
-  assert.match(source, /fineApi\.list\(\)/);
+  assert.match(source, /fineApi\.list\(buildFineListParams\(\{/);
 
   assert.doesNotMatch(source, /getFineRecords/);
   assert.doesNotMatch(source, /saveFineRecords/);
@@ -59,7 +59,7 @@ test('FE09 reuses shared operational components with canonical API alignment', a
   assert.doesNotMatch(source, /function Toast\(/);
   assert.doesNotMatch(source, /function EmptyState\(/);
   assert.doesNotMatch(source, /<table className="fine-table"/);
-  assert.match(source, /fineApi\.list\(\)/);
+  assert.match(source, /fineApi\.list\(buildFineListParams\(\{/);
   assert.match(source, /fineApi\.calculate/);
   assert.match(source, /fineApi\.collect/);
   assert.match(source, /fineApi\.markPaid/);

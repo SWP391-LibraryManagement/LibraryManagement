@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Calculator,
   Check,
@@ -16,9 +16,9 @@ import { fineApi } from '../api/libraryFeatureApi';
 import AppLayout from '../component/layout/AppLayout';
 import { Badge, DataNotice, EmptyState, Toast, useToast } from '../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../component/shared/OperationalPatterns';
+import { FINE_LIST_PAGE_SIZE, buildFineListParams } from '../utils/fineListQuery';
 import '../styles/fine-management.css';
 
-const PAGE_SIZE = 8;
 const STATUS_OPTIONS = [
   ['ALL', 'Tất cả phiếu phạt'],
   ['UNPAID', 'Chưa thanh toán'],
@@ -43,10 +43,6 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
-function normalize(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
-
 function getRoles() {
   try {
     const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
@@ -64,6 +60,12 @@ export default function FineManagement() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: FINE_LIST_PAGE_SIZE,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
   const [lastUpdated, setLastUpdated] = useState('');
@@ -74,46 +76,59 @@ export default function FineManagement() {
   const [toast, showToast, clearToast] = useToast();
   const isAdmin = getRoles().includes('ADMIN');
 
-  async function loadFines() {
+  const loadFines = useCallback(async ({
+    pageNumber = page,
+    nextQuery = query,
+    nextStatus = statusFilter,
+  } = {}) => {
     setLoading(true);
     setNotice('');
     try {
-      const result = await fineApi.list();
-      const next = [...(result.fines || [])].sort((left, right) => Number(left.fineId) - Number(right.fineId));
+      const result = await fineApi.list(buildFineListParams({
+        page: pageNumber,
+        query: nextQuery,
+        status: nextStatus,
+      }));
+      const next = result.fines || [];
+      const nextPagination = {
+        page: Number(result.page || pageNumber),
+        limit: Number(result.limit || FINE_LIST_PAGE_SIZE),
+        total: Number(result.total || 0),
+        totalPages: Number(result.totalPages || 0),
+      };
+
+      if (nextPagination.totalPages > 0 && pageNumber > nextPagination.totalPages) {
+        setPage(nextPagination.totalPages);
+        return;
+      }
+
       setFines(next);
+      setPagination(nextPagination);
       setSelectedFineId((current) => next.some((fine) => String(fine.fineId) === String(current)) ? current : String(next[0]?.fineId || ''));
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
     } catch (error) {
       setFines([]);
+      setPagination({
+        page: pageNumber,
+        limit: FINE_LIST_PAGE_SIZE,
+        total: 0,
+        totalPages: 0,
+      });
       setSelectedFineId('');
       setNotice(error.message || 'Không thể tải danh sách phiếu phạt.');
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, query, statusFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(loadFines, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadFines]);
 
-  const filteredFines = useMemo(() => {
-    const keyword = normalize(query);
-    return fines.filter((fine) => (statusFilter === 'ALL' || fine.status === statusFilter)
-      && (!keyword || normalize([
-        fine.fineId,
-        fine.borrowDetailId,
-        fine.member?.fullName,
-        fine.member?.username,
-        fine.member?.email,
-        fine.bookTitle,
-        fine.barcode,
-      ].join(' ')).includes(keyword)));
-  }, [fines, query, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredFines.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageRows = filteredFines.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const totalPages = Math.max(1, pagination.totalPages || 0);
+  const safePage = Math.min(pagination.page || page, totalPages);
+  const pageRows = fines;
   const selectedFine = fines.find((fine) => String(fine.fineId) === String(selectedFineId)) || null;
   const unpaidFines = fines.filter((fine) => fine.status === 'UNPAID');
   const paidFines = fines.filter((fine) => fine.status === 'PAID');
@@ -197,9 +212,9 @@ export default function FineManagement() {
       </div>
 
       <section className="fine-stats">
-        <div className="fine-stat danger"><div><WalletCards size={20} /></div><span>Tổng chưa thu</span><strong>{formatCurrency(unpaidFines.reduce((sum, fine) => sum + fine.amount, 0))}</strong></div>
-        <div className="fine-stat warning"><div><ReceiptText size={20} /></div><span>Chưa thanh toán</span><strong>{unpaidFines.length}</strong></div>
-        <div className="fine-stat success"><div><Check size={20} /></div><span>Đã thanh toán</span><strong>{paidFines.length}</strong></div>
+        <div className="fine-stat danger"><div><WalletCards size={20} /></div><span>Chưa thu trên trang</span><strong>{formatCurrency(unpaidFines.reduce((sum, fine) => sum + fine.amount, 0))}</strong></div>
+        <div className="fine-stat warning"><div><ReceiptText size={20} /></div><span>Chưa thanh toán trên trang</span><strong>{unpaidFines.length}</strong></div>
+        <div className="fine-stat success"><div><Check size={20} /></div><span>Đã thanh toán trên trang</span><strong>{paidFines.length}</strong></div>
         <div className="fine-stat neutral"><div><Calculator size={20} /></div><span>Mức phạt</span><strong>5.000 đ/ngày</strong></div>
       </section>
 
@@ -210,7 +225,7 @@ export default function FineManagement() {
             <form onSubmit={(event) => { event.preventDefault(); setQuery(queryInput.trim()); setPage(1); }}>
               <DataToolbar
                 primary={<div className="search-input"><Search size={18} /><input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Tìm mã phiếu, thành viên, sách, barcode..." aria-label="Tìm phiếu phạt" /></div>}
-                filters={<div className="row-flex"><Filter size={17} /><select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>}
+                filters={<div className="row-flex"><Filter size={17} /><select className="select" aria-label="Lọc trạng thái" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>}
                 actions={<button type="submit" className="btn btn-primary"><Search size={16} /> Tìm kiếm</button>}
               />
             </form>
@@ -231,7 +246,7 @@ export default function FineManagement() {
                 </tr>
               ))}
             </DataTable>
-            <div className="pagination"><span>Trang {safePage}/{totalPages} • {filteredFines.length} phiếu</span><div className="page-controls"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage === 1}>Trước</button><span className="active">{safePage}</span><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={safePage === totalPages}>Sau</button></div></div>
+            <div className="pagination" aria-label="Phân trang phiếu phạt"><span>Trang {safePage}/{totalPages} • {pagination.total} phiếu</span><div className="page-controls"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage === 1}>Trước</button><span className="active">{safePage}</span><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={safePage === totalPages}>Sau</button></div></div>
           </div>
           <FineDetail fine={selectedFine} isAdmin={isAdmin} reason={resolutionReason} setReason={setResolutionReason} onResolve={handleResolve} loading={loading} />
         </section>

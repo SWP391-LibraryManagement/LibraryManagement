@@ -3,8 +3,8 @@
 ## Decision
 
 - Method: Hybrid SDD+ADD. SDD/Full depth covers fine calculation, state transitions, schema/API contracts, transaction boundaries, audit, and concurrency Core; ADD is limited to the reversible frontend boundary.
-- Scope: FE09-T013 through FE09-T020 on `feat/fe09-fine-reconciliation`.
-- Integration state: agent-side ready for review; no commit, push, PR, or merge performed.
+- Scope: FE09-T013 through FE09-T021, including the formerly deferred frontend/L4 closeout, integrated into draft PR #40.
+- Integration state: agent-side implementation, live SQL, and browser/L4 pass; final human acceptance remains open.
 
 ## Fresh Evidence
 
@@ -30,14 +30,27 @@
 - Waive/cancel are Admin-only, require a trimmed 1..500-character reason, preserve terminal metadata invariants, and emit deterministic audit results.
 - Calculation, collection, paid, waive, and cancel mutation plus audit writes share one transaction; injected audit failures roll back state in both the in-memory contract and SQL implementation.
 - Fine lists validate filters before repository access, return the `{ fines, page, limit, total, totalPages }` envelope, search approved context fields, and order by `FineId ASC`.
-- The frontend reads canonical fine APIs and has no browser-storage fallback; fully server-controlled list presentation and browser/L4 acceptance remain explicitly deferred TD-004.
+- The frontend sends canonical `q`, `status`, `page`, and `limit` queries, renders only server-returned rows, consumes server totals/pages, and has no browser-storage fallback.
+
+## Frontend And Browser L4 Follow-Up
+
+| Gate | Result |
+| --- | --- |
+| RED source boundary | Failed because `fineListQuery.js` did not exist |
+| RED browser boundary | Timed out waiting for `page=1&limit=8`, proving the UI omitted server pagination parameters |
+| Focused frontend | PASS - 6/6 tests |
+| Full frontend | PASS - 146/146 tests |
+| Frontend lint/build | PASS; existing non-blocking chunk-size warning remains |
+| FE09 browser/L4 on `4185/3101` | PASS - 1/1 |
+| Full browser suite on `4185/3101` | PASS - 3/3 |
+
+Browser evidence proves initial and second-page requests, status filtering, combined search/status filtering, canonical server totals, returned-row counts, and no horizontal overflow at 390px width.
 
 ## Open Gates
 
-- Live SQL execution of duplicate-calculation, concurrent payment, and rollback tests requires an approved mutable SQL Server environment with `DB_SERVER`, `DB_NAME`, and `FE09_SQL_TEST_ALLOW_MUTATION=true`.
-- Browser/L4 acceptance and FE07/FE08/FE12 ownership confirmation remain pending at project level.
+- Live SQL subsequently passed all 9/9 FE09 cases on the approved disposable SQL Server runtime with cleanup evidence.
 - The backend package has no ESLint configuration or lint script; changed backend files were syntax-checked, while project backend lint remains a DoD technical-debt gate.
-- Human B7 integration review is mandatory before commit, branch publication, PR, or merge.
+- Human B7 integration review remains mandatory before merge/final acceptance.
 
 ## Post-Origin Sync Revalidation
 

@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-19 - Server-Controlled Fine List And L4 Closure
+
+- Moved Fine Management search, status filtering, and pagination fully onto canonical `/api/fines` query parameters and the `{ fines, page, limit, total, totalPages }` response envelope.
+- Removed browser-side list normalization, filtering, sorting, slicing, and derived total-page ownership; retained page-scoped summary metrics with explicit labels.
+- Added a deterministic query builder, focused source tests, accessible status/pagination labels, and a Playwright L4 flow covering page 1/2, combined search/status filters, server totals, and mobile overflow.
+- Focused frontend tests pass 6/6, full frontend passes 146/146, lint/build pass, FE09 browser acceptance passes 1/1, and the full isolated browser suite passes 3/3.
+- Closed `TD-004`; final project human integration acceptance remains open.
+
 ## 2026-07-19 - Agent-Side v0.4.0 Reconciliation
 
 - Completed FE09-T013 through FE09-T020 on the Core server boundary under Hybrid SDD+ADD: contract-first tests, explicit `Asia/Ho_Chi_Minh` business time, in-place `UNPAID` recalculation, terminal history preservation, and locked duplicate prevention.

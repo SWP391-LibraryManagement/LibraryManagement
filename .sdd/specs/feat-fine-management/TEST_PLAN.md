@@ -1,7 +1,7 @@
 # FE09 Test Plan - Fine Management
 
-Version: 0.3.1
-Status: READY FOR HUMAN/INTEGRATION REVIEW
+Version: 0.3.2
+Status: READY FOR HUMAN/INTEGRATION REVIEW - L4 PASS
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1
@@ -17,8 +17,8 @@ cancelled terminal states, audit logging, FE07 eligibility readback, determinist
 role-protected visibility. Legacy `POST`/`PUT`/`DELETE /api/fines` CRUD routes are not part of the
 production contract and must remain unregistered; `fineRoutes.test.js` verifies that boundary.
 
-FE09-T013 through FE09-T020 now have agent-side RED/GREEN and live SQL evidence. Browser/L4 and
-project human acceptance remain release gates.
+FE09-T013 through FE09-T021 now have agent-side RED/GREEN, live SQL, and browser/L4 evidence.
+Project human acceptance remains a release gate.
 
 ## 2. Unit / Service Test Targets
 
@@ -50,7 +50,7 @@ project human acceptance remain release gates.
 - Overdue return -> Librarian calculates the fine -> Librarian records one full offline collection -> payment metadata and audit are committed -> FE07 no longer blocks the member.
 - Admin waives or cancels an unpaid fine with a valid reason -> the fine remains visible, becomes terminal, and the audit record is committed atomically.
 - Staff lists fines with omitted pagination -> the first 20 records appear in `FineId ASC` order; invalid filters are rejected without a data query.
-- Frontend `FineManagement.jsx` owns canonical API state and has no browser-storage fallback; fully server-controlled list presentation remains a documented TD-004 boundary and must not be presented as browser/L4 completion.
+- Frontend `FineManagement.jsx` sends canonical search/status/page/limit queries, consumes the server list envelope, and renders responsive desktop/mobile pagination without browser-side filtering or slicing.
 
 ## 5. Current Evidence
 
@@ -58,19 +58,21 @@ project human acceptance remain release gates.
 - `backend/tests/fineRoutes.test.js` verifies staff list RBAC and that legacy CRUD mutation routes return `404`.
 - `backend/tests/fineContract.test.js` covers the eight canonical OpenAPI operations and the timezone boundary.
 - `backend/tests/sql/fineConcurrency.sqltest.js` passes all three static transaction/contract checks and six mutable SQL cases on the disposable SQL Server runtime.
-- `frontend/test/fineManagementFrontend.test.js` covers canonical API ownership, no demo storage, and the deferred UI boundary.
+- `frontend/test/fineManagementFrontend.test.js` covers canonical API ownership, server query construction, server pagination metadata, and no demo storage.
+- `frontend/test/fineOperationalFrontend.test.js` preserves the shared operational layout and safe mutation boundary.
+- `tests/e2e/fe09-fine-management.spec.js` passes the server-query, pagination, filter/search, returned-row-count, and mobile-overflow L4 flow.
 
 ## 6. Gaps
 
-- TD-004: complete browser/L4 acceptance and, if required by the owner, move list search/filter/pagination controls fully onto the server query contract; this is not claimed by the focused source tests.
 - Persistence, duplicate-calculation, terminal-winner, eligibility, and atomic rollback evidence passed on disposable SQL Server; see `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Final project human integration acceptance remains open.
 - Online payment, partial payment, automatic scheduling, and lost/damaged fine policies remain outside Phase 1.
 
 ## 7. NFR Coverage
 
 | NFR ID | Test target | Evidence state |
 | ------ | ----------- | -------------- |
-| NFR-FE09-SEC-001 | Authentication on all fine endpoints and staff-only manual calculation. | Route middleware plus focused role/permission evidence; browser/L4 remains open. |
+| NFR-FE09-SEC-001 | Authentication on all fine endpoints and staff-only manual calculation. | Route middleware plus focused role/permission evidence; browser L4 runs with stored Librarian state. |
 | NFR-FE09-SEC-002 | Member own-fine isolation for list and detail. | Focused own-list and foreign-detail tests pass. |
 | NFR-FE09-SEC-003 | Librarian/Admin collection/paid guards and Admin-only waive/cancel guards. | Focused role matrix passes. |
 | NFR-FE09-SEC-004 | Calculation ignores client amount, overdue days, and date inputs. | Focused tampering test passes. |
@@ -81,7 +83,7 @@ project human acceptance remain release gates.
 | NFR-FE09-PERF-002 | Borrow-detail calculation lookup uses key-based access. | Repository lookup is primary-key bounded and covered by source review. |
 | NFR-FE09-LOG-001 | Calculation, collection, paid, waive, cancel, and failed mutation are traceable. | Focused audit metadata and rollback tests pass. |
 | NFR-FE09-LOG-002 | Audit/log output excludes unnecessary personal data. | Audit metadata is allow-listed to fine context and safe note/reason fields. |
-| NFR-FE09-UX-001 | Fine display includes amount, reason, status, and borrowing context. | API DTO/OpenAPI and frontend source checks pass; browser/L4 pending. |
+| NFR-FE09-UX-001 | Fine display includes amount, reason, status, and borrowing context. | API DTO/OpenAPI, frontend source checks, and browser/L4 pass. |
 | NFR-FE09-UX-002 | Error responses distinguish missing, unauthorized, and terminal conflicts. | Deterministic error-code assertions pass. |
 | NFR-FE09-TIME-001 | Returned and active loans use `Asia/Ho_Chi_Minh` business date. | Focused boundary test passes; live environment confirmation pending. |
 
@@ -91,6 +93,7 @@ project human acceptance remain release gates.
 npm.cmd --prefix backend test -- --runTestsByPath tests/fineManagementRoutes.test.js tests/fineRoutes.test.js tests/fineContract.test.js
 npm.cmd --prefix backend run test:sql:fe09
 node --test frontend/test/fineManagementFrontend.test.js
+$env:E2E_FRONTEND_PORT='4185'; $env:E2E_BACKEND_PORT='3101'; $env:E2E_FRONTEND_URL='http://127.0.0.1:4185'; $env:E2E_BACKEND_URL='http://127.0.0.1:3101'; npx playwright test tests/e2e/fe09-fine-management.spec.js --project=chromium
 npm.cmd run trace:enforce
 git diff --check
 ```

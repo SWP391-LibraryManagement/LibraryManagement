@@ -23,7 +23,6 @@ Last Updated: 2026-07-19
 
 | ID | Feature | Priority | Description | Source | Status |
 | -- | ------- | -------- | ----------- | ------ | ------ |
-| TD-004 | FE09 Fine | P2 | Complete browser/L4 acceptance and, if required by the owner, move the **frontend** `FineManagement.jsx` list search/filter/pagination fully onto the server query contract. Canonical API ownership is implemented, and legacy create/update/delete mutation routes now return `404`. | VG FE09 P1-5/P2-1 | OPEN |
 | TD-005 | FE06 Inventory | P1 | The FE06 routes, controller, service, repository, validators, transition/conflict guards, rowversion `If-Match`, transactional audit, frontend workflow, and live SQL tests are implemented. Draft PR #40 CI run `29680011551` passes on `0040e0f`; final H2/human integration acceptance remains. | FE06 reconciliation validation; FE06 PLAN/TASKS; Live SQL review; PR #40 | IN REVIEW |
 | TD-012 | FE11 User & Role | P1 | Nullable 100-character `department`/`specialization` columns and role-gated create/read/update persistence are implemented with schema/model/API tests. Draft PR #40 CI run `29680011551` passes on `0040e0f`; H2/H3 and final closeout remain. | FE11 Wave A validation; FE11 Finalization Batch; PR #40 | IN REVIEW |
 | TD-013 | FE11 User & Role | P1 | Resolved in the transactional role slice: duplicate assignment returns `409 USER_ALREADY_HAS_ROLE`; absent revocation returns `404 USER_ROLE_NOT_FOUND`; neither branch mutates or audits. Evidence: `0805363`, `d04ebfb`, `817039d`. | VG FE11 P1-4/5 | RESOLVED |
@@ -41,6 +40,7 @@ Last Updated: 2026-07-19
 
 | Feature | What was fixed | Commit |
 | ------- | -------------- | ------ |
+| FE09 | TD-004: moved Fine Management search, status filtering, and pagination onto the canonical server query/envelope; removed browser-side list filtering/slicing; added query-builder, source, responsive, and Playwright L4 regressions. | PR #40 |
 | FE02 | TD-018: added API regressions for duplicate registration and weak-password no-mutation behavior plus canonical `{ email, otp }` verification/reset consumption. Focused auth validation passes 30/30. | 0040e0f / PR #40 |
 | FE02 | TD-019: closed as an approved Phase 1 policy decision. `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005` explicitly require known-account lockout and state that IP-wide limiting is not implemented. | 0040e0f / PR #40 |
 | FE02 | TD-020: inactive-account login preserves its internal audit event but now returns the same public `401 INVALID_CREDENTIALS` envelope as an unknown email, satisfying `BR-FE02-007` and `NFR-FE02-SEC-010`. | 0040e0f / PR #40 |
