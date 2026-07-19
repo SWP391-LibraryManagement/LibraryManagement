@@ -137,3 +137,15 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Maps to: BR-FE02-014, BR-FE02-015, BR-FE02-017; FR-FE02-013, FR-FE02-014; AC-FE02-022..024; Q-FE02-014..016.
   - DoD: self-registration is Member-only, FE11 owns staff/admin creation, account setup expiry is exactly 24 hours, refresh-token exchange does not require an access token, and every normalized rule has deterministic traceability.
   - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.
+
+- [x] **FE02-T039 - Close the API and canonical OTP evidence gap.**
+  - Maps to: FR-FE02-003, FR-FE02-012, FR-FE02-015, FR-FE02-019; AC-FE02-002, AC-FE02-016, AC-FE02-018.
+  - Files: `backend/tests/authRoutes.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`, `TECH_DEBT.md`.
+  - DoD: API tests prove duplicate registration and weak registration/reset passwords persist no unauthorized state; canonical `{ email, otp }` verification/reset activates or updates only the eligible account and consumes the purpose-bound OTP.
+  - Evidence: focused auth validation passes 30/30; `TD-018` is resolved in PR #40.
+
+- [x] **FE02-T040 - Reconcile Phase 1 login abuse and enumeration policy.**
+  - Maps to: BR-FE02-007, BR-FE02-008, NFR-FE02-SEC-005, NFR-FE02-SEC-010, Q-FE02-005; AC-FE02-005, AC-FE02-007, AC-FE02-008.
+  - Files: `backend/src/services/authService.js`, `backend/tests/authRoutes.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`, `TECH_DEBT.md`.
+  - DoD: known-account lockout remains the approved Phase 1 control; IP-wide limiting is not claimed; inactive and unknown accounts return the same generic public login error while locked accounts retain their approved lock message.
+  - Evidence: the RED parity regression failed on `403 ACCOUNT_INACTIVE`; GREEN passes with `401 INVALID_CREDENTIALS`, while the internal inactive audit event remains.

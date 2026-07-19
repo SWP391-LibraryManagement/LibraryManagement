@@ -466,7 +466,8 @@ function createAuthService({
 
     if (user.status !== 'ACTIVE') {
       await writeAudit(context, 'AUTH_LOGIN_INACTIVE', { userId: user.userId, targetId: user.userId });
-      throw errors.forbidden('ACCOUNT_INACTIVE', 'Account is not active.');
+      // @spec BR-FE02-007 NFR-FE02-SEC-010 - keep inactive and unknown accounts indistinguishable publicly.
+      throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
     const passwordValid = await verifyPassword(password, user.passwordHash);

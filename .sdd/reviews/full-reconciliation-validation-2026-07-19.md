@@ -1,6 +1,6 @@
 # FE01-FE12 Full Reconciliation Validation - 2026-07-19
 
-Status: LOCAL AUTOMATED, SPEC, SAFETY, AND PR CI GATES PASS; HUMAN ACCEPTANCE PENDING
+Status: LOCAL AUTOMATED, SPEC, AND SAFETY GATES PASS; PR CI FOR THE FE02 DELTA AND HUMAN ACCEPTANCE PENDING
 
 Branch: `feat/full-reconciliation`
 
@@ -21,6 +21,7 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 
 - Constitution, shared context, global/business/safety constraints, ADR-002, and the affected feature SPEC/PLAN/TASKS/TEST_PLAN/CHANGELOG files were reconciled.
 - Feature-specific validation records exist under `.sdd/reviews/` for FE01, FE03-FE06, FE09-FE12, plus FE11 finalization Waves A and B.
+- FE02 debt-closure evidence is recorded in `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`.
 - Live SQL evidence is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Remaining accepted boundaries are recorded in `TECH_DEBT.md` rather than being silently represented as complete behavior.
 
@@ -28,7 +29,7 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 
 | Gate | Command boundary | Result |
 | --- | --- | --- |
-| Backend regression | `backend`: `npm test` | PASS - 52/52 suites, 888/888 tests after v0.4.1 removes three legacy mutation cases |
+| Backend regression | `backend`: `npm test` | PASS - 52/52 suites, 893/893 tests after the FE02 debt-closure regressions |
 | Backend coverage | `backend`: `npm run test:coverage:ci` | PASS - 92.69% statements, 81.79% branches, 96.55% functions, 92.62% lines |
 | Frontend regression | `frontend`: `npm test` | PASS - 145/145 tests |
 | Frontend lint | `frontend`: `npm run lint` | PASS |
@@ -49,9 +50,10 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 ## Pull Request And CI Evidence
 
 - Draft PR: `#40` (`feat/full-reconciliation` -> `main`).
-- Validated commit: `422246ba5b67aeff297253a28b8a724c99ed80f6`.
-- GitHub Actions run: `29679154327`.
+- Last published validated commit before the FE02 follow-up: `749b47f66c20df0c207a6b87218b04b54779c84b`.
+- GitHub Actions run on that commit: `29679375352`.
 - Result: PASS - `foundation-checks` completed traceability, backend tests, system integration, coverage, frontend lint/tests/build, Playwright E2E, and backend health import.
+- The current FE02 debt-closure delta requires a fresh run after commit and push; prior CI is not used as proof for the new head.
 
 ## Upstream Integration
 
@@ -82,6 +84,13 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 
 `DEMO_BORROW_CATALOG` remains the documented temporary FE07 candidate dependency. `DEMO_RESERVABLE` remains active only because FE08 still lacks an approved member-safe FE01/FE06/FE08 candidate-selection contract; this is tracked as `TD-028`.
 
+## FE02 Debt Closure Follow-Up
+
+- `TD-018` is closed with API regressions for duplicate and weak-password no-mutation behavior plus canonical email/OTP verification and reset consumption.
+- `TD-019` is closed by the approved Phase 1 policy: known-account lockout is implemented and IP-wide limiting is explicitly not claimed.
+- `TD-020` is closed by returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts while preserving the internal inactive-login audit event.
+- Focused auth validation passes 30/30; full backend regression passes 893/893; coverage, system integration, traceability, syntax, and diff hygiene pass locally.
+
 ## Validation Layers
 
 | Layer | State | Evidence or remaining boundary |
@@ -89,16 +98,15 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 | 1. Automated checks | PASS locally | Unit, integration, coverage, lint, build, deployment, E2E, Live SQL, OpenAPI, import, audits, traceability, and diff checks pass |
 | 2. Spec compliance | READY FOR REVIEW | FE01-FE12 traceability is 100%; feature specs/tasks/evidence are reconciled; approved deferred debt remains explicit |
 | 3. Constitution and safety | PASS locally | Approved stack retained; protected actions remain server-authorized; SQL mutation was isolated; no saved credentials or high-confidence secrets detected |
-| 4. Acceptance verification | PARTIAL | Draft PR #40 and exact CI run `29679154327` pass; explicit human integration acceptance is still required |
+| 4. Acceptance verification | PARTIAL | Draft PR #40 CI passes on prior head `749b47f`; the FE02 delta still needs CI on its committed head and explicit human integration acceptance |
 
 ## Residual Risks And Decisions
 
 - `TD-004`: FE09 full server-controlled list/pagination presentation and browser/L4 acceptance remain open.
-- `TD-018`, `TD-019`, `TD-020`: FE02 API/OTP test depth, IP rate-limit decision, and inactive-account enumeration decision remain open.
 - `TD-028`: FE08 uses hardcoded reservable copy candidates until a human approves a member-safe cross-feature selection contract.
 - Frontend production output contains a Vite warning for a minified JavaScript chunk above 500 kB; the build passes, but code splitting remains a performance improvement.
 - The local diff is large because it reconciles all twelve features. Merge must remain blocked until PR review and CI validate the frozen commit rather than the mutable worktree.
 
 ## Execution Boundary
 
-Draft PR #40 targets `main`, and CI run `29679154327` passes on merge commit `422246b`. The work must not be merged or marked complete until a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.
+Draft PR #40 targets `main`. CI run `29679375352` passes on the prior published head `749b47f`; the current FE02 delta must receive fresh CI after commit/push. The work must not be merged or marked complete until a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.

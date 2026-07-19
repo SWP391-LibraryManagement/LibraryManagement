@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - API Evidence And Login Enumeration Reconciliation
+
+- Added API regressions for duplicate registration and weak registration/reset passwords with explicit no-persistence assertions.
+- Added canonical `{ email, otp }` verification and password-reset coverage, including OTP consumption and password-state assertions.
+- Kept the internal `AUTH_LOGIN_INACTIVE` audit event while returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts.
+- Closed the IP-wide rate-limit question as an approved Phase 1 non-goal under `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005`.
+- Focused `authRoutes.test.js` validation passes 30/30; full backend regression passes 893/893 with coverage, system integration, and traceability green; PR CI association is the next gate.
+
 ## 2026-07-19 - OTP Requester And Refresh Reconciliation
 
 - Fanned the FE02 verification/reset requester into the canonical FE10 sensitive-provider boundary with token-ID idempotency and no duplicate direct delivery path.

@@ -1,8 +1,8 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.0
-Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
-Last Updated: 2026-07-15
+Version: 0.3.1
+Status: READY FOR REVIEW - DEBT RECONCILIATION COMPLETE
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
 Feature IDs: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -25,16 +25,16 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 ## 3. API / Integration Test Targets
 
-- `POST /auth/register`: happy path, duplicate email, invalid input.
-- `POST /auth/verify-email`: happy path, invalid OTP, expired OTP.
+- `POST /auth/register`: happy path, duplicate email with no additional persistence/delivery, weak password with no persistence, invalid input.
+- `POST /auth/verify-email`: canonical email/OTP and legacy-token happy paths, invalid OTP, expired OTP, and credential consumption.
 - `POST /auth/resend-verification`: happy path, invalid user/state.
-- `POST /auth/login`: happy path, wrong password, unverified user, inactive user, locked account.
+- `POST /auth/login`: happy path, wrong password, inactive/unknown public-envelope parity, locked account, and automatic unlock.
 - `POST /auth/refresh-token`: happy path, expired token, invalid token.
 - Registration role assignment: self-registration creates exactly one `Member` assignment and cannot create Librarian/Admin roles.
 - Authorization and transport: protected actions use current `UserRoles`; deployed HTTP auth requests are redirected or rejected before credential processing.
 - `POST /auth/logout`: happy path, invalid token.
 - `POST /auth/change-password` (+ `/request-otp`, `/confirm`): happy path, wrong old password, reused password, invalid OTP, unauthenticated.
-- `POST /auth/forgot-password`, `/reset-password`: happy path, invalid/expired token.
+- `POST /auth/forgot-password`, `/reset-password`: generic request semantics; canonical email/OTP and legacy-token success; invalid/expired/reused credential; weak-password no-mutation behavior.
 - `POST /auth/reset-password` with `ACCOUNT_SETUP`: atomic activation, invalid/used/revoked/ineligible/concurrent token rejection, and no reset-purpose activation.
 - `GET /auth/me`: authenticated happy path, unauthenticated error.
 
@@ -46,13 +46,13 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
+- Focused API evidence: `backend/tests/authRoutes.test.js` passes 30/30, including TD-018 and TD-020 regressions.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
 - No enforced Jest line/branch coverage threshold yet (Week 11 target).
-- TD-018: add API tests for duplicate email (FR-FE02-015) and weak password (FR-FE02-019) and for the OTP verify/reset branches.
-- TD-019/020: confirm IP-based rate limiting need and the `ACCOUNT_INACTIVE` enumeration message.
+- Final FE01-FE12 human integration acceptance remains outside this focused FE02 automated gate.
 
 ## 7. Required Commands / Evidence Before Merge
 
