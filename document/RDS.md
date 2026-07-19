@@ -175,15 +175,6 @@ flowchart TB
 
   EmailService --> UC10
 
-  UC02 -. "<<include>>" .-> UC10
-  UC04 -. "<<include>>" .-> UC10
-  UC08 -. "<<include>>" .-> UC10
-  UC09 -. "<<include>>" .-> UC10
-  UC11 -. "<<include>>" .-> UC10
-  UC07 -. "<<include>>" .-> UC06
-  UC08 -. "<<include>>" .-> UC06
-  UC07 -. "<<extend>>" .-> UC09
-
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
   style TopRow fill:transparent,stroke:transparent;
