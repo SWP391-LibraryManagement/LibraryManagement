@@ -1,6 +1,7 @@
 # TASKS.md - FE06 Inventory / Book Copy Management
 
-Status: READY FOR REVIEW - FE06 reconciliation and live SQL complete; merge/human gates pending
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Implementation State: COMPLETE
 
 Owner: Dat
 

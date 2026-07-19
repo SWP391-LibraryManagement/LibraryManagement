@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-borrowing-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - V0.5.1 Reconciliation And History Contract
 
 - Reconciled canonical eligibility, active-parent guards, member-scoped approval serialization, required approval/borrow metadata, Ho Chi Minh business dates, future/pre-borrow return rejection, and mandatory rejection reasons.

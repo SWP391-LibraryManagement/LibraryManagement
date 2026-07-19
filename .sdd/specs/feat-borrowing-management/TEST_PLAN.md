@@ -1,7 +1,7 @@
 # FE07 Test Plan - Borrowing Management
 
 Version: 0.2.4
-Status: V0.5.1 AGENT-SIDE AND LIVE SQL VALIDATION COMPLETE; HUMAN INTEGRATION PENDING
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-notification-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- FE02/FE10 OTP delivery follow-up is additionally closed through PR #42/#43/#44 with exact post-merge `main` CI evidence.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - OTP Integration B7 Closeout
 
 - FE10-S05 is complete through B7: PR #42 merged as `34d9180`, PR CI `29688102867` passed, and exact post-merge `main` CI `29688222757` passed.

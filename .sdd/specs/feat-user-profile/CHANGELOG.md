@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-user-profile is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - Deterministic Profile Contract Reconciled
 
 - Completed T-FE03-016 with an exact PUT allowlist that rejects direct `avatarUrl`, protected, unknown, and empty payloads before writes.

@@ -1,6 +1,7 @@
 # TASKS.md - FE05 Book Management
 
-Status: READY FOR REVIEW - FE05 reconciliation and live SQL complete; merge/human gates pending
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Implementation State: COMPLETE
 
 Owner: Dung
 
