@@ -157,6 +157,12 @@ export const reservationApi = {
   create(copyId) {
     return authorizedReservationRequest({ method: 'post', url: '/reservations', data: { copyId } }, 'Không thể đặt chỗ sách.');
   },
+  listCandidates(params = {}) {
+    return authorizedReservationRequest(
+      { method: 'get', url: '/reservations/candidates', params },
+      'Không thể tải danh sách sách có thể đặt chỗ.',
+    );
+  },
   listMine(params = {}) {
     return authorizedReservationRequest({ method: 'get', url: '/reservations/me', params }, 'Không thể tải đặt chỗ của bạn.');
   },

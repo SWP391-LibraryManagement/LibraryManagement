@@ -296,6 +296,7 @@ git commit -m "test: validate FE08 candidate catalog on SQL Server"
 - Modify: `frontend/src/page/reservation/MyReservationsPage.jsx`
 - Modify: `frontend/src/utils/libraryFeatureViewModels.js`
 - Modify: `frontend/test/reservationFrontend.test.js`
+- Modify: `frontend/test/borrowingFrontend.test.js`
 
 **Interfaces:**
 - API method: `reservationApi.listCandidates(params = {})`.
@@ -314,7 +315,7 @@ listCandidates(params = {}) {
 },
 ```
 
-Extend the frontend source tests to require this method, the candidate URL, and the reservation resolver; add a failing assertion that `DEMO_RESERVABLE` is absent from `MyReservationsPage.jsx`.
+Extend the frontend source tests to require this method, the candidate URL, and the reservation resolver; update `borrowingFrontend.test.js` to retain only `DEMO_BORROW_CATALOG`; add a failing assertion that `DEMO_RESERVABLE` is absent from `MyReservationsPage.jsx`.
 
 - [ ] **Step 2: Run RED frontend tests.**
 
@@ -349,7 +350,7 @@ Expected: focused tests, lint, and build pass; the known non-blocking chunk warn
 - [ ] **Step 7: Commit frontend migration.**
 
 ```powershell
-git add frontend/src/api/libraryFeatureApi.js frontend/src/page/reservation/MyReservationsPage.jsx frontend/src/utils/libraryFeatureViewModels.js frontend/test/reservationFrontend.test.js
+git add frontend/src/api/libraryFeatureApi.js frontend/src/page/reservation/MyReservationsPage.jsx frontend/src/utils/libraryFeatureViewModels.js frontend/test/reservationFrontend.test.js frontend/test/borrowingFrontend.test.js
 git commit -m "feat: connect FE08 member candidates to server state"
 ```
 

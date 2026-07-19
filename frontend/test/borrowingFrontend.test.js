@@ -18,14 +18,14 @@ async function loadBorrowingViewModels() {
   }
 }
 
-test('shared view models retain only the two documented temporary candidate catalogs', async () => {
+test('shared view models retain only the documented FE07 temporary candidate catalog', async () => {
   const source = await readFile(
     new URL('../src/utils/libraryFeatureViewModels.js', import.meta.url),
     'utf8'
   );
 
   assert.match(source, /export const DEMO_BORROW_CATALOG/);
-  assert.match(source, /export const DEMO_RESERVABLE/);
+  assert.doesNotMatch(source, /export const DEMO_RESERVABLE/);
   assert.doesNotMatch(
     source,
     /DEMO_MY_RESERVATIONS|DEMO_ALL_RESERVATIONS|DEMO_BORROW_ROWS|DEMO_ADMIN_REQUESTS|DEMO_MEMBERS/

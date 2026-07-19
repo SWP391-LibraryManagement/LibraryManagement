@@ -13,12 +13,6 @@ export const DEMO_BORROW_CATALOG = [
   { id: 'BK-004', title: 'Nhà Giả Kim', author: 'Paulo Coelho', category: 'Tiểu thuyết', rating: 4.5, copies: [] },
 ];
 
-export const DEMO_RESERVABLE = [
-  { id: 'BK-001', copyId: 1, title: 'Clean Code', author: 'Robert C. Martin', availableCopies: 0, queue: 2, eta: 'khoảng 5 ngày' },
-  { id: 'BK-010', copyId: 2, title: 'You Don\'t Know JS', author: 'Kyle Simpson', availableCopies: 2, queue: 0, eta: 'Sẵn sàng mượn' },
-  { id: 'BK-022', copyId: 3, title: 'Atomic Habits', author: 'James Clear', availableCopies: 0, queue: 4, eta: 'khoảng 12 ngày' },
-];
-
 export function fmtDate(value) {
   if (!value) return '—';
   const date = new Date(value);
