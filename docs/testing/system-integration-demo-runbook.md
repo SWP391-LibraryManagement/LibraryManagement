@@ -1,6 +1,6 @@
 # System Integration Demo Runbook
 
-Date: 2026-07-14
+Date: 2026-07-14; Phase 3 evidence update: 2026-07-19
 
 Audience: SWP391 project presentation
 
@@ -14,6 +14,16 @@ Do not use local-storage sample rows as proof of database integration. Do not di
 
 ## 2. Preflight
 
+- Run the current read-only staging gate and keep its six check names visible:
+
+```powershell
+$env:STAGING_FRONTEND_URL='https://lemon-wave-04db51100.7.azurestaticapps.net'
+$env:STAGING_API_URL='https://app-library-api-staging-nhat714.azurewebsites.net'
+npm.cmd run smoke:staging
+```
+
+- Run `npm.cmd run phase3:performance` and confirm the documented bcrypt-cost-10
+  timing plus entry-bundle metrics are emitted without identities or tokens.
 - Start both applications with `npm.cmd run dev`.
 - Verify `Invoke-RestMethod http://localhost:3000/health` returns a healthy response.
 - Open the frontend URL printed by Vite and confirm login works for one approved Member and one Librarian account.
@@ -90,6 +100,17 @@ npm.cmd --prefix backend run test:sql:system
 
 The SQL suite creates synthetic rows, proves FE07 -> FE10 -> FE09 -> FE12 shared state, and verifies cleanup before exiting.
 
+If port `4173` is already used by another local session, preserve that process
+and run the browser evidence on isolated ports:
+
+```powershell
+$env:E2E_FRONTEND_PORT='4273'
+$env:E2E_BACKEND_PORT='3200'
+$env:E2E_FRONTEND_URL='http://127.0.0.1:4273'
+$env:E2E_BACKEND_URL='http://127.0.0.1:3200'
+npm.cmd run test:e2e
+```
+
 ## 5. Safe FE10 Query
 
 Select metadata only. Do not select `Body`, `SafePayload`, tokens, or provider details.
@@ -130,7 +151,11 @@ WHERE SourceFeature = 'FE07'
 
 ## 8. Rehearsal Record
 
-Run twice and record the result in `.sdd/reviews/system-integration-evidence-2026-07-14.md`:
+Historical results remain in `.sdd/reviews/system-integration-evidence-2026-07-14.md`.
+The current Phase 3 browser, staging, performance, visual, and reset evidence is
+recorded in `docs/release/phase3-user-testing-record-2026-07-19.md`.
+
+Run twice before the defense:
 
 1. Normal pace: verify every state transition and reset.
 2. Timed pace: finish within five minutes using the fallback evidence when needed.
