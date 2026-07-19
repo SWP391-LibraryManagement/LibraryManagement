@@ -68,6 +68,25 @@ async function runStagingSmoke({
   }
   checks.push('health');
 
+  const catalogResponse = await request(
+    fetchImpl,
+    `${api}/api/books?page=1&limit=1`,
+    {},
+    timeoutMs,
+    requestAttempts,
+    retryDelayMs
+  );
+  const catalog = await catalogResponse.json().catch(() => ({}));
+  if (
+    catalogResponse.status !== 200 ||
+    !Array.isArray(catalog.data) ||
+    !catalog.pagination ||
+    catalog.pagination.page !== 1
+  ) {
+    throw new Error(`SQL-backed catalog check failed with HTTP ${catalogResponse.status}.`);
+  }
+  checks.push('sql-catalog');
+
   const allowedResponse = await request(
     fetchImpl,
     `${api}/health`,

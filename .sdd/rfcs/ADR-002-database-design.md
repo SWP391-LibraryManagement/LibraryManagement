@@ -88,6 +88,13 @@ five reconciliation migrations executed successfully, the migrations passed a se
 and the database/login were removed afterward. See
 `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 
+The Phase 3 Azure staging upgrade exposed one legacy-schema difference that the disposable
+canonical baseline did not: `Books.ISBN` still had the filtered unique index
+`UX_Books_ISBN_NotNull` while its width needed reconciliation. The FE05 migration therefore drops
+that named index only inside the width-change branch, alters `ISBN`, and recreates the same unique
+filtered index in the transaction. The target schema and FE05 contract are unchanged; this makes
+the approved migration safe for an existing Week 13 database as well as a canonical baseline.
+
 ## FE04 Membership Concurrency Migration Decision
 
 FE04 owns the filtered unique index

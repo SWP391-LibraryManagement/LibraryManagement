@@ -48,7 +48,9 @@ test('Books schema, migration, and model expose the canonical rowversion contrac
 test('Books ISBN width and filtered uniqueness stay synchronized', () => {
   expect(schemaSource).toMatch(/ISBN\s+NVARCHAR\(20\)\s+NULL/i);
   expect(schemaSource).toMatch(/CREATE UNIQUE INDEX UX_Books_ISBN_NotNull[\s\S]*WHERE ISBN IS NOT NULL/i);
+  expect(migrationSource).toMatch(/DROP INDEX\s+UX_Books_ISBN_NotNull\s+ON\s+dbo\.Books/i);
   expect(migrationSource).toMatch(/ALTER TABLE dbo\.Books ALTER COLUMN ISBN NVARCHAR\(20\) NULL/i);
+  expect(migrationSource).toMatch(/CREATE UNIQUE INDEX\s+UX_Books_ISBN_NotNull[\s\S]*WHERE ISBN IS NOT NULL/i);
 });
 
 // @spec FR-FE05-018, FR-FE05-023, NFR-FE05-TXN-001

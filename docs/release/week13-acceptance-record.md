@@ -6,6 +6,12 @@ Release candidate: Week 13 Azure staging
 
 Overall status: READY FOR HUMAN ACCEPTANCE
 
+Historical record: this file preserves the 2026-07-14 Week 13 candidate state.
+Current Phase 3 deployment evidence is recorded in
+[`phase3-staging-evidence-2026-07-19.md`](phase3-staging-evidence-2026-07-19.md).
+Unchecked live-user items below remain unchecked unless they were actually
+observed with a safe staging account.
+
 ## Evidence Rules
 
 - L1 automated evidence does not replace L4 human acceptance.
@@ -25,6 +31,10 @@ Overall status: READY FOR HUMAN ACCEPTANCE
 | Frontend gate | 38/38 tests, lint, and production build passed. |
 | Security gate | Root, backend, and frontend production dependency audits report no Critical/High finding. |
 | Traceability gate | Six implemented features meet the enforced FR `@spec` threshold. |
+
+The current Phase 3 baseline supersedes the counts in this historical table:
+all twelve feature packages report `Implementation State: COMPLETE`, 100% FR
+traceability, 916/916 backend tests, and 149/149 frontend tests.
 
 Sources:
 

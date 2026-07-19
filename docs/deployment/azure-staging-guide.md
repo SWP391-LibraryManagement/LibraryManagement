@@ -153,16 +153,32 @@ Before executing:
 1. Review the generated SQL.
 2. Confirm the connected database is `LibraryManagementStaging`.
 3. Execute using Azure Query Editor, SSMS, or `sqlcmd`.
-4. Verify the target and table count:
+4. For an existing pre-reconciliation database, execute these approved idempotent migrations in
+   order:
+
+```text
+database/migrations/2026-07-19-fe04-membership-concurrency.sql
+database/migrations/2026-07-19-fe05-book-rowversion.sql
+database/migrations/2026-07-19-fe06-bookcopy-rowversion.sql
+database/migrations/2026-07-19-fe10-otp-templates.sql
+database/migrations/2026-07-19-fe11-finalization.sql
+```
+
+5. Execute the migration sequence a second time to prove idempotence before accepting the staging
+   schema.
+6. Verify the target, table count, and reconciliation columns:
 
 ```sql
 SELECT
   DB_NAME() AS DatabaseName,
-  COUNT(*) AS TableCount
-FROM sys.tables;
+  (SELECT COUNT(*) FROM sys.tables) AS TableCount,
+  COL_LENGTH(N'dbo.Books', N'RowVersion') AS BooksRowVersionBytes,
+  COL_LENGTH(N'dbo.BookCopies', N'Version') AS BookCopiesVersionBytes,
+  COL_LENGTH(N'dbo.Users', N'DeactivatedAt') AS UsersDeactivatedAtBytes;
 ```
 
-Expected database: `LibraryManagementStaging`. CI must not execute this schema automatically.
+Expected database: `LibraryManagementStaging`, table count `20`, and each listed reconciliation
+column length `8`. CI must not execute this schema automatically.
 
 ## Configure App Service Runtime Settings
 
@@ -174,6 +190,7 @@ az webapp config appsettings set `
   --resource-group rg-library-staging `
   --settings `
     NODE_ENV=production `
+    TRUST_PROXY=true `
     PORT=8080 `
     DB_SERVER=sql-library-staging-ea-nhat714.database.windows.net `
     DB_NAME=LibraryManagementStaging `
@@ -182,6 +199,12 @@ az webapp config appsettings set `
     DB_TRUST_SERVER_CERTIFICATE=false `
     SCM_DO_BUILD_DURING_DEPLOYMENT=true
 ```
+
+`TRUST_PROXY=true` is required on Azure App Service because TLS terminates at
+the Azure proxy. The backend uses the forwarded protocol when enforcing HTTPS
+for `/api/auth/*`; without this setting a real HTTPS request can be interpreted
+as the internal HTTP hop and return `400 HTTPS_REQUIRED` instead of reaching
+authentication and returning the expected `401` for an anonymous request.
 
 Use App Service -> Configuration to enter secret values:
 
@@ -254,6 +277,11 @@ The workflow is intentionally manual:
 5. Confirm quality, backend deploy, frontend deploy, and smoke jobs all pass.
 
 No deployment should run if the quality gate fails.
+
+After changing App Service settings, allow the F1 instance to warm up before
+judging the smoke result. A first request may return `503` while the application
+restarts. Re-run the read-only smoke check after `/health` returns `200`; do not
+hide a persistent `503` as warm-up.
 
 ## Run Smoke Tests
 
