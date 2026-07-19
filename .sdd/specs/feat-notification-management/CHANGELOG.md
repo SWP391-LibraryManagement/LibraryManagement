@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-19 - OTP Integration B7 Closeout
+
+- FE10-S05 is complete through B7: PR #42 merged as `34d9180`, PR CI `29688102867` passed, and exact post-merge `main` CI `29688222757` passed.
+- FE02/FE10 ownership, source rejection, secret-boundary, failure, idempotency, and reset-event evidence is complete. Real provider delivery, inbox UI, and FE09 caller integration remain deferred.
+
 ## 2026-07-19 - OTP Integration Human Acceptance And Evidence Expansion
 
 - Expanded ADR-004 ownership evidence across both sensitive types and every allowlisted non-FE02 requester, with exact safe HTTP source-override assertions and no side effects.

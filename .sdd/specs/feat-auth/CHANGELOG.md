@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - OTP Delivery B7 Closeout
+
+- FE02-T033 is complete through B7 after PR #42 merged as `34d9180`; PR CI `29688102867` and exact post-merge `main` CI `29688222757` passed.
+- The approved FE02-bound FE10 OTP delivery boundary now has complete ownership, leakage, failure, and token-rotation evidence. Real SMTP and unrelated FE02 follow-up remain out of scope.
+
 ## 2026-07-19 - OTP Delivery Acceptance And Boundary Evidence
 
 - Expanded ADR-004 evidence so every allowlisted non-FE02 requester is rejected for both verification and reset types with no persistence, attempt, audit, or provider side effects.

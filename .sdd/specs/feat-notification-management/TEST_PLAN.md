@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
 Version: 0.3.3
-Status: OTP/FE02 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING
+Status: OTP/FE02 COMPLETE THROUGH B7; REAL PROVIDER OUT OF SCOPE
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -55,7 +55,7 @@ Notification requests, source/type ownership, sensitive in-memory delivery, temp
 
 - `database/Librarymanagement.sql`, FE11-owned shared widths, and the FE10 OTP migration are synchronized; the migration passed two disposable SQL Server executions.
 - FE10-S04 FE02 requester integration and FE10-S09 FE04 membership-result integration are fanned into this worktree.
-- Focused FE02/FE10/integration validation passes 170/170. Human acceptance is approved for the injected-provider scope; real provider delivery remains out of scope. Integration PR and exact post-merge `main` CI remain required.
+- Focused FE02/FE10/integration validation passes 170/170. Human acceptance, PR integration, and exact post-merge `main` CI pass for the injected-provider scope; real provider delivery remains out of scope.
 
 ## 7. Required Commands / Evidence Before Merge
 
