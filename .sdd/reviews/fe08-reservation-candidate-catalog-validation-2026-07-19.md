@@ -51,4 +51,4 @@ The first aggregate SQL run exposed a fixture-isolation issue: the canonical bas
 ## Residual Gates
 
 - Decision Gate B / H3 human integration review remains unchecked in the full acceptance packet.
-- PR publication/CI association, merge approval, and exact post-merge `main` CI evidence remain required before the project goal can be marked complete.
+- PR publication and CI association are complete: PR #40 / CI run `29682997784` passed on head `ed7376f`. Merge approval, human H3, and exact post-merge `main` CI evidence remain required before the project goal can be marked complete.

@@ -448,7 +448,7 @@ Move TD-028 from `OPEN` to the Resolved table with the implementation commit and
 
 Fill Decision Gate A with the approved Option A reference, update final head/CI, and leave Gate B unchecked until a named human reviewer completes the FE01-FE12 walkthrough and explicitly approves merge.
 
-- [ ] **Step 6: Commit and push evidence.**
+- [x] **Step 6: Commit and push evidence.**
 
 ```powershell
 git add TECH_DEBT.md .sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md .sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md

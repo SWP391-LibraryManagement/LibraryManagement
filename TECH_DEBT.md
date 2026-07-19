@@ -39,7 +39,7 @@ Last Updated: 2026-07-19
 
 | Feature | What was fixed | Commit |
 | ------- | -------------- | ------ |
-| FE08 | TD-028: approved Option A; added member-only `GET /api/reservations/candidates` with the six-field redacted projection, active-book `BORROWED`/`RESERVED` filtering, server search/pagination, and parameterized SQL; removed `DEMO_RESERVABLE`; focused/full backend, frontend, SQL, traceability, safety, and Playwright gates pass. Final H3 remains separate. | 401fb8d..bcbccce / PR #40; FE08 candidate validation review |
+| FE08 | TD-028: approved Option A; added member-only `GET /api/reservations/candidates` with the six-field redacted projection, active-book `BORROWED`/`RESERVED` filtering, server search/pagination, and parameterized SQL; removed `DEMO_RESERVABLE`; focused/full backend, frontend, SQL, traceability, safety, Playwright, and PR CI gates pass. Final H3 remains separate. | `ed7376f` / PR #40; FE08 candidate validation review |
 | FE09 | TD-004: moved Fine Management search, status filtering, and pagination onto the canonical server query/envelope; removed browser-side list filtering/slicing; added query-builder, source, responsive, and Playwright L4 regressions. | dfe45ae / PR #40 |
 | FE02 | TD-018: added API regressions for duplicate registration and weak-password no-mutation behavior plus canonical `{ email, otp }` verification/reset consumption. Focused auth validation passes 30/30. | 0040e0f / PR #40 |
 | FE02 | TD-019: closed as an approved Phase 1 policy decision. `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005` explicitly require known-account lockout and state that IP-wide limiting is not implemented. | 0040e0f / PR #40 |
