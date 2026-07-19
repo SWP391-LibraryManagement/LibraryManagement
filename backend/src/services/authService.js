@@ -282,8 +282,8 @@ function createAuthService({
       await createNotification({
         userId,
         recipientEmail,
-        templateCode: 'EMAIL_VERIFY',
-        safePayload: { purpose: 'EMAIL_VERIFY' },
+        templateCode: 'ACCOUNT_VERIFICATION',
+        safePayload: { purpose: 'ACCOUNT_VERIFICATION' },
       });
     } catch (notifyError) {
       console.error('[auth notification] Failed to queue verification notification:', notifyError.message);

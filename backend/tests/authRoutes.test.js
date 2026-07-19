@@ -92,6 +92,7 @@ describe('FE02 auth vertical slice', () => {
     });
     expect(registerResponse.body.debugVerificationToken).toEqual(expect.any(String));
     expect(dependencies.state.users[0].status).toBe('INACTIVE');
+    expect(dependencies.state.notifications.at(-1).templateCode).toBe('ACCOUNT_VERIFICATION');
 
     const verifyResponse = await request(app)
       .post('/api/auth/verify-email')
@@ -191,6 +192,7 @@ describe('FE02 auth vertical slice', () => {
       message: 'Verification email sent',
       debugVerificationToken: expect.any(String),
     });
+    expect(dependencies.state.notifications.at(-1).templateCode).toBe('ACCOUNT_VERIFICATION');
     expect(dependencies.state.tokens[0].revokedAt).toEqual(expect.any(Date));
 
     const oldTokenResponse = await request(app)
