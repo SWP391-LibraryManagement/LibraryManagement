@@ -549,3 +549,295 @@ flowchart TB
 | 16 | `backend/src/config` | Contains backend configuration files such as database configuration. |
 | 17 | `backend/src/CustomException` | Contains custom application exception classes. |
 | 18 | `database` | Contains the SQL Server schema and migration scripts for the Library Management database. |
+
+# II. Requirement Specifications
+
+## 1. Core System Use Cases
+
+### 1.1 UC-01 Browse Books
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-01 Browse Books |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest, Member |
+| Secondary Actors | Internal database |
+| Trigger | Actor opens the home page, public book page, or search function. |
+| Description | Actor searches, browses, and views public book catalog information and availability. |
+| Preconditions | PRE-1: Book catalog data exists in the system.<br/>PRE-2: Public browse route is available. |
+| Postconditions | POST-1: Matching book information is displayed.<br/>POST-2: Staff-only copy details remain hidden from public/member views. |
+| Normal Flow | 1.0.1 Actor opens the public book page.<br/>1.0.2 System displays active books.<br/>1.0.3 Actor enters search or filter criteria.<br/>1.0.4 System returns matching books with public availability.<br/>1.0.5 Actor opens a book detail.<br/>1.0.6 System displays book metadata and availability summary. |
+| Alternative Flows | 1.1 No search criteria: system displays default active book list.<br/>1.2 No matching books: system displays an empty result message. |
+| Exceptions | 1.0.E1 Catalog service unavailable: system displays a safe error message and no internal error details. |
+| Priority | High, Must Have |
+| Frequency of Use | High, multiple times per day |
+| Business Rules | BR-GEN-001, BR-GEN-003 |
+| Other Information | Public browse must not expose barcode, borrower, location, or staff-only inventory data. |
+| Assumptions | Only active books are shown in public catalog views. |
+
+### 1.2 UC-02 Manage Account Access
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-02 Manage Account Access |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest, Member, Librarian, Admin |
+| Secondary Actors | EmailService, Internal database |
+| Trigger | Actor registers, logs in, logs out, changes password, requests password reset, verifies email, or completes account setup. |
+| Description | Actor manages account access securely through authentication and account recovery flows. |
+| Preconditions | PRE-1: Authentication service is available.<br/>PRE-2: Actor provides required account information.<br/>PRE-3: EmailService is available for email-based flows. |
+| Postconditions | POST-1: Successful login creates an authenticated session.<br/>POST-2: Password or account setup changes are persisted securely.<br/>POST-3: Verification/reset/setup email is queued or sent when required. |
+| Normal Flow | 2.0.1 Actor submits account credentials or account request data.<br/>2.0.2 System validates input.<br/>2.0.3 System checks account and token rules.<br/>2.0.4 System completes the requested account action.<br/>2.0.5 System displays success result or redirects actor to the proper screen. |
+| Alternative Flows | 2.1 Forgot password: actor submits email and system sends reset instruction.<br/>2.2 Email verification: actor opens verification link and system verifies account.<br/>2.3 Admin-created setup: actor opens setup link and creates initial password. |
+| Exceptions | 2.0.E1 Invalid credentials: system rejects login safely.<br/>2.0.E2 Expired or used token: system rejects the token and asks actor to request a new one.<br/>2.0.E3 Email delivery failure: system records failure without exposing sensitive details. |
+| Priority | High, Must Have |
+| Frequency of Use | High, multiple times per day |
+| Business Rules | BR-GEN-003 |
+| Other Information | Passwords and tokens must never be stored in plain text. |
+| Assumptions | Email address is unique per user account. |
+
+### 1.3 UC-03 Manage Profile
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-03 Manage Profile |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member, Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authenticated actor opens profile screen or submits profile changes. |
+| Description | Actor views and updates personal profile information. |
+| Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Profile route and profile service are available. |
+| Postconditions | POST-1: Current profile data is displayed.<br/>POST-2: Valid updates are saved. |
+| Normal Flow | 3.0.1 Actor opens profile screen.<br/>3.0.2 System loads current profile data.<br/>3.0.3 Actor updates editable fields.<br/>3.0.4 System validates input.<br/>3.0.5 System saves changes and displays updated profile. |
+| Alternative Flows | 3.1 Upload avatar: actor selects avatar file and system saves avatar URL if valid. |
+| Exceptions | 3.0.E1 Invalid profile data: system rejects update and displays validation message.<br/>3.1.E1 Invalid avatar upload: system rejects file and keeps existing avatar. |
+| Priority | Medium, Should Have |
+| Frequency of Use | Medium, weekly or monthly |
+| Business Rules | BR-GEN-002, BR-GEN-003 |
+| Other Information | Actor can update own profile only unless an admin workflow explicitly allows otherwise. |
+| Assumptions | Profile data belongs to an existing authenticated user. |
+
+### 1.4 UC-04 Apply For Membership
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-04 Apply For Membership |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Trigger | Member opens membership screen and submits an application. |
+| Description | Member applies for membership; authorized staff reviews and approves or rejects the application. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member does not already have an approved active membership.<br/>PRE-3: No duplicate pending application blocks submission. |
+| Postconditions | POST-1: Application is stored as pending, approved, or rejected.<br/>POST-2: Membership status is visible to the member.<br/>POST-3: Review result notification may be queued. |
+| Normal Flow | 4.0.1 Member opens membership screen.<br/>4.0.2 System displays current membership status.<br/>4.0.3 Member submits application.<br/>4.0.4 System validates membership rules and stores pending application.<br/>4.0.5 Librarian or admin reviews the application.<br/>4.0.6 System records approval or rejection and updates status. |
+| Alternative Flows | 4.1 Rejected member reapplies after correcting information.<br/>4.2 Staff rejects application with required rejection reason. |
+| Exceptions | 4.0.E1 Duplicate pending application: system blocks new application.<br/>4.0.E2 Unauthorized review action: system returns forbidden response. |
+| Priority | High, Must Have |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | BR-GEN-002, BR-GEN-003 |
+| Other Information | Phase 1 does not include membership payment or points-based membership. |
+| Assumptions | Membership approval does not change the user's login role. |
+
+### 1.5 UC-05 Manage Books
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-05 Manage Books |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authorized staff opens book management screen or submits catalog changes. |
+| Description | Authorized staff manages catalog records for books. |
+| Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Required category, author, or publisher data exists when referenced. |
+| Postconditions | POST-1: Book data is created, updated, deactivated, or reactivated.<br/>POST-2: Catalog changes are available to browse and inventory features. |
+| Normal Flow | 5.0.1 Actor opens book management screen.<br/>5.0.2 System displays book list.<br/>5.0.3 Actor creates or edits book data.<br/>5.0.4 System validates catalog fields.<br/>5.0.5 System persists the change and updates the list. |
+| Alternative Flows | 5.1 Actor searches or filters book records.<br/>5.2 Actor deactivates or reactivates a book. |
+| Exceptions | 5.0.E1 Duplicate ISBN: system rejects duplicate book ISBN.<br/>5.0.E2 Invalid reference data: system rejects unknown category, author, or publisher. |
+| Priority | High, Must Have |
+| Frequency of Use | High, daily |
+| Business Rules | BR-GEN-001, BR-GEN-003, BR-GEN-010 |
+| Other Information | Public visibility depends on book active/inactive state. |
+| Assumptions | Book metadata is managed separately from physical copy inventory. |
+
+### 1.6 UC-06 Manage Book Copies
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-06 Manage Book Copies |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authorized staff opens inventory screen or changes copy data/status. |
+| Description | Authorized staff manages physical copies, barcodes, locations, and availability status. |
+| Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Related book exists. |
+| Postconditions | POST-1: Copy data is stored with valid status.<br/>POST-2: Availability changes are reflected in borrowing, reservation, and public browse flows. |
+| Normal Flow | 6.0.1 Actor opens inventory screen.<br/>6.0.2 System displays copy data.<br/>6.0.3 Actor adds, updates, changes status, or deactivates a copy.<br/>6.0.4 System validates barcode, book reference, and status transition.<br/>6.0.5 System saves the copy change. |
+| Alternative Flows | 6.1 Actor searches by barcode.<br/>6.2 Actor updates copy availability from a staff workflow. |
+| Exceptions | 6.0.E1 Duplicate barcode: system rejects new or updated copy.<br/>6.0.E2 Status conflicts with active borrowing or reservation: system blocks status change. |
+| Priority | High, Must Have |
+| Frequency of Use | High, daily |
+| Business Rules | BR-GEN-003, BR-GEN-004, BR-GEN-010 |
+| Other Information | Copy status is the source for availability-sensitive workflows. |
+| Assumptions | One physical copy has one unique barcode. |
+
+### 1.7 UC-07 Borrow Books
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-07 Borrow Books |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Trigger | Member creates a borrow request or staff processes borrowing/returning. |
+| Description | Member requests books and authorized staff approves, rejects, renews, or processes returns. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is eligible to borrow.<br/>PRE-3: Requested copies are available or processable according to status rules. |
+| Postconditions | POST-1: Borrow request and details are stored.<br/>POST-2: Approved borrow details include borrow date and due date.<br/>POST-3: Returned copies update borrowing and copy status.<br/>POST-4: Overdue return may create fine data. |
+| Normal Flow | 7.0.1 Member creates borrow request.<br/>7.0.2 System validates eligibility and selected copies.<br/>7.0.3 System stores request as pending.<br/>7.0.4 Librarian or admin reviews request.<br/>7.0.5 System approves request, sets due date, and updates copy status.<br/>7.0.6 Staff processes return when copy is returned.<br/>7.0.7 System updates borrow detail and copy status. |
+| Alternative Flows | 7.1 Staff rejects request with reason.<br/>7.2 Member views borrowing history.<br/>7.3 Eligible borrowed copy is renewed. |
+| Exceptions | 7.0.E1 Borrow limit exceeded: system blocks request or approval.<br/>7.0.E2 Copy unavailable: system blocks approval.<br/>7.0.E3 Unpaid fine or overdue blocker: system blocks borrowing. |
+| Priority | High, Must Have |
+| Frequency of Use | High, daily |
+| Business Rules | BR-GEN-004, BR-GEN-005, BR-GEN-006, BR-GEN-007, BR-GEN-008, BR-GEN-009 |
+| Other Information | Default loan duration is 14 calendar days. |
+| Assumptions | Staff approval is required before a request becomes an active loan. |
+
+### 1.8 UC-08 Reserve Books
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-08 Reserve Books |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member |
+| Secondary Actors | Librarian, Admin, EmailService, Internal database |
+| Trigger | Member reserves a book copy or staff processes reservation queue. |
+| Description | Member reserves books and staff manages reservation queue and fulfillment. |
+| Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Member is allowed to reserve.<br/>PRE-3: Copy exists and supports reservation workflow. |
+| Postconditions | POST-1: Reservation is stored or cancelled.<br/>POST-2: Queue position or held status is updated.<br/>POST-3: Availability notification may be created. |
+| Normal Flow | 8.0.1 Member opens reservation screen.<br/>8.0.2 Member creates reservation.<br/>8.0.3 System validates copy and member eligibility.<br/>8.0.4 System stores active reservation and queue position.<br/>8.0.5 Staff processes queue when copy becomes available.<br/>8.0.6 System notifies member and allows fulfillment through borrowing. |
+| Alternative Flows | 8.1 Member cancels own reservation.<br/>8.2 Reservation expires before fulfillment. |
+| Exceptions | 8.0.E1 Duplicate or invalid reservation: system rejects request.<br/>8.0.E2 Unauthorized queue action: system returns forbidden response. |
+| Priority | Medium, Should Have |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | BR-GEN-003, BR-GEN-004, BR-GEN-006 |
+| Other Information | Reservation fulfillment is completed through borrowing workflow. |
+| Assumptions | Reservation queue processing respects copy availability. |
+
+### 1.9 UC-09 Manage Fines
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-09 Manage Fines |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Librarian, Admin |
+| Secondary Actors | Member, EmailService, Internal database |
+| Trigger | A return is overdue, a fine list is opened, or staff updates fine status. |
+| Description | System calculates fine records and authorized staff manages collection, payment, or resolution. |
+| Preconditions | PRE-1: Borrow detail exists.<br/>PRE-2: Fine calculation source data is available.<br/>PRE-3: Staff actor is authenticated for fine updates. |
+| Postconditions | POST-1: Fine is calculated or confirmed as not required.<br/>POST-2: Fine status is stored as unpaid, paid, waived, or cancelled.<br/>POST-3: Member borrowing eligibility reflects unpaid fine state. |
+| Normal Flow | 9.0.1 Staff opens fine management screen or return workflow triggers fine check.<br/>9.0.2 System calculates overdue days and amount.<br/>9.0.3 System stores or displays fine information.<br/>9.0.4 Staff records collection, marks paid, or resolves fine.<br/>9.0.5 System updates fine status. |
+| Alternative Flows | 9.1 Member views own fine information.<br/>9.2 Fine is resolved without collection when business rule allows. |
+| Exceptions | 9.0.E1 Fine already exists: system prevents duplicate active fine.<br/>9.0.E2 Unauthorized fine update: system rejects update.<br/>9.0.E3 Paid fine updated again: system blocks invalid transition. |
+| Priority | High, Must Have |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | BR-GEN-006, BR-GEN-009, BR-GEN-010 |
+| Other Information | Phase 1 overdue fine is 5,000 VND per overdue day per copy, starting the day after due date. |
+| Assumptions | Fine payment is recorded offline; online payment gateway is out of scope. |
+
+### 1.10 UC-10 Send Notifications
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-10 Send Notifications |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | EmailService |
+| Secondary Actors | Source feature, Librarian, Admin, Internal database |
+| Trigger | A source feature requests a notification or authorized staff submits a non-sensitive notification request. |
+| Description | System creates notification records and sends email notifications through EmailService. |
+| Preconditions | PRE-1: Notification template or safe notification content exists.<br/>PRE-2: Recipient email is valid.<br/>PRE-3: Source feature is allowed to request the notification type. |
+| Postconditions | POST-1: Notification request is stored.<br/>POST-2: Delivery attempt result is stored.<br/>POST-3: Sensitive notification content is not exposed through public or staff HTTP responses. |
+| Normal Flow | 10.0.1 Source feature creates notification request.<br/>10.0.2 System validates recipient, type, template, and idempotency key.<br/>10.0.3 System stores notification record.<br/>10.0.4 System sends email through EmailService.<br/>10.0.5 System records delivery attempt status. |
+| Alternative Flows | 10.1 Duplicate idempotency key: system returns existing notification summary.<br/>10.2 Optional notification disabled: system records skipped state where applicable. |
+| Exceptions | 10.0.E1 Missing recipient: system rejects request.<br/>10.0.E2 Email provider unavailable: system records failed attempt.<br/>10.0.E3 Unauthorized sensitive notification request: system rejects request safely. |
+| Priority | High, Must Have |
+| Frequency of Use | High, multiple times per day |
+| Business Rules | BR-GEN-003, BR-GEN-010 |
+| Other Information | Verification, reset, and setup notifications must be requested internally by the owning feature boundary. |
+| Assumptions | Email is the only supported delivery channel in Phase 1. |
+
+### 1.11 UC-11 Manage Users And Roles
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-11 Manage Users And Roles |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Admin |
+| Secondary Actors | EmailService, Internal database |
+| Trigger | Admin opens user management screen or performs account/role action. |
+| Description | Admin manages users, librarian accounts, roles, permissions, audit logs, and admin request review view. |
+| Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Admin role.<br/>PRE-3: Target user exists for update/deactivation actions. |
+| Postconditions | POST-1: User or role changes are saved.<br/>POST-2: Account setup email may be sent for admin-created accounts.<br/>POST-3: Administrative actions are audited. |
+| Normal Flow | 11.0.1 Admin opens user management screen.<br/>11.0.2 System displays user list and admin console sections.<br/>11.0.3 Admin creates, updates, deactivates, or changes roles for a user.<br/>11.0.4 System validates action and role rules.<br/>11.0.5 System persists changes and writes audit log. |
+| Alternative Flows | 11.1 Admin views permissions.<br/>11.2 Admin views audit logs.<br/>11.3 Admin resends account setup email. |
+| Exceptions | 11.0.E1 Duplicate email: system rejects create/update.<br/>11.0.E2 Last admin removal: system blocks role removal or deactivation.<br/>11.0.E3 User has active borrowings: system blocks unsafe deactivation. |
+| Priority | High, Must Have |
+| Frequency of Use | Medium, weekly |
+| Business Rules | BR-GEN-003, BR-GEN-010 |
+| Other Information | Admin views must not expose sensitive password or token data. |
+| Assumptions | Only Admin can manage role assignments. |
+
+### 1.12 UC-12 Generate Reports
+
+#### a. Functionalities
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-12 Generate Reports |
+| Created By | Project Team |
+| Date Created | 2026-07-19 |
+| Primary Actor | Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authorized staff opens a report screen or applies report filters. |
+| Description | Authorized staff views borrowing, inventory, and user statistics reports. |
+| Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Source data exists or system can return empty report safely. |
+| Postconditions | POST-1: Report data is displayed.<br/>POST-2: Source operational data remains unchanged. |
+| Normal Flow | 12.0.1 Actor opens report screen.<br/>12.0.2 System validates role access.<br/>12.0.3 Actor selects or applies filters.<br/>12.0.4 System validates filters and aggregates report data.<br/>12.0.5 System displays report summary. |
+| Alternative Flows | 12.1 No data exists: system displays an empty report state.<br/>12.2 Actor changes filters and system refreshes report. |
+| Exceptions | 12.0.E1 Unauthorized report access: system blocks access.<br/>12.0.E2 Invalid filter: system rejects request and displays validation message.<br/>12.0.E3 Source data incomplete: system returns safe partial/empty result according to report contract. |
+| Priority | Medium, Should Have |
+| Frequency of Use | Medium, weekly or monthly |
+| Business Rules | BR-GEN-003, BR-GEN-010 |
+| Other Information | Reporting is read-only and must not mutate source records. |
+| Assumptions | Reports are generated from existing library operational data. |
