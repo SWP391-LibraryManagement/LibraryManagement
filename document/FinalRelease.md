@@ -10,7 +10,7 @@ Project: SWP391 Library Management System
 
 Group/project code: `6-LMS`
 
-Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery ready for integration
+Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery integrated on `main`
 
 ## I. Deliverable Package
 
@@ -543,7 +543,7 @@ Release limitation:
 | Authenticated staging acceptance | NOT OBSERVED: no safe staging Member/Librarian credentials were created or disclosed. |
 | Real SMTP inbox delivery | NOT OBSERVED: provider delivery was not executed. |
 | Historical Phase 2 merge and CI | PR #40 and Phase 2 closeout PR #45/#46 merged; `main` CI `29690856461` passed. |
-| Phase 3 merge and post-merge CI | Pending PR #48 integration; dispatch a fresh staging workflow after merge. |
+| Phase 3 merge and post-merge CI | PR #48 merged as `4d02fc4`; `main` CI `29696519912` and staging workflow `29696612260` passed. |
 
 ### 15. References
 

@@ -10,7 +10,7 @@ documentation, and review.
 ## Project Status
 
 - Phase 2 Core Development: complete for the approved FE01-FE12 scope.
-- Current phase: Phase 3 - Polish and Delivery ready for integration.
+- Current phase: Phase 3 - Polish and Delivery integrated on `main`; external/provider boundaries remain explicit.
 - Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
 - Deferred operational items remain explicit and do not become implied product claims during Phase 3.
 

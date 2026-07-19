@@ -95,8 +95,7 @@ blocked-cors
 protected-route
 ```
 
-The six-check version exists on `docs/phase3-polish-delivery` and must pass in
-the post-merge staging workflow before Phase 3 closeout.
+Post-merge workflow `29696612260` ran from merge commit `4d02fc423c2fc06374d71ec945b7593dfd10c7e6` and passed its quality gate, backend deploy, frontend deploy, and six-check `smoke-test` job. This is the current SQL-aware staging acceptance evidence.
 
 ## Acceptance boundaries
 
@@ -109,3 +108,9 @@ the post-merge staging workflow before Phase 3 closeout.
 | Real SMTP inbox delivery | NOT OBSERVED | Provider delivery was not executed; settings existence is not delivery evidence. |
 | Durable avatar storage | LIMITATION | App Service filesystem is not production-durable storage. |
 | Production SLA | OUT OF SCOPE | Student-credit staging has no production availability commitment. |
+
+## Post-merge workflow
+
+| Workflow | Commit | Result |
+| --- | --- | --- |
+| `deploy-staging.yml` run `29696612260` | `4d02fc4` | PASS: quality gate, backend deploy, frontend deploy, and SQL-aware six-check smoke. |

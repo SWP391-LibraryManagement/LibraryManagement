@@ -4,7 +4,7 @@ Validation commit: `80d81e4`
 
 ## Decision
 
-Phase 3 is **ready for integration** on branch `docs/phase3-polish-delivery`.
+Phase 3 is **integrated and validated** on `main` at merge commit `4d02fc4`.
 The package satisfies the four Hybrid SDD validation layers for the observed
 scope. Authenticated Azure acceptance, real SMTP inbox delivery, durable avatar
 storage, shared SQL CI, and production SLA remain explicit residual boundaries;
@@ -86,8 +86,7 @@ Observed acceptance is intentionally split by evidence boundary:
 
 ## Integration gate
 
-The branch may be pushed and opened as a reviewable PR. After merge, dispatch a
-fresh `deploy-staging.yml` run and require the current six-check SQL-aware smoke
-to pass before calling Phase 3 fully integrated. Do not use historical run
-`29694280002` as proof of that post-merge gate because it predates the SQL-aware
-smoke assertion.
+The branch was merged as PR #48. Post-merge `main` CI run `29696519912` passed,
+and fresh staging workflow `29696612260` passed the quality gate, both deploys,
+and the current six-check SQL-aware smoke. Historical run `29694280002` remains
+context only because it predates the SQL-aware smoke assertion.
