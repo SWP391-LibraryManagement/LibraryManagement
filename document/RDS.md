@@ -203,7 +203,7 @@ flowchart LR
 | UC-02 | Manage Account Access | Guest, Member, Admin-created user | EmailService, Internal database | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
 | UC-03 | Manage Profile | Member | Internal database | Member can view and update profile information, including avatar where supported. |
 | UC-04 | Apply For Membership | Member, Librarian, Admin | EmailService, Internal database | Member can submit a membership application and authorized staff can approve or reject it. |
-| UC-05 | Manage Books | Librarian, Admin | Internal database | Authorized staff can create, update, deactivate, reactivate, search, and view book catalog records. |
+| UC-05 | Manage Books | Librarian, Admin | Internal database | Authorized staff can create, update, deactivate, search, and view book catalog records; reactivation is an approved FE05 follow-up contract. |
 | UC-06 | Manage Book Copies | Librarian, Admin | Internal database | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
 | UC-07 | Borrow Books | Member, Librarian, Admin | EmailService, Internal database | Member can request borrowing; authorized staff can approve, reject, process returns, renew borrowing, and maintain borrowing history. |
 | UC-08 | Reserve Books | Member, Librarian, Admin | EmailService, Internal database | Member can reserve or cancel reservations; authorized staff can manage queues and fulfill held reservations. |
@@ -313,7 +313,7 @@ This section describes the screens shown in the Screens Flow above.
 | 5 | Public / Browse | Public Book Homepage | Shows public book information, searchable catalog content, and book availability. |
 | 6 | User Profile | User Profile | Allows an authenticated user to view and update profile information. |
 | 7 | Membership Management | Membership | Allows a member to submit or view membership status and allows authorized staff to review membership information. |
-| 8 | Book Management | Book Management | Allows librarian or admin users to create, update, deactivate, reactivate, search, and view book records. |
+| 8 | Book Management | Book Management | Allows librarian or admin users to create, update, deactivate, search, and view book records; reactivation remains an approved FE05 follow-up. |
 | 9 | Inventory / Book Copy Management | Inventory | Allows librarian or admin users to manage physical book copies, barcode, status, location, and availability. |
 | 10 | Borrowing Management | Create Borrow Request | Allows a member to create a request to borrow available books. |
 | 11 | Borrowing Management | Borrowing History | Allows a member to view their borrowing requests, active borrowings, returns, and renewal-related information. |
@@ -334,7 +334,7 @@ This section defines which system roles can access each screen or activity.
 
 | Screen / Activity | Guest | Member | Librarian | Admin |
 | ----------------- | ----- | ------ | --------- | ----- |
-| Login | X | X | X | X |
+| Login | X |  |  |  |
 | Register | X |  |  |  |
 | Forgot Password | X | X | X | X |
 | Home | X | X | X | X |
@@ -348,7 +348,7 @@ This section defines which system roles can access each screen or activity.
 | Query book data | X | X | X | X |
 | Add book data |  |  | X | X |
 | Update book data |  |  | X | X |
-| Deactivate or reactivate book data |  |  | X | X |
+| Deactivate book data |  |  | X | X |
 | Inventory |  |  | X | X |
 | Query copy data |  |  | X | X |
 | Add copy data |  |  | X | X |
@@ -365,7 +365,7 @@ This section defines which system roles can access each screen or activity.
 | Reservation Management |  |  | X | X |
 | Process reservation queue |  |  | X | X |
 | Fine Management |  |  | X | X |
-| View own fine information |  | X |  |  |
+| View own fine information through API |  | X |  |  |
 | Calculate or update fine data |  |  | X | X |
 | Mark fine as paid or resolved |  |  | X | X |
 | Borrowing Report |  |  | X | X |
@@ -464,7 +464,7 @@ erDiagram
 | 04 | UserProfiles | Stores personal profile information for a user.<br/>- Primary keys: ProfileId<br/>- Foreign keys: UserId |
 | 05 | Members | Stores library membership status for a user.<br/>- Primary keys: MemberId<br/>- Foreign keys: UserId, ApprovedBy |
 | 06 | MembershipApplications | Stores membership application and review records.<br/>- Primary keys: ApplicationId<br/>- Foreign keys: UserId, ReviewedBy |
-| 07 | AuthTokens | Stores refresh, password reset, email verification, and account setup token hashes.<br/>- Primary keys: TokenId<br/>- Foreign keys: UserId |
+| 07 | AuthTokens | Stores refresh, password reset, email verification, account setup, and compatibility-only change-password OTP token hashes.<br/>- Primary keys: TokenId<br/>- Foreign keys: UserId |
 | 08 | Categories | Stores book category information.<br/>- Primary keys: CategoryId<br/>- Foreign keys: None |
 | 09 | Authors | Stores author information.<br/>- Primary keys: AuthorId<br/>- Foreign keys: None |
 | 10 | Publishers | Stores publisher information.<br/>- Primary keys: PublisherId<br/>- Foreign keys: None |
@@ -554,7 +554,7 @@ flowchart TB
 | 10 | `backend/src/middleware` | Contains shared Express middleware such as authentication, authorization, and error handling. |
 | 11 | `backend/src/services` | Contains business logic for authentication, profile, membership, books, inventory, borrowing, reservation, fine, notification, reporting, and user management. |
 | 12 | `backend/src/repositories` | Contains database access logic used by services. |
-| 13 | `backend/src/models` | Contains Sequelize model definitions that map application entities to database tables. |
+| 13 | `backend/src/models` | Contains lightweight table metadata and row-mapping definitions used with repository-based SQL Server access. |
 | 14 | `backend/src/policies` | Contains reusable authorization or business policy checks. |
 | 15 | `backend/src/utils` | Contains backend utility functions for tokens, password policy, avatar storage, and safe errors. |
 | 16 | `backend/src/config` | Contains backend configuration files such as database configuration. |
@@ -707,9 +707,9 @@ flowchart TB
 | Trigger | Authorized staff opens book management screen or submits catalog changes. |
 | Description | Authorized staff manages catalog records for books. |
 | Preconditions | PRE-1: Actor is authenticated.<br/>PRE-2: Actor has Librarian or Admin role.<br/>PRE-3: Required category, author, or publisher data exists when referenced. |
-| Postconditions | POST-1: Book data is created, updated, deactivated, or reactivated.<br/>POST-2: Catalog changes are available to browse and inventory features. |
+| Postconditions | POST-1: Current implementation supports book create, update, and deactivate; reactivation is an approved FE05 contract follow-up and requires the planned API/schema alignment before it is claimed as implemented.<br/>POST-2: Catalog changes are available to browse and inventory features. |
 | Normal Flow | 5.0.1 Actor opens book management screen.<br/>5.0.2 System displays book list.<br/>5.0.3 Actor creates or edits book data.<br/>5.0.4 System validates catalog fields.<br/>5.0.5 System persists the change and updates the list. |
-| Alternative Flows | 5.1 Actor searches or filters book records.<br/>5.2 Actor deactivates or reactivates a book. |
+| Alternative Flows | 5.1 Actor searches or filters book records.<br/>5.2 Actor deactivates a book.<br/>5.3 Approved contract follow-up: actor reactivates a book after the FE05 reactivation endpoint, `If-Match`, and rowversion alignment are implemented. |
 | Exceptions | 5.0.E1 Duplicate ISBN: system rejects duplicate book ISBN.<br/>5.0.E2 Invalid reference data: system rejects unknown category, author, or publisher. |
 | Priority | High, Must Have |
 | Frequency of Use | High, daily |
@@ -724,7 +724,7 @@ flowchart TB
 | BR-FE05-002 | Add Book Authorization | Only librarians and admins may add books. |
 | BR-FE05-003 | Update Book Authorization | Only librarians and admins may update books. |
 | BR-FE05-005 | Unique ISBN | ISBN must be unique across all books. |
-| BR-FE05-010 | Book Audit | Every create, update, deactivate, and reactivate action must be auditable. |
+| BR-FE05-010 | Book Audit | Current implementation must audit create, update, and deactivate actions; the approved reactivation follow-up must also be auditable before it is claimed as implemented. |
 
 ### 1.6 UC-06 Manage Book Copies
 
@@ -877,7 +877,7 @@ flowchart TB
 | Priority | High, Must Have |
 | Frequency of Use | High, multiple times per day |
 | Business Rules | BR-GEN-003, BR-GEN-010 |
-| Other Information | Verification, reset, and setup notifications must be requested internally by the owning feature boundary. |
+| Other Information | Verification, reset, and setup notifications must be requested internally by the owning feature boundary. Canonical Phase 1 type/template pairs are `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE`, and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. |
 | Assumptions | Email is the only supported delivery channel in Phase 1. |
 
 #### b. Business Rules
@@ -1226,8 +1226,8 @@ flowchart TB
 | Description | A member submits a membership application so the account can become an approved library member for borrowing and reservation eligibility. Librarian or Admin reviews the application and the system stores the final decision. |
 | Trigger | Member requests to apply for membership, or Librarian/Admin opens pending membership applications for review. |
 | Preconditions | PRE-1: Member is logged in and has an active account.<br/>PRE-2: Member does not already have `Members.Status = APPROVED`.<br/>PRE-3: Member has no existing `PENDING` membership application.<br/>PRE-4: Review actor has Librarian or Admin permission. |
-| Postconditions | POST-1: New membership application is stored with status `PENDING`.<br/>POST-2: On approval, application and canonical member status are updated to `APPROVED`.<br/>POST-3: On rejection, application and canonical member status are updated to `REJECTED` with a rejection reason.<br/>POST-4: Review result notification may be requested through EmailService after the decision commits. |
-| Normal Flow | MEM-02.0 Apply For Membership<br/>1. Member opens the Membership screen.<br/>2. System loads current canonical membership status and latest application.<br/>3. Member submits membership application.<br/>4. System verifies that the member has no approved membership and no pending application.<br/>5. System creates a new application with status `PENDING` and updates canonical member projection to `PENDING`.<br/>6. Librarian or Admin opens pending membership applications.<br/>7. Librarian or Admin reviews applicant information.<br/>8. Librarian or Admin approves the application.<br/>9. System verifies the application is still `PENDING`.<br/>10. System updates application status and canonical member status to `APPROVED` in one transaction.<br/>11. System records reviewer and approval timestamp.<br/>12. System requests membership result notification when notification requester is configured.<br/>13. Member opens Membership screen and sees approved status. |
+| Postconditions | POST-1: Target contract stores a new membership application with status `PENDING`.<br/>POST-2: Target contract updates application and canonical member status to `APPROVED` on approval.<br/>POST-3: Target contract updates application and canonical member status to `REJECTED` with a rejection reason on rejection.<br/>POST-4: Target contract requests `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` notification after the decision commits. Current implementation still has documented FE04 reconciliation gaps for atomic audit, SQL uniqueness/concurrency evidence, FE10 requester integration, and canonical response shape. |
+| Normal Flow | MEM-02.0 Apply For Membership Target Contract<br/>1. Member opens the Membership screen.<br/>2. System loads current canonical membership status and latest application.<br/>3. Member submits membership application.<br/>4. System verifies that the member has no approved membership and no pending application.<br/>5. System creates a new application with status `PENDING` and updates canonical member projection to `PENDING`.<br/>6. Librarian or Admin opens pending membership applications.<br/>7. Librarian or Admin reviews applicant information.<br/>8. Librarian or Admin approves the application.<br/>9. System verifies the application is still `PENDING`.<br/>10. System updates application status and canonical member status to `APPROVED` in one transaction.<br/>11. System records reviewer and approval timestamp.<br/>12. System requests `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` notification when the FE04 requester is configured.<br/>13. Member opens Membership screen and sees approved status. |
 | Alternative Flows | MEM-02.1 Reject Membership Application<br/>1. Steps 1-7 follow normal flow.<br/>2. Librarian or Admin enters rejection reason.<br/>3. Librarian or Admin rejects the application.<br/>4. System verifies the application is still `PENDING`.<br/>5. System updates application and canonical member status to `REJECTED` and stores rejection reason.<br/>6. System requests membership result notification when configured.<br/><br/>MEM-02.2 Reapply After Rejection<br/>1. Member with `REJECTED` status opens Membership screen.<br/>2. Member submits a new application after correcting information.<br/>3. System creates a new `PENDING` application and keeps previous application history unchanged. |
 | Exceptions | MEM-02.0.E1 Guest attempts to apply: system requires login.<br/>MEM-02.0.E2 Member already has approved membership: system rejects new application.<br/>MEM-02.0.E3 Member already has pending application: system rejects duplicate pending application.<br/>MEM-02.0.E4 Unauthorized actor attempts approval/rejection: system denies access.<br/>MEM-02.1.E1 Missing, blank, or overlength rejection reason: system rejects rejection without changing application/member state.<br/>MEM-02.0.E5 Application already reviewed by another staff user: system rejects invalid state transition.<br/>MEM-02.0.E6 Notification delivery fails after decision: system keeps committed membership decision and records safe delivery status. |
 | Priority | High |
@@ -1252,7 +1252,7 @@ flowchart TB
 | BR-FE04-011 | Own Status Visibility | Authenticated members may view only their own membership status. |
 | BR-FE04-014 | Canonical Membership Source | `Members.Status` is the canonical membership eligibility source for borrowing and reservation. |
 | BR-FE04-016 | Reapply After Rejection | A rejected user may re-apply; the new application starts `PENDING` and previous applications remain unchanged. |
-| BR-FE04-018 | Membership Result Notification | After approval/rejection commits, FE04 requests one membership result notification when configured; delivery failure is non-blocking. |
+| BR-FE04-018 | Membership Result Notification | Target contract: after approval/rejection commits, FE04 requests one `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` notification when configured; delivery failure is non-blocking. |
 
 ### 3.3 UC-MEM-03 Create Borrow Request
 
@@ -1330,8 +1330,8 @@ flowchart TB
 | Date Created | 2026-07-19 |
 | Primary Actor | Member |
 | Secondary Actors | Internal database |
-| Description | A member views borrowing history and fine information related to their account. |
-| Trigger | Member opens Borrowing History, My Reservations, or fine information view. |
+| Description | A member views borrowing history and fine information related to their account. Borrowing history has a frontend route; own fine data is currently exposed by backend API and has no dedicated member fine screen in `frontend/src/App.jsx`. |
+| Trigger | Member opens Borrowing History, My Reservations, or an API-backed fine information capability. |
 | Preconditions | PRE-1: Member is authenticated.<br/>PRE-2: Borrowing or fine records may exist for the member. |
 | Postconditions | POST-1: Member borrowing history is displayed.<br/>POST-2: Member fine information is displayed when available.<br/>POST-3: No other member's private borrowing or fine data is exposed. |
 | Normal Flow | MEM-05.0 View Borrowing And Fines<br/>1. Member opens Borrowing History or fine-related view.<br/>2. System validates member identity.<br/>3. System loads records owned by the member.<br/>4. System displays request status, loan status, due dates, return data, and fine status where available. |
@@ -1419,8 +1419,7 @@ This screen allows a user to be authenticated to system screens and functionalit
 | Login | Button | User clicks to authenticate into the system with the provided email and password. | Login Form |
 | Register | Button/Link | User clicks to redirect to the User Register page for registering a new account. | Login Links |
 | Forgot Password? | Hyperlink | User clicks to redirect to the Password Reset page. | Login Links |
-| Login with Google | Hyperlink | Allows user to login with Google account when social login is enabled. | Social Login |
-| Login with Facebook | Hyperlink | Allows user to login with Facebook account when social login is enabled. | Social Login |
+| Social login placeholder | Future/out-of-scope link area | Google/Facebook login is not part of the current Phase 1 implementation; add only after an approved FE02 spec/API update. | Future Social Login |
 
 ##### Database Access
 
@@ -1448,7 +1447,7 @@ WHERE ur.UserId = @UserId;
 
 #### b. Setting List
 
-The Setting List screen allows authorized users to view, search, filter, activate, and deactivate system master data settings.
+The Setting List screen is a proposed/future system master-data screen. The current project schema and backend do not include a `Settings` table or Settings API, so this section is design reference only until a reviewed SPEC, migration, and API contract are approved.
 
 ##### UI Design
 
@@ -1468,13 +1467,13 @@ The Setting List screen allows authorized users to view, search, filter, activat
 | Activate | Icon | Shown when status is inactive; activates the setting. | Data Actions |
 | Deactivate | Icon | Shown when status is active; deactivates the setting. | Data Actions |
 
-##### Database Access
+##### Proposed Database Access
 
 | Table | CRUD | Description |
 | ----- | ---- | ----------- |
 | Settings | R, U | Query the current setting list and update status of a specific setting. |
 
-##### SQL Commands
+##### Proposed SQL Commands
 
 ```sql
 SELECT s.SettingId, s.SettingName, s.MappedValues, s.TypeId, s.DisplayOrder, s.Status
@@ -1496,7 +1495,7 @@ WHERE SettingId = @SettingId;
 
 #### c. Setting Details
 
-The Setting Details screen allows authorized users to create or update a system master data setting.
+The Setting Details screen is a proposed/future system master-data screen. It is not implemented by the current schema/API and must not be treated as available project behavior before the required SPEC, migration, and API contract exist.
 
 ##### UI Design
 
@@ -1511,14 +1510,14 @@ The Setting Details screen allows authorized users to create or update a system 
 | Submit | Button | Stores new or updated setting details. | Actions |
 | Reset | Button | Resets field changes back to the values loaded when the screen opened. | Actions |
 
-##### Database Access
+##### Proposed Database Access
 
 | Table | CRUD | Description |
 | ----- | ---- | ----------- |
 | Settings | C, R, U | Read setting detail, create new setting, and update existing setting fields. |
 | Settings | R | Read active setting types for the Type combo box. |
 
-##### SQL Commands
+##### Proposed SQL Commands
 
 ```sql
 SELECT SettingId, SettingName, MappedValues, TypeId, DisplayOrder, Status, Description
@@ -1714,7 +1713,7 @@ Book Management maintains catalog data, while Inventory manages physical book co
 
 | Table | CRUD | Description |
 | ----- | ---- | ----------- |
-| Books | C, R, U | Create, read, update, deactivate, or reactivate catalog records. |
+| Books | C, R, U | Create, read, update, and deactivate catalog records; approved reactivation requires the FE05 follow-up endpoint and concurrency alignment. |
 | Categories | R | Read categories for book metadata. |
 | Authors | R | Read authors for book metadata. |
 | Publishers | R | Read publishers for book metadata. |
@@ -1817,7 +1816,7 @@ VALUES (@UserId, @CopyId, GETDATE(), @QueuePosition, 'ACTIVE', GETDATE());
 
 #### a. Fine Management Screen
 
-The Fine Management screen allows staff to calculate, collect, mark paid, waive, or cancel fines. Related use cases: `UC-09 Manage Fines`, `UC-MEM-05 View Borrowing And Fines`.
+The Fine Management screen allows Librarian/Admin users to calculate, collect, or mark fines as paid; only Admin users may waive or cancel fines. Related use cases: `UC-09 Manage Fines`, `UC-MEM-05 View Borrowing And Fines`.
 
 ##### UI Design
 
@@ -1866,7 +1865,7 @@ WHERE FineId = @FineId
 
 #### a. Admin User Management Screen
 
-The Admin User Management screen allows admin users to manage users, librarian accounts, roles, permissions, and audit logs. Related use case: `UC-11 Manage Users And Roles`.
+The Admin User Management screen allows admin users to manage users, librarian accounts, roles, permissions, and view redacted audit logs. Related use case: `UC-11 Manage Users And Roles`.
 
 ##### UI Design
 
@@ -1888,7 +1887,7 @@ The Admin User Management screen allows admin users to manage users, librarian a
 | UserRoles | C, R, U, D | Read and update role assignments. |
 | UserProfiles | C, R, U | Create or update related profile data. |
 | AuthTokens | C, U | Create or rotate account setup tokens. |
-| AuditLogs | C, R | Write administrative events and read redacted audit list. |
+| AuditLogs | R | Read redacted audit list; write operations are internal side effects of admin actions. |
 | Notifications | C | Create account setup notification requests. |
 
 ##### SQL Commands
@@ -1966,3 +1965,117 @@ JOIN UserRoles ur ON ur.UserId = u.UserId
 JOIN Roles r ON r.RoleId = ur.RoleId
 GROUP BY r.RoleName;
 ```
+
+# IV. Appendix
+
+## 1. Assumptions & Dependencies
+
+### 1.1 Assumptions
+
+| ID | Assumption |
+| -- | ---------- |
+| AS-1 | The system is used by four Phase 1 roles: Guest, Member, Librarian, and Admin. System/Scheduler is treated as an internal actor, not a login role. |
+| AS-2 | Users access the system through a web browser connected to the React frontend and Express REST API. |
+| AS-3 | Email address is unique per user account and is the primary credential for login, verification, password reset, and account setup. |
+| AS-4 | A registered account must complete email verification before normal login access. |
+| AS-5 | Role and permission decisions are resolved from server-side account/role data, not from client-side UI state. |
+| AS-6 | Book availability is derived from active catalog records and physical copy status. |
+| AS-7 | One physical book copy has one unique barcode. |
+| AS-8 | Staff approval is required before a borrow request becomes an active loan. |
+| AS-9 | The default loan duration is 14 calendar days from borrow approval. |
+| AS-10 | A member may have at most 5 active borrowed copies at the same time. |
+| AS-11 | Overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date. |
+| AS-12 | Fine payment is recorded offline by staff; online payment is not part of Phase 1. |
+| AS-13 | Email is the only supported notification delivery channel in Phase 1. |
+| AS-14 | Reports are generated from existing operational data; reports do not modify source transactions. |
+| AS-15 | Human review is required before AI-generated work is committed, merged, or accepted as final project output. |
+
+### 1.2 Dependencies
+
+| ID | Dependency |
+| -- | ---------- |
+| DE-1 | Frontend depends on React, Vite, Bootstrap, Material UI, lucide-react, axios, and configured `VITE_API_BASE_URL`. |
+| DE-2 | Backend depends on Node.js, Express.js, JWT, bcrypt, `mssql`, and the configured SQL Server connection. |
+| DE-3 | Database persistence depends on SQL Server locally and Azure SQL for staging where staging is used. |
+| DE-4 | Authentication, profile, membership, borrowing, reservation, fine, notification, user management, and reporting depend on the canonical schema in `database/Librarymanagement.sql`. |
+| DE-5 | Protected features depend on server-side authentication middleware and role-based authorization. |
+| DE-6 | Verification, password reset, account setup, membership result, due date, reservation, and fine notifications depend on SMTP/email provider configuration. |
+| DE-7 | Staging deployment depends on Azure Static Web Apps, Azure App Service, and Azure SQL resources. |
+| DE-8 | Quality gates depend on available automated tests, lint/build commands, security checks, and human review. |
+| DE-9 | Core feature behavior depends on approved `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.md`, and `TASKS.md` documents. |
+
+## 2. Limitations & Exclusions
+
+| ID | Limitation / Exclusion |
+| -- | ---------------------- |
+| LE-1 | Native mobile applications are not included; the Phase 1 system is a web application. |
+| LE-2 | Social login such as Google and Facebook is documented as a possible UI entry but is not included in the current Phase 1 implementation. |
+| LE-3 | Multi-factor authentication, SSO, LDAP/Active Directory, biometric login, and OAuth/OpenID Connect are out of scope for Phase 1. |
+| LE-4 | Online payment gateway integration is out of scope; staff record fine collection manually/offline. |
+| LE-5 | SMS, mobile push, marketing/newsletter notifications, and in-app notification inbox UI are out of scope for Phase 1. |
+| LE-6 | Real-time dashboards, external BI/analytics warehouse, and unapproved CSV/PDF export are out of scope. |
+| LE-7 | Study seat reservation is out of scope. |
+| LE-8 | RFID/QR hardware integration is out of scope. |
+| LE-9 | Production email delivery requires provider configuration; without SMTP, email send behavior is limited to configured test/development behavior. |
+| LE-10 | SQL integration testing is local/manual because CI does not provide a shared disposable SQL Server service. |
+| LE-11 | Frontend production build may report a non-blocking chunk-size advisory. |
+| LE-12 | FE09 legacy frontend local browser records are not production release evidence; production-aligned evidence uses the server API. |
+| LE-13 | Avatar storage on staging App Service requires durable storage before production-scale deployment. |
+| LE-14 | Setting master data screens are documented in this RDS, but the current schema does not yet include a `Settings` table/API. Implementation requires a reviewed schema/spec update. |
+
+## 3. Business Rules
+
+| ID | Category | Rule Definition |
+| -- | -------- | --------------- |
+| BR-01 | Identity | Each user account must have a unique email address. |
+| BR-02 | Identity | User passwords must be hashed with bcrypt before storage. |
+| BR-03 | Identity | A registered user account must be verified by email before activation/login. |
+| BR-04 | Security | Login and password reset responses must not reveal whether an email is registered. |
+| BR-05 | Security | A known account that reaches 5 consecutive failed password attempts within the configured window is locked for 30 minutes. |
+| BR-06 | Security | Every protected request must validate the session/token before processing. |
+| BR-07 | Authorization | Protected operations must enforce role-based authorization on the server. |
+| BR-08 | Authorization | Phase 1 login roles are Guest, Member, Librarian, and Admin. |
+| BR-09 | Authorization | Only Admin can manage user role assignments. |
+| BR-10 | Authorization | A user's roles are determined by `UserRoles` and must not be trusted from the client. |
+| BR-11 | Catalog | A book must have a unique identifier. |
+| BR-12 | Catalog | ISBN must be unique when provided. |
+| BR-13 | Catalog | Deactivated books must not appear in public search/detail results. |
+| BR-14 | Inventory | One physical copy must have one unique barcode. |
+| BR-15 | Inventory | A book cannot be borrowed when available quantity is 0. |
+| BR-16 | Membership | A member must have a unique identifier linked to account/profile data. |
+| BR-17 | Membership | A member cannot create a new membership application while another application is pending. |
+| BR-18 | Membership | An approved member cannot submit another active membership application in Phase 1. |
+| BR-19 | Membership | Only Librarian or Admin may approve or reject membership applications. |
+| BR-20 | Membership | Rejection of a membership application must include a non-empty rejection reason. |
+| BR-21 | Borrowing | A member cannot have more than 5 active borrowed copies at the same time. |
+| BR-22 | Borrowing | A member with overdue books or unpaid fines may be restricted from borrowing. |
+| BR-23 | Borrowing | Every borrow transaction must store member, book/copy, borrow date, due date, status, and creator. |
+| BR-24 | Borrowing | Every return transaction must update the related borrowing transaction. |
+| BR-25 | Borrowing | Default loan duration is 14 calendar days from borrow approval. |
+| BR-26 | Reservation | Reservation queue processing depends on physical copy availability. |
+| BR-27 | Reservation | Members may view and manage only their own reservation records unless they have staff/admin permission. |
+| BR-28 | Fine | Fine calculation must be traceable and testable. |
+| BR-29 | Fine | Overdue fine is 5,000 VND per overdue day per copy, starting the day after due date. |
+| BR-30 | Fine | Client input must not determine the calculated fine amount. |
+| BR-31 | Fine | Fine collection and paid marking may be performed by authorized Librarian/Admin users; fine waive/cancel actions may be performed only by Admin users. |
+| BR-32 | Notification | Account verification and password reset notifications must not expose OTPs or token hashes in production responses. |
+| BR-33 | Notification | Notification delivery failure must not roll back a completed source transaction. |
+| BR-34 | Reporting | Reports are read-only and must not modify borrowing, inventory, user, membership, reservation, or fine records. |
+| BR-35 | Audit | Important administrative actions affecting users, roles, books, inventory, membership, borrowing, returning, fines, or notifications must be logged where audit logging is enabled. |
+| BR-36 | Data Safety | Source code, fixtures, logs, and commits must not contain real secrets, passwords, tokens, private keys, or production credentials. |
+| BR-37 | Data Safety | Server-side validation is required for all user input at trust boundaries. |
+| BR-38 | Data Safety | Database access must use parameterized queries or ORM-controlled values to prevent SQL injection. |
+| BR-39 | Error Handling | Internal stack traces and framework error details must not be exposed to end users. |
+
+## 4. References
+
+| ID | Reference |
+| -- | --------- |
+| REF-1 | `.sdd/constitution.md` |
+| REF-2 | `.sdd/shared_context.md` |
+| REF-3 | `.sdd/constraints/global.md` |
+| REF-4 | `.sdd/constraints/business.md` |
+| REF-5 | `.sdd/constraints/safety.md` |
+| REF-6 | `.sdd/specs/feat-{name}/SPEC.md` |
+| REF-7 | `database/Librarymanagement.sql` |
+| REF-8 | `README.md` |
