@@ -10,7 +10,7 @@ Project: SWP391 Library Management System
 
 Group/project code: `6-LMS`
 
-Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery active
+Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery ready for integration
 
 ## I. Deliverable Package
 
@@ -57,6 +57,14 @@ This section lists the final source code, database scripts, documents, test evid
 | 37 | `frontend/test/` | 1.0 | Frontend automated tests for API helpers, route access, operational view models, and UI behavior utilities. |
 | 38 | `package.json`, `backend/package.json`, `frontend/package.json` | 1.0 | Root, backend, and frontend dependency and command definitions. |
 | 39 | `.github/workflows/` | 1.0 | CI and staging deployment workflow definitions. |
+| 40 | `docs/release/phase3-staging-evidence-2026-07-19.md` | 1.0 | Observed Azure staging, SQL reconciliation, smoke checks, and explicit acceptance boundaries. |
+| 41 | `docs/performance/phase3-performance-report-2026-07-19.md` | 1.0 | Reproducible bundle and local authentication timing evidence. |
+| 42 | `docs/release/phase3-user-testing-record-2026-07-19.md` | 1.0 | Synthetic browser rehearsal, visual review, staging matrix, and reset/privacy evidence. |
+| 43 | `docs/presentation/phase3-defense-deck.pptx` | 1.0 | Source-linked Phase 3 defense presentation. |
+| 44 | `docs/presentation/phase3-defense-deck-source.md` | 1.0 | Slide-by-slide claims, commands, sources, and visual provenance. |
+| 45 | `.sdd/reviews/phase3-final-validation-2026-07-19.md` | 1.0 | Four-layer final validation packet and residual risk record. |
+| 46 | `docs/release/phase3-final-report.md` | 1.0 | Scope, architecture, measured results, acceptance boundaries, and reproduction commands. |
+| 47 | `docs/release/phase3-rehearsal-record.md` | 1.0 | Normal browser rehearsal, five-minute defense path, fallback, and reset procedure. |
 
 ### Final Product Backlog Summary
 
@@ -81,11 +89,11 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Item | Link / Location | Notes |
 | --- | --- | --- |
-| Tagged source code | `<git tag link>` | Add the Git repository release tag link after the team creates the final tag. Recommended tag name: `v1.0.0-final-release`. |
-| Demonstration video | `<YouTube link>` | Add the final demo video link after upload. |
-| Staging frontend | `<Azure Static Web Apps URL>` | Add the actual Azure Static Web Apps URL after deployment. |
-| Staging backend health | `<Azure App Service URL>/health` | Add the actual backend health URL after deployment. |
-| Swagger API documentation | `http://localhost:3000/api-docs` or `<staging backend>/api-docs` | Available when the backend is running. |
+| Tagged source code | `PENDING — final release tag not created` | Create the final tag only after integration and post-merge verification. Recommended tag name: `v1.0.0-final-release`. |
+| Demonstration video | `PENDING — not published` | The tracked deck and runbook are the reproducible local demonstration evidence. |
+| Staging frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` | Observed public frontend origin in the Phase 3 staging evidence. |
+| Staging backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` | Observed `200` health endpoint in the Phase 3 staging evidence. |
+| Swagger API documentation | `http://localhost:3000/api-docs` or `https://app-library-api-staging-nhat714.azurewebsites.net/api-docs` | Available when the backend is running and the staging route is enabled. |
 
 ## II. Installation Guides
 
@@ -237,6 +245,13 @@ Azure staging uses:
 - GitHub Actions for CI/staging deployment.
 
 Follow `docs/deployment/azure-staging-guide.md` for the full deployment procedure. The workflow does not automatically mutate database schema; run and review database schema updates manually.
+
+Observed Phase 3 staging endpoints and checks are recorded in
+`docs/release/phase3-staging-evidence-2026-07-19.md`. The public frontend,
+backend health, SQL-backed catalog query, exact CORS allow/deny behavior, and
+anonymous protected-route rejection passed the independent six-check smoke.
+Authenticated Azure Member/Librarian acceptance and real SMTP inbox delivery
+remain `NOT OBSERVED`.
 
 ## III. User Manual
 
@@ -504,22 +519,24 @@ Release limitation:
 | 3 | SMTP delivery requires a configured provider; without SMTP, actual inbox delivery is not proven. |
 | 4 | SQL integration testing is local/manual because CI does not provide a shared disposable SQL Server service. |
 | 5 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
-| 6 | Frontend production build may show a non-blocking chunk-size advisory. |
+| 6 | Route-level code splitting resolves the prior entry-chunk advisory; total JavaScript remains a future optimization target if browser telemetry requires it. |
 | 7 | Staging is a student-credit environment, not a production SLA environment. |
 
 ### 14. Final Acceptance Checklist
 
 | Check | Status |
 | --- | --- |
-| Backend automated tests pass | Current reconciliation evidence: 905/905 tests across 53 suites. |
-| Frontend tests pass | Current reconciliation evidence: 149/149 tests. |
-| Frontend lint and build pass | Passed in Week 13 evidence. |
-| Browser golden path passes | Passed in Chromium for login, borrowing, return, fine API, and reporting. |
+| Backend automated tests pass | Current reconciliation evidence: 916 tests across 53 suites. |
+| Frontend tests pass | Current reconciliation evidence: 151/151 tests. |
+| Frontend lint and build pass | Passed after route-level code splitting; no entry-chunk warning. |
+| Browser golden path passes | 4/4 Playwright tests passed in 24.4 seconds for the synthetic local flow. |
 | Coverage gate | Passed with more than 80% for configured metrics. |
 | Security dependency audit | No unresolved Critical/High production dependency findings. |
 | Traceability gate | All twelve feature specs report 100% FR tag coverage. |
-| Human staging acceptance | APPROVED by the requestor on 2026-07-19. |
-| Merge and post-merge CI | PR #40 merged as `1555111`; `main` CI `29685953839` passed. |
+| Public staging acceptance | PASS: frontend, health, SQL catalog, strict CORS, and anonymous protected route. |
+| Authenticated staging acceptance | NOT OBSERVED: no safe staging Member/Librarian credentials were created or disclosed. |
+| Real SMTP inbox delivery | NOT OBSERVED: provider delivery was not executed. |
+| Merge and post-merge CI | Pending Phase 3 branch integration; do not treat historical Phase 2 CI as Phase 3 closure. |
 
 ### 15. References
 
@@ -534,3 +551,10 @@ Release limitation:
 | Master Test Policy | `.sdd/test-plan.md` |
 | Acceptance Record | `docs/release/week13-acceptance-record.md` |
 | Azure Staging Guide | `docs/deployment/azure-staging-guide.md` |
+| Phase 3 staging evidence | `docs/release/phase3-staging-evidence-2026-07-19.md` |
+| Phase 3 performance report | `docs/performance/phase3-performance-report-2026-07-19.md` |
+| Phase 3 user-testing record | `docs/release/phase3-user-testing-record-2026-07-19.md` |
+| Phase 3 defense deck/source | `docs/presentation/phase3-defense-deck.pptx`; `docs/presentation/phase3-defense-deck-source.md` |
+| Phase 3 final validation | `.sdd/reviews/phase3-final-validation-2026-07-19.md` |
+| Phase 3 final report | `docs/release/phase3-final-report.md` |
+| Phase 3 rehearsal record | `docs/release/phase3-rehearsal-record.md` |

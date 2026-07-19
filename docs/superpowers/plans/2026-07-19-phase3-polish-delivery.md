@@ -32,27 +32,27 @@
 - Consumes: `origin/main` at `64831fe`, the Hybrid roadmap, the deployment workflow, and the approved feature evidence.
 - Produces: a traceable Phase 3 design/plan and an operational guide that documents `TRUST_PROXY=true` for proxied production App Service traffic.
 
-- [ ] **Step 1: Record the observed proxy failure and correction**
+- [x] **Step 1: Record the observed proxy failure and correction**
 
   Update the Azure runtime settings table/commands to include the non-secret
   `TRUST_PROXY=true` setting. Explain that it is required because the existing
   HTTPS enforcement middleware reads `x-forwarded-proto` only when this flag is
   enabled. Do not include any secret value.
 
-- [ ] **Step 2: Refresh the release checklist from evidence**
+- [x] **Step 2: Refresh the release checklist from evidence**
 
   Replace stale Week 13 shared-quality counts with the current `origin/main`
   evidence (916 backend tests, 149 frontend tests, 100% traceability) and add
   a dated Phase 3 staging evidence section. Keep authenticated staging user
   acceptance unchecked until a human observes it with synthetic accounts.
 
-- [ ] **Step 3: Mark the Phase 3 plan active**
+- [x] **Step 3: Mark the Phase 3 plan active**
 
   Update `plan.md` so its active checkpoints link to the Phase 3 design,
   performance report, acceptance record, and presentation artifacts created by
   later tasks. Keep the deferred operational boundaries intact.
 
-- [ ] **Step 4: Run a placeholder and secret scan**
+- [x] **Step 4: Run a placeholder and secret scan**
 
   Run:
 
@@ -63,7 +63,7 @@
   Expected: only intentionally documented unavailable external artifacts may
   remain, and no secret-like values are present.
 
-- [ ] **Step 5: Commit the evidence contract**
+- [x] **Step 5: Commit the evidence contract**
 
   ```powershell
   git add docs/superpowers/specs/2026-07-19-phase3-polish-delivery-design.md docs/superpowers/plans/2026-07-19-phase3-polish-delivery.md docs/deployment/azure-staging-guide.md docs/release/week13-acceptance-record.md plan.md
@@ -84,14 +84,14 @@
 - Produces: a reproducible report with bundle sizes and p95 timings; route
   loading remains compatible with the current React Router setup.
 
-- [ ] **Step 1: Add failing contract tests for route-level lazy loading**
+- [x] **Step 1: Add failing contract tests for route-level lazy loading**
 
   Add tests that import the app source as text and assert that the largest
   role-specific pages are loaded through `lazy(() => import(...))` and that a
   `Suspense` fallback exists. Keep the test focused on the performance boundary;
   it must not assert business behavior or change API calls.
 
-- [ ] **Step 2: Run the focused test and verify the RED state**
+- [x] **Step 2: Run the focused test and verify the RED state**
 
   ```powershell
   npm.cmd --prefix frontend test -- --test-name-pattern "Phase 3 performance"
@@ -100,14 +100,14 @@
   Expected: the new lazy-loading assertion fails against the current eager
   import graph.
 
-- [ ] **Step 3: Implement safe route-level code splitting**
+- [x] **Step 3: Implement safe route-level code splitting**
 
   Convert the large page imports in `frontend/src/App.jsx` to named
   `lazy(() => import(...))` declarations, wrap the route tree in `Suspense` with
   the existing neutral loading presentation, and leave route paths, guards,
   props, API clients, and role checks unchanged.
 
-- [ ] **Step 4: Run focused and full frontend checks**
+- [x] **Step 4: Run focused and full frontend checks**
 
   ```powershell
   npm.cmd --prefix frontend test
@@ -118,7 +118,7 @@
   Expected: all frontend tests pass, lint is clean, and the build emits
   multiple route chunks with no primary JavaScript chunk above 500 kB.
 
-- [ ] **Step 5: Add the reproducible timing harness**
+- [x] **Step 5: Add the reproducible timing harness**
 
   `scripts/phase3-performance.js` shall:
 
@@ -132,7 +132,7 @@
 
   The script must exit non-zero if setup, login, or the measured request fails.
 
-- [ ] **Step 6: Run the harness and publish the report**
+- [x] **Step 6: Run the harness and publish the report**
 
   ```powershell
   npm.cmd run phase3:performance
@@ -143,7 +143,7 @@
   environment cannot prove a target, record it as unverified rather than
   changing the target.
 
-- [ ] **Step 7: Commit the performance slice**
+- [x] **Step 7: Commit the performance slice**
 
   ```powershell
   git add scripts/phase3-performance.js frontend/src/App.jsx frontend/test/phase3Performance.test.js frontend/package.json docs/release/phase3-performance-report.md
@@ -163,7 +163,7 @@
 - Produces: an evidence matrix that separates automated observations from
   human-only authenticated staging acceptance.
 
-- [ ] **Step 1: Run local browser golden path**
+- [x] **Step 1: Run local browser golden path**
 
   ```powershell
   npm.cmd run test:e2e
@@ -173,7 +173,7 @@
   desktop/mobile overflow assertion, and screenshot output. Do not copy
   credentials or bearer tokens into the record.
 
-- [ ] **Step 2: Run independent current-staging smoke**
+- [x] **Step 2: Run independent current-staging smoke**
 
   ```powershell
   $env:STAGING_FRONTEND_URL='https://lemon-wave-04db51100.7.azurestaticapps.net'
@@ -184,7 +184,7 @@
   Record only the endpoint origins and the five named checks from the command
   output. Add the workflow run URL and exact SHA.
 
-- [ ] **Step 3: Record the user-testing matrix**
+- [x] **Step 3: Record the user-testing matrix**
 
   Include scenarios for public browse, authentication boundary, member borrow,
   staff approval/return, reservation queue, fine calculation/payment, safe
@@ -193,12 +193,12 @@
   authenticated staging rows `OPEN - HUMAN OBSERVATION REQUIRED` unless they
   have been directly observed.
 
-- [ ] **Step 4: Record rehearsal and fallback behavior**
+- [x] **Step 4: Record rehearsal and fallback behavior**
 
   Update the runbook with a five-minute path, a screenshot/API fallback, and a
   reset procedure. Ensure no raw OTP, token, SMTP body, or credential appears.
 
-- [ ] **Step 5: Commit the acceptance slice**
+- [x] **Step 5: Commit the acceptance slice**
 
   ```powershell
   git add docs/release/phase3-user-testing-record.md docs/release/week13-acceptance-record.md docs/testing/system-integration-demo-runbook.md
@@ -220,35 +220,35 @@
 - Produces: a source-linked final report and a rendered presentation deck with
   no fabricated links or claims.
 
-- [ ] **Step 1: Write the final report**
+- [x] **Step 1: Write the final report**
 
   Cover scope, architecture, feature traceability, test totals, staging
   deployment, performance result, user-testing result, known limitations,
   ethical/security safeguards, and exact reproducibility commands. Separate
   observed outcomes from open human/provider checks.
 
-- [ ] **Step 2: Replace release placeholders with honest status**
+- [x] **Step 2: Replace release placeholders with honest status**
 
   In `document/FinalRelease.md`, add the observed staging frontend/backend
   origins and workflow evidence. Replace unavailable video/tag links with an
   explicit `Not published in this repository` status and link to the local
   rehearsal record instead of inventing a URL.
 
-- [ ] **Step 3: Create and render the presentation**
+- [x] **Step 3: Create and render the presentation**
 
   Use the `presentations:Presentations` skill. The deck must contain: problem
   and users, architecture, feature map, core golden path, quality gates,
   staging topology, performance result, limitations, and a five-minute demo
   sequence. Use only synthetic/example data.
 
-- [ ] **Step 4: Run a timed rehearsal**
+- [x] **Step 4: Run a timed rehearsal**
 
   Follow the runbook once at normal pace and once at five-minute pace. Record
   elapsed time, checkpoint results, fallback used, and any follow-up. Render
   the deck to images/PDF and inspect the output before marking the artifact
   verified.
 
-- [ ] **Step 5: Commit delivery artifacts**
+- [x] **Step 5: Commit delivery artifacts**
 
   ```powershell
   git add docs/release/phase3-final-report.md docs/release/phase3-rehearsal-record.md presentation/phase3-final-defense.pptx document/FinalRelease.md README.md
@@ -267,7 +267,7 @@
 - Produces: a review record that proves or explicitly identifies each required
   Phase 3 item before integration.
 
-- [ ] **Step 1: Run the complete local validation set**
+- [x] **Step 1: Run the complete local validation set**
 
   ```powershell
   npm.cmd ci
@@ -294,7 +294,7 @@
   Replace `<observed-run-id>` in the executed command with the actual ID and
   record the resulting URL; no placeholder may remain in the evidence file.
 
-- [ ] **Step 3: Audit all four validation layers**
+- [x] **Step 3: Audit all four validation layers**
 
   Write `.sdd/reviews/phase3-final-validation-2026-07-19.md` with approach,
   exact files, commands/results, traceability mapping, safety review,

@@ -36,7 +36,7 @@ integration. It is not substituted for an unperformed live-user observation.
 | FE12 report | Borrowing activity appears and the report remains read-only. | One integrated record appeared in the report. | PASS |
 | Responsive report | 390x844 viewport has no blocking horizontal overflow. | Browser assertion returned no document overflow. | PASS |
 
-Aggregate browser result: **4/4 Playwright tests passed in 33.1 seconds**.
+Aggregate browser result: **4/4 Playwright tests passed in 24.4 seconds**.
 
 ## Visual review
 
@@ -73,7 +73,7 @@ Full operational evidence: [`phase3-staging-evidence-2026-07-19.md`](phase3-stag
 
 | Rehearsal | Result | Duration/evidence |
 | --- | --- | --- |
-| Normal browser flow | PASS | Four synthetic browser scenarios completed in 33.1 seconds with screenshots and state assertions. |
+| Normal browser flow | PASS | Four synthetic browser scenarios completed in 24.4 seconds with screenshots and state assertions. |
 | Five-minute fallback | PASS | `npm.cmd run test:system` remains the deterministic API fallback; the current focused suite runs well below five minutes. |
 | Deployment preflight | PASS | Staging smoke verifies frontend, health, SQL catalog, CORS, and anonymous auth before the presentation. |
 | Performance preflight | PASS | `npm.cmd run phase3:performance` records bcrypt-cost-10 auth timing and production bundle size. |

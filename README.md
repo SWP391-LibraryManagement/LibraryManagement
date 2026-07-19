@@ -10,7 +10,7 @@ documentation, and review.
 ## Project Status
 
 - Phase 2 Core Development: complete for the approved FE01-FE12 scope.
-- Current phase: Phase 3 - Polish and Delivery.
+- Current phase: Phase 3 - Polish and Delivery ready for integration.
 - Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
 - Deferred operational items remain explicit and do not become implied product claims during Phase 3.
 
@@ -145,6 +145,7 @@ npm.cmd run test:e2e                   # browser golden path
 npm.cmd run test:deployment            # deployment utility tests
 npm.cmd run schema:azure:prepare       # derive Azure SQL schema under tmp/
 npm.cmd run smoke:staging              # read-only checks against staging URLs
+npm.cmd run phase3:performance          # bundle and deterministic auth timing evidence
 npm.cmd run docs:screenshots           # regenerate synthetic user-manual images
 npm.cmd run trace:enforce              # FR @spec traceability gate
 ```
@@ -156,8 +157,8 @@ the [system integration runbook](docs/testing/system-integration-demo-runbook.md
 
 The current observed baseline is:
 
-- backend: 905 tests across 53 suites;
-- frontend: 149 tests;
+- backend: 916 tests across 53 suites;
+- frontend: 151 tests;
 - coverage: see the dated reconciliation validation record for the latest measured thresholds;
 - Playwright system golden path: passing;
 - traceability: all twelve feature specs currently report 100% FR tag coverage; implementation completion remains a separate gate;
@@ -170,6 +171,8 @@ Evidence:
 - [Week 11 coverage evidence](.sdd/reviews/week11-coverage-evidence-2026-07-14.md)
 - [Week 11 E2E evidence](.sdd/reviews/week11-e2e-evidence-2026-07-14.md)
 - [Week 12 security audit](.sdd/reviews/week12-security-audit-2026-07-14.md)
+- [Phase 3 final report](docs/release/phase3-final-report.md)
+- [Phase 3 final validation](.sdd/reviews/phase3-final-validation-2026-07-19.md)
 
 ## API Documentation
 
@@ -191,6 +194,15 @@ Week 13 uses separate staging services:
 Deployment is staging-only and manually dispatched after quality gates pass. Database schema changes
 are never executed automatically by CI.
 
+Observed Phase 3 staging origins:
+
+- frontend: `https://lemon-wave-04db51100.7.azurestaticapps.net`;
+- backend health: `https://app-library-api-staging-nhat714.azurewebsites.net/health`.
+
+The independent six-check smoke passed frontend HTML, health, SQL-backed catalog,
+strict CORS allow/deny, and anonymous protected-route rejection. Authenticated
+Azure acceptance remains `NOT OBSERVED`.
+
 - [Azure staging guide](docs/deployment/azure-staging-guide.md)
 - [Week 13 design](docs/superpowers/specs/2026-07-14-week13-documentation-deployment-design.md)
 - [Week 13 implementation plan](docs/superpowers/plans/2026-07-14-week13-documentation-deployment.md)
@@ -208,7 +220,7 @@ are never executed automatically by CI.
 - FE10 notification inbox UI is not part of the completed acceptance scope.
 - SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
 - Deployed authentication transport must set `NODE_ENV=production`; set `TRUST_PROXY=true` only behind a trusted TLS-terminating proxy, and optionally set `HTTPS_REDIRECT=true` with a validated `HTTPS_CANONICAL_HOST` to redirect plain HTTP auth requests.
-- The frontend production bundle has a non-blocking chunk-size advisory.
+- Route-level code splitting reduced the initial JavaScript entry from 999,203 to 320,688 bytes; further total-byte optimization is optional.
 - SMTP delivery is unavailable unless a staging mail provider is configured.
 
 ## Security Notes
