@@ -11,6 +11,7 @@ documentation, and review.
 
 - Phase 2 Core Development: complete for the approved FE01-FE12 scope.
 - Current phase: Phase 3 - Polish and Delivery integrated on `main`; external/provider boundaries remain explicit.
+- Canonical source release: `v1.0.0-final-release`.
 - Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
 - Deferred operational items remain explicit and do not become implied product claims during Phase 3.
 
@@ -173,6 +174,7 @@ Evidence:
 - [Week 12 security audit](.sdd/reviews/week12-security-audit-2026-07-14.md)
 - [Phase 3 final report](docs/release/phase3-final-report.md)
 - [Phase 3 final validation](.sdd/reviews/phase3-final-validation-2026-07-19.md)
+- [Final submission checklist](docs/release/final-submission-checklist-2026-07-20.md)
 
 ## API Documentation
 

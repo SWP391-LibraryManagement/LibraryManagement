@@ -89,7 +89,7 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Item | Link / Location | Notes |
 | --- | --- | --- |
-| Tagged source code | `PENDING — final release tag not created` | Create the final tag only after integration and post-merge verification. Recommended tag name: `v1.0.0-final-release`. |
+| Tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.0-final-release` | Canonical final source release created from the verified closeout commit on `main`. |
 | Demonstration video | `PENDING — not published` | The tracked deck and runbook are the reproducible local demonstration evidence. |
 | Staging frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` | Observed public frontend origin in the Phase 3 staging evidence. |
 | Staging backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` | Observed `200` health endpoint in the Phase 3 staging evidence. |
@@ -565,3 +565,4 @@ Release limitation:
 | Phase 3 final validation | `.sdd/reviews/phase3-final-validation-2026-07-19.md` |
 | Phase 3 final report | `docs/release/phase3-final-report.md` |
 | Phase 3 rehearsal record | `docs/release/phase3-rehearsal-record.md` |
+| Final submission checklist | `docs/release/final-submission-checklist-2026-07-20.md` |

@@ -1,0 +1,43 @@
+# Final Submission Checklist - 2026-07-20
+
+## Release decision
+
+The approved FE01-FE12 scope and Phase 3 delivery package are complete. The
+canonical source release is `v1.0.0-final-release` on `main`.
+
+## Submission package
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Source code | PASS | GitHub release/tag `v1.0.0-final-release`. |
+| Requirements and design | PASS | `document/RDS.md` and `document/SDS.md`. |
+| Final release document | PASS | `document/FinalRelease.md`. |
+| User documentation | PASS | `docs/user-manual.md` and system overview. |
+| Phase 3 final report | PASS | `docs/release/phase3-final-report.md`. |
+| Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA. |
+| Rehearsal | PASS | `docs/release/phase3-rehearsal-record.md` and demo runbook. |
+| Automated quality | PASS | 916 backend tests, 151 frontend tests, coverage gate, lint, build, and 4/4 browser E2E. |
+| Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
+| Demonstration video/link | NOT PUBLISHED | No external video URL was provided or fabricated. |
+| Authenticated Azure user observation | NOT OBSERVED | No safe Member/Librarian staging credential was created or disclosed. |
+| Real SMTP inbox delivery | NOT OBSERVED | Provider delivery was not executed. |
+
+## Final operator checks
+
+```powershell
+git fetch origin --tags
+git rev-list -n 1 v1.0.0-final-release
+gh release view v1.0.0-final-release --repo SWP391-LibraryManagement/LibraryManagement
+gh run list --repo SWP391-LibraryManagement/LibraryManagement --branch main --limit 5
+```
+
+## Residual limitations
+
+- Notification inbox UI remains outside the approved Phase 1 scope.
+- Avatar storage on App Service is not production-durable.
+- CI has no shared disposable SQL Server service.
+- Student-credit staging has no production SLA.
+
+These limitations are documented release boundaries, not unverified PASS
+claims. Any new feature or production-hardening program requires a separately
+approved Phase 4 specification package.

@@ -15,6 +15,8 @@ Integration evidence: PR #48 merged as `4d02fc4`; post-merge `main` CI
 `29696519912` passed; staging workflow `29696612260` passed its quality gate,
 both deployments, and the SQL-aware six-check smoke.
 
+Canonical source release: `v1.0.0-final-release`.
+
 ## Architecture and traceability
 
 The approved Node.js/Express, React/Bootstrap, SQL Server, and REST stack is
