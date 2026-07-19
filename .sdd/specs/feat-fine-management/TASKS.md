@@ -99,7 +99,7 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Files: `frontend/src/page/FineManagement.jsx`, `frontend/src/utils/fineListQuery.js`, `frontend/test/fineManagementFrontend.test.js`, `frontend/test/fineOperationalFrontend.test.js`, `tests/e2e/fe09-fine-management.spec.js`.
   - RED: source tests fail because the query builder is absent; browser acceptance times out because `/api/fines` omits canonical `page`/`limit` parameters.
   - GREEN: the UI sends trimmed `q`, optional non-`ALL` status, page, and limit; renders only server-returned rows; consumes `total`/`totalPages`; and labels page-scoped KPIs truthfully.
-  - Verify: focused frontend 6/6, FE09 Playwright 1/1, full frontend 146/146, lint/build, and the complete isolated browser suite 3/3 pass.
+  - Verify: focused frontend 6/6, FE09 Playwright 1/1, full frontend 146/146, lint/build, complete isolated browser suite 3/3, and PR CI run `29680600893` pass on `dfe45ae`.
   - DoD: `TD-004` is resolved without changing fine mutations, backend contracts, schema, or Phase 1 policy.
 
 ## Validation Status

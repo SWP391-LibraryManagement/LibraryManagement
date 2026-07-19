@@ -4,7 +4,7 @@
 
 - Method: Hybrid SDD+ADD. SDD/Full depth covers fine calculation, state transitions, schema/API contracts, transaction boundaries, audit, and concurrency Core; ADD is limited to the reversible frontend boundary.
 - Scope: FE09-T013 through FE09-T021, including the formerly deferred frontend/L4 closeout, integrated into draft PR #40.
-- Integration state: agent-side implementation, live SQL, and browser/L4 pass; final human acceptance remains open.
+- Integration state: agent-side implementation, live SQL, browser/L4, and PR CI pass; final human acceptance remains open.
 
 ## Fresh Evidence
 
@@ -45,6 +45,13 @@
 | Full browser suite on `4185/3101` | PASS - 3/3 |
 
 Browser evidence proves initial and second-page requests, status filtering, combined search/status filtering, canonical server totals, returned-row counts, and no horizontal overflow at 390px width.
+
+## Pull Request CI Evidence
+
+- Implementation commit: `dfe45ae75da61f1ff66ac544625f8559c1a821d3`.
+- Draft PR: #40.
+- GitHub Actions run: `29680600893`.
+- Result: PASS. Backend regression, system integration, coverage, frontend lint/tests/build, Playwright 3/3, traceability, and health import completed successfully.
 
 ## Open Gates
 
