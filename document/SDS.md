@@ -116,7 +116,7 @@
 
 ## 1. Code Packages
 
-This section describes the main source-code packages used by the Library Management System. The backend is organized by Express API responsibilities, while the frontend is organized by React application layers.
+This section describes the main source-code packages used by the Library Management System. The backend is organized by Express API responsibilities, while the frontend is organized by React/Vite application layers using Bootstrap, Material UI, and lucide-react UI dependencies.
 
 ### Overall Package Diagram
 
@@ -141,6 +141,8 @@ flowchart LR
     Repositories["repositories"]
     Models["models"]
     Config["config"]
+    Constants["constrants"]
+    BEDocs["docs"]
     BEUtils["utils"]
     Exceptions["CustomException"]
   end
@@ -164,9 +166,11 @@ flowchart LR
   Services --> Repositories
   Services --> Models
   Services --> BEUtils
+  Services --> Constants
   Repositories --> Config
   Repositories --> Models
   Repositories --> Database
+  BEDocs --> Routes
   Controllers --> Exceptions
   Services --> Exceptions
 ```
@@ -185,11 +189,14 @@ flowchart LR
 | 08 | backend/src/validators | Contains input validation rules for API request payloads and parameters. |
 | 09 | backend/src/policies | Defines permission and access-control policy logic used by protected backend operations. |
 | 10 | backend/src/utils | Provides shared backend helper functions used across multiple modules. |
-| 11 | frontend/src/api | Contains frontend API client functions for calling backend REST endpoints. |
-| 12 | frontend/src/component | Contains reusable React UI components shared across pages. |
-| 13 | frontend/src/page | Contains React page-level screens for member, librarian, and admin workflows. |
-| 14 | frontend/src/styles | Stores shared frontend styling assets and CSS. |
-| 15 | frontend/src/utils | Provides shared frontend helper functions used by UI and API layers. |
+| 11 | backend/src/constrants | Stores shared backend constants; the current repository directory name is `constrants`. |
+| 12 | backend/src/docs | Stores machine-readable API documentation, including `openapi.yaml`. |
+| 13 | frontend/src/api | Contains frontend API client functions for calling backend REST endpoints. |
+| 14 | frontend/src/component | Contains reusable React UI components shared across pages. |
+| 15 | frontend/src/page | Contains React page-level screens for member, librarian, and admin workflows. |
+| 16 | frontend/src/styles | Stores shared frontend styling assets and CSS. |
+| 17 | frontend/src/utils | Provides shared frontend helper functions used by UI and API layers. |
+| 18 | frontend/src/assets | Stores frontend static assets used by the React application. |
 
 ## 2. Database Design
 
@@ -226,18 +233,18 @@ erDiagram
 
 | No | Table | Description |
 | --- | --- | --- |
-| 01 | Roles | Stores system roles such as ADMIN, LIBRARIAN, MEMBER, and GUEST. |
-| 02 | Users | Stores login accounts, email, password hash, account status, and security timestamps. |
+| 01 | Roles | Stores role names used by authorization (`ADMIN`, `LIBRARIAN`, `MEMBER`, and compatibility `GUEST`). Guest remains an unauthenticated actor for public flows, not a normal login workspace. |
+| 02 | Users | Stores login accounts, email, password hash, account status, security timestamps, and deactivation timestamp. |
 | 03 | UserRoles | Maps users to one or more roles. |
-| 04 | UserProfiles | Stores profile details for a user, including full name, address, date of birth, and avatar URL. |
+| 04 | UserProfiles | Stores profile details for a user, including full name, address, date of birth, avatar URL, and FE11 librarian-only department/specialization fields. |
 | 05 | Members | Stores the approved member projection used for borrowing and reservation eligibility. |
 | 06 | MembershipApplications | Stores membership application history, review status, reviewer, and review note. |
 | 07 | AuthTokens | Stores hashed authentication tokens for refresh, email verification, password reset, account setup, and OTP flows. |
 | 08 | Categories | Stores book categories used by catalog and inventory features. |
 | 09 | Authors | Stores book author records. |
 | 10 | Publishers | Stores book publisher records. |
-| 11 | Books | Stores catalog metadata including title, ISBN, category, author, publisher, status, and audit ownership. |
-| 12 | BookCopies | Stores physical copy records, barcode, location, and availability status. |
+| 11 | Books | Stores catalog metadata including title, ISBN, category, author, publisher, status, audit ownership, and `RowVersion` for `If-Match` concurrency. |
+| 12 | BookCopies | Stores physical copy records, barcode, location, availability status, and `Version` rowversion for copy mutation concurrency. |
 | 13 | BorrowRequests | Stores borrowing request headers, requester, processing status, and approval metadata. |
 | 14 | BorrowDetails | Stores individual borrowed copy lines, due dates, return dates, renewal count, and item status. |
 | 15 | Reservations | Stores reservation queue records for users and book copies. |
@@ -284,28 +291,32 @@ classDiagram
 | --- | --- | --- |
 | 01 | register(req, res, next) | Accepts registration input, passes request context to `AuthService.register`, returns created account response. |
 | 02 | verifyEmail(req, res, next) | Accepts verification token or OTP, delegates validation and account activation to the service. |
-| 03 | resendVerification(req, res, next) | Requests a new email verification token for an unverified account. |
+| 03 | resendVerification(req, res, next) | Requests a new email verification OTP for an unverified account. |
 | 04 | login(req, res, next) | Validates credentials through the service and returns access/refresh tokens. |
 | 05 | refreshToken(req, res, next) | Exchanges a valid refresh token for a new access token. |
 | 06 | logout(req, res, next) | Revokes the submitted refresh/session token. |
 | 07 | changePassword(req, res, next) | Changes password for the authenticated user after current-password validation. |
-| 08 | forgotPassword(req, res, next) | Creates a password reset token and sends reset instructions. |
-| 09 | resetPassword(req, res, next) | Validates reset token and persists the new password hash. |
-| 10 | me(req, res, next) | Returns the authenticated user's safe profile and roles. |
+| 08 | requestChangePasswordOtp(req, res, next) | Sends a change-password OTP for the authenticated user. |
+| 09 | confirmChangePassword(req, res, next) | Confirms the change-password OTP and persists the new password hash. |
+| 10 | forgotPassword(req, res, next) | Creates a password reset token or OTP and sends reset instructions. |
+| 11 | resetPassword(req, res, next) | Validates reset token/OTP or account-setup token and persists the new password hash. |
+| 12 | me(req, res, next) | Returns the authenticated user's safe profile and roles. |
 
 **AuthService Class**
 
 | No | Method | Description |
 | --- | --- | --- |
-| 01 | register(input, context) | Normalizes email/username, validates password, checks duplicates, creates user/profile/member-related defaults, stores verification token, sends notification/email. |
+| 01 | register(input, context) | Normalizes email/username, validates password, checks duplicates, creates user/profile/member-related defaults, stores a verification OTP hash, and requests FE10 delivery through the FE02-bound notification requester. |
 | 02 | verifyEmail(input, context) | Finds active token, checks expiry, marks token used, marks user email verified, writes audit log. |
 | 03 | login(input, context) | Finds account by email/username, checks status/lock, verifies password, resets failed-login count, creates refresh token, signs JWT access token. |
 | 04 | refreshToken(input, context) | Hashes refresh token, loads active session token, validates expiry and user status, returns a new access token. |
 | 05 | logout(input, context) | Revokes one refresh token or active user tokens and records audit data. |
 | 06 | changePassword(input, context) | Validates current and new password, updates password hash, revokes active tokens. |
-| 07 | forgotPassword(input, context) | Creates reset token for an existing email and sends reset notification without exposing account existence. |
-| 08 | resetPassword(input, context) | Validates reset token, applies password policy, updates password, marks token used, revokes active sessions. |
-| 09 | authenticateToken(token) | Verifies JWT, validates active session token, loads safe user and roles. |
+| 07 | requestChangePasswordOtp(input, context) | Validates the authenticated user and sends a one-time OTP for password change confirmation. |
+| 08 | confirmChangePassword(input, context) | Validates the OTP, applies password policy, updates password, marks token used, and revokes active sessions. |
+| 09 | forgotPassword(input, context) | Creates a reset OTP for an eligible active account and requests FE10 delivery without exposing account existence. |
+| 10 | resetPassword(input, context) | Validates reset token/OTP or account-setup token, applies password policy, updates password, marks token used, revokes active sessions. |
+| 11 | authenticateToken(token) | Verifies JWT, validates active session token, loads safe user and roles. |
 
 **UserRepository Class**
 
@@ -391,8 +402,8 @@ classDiagram
 
 | No | Method | Description |
 | --- | --- | --- |
-| 01 | listBooks(req, res, next) | Reads filters and returns public catalog books. |
-| 02 | getBook(req, res, next) | Loads one active book by id with copy availability. |
+| 01 | getHomeBooks(req, res, next) | Reads public filters and returns active public catalog books. |
+| 02 | getBookById(req, res, next) | Loads one book by id; public callers see only active public-safe fields, while staff can view management fields. |
 | 03 | getMetadata(req, res, next) | Returns category, author, and publisher metadata. |
 
 **BookService Class**
@@ -408,9 +419,9 @@ classDiagram
 
 | No | Method | Description |
 | --- | --- | --- |
-| 01 | listPublicBooks(filters) | Selects active books with category, author, publisher, and copy counts. |
-| 02 | findBookById(bookId) | Selects one book detail. |
-| 03 | listMetadata() | Selects categories, authors, and publishers. |
+| 01 | getHomeBooks(filters) | Selects active books with category, author, publisher, copy counts, and `RowVersion`. |
+| 02 | getBookById(bookId) | Selects one book detail with metadata, copy counts, and `RowVersion`. |
+| 03 | getMetadata() | Selects active categories, authors, and publishers. |
 
 ### c. Sequence Diagram(s)
 
@@ -435,13 +446,16 @@ sequenceDiagram
 ### d. Database Queries
 
 ```sql
-SELECT b.*, c.CategoryName, a.AuthorName, p.PublisherName
+SELECT b.BookId, b.Title, b.ISBN, c.CategoryName, a.AuthorName, p.PublisherName,
+       b.RowVersion, COUNT(bc.CopyId) AS totalCopies,
+       SUM(CASE WHEN bc.Status = 'AVAILABLE' THEN 1 ELSE 0 END) AS availableCopies
 FROM Books b
 LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
 LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
 LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
-WHERE b.Status = 'ACTIVE';
-SELECT COUNT(*) FROM BookCopies WHERE BookId = @BookId AND Status = 'AVAILABLE';
+LEFT JOIN BookCopies bc ON b.BookId = bc.BookId
+WHERE b.Status = 'ACTIVE'
+GROUP BY b.BookId, b.Title, b.ISBN, c.CategoryName, a.AuthorName, p.PublisherName, b.RowVersion;
 SELECT * FROM Categories WHERE Status = 'ACTIVE' ORDER BY CategoryName;
 SELECT * FROM Authors WHERE Status = 'ACTIVE' ORDER BY AuthorName;
 SELECT * FROM Publishers WHERE Status = 'ACTIVE' ORDER BY PublisherName;
@@ -633,9 +647,9 @@ classDiagram
 | --- | --- | --- |
 | 01 | getManagementBooks(filters) | Loads books for librarian/admin management with filters. |
 | 02 | createBook(body, actorUserId) | Validates references and ISBN uniqueness, inserts a book. |
-| 03 | updateBook(bookId, body, actorUserId) | Validates editable fields and updates catalog metadata. |
-| 04 | deactivateBook(bookId, body, actorUserId) | Marks a book inactive. |
-| 05 | reactivateBook(bookId, body, actorUserId) | Restores inactive book to active. |
+| 03 | updateBook(bookId, body, actorUserId, ifMatch) | Validates editable fields and updates catalog metadata when `If-Match` matches `Books.RowVersion`. |
+| 04 | deactivateBook(bookId, body, actorUserId, ifMatch) | Marks a book inactive with a required reason and matching `If-Match`. |
+| 05 | reactivateBook(bookId, body, actorUserId, ifMatch) | Restores inactive book to active with a required reason and matching `If-Match`. |
 
 **InventoryService Class**
 
@@ -644,9 +658,9 @@ classDiagram
 | 01 | listInventory(filters, actor) | Lists physical copies with book metadata. |
 | 02 | getCopy(copyId, actor) | Loads one copy by id. |
 | 03 | createCopy(bookId, input, actor, context) | Validates book/barcode and inserts a copy. |
-| 04 | updateCopy(copyId, input, actor, context) | Updates barcode/location for a copy. |
-| 05 | updateCopyStatus(copyId, input, actor, context) | Updates copy status after checking active borrowing/reservation conflicts. |
-| 06 | deactivateCopy(copyId, actor, context) | Marks an unused copy inactive. |
+| 04 | updateCopy(copyId, input, actor, context, ifMatch) | Updates barcode/location for a copy when `If-Match` matches `BookCopies.Version`. |
+| 05 | updateCopyStatus(copyId, input, actor, context, ifMatch) | Updates copy status after `If-Match`, active borrowing/reservation, and parent-book checks pass. |
+| 06 | deactivateCopy(copyId, actor, context, ifMatch) | Soft-deactivates an unused copy with a matching `If-Match`. |
 
 **BookRepository / InventoryRepository Classes**
 
@@ -666,7 +680,7 @@ sequenceDiagram
   participant R as Repository
   participant DB as SQL Server
   Librarian->>UI: Save book or copy
-  UI->>API: POST/PUT /api/admin/books or /api/book-copies
+  UI->>API: POST/PUT/PATCH /api/books, /api/books/{bookId}/copies, or /api/book-copies/{copyId}
   API->>S: Validate and process
   S->>R: Insert or update record
   R->>DB: SQL write
@@ -677,12 +691,13 @@ sequenceDiagram
 
 ```sql
 INSERT INTO Books (Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Rating, Pages, CreatedBy) VALUES (@Title, @ISBN, @CategoryId, @AuthorId, @PublisherId, @PublishYear, @Description, @CoverUrl, @Rating, @Pages, @CreatedBy);
-UPDATE Books SET Title = @Title, ISBN = @ISBN, CategoryId = @CategoryId, AuthorId = @AuthorId, PublisherId = @PublisherId, PublishYear = @PublishYear, Description = @Description, CoverUrl = @CoverUrl, Rating = @Rating, Pages = @Pages, UpdatedBy = @UpdatedBy, UpdatedAt = GETDATE() WHERE BookId = @BookId;
-UPDATE Books SET Status = 'INACTIVE', UpdatedBy = @UpdatedBy, UpdatedAt = GETDATE() WHERE BookId = @BookId;
+UPDATE Books SET Title = @Title, ISBN = @ISBN, CategoryId = @CategoryId, AuthorId = @AuthorId, PublisherId = @PublisherId, PublishYear = @PublishYear, Description = @Description, CoverUrl = @CoverUrl, Rating = @Rating, Pages = @Pages, UpdatedBy = @UpdatedBy, UpdatedAt = GETDATE() WHERE BookId = @BookId AND RowVersion = @ExpectedRowVersion;
+UPDATE Books SET Status = 'INACTIVE', UpdatedBy = @UpdatedBy, UpdatedAt = GETDATE() WHERE BookId = @BookId AND RowVersion = @ExpectedRowVersion;
+UPDATE Books SET Status = 'ACTIVE', UpdatedBy = @UpdatedBy, UpdatedAt = GETDATE() WHERE BookId = @BookId AND RowVersion = @ExpectedRowVersion;
 INSERT INTO BookCopies (BookId, Barcode, Status, Location) VALUES (@BookId, @Barcode, @Status, @Location);
-UPDATE BookCopies SET Barcode = @Barcode, Location = @Location, UpdatedAt = GETDATE() WHERE CopyId = @CopyId;
-UPDATE BookCopies SET Status = @Status, UpdatedAt = GETDATE() WHERE CopyId = @CopyId;
-SELECT bc.*, b.Title FROM BookCopies bc INNER JOIN Books b ON bc.BookId = b.BookId WHERE bc.CopyId = @CopyId;
+UPDATE BookCopies SET Barcode = @Barcode, Location = @Location, UpdatedAt = GETDATE() WHERE CopyId = @CopyId AND Version = @ExpectedVersion;
+UPDATE BookCopies SET Status = @Status, UpdatedAt = GETDATE() WHERE CopyId = @CopyId AND Version = @ExpectedVersion;
+SELECT bc.*, bc.Version, b.Title FROM BookCopies bc INNER JOIN Books b ON bc.BookId = b.BookId WHERE bc.CopyId = @CopyId;
 ```
 
 ## 6. Borrowing and Reservation
@@ -778,7 +793,7 @@ UPDATE Reservations SET Status = @Status, UpdatedAt = GETDATE() WHERE Reservatio
 
 ## 7. Fine Management
 
-This feature supports overdue fine calculation, member fine viewing, staff fine collection, payment marking, waiver, and cancellation.
+This feature supports overdue fine calculation, member fine viewing, Librarian/Admin full offline collection or paid marking, and Admin-only waiver/cancellation.
 
 ### a. Class Diagram
 
@@ -805,9 +820,9 @@ classDiagram
 | 02 | listMyFines(req, res, next) | Returns fines for the authenticated member. |
 | 03 | listFines(req, res, next) | Returns staff fine list. |
 | 04 | getFine(req, res, next) | Returns one fine detail. |
-| 05 | recordCollection(req, res, next) | Records partial/full collection. |
-| 06 | waiveFine(req, res, next) | Waives a fine with reason. |
-| 07 | cancelFine(req, res, next) | Cancels invalid fine. |
+| 05 | recordCollection(req, res, next) | Records one full offline collection; client-supplied partial amounts are rejected. |
+| 06 | waiveFine(req, res, next) | Waives an unpaid fine with an Admin role and required reason. |
+| 07 | cancelFine(req, res, next) | Cancels an unpaid fine with an Admin role and required reason. |
 
 **FineManagementService Class**
 
@@ -816,9 +831,9 @@ classDiagram
 | 01 | calculateFine(input, actor, context) | Calculates overdue days and amount, avoids duplicate active fine records. |
 | 02 | listMyFines(filters, actor) | Loads current member fines only. |
 | 03 | listFines(filters, actor) | Loads staff-managed fine list. |
-| 04 | recordCollection(fineId, input, actor, context) | Applies collected amount, payment method, paid timestamp, and audit log. |
-| 05 | waiveFine(fineId, input, actor, context) | Marks fine waived when policy allows. |
-| 06 | cancelFine(fineId, input, actor, context) | Marks fine cancelled when policy allows. |
+| 04 | recordCollection(fineId, input, actor, context) | Sets `PaidAmount = Amount`, payment method, paid timestamp, collector, and audit log. |
+| 05 | waiveFine(fineId, input, actor, context) | Marks fine waived only for Admin with a valid reason. |
+| 06 | cancelFine(fineId, input, actor, context) | Marks fine cancelled only for Admin with a valid reason. |
 
 **FineRepository Class**
 
@@ -826,8 +841,8 @@ classDiagram
 | --- | --- | --- |
 | 01 | findByBorrowDetailId(borrowDetailId) | Finds an existing fine for a borrow detail. |
 | 02 | createFine(payload) | Inserts calculated fine. |
-| 03 | updateFinePayment(payload) | Updates paid amount/status fields. |
-| 04 | updateFineStatus(fineId, status) | Updates waive/cancel status. |
+| 03 | recordCollection(payload) / markPaid(payload) | Updates full payment metadata and `PAID` status. |
+| 04 | resolveFine(fineId, status) | Updates Admin-only waive/cancel terminal status. |
 
 ### c. Sequence Diagram(s)
 
@@ -854,13 +869,13 @@ SELECT bd.*, br.UserId FROM BorrowDetails bd INNER JOIN BorrowRequests br ON bd.
 SELECT TOP 1 * FROM Fines WHERE BorrowDetailId = @BorrowDetailId AND Status IN ('UNPAID', 'PAID');
 INSERT INTO Fines (UserId, BorrowDetailId, OverdueDays, RatePerDay, Amount, Reason, CreatedBy) VALUES (@UserId, @BorrowDetailId, @OverdueDays, @RatePerDay, @Amount, @Reason, @CreatedBy);
 SELECT f.*, u.Email FROM Fines f INNER JOIN Users u ON f.UserId = u.UserId WHERE f.UserId = @UserId;
-UPDATE Fines SET PaidAmount = @PaidAmount, Status = @Status, PaidAt = @PaidAt, CollectedBy = @CollectedBy, PaymentMethod = @PaymentMethod, UpdatedAt = GETDATE() WHERE FineId = @FineId;
+UPDATE Fines SET PaidAmount = Amount, Status = 'PAID', PaidAt = @PaidAt, CollectedBy = @CollectedBy, PaymentMethod = @PaymentMethod, UpdatedAt = GETDATE() WHERE FineId = @FineId AND Status = 'UNPAID';
 UPDATE Fines SET Status = @Status, Reason = @Reason, UpdatedAt = GETDATE() WHERE FineId = @FineId;
 ```
 
 ## 8. Notification
 
-This feature supports safe notification creation, email delivery attempts, retry, pending queue processing, and audit records.
+This feature supports safe notification creation, email delivery attempts, retry, pending queue processing, and audit records. HTTP callers must be Librarian/Admin and may submit only non-sensitive notification types; sensitive authentication/setup notifications use source-bound internal requesters.
 
 ### a. Class Diagram
 
@@ -885,17 +900,17 @@ classDiagram
 
 | No | Method | Description |
 | --- | --- | --- |
-| 01 | createNotificationRequest(req, res, next) | Queues a notification request after validation and authorization. |
-| 02 | retryNotification(req, res, next) | Retries a failed notification by id. |
+| 01 | createNotificationRequest(req, res, next) | Queues a non-sensitive notification request after validation and Librarian/Admin authorization. |
+| 02 | retryNotification(req, res, next) | Retries a failed non-sensitive notification by id; sensitive records require source reissue. |
 | 03 | processPendingNotifications(req, res, next) | Processes pending notification queue. |
 
 **NotificationService Class**
 
 | No | Method | Description |
 | --- | --- | --- |
-| 01 | createNotificationRequest(input, actor, context) | Resolves recipient/template, stores safe payload, applies idempotency. |
-| 02 | createNotificationRequestWithSource(input, actor, context) | Queues feature-owned notification with source metadata. |
-| 03 | retryNotification(notificationId, actor, context) | Re-sends a failed notification and records attempt. |
+| 01 | createNotificationRequest(input, actor, context) | Resolves recipient/template, rejects HTTP `sourceFeature` and sensitive auth types, stores safe payload, applies idempotency. |
+| 02 | createNotificationRequestWithSource(input, actor, context) | Queues feature-owned notification with construction-bound source metadata. |
+| 03 | retryNotification(notificationId, actor, context) | Re-sends a failed non-sensitive notification and records attempt. |
 | 04 | processPendingNotifications(input, actor, context) | Sends pending notifications within configured limit. |
 
 **NotificationRepository Class**
@@ -928,7 +943,7 @@ sequenceDiagram
 
 ```sql
 SELECT TOP 1 * FROM NotificationTemplates WHERE TemplateCode = @TemplateCode AND Status = 'ACTIVE';
-INSERT INTO Notifications (NotificationType, TemplateId, TemplateKey, UserId, RecipientEmail, Channel, Status, Title, Body, SourceFeature, SourceEntityType, SourceEntityId, IdempotencyKey, SafePayload) VALUES (@NotificationType, @TemplateId, @TemplateKey, @UserId, @RecipientEmail, @Channel, 'PENDING', @Title, @Body, @SourceFeature, @SourceEntityType, @SourceEntityId, @IdempotencyKey, @SafePayload);
+INSERT INTO Notifications (NotificationType, TemplateId, TemplateKey, UserId, RecipientEmail, Channel, Status, Title, Body, SourceFeature, SourceEntityType, SourceEntityId, IdempotencyKey, SafePayload) VALUES (@NotificationType, @TemplateId, @TemplateKey, @UserId, @RecipientEmail, @Channel, @Status, @Title, @Body, @SourceFeature, @SourceEntityType, @SourceEntityId, @IdempotencyKey, @SafePayload);
 SELECT TOP (@Limit) * FROM Notifications WHERE Status = 'PENDING' ORDER BY CreatedAt ASC;
 UPDATE Notifications SET Status = 'SENT', SentAt = GETDATE(), AttemptCount = AttemptCount + 1 WHERE NotificationId = @NotificationId;
 UPDATE Notifications SET Status = 'FAILED', LastErrorMessage = @SafeErrorMessage, AttemptCount = AttemptCount + 1 WHERE NotificationId = @NotificationId;
@@ -1018,12 +1033,18 @@ sequenceDiagram
 ### d. Database Queries
 
 ```sql
-SELECT u.UserId, u.Username, u.Email, u.Phone, u.Status, up.FullName, up.Address FROM Users u LEFT JOIN UserProfiles up ON u.UserId = up.UserId ORDER BY u.CreatedAt DESC OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+SELECT u.UserId, u.Username, u.Email, u.Phone, u.Status, u.LastLoginAt,
+       COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
+       up.FullName, up.Address, up.Department, up.Specialization
+FROM Users u
+LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+ORDER BY u.CreatedAt DESC, u.UserId DESC
+OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
 SELECT r.RoleId, r.RoleName FROM Roles r ORDER BY r.RoleName;
 INSERT INTO Users (Username, Email, PasswordHash, Phone, Status) VALUES (@Username, @Email, @PasswordHash, @Phone, @Status);
 INSERT INTO UserRoles (UserId, RoleId) VALUES (@UserId, @RoleId);
-UPDATE Users SET Email = @Email, Phone = @Phone, UpdatedAt = GETDATE() WHERE UserId = @UserId;
-UPDATE UserProfiles SET FullName = @FullName, Address = @Address, UpdatedAt = GETDATE() WHERE UserId = @UserId;
+UPDATE Users SET Phone = @Phone, UpdatedAt = GETDATE() WHERE UserId = @UserId;
+UPDATE UserProfiles SET FullName = @FullName, Address = @Address, Department = @Department, Specialization = @Specialization, UpdatedAt = GETDATE() WHERE UserId = @UserId;
 UPDATE Users SET Status = @Status, UpdatedAt = GETDATE() WHERE UserId = @UserId;
 DELETE FROM UserRoles WHERE UserId = @UserId AND RoleId = @RoleId;
 SELECT * FROM AuditLogs WHERE UserId = @UserId OR TargetId = @UserId ORDER BY CreatedAt DESC;
