@@ -2,7 +2,7 @@
 
 # Version: 0.2.0
 
-# Status: DRAFT - AVATAR UPLOAD REVISION
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
@@ -102,7 +102,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 - A user may access another user's personal profile if authorization checks are missing.
 - Updating profile may accidentally change account credentials, roles, or membership state.
-- Invalid phone, date of birth, or avatar URL data may be stored without validation.
+- Invalid phone/date data or direct `avatarUrl` mutation may bypass the approved field and upload boundaries unless rejected server-side.
 - Uploaded avatar files may create security risk if file type, size, path, or executable content is not validated.
 - Email change behavior may conflict with FE02 verification.
 - Profile responses may expose password hash or role data if DTOs are not controlled.
@@ -129,6 +129,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-004 | Phase 1 originally supported avatar URL text only. This revision proposes local avatar file upload with backend-generated `avatarUrl`. | User request 2026-06-20 | DRAFT REVISION |
 | Q-FE03-005 | Profile updates write audit logs. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-006 | Missing profiles are auto-created, protected/unknown fields are rejected, status is read-only, and avatarUrl changes only through upload. | Spec normalization 2026-07-17 | APPROVED |
 
 ## 9.1 Avatar Upload Revision Notes
 

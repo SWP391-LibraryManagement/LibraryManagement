@@ -1,6 +1,6 @@
 # Auth Account Setup Boundary Validation Review - 2026-07-15
 
-Status: COMPLETE - HUMAN REVIEW CONFIRMED
+Status: B7 INTEGRATION COMPLETE
 
 Branch: `fix/auth-account-setup-boundary`
 
@@ -62,6 +62,14 @@ No live SQL suite or unrelated full SQL suite was run, matching the approved Tas
 
 Nhat reviewed the implementation incrementally through Task 6 and explicitly confirmed `đã review` for this Task 7 packet on 2026-07-15. This closes FE02-T037, FE10-S08, and FE11-S07; it does not itself select a merge or push option.
 
+## B7 Integration Evidence
+
+- The account-setup boundary merged into `main` as `c7f78213a62a83a133e9571c149468a054e48219`.
+- Main commit `e8f467c7f53e75d36c2834429b92beafca819919` contains that merge.
+- GitHub Actions CI run `29392143926` completed successfully on `e8f467c7f53e75d36c2834429b92beafca819919`.
+
+This completes B7 integration evidence for the bounded account-setup slice. It does not claim whole-feature completion for FE02, FE10, or FE11.
+
 ## Residual Risks
 
 - Live Azure SQL behavior was not rerun in Task 7; transaction semantics are covered by focused rollback/concurrency tests and SQL review, but a deployed-database smoke test remains an integration risk.
@@ -77,4 +85,4 @@ Nhat reviewed the implementation incrementally through Task 6 and explicitly con
 4. Confirm an invalid/expired/used setup link shows the safe frontend error and does not activate the account.
 5. Confirm the existing verification/reset OTP and `CHANGE_PASSWORD_OTP` behaviors were not widened by ADR-005 work.
 
-Verdict: **Task 7 validation and human review are complete. The branch is ready for an integration decision.**
+Verdict: **Task 7 validation, human review, merge, and post-merge CI are complete through B7 for the bounded account-setup slice.**

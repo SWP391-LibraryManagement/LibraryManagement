@@ -29,17 +29,20 @@ test('shared data table exposes semantic and mobile labeling hooks', async () =>
   assert.match(styles, /content:\s*attr\(data-label\)/);
 });
 
-test('staff navigation includes Inventory and Fines without changing role groups', async () => {
+test('staff navigation includes separate Books, Inventory and Fines pages', async () => {
   const navigation = await import('../src/utils/appNavigation.js');
 
   assert.deepEqual(
     navigation.getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
     [
+      'library-home',
       'home',
       'borrow-requests-admin',
       'process-returns',
       'reservations-librarian',
       'member-details',
+      'membership-review',
+      'book-management',
       'inventory-management',
       'fine-management',
       'borrowing-report',
@@ -48,5 +51,6 @@ test('staff navigation includes Inventory and Fines without changing role groups
     ],
   );
   assert.equal(navigation.getActiveNavigationKey('/librarian/inventory'), 'inventory-management');
+  assert.equal(navigation.getActiveNavigationKey('/librarian/books'), 'book-management');
   assert.equal(navigation.getActiveNavigationKey('/librarian/fines'), 'fine-management');
 });

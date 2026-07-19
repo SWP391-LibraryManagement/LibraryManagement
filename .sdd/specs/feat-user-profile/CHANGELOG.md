@@ -1,5 +1,33 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-19 - FE11 Librarian Column Ownership Activated
+
+- Bumped `SPEC.md` to 0.3.4 and recorded nullable `UserProfiles.Department` and `UserProfiles.Specialization` at 100 characters as FE11-admin-managed fields.
+- Kept both fields outside FE03 self-profile read/update DTOs and preserved the existing `fullName` maximum of 100 characters.
+- Product schema/model implementation remains pending FE11 Finalization Wave A.
+
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE03 profile, protected-field, avatar cleanup, audit, and failure-compensation contract as the Phase 1 baseline; implementation follow-up remains pending.
+
+## 2026-07-17 - Avatar Cleanup Failure Contract
+
+- Defined safe logging when post-commit cleanup of a replaced avatar fails.
+- Made profile-read scope and upload-error wording testable.
+
+## 2026-07-17 - Avatar Failure Compensation Contract - v0.3.3
+
+- Defined deterministic `404 PROFILE_ACCOUNT_NOT_FOUND` behavior.
+- Added compensation for failed avatar database/audit writes and post-commit old-file cleanup rules.
+
+## 2026-07-17 - Deterministic Profile Contract - v0.3.2
+
+- Changed `SPEC.md` to `READY FOR REVIEW` after normalizing missing-profile, protected-field, audit, and status-display behavior.
+- Missing profile rows are now always auto-created; protected, unknown, and read-only fields reject the entire update.
+- Removed direct `avatarUrl` mutation from profile PUT; only the validated upload endpoint owns avatar changes.
+- Made safe audit logging mandatory for successful profile-field and avatar updates.
+- Added explicit traceability and implementation follow-up tasks for the code owner.
+
 ## 2026-06-25 - Traceability Matrix Completed — v0.3.1
 
 - Completed Traceability Matrix to cover all BR/FR/AC IDs.

@@ -1,4 +1,5 @@
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -18,7 +19,10 @@ export default function UserMenuPopup({
   role = '',
   initials = '',
   avatarUrl = '',
+  showMemberActions = false,
   onAccountInfo,
+  onAdminConsole,
+  onLibrarianConsole,
   onBorrowingHistory,
   onMembership,
   onLogout,
@@ -95,19 +99,33 @@ export default function UserMenuPopup({
         Thông tin tài khoản
       </MenuItem>
 
-      <MenuItem onClick={() => handleClick(onBorrowingHistory)}>
+      {onAdminConsole && <MenuItem onClick={() => handleClick(onAdminConsole)}>
+        <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
+          <AdminPanelSettingsOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        Trang quản trị
+      </MenuItem>}
+
+      {onLibrarianConsole && <MenuItem onClick={() => handleClick(onLibrarianConsole)}>
+        <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
+          <AdminPanelSettingsOutlinedIcon fontSize="small" />
+        </ListItemIcon>
+        Khu vực thủ thư
+      </MenuItem>}
+
+      {showMemberActions && <MenuItem onClick={() => handleClick(onBorrowingHistory)}>
         <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
           <HistoryIcon fontSize="small" />
         </ListItemIcon>
         Lịch sử mượn sách
-      </MenuItem>
+      </MenuItem>}
 
-      <MenuItem onClick={() => handleClick(onMembership)}>
+      {showMemberActions && <MenuItem onClick={() => handleClick(onMembership)}>
         <ListItemIcon sx={{ color: '#7b5528', minWidth: 32 }}>
           <CardMembershipIcon fontSize="small" />
         </ListItemIcon>
         Đăng ký hội viên
-      </MenuItem>
+      </MenuItem>}
 
       <MenuItem onClick={() => handleClick(onLogout)} sx={{ mb: 0.75 }}>
         <ListItemIcon sx={{ color: '#c1452f', minWidth: 32 }}>

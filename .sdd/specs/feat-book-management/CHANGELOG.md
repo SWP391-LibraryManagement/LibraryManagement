@@ -1,5 +1,58 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-18 - Librarian Book Management Navigation
+
+- Added the dedicated Librarian sidebar entry and route `/librarian/books` for FE05 book management.
+- Removed the previous redirect from `/librarian/books` to the FE09 fine page.
+- Kept FE05 available only to authenticated Librarian/Admin roles through its dedicated page shell.
+
+## 2026-07-18 - Catalog Metadata Creation Timestamps
+
+- Added database-owned `CreatedAt` timestamps to categories, authors, and publishers.
+- Updated protected metadata-management reads and creates to return the persisted timestamp.
+- Replaced the admin UI placeholder with the formatted database timestamp.
+- Enforced the existing inactive-book rule in FE07 borrowing and FE08 reservation creation while preserving inventory and historical reads.
+- Added status-based deactivation for categories, authors, and publishers without cascading changes to existing books.
+
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE05 specification, plan, and task boundary as the Phase 1 baseline; implementation tasks remain pending.
+
+## 2026-07-17 - Final Contract Audit
+
+- Made the staff book-list flow use the approved query filters and sort/order contract.
+- Replaced non-verifiable search-performance wording with a database-filtering requirement.
+
+## 2026-07-17 - Detail Contract Wording - v0.5.1
+
+- Clarified that staff detail reads may return both `ACTIVE` and `INACTIVE` books; public callers still receive only active public-safe detail or `404`.
+- Marked SPEC/PLAN/TASKS ready for human re-review; no implementation behavior or code changed.
+
+## 2026-07-16 - Planning Human Review Approval
+
+- Nhat approved the FE05 prototype-reconciliation plan and ordered task decomposition.
+- Marked `PLAN.md` and `TASKS.md` as `APPROVED`; implementation tasks remain unchecked and have not started.
+
+## 2026-07-16 - Implementation Planning Decomposition
+
+- Replaced placeholder `PLAN.md` and `TASKS.md` with a `READY FOR REVIEW` reconciliation plan for approved SPEC v0.5.0.
+- Added ordered RED/GREEN tasks for deterministic queries, metadata validation, SQL `rowversion`/`If-Match`, atomic audit writes, and dedicated deactivate/reactivate commands.
+- Made removal of FE05 copy-status mutation ownership and replacement of prototype frontend expectations explicit, with all 61 BR/FR/AC requirements mapped to concrete tasks and verification gates.
+
+## 2026-07-16 - Human Review Approval
+
+- Nhat confirmed human review of revision v0.5.0.
+- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+
+## 2026-07-15 - Catalog Ownership and Deterministic Contract (v0.5.0)
+
+- Removed FE05 copy-status mutation ownership and deleted the `/api/books/{bookId}/availability` contract.
+- Defined public availability as a read-only aggregation of `Books.Status` and FE06-owned copy states.
+- Formalized `ACTIVE`/`INACTIVE` deactivation/reactivation without rewriting copy, borrow, reservation, or history rows.
+- Added SQL `rowversion`/`If-Match` stale-write protection, deterministic search/pagination/sort rules, and explicit rejection criteria for invalid pages/rating.
+- Standardized the derived unavailable display label as `Không khả dụng` so reserved/damaged/lost/inactive copies are not mislabeled as borrowed.
+- Added complete BR/FR/AC traceability with concrete planned test intents.
+
 ## 2026-06-02
 
 - Created initial FE05 Book Management specification.
@@ -50,3 +103,11 @@
   - FR-FE05-019: Prevent borrowing and hide INACTIVE books from public search while preserving history (BR-FE05-008/009, EC-FE05-010, Q-FE05-007).
 - Updated Section 16 Traceability Matrix with the 9 new FRs (Test Case marked TBD).
 - Result: total FRs 10 -> 19; Unwanted FRs 0 -> 9 (~47.4%).
+## 2026-07-18 - Librarian layout alignment
+
+- Aligned the librarian book-management workspace with the shared cream-and-brown visual system.
+- Clarified summary cards, search, filters, tables, buttons, and Vietnamese section labels without changing FE05 API behavior.
+- Removed the duplicated inner module heading, made refresh reload both catalog metadata and book rows, and added eight-row management pagination.
+- Renamed the destructive-looking Delete area to the actual soft-deactivation behavior while preserving catalog and workflow history.
+- After creation, reset incompatible management filters and navigate to the page containing the new canonical book record.
+- Display continuous row numbers across pages while retaining the immutable database BookId for API calls and cross-feature relationships.

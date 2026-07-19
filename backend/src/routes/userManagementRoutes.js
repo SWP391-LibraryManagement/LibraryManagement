@@ -2,7 +2,14 @@ const express = require('express');
 const { createUserManagementController } = require('../controllers/userManagementController');
 const { createAuthenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/requireRole');
-const { resendSetupValidators } = require('../validators/userManagementValidators');
+const errors = require('../utils/safeErrors');
+const {
+  listUsersValidators,
+  getUserValidators,
+  resendSetupValidators,
+  assignRoleValidators,
+  revokeRoleValidators,
+} = require('../validators/userManagementValidators');
 
 function createUserManagementRoutes({ authService, userManagementService } = {}) {
   const router = express.Router();
@@ -10,10 +17,12 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   const authenticate = createAuthenticate(authService);
   const requireAdmin = [authenticate, requireRole('ADMIN')];
 
-  router.get('/', requireAdmin, controller.listUsers);
+  router.get('/', ...requireAdmin, listUsersValidators, controller.listUsers);
   router.get('/roles', requireAdmin, controller.listRoles);
-  router.get('/audit-logs', requireAdmin, controller.listAuditLogs);
-  router.get('/:userId', requireAdmin, controller.getUser);
+  router.get('/audit-logs', (req, res, next) => (
+    next(errors.notFound('NOT_FOUND', 'Resource not found.'))
+  ));
+  router.get('/:userId', ...requireAdmin, getUserValidators, controller.getUser);
   router.post('/', requireAdmin, controller.createUser);
   router.post(
     '/:userId/resend-setup',
@@ -23,8 +32,13 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
   );
   router.put('/:userId', requireAdmin, controller.updateUser);
   router.patch('/:userId/status', requireAdmin, controller.updateStatus);
-  router.post('/:userId/roles', requireAdmin, controller.assignRole);
-  router.delete('/:userId/roles/:roleId', requireAdmin, controller.revokeRole);
+  router.post('/:userId/roles', ...requireAdmin, assignRoleValidators, controller.assignRole);
+  router.delete(
+    '/:userId/roles/:roleId',
+    ...requireAdmin,
+    revokeRoleValidators,
+    controller.revokeRole
+  );
 
   return router;
 }

@@ -1,5 +1,27 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE12 report filters, deterministic responses, database-side processing, audit, and out-of-scope export policy as the Phase 1 baseline; implementation follow-up remains pending.
+
+## 2026-07-17 - Final Filter And Query Contract Audit
+
+- Replaced open-ended filter examples with the exact query fields for each report.
+- Made database-side filtering and safe failure logging explicit performance/logging requirements.
+
+## 2026-07-17 - Deterministic Report Response Contract - v0.1.6
+
+- Added exact metrics and detailed-row schemas for borrowing, inventory, and user reports.
+- Defined date semantics, top-book limit/tie-breaking, and report response envelopes.
+
+## 2026-07-17 - Deterministic Report Policy - v0.1.5
+
+- Changed `SPEC.md` to `READY FOR REVIEW` while preserving the completed base slice as historical evidence.
+- Confirmed both Librarian and Admin can access borrowing, inventory, and user-statistics reports.
+- Standardized well-formed unknown IDs as empty reports and unknown persisted statuses as `UNKNOWN` groups.
+- Added deterministic detail pagination/order and made successful report-view audit mandatory.
+- Locked all report export strictly out of Phase 1 and replaced the `TBD` traceability entry with an out-of-scope contract test.
+
 ## 2026-07-13 - B7 Integration And Review Closeout
 
 - Nhat confirmed the human review gate and selected local merge after the clean FE12 re-review.

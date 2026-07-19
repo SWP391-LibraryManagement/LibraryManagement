@@ -1,10 +1,10 @@
 # TASKS.md - FE12 Reporting & Statistics
 
-Status: COMPLETE
+Status: APPROVED - BASELINE 2026-07-17; NORMALIZATION IMPLEMENTATION FOLLOW-UP PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-13
+Updated: 2026-07-17
 
 Workflow State: B5 implementation, B6 validation, and B7 integration complete
 
@@ -114,3 +114,9 @@ Detailed evidence is recorded in
   backend health import check.
 - [x] Detailed evidence is recorded in
   `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
+
+## 8. Deterministic Policy Follow-up
+
+- [x] FE12-N01 Normalize all-report access, unknown-ID/status behavior, pagination/order, audit, export scope, and traceability in documentation.
+- [ ] FE12-N02 Code owner validates or aligns implementation for BR-FE12-003, BR-FE12-008, BR-FE12-010, BR-FE12-014..015 and FR-FE12-009..010 after human approval.
+- [ ] FE12-N03 Add focused contract tests for unknown IDs, `UNKNOWN` status grouping, page/limit bounds, stable ordering, successful audit, and absence of export surfaces.

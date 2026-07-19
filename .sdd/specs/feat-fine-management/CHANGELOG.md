@@ -1,5 +1,42 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-18 - Librarian Fine Page Restored
+
+- Restored the `Quản lý tiền phạt` sidebar item and `/librarian/fines` page after clarifying that only the redundant embedded book workspace should be removed.
+- Kept FE05 book management on its separate `/librarian/books` route.
+
+## 2026-07-18 - Librarian Fine Navigation Separation
+
+- Kept `/librarian/fines` as the dedicated FE09 workspace and preserved its Librarian sidebar entry.
+- Removed the embedded FE05 book-management workspace from the fine page because FE05 now has its own `/librarian/books` sidebar route.
+
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE09 accrual, payment, terminal-state, and server-boundary contract as the Phase 1 baseline; implementation follow-up remains pending.
+- Closed the reconciliation-plan review gate while retaining the deferred frontend migration and pending implementation tasks.
+
+## 2026-07-17 - Payment Storage Contract
+
+- Chose `Fines` as the Phase 1 payment metadata owner; no separate payment table is required.
+- Kept collection notes in safe audit metadata rather than the `Fines` table.
+
+## 2026-07-17 - Fine Accrual And Payment Invariant Hardening
+
+- Bumped `SPEC.md` to 0.4.1.
+- Recalculation now updates an existing `UNPAID` fine in place instead of freezing an earlier amount.
+- Terminal fines remain immutable; `PaymentMethod` and payment metadata invariants are explicit.
+
+## 2026-07-17 - Deterministic Contract Normalization (v0.4.0)
+
+- Resolved the conflict between the no-partial-payment decision and `collectedAmount`: Phase 1 now records one full offline collection with `PaidAmount = Amount` and `PAID` atomically.
+- Added explicit admin waive/cancel contracts, deterministic pagination/order, `Asia/Ho_Chi_Minh` date policy, terminal conflict behavior, and complete requirement traceability.
+- Replaced the high-level reconciliation plan/tasks with FE09-T013 through FE09-T020; historical TD-001/002/003 evidence remains separate from v0.4.0 completion.
+- Updated `TEST_PLAN.md` with no-partial-payment, full metadata, timezone, atomicity, terminal-state, admin-resolution, pagination, and FE07/FE12 integration targets.
+- Locked terminal conflicts to `409 FINE_NOT_COLLECTIBLE`, `409 FINE_NOT_PAYABLE`, and `409 FINE_NOT_RESOLVABLE`; locked reason validation to `REASON_REQUIRED` or `REASON_TOO_LONG`.
+- Removed remaining optional audit/sort wording and made resolved fine visibility and terminal states explicit.
+- Added explicit test-plan mappings for all FE09 security, transaction, performance, logging, usability, and business-time NFR IDs.
+- Corrected `CONTEXT.md` to match the current SQL payment metadata fields while keeping collection notes in audit metadata only.
+
 ## 2026-06-10
 
 - Created FE09 Fine Management feature specification structure.
@@ -52,3 +89,10 @@
 - Added stable fine-list ordering guidance: librarian fine list defaults to fine ID ascending.
 - Added BR-FE09-017..018, FR-FE09-011..013, AC-FE09-011..012, EC-FE09-011, and Q-FE09-008..009.
 - Updated the `/api/fines` API contract to include `q?` and `sort?` with default fine ID ascending order.
+## 2026-07-18 - Librarian layout alignment
+
+- Aligned fine statistics, policy guidance, forms, detail cards, and action buttons with the shared librarian cream-and-brown visual system.
+- Improved component spacing and hierarchy without changing FE09 calculation or persistence behavior.
+- Replaced the browser-storage demonstration screen with the canonical FE09 server workflow and removed the demonstration-data notice.
+- Connected the staff list to SQL-backed fine, member, borrowing-detail, book, and barcode fields with ascending FineId ordering, search, status filtering, refresh, and pagination.
+- Replaced arbitrary edit/delete controls with traceable state transitions: calculate, full offline collection/mark-paid, plus Admin-only waive/cancel with a required reason.

@@ -1,5 +1,59 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-18 - Member Workspace Layout Polish
+
+- Clarified the member borrow-selection hierarchy and responsive two-column layout without changing FE07 mutation APIs.
+- Consolidated borrowing history filters, table, and pagination into one responsive operational card.
+
+## 2026-07-18 - Admin Circulation Alignment
+
+- Made the admin circulation table read-only and routed approve/return work to canonical FE07 screens.
+- Removed unsafe admin-only direct inserts and updates of borrowing details.
+- Derived `OVERDUE` from `BORROWED` plus due date, and added refresh/loading feedback and canonical database export.
+- Removed demo circulation transactions from the baseline SQL seed.
+- Added a coherent canonical circulation seed with one active loan and one completed return so the admin read model can be verified without frontend fallback data.
+
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE07 borrowing, return, renewal, history, and reservation-priority contract as the Phase 1 baseline; reconciliation implementation remains pending.
+
+## 2026-07-17 - Return And Reservation Priority Contract
+
+- Made normal return atomic with FE08 reservation-claim revalidation and the shared lock order.
+- Clarified that an `AVAILABLE` returned copy remains unavailable to ordinary borrowing while an `ACTIVE` reservation queue claim exists.
+
+## 2026-07-17 - Borrowing History Contract - v0.5.1
+
+- Changed `SPEC.md` to `READY FOR REVIEW` while preserving the v0.5.0 reconciliation decisions.
+- Defined the shared member/staff history query contract, including status/date filters, page/limit defaults and bounds, inclusive date semantics, validation-before-query, and stable ordering.
+- Added traceability for BR-FE07-028, FR-FE07-028, AC-FE07-022, and the focused implementation task; no code was changed.
+
+## 2026-07-16 - Reconciliation Planning Human Review Approval
+
+- Nhat approved the FE07 v0.5.0 reconciliation plan and FE07-T031 through FE07-T038.
+- Marked the reconciliation `PLAN.md` and `TASKS.md` as `APPROVED`; the new implementation tasks and validation gates remain unchecked.
+
+## 2026-07-16 - V0.5.0 Reconciliation Planning
+
+- Changed `PLAN.md` and `TASKS.md` to `READY FOR REVIEW - v0.5.0 RECONCILIATION` after SPEC approval.
+- Preserved all historical checked tasks and B7 evidence, then added FE07-T031 through FE07-T038 for canonical eligibility, parent-book guards, member-scoped limit locking, approval metadata, Ho Chi Minh business dates, future-return rejection, mandatory rejection reasons, frontend errors, and focused verification.
+- Added exact file paths, RED/GREEN gates, dependency order, SQL concurrency expectations, and supplemental v0.5.0 traceability without claiming the historical implementation already satisfies the revised contract.
+
+## 2026-07-16 - Human Review Approval
+
+- Nhat confirmed human review of revision v0.5.0.
+- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+
+## 2026-07-15 - Eligibility, Limit, and Date Contract (v0.5.0)
+
+- Required canonical `Members.Status = APPROVED` and parent `Books.Status = ACTIVE` at create/approval.
+- Defined the five-copy formula at create/approval and a member-scoped approval lock that prevents concurrent limit overflow.
+- Required `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is `BorrowDate + 14 calendar days`.
+- Standardized borrow/return/overdue business dates on `Asia/Ho_Chi_Minh` and rejected future return dates.
+- Made rejection reason mandatory in audit metadata and added traceability for every new BR/FR/AC.
+- Aligned approval locking with FE06 using `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; active-count and reservation-aware checks run only after relevant rows are locked.
+- Updated `CONTEXT.md` from the superseded Phase 1 draft assumptions to the v0.5.0 review/reconciliation decisions.
+
 ## 2026-07-15 - Reservation-Aware Borrowing Contract (v0.4.0)
 
 - Approved FE07 as the owner of borrow request creation and approval for both ordinary copies and requester-owned notified holds.
@@ -111,3 +165,26 @@
 - (B) BorrowDetail lifecycle: states REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE — with Mermaid `stateDiagram-v2`, descriptions, valid transitions, forbidden transitions, and invariants INV-FE07-B1..B8.
 - All state values reuse the enums declared in Section 10.2 (no new status invented). Transitions trace to existing MF-*, FR-*, BR-*, AF-*, and EC-* sources.
 - Documented enum-declared states without an explicit flow (request `CANCELLED`, detail `OVERDUE`) as modeled per the declared enum with their dependency on FE09 / Phase 2 confirmation noted.
+## 2026-07-18 - Librarian Borrow Request Review Polish
+
+- Corrected Vietnamese labels and improved the request list/detail layout for the librarian review screen.
+- Added canonical request-status filtering and a visible last-updated indicator.
+- Made manual refresh provide loading/success/error feedback and reload canonical API state after approval or rejection.
+- Exposed the member profile, canonical member ID, phone, barcode, author, location, and every requested copy from the existing database relationships.
+- Sorted librarian request IDs in ascending order, added eight-row pagination, and refined the summary/filter toolbar.
+- Replaced the heading font fallback that rendered some Vietnamese combining marks incorrectly.
+- Added accent-insensitive search across request code, member identity, book, author, and barcode; search results now feed the same pagination used by the canonical status filter.
+- Added an explicit Search submit action with Enter-key support and separated draft input from the applied query so results update only after user confirmation.
+- Rebuilt the librarian return workspace with canonical approved-loan loading, explicit refresh/search feedback, complete member/copy fields, pagination, and canonical reload after return mutations.
+## 2026-07-18 - Librarian row actions made explicit
+
+- Added status-aware row actions to borrow requests: pending requests expose approve/reject, while terminal requests expose detail viewing.
+- Added an explicit return-processing action to each active loan row while retaining the condition review and confirmation panel.
+- Kept all mutations connected to the existing FE07 API and canonical server reload flow.
+
+## 2026-07-18 - Member borrowing details workspace
+
+- Replaced the ambiguous manual user-ID lookup with an API-backed member directory that automatically loads the first available member.
+- Added accent-insensitive member and transaction search, canonical status filtering, eight-row pagination, summary counters, and responsive profile/table layouts.
+- Displayed canonical member, contact, book, copy, barcode, location, loan, due, return, and status fields from the existing FE07 database relationships.
+- Kept the screen restricted to Librarian/Admin and connected it to the shared borrow-request and member-borrowing endpoints without demo fallback data.

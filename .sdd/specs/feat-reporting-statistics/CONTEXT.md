@@ -2,7 +2,7 @@
 
 # Version: 0.1.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
@@ -133,19 +133,20 @@ Owner column reflects the current team redistribution.
 
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
-| Q-FE12-001 | Librarian and Admin can view reports; Member/Guest cannot. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-001 | Librarian and Admin can view all three reports; Member/Guest cannot view any FE12 report. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
 | Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | Review packet 2026-06-10 | APPROVED |
 | Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | Review packet 2026-06-10 | APPROVED |
 | Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | Review packet 2026-06-10 | APPROVED |
-| Q-FE12-005 | CSV/PDF export is out of scope unless teacher requires it. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-005 | All report export is strictly out of scope for Phase 1. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
 | Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | Review packet 2026-06-10 | APPROVED |
+| Q-FE12-007 | Unknown well-formed IDs return empty reports, unknown source statuses group as `UNKNOWN`, and detailed rows use deterministic pagination/order. | Spec normalization 2026-07-17 | APPROVED |
 
 ---
 
 ## 10. Notes For Implementation Later
 
 - Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- The completed base slice remains historical evidence; normalization follow-up is planned separately after this revision is approved.
 - Keep reports read-only.
 - Validate filters server-side.
 - Avoid exposing personal details unless necessary and authorized.

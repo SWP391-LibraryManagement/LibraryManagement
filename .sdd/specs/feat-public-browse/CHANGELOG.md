@@ -1,5 +1,44 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-18 - Authenticated Homepage Navigation
+
+- Added a dedicated `Home` sidebar item for Member/Librarian/Admin users that opens the authenticated public library homepage at `/homepage`.
+- Preserved `/home` as the role-aware `Tổng quan` dashboard so the two navigation destinations remain distinct.
+
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật approved the normalized FE01 public visibility, search, pagination, safe-detail, and availability contract as the Phase 1 baseline; plan and task decomposition remain pending.
+
+## 2026-07-17 - Implementation Planning Decomposition
+
+- Added the approved FE01 implementation plan and FE01-T001 through FE01-T008 task sequence.
+- Defined the FE01/FE05 shared public-read boundary, FE06 availability ownership, dedicated test evidence, and explicit frontend/API drift reconciliation.
+- Updated `TEST_PLAN.md` to the canonical query, pagination, safe-field, and availability contract; implementation remains pending.
+
+## 2026-07-17 - Final Browse Contract Audit
+
+- Made recent public books part of the home-page contract while keeping featured content out of scope.
+- Removed optional highlights behavior and made search filtering/database handling deterministic.
+
+## 2026-07-17 - Public Filter Scope Hardening
+
+- Defined the exact Phase 1 query fields and `q` matching semantics.
+- Removed optional `/api/public/*` aliases from the canonical API contract.
+
+## 2026-07-17 - Deterministic Browse Contract
+
+- Bumped `SPEC.md` to 0.3.1 and kept the revision `READY FOR REVIEW`.
+- Empty search now returns the default first page; pagination defaults/bounds and stable ordering are explicit.
+- Distinguished validation errors for malformed IDs/query values from `404` for well-formed missing/hidden books.
+- Missing optional catalog metadata now returns `null` with a UI fallback instead of excluding the book.
+- Completed BR/FR/AC traceability with explicit planned test intent.
+
+## 2026-07-15 - Read-Only Availability Ownership (v0.3.0)
+
+- Removed the FE01 dependency on FE05 manual copy-status updates.
+- Clarified that FE06/FE07/FE08 own copy transitions and FE01/FE05 only read the latest committed availability summary.
+- Standardized the simple public display as `Còn sách` / `Không khả dụng`, removed stale conditional wording, and kept exact copy counts private.
+
 ## 2026-06-10
 
 - Created FE01 Public / Browse feature specification structure.

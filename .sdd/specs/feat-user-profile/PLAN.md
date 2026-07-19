@@ -2,7 +2,7 @@
 
 # Version: 0.2.0
 
-# Status: DRAFT - AVATAR UPLOAD REVISION
+# Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 
 # Owner: Dat
 
@@ -25,7 +25,7 @@ The backend shall support:
 - protected-field rejection
 - auto-creation of a missing `UserProfiles` record
 - storing uploaded avatar files under a backend-controlled static uploads directory
-- audit logging for profile updates when the database supports an audit log table
+- mandatory safe audit logging for successful profile-field and avatar updates
 
 This plan covers backend work and the minimum frontend wiring needed for users to upload an avatar from their device.
 
@@ -97,7 +97,7 @@ The service shall:
 - update `Users.Phone` and `UserProfiles` fields atomically
 - store a validated avatar image with a server-generated filename
 - update `UserProfiles.AvatarUrl` after a successful avatar upload
-- write an audit log for profile update changes if the existing schema has an audit log table
+- write a safe audit log for every successful profile-field update
 
 ### 3.4 Model / Repository Layer
 
@@ -109,9 +109,9 @@ Required operations:
 - find profile by `UserId`
 - create blank profile by `UserId`
 - update `Users.Phone`
-- update `UserProfiles.FullName`, `Address`, `DateOfBirth`, and `AvatarUrl`
+- update `UserProfiles.FullName`, `Address`, and `DateOfBirth`; direct `AvatarUrl` mutation is forbidden here
 - update only `UserProfiles.AvatarUrl` after avatar upload
-- create audit log entry when supported
+- create the required safe audit log entry in the source transaction
 
 No database schema change is part of this plan.
 
@@ -126,7 +126,6 @@ Approved editable fields:
 - `fullName`
 - `address`
 - `dateOfBirth`
-- `avatarUrl`
 - `phone`
 
 Protected fields must be rejected if present:
@@ -150,7 +149,6 @@ Field rules for Phase 1:
 | `fullName` | optional; string; trim; max 100 characters |
 | `address` | optional; string; trim; max 255 characters |
 | `dateOfBirth` | optional; valid ISO date; must not be in the future |
-| `avatarUrl` | optional; valid URL; empty string may be stored as `null` |
 | `phone` | optional; string; trim; 10-15 digits, optional leading `+` |
 
 If validation fails, no profile or phone field may be changed.
@@ -232,4 +230,4 @@ Do not implement:
 
 ## 8. Approval
 
-This plan is a draft revision for adding avatar upload to FE03 User Profile. It needs team review before implementation is considered approved.
+This normalized plan is baseline-approved by Nhat on 2026-07-17. Existing implementation evidence remains historical; the code owner must separately align direct `avatarUrl` mutation and mandatory audit behavior before claiming implementation conformance.

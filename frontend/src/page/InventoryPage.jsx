@@ -28,7 +28,7 @@ export default function InventoryPage() {
   return (
     <AppLayout
       active="inventory-management"
-      title="Quản lý kho sách"
+      title="Quản lí kho"
       subtitle="Theo dõi đầu sách, bản sao vật lý, barcode, vị trí và trạng thái lưu thông."
       actions={<span className="stat-chip"><Inventory2Icon fontSize="small" /> FE06</span>}
     >

@@ -1,12 +1,12 @@
 # CONTEXT.md - FE05 Book Management
 
-# Version: 0.1.0
+# Version: 0.2.0
 
-# Status: DRAFT
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-16
 
 # Feature folder: `.sdd/specs/feat-book-management/`
 
@@ -67,21 +67,23 @@ FE05 does not include:
 
 The current SQL design includes:
 
-- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl)`
+- `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Status)`
 - `Authors(AuthorId, AuthorName)`
 - `Categories(CategoryId, CategoryName)`
 - `Publishers(PublisherId, PublisherName)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
 
-Potential issues to review:
+Implementation reconciliation points:
 
 - ISBN uniqueness constraints must be enforced.
 - The current SQL supports one author per book; multiple authors would require a later schema change.
-- Soft delete should be used instead of physical deletion.
-- The current SQL does not yet include a `Books.Status` field; status-based deactivation requires a schema decision.
+- Status-based deactivation must be used instead of physical deletion.
+- Current SQL includes `Books.Status = ACTIVE|INACTIVE`; FE05 deactivation/reactivation changes only this field and leaves FE06 copy state untouched.
+- FE05 availability is read-only and derived from `Books.Status` plus FE06-owned `BookCopies.Status`; FE05 has no copy-status mutation endpoint.
+- Existing-book mutations require SQL `rowversion`/`If-Match` to reject stale updates deterministically.
 - Search performance may require indexing on ISBN, Title, and Author.
 
-These are not blockers for drafting but must be validated before implementation.
+These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against the existing prototype before implementation can be considered complete.
 
 ---
 
@@ -148,7 +150,7 @@ These are not blockers for drafting but must be validated before implementation.
 | Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
-| Q-FE05-008 | Staff update form may set book status directly to `ACTIVE` or `INACTIVE`; public browse must hide `INACTIVE` books. | User request 2026-06-21 | APPROVED |
+| Q-FE05-008 | Staff use dedicated deactivate/reactivate commands for `Books.Status`; metadata update does not change status, and public browse hides `INACTIVE` books. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
 
 ---
 
@@ -157,6 +159,6 @@ These are not blockers for drafting but must be validated before implementation.
 - Do not implement until `SPEC.md` is reviewed.
 - `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
 - ISBN validation must be enforced on the server.
-- Soft delete is preferred over physical deletion.
+- Status-based deactivation is required; physical deletion is forbidden in Phase 1.
 - Search APIs should support pagination and filtering.
 - Every API endpoint must validate role and input on the server.

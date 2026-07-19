@@ -11,7 +11,7 @@
 > Priority: **P1** = should fix before the feature is considered "done" / Full-Spec compliant.
 > **P2** = improvement or follow-up; not blocking. **Risk** notes money/security/data sensitivity.
 
-Last Updated: 2026-06-25
+Last Updated: 2026-07-19
 
 > Traceability note: every implemented feature now meets the Validation-Gate L2 bar (FR `@spec`
 > coverage ≥ 70%). FE07 and FE08 are at 100%, FE02 was completed to 100%, and the CI workflow now runs
@@ -25,16 +25,17 @@ Last Updated: 2026-06-25
 | -- | ------- | -------- | ----------- | ------ | ------ |
 | TD-004 | FE09 Fine | P2 | Align the **frontend** `FineManagement.jsx` to the new server-side API (`/calculate`, `/me`, `/{id}/collections`, `PATCH /{id}/paid`) and add pagination. Backend endpoints now exist (TD-001..003 resolved); the prototype CRUD routes are kept until the UI is migrated. | VG FE09 P1-5/P2-1 | OPEN |
 | TD-005 | FE06 Inventory | P1 (deferred) | Implement the whole FE06 layer: routes + controller + service + repository + validators, with transition guards (FR-FE06-014/015/016), conflict checks, optimistic locking (FR-FE06-018), audit (FR-FE06-010) and tests. Currently only the `BookCopies` model exists. | VG FE06 (spec marked NOT IMPLEMENTED) | DEFERRED |
-| TD-012 | FE11 User & Role | P1 | Persist & validate librarian fields `department`/`specialization` (FR-FE11-010/028, API §11). Currently dropped by `updateUser`/repo; AC-011 cannot pass. | VG FE11 P1-3 | OPEN |
-| TD-013 | FE11 User & Role | P1 | Assign-existing-role is a silent no-op and remove-missing-role returns success. Should reject with a clear error (FR-FE11-025/026, EC-FE11-011). | VG FE11 P1-4/5 | OPEN |
-| TD-014 | FE11 User & Role | P1 | Use 404 (not 400) for not-found user/role (FR-FE11-016/017/024) and verify `adminUserId` exists before acting. | VG FE11 P1-6/7 | OPEN |
-| TD-015 | FE11 User & Role | P1 | No service-level tests: 13/15 ACs and most Unwanted FRs untested (`userManagementService.test.js` missing). Add them. | VG FE11 P0-2 | OPEN |
-| TD-016 | FE11 User & Role | P2 | Make user create atomic (token + notification + audit currently outside the create transaction, NFR-TXN-001); email max length 100 → 255 (FR-FE11-021); consider optimistic locking (FR-FE11-023). | VG FE11 P1/P2 | OPEN |
-| TD-017 | FE11 User & Role | P2 (config risk) | `allowDevUserManagementWithoutLogin` dev-bypass grants ADMIN when `NODE_ENV` is unset — guard against accidental non-production deploys. | VG FE11 L3 | OPEN |
+| TD-012 | FE11 User & Role | P1 | FE11 Finalization Wave A will add nullable 100-character `department`/`specialization` columns, role-gated create/read/update persistence, and synchronized schema/model/API tests. Governance is active; product implementation is pending H2. | VG FE11 P1-3; FE11 Finalization Batch | IN PROGRESS |
+| TD-013 | FE11 User & Role | P1 | Resolved in the transactional role slice: duplicate assignment returns `409 USER_ALREADY_HAS_ROLE`; absent revocation returns `404 USER_ROLE_NOT_FOUND`; neither branch mutates or audits. Evidence: `0805363`, `d04ebfb`, `817039d`. | VG FE11 P1-4/5 | RESOLVED |
+| TD-014 | FE11 User & Role | P1 | FE11 Finalization Wave A will close remaining create/resend/update/deactivation actor/target/lifecycle semantics with transaction-authoritative outcomes, including pending activation. Governance is active; product implementation is pending H2. | VG FE11 P1-6/7; FE11 Finalization Batch | IN PROGRESS |
+| TD-015 | FE11 User & Role | P1 | FE11 Finalization Wave A adds focused create/resend/update/deactivation repository/service/route tests and rollback evidence; Wave B adds request/browser acceptance. Governance is active; evidence is not yet implemented. | VG FE11 P0-2; FE11 context drift audit; Finalization Batch | IN PROGRESS |
+| TD-016 | FE11 User & Role | P2 | FE11 Finalization Wave A synchronizes 255-character user/notification email persistence and effective `COALESCE(UpdatedAt, CreatedAt)` optimistic concurrency. Governance is active; migration/code evidence is pending H2. | VG FE11 P1/P2; ADR-005; ADR-002 | IN PROGRESS |
+| TD-017 | FE11 User & Role | P2 (config risk) | FE11 Finalization Wave A removes the implicit Vite development Admin bypass and requires canonical stored authentication/role state in every mode. Governance is active; product implementation is pending H2. | VG FE11 L3; FE11 Finalization Batch | IN PROGRESS |
 | TD-018 | FE02 Auth | P2 | Add tests for FR-FE02-015 (duplicate email) and FR-FE02-019 (weak password) via the API, and for the OTP verify/reset branches (currently only token branch is tested). | VG FE02 P2 | OPEN |
 | TD-019 | FE02 Auth | P2 | IP-based rate limiting (NFR-FE02-SEC-005) is not implemented (only per-user lockout). Confirm whether per-user is sufficient for Phase 1. | VG FE02 P2 | OPEN |
 | TD-020 | FE02 Auth | P2 (decision) | Login returns `ACCOUNT_INACTIVE` (403) for existing-but-unverified accounts, which is a mild user-enumeration signal vs NFR-SEC-010. Confirm intended vs generic message. | VG FE02 P2 | OPEN |
-| TD-021 | Cross-feature | P2 | **Partial.** API-level integration tests now prove the in-scope cross-feature flows (FE02→FE07/FE08/FE10/FE12, FE07→FE09→FE10, FE08 held-copy→FE07, **FE08→FE10 reservation-ready**, **FE08 expire→promote→FE10**). Still missing: a true browser E2E (no Playwright/Cypress installed) and a SQL-Server-backed integration run (no MSSQL instance in CI) — both need infra not available now, so deferred. | Integration map | PARTIAL |
+| TD-021 | Cross-feature | P2 | **Partial.** API-level integration tests prove the in-scope cross-feature flows and the CI now runs a Playwright browser golden path. Still missing: feature-specific FE11 Admin Console browser acceptance and a SQL-Server-backed integration run (no MSSQL instance in CI). | Integration map; CI run `29639933730` | PARTIAL |
+| TD-025 | FE11 Request Management | P1 | FE11 Finalization Wave B will add canonical Admin request list/detail reads, server pagination, safe all-page CSV, FE07-owned terminal actions, and focused browser acceptance. Governance is active; product implementation is pending H2. | FE11 context drift audit; FR-FE11-034/035; Finalization Batch | IN PROGRESS |
 
 ---
 
@@ -42,6 +43,11 @@ Last Updated: 2026-06-25
 
 | Feature | What was fixed | Commit |
 | ------- | -------------- | ------ |
+| FE11 | TD-023: aligned the Admin Console to the exact eight-entry sidebar, added Admin-only `GET /api/admin/permissions` with the canonical three-role/15-permission policy, and composed independent FE12 role counts with derived read-only coverage/matrix state. PR #37; post-merge CI `29655548150`. | 356130e |
+| FE11 | TD-024: replaced the legacy Audit Log read path with Admin-first canonical filtering, stable SQL pagination, action-aware default-deny redaction, safe frontend rendering, and legacy `404 NOT_FOUND`. PR #33; post-merge CI `29651173195`. | 3c88e43 |
+| FE11 | TD-026: restored `GET /api/users` to exactly `{ data, pagination }` and moved global Admin counters to independent FE12 `/api/reports/users` statistics with numeric zero defaults. PR #34; post-merge CI `29652243809`. | 411fa25 |
+| FE11 | TD-027: reconciled exactly 22 approved FE11 Test Case/Status cells while preserving requirement text, deferred rows, and whole-feature `DEFERRED` state. PR #35; post-merge CI `29652617587`. | c286cd9 |
+| FE11 | TD-022: Admin role actions now use numeric IDs from the authenticated catalog, validate the full diff, assign before revoke, preserve no-op/non-editable roles, and reconcile partial failures. PR #30 merged as `c20d3251`; post-merge CI `29644292781` passed. | c20d3251 |
 | FE07 | TD-006: added tests for FR-FE07-019 (no double-borrow on concurrent approve), FR-FE07-016 (unpaid-fine block), FR-FE07-020 (overdue renewal block); tagged FR-FE07-014..022 with `@spec` → 100% traceability | 16e8134 |
 | FE07 | TD-008: synced `models/BorrowDetail.js` `allowedValues` + default to the SQL CHECK set (`REQUESTED..DAMAGED`) | 3ae1d82 |
 | FE08 | TD-010: `cancelReservation` now returns the current reservation state (`{reservationId, status}`) alongside the 409 (`safeErrors.conflict` + errorHandler carry `details`) | 3ae1d82 |

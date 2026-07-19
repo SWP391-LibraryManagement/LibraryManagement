@@ -11,17 +11,16 @@ import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { DEMO_MY_RESERVATIONS, DEMO_RESERVABLE, fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import { DEMO_RESERVABLE, fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
 
 export default function MyReservationsPage() {
   const navigate = useNavigate();
-  const [reservations, setReservations] = useState(DEMO_MY_RESERVATIONS);
+  const [reservations, setReservations] = useState([]);
   const [search, setSearch] = useState('');
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Đang hiển thị dữ liệu demo để review UI đặt chỗ.');
-  const [isDemo, setIsDemo] = useState(true);
+  const [notice, setNotice] = useState(null);
   const [toast, showToast, clearToast] = useToast();
 
   async function loadReservations() {
@@ -29,12 +28,10 @@ export default function MyReservationsPage() {
     try {
       const data = await reservationApi.listMine();
       setReservations((data.reservations || []).map(mapReservation));
-      setIsDemo(false);
-      setNotice('Dữ liệu đặt chỗ đã được cập nhật.');
+      setNotice({ type: 'success', title: 'Đã cập nhật dữ liệu', message: 'Danh sách đặt chỗ đã được đồng bộ với thư viện.' });
     } catch (error) {
-      setReservations(DEMO_MY_RESERVATIONS);
-      setIsDemo(true);
-      setNotice(error.message);
+      setReservations([]);
+      setNotice({ type: 'error', title: 'Không thể tải đặt chỗ', message: error.message });
     } finally {
       setLoading(false);
     }
@@ -64,25 +61,9 @@ export default function MyReservationsPage() {
       const data = await reservationApi.create(book.copyId);
       const next = mapReservation(data.reservation);
       setReservations((current) => [next, ...current]);
-      setIsDemo(false);
       showToast(`Đã đặt "${next.title}". Vị trí hiện tại: #${next.queue}.`, 'success');
     } catch (error) {
-      if (isDemo) {
-        const next = {
-          id: `RS-DEMO-${reservations.length + 900}`,
-          reservationId: reservations.length + 900,
-          copyId: book.copyId,
-          title: book.title,
-          author: book.author,
-          reservedDate: new Date().toISOString(),
-          queue: book.queue + 1,
-          status: 'Waiting',
-        };
-        setReservations((current) => [next, ...current]);
-        showToast('Backend chưa nhận yêu cầu; đã thêm đặt chỗ demo để kiểm tra UI.', 'info');
-      } else {
-        showToast(error.message, 'error');
-      }
+      showToast(error.message, 'error');
     }
   }
 
@@ -90,9 +71,7 @@ export default function MyReservationsPage() {
     if (!cancelTarget || cancelling) return;
     setCancelling(true);
     try {
-      if (!isDemo) {
-        await reservationApi.cancel(cancelTarget.reservationId, 'Cancelled by member from UI');
-      }
+      await reservationApi.cancel(cancelTarget.reservationId, 'Cancelled by member from UI');
       setReservations((current) => current.filter((item) => item.id !== cancelTarget.id));
       showToast(`Đã hủy đặt chỗ "${cancelTarget.title}".`, 'info');
       setCancelTarget(null);
@@ -110,9 +89,9 @@ export default function MyReservationsPage() {
       subtitle="Đặt sách và theo dõi vị trí trong hàng đợi."
       actions={<button className="btn btn-outline" onClick={loadReservations} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      <DataNotice type={isDemo ? 'warning' : 'success'} title={isDemo ? 'Dữ liệu demo' : 'Đã cập nhật dữ liệu'}>{notice}</DataNotice>
+      {notice && <DataNotice type={notice.type} title={notice.title}>{notice.message}</DataNotice>}
 
-      <div className="lib-card">
+      <div className="lib-card member-reservation-catalog">
         <h3 className="lib-card-title">Đặt một cuốn sách</h3>
         <DataToolbar
           primary={(
@@ -141,7 +120,7 @@ export default function MyReservationsPage() {
         </div>
       </div>
 
-      <div className="lib-card">
+      <div className="lib-card member-reservation-list">
         <h3 className="lib-card-title">Đặt chỗ của tôi</h3>
         <DataTable
           caption="My reservations table"

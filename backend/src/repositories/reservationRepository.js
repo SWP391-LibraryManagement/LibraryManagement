@@ -16,15 +16,19 @@ const reservationSelect = `
     u.Username,
     u.Email,
     u.Status AS UserStatus,
+    up.FullName,
     bc.BookId,
     bc.Barcode,
     bc.Status AS CopyStatus,
     bc.Location,
-    b.Title
+    b.Title,
+    a.AuthorName
   FROM Reservations r
   INNER JOIN Users u ON r.UserId = u.UserId
+  LEFT JOIN UserProfiles up ON r.UserId = up.UserId
   INNER JOIN BookCopies bc ON r.CopyId = bc.CopyId
   INNER JOIN Books b ON bc.BookId = b.BookId
+  LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
 `;
 
 function mapCopy(row) {
@@ -37,8 +41,10 @@ function mapCopy(row) {
     bookId: row.BookId,
     barcode: row.Barcode,
     status: row.CopyStatus,
+    bookStatus: row.BookStatus,
     location: row.Location,
     title: row.Title,
+    author: row.AuthorName,
   };
 }
 
@@ -62,6 +68,7 @@ function mapReservation(row) {
     member: {
       userId: row.UserId,
       username: row.Username,
+      fullName: row.FullName,
       email: row.Email,
       status: row.UserStatus,
     },
@@ -113,6 +120,7 @@ async function findCopyById(copyId) {
         bc.Barcode,
         bc.Status AS CopyStatus,
         bc.Location,
+        b.Status AS BookStatus,
         b.Title
       FROM BookCopies bc
       INNER JOIN Books b ON bc.BookId = b.BookId

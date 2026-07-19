@@ -1,6 +1,6 @@
 ﻿# TASKS.md - FE02 Authentication
 
-Status: READY FOR REVIEW - OTP DELIVERY FOLLOW-UP
+Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 Date: 2026-07-15
 Owner: Dat
 
@@ -25,7 +25,7 @@ Owner: Dat
 | FE02-T007 | Implement repositories: `userRepository`, `authTokenRepository`, `auditLogRepository`. | FR-FE02-001 to FR-FE02-014 | FE02-T003 | All SQL uses parameterized queries; no raw token lookup except hashed token. |
 | FE02-T008 | Implement optional/mock notification repository/service adapter for verification/reset emails. | FR-FE02-003, FR-FE02-011; FE10 dependency | FE02-T007 | Creates safe notification record or no-op mock; raw token is not logged. |
 | FE02-T009 | Implement auth validators with `express-validator`. | FR-FE02-001, FR-FE02-004, FR-FE02-010 to FR-FE02-012 | FE02-T001 | Invalid requests return 400 with safe validation errors. |
-| FE02-T010 | Implement registration service and controller. | UC05; AC-FE02-001 to AC-FE02-003 | FE02-T005, FE02-T007, FE02-T008, FE02-T009 | Valid registration creates user, hashes password, creates verification token, returns 201. |
+| FE02-T010 | Implement registration service and controller. | UC05; AC-FE02-001 to AC-FE02-003, AC-FE02-022 | FE02-T005, FE02-T007, FE02-T008, FE02-T009 | Valid self-registration creates an inactive Member, hashes the password, creates the verification token, and returns 201. |
 | FE02-T011 | Implement email verification and resend verification. | UC05; FR-FE02-003; AC-FE02-002, AC-FE02-003 | FE02-T010 | Valid token activates account; expired/used token fails safely; resend avoids enumeration. |
 | FE02-T012 | Implement login service/controller with failed-login counter and lock handling. | UC06; AC-FE02-004 to AC-FE02-010 | FE02-T006, FE02-T007, FE02-T009 | Valid active user receives access/refresh token; invalid/inactive/locked cases fail safely. |
 | FE02-T013 | Implement auth middleware and `/api/auth/me`. | FR-FE02-008, FR-FE02-009; AC-FE02-009, AC-FE02-010 | FE02-T006, FE02-T012 | Valid access token sets `req.user`; missing/expired token returns 401. |
@@ -76,7 +76,7 @@ Password reset and frontend integration may follow only if the team explicitly s
 - [x] Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
 - [x] B7 evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
 
-This evidence closes the Authentication/OTP UX task group only and does not change the overall FE02 `READY FOR REVIEW` status.
+This evidence closes the Authentication/OTP UX task group only; the FE02 baseline is approved while OTP delivery implementation follow-up remains pending.
 
 ## FE02/FE10 OTP Delivery Follow-up Tasks
 
@@ -129,3 +129,8 @@ This evidence closes the Authentication/OTP UX task group only and does not chan
   - Dependencies: FE02-T036, FE11-S03..S06.
   - DoD: focused cross-feature tests, traceability, secret scans, and `git diff --check` pass; Nhat completes human review.
   - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
+
+- [x] **FE02-T038 - Normalize the FE02 business contract for cross-feature review.**
+  - Maps to: BR-FE02-014, BR-FE02-015, BR-FE02-017; FR-FE02-013, FR-FE02-014; AC-FE02-022..024; Q-FE02-014..016.
+  - DoD: self-registration is Member-only, FE11 owns staff/admin creation, account setup expiry is exactly 24 hours, refresh-token exchange does not require an access token, and every normalized rule has deterministic traceability.
+  - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.

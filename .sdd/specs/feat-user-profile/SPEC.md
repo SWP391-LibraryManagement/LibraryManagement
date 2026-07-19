@@ -1,18 +1,18 @@
 # SPEC.md - FE03 User Profile
 
-# Version: 0.3.1
+# Version: 0.3.4
 
-# Status: APPROVED
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-06-25
+# Last Updated: 2026-07-19
 
 # Feature ID: FE03
 
 # Feature folder: `.sdd/specs/feat-user-profile/`
 
-> Source of truth for FE03 User Profile. Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`. The avatar upload storage policy (Q-FE03-004) was approved on 2026-06-25, completing the Phase 1 spec lock.
+> Source of truth for FE03 User Profile. The previously approved profile/avatar scope is preserved; v0.3.2 makes missing-profile, protected-field, avatar ownership, audit, and status-display behavior deterministic and awaits human re-review.
 
 ---
 
@@ -26,7 +26,7 @@ User Profile
 
 Members and librarians need to view and maintain their personal information so the library can contact them and identify them correctly during membership, borrowing, reservation, and fine workflows.
 
-Profile management must protect personal data. A user should be able to update allowed profile fields, but should not be able to change protected account fields such as password, role, account status, or membership approval through this feature.
+Profile management must protect personal data. A user can update only the approved profile fields and cannot change password, role, account status, or membership approval through this feature.
 
 ### 1.3 Goal / Outcome
 
@@ -78,9 +78,9 @@ The feature can only start when:
 
 1. Authenticated user opens profile page.
 2. The system identifies the current user from the authenticated session/token.
-3. The system loads profile data for that user only.
+3. The system loads profile data for that user only; if no `UserProfiles` row exists, it atomically creates a blank row for the current user and continues.
 4. The system returns safe account summary and profile fields.
-5. The system excludes password hash, role management fields, and internal audit data.
+5. The system includes account `status` as read-only display data and excludes password hash, role management fields, and internal audit data.
 
 ### MF-FE03-002: Update Profile
 
@@ -89,7 +89,8 @@ The feature can only start when:
 3. The system validates each submitted field.
 4. The system rejects protected fields such as role, status, password hash, and membership approval.
 5. The system saves valid profile changes.
-6. The system returns the updated safe profile view.
+6. The system writes an audit entry containing actor, changed field names, and timestamp without raw before/after personal values.
+7. The system returns the updated safe profile view.
 
 ### MF-FE03-003: Upload Avatar
 
@@ -99,7 +100,9 @@ The feature can only start when:
 4. The system validates file type, file size, and safe storage rules.
 5. The system stores the image using a server-generated safe filename.
 6. The system saves the generated public avatar URL/path in `UserProfiles.AvatarUrl`.
-7. The system returns the updated safe profile view.
+7. The system writes a profile-avatar audit entry without recording file bytes, local paths, or secret metadata.
+8. If the database or audit transaction fails, the system deletes the newly stored file and preserves the previous avatar URL; after a successful commit, cleanup of the replaced old file is attempted without changing the committed profile state, and any cleanup failure is logged safely.
+9. The system returns the updated safe profile view.
 
 ---
 
@@ -109,7 +112,7 @@ The feature can only start when:
 
 1. Authenticated user opens profile.
 2. `UserProfiles` record does not exist.
-3. The system either creates a blank profile record or returns a controlled incomplete-profile response according to approved policy.
+3. The system atomically creates one blank `UserProfiles` record for the current user and returns the normal safe profile response.
 
 ### AF-FE03-002: User Attempts To Access Another Profile
 
@@ -119,14 +122,14 @@ The feature can only start when:
 
 ### AF-FE03-003: Invalid Profile Data
 
-1. User submits invalid date, phone, avatar URL, or overlong text.
+1. User submits invalid date, phone, or overlong editable text.
 2. The system rejects the update.
 3. The existing profile data remains unchanged.
 
 ### AF-FE03-004: Protected Field Submitted
 
 1. User submits role, account status, password, or membership approval fields.
-2. The system ignores or rejects those fields.
+2. The system rejects the entire update with a validation response.
 3. The protected account data remains unchanged.
 
 ### AF-FE03-005: Invalid Avatar Upload
@@ -147,7 +150,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE03-004: FE03 must not return password hash or credential secrets.
 - BR-FE03-005: FE03 must not update password, role, account status, or membership approval.
 - BR-FE03-006: Profile updates must be validated on the server.
-- BR-FE03-007: Full name, address, date of birth, avatar URL, and phone must follow approved validation rules when submitted.
+- BR-FE03-007: Editable fields are `fullName` (trimmed, max 100), `address` (trimmed, max 255), `dateOfBirth` (valid ISO date, not future), and `phone` (10-15 digits with optional leading `+`).
 - BR-FE03-008: Invalid update requests must not partially change profile data.
 - BR-FE03-009: Email changes are out of FE03 scope unless FE02 verification behavior is approved.
 - BR-FE03-010: Profile data must be treated as personal information and returned only to authorized actors.
@@ -156,20 +159,23 @@ Use these stable IDs for tasks and tests.
 - BR-FE03-013: Avatar uploads must enforce the approved maximum file size.
 - BR-FE03-014: Avatar storage must use server-generated filenames and must not trust or persist the user's local file path.
 - BR-FE03-015: Avatar files must be stored on the server local filesystem under a public uploads directory (e.g. `/uploads/avatars/`); the generated public path/URL is saved in `UserProfiles.AvatarUrl`. Cloud/object storage is out of scope for Phase 1.
+- BR-FE03-016: `avatarUrl` is read-only in profile GET/PUT contracts and may be changed only by the authenticated avatar-upload endpoint after file validation.
+- BR-FE03-017: Every successful profile-field update and avatar update must write an audit entry with actor, changed field names, action, and timestamp; raw personal values, file content, paths, tokens, and secrets are forbidden in audit metadata. If avatar storage succeeds before the database/audit transaction fails, the newly stored file must be deleted; after commit, the replaced old file must be cleaned up, and a cleanup failure must be logged safely without rolling back the committed profile state.
 
 ---
 
 ## 7. Functional Requirements
 
-- FR-FE03-001: When an authenticated user opens profile, the system shall return the user's own safe profile data.
+- FR-FE03-001: When an authenticated user opens profile, the system shall atomically create a blank profile if missing and return the user's own safe profile data.
 - FR-FE03-002: If a guest requests profile data, then the system shall deny access.
 - FR-FE03-003: If a user requests another user's profile through FE03, then the system shall deny access.
 - FR-FE03-004: When an authenticated user submits valid allowed profile fields, the system shall update the profile.
 - FR-FE03-005: If submitted profile fields are invalid, then the system shall reject the update and keep existing data unchanged.
-- FR-FE03-006: If protected account fields are submitted, then the system shall reject or ignore them without changing protected data.
+- FR-FE03-006: If any protected, unknown, or read-only field is submitted to profile update, including `avatarUrl`, then the system shall reject the entire request without changing profile or account data.
 - FR-FE03-007: When a profile response is returned, the system shall exclude password hash, credential tokens, and internal role-management data.
 - FR-FE03-008: When an authenticated user uploads a valid avatar image, the system shall store it and update that user's `avatarUrl`.
 - FR-FE03-009: If an avatar upload is invalid, then the system shall reject it and keep the existing avatar unchanged.
+- FR-FE03-010: When a profile-field update or avatar update succeeds, the system shall write the required safe audit entry in the same source transaction as the database change; avatar file storage must follow the compensation and post-commit cleanup rules in BR-FE03-017, including safe logging when old-file cleanup fails after commit.
 
 ---
 
@@ -181,11 +187,14 @@ Use these stable IDs for tasks and tests.
 - AC-FE03-004: Given a user tries to view another user's profile, when the request is processed, then the system denies access.
 - AC-FE03-005: Given valid profile updates, when the user submits changes, then the system saves the changes.
 - AC-FE03-006: Given invalid profile data, when the user submits changes, then the system rejects the update.
-- AC-FE03-007: Given protected fields in the update payload, when the system processes it, then password, role, status, and membership approval remain unchanged.
+- AC-FE03-007: Given any protected, unknown, or read-only field in the update payload, when the system processes it, then the entire request is rejected and no profile or account field changes.
 - AC-FE03-008: Given a profile response, when it is returned, then it does not include `PasswordHash`.
 - AC-FE03-009: Given an authenticated user and a valid avatar image, when the user uploads it, then the response includes the updated `avatarUrl`.
 - AC-FE03-010: Given an invalid avatar upload, when the request is processed, then the upload is rejected and the old `avatarUrl` remains unchanged.
 - AC-FE03-011: Given a guest, when the guest uploads an avatar, then the system denies access.
+- AC-FE03-012: Given an authenticated user without a `UserProfiles` row, when the user views the profile, then exactly one blank row is created and the normal safe profile response is returned.
+- AC-FE03-013: Given `avatarUrl` in a profile PUT payload, when the request is processed, then it is rejected and the current avatar remains unchanged.
+- AC-FE03-014: Given an avatar file is stored, when the database/audit transaction fails, then the new file is deleted and the old avatar remains; when the transaction commits, one safe audit entry is written, old-file cleanup is attempted, and a cleanup failure is safely logged without rolling back the profile state.
 
 ---
 
@@ -194,21 +203,22 @@ Use these stable IDs for tasks and tests.
 | ID | Edge Case / Error | Expected System Behavior |
 | -- | ----------------- | ------------------------ |
 | EC-FE03-001 | User is not authenticated | Return unauthorized response. |
-| EC-FE03-002 | User account does not exist | Return not found or force logout according to auth policy. |
-| EC-FE03-003 | Profile record missing | Create blank profile or return controlled incomplete-profile response. |
+| EC-FE03-002 | User account does not exist | Return `404 PROFILE_ACCOUNT_NOT_FOUND`; do not create a profile row or mutate account state. |
+| EC-FE03-003 | Profile record missing | Atomically create one blank profile for the current user and return the normal safe profile response. |
 | EC-FE03-004 | User requests another user's profile | Return forbidden response. |
 | EC-FE03-005 | Full name too long | Reject update. |
 | EC-FE03-006 | Invalid date of birth | Reject update. |
 | EC-FE03-007 | Future date of birth | Reject update. |
 | EC-FE03-008 | Invalid phone format | Reject update if phone is editable. |
-| EC-FE03-009 | Invalid avatar URL | Reject update or store null according to policy. |
-| EC-FE03-010 | Payload includes password/role/status | Reject or ignore protected fields; do not change them. |
-| EC-FE03-011 | Database update fails | Keep previous profile state and return safe error. |
+| EC-FE03-009 | PUT payload includes `avatarUrl` | Reject the entire update; avatar changes are accepted only through `POST /api/profile/me/avatar`. |
+| EC-FE03-010 | Payload includes password/role/status/unknown field | Reject the entire update; do not change profile or protected data. |
+| EC-FE03-011 | Database or audit update fails after avatar storage | Keep previous profile state, delete the newly stored file, and return a safe error. |
 | EC-FE03-012 | Avatar upload has no file | Reject upload. |
 | EC-FE03-013 | Avatar upload is not an approved image type | Reject upload. |
 | EC-FE03-014 | Avatar upload exceeds maximum size | Reject upload. |
 | EC-FE03-015 | Avatar upload uses unsafe file name or path | Ignore original path/name and use a server-generated safe filename. |
 | EC-FE03-016 | Avatar storage fails | Keep previous avatar state and return safe error. |
+| EC-FE03-017 | Replaced old avatar cannot be cleaned after commit | Keep the committed new avatar URL, log a safe cleanup failure, and do not roll back the profile transaction. |
 
 ---
 
@@ -230,23 +240,25 @@ Use these stable IDs for tasks and tests.
 | username | string | Yes | Display only unless FE11/FE02 approves changes. |
 | email | string | Yes | Display only unless FE02 email-change flow is approved. |
 | phone | string | No | Editable only if Q-FE03-001 is approved. |
-| fullName | string | No | Trimmed; max length must be approved. |
-| address | string | No | Trimmed; max length must be approved. |
+| fullName | string | No | Editable; trimmed; maximum 100 characters. |
+| address | string | No | Editable; trimmed; maximum 255 characters. |
 | dateOfBirth | date | No | Must not be in the future. |
-| avatarUrl | string | No | Server-generated public path/URL pointing to the stored avatar on the server local filesystem (e.g. `/uploads/avatars/{generated}.png`). Set by avatar upload; see Q-FE03-004 and BR-FE03-015. |
+| avatarUrl | string | No | Read-only server-generated public path/URL (for example `/uploads/avatars/{generated}.png`); changed only by avatar upload, never by profile PUT. |
 | avatarFile | file | No | Upload-only field. Accepted extensions: JPG, JPEG, PNG, WebP. Maximum size: 2 MB. Stored using a server-generated filename. |
-| status | string | No | Display only if approved; not editable by FE03. |
+| status | string | No | Included in the safe profile DTO as read-only account state; never editable by FE03. |
+| department | string | No | Nullable `UserProfiles.Department`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
+| specialization | string | No | Nullable `UserProfiles.Specialization`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
 
 ---
 
 ## 11. API / Interface Contract
 
-> Endpoint names are proposed for RESTful API. Final contract may stay in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
+> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | GET | `/api/profile/me` | Member/Librarian/Admin | - | Safe profile DTO | Current user's profile only. |
-| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, avatarUrl?, phone? }` | Updated safe profile DTO | Phone is included as an approved editable field in Phase 1. |
+| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, phone? }` | Updated safe profile DTO | Unknown/protected/read-only fields, including `avatarUrl`, reject the entire request. |
 | POST | `/api/profile/me/avatar` | Member/Librarian/Admin | multipart form-data with `avatar` file | Updated safe profile DTO | Uploads an avatar image from the user's local device and stores the generated URL/path in `avatarUrl`. |
 
 ---
@@ -265,22 +277,23 @@ Use these stable IDs for tasks and tests.
 ### 12.2 Transaction Integrity
 
 - NFR-FE03-TXN-001: Profile update must be atomic; invalid fields must not cause partial profile changes.
-- NFR-FE03-TXN-002: Invalid avatar uploads must not change the current stored `avatarUrl`.
+- NFR-FE03-TXN-002: Invalid avatar uploads must not change the current stored `avatarUrl`; a database/audit failure after file storage must delete the new file and preserve the previous URL.
+- NFR-FE03-TXN-003: Replacing an avatar must commit the profile URL and audit atomically; cleanup of the old file occurs after commit and cannot change the committed profile state.
 
 ### 12.3 Performance
 
-- NFR-FE03-PERF-001: Profile load should require only current user/profile lookup in normal cases.
+- NFR-FE03-PERF-001: Profile GET must read only the authenticated user's `Users` row and at most one `UserProfiles` row; collection-wide scans are not permitted.
 
 ### 12.4 Logging and Audit
 
-- NFR-FE03-LOG-001: Profile update failures should be logged safely without storing sensitive payloads.
-- NFR-FE03-LOG-002: Audit logging for profile updates is optional unless the team requires it.
+- NFR-FE03-LOG-001: Profile update failures must be logged safely without storing sensitive payloads.
+- NFR-FE03-LOG-002: Every successful profile-field update and avatar update must be audited with actor, action, changed field names, and timestamp; raw personal values and file/path secrets must not be logged.
 
 ### 12.5 Usability
 
 - NFR-FE03-UX-001: Validation errors must identify the invalid field clearly.
-- NFR-FE03-UX-002: Profile view should clearly separate editable profile fields from account fields managed elsewhere.
-- NFR-FE03-UX-003: Avatar upload errors should clearly identify file size or file type problems.
+- NFR-FE03-UX-002: Profile view must clearly separate editable profile fields from account fields managed elsewhere.
+- NFR-FE03-UX-003: Avatar upload errors must identify whether file size or file type validation failed.
 
 ---
 
@@ -303,7 +316,7 @@ This feature does not include:
 | Dependency | Type | Notes |
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | Provides authenticated identity and credential flows. |
-| FE04 Membership Management | Internal | Owns membership status; FE03 may display but not change it if approved. |
+| FE04 Membership Management | Internal | Owns membership status; FE03 does not display or change membership status in Phase 1. |
 | FE11 User & Role Management | Internal | Owns user status and role management. |
 | SQL Server database | Technical | Current SQL script has `Users` and `UserProfiles`. |
 
@@ -317,7 +330,9 @@ This feature does not include:
 | Q-FE03-002 | FE03 cannot update email; email changes must go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-004 | Phase 1 supports avatar upload from the user's local device. Avatars are stored on the server local filesystem under a public uploads directory (e.g. `/uploads/avatars/`) using a server-generated filename; the generated public path/URL is saved in `UserProfiles.AvatarUrl`. Allowed types: JPG/JPEG/PNG/WebP; max size 2 MB. Cloud/object storage is out of scope for Phase 1. | User decision 2026-06-25 | APPROVED |
-| Q-FE03-005 | Profile updates write audit logs for changed fields, actor, and timestamp. | Review packet 2026-06-10 | APPROVED |
+| Q-FE03-005 | Profile-field and avatar updates must write safe audit logs containing actor, action, changed field names, and timestamp without raw personal values or file/path secrets. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
+| Q-FE03-006 | The safe profile DTO includes account `status` as read-only display data. | Spec normalization 2026-07-17 | APPROVED |
+| Q-FE03-007 | `avatarUrl` is changed only by the file-upload endpoint; direct profile PUT mutation is rejected. | Spec normalization 2026-07-17 | APPROVED |
 
 ---
 
@@ -360,6 +375,14 @@ This feature does not include:
 | AC-FE03-009 | UC12 | FT13 | Not Started |
 | AC-FE03-010 | UC12 | FT13 | Not Started |
 | AC-FE03-011 | UC12 | FT13 | Not Started |
+| BR-FE03-016 | UC12 | Planned avatarUrl read-only contract case | Not Started |
+| BR-FE03-017 | UC12 | Planned profile/avatar audit transaction case | Not Started |
+| FR-FE03-010 | UC12 | Planned safe audit persistence case | Not Started |
+| AC-FE03-012 | UC11 | FT12 missing-profile auto-create case | Not Started |
+| AC-FE03-013 | UC12 | Planned direct avatarUrl rejection case | Not Started |
+| AC-FE03-014 | UC12 | Planned avatar compensation, old-file cleanup failure logging, and safe audit case | Not Started |
+
+Coverage: 17/17 BR, 10/10 FR, and 14/14 AC have explicit use-case and test intent mappings.
 
 ---
 
@@ -373,3 +396,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Avatar upload storage policy revision is reviewed and approved (Q-FE03-004: local filesystem, approved 2026-06-25).
 - [x] Privacy and response DTO rules are reviewed.
 - [x] Every acceptance criterion can become a test.
+- [x] FE11-owned `department` and `specialization` columns are excluded from the FE03 safe DTO and PUT allowlist.

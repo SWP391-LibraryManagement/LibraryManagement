@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { buildManagedUserListParams } from '../utils/userManagementQuery';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -110,6 +111,21 @@ function getErrorMessage(error, fallback = 'Request failed. Please try again.') 
     return 'Your account does not have Admin permission for this action.';
   }
 
+  const messages = {
+    EMAIL_ALREADY_EXISTS: 'Email đã được sử dụng bởi tài khoản khác.',
+    USERNAME_ALREADY_EXISTS: 'Username đã tồn tại.',
+    INVALID_EMAIL: 'Email không hợp lệ.',
+    INVALID_PHONE: 'Số điện thoại không hợp lệ.',
+    FULL_NAME_REQUIRED: 'Họ và tên là bắt buộc.',
+    ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
+    CANNOT_DEACTIVATE_SELF: 'Admin không thể tự vô hiệu hóa tài khoản của mình.',
+    LAST_ADMIN_ROLE: 'Không thể gỡ vai trò Admin cuối cùng.',
+    LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
+    STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
+  };
+
+  if (messages[code]) return messages[code];
+
   return error.response?.data?.error?.message || fallback;
 }
 
@@ -118,11 +134,23 @@ export async function fetchUsers(params = {}) {
     const response = await authorizedRequest({
       method: 'get',
       url: '/users',
-      params,
+      params: buildManagedUserListParams(params),
     });
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Could not load users.'), { cause: error });
+  }
+}
+
+export async function fetchManagedUser(userId) {
+  try {
+    const response = await authorizedRequest({
+      method: 'get',
+      url: `/users/${userId}`,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Could not load user details.'), { cause: error });
   }
 }
 
@@ -135,19 +163,6 @@ export async function fetchRoles() {
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Could not load roles.'), { cause: error });
-  }
-}
-
-export async function fetchAuditLogs(limit = 30) {
-  try {
-    const response = await authorizedRequest({
-      method: 'get',
-      url: '/users/audit-logs',
-      params: { limit },
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load audit logs.'), { cause: error });
   }
 }
 
@@ -190,12 +205,12 @@ export async function deactivateManagedUser(userId) {
   }
 }
 
-export async function assignManagedUserRole(userId, roleName) {
+export async function assignManagedUserRole(userId, roleId) {
   try {
     const response = await authorizedRequest({
       method: 'post',
       url: `/users/${userId}/roles`,
-      data: { roleName },
+      data: { roleId },
     });
     return response.data;
   } catch (error) {
@@ -203,11 +218,11 @@ export async function assignManagedUserRole(userId, roleName) {
   }
 }
 
-export async function revokeManagedUserRole(userId, roleName) {
+export async function revokeManagedUserRole(userId, roleId) {
   try {
     const response = await authorizedRequest({
       method: 'delete',
-      url: `/users/${userId}/roles/${roleName}`,
+      url: `/users/${userId}/roles/${roleId}`,
     });
     return response.data;
   } catch (error) {

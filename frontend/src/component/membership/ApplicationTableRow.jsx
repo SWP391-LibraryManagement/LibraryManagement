@@ -23,7 +23,7 @@ export default function ApplicationTableRow({ application, onApprove, onReject }
       <td style={{ textAlign: 'right' }}>
         <div className="row-flex" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-success btn-sm" onClick={() => onApprove(application)} disabled={!canReview}>
-            <Check size={15} /> Xác thực
+            <Check size={15} /> Duyệt
           </button>
           <button type="button" className="btn btn-danger btn-sm" onClick={() => onReject(application)} disabled={!canReview}>
             <X size={15} /> Từ chối

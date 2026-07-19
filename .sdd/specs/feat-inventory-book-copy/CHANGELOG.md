@@ -1,5 +1,41 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-17 - Phase 1 Baseline Approved
+
+- Nhật confirmed the normalized FE06 inventory contract as the Phase 1 baseline; prototype reconciliation implementation remains pending.
+
+## 2026-07-17 - Final Contract Audit
+
+- Made the inventory filter set and copy-status vocabulary explicit in the main flow.
+- Replaced non-verifiable lookup-performance wording with database key/filter requirements.
+
+## 2026-07-16 - Planning Human Review Approval
+
+- Nhat approved the FE06 prototype-reconciliation plan and ordered task decomposition.
+- Marked `PLAN.md` and `TASKS.md` as `APPROVED`; implementation tasks remain unchecked and have not started.
+
+## 2026-07-16 - Implementation Planning Decomposition
+
+- Replaced placeholder `PLAN.md` and `TASKS.md` with a `READY FOR REVIEW` reconciliation plan for approved SPEC v0.4.0.
+- Added ordered RED/GREEN tasks for `BookCopies` rowversion/`If-Match`, same-transaction conflict checks, fixed lock order, active-parent guards, mandatory reasons, atomic audits, and idempotent deactivation.
+- Planned replacement of mock frontend ownership with server-backed inventory and mapped all 56 BR/FR/AC requirements to concrete files, dependencies, commands, and review gates.
+
+## 2026-07-16 - Human Review Approval
+
+- Nhat confirmed human review of revision v0.4.0.
+- Marked `SPEC.md` and `CONTEXT.md` as `APPROVED` and completed the revision review gate.
+
+## 2026-07-15 - Deterministic Inventory Contract (v0.4.0)
+
+- Required parent `Books.Status = ACTIVE` for FE06 create/manual transitions into `AVAILABLE` while preserving effective availability rules for FE07/FE08 releases.
+- Removed physical hard delete; DELETE is deterministic soft deactivation only.
+- Replaced all reject/redirect/normalize alternatives with one response policy and made duplicate deactivation idempotent.
+- Added SQL `rowversion`/`If-Match`, mandatory same-transaction conflict checks, lock order, and required audit logging.
+- Fixed initial create state, location validation, API mutation ownership, and complete traceability without `TBD` test mappings.
+- Corrected stale implementation metadata: FE06 prototype routes/layers/tests exist but require v0.4.0 reconciliation before completion.
+- Applied the parent-book guard to every FE06-owned transition into `AVAILABLE`, removed the deferred `condition` field, and kept borrower/reservation-owner data outside FE06 responses.
+- Defined deterministic inventory pagination: `page = 1`, `limit = 20`, bounds `page >= 1` and `limit = 1..100`, with invalid supplied values rejected rather than normalized.
+
 ## 2026-06-25 - Mark implementation as deferred (v0.3.1)
 
 - Added an explicit "Implementation Status: NOT IMPLEMENTED (deferred)" note to the spec header.
@@ -37,3 +73,6 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+## 2026-07-18 - Navigation label clarification
+
+- Renamed the librarian navigation and page title from “Quản lý kho sách” to “Quản lí kho”.

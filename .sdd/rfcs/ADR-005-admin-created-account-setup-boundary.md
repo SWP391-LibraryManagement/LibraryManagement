@@ -1,10 +1,12 @@
 # ADR-005: Admin-Created Account Setup Boundary
 
-Status: PROPOSED - AWAITING HUMAN REVIEW
+Status: ACCEPTED - IMPLEMENTED FOR THE APPROVED ACCOUNT-SETUP SLICE
 
 Date: 2026-07-15
 
 Affected features: FE02 Authentication, FE10 Notification Management, FE11 User & Role Management
+
+Review evidence: human review approved on 2026-07-15; `FE11-S01..S07` passed validation and the integrated behavior remains the accepted boundary. Remaining FE11 implementation stays deferred.
 
 ## Context
 

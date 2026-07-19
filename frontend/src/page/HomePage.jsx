@@ -5,6 +5,8 @@ import {
   addBorrowRecord,
   getMemberUnpaidFineSummary,
 } from '../utils/libraryWorkflow';
+import { fetchHeaderProfile } from '../api/profileApi';
+import { getHomeBookAction } from '../utils/homeBookActions';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
 
@@ -46,6 +48,19 @@ const getStoredAuthState = () => {
     isLoggedIn: false,
     authUser: null,
   };
+};
+
+const getHomeRoleLabel = (roles = []) => {
+  if (roles.includes('ADMIN')) return 'Quản trị viên';
+  if (roles.includes('LIBRARIAN')) return 'Thủ thư';
+  if (roles.includes('MEMBER')) return 'Thành viên';
+  return 'Người dùng';
+};
+
+const getHomeInitials = (name, email) => {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length) return parts.slice(-2).map((part) => part[0]?.toUpperCase() || '').join('');
+  return String(email || 'TV').charAt(0).toUpperCase();
 };
 
 
@@ -110,62 +125,6 @@ const StarRating = ({ rating, size = 12 }) => {
       >
         {score.toFixed(1)}
       </span>
-    </div>
-  );
-};
-
-// -- Trang đăng ký mượn sách --
-const REVIEW_NAMES = ['Minh Anh', 'Bao Long', 'Thao Vy', 'Gia Han', 'Quoc Huy'];
-const REVIEW_COMMENTS = [
-  'Noi dung de theo doi, phu hop de doc va tra cuu.',
-  'Sach co nhieu y hay, minh se gioi thieu cho ban be.',
-  'Ban in sach ro, thong tin huu ich cho viec hoc tap.',
-  'Tac gia trinh bay mach lac, diem tru nho la mot vai phan hoi dai.',
-  'Trai nghiem doc tot, rat dang muon lai lan sau.',
-];
-
-function getBookReviews(book) {
-  const baseScore = Number(book?.rating) || 4;
-  const seed = Number(book?.id) || 1;
-
-  return [0, 1, 2].map((index) => {
-    const score = Math.max(3.5, Math.min(5, baseScore + ((seed + index) % 3 - 1) * 0.2));
-    return {
-      id: `${book?.id || 'book'}-${index}`,
-      name: REVIEW_NAMES[(seed + index) % REVIEW_NAMES.length],
-      rating: Number(score.toFixed(1)),
-      comment: REVIEW_COMMENTS[(seed + index) % REVIEW_COMMENTS.length],
-    };
-  });
-}
-
-const ReviewModal = ({ book, onClose }) => {
-  if (!book) return null;
-
-  const reviews = getBookReviews(book);
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 850, background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={onClose}>
-      <div style={{ width: '100%', maxWidth: 520, background: '#FFF', borderRadius: 14, boxShadow: '0 24px 80px rgba(44,26,14,0.3)', overflow: 'hidden' }} onClick={event => event.stopPropagation()}>
-        <div style={{ background: '#4E342E', color: '#FAF7F2', padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <p style={{ margin: '0 0 4px', color: '#C78A3B', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Danh gia doc gia</p>
-            <h3 style={{ margin: 0, fontFamily: 'Playfair Display, serif', fontSize: 20 }}>{book.title}</h3>
-          </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 0, color: '#C4A882', borderRadius: 8, padding: 8, cursor: 'pointer' }}><X size={18} /></button>
-        </div>
-        <div style={{ padding: 22, display: 'grid', gap: 14 }}>
-          {reviews.map((review) => (
-            <div key={review.id} style={{ border: '1px solid rgba(78,52,46,0.12)', borderRadius: 10, padding: 14, background: '#FAF7F2' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 8 }}>
-                <strong style={{ color: '#2C1A0E', fontSize: 14 }}>{review.name}</strong>
-                <StarRating rating={review.rating} size={12} />
-              </div>
-              <p style={{ margin: 0, color: '#5A3E36', fontSize: 13, lineHeight: 1.6 }}>{review.comment}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
@@ -607,7 +566,7 @@ const canConfirm =
 };
 
 // -- Book Information Panel (sidebar-style) --
-const BookInfoPanel = ({ book, isLoggedIn, onClose, onViewDetails, onBorrow, onSignIn }) => (
+const BookInfoPanel = ({ book, action, onClose, onViewDetails, onAction }) => (
   <div style={{
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, zIndex: 300,
     background: '#FFF', boxShadow: '-8px 0 40px rgba(78,52,46,0.12)',
@@ -686,37 +645,19 @@ const BookInfoPanel = ({ book, isLoggedIn, onClose, onViewDetails, onBorrow, onS
       >
         Xem chi tiết đầy đủ <ArrowRight size={16} />
       </button>
-      {book.available && (
-        isLoggedIn ? (
-          <button
-            onClick={onBorrow}
-            style={{
-              width: '100%', padding: '12px', borderRadius: 8, marginTop: 10,
-              border: '1.5px solid #8B6B4A', background: 'transparent',
-              color: '#8B6B4A', cursor: 'pointer', fontSize: 14, fontWeight: 700,
-              transition: 'all 0.2s', fontFamily: 'Lato, sans-serif',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
-          >
-            Mượn sách này
-          </button>
-        ) : (
-          <button
-            onClick={onSignIn}
-            style={{
-              width: '100%', padding: '12px', borderRadius: 8, marginTop: 10,
-              border: '1.5px solid #C78A3B', background: 'transparent',
-              color: '#C78A3B', cursor: 'pointer', fontSize: 14, fontWeight: 700,
-              transition: 'all 0.2s', fontFamily: 'Lato, sans-serif',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#C78A3B'; e.currentTarget.style.color = '#FFF'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C78A3B'; }}
-          >
-            Đăng nhập để mượn
-          </button>
-        )
-      )}
+      <button
+        onClick={onAction}
+        style={{
+          width: '100%', padding: '12px', borderRadius: 8, marginTop: 10,
+          border: '1.5px solid #8B6B4A', background: 'transparent',
+          color: '#8B6B4A', cursor: 'pointer', fontSize: 14, fontWeight: 700,
+          transition: 'all 0.2s', fontFamily: 'Lato, sans-serif',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
+      >
+        {action.label}
+      </button>
     </div>
   </div>
 );
@@ -829,7 +770,7 @@ const MembershipModal = ({ onClose }) => (
 );
 
 // -- Modal chi tiết sách --
-const BookDetailsModal = ({ book, isLoggedIn, onClose, onBack, onBorrow, onSignIn, onReadingList }) => (
+const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 400,
     background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -864,31 +805,7 @@ const BookDetailsModal = ({ book, isLoggedIn, onClose, onBack, onBorrow, onSignI
             <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {book.available ? (
-              isLoggedIn ? (
-                <button onClick={onBorrow} style={{
-                  padding: '10px', borderRadius: 8, border: 'none', background: '#C78A3B',
-                  color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                  fontFamily: 'Lato, sans-serif', transition: 'background 0.2s',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
-                >
-                  Mượn ngay
-                </button>
-              ) : (
-                <button onClick={onSignIn} style={{
-                  padding: '10px', borderRadius: 8, border: '1.5px solid #C78A3B', background: 'transparent',
-                  color: '#C78A3B', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                  fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#C78A3B'; e.currentTarget.style.color = '#FFF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C78A3B'; }}
-                >
-                  Đăng nhập để mượn
-                </button>
-              )
-            ) : (
+            {!book.available && (
               <button style={{
                 padding: '10px', borderRadius: 8, border: 'none', background: '#EDE0CE',
                 color: '#A08060', cursor: 'not-allowed', fontSize: 13, fontWeight: 700,
@@ -897,7 +814,7 @@ const BookDetailsModal = ({ book, isLoggedIn, onClose, onBack, onBorrow, onSignI
                 Hiện đã được mượn
               </button>
             )}
-            <button onClick={onReadingList} style={{
+            <button onClick={onAction} style={{
               padding: '10px', borderRadius: 8, border: '1.5px solid rgba(78,52,46,0.25)',
               background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 13, fontWeight: 600,
               fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
@@ -905,7 +822,7 @@ const BookDetailsModal = ({ book, isLoggedIn, onClose, onBack, onBorrow, onSignI
               onMouseEnter={e => { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; }}
             >
-              + Thêm vào danh sách đọc
+              {action.label}
             </button>
           </div>
         </div>
@@ -977,6 +894,7 @@ const HomePage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [authState, setAuthState] = useState(getStoredAuthState);
+  const [headerProfile, setHeaderProfile] = useState(null);
   const isLoggedIn = authState.isLoggedIn;
   const authUser = authState.authUser;
   const [books, setBooks] = useState([]);
@@ -989,7 +907,16 @@ const HomePage = () => {
 
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState(null);
-  const [selectedReviewBook, setSelectedReviewBook] = useState(null);
+  const displayName = headerProfile?.fullName || authUser?.email || 'Tài khoản';
+  const roleLabel = getHomeRoleLabel(authUser?.roles || []);
+  const showMemberAccountActions = roleLabel === 'Thành viên';
+  const showAdminConsoleAction = roleLabel === 'Quản trị viên';
+  const showLibrarianConsoleAction = roleLabel === 'Thủ thư';
+  const selectedBookAction = selectedBook
+    ? getHomeBookAction({ book: selectedBook, isLoggedIn, roles: authUser?.roles || [] })
+    : null;
+  const avatarUrl = headerProfile?.avatarUrl || '';
+  const initials = getHomeInitials(headerProfile?.fullName, authUser?.email);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -1008,12 +935,21 @@ const HomePage = () => {
     navigate('/register');
   };
 
+  const handleBookAction = (book) => {
+    const action = getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] });
+    setShowDetails(false);
+    setShowBorrow(false);
+    setSelectedBook(null);
+    navigate(action.path);
+  };
+
   const handleLogout = () => {
     for (const key of ['accessToken', 'refreshToken', 'authUser']) {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     }
     setAuthState({ isLoggedIn: false, authUser: null });
+    setHeaderProfile(null);
     setShowUserMenu(false);
     setShowLogoutConfirm(false);
   };
@@ -1026,11 +962,22 @@ const HomePage = () => {
     navigate(isLoggedIn ? '/membership' : '/login');
   };
 
-  const openReviews = (event, book) => {
-    event.stopPropagation();
-    setSelectedReviewBook(book);
-  };
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return undefined;
+    }
 
+    let active = true;
+    fetchHeaderProfile()
+      .then((profile) => {
+        if (active) setHeaderProfile(profile);
+      })
+      .catch(() => {
+        // Stored authentication data keeps the account control usable.
+      });
+
+    return () => { active = false; };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -1187,7 +1134,7 @@ const HomePage = () => {
             { label: 'Thành viên', id: 'section-cta' },
             { label: 'Giới thiệu', id: 'section-footer' },
             { label: 'Liên hệ', id: 'section-footer' },
-          ].map(item => (
+          ].filter((item) => !isLoggedIn || item.id !== 'section-cta').map(item => (
             <button key={item.label} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A3E36', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s', fontFamily: 'Lato, sans-serif', padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.color = '#C78A3B')}
               onMouseLeave={e => (e.currentTarget.style.color = '#5A3E36')}
@@ -1204,16 +1151,32 @@ const HomePage = () => {
                 onClick={() => setShowUserMenu((open) => !open)}
                 aria-label="Mở menu tài khoản"
                 aria-expanded={showUserMenu}
-                style={{ width: 36, height: 36, borderRadius: '50%', border: '1.5px solid rgba(199,138,59,0.35)', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#7A5C44', cursor: 'pointer', position: 'relative', zIndex: 260 }}
+                style={{ border: 0, background: 'transparent', display: 'flex', alignItems: 'center', gap: 10, color: '#4E342E', cursor: 'pointer', position: 'relative', zIndex: 260, padding: 0 }}
               >
-                {(authUser?.email || 'TV').charAt(0).toUpperCase()}
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0 }}>
+                  <span style={{ maxWidth: 190, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: 700 }}>{displayName}</span>
+                  <span style={{ color: '#7A5C44', fontSize: 12 }}>{roleLabel}</span>
+                </span>
+                <span style={{ width: 38, height: 38, borderRadius: '50%', border: '1.5px solid rgba(199,138,59,0.35)', background: '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', fontSize: 13, fontWeight: 700, color: '#7A5C44', flexShrink: 0 }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials}
+                </span>
               </button>
               {showUserMenu && (
                 <div style={{ position: 'absolute', top: 46, right: 0, zIndex: 260, width: 220, background: '#FFFDF8', border: '1px solid rgba(78,52,46,0.14)', borderRadius: 12, boxShadow: '0 18px 48px rgba(44,26,14,0.18)', padding: 8 }}>
                   {[
                     { label: 'Thông tin cá nhân', action: () => navigate('/profile') },
-                    { label: 'Lịch sử mượn sách', action: () => navigate('/borrowing/history') },
-                    { label: 'Đăng kí hội viên', action: () => navigate('/membership') },
+                    ...(showAdminConsoleAction ? [
+                      { label: 'Trang quản trị', action: () => navigate('/admin/users') },
+                    ] : []),
+                    ...(showLibrarianConsoleAction ? [
+                      { label: 'Khu vực thủ thư', action: () => navigate('/home') },
+                    ] : []),
+                    ...(showMemberAccountActions ? [
+                      { label: 'Lịch sử mượn sách', action: () => navigate('/borrowing/history') },
+                      { label: 'Đăng kí hội viên', action: () => navigate('/membership') },
+                    ] : []),
                     { label: 'Đăng xuất', action: () => setShowLogoutConfirm(true), danger: true },
                   ].map((item) => (
                     <button
@@ -1411,32 +1374,9 @@ const HomePage = () => {
                     <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.category)}</p>
                     <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
-                    <button
-                      type="button"
-                      onClick={(event) => openReviews(event, book)}
-                      style={{ background: 'transparent', border: 0, padding: 0, alignSelf: 'flex-start', cursor: 'pointer' }}
-                    >
-                      <StarRating rating={book.rating} />
-                    </button>
-                    {isLoggedIn ? (
-                      book.available ? (
-                        <button onClick={e => { e.stopPropagation(); setSelectedBook(book); setShowBorrow(true); }}
-                          style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: 'none', background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'background 0.2s' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
-                          onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
-                        >Mượn sách này</button>
-                      ) : (
-                        <button style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)', background: 'transparent', color: '#A08060', cursor: 'not-allowed', fontSize: 12, fontWeight: 600, fontFamily: 'Lato, sans-serif' }} disabled>
-                          Không còn sách
-                        </button>
-                      )
-                    ) : (
-                      <button onClick={e => { e.stopPropagation(); goToLogin(); }}
-                        style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: 'transparent', color: '#C78A3B', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#C78A3B'; e.currentTarget.style.color = '#FFF'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C78A3B'; }}
-                      >Đăng nhập để mượn</button>
-                    )}
+                    <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
+                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: book.available ? '#C78A3B' : 'transparent', color: book.available ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
+                    >{getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label}</button>
                   </div>
                 </div>
               ))}
@@ -1514,13 +1454,6 @@ const HomePage = () => {
                 </h3>
                 <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
                 <button
-                  type="button"
-                  onClick={(event) => openReviews(event, book)}
-                  style={{ background: 'transparent', border: 0, padding: 0, alignSelf: 'flex-start', cursor: 'pointer' }}
-                >
-                  <StarRating rating={book.rating} />
-                </button>
-                <button
                   onClick={e => { e.stopPropagation(); setSelectedBook(book); setShowDetails(false); }}
                   style={{
                     marginTop: 22, width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid rgba(78,52,46,0.2)',
@@ -1539,7 +1472,7 @@ const HomePage = () => {
       </section>
 
       {/* -- CTA -- */}
-      <section id="section-cta" style={{ background: '#EDE0CE', padding: '72px 80px' }}>
+      {!isLoggedIn && <section id="section-cta" style={{ background: '#EDE0CE', padding: '72px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           {/* Left */}
           <div>
@@ -1598,7 +1531,7 @@ const HomePage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* -- FOOTER -- */}
       <footer id="section-footer" style={{ background: '#1E120A' }}>
@@ -1710,11 +1643,10 @@ const HomePage = () => {
       {selectedBook && !showDetails && !showBorrow && (
         <BookInfoPanel
           book={selectedBook}
-          isLoggedIn={isLoggedIn}
+          action={selectedBookAction}
           onClose={() => setSelectedBook(null)}
           onViewDetails={() => setShowDetails(true)}
-          onBorrow={() => setShowBorrow(true)}
-          onSignIn={goToLogin}
+          onAction={() => handleBookAction(selectedBook)}
         />
       )}
 
@@ -1731,16 +1663,12 @@ const HomePage = () => {
       {selectedBook && showDetails && (
         <BookDetailsModal
           book={selectedBook}
-          isLoggedIn={isLoggedIn}
+          action={selectedBookAction}
           onClose={() => { setSelectedBook(null); setShowDetails(false); }}
           onBack={() => setShowDetails(false)}
-          onBorrow={() => { setShowDetails(false); setShowBorrow(true); }}
-          onSignIn={() => { markDemoLoggedIn(); showToast('Đã đăng nhập! Bạn có thể mượn sách ngay bây giờ.'); }}
-          onReadingList={() => showToast(`Đã thêm "${selectedBook.title}" vào danh sách đọc!`)}
+          onAction={() => handleBookAction(selectedBook)}
         />
       )}
-
-      <ReviewModal book={selectedReviewBook} onClose={() => setSelectedReviewBook(null)} />
 
       {/* -- TOAST -- */}
       {toast && (

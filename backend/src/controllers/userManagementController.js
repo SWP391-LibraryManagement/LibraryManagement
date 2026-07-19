@@ -12,7 +12,7 @@ function createUserManagementController(userManagementService = defaultUserManag
   return {
     listUsers: async (req, res, next) => {
       try {
-        const result = await userManagementService.listUsers(req.query);
+        const result = await userManagementService.listUsers(req.validatedListQuery || req.query);
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -31,15 +31,6 @@ function createUserManagementController(userManagementService = defaultUserManag
     listRoles: async (req, res, next) => {
       try {
         const result = await userManagementService.listRoles();
-        return res.status(200).json(result);
-      } catch (error) {
-        return next(error);
-      }
-    },
-
-    listAuditLogs: async (req, res, next) => {
-      try {
-        const result = await userManagementService.listAuditLogs(req.query);
         return res.status(200).json(result);
       } catch (error) {
         return next(error);

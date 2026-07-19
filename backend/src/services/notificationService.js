@@ -51,7 +51,7 @@ const unsafeSourceEntityTypeFragments = [
   'password',
   'otp',
 ];
-const allowedSourceFeatures = new Set(['FE02', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM']);
+const allowedSourceFeatures = new Set(['FE02', 'FE04', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM']);
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();

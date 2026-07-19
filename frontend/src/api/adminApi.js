@@ -28,22 +28,25 @@ export const adminApi = {
   updateResource(resource, id, data) {
     return authorizedRequest({ method: 'put', url: `/admin/library/${resource}/${id}`, data }, 'Khong the cap nhat du lieu.');
   },
-  deleteResource(resource, id) {
-    return authorizedRequest({ method: 'delete', url: `/admin/library/${resource}/${id}` }, 'Khong the xoa du lieu.');
+  deactivateResource(resource, id) {
+    return authorizedRequest({ method: 'patch', url: `/admin/library/${resource}/${id}/deactivate`, data: {} }, 'Khong the vo hieu hoa du lieu.');
   },
   borrowings(params = {}) {
     return authorizedRequest({ method: 'get', url: '/admin/borrowings', params }, 'Khong the tai du lieu muon tra.');
   },
-  createBorrowing(data) {
-    return authorizedRequest({ method: 'post', url: '/admin/borrowings', data }, 'Khong the them muon tra.');
-  },
-  updateBorrowing(id, data) {
-    return authorizedRequest({ method: 'put', url: `/admin/borrowings/${id}`, data }, 'Khong the cap nhat muon tra.');
-  },
   requests(params = {}) {
     return authorizedRequest({ method: 'get', url: '/admin/requests', params }, 'Khong the tai yeu cau.');
   },
-  updateRequestStatus(id, status) {
-    return authorizedRequest({ method: 'patch', url: `/admin/requests/${id}/status`, data: { status } }, 'Khong the cap nhat yeu cau.');
+  permissions() {
+    return authorizedRequest(
+      { method: 'get', url: '/admin/permissions' },
+      'Khong the tai ma tran phan quyen.'
+    );
+  },
+  auditLogs(params = {}) {
+    return authorizedRequest(
+      { method: 'get', url: '/admin/audit-logs', params },
+      'Khong the tai nhat ky hoat dong.'
+    );
   },
 };

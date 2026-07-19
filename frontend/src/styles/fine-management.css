@@ -1,13 +1,17 @@
 .fine-header p,
-.fine-panel-head p { color: #0f766e; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
+.fine-panel-head p { color: #8a581d; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
 .fine-panel-head h2,
 .fine-guide-panel h2 { margin: 0; color: #111827; letter-spacing: 0; }
-.fine-policy { max-width: 520px; display: flex; gap: 12px; padding: 14px 16px; border: 1px solid #ccfbf1; border-radius: 8px; background: #f0fdfa; color: #0f766e; }
+.fine-policy { max-width: none; display: flex; gap: 12px; padding: 15px 18px; border: 1px solid #e6d5bb; border-radius: 14px; background: #f7efe2; color: #8a581d; }
 .fine-policy strong, .fine-policy span { display: block; }
 .fine-policy span { color: #475569; font-size: 13px; margin-top: 3px; }
+.fine-workflow-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.fine-workflow-tabs .tab { min-height: 44px; }
+.fine-workflow-tabs .tab > span { width: 23px; height: 23px; border-radius: 50%; display: grid; place-items: center; background: #f2e7d5; color: #8a581d; font-size: 12px; font-weight: 800; }
+.fine-workflow-tabs .tab.active > span { background: rgba(255, 255, 255, .22); color: #fff; }
 .fine-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
-.fine-stat, .fine-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 30px rgba(15, 23, 42, .05); }
-.fine-stat { padding: 18px; display: grid; gap: 8px; }
+.fine-stat, .fine-panel { background: #fffdfa; border: 1px solid #e6d5bb; border-radius: 16px; box-shadow: 0 10px 30px rgba(84, 56, 27, .07); }
+.fine-stat { padding: 18px 20px; display: grid; gap: 8px; border-top: 3px solid #b67a2a; }
 .fine-stat div { width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; }
 .fine-stat span { color: #64748b; font-size: 13px; }
 .fine-stat strong { color: #111827; font-size: 22px; }
@@ -16,9 +20,9 @@
 .fine-stat.success div { background: #dcfce7; color: #15803d; }
 .fine-stat.neutral div { background: #e0f2fe; color: #0369a1; }
 .fine-grid, .fine-section-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
-.fine-panel { padding: 18px; }
+.fine-panel { padding: 20px; }
 .fine-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
-.fine-crud-form { border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; padding: 14px; margin-bottom: 14px; display: grid; gap: 12px; }
+.fine-crud-form { border: 1px solid #e6d5bb; border-radius: 12px; background: #faf6ef; padding: 16px; margin: 16px 0; display: grid; gap: 14px; }
 .fine-crud-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .fine-crud-head strong { color: #111827; font-size: 15px; }
 .fine-crud-head div { display: flex; gap: 8px; }
@@ -26,11 +30,11 @@
 .fine-crud-grid label { display: grid; gap: 5px; color: #334155; font-size: 12px; font-weight: 800; }
 .fine-crud-grid input, .fine-crud-grid select { min-height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; font: inherit; color: #111827; background: #fff; }
 .fine-crud-grid label span { color: #b91c1c; font-size: 11px; }
-.fine-save-button { min-height: 36px; border-radius: 8px; border: 1px solid #0f766e; background: #0f766e; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-weight: 800; padding: 0 11px; justify-self: start; }
+.fine-save-button { min-height: 42px; border-radius: 10px; border: 1px solid #b67a2a; background: #b67a2a; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-weight: 800; padding: 0 16px; justify-self: start; }
 .fine-save-button:disabled { opacity: .6; cursor: not-allowed; }
 .fine-detail-panel { position: sticky; top: 20px; }
 .fine-detail-card { display: grid; gap: 12px; margin-bottom: 16px; }
-.fine-detail-card > div { border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; }
+.fine-detail-card > div { border-radius: 12px; background: #faf6ef; border: 1px solid #eadcc7; padding: 15px; }
 .fine-detail-card span, .fine-details dt, .fine-paid-preview span, .fine-preview-grid span { color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: .06em; }
 .fine-detail-card strong { display: block; margin-top: 5px; color: #111827; font-size: 18px; }
 .fine-detail-card small { color: #64748b; display: block; margin-top: 4px; }
@@ -41,8 +45,8 @@
 .fine-form-panel label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 800; }
 .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 11px 12px; resize: vertical; min-height: 42px; }
 .fine-form-panel textarea { min-height: 90px; }
-.fine-form-panel button { min-height: 44px; border: 0; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.fine-form-panel button:hover { background: #115e59; }
+.fine-form-panel button { min-height: 44px; border: 0; border-radius: 10px; background: #b67a2a; color: #fff; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.fine-form-panel button:hover { background: #8a581d; }
 .fine-form-panel button:disabled { background: #cbd5e1; cursor: not-allowed; }
 .fine-note { border-radius: 8px; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
 .fine-transfer-card { display: grid; gap: 14px; padding: 14px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff; }
@@ -61,6 +65,10 @@
 .fine-paid-preview strong { text-align: right; margin-top: 0; }
 .fine-guide-panel h2 { font-size: 20px; margin-bottom: 14px; }
 .fine-guide-panel ol { margin: 0; padding-left: 20px; color: #475569; line-height: 1.7; }
+.fine-admin-resolution { border-top: 1px solid #eadcc7; margin-top: 18px; padding-top: 16px; display: grid; gap: 12px; }
+.fine-admin-resolution label { display: grid; gap: 7px; color: #5f472e; font-weight: 800; }
+.fine-admin-resolution textarea { min-height: 82px; border: 1px solid #ddc9aa; border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.fine-admin-resolution > div { display: flex; flex-wrap: wrap; gap: 10px; }
 @media (max-width: 1180px) {
   .fine-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fine-grid, .fine-section-layout { grid-template-columns: 1fr; }

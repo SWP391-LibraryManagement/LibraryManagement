@@ -2,7 +2,7 @@
 
 # Version: 0.2.0
 
-# Status: READY FOR REVIEW - ACCOUNT SETUP REVISION
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
@@ -49,6 +49,7 @@ The typical small/medium library administration workflow:
 FE11 includes:
 
 - View list of all users with filtering, sorting, and search.
+- View safe allowlisted user details without passwords, credential/token hashes, session identifiers, setup/reset links, or secret audit metadata.
 - View detailed user information.
 - Create member accounts.
 - Create librarian accounts.
@@ -96,6 +97,7 @@ Potential issues to review:
 - `AuditLogs` must capture what changed and by whom; simple action text is insufficient.
 - Need to prevent removal of Admin role if only one admin remains.
 - Email uniqueness constraint should be case-insensitive.
+- User updates require the loaded `UpdatedAt` value; stale updates fail deterministically with `409 STALE_USER_STATE`.
 - Need `Department` and `Specialization` fields for librarian accounts.
 - Shared passwords must not be displayed to admins.
 

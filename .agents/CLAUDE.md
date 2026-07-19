@@ -1,10 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.0
+# Version: 0.3.4
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
-# Last Updated: 2026-07-15
+# Last Updated: 2026-07-18
 
 # Project: SWP391 Library Management System
 
@@ -18,18 +18,17 @@
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 - **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
-- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server (Sequelize ORM) database, RESTful API.
-- **Current SDD scope**: all 12 Phase 1 feature `SPEC.md` files are **APPROVED**. `PLAN.md` + `TASKS.md` are **READY FOR REVIEW** (implemented vertical slice) for 3 features:
-  - FE02 `feat-auth`, FE08 `feat-reservation-management`, and FE09 `feat-fine-management`.
+- **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server through the `mssql` package with parameterized queries, RESTful API.
+- **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. This approval locks the normalized contracts as the source of truth; it does not claim that implementation, tests, or deferred follow-up tasks are complete.
+  - FE01 remains implementation `NOT STARTED`. FE04/FE05/FE06 have decomposed implementation tasks that are not yet executed. FE02/FE07/FE08/FE09/FE10 have follow-up reconciliation tasks. FE11 account setup (`FE11-S01..S07`), transactional backend role mutation (`FE11-R01..R05`), safe user list/detail (`FE11-U01..U06`), and the Admin role-action UI contract (`FE11-UIR01..UIR05`) are complete through B7; update/deactivation, Admin Console/Permissions/Audit/Request Management, and remaining FE11 debt stay deferred. FE12's B7 base slice is complete while deterministic-policy follow-up remains pending.
   - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
-  - FE07 `feat-borrowing-management` is **COMPLETE** through B7: Nhat confirmed human review, implementation commit `3a7b0ad1165607b8912c6c0be5f3ef2025c11b55` reached `main` through PR #19 / merge commit `aeed0dfecb764e6cbe63d7074727f318700e59ea`, and GitHub Actions CI run `29308540692` passed. See `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
-  - FE08 also has B7 evidence: human review confirmed in the Codex task before merge, commit `236043864304627f3577baafa9b8648c13c7a691` is in `main`, and GitHub Actions CI run `29217437981` passed. See `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
-  - FE10 `feat-notification-management` completed the historical G1-G7 slice through B7: human integration review was confirmed, commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` is in `main`, and GitHub Actions CI run `29236572558` passed. ADR-004/G8-G10 define the pending FE02 OTP security follow-up; ADR-005/G11 define pending FE11-owned `ACCOUNT_SETUP` delivery. Both specification/task revisions await final written review; implementation has not started.
-  - FE12 `feat-reporting-statistics` is **COMPLETE** through B7: Nhat confirmed human review, commit `58747bc10657ed1accb44950ae0c5edbd178a242` is in `main` and `origin/main`, and GitHub Actions CI run `29249491818` passed. See `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
-  - FE01 `feat-public-browse`, FE04 `feat-membership-management`, FE05 `feat-book-management`, and FE06 `feat-inventory-book-copy` have `PLAN.md` / `TASKS.md` marked **NOT STARTED**. FE11 now has a reviewable account-setup slice only; all remaining FE11 work stays unplanned.
-  - FE03 `feat-user-profile` uses legacy `# Status:` headings (`DRAFT - AVATAR UPLOAD REVISION` / manual verification pending) instead of the canonical unprefixed `Status:` field.
-- **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories → Sequelize models`) with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, and report pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
-- **Known drift to reconcile**: some features (e.g. FE05 book) have prototype code while their `PLAN.md` / `TASKS.md` are still `NOT STARTED`. Do not treat such code as spec-driven/source-of-truth until the matching PLAN/TASKS are decomposed and approved. See [`.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md`](../.sdd/reviews/hybrid-method-compliance-review-2026-06-22.md).
+  - FE07 B7 evidence (merge `aeed0df`, CI `29308540692`) remains historical baseline evidence; it does not prove the v0.5.1 history contract.
+  - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; v0.4.3 timestamp normalization is pending.
+  - FE10 historical G1-G7 and FE11 `ACCOUNT_SETUP` delivery are complete; ADR-004/G8-G10 OTP implementation and G12 FE04 membership-result integration remain pending.
+  - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; v0.1.5 deterministic policy follow-up is pending.
+- **Current delivery mode**: Fast-Track Hybrid is the approved bounded-batch workflow. Use the three-lane pipeline and H1/H2/H3 authority model from `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`. The first activation batch covers FE11 `TD-024`, `TD-026`, and `TD-027`; its task/debt state and product-work authorization become usable only when the governance activation PR reaches `main`.
+- **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories`) using `mssql` repositories and SQL-oriented models, with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, report, and Admin pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
+- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. The Admin role-action UI drift (`TD-022`) was resolved through PR #30 and post-merge CI run `29644292781`. Remaining FE11 drift includes navigation/permissions, Audit Logs, Request Management, the extra user-list `summary` envelope, and stale evidence metadata (`TD-023..TD-027`). Treat completed B7 evidence as bounded-slice evidence only; do not claim whole-feature conformance. See [`.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`](../.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md).
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---
@@ -73,6 +72,20 @@ For every feature change Claude follows the same loop:
 6. **Hand back a diff plus a short explanation** mentioning which spec IDs are now covered and which are still pending.
 
 If the user asks for code without an approved spec, default to drafting or updating the spec first.
+
+---
+
+## 3.1 Fast-Track Execution Rules
+
+- The Integration Lead owns shared contracts, fan-in, commits, PR publication, and CI association.
+- The Builder owns RED-GREEN changes for one active slice and leaves generated implementation changes uncommitted until H2.
+- The Verifier independently checks L2/L3/L4 and does not rewrite Builder production files concurrently.
+- H2 is a local pre-commit AI-output review; H3 is the final PR integration review after required checks pass.
+- The H1-reviewed governance activation diff may be committed and published directly after H1, but it still requires required checks and H3 before merge.
+- Shared `SPEC.md` edits are serialized even when their read-only analysis ran in parallel.
+- Batch task/debt activation is authoritative only after the governance activation PR reaches `main`.
+- Draft publication after H2 and post-merge monitoring after H3 do not require additional permission prompts.
+- Batched closeout may replace per-slice closeout only when the H3-reviewed template permits exact evidence substitutions and no new behavior claim.
 
 ---
 

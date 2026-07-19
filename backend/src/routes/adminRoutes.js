@@ -1,6 +1,7 @@
 const express = require('express');
 const { createAdminController } = require('../controllers/adminController');
 const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
+const { auditLogQueryValidators } = require('../validators/adminValidators');
 
 function createAdminRoutes({ authService, adminService } = {}) {
   const router = express.Router();
@@ -8,17 +9,23 @@ function createAdminRoutes({ authService, adminService } = {}) {
   const authenticate = createAuthenticate(authService);
   const requireAdmin = [authenticate, requireAnyRole('ADMIN')];
 
+  // @spec FR-FE11-033
+  router.get(
+    '/audit-logs',
+    ...requireAdmin,
+    auditLogQueryValidators,
+    controller.listAuditLogs
+  );
+  // @spec FR-FE11-032, BR-FE11-017, AC-FE11-017
+  router.get('/permissions', ...requireAdmin, controller.permissions);
   router.get('/dashboard', requireAdmin, controller.dashboard);
   router.get('/library/books', requireAdmin, controller.listBooks);
   router.get('/library/:resource', requireAdmin, controller.listResource);
   router.post('/library/:resource', requireAdmin, controller.createResource);
   router.put('/library/:resource/:id', requireAdmin, controller.updateResource);
-  router.delete('/library/:resource/:id', requireAdmin, controller.deleteResource);
+  router.patch('/library/:resource/:id/deactivate', requireAdmin, controller.deactivateResource);
   router.get('/borrowings', requireAdmin, controller.listBorrowings);
-  router.post('/borrowings', requireAdmin, controller.createBorrowing);
-  router.put('/borrowings/:id', requireAdmin, controller.updateBorrowing);
   router.get('/requests', requireAdmin, controller.listRequests);
-  router.patch('/requests/:id/status', requireAdmin, controller.updateRequestStatus);
 
   return router;
 }

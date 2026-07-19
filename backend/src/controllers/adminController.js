@@ -2,6 +2,22 @@ const adminService = require('../services/adminService');
 
 function createAdminController(service = adminService) {
   return {
+    permissions: async (req, res, next) => {
+      try {
+        return res.status(200).json(await service.getPermissions());
+      } catch (error) {
+        return next(error);
+      }
+    },
+    listAuditLogs: async (req, res, next) => {
+      try {
+        return res.status(200).json(
+          await service.listAuditLogs(req.validatedAuditQuery || req.query)
+        );
+      } catch (error) {
+        return next(error);
+      }
+    },
     dashboard: async (req, res, next) => {
       try {
         return res.status(200).json(await service.getDashboard());
@@ -37,9 +53,9 @@ function createAdminController(service = adminService) {
         return next(error);
       }
     },
-    deleteResource: async (req, res, next) => {
+    deactivateResource: async (req, res, next) => {
       try {
-        return res.status(200).json(await service.deleteResource(req.params.resource, req.params.id));
+        return res.status(200).json(await service.deactivateResource(req.params.resource, req.params.id));
       } catch (error) {
         return next(error);
       }
@@ -51,30 +67,9 @@ function createAdminController(service = adminService) {
         return next(error);
       }
     },
-    createBorrowing: async (req, res, next) => {
-      try {
-        return res.status(201).json(await service.createBorrowing(req.body));
-      } catch (error) {
-        return next(error);
-      }
-    },
-    updateBorrowing: async (req, res, next) => {
-      try {
-        return res.status(200).json(await service.updateBorrowing(req.params.id, req.body));
-      } catch (error) {
-        return next(error);
-      }
-    },
     listRequests: async (req, res, next) => {
       try {
         return res.status(200).json(await service.listRequests(req.query));
-      } catch (error) {
-        return next(error);
-      }
-    },
-    updateRequestStatus: async (req, res, next) => {
-      try {
-        return res.status(200).json(await service.updateRequestStatus(req.params.id, req.body));
       } catch (error) {
         return next(error);
       }

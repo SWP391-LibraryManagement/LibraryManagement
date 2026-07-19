@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  title: Library Management System API — FE07/FE08/FE10/FE12
+  title: Library Management System API — FE07/FE08/FE10/FE11/FE12
   version: 1.0.0
   description: >
-    API documentation for the features owned by Nhật:
-    FE07 Borrowing, FE08 Reservation, FE10 Notification, FE12 Reporting.
+    API documentation for FE07 Borrowing, FE08 Reservation, FE10 Notification,
+    FE11 Admin Audit Logs and Permissions, and FE12 Reporting.
     All endpoints require a Bearer JWT obtained from /api/auth/login.
 servers:
   - url: /
@@ -18,6 +18,10 @@ tags:
     description: FE10 — notification requests and delivery
   - name: Reporting
     description: FE12 — read-only aggregate reports
+  - name: Admin Audit
+    description: FE11 — Admin-only searchable and redacted audit log view
+  - name: Admin Permissions
+    description: FE11 — Admin-only canonical read-only permission policy
 components:
   securitySchemes:
     bearerAuth:
@@ -143,6 +147,130 @@ components:
           properties:
             code: { type: string, example: ROLE_REQUIRED }
             message: { type: string, example: Access is denied. }
+    AdminPermissionRole:
+      type: object
+      additionalProperties: false
+      required: [roleName, label]
+      properties:
+        roleName: { type: string, enum: [ADMIN, LIBRARIAN, MEMBER] }
+        label: { type: string }
+    AdminPermissionRule:
+      type: object
+      additionalProperties: false
+      required: [permissionKey, label, moduleKey, moduleLabel, allowedRoles]
+      properties:
+        permissionKey: { type: string }
+        label: { type: string }
+        moduleKey: { type: string }
+        moduleLabel: { type: string }
+        allowedRoles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, enum: [ADMIN, LIBRARIAN, MEMBER] }
+    AdminPermissionsResponse:
+      type: object
+      additionalProperties: false
+      required: [roles, permissions]
+      properties:
+        roles:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { $ref: '#/components/schemas/AdminPermissionRole' }
+        permissions:
+          type: array
+          minItems: 15
+          maxItems: 15
+          items: { $ref: '#/components/schemas/AdminPermissionRule' }
+    AuditLogActor:
+      type: object
+      additionalProperties: false
+      required: [userId, email, fullName]
+      properties:
+        userId: { type: integer, nullable: true, minimum: 1 }
+        email: { type: string, nullable: true, format: email }
+        fullName: { type: string, nullable: true }
+    AuditLogTarget:
+      type: object
+      additionalProperties: false
+      required: [type, id, label]
+      properties:
+        type: { type: string, nullable: true }
+        id: { type: integer, nullable: true, minimum: 1 }
+        label: { type: string, nullable: true }
+    AuditLogDetails:
+      type: object
+      additionalProperties: false
+      properties:
+        roleId: { type: integer, minimum: 1 }
+        roleName: { type: string }
+        changedFields: { type: array, maxItems: 100, items: { type: string } }
+        newStatus: { type: string }
+        previousStatus: { type: string }
+        copyIds: { type: array, maxItems: 100, items: { type: integer, minimum: 1 } }
+        memberUserId: { type: integer, minimum: 1 }
+        requestId: { type: integer, minimum: 1 }
+        memberId: { type: integer, minimum: 1 }
+        copyId: { type: integer, minimum: 1 }
+        selectedUserId: { type: integer, minimum: 1 }
+        borrowDetailId: { type: integer, minimum: 1 }
+        userId: { type: integer, minimum: 1 }
+        bookId: { type: integer, minimum: 1 }
+        sourceEntityId: { type: integer, minimum: 1 }
+        condition: { type: string }
+        barcode: { type: string }
+        location: { type: string }
+        status: { type: string }
+        code: { type: string }
+        method: { type: string }
+        reportType: { type: string, enum: [BORROWING, INVENTORY, USERS] }
+        type: { type: string }
+        channel: { type: string }
+        sourceFeature: { type: string }
+        sourceEntityType: { type: string }
+        newDueDate: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        overdueDays: { type: number, minimum: 0 }
+        amount: { type: number, minimum: 0 }
+        collectedAmount: { type: number, minimum: 0 }
+        statusCode: { type: integer, minimum: 0 }
+        processed: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        fullyCollected: { type: boolean }
+        reasonProvided: { type: boolean }
+        notesProvided: { type: boolean }
+        noteProvided: { type: boolean }
+    AuditLogEntry:
+      type: object
+      additionalProperties: false
+      required: [logId, action, actor, target, details, ipAddress, createdAt]
+      properties:
+        logId: { type: integer, minimum: 1 }
+        action: { type: string }
+        actor: { $ref: '#/components/schemas/AuditLogActor' }
+        target: { $ref: '#/components/schemas/AuditLogTarget' }
+        details: { $ref: '#/components/schemas/AuditLogDetails' }
+        ipAddress: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AuditLogPagination:
+      type: object
+      additionalProperties: false
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    AuditLogListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/AuditLogEntry' }
+        pagination: { $ref: '#/components/schemas/AuditLogPagination' }
     BorrowRequestCreateInput:
       type: object
       additionalProperties: false
@@ -352,6 +480,41 @@ components:
 security:
   - bearerAuth: []
 paths:
+  /api/admin/permissions:
+    get:
+      tags: [Admin Permissions]
+      summary: Read the canonical FE11 Phase 1 permission matrix (FR-FE11-032)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Canonical read-only roles and permission policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminPermissionsResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/audit-logs:
+    get:
+      tags: [Admin Audit]
+      summary: Search and filter redacted cross-feature audit logs (FR-FE11-033)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: q, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 100 } }
+        - { name: action, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 100 } }
+        - { name: actorId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Redacted audit-log page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditLogListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/borrow-requests:
     post:
       tags: [Borrowing]

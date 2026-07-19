@@ -1,10 +1,12 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: IN PROGRESS
+Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-15
+Updated: 2026-07-17
+
+Workflow State: SPEC v0.4.3 baseline approved; historical implementation remains recorded and normalization tasks are pending execution
 
 ---
 
@@ -20,12 +22,12 @@ Included:
 - Manual staff queue processing and manual hold-expiration processing.
 - Server-backed refresh after hold expiration.
 - FE07 handoff that preserves queue priority and fulfills the notified owner's hold during borrow approval.
+- Deterministic reservation-list pagination and stable queue/list ordering.
 
 Not included:
 
 - FE07 return automation or general borrowing implementation outside the approved reservation handoff.
 - FE10 email delivery worker changes.
-- Server-side reservation pagination.
 - Automatic queue processing or hold-expiration jobs.
 
 ---
@@ -96,6 +98,16 @@ Not included:
 - Use the shared `BookCopies -> Reservations` lock order for hold, cancellation, expiration, and fulfillment transitions.
 - Keep queue processing manual and add no endpoint, schema field, or automatic job.
 
+### 3.8 V0.4.2 Normalization
+
+- Keep `CopyId` as the only Phase 1 reservation target; reject `bookId` in create/process-queue payloads.
+- Make ineligible queue entries deterministic: skip for the current run, leave `ACTIVE`, and leave the copy unchanged.
+- Make empty queue deterministic: return no selection and change no copy/reservation state.
+- Make FE10 failure deterministic: keep the committed hold and write `RESERVATION_NOTIFY_FAILED`; no automatic retry worker.
+- Add `page = 1`, `limit = 20`, bounds `page >= 1`, `limit = 1..100`, and stable list/queue ordering.
+- Reconcile `QueuePosition`, `NotifiedAt`, `ExpiresAt`, and `CancelledAt` with immutable notification-history semantics: notified/expiry timestamps survive terminal transitions, while `CancelledAt` exists only for cancelled rows.
+- Preserve the shared `BookCopies -> Reservations` lock order for queue, cancellation, expiration, and FE07 fulfillment.
+
 ---
 
 ## 4. Review Notes
@@ -103,9 +115,26 @@ Not included:
 - This plan covers the approved backend and frontend reservation slice.
 - Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
 - FE07 approval may fulfill only the matching notified reservation; automatic queue processing after return remains out of scope for Phase 1.
+- The v0.4.2 contract normalization is not implementation completion evidence; FE08-T028 through FE08-T033 remain pending.
 
 ## 5. B7 Closeout Evidence
 
 - Commit `236043864304627f3577baafa9b8648c13c7a691` is contained in `main`.
 - GitHub Actions CI run `29217437981` completed successfully for that commit.
 - The scoped integration/review record is `.sdd/reviews/fe08-b7-integration-review-closeout-2026-07-13.md`.
+
+## 6. V0.4.2 Verification Gates
+
+| Gate | Command | Expected result |
+| --- | --- | --- |
+| FE08 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js tests/integration.test.js` | Deterministic queue, pagination, failure-audit, and lifecycle cases pass. |
+| FE08 frontend | `node --test frontend/test/reservationFrontend.test.js` | Canonical lifecycle, error isolation, and server-refresh cases pass when the focused file exists. |
+| Traceability | `npm.cmd run trace:enforce` | FE08 changed files satisfy the traceability threshold. |
+| Diff hygiene | `git diff --check` | No whitespace errors. |
+
+## 7. V0.4.3 Baseline Review And Implementation Gate
+
+- [x] Nhat confirmed the `CopyId`-only process-queue contract on 2026-07-17.
+- [x] Nhat confirmed skip/empty-queue/no-retry notification policies on 2026-07-17.
+- [x] Nhat confirmed pagination and stable ordering on 2026-07-17.
+- [x] Nhat confirmed FE07 fulfillment remains the only `NOTIFIED -> FULFILLED` trigger on 2026-07-17.

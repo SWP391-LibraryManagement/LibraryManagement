@@ -1,12 +1,12 @@
 # CONTEXT.md - FE07 Borrowing Management
 
-# Version: 0.1.0
+# Version: 0.2.1
 
-# Status: APPROVED
+# Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-17
 
 # Feature folder: `.sdd/specs/feat-borrowing-management/`
 
@@ -35,7 +35,7 @@ The typical small/medium library workflow:
 3. The system checks whether each requested physical copy is available.
 4. A borrow request is created.
 5. A librarian approves or rejects the request.
-6. If approved, the system records due dates and marks copies as borrowed.
+6. On approval, the system records approval/borrow metadata and due dates, marks copies as borrowed, and fulfills any matching requester-owned notified hold atomically.
 7. Later, the member returns one or more copies.
 8. The librarian records return condition: normal, damaged, or lost.
 9. The system updates copy status and exposes overdue/lost/damaged data for Fine Management.
@@ -74,14 +74,15 @@ The current SQL script includes:
 - `Fines(FineId, UserId, BorrowDetailId, Amount, Reason, Status, PaidAt)`
 - `AuditLogs(LogId, UserId, Action, CreatedAt)`
 
-Potential issue to review:
+Implementation reconciliation points:
 
-- `BorrowDetails.Status` currently defaults to `BORROWED`. If members can create pending borrow requests before librarian approval, the team may need a `REQUESTED` detail status or a separate request-detail design.
-- `BorrowRequests` has no rejection reason field.
-- `BorrowDetails` has no renew count field.
-- `AuditLogs` is simple and may need object ID or action type later.
+- Pending items use `BorrowDetails.Status = REQUESTED`; no separate request-detail table is introduced in Phase 1.
+- Rejection reason is required in audit metadata; FE07 does not require a new `BorrowRequests` rejection-reason column.
+- The prototype/schema must provide the approved renewal count, `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate` contract.
+- Approval must implement the member-scoped five-copy guard and shared lock order from `SPEC.md` v0.5.0.
+- Borrow, due, return, and overdue business dates use `Asia/Ho_Chi_Minh`.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against the existing implementation before FE07 can be considered complete against the revision.
 
 ---
 
@@ -128,14 +129,14 @@ These are not blockers for drafting, but they must be resolved before implementa
 | FE02 Authentication | Identifies the current actor. |
 | FE04 Membership Management | Confirms whether a user is an approved member. |
 | FE06 Inventory / Book Copy Management | Owns physical copy statuses. |
-| FE08 Reservation Management | May affect renewal priority. |
-| FE09 Fine Management | Uses overdue/return data and may block borrowing. |
+| FE08 Reservation Management | Owns queue/hold state; FE07 enforces priority, checks renewal conflicts, and fulfills matching notified holds during approval. |
+| FE09 Fine Management | Uses overdue/return data and unpaid positive fines block borrowing/renewal. |
 | FE10 Notification Management | Sends borrow, return, and renewal result notifications. |
 | FE11 User & Role Management | Provides role permissions. |
 
 ---
 
-## 9. Open Questions For Team / Teacher
+## 9. Resolved Questions For Team / Teacher
 
 | ID | Question | Owner | Status |
 | -- | -------- | ----- | ------ |
@@ -144,6 +145,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE07-003 | Renewal limit per borrowed copy? | Team/Teacher | Resolved: 1 renewal per `BorrowDetail`, adding 14 calendar days from the current due date. |
 | Q-FE07-004 | Does unpaid fine block borrowing? | Team/Teacher | Resolved: any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal. |
 | Q-FE07-005 | Does member create request directly, or librarian creates request at desk? | Team/Teacher | Resolved: member creates own borrow request; librarian/admin approves, rejects, returns, renews, and views history. |
+| Q-FE07-009 | History uses `status?`, `fromDate?`, `toDate?`, `page?`, `limit?`; page 1/limit 20, max 100, inclusive business dates, validation before query, and stable BorrowDate/BorrowDetailId order. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE07-006 | Should pending request details use `REQUESTED` status or another table? | Team/DB owner | Resolved: use `BorrowDetails.Status = REQUESTED`; no extra request-detail table in Phase 1. |
 | Q-FE07-007 | Should request status become `COMPLETED` automatically when all details are returned/lost/damaged? | Team | Resolved: yes, mark `BorrowRequests.Status = COMPLETED` when all details are terminal. |
 | Q-FE07-008 | Should damaged/lost returns immediately create a fine record, or only expose data for FE09? | Team/Teacher | Resolved: FE07 records damaged/lost return data only; FE09 owns fine creation. |
@@ -152,7 +154,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 10. Notes For Implementation Later
 
-- FE07 `SPEC.md` is approved for Phase 2 planning.
-- `PLAN.md` and `TASKS.md` may now be updated from the approved spec before implementation.
-- Use database transactions for approve and return flows.
+- FE07 `SPEC.md` v0.5.0 was approved by human review on 2026-07-16 and is ready for implementation reconciliation.
+- Existing `PLAN.md`, `TASKS.md`, code, and tests remain historical evidence until they are extended for the v0.5.0 requirements.
+- Use the approved transactions and lock order for approve and return flows.
 - Every API endpoint must validate role and input on the server.

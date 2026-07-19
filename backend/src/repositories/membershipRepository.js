@@ -148,7 +148,7 @@ async function findById(applicationId) {
   return mapApplication(result.recordset[0]);
 }
 
-async function listApplications({ status, page = 1, limit = 20 } = {}) {
+async function listApplications({ q, status, page = 1, limit = 20 } = {}) {
   const safePage = Math.max(Number(page) || 1, 1);
   const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const offset = (safePage - 1) * safeLimit;
@@ -161,18 +161,38 @@ async function listApplications({ status, page = 1, limit = 20 } = {}) {
     where.push('ma.Status = @Status');
   }
 
+  if (q) {
+    request.input('Search', sql.NVarChar(102), `%${q}%`);
+    where.push(`(
+      CAST(ma.ApplicationId AS NVARCHAR(20)) LIKE @Search
+      OR u.Email LIKE @Search
+      OR u.Username LIKE @Search
+      OR up.FullName LIKE @Search
+    )`);
+  }
+
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const result = await request.query(`
+    SELECT COUNT_BIG(1) AS Total
+    FROM MembershipApplications ma
+    INNER JOIN Users u ON ma.UserId = u.UserId
+    LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+    ${whereSql};
+
     ${applicationSelect}
     ${whereSql}
     ORDER BY ma.AppliedAt DESC, ma.ApplicationId DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
   `);
 
+  const total = Number(result.recordsets[0][0]?.Total || 0);
+
   return {
-    applications: result.recordset.map(mapApplication),
+    applications: result.recordsets[1].map(mapApplication),
     page: safePage,
     limit: safeLimit,
+    total,
+    totalPages: Math.max(Math.ceil(total / safeLimit), 1),
   };
 }
 
@@ -187,6 +207,7 @@ async function reject(applicationId, reviewerId, reason) {
 async function review(applicationId, reviewerId, status, reason) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
+  const decisionAt = new Date();
   await transaction.begin();
 
   try {
@@ -209,10 +230,11 @@ async function review(applicationId, reviewerId, status, reason) {
       .input('ApplicationId', sql.Int, applicationId)
       .input('ReviewerId', sql.Int, reviewerId)
       .input('ReviewNote', sql.NVarChar(500), reason || null)
+      .input('DecisionAt', sql.DateTime2, decisionAt)
       .query(`
         UPDATE MembershipApplications
         SET Status = '${status}',
-            ApprovedAt = ${status === 'APPROVED' ? 'GETDATE()' : 'NULL'},
+            ApprovedAt = ${status === 'APPROVED' ? '@DecisionAt' : 'NULL'},
             ReviewedBy = @ReviewerId,
             ReviewNote = @ReviewNote
         WHERE ApplicationId = @ApplicationId
@@ -221,6 +243,7 @@ async function review(applicationId, reviewerId, status, reason) {
     await new sql.Request(transaction)
       .input('UserId', sql.Int, row.UserId)
       .input('ReviewerId', sql.Int, reviewerId)
+      .input('DecisionAt', sql.DateTime2, decisionAt)
       .query(`
         MERGE Members AS target
         USING (SELECT @UserId AS UserId) AS source
@@ -228,12 +251,12 @@ async function review(applicationId, reviewerId, status, reason) {
         WHEN MATCHED THEN
           UPDATE SET
             Status = '${status}',
-            ApprovedAt = ${status === 'APPROVED' ? 'GETDATE()' : 'NULL'},
+            ApprovedAt = ${status === 'APPROVED' ? '@DecisionAt' : 'NULL'},
             ApprovedBy = ${status === 'APPROVED' ? '@ReviewerId' : 'NULL'},
             UpdatedAt = GETDATE()
         WHEN NOT MATCHED THEN
           INSERT (UserId, Status, ApprovedAt, ApprovedBy, CreatedAt, UpdatedAt)
-          VALUES (@UserId, '${status}', ${status === 'APPROVED' ? 'GETDATE()' : 'NULL'}, ${status === 'APPROVED' ? '@ReviewerId' : 'NULL'}, GETDATE(), GETDATE());
+          VALUES (@UserId, '${status}', ${status === 'APPROVED' ? '@DecisionAt' : 'NULL'}, ${status === 'APPROVED' ? '@ReviewerId' : 'NULL'}, GETDATE(), GETDATE());
       `);
 
     await transaction.commit();

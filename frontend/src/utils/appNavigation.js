@@ -17,7 +17,9 @@ export const APP_NAV_GROUPS = [
       { key: 'process-returns', label: 'Xử lý trả sách', path: '/librarian/returns' },
       { key: 'reservations-librarian', label: 'Quản lý đặt chỗ', path: '/librarian/reservations' },
       { key: 'member-details', label: 'Chi tiết thành viên', path: '/librarian/members' },
-      { key: 'inventory-management', label: 'Quản lý kho sách', path: '/librarian/inventory' },
+      { key: 'membership-review', label: 'Duyệt hội viên', path: '/membership' },
+      { key: 'book-management', label: 'Quản lý sách', path: '/librarian/books' },
+      { key: 'inventory-management', label: 'Quản lí kho', path: '/librarian/inventory' },
       { key: 'fine-management', label: 'Quản lý tiền phạt', path: '/librarian/fines' },
     ],
   },
@@ -33,16 +35,22 @@ export const APP_NAV_GROUPS = [
 ];
 
 const HOME_ITEM = { key: 'home', label: 'Tổng quan', path: '/home' };
+const LIBRARY_HOME_ITEM = { key: 'library-home', label: 'Home', path: '/homepage' };
 
 export function getVisibleNavigation(roles = []) {
   const items = APP_NAV_GROUPS
     .filter((group) => group.roles.some((role) => roles.includes(role)))
     .flatMap((group) => group.items);
-  return [HOME_ITEM, ...items];
+  const canOpenLibraryHome = roles.some((role) => ['MEMBER', 'LIBRARIAN', 'ADMIN'].includes(role));
+  return [
+    ...(canOpenLibraryHome ? [LIBRARY_HOME_ITEM] : []),
+    HOME_ITEM,
+    ...items,
+  ];
 }
 
 export function getActiveNavigationKey(pathname) {
-  return [HOME_ITEM, ...APP_NAV_GROUPS.flatMap((group) => group.items)]
+  return [LIBRARY_HOME_ITEM, HOME_ITEM, ...APP_NAV_GROUPS.flatMap((group) => group.items)]
     .find((item) => item.path === pathname)?.key || null;
 }
 

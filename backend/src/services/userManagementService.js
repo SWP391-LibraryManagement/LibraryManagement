@@ -11,7 +11,8 @@ const ROLE_BY_TYPE = {
   member: 'MEMBER',
   librarian: 'LIBRARIAN',
 };
-const VALID_ROLE_NAMES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
+const USER_LIST_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
+const USER_LIST_ROLES = new Set(['MEMBER', 'LIBRARIAN', 'ADMIN']);
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -22,6 +23,48 @@ function cleanString(value) {
   return cleaned || null;
 }
 
+function parseListInteger(value, { defaultValue, min, max, code, message }) {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || (max !== undefined && parsed > max)) {
+    throw errors.badRequest(code, message);
+  }
+
+  return parsed;
+}
+
+function normalizeListEnum(value, allowed, code, message) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim().toUpperCase();
+  if (!allowed.has(normalized)) {
+    throw errors.badRequest(code, message);
+  }
+
+  return normalized;
+}
+
+function normalizeListSearch(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  if (normalized.length < 1 || normalized.length > 200) {
+    throw errors.badRequest(
+      'INVALID_USER_SEARCH',
+      'Search must be between 1 and 200 characters.'
+    );
+  }
+
+  return normalized;
+}
+
 function deriveUsername(email) {
   const base =
     normalizeEmail(email)
@@ -30,10 +73,6 @@ function deriveUsername(email) {
       .slice(0, 20) || 'user';
 
   return `${base}_${crypto.randomBytes(2).toString('hex')}`;
-}
-
-function normalizeRoleName(roleName) {
-  return String(roleName || '').trim().toUpperCase();
 }
 
 function normalizeFilter(value) {
@@ -68,8 +107,45 @@ function validatePhone(phone) {
   }
 }
 
+function parsePositiveId(value, code, message, errorFactory = errors.badRequest) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw errorFactory(code, message);
+  }
+
+  return parsed;
+}
+
+function throwRoleMutationError(outcome) {
+  const mappings = {
+    ADMIN_NOT_FOUND: () =>
+      errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.'),
+    ADMIN_REQUIRED: () =>
+      errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
+    USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
+    ROLE_NOT_FOUND: () => errors.notFound('ROLE_NOT_FOUND', 'Role was not found.'),
+    USER_ALREADY_HAS_ROLE: () =>
+      errors.conflict('USER_ALREADY_HAS_ROLE', 'User already has this role.'),
+    USER_ROLE_NOT_FOUND: () =>
+      errors.notFound('USER_ROLE_NOT_FOUND', 'User does not have this role.'),
+    LAST_USER_ROLE: () =>
+      errors.badRequest('LAST_USER_ROLE', 'Every user must keep at least one role.'),
+    LAST_ADMIN_ROLE: () =>
+      errors.badRequest('LAST_ADMIN_ROLE', 'Cannot remove the last Admin role.'),
+  };
+  const createError = mappings[outcome];
+
+  if (!createError) {
+    throw errors.internal();
+  }
+
+  throw createError();
+}
+
 function createUserManagementService({
   userRepository,
+  userRoleRepository,
   authTokenRepository,
   auditLogRepository,
   accountSetupRepository,
@@ -78,6 +154,10 @@ function createUserManagementService({
 } = {}) {
   if (!userRepository) {
     userRepository = require('../repositories/userRepository');
+  }
+
+  if (!userRoleRepository) {
+    userRoleRepository = require('../repositories/userRoleRepository');
   }
 
   if (!authTokenRepository) {
@@ -161,52 +241,57 @@ function createUserManagementService({
     };
   }
 
-  async function resolveRole(roleInput) {
-    const roleId = Number(roleInput.roleId ?? roleInput);
-    let role = Number.isInteger(roleId) && roleId > 0 ? await userRepository.findRoleById(roleId) : null;
-
-    if (!role) {
-      const roleName = normalizeRoleName(roleInput.roleName ?? roleInput);
-      if (!VALID_ROLE_NAMES.has(roleName)) {
-        throw errors.badRequest('INVALID_ROLE', 'Role is invalid.');
-      }
-      role = await userRepository.findRoleByName(roleName);
-    }
-
-    if (!role) {
-      throw errors.badRequest('ROLE_NOT_FOUND', 'Role was not found.');
-    }
-
-    return role;
-  }
-
   async function listUsers(query = {}) {
-    const page = Math.max(Number(query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
-    const result = await userRepository.listManagedUsers({
-      page,
-      limit,
-      status: normalizeFilter(query.status),
-      role: normalizeFilter(query.role),
-      search: cleanString(query.search),
+    // @spec FR-FE11-001, AC-FE11-001
+    return userRepository.listManagedUsers({
+      page: parseListInteger(query.page, {
+        defaultValue: 1,
+        min: 1,
+        code: 'INVALID_PAGE',
+        message: 'Page must be a positive integer.',
+      }),
+      limit: parseListInteger(query.limit, {
+        defaultValue: 20,
+        min: 1,
+        max: 100,
+        code: 'INVALID_LIMIT',
+        message: 'Limit must be an integer between 1 and 100.',
+      }),
+      status: normalizeListEnum(
+        query.status,
+        USER_LIST_STATUSES,
+        'INVALID_USER_STATUS',
+        'Status must be ACTIVE, INACTIVE, or LOCKED.'
+      ),
+      role: normalizeListEnum(
+        query.role,
+        USER_LIST_ROLES,
+        'INVALID_USER_ROLE',
+        'Role must be MEMBER, LIBRARIAN, or ADMIN.'
+      ),
+      search: normalizeListSearch(query.search),
     });
-
-    return result;
   }
 
   async function getUser(userId) {
-    return getExistingUser(userId);
+    // @spec FR-FE11-002, FR-FE11-016
+    const parsedUserId = parsePositiveId(
+      userId,
+      'INVALID_USER_ID',
+      'User id is invalid.'
+    );
+    const user = await userRepository.getManagedUserDetailById(parsedUserId);
+
+    if (!user) {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
+    }
+
+    return user;
   }
 
   async function listRoles() {
     return {
       data: await userRepository.listRoles(),
-    };
-  }
-
-  async function listAuditLogs(query = {}) {
-    return {
-      data: await auditLogRepository.listRecent(query.limit),
     };
   }
 
@@ -402,45 +487,59 @@ function createUserManagementService({
     return userRepository.getManagedUserById(existing.userId);
   }
 
-  async function assignRole(userId, input, context = {}) {
-    const existing = await getExistingUser(userId);
-    const role = await resolveRole(input);
-
-    await userRepository.assignRole(existing.userId, role.roleId);
-    await writeAudit(context, 'USER_ROLE_ASSIGN', existing.userId, {
-      roleId: role.roleId,
-      roleName: role.roleName,
+  // @spec FR-FE11-012, FR-FE11-013, FR-FE11-014, FR-FE11-017
+  // @spec FR-FE11-024, FR-FE11-025, FR-FE11-026, FR-FE11-027
+  async function mutateRole(operation, userId, roleIdInput, context = {}) {
+    const parsedAdminUserId = parsePositiveId(
+      context.adminUserId,
+      'ADMIN_NOT_FOUND',
+      'Acting admin was not found.',
+      errors.notFound
+    );
+    const parsedUserId = parsePositiveId(
+      userId,
+      'INVALID_USER_ID',
+      'User id is invalid.'
+    );
+    const parsedRoleId = parsePositiveId(
+      roleIdInput,
+      'INVALID_ROLE_ID',
+      'Role id is invalid.'
+    );
+    const result = await userRoleRepository.mutateUserRole({
+      operation,
+      adminUserId: parsedAdminUserId,
+      userId: parsedUserId,
+      roleId: parsedRoleId,
+      ipAddress: context.ip || null,
+      userAgent: context.userAgent || null,
     });
-    return userRepository.getManagedUserById(existing.userId);
+    const successOutcome = operation === 'ASSIGN' ? 'ASSIGNED' : 'REVOKED';
+
+    if (result.outcome !== successOutcome) {
+      throwRoleMutationError(result.outcome);
+    }
+
+    const updatedUser = await userRepository.getManagedUserById(parsedUserId);
+    if (!updatedUser) {
+      throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
+    }
+
+    return updatedUser;
+  }
+
+  async function assignRole(userId, input, context = {}) {
+    return mutateRole('ASSIGN', userId, input?.roleId, context);
   }
 
   async function revokeRole(userId, roleIdParam, context = {}) {
-    const existing = await getExistingUser(userId);
-    const role = await resolveRole(roleIdParam);
-
-    const roleName = normalizeRoleName(role.roleName);
-    if (roleName === 'ADMIN') {
-      const adminCount = await userRepository.countUsersByRole('ADMIN');
-      if (adminCount <= 1) {
-        throw errors.badRequest('LAST_ADMIN_ROLE', 'Cannot remove the last Admin role.');
-      }
-    }
-
-    const roleCount = await userRepository.countRolesByUserId(existing.userId);
-    if (roleCount <= 1 && existing.roles.includes(roleName)) {
-      throw errors.badRequest('LAST_USER_ROLE', 'Every user must keep at least one role.');
-    }
-
-    await userRepository.revokeRole(existing.userId, role.roleId);
-    await writeAudit(context, 'USER_ROLE_REVOKE', existing.userId, { roleId: role.roleId, roleName });
-    return userRepository.getManagedUserById(existing.userId);
+    return mutateRole('REVOKE', userId, roleIdParam, context);
   }
 
   return {
     listUsers,
     getUser,
     listRoles,
-    listAuditLogs,
     createUser,
     resendSetup,
     updateUser,
