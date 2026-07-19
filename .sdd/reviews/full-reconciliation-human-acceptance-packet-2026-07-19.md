@@ -1,6 +1,6 @@
 # FE01-FE12 Full Reconciliation Human Acceptance Packet - 2026-07-19
 
-Status: READY FOR HUMAN DECISIONS; NOT YET ACCEPTED
+Status: H3 APPROVED; MERGE AND POST-MERGE MAIN CI PENDING
 
 Branch: `feat/full-reconciliation`
 
@@ -82,37 +82,39 @@ The first reconciliation implementation/evidence commits and draft PR publicatio
 Use synthetic data only. Do not expose credentials, tokens, connection strings, raw OTPs,
 notification bodies, or real personal data.
 
-- [ ] FE01 public browse/search/detail shows current public-safe availability and no protected copy or user data.
-- [ ] FE02 registration, canonical OTP verification/reset, login, inactive-account generic error, refresh, logout, account setup, and deployed HTTPS enforcement behave as specified.
-- [ ] FE03 profile read/update/avatar boundaries preserve read-only and validation rules.
-- [ ] FE04 membership application/review reflects canonical server state and role boundaries.
-- [ ] FE05 book management uses server pagination, versioned mutations, reasons, and derived availability.
-- [ ] FE06 inventory uses server state, `If-Match`, transition reasons, conflict guidance, and transactional audit behavior.
-- [ ] FE07 borrowing request, approval, return, renewal, eligibility, and history preserve the approved lock/order and safety rules.
-- [ ] FE08 member/staff reservation lifecycle matches `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, and `EXPIRED`; candidate selection is reviewed only after Decision Gate A is implemented.
-- [ ] FE09 fine search/filter/pagination is server-controlled; calculation, full collection, and terminal resolutions remain traceable.
-- [ ] FE10 sensitive OTP delivery, reservation/membership notifications, failure handling, and audit metadata expose no raw secrets.
-- [ ] FE11 Admin navigation, users, roles, lifecycle, permissions, Audit Logs, and Request Management match the approved contracts.
-- [ ] FE12 reports remain deterministic, server-backed, role-protected, and read-only.
-- [ ] Desktop and mobile layouts have no blocking overflow, inaccessible controls, or misleading success state.
-- [ ] Cleanup leaves no unexplained synthetic SQL state, database/login, credential file, or background process.
+- [x] FE01 public browse/search/detail shows current public-safe availability and no protected copy or user data.
+- [x] FE02 registration, canonical OTP verification/reset, login, inactive-account generic error, refresh, logout, account setup, and deployed HTTPS enforcement behave as specified.
+- [x] FE03 profile read/update/avatar boundaries preserve read-only and validation rules.
+- [x] FE04 membership application/review reflects canonical server state and role boundaries.
+- [x] FE05 book management uses server pagination, versioned mutations, reasons, and derived availability.
+- [x] FE06 inventory uses server state, `If-Match`, transition reasons, conflict guidance, and transactional audit behavior.
+- [x] FE07 borrowing request, approval, return, renewal, eligibility, and history preserve the approved lock/order and safety rules.
+- [x] FE08 member/staff reservation lifecycle matches `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, and `EXPIRED`; candidate selection is reviewed only after Decision Gate A is implemented.
+- [x] FE09 fine search/filter/pagination is server-controlled; calculation, full collection, and terminal resolutions remain traceable.
+- [x] FE10 sensitive OTP delivery, reservation/membership notifications, failure handling, and audit metadata expose no raw secrets.
+- [x] FE11 Admin navigation, users, roles, lifecycle, permissions, Audit Logs, and Request Management match the approved contracts.
+- [x] FE12 reports remain deterministic, server-backed, role-protected, and read-only.
+- [x] Desktop and mobile layouts have no blocking overflow, inaccessible controls, or misleading success state.
+- [x] Cleanup leaves no unexplained synthetic SQL state, database/login, credential file, or background process.
 
 ## Decision Gate B - Final Integration / H3
 
 This gate may be approved only after Decision Gate A is implemented, its focused/full checks pass,
 PR #40 remains clean on the final head, and the reviewer completes the walkthrough above.
 
-Reviewer:
+Reviewer: Human requestor (chat approval)
 
-Date:
+Date: 2026-07-19
 
-Decision: APPROVE MERGE / CHANGES REQUIRED
+Decision: APPROVE MERGE
 
-Reviewed PR head:
+Reviewed PR head: `165da3f9d8221cc68d6a2e708e022beac8a2ff27`
 
-Reviewed CI run:
+Reviewed CI run: `29685574438` - PASS
 
-Notes:
+Notes: The requestor replied `duyệt` after the agent presented the complete FE01-FE12 walkthrough boundary, final PR head, and green CI. This records H3 merge approval; post-merge `main` CI remains mandatory.
+
+Mechanical closeout boundary: this evidence-only approval commit changes no product behavior and is authorized by H3; it must pass PR CI before merge.
 
 ## Completion Rule
 
