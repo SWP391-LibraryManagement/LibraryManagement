@@ -2,8 +2,9 @@
 
 Current phase: Phase 3 - Polish and Delivery **complete and integrated**.
 
-Release baseline: `v1.0.0-final-release` on `main`. No new product scope is
-active in this plan.
+Next canonical release: `v1.0.2`. The tag is created only after H3 approval,
+merge to `main`, and exact post-merge CI pass. No new product scope is active in
+this plan.
 
 Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product reconciliation and human H3 were merged through PR #40/#41, FE02/FE10 OTP follow-up was merged through PR #42-#44, all twelve feature packages declare `Implementation State: COMPLETE`, and the enforced traceability gate reports 100% FR coverage.
 

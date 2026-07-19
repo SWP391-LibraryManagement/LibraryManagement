@@ -11,7 +11,8 @@ documentation, and review.
 
 - Phase 2 Core Development: complete for the approved FE01-FE12 scope.
 - Current phase: Phase 3 - Polish and Delivery integrated on `main`; external/provider boundaries remain explicit.
-- Canonical source release: `v1.0.0-final-release`.
+- Next canonical source release: `v1.0.2`, created only after H3 approval,
+  merge to `main`, and exact post-merge CI pass.
 - Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
 - Deferred operational items remain explicit and do not become implied product claims during Phase 3.
 
@@ -159,7 +160,7 @@ the [system integration runbook](docs/testing/system-integration-demo-runbook.md
 The current observed baseline is:
 
 - backend: 916 tests across 53 suites;
-- frontend: 151 tests;
+- frontend: 152 tests;
 - coverage: see the dated reconciliation validation record for the latest measured thresholds;
 - Playwright system golden path: passing;
 - traceability: all twelve feature specs currently report 100% FR tag coverage; implementation completion remains a separate gate;
@@ -174,6 +175,7 @@ Evidence:
 - [Week 12 security audit](.sdd/reviews/week12-security-audit-2026-07-14.md)
 - [Phase 3 final report](docs/release/phase3-final-report.md)
 - [Phase 3 final validation](.sdd/reviews/phase3-final-validation-2026-07-19.md)
+- [Final governance closeout validation](.sdd/reviews/final-governance-closeout-validation-2026-07-20.md)
 - [Final submission checklist](docs/release/final-submission-checklist-2026-07-20.md)
 
 ## API Documentation

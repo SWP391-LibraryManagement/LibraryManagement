@@ -1,8 +1,10 @@
 # Global Constraints — Library Management System
 
-# Version: 0.1.0
+# Version: 0.1.1
 
-# Status: DRAFT (Week 3)
+# Status: APPROVED
+
+# Last Updated: 2026-07-20
 
 > High-level engineering rules every feature in this project must follow. See [`business.md`](business.md) for domain rules and [`safety.md`](safety.md) for security rules.
 

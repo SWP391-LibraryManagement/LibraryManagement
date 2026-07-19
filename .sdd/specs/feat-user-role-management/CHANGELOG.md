@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-20 - Final Governance Closeout H2-Ready
+
+- Restored the approved Admin Audit Log `action` and numeric `actorId` filter controls while preserving the canonical FE11 query builder and backend API.
+- Added RED-GREEN frontend regression coverage mapped to `BR-FE11-018`, `BR-FE11-026`, `FR-FE11-033`, and `AC-FE11-018`.
+- Reconciled direct-main commit `f10e7f4` through an approved design, implementation plan, current traceability evidence, and the four-layer closeout validation packet.
+- Changed no API, schema, authorization, role permission, pagination, redaction, or database behavior.
+- Generated closeout changes remain uncommitted pending H2 review; H3, merge, exact post-merge CI, and tag `v1.0.2` remain integration steps.
+
 ## 2026-07-19 - Phase 2 Exit Closeout
 
 - feat-user-role-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.

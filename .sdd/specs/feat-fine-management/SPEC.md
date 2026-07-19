@@ -12,6 +12,12 @@
 
 # Feature folder: `.sdd/specs/feat-fine-management/`
 
+> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
+> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> are authoritative for current implementation state. Older `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
+> historical planning/evidence snapshots, not the current delivery state.
+
 > Source of truth for FE09 Fine Management. Baseline v0.4.0 is approved after payment, resolution, pagination, timezone, and server-prototype boundaries were made deterministic.
 
 ---

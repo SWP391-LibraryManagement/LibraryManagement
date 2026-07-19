@@ -2306,6 +2306,27 @@ function UserManagement() {
                 />
               </div>
               <input
+                aria-label="Lọc hành động"
+                value={auditFilters.action}
+                maxLength={100}
+                placeholder="AUTH_LOGIN_SUCCESS"
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  action: event.target.value,
+                }))}
+              />
+              <input
+                aria-label="Actor ID"
+                type="number"
+                min="1"
+                step="1"
+                value={auditFilters.actorId}
+                onChange={(event) => setAuditFilters((current) => ({
+                  ...current,
+                  actorId: event.target.value,
+                }))}
+              />
+              <input
                 aria-label="Từ ngày"
                 type="date"
                 value={auditFilters.from}
@@ -2717,7 +2738,7 @@ function UserManagement() {
         .um-tabs button { min-height: 38px; border-radius: 8px; border: 1px solid #d7dee8; background: #fff; color: #334155; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; cursor: pointer; font-weight: 800; }
         .um-tabs button.active { background: #2f80ed; color: #fff; border-color: #2f80ed; }
         .um-toolbar.requests { grid-template-columns: minmax(260px, 1fr) 170px 150px 150px auto auto; }
-        .um-toolbar.audit { display: grid; grid-template-columns: minmax(260px, 1fr) 150px 150px auto auto; margin-bottom: 0; }
+        .um-toolbar.audit { display: grid; grid-template-columns: minmax(260px, 1fr) 190px 100px 150px 150px auto auto; margin-bottom: 0; }
         .um-toolbar.audit > input { min-width: 0; min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-toolbar input[type="date"] { min-height: 40px; border: 1px solid #d7dee8; border-radius: 8px; padding: 0 12px; }
         .um-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

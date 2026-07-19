@@ -1,8 +1,10 @@
 # AGENTS.md — Library Management System
 
-# Version: 0.1.0
+# Version: 0.1.1
 
-# Status: DRAFT
+# Status: APPROVED
+
+# Last Updated: 2026-07-20
 
 # Project: SWP391 Library Management System
 

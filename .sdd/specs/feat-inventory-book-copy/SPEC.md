@@ -14,6 +14,12 @@
 
 # Feature folder: `.sdd/specs/feat-inventory-book-copy/`
 
+> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
+> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> are authoritative for current implementation state. Older `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
+> historical planning/evidence snapshots, not the current delivery state.
+
 > Source of truth for FE06 Inventory / Book Copy Management. Revision v0.4.2 reconciles the approved v0.4.0 concurrency, audit, parent-book, API, and frontend contracts with the implemented behavior.
 >
 > **Implementation status (2026-07-19): automated reconciliation passes.** FE06 now uses SQL

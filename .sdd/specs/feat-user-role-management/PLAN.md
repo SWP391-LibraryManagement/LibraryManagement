@@ -2,15 +2,19 @@
 
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
-Date: 2026-07-19
+Date: 2026-07-20
 
 Owner: Dung
 
 ## 1. Purpose
 
-Preserve the completed bounded FE11 slices and govern the remaining user-lifecycle and Admin Request Management work through the approved Finalization Batch. Sections 3-14 retain historical slice scope/evidence; Section 15 is the active execution boundary.
+Preserve completed FE11 slice evidence and reconcile the final Admin Audit Log
+presentation contract. Sections 3-15 retain historical planning and integration
+snapshots; Section 16 is the current closeout boundary.
 
-Whole FE11 remains incomplete until the Finalization closeout records all required H2/H3, merge, exact `main` CI, and acceptance evidence.
+The approved Phase 1 FE11 scope is complete through B7. Historical pending or
+deferred statements below describe earlier checkpoints and do not override the
+current status header or Section 16.
 
 ## 2. Source Documents
 
@@ -279,3 +283,40 @@ Implementation State: WAVE A IMPLEMENTED LOCALLY; H2 PENDING
 - Every PR requires H3 after checks and before merge.
 - Only the closeout PR may transition whole FE11 to `COMPLETE THROUGH B7`.
 - All finalization task checkboxes remain open at governance activation; this section records authorization, not implementation evidence.
+
+## 16. Final Governance Closeout
+
+Implementation State: H2-READY AFTER LOCAL VALIDATION
+
+### Scope
+
+- Restore the FE11 Admin Audit Log `action` and numeric `actorId` controls that
+  feed the already-approved canonical query builder.
+- Add a focused frontend regression mapped to `BR-FE11-018`, `BR-FE11-026`,
+  `FR-FE11-033`, and `AC-FE11-018`.
+- Reconcile current traceability metadata while preserving historical planning
+  snapshots.
+- Change no API, schema, role permission, authorization, pagination, redaction,
+  or backend behavior.
+
+### Validation Commands
+
+```powershell
+npm.cmd run trace:enforce
+npm.cmd run test:deployment
+npm.cmd --prefix backend run test:coverage:ci
+npm.cmd run test:system
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
+npm.cmd run test:e2e
+npm.cmd run phase3:performance
+npm.cmd run smoke:staging
+```
+
+### Review Boundary
+
+- Generated closeout changes remain uncommitted until H2 reviews the complete
+  diff and L1-L4 evidence.
+- H3, merge, exact post-merge `main` CI, and creation of `v1.0.2` remain
+  integration steps after local acceptance.
