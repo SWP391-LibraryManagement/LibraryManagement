@@ -65,6 +65,7 @@ This section lists the final source code, database scripts, documents, test evid
 | 45 | `.sdd/reviews/phase3-final-validation-2026-07-19.md` | 1.0 | Four-layer final validation packet and residual risk record. |
 | 46 | `docs/release/phase3-final-report.md` | 1.0 | Scope, architecture, measured results, acceptance boundaries, and reproduction commands. |
 | 47 | `docs/release/phase3-rehearsal-record.md` | 1.0 | Normal browser rehearsal, five-minute defense path, fallback, and reset procedure. |
+| 48 | `docs/briefing-thuyet-trinh-du-an-vi.docx` | 1.0 | Vietnamese project presentation briefing aligned with the final FE01-FE12 scope, validation evidence, and explicit release limitations. |
 
 ### Final Product Backlog Summary
 
@@ -567,4 +568,5 @@ Release limitation:
 | Phase 3 final validation | `.sdd/reviews/phase3-final-validation-2026-07-19.md` |
 | Phase 3 final report | `docs/release/phase3-final-report.md` |
 | Phase 3 rehearsal record | `docs/release/phase3-rehearsal-record.md` |
+| Vietnamese project presentation briefing | `docs/briefing-thuyet-trinh-du-an-vi.docx` |
 | Final submission checklist | `docs/release/final-submission-checklist-2026-07-20.md` |

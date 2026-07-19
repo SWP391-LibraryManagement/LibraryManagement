@@ -87,4 +87,5 @@ npm.cmd run smoke:staging
 - User testing record: `docs/release/phase3-user-testing-record-2026-07-19.md`.
 - Rehearsal record: `docs/release/phase3-rehearsal-record.md`.
 - Defense deck and source record: `docs/presentation/phase3-defense-deck.pptx` and `docs/presentation/phase3-defense-deck-source.md`.
+- Vietnamese project presentation briefing: `docs/briefing-thuyet-trinh-du-an-vi.docx`.
 - Four-layer validation: `.sdd/reviews/phase3-final-validation-2026-07-19.md`.

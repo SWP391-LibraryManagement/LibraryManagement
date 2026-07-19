@@ -16,7 +16,7 @@ merge to `main`, and exact post-merge CI pass.
 | User documentation | PASS | `docs/user-manual.md` and system overview. |
 | Phase 3 final report | PASS | `docs/release/phase3-final-report.md`. |
 | Final governance closeout | H2-READY | `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`; implementation remains uncommitted. |
-| Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA. |
+| Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA; Vietnamese briefing at `docs/briefing-thuyet-trinh-du-an-vi.docx`. |
 | Rehearsal | PASS | `docs/release/phase3-rehearsal-record.md` and demo runbook. |
 | Automated quality | PASS | 916 backend tests, 152 frontend tests, coverage gate, lint, build, and 4/4 browser E2E. |
 | Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
