@@ -974,3 +974,196 @@ flowchart TB
 | FR2 | Invalid Login | User cannot be authenticated if login details are incorrect, email is not verified, account is inactive, or account is locked. |
 | FR3 | Account Locking | If a known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the account is locked for 30 minutes. |
 | FR4 | Session Validation | Every protected request must validate the session/token before processing. |
+
+### 2.2 UC-3_Register User Account
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-3_Register User Account |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest |
+| Secondary Actors | EmailService, Internal database |
+| Trigger | Guest clicks Register or submits the registration form. |
+| Description | As a guest, I want to register an account so that I can verify my email and use member features. |
+| Preconditions | PRE-1: Guest is not logged in.<br/>PRE-2: Registration screen is available.<br/>PRE-3: Submitted email is not already registered. |
+| Postconditions | POST-1: System creates an inactive user account.<br/>POST-2: System assigns the member role where supported.<br/>POST-3: System sends or queues email verification instruction. |
+| Normal Flow | 3.0 Register User Account<br/>1. Guest accesses Register screen.<br/>2. Guest enters required registration information.<br/>3. Guest submits the form.<br/>4. System validates input and duplicate email.<br/>5. System hashes the password.<br/>6. System creates an inactive account.<br/>7. System sends verification email.<br/>8. System informs the guest to verify email before login. |
+| Alternative Flows | 3.1 Guest clicks Login: system opens Login screen.<br/>3.2 Verification email delivery fails: system keeps the account and allows resend flow. |
+| Exceptions | 3.0.E1 Email already registered: system rejects registration without creating a user.<br/>3.0.E2 Invalid password: system rejects registration and displays password policy message.<br/>3.0.E3 Invalid input: system displays validation errors. |
+| Priority | Must Have |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | FR1, FR2, FR3, FR4 |
+| Other Information | Account cannot be used for login until email verification is completed. |
+| Assumptions | Guest registers using email and password. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Required Registration Data | Guest must provide valid email, password, and required confirmation fields. |
+| FR2 | Unique Email | Registration must reject an email that is already registered. |
+| FR3 | Password Hashing | User password must be hashed with bcrypt before storage. |
+| FR4 | Email Verification Required | New registered account must be verified by email before activation. |
+
+### 2.3 UC-4_Verify Email
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-4_Verify Email |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest, Member |
+| Secondary Actors | EmailService, Internal database |
+| Trigger | User submits verification OTP/code or opens verification link from email. |
+| Description | As a registered user, I want to verify my email so that my account can become active. |
+| Preconditions | PRE-1: User account exists.<br/>PRE-2: User account is not already verified.<br/>PRE-3: Verification credential exists and has not expired or been used. |
+| Postconditions | POST-1: Account email verification timestamp is saved.<br/>POST-2: Account status is activated if verification is successful.<br/>POST-3: Verification credential is marked used or revoked according to token rules. |
+| Normal Flow | 4.0 Verify Email<br/>1. User opens verification page or submits verification code.<br/>2. System validates the verification credential.<br/>3. System matches credential to the user account.<br/>4. System activates the account.<br/>5. System records the verification event.<br/>6. System allows the user to continue to login. |
+| Alternative Flows | 4.1 User requests resend verification: system revokes active verification token and creates a new one.<br/>4.2 Account already verified: system informs user that verification is already complete. |
+| Exceptions | 4.0.E1 Expired credential: system rejects verification and offers resend.<br/>4.0.E2 Invalid credential: system rejects verification safely.<br/>4.0.E3 Token already used: system rejects verification and asks user to request a new credential if needed. |
+| Priority | Must Have |
+| Frequency of Use | Medium, daily or weekly |
+| Business Rules | FR1, FR2, FR3 |
+| Other Information | Verification responses must not expose sensitive token hash data. |
+| Assumptions | Verification is delivered through EmailService. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Email Verification Required | A registered user account must be verified via email before activation. |
+| FR2 | Verification Credential Expiry | Expired, malformed, used, or mismatched verification credentials must be rejected. |
+| FR3 | Safe Verification Response | Verification failure must not expose token hash or sensitive account internals. |
+
+### 2.4 UC-5_Reset Password
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-5_Reset Password |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest, Member, Librarian, Admin |
+| Secondary Actors | EmailService, Internal database |
+| Trigger | User clicks Forgot Password or submits reset credential and new password. |
+| Description | As a user, I want to reset my password when I cannot log in. |
+| Preconditions | PRE-1: User account exists and is eligible for password reset.<br/>PRE-2: Reset credential is valid, unused, and not expired.<br/>PRE-3: New password satisfies password policy. |
+| Postconditions | POST-1: Password hash is updated after successful reset.<br/>POST-2: Reset credential is marked used or revoked.<br/>POST-3: Reset event is auditable. |
+| Normal Flow | 5.0 Reset Password<br/>1. User opens Forgot Password screen.<br/>2. User enters email address.<br/>3. System accepts the request without revealing whether the email exists.<br/>4. System sends reset instruction if the account is eligible.<br/>5. User submits reset credential and new password.<br/>6. System validates credential and password policy.<br/>7. System hashes and stores new password.<br/>8. System confirms password reset result. |
+| Alternative Flows | 5.1 User returns to Login screen without resetting password.<br/>5.2 Email delivery fails: system preserves generic response and allows a new reset request. |
+| Exceptions | 5.0.E1 Invalid or expired credential: system rejects reset without changing password.<br/>5.0.E2 New password fails policy: system rejects reset and displays validation message.<br/>5.0.E3 Ineligible inactive account: system rejects reset without activating account. |
+| Priority | Must Have |
+| Frequency of Use | Medium, weekly |
+| Business Rules | FR1, FR2, FR3, FR4 |
+| Other Information | Password reset must not activate ordinary inactive accounts. |
+| Assumptions | Reset instruction is delivered through EmailService. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | No Account Enumeration | Forgot password response must not reveal whether the submitted email is registered. |
+| FR2 | Reset Credential Required | Password reset must prove email ownership through a valid purpose-specific credential. |
+| FR3 | Reset Token Expiry | Password reset credentials expire after the configured reset window. |
+| FR4 | Password Hashing | New password must be hashed with bcrypt before storage. |
+
+### 2.5 UC-6_Change Password
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-6_Change Password |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member, Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authenticated user opens account/profile security function and submits password change. |
+| Description | As an authenticated user, I want to change my password while logged in. |
+| Preconditions | PRE-1: User is authenticated.<br/>PRE-2: Current password is known by the user.<br/>PRE-3: New password satisfies password policy. |
+| Postconditions | POST-1: Password hash is updated.<br/>POST-2: Password change event is auditable.<br/>POST-3: User can use the new password for future login. |
+| Normal Flow | 6.0 Change Password<br/>1. User opens password change function.<br/>2. User enters current password and new password.<br/>3. System validates current password.<br/>4. System validates new password policy.<br/>5. System hashes and stores the new password.<br/>6. System records password change event.<br/>7. System confirms success. |
+| Alternative Flows | 6.1 User cancels change: system keeps existing password unchanged. |
+| Exceptions | 6.0.E1 Current password is incorrect: system rejects the change.<br/>6.0.E2 New password fails complexity policy: system rejects the change.<br/>6.0.E3 New password matches old password: system rejects the change. |
+| Priority | Should Have |
+| Frequency of Use | Low, monthly or less |
+| Business Rules | FR1, FR2, FR3 |
+| Other Information | Current code baseline does not revoke all other active refresh/session credentials after password change. |
+| Assumptions | User is already authenticated before changing password. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Authenticated Change Only | User may change password only when authenticated. |
+| FR2 | Current Password Required | Password change must require entry and validation of current password. |
+| FR3 | Password Hashing | New password must be hashed with bcrypt before storage. |
+
+### 2.6 UC-7_Logout System
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-7_Logout System |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member, Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | Authenticated user clicks Logout. |
+| Description | As an authenticated user, I want to log out so that my session can no longer be used. |
+| Preconditions | PRE-1: User is authenticated.<br/>PRE-2: Current refresh/session credential exists. |
+| Postconditions | POST-1: Current refresh/session credential is revoked where supported.<br/>POST-2: User is redirected to Login screen or public screen.<br/>POST-3: Logout event is auditable. |
+| Normal Flow | 7.0 Logout System<br/>1. User clicks Logout.<br/>2. System receives logout request.<br/>3. System revokes submitted/current refresh-session credential.<br/>4. System clears client authentication state.<br/>5. System redirects user to Login screen. |
+| Alternative Flows | 7.1 Session already expired: system clears client state and redirects to Login. |
+| Exceptions | 7.0.E1 Logout request fails: client clears local authentication state and protected requests remain subject to token validation. |
+| Priority | Must Have |
+| Frequency of Use | High, daily |
+| Business Rules | FR1, FR2 |
+| Other Information | Logout must not expose token contents in logs or responses. |
+| Assumptions | User has an active authenticated session before logout. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Refresh Credential Revocation | Logout must revoke the submitted/current refresh-session credential. |
+| FR2 | Protected Access After Logout | Subsequent protected requests associated with the revoked credential must fail authorization. |
+
+### 2.7 UC-8_Validate Protected Access
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-8_Validate Protected Access |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Member, Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | User opens a protected screen or submits a protected API request. |
+| Description | As the system, I need to validate identity and role before allowing protected operations. |
+| Preconditions | PRE-1: Request targets a protected route or API.<br/>PRE-2: Request includes session/token data where required. |
+| Postconditions | POST-1: Authorized request continues to the target function.<br/>POST-2: Unauthorized request is rejected safely.<br/>POST-3: Role-restricted screens redirect or show forbidden result where applicable. |
+| Normal Flow | 8.0 Validate Protected Access<br/>1. User requests a protected screen or API.<br/>2. System reads session/token data.<br/>3. System validates token signature, expiry, and user identity.<br/>4. System loads or verifies user roles.<br/>5. System checks required role for the target function.<br/>6. System allows the request to continue. |
+| Alternative Flows | 8.1 Missing authentication: system redirects to Login or returns 401.<br/>8.2 Authenticated but forbidden role: system redirects to forbidden screen or returns 403. |
+| Exceptions | 8.0.E1 Malformed token: system rejects the request with unauthorized response.<br/>8.0.E2 Expired token: system rejects the request or requires refresh flow.<br/>8.0.E3 User disabled or locked: system rejects protected access. |
+| Priority | Must Have |
+| Frequency of Use | Very High, every protected request |
+| Business Rules | FR1, FR2, FR3 |
+| Other Information | Client-side route guards improve navigation UX, but server-side authorization remains required for protected APIs. |
+| Assumptions | Sensitive operations verify roles from trusted server-side data. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Token Validation | Every protected request must validate the session/token before processing. |
+| FR2 | Server-Side Roles | User roles are determined by UserRoles and must be verified on sensitive operations. |
+| FR3 | Forbidden Access | Authenticated users without the required role must be denied access to protected operations. |
