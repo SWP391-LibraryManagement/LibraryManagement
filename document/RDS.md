@@ -214,3 +214,101 @@ flowchart LR
 | UC-09 includes UC-10 | Fine and overdue events can trigger due date or fine notifications. |
 | UC-11 includes UC-10 | Admin-created user accounts can trigger account setup notifications. |
 | UC-01 to UC-12 use internal database reads or persistence | Each use case reads from or writes to the database according to its feature data contract; the database is an internal component, not a use case actor in this diagram. |
+
+## 2. Overall Functionalities
+
+### 2.1 Screens Flow
+
+This section shows the main system screens and navigation relationship among screens. The screen flow is based on the current frontend routes in `frontend/src/App.jsx`.
+
+```mermaid
+flowchart TB
+  Start([Start])
+  Root["/"]
+  Login["Login"]
+  Register["Register"]
+  ForgotPassword["Forgot Password"]
+  Home["Home"]
+  PublicHome["Public Book Homepage"]
+  Profile["User Profile"]
+  Membership["Membership"]
+  BorrowNew["Create Borrow Request"]
+  BorrowHistory["Borrowing History"]
+  MyReservations["My Reservations"]
+  AdminUsers["Admin User Management"]
+  FineManagement["Fine Management"]
+  Inventory["Inventory"]
+  BookManagement["Book Management"]
+  BorrowRequests["Borrow Requests"]
+  ProcessReturns["Process Returns"]
+  MemberBorrowing["Member Borrowing Details"]
+  ReservationsAdmin["Reservation Management"]
+  BorrowingReport["Borrowing Report"]
+  InventoryReport["Inventory Report"]
+  UserStatistics["User Statistics"]
+  NotFound["Unknown Route"]
+
+  Start --> Root
+  Root --> Home
+
+  Login --> Home
+  Register --> Login
+  ForgotPassword --> Login
+  NotFound --> Login
+
+  Home --> PublicHome
+  Home --> Profile
+  Home --> Membership
+  Home --> BorrowNew
+  Home --> BorrowHistory
+  Home --> MyReservations
+  Home --> AdminUsers
+  Home --> FineManagement
+  Home --> Inventory
+  Home --> BookManagement
+  Home --> BorrowRequests
+  Home --> ProcessReturns
+  Home --> MemberBorrowing
+  Home --> ReservationsAdmin
+  Home --> BorrowingReport
+  Home --> InventoryReport
+  Home --> UserStatistics
+
+  BorrowNew --> BorrowHistory
+  MyReservations --> PublicHome
+  BorrowRequests --> ProcessReturns
+  BorrowRequests --> MemberBorrowing
+  ReservationsAdmin --> BorrowRequests
+  FineManagement --> BorrowingReport
+  Inventory --> InventoryReport
+  AdminUsers --> UserStatistics
+
+  classDef screen fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  classDef startEnd fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  class Start startEnd;
+  class Root,Login,Register,ForgotPassword,Home,PublicHome,Profile,Membership,BorrowNew,BorrowHistory,MyReservations,AdminUsers,FineManagement,Inventory,BookManagement,BorrowRequests,ProcessReturns,MemberBorrowing,ReservationsAdmin,BorrowingReport,InventoryReport,UserStatistics,NotFound screen;
+```
+
+| Screen | Route | Main Actor(s) | Purpose |
+| ------ | ----- | ------------- | ------- |
+| Login | `/login` | Guest, Member, Librarian, Admin | Authenticate an existing user. |
+| Register | `/register` | Guest | Create a new user account. |
+| Forgot Password | `/forgot-password` | Guest, Member, Librarian, Admin | Request password reset support. |
+| Home | `/home` | Guest, Member, Librarian, Admin | Route users to the proper home experience. |
+| Public Book Homepage | `/homepage` | Guest, Member | Browse public book information. |
+| User Profile | `/profile` | Member, Librarian, Admin | View and update personal profile information. |
+| Membership | `/membership` | Member, Librarian, Admin | Submit or review membership-related information. |
+| Admin User Management | `/admin/users` | Admin | Manage users, roles, permissions, audit logs, and admin console sections. |
+| Fine Management | `/librarian/fines` | Librarian, Admin | Manage fine list, collection, paid status, and resolution. |
+| Inventory | `/librarian/inventory` | Librarian, Admin | Manage physical book copies and availability. |
+| Book Management | `/librarian/books` | Librarian, Admin | Manage catalog book records. |
+| Create Borrow Request | `/borrowing/new` | Member | Create a new borrow request. |
+| Borrowing History | `/borrowing/history` | Member | View personal borrowing history. |
+| Borrow Requests | `/librarian/borrow-requests` | Librarian, Admin | Review and process borrow requests. |
+| Process Returns | `/librarian/returns` | Librarian, Admin | Process returned borrowed copies. |
+| Member Borrowing Details | `/librarian/members` | Librarian, Admin | View member borrowing details. |
+| My Reservations | `/reservations/mine` | Member | View and manage personal reservations. |
+| Reservation Management | `/librarian/reservations` | Librarian, Admin | Manage reservation queues and staff reservation operations. |
+| Borrowing Report | `/reports/borrowing` | Librarian, Admin | View borrowing report data. |
+| Inventory Report | `/reports/inventory` | Librarian, Admin | View inventory report data. |
+| User Statistics | `/reports/users` | Librarian, Admin | View user statistics. |
