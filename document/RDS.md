@@ -107,24 +107,46 @@ A use case describes a sequence of interactions between an external actor and th
 
 #### a. Diagram(s)
 
-##### Figure 1. Public, Account, And Member Use Cases
+##### Figure 1. Overall Use Case Diagram
 
 ```mermaid
 flowchart LR
   Guest[Guest]
   Member[Member]
+  Librarian[Librarian]
+  Admin[Admin]
   NotificationService[Notification Service]
+  DatabaseSystem[Database System]
 
   subgraph LMS[Library Management System]
-    direction TB
-    UC01((Browse Books))
-    UC02((Manage Account Access))
-    UC03((Manage Profile))
-    UC04((Apply For Membership))
-    UC07((Borrow Books))
-    UC08((Reserve Books))
-    UC09A((View Fines))
-    UC10A((Receive Notifications))
+    direction LR
+    subgraph PublicMember[Public And Member Functions]
+      direction TB
+      UC01((Browse Books))
+      UC02((Manage Account Access))
+      UC03((Manage Profile))
+      UC04((Apply For Membership))
+      UC07((Borrow Books))
+      UC08((Reserve Books))
+      UC09((Manage Fines))
+    end
+
+    subgraph StaffAdmin[Staff And Admin Functions]
+      direction TB
+      UC05((Manage Books))
+      UC06((Manage Book Copies))
+      UC07S((Process Borrowing))
+      UC08S((Manage Reservations))
+      UC09S((Manage Fines))
+      UC11((Manage Users And Roles))
+      UC12((Generate Reports))
+    end
+
+    subgraph Support[Support Functions]
+      direction TB
+      UC10((Send Notifications))
+      UCDB((Persist Library Data))
+    end
   end
 
   Guest --> UC01
@@ -135,69 +157,33 @@ flowchart LR
   Member --> UC04
   Member --> UC07
   Member --> UC08
-  Member --> UC09A
-  Member --> UC10A
-  NotificationService --> UC10A
-```
-
-##### Figure 2. Librarian And Admin Use Cases
-
-```mermaid
-flowchart LR
-  Librarian[Librarian]
-  Admin[Admin]
-  NotificationService[Notification Service]
-
-  subgraph LMS[Library Management System]
-    direction TB
-    UC05((Manage Books))
-    UC06((Manage Book Copies))
-    UC07B((Process Borrowing))
-    UC08B((Manage Reservations))
-    UC09B((Manage Fines))
-    UC10B((Send Notifications))
-    UC11((Manage Users And Roles))
-    UC12((Generate Reports))
-  end
+  Member --> UC09
 
   Librarian --> UC05
   Librarian --> UC06
-  Librarian --> UC07B
-  Librarian --> UC08B
-  Librarian --> UC09B
-  Librarian --> UC10B
+  Librarian --> UC07S
+  Librarian --> UC08S
+  Librarian --> UC09S
   Librarian --> UC12
   Admin --> UC05
   Admin --> UC06
-  Admin --> UC07B
-  Admin --> UC08B
-  Admin --> UC09B
-  Admin --> UC10B
+  Admin --> UC07S
+  Admin --> UC08S
+  Admin --> UC09S
   Admin --> UC11
   Admin --> UC12
-  NotificationService --> UC10B
-```
 
-##### Figure 3. Use Case Relationship Overview
+  UC02 -. "<<include>>" .-> UC10
+  UC04 -. "<<include>>" .-> UC10
+  UC08 -. "<<include>>" .-> UC10
+  UC09 -. "<<include>>" .-> UC10
+  UC11 -. "<<include>>" .-> UC10
+  UC07S -. "<<include>>" .-> UC06
+  UC08S -. "<<include>>" .-> UC06
+  UC07S -. "<<extend>>" .-> UC09S
 
-```mermaid
-flowchart LR
-  subgraph Notifications[Notification Includes]
-    direction TB
-    UC02((Manage Account Access)) -. "<<include>>" .-> UC10((Send Notifications))
-    UC04((Apply For Membership)) -. "<<include>>" .-> UC10
-    UC08((Reserve Books)) -. "<<include>>" .-> UC10
-    UC09((Manage Fines)) -. "<<include>>" .-> UC10
-    UC11((Manage Users And Roles)) -. "<<include>>" .-> UC10
-  end
-
-  subgraph Operations[Operational Dependencies]
-    direction TB
-    UC07((Borrow Books)) -. "<<include>>" .-> UC06((Manage Book Copies))
-    UC08B((Reserve Books)) -. "<<include>>" .-> UC06
-    UC07 -. "<<extend>>" .-> UC09B((Manage Fines))
-  end
-
+  NotificationService --> UC10
+  DatabaseSystem --> UCDB
 ```
 
 #### b. Use Case List
