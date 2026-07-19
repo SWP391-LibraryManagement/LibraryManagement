@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-19 - Remove duplicate Admin Console book mutations
+
+- Kept `UserManagement` Library book rows read-only and removed its create/edit/deactivate book controls.
+- Removed the unused FE11 `adminApi` book mutation aliases; canonical `BookManagement` remains the only FE05 mutation surface.
+- Added frontend regression coverage for the FE05/FE11 ownership boundary.
+
 ## 2026-07-19 - Hybrid reconciliation evidence
 
 - Executed FE05-T001 through FE05-T008 from RED tests through focused verification in the isolated `feat/fe05-book-reconciliation` worktree.

@@ -44,6 +44,7 @@ Book catalog management for authorized staff, including create, update, metadata
 
 - Focused route/repository tests: `45/45` pass.
 - FE05 frontend contract tests: `6/6` pass.
+- FE11 Admin Console boundary tests: read-only Library book view and no duplicate book mutation adapter pass.
 - FE05 SQL suite: `7/7` pass, including stale rowversion, atomic audit rollback, and status/copy/workflow preservation on disposable SQL Server.
 - Frontend lint/build, traceability enforcement, and `git diff --check` pass.
 

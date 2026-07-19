@@ -294,6 +294,61 @@ describe('FE08 reservation management', () => {
     expect(limitResponse.body.error.code).toBe('ACTIVE_RESERVATION_LIMIT');
   });
 
+  // @spec BR-FE08-006 FR-FE08-015 Q-FE08-003
+  test('NOTIFIED reservations remain open for duplicate and three-open limit checks', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'open-reservation-limit.member@example.test',
+    });
+    const now = new Date();
+
+    reservationDependencies.state.reservations.push(
+      {
+        reservationId: 90,
+        userId: member.userId,
+        copyId: 1,
+        reservedAt: now,
+        status: 'NOTIFIED',
+        notifiedAt: now,
+        expiresAt: new Date(now.getTime() + 86400000),
+      },
+      {
+        reservationId: 91,
+        userId: member.userId,
+        copyId: 3,
+        reservedAt: now,
+        status: 'NOTIFIED',
+        notifiedAt: now,
+        expiresAt: new Date(now.getTime() + 86400000),
+      },
+      {
+        reservationId: 92,
+        userId: member.userId,
+        copyId: 4,
+        reservedAt: now,
+        status: 'ACTIVE',
+      }
+    );
+
+    const duplicateResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 });
+    const limitResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 5 });
+
+    expect(duplicateResponse.status).toBe(409);
+    expect(duplicateResponse.body.error.code).toBe('DUPLICATE_ACTIVE_RESERVATION');
+    expect(limitResponse.status).toBe(409);
+    expect(limitResponse.body.error.code).toBe('ACTIVE_RESERVATION_LIMIT');
+    expect(reservationDependencies.state.reservations).toHaveLength(3);
+  });
+
   test('member cancels only their own active reservation', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
     const member = await createVerifiedUser({

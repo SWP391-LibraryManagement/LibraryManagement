@@ -648,18 +648,8 @@ function AdminLineChart({ title, rows }) {
   );
 }
 
-function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
-  const isBook = resource === 'books';
-  const [form, setForm] = useState(() => isBook ? {
-    title: item?.title || '',
-    isbn: item?.isbn || '',
-    categoryId: item?.categoryId || metadata.categories?.[0]?.id || '',
-    authorId: item?.authorId || metadata.authors?.[0]?.id || '',
-    publisherId: item?.publisherId || metadata.publishers?.[0]?.id || '',
-    publishYear: item?.publishYear || item?.year || '',
-    pages: item?.pages || '',
-    description: item?.description || '',
-  } : { name: item?.name || '' });
+function LibraryModal({ item, onClose, onSubmit }) {
+  const [form, setForm] = useState(() => ({ name: item?.name || '' }));
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -671,25 +661,12 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
         <div className="um-modal-header">
           <div>
             <p>{item ? 'Update' : 'Create'}</p>
-            <h2>{isBook ? 'Kho sách' : 'Danh mục thư viện'}</h2>
+            <h2>Danh mục thư viện</h2>
           </div>
           <button type="button" className="um-icon-button" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="um-modal-body">
-          {isBook ? (
-            <div className="um-form-grid">
-              <label>Tên sách<input value={form.title} onChange={(e) => update('title', e.target.value)} required /></label>
-              <label>ISBN<input value={form.isbn} onChange={(e) => update('isbn', e.target.value)} /></label>
-              <label>Danh mục<select value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)} required>{metadata.categories.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-              <label>Tác giả<select value={form.authorId} onChange={(e) => update('authorId', e.target.value)} required>{metadata.authors.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-              <label>Nhà xuất bản<select value={form.publisherId} onChange={(e) => update('publisherId', e.target.value)}>{metadata.publishers.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-              <label>Năm xuất bản<input type="number" value={form.publishYear} onChange={(e) => update('publishYear', e.target.value)} /></label>
-              <label>Số trang<input type="number" value={form.pages} onChange={(e) => update('pages', e.target.value)} /></label>
-              <label className="span-2">Mô tả<textarea value={form.description} onChange={(e) => update('description', e.target.value)} /></label>
-            </div>
-          ) : (
-            <label>Tên<input value={form.name} onChange={(e) => update('name', e.target.value)} required maxLength={100} /></label>
-          )}
+          <label>Tên<input value={form.name} onChange={(e) => update('name', e.target.value)} required maxLength={100} /></label>
         </div>
         <div className="um-modal-actions">
           <button type="button" className="um-secondary-button" onClick={onClose}>Cancel</button>
@@ -816,7 +793,6 @@ function UserManagement() {
   const [libraryStatus, setLibraryStatus] = useState('ALL');
   const [libraryModal, setLibraryModal] = useState(null);
   const [libraryPage, setLibraryPage] = useState(1);
-  const [bookMetadata, setBookMetadata] = useState({ categories: [], authors: [], publishers: [] });
   const [borrowings, setBorrowings] = useState([]);
   const [borrowingsLoading, setBorrowingsLoading] = useState(false);
   const [borrowingsError, setBorrowingsError] = useState('');
@@ -1259,17 +1235,10 @@ function UserManagement() {
         : await adminApi.libraryResource(resource, params);
       setLibraryRows(result.data || []);
       setLibraryPage(1);
-      if (resource === 'books') {
-        const metadata = await adminApi.bookMetadata();
-        setBookMetadata(metadata.data || { categories: [], authors: [], publishers: [] });
-      }
       setLibraryUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Dữ liệu thư viện đã được làm mới.' });
     } catch (error) {
       setLibraryRows([]);
-      if (resource === 'books') {
-        setBookMetadata({ categories: [], authors: [], publishers: [] });
-      }
       setLibraryError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
@@ -1278,14 +1247,13 @@ function UserManagement() {
   }
 
   async function saveLibrary(form) {
+    if (libraryResource === 'books') {
+      setToast({ type: 'error', message: 'Sách chỉ xem tại đây; hãy dùng màn hình Quản lý sách để chỉnh sửa.' });
+      return;
+    }
+
     try {
-      if (libraryResource === 'books') {
-        if (libraryModal?.item) {
-          await adminApi.updateBook(libraryModal.item.id, form);
-        } else {
-          await adminApi.createBook(form);
-        }
-      } else if (libraryModal?.item) {
+      if (libraryModal?.item) {
         await adminApi.updateResource(libraryResource, libraryModal.item.id, form);
       } else {
         await adminApi.createResource(libraryResource, form);
@@ -1293,18 +1261,6 @@ function UserManagement() {
       setLibraryModal(null);
       await loadLibrary();
       setToast({ type: 'success', message: 'Library data saved.' });
-    } catch (error) {
-      setToast({ type: 'error', message: error.message });
-    }
-  }
-
-  async function deactivateBook(row) {
-    if (row.status === 'INACTIVE') return;
-    if (!window.confirm(`Vô hiệu hóa sách “${row.title}”? Sách sẽ không còn xuất hiện với bạn đọc.`)) return;
-    try {
-      await adminApi.deactivateBook(row.id);
-      await loadLibrary();
-      setToast({ type: 'success', message: 'Sách đã được vô hiệu hóa.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     }
@@ -1850,7 +1806,7 @@ function UserManagement() {
               )}
               <button className="um-secondary-button" disabled={libraryLoading} onClick={() => loadLibrary()}>Tìm kiếm</button>
               <button className="um-secondary-button" disabled={libraryLoading || libraryRows.length === 0} onClick={() => downloadCsv(`${libraryResource}.csv`, libraryRows)}><FileDown size={16} /> Xuất CSV</button>
-              <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Thêm mới</button>
+              {libraryResource !== 'books' && <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Thêm mới</button>}
             </div>
             <section className="um-content">
               <table className="um-table">
@@ -1873,7 +1829,7 @@ function UserManagement() {
                       <td>{row.publishYear || row.year || '-'}</td>
                       <td>{row.availableCopies || 0}/{row.totalCopies || 0}</td>
                       <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
-                      <td><div className="um-row-actions"><button className="um-icon-button" title="Chỉnh sửa" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" title="Vô hiệu hóa" disabled={row.status === 'INACTIVE'} onClick={() => deactivateBook(row)}><PowerOff size={16} /></button></div></td>
+                      <td><span className="um-readonly-note">Chỉ xem; chỉnh sửa tại Quản lý sách.</span></td>
                     </tr>
                   ) : (
                     <tr key={row.id}>
@@ -2602,8 +2558,6 @@ function UserManagement() {
 
       {libraryModal && (
         <LibraryModal
-          resource={libraryResource}
-          metadata={bookMetadata}
           item={libraryModal.item}
           onClose={() => setLibraryModal(null)}
           onSubmit={saveLibrary}

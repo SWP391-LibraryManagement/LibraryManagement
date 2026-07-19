@@ -148,10 +148,10 @@ function createReservationService({
       throw errors.conflict('DUPLICATE_ACTIVE_RESERVATION', 'You already have an active reservation for this copy.');
     }
 
-    // @spec FR-FE08-015 — reject when the member already holds the max active reservations (Q-FE08-003)
+    // @spec FR-FE08-015 — ACTIVE and NOTIFIED both count toward the open-reservation limit.
     const activeCount = await reservationRepository.countActiveReservationsForUser(userId);
     if (activeCount >= MAX_ACTIVE_RESERVATIONS) {
-      throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 active reservations.');
+      throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 open reservations.');
     }
 
     const reservation = await reservationRepository.createReservation({ userId, copyId });

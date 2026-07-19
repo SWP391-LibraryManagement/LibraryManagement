@@ -1,10 +1,10 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.4
+# Version: 0.3.5
 
 # Status: ACTIVE (Phase 2 — Core Development)
 
-# Last Updated: 2026-07-18
+# Last Updated: 2026-07-19
 
 # Project: SWP391 Library Management System
 
@@ -20,15 +20,15 @@
 - **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server through the `mssql` package with parameterized queries, RESTful API.
 - **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. This approval locks the normalized contracts as the source of truth; it does not claim that implementation, tests, or deferred follow-up tasks are complete.
-  - FE01 remains implementation `NOT STARTED`. FE04/FE05/FE06 have decomposed implementation tasks that are not yet executed. FE02/FE07/FE08/FE09/FE10 have follow-up reconciliation tasks. FE11 account setup (`FE11-S01..S07`), transactional backend role mutation (`FE11-R01..R05`), safe user list/detail (`FE11-U01..U06`), and the Admin role-action UI contract (`FE11-UIR01..UIR05`) are complete through B7; update/deactivation, Admin Console/Permissions/Audit/Request Management, and remaining FE11 debt stay deferred. FE12's B7 base slice is complete while deterministic-policy follow-up remains pending.
+  - FE01 public browse is implemented and automated-validated, with owner/staging confirmation still pending. FE02, FE04, FE05, FE06, and FE08 reconciliation slices now have focused automated evidence in draft PR #40; FE02 HTTPS transport, FE04 role guards, FE05 canonical ownership, FE06 transactional rechecks, and FE08 Option A candidate catalog are implemented, while named human owners, browser/L4, H3, and merge gates remain open. FE07/FE09/FE10/FE12 remain bounded slices with their documented follow-up boundaries. FE11 account setup, role mutation, safe user list/detail, and Admin role-action UI remain complete only for their named slices; whole FE11 is not complete.
   - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
   - FE07 B7 evidence (merge `aeed0df`, CI `29308540692`) remains historical baseline evidence; it does not prove the v0.5.1 history contract.
-  - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; v0.4.3 timestamp normalization is pending.
+  - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; the approved v0.4.4 candidate catalog is now automated in PR #40, while candidate eligibility walkthrough and final H3 remain pending.
   - FE10 historical G1-G7 and FE11 `ACCOUNT_SETUP` delivery are complete; ADR-004/G8-G10 OTP implementation and G12 FE04 membership-result integration remain pending.
-  - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; v0.1.5 deterministic policy follow-up is pending.
+  - FE12 B7 evidence (commit `58747bc`, CI `29249491818`) remains historical baseline evidence; deterministic-policy and human acceptance follow-up remain pending.
 - **Current delivery mode**: Fast-Track Hybrid is the approved bounded-batch workflow. Use the three-lane pipeline and H1/H2/H3 authority model from `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`. The first activation batch covers FE11 `TD-024`, `TD-026`, and `TD-027`; its task/debt state and product-work authorization become usable only when the governance activation PR reaches `main`.
 - **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories`) using `mssql` repositories and SQL-oriented models, with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, report, and Admin pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
-- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. The Admin role-action UI drift (`TD-022`) was resolved through PR #30 and post-merge CI run `29644292781`. Remaining FE11 drift includes navigation/permissions, Audit Logs, Request Management, the extra user-list `summary` envelope, and stale evidence metadata (`TD-023..TD-027`). Treat completed B7 evidence as bounded-slice evidence only; do not claim whole-feature conformance. See [`.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md`](../.sdd/reviews/fe11-admin-console-context-drift-audit-2026-07-18.md).
+- **Known drift to reconcile**: prototype or historical code may predate the latest normalized specs. The current reconciliation branch has corrected FE04 role boundaries, FE05 duplicate Admin-console book mutations, FE06 transactional races, FE08 open-reservation counting/candidate ownership, and FE02 HTTPS transport. Remaining FE11 lifecycle/Audit/Request debt, FE01 implementation, named human acceptance, H2/H3 ordering exception, and stale release snapshots remain explicit residuals. Treat completed B7 evidence as bounded-slice evidence only; do not claim whole-feature conformance. See `.sdd/reviews/full-reconciliation-human-acceptance-packet-2026-07-19.md`.
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---

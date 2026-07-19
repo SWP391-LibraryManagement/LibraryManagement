@@ -21,13 +21,13 @@
 | --- | --- | --- |
 | Focused backend | FE08 reservation route/candidate contract tests | 23/23 passed |
 | FE08 SQL | `npm.cmd --prefix backend test -- --runInBand --testMatch "**/reservationCandidates.sqltest.js"` | 2/2 passed |
-| Aggregate Live SQL | `npm.cmd --prefix backend test -- --runInBand --testMatch "**/*.sqltest.js"` | 9/9 suites, 63/63 tests passed |
+| Aggregate Live SQL | Latest recorded disposable run with `**/*.sqltest.js` | 9/9 suites, 69/69 tests passed |
 | SQL schema/migrations | Canonical baseline plus five migrations, applied twice to disposable SQL Server | Pass; both migration passes succeeded |
 | SQL connectivity | TCP SQL-auth `sqlcmd` and direct Node `mssql` probe | Pass |
 | SQL cleanup | Disposable database/login checked in `finally` | `DB_CLEAN`; `LOGIN_CLEAN` |
-| Full backend | `npm.cmd --prefix backend test` | 52/52 suites, 896/896 tests passed |
+| Full backend | `npm.cmd --prefix backend test -- --runInBand` | 53/53 suites, 905/905 tests passed |
 | Backend coverage | `npm.cmd --prefix backend run test:coverage:ci` | 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
-| Frontend | `npm.cmd --prefix frontend test` | 147/147 passed |
+| Frontend | `npm.cmd --prefix frontend test` | 149/149 passed |
 | Frontend quality | `npm.cmd --prefix frontend run lint`; `npm.cmd --prefix frontend run build` | Pass; existing Vite chunk warning is non-blocking |
 | System integration | `npm.cmd --prefix backend run test:integration:system` | 10/10 passed |
 | Deployment | `npm.cmd run test:deployment` | 7/7 passed |
@@ -51,4 +51,4 @@ The first aggregate SQL run exposed a fixture-isolation issue: the canonical bas
 ## Residual Gates
 
 - Decision Gate B / H3 human integration review remains unchecked in the full acceptance packet.
-- PR publication and CI association are complete: PR #40 / CI run `29682997784` passed on head `ed7376f`. Merge approval, human H3, and exact post-merge `main` CI evidence remain required before the project goal can be marked complete.
+- PR publication and CI association are complete for prior published heads: implementation CI `29682997784` passed on `ed7376f`, and the latest docs-only CI `29683107536` passed on `199fa36`. Merge approval, human H3, and exact post-merge `main` CI evidence remain required before the project goal can be marked complete.

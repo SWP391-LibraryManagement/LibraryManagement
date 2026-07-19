@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-19 - Open Reservation Limit Corrected
+
+- Counted both `ACTIVE` and `NOTIFIED` rows for the maximum-three-open-reservations rule.
+- Treated an existing `NOTIFIED` row as a duplicate for the same member and physical copy.
+- Added route, SQL-source, and live SQL regression coverage while preserving the existing conflict codes.
+
 ## 2026-07-19 - V0.4.4 Member-Safe Candidate Contract Approved
 
 - Approved protected member-only `GET /api/reservations/candidates` as the source of physical `CopyId` targets.
@@ -12,7 +18,7 @@
 
 - Added the member-only SQL-backed candidate catalog and migrated the member page off `DEMO_RESERVABLE`.
 - Validated the redacted six-field projection, eligible statuses, server search/pagination, real `copyId` mutation, and canonical refresh through backend, frontend, SQL, and browser gates.
-- Aggregate disposable SQL validation passes `9/9` suites and `63/63` tests after two migration passes; cleanup leaves no disposable database or login.
+- Aggregate disposable SQL validation passes `9/9` suites and `69/69` tests after two migration passes; cleanup leaves no disposable database or login.
 - Closed `TD-028` for agent-side validation; final H3, merge, and post-merge `main` CI remain human gates.
 
 ## 2026-07-19 - Reservation Candidate Drift Recorded

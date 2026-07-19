@@ -6,9 +6,13 @@ Branch: `feat/full-reconciliation`
 
 Draft PR: #40
 
-Recorded head: `ed7376ffe9462bcb79812c472adaa0c89361f9ef`
+Recorded implementation/evidence head: `ed7376ffe9462bcb79812c472adaa0c89361f9ef`
 
 Recorded CI: `29682997784` - PASS
+
+Latest docs-only PR head checked: `199fa36437ee5a54de85c0836fd01e26a4e356ed`
+
+Latest CI: `29683107536` - PASS
 
 ## Purpose
 
@@ -20,16 +24,16 @@ until a named reviewer records an explicit decision.
 
 | Gate | Evidence |
 | --- | --- |
-| Backend regression | 52/52 suites, 896/896 tests |
+| Backend regression | 53/53 suites, 905/905 tests |
 | Backend coverage | 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
-| Frontend regression | 147/147 tests |
+| Frontend regression | 149/149 tests |
 | Frontend quality | lint PASS; production build PASS with the known non-blocking chunk warning |
 | System integration | 10/10 tests |
-| Live SQL | baseline PASS; five migrations twice; 9/9 suites, 63/63 tests; FE08 candidate `2/2`; `DB_CLEAN`, `LOGIN_CLEAN` |
+| Live SQL | baseline PASS; five migrations twice; 9/9 suites, 69/69 tests; FE06 `10/10`; `DB_CLEAN`, `LOGIN_CLEAN` |
 | Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
 | Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 is draft, clean, mergeable, and CI run `29682997784` passes on the recorded head |
+| Pull request | PR #40 is draft; implementation/evidence CI `29682997784` and docs-only CI `29683107536` pass on prior heads. Current local P1 corrections have a fresh H2 PASS; commit/push and new CI remain required before H3. |
 
 Authoritative consolidated evidence:
 
@@ -61,13 +65,23 @@ Decision: APPROVED - Option A
 
 Approved contract reference or notes: `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md`; member-only `GET /api/reservations/candidates`, six-field redacted rows, server-owned search/pagination, and authoritative `POST /api/reservations { copyId }`.
 
+## Governance Exception - Post-Hoc H2 Ordering
+
+The first reconciliation implementation/evidence commits and draft PR publication occurred before the complete H2 diff review required by the Fast-Track Hybrid rules. This packet records that ordering violation explicitly instead of treating the earlier publication as valid H2 evidence.
+
+- Exception scope: commits through published head `199fa36` and draft PR #40 creation.
+- Corrective action: keep all current P1 fixes uncommitted, run a fresh full-diff H2 review and all required validation, then commit/push only the reviewed final diff.
+- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff remains uncommitted until the commit/push checkpoint.
+- Authority boundary: this exception record does not waive H2 findings, approve merge, or substitute for H3.
+- H3 condition: the reviewer must evaluate the final pushed head and its new CI run, not the earlier green heads.
+
 ## Human Product Walkthrough
 
 Use synthetic data only. Do not expose credentials, tokens, connection strings, raw OTPs,
 notification bodies, or real personal data.
 
 - [ ] FE01 public browse/search/detail shows current public-safe availability and no protected copy or user data.
-- [ ] FE02 registration, canonical OTP verification/reset, login, inactive-account generic error, refresh, logout, and account setup behave as specified.
+- [ ] FE02 registration, canonical OTP verification/reset, login, inactive-account generic error, refresh, logout, account setup, and deployed HTTPS enforcement behave as specified.
 - [ ] FE03 profile read/update/avatar boundaries preserve read-only and validation rules.
 - [ ] FE04 membership application/review reflects canonical server state and role boundaries.
 - [ ] FE05 book management uses server pagination, versioned mutations, reasons, and derived availability.

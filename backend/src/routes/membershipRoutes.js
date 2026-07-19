@@ -16,6 +16,7 @@ function createMembershipRoutes({ authService, membershipService } = {}) {
   router.post(
     '/applications',
     authenticate,
+    requireAnyRole('MEMBER'),
     controller.apply
   );
 
@@ -23,6 +24,7 @@ function createMembershipRoutes({ authService, membershipService } = {}) {
   router.get(
     '/status/me',
     authenticate,
+    requireAnyRole('MEMBER'),
     controller.getMyStatus
   );
 

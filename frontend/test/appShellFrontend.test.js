@@ -227,8 +227,8 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.match(source, /<path d=\{path\}/);
   assert.doesNotMatch(source, /className="um-bar-chart"/);
   assert.match(source, /loadLibrary\(libraryResource, \{ announce: true \}\)/);
-  assert.match(source, /Vô hiệu hóa sách/);
-  assert.match(source, /adminApi\.deactivateBook\(row\.id\)/);
+  assert.doesNotMatch(source, /Vô hiệu hóa sách/);
+  assert.doesNotMatch(source, /adminApi\.(createBook|updateBook|deactivateBook)/);
   assert.match(source, /adminApi\.deactivateResource\(libraryResource, row\.id\)/);
   assert.match(source, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
   assert.doesNotMatch(source, /deleteLibraryItem/);

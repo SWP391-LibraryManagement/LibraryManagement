@@ -158,7 +158,7 @@ async function countActiveReservationsForUser(userId) {
       SELECT COUNT(*) AS ActiveCount
       FROM Reservations
       WHERE UserId = @UserId
-        AND Status = 'ACTIVE'
+        AND Status IN ('ACTIVE', 'NOTIFIED')
     `);
 
   return result.recordset[0]?.ActiveCount || 0;
@@ -174,7 +174,7 @@ async function findActiveReservationByUserAndCopy(userId, copyId) {
       ${reservationSelect}
       WHERE r.UserId = @UserId
         AND r.CopyId = @CopyId
-        AND r.Status = 'ACTIVE'
+        AND r.Status IN ('ACTIVE', 'NOTIFIED')
     `);
 
   return mapReservation(result.recordset[0]);

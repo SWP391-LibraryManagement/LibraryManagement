@@ -5,7 +5,7 @@ Feature: FE08 Reservation Management
 Debt: TD-028
 Delivery: Hybrid SDD + ADD
 Specification depth: Standard for the new API contract; implementation remains bounded by the approved FE08 Core contract.
-Design status: Approach approved by user with `APPROVE TD-028 - Option A`; written spec review pending.
+Design status: APPROVED by user with `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN` on 2026-07-19.
 
 ## 1. Context
 

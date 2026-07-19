@@ -105,7 +105,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
     async countActiveReservationsForUser(userId) {
       return reservations.filter(
         (reservation) =>
-          reservation.userId === Number(userId) && reservation.status === 'ACTIVE'
+          reservation.userId === Number(userId) &&
+          (reservation.status === 'ACTIVE' || reservation.status === 'NOTIFIED')
       ).length;
     },
 
@@ -115,7 +116,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
           (reservation) =>
             reservation.userId === Number(userId) &&
             reservation.copyId === Number(copyId) &&
-            reservation.status === 'ACTIVE'
+            (reservation.status === 'ACTIVE' || reservation.status === 'NOTIFIED')
         ) || null
       );
     },

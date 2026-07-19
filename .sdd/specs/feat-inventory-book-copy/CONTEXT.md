@@ -1,12 +1,12 @@
 # CONTEXT.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.2.0
+# Version: 0.2.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-16
+# Last Updated: 2026-07-19
 
 # Feature folder: `.sdd/specs/feat-inventory-book-copy/`
 
@@ -64,7 +64,7 @@ FE06 does not include:
 The current SQL script includes:
 
 - `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl, Status)`
-- `BookCopies(CopyId, BookId, Barcode, Status, Location, CreatedAt, UpdatedAt)`
+- `BookCopies(CopyId, BookId, Barcode, Status, Location, Version, CreatedAt, UpdatedAt)`
 - `BorrowDetails(BorrowDetailId, RequestId, CopyId, DueDate, ReturnDate, Status)`
 - `Reservations(ReservationId, UserId, CopyId, ReservedAt, Status)`
 
@@ -77,7 +77,7 @@ Implementation reconciliation points:
 - Effective availability is derived from `BookCopies.Status = AVAILABLE` plus parent `Books.Status = ACTIVE`; FE05/FE01 never mutate copy state.
 - Manual reservation release always rejects with `RESERVATION_STATE_CONFLICT`; location validation rejects invalid values rather than normalizing them.
 
-These decisions are reflected in `SPEC.md` v0.4.0 and must be reconciled against the existing prototype before implementation can be considered complete.
+These decisions are reflected in `SPEC.md` v0.4.2 and are implemented with automated evidence; cross-feature owner confirmation and final integration remain open.
 
 ---
 

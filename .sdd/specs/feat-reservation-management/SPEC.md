@@ -12,7 +12,7 @@
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
-> Source of truth for FE08 Reservation Management. Revision v0.4.4 adds the approved member-safe reservation-candidate catalog while preserving the `CopyId` mutation contract and immutable terminal timestamp history. Candidate implementation still requires focused validation and final human review before merge.
+> Source of truth for FE08 Reservation Management. Revision v0.4.4 adds the approved member-safe reservation-candidate catalog while preserving the `CopyId` mutation contract and immutable terminal timestamp history. Candidate implementation is automated-validated; final human walkthrough/H3 review remains required before merge.
 
 ---
 
@@ -457,9 +457,9 @@ This feature does not include:
 | BR-FE08-012 | UC40 | FE08-T08, FE08-T14 | Ready for review |
 | BR-FE08-013 | UC36, UC37, UC39, UC40 | FE08-T09, FE08-T12, FE08-T14 | Ready for review |
 | BR-FE08-014 | UC39 | FT40 | Ready for review |
-| BR-FE08-015 | UC39, UC40 | FE08-T025 and FE07-T030 fulfillment tests | Planned |
-| BR-FE08-016 | UC36, UC39 | FE08-T025 and FE07-T029 priority tests | Planned |
-| BR-FE08-017 | UC37, UC39, UC40 | FE08-T030 timestamp-retention model/transition tests | Planned |
+| BR-FE08-015 | UC39, UC40 | FE08-T025 and FE07-T030 fulfillment tests | Automated pass; human review pending |
+| BR-FE08-016 | UC36, UC39 | FE08-T025 and FE07-T029 priority tests | Automated pass; human review pending |
+| BR-FE08-017 | UC37, UC39, UC40 | FE08-T030 timestamp-retention model/transition tests | Automated pass; human review pending |
 | FR-FE08-001 | UC36 | FT37 | Ready for review |
 | FR-FE08-002 | UC36 | FT37 | Ready for review |
 | FR-FE08-003 | UC36 | FT37 | Ready for review |
@@ -474,7 +474,7 @@ This feature does not include:
 | FR-FE08-012 | UC36 (EC-FE08-002) | rejects reservation when member account is inactive (FR-FE08-012) | Ready for review |
 | FR-FE08-013 | UC36 (EC-FE08-003) | FT37; rejects reservation when membership is not approved (FR-FE08-013) | Ready for review |
 | FR-FE08-014 | UC36 (EC-FE08-004) | rejects reservation when the copy does not exist (FR-FE08-014) | Ready for review |
-| FR-FE08-015 | UC36 (Q-FE08-003) | member creates reservations only for unavailable copies within the active limit (FR-FE08-015) | Ready for review |
+| FR-FE08-015 | UC36 (Q-FE08-003) | route and SQL tests count `ACTIVE` plus `NOTIFIED` toward the three-open limit | Automated pass; human review pending |
 | FR-FE08-016 | UC37 (EC-FE08-006) | member cancels only their own `ACTIVE` or `NOTIFIED` reservation (FR-FE08-016) | Ready for review |
 | FR-FE08-017 | UC37 (EC-FE08-007) | member cancellation rejects states outside `ACTIVE` or `NOTIFIED` (FR-FE08-017) | Ready for review |
 | FR-FE08-018 | UC39 (AF-FE08-003) | process-queue skips an ineligible member instead of holding (FR-FE08-018) | Ready for review |
@@ -484,13 +484,13 @@ This feature does not include:
 | FR-FE08-022 | UC39 (EC-FE08-010) | concurrent queue processing holds the copy only once (FR-FE08-022) | Ready for review |
 | FR-FE08-023 | UC39 (BR-FE08-011) | FT40 | Ready for review |
 | FR-FE08-024 | UC39 (BR-FE08-014) | FT40 | Ready for review |
-| FR-FE08-025 | UC39, UC40 | FE08-T025 and FE07-T030 approval fulfillment tests | Planned |
-| FR-FE08-026 | UC36, UC39 | FE08-T025 and FE07-T029 safe priority-conflict tests | Planned |
-| FR-FE08-027 | UC38 | FE08-T028 pagination validation test | Planned |
-| FR-FE08-028 | UC37, UC39, UC40 | FE08-T030 terminal timestamp-retention tests | Planned |
-| FR-FE08-029 | UC36 | FE08-T035 route/service/redaction tests; FE08-T036 SQL projection tests; FE08-T038 browser acceptance | Planned |
+| FR-FE08-025 | UC39, UC40 | FE08-T025 and FE07-T030 approval fulfillment tests | Automated pass; human review pending |
+| FR-FE08-026 | UC36, UC39 | FE08-T025 and FE07-T029 safe priority-conflict tests | Automated pass; human review pending |
+| FR-FE08-027 | UC38 | FE08-T028 pagination validation test | Automated pass; human review pending |
+| FR-FE08-028 | UC37, UC39, UC40 | FE08-T030 terminal timestamp-retention tests | Automated pass; human review pending |
+| FR-FE08-029 | UC36 | FE08-T035 route/service/redaction tests; FE08-T036 SQL projection tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
 | AC-FE08-001 | UC36 | FT37 eligible unavailable-copy reservation test | Ready for review |
-| AC-FE08-002 | UC36 | FT37 duplicate active reservation rejection test | Ready for review |
+| AC-FE08-002 | UC36 | FT37 duplicate open reservation rejection, including `NOTIFIED` | Automated pass; human review pending |
 | AC-FE08-003 | UC36 | FT37 available-copy reservation rejection test | Ready for review |
 | AC-FE08-004 | UC37 | FT38 owner cancellation and atomic hold-release test | Ready for review |
 | AC-FE08-005 | UC37 | FT38 foreign-owner cancellation denial test | Ready for review |
@@ -499,14 +499,14 @@ This feature does not include:
 | AC-FE08-008 | UC39 | FT40 and FE07 integration held-copy borrow denial test | Ready for review |
 | AC-FE08-009 | UC40 | FT41 FE10 notification-request test | Ready for review |
 | AC-FE08-010 | UC38 | FT39 member own-reservation isolation test | Ready for review |
-| AC-FE08-011 | UC39, UC40 | FE08-T025 and FE07-T030 atomic fulfillment tests | Planned |
-| AC-FE08-012 | UC36, UC39 | FE08-T025 and FE07-T029 reservation-priority tests | Planned |
-| AC-FE08-013 | UC38 | FE08-T028 pagination defaults/bounds test | Planned |
-| AC-FE08-014 | UC37, UC39, UC40 | FE08-T030 fulfilled/expired/cancelled timestamp-retention cases | Planned |
-| AC-FE08-015 | UC36 | FE08-T035 safe-key route tests; FE08-T036 SQL redaction tests | Planned |
-| AC-FE08-016 | UC36 | FE08-T037 frontend source/API tests; FE08-T038 browser acceptance | Planned |
-| NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Planned |
-| NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Planned |
+| AC-FE08-011 | UC39, UC40 | FE08-T025 and FE07-T030 atomic fulfillment tests | Automated pass; human review pending |
+| AC-FE08-012 | UC36, UC39 | FE08-T025 and FE07-T029 reservation-priority tests | Automated pass; human review pending |
+| AC-FE08-013 | UC38 | FE08-T028 pagination defaults/bounds test | Automated pass; human review pending |
+| AC-FE08-014 | UC37, UC39, UC40 | FE08-T030 fulfilled/expired/cancelled timestamp-retention cases | Automated pass; human review pending |
+| AC-FE08-015 | UC36 | FE08-T035 safe-key route tests; FE08-T036 SQL redaction tests | Automated pass; design approved; human walkthrough/H3 pending |
+| AC-FE08-016 | UC36 | FE08-T037 frontend source/API tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
+| NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Automated pass; design approved; human walkthrough/H3 pending |
+| NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Automated pass; design approved; human walkthrough/H3 pending |
 
 ---
 
@@ -515,7 +515,7 @@ This feature does not include:
 Phase 1 approval checklist (completed on 2026-06-10):
 
 - [x] Reservation target is confirmed as the physical copy identified by `CopyId`.
-- [x] Maximum active reservations is approved.
+- [x] Maximum three open reservations (`ACTIVE` plus `NOTIFIED`) is approved.
 - [x] Reservation expiry/hold period is approved.
 - [x] Queue processing behavior is approved.
 - [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.

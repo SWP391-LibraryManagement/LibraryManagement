@@ -636,7 +636,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE02-021 | Invalid/expired/used/revoked/ineligible/concurrent setup token cannot partially activate | FR-FE02-025 | BR-FE02-024, BR-FE02-025 | FT11 | Approved for implementation |
 | AC-FE02-022 | Guest self-registration assigns exactly the Member role through UserRoles | FR-FE02-013 | BR-FE02-003, BR-FE02-015, Q-FE02-014 | Planned registration role-assignment integration case | Not Started |
 | AC-FE02-023 | Protected authorization uses current server-side UserRoles and rejects client role claims | FR-FE02-014 | BR-FE02-015 | Planned authorization middleware role-source case | Not Started |
-| AC-FE02-024 | Deployed HTTP authentication request is redirected or rejected before credential processing | NFR-FE02-SEC-003 | BR-FE02-017 | Planned HTTPS enforcement deployment case | Not Started |
+| AC-FE02-024 | Deployed HTTP authentication request is redirected or rejected before credential processing | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` (3/3) | Automated pass; human deployment review pending |
 | AC-FE02-025 | Refresh-token exchange returns a new access token and the same refresh token without requiring an access token | FR-FE02-026 | BR-FE02-010 | Existing refresh-token route case | Ready for review |
 
 ### FE02 Unwanted Functional Requirements to Sources to Tests

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - HTTPS transport enforcement
+
+- Added a deployment-aware HTTPS middleware before JSON parsing and auth route dispatch.
+- Plain HTTP authentication requests now reject with `400 HTTPS_REQUIRED` by default; optional `HTTPS_REDIRECT=true` redirects only to a validated `HTTPS_CANONICAL_HOST`.
+- Trusted reverse-proxy deployments may pass `X-Forwarded-Proto: https` only when `TRUST_PROXY=true`; focused transport tests pass `3/3`.
+
 ## 2026-07-19 - API Evidence And Login Enumeration Reconciliation
 
 - Added API regressions for duplicate registration and weak registration/reset passwords with explicit no-persistence assertions.

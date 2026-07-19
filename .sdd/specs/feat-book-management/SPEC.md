@@ -335,6 +335,12 @@ Use these stable IDs for tasks and tests.
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
 | PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Reactivated book + new version | Sets `ACTIVE`; reason required; copy states remain unchanged. |
 
+### 11.1 Frontend Ownership Boundary
+
+- `frontend/src/page/BookManagement.jsx` is the canonical FE05 mutation surface for book create, metadata update, deactivate, and reactivate actions.
+- `frontend/src/page/UserManagement.jsx` may read the Admin Library book list for console context, but its book rows are read-only and expose no duplicate FE05 mutation controls.
+- FE11 `adminApi` contains no book mutation aliases; all existing-book mutations use the FE05 API contract above with `If-Match` and reason where required.
+
 ---
 
 ## 12. Non-functional Requirements

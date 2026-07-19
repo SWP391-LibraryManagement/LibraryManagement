@@ -6,7 +6,7 @@ Owner: Dat
 
 Updated: 2026-07-19
 
-Workflow State: FE06-T001 through FE06-T008 executed; final integration remains gated
+Workflow State: FE06-T001 through FE06-T008 plus the post-H2 transactional race correction executed; final integration remains gated
 
 ---
 
@@ -67,6 +67,7 @@ Workflow State: FE06-T001 through FE06-T008 executed; final integration remains 
   - RED: race tests change borrow/reservation state between initial read and mutation; tests also cover prohibited manual `BORROWED`/`RESERVED`, reserved release, borrowed release, active-parent guard, reason, stale version, and duplicate deactivate.
   - GREEN: lock `BookCopies -> BorrowDetails -> Reservations`, compare version, recheck conflicts/parent, apply one valid transition, and write audit in one transaction.
   - Verify: focused route/SQL tests pass all state-matrix and rollback cases without deadlock.
+  - Post-H2 correction evidence: four route race regressions went RED at `201/200`, then GREEN; route `35/35`, FE06 SQL `10/10` live, cleanup `DB_CLEAN`/`LOGIN_CLEAN`.
   - DoD: duplicate current-version deactivation returns current copy plus `changed = false` and writes no second transition audit.
 
 - [x] **FE06-T007 - Replace mock inventory ownership with server-backed frontend state.**
@@ -105,7 +106,7 @@ Workflow State: FE06-T001 through FE06-T008 executed; final integration remains 
 ## Completion Gate
 
 - [ ] FE06-T001 through FE06-T008 are complete and independently reviewed.
-- [ ] Focused backend, SQL, frontend, traceability, and diff checks pass.
+- [x] Focused backend `35/35`, FE06 SQL `10/10`, frontend `6/6`, traceability `24/24`, and diff checks pass.
 - [ ] Full merge-gate suites pass when the implementation branch is ready.
 - [ ] FE05/FE07/FE08 owners confirm state ownership and lock-order compatibility.
 - [ ] Dat confirms server-backed inventory and stale/conflict UX behavior.

@@ -180,6 +180,19 @@ async function countInventoryByStatus(filters = {}) {
 }
 
 async function createCopy({ bookId, barcode, status, location }, transaction) {
+  const parentResult = await (await requestFor(transaction))
+    .input('BookId', sql.Int, bookId)
+    .query(`
+      SELECT BookId, Status
+      FROM Books WITH (UPDLOCK, HOLDLOCK)
+      WHERE BookId = @BookId
+    `);
+  const parent = parentResult.recordset[0];
+  if (!parent) throw new AppException(404, 'BOOK_NOT_FOUND', 'Book was not found.');
+  if (status === 'AVAILABLE' && parent.Status !== 'ACTIVE') {
+    throw new AppException(409, 'INACTIVE_PARENT_BOOK', 'A copy cannot be made available under an inactive book.');
+  }
+
   const request = await requestFor(transaction);
   const result = await request
     .input('BookId', sql.Int, bookId)
@@ -200,9 +213,11 @@ async function lockCopyForMutation(copyId, expectedVersion, transaction) {
     .input('CopyId', sql.Int, copyId)
     .input('ExpectedVersion', sql.NVarChar(512), expectedVersion)
     .query(`
-      SELECT TOP 1 CopyId, BookId, Barcode, Status AS CopyStatus, Location, Version AS RowVersion
-      FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
-      WHERE CopyId = @CopyId;
+      SELECT TOP 1 bc.CopyId, bc.BookId, bc.Barcode, bc.Status AS CopyStatus,
+                   bc.Location, bc.Version AS RowVersion, b.Status AS BookStatus
+      FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
+      INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
+      WHERE bc.CopyId = @CopyId;
       SELECT TOP 1 BorrowDetailId
       FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
       WHERE CopyId = @CopyId AND Status IN ('BORROWED', 'OVERDUE');
@@ -235,6 +250,15 @@ async function updateCopy(copyId, patch = {}, expectedVersion, transaction) {
 
 async function updateCopyStatus(copyId, status, expectedVersion, transaction) {
   const locked = await lockCopyForMutation(copyId, expectedVersion, transaction);
+  if (locked.row.CopyStatus === 'BORROWED' || locked.borrow) {
+    throw new AppException(409, 'ACTIVE_BORROW_CONFLICT', 'Borrowed copies must be handled through the return flow.');
+  }
+  if (locked.row.CopyStatus === 'RESERVED' || locked.reservation) {
+    throw new AppException(409, 'RESERVATION_STATE_CONFLICT', 'Reserved copies must be handled through the reservation flow.');
+  }
+  if (status === 'AVAILABLE' && locked.row.BookStatus !== 'ACTIVE') {
+    throw new AppException(409, 'INACTIVE_PARENT_BOOK', 'A copy cannot be made available under an inactive book.');
+  }
   const request = await requestFor(transaction);
   await request
     .input('CopyId', sql.Int, copyId)

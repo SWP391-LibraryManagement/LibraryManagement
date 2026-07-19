@@ -202,6 +202,16 @@ test('FE11 Admin access never uses an implicit development bypass', async () => 
   assert.match(source, /<Navigate to="\/home" replace/);
 });
 
+// @spec AC-FE05-012, FR-FE05-021, FR-FE05-025
+test('FE11 Library view is read-only for FE05 books and directs mutations to canonical BookManagement', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.doesNotMatch(source, /adminApi\.(createBook|updateBook|deactivateBook)/);
+  assert.doesNotMatch(source, /function deactivateBook\(/);
+  assert.match(source, /libraryResource === 'books'/);
+  assert.match(source, /Chỉ xem|read-only/i);
+});
+
 test('FE11 lifecycle payloads include effective version and Librarian fields', async () => {
   const source = await readFile(pagePath, 'utf8');
 

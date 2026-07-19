@@ -37,7 +37,7 @@ The repository already contains FE04 routes, controller, service, repository, va
 | At most one pending application and one final review result | In-memory checks exist, but SQL-level uniqueness and concurrent review evidence are missing. |
 | Rejected users may re-apply while preserving history | Prototype behavior needs explicit route and SQL tests for the new pending row plus canonical projection reset. |
 | FE10 delivery occurs once after commit and is non-blocking | The current service has no FE04-bound notification requester integration. |
-| Registered active users may apply/view status | Routes currently require the `MEMBER` role, which is not the same as an active registered account and can block pre-membership applicants. |
+| Authenticated active `MEMBER` users may apply/view status | Applicant endpoints must enforce the `MEMBER` role while allowing users without a pre-existing membership projection to apply. |
 | Applicant UI shows server truth | The page currently falls back to fabricated demo status/application data after API failure. |
 
 ### 3.1 2026-07-19 Implementation Checkpoint
@@ -88,8 +88,8 @@ The repository already contains FE04 routes, controller, service, repository, va
 
 | Method | Endpoint | Required behavior |
 | --- | --- | --- |
-| `POST` | `/api/membership/applications` | Authenticated active registered user; creates application and canonical `PENDING` projection atomically. |
-| `GET` | `/api/membership/status/me` | Returns only the actor's `{ membershipStatusView, memberStatus, currentApplication }`. |
+| `POST` | `/api/membership/applications` | Authenticated active `MEMBER` user; creates application and canonical `PENDING` projection atomically. |
+| `GET` | `/api/membership/status/me` | Authenticated `MEMBER` only; returns only the actor's `{ membershipStatusView, memberStatus, currentApplication }`. |
 | `GET` | `/api/membership/applications` | Librarian/Admin; validated status filter and paginated review list. |
 | `PATCH` | `/api/membership/applications/{applicationId}/approve` | Pending only; application/member/reviewer/audit commit together, then FE10 is requested. |
 | `PATCH` | `/api/membership/applications/{applicationId}/reject` | Pending only; trimmed `reason` length 1..500, atomic review writes, then FE10 is requested. |
@@ -100,7 +100,7 @@ The FE10 requester call must use type `MEMBERSHIP_RESULT`, source feature `FE04`
 
 ### 7.1 Lock The Contract With RED Tests
 
-- Extend route tests for active registered applicants without a pre-existing member role, canonical `NONE`, re-application, invalid transitions, privacy, pagination, and FE10 failure.
+- Extend route tests for active `MEMBER` applicants without a pre-existing membership projection, non-member denial, canonical `NONE`, re-application, invalid transitions, privacy, pagination, and FE10 failure.
 - Add SQL tests that race two applications for one user and two final review commands for one application.
 - Make tests assert no partial application/member/audit state after injected failure.
 
@@ -112,7 +112,7 @@ The FE10 requester call must use type `MEMBERSHIP_RESULT`, source feature `FE04`
 
 ### 7.3 Reconcile Boundary And Service Rules
 
-- Authenticate applicant endpoints without requiring an already-assigned membership role.
+- Authenticate applicant endpoints and require the `MEMBER` role; an existing membership projection is not required before applying.
 - Validate active `Users.Status`, IDs, filters, pagination, and rejection reason on the server.
 - Derive status from `Members`; select the latest application by `AppliedAt DESC, ApplicationId DESC` only for display.
 - Preserve final application rows and reset only the canonical projection on re-application.

@@ -1,6 +1,6 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.1
+Version: 0.3.2
 Status: READY FOR REVIEW - DEBT RECONCILIATION COMPLETE
 Last Updated: 2026-07-19
 
@@ -32,6 +32,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 - `POST /auth/refresh-token`: happy path, expired token, invalid token.
 - Registration role assignment: self-registration creates exactly one `Member` assignment and cannot create Librarian/Admin roles.
 - Authorization and transport: protected actions use current `UserRoles`; deployed HTTP auth requests are redirected or rejected before credential processing.
+- HTTPS transport: plain HTTP auth requests are rejected before body/auth dispatch, trusted proxy HTTPS is accepted, and an explicit canonical-host redirect mode is tested.
 - `POST /auth/logout`: happy path, invalid token.
 - `POST /auth/change-password` (+ `/request-otp`, `/confirm`): happy path, wrong old password, reused password, invalid OTP, unauthenticated.
 - `POST /auth/forgot-password`, `/reset-password`: generic request semantics; canonical email/OTP and legacy-token success; invalid/expired/reused credential; weak-password no-mutation behavior.
@@ -47,6 +48,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
 - Focused API evidence: `backend/tests/authRoutes.test.js` passes 30/30, including TD-018 and TD-020 regressions.
+- Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps

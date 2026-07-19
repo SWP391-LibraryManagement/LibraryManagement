@@ -1,6 +1,6 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.2.2
+# Version: 0.2.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -80,7 +80,7 @@ The feature can only start when:
 3. The user submits the application.
 4. The system validates duplicate and status rules.
 5. In one transaction, the system creates a `MembershipApplications` record with status `PENDING` and creates/updates the user's canonical `Members` projection to `PENDING`.
-6. After the membership transaction commits, the system writes the application audit entry.
+6. In the same transaction, the system writes the application audit entry before committing the application/member projection.
 7. The system preserves all previous application records as immutable history and shows the pending status to the user.
 
 ### MF-FE04-002: Approve Membership Application
@@ -90,7 +90,7 @@ The feature can only start when:
 3. Librarian/admin chooses approve.
 4. The system verifies the application is still `PENDING`.
 5. In one transaction, the system updates the application to `APPROVED`, stores `MembershipApplications.ApprovedAt` and reviewer, updates canonical `Members.Status` to `APPROVED`, and stores the same server timestamp in `Members.ApprovedAt`.
-6. After commit, the system writes the review audit entry and then requests a non-blocking FE10 notification with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, and FE04-bound source context when the requester is configured; delivery failure does not roll back approval.
+6. The transaction writes the review audit entry before commit, then the system requests a non-blocking FE10 notification with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, and FE04-bound source context when the requester is configured; delivery failure does not roll back approval.
 
 ### MF-FE04-003: Reject Membership Application
 
@@ -99,7 +99,7 @@ The feature can only start when:
 3. Librarian/admin chooses reject.
 4. The system verifies the application is still `PENDING`.
 5. In one transaction, the system updates the application to `REJECTED`, stores reviewer and required rejection reason, updates canonical `Members.Status` to `REJECTED`, and keeps `Members.ApprovedAt = null`.
-6. After commit, the system writes the review audit entry and then requests a non-blocking FE10 notification with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, and FE04-bound source context when the requester is configured; delivery failure does not roll back rejection.
+6. The transaction writes the review audit entry before commit, then the system requests a non-blocking FE10 notification with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, and FE04-bound source context when the requester is configured; delivery failure does not roll back rejection.
 
 ### MF-FE04-004: View Membership Status
 
@@ -157,7 +157,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE04-012: Membership status must be available for FE07 and FE08 eligibility checks.
 - BR-FE04-013: Approval/rejection actions must be traceable.
 - BR-FE04-014: `Members.Status` is the canonical membership eligibility source for FE07/FE08; `MembershipApplications` is the immutable application/review history.
-- BR-FE04-015: Application create/review result and the canonical member projection commit atomically. Audit logging happens after the membership transaction in the current code baseline.
+- BR-FE04-015: Application create/review result, canonical member projection, and the corresponding audit entry commit atomically; an audit failure rolls the membership transaction back.
 - BR-FE04-016: A rejected user may re-apply; the new application starts `PENDING`, previous applications remain unchanged, and the canonical member projection returns to `PENDING`.
 - BR-FE04-017: Membership does not expire in Phase 1; `EXPIRED` is not a valid application/member state.
 - BR-FE04-018: After approval/rejection commits and audit logging succeeds, FE04 requests one FE10 notification when the requester is configured, with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, application source metadata, and idempotency key `FE04:MEMBERSHIP_RESULT:<applicationId>:<finalStatus>`; notification failure is non-blocking and must not change the membership decision.
@@ -176,7 +176,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE04-008: If the application is not pending, then the system shall reject approve/reject state changes.
 - FR-FE04-009: When FE07/FE08 checks eligibility, the system shall classify the user as an approved member only when `Users.Status = ACTIVE` and `Members.Status = APPROVED`.
 - FR-FE04-010: When a rejected user reapplies, the system shall create a new pending application, preserve prior history, and atomically set `Members.Status = PENDING`.
-- FR-FE04-011: When approval/rejection succeeds, the system shall update the application, canonical member projection, reviewer metadata, and decision timestamps in one transaction; approval uses the same timestamp for both `ApprovedAt` fields, while rejection keeps `Members.ApprovedAt = null`. Audit logging occurs after the membership transaction in the current code baseline.
+- FR-FE04-011: When approval/rejection succeeds, the system shall update the application, canonical member projection, reviewer metadata, decision timestamps, and corresponding audit entry in one transaction; approval uses the same timestamp for both `ApprovedAt` fields, while rejection keeps `Members.ApprovedAt = null`. Any failure rolls the transaction back.
 - FR-FE04-012: When approval/rejection commits and audit logging succeeds, the system shall request one idempotent FE10 delivery with `type = GENERAL_SYSTEM` and `templateKey = MEMBERSHIP_RESULT` through the FE04-bound requester when configured, then return safe delivery status without rolling back the decision if delivery fails.
 
 ---
@@ -210,8 +210,8 @@ Use these stable IDs for tasks and tests.
 | EC-FE04-007 | Unauthorized actor approves/rejects | Return forbidden response. |
 | EC-FE04-008 | Missing/blank/overlength rejection reason | Reject request without changing application/member state. |
 | EC-FE04-009 | Concurrent review by two staff users | Only first valid transition succeeds. |
-| EC-FE04-010 | Database update fails during review | Roll back application/member status and timestamp changes; audit is attempted only after the membership transaction commits. |
-| EC-FE04-011 | Concurrent re-application creates duplicate pending rows | The current code checks for existing pending/approved applications before insert, but no dedicated concurrency guard is implemented in FE04 code. |
+| EC-FE04-010 | Database or audit update fails during review | Roll back application/member status, timestamp, reviewer, and audit changes. |
+| EC-FE04-011 | Concurrent re-application creates duplicate pending rows | A filtered unique pending-only constraint plus transactional checks allow one pending row and return a deterministic conflict to the loser. |
 | EC-FE04-012 | FE10 notification request/delivery fails | Keep committed membership decision and return safe `FAILED` delivery status. When requester is not configured, return `NOT_CONFIGURED`. |
 
 ---
@@ -252,7 +252,7 @@ Use these stable IDs for tasks and tests.
 - A user may have many historical applications. The service rejects a new application when it detects an existing `PENDING` or `APPROVED` application; before the first application there may be no `Members` row, and once the first application is created, exactly one canonical `Members` row must exist.
 - Current/latest application is selected deterministically by `AppliedAt DESC, ApplicationId DESC`; this display rule never overrides canonical eligibility from `Members`.
 - `membershipStatusView` is derived as `NONE` only when both the canonical member row and current application are absent; otherwise it mirrors canonical `Members.Status`.
-- Application/member writes use one transaction. Audit logging and FE10 notification are requested only after commit and are not part of the membership transaction.
+- Application/member/audit writes use one transaction. FE10 notification is requested only after commit and is not part of the membership transaction.
 
 ---
 
@@ -265,8 +265,8 @@ Use these stable IDs for tasks and tests.
 | POST | `/api/membership/applications` | Authenticated `MEMBER` | `{}` | Created application and canonical `PENDING` status | Active account only; preserves prior history. |
 | GET | `/api/membership/status/me` | Authenticated `MEMBER` | - | Status response with `status`, `membershipStatusView`, `memberStatus`, `currentApplication`, `application`, and `member` | `NONE`/`null` values are returned deterministically before the first application; otherwise canonical status comes from `Members`. |
 | GET | `/api/membership/applications` | Librarian/Admin | Query: `q?, status?, page?, limit?` | `{ applications, page, limit, total, totalPages }` | Protected review list; `q` searches application ID, name, username, or email. |
-| PATCH | `/api/membership/applications/{applicationId}/approve` | Librarian/Admin | `{}` | Approved application + safe `notificationStatus` | Pending only; application/member commit together, audit and notification run after commit. |
-| PATCH | `/api/membership/applications/{applicationId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected application + safe `notificationStatus` | Pending only; reason required, trimmed, max 500; audit and notification run after commit. |
+| PATCH | `/api/membership/applications/{applicationId}/approve` | Librarian/Admin | `{}` | Approved application + safe `notificationStatus` | Pending only; application/member/audit commit together, then FE10 is requested. |
+| PATCH | `/api/membership/applications/{applicationId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected application + safe `notificationStatus` | Pending only; reason required, trimmed, max 500; application/member/audit commit together, then FE10 is requested. |
 
 ---
 
@@ -281,8 +281,8 @@ Use these stable IDs for tasks and tests.
 
 ### 12.2 Transaction Integrity
 
-- NFR-FE04-TXN-001: Application, canonical `Members` projection, and reviewer metadata must commit or roll back together. Audit logging is outside that transaction in the current code baseline.
-- NFR-FE04-TXN-002: Review operations enforce one final transition by rechecking pending status inside the review transaction. Apply checks existing pending/approved applications before insert, but no dedicated concurrent-apply guard is implemented in FE04 code.
+- NFR-FE04-TXN-001: Application, canonical `Members` projection, reviewer metadata, and the corresponding audit entry must commit or roll back together.
+- NFR-FE04-TXN-002: Review operations enforce one final transition by rechecking pending status inside the review transaction; apply operations use the filtered pending-only uniqueness guard and transactional checks to prevent duplicate pending rows.
 
 ### 12.3 Performance
 
@@ -345,47 +345,47 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE04-001 | UC13 | FT14 | Not Started |
-| BR-FE04-002 | UC13 | FT14 | Not Started |
-| BR-FE04-003 | UC13 | FT14 | Not Started |
-| BR-FE04-004 | UC13 | FT14 | Not Started |
-| BR-FE04-005 | UC13 | FT14 | Not Started |
-| BR-FE04-006 | UC14 | FT15 | Not Started |
-| BR-FE04-007 | UC15 | FT16 | Not Started |
-| BR-FE04-008 | UC14, UC15 | FT15, FT16 | Not Started |
-| BR-FE04-009 | UC14 | FT15 | Not Started |
-| BR-FE04-010 | UC15 | FT16 | Not Started |
-| BR-FE04-011 | UC16 | FT17 | Not Started |
-| BR-FE04-012 | UC16, UC29, UC36 | Planned: FE04-FE07-FE08 canonical eligibility contract test | Planned |
-| BR-FE04-013 | UC14, UC15 | FT15, FT16 | Not Started |
-| BR-FE04-014 | UC13, UC16, UC29, UC36 | Planned: `Members` canonical projection test | Planned |
-| BR-FE04-015 | UC13, UC14, UC15 | Existing: membership transaction and decision-timestamp tests; concurrent apply guard not implemented | Ready for review |
-| BR-FE04-016 | UC13 | Planned: rejected applicant re-application history test | Planned |
-| BR-FE04-017 | UC16 | Planned: Phase 1 no-expiry state test | Planned |
-| BR-FE04-018 | UC14, UC15 | Planned: non-blocking `MEMBERSHIP_RESULT` requester test | Planned |
-| FR-FE04-001 | UC13 | FT14 | Not Started |
-| FR-FE04-002 | UC13 | FT14 | Not Started |
-| FR-FE04-003 | UC13 | FT14 | Not Started |
-| FR-FE04-004 | UC14 | FT15 | Not Started |
-| FR-FE04-005 | UC15 | FT16 | Not Started |
-| FR-FE04-006 | UC14, UC15 | FT15, FT16 | Not Started |
-| FR-FE04-007 | UC16 | FT17 | Not Started |
-| FR-FE04-008 | UC14, UC15 | FT15, FT16 | Not Started |
-| FR-FE04-009 | UC29, UC36 | Planned: active user + canonical approved membership eligibility test | Planned |
-| FR-FE04-010 | UC13 | Planned: re-application projection/history test | Planned |
-| FR-FE04-011 | UC14, UC15 | Existing: application/member atomicity and dual-ApprovedAt test; audit is post-transaction | Ready for review |
-| FR-FE04-012 | UC14, UC15 | Planned: FE10 failure preserves membership decision test | Planned |
-| AC-FE04-001 | UC13 | FT14 | Not Started |
-| AC-FE04-002 | UC13 | FT14 | Not Started |
-| AC-FE04-003 | UC14 | FT15 | Not Started |
-| AC-FE04-004 | UC15 | FT16 | Not Started |
-| AC-FE04-005 | UC14, UC15 | FT15, FT16 | Not Started |
-| AC-FE04-006 | UC14, UC15 | FT15, FT16 | Not Started |
-| AC-FE04-007 | UC16 | FT17 | Not Started |
-| AC-FE04-008 | UC13, UC16 | FT14, FT17 | Not Started |
-| AC-FE04-009 | UC13 | Planned: rejected user creates one new pending application | Planned |
-| AC-FE04-010 | UC14, UC15 | Planned: failed notification leaves committed decision | Planned |
-| AC-FE04-011 | UC29, UC36 | Planned: only active + canonical approved passes | Planned |
+| BR-FE04-001 | UC13 | `membershipRoutes.test.js` member-role boundary | Automated pass; human review pending |
+| BR-FE04-002 | UC13 | `membershipRoutes.test.js` active-account/role validation | Automated pass; human review pending |
+| BR-FE04-003 | UC13 | `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` one-pending cases | Automated pass; human review pending |
+| BR-FE04-004 | UC13 | `membershipRoutes.test.js` approved-member block | Automated pass; human review pending |
+| BR-FE04-005 | UC13 | `membershipRoutes.test.js` pending creation | Automated pass; human review pending |
+| BR-FE04-006 | UC14 | `membershipRoutes.test.js` staff approval authorization | Automated pass; human review pending |
+| BR-FE04-007 | UC15 | `membershipRoutes.test.js` staff rejection authorization | Automated pass; human review pending |
+| BR-FE04-008 | UC14, UC15 | `membershipRoutes.test.js` final-state guard | Automated pass; human review pending |
+| BR-FE04-009 | UC14 | `membershipRoutes.test.js` shared approval timestamps | Automated pass; human review pending |
+| BR-FE04-010 | UC15 | `membershipRoutes.test.js` rejection reason bounds | Automated pass; human review pending |
+| BR-FE04-011 | UC16 | `membershipRoutes.test.js` own status/privacy | Automated pass; human review pending |
+| BR-FE04-012 | UC16, UC29, UC36 | FE07/FE08 eligibility integration and SQL evidence | Automated pass; human review pending |
+| BR-FE04-013 | UC14, UC15 | route/SQL audit assertions | Automated pass; human review pending |
+| BR-FE04-014 | UC13, UC16, UC29, UC36 | canonical `Members` projection cases | Automated pass; human review pending |
+| BR-FE04-015 | UC13, UC14, UC15 | `membershipRoutes.test.js`; `membershipConcurrency.sqltest.js` atomic audit cases | Automated pass; human review pending |
+| BR-FE04-016 | UC13 | rejected applicant re-application history test | Automated pass; human review pending |
+| BR-FE04-017 | UC16 | Phase 1 no-expiry state cases | Automated pass; human review pending |
+| BR-FE04-018 | UC14, UC15 | non-blocking `MEMBERSHIP_RESULT` requester tests | Automated pass; human review pending |
+| FR-FE04-001 | UC13 | apply happy path | Automated pass; human review pending |
+| FR-FE04-002 | UC13 | duplicate pending conflict | Automated pass; human review pending |
+| FR-FE04-003 | UC13 | approved member block | Automated pass; human review pending |
+| FR-FE04-004 | UC14 | approval metadata/audit cases | Automated pass; human review pending |
+| FR-FE04-005 | UC15 | rejection metadata/audit cases | Automated pass; human review pending |
+| FR-FE04-006 | UC14, UC15 | role guards | Automated pass; human review pending |
+| FR-FE04-007 | UC16 | canonical own status | Automated pass; human review pending |
+| FR-FE04-008 | UC14, UC15 | invalid final transition | Automated pass; human review pending |
+| FR-FE04-009 | UC29, UC36 | active user + canonical approved eligibility | Automated pass; human review pending |
+| FR-FE04-010 | UC13 | re-application projection/history | Automated pass; human review pending |
+| FR-FE04-011 | UC14, UC15 | atomic application/member/audit review cases | Automated pass; human review pending |
+| FR-FE04-012 | UC14, UC15 | FE10 failure preserves decision | Automated pass; human review pending |
+| AC-FE04-001 | UC13 | apply happy path | Automated pass; human review pending |
+| AC-FE04-002 | UC13 | duplicate pending rejection | Automated pass; human review pending |
+| AC-FE04-003 | UC14 | approval + notification | Automated pass; human review pending |
+| AC-FE04-004 | UC15 | rejection + notification | Automated pass; human review pending |
+| AC-FE04-005 | UC14, UC15 | unauthorized review | Automated pass; human review pending |
+| AC-FE04-006 | UC14, UC15 | invalid state transition | Automated pass; human review pending |
+| AC-FE04-007 | UC16 | own status privacy | Automated pass; human review pending |
+| AC-FE04-008 | UC13, UC16 | authentication/role boundary | Automated pass; human review pending |
+| AC-FE04-009 | UC13 | rejected re-application | Automated pass; human review pending |
+| AC-FE04-010 | UC14, UC15 | failed notification preserves decision | Automated pass; human review pending |
+| AC-FE04-011 | UC29, UC36 | active + canonical approved eligibility | Automated pass; human review pending |
 
 ### 16.1 Coverage Summary
 
@@ -409,9 +409,9 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
 - [x] Every acceptance criterion can become a test.
 
-### 17.1 Revision v0.2.0 Review Gate
+### 17.1 Revision v0.2.3 Review Gate
 
 - [x] Confirm `Members.Status` as the canonical FE07/FE08 eligibility source.
-- [x] Confirm atomic application/member writes; audit is post-transaction and concurrent-apply guard is not implemented in the current code baseline.
+- [x] Confirm atomic application/member/audit writes and the filtered pending-only concurrent-apply guard.
 - [x] Confirm mandatory rejection reason and Phase 1 no-expiry behavior.
 - [x] Confirm non-blocking idempotent FE10 `MEMBERSHIP_RESULT` delivery.

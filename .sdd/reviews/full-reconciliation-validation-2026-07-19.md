@@ -1,6 +1,6 @@
 # FE01-FE12 Full Reconciliation Validation - 2026-07-19
 
-Status: LOCAL AUTOMATED, SPEC, AND SAFETY GATES PASS; PR CI FOR FE09 IMPLEMENTATION PASS; HUMAN ACCEPTANCE PENDING
+Status: CURRENT LOCAL AUTOMATED, SPEC, AND SAFETY GATES PASS; FINAL H2, PR CI, AND HUMAN ACCEPTANCE PENDING
 
 Branch: `feat/full-reconciliation`
 
@@ -22,6 +22,7 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 - Constitution, shared context, global/business/safety constraints, ADR-002, and the affected feature SPEC/PLAN/TASKS/TEST_PLAN/CHANGELOG files were reconciled.
 - Feature-specific validation records exist under `.sdd/reviews/` for FE01, FE03-FE06, FE09-FE12, plus FE11 finalization Waves A and B.
 - FE02 debt-closure evidence is recorded in `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`.
+- FE08 candidate-catalog evidence is recorded in `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`.
 - Live SQL evidence is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Remaining accepted boundaries are recorded in `TECH_DEBT.md` rather than being silently represented as complete behavior.
 
@@ -29,30 +30,30 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 
 | Gate | Command boundary | Result |
 | --- | --- | --- |
-| Backend regression | `backend`: `npm test` | PASS - 52/52 suites, 893/893 tests after the FE02 debt-closure regressions |
-| Backend coverage | `backend`: `npm run test:coverage:ci` | PASS - 92.69% statements, 81.79% branches, 96.55% functions, 92.62% lines |
-| Frontend regression | `frontend`: `npm test` | PASS - 146/146 tests |
+| Backend regression | `backend`: `npm test -- --runInBand` | PASS - 53/53 suites, 905/905 tests |
+| Backend coverage | `backend`: `npm run test:coverage:ci` | PASS - 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
+| Frontend regression | `frontend`: `npm test` | PASS - 149/149 tests |
 | Frontend lint | `frontend`: `npm run lint` | PASS |
 | Frontend build | `frontend`: `npm run build` | PASS; non-blocking chunk-size warning remains |
 | System integration | `backend`: `npm run test:integration:system` | PASS - 10/10 tests |
 | Deployment utilities | root: `npm run test:deployment` | PASS - 7/7 tests |
-| Browser acceptance | Playwright on isolated frontend/backend ports `4185/3101` | PASS - FE09 Fine Management, FE11 Request Management, and system golden path, 3/3 |
+| Browser acceptance | Playwright on isolated frontend/backend ports `4185/3101` with both E2E URLs explicit | PASS - FE08, FE09, FE11, and system golden path, 4/4; FE08 focused 1/1 |
 | Traceability | root: `npm run trace:enforce` | PASS - every FE01-FE12 feature is 100% tagged |
 | OpenAPI | parse `backend/src/docs/openapi.yaml` with `yamljs` | `OPENAPI_PARSE_OK` |
-| Backend health import | import `backend/src/index.js` and verify Express `listen` | `BACKEND_IMPORT_OK` |
+| Backend health import | import `backend/src/app.js` | `BACKEND_IMPORT_OK` |
 | Dependency audit | root/backend/frontend: `npm audit --omit=dev --audit-level=high` | PASS - 0 vulnerabilities in all three scopes |
 | Secret scan | high-confidence token/private-key signatures on added diff lines | PASS - no matches |
 | Scope scan | changed paths restricted to SDD evidence/specs, application, database, and tests | PASS |
 | FE11 drift scan | obsolete request query names, client paging variable, `STRING_AGG`, and Admin mutation aliases | PASS in the FE11 contract boundary |
-| Product drift scan | obsolete shared demo exports | PASS - only documented `DEMO_BORROW_CATALOG` and tracked-debt `DEMO_RESERVABLE` remain |
+| Product drift scan | obsolete shared demo exports and duplicate FE05 mutation adapters | PASS - only documented `DEMO_BORROW_CATALOG` remains; FE08 `DEMO_RESERVABLE` and FE11 book mutation aliases are removed |
 | Diff hygiene | `git diff --check` | PASS |
 
 ## Pull Request And CI Evidence
 
 - Draft PR: `#40` (`feat/full-reconciliation` -> `main`).
-- Validated FE09 implementation head: `dfe45ae75da61f1ff66ac544625f8559c1a821d3`.
-- GitHub Actions run on that head: `29680600893`.
-- Result: PASS - `foundation-checks` completed traceability, backend tests, system integration, coverage, frontend lint/tests/build, Playwright E2E, and backend health import.
+- Validated implementation/evidence head: `199fa36437ee5a54de85c0836fd01e26a4e356ed`.
+- GitHub Actions run on that head: `29683107536`.
+- Result: PASS for the last published head - `foundation-checks` completed traceability, backend tests, system integration, coverage, frontend lint/tests/build, Playwright E2E, and backend health import. Current local FE02/FE05/FE06/FE08 corrections now have a fresh H2 PASS; commit/push and a new PR CI association remain required.
 
 ## Upstream Integration
 
@@ -69,7 +70,7 @@ The final rerun, repeated after integrating `origin/main@3f63a13`, used a dispos
 
 - Canonical `database/Librarymanagement.sql`: PASS.
 - Five reconciliation migrations in canonical order: PASS on execution 1/2 and 2/2.
-- SQL-backed Jest suites: PASS - 8/8 suites, 61/61 tests.
+- SQL-backed Jest suites: PASS - 9/9 suites, 69/69 tests, including FE06 post-precheck race rechecks and FE08 open-reservation/candidate cases.
 - Cleanup: `DB_CLEAN` and `LOGIN_CLEAN`.
 - Application databases and the existing frontend process on port `4173` were not used or mutated.
 
@@ -81,20 +82,28 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 - Focused GREEN: 19/19 passed.
 - Full frontend regression after cleanup: 145/145, lint PASS, build PASS.
 
-`DEMO_BORROW_CATALOG` remains the documented temporary FE07 candidate dependency. `DEMO_RESERVABLE` remains active only because FE08 still lacks an approved member-safe FE01/FE06/FE08 candidate-selection contract; this is tracked as `TD-028`.
+`DEMO_BORROW_CATALOG` remains the documented temporary FE07 candidate dependency. FE08 no longer imports or renders `DEMO_RESERVABLE`; TD-028 is resolved for the agent-side implementation and automated validation slice.
 
 ## FE02 Debt Closure Follow-Up
 
 - `TD-018` is closed with API regressions for duplicate and weak-password no-mutation behavior plus canonical email/OTP verification and reset consumption.
 - `TD-019` is closed by the approved Phase 1 policy: known-account lockout is implemented and IP-wide limiting is explicitly not claimed.
 - `TD-020` is closed by returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts while preserving the internal inactive-login audit event.
-- Focused auth validation passes 30/30; full backend regression passes 893/893; coverage, system integration, traceability, syntax, and diff hygiene pass locally.
+- Focused auth validation passes 30/30 and HTTPS transport passes 3/3; full backend regression passes 905/905; coverage, system integration, traceability, syntax, and diff hygiene pass locally.
+
+## Post-H2 P1 Corrections
+
+- FE04 membership application/status routes now require the `MEMBER` role; focused route tests pass 19/19.
+- FE05 removes duplicate Admin Console book mutation controls/adapters; canonical BookManagement remains version/reason authoritative; frontend passes 149/149.
+- FE06 repository mutations now enforce locked borrow/reservation/parent state after service prechecks; route 35/35 and live SQL 10/10 pass.
+- FE08 open reservations count both `ACTIVE` and `NOTIFIED` for limits/duplicates; route and live SQL regressions pass.
+- FE02 deployed auth requests enforce HTTPS before JSON/auth dispatch; transport tests pass 3/3.
 
 ## FE09 L4 Closure Follow-Up
 
 - `TD-004` is closed: Fine Management now delegates search, status filtering, page, limit, ordering, and totals to the canonical server contract.
 - Browser-side filtering/slicing was removed; page-scoped KPIs are labeled explicitly so they do not imply global aggregates.
-- Focused frontend passes 6/6; full frontend passes 146/146; lint/build pass; FE09 browser acceptance passes 1/1; the full isolated browser suite passes 3/3.
+- Focused frontend passes 6/6; current full frontend passes 149/149; lint/build pass; FE09 browser acceptance passes 1/1; the full isolated browser suite passes 4/4.
 - The implementation adds no backend route, schema, dependency, mutation behavior, browser storage, or new fine policy.
 
 ## Validation Layers
@@ -104,14 +113,24 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 | 1. Automated checks | PASS locally | Unit, integration, coverage, lint, build, deployment, E2E, Live SQL, OpenAPI, import, audits, traceability, and diff checks pass |
 | 2. Spec compliance | READY FOR REVIEW | FE01-FE12 traceability is 100%; feature specs/tasks/evidence are reconciled; approved deferred debt remains explicit |
 | 3. Constitution and safety | PASS locally | Approved stack retained; protected actions remain server-authorized; SQL mutation was isolated; no saved credentials or high-confidence secrets detected |
-| 4. Acceptance verification | PARTIAL | Draft PR #40 and exact CI run `29680600893` pass on FE09 implementation head `dfe45ae`; explicit human integration acceptance is still required |
+| 4. Acceptance verification | PARTIAL | Draft PR #40 and CI run `29683107536` pass on the last published head `199fa36`; current local corrections require final H2/new CI, then explicit human FE01-FE12 walkthrough, H3, merge, and post-merge `main` CI |
+
+## Final H2 Diff Review - Current Worktree
+
+Status: PASS after remediation; the reviewed diff remains uncommitted on `feat/full-reconciliation`.
+
+- Reviewed the full `origin/main` to worktree diff across application code, migrations, tests, specs, evidence, release documents, and agent memory.
+- JavaScript syntax check: `146` changed `.js/.mjs/.cjs` files passed `node --check`.
+- Focused FE02 transport regression: `3/3` passed after redirect hardening; full backend regression and coverage remain `905/905` and `92.68% / 81.66% / 96.59% / 92.61%`.
+- Secret-signature scan, scope scan, generated-artifact check, OpenAPI parse/import, traceability enforcement, and `git diff --check` passed.
+- H2-001 (fixed): `HTTPS_REDIRECT=true` previously trusted the request `Host`; redirects now require a validated `HTTPS_CANONICAL_HOST`, otherwise the middleware rejects with `HTTPS_REQUIRED`.
+- Latest recorded disposable SQL evidence remains `9/9` suites and `69/69` tests with `DB_CLEAN`/`LOGIN_CLEAN`; this worktree has no mutable SQL configuration for a new rerun, and no SQL code changed after that recorded run.
 
 ## Residual Risks And Decisions
 
-- `TD-028`: FE08 uses hardcoded reservable copy candidates until a human approves a member-safe cross-feature selection contract.
 - Frontend production output contains a Vite warning for a minified JavaScript chunk above 500 kB; the build passes, but code splitting remains a performance improvement.
-- The local diff is large because it reconciles all twelve features. Merge must remain blocked until PR review and CI validate the frozen commit rather than the mutable worktree.
+- The local diff is large because it reconciles all twelve features. Merge remains blocked by final H2 review, a green CI run on the new pushed head, named human acceptance/H3, and final post-merge `main` CI evidence.
 
 ## Execution Boundary
 
-Draft PR #40 targets `main`, and CI run `29680600893` passes on FE09 implementation head `dfe45ae`. The work must not be merged or marked complete until a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.
+Draft PR #40 targets `main`, and CI run `29683107536` passes on the last published head `199fa36`. The current local corrections have passed final H2; they must be committed/pushed and pass a new PR CI run before a human reviewer may accept the integrated FE01-FE12 result.

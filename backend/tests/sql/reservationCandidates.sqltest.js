@@ -24,6 +24,16 @@ test('candidate repository source locks the safe projection and eligible status 
   expect(repositorySource).not.toMatch(/SELECT[\s\S]{0,500}bc\.Barcode[\s\S]{0,500}listReservationCandidates/);
 });
 
+// @spec BR-FE08-006, FR-FE08-015, Q-FE08-003
+test('open reservation SQL counts and duplicate checks include ACTIVE and NOTIFIED', () => {
+  expect(repositorySource).toMatch(
+    /SELECT COUNT\(\*\) AS ActiveCount[\s\S]*Status IN \('ACTIVE', 'NOTIFIED'\)/i
+  );
+  expect(repositorySource).toMatch(
+    /WHERE r\.UserId = @UserId[\s\S]*r\.CopyId = @CopyId[\s\S]*r\.Status IN \('ACTIVE', 'NOTIFIED'\)/i
+  );
+});
+
 const hasSqlRuntime = Boolean(process.env.DB_SERVER && process.env.DB_NAME)
   && process.env.FE08_SQL_TEST_ALLOW_MUTATION === 'true';
 const runtimeDescribe = hasSqlRuntime ? describe : describe.skip;
@@ -183,5 +193,45 @@ runtimeDescribe('FE08 live SQL reservation candidate catalog', () => {
     });
     expect(searched.total).toBe(1);
     expect(searched.rows[0].copyId).toBe(borrowedCopyId);
+  });
+
+  // @spec BR-FE08-006, FR-FE08-015, Q-FE08-003
+  test('SQL duplicate and open-limit lookups include NOTIFIED and exclude terminal rows', async () => {
+    const beforeCount = await reservationRepository.countActiveReservationsForUser(seed.userId);
+    const openBookId = await insertBook('OpenChecks');
+    const notifiedCopyId = await insertCopy(openBookId, 'notified', 'BORROWED');
+    const activeCopyId = await insertCopy(openBookId, 'active', 'BORROWED');
+    const terminalCopyId = await insertCopy(openBookId, 'terminal', 'BORROWED');
+
+    for (const [copyId, status] of [
+      [notifiedCopyId, 'NOTIFIED'],
+      [activeCopyId, 'ACTIVE'],
+      [terminalCopyId, 'CANCELLED'],
+    ]) {
+      const result = await pool.request()
+        .input('UserId', sql.Int, seed.userId)
+        .input('CopyId', sql.Int, copyId)
+        .input('Status', sql.NVarChar(20), status)
+        .query(`
+          INSERT INTO Reservations (UserId, CopyId, Status)
+          OUTPUT INSERTED.ReservationId
+          VALUES (@UserId, @CopyId, @Status)
+        `);
+      seed.reservationIds.push(result.recordset[0].ReservationId);
+    }
+
+    const afterCount = await reservationRepository.countActiveReservationsForUser(seed.userId);
+    const notifiedDuplicate = await reservationRepository.findActiveReservationByUserAndCopy(
+      seed.userId,
+      notifiedCopyId
+    );
+    const terminalDuplicate = await reservationRepository.findActiveReservationByUserAndCopy(
+      seed.userId,
+      terminalCopyId
+    );
+
+    expect(afterCount).toBe(beforeCount + 2);
+    expect(notifiedDuplicate).toEqual(expect.objectContaining({ status: 'NOTIFIED' }));
+    expect(terminalDuplicate).toBeNull();
   });
 });

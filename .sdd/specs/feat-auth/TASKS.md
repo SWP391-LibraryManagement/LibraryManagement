@@ -149,3 +149,10 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Files: `backend/src/services/authService.js`, `backend/tests/authRoutes.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`, `TECH_DEBT.md`.
   - DoD: known-account lockout remains the approved Phase 1 control; IP-wide limiting is not claimed; inactive and unknown accounts return the same generic public login error while locked accounts retain their approved lock message.
   - Evidence: the RED parity regression failed on `403 ACCOUNT_INACTIVE`; GREEN passes with `401 INVALID_CREDENTIALS`, the internal inactive audit event remains, and PR CI run `29680011551` passes on `0040e0f`.
+
+- [x] **FE02-T041 - Enforce HTTPS before authentication credential processing.**
+  - Maps to: AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003.
+  - Files: `backend/src/middleware/httpsEnforcement.js`, `backend/src/app.js`, `backend/tests/httpsEnforcement.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`.
+  - RED: deployed plain-HTTP auth requests reached the auth service and returned `200`; redirect policy was also absent.
+  - GREEN: production auth requests reject with `400 HTTPS_REQUIRED` before JSON/auth dispatch, trusted `X-Forwarded-Proto: https` passes, and explicit `308` redirect policy uses only a validated `HTTPS_CANONICAL_HOST`.
+  - Validation: focused transport suite `3/3`; full backend and traceability remain merge-gate checks.

@@ -272,6 +272,26 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
     expectStateUnchanged(inventoryDependencies, beforeReactivate);
   });
 
+  // @spec AC-FE06-011, BR-FE06-015, FR-FE06-022, NFR-FE06-TXN-002
+  test('copy creation rechecks parent book activity inside the mutation transaction', async () => {
+    const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup();
+    const copyCount = inventoryDependencies.state.copies.length;
+    const auditCount = authDependencies.state.auditLogs.length;
+    inventoryDependencies.control.beforeMutation = ({ books }) => {
+      books.find((book) => book.bookId === 1).status = 'INACTIVE';
+    };
+
+    const response = await request(app)
+      .post('/api/books/1/copies')
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({ barcode: 'BC-PARENT-RACE', location: 'A9' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('INACTIVE_PARENT_BOOK');
+    expect(inventoryDependencies.state.copies).toHaveLength(copyCount);
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCount);
+  });
+
   // @spec AC-FE06-005, BR-FE06-003, BR-FE06-013, FR-FE06-005
   test('metadata update rejects duplicate barcode and status ownership', async () => {
     const { app, staff, inventoryDependencies } = await makeStaffSetup();
@@ -356,6 +376,87 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
     expect(reservedResponse.status).toBe(409);
     expect(reservedResponse.body.error.code).toBe('RESERVATION_STATE_CONFLICT');
     expectStateUnchanged(inventoryDependencies, beforeReservation);
+  });
+
+  // @spec AC-FE06-007, BR-FE06-007, FR-FE06-007, NFR-FE06-TXN-002
+  test('status mutation rechecks an active borrow that appears after the service precheck', async () => {
+    const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup();
+    const auditCount = authDependencies.state.auditLogs.length;
+    inventoryDependencies.control.beforeMutation = ({ borrowDetails }) => {
+      borrowDetails.push({ borrowDetailId: 99, copyId: 1, status: 'BORROWED' });
+    };
+
+    const response = await request(app)
+      .patch('/api/book-copies/1/status')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'copy-v1')
+      .send({ status: 'DAMAGED', reason: 'Torn cover' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('ACTIVE_BORROW_CONFLICT');
+    expect(inventoryDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCount);
+  });
+
+  // @spec AC-FE06-008, BR-FE06-008, FR-FE06-007, NFR-FE06-TXN-002
+  test('status mutation rechecks an active reservation that appears after the service precheck', async () => {
+    const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup();
+    const auditCount = authDependencies.state.auditLogs.length;
+    inventoryDependencies.control.beforeMutation = ({ reservations }) => {
+      reservations.push({ reservationId: 99, copyId: 1, status: 'ACTIVE' });
+    };
+
+    const response = await request(app)
+      .patch('/api/book-copies/1/status')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'copy-v1')
+      .send({ status: 'DAMAGED', reason: 'Torn cover' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('RESERVATION_STATE_CONFLICT');
+    expect(inventoryDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCount);
+  });
+
+  // @spec AC-FE06-011, BR-FE06-015, FR-FE06-022, NFR-FE06-TXN-002
+  test('status mutation rechecks parent book activity before making a copy available', async () => {
+    const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup('LIBRARIAN', {
+      books: [
+        {
+          bookId: 1,
+          title: 'Clean Code',
+          isbn: '9780132350884',
+          status: 'ACTIVE',
+        },
+      ],
+      copies: [
+        {
+          copyId: 1,
+          bookId: 1,
+          barcode: 'BC-001',
+          status: 'DAMAGED',
+          location: 'A1',
+          version: 'copy-v1',
+        },
+      ],
+      borrowDetails: [],
+      reservations: [],
+    });
+    const auditCount = authDependencies.state.auditLogs.length;
+    inventoryDependencies.control.beforeMutation = ({ books }) => {
+      books.find((book) => book.bookId === 1).status = 'INACTIVE';
+    };
+
+    const response = await request(app)
+      .patch('/api/book-copies/1/status')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'copy-v1')
+      .send({ status: 'AVAILABLE', reason: 'Repair completed' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('INACTIVE_PARENT_BOOK');
+    expect(inventoryDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('DAMAGED');
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCount);
   });
 
   // @spec AC-FE06-012, BR-FE06-016, FR-FE06-018

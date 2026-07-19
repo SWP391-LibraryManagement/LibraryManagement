@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-19 - Transactional recheck and source-of-truth correction
+
+- Added RED/GREEN regressions for borrow, reservation, and parent-book state changing after service prechecks.
+- Made create and status/deactivation repository mutations enforce locked parent/workflow state before update.
+- Added static and live SQL race coverage and a focused `test:sql:fe06` command.
+- Reconciled `SPEC.md` v0.4.2 and `CONTEXT.md` with the implemented rowversion, atomic audit, parent guard, required reason, API, and traceability contracts.
+
 ## 2026-07-19 - Hybrid inventory reconciliation evidence
 
 - Executed FE06-T001 through FE06-T008 from RED tests through focused and full local validation in `feat/fe06-inventory-reconciliation`.

@@ -12,6 +12,7 @@
     "test:sql:fe03": "jest --runInBand --testMatch \"**/profileConcurrency.sqltest.js\"",
     "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
     "test:sql:fe05": "jest --runInBand --testMatch \"**/bookConcurrency.sqltest.js\"",
+    "test:sql:fe06": "jest --runInBand --testMatch \"**/inventoryConcurrency.sqltest.js\"",
     "test:sql:system": "jest --runInBand --testMatch \"**/systemIntegration.sqltest.js\"",
     "test:coverage": "jest --runInBand --coverage",
     "test:coverage:ci": "jest --runInBand --coverage --coverageReporters=text-summary"

@@ -20,3 +20,9 @@ test('FE11 Permissions use the canonical Admin endpoint and authorized wrapper',
     /permissions\(\)[\s\S]*?authorizedRequest\([\s\S]*?url: '\/admin\/permissions'/,
   );
 });
+
+// @spec AC-FE05-012, FR-FE05-021, FR-FE05-025
+test('FE11 Admin Console does not expose a duplicate FE05 book mutation adapter', async () => {
+  const source = await readFile(apiPath, 'utf8');
+  assert.doesNotMatch(source, /createBook\(|updateBook\(|deactivateBook\(/);
+});

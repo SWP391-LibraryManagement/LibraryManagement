@@ -42,3 +42,12 @@
 
 - Fast-forwarded the dirty feature worktree from `62ac2d1` to `origin/main@b2ad9b1` without overlap, commit, stash, or loss of local changes.
 - Fresh focused verification after the sync: `inventoryRoutes.test.js` passed 31/31.
+
+## Post-H2 Transactional Race Correction
+
+- Root cause: service prechecks ran before the transaction, while `lockCopyForMutation` returned locked borrow/reservation state that `updateCopyStatus` ignored; parent status was also not authoritative inside create/status transactions.
+- RED: four route regressions received `201/200` instead of the required `409` for create-parent, borrow, reservation, and status-parent races.
+- GREEN: `inventoryRoutes.test.js` passes `35/35`; FE06 frontend passes `6/6`; traceability remains `24/24`; diff hygiene passes.
+- Live SQL: `npm.cmd --prefix backend run test:sql:fe06 -- --silent` passes `10/10` after applying the FE06 migration twice to a disposable database.
+- Cleanup: `DB_CLEAN` and `LOGIN_CLEAN`; the generated SQL password existed only in process memory.
+- Human state: FE05/FE07/FE08 ownership confirmation, Dat UX confirmation, final H3, merge, and post-merge `main` CI remain open.

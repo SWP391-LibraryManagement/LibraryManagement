@@ -74,14 +74,38 @@ function getMembershipAudits(authDependencies) {
 }
 
 describe('FE04 membership management', () => {
+  // @spec BR-FE04-001 BR-FE04-002 BR-FE04-011 AC-FE04-005 AC-FE04-008
+  test('non-member roles cannot apply or view membership status', async () => {
+    const { app, authDependencies, membershipDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'membership.non-member-role@example.test',
+      roles: ['LIBRARIAN'],
+    });
+
+    const statusResponse = await request(app)
+      .get('/api/membership/status/me')
+      .set('Authorization', authHeader(librarian.accessToken));
+    const applyResponse = await request(app)
+      .post('/api/membership/applications')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(statusResponse.status).toBe(403);
+    expect(applyResponse.status).toBe(403);
+    expect(membershipDependencies.state.applications).toHaveLength(0);
+    expect(membershipDependencies.state.members).toHaveLength(0);
+  });
+
   // @spec AC-FE04-001 AC-FE04-007 AC-FE04-008
-  test('active registered applicant can access own status and apply without a pre-existing member role', async () => {
+  test('active MEMBER applicant can access own status and apply without a pre-existing membership projection', async () => {
     const { app, authDependencies, membershipDependencies } = makeTestApp();
     const applicant = await createVerifiedUser({
       app,
       authDependencies,
       email: 'membership.registered-applicant@example.test',
-      roles: [],
+      roles: ['MEMBER'],
     });
 
     const initialStatus = await request(app)
@@ -117,7 +141,7 @@ describe('FE04 membership management', () => {
       app,
       authDependencies,
       email: 'membership.submit-audit@example.test',
-      roles: [],
+      roles: ['MEMBER'],
     });
     const applyResponse = await request(app)
       .post('/api/membership/applications')

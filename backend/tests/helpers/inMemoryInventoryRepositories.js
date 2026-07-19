@@ -2,6 +2,8 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+const AppException = require('../../src/CustomException/AppException');
+
 const DEFAULT_BOOKS = [
   {
     bookId: 1,
@@ -91,7 +93,14 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
   const control = {
     failAudit: false,
     listCalls: [],
+    beforeMutation: null,
   };
+
+  function runBeforeMutationHook() {
+    const hook = control.beforeMutation;
+    control.beforeMutation = null;
+    if (typeof hook === 'function') hook({ books, copies, borrowDetails, reservations });
+  }
 
   function mapBook(book) {
     if (!book) return null;
@@ -157,6 +166,12 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
         }, {});
     },
     async createCopy(input) {
+      runBeforeMutationHook();
+      const parent = books.find((book) => book.bookId === Number(input.bookId));
+      if (!parent) throw new AppException(404, 'BOOK_NOT_FOUND', 'Book was not found.');
+      if (input.status === 'AVAILABLE' && parent.status !== 'ACTIVE') {
+        throw new AppException(409, 'INACTIVE_PARENT_BOOK', 'A copy cannot be made available under an inactive book.');
+      }
       const copy = { copyId: nextCopyId, version: `copy-v${nextVersion}`, ...clone(input) };
       nextCopyId += 1;
       nextVersion += 1;
@@ -164,6 +179,7 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
       return mapCopy(copy);
     },
     async updateCopy(copyId, patch) {
+      runBeforeMutationHook();
       const copy = copies.find((item) => item.copyId === Number(copyId));
       if (!copy) return null;
       Object.assign(copy, clone(patch));
@@ -182,8 +198,29 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
       if (index >= 0) copies.splice(index, 1);
     },
     async updateCopyStatus(copyId, status) {
+      runBeforeMutationHook();
       const copy = copies.find((item) => item.copyId === Number(copyId));
       if (!copy) return null;
+      if (
+        copy.status === 'BORROWED' ||
+        borrowDetails.some(
+          (detail) => detail.copyId === Number(copyId) && ['BORROWED', 'OVERDUE'].includes(detail.status)
+        )
+      ) {
+        throw new AppException(409, 'ACTIVE_BORROW_CONFLICT', 'Borrowed copies must be handled through the return flow.');
+      }
+      if (
+        copy.status === 'RESERVED' ||
+        reservations.some(
+          (reservation) => reservation.copyId === Number(copyId) && reservation.status === 'ACTIVE'
+        )
+      ) {
+        throw new AppException(409, 'RESERVATION_STATE_CONFLICT', 'Reserved copies must be handled through the reservation flow.');
+      }
+      const parent = books.find((book) => book.bookId === Number(copy.bookId));
+      if (status === 'AVAILABLE' && parent?.status !== 'ACTIVE') {
+        throw new AppException(409, 'INACTIVE_PARENT_BOOK', 'A copy cannot be made available under an inactive book.');
+      }
       copy.status = status;
       advanceVersion(copy);
       return mapCopy(copy);

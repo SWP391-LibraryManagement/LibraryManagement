@@ -41,10 +41,10 @@ Workflow State: FE04-T001 through FE04-T008 are agent-side complete; FE04-T009 a
   - Maps to: BR-FE04-001, BR-FE04-002, BR-FE04-006 through BR-FE04-011, BR-FE04-017; FR-FE04-006 through FR-FE04-008; AC-FE04-005 through AC-FE04-008; NFR-FE04-SEC-001 through NFR-FE04-SEC-004.
   - Files: `backend/src/routes/membershipRoutes.js`, `backend/src/controllers/membershipController.js`, `backend/src/validators/membershipValidators.js`, `backend/src/services/membershipService.js`, `backend/src/docs/openapi.yaml`.
   - Dependency: FE04-T001.
-  - GREEN: permit authenticated active registered users to apply/view own status without requiring prior membership; retain Librarian/Admin review guards; validate IDs, status, pagination, and reason.
+  - GREEN: permit authenticated active `MEMBER` users to apply/view own status without requiring a prior membership projection; deny non-member roles; retain Librarian/Admin review guards; validate IDs, status, pagination, and reason.
   - Verify: focused route tests return `401`, `403`, `400`, `404`, or `409` according to the approved branch and never expose stack traces.
   - DoD: all five endpoints and response/error contracts are documented in OpenAPI.
-  - Evidence: the roleless active-applicant boundary passes 1/1; the full route suite remains intentionally RED only for T004-T006 atomicity, response, concurrency, audit, and notification behavior.
+  - Evidence: non-member apply/status denial and active `MEMBER` applicant boundaries pass; the full route suite passes the reconciled atomicity, response, concurrency, audit, and notification behavior.
 
 - [x] **FE04-T004 - Implement canonical apply, re-application, and own-status behavior.**
   - Maps to: BR-FE04-002 through BR-FE04-005, BR-FE04-011, BR-FE04-012, BR-FE04-014 through BR-FE04-017; FR-FE04-001 through FR-FE04-003, FR-FE04-007, FR-FE04-009, FR-FE04-010; AC-FE04-001, AC-FE04-002, AC-FE04-007 through AC-FE04-009, AC-FE04-011.
