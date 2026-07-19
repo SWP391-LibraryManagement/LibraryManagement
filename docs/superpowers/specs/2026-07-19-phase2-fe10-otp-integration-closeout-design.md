@@ -1,6 +1,6 @@
 # Phase 2 FE10 OTP Integration Closeout Design
 
-Status: APPROVED BY USER - 2026-07-19
+Status: COMPLETE THROUGH B7 - 2026-07-19
 
 Date: 2026-07-19
 
@@ -142,4 +142,12 @@ The slice is complete only when:
 - HTTP source override evidence now asserts the exact safe error and absence of persistence, attempt, provider, and audit side effects.
 - Repeated password-reset requests now prove token rotation, new idempotency keys, and absence of direct FE02 delivery.
 - All added assertions passed against the existing implementation, so no production correction was required.
-- Human acceptance is approved for the injected-provider contract. PR integration and exact post-merge `main` CI remain mandatory before the design DoD is complete.
+- Human acceptance, PR integration, and exact post-merge `main` CI are complete for the injected-provider contract. Real provider delivery remains out of scope.
+
+## 13. Final Integration Evidence
+
+- Implementation PR: #42, head `e52b4ac94c9ed0f3bb799d0c0ceb4b763555a1ee`.
+- Implementation PR CI: `29688102867` - PASS.
+- Merge commit: `34d918030580a6a36b943f187eec7fd95838a66b`.
+- Exact post-merge `main` CI: `29688222757` - PASS.
+- The FE10-S05/FE02-T033 slice is complete through B7; deferred SMTP, inbox UI, and FE09 caller boundaries remain explicit.

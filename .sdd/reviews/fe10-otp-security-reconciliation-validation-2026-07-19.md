@@ -1,12 +1,24 @@
 # FE10 OTP Security Reconciliation Validation - 2026-07-19
 
-Status: HUMAN ACCEPTANCE APPROVED; INTEGRATION PR AND POST-MERGE MAIN CI PENDING
+Status: COMPLETE THROUGH B7 - HUMAN ACCEPTANCE, MERGE, AND POST-MERGE MAIN CI PASS
 
-Branch: `feat/phase2-fe10-otp-integration`
+Implementation branch: `feat/phase2-fe10-otp-integration`
+
+Closeout branch: `docs/phase2-fe10-otp-closeout`
 
 Design commit: `d6f4600`
 
 Plan commits: `32b03c2`, `30fca57`
+
+Implementation PR: #42
+
+Implementation head: `e52b4ac94c9ed0f3bb799d0c0ceb4b763555a1ee`
+
+Implementation PR CI: `29688102867` - PASS
+
+Implementation merge: `34d918030580a6a36b943f187eec7fd95838a66b`
+
+Post-merge `main` CI: `29688222757` - PASS
 
 ## Decision
 
@@ -64,7 +76,7 @@ The first E2E attempt failed before test execution because another historical wo
 | L1 Automated | PASS | Focused/full backend, coverage, frontend, system, deployment, E2E, OpenAPI/import, traceability, and diff checks pass |
 | L2 Spec compliance | PASS | All seven ADR-004 verification items map directly to code/tests; FE10/FE02 FR traceability is 100% |
 | L3 Constitution/safety | PASS | Server ownership, no OTP persistence/logging, safe errors, existing parameterized repositories, approved stack, and no schema/dependency expansion are preserved |
-| L4 Acceptance | APPROVED | User approved the design and granted standing acceptance for the injected-provider scope on 2026-07-19; real SMTP remains out of scope |
+| L4 Acceptance | PASS | User approved the design and granted standing acceptance for the injected-provider scope on 2026-07-19; implementation PR #42 merged and exact post-merge `main` CI passed; real SMTP remains out of scope |
 
 ## SQL And Existing Integration Evidence
 
@@ -75,4 +87,9 @@ This slice changes no schema, migration, repository SQL, or production behavior.
 - H2 review scope hash excluding this self-recording validation packet: `9d8e3920600a1e515392459ebb022e981c99213a`.
 - H2 result: PASS with no findings. The reviewed generated diff changes only two test files plus FE02/FE10/design/plan/evidence Markdown; no product source, schema, dependency, frontend product, FE09 caller, or `CHANGE_PASSWORD_OTP` behavior changes exist.
 - Standing user approval authorizes commit, PR publication, H3 merge, post-merge monitoring, and the exact mechanical closeout after required checks pass.
-- Do not mark FE10-S05 or FE02-T033 complete through B7 until the integration PR merges and its exact post-merge `main` CI succeeds.
+- FE10-S05 and FE02-T033 are complete through B7. The only remaining boundaries are the explicitly deferred real provider delivery, inbox UI, and FE09 caller integration.
+
+## Final Closeout
+
+- No product source, schema, dependency, frontend product, FE09 caller, or `CHANGE_PASSWORD_OTP` behavior changed in the implementation PR.
+- The closeout docs preserve the approved future boundaries and do not claim whole-feature completion beyond the FE10 OTP/FE02 slice.

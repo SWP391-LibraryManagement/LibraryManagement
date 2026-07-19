@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Notification Management
 
-Status: APPROVED - OTP/FE02 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING; FE04/SCHEMA EVIDENCE UNCHANGED
+Status: APPROVED - OTP/FE02 COMPLETE THROUGH B7; FE04/SCHEMA EVIDENCE UNCHANGED
 
 Owner: Nhat
 
@@ -227,12 +227,12 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S05 Pass Cross-Feature Validation And Human Review
 
-- [~] Status: HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING
+- [x] Status: COMPLETE THROUGH B7
 - Dependencies: FE10-S02 to FE10-S04; FE02-T030 to FE02-T032.
 - Maps to: ADR-004 verification contract and all G8-G10 traceability rows.
 - Files: FE10/FE02 `TASKS.md` and `CHANGELOG.md`; implementation files only for approved review fixes.
 - DoD: focused FE10/FE02 and affected integration tests pass; old link/deferred contract scans have no active matches; OTP leakage scan passes; traceability and `git diff --check` pass; diff contains no frontend, FE09 caller, new dependency, schema-table/index migration, or `CHANGE_PASSWORD_OTP` migration; human review is recorded before commit/merge.
-- Evidence: focused FE02/FE10/integration gate passes 170/170; full backend passes 916/916 with configured coverage; traceability is 10/10 for FE10 and 26/26 for FE02; frontend 149/149, system 10/10, deployment 7/7, browser E2E 4/4, OpenAPI/import, leakage, and diff checks pass. Expanded evidence covers the full non-FE02 allowlist, exact HTTP source override errors, and repeated password-reset event/key rotation. No production correction was required. Human acceptance is recorded; integration PR and exact post-merge `main` CI remain open.
+- Evidence: focused FE02/FE10/integration gate passes 170/170; full backend passes 916/916 with configured coverage; traceability is 10/10 for FE10 and 26/26 for FE02; frontend 149/149, system 10/10, deployment 7/7, browser E2E 4/4, OpenAPI/import, leakage, and diff checks pass. Expanded evidence covers the full non-FE02 allowlist, exact HTTP source override errors, and repeated password-reset event/key rotation. No production correction was required. PR #42 merged as `34d9180`; PR CI `29688102867` and exact post-merge `main` CI `29688222757` passed.
 
 ## 10. FE11 Account Setup Follow-up Tasks
 

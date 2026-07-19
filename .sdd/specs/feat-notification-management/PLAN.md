@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: APPROVED - OTP/FE02 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING; FE04/SCHEMA EVIDENCE UNCHANGED
+Status: APPROVED - OTP/FE02 COMPLETE THROUGH B7; FE04/SCHEMA EVIDENCE UNCHANGED
 
 Owner: Nhat
 
@@ -8,7 +8,7 @@ Updated: 2026-07-19
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
-Workflow State: G1-G12 implementation is on `main`; FE10-S03/S04/S09 and disposable SQL migration evidence are GREEN. FE10-S05 human acceptance is approved, with the integration PR and exact post-merge `main` CI still required.
+Workflow State: G1-G12 implementation is on `main`; FE10-S03/S04/S05/S09 and disposable SQL migration evidence are GREEN through B7. Real provider delivery, inbox UI, and FE09 caller integration remain explicit future boundaries.
 
 ---
 
@@ -47,7 +47,7 @@ Nhat approved the binding recommendations G1-G7 on 2026-07-13. That approval fir
 | G4: source entity ID | SPEC allows integer/string; validator/repository/model/SQL are `INT`, and current source primary keys are integers. | Phase 1 is integer-only; revise FE10 SPEC data requirements from integer/string to integer. | String support requires a coordinated schema migration and validator/model/repository updates. Do not silently widen/narrow the contract. |
 | G5: manual retry | No retry route/service/repository behavior exists; `FAILED` is never reselected by pending processing. | Add protected `POST /api/notifications/{id}/retry` for `LIBRARIAN`/`ADMIN`. It permits only a `FAILED` non-sensitive queued notification to transition to `PENDING`, retaining the same record, idempotency key, and attempt history; return `200 { notificationId, status }` and `409` otherwise. Retry of `ACCOUNT_VERIFICATION` or `PASSWORD_RESET` returns the standard safe `409` error body with code `REISSUE_REQUIRED` and a generic message instructing creation of a new source event; include no secret or provider detail. | An operator workflow without an endpoint is possible only if its actor, mechanism, transition, audit, and response contract are added to SPEC. No retry is executable until one option is approved. |
 | G6: terminal-state idempotency | SQL unique index applies to all statuses; service lookup checks only active statuses, so a terminal record can block a new insert unexpectedly. | One record per key across all statuses: change lookup semantics to all statuses, keep the existing all-status unique index, and make non-sensitive retry reuse the record. | A filtered active-only unique index permits a new record after a terminal state, but requires schema/index change and weakens source-event uniqueness. Do not alter lookup alone. |
-| G7: FE02 dependency and template-key alignment | The approved FE02/FE10 specs are OTP-based. Historical FE02 code sent OTP directly and used the legacy `EMAIL_VERIFY` key, while the canonical FE10 contract uses `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. | FE10 owns the delivery boundary and FE02 owns OTP generation/validation. The FE02 follow-up must route verification/reset through the FE02-bound requester with canonical template keys, without duplicate direct delivery. | Do not introduce an undocumented `EMAIL_VERIFY` alias. Until the FE02 facade migration is implemented, keep that integration explicitly pending and do not claim end-to-end FE02/FE10 delivery. |
+| G7: FE02 dependency and template-key alignment | The approved FE02/FE10 specs are OTP-based. Historical FE02 code sent OTP directly and used the legacy `EMAIL_VERIFY` key, while the canonical FE10 contract uses `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`. | FE10 owns the delivery boundary and FE02 owns OTP generation/validation. The FE02 follow-up routes verification/reset through the FE02-bound requester with canonical template keys, without duplicate direct delivery. | Do not introduce an undocumented `EMAIL_VERIFY` notification alias. The former FE02 deferral is superseded by FE10-S04/FE02-T031 through B7. |
 
 ## 3. Recommended Approach And Alternatives
 

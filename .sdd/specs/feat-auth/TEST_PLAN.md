@@ -1,7 +1,7 @@
 # FE02 Test Plan - Authentication
 
 Version: 0.3.3
-Status: OTP DELIVERY HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING
+Status: OTP DELIVERY COMPLETE THROUGH B7; REAL SMTP OUT OF SCOPE; OTHER FE02 GAPS UNCHANGED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
@@ -55,7 +55,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 ## 6. Gaps
 
 - Configured Jest global coverage thresholds pass for statements, branches, functions, and lines.
-- Human acceptance is approved for the injected FE10 delivery boundary; real SMTP remains out of scope. Integration PR and exact post-merge `main` CI remain required.
+- Human acceptance, PR integration, and exact post-merge `main` CI passed for the injected FE10 delivery boundary; real SMTP remains out of scope.
 
 ## 7. Required Commands / Evidence Before Merge
 
