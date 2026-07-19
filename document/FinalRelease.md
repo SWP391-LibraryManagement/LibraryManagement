@@ -24,7 +24,7 @@ This section lists the final source code, database scripts, documents, test evid
 | 4 | `document/SDS.md` | 1.0 | Final Software Design Specification document covering code packages, database design, class-level design, sequence diagrams, and representative SQL queries. |
 | 5 | `document/FinalRelease.md` | 1.0 | Final release document for deliverable package, installation guide, and user manual overview. |
 | 6 | `README.md` | 1.0 | Main project overview, implemented scope, architecture, setup commands, test commands, staging notes, limitations, and security notes. |
-| 7 | `.sdd/constitution.md` | 0.1.1 | Project constitution defining approved stack, source-of-truth rules, core business rules, testing rules, and definition of done. |
+| 7 | `.sdd/constitution.md` | 0.1.2 | Project constitution defining approved stack, source-of-truth rules, core business rules, testing rules, and definition of done. |
 | 8 | `.sdd/shared_context.md` | 1.0.0 | Shared project context, actors, core modules, data entities, and Phase 1 baseline business decisions. |
 | 9 | `.sdd/test-plan.md` | 0.2.0 | Approved master test policy, coverage target, validation gate, test strategy, and readiness summary. |
 | 10 | `.sdd/specs/feat-public-browse/` | Baseline 2026-07-17 | FE01 Public / Browse specification package. |
@@ -89,7 +89,7 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Item | Link / Location | Notes |
 | --- | --- | --- |
-| Tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.0-final-release` | Canonical final source release created from the verified closeout commit on `main`. |
+| Tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.2` | Create only after H3 approval, merge to `main`, and exact post-merge CI pass. |
 | Demonstration video | `PENDING — not published` | The tracked deck and runbook are the reproducible local demonstration evidence. |
 | Staging frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` | Observed public frontend origin in the Phase 3 staging evidence. |
 | Staging backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` | Observed `200` health endpoint in the Phase 3 staging evidence. |
@@ -535,7 +535,7 @@ Release limitation:
 | Check | Status |
 | --- | --- |
 | Backend automated tests pass | Current reconciliation evidence: 916 tests across 53 suites. |
-| Frontend tests pass | Current reconciliation evidence: 151/151 tests. |
+| Frontend tests pass | Current closeout evidence: 152/152 tests. |
 | Frontend lint and build pass | Passed after route-level code splitting; no entry-chunk warning. |
 | Browser golden path passes | 4/4 Playwright tests passed in 24.4 seconds for the synthetic local flow. |
 | Coverage gate | Passed with more than 80% for configured metrics. |

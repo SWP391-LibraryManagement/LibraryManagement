@@ -1,8 +1,10 @@
 # Safety Constraints — Library Management System
 
-# Version: 0.1.0
+# Version: 0.1.1
 
-# Status: DRAFT (Week 3)
+# Status: APPROVED
+
+# Last Updated: 2026-07-20
 
 > High-level security rules. These rules override convenience or speed. Detailed safety rules (audit, PII handling, dependency policy) will be added in later weeks.
 

@@ -1,8 +1,10 @@
 # Business Constraints — Library Management System
 
-# Version: 0.1.0
+# Version: 0.1.1
 
-# Status: DRAFT (Phase 1 Baseline)
+# Status: APPROVED - PHASE 1 BASELINE
+
+# Last Updated: 2026-07-20
 
 > Project-wide, high-level business rules every feature must respect. Detailed rules live in each feature's `SPEC.md` under [`.sdd/specs/feat-{name}/SPEC.md`](../specs).
 

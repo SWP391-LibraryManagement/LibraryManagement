@@ -125,6 +125,15 @@ test('FE11 Audit query builder omits blanks and preserves nonblank server valida
   assert.equal(buildAuditLogParams({ actorId: 'invalid' }).actorId, 'invalid');
 });
 
+test('FE11 Audit exposes the approved action and actor filters', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /aria-label="Lọc hành động"[\s\S]*?value=\{auditFilters\.action\}/);
+  assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?action: event\.target\.value/);
+  assert.match(source, /aria-label="Actor ID"[\s\S]*?type="number"[\s\S]*?value=\{auditFilters\.actorId\}/);
+  assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?actorId: event\.target\.value/);
+});
+
 test('FE11 Audit controls reset pagination and refresh with applied filters', async () => {
   const source = await readFile(pagePath, 'utf8');
   assert.match(source, /loadAuditLogs\(1, \{ filters: auditFilters \}\)/);

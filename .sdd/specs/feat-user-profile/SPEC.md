@@ -12,6 +12,12 @@
 
 # Feature folder: `.sdd/specs/feat-user-profile/`
 
+> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
+> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> are authoritative for current implementation state. Older `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
+> historical planning/evidence snapshots, not the current delivery state.
+
 > Source of truth for FE03 User Profile. The previously approved profile/avatar scope is preserved; v0.3.2 makes missing-profile, protected-field, avatar ownership, audit, and status-display behavior deterministic and awaits human re-review.
 
 ---

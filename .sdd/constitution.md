@@ -1,8 +1,10 @@
 # Constitution — Library Management System
 
-# Version: 0.1.1
+# Version: 0.1.2
 
-# Status: DRAFT
+# Status: APPROVED
+
+# Last Updated: 2026-07-20
 
 ## 1. Project Purpose
 

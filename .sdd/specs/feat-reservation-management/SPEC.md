@@ -12,6 +12,12 @@
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
+> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
+> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> are authoritative for current implementation state. Older `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
+> historical planning/evidence snapshots, not the current delivery state.
+
 > Source of truth for FE08 Reservation Management. Revision v0.4.4 adds the approved member-safe reservation-candidate catalog while preserving the `CopyId` mutation contract and immutable terminal timestamp history. Candidate implementation is automated-validated; final human walkthrough/H3 review remains required before merge.
 
 ---
