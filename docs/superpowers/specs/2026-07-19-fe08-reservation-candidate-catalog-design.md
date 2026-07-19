@@ -5,7 +5,7 @@ Feature: FE08 Reservation Management
 Debt: TD-028
 Delivery: Hybrid SDD + ADD
 Specification depth: Standard for the new API contract; implementation remains bounded by the approved FE08 Core contract.
-Design status: APPROVED by user with `APPROVE TD-028 - Option A`
+Design status: Approach approved by user with `APPROVE TD-028 - Option A`; written spec review pending.
 
 ## 1. Context
 
@@ -192,4 +192,3 @@ The implementation plan must update the following source-of-truth artifacts befo
   physical-location or ownership information is exposed.
 - This change does not add automatic queue processing, ETA prediction, notification workers, book-level reservation
   mutation, public copy identifiers, or a database migration.
-
