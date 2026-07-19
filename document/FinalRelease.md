@@ -10,7 +10,7 @@ Project: SWP391 Library Management System
 
 Group/project code: `6-LMS`
 
-Release status: Reconciliation candidate; human H3/merge and staging acceptance pending
+Release status: FE01-FE12 reconciliation accepted and merged; post-merge `main` CI passed
 
 ## I. Deliverable Package
 
@@ -64,18 +64,18 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Feature | Roles | Final Status | Notes |
 | --- | --- | --- | --- |
-| FE01 Public / Browse | Guest, Member, Librarian, Admin | Implemented; human integration pending | Public catalog browsing, search, detail, and availability summary. |
-| FE02 Authentication | Guest, Member, Librarian, Admin | Ready for human staging acceptance | Register, email verification, login, logout, refresh token, password change/reset, account setup support. |
-| FE03 User Profile | Member, Librarian, Admin | Automated/live SQL/browser pass; human review pending | Profile view/update and avatar support; email changes remain outside FE03. |
-| FE04 Membership Management | Member, Librarian, Admin | Approved baseline; UI integrated | Member application and librarian/admin approval/rejection workflow. |
-| FE05 Book Management | Librarian, Admin | Focused reconciliation pass; human gate pending | Canonical BookManagement owns versioned catalog mutations; FE11 Library view is read-only. |
-| FE06 Inventory / Book Copy Management | Librarian, Admin | Focused/live SQL pass; human gate pending | Physical copy management, rowversion, locked workflow/parent rechecks, audit, and availability ownership. |
-| FE07 Borrowing Management | Member, Librarian, Admin | Ready for staging recheck | Member borrow request, staff approval/rejection, return, renewal, and borrowing history. |
-| FE08 Reservation Management | Member, Librarian, Admin | Candidate catalog automated; human walkthrough/H3 pending | Reservation creation, cancellation, queue management, hold/fulfillment workflow. |
-| FE09 Fine Management | Member, Librarian, Admin | Ready with UI limitation | Server-side overdue fine calculation and offline payment recording; legacy frontend is not release evidence. |
-| FE10 Notification Management | System, Librarian, Admin | Ready with UI limitation | Safe email notifications, templates, queue, retry, and delivery attempts; inbox UI deferred. |
-| FE11 User & Role Management | Admin | Named slices complete; whole-feature/H3 pending | User list/detail, role assignment, librarian account creation, permissions, and audit log access. |
-| FE12 Reporting & Statistics | Librarian, Admin | Ready for staging recheck | Read-only borrowing, inventory, and user statistics reports. |
+| FE01 Public / Browse | Guest, Member, Librarian, Admin | Accepted in PR #40 | Public catalog browsing, search, detail, and availability summary. |
+| FE02 Authentication | Guest, Member, Librarian, Admin | Accepted in PR #40 | Register, email verification, login, logout, refresh token, password change/reset, account setup support. |
+| FE03 User Profile | Member, Librarian, Admin | Accepted in PR #40 | Profile view/update and avatar support; email changes remain outside FE03. |
+| FE04 Membership Management | Member, Librarian, Admin | Accepted in PR #40 | Member application and librarian/admin approval/rejection workflow. |
+| FE05 Book Management | Librarian, Admin | Accepted in PR #40 | Canonical BookManagement owns versioned catalog mutations; FE11 Library view is read-only. |
+| FE06 Inventory / Book Copy Management | Librarian, Admin | Accepted in PR #40 | Physical copy management, rowversion, locked workflow/parent rechecks, audit, and availability ownership. |
+| FE07 Borrowing Management | Member, Librarian, Admin | Accepted in PR #40 | Member borrow request, staff approval/rejection, return, renewal, and borrowing history. |
+| FE08 Reservation Management | Member, Librarian, Admin | Accepted; TD-028 complete | Reservation creation, cancellation, queue management, hold/fulfillment workflow. |
+| FE09 Fine Management | Member, Librarian, Admin | Accepted with UI limitation | Server-side overdue fine calculation and offline payment recording; legacy frontend is not release evidence. |
+| FE10 Notification Management | System, Librarian, Admin | Accepted with UI limitation | Safe email notifications, templates, queue, retry, and delivery attempts; inbox UI deferred. |
+| FE11 User & Role Management | Admin | Accepted approved Phase 1 scope | User list/detail, role assignment, librarian account creation, permissions, and audit log access. |
+| FE12 Reporting & Statistics | Librarian, Admin | Accepted in PR #40 | Read-only borrowing, inventory, and user statistics reports. |
 
 ### Other Related Deliverables
 
@@ -499,14 +499,13 @@ Release limitation:
 
 | No. | Limitation |
 | --- | --- |
-| 1 | Human staging acceptance still needs final reviewer sign-off. |
-| 2 | FE09 legacy frontend is not authoritative release evidence; use server API evidence. |
-| 3 | FE10 notification inbox UI is deferred. |
-| 4 | SMTP delivery requires a configured provider; without SMTP, actual inbox delivery is not proven. |
-| 5 | SQL integration testing is local/manual because CI does not provide a shared disposable SQL Server service. |
-| 6 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
-| 7 | Frontend production build may show a non-blocking chunk-size advisory. |
-| 8 | Staging is a student-credit environment, not a production SLA environment. |
+| 1 | FE09 legacy frontend is not authoritative release evidence; use server API evidence. |
+| 2 | FE10 notification inbox UI is deferred. |
+| 3 | SMTP delivery requires a configured provider; without SMTP, actual inbox delivery is not proven. |
+| 4 | SQL integration testing is local/manual because CI does not provide a shared disposable SQL Server service. |
+| 5 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
+| 6 | Frontend production build may show a non-blocking chunk-size advisory. |
+| 7 | Staging is a student-credit environment, not a production SLA environment. |
 
 ### 14. Final Acceptance Checklist
 
@@ -518,8 +517,9 @@ Release limitation:
 | Browser golden path passes | Passed in Chromium for login, borrowing, return, fine API, and reporting. |
 | Coverage gate | Passed with more than 80% for configured metrics. |
 | Security dependency audit | No unresolved Critical/High production dependency findings. |
-| Traceability gate | All twelve feature specs currently report 100% FR tag coverage; whole-project completion still requires human/H3 gates. |
-| Human staging acceptance | Pending final reviewer sign-off. |
+| Traceability gate | All twelve feature specs report 100% FR tag coverage. |
+| Human staging acceptance | APPROVED by the requestor on 2026-07-19. |
+| Merge and post-merge CI | PR #40 merged as `1555111`; `main` CI `29685953839` passed. |
 
 ### 15. References
 

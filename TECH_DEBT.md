@@ -21,17 +21,9 @@ Last Updated: 2026-07-19
 
 ## Open debt
 
-| ID | Feature | Priority | Description | Source | Status |
-| -- | ------- | -------- | ----------- | ------ | ------ |
-| TD-005 | FE06 Inventory | P1 | The FE06 routes, controller, service, repository, validators, transition/conflict guards, rowversion `If-Match`, transactional audit, frontend workflow, and live SQL tests are implemented. PR #40 CI run `29685337907` passes on current integrated head `d820ab7`; human integration acceptance remains. | FE06 reconciliation validation; FE06 PLAN/TASKS; Live SQL review; PR #40 | IN REVIEW |
-| TD-012 | FE11 User & Role | P1 | Nullable 100-character `department`/`specialization` columns and role-gated create/read/update persistence are implemented with schema/model/API tests. PR #40 CI run `29685337907` passes on current integrated head `d820ab7`; H3 and final closeout remain. | FE11 Wave A validation; FE11 Finalization Batch; PR #40 | IN REVIEW |
-| TD-013 | FE11 User & Role | P1 | Resolved in the transactional role slice: duplicate assignment returns `409 USER_ALREADY_HAS_ROLE`; absent revocation returns `404 USER_ROLE_NOT_FOUND`; neither branch mutates or audits. Evidence: `0805363`, `d04ebfb`, `817039d`. | VG FE11 P1-4/5 | RESOLVED |
-| TD-014 | FE11 User & Role | P1 | Create/resend/update/deactivation actor, target, lifecycle, pending-activation, rollback, and FE07 serialization outcomes are implemented locally and validated. H2/H3 and integration evidence remain. | FE11 Wave A validation; FE11 Finalization Batch | IN REVIEW |
-| TD-015 | FE11 User & Role | P1 | Focused lifecycle repository/service/route rollback evidence and Wave B request/browser acceptance are implemented; full automated regression and PR #40 CI run `29685337907` on `d820ab7` are green. H3 and human acceptance remain. | FE11 Wave A/Wave B validations; PR #40 | IN REVIEW |
-| TD-016 | FE11 User & Role | P2 | Canonical 255-character user/notification email persistence and effective `COALESCE(UpdatedAt, CreatedAt)` concurrency are implemented; the idempotent migration passed the disposable SQL Server gate twice. Integration closeout remains. | FE11 Wave A validation; ADR-005; ADR-002; Live SQL review | IN REVIEW |
-| TD-017 | FE11 User & Role | P2 (config risk) | The implicit Vite development Admin bypass is removed; every mode now requires stored authenticated Admin state, with frontend and isolated browser regression evidence. Integration closeout remains. | FE11 Wave A/Wave B validations | IN REVIEW |
-| TD-021 | Cross-feature | P2 | Disposable SQL Server validation passes 9/9 suites and 69/69 tests with two-pass migrations and cleanup; the full Playwright suite passes 4/4 on isolated ports `4185/3101`. Final H3, merge, and post-merge `main` CI remain pending. | Full-reconciliation Live SQL review; FE08/FE11 validation; PR #40 | PARTIAL |
-| TD-025 | FE11 Request Management | P1 | Canonical Admin request list/detail, server pagination, safe all-filtered-row CSV, FE07-owned terminal actions, Dashboard evidence, and focused browser acceptance are implemented. `FE11-REQ01..REQ03` are H2-reviewed and PR #40 CI run `29685337907` passes on `d820ab7`; H3 and final closeout remain. | FE11 Wave B validation; FR-FE11-031/034/035; Finalization Batch; PR #40 | IN REVIEW |
+No release-blocking P1 debt remains for the approved FE01-FE12 Phase 1 reconciliation scope.
+Non-blocking operational and future-scope limitations remain documented in `README.md` and
+`document/FinalRelease.md`.
 
 ---
 
@@ -39,7 +31,10 @@ Last Updated: 2026-07-19
 
 | Feature | What was fixed | Commit |
 | ------- | -------------- | ------ |
-| FE08 | TD-028: approved Option A; added member-only `GET /api/reservations/candidates` with the six-field redacted projection, active-book `BORROWED`/`RESERVED` filtering, server search/pagination, and parameterized SQL; removed `DEMO_RESERVABLE`; focused/full backend, frontend, SQL, traceability, safety, Playwright, and PR CI gates pass. Final H3 remains separate. | `d820ab7` / PR #40; FE08 candidate validation review |
+| Cross-feature | TD-021: disposable SQL Server validation passes 9/9 suites and 69/69 tests with two-pass migrations and cleanup; Playwright passes 4/4; H3, merge `1555111`, and post-merge `main` CI `29685953839` are complete. | `1555111` / PR #40 |
+| FE06 | TD-005: inventory routes through live SQL concurrency, rowversion, audit, and human integration gates are complete. | `1555111` / PR #40 |
+| FE11 | TD-012/013/014/015/016/017/025: approved Phase 1 schema, roles, lifecycle, request management, configuration safety, rollback, browser, SQL, H2/H3, merge, and post-merge integration evidence are complete. | `1555111` / PR #40 |
+| FE08 | TD-028: approved Option A; added member-only `GET /api/reservations/candidates` with the six-field redacted projection, active-book `BORROWED`/`RESERVED` filtering, server search/pagination, and parameterized SQL; removed `DEMO_RESERVABLE`; focused/full backend, frontend, SQL, traceability, safety, Playwright, H3, merge, and post-merge CI gates pass. | `1555111` / PR #40; FE08 candidate validation review |
 | FE09 | TD-004: moved Fine Management search, status filtering, and pagination onto the canonical server query/envelope; removed browser-side list filtering/slicing; added query-builder, source, responsive, and Playwright L4 regressions. | dfe45ae / PR #40 |
 | FE02 | TD-018: added API regressions for duplicate registration and weak-password no-mutation behavior plus canonical `{ email, otp }` verification/reset consumption. Focused auth validation passes 30/30. | 0040e0f / PR #40 |
 | FE02 | TD-019: closed as an approved Phase 1 policy decision. `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005` explicitly require known-account lockout and state that IP-wide limiting is not implemented. | 0040e0f / PR #40 |

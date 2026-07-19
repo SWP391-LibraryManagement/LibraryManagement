@@ -1,6 +1,6 @@
 # FE01-FE12 Full Reconciliation Human Acceptance Packet - 2026-07-19
 
-Status: H3 APPROVED; MERGE AND POST-MERGE MAIN CI PENDING
+Status: COMPLETE - H3 APPROVED, MERGED, POST-MERGE MAIN CI PASS
 
 Branch: `feat/full-reconciliation`
 
@@ -15,6 +15,12 @@ Latest implementation head checked: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 Latest implementation CI: `29685337907` - PASS
 
 Docs-only evidence follow-up: head `c9aa4ba`, CI `29685476077` - PASS
+
+H3 evidence head: `24680ffe9052f35298cbef4a2555bcb39e333824`, CI `29685838610` - PASS
+
+Merge commit: `1555111e895a1850da5daee7ade3453479c3a82b`
+
+Post-merge `main` CI: `29685953839` - PASS
 
 ## Purpose
 
@@ -35,7 +41,7 @@ until a named reviewer records an explicit decision.
 | Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
 | Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 is draft; H2-reviewed implementation head `d820ab7` and CI `29685337907` pass, with docs-only follow-up `c9aa4ba` / `29685476077` also green. Human walkthrough, H3, merge, and post-merge `main` CI remain required. |
+| Pull request | PR #40 passed final CI `29685838610`, merged as `1555111`, and exact post-merge `main` CI `29685953839` passed. |
 
 Authoritative consolidated evidence:
 
@@ -73,7 +79,7 @@ The first reconciliation implementation/evidence commits and draft PR publicatio
 
 - Exception scope: commits through published head `199fa36` and draft PR #40 creation.
 - Corrective action: keep all current P1 fixes uncommitted, run a fresh full-diff H2 review and all required validation, then commit/push only the reviewed final diff.
-- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff is committed/pushed at `d820ab7` and CI `29685337907` passes.
+- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff and mechanical H3 evidence closeout merged through PR #40, with post-merge `main` CI passing.
 - Authority boundary: this exception record does not waive H2 findings, approve merge, or substitute for H3.
 - H3 condition: the reviewer must evaluate the final pushed head and its new CI run, not the earlier green heads.
 
@@ -112,12 +118,20 @@ Reviewed PR head: `165da3f9d8221cc68d6a2e708e022beac8a2ff27`
 
 Reviewed CI run: `29685574438` - PASS
 
-Notes: The requestor replied `duyệt` after the agent presented the complete FE01-FE12 walkthrough boundary, final PR head, and green CI. This records H3 merge approval; post-merge `main` CI remains mandatory.
+Notes: The requestor replied `duyệt` after the agent presented the complete FE01-FE12 walkthrough boundary, final PR head, and green CI. This recorded H3 merge approval; the mandatory post-merge `main` CI is now recorded below.
 
-Mechanical closeout boundary: this evidence-only approval commit changes no product behavior and is authorized by H3; it must pass PR CI before merge.
+Mechanical closeout boundary: this evidence-only approval commit changed no product behavior, was authorized by H3, and passed PR CI before merge.
+
+## Post-Merge Closeout
+
+- Final PR head: `24680ffe9052f35298cbef4a2555bcb39e333824`.
+- Final PR CI: `29685838610` - PASS.
+- Merge commit: `1555111e895a1850da5daee7ade3453479c3a82b`.
+- Post-merge `main` CI: `29685953839` - PASS.
+- Persistent GitHub evidence: PR #40 post-merge closeout comment `issuecomment-5015618240`.
+- No product diff exists between the approved PR head and the merged `main` content.
 
 ## Completion Rule
 
-The active full-reconciliation goal remains open until both decision gates are explicitly approved,
-all resulting implementation/evidence changes pass required checks, PR #40 receives final H3, and
-the project records the required post-merge `main` CI evidence.
+Both decision gates are approved, PR #40 is merged, and the required post-merge `main` CI evidence
+is recorded. The FE01-FE12 reconciliation completion rule is satisfied.
