@@ -1,5 +1,7 @@
 # Phase 3 Final Validation - 2026-07-19
 
+Validation commit: `80d81e4`
+
 ## Decision
 
 Phase 3 is **ready for integration** on branch `docs/phase3-polish-delivery`.
