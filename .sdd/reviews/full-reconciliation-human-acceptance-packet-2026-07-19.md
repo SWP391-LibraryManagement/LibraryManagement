@@ -10,9 +10,11 @@ Recorded implementation/evidence head: `d820ab75d0c4042bd8a7317b054e72518faaeffd
 
 Recorded CI: `29685337907` - PASS
 
-Latest pushed PR head checked: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
+Latest implementation head checked: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 
-Latest CI: `29685337907` - PASS
+Latest implementation CI: `29685337907` - PASS
+
+Docs-only evidence follow-up: head `c9aa4ba`, CI `29685476077` - PASS
 
 ## Purpose
 
@@ -33,7 +35,7 @@ until a named reviewer records an explicit decision.
 | Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
 | Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 is draft; H2-reviewed head `d820ab7` and CI `29685337907` pass. Human walkthrough, H3, merge, and post-merge `main` CI remain required. |
+| Pull request | PR #40 is draft; H2-reviewed implementation head `d820ab7` and CI `29685337907` pass, with docs-only follow-up `c9aa4ba` / `29685476077` also green. Human walkthrough, H3, merge, and post-merge `main` CI remain required. |
 
 Authoritative consolidated evidence:
 
