@@ -2839,7 +2839,7 @@ function UserManagement() {
           --um-muted: #6b6153;
           background: var(--um-canvas);
           color: var(--um-ink);
-          font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+          font-family: var(--sans);
         }
         .um-sidebar {
           background: var(--um-surface);

@@ -61,5 +61,5 @@ test('major surfaces no longer hardcode superseded UI fonts', async () => {
     '../src/component/layout/LogoutConfirmModal.jsx',
   ];
   const source = (await Promise.all(files.map((file) => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n');
-  assert.doesNotMatch(source, /Playfair Display|Lato, sans-serif|Inter, system-ui|DM Serif Display|Times New Roman/);
+  assert.doesNotMatch(source, /Playfair Display|Lato, sans-serif|Inter, system-ui|DM Serif Display|Times New Roman|system-ui, 'Segoe UI', Roboto, Arial, sans-serif/);
 });
