@@ -1,7 +1,7 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; WAVES A/B H2 READY
-Implementation State: IN PROGRESS - WAVES A/B H2 READY; INTEGRATION PENDING
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Implementation State: COMPLETE
 
 Date: 2026-07-19
 
@@ -242,8 +242,9 @@ Owner: Dung
   - DoD: every mode requires stored authenticated Admin state; update/deactivate send the effective version and reload authoritative state.
   - Evidence: frontend API/page tests, full frontend regression, lint/build, and browser regression are recorded in the Wave A validation record.
 
-- [ ] **FE11-LIFE06 - Pass Wave A H2/H3/B7 integration.**
+- [x] **FE11-LIFE06 - Pass Wave A H2/H3/B7 integration.**
   - Depends on: FE11-LIFE01..FE11-LIFE05.
+  - Evidence: PR #40 H2/H3 review, merge `1555111`, post-merge CI `29685953839`, and Live SQL/browser evidence in the full reconciliation packet.
 
 - [x] **FE11-REQ01 - Canonicalize Admin request list and detail reads.**
   - Maps to: BR-FE11-019/026; FR-FE11-034; AC-FE11-019; TD-025.
@@ -257,15 +258,16 @@ Owner: Dung
   - Maps to: BR-FE11-019; FR-FE11-035; FE07 request lifecycle invariants; TD-025.
   - Evidence: focused backend tests and browser acceptance prove completed detail is read-only and direct FE07 approve/reject attempts both return `409 BORROW_REQUEST_NOT_PENDING`.
 
-- [ ] **FE11-ACC01 - Pass FE11 browser acceptance and Wave B integration.**
+- [x] **FE11-ACC01 - Pass FE11 browser acceptance and Wave B integration.**
   - Depends on: FE11-REQ01..FE11-REQ03.
   - Includes: evidence-only Admin Dashboard coverage for FR-FE11-031 without redesigning FE12 ownership.
-  - Evidence: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; H2/H3 and human integration acceptance remain required.
+  - Evidence: PR #40 merged as `1555111`; final PR CI `29685838610` and exact post-merge `main` CI `29685953839` passed; human FE01-FE12 walkthrough and H3 were approved.
 
-- [ ] **FE11-FIN02 - Publish final FE11 B7 closeout.**
+- [x] **FE11-FIN02 - Publish final FE11 B7 closeout.**
   - Depends on: FE11-LIFE06, FE11-ACC01.
+  - Evidence: FE11 finalization is included in the approved FE01-FE12 H3 walkthrough and full reconciliation closeout.
   - DoD: all four PRs and exact main CI runs are recorded; FE11 is complete through B7 and no SQL or browser residual remains under TD-021.
 
 ## Deferred FE11 Work
 
-The completed B7 slices remain account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`, and Admin navigation/permissions `FE11-PERM01..FE11-PERM06`. Wave A `FE11-LIFE01..FE11-LIFE05` is implemented and validation-ready but not integrated; `FE11-LIFE06`, Wave B, and final closeout remain open. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
+The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.

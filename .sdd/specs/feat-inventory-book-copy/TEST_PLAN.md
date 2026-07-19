@@ -1,7 +1,7 @@
 ﻿# FE06 Test Plan - Inventory / Book Copy Management
 
 Version: 0.3.1
-Status: READY FOR REVIEW - focused and live SQL evidence recorded; acceptance pending
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-inventory-book-copy/SPEC.md`

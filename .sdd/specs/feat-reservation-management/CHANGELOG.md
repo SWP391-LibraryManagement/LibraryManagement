@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-reservation-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - Open Reservation Limit Corrected
 
 - Counted both `ACTIVE` and `NOTIFIED` rows for the maximum-three-open-reservations rule.

@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-membership-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - Canonical Membership Reconciliation
 
 - Added the pending-only filtered unique index, model metadata, ADR decision, and idempotent FE04

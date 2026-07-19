@@ -1,7 +1,7 @@
 # FE02 Test Plan - Authentication
 
 Version: 0.3.3
-Status: OTP DELIVERY COMPLETE THROUGH B7; REAL SMTP OUT OF SCOPE; OTHER FE02 GAPS UNCHANGED
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`

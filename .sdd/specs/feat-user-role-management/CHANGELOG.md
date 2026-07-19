@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-19 - Phase 2 Exit Closeout
+
+- feat-user-role-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+
 ## 2026-07-19 - Finalization Wave B Implemented And H2-Ready
 
 - Added feature-specific FE11 Playwright acceptance for Admin Dashboard evidence and Request Management server pagination, filtering, authoritative detail, all-filtered-row CSV, pending controls, completed read-only behavior, and FE07 terminal-state `409` enforcement.

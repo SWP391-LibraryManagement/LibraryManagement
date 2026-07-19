@@ -16,15 +16,16 @@
  *                                                 # below the threshold
  *   node scripts/check-traceability.js --enforce --min=70
  *
- * A feature is considered "implemented" when its TASKS.md status is
- * READY FOR REVIEW / IN PROGRESS / COMPLETE. NOT STARTED features are
- * reported but never enforced.
+ * A feature is enforced only when TASKS.md explicitly declares PARTIAL or
+ * COMPLETE implementation state. Approved specifications remain report-only
+ * until implementation state is recorded.
  */
 
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const { parseImplementationState, shouldEnforce } = require('./traceability-state');
 
 const ROOT = path.resolve(__dirname, '..');
 const SPECS_DIR = path.join(ROOT, '.sdd', 'specs');
@@ -68,12 +69,20 @@ for (const dir of CODE_DIRS) {
   }
 }
 
-// 2. Per feature: read FR ids from SPEC.md and TASKS.md status.
-function taskStatus(featDir) {
+// 2. Per feature: read FR ids from SPEC.md and explicit implementation state.
+function taskMetadata(featDir) {
   const tasksPath = path.join(featDir, 'TASKS.md');
-  if (!fs.existsSync(tasksPath)) return 'UNKNOWN';
-  const m = fs.readFileSync(tasksPath, 'utf8').match(/Status[:\s#]*([A-Za-z ]+)/i);
-  return m ? m[1].trim().toUpperCase() : 'UNKNOWN';
+  if (!fs.existsSync(tasksPath)) {
+    if (enforce) throw new Error(`${tasksPath}: missing TASKS.md`);
+    return { state: 'UNKNOWN', source: 'Implementation State' };
+  }
+
+  try {
+    return parseImplementationState(fs.readFileSync(tasksPath, 'utf8'));
+  } catch (error) {
+    if (enforce) throw new Error(`${tasksPath}: ${error.message}`);
+    return { state: 'UNKNOWN', source: 'Implementation State' };
+  }
 }
 
 const features = fs
@@ -95,8 +104,9 @@ for (const feat of features) {
 
   const covered = frs.filter((id) => taggedIds.has(id));
   const pct = Math.round((covered.length / frs.length) * 100);
-  const status = taskStatus(featDir);
-  const active = /READY FOR REVIEW|IN PROGRESS|COMPLETE/.test(status);
+  const metadata = taskMetadata(featDir);
+  const status = metadata.state;
+  const active = shouldEnforce(metadata.state);
   const missing = frs.filter((id) => !taggedIds.has(id));
 
   rows.push({ feat, total: frs.length, covered: covered.length, pct, status, active, missing });
@@ -106,7 +116,7 @@ for (const feat of features) {
 // 3. Print report.
 const pad = (s, n) => String(s).padEnd(n);
 console.log('\nTraceability coverage (FR ids tagged with @spec in source)\n');
-console.log(pad('Feature', 32) + pad('FR', 5) + pad('Tagged', 8) + pad('Coverage', 10) + 'TASKS status');
+console.log(pad('Feature', 32) + pad('FR', 5) + pad('Tagged', 8) + pad('Coverage', 10) + 'Implementation state');
 console.log('-'.repeat(78));
 for (const r of rows) {
   const mark = !r.active ? '·' : r.pct >= MIN ? '✓' : '✗';
