@@ -4,7 +4,7 @@ Status: COMPLETE - PHASE 2 EXIT PR MERGED; EXACT POST-MERGE MAIN CI PASS
 
 Branch: `main`
 
-Baseline: `origin/main@1e7431ae9ecf9d79ad909d85a79af9d9af36e5a3`
+Baseline: `origin/main@c9124df8286620a937ba41c5ee7867c74b6fcfee`
 
 ## Decision
 
@@ -93,5 +93,7 @@ Phase 2 exit integration is complete:
 
 - PR #45 passed foundation CI `29690486632` and merged as `1e7431ae9ecf9d79ad909d85a79af9d9af36e5a3`.
 - Exact post-merge `main` CI `29690585950` passed traceability, backend tests/coverage, frontend lint/tests/build, Playwright E2E, and backend import health.
+- PR #46 passed foundation CI `29690752378` and merged as `c9124df8286620a937ba41c5ee7867c74b6fcfee`.
+- Exact post-merge `main` CI `29690856461` passed the same required foundation checks on the final Phase 2 evidence state.
 - `origin/main` now records Phase 3 - Polish and Delivery as the single current phase.
 - Final stale-state and worktree audit passed after merge.
