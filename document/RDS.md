@@ -364,3 +364,36 @@ This section defines which system roles can access each screen or activity.
 | Create or update user account |  |  |  | X |
 | Manage roles and permissions |  |  |  | X |
 | View audit logs |  |  |  | X |
+
+### 2.4 Non-UI Functions
+
+This section describes system functions that run behind the screens, through services, APIs, guards, or internal processing.
+
+| # | Feature | System Function | Description |
+| - | ------- | --------------- | ----------- |
+| 1 | Authentication | Validate Session / Token | Validates the authenticated user's token before protected API or screen access is allowed. |
+| 2 | Authentication | Hash Password | Stores user passwords using secure hashing instead of plain text. |
+| 3 | Authentication | Generate Verification Token | Creates a time-limited credential for email verification after registration. |
+| 4 | Authentication | Generate Password Reset Token | Creates a time-limited credential for password reset requests. |
+| 5 | Authentication | Complete Admin-Created Account Setup | Allows a user created by an admin to finish account setup through a secure setup link. |
+| 6 | Notification Management | Send Account Verification Email | Sends account verification email through EmailService. |
+| 7 | Notification Management | Send Password Reset Email | Sends password reset email through EmailService. |
+| 8 | Notification Management | Send Account Setup Email | Sends setup email for admin-created accounts through EmailService. |
+| 9 | Notification Management | Queue Membership Result Notification | Creates a notification request when a membership application is approved or rejected. |
+| 10 | Notification Management | Send Reservation Notification | Sends reservation availability or queue-related email notification. |
+| 11 | Notification Management | Send Due Date Or Fine Notification | Sends due date, overdue, or fine-related notification when requested by the system. |
+| 12 | Book Management | Derive Public Availability | Calculates public-facing book availability from active inventory copy data. |
+| 13 | Inventory / Book Copy Management | Validate Copy Status Transition | Prevents invalid manual copy status changes that conflict with borrowing or reservation state. |
+| 14 | Borrowing Management | Check Borrowing Eligibility | Checks membership, borrow limit, overdue, unpaid fine, and copy availability rules before borrowing is approved. |
+| 15 | Borrowing Management | Calculate Due Date | Calculates due date from the approved borrow date using the default loan duration. |
+| 16 | Borrowing Management | Update Borrowing And Copy Status | Updates borrow detail status and physical copy status during approve, return, and renewal operations. |
+| 17 | Reservation Management | Process Reservation Queue | Selects the next valid reservation when a reserved copy becomes available. |
+| 18 | Reservation Management | Fulfill Held Reservation | Connects a held reservation to borrowing processing when the member borrows the held copy. |
+| 19 | Fine Management | Calculate Overdue Fine | Calculates overdue fines based on overdue days and configured fine rate. |
+| 20 | Fine Management | Prevent Duplicate Fine | Ensures the same overdue borrowing detail does not create duplicate active fine records. |
+| 21 | User & Role Management | Enforce Role-Based Authorization | Blocks protected actions when the current user does not have the required role. |
+| 22 | User & Role Management | Prevent Last Admin Removal | Prevents deactivation or role changes that would leave the system without an admin. |
+| 23 | User & Role Management | Write Audit Log | Records important administrative actions that affect users, roles, books, borrowing, returning, fines, or membership. |
+| 24 | Reporting & Statistics | Aggregate Borrowing Report Data | Builds borrowing report summaries from borrowing records. |
+| 25 | Reporting & Statistics | Aggregate Inventory Report Data | Builds inventory report summaries from book and copy records. |
+| 26 | Reporting & Statistics | Aggregate User Statistics | Builds user statistics from account, role, and member data. |
