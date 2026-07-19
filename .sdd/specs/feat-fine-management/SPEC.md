@@ -522,8 +522,8 @@ Phase 1 approval checklist (completed on 2026-06-10):
 
 ### 17.1 Revision v0.4.0 Review Gate
 
-- [ ] Confirm full offline collection is the only Phase 1 collection mode and `collectedAmount` is not accepted.
-- [ ] Confirm `/waive` and `/cancel` are admin-only and require a 1..500 character reason.
-- [ ] Confirm list pagination defaults/bounds and fixed `FineId ASC` ordering.
-- [ ] Confirm overdue-day calculation uses `Asia/Ho_Chi_Minh`.
+- [x] Confirm full offline collection is the only Phase 1 collection mode and `collectedAmount` is not accepted.
+- [x] Confirm `/waive` and `/cancel` are admin-only and require a 1..500 character reason.
+- [x] Confirm list pagination defaults/bounds and fixed `FineId ASC` ordering.
+- [x] Confirm overdue-day calculation uses `Asia/Ho_Chi_Minh`.
 - [x] Confirm fine state/payment/audit writes are atomic and terminal-state retries return deterministic conflicts.

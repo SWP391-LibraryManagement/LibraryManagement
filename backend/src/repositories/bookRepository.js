@@ -8,6 +8,10 @@ async function getHomeBooks(filters = {}) {
   const pool = await getPool();
   const request = pool.request();
   const whereConditions = [`b.Status = 'ACTIVE'`];
+  const offset = (filters.page - 1) * filters.limit;
+  const sortColumns = { title: 'b.Title', publishYear: 'b.PublishYear', createdAt: 'b.CreatedAt' };
+  const sortColumn = sortColumns[filters.sort] || 'b.CreatedAt';
+  const sortOrder = filters.order === 'asc' ? 'ASC' : 'DESC';
 
   if (filters.q) {
     request.input('search', escapeLikePattern(filters.q));
@@ -25,6 +29,20 @@ async function getHomeBooks(filters = {}) {
     whereConditions.push(`c.CategoryName = @category`);
   }
 
+  for (const [field, column, parameter] of [
+    ['categoryId', 'b.CategoryId', 'categoryId'],
+    ['authorId', 'b.AuthorId', 'authorId'],
+    ['publisherId', 'b.PublisherId', 'publisherId'],
+  ]) {
+    if (filters[field]) {
+      request.input(parameter, sql.Int, filters[field]);
+      whereConditions.push(`${column} = @${parameter}`);
+    }
+  }
+
+  request.input('offset', sql.Int, offset);
+  request.input('limit', sql.Int, filters.limit);
+
   const result = await request.query(`
     SELECT
         b.BookId AS id,
@@ -38,6 +56,7 @@ async function getHomeBooks(filters = {}) {
         b.CoverUrl AS cover,
         b.Rating AS rating,
         b.Pages AS pages,
+        COUNT(*) OVER() AS totalRows,
 
         CASE 
             WHEN SUM(CASE WHEN bc.Status = 'AVAILABLE' THEN 1 ELSE 0 END) > 0 
@@ -67,12 +86,17 @@ async function getHomeBooks(filters = {}) {
         b.Description,
         b.CoverUrl,
         b.Rating,
-        b.Pages
+        b.Pages,
+        b.CreatedAt
 
-    ORDER BY b.BookId DESC;
+    ORDER BY ${sortColumn} ${sortOrder}, b.BookId ${sortOrder}
+    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
   `);
 
-  return result.recordset;
+  return {
+    rows: result.recordset,
+    total: Number(result.recordset[0]?.totalRows || 0),
+  };
 }
 
 async function getCategories() {
@@ -347,61 +371,19 @@ async function updateBook(bookId, payload, actorUserId = null) {
   return getBookById(bookId);
 }
 
-async function deactivateBook(bookId, actorUserId = null) {
+// @spec FR-FE05-022, BR-FE05-015
+async function setBookStatus(bookId, status, reason, actorUserId = null) {
   const pool = await getPool();
   await pool.request()
     .input('bookId', sql.Int, bookId)
+    .input('status', sql.NVarChar(20), status)
+    .input('reason', sql.NVarChar(500), reason)
     .input('updatedBy', sql.Int, actorUserId || null)
     .query(`
       UPDATE Books
-      SET Status = 'INACTIVE', UpdatedBy = @updatedBy, UpdatedAt = GETDATE()
+      SET Status = @status, UpdatedBy = @updatedBy, UpdatedAt = GETDATE()
       WHERE BookId = @bookId;
     `);
-
-  return getBookById(bookId);
-}
-
-async function updateBookAvailability(bookId, copyStatus, actorUserId = null) {
-  const pool = await getPool();
-  const targetStatus = copyStatus === 'AVAILABLE' ? 'AVAILABLE' : 'BORROWED';
-  const sourceStatuses = targetStatus === 'AVAILABLE'
-    ? ['BORROWED']
-    : ['AVAILABLE'];
-
-  const request = pool.request()
-    .input('bookId', sql.Int, bookId)
-    .input('targetStatus', sql.NVarChar(20), targetStatus)
-    .input('updatedBy', sql.Int, actorUserId || null);
-
-  sourceStatuses.forEach((status, index) => {
-    request.input(`status${index}`, sql.NVarChar(20), status);
-  });
-
-  await request.query(`
-    IF @targetStatus = 'AVAILABLE'
-       AND NOT EXISTS (SELECT 1 FROM BookCopies WHERE BookId = @bookId)
-    BEGIN
-      INSERT INTO BookCopies (BookId, Barcode, Status, Location)
-      VALUES (
-        @bookId,
-        CONCAT('AUTO-B', @bookId, '-', REPLACE(CONVERT(NVARCHAR(36), NEWID()), '-', '')),
-        'AVAILABLE',
-        NULL
-      );
-    END;
-
-    UPDATE BookCopies
-    SET Status = @targetStatus,
-        UpdatedAt = GETDATE()
-    WHERE BookId = @bookId
-      AND Status IN (${sourceStatuses.map((_, index) => `@status${index}`).join(', ')});
-
-    UPDATE Books
-    SET Status = 'ACTIVE',
-        UpdatedBy = @updatedBy,
-        UpdatedAt = GETDATE()
-    WHERE BookId = @bookId;
-  `);
 
   return getBookById(bookId);
 }
@@ -416,6 +398,5 @@ module.exports = {
   referenceExists,
   createBook,
   updateBook,
-  deactivateBook,
-  updateBookAvailability,
+  setBookStatus,
 };

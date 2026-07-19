@@ -20,7 +20,6 @@ const DEFAULT_FORM = {
   pages: '',
   rating: '0',
   status: 'ACTIVE',
-  copyStatus: '',
   coverUrl: '',
   description: '',
 };
@@ -51,13 +50,12 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
     status: book.status || 'ACTIVE',
-    copyStatus: Number(book.availableCopies || 0) > 0 ? 'AVAILABLE' : 'BORROWED',
     coverUrl: book.cover || '',
     description: book.description || '',
   };
 }
 
-function validateBookForm(form, currentBooks = [], editingBookId = null, { allowStatus = false } = {}) {
+function validateBookForm(form, currentBooks = [], editingBookId = null) {
   const errors = {};
   const currentYear = new Date().getFullYear();
   const title = form.title.trim();
@@ -80,9 +78,6 @@ function validateBookForm(form, currentBooks = [], editingBookId = null, { allow
   }
   if (pages && (!Number.isInteger(pages) || pages < 1)) errors.pages = 'Pages must be a positive number.';
   if (!Number.isFinite(rating) || rating < 0 || rating > 5) errors.rating = 'Rating must be between 0 and 5.';
-  if (allowStatus && !['AVAILABLE', 'BORROWED'].includes(form.copyStatus)) {
-    errors.copyStatus = 'Tình trạng sách phải là Còn sách hoặc Đã mượn.';
-  }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'Cover URL must start with http(s) or /.';
   }
@@ -101,7 +96,6 @@ function makePayload(form) {
     publishYear: form.publishYear ? Number(form.publishYear) : null,
     pages: form.pages ? Number(form.pages) : null,
     rating: form.rating === '' ? 0 : Number(form.rating),
-    status: form.status || 'ACTIVE',
     coverUrl: form.coverUrl.trim(),
     description: form.description.trim(),
   };
@@ -110,7 +104,7 @@ function makePayload(form) {
 function getBookAvailability(book) {
   return Number(book.availableCopies || 0) > 0
     ? { key: 'available', label: 'Còn sách' }
-    : { key: 'borrowed', label: 'Đã mượn' };
+    : { key: 'borrowed', label: 'Không khả dụng' };
 }
 
 function Toast({ toast, onClose }) {
@@ -136,7 +130,6 @@ function BookForm({
   submitLabel,
   onSubmit,
   disabled,
-  showAvailabilityStatus = false,
 }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
@@ -191,20 +184,6 @@ function BookForm({
         <input type="number" value={form.pages} onChange={(event) => update('pages', event.target.value)} />
         <FieldError message={errors.pages} />
       </label>
-
-      {showAvailabilityStatus && (
-        <label>
-          <span>Tình trạng</span>
-          <select
-            value={form.copyStatus}
-            onChange={(event) => update('copyStatus', event.target.value)}
-          >
-            <option value="AVAILABLE">Còn sách</option>
-            <option value="BORROWED">Đã mượn</option>
-          </select>
-          <FieldError message={errors.copyStatus} />
-        </label>
-      )}
 
       <label className="bm-wide">
         <span>Cover URL</span>
@@ -271,7 +250,7 @@ export default function BookManagement() {
     const params = new URLSearchParams({ limit: '100' });
     if (status) params.set('status', status);
     if (categoryId) params.set('categoryId', categoryId);
-    const result = await apiRequest(`/books/management?${params.toString()}`);
+    const result = await apiRequest(`/admin/books?${params.toString()}`);
     const nextBooks = result.data || [];
     setBooks(nextBooks);
     setSelectedBookId((currentSelectedBookId) => {
@@ -412,7 +391,7 @@ export default function BookManagement() {
       return;
     }
 
-    const errors = validateBookForm(updateForm, books, selectedBookId, { allowStatus: true });
+    const errors = validateBookForm(updateForm, books, selectedBookId);
     setUpdateErrors(errors);
 
     if (Object.keys(errors).length) return;
@@ -423,13 +402,9 @@ export default function BookManagement() {
         method: 'PUT',
         body: JSON.stringify(makePayload(updateForm)),
       });
-      const availabilityResult = await apiRequest(`/books/${selectedBookId}/availability`, {
-        method: 'PATCH',
-        body: JSON.stringify({ copyStatus: updateForm.copyStatus }),
-      });
       await loadBooks();
       setPage(1);
-      setDetailBook(availabilityResult.data || result.data);
+      setDetailBook(result.data);
       showToast('Đã cập nhật thông tin sách. Trạng thái mới sẽ được đồng bộ với trang chủ.');
     } catch (error) {
       showToast(error.message, 'error');
@@ -451,7 +426,10 @@ export default function BookManagement() {
 
     try {
       setSaving(true);
-      await apiRequest(`/books/${selectedBook.id}/deactivate`, { method: 'PATCH', body: JSON.stringify({}) });
+      await apiRequest(`/books/${selectedBook.id}/deactivate`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason: 'Removed from the public catalog by staff.' }),
+      });
       setStatusFilter('ACTIVE');
       await loadBooks({ status: 'ACTIVE' });
       setSelectedBookId('');
@@ -647,7 +625,6 @@ export default function BookManagement() {
                 submitLabel="Save Changes"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
-                showAvailabilityStatus
               />
             ) : (
               <div className="bm-empty">Select a book before updating.</div>

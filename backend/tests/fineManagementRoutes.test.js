@@ -247,25 +247,25 @@ describe('FE09 fine management (server-side)', () => {
       .post('/api/fines/9100/collections')
       .set(...auth(99, 'LIBRARIAN'))
       .send({ collectedAmount: 20000 });
-    expect(partial.status).toBe(200);
-    expect(partial.body.fine).toMatchObject({ status: 'UNPAID', paidAmount: 20000 });
+    expect(partial.status).toBe(400);
+    expect(partial.body.error.code).toBe('COLLECTED_AMOUNT_NOT_ALLOWED');
 
     const fullApp = makeApp({ fines: [{ ...baseFine }] });
     const full = await request(fullApp.app)
       .post('/api/fines/9100/collections')
       .set(...auth(99, 'LIBRARIAN'))
-      .send({ collectedAmount: 35000 });
+      .send({ paymentMethod: 'CASH' });
     expect(full.status).toBe(200);
     expect(full.body.fine).toMatchObject({ status: 'PAID', paidAmount: 35000 });
 
-    // INV-4: collected amount cannot exceed the fine amount.
+    // Phase 1 rejects every client-supplied amount, including over-collection.
     const overApp = makeApp({ fines: [{ ...baseFine }] });
     const over = await request(overApp.app)
       .post('/api/fines/9100/collections')
       .set(...auth(99, 'LIBRARIAN'))
       .send({ collectedAmount: 99999 });
     expect(over.status).toBe(400);
-    expect(over.body.error.code).toBe('INVALID_COLLECTED_AMOUNT');
+    expect(over.body.error.code).toBe('COLLECTED_AMOUNT_NOT_ALLOWED');
   });
 
   // Q-FE09-005: only an admin can waive a fine; a librarian is rejected.

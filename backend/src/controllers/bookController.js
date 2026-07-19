@@ -2,15 +2,21 @@ const bookService = require('../services/bookService');
 
 async function getHomeBooks(req, res, next) {
   try {
-    const books = await bookService.getHomeBooks({
+    const result = await bookService.getHomeBooks({
       q: req.query.q,
-      category: req.query.category,
+      categoryId: req.query.categoryId,
+      authorId: req.query.authorId,
+      publisherId: req.query.publisherId,
+      page: req.query.page,
+      limit: req.query.limit,
+      sort: req.query.sort,
+      order: req.query.order,
     });
 
     return res.status(200).json({
       success: true,
       message: 'Lấy danh sách sách thành công',
-      data: books,
+      ...result,
     });
   } catch (error) {
     return next(error);
@@ -67,7 +73,9 @@ async function getManagementBooks(req, res, next) {
 
 async function getBookById(req, res, next) {
   try {
-    const book = await bookService.getBookById(req.params.bookId);
+    const roles = Array.isArray(req.user?.roles) ? req.user.roles.map((role) => String(role).toUpperCase()) : [];
+    const includeInactive = roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role));
+    const book = await bookService.getBookById(req.params.bookId, { includeInactive });
 
     return res.status(200).json({
       success: true,
@@ -95,7 +103,7 @@ async function createBook(req, res, next) {
 
 async function updateBook(req, res, next) {
   try {
-    const book = await bookService.updateBook(req.params.bookId, req.body, req.user?.userId);
+    const book = await bookService.updateBook(req.params.bookId, req.body, req.user?.userId, req.headers['if-match']);
 
     return res.status(200).json({
       success: true,
@@ -109,7 +117,7 @@ async function updateBook(req, res, next) {
 
 async function deactivateBook(req, res, next) {
   try {
-    const book = await bookService.deactivateBook(req.params.bookId, req.user?.userId);
+    const book = await bookService.deactivateBook(req.params.bookId, req.body, req.user?.userId, req.headers['if-match']);
 
     return res.status(200).json({
       success: true,
@@ -121,9 +129,9 @@ async function deactivateBook(req, res, next) {
   }
 }
 
-async function updateBookAvailability(req, res, next) {
+async function reactivateBook(req, res, next) {
   try {
-    const book = await bookService.updateBookAvailability(req.params.bookId, req.body, req.user?.userId);
+    const book = await bookService.reactivateBook(req.params.bookId, req.body, req.user?.userId, req.headers['if-match']);
 
     return res.status(200).json({
       success: true,
@@ -144,5 +152,5 @@ module.exports = {
   createBook,
   updateBook,
   deactivateBook,
-  updateBookAvailability,
+  reactivateBook,
 };

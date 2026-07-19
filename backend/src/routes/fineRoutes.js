@@ -1,5 +1,4 @@
 const express = require('express');
-const fineController = require('../controllers/fineController');
 const { createFineManagementController } = require('../controllers/fineManagementController');
 const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
 
@@ -20,9 +19,6 @@ function createFineRoutes({ authService, fineManagementService } = {}) {
 
   // Canonical FE09 list. Legacy write routes remain isolated for backward compatibility only.
   router.get('/', requireStaff, fineManagement.listAll);
-  router.post('/', requireStaff, fineController.createFine);
-  router.put('/:fineId', requireStaff, fineController.updateFine);
-  router.delete('/:fineId', requireStaff, fineController.deleteFine);
 
   return router;
 }

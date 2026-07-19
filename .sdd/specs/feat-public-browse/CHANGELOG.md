@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-19 - Public Safety Reconciliation In Progress
+
+- Replaced the copy-state-revealing `Đã mượn` label with the approved public-safe `Không khả dụng` label.
+- Removed fake homepage login behavior and routed authenticated borrowing-history links to the real role-protected workflow.
+- Public pagination, safe DTO projection, API adapter, and focused FE01 task evidence remain pending.
+
 ## 2026-07-18 - Authenticated Homepage Navigation
 
 - Added a dedicated `Home` sidebar item for Member/Librarian/Admin users that opens the authenticated public library homepage at `/homepage`.

@@ -4,21 +4,22 @@ import test from 'node:test';
 
 const pagePath = new URL('../src/page/BookManagement.jsx', import.meta.url);
 
-test('FE05 maps copy counts to canonical availability values in the update form', async () => {
+test('FE05 treats copy availability as read-only derived data', async () => {
   const source = await readFile(pagePath, 'utf8');
 
-  assert.match(source, /copyStatus: Number\(book\.availableCopies \|\| 0\) > 0 \? 'AVAILABLE' : 'BORROWED'/);
-  assert.match(source, /body: JSON\.stringify\(\{ copyStatus: updateForm\.copyStatus \}\)/);
+  assert.doesNotMatch(source, /\/availability/);
+  assert.doesNotMatch(source, /copyStatus:/);
+  assert.match(source, /Number\(book\.availableCopies \|\| 0\) > 0/);
 });
 
-test('FE05 keeps the management UI limited to available and borrowed states', async () => {
+test('FE05 shows only the public-safe derived availability label', async () => {
   const source = await readFile(pagePath, 'utf8');
 
   assert.doesNotMatch(source, /Chưa có bản sao/);
   assert.doesNotMatch(source, /return \{ key: 'inactive', label: 'INACTIVE' \}/);
-  assert.match(source, /\? \{ key: 'available', label: 'Còn sách' \}[\s\S]*?: \{ key: 'borrowed', label: 'Đã mượn' \}/);
+  assert.match(source, /\? \{ key: 'available', label: 'Còn sách' \}[\s\S]*?: \{ key: 'borrowed', label: 'Không khả dụng' \}/);
   assert.doesNotMatch(source, /availabilityDisabled|Hãy thêm bản sao và barcode/);
-  assert.match(source, /const availabilityResult = await apiRequest/);
+  assert.doesNotMatch(source, /const availabilityResult = await apiRequest/);
 });
 
 test('FE05 removes a deactivated book from the active management list', async () => {

@@ -9,7 +9,7 @@ jest.mock('../src/config/db', () => ({
 const { getPool } = require('../src/config/db');
 const bookRepository = require('../src/repositories/bookRepository');
 
-test('changing an inventory-less book to AVAILABLE creates its first copy', async () => {
+test('FE05 catalog state transition never mutates or creates BookCopies', async () => {
   const queries = [];
   const request = {
     input: jest.fn().mockReturnThis(),
@@ -20,10 +20,9 @@ test('changing an inventory-less book to AVAILABLE creates its first copy', asyn
   };
   getPool.mockResolvedValue({ request: () => request });
 
-  await bookRepository.updateBookAvailability(1005, 'AVAILABLE', 1);
+  await bookRepository.setBookStatus(1005, 'INACTIVE', 'Catalog cleanup', 1);
 
-  expect(queries[0]).toContain("IF @targetStatus = 'AVAILABLE'");
-  expect(queries[0]).toContain('NOT EXISTS (SELECT 1 FROM BookCopies WHERE BookId = @bookId)');
-  expect(queries[0]).toContain('INSERT INTO BookCopies');
-  expect(queries[0]).toContain("CONCAT('AUTO-B', @bookId");
+  expect(queries[0]).toContain('UPDATE Books');
+  expect(queries[0]).not.toContain('BookCopies');
+  expect(bookRepository.updateBookAvailability).toBeUndefined();
 });

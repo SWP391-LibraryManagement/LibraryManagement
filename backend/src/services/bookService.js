@@ -101,8 +101,15 @@ function mapBook(book) {
 function normalizeFilters(filters = {}) {
   const q = typeof filters.q === 'string' ? filters.q.trim() : '';
   const category = typeof filters.category === 'string' ? filters.category.trim() : '';
+  const page = normalizePositiveInt(filters.page, 'Page', { max: 100000 }) || 1;
+  const limit = normalizePositiveInt(filters.limit, 'Limit', { max: 100 }) || 20;
+  const categoryId = normalizePositiveInt(filters.categoryId, 'Category ID');
+  const authorId = normalizePositiveInt(filters.authorId, 'Author ID');
+  const publisherId = normalizePositiveInt(filters.publisherId, 'Publisher ID');
+  const sort = trimString(filters.sort) || 'createdAt';
+  const order = trimString(filters.order).toLowerCase() || 'desc';
 
-  if (q.length > 100) {
+  if (q.length > 200) {
     throw new AppException(400, 'INVALID_SEARCH_QUERY', 'Từ khóa tìm kiếm không được vượt quá 100 ký tự.');
   }
 
@@ -110,17 +117,28 @@ function normalizeFilters(filters = {}) {
     throw new AppException(400, 'INVALID_CATEGORY_FILTER', 'Tên thể loại không được vượt quá 80 ký tự.');
   }
 
+  if (!['title', 'publishYear', 'createdAt'].includes(sort) || !['asc', 'desc'].includes(order)) {
+    throw new AppException(400, 'INVALID_BOOK_QUERY', 'Invalid book sort or order value.');
+  }
+
   return {
     q,
     category: category && category !== 'Tất cả' ? category : '',
+    page,
+    limit,
+    categoryId,
+    authorId,
+    publisherId,
+    sort,
+    order,
   };
 }
 
 async function getHomeBooks(filters = {}) {
   const normalizedFilters = normalizeFilters(filters);
-  const books = await bookRepository.getHomeBooks(normalizedFilters);
+  const result = await bookRepository.getHomeBooks(normalizedFilters);
 
-  return books.map((book) => ({
+  const data = result.rows.map((book) => ({
     id: book.id,
     title: book.title,
     author: book.author || 'Không rõ tác giả',
@@ -136,6 +154,16 @@ async function getHomeBooks(filters = {}) {
     rating: book.rating === null || book.rating === undefined ? 0 : Number(book.rating),
     pages: book.pages || 0,
   }));
+
+  return {
+    data,
+    pagination: {
+      page: normalizedFilters.page,
+      limit: normalizedFilters.limit,
+      total: result.total,
+      totalPages: Math.max(Math.ceil(result.total / normalizedFilters.limit), 1),
+    },
+  };
 }
 
 function normalizeManagementFilters(filters = {}) {
@@ -173,11 +201,11 @@ async function getManagementBooks(filters = {}) {
   };
 }
 
-async function getBookById(bookId) {
+async function getBookById(bookId, { includeInactive = false } = {}) {
   const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
   const book = await bookRepository.getBookById(id);
 
-  if (!book) {
+  if (!book || (!includeInactive && book.status === 'INACTIVE')) {
     throw new AppException(404, 'BOOK_NOT_FOUND', 'Không tìm thấy sách.');
   }
 
@@ -257,38 +285,53 @@ async function normalizeBookPayload(body = {}, existingBookId = null) {
 }
 
 async function createBook(body = {}, actorUserId = null) {
+  if (body.status !== undefined || body.copyStatus !== undefined || body.availabilityStatus !== undefined) {
+    throw new AppException(400, 'READ_ONLY_BOOK_STATE', 'Book and copy state cannot be supplied with catalog metadata.');
+  }
   const payload = await normalizeBookPayload(body);
+  payload.status = 'ACTIVE';
   return mapBook(await bookRepository.createBook(payload, actorUserId));
 }
 
 async function updateBook(bookId, body = {}, actorUserId = null) {
+  if (body.status !== undefined || body.copyStatus !== undefined || body.availabilityStatus !== undefined) {
+    throw new AppException(400, 'READ_ONLY_BOOK_STATE', 'Use catalog state commands; FE05 cannot mutate copy state.');
+  }
   const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  await getBookById(id);
+  const existing = await getBookById(id, { includeInactive: true });
   const payload = await normalizeBookPayload(body, id);
+  payload.status = existing.status;
   return mapBook(await bookRepository.updateBook(id, payload, actorUserId));
 }
 
-async function deactivateBook(bookId, actorUserId = null) {
-  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  const book = await getBookById(id);
-
-  if (book.status === 'INACTIVE') {
-    return book;
+function normalizeTransitionReason(body = {}) {
+  const reason = trimString(body.reason);
+  if (!reason || reason.length > 500) {
+    throw new AppException(400, 'INVALID_ACTION_REASON', 'Reason must contain between 1 and 500 characters.');
   }
-
-  return mapBook(await bookRepository.deactivateBook(id, actorUserId));
+  return reason;
 }
 
-async function updateBookAvailability(bookId, body = {}, actorUserId = null) {
+async function deactivateBook(bookId, body = {}, actorUserId = null) {
   const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  await getBookById(id);
+  const book = await getBookById(id, { includeInactive: true });
 
-  const copyStatus = trimString(body.copyStatus || body.status).toUpperCase();
-  if (!['AVAILABLE', 'BORROWED'].includes(copyStatus)) {
-    throw new AppException(400, 'INVALID_COPY_STATUS', 'Tình trạng sách phải là AVAILABLE hoặc BORROWED.');
+  if (book.status === 'INACTIVE') {
+    throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already inactive.');
   }
 
-  return mapBook(await bookRepository.updateBookAvailability(id, copyStatus, actorUserId));
+  return mapBook(await bookRepository.setBookStatus(id, 'INACTIVE', normalizeTransitionReason(body), actorUserId));
+}
+
+async function reactivateBook(bookId, body = {}, actorUserId = null) {
+  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
+  const book = await getBookById(id, { includeInactive: true });
+
+  if (book.status === 'ACTIVE') {
+    throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already active.');
+  }
+
+  return mapBook(await bookRepository.setBookStatus(id, 'ACTIVE', normalizeTransitionReason(body), actorUserId));
 }
 
 async function getCategories() {
@@ -321,5 +364,5 @@ module.exports = {
   createBook,
   updateBook,
   deactivateBook,
-  updateBookAvailability,
+  reactivateBook,
 };

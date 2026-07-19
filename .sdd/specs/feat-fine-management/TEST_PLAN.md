@@ -1,10 +1,10 @@
 # FE09 Test Plan - Fine Management
 
-Version: 0.3.0
-Status: READY FOR REVIEW
-Last Updated: 2026-07-17
+Version: 0.3.1
+Status: APPROVED BASELINE; IMPLEMENTATION FOLLOW-UP PENDING
+Last Updated: 2026-07-19
 
-Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.0
+Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -14,8 +14,8 @@ Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this
 
 Server-side overdue fine calculation, duplicate prevention, full offline collection, paid/waived/
 cancelled terminal states, audit logging, FE07 eligibility readback, deterministic fine lists, and
-role-protected visibility. The legacy prototype CRUD (`fineService.js`) is kept only for the demo UI
-and is covered separately by `fineRoutes.test.js`; it is not production completion evidence.
+role-protected visibility. Legacy `POST`/`PUT`/`DELETE /api/fines` CRUD routes are not part of the
+production contract and must remain unregistered; `fineRoutes.test.js` verifies that boundary.
 
 The normalization tasks are contract work awaiting human review. Historical test results do not prove
 FE09-T013 through FE09-T020 are complete.
@@ -54,8 +54,8 @@ FE09-T013 through FE09-T020 are complete.
 
 ## 5. Current Evidence
 
-- `backend/tests/fineManagementRoutes.test.js` contains the historical server-side route coverage (11 tests; AC-FE09-001..010).
-- `backend/tests/fineRoutes.test.js` covers the retained legacy prototype CRUD separately.
+- `backend/tests/fineManagementRoutes.test.js` covers the current server-side route behavior, including full-only collection.
+- `backend/tests/fineRoutes.test.js` verifies staff list RBAC and that legacy CRUD mutation routes return `404`.
 - FE09-T013 through FE09-T020 focused contract, SQL concurrency, and frontend-boundary tests have not yet been added; no completion claim is made for them.
 
 ## 6. Gaps

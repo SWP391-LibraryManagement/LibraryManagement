@@ -156,8 +156,8 @@ These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- The baseline `SPEC.md`, `PLAN.md`, and `TASKS.md` are approved; implement only the ordered task currently in scope.
+- Prototype behavior is not completion evidence; record fresh focused validation for each task.
 - ISBN validation must be enforced on the server.
 - Status-based deactivation is required; physical deletion is forbidden in Phase 1.
 - Search APIs should support pagination and filtering.

@@ -954,10 +954,6 @@ const HomePage = () => {
     setShowLogoutConfirm(false);
   };
 
-  const markDemoLoggedIn = () => {
-    setAuthState((current) => ({ ...current, isLoggedIn: true }));
-  };
-
   const goToMembership = () => {
     navigate(isLoggedIn ? '/membership' : '/login');
   };
@@ -1367,7 +1363,7 @@ const HomePage = () => {
                       background: book.available ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
                       color: '#FFF', fontSize: 10, fontWeight: 700,
                     }}>
-                      {book.available ? 'CÒN SÁCH' : 'ĐÃ MƯỢN'}
+                      {book.available ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
                     </div>
                   </div>
                   <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -1442,7 +1438,7 @@ const HomePage = () => {
                   background: book.available ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
                   color: '#FFF', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
                 }}>
-                  {book.available ? 'CÒN SÁCH' : 'ĐÃ MƯỢN'}
+                  {book.available ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
                 </div>
               </div>
               <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -1556,8 +1552,8 @@ const HomePage = () => {
               { title: 'Tài khoản', links: [
                 { label: 'Đăng nhập', action: () => {} },
                 { label: 'Đăng ký', action: () => {} },
-                { label: 'Sách đang mượn', action: () => isLoggedIn ? showToast('Chưa có sách đang mượn.') : markDemoLoggedIn() },
-                { label: 'Lịch sử đọc', action: () => isLoggedIn ? showToast('Chưa có lịch sử đọc.') : markDemoLoggedIn() },
+                { label: 'Sách đang mượn', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
+                { label: 'Lịch sử đọc', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
               ]},
               { title: 'Hỗ trợ', links: [
                 { label: 'Trung tâm trợ giúp', action: () => showToast('Trung tâm trợ giúp sẽ sớm ra mắt!') },

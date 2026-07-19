@@ -194,16 +194,11 @@ function createFineManagementService({
       throw errors.conflict('FINE_NOT_COLLECTIBLE', `Fine is already ${fine.status} and cannot be collected.`);
     }
 
-    const collectedAmount =
-      input.collectedAmount === undefined || input.collectedAmount === null || input.collectedAmount === ''
-        ? fine.amount
-        : Number(input.collectedAmount);
-
-    if (!Number.isFinite(collectedAmount) || collectedAmount < 0 || collectedAmount > fine.amount) {
-      throw errors.badRequest('INVALID_COLLECTED_AMOUNT', `Collected amount must be between 0 and ${fine.amount}.`);
+    if (input.collectedAmount !== undefined) {
+      throw errors.badRequest('COLLECTED_AMOUNT_NOT_ALLOWED', 'Partial or client-supplied collection amounts are not supported in Phase 1.');
     }
-
-    const fullyCollected = collectedAmount >= fine.amount;
+    const collectedAmount = fine.amount;
+    const fullyCollected = true;
     const updated = await fineRepository.recordCollection({
       fineId,
       collectedAmount,
@@ -267,7 +262,7 @@ function createFineManagementService({
     const fineId = toPositiveInteger(fineIdInput, 'Fine ID');
     const reason = String(input.reason || '').trim();
 
-    if (!reason) {
+    if (!reason || reason.length > 500) {
       throw errors.badRequest('REASON_REQUIRED', 'A reason is required to waive or cancel a fine.');
     }
 

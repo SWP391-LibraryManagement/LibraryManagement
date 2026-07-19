@@ -49,16 +49,16 @@ const RESERVATION_ERROR_MESSAGES = {
 
 export function getLibraryFeatureErrorMessage(error, fallback = 'Không thể tải dữ liệu từ backend.') {
   if (!error.response) {
-    return 'Không kết nối được backend. UI đang dùng dữ liệu demo để bạn vẫn kiểm tra được màn hình.';
+    return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
   }
 
   const code = error.response?.data?.error?.code;
   if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
-    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. UI đang hiển thị dữ liệu demo.';
+    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
   }
 
   if (error.response?.status === 403) {
-    return 'Tài khoản hiện tại không có quyền xem dữ liệu này. UI đang hiển thị dữ liệu demo.';
+    return 'Tài khoản hiện tại không có quyền xem dữ liệu này.';
   }
 
   const details = error.response?.data?.error?.details;

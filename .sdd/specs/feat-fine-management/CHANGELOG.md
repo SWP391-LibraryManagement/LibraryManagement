@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-19 - Production Boundary Reconciliation In Progress
+
+- Removed legacy create/update/delete fine routes from the production router and converted their tests to assert `404`.
+- Enforced Phase 1 full-only offline collection by rejecting every client-supplied `collectedAmount`.
+- Reconciled `TEST_PLAN.md` and the approved v0.4.1 review-gate decisions; timezone, pagination, concurrency, atomic audit, and full traceability tasks remain open.
+
 ## 2026-07-18 - Librarian Fine Page Restored
 
 - Restored the `Quản lý tiền phạt` sidebar item and `/librarian/fines` page after clarifying that only the redundant embedded book workspace should be removed.

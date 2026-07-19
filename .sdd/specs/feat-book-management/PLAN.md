@@ -30,7 +30,7 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 
 | Approved contract | Current drift to reconcile |
 | --- | --- |
-| FE05 never mutates `BookCopies.Status` | `PATCH /api/books/{bookId}/availability`, service/repository methods, UI controls, and frontend tests still perform copy-status mutation. |
+| FE05 never mutates `BookCopies.Status` | Reconciled 2026-07-19: the legacy `/availability` route and repository mutation were removed, UI copy-state controls were removed, and regression tests now enforce read-only derived availability. |
 | Existing-book mutations require `If-Match`/SQL `rowversion` | `Books` has no rowversion column and current update/deactivate paths accept no version. |
 | Status changes use dedicated deactivate/reactivate commands with reason | Reactivation endpoint is missing; update payload may change status; deactivation has no required reason. |
 | Public and staff lists use deterministic pagination/sort policy | Current filters and endpoints use prototype shapes and incomplete validation. |

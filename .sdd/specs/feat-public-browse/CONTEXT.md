@@ -143,8 +143,8 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 10. Notes For Implementation Later
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
+- The baseline `SPEC.md`, `PLAN.md`, and `TASKS.md` are approved; implementation follow-up remains pending.
+- Prototype behavior is not completion evidence; follow the ordered tasks and record fresh validation.
 - Keep public browse endpoints read-only.
 - Return only public-safe book fields.
 - Search and detail behavior must stay consistent with FE05 and FE06.
