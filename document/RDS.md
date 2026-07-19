@@ -316,3 +316,51 @@ This section describes the screens shown in the Screens Flow above.
 | 19 | Reporting & Statistics | Inventory Report | Shows inventory and availability report data. |
 | 20 | Reporting & Statistics | User Statistics | Shows user statistics for administrative review. |
 | 21 | User & Role Management | Admin User Management | Allows admin users to manage user accounts, librarian accounts, roles, permissions, audit logs, and admin console sections. |
+
+### 2.3 Screen Authorization
+
+This section defines which system roles can access each screen or activity.
+
+| Screen / Activity | Guest | Member | Librarian | Admin |
+| ----------------- | ----- | ------ | --------- | ----- |
+| Login | X | X | X | X |
+| Register | X |  |  |  |
+| Forgot Password | X | X | X | X |
+| Home | X | X | X | X |
+| Public Book Homepage | X | X | X | X |
+| User Profile |  | X | X | X |
+| Membership |  | X | X | X |
+| Apply for membership |  | X |  |  |
+| View own membership status |  | X |  |  |
+| Review membership application |  |  | X | X |
+| Book Management |  |  | X | X |
+| Query book data | X | X | X | X |
+| Add book data |  |  | X | X |
+| Update book data |  |  | X | X |
+| Deactivate or reactivate book data |  |  | X | X |
+| Inventory |  |  | X | X |
+| Query copy data |  |  | X | X |
+| Add copy data |  |  | X | X |
+| Update copy data |  |  | X | X |
+| Deactivate copy data |  |  | X | X |
+| Create Borrow Request |  | X |  |  |
+| Borrowing History |  | X |  |  |
+| Borrow Requests |  |  | X | X |
+| Approve or reject borrow request |  |  | X | X |
+| Process Returns |  |  | X | X |
+| Member Borrowing Details |  |  | X | X |
+| My Reservations |  | X |  |  |
+| Create or cancel own reservation |  | X |  |  |
+| Reservation Management |  |  | X | X |
+| Process reservation queue |  |  | X | X |
+| Fine Management |  |  | X | X |
+| View own fine information |  | X |  |  |
+| Calculate or update fine data |  |  | X | X |
+| Mark fine as paid or resolved |  |  | X | X |
+| Borrowing Report |  |  | X | X |
+| Inventory Report |  |  | X | X |
+| User Statistics |  |  | X | X |
+| Admin User Management |  |  |  | X |
+| Create or update user account |  |  |  | X |
+| Manage roles and permissions |  |  |  | X |
+| View audit logs |  |  |  | X |
