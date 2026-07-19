@@ -110,43 +110,43 @@ A use case describes a sequence of interactions between an external actor and th
 ##### Figure 1. Overall Use Case Diagram
 
 ```mermaid
-flowchart LR
-  Guest[Guest]
-  Member[Member]
-  Librarian[Librarian]
-  Admin[Admin]
-  NotificationService[Notification Service]
-  DatabaseSystem[Database System]
-
-  subgraph LMS[Library Management System]
+flowchart TB
+  subgraph Actors[Actors]
     direction LR
-    subgraph PublicMember[Public And Member Functions]
-      direction TB
-      UC01((Browse Books))
-      UC02((Manage Account Access))
-      UC03((Manage Profile))
-      UC04((Apply For Membership))
-      UC07((Borrow Books))
-      UC08((Reserve Books))
-      UC09((Manage Fines))
-    end
+    Guest[Guest]
+    Member[Member]
+    Librarian[Librarian]
+    Admin[Admin]
+    NotificationService[Notification Service]
+    DatabaseSystem[Database System]
+  end
 
-    subgraph StaffAdmin[Staff And Admin Functions]
-      direction TB
-      UC05((Manage Books))
-      UC06((Manage Book Copies))
-      UC07S((Process Borrowing))
-      UC08S((Manage Reservations))
-      UC09S((Manage Fines))
-      UC11((Manage Users And Roles))
-      UC12((Generate Reports))
-    end
+  subgraph PublicMember[Public And Member Use Cases]
+    direction LR
+    UC01((Browse Books))
+    UC02((Manage Account Access))
+    UC03((Manage Profile))
+    UC04((Apply For Membership))
+    UC07((Borrow Books))
+    UC08((Reserve Books))
+    UC09((Manage Fines))
+  end
 
-    subgraph Support[Support Functions]
-      direction TB
-      UC10((Send Notifications))
-      UCDB((Persist Library Data))
-    end
+  subgraph StaffAdmin[Staff And Admin Use Cases]
+    direction LR
+    UC05((Manage Books))
+    UC06((Manage Book Copies))
+    UC07S((Process Borrowing))
+    UC08S((Manage Reservations))
+    UC09S((Manage Fines))
+    UC11((Manage Users And Roles))
+    UC12((Generate Reports))
+  end
+
+  subgraph Support[Support Use Cases]
+    direction LR
+    UC10((Send Notifications))
+    UCDB((Persist Library Data))
   end
 
   Guest --> UC01
