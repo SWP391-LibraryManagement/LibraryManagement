@@ -6,7 +6,7 @@
 - Added canonical `{ email, otp }` verification and password-reset coverage, including OTP consumption and password-state assertions.
 - Kept the internal `AUTH_LOGIN_INACTIVE` audit event while returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts.
 - Closed the IP-wide rate-limit question as an approved Phase 1 non-goal under `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005`.
-- Focused `authRoutes.test.js` validation passes 30/30; full backend regression passes 893/893 with coverage, system integration, and traceability green; PR CI association is the next gate.
+- Focused `authRoutes.test.js` validation passes 30/30; full backend regression passes 893/893 with coverage, system integration, and traceability green; PR CI run `29680011551` passes on implementation commit `0040e0f`.
 
 ## 2026-07-19 - OTP Requester And Refresh Reconciliation
 
