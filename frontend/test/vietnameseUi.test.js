@@ -97,3 +97,23 @@ test('public and member pages translate generated copy while preserving source d
   assert.match(viewModels, /`Bản sao #/);
   assert.match(viewModels, /`Thành viên #/);
 });
+
+test('librarian and report surfaces remove known English interface copy', async () => {
+  const files = {
+    books: await readFile(new URL('../src/page/BookManagement.jsx', import.meta.url), 'utf8'),
+    copies: await readFile(new URL('../src/component/inventory/BookCopies.jsx', import.meta.url), 'utf8'),
+    inventory: await readFile(new URL('../src/component/inventory/InventoryManagement.jsx', import.meta.url), 'utf8'),
+    borrowingReport: await readFile(new URL('../src/page/report/BorrowingReportPage.jsx', import.meta.url), 'utf8'),
+    inventoryReport: await readFile(new URL('../src/page/report/InventoryReportPage.jsx', import.meta.url), 'utf8'),
+    userReport: await readFile(new URL('../src/page/report/UserStatisticsPage.jsx', import.meta.url), 'utf8'),
+  };
+
+  assert.doesNotMatch(files.books, /Book title is required|Add Book|Save Changes|Select a book|No description/);
+  assert.match(files.books, /Tên sách là bắt buộc|Thêm sách|Lưu thay đổi|Chọn một cuốn sách|Chưa có mô tả/);
+  assert.match(files.copies, /caption="Danh sách bản sao"/);
+  assert.match(files.inventory, /caption="Danh sách bản sao trong kho"/);
+  assert.match(files.borrowingReport, /caption="Chi tiết báo cáo mượn trả"/);
+  assert.match(files.inventoryReport, /caption="Danh sách sách sắp hết"/);
+  assert.match(files.userReport, /caption="Tổng hợp thống kê người dùng"/);
+  assert.doesNotMatch(files.userReport, /User ID|Membership|User statistics/);
+});

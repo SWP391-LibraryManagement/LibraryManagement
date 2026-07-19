@@ -13,6 +13,7 @@ import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/sha
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildDateRangeReportParams } from '../../utils/reportFilters';
+import { getRoleLabel, getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
@@ -60,10 +61,10 @@ export default function UserStatisticsPage() {
   const newMembers = Object.values(metrics.newMembersByPeriod || {})
     .reduce((total, value) => total + Number(value || 0), 0);
   const kpis = [
-    { label: 'Tổng người dùng', value: totalRows, icon: Users, hint: 'aggregate only' },
+    { label: 'Tổng người dùng', value: totalRows, icon: Users, hint: 'Chỉ dữ liệu tổng hợp' },
     { label: 'Thành viên', value: metrics.totalMembers, icon: UserCheck, hint: 'usersByRole.MEMBER' },
     { label: 'Mới theo kỳ', value: newMembers, icon: UserPlus, hint: 'newMembersByPeriod' },
-    { label: 'Đang chờ duyệt', value: pendingMembers, icon: Clock, hint: 'membership pending' },
+    { label: 'Đang chờ duyệt', value: pendingMembers, icon: Clock, hint: 'Hội viên chờ duyệt' },
   ];
   const roleRows = objectToChart(metrics.usersByRole);
 
@@ -79,9 +80,9 @@ export default function UserStatisticsPage() {
         filters={(
           <div className="field report-date-filter">
             <Calendar size={16} className="muted" />
-            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
             <span className="muted">-</span>
-            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
             <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
           </div>
         )}
@@ -121,27 +122,27 @@ export default function UserStatisticsPage() {
           </div>
 
           <div className="lib-card">
-            <h3 className="lib-card-title">Tổng hợp theo vai trò và membership</h3>
+            <h3 className="lib-card-title">Tổng hợp theo vai trò và hội viên</h3>
             <DataTable
-              caption="User statistics summary table"
+              caption="Tổng hợp thống kê người dùng"
               headers={['Nhóm', 'Số lượng', 'Nguồn', 'Trạng thái']}
               isEmpty={!roleRows.length && !membershipRows.length}
               emptyState={<EmptyState icon={Users} title="Không có dữ liệu vai trò" />}
             >
               {roleRows.map((row) => (
                 <tr key={row.label}>
-                  <td data-label="Nhóm"><strong>{row.label}</strong></td>
+                  <td data-label="Nhóm"><strong>{getRoleLabel(row.label)}</strong></td>
                   <td data-label="Số lượng"><strong>{fmtNumber(row.value)}</strong></td>
-                  <td data-label="Nguồn">usersByRole</td>
-                  <td data-label="Trạng thái"><Badge status="Active" /></td>
+                  <td data-label="Nguồn">Theo vai trò người dùng</td>
+                  <td data-label="Trạng thái"><Badge status="Active">{getStatusLabel('Active')}</Badge></td>
                 </tr>
               ))}
               {membershipRows.map((row) => (
                 <tr key={`member-${row.label}`}>
-                  <td data-label="Nhóm"><strong>Membership {row.label}</strong></td>
+                  <td data-label="Nhóm"><strong>Hội viên: {getStatusLabel(row.label)}</strong></td>
                   <td data-label="Số lượng"><strong>{fmtNumber(row.value)}</strong></td>
-                  <td data-label="Nguồn">membershipByStatus</td>
-                  <td data-label="Trạng thái"><Badge status={row.label} /></td>
+                  <td data-label="Nguồn">Theo trạng thái hội viên</td>
+                  <td data-label="Trạng thái"><Badge status={row.label}>{getStatusLabel(row.label)}</Badge></td>
                 </tr>
               ))}
             </DataTable>
@@ -150,17 +151,17 @@ export default function UserStatisticsPage() {
           <div className="lib-card">
             <h3 className="lib-card-title">Chi tiết người dùng ({fmtNumber(totalRows)})</h3>
             <DataTable
-              caption="User statistics detail rows"
-              headers={['User ID', 'Trạng thái', 'Vai trò', 'Membership', 'Ngày tạo', 'Ngày duyệt']}
+              caption="Chi tiết thống kê người dùng"
+              headers={['Mã người dùng', 'Trạng thái', 'Vai trò', 'Hội viên', 'Ngày tạo', 'Ngày duyệt']}
               isEmpty={!rows.length}
               emptyState={<EmptyState icon={Users} title="Không có người dùng khớp bộ lọc" />}
             >
               {rows.map((row) => (
                 <tr key={row.userId}>
-                  <td data-label="User ID"><strong>#{row.userId}</strong></td>
-                  <td data-label="Trạng thái"><Badge status={row.status}>{row.status}</Badge></td>
-                  <td data-label="Vai trò">{row.roles?.join(', ') || '-'}</td>
-                  <td data-label="Membership">{row.membershipStatus ? <Badge status={row.membershipStatus}>{row.membershipStatus}</Badge> : '-'}</td>
+                  <td data-label="Mã người dùng"><strong>#{row.userId}</strong></td>
+                  <td data-label="Trạng thái"><Badge status={row.status}>{getStatusLabel(row.status)}</Badge></td>
+                  <td data-label="Vai trò">{row.roles?.map(getRoleLabel).join(', ') || '-'}</td>
+                  <td data-label="Hội viên">{row.membershipStatus ? <Badge status={row.membershipStatus}>{getStatusLabel(row.membershipStatus)}</Badge> : '-'}</td>
                   <td data-label="Ngày tạo">{fmtDate(row.createdAt)}</td>
                   <td data-label="Ngày duyệt">{fmtDate(row.approvedAt)}</td>
                 </tr>

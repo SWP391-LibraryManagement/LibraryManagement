@@ -13,6 +13,7 @@ import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/sha
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildInventoryReportParams } from '../../utils/reportFilters';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t: 'Sắp hết' }, out: { s: 'overdue', t: 'Hết hàng' } };
@@ -170,8 +171,8 @@ export default function InventoryReportPage() {
           <div className="lib-card">
             <h3 className="lib-card-title">Đầu sách cần theo dõi tồn kho</h3>
             <DataTable
-              caption="Low inventory books table"
-              headers={['Sách', 'Book ID', 'Khả dụng hiệu lực', 'Trạng thái']}
+              caption="Danh sách sách sắp hết"
+              headers={['Sách', 'Mã sách', 'Khả dụng hiệu lực', 'Trạng thái']}
               isEmpty={!lowBooks.length}
               emptyState={<EmptyState icon={Library} title="Không có đầu sách tồn kho thấp" />}
             >
@@ -180,8 +181,8 @@ export default function InventoryReportPage() {
                 const key = available === 0 ? 'out' : available <= 2 ? 'low' : 'ok';
                 return (
                   <tr key={`${book.bookId || book.title}-${index}`} className={key !== 'ok' ? 'row-overdue' : ''}>
-                    <td data-label="Sách"><strong>{book.title || `Book #${book.bookId}`}</strong></td>
-                    <td data-label="Book ID">#{book.bookId}</td>
+                    <td data-label="Sách"><strong>{book.title || `Sách #${book.bookId}`}</strong></td>
+                    <td data-label="Mã sách">#{book.bookId}</td>
                     <td data-label="Khả dụng hiệu lực"><strong>{fmtNumber(available)}</strong></td>
                     <td data-label="Trạng thái"><Badge status={STOCK_BADGE[key].s}>{STOCK_BADGE[key].t}</Badge></td>
                   </tr>
@@ -193,18 +194,18 @@ export default function InventoryReportPage() {
           <div className="lib-card">
             <h3 className="lib-card-title">Chi tiết bản sao ({fmtNumber(totalRows)})</h3>
             <DataTable
-              caption="Inventory report detail rows"
+              caption="Chi tiết báo cáo tồn kho"
               headers={['Sách', 'Bản sao', 'Barcode', 'Vị trí', 'Trạng thái', 'Khả dụng hiệu lực']}
               isEmpty={!rows.length}
               emptyState={<EmptyState icon={Copy} title="Không có bản sao khớp bộ lọc" />}
             >
               {rows.map((row) => (
                 <tr key={row.copyId}>
-                  <td data-label="Sách"><strong>{row.title || `Book #${row.bookId}`}</strong></td>
+                  <td data-label="Sách"><strong>{row.title || `Sách #${row.bookId}`}</strong></td>
                   <td data-label="Bản sao">#{row.copyId}</td>
                   <td data-label="Barcode">{row.barcode || '-'}</td>
                   <td data-label="Vị trí">{row.location || '-'}</td>
-                  <td data-label="Trạng thái"><Badge status={row.status}>{row.status}</Badge></td>
+                  <td data-label="Trạng thái"><Badge status={row.status}>{getStatusLabel(row.status)}</Badge></td>
                   <td data-label="Khả dụng hiệu lực">{fmtNumber(row.effectiveAvailability)}</td>
                 </tr>
               ))}

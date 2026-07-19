@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getBookErrorMessage } from '../api/apiErrorMessages';
 import { authorizedRequest } from '../api/libraryFeatureApi';
+import { getStatusLabel } from '../utils/uiLabels';
 
 const DEFAULT_FORM = {
   title: '',
@@ -64,23 +65,23 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
     String(book.isbn || '').toLowerCase() === isbn.toLowerCase() && Number(book.id) !== Number(editingBookId)
   ));
 
-  if (!title) errors.title = 'Book title is required.';
-  if (title.length > 255) errors.title = 'Book title must be 255 characters or fewer.';
-  if (isbn.length > 20) errors.isbn = 'ISBN must be 20 characters or fewer.';
-  if (duplicate) errors.isbn = 'ISBN already exists.';
-  if (!form.categoryId) errors.categoryId = 'Category is required.';
-  if (!form.authorId) errors.authorId = 'Author is required.';
+  if (!title) errors.title = 'Tên sách là bắt buộc.';
+  if (title.length > 255) errors.title = 'Tên sách không được vượt quá 255 ký tự.';
+  if (isbn.length > 20) errors.isbn = 'ISBN không được vượt quá 20 ký tự.';
+  if (duplicate) errors.isbn = 'ISBN đã tồn tại.';
+  if (!form.categoryId) errors.categoryId = 'Thể loại là bắt buộc.';
+  if (!form.authorId) errors.authorId = 'Tác giả là bắt buộc.';
   if (publishYear && (!Number.isInteger(publishYear) || publishYear < 1 || publishYear > currentYear)) {
-    errors.publishYear = `Publish year must not be greater than ${currentYear}.`;
+    errors.publishYear = `Năm xuất bản không được lớn hơn ${currentYear}.`;
   }
-  if (pages && (!Number.isInteger(pages) || pages < 1 || pages > 10000)) errors.pages = 'Pages must be from 1 to 10000.';
+  if (pages && (!Number.isInteger(pages) || pages < 1 || pages > 10000)) errors.pages = 'Số trang phải từ 1 đến 10000.';
   if (!Number.isFinite(rating) || rating < 0 || rating > 5 || !Number.isInteger(rating * 10)) {
-    errors.rating = 'Rating must be between 0 and 5 with at most one decimal place.';
+    errors.rating = 'Điểm đánh giá phải từ 0 đến 5 và có tối đa một chữ số thập phân.';
   }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
-    errors.coverUrl = 'Cover URL must start with http(s) or /.';
+    errors.coverUrl = 'URL ảnh bìa phải bắt đầu bằng http(s) hoặc /.';
   }
-  if (form.description.length > 2000) errors.description = 'Description must be 2000 characters or fewer.';
+  if (form.description.length > 2000) errors.description = 'Mô tả không được vượt quá 2000 ký tự.';
 
   return errors;
 }
@@ -135,7 +136,7 @@ function BookForm({
   return (
     <form className="bm-form" onSubmit={onSubmit}>
       <label>
-        <span>Book Title</span>
+        <span>Tên sách</span>
         <input value={form.title} onChange={(event) => update('title', event.target.value)} maxLength={255} />
         <FieldError message={errors.title} />
       </label>
@@ -147,57 +148,57 @@ function BookForm({
       </label>
 
       <label>
-        <span>Category</span>
+        <span>Thể loại</span>
         <select value={form.categoryId} onChange={(event) => update('categoryId', event.target.value)}>
-          <option value="">Select category</option>
+          <option value="">Chọn thể loại</option>
           {metadata.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <FieldError message={errors.categoryId} />
       </label>
 
       <label>
-        <span>Author</span>
+        <span>Tác giả</span>
         <select value={form.authorId} onChange={(event) => update('authorId', event.target.value)}>
-          <option value="">Select author</option>
+          <option value="">Chọn tác giả</option>
           {metadata.authors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
         <FieldError message={errors.authorId} />
       </label>
 
       <label>
-        <span>Publisher</span>
+        <span>Nhà xuất bản</span>
         <select value={form.publisherId} onChange={(event) => update('publisherId', event.target.value)}>
-          <option value="">No publisher</option>
+          <option value="">Không có nhà xuất bản</option>
           {metadata.publishers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </label>
 
       <label>
-        <span>Publish Year</span>
+        <span>Năm xuất bản</span>
         <input type="number" value={form.publishYear} onChange={(event) => update('publishYear', event.target.value)} />
         <FieldError message={errors.publishYear} />
       </label>
 
       <label>
-        <span>Pages</span>
+        <span>Số trang</span>
         <input type="number" min="1" max="10000" value={form.pages} onChange={(event) => update('pages', event.target.value)} />
         <FieldError message={errors.pages} />
       </label>
 
       <label>
-        <span>Rating</span>
+        <span>Điểm đánh giá</span>
         <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => update('rating', event.target.value)} />
         <FieldError message={errors.rating} />
       </label>
 
       <label className="bm-wide">
-        <span>Cover URL</span>
+        <span>URL ảnh bìa</span>
         <input value={form.coverUrl} onChange={(event) => update('coverUrl', event.target.value)} maxLength={255} />
         <FieldError message={errors.coverUrl} />
       </label>
 
       <label className="bm-wide">
-        <span>Description</span>
+        <span>Mô tả</span>
         <textarea value={form.description} onChange={(event) => update('description', event.target.value)} rows={4} maxLength={2000} />
         <FieldError message={errors.description} />
       </label>
@@ -324,12 +325,12 @@ export default function BookManagement() {
     const keyword = searchQuery.trim();
 
     if (!keyword) {
-      showToast('Please enter a search keyword.', 'error');
+      showToast('Vui lòng nhập từ khóa tìm kiếm.', 'error');
       return;
     }
 
     if (keyword.length > 200) {
-      showToast('Search keyword must be 200 characters or fewer.', 'error');
+      showToast('Từ khóa tìm kiếm không được vượt quá 200 ký tự.', 'error');
       return;
     }
 
@@ -350,7 +351,7 @@ export default function BookManagement() {
 
   const handleViewDetails = async (bookId = selectedBookId) => {
     if (!bookId) {
-      showToast('Please select a book first.', 'error');
+      showToast('Vui lòng chọn một cuốn sách trước.', 'error');
       return;
     }
 
@@ -372,7 +373,7 @@ export default function BookManagement() {
     setAddErrors(errors);
 
     if (Object.keys(errors).length) {
-      showToast('Please fix the highlighted Add Book fields before submitting.', 'error');
+      showToast('Vui lòng sửa các trường được đánh dấu trước khi thêm sách.', 'error');
       return;
     }
 
@@ -391,7 +392,7 @@ export default function BookManagement() {
       showToast('Đã thêm sách và tải lại danh sách theo trạng thái chuẩn.');
     } catch (error) {
       if (/isbn/i.test(error.message)) {
-        setAddErrors((current) => ({ ...current, isbn: 'ISBN already exists. Please use a unique ISBN or leave it blank.' }));
+        setAddErrors((current) => ({ ...current, isbn: 'ISBN đã tồn tại. Vui lòng dùng ISBN khác hoặc để trống.' }));
       }
       showToast(error.message, 'error');
     } finally {
@@ -402,7 +403,7 @@ export default function BookManagement() {
   const handleUpdateBook = async (event) => {
     event.preventDefault();
     if (!selectedBookId) {
-      showToast('Please select a book to update.', 'error');
+      showToast('Vui lòng chọn sách cần cập nhật.', 'error');
       return;
     }
 
@@ -430,13 +431,13 @@ export default function BookManagement() {
 
   const handleStatusChange = async () => {
     if (!selectedBook) {
-      showToast('Please select a book before changing status.', 'error');
+      showToast('Vui lòng chọn sách trước khi đổi trạng thái.', 'error');
       return;
     }
 
     const reason = statusReason.trim();
     if (!statusConfirmed) {
-      showToast('Please confirm the status change before submitting.', 'error');
+      showToast('Vui lòng xác nhận thay đổi trạng thái trước khi gửi.', 'error');
       return;
     }
 
@@ -487,16 +488,16 @@ export default function BookManagement() {
         <thead>
           <tr>
             <th>STT</th>
-            <th>Title</th>
+            <th>Tên sách</th>
             <th>ISBN</th>
-            <th>Category</th>
-            <th>Author</th>
-            <th>Publisher</th>
-            <th>Year</th>
-            <th>Pages</th>
-            <th>Rating</th>
-            <th>Status</th>
-            <th>Copies</th>
+            <th>Thể loại</th>
+            <th>Tác giả</th>
+            <th>Nhà xuất bản</th>
+            <th>Năm xuất bản</th>
+            <th>Số trang</th>
+            <th>Điểm đánh giá</th>
+            <th>Trạng thái</th>
+            <th>Bản sao</th>
             <th></th>
           </tr>
         </thead>
@@ -522,7 +523,7 @@ export default function BookManagement() {
               <td>
                 <button type="button" onClick={() => { setSelectedBookId(String(book.id)); handleViewDetails(book.id); }}>
                   <Eye size={15} />
-                  View
+                  Xem
                 </button>
               </td>
             </tr>
@@ -548,12 +549,12 @@ export default function BookManagement() {
     <section className="bm-panel">
       <div className="bm-panel-head">
         <div>
-          <p>Book Detail</p>
-          <h2>{detailBook?.title || 'Select a book'}</h2>
+          <p>Chi tiết sách</p>
+          <h2>{detailBook?.title || 'Chọn một cuốn sách'}</h2>
         </div>
         <button className="bm-soft" onClick={() => handleViewDetails()}>
           <RefreshCw size={16} />
-          Reload
+          Tải lại
         </button>
       </div>
       {detailBook ? (
@@ -567,19 +568,19 @@ export default function BookManagement() {
             <h3>{detailBook.title}</h3>
             <dl>
               <dt>ISBN</dt><dd>{detailBook.isbn || '-'}</dd>
-              <dt>Author</dt><dd>{detailBook.author}</dd>
-              <dt>Category</dt><dd>{detailBook.category}</dd>
-              <dt>Publisher</dt><dd>{detailBook.publisher}</dd>
-              <dt>Publish Year</dt><dd>{detailBook.year || '-'}</dd>
-              <dt>Pages</dt><dd>{detailBook.pages || '-'}</dd>
-              <dt>Rating</dt><dd>{detailBook.rating}/5</dd>
-              <dt>Copies</dt><dd>{detailBook.availableCopies || 0} available / {detailBook.totalCopies || 0} total</dd>
+              <dt>Tác giả</dt><dd>{detailBook.author}</dd>
+              <dt>Thể loại</dt><dd>{detailBook.category}</dd>
+              <dt>Nhà xuất bản</dt><dd>{detailBook.publisher}</dd>
+              <dt>Năm xuất bản</dt><dd>{detailBook.year || '-'}</dd>
+              <dt>Số trang</dt><dd>{detailBook.pages || '-'}</dd>
+              <dt>Điểm đánh giá</dt><dd>{detailBook.rating}/5</dd>
+              <dt>Bản sao</dt><dd>{detailBook.availableCopies || 0} có sẵn / {detailBook.totalCopies || 0} tổng cộng</dd>
             </dl>
-            <p>{detailBook.description || 'No description.'}</p>
+            <p>{detailBook.description || 'Chưa có mô tả.'}</p>
           </div>
         </div>
       ) : (
-        <div className="bm-empty">Choose a book from the list to view details.</div>
+        <div className="bm-empty">Chọn một cuốn sách trong danh sách để xem chi tiết.</div>
       )}
     </section>
   );
@@ -618,8 +619,8 @@ export default function BookManagement() {
             <div className="bm-filters">
               <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
                 <option value="">Tất cả trạng thái</option>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
+                <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
               </select>
               <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(1); }}>
                 <option value="">Tất cả danh mục</option>
@@ -637,14 +638,14 @@ export default function BookManagement() {
         <section className="bm-two-column">
           <section className="bm-panel">
             <div className="bm-panel-head">
-              <div><p>Create catalog record</p><h2>Add Book</h2></div>
+              <div><p>Tạo bản ghi danh mục</p><h2>Thêm sách</h2></div>
             </div>
             <BookForm
               form={addForm}
               setForm={setAddForm}
               metadata={metadata}
               errors={addErrors}
-              submitLabel="Add Book"
+              submitLabel="Thêm sách"
               onSubmit={handleAddBook}
               disabled={saving}
             />
@@ -652,7 +653,7 @@ export default function BookManagement() {
 
           <section className="bm-panel">
             <div className="bm-panel-head">
-              <div><p>Edit selected record</p><h2>Update Book Information</h2></div>
+              <div><p>Chỉnh sửa bản ghi đã chọn</p><h2>Cập nhật thông tin sách</h2></div>
             </div>
             {selectedBook ? (
               <BookForm
@@ -660,12 +661,12 @@ export default function BookManagement() {
                 setForm={setUpdateForm}
                 metadata={metadata}
                 errors={updateErrors}
-                submitLabel="Save Changes"
+                submitLabel="Lưu thay đổi"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
               />
             ) : (
-              <div className="bm-empty">Select a book before updating.</div>
+              <div className="bm-empty">Chọn sách trước khi cập nhật.</div>
             )}
           </section>
         </section>
@@ -707,7 +708,7 @@ export default function BookManagement() {
               </div>
             </div>
           ) : (
-            <div className="bm-empty">Select a book before changing status.</div>
+            <div className="bm-empty">Chọn sách trước khi thay đổi trạng thái.</div>
           )}
         </section>
       </main>
