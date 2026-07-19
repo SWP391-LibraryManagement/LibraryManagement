@@ -6,13 +6,13 @@ Branch: `feat/full-reconciliation`
 
 Draft PR: #40
 
-Recorded implementation/evidence head: `ed7376ffe9462bcb79812c472adaa0c89361f9ef`
+Recorded implementation/evidence head: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 
-Recorded CI: `29682997784` - PASS
+Recorded CI: `29685337907` - PASS
 
-Latest docs-only PR head checked: `199fa36437ee5a54de85c0836fd01e26a4e356ed`
+Latest pushed PR head checked: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 
-Latest CI: `29683107536` - PASS
+Latest CI: `29685337907` - PASS
 
 ## Purpose
 
@@ -33,7 +33,7 @@ until a named reviewer records an explicit decision.
 | Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
 | Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
 | Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 is draft; implementation/evidence CI `29682997784` and docs-only CI `29683107536` pass on prior heads. Current local P1 corrections have a fresh H2 PASS; commit/push and new CI remain required before H3. |
+| Pull request | PR #40 is draft; H2-reviewed head `d820ab7` and CI `29685337907` pass. Human walkthrough, H3, merge, and post-merge `main` CI remain required. |
 
 Authoritative consolidated evidence:
 
@@ -71,7 +71,7 @@ The first reconciliation implementation/evidence commits and draft PR publicatio
 
 - Exception scope: commits through published head `199fa36` and draft PR #40 creation.
 - Corrective action: keep all current P1 fixes uncommitted, run a fresh full-diff H2 review and all required validation, then commit/push only the reviewed final diff.
-- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff remains uncommitted until the commit/push checkpoint.
+- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff is committed/pushed at `d820ab7` and CI `29685337907` passes.
 - Authority boundary: this exception record does not waive H2 findings, approve merge, or substitute for H3.
 - H3 condition: the reviewer must evaluate the final pushed head and its new CI run, not the earlier green heads.
 
