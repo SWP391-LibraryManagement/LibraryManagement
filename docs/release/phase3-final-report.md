@@ -2,7 +2,7 @@
 
 Date: 2026-07-19  
 Branch: `docs/phase3-polish-delivery`  
-Decision: **Ready for integration**
+Decision: **Integrated on `main`**
 
 ## Scope
 
@@ -10,6 +10,10 @@ Phase 3 hardens and demonstrates the accepted FE01-FE12 release without adding
 new business scope. Work covered Azure staging evidence, Live SQL reconciliation,
 frontend performance polish, synthetic browser rehearsal, release documentation,
 and a source-linked defense deck.
+
+Integration evidence: PR #48 merged as `4d02fc4`; post-merge `main` CI
+`29696519912` passed; staging workflow `29696612260` passed its quality gate,
+both deployments, and the SQL-aware six-check smoke.
 
 ## Architecture and traceability
 
