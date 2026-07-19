@@ -240,6 +240,9 @@ Expected: all suites and tests PASS with zero snapshots or skipped failures.
 ### Task 4: Reconcile FE10-S05 Pre-Integration Evidence
 
 **Files:**
+- Modify: `.sdd/specs/feat-auth/PLAN.md`
+- Modify: `.sdd/specs/feat-auth/TASKS.md`
+- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-notification-management/PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/TASKS.md`
 - Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
@@ -256,6 +259,8 @@ Use these boundaries:
 
 - `PLAN.md`: `FE10-S05 HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
 - `TASKS.md`: keep the task unchecked or `[~]`, but replace `FINAL HUMAN CLOSEOUT PENDING` with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`.
+- FE02 `PLAN.md`/`TASKS.md`: replace the stale OTP delivery implementation/human-closeout pending statements with `HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING`, while leaving unrelated refresh, HTTPS, legacy-token, and future-scope boundaries unchanged.
+- FE02 `CHANGELOG.md`: prepend the same focused evidence and standing-approval record without claiming integration.
 - `CHANGELOG.md`: prepend a 2026-07-19 entry describing the expanded ownership/reset-event evidence and standing approval.
 - Validation review: replace obsolete 131/623 counts and old missing-schema/FE02/SQL statements with fresh commands/results; set L4 to approved for injected-provider scope while leaving integration pending.
 - Design: record the final requirement audit result and any production gap or `no product correction required` conclusion.
@@ -263,7 +268,7 @@ Use these boundaries:
 - [ ] **Step 2: Run contradiction and leakage scans**
 
 ```powershell
-rg -n -i "shared schema.*pending|FE02 fan-in.*pending|SQL.*pending|human review pending|FINAL HUMAN CLOSEOUT PENDING" .sdd/specs/feat-notification-management .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md
+rg -n -i "shared schema.*pending|FE02 fan-in.*pending|SQL.*pending|human review pending|FINAL HUMAN CLOSEOUT PENDING|OTP delivery implementation follow-up remains pending" .sdd/specs/feat-auth .sdd/specs/feat-notification-management .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md
 rg -n "verificationLink|resetLink" backend/src database/Librarymanagement.sql
 rg -n "ACCOUNT_VERIFICATION|PASSWORD_RESET|EMAIL_VERIFY" backend/src/services/authService.js backend/src/services/notificationService.js database/Librarymanagement.sql
 git diff --check
@@ -316,7 +321,7 @@ Expected: only planned FE10/FE02 tests and evidence files; no credentials, front
 Record the diff hash and validation results in the review packet. Then:
 
 ```powershell
-git add -- backend/tests/notificationRoutes.test.js backend/tests/authRoutes.test.js .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md
+git add -- backend/tests/notificationRoutes.test.js backend/tests/authRoutes.test.js .sdd/specs/feat-auth/PLAN.md .sdd/specs/feat-auth/TASKS.md .sdd/specs/feat-auth/CHANGELOG.md .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-otp-security-reconciliation-validation-2026-07-19.md docs/superpowers/specs/2026-07-19-phase2-fe10-otp-integration-closeout-design.md
 git commit -m "test(fe10): close OTP integration evidence"
 git push -u origin feat/phase2-fe10-otp-integration
 ```
@@ -330,6 +335,9 @@ Create a draft PR summarizing ADR-004 coverage and no scope expansion. Mark read
 ### Task 6: Publish The Mechanical FE10-S05 Closeout
 
 **Files:**
+- Modify: `.sdd/specs/feat-auth/PLAN.md`
+- Modify: `.sdd/specs/feat-auth/TASKS.md`
+- Modify: `.sdd/specs/feat-auth/CHANGELOG.md`
 - Modify: `.sdd/specs/feat-notification-management/PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/TASKS.md`
 - Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
@@ -352,6 +360,7 @@ Verify `.worktrees/` remains ignored and the new worktree is clean.
 - [ ] **Step 2: Apply exact evidence substitutions**
 
 - Mark `FE10-S05` `[x] COMPLETE THROUGH B7`.
+- Mark the FE02 OTP-delivery follow-up validation task complete through B7 and remove only the stale OTP-delivery pending statements.
 - Set FE10 `PLAN.md`/`TASKS.md` top status to complete for OTP/FE02/FE04/schema reconciliation without claiming real SMTP or inbox UI.
 - Record integration PR number, final head SHA, PR CI, merge SHA, post-merge `main` CI, test counts, traceability, standing acceptance, and residual boundaries.
 - Update `.agents/CLAUDE.md` only to remove the stale statement that ADR-004/G8-G10 implementation remains pending.
