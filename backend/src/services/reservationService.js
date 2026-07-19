@@ -148,10 +148,10 @@ function createReservationService({
       throw errors.conflict('DUPLICATE_ACTIVE_RESERVATION', 'You already have an active reservation for this copy.');
     }
 
-    // @spec FR-FE08-015 — reject when the member already holds the max active reservations (Q-FE08-003)
+    // @spec FR-FE08-015 — ACTIVE and NOTIFIED both count toward the open-reservation limit.
     const activeCount = await reservationRepository.countActiveReservationsForUser(userId);
     if (activeCount >= MAX_ACTIVE_RESERVATIONS) {
-      throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 active reservations.');
+      throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 open reservations.');
     }
 
     const reservation = await reservationRepository.createReservation({ userId, copyId });
@@ -167,16 +167,52 @@ function createReservationService({
     };
   }
 
+  // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+  async function listReservationCandidates(filters = {}, actor) {
+    requireMember(actor);
+
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const result = await reservationRepository.listReservationCandidates({
+      q: typeof filters.q === 'string' ? filters.q.trim() : '',
+      page,
+      limit,
+    });
+    const total = Number(result.total || 0);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+      },
+    };
+  }
+
   async function listMyReservations(filters, actor) {
     requireMember(actor);
 
-    const reservations = await reservationRepository.listReservations({
+    const repositoryFilters = {
       userId: actor.userId,
       status: filters.status || undefined,
-    });
+    };
+    if (filters.page || filters.limit) {
+      repositoryFilters.page = Number(filters.page) || 1;
+      repositoryFilters.limit = Number(filters.limit) || 20;
+    }
+    const result = await reservationRepository.listReservations(repositoryFilters);
+    const reservations = Array.isArray(result) ? result : result.rows;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const total = Array.isArray(result) ? reservations.length : result.total;
 
     return {
       reservations,
+      ...(Array.isArray(result) && !filters.page && !filters.limit
+        ? {}
+        : { pagination: { page, limit, total, totalPages: total === 0 ? 0 : Math.ceil(total / limit) } }),
     };
   }
 
@@ -225,17 +261,30 @@ function createReservationService({
     };
   }
 
+  // @spec FR-FE08-027
   async function listReservations(filters, actor) {
     requireStaff(actor);
 
-    const reservations = await reservationRepository.listReservations({
+    const repositoryFilters = {
       bookId: filters.bookId ? Number(filters.bookId) : undefined,
       memberId: filters.memberId ? Number(filters.memberId) : undefined,
       status: filters.status || undefined,
-    });
+    };
+    if (filters.page || filters.limit) {
+      repositoryFilters.page = Number(filters.page) || 1;
+      repositoryFilters.limit = Number(filters.limit) || 20;
+    }
+    const result = await reservationRepository.listReservations(repositoryFilters);
+    const reservations = Array.isArray(result) ? result : result.rows;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const total = Array.isArray(result) ? reservations.length : result.total;
 
     return {
       reservations,
+      ...(Array.isArray(result) && !filters.page && !filters.limit
+        ? {}
+        : { pagination: { page, limit, total, totalPages: total === 0 ? 0 : Math.ceil(total / limit) } }),
     };
   }
 
@@ -365,6 +414,7 @@ function createReservationService({
 
   return {
     createReservation,
+    listReservationCandidates,
     listMyReservations,
     cancelReservation,
     listReservations,

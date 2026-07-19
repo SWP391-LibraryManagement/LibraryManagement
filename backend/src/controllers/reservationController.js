@@ -15,6 +15,16 @@ function createReservationController(reservationService = defaultReservationServ
       }
     },
 
+    // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+    listCandidates: async (req, res, next) => {
+      try {
+        const result = await reservationService.listReservationCandidates(req.query, req.user);
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     // @spec FR-FE08-010
     listMine: async (req, res, next) => {
       try {

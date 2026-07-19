@@ -1,12 +1,12 @@
 # PLAN.md - FE05 Book Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: READY FOR REVIEW - FE05 reconciliation and live SQL complete; human gates pending
 
 Owner: Dung
 
-Updated: 2026-07-16
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.5.0 and implementation plan approved; implementation not started
+Workflow State: FE05-T001 through FE05-T008 plus the duplicate Admin Console boundary correction executed; merge-gate and human acceptance remain open
 
 > **For implementation agents:** Execute `TASKS.md` in order. Preserve FE05 catalog ownership, begin each behavior task with focused failing tests, and do not mutate FE06 copy lifecycle state from FE05.
 
@@ -18,7 +18,7 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-book-management/SPEC.md` v0.5.0.
+- `.sdd/specs/feat-book-management/SPEC.md` v0.5.1.
 - `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
@@ -26,17 +26,18 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 - `database/Librarymanagement.sql`.
 - `.sdd/constraints/safety.md`.
 
-## 3. Existing Baseline And Drift
+## 3. Reconciled Baseline Drift
 
-| Approved contract | Current drift to reconcile |
+| Approved contract | Reconciled implementation |
 | --- | --- |
-| FE05 never mutates `BookCopies.Status` | Reconciled 2026-07-19: the legacy `/availability` route and repository mutation were removed, UI copy-state controls were removed, and regression tests now enforce read-only derived availability. |
-| Existing-book mutations require `If-Match`/SQL `rowversion` | `Books` has no rowversion column and current update/deactivate paths accept no version. |
-| Status changes use dedicated deactivate/reactivate commands with reason | Reactivation endpoint is missing; update payload may change status; deactivation has no required reason. |
-| Public and staff lists use deterministic pagination/sort policy | Current filters and endpoints use prototype shapes and incomplete validation. |
-| Create/update/deactivate/reactivate plus audit are atomic | Repository audit behavior is not documented or tested as a single transaction. |
-| Public availability is read-only `AVAILABLE`/`UNAVAILABLE` | Frontend labels unavailable records as borrowed and collapses unrelated copy states. |
-| Public and staff endpoints have distinct visibility | Prototype uses `/api/books/management` instead of the approved `/api/admin/books` contract. |
+| FE05 never mutates `BookCopies.Status` | Legacy `/availability` route, repository mutation, and BookManagement copy-state controls are removed; tests enforce read-only derived availability. |
+| Existing-book mutations require `If-Match`/SQL `rowversion` | `Books.RowVersion` and version-aware metadata/status commands are implemented. |
+| Status changes use dedicated deactivate/reactivate commands with reason | Both commands require matching version and a trimmed reason; metadata PUT cannot change status. |
+| Public and staff lists use deterministic pagination/sort policy | Approved filters, endpoint shapes, and validation are implemented and tested. |
+| Create/update/deactivate/reactivate plus audit are atomic | Repository transaction and rollback coverage prove mutation/audit atomicity. |
+| Public availability is read-only `AVAILABLE`/`UNAVAILABLE` | Frontend renders derived availability without classifying all unavailable rows as borrowed. |
+| Public and staff endpoints have distinct visibility | Staff list uses `/api/admin/books`; public reads remain separate and safe. |
+| FE11 Admin Console must not duplicate FE05 mutations | `UserManagement` keeps the Library table read-only; canonical `BookManagement` owns create/update/deactivate/reactivate. |
 
 ## 4. Scope
 

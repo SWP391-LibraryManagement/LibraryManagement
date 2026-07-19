@@ -2,11 +2,15 @@
 
 **Final Release Document**
 
-Version: 1.0  
-Release date: 2026-07-19  
-Project: SWP391 Library Management System  
-Group/project code: `6-LMS`  
-Release status: Ready for human staging acceptance
+Version: 1.0
+
+Release date: 2026-07-19
+
+Project: SWP391 Library Management System
+
+Group/project code: `6-LMS`
+
+Release status: Reconciliation candidate; human H3/merge and staging acceptance pending
 
 ## I. Deliverable Package
 
@@ -60,17 +64,17 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Feature | Roles | Final Status | Notes |
 | --- | --- | --- | --- |
-| FE01 Public / Browse | Guest, Member, Librarian, Admin | Approved baseline | Public catalog browsing, search, detail, and availability summary. |
+| FE01 Public / Browse | Guest, Member, Librarian, Admin | Implemented; human integration pending | Public catalog browsing, search, detail, and availability summary. |
 | FE02 Authentication | Guest, Member, Librarian, Admin | Ready for human staging acceptance | Register, email verification, login, logout, refresh token, password change/reset, account setup support. |
-| FE03 User Profile | Member, Librarian, Admin | Approved baseline | Profile view/update and avatar support; email changes remain outside FE03. |
+| FE03 User Profile | Member, Librarian, Admin | Automated/live SQL/browser pass; human review pending | Profile view/update and avatar support; email changes remain outside FE03. |
 | FE04 Membership Management | Member, Librarian, Admin | Approved baseline; UI integrated | Member application and librarian/admin approval/rejection workflow. |
-| FE05 Book Management | Librarian, Admin | Approved baseline | Catalog create/update/deactivate/search; reactivation is follow-up scope. |
-| FE06 Inventory / Book Copy Management | Librarian, Admin | Approved baseline | Physical copy management, barcode, location, copy status, and availability ownership. |
+| FE05 Book Management | Librarian, Admin | Focused reconciliation pass; human gate pending | Canonical BookManagement owns versioned catalog mutations; FE11 Library view is read-only. |
+| FE06 Inventory / Book Copy Management | Librarian, Admin | Focused/live SQL pass; human gate pending | Physical copy management, rowversion, locked workflow/parent rechecks, audit, and availability ownership. |
 | FE07 Borrowing Management | Member, Librarian, Admin | Ready for staging recheck | Member borrow request, staff approval/rejection, return, renewal, and borrowing history. |
-| FE08 Reservation Management | Member, Librarian, Admin | Ready for human staging acceptance | Reservation creation, cancellation, queue management, hold/fulfillment workflow. |
+| FE08 Reservation Management | Member, Librarian, Admin | Candidate catalog automated; human walkthrough/H3 pending | Reservation creation, cancellation, queue management, hold/fulfillment workflow. |
 | FE09 Fine Management | Member, Librarian, Admin | Ready with UI limitation | Server-side overdue fine calculation and offline payment recording; legacy frontend is not release evidence. |
 | FE10 Notification Management | System, Librarian, Admin | Ready with UI limitation | Safe email notifications, templates, queue, retry, and delivery attempts; inbox UI deferred. |
-| FE11 User & Role Management | Admin | Approved baseline; finalization activated | User list/detail, role assignment, librarian account creation, permissions, and audit log access. |
+| FE11 User & Role Management | Admin | Named slices complete; whole-feature/H3 pending | User list/detail, role assignment, librarian account creation, permissions, and audit log access. |
 | FE12 Reporting & Statistics | Librarian, Admin | Ready for staging recheck | Read-only borrowing, inventory, and user statistics reports. |
 
 ### Other Related Deliverables
@@ -508,13 +512,13 @@ Release limitation:
 
 | Check | Status |
 | --- | --- |
-| Backend automated tests pass | Passed in Week 13 evidence: 307/307 tests. |
-| Frontend tests pass | Passed in Week 13 evidence: 38/38 tests. |
+| Backend automated tests pass | Current reconciliation evidence: 905/905 tests across 53 suites. |
+| Frontend tests pass | Current reconciliation evidence: 149/149 tests. |
 | Frontend lint and build pass | Passed in Week 13 evidence. |
 | Browser golden path passes | Passed in Chromium for login, borrowing, return, fine API, and reporting. |
 | Coverage gate | Passed with more than 80% for configured metrics. |
 | Security dependency audit | No unresolved Critical/High production dependency findings. |
-| Traceability gate | Implemented features meet enforced FR `@spec` threshold. |
+| Traceability gate | All twelve feature specs currently report 100% FR tag coverage; whole-project completion still requires human/H3 gates. |
 | Human staging acceptance | Pending final reviewer sign-off. |
 
 ### 15. References

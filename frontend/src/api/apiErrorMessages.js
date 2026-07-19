@@ -21,7 +21,8 @@ const BORROWING_ERROR_MESSAGES = {
   BORROW_REQUEST_NOT_PENDING: 'Chỉ yêu cầu đang chờ xử lý mới có thể được duyệt hoặc từ chối.',
   BORROW_DETAIL_NOT_FOUND: 'Không tìm thấy lượt mượn sách này.',
   BORROW_DETAIL_NOT_BORROWED: 'Chỉ sách đang được mượn mới có thể trả hoặc gia hạn.',
-  INVALID_RETURN_DATE: 'Ngày trả sách không thể sớm hơn ngày mượn.',
+  INVALID_RETURN_DATE: 'Ngày trả phải nằm trong khoảng từ ngày mượn đến ngày hiện tại.',
+  BOOK_INACTIVE: 'Sách này đã ngừng phục vụ nên không thể mượn.',
   RENEWAL_LIMIT_REACHED: 'Sách này đã được gia hạn một lần và không thể gia hạn thêm.',
   BORROW_DETAIL_OVERDUE: 'Sách đã quá hạn nên không thể gia hạn.',
   BORROW_DETAIL_OWNER_REQUIRED: 'Bạn chỉ có thể gia hạn sách do chính mình mượn.',
@@ -45,6 +46,29 @@ const RESERVATION_ERROR_MESSAGES = {
   COPY_NOT_AVAILABLE: 'Bản sao chưa sẵn sàng để xử lý hàng đợi đặt chỗ.',
   COPY_MISMATCH: 'Bản sao được chọn không khớp với lượt đặt chỗ.',
   INVALID_ID: 'Mã đặt chỗ hoặc bản sao không hợp lệ.',
+};
+
+const MEMBERSHIP_ERROR_MESSAGES = {
+  MEMBERSHIP_APPLICATION_PENDING: 'Bạn đã có một đơn đăng ký đang chờ duyệt.',
+  MEMBERSHIP_ALREADY_APPROVED: 'Tài khoản này đã là hội viên được duyệt.',
+  MEMBERSHIP_APPLICATION_NOT_PENDING: 'Đơn đăng ký này không còn ở trạng thái chờ duyệt.',
+  MEMBERSHIP_APPLICATION_NOT_FOUND: 'Không tìm thấy đơn đăng ký hội viên.',
+  USER_ACCOUNT_INACTIVE: 'Tài khoản chưa hoạt động nên chưa thể đăng ký hội viên.',
+  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc admin mới được xét duyệt đơn hội viên.',
+  REJECTION_REASON_REQUIRED: 'Lý do từ chối là bắt buộc.',
+  REJECTION_REASON_TOO_LONG: 'Lý do từ chối không được vượt quá 500 ký tự.',
+};
+
+const BOOK_ERROR_MESSAGES = {
+  STALE_BOOK_STATE: 'Dữ liệu sách đã thay đổi bởi người khác. Vui lòng tải lại danh sách rồi thử lại.',
+  INVALID_BOOK_STATUS_TRANSITION: 'Trạng thái sách vừa thay đổi. Vui lòng tải lại dữ liệu và thử lại.',
+};
+
+const INVENTORY_ERROR_MESSAGES = {
+  STALE_COPY_STATE: 'Dữ liệu bản sao đã thay đổi. Vui lòng tải lại rồi thử lại.',
+  RESERVATION_STATE_CONFLICT: 'Bản sao đang thuộc hàng đợi giữ chỗ. Hãy xử lý qua FE08 trước.',
+  ACTIVE_BORROW_CONFLICT: 'Bản sao đang được mượn. Hãy xử lý trả sách qua FE07 trước.',
+  INACTIVE_PARENT_BOOK: 'Đầu sách đang ngừng hoạt động nên không thể đưa bản sao về trạng thái khả dụng.',
 };
 
 export function getLibraryFeatureErrorMessage(error, fallback = 'Không thể tải dữ liệu từ backend.') {
@@ -104,6 +128,50 @@ export function getReservationErrorMessage(error, fallback) {
   }
 
   return getLibraryFeatureErrorMessage(error, fallback);
+}
+
+export function getBookErrorMessage(error, fallback = 'Không thể xử lý yêu cầu quản lý sách.') {
+  if (!error.response) return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  if (BOOK_ERROR_MESSAGES[code]) return BOOK_ERROR_MESSAGES[code];
+  if (error.response?.status === 403) return 'Tài khoản hiện tại không có quyền quản lý sách.';
+  return error.response?.data?.error?.message || fallback;
+}
+
+export function getInventoryErrorMessage(error, fallback = 'Không thể xử lý dữ liệu kho sách.') {
+  if (!error.response) return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  if (INVENTORY_ERROR_MESSAGES[code]) return INVENTORY_ERROR_MESSAGES[code];
+  if (error.response?.status === 403) return 'Tài khoản hiện tại không có quyền quản lý kho sách.';
+  return error.response?.data?.error?.message || fallback;
+}
+
+export function getMembershipErrorMessage(error, fallback = 'Không thể xử lý dữ liệu hội viên.') {
+  if (!error.response) {
+    return 'Không kết nối được backend. Không thể xác nhận trạng thái hội viên.';
+  }
+
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
+    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  }
+
+  if (MEMBERSHIP_ERROR_MESSAGES[code]) {
+    return MEMBERSHIP_ERROR_MESSAGES[code];
+  }
+
+  if (error.response?.status === 403) {
+    return 'Tài khoản hiện tại không có quyền thực hiện thao tác hội viên này.';
+  }
+
+  const details = error.response?.data?.error?.details;
+  if (Array.isArray(details) && details.length) {
+    return details.map((item) => item.message).filter(Boolean).join('\n') || fallback;
+  }
+
+  return error.response?.data?.error?.message || fallback;
 }
 
 export function getReportErrorMessage(error, fallback) {

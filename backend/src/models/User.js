@@ -52,5 +52,9 @@ module.exports = defineModel({
       attribute: 'updatedAt',
       name: 'UpdatedAt',
     },
+    {
+      attribute: 'deactivatedAt',
+      name: 'DeactivatedAt',
+    },
   ],
 });

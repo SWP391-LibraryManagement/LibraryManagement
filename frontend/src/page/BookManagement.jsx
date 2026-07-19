@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import { getBookErrorMessage } from '../api/apiErrorMessages';
 import { authorizedRequest } from '../api/libraryFeatureApi';
 
 const DEFAULT_FORM = {
@@ -19,12 +20,9 @@ const DEFAULT_FORM = {
   publishYear: '',
   pages: '',
   rating: '0',
-  status: 'ACTIVE',
   coverUrl: '',
   description: '',
 };
-
-const PAGE_SIZE = 8;
 
 async function apiRequest(path, options = {}) {
   const body = options.body ? JSON.parse(options.body) : undefined;
@@ -34,7 +32,7 @@ async function apiRequest(path, options = {}) {
     url: path,
     data: body,
     headers: options.headers,
-  }, 'Không thể xử lý yêu cầu.');
+  }, 'Không thể xử lý yêu cầu.', getBookErrorMessage);
 }
 
 function toForm(book) {
@@ -49,7 +47,6 @@ function toForm(book) {
     publishYear: book.year ? String(book.year) : '',
     pages: book.pages ? String(book.pages) : '',
     rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
-    status: book.status || 'ACTIVE',
     coverUrl: book.cover || '',
     description: book.description || '',
   };
@@ -69,15 +66,17 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
 
   if (!title) errors.title = 'Book title is required.';
   if (title.length > 255) errors.title = 'Book title must be 255 characters or fewer.';
-  if (isbn.length > 50) errors.isbn = 'ISBN must be 50 characters or fewer.';
+  if (isbn.length > 20) errors.isbn = 'ISBN must be 20 characters or fewer.';
   if (duplicate) errors.isbn = 'ISBN already exists.';
   if (!form.categoryId) errors.categoryId = 'Category is required.';
   if (!form.authorId) errors.authorId = 'Author is required.';
   if (publishYear && (!Number.isInteger(publishYear) || publishYear < 1 || publishYear > currentYear)) {
     errors.publishYear = `Publish year must not be greater than ${currentYear}.`;
   }
-  if (pages && (!Number.isInteger(pages) || pages < 1)) errors.pages = 'Pages must be a positive number.';
-  if (!Number.isFinite(rating) || rating < 0 || rating > 5) errors.rating = 'Rating must be between 0 and 5.';
+  if (pages && (!Number.isInteger(pages) || pages < 1 || pages > 10000)) errors.pages = 'Pages must be from 1 to 10000.';
+  if (!Number.isFinite(rating) || rating < 0 || rating > 5 || !Number.isInteger(rating * 10)) {
+    errors.rating = 'Rating must be between 0 and 5 with at most one decimal place.';
+  }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'Cover URL must start with http(s) or /.';
   }
@@ -102,9 +101,9 @@ function makePayload(form) {
 }
 
 function getBookAvailability(book) {
-  return Number(book.availableCopies || 0) > 0
+  return book.availabilityStatus === 'AVAILABLE'
     ? { key: 'available', label: 'Còn sách' }
-    : { key: 'borrowed', label: 'Không khả dụng' };
+    : { key: 'unavailable', label: 'Không khả dụng' };
 }
 
 function Toast({ toast, onClose }) {
@@ -143,7 +142,7 @@ function BookForm({
 
       <label>
         <span>ISBN</span>
-        <input value={form.isbn} onChange={(event) => update('isbn', event.target.value)} maxLength={50} />
+        <input value={form.isbn} onChange={(event) => update('isbn', event.target.value)} maxLength={20} />
         <FieldError message={errors.isbn} />
       </label>
 
@@ -181,8 +180,14 @@ function BookForm({
 
       <label>
         <span>Pages</span>
-        <input type="number" value={form.pages} onChange={(event) => update('pages', event.target.value)} />
+        <input type="number" min="1" max="10000" value={form.pages} onChange={(event) => update('pages', event.target.value)} />
         <FieldError message={errors.pages} />
+      </label>
+
+      <label>
+        <span>Rating</span>
+        <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => update('rating', event.target.value)} />
+        <FieldError message={errors.rating} />
       </label>
 
       <label className="bm-wide">
@@ -219,7 +224,10 @@ export default function BookManagement() {
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
   const [addErrors, setAddErrors] = useState({});
   const [updateErrors, setUpdateErrors] = useState({});
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [statusConfirmed, setStatusConfirmed] = useState(false);
+  const [statusReason, setStatusReason] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
@@ -228,9 +236,6 @@ export default function BookManagement() {
     () => books.find((book) => Number(book.id) === Number(selectedBookId)) || null,
     [books, selectedBookId]
   );
-  const totalPages = Math.max(1, Math.ceil(books.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pagedBooks = books.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -246,12 +251,22 @@ export default function BookManagement() {
     });
   };
 
-  const loadBooks = useCallback(async ({ status = statusFilter, categoryId = categoryFilter } = {}) => {
-    const params = new URLSearchParams({ limit: '100' });
+  const loadBooks = useCallback(async ({ status = statusFilter, categoryId = categoryFilter, pageNumber = page } = {}) => {
+    const requestedPage = Number(pageNumber) || 1;
+    const params = new URLSearchParams({
+      page: String(requestedPage),
+      limit: '20',
+      sort: 'title',
+      order: 'asc',
+    });
     if (status) params.set('status', status);
     if (categoryId) params.set('categoryId', categoryId);
     const result = await apiRequest(`/admin/books?${params.toString()}`);
-    const nextBooks = result.data || [];
+    const nextBooks = result.items || [];
+    const pagination = result.pagination || {};
+    setTotalItems(Number(pagination.total) || nextBooks.length);
+    setTotalPages(Math.max(1, Number(pagination.totalPages) || 1));
+    setPage(Number(pagination.page) || requestedPage);
     setBooks(nextBooks);
     setSelectedBookId((currentSelectedBookId) => {
       if (nextBooks.length && !nextBooks.some((book) => Number(book.id) === Number(currentSelectedBookId))) {
@@ -261,7 +276,7 @@ export default function BookManagement() {
       return nextBooks.length ? currentSelectedBookId : '';
     });
     return nextBooks;
-  }, [categoryFilter, statusFilter]);
+  }, [categoryFilter, page, statusFilter]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -283,7 +298,8 @@ export default function BookManagement() {
       const timer = window.setTimeout(() => {
         setUpdateForm(toForm(selectedBook));
         setDetailBook(selectedBook);
-        setDeleteConfirmed(false);
+        setStatusConfirmed(false);
+        setStatusReason('');
       }, 0);
 
       return () => window.clearTimeout(timer);
@@ -293,8 +309,8 @@ export default function BookManagement() {
   const handleRefreshList = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadMetadata(), loadBooks()]);
       setPage(1);
+      await Promise.all([loadMetadata(), loadBooks({ pageNumber: 1 })]);
       showToast('Đã tải lại dữ liệu sách.');
     } catch (error) {
       showToast(error.message, 'error');
@@ -312,8 +328,8 @@ export default function BookManagement() {
       return;
     }
 
-    if (keyword.length > 100) {
-      showToast('Search keyword must be 100 characters or fewer.', 'error');
+    if (keyword.length > 200) {
+      showToast('Search keyword must be 200 characters or fewer.', 'error');
       return;
     }
 
@@ -321,8 +337,9 @@ export default function BookManagement() {
       setLoading(true);
       const params = new URLSearchParams({ q: keyword });
       const result = await apiRequest(`/books?${params.toString()}`);
-      setSearchResults(result.data || []);
-      showToast(`Tìm thấy ${result.data?.length || 0} sách đang hoạt động.`);
+      const items = result.items || [];
+      setSearchResults(items);
+      showToast(`Tìm thấy ${result.pagination?.total ?? items.length} sách đang hoạt động.`);
     } catch (error) {
       showToast(error.message, 'error');
       setSearchResults([]);
@@ -340,8 +357,8 @@ export default function BookManagement() {
     try {
       setLoading(true);
       const result = await apiRequest(`/books/${bookId}`);
-      setDetailBook(result.data);
-      setSelectedBookId(String(result.data.id));
+      setDetailBook(result.book);
+      setSelectedBookId(String(result.book.id));
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -368,12 +385,10 @@ export default function BookManagement() {
       setAddForm(DEFAULT_FORM);
       setStatusFilter('ACTIVE');
       setCategoryFilter('');
-      const nextBooks = await loadBooks({ status: 'ACTIVE', categoryId: '' });
-      setSelectedBookId(String(result.data.id));
-      setDetailBook(result.data);
-      const createdIndex = nextBooks.findIndex((book) => Number(book.id) === Number(result.data.id));
-      setPage(createdIndex >= 0 ? Math.floor(createdIndex / PAGE_SIZE) + 1 : 1);
-      showToast('Đã thêm sách và chuyển đến vị trí của sách trong danh sách.');
+      await loadBooks({ status: 'ACTIVE', categoryId: '', pageNumber: 1 });
+      setSelectedBookId(String(result.book.id));
+      setDetailBook(result.book);
+      showToast('Đã thêm sách và tải lại danh sách theo trạng thái chuẩn.');
     } catch (error) {
       if (/isbn/i.test(error.message)) {
         setAddErrors((current) => ({ ...current, isbn: 'ISBN already exists. Please use a unique ISBN or leave it blank.' }));
@@ -400,12 +415,12 @@ export default function BookManagement() {
       setSaving(true);
       const result = await apiRequest(`/books/${selectedBookId}`, {
         method: 'PUT',
+        headers: { 'If-Match': selectedBook.version },
         body: JSON.stringify(makePayload(updateForm)),
       });
-      await loadBooks();
-      setPage(1);
-      setDetailBook(result.data);
-      showToast('Đã cập nhật thông tin sách. Trạng thái mới sẽ được đồng bộ với trang chủ.');
+      const nextBooks = await loadBooks();
+      setDetailBook(nextBooks.find((book) => Number(book.id) === Number(selectedBookId)) || result.book);
+      showToast('Đã cập nhật thông tin sách và tải lại trạng thái chuẩn.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -413,29 +428,52 @@ export default function BookManagement() {
     }
   };
 
-  const handleDeleteBook = async () => {
+  const handleStatusChange = async () => {
     if (!selectedBook) {
-      showToast('Please select a book to delete.', 'error');
+      showToast('Please select a book before changing status.', 'error');
       return;
     }
 
-    if (!deleteConfirmed) {
-      showToast('Please confirm that this book should be removed from the public catalog.', 'error');
+    const reason = statusReason.trim();
+    if (!statusConfirmed) {
+      showToast('Please confirm the status change before submitting.', 'error');
+      return;
+    }
+
+    if (!reason || reason.length > 500) {
+      showToast('Vui lòng nhập lý do từ 1 đến 500 ký tự.', 'error');
       return;
     }
 
     try {
       setSaving(true);
-      await apiRequest(`/books/${selectedBook.id}/deactivate`, {
-        method: 'PATCH',
-        body: JSON.stringify({ reason: 'Removed from the public catalog by staff.' }),
-      });
-      setStatusFilter('ACTIVE');
-      await loadBooks({ status: 'ACTIVE' });
-      setSelectedBookId('');
-      setDetailBook(null);
-      setDeleteConfirmed(false);
-      showToast('Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+      const body = JSON.stringify({ reason });
+      if (selectedBook.status === 'INACTIVE') {
+        await apiRequest(`/books/${selectedBook.id}/reactivate`, {
+          method: 'PATCH',
+          headers: { 'If-Match': selectedBook.version },
+          body,
+        });
+      } else {
+        await apiRequest(`/books/${selectedBook.id}/deactivate`, {
+          method: 'PATCH',
+          headers: { 'If-Match': selectedBook.version },
+          body,
+        });
+      }
+      const nextBooks = await loadBooks();
+      const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(selectedBook.id));
+      if (!refreshedBook) {
+        setSelectedBookId('');
+        setDetailBook(null);
+      } else {
+        setDetailBook(refreshedBook);
+      }
+      setStatusConfirmed(false);
+      setStatusReason('');
+      showToast(selectedBook.status === 'INACTIVE'
+        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
+        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -497,11 +535,11 @@ export default function BookManagement() {
 
   const renderPagination = () => (
     <div className="bm-pagination" aria-label="Phân trang danh sách sách">
-      <span>Trang {safePage}/{totalPages} • {books.length} sách</span>
+      <span>Trang {page}/{totalPages} • {totalItems} sách</span>
       <div>
-        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage === 1}>Trước</button>
-        <span className="bm-page-current">{safePage}</span>
-        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={safePage === totalPages}>Sau</button>
+        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>Trước</button>
+        <span className="bm-page-current">{page}</span>
+        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>Sau</button>
       </div>
     </div>
   );
@@ -558,9 +596,9 @@ export default function BookManagement() {
         </div>
 
         <section className="bm-summary">
-          <div><span>Tổng số sách</span><strong>{books.length}</strong></div>
-          <div><span>Đang hoạt động</span><strong>{books.filter((book) => book.status === 'ACTIVE').length}</strong></div>
-          <div><span>Ngừng hoạt động</span><strong>{books.filter((book) => book.status === 'INACTIVE').length}</strong></div>
+           <div><span>Tổng số sách</span><strong>{totalItems}</strong></div>
+           <div><span>Đang hoạt động</span><strong>{books.filter((book) => book.status === 'ACTIVE').length}</strong></div>
+           <div><span>Ngừng hoạt động</span><strong>{books.filter((book) => book.status === 'INACTIVE').length}</strong></div>
         </section>
 
         <section className="bm-panel">
@@ -568,7 +606,7 @@ export default function BookManagement() {
             <div><p>Tra cứu nhanh</p><h2>Tìm kiếm sách</h2></div>
           </div>
           <form className="bm-search-row" onSubmit={handleSearch}>
-            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={100} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." />
+             <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={200} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." />
             <button className="bm-primary" type="submit"><Search size={17} />Tìm kiếm</button>
           </form>
           {searchResults.length > 0 && renderBookTable(searchResults)}
@@ -590,7 +628,7 @@ export default function BookManagement() {
               <button className="bm-soft" onClick={handleRefreshList}>Áp dụng</button>
             </div>
           </div>
-          {renderBookTable(pagedBooks, (safePage - 1) * PAGE_SIZE)}
+           {renderBookTable(books, (page - 1) * 20)}
           {renderPagination()}
         </section>
 
@@ -634,30 +672,42 @@ export default function BookManagement() {
 
         <section className="bm-panel">
           <div className="bm-panel-head">
-            <div><p>Quản lý trạng thái</p><h2>Ngừng hoạt động sách</h2></div>
+            <div><p>Quản lý trạng thái</p><h2>{selectedBook?.status === 'INACTIVE' ? 'Kích hoạt lại sách' : 'Ngừng hoạt động sách'}</h2></div>
           </div>
           {selectedBook ? (
             <div className="bm-danger-box">
               <AlertTriangle size={22} />
               <div>
                 <h3>{selectedBook.title}</h3>
-                <p>Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.</p>
+                <p>{selectedBook.status === 'INACTIVE'
+                  ? 'Kích hoạt lại chỉ đổi trạng thái catalog; bản sao và lịch sử vẫn giữ nguyên.'
+                  : 'Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.'}</p>
+                <label>
+                  <span>Lý do (bắt buộc, tối đa 500 ký tự)</span>
+                  <textarea
+                    value={statusReason}
+                    onChange={(event) => setStatusReason(event.target.value)}
+                    maxLength={500}
+                    rows={3}
+                    aria-label="Lý do thay đổi trạng thái"
+                  />
+                </label>
                 <label className="bm-confirm-line">
                   <input
                     type="checkbox"
-                    checked={deleteConfirmed}
-                    onChange={(event) => setDeleteConfirmed(event.target.checked)}
+                    checked={statusConfirmed}
+                    onChange={(event) => setStatusConfirmed(event.target.checked)}
                   />
-                  <span>Tôi xác nhận sách sẽ bị ẩn với thành viên và khách.</span>
+                  <span>Tôi xác nhận thay đổi trạng thái sách.</span>
                 </label>
-                <button className="bm-danger" onClick={handleDeleteBook} disabled={saving || selectedBook.status === 'INACTIVE'}>
+                <button className="bm-danger" onClick={handleStatusChange} disabled={saving}>
                   <Trash2 size={17} />
-                  {selectedBook.status === 'INACTIVE' ? 'Đã ngừng hoạt động' : 'Ngừng hoạt động'}
+                  {selectedBook.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Ngừng hoạt động'}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bm-empty">Select a book before deleting.</div>
+            <div className="bm-empty">Select a book before changing status.</div>
           )}
         </section>
       </main>

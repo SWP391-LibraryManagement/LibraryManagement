@@ -189,7 +189,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-014: `Books.Status` has exactly two states, `ACTIVE` and `INACTIVE`; valid transitions are create -> `ACTIVE`, `ACTIVE -> INACTIVE`, and `INACTIVE -> ACTIVE`. Physical deletion is forbidden in Phase 1.
 - BR-FE05-015: Deactivation/reactivation changes only `Books.Status`; FE05 never rewrites related copy, borrowing, reservation, or history rows.
 - BR-FE05-016: Every update/deactivate/reactivate of an existing book requires the caller's last-seen SQL `rowversion` through `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE` with no mutation.
-- BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100; allowed sort fields are `title`, `publishYear`, and `createdAt`; allowed order values are `asc` and `desc`.
+- BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100. Public `/api/books` accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit` and always orders by `Title ASC, BookId ASC`; staff `/api/admin/books` additionally accepts sort fields `title`, `publishYear`, or `createdAt` and order `asc` or `desc`.
 - BR-FE05-018: Deactivation/reactivation requires a trimmed non-empty reason of at most 500 characters, stored in audit metadata.
 
 
@@ -223,7 +223,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-021: IF a caller attempts to change `BookCopies.Status` through an FE05 book endpoint, the system shall reject the request and shall not modify `Books` or `BookCopies`. (Source: BR-FE05-012, EC-FE05-013)
 - FR-FE05-022: WHEN an authorized actor reactivates an `INACTIVE` book with a matching version and non-empty reason, the system shall set `Books.Status = ACTIVE`, preserve all related copy/workflow records, recalculate derived availability, and write the audit atomically. (Source: MF-FE05-008, BR-FE05-014, BR-FE05-015)
 - FR-FE05-023: IF `If-Match` is missing or does not match current book `rowversion` during update/deactivate/reactivate, the system shall return `409 STALE_BOOK_STATE` and change no record. (Source: BR-FE05-016, EC-FE05-014)
-- FR-FE05-024: IF query keyword, pagination, sort, or order violates BR-FE05-017, the system shall return a validation error rather than silently applying a different policy. (Source: EC-FE05-011, EC-FE05-015)
+- FR-FE05-024: IF a public query contains an unapproved field, or any keyword, pagination, staff sort, or staff order value violates BR-FE05-017, the system shall return a validation error rather than silently applying a different policy. (Source: EC-FE05-011, EC-FE05-015)
 - FR-FE05-025: IF deactivation/reactivation reason is missing, blank after trimming, or longer than 500 characters, the system shall reject the command and preserve all state. (Source: BR-FE05-018, EC-FE05-016)
 - FR-FE05-026: IF `pages` is not an integer from 1 to 10,000, or `rating` is outside 0.0 to 5.0 or has more than one decimal place during create/update, the system shall reject the request with field-level validation and change no record. (Source: EC-FE05-017, Section 10.2)
 
@@ -245,7 +245,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-012: Given a caller submits a copy-status mutation through an FE05 endpoint, when the request is processed, then the request is rejected and all book/copy states remain unchanged.
 - AC-FE05-013: Given an `INACTIVE` book, matching `If-Match`, and non-empty reason, when staff reactivates it, then only `Books.Status` becomes `ACTIVE`, copy states remain unchanged, and derived availability reflects current copies.
 - AC-FE05-014: Given a stale or missing `If-Match`, when staff updates/deactivates/reactivates a book, then FE05 returns `409 STALE_BOOK_STATE` and preserves all state.
-- AC-FE05-015: Given invalid pagination/sort/keyword input, when a list/search endpoint is called, then FE05 returns a validation error using the deterministic query policy.
+- AC-FE05-015: Given an unapproved public query field or invalid pagination/staff-sort/keyword input, when a list/search endpoint is called, then FE05 returns a validation error using the deterministic query policy.
 - AC-FE05-016: Given a missing/blank/overlength deactivation or reactivation reason, when staff submits the command, then FE05 rejects it and preserves book/copy/workflow state.
 - AC-FE05-017: Given invalid `pages` or `rating`, when staff creates or updates a book, then FE05 returns field-level validation and preserves the book, copy, workflow, and audit state.
 
@@ -269,7 +269,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE05-012 | Database update partially fails | Roll back book update and audit log. |
 | EC-FE05-013 | Caller attempts copy-status mutation through FE05 | Reject request; direct copy transitions must use the owning FE06/FE07/FE08 workflow. |
 | EC-FE05-014 | Missing/stale `If-Match` rowversion | Return `409 STALE_BOOK_STATE`; caller reloads current state. |
-| EC-FE05-015 | Invalid page/limit/sort/order | Reject using BR-FE05-017; do not silently normalize. |
+| EC-FE05-015 | Unapproved public query field or invalid page/limit/staff sort/order | Reject using BR-FE05-017; do not silently normalize. |
 | EC-FE05-016 | Missing/blank/overlength state-transition reason | Reject command and preserve all state. |
 | EC-FE05-017 | `pages` or `rating` violates Section 10.2 bounds/precision | Reject create/update with field-level validation and no mutation. |
 
@@ -327,13 +327,19 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page?, limit?, sort?, order?` | Paginated book summaries | Public callers receive only active/public-safe books; BR-FE05-017 applies. |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; public results are active/public-safe and ordered by `Title ASC, BookId ASC`; BR-FE05-017 applies. |
 | GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public callers receive public-safe `ACTIVE` detail or `404`; staff may receive management fields for both `ACTIVE` and `INACTIVE` books. |
 | GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; BR-FE05-017 applies. |
 | POST | `/api/books` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl? }` | Created `ACTIVE` book + version | Validates required fields and unique ISBN. |
 | PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl? }` | Updated book + new version | Metadata only; never changes book status or copies. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
 | PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Reactivated book + new version | Sets `ACTIVE`; reason required; copy states remain unchanged. |
+
+### 11.1 Frontend Ownership Boundary
+
+- `frontend/src/page/BookManagement.jsx` is the canonical FE05 mutation surface for book create, metadata update, deactivate, and reactivate actions.
+- `frontend/src/page/UserManagement.jsx` may read the Admin Library book list for console context, but its book rows are read-only and expose no duplicate FE05 mutation controls.
+- FE11 `adminApi` contains no book mutation aliases; all existing-book mutations use the FE05 API contract above with `If-Match` and reason where required.
 
 ---
 
@@ -410,7 +416,7 @@ This feature does not include:
 | Q-FE05-008 | Staff may transition book status through dedicated deactivate/reactivate commands; metadata PUT does not change status, and public browse hides `INACTIVE` books. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
 | Q-FE05-009 | Staff/public views display simple derived availability (`Còn sách` / `Không khả dụng`). FE05 never updates `BookCopies.Status`; FE06/FE07/FE08 own copy transitions. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
 | Q-FE05-010 | Existing-book mutations use SQL `rowversion` exposed as an opaque version and require `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE`. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
-| Q-FE05-011 | Query policy is deterministic: keyword 1..200, page default 1, limit default 20/max 100, sort in title/publishYear/createdAt, order asc/desc. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
+| Q-FE05-011 | Query policy is deterministic: public browse uses the exact FE01 allowlist and fixed `Title ASC, BookId ASC`; staff list additionally accepts sort in title/publishYear/createdAt and order asc/desc. | Nhat approval after cross-feature audit 2026-07-15; user envelope approval 2026-07-19 | APPROVED |
 
 ---
 

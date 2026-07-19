@@ -1,12 +1,12 @@
 # PLAN.md - FE06 Inventory / Book Copy Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: READY FOR REVIEW - FE06 reconciliation and live SQL complete; human gates pending
 
 Owner: Dat
 
-Updated: 2026-07-16
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.0 and implementation plan approved; implementation not started
+Workflow State: FE06-T001 through FE06-T008 and the post-H2 transactional race correction pass focused/live SQL gates; integration review remains open
 
 > **For implementation agents:** Execute `TASKS.md` in order. Every manual copy mutation must be proven with focused RED/GREEN tests, matching `If-Match`, transactional conflict checks, and an atomic audit write.
 
@@ -18,26 +18,26 @@ Reconcile the FE06 prototype with the approved deterministic copy-lifecycle cont
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-inventory-book-copy/SPEC.md` v0.4.0.
-- `.sdd/specs/feat-inventory-book-copy/CONTEXT.md` v0.2.0.
+- `.sdd/specs/feat-inventory-book-copy/SPEC.md` v0.4.2.
+- `.sdd/specs/feat-inventory-book-copy/CONTEXT.md` v0.2.1.
 - `.sdd/specs/feat-inventory-book-copy/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
 - FE05, FE07, and FE08 approved specs for parent-book, borrow, and reservation ownership.
 - `database/Librarymanagement.sql`.
 - `.sdd/constraints/safety.md`.
 
-## 3. Existing Baseline And Drift
+## 3. Reconciled Baseline Drift
 
-| Approved contract | Current drift to reconcile |
+| Approved contract | Reconciled implementation |
 | --- | --- |
-| Existing-copy mutations require SQL `rowversion` and `If-Match` | `BookCopies` has no rowversion and routes/services accept no version header. |
-| Conflict checks and audit write occur in the mutation transaction | Service currently checks borrow/reservation before separate repository update and writes audit afterward. |
-| Lock order is `BookCopies -> BorrowDetails -> Reservations` | Repository helpers perform independent reads without transaction-scoped locks. |
-| Create/status-to-`AVAILABLE` requires parent `Books.Status = ACTIVE` | Current parent lookup does not enforce active status for all FE06-owned transitions into `AVAILABLE`. |
-| Status reason is required, trimmed 1..500 | Current reason is optional and validator maximum is 255. |
-| Duplicate deactivation is idempotent with `changed = false` | Prototype handles status but lacks current-version and atomic audit semantics. |
-| Inventory returns counts and deterministic pagination | Current response/filter shape must be reconciled to `{ items, page, limit, totalItems, totalPages, countsByStatus }`. |
-| Frontend is server-backed | `InventoryManagement.jsx` still owns `MOCK_BOOKS`/`MOCK_COPIES`; copy dialogs call APIs against mock-selected state. |
+| Existing-copy mutations require SQL `rowversion` and `If-Match` | `BookCopies.Version` and required `If-Match` are implemented for update/status/deactivate. |
+| Conflict checks and audit write occur in the mutation transaction | Repository locks and rechecks workflow/parent state; copy and audit commit or roll back together. |
+| Lock order is `BookCopies -> BorrowDetails -> Reservations` | SQL source and live race tests verify the approved order and authoritative rechecks. |
+| Create/status-to-`AVAILABLE` requires parent `Books.Status = ACTIVE` | Create and status mutations lock/recheck the parent inside the transaction. |
+| Status reason is required, trimmed 1..500 | Boundary and UI require a trimmed 1..500-character reason. |
+| Duplicate deactivation is idempotent with `changed = false` | Current-version duplicate deactivation returns unchanged state without a second audit. |
+| Inventory returns counts and deterministic pagination | API returns `{ items, page, limit, totalItems, totalPages, countsByStatus }`. |
+| Frontend is server-backed | Inventory screens load canonical server state and preserve version/reason/conflict behavior. |
 
 ## 4. Scope
 

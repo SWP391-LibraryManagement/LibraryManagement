@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-19 - Deterministic Profile Contract Reconciled
+
+- Completed T-FE03-016 with an exact PUT allowlist that rejects direct `avatarUrl`, protected, unknown, and empty payloads before writes.
+- Moved profile-field and avatar audits into the same SQL transaction as their database changes; audit failure now rolls back the source update.
+- Serialized missing-profile creation with SQL locks and returned the updated safe DTO before transaction commit completion is reported to the service.
+- Added avatar failure compensation, managed-path-only deletion, post-commit old-file cleanup, and path/PII-free cleanup logging.
+- Removed the read-only Avatar URL input and `avatarUrl` PUT field from the frontend while preserving upload-only avatar changes.
+- Hardened shared 5xx logging so raw error text, stacks, and query-string personal data are not persisted.
+- Added focused route, service, repository, storage, security, and coverage evidence.
+- Added and passed the FE03 SQL suite 6/6 for first-view serialization and profile/avatar audit rollback; manual profile/avatar acceptance remains pending.
+- Reconciled CONTEXT/PLAN/TASKS and the full BR/FR/AC traceability matrix with the approved upload-only avatar contract and current automated evidence; source `@spec` coverage now includes all 10 FE03 functional requirements.
+
 ## 2026-07-19 - FE11 Librarian Column Ownership Activated
 
 - Bumped `SPEC.md` to 0.3.4 and recorded nullable `UserProfiles.Department` and `UserProfiles.Specialization` at 100 characters as FE11-admin-managed fields.

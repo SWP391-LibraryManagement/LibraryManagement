@@ -1,5 +1,6 @@
 jest.mock('../src/config/db', () => ({
   sql: {
+    Date: 'Date',
     DateTime: 'DateTime',
     Int: 'Int',
     NVarChar: (size) => `NVarChar(${size})`,
@@ -44,6 +45,8 @@ test('borrowing request status counts deduplicate joined detail rows', async () 
       BorrowDetailId: 101,
       DetailStatus: 'BORROWED',
       BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
+      DueDate: null,
+      ReturnDate: null,
       BookId: 1,
       Title: 'Clean Code',
     },
@@ -61,17 +64,49 @@ test('borrowing request status counts deduplicate joined detail rows', async () 
 
   const report = await reportRepository.getBorrowingReport();
 
-  expect(report.totals.requests).toBe(1);
-  expect(report.totals.details).toBe(2);
-  expect(report.requestStatusCounts).toEqual({ APPROVED: 1 });
+  expect(report.totalRows).toBe(2);
+  expect(report.metrics.activeLoans).toBe(2);
+  expect(report.rows.map((row) => row.borrowDetailId)).toEqual([102, 101]);
+  expect(report.rows.map((row) => row.borrowDate)).toEqual(['2026-06-10', '2026-06-10']);
+  expect(report.rows.find((row) => row.borrowDetailId === 101)).toEqual(
+    expect.objectContaining({ dueDate: null, returnDate: null })
+  );
 });
 
 test('borrowing date-only toDate filters use an exclusive next-day boundary', async () => {
   const borrowingCapture = useRecordset([]);
   await reportRepository.getBorrowingReport({ toDate: '2026-06-10' });
 
-  expect(borrowingCapture.query).toContain('br.RequestDate < @ToDateExclusive');
+  expect(borrowingCapture.query).toContain('bd.BorrowDate < @ToDateExclusive');
   expect(borrowingCapture.inputs.ToDateExclusive.toISOString()).toBe('2026-06-11T00:00:00.000Z');
+});
+
+test('borrowing rows sort by the raw borrow timestamp before the detail ID tie-breaker', async () => {
+  useRecordset([
+    {
+      RequestId: 10,
+      UserId: 1,
+      BorrowDetailId: 200,
+      CopyId: 2,
+      DetailStatus: 'RETURNED',
+      BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
+      BookId: 2,
+    },
+    {
+      RequestId: 10,
+      UserId: 1,
+      BorrowDetailId: 100,
+      CopyId: 1,
+      DetailStatus: 'RETURNED',
+      BorrowDate: new Date('2026-06-10T09:00:00.000Z'),
+      BookId: 1,
+    },
+  ]);
+
+  const report = await reportRepository.getBorrowingReport();
+
+  expect(report.rows.map((row) => row.borrowDetailId)).toEqual([100, 200]);
+  expect(report.rows.map((row) => row.borrowDate)).toEqual(['2026-06-10', '2026-06-10']);
 });
 
 test('borrowing reports filter derived OVERDUE rows as past-due borrowed details', async () => {
@@ -80,9 +115,30 @@ test('borrowing reports filter derived OVERDUE rows as past-due borrowed details
   await reportRepository.getBorrowingReport({ status: 'OVERDUE' });
 
   expect(capture.query).toContain("bd.Status = 'BORROWED'");
-  expect(capture.query).toContain('bd.DueDate < CAST(GETDATE() AS DATE)');
+  expect(capture.query).toContain('bd.DueDate < @BusinessDate');
+  expect(capture.query).not.toContain('GETDATE()');
+  expect(capture.inputs.BusinessDate).toBeInstanceOf(Date);
   expect(capture.query).not.toContain('bd.Status = @Status');
   expect(capture.inputs).not.toHaveProperty('Status');
+});
+
+test('borrowing period metrics do not substitute RequestDate when BorrowDate is missing', async () => {
+  useRecordset([
+    {
+      RequestId: 30,
+      RequestStatus: 'APPROVED',
+      RequestDate: new Date('2026-06-12T08:00:00.000Z'),
+      BorrowDetailId: 301,
+      DetailStatus: 'RETURNED',
+      BorrowDate: null,
+      BookId: 3,
+      Title: 'Missing Borrow Date',
+    },
+  ]);
+
+  const report = await reportRepository.getBorrowingReport();
+
+  expect(report.metrics.borrowCountByPeriod).toEqual({});
 });
 
 test('requested-only details do not create borrowing activity metrics', async () => {
@@ -101,8 +157,8 @@ test('requested-only details do not create borrowing activity metrics', async ()
 
   const report = await reportRepository.getBorrowingReport();
 
-  expect(report.borrowCountByPeriod).toEqual({});
-  expect(report.topBorrowedBooks).toEqual([]);
+  expect(report.metrics.borrowCountByPeriod).toEqual({});
+  expect(report.metrics.topBorrowedBooks).toEqual([]);
 });
 
 test('borrowing activity metrics include all actual-loan statuses and exclude requested details', async () => {
@@ -117,8 +173,8 @@ test('borrowing activity metrics include all actual-loan statuses and exclude re
 
   const report = await reportRepository.getBorrowingReport();
 
-  expect(report.borrowCountByPeriod).toEqual({ '2026-06-10': 2, '2026-06-11': 3 });
-  expect(report.topBorrowedBooks).toEqual([
+  expect(report.metrics.borrowCountByPeriod).toEqual({ '2026-06-10': 2, '2026-06-11': 3 });
+  expect(report.metrics.topBorrowedBooks).toEqual([
     { bookId: 2, title: 'Book Two', borrowCount: 3 },
     { bookId: 1, title: 'Book One', borrowCount: 2 },
   ]);
@@ -140,7 +196,7 @@ test('new member periods use membership approval dates instead of account creati
   const report = await reportRepository.getUserStatistics();
 
   expect(capture.query).toContain('m.ApprovedAt AS MemberApprovedAt');
-  expect(report.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
+  expect(report.metrics.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
 });
 
 test('user date filters limit approval-period metrics without changing user totals', async () => {
@@ -153,6 +209,7 @@ test('user date filters limit approval-period metrics without changing user tota
       RoleName: 'MEMBER',
       MemberStatus: 'APPROVED',
       MemberApprovedAt: new Date('2026-06-10T23:30:00.000Z'),
+      IsInApprovalPeriod: 1,
     },
     {
       UserId: 8,
@@ -162,6 +219,7 @@ test('user date filters limit approval-period metrics without changing user tota
       RoleName: 'MEMBER',
       MemberStatus: 'APPROVED',
       MemberApprovedAt: new Date('2026-05-20T09:00:00.000Z'),
+      IsInApprovalPeriod: 0,
     },
   ]);
 
@@ -170,14 +228,15 @@ test('user date filters limit approval-period metrics without changing user tota
     toDate: '2026-06-10',
   });
 
-  expect(capture.query).not.toContain('u.CreatedAt >= @FromDate');
-  expect(capture.query).not.toContain('u.CreatedAt < @ToDateExclusive');
-  expect(capture.inputs).not.toHaveProperty('FromDate');
-  expect(capture.inputs).not.toHaveProperty('ToDateExclusive');
-  expect(report.totals).toEqual({ users: 2, members: 2 });
-  expect(report.usersByStatus).toEqual({ ACTIVE: 1, INACTIVE: 1 });
-  expect(report.usersByRole).toEqual({ MEMBER: 2 });
-  expect(report.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
+  expect(capture.query).toContain('m.ApprovedAt >= @FromDate');
+  expect(capture.query).toContain('m.ApprovedAt < @ToDateExclusive');
+  expect(capture.query).not.toMatch(/WHERE[\s\S]*m\.ApprovedAt >= @FromDate/);
+  expect(capture.inputs.FromDate.toISOString()).toBe('2026-06-01T00:00:00.000Z');
+  expect(capture.inputs.ToDateExclusive.toISOString()).toBe('2026-06-11T00:00:00.000Z');
+  expect(report.metrics.totalMembers).toBe(2);
+  expect(report.metrics.usersByStatus).toEqual({ ACTIVE: 1, INACTIVE: 1 });
+  expect(report.metrics.usersByRole).toEqual({ MEMBER: 2 });
+  expect(report.metrics.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
 });
 
 test('inventory categories count books and low-stock includes up to two available copies', async () => {
@@ -195,14 +254,14 @@ test('inventory categories count books and low-stock includes up to two availabl
 
   const report = await reportRepository.getInventoryReport();
 
-  expect(report.categoryCounts).toEqual({ Programming: 5 });
-  expect(report.lowAvailabilityBooks).toEqual([
-    expect.objectContaining({ bookId: 1, totalCopies: 2, availableCopies: 1 }),
-    expect.objectContaining({ bookId: 2, totalCopies: 1, availableCopies: 0 }),
-    expect.objectContaining({ bookId: 3, totalCopies: 2, availableCopies: 2 }),
-    expect.objectContaining({ bookId: 5, totalCopies: 0, availableCopies: 0 }),
+  expect(report.metrics.totalBooks).toBe(5);
+  expect(report.metrics.lowStockBooks).toEqual([
+    expect.objectContaining({ bookId: 1, effectiveAvailability: 1 }),
+    expect.objectContaining({ bookId: 2, effectiveAvailability: 0 }),
+    expect.objectContaining({ bookId: 3, effectiveAvailability: 2 }),
+    expect.objectContaining({ bookId: 5, effectiveAvailability: 0 }),
   ]);
-  expect(report.lowAvailabilityBooks).not.toEqual(
+  expect(report.metrics.lowStockBooks).not.toEqual(
     expect.arrayContaining([expect.objectContaining({ bookId: 4 })])
   );
 });
@@ -218,12 +277,23 @@ test('inventory copy filters do not hide full availability from low-stock calcul
 
   const report = await reportRepository.getInventoryReport({ status: 'BORROWED' });
 
-  expect(capture.query).not.toContain('bc.Status = @Status');
-  expect(capture.inputs).not.toHaveProperty('Status');
-  expect(report.totals).toEqual({ books: 2, copies: 2 });
-  expect(report.copyStatusCounts).toEqual({ BORROWED: 2 });
-  expect(report.categoryCounts).toEqual({ Programming: 2 });
-  expect(report.lowAvailabilityBooks).toEqual([
-    expect.objectContaining({ bookId: 2, totalCopies: 1, availableCopies: 0 }),
+  expect(capture.query).toContain('bc.Status = @CopyStatus');
+  expect(capture.query).toContain('EffectiveAvailability');
+  expect(capture.inputs.CopyStatus).toBe('BORROWED');
+  expect(report.metrics).toEqual(
+    expect.objectContaining({ totalBooks: 2, totalCopies: 2, copiesByStatus: { BORROWED: 2 } })
+  );
+  expect(report.metrics.lowStockBooks).toEqual([
+    expect.objectContaining({ bookId: 2, effectiveAvailability: 0 }),
   ]);
+});
+
+test('inventory status and location filters must match the same copy in SQL', async () => {
+  const capture = useRecordset([]);
+
+  await reportRepository.getInventoryReport({ status: 'BORROWED', location: 'A1' });
+
+  expect(capture.query).toContain('bc.Status = @CopyStatus');
+  expect(capture.query).toContain('bc.Location = @Location');
+  expect(capture.query).not.toContain('FROM BookCopies selectedCopy');
 });

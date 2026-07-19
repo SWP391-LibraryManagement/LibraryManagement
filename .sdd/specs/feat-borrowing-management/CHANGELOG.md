@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-19 - V0.5.1 Reconciliation And History Contract
+
+- Reconciled canonical eligibility, active-parent guards, member-scoped approval serialization, required approval/borrow metadata, Ho Chi Minh business dates, future/pre-borrow return rejection, and mandatory rejection reasons.
+- Changed member history from request-envelope/client pagination to canonical detail rows with detail-status filtering, derived `OVERDUE`, member scope, inclusive dates, stable database ordering, and server pagination.
+- Passed focused FE07 backend 66/66, frontend 18/18, traceability 28/28, and the aggregate disposable SQL Server gate 61/61 with cleanup.
+- Final whole-repository regression, diff review, and human integration acceptance remain open.
+
 ## 2026-07-18 - Member Workspace Layout Polish
 
 - Clarified the member borrow-selection hierarchy and responsive two-column layout without changing FE07 mutation APIs.

@@ -83,6 +83,25 @@ Server database when that environment is available. If live SQL Server is unavai
 execution evidence may remain recorded under `TD-021`; the script, baseline, models, bindings, and
 static idempotence checks remain mandatory.
 
+The required disposable SQL Server evidence passed on 2026-07-19: the canonical baseline and all
+five reconciliation migrations executed successfully, the migrations passed a second execution,
+and the database/login were removed afterward. See
+`.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+
+## FE04 Membership Concurrency Migration Decision
+
+FE04 owns the filtered unique index
+`UX_MembershipApplications_User_Pending` on `MembershipApplications(UserId)` where
+`Status = 'PENDING'`. This preserves immutable approved/rejected history while making one pending
+application per user a database invariant rather than a service-only pre-check.
+
+The reviewable, idempotent migration is
+`database/migrations/2026-07-19-fe04-membership-concurrency.sql`. It must fail safely when existing
+data already contains duplicate pending rows, create no seed data, and be safe to execute twice.
+Application and review mutations must keep the canonical `Members` projection and matching audit
+entry in the same SQL transaction; final review reads use `UPDLOCK, HOLDLOCK` and updates retain a
+`Status = 'PENDING'` predicate.
+
 ## Configuration
 
 Database connection values must come from environment variables, for example:

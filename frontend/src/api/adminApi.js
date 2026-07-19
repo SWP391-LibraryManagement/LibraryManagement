@@ -7,18 +7,6 @@ export const adminApi = {
   libraryBooks(params = {}) {
     return authorizedRequest({ method: 'get', url: '/admin/library/books', params }, 'Khong the tai kho sach.');
   },
-  bookMetadata() {
-    return authorizedRequest({ method: 'get', url: '/books/metadata' }, 'Khong the tai metadata sach.');
-  },
-  createBook(data) {
-    return authorizedRequest({ method: 'post', url: '/books', data }, 'Khong the them sach.');
-  },
-  updateBook(id, data) {
-    return authorizedRequest({ method: 'put', url: `/books/${id}`, data }, 'Khong the cap nhat sach.');
-  },
-  deactivateBook(id) {
-    return authorizedRequest({ method: 'patch', url: `/books/${id}/deactivate`, data: {} }, 'Khong the xoa sach.');
-  },
   libraryResource(resource, params = {}) {
     return authorizedRequest({ method: 'get', url: `/admin/library/${resource}`, params }, 'Khong the tai du lieu thu vien.');
   },
@@ -36,6 +24,12 @@ export const adminApi = {
   },
   requests(params = {}) {
     return authorizedRequest({ method: 'get', url: '/admin/requests', params }, 'Khong the tai yeu cau.');
+  },
+  requestDetail(requestId) {
+    return authorizedRequest(
+      { method: 'get', url: `/admin/requests/${requestId}` },
+      'Khong the tai chi tiet yeu cau.'
+    );
   },
   permissions() {
     return authorizedRequest(

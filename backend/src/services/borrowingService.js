@@ -1,4 +1,9 @@
 const errors = require('../utils/safeErrors');
+const {
+  formatBusinessDate,
+  addBusinessDays,
+  compareBusinessDates,
+} = require('../utils/libraryBusinessTime');
 
 const MAX_ACTIVE_BORROWED_COPIES = 5;
 const LOAN_DAYS = 14;
@@ -244,17 +249,43 @@ function createBorrowingService({
     };
   }
 
+  function projectHistoryBorrowings(rows, today) {
+    return rows.map((detail) => ({
+      ...detail,
+      status: detail.status === 'BORROWED' && detail.dueDate && detail.dueDate < today
+        ? 'OVERDUE'
+        : detail.status,
+    }));
+  }
+
+  // @spec FR-FE07-028
   async function listMyBorrowRequests(filters, actor) {
     requireMember(actor);
 
-    const borrowRequests = await borrowingRepository.listBorrowRequests({
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const today = formatBusinessDate(clock());
+    const result = await borrowingRepository.listBorrowDetails({
       userId: actor.userId,
       status: filters.status || undefined,
       fromDate: filters.fromDate || undefined,
       toDate: filters.toDate || undefined,
+      page,
+      limit,
+      today,
     });
+    const rows = Array.isArray(result) ? result : result.rows;
+    const total = Array.isArray(result) ? rows.length : result.total;
 
-    return { borrowRequests };
+    return {
+      borrowings: projectHistoryBorrowings(rows, today),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+      },
+    };
   }
 
   async function listBorrowRequests(filters, actor) {
@@ -280,16 +311,35 @@ function createBorrowingService({
       throw errors.notFound('MEMBER_NOT_FOUND', 'Member account was not found.');
     }
 
-    const borrowings = await borrowingRepository.listBorrowDetails({
+    const today = formatBusinessDate(clock());
+    const result = await borrowingRepository.listBorrowDetails({
       userId: memberId,
       status: filters.status || undefined,
       fromDate: filters.fromDate || undefined,
       toDate: filters.toDate || undefined,
+      page: Number(filters.page) || 1,
+      limit: Number(filters.limit) || 20,
+      today,
     });
 
-    return { borrowings };
+    const rows = Array.isArray(result) ? result : result.rows;
+    const borrowings = projectHistoryBorrowings(rows, today);
+    const total = Array.isArray(result) ? borrowings.length : result.total;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+
+    return {
+      borrowings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+      },
+    };
   }
 
+  // @spec FR-FE07-018, FR-FE07-026
   async function approveBorrowRequest(requestIdInput, input, actor, context = {}) {
     requireStaff(actor);
 
@@ -343,6 +393,10 @@ function createBorrowingService({
       throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
     }
 
+    if (approvalResult?.outcome === 'BOOK_INACTIVE') {
+      throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be borrowed.');
+    }
+
     if (approvalResult?.outcome === 'UNPAID_FINE_BLOCKS_BORROWING') {
       throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
     }
@@ -391,6 +445,7 @@ function createBorrowingService({
     };
   }
 
+  // @spec FR-FE07-027
   async function rejectBorrowRequest(requestIdInput, input, actor, context = {}) {
     requireStaff(actor);
 
@@ -453,11 +508,24 @@ function createBorrowingService({
       throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be returned.');
     }
 
-    const returnDate = input.returnDate ? new Date(input.returnDate) : clock();
+    const returnDate = input.returnDate ? new Date(`${input.returnDate}T00:00:00Z`) : clock();
+    const returnBusinessDate = input.returnDate
+      ? input.returnDate
+      : formatBusinessDate(returnDate);
+    const currentBusinessDate = formatBusinessDate(clock());
+    const borrowBusinessDate = borrowDetail.borrowDate
+      ? formatBusinessDate(borrowDetail.borrowDate)
+      : null;
 
     // @spec FR-FE07-021 — reject a return date earlier than the borrow date (EC-FE07-009)
-    if (borrowDetail.borrowDate && toDateOnly(returnDate) < toDateOnly(new Date(borrowDetail.borrowDate))) {
-      throw errors.badRequest('INVALID_RETURN_DATE', 'Return date cannot be before borrow date.');
+    if (
+      (borrowBusinessDate && compareBusinessDates(returnBusinessDate, borrowBusinessDate) < 0)
+      || compareBusinessDates(returnBusinessDate, currentBusinessDate) > 0
+    ) {
+      throw errors.badRequest(
+        'INVALID_RETURN_DATE',
+        'Return date must be between the borrow date and the current business date.'
+      );
     }
 
     const { detailStatus, copyStatus } = mapReturnConditionToStatuses(input.condition);

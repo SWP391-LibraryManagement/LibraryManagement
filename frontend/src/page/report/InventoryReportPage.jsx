@@ -3,7 +3,7 @@
  * API that: GET /api/reports/inventory.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Library, Copy, CheckCircle2, BookMarked, AlertTriangle, Filter, RefreshCw, RotateCcw } from 'lucide-react';
 
 import { authorizedRequest, reportApi } from '../../api/libraryFeatureApi';
@@ -71,28 +71,30 @@ export default function InventoryReportPage() {
     loadReport('');
   }
 
-  const totals = report?.totals || {};
-  const statusCounts = report?.copyStatusCounts || {};
-  const categoryData = useMemo(() => objectToChart(report?.categoryCounts), [report]);
+  const metrics = report?.metrics || {};
+  const rows = report?.rows || [];
+  const totalRows = report?.totalRows || 0;
+  const statusCounts = metrics.copiesByStatus || {};
+  const statusData = objectToChart(metrics.copiesByStatus);
   const availability = [
-    { label: 'Khả dụng', value: statusCounts.AVAILABLE || statusCounts.Available || 0, color: '#2f8f5b' },
-    { label: 'Đang mượn', value: statusCounts.BORROWED || statusCounts.Borrowed || 0, color: '#a87532' },
+    { label: 'Khả dụng', value: statusCounts.AVAILABLE || 0, color: '#2f8f5b' },
+    { label: 'Đang mượn', value: statusCounts.BORROWED || 0, color: '#a87532' },
     { label: 'Mất/Hỏng', value: (statusCounts.LOST || 0) + (statusCounts.DAMAGED || 0), color: '#c1452f' },
   ];
   const kpis = [
-    { label: 'Tổng đầu sách', value: totals.books, icon: Library },
-    { label: 'Tổng bản sao', value: totals.copies, icon: Copy },
+    { label: 'Tổng đầu sách', value: metrics.totalBooks, icon: Library },
+    { label: 'Tổng bản sao', value: metrics.totalCopies, icon: Copy },
     { label: 'Khả dụng', value: availability[0].value, icon: CheckCircle2 },
     { label: 'Đang mượn', value: availability[1].value, icon: BookMarked },
     { label: 'Mất / Hỏng', value: availability[2].value, icon: AlertTriangle },
   ];
-  const lowBooks = report?.lowAvailabilityBooks || [];
+  const lowBooks = metrics.lowStockBooks || [];
 
   return (
     <AppLayout
       active="inventory-report"
       title="Báo cáo tồn kho"
-      subtitle="Tổng hợp tình trạng bản sao, tồn kho thấp và phân bổ theo nhóm sách."
+      subtitle="Tổng hợp tình trạng bản sao và các đầu sách có tồn kho thấp."
       actions={<button className="btn btn-outline" onClick={() => loadReport(categoryId)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
@@ -148,14 +150,20 @@ export default function InventoryReportPage() {
             ))}
           </div>
 
+          <div className="stat-strip">
+            <span className="stat-chip"><strong>{fmtNumber(rows.length)}</strong> dòng trên trang {report?.page || 1}</span>
+            <span className="stat-chip"><strong>{fmtNumber(totalRows)}</strong> tổng bản sao khớp bộ lọc</span>
+            <span className="stat-chip"><strong>{fmtNumber(report?.limit || 20)}</strong> dòng/trang</span>
+          </div>
+
           <div className="split">
             <div className="lib-card">
-              <h3 className="lib-card-title">Đầu sách theo thể loại</h3>
-              {categoryData.length ? <BarChart data={categoryData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu thể loại" />}
+              <h3 className="lib-card-title">Bản sao theo trạng thái</h3>
+              {statusData.length ? <BarChart data={statusData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu trạng thái" />}
             </div>
             <div className="lib-card">
               <h3 className="lib-card-title">Khả dụng vs Đang mượn</h3>
-              <DonutChart data={availability} centerLabel="ban sao" centerValue={fmtNumber(totals.copies)} />
+              <DonutChart data={availability} centerLabel="bản sao" centerValue={fmtNumber(metrics.totalCopies)} />
             </div>
           </div>
 
@@ -163,24 +171,43 @@ export default function InventoryReportPage() {
             <h3 className="lib-card-title">Đầu sách cần theo dõi tồn kho</h3>
             <DataTable
               caption="Low inventory books table"
-              headers={['Sách', 'Thể loại', 'Tổng bản', 'Khả dụng', 'Trạng thái']}
+              headers={['Sách', 'Book ID', 'Khả dụng hiệu lực', 'Trạng thái']}
               isEmpty={!lowBooks.length}
               emptyState={<EmptyState icon={Library} title="Không có đầu sách tồn kho thấp" />}
             >
               {lowBooks.map((book, index) => {
-                const available = Number(book.availableCopies ?? book.availableCount ?? 0);
-                const total = Number(book.totalCopies ?? book.copyCount ?? 0);
+                const available = Number(book.effectiveAvailability || 0);
                 const key = available === 0 ? 'out' : available <= 2 ? 'low' : 'ok';
                 return (
                   <tr key={`${book.bookId || book.title}-${index}`} className={key !== 'ok' ? 'row-overdue' : ''}>
                     <td data-label="Sách"><strong>{book.title || `Book #${book.bookId}`}</strong></td>
-                    <td data-label="Thể loại">{book.categoryName || book.category || '-'}</td>
-                    <td data-label="Tổng bản">{fmtNumber(total)}</td>
-                    <td data-label="Khả dụng"><strong>{fmtNumber(available)}</strong></td>
+                    <td data-label="Book ID">#{book.bookId}</td>
+                    <td data-label="Khả dụng hiệu lực"><strong>{fmtNumber(available)}</strong></td>
                     <td data-label="Trạng thái"><Badge status={STOCK_BADGE[key].s}>{STOCK_BADGE[key].t}</Badge></td>
                   </tr>
                 );
               })}
+            </DataTable>
+          </div>
+
+          <div className="lib-card">
+            <h3 className="lib-card-title">Chi tiết bản sao ({fmtNumber(totalRows)})</h3>
+            <DataTable
+              caption="Inventory report detail rows"
+              headers={['Sách', 'Bản sao', 'Barcode', 'Vị trí', 'Trạng thái', 'Khả dụng hiệu lực']}
+              isEmpty={!rows.length}
+              emptyState={<EmptyState icon={Copy} title="Không có bản sao khớp bộ lọc" />}
+            >
+              {rows.map((row) => (
+                <tr key={row.copyId}>
+                  <td data-label="Sách"><strong>{row.title || `Book #${row.bookId}`}</strong></td>
+                  <td data-label="Bản sao">#{row.copyId}</td>
+                  <td data-label="Barcode">{row.barcode || '-'}</td>
+                  <td data-label="Vị trí">{row.location || '-'}</td>
+                  <td data-label="Trạng thái"><Badge status={row.status}>{row.status}</Badge></td>
+                  <td data-label="Khả dụng hiệu lực">{fmtNumber(row.effectiveAvailability)}</td>
+                </tr>
+              ))}
             </DataTable>
           </div>
         </>

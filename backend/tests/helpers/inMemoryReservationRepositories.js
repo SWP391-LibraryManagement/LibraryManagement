@@ -6,8 +6,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
   let nextReservationId = 1;
   const books = clone(
     initialState.books || [
-      { bookId: 1, title: 'Clean Code' },
-      { bookId: 2, title: 'Database System' },
+      { bookId: 1, title: 'Clean Code', authorName: 'Robert C. Martin', status: 'ACTIVE' },
+      { bookId: 2, title: 'Database System', authorName: 'Abraham Silberschatz', status: 'ACTIVE' },
     ]
   );
   const copies = clone(
@@ -105,7 +105,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
     async countActiveReservationsForUser(userId) {
       return reservations.filter(
         (reservation) =>
-          reservation.userId === Number(userId) && reservation.status === 'ACTIVE'
+          reservation.userId === Number(userId) &&
+          (reservation.status === 'ACTIVE' || reservation.status === 'NOTIFIED')
       ).length;
     },
 
@@ -115,7 +116,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
           (reservation) =>
             reservation.userId === Number(userId) &&
             reservation.copyId === Number(copyId) &&
-            reservation.status === 'ACTIVE'
+            (reservation.status === 'ACTIVE' || reservation.status === 'NOTIFIED')
         ) || null
       );
     },
@@ -125,6 +126,41 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         reservations.find((reservation) => reservation.reservationId === Number(reservationId)) ||
           null
       );
+    },
+
+    async listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) {
+      const normalizedQuery = String(q).trim().toLowerCase();
+      const rows = copies
+        .map((copy) => ({ copy, book: getBook(copy.bookId) }))
+        .filter(({ copy, book }) => (
+          book?.status === 'ACTIVE'
+          && (copy.status === 'BORROWED' || copy.status === 'RESERVED')
+        ))
+        .filter(({ book }) => (
+          !normalizedQuery
+          || `${book.title} ${book.authorName || ''}`.toLowerCase().includes(normalizedQuery)
+        ))
+        .sort((left, right) => (
+          left.book.title.localeCompare(right.book.title)
+          || left.book.bookId - right.book.bookId
+          || left.copy.copyId - right.copy.copyId
+        ))
+        .map(({ copy, book }) => ({
+          copyId: copy.copyId,
+          bookId: copy.bookId,
+          title: book.title,
+          authorName: book.authorName || null,
+          copyStatus: copy.status,
+          activeReservationCount: reservations.filter(
+            (reservation) => reservation.copyId === copy.copyId && reservation.status === 'ACTIVE'
+          ).length,
+        }));
+
+      const start = (Number(page) - 1) * Number(limit);
+      return {
+        rows: rows.slice(start, start + Number(limit)),
+        total: rows.length,
+      };
     },
 
     async createReservation({ userId, copyId }) {
@@ -178,11 +214,17 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         })
         .sort(
           (left, right) =>
-            new Date(right.reservedAt).getTime() - new Date(left.reservedAt).getTime() ||
-            right.reservationId - left.reservationId
+            new Date(left.reservedAt).getTime() - new Date(right.reservedAt).getTime() ||
+            left.reservationId - right.reservationId
         );
 
-      return filteredReservations.map(mapReservation);
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      const start = (page - 1) * limit;
+      return {
+        rows: filteredReservations.slice(start, start + limit).map(mapReservation),
+        total: filteredReservations.length,
+      };
     },
 
     async cancelReservation(reservationId) {

@@ -1,16 +1,12 @@
 ﻿import { useNavigate } from 'react-router-dom';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Search, BookOpen, Star, ArrowRight, Menu, X, Calendar, User, Tag, Hash, Clock, ChevronLeft } from 'lucide-react';
-import {
-  addBorrowRecord,
-  getMemberUnpaidFineSummary,
-} from '../utils/libraryWorkflow';
+import { useEffect, useState } from 'react';
+import { Search, BookOpen, ArrowRight, Menu, X, Calendar, User, Tag, ChevronLeft } from 'lucide-react';
+import { publicBrowseApi } from '../api/libraryFeatureApi';
 import { fetchHeaderProfile } from '../api/profileApi';
 import { getHomeBookAction } from '../utils/homeBookActions';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1514894780887-121968d00567?w=1400&h=800&fit=crop&auto=format';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const BOOK_COVER_FALLBACK = 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=420&fit=crop&auto=format';
 
 const CATEGORY_LABELS = {
   Programming: 'Lập trình',
@@ -64,71 +60,6 @@ const getHomeInitials = (name, email) => {
 };
 
 
-const StarRating = ({ rating, size = 12 }) => {
-  const score = Number(rating) || 0;
-
-  return (
-    <div
-      aria-label={`Đánh giá ${score.toFixed(1)} trên 5`}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: size + 8 }}
-    >
-      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: '#C78A3B' }}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Star
-              key={s}
-              size={size}
-              strokeWidth={2.2}
-              style={{ flexShrink: 0, fill: 'transparent' }}
-            />
-          ))}
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: `${Math.min(Math.max(score, 0), 5) * 20}%`,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 2,
-            color: '#C78A3B',
-            overflow: 'hidden',
-            pointerEvents: 'none',
-          }}
-        >
-        {[1, 2, 3, 4, 5].map((s) => (
-          <Star
-            key={s}
-            size={size}
-            strokeWidth={2.2}
-            style={{
-              flexShrink: 0,
-              fill: '#C78A3B',
-            }}
-          />
-        ))}
-        </div>
-      </div>
-      <span
-        style={{
-          minWidth: 28,
-          padding: '2px 6px',
-          borderRadius: 5,
-          background: '#F5EFE6',
-          color: '#6F4D2D',
-          fontSize: Math.max(size - 2, 10),
-          fontWeight: 700,
-          lineHeight: 1.2,
-          textAlign: 'center',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {score.toFixed(1)}
-      </span>
-    </div>
-  );
-};
-
 const textClamp = (lines) => ({
   display: '-webkit-box',
   WebkitLineClamp: lines,
@@ -136,437 +67,8 @@ const textClamp = (lines) => ({
   overflow: 'hidden',
 });
 
-const BorrowModal = ({ book, onClose, onConfirm }) => {
-  const [step, setStep] = React.useState('book');
-  const [duration, setDuration] = React.useState(14);
-  const [agreed, setAgreed] = React.useState(false);
-  const [pickupDate, setPickupDate] = React.useState(() => new Date().toISOString().slice(0, 10));
-  const [borrowerInfo, setBorrowerInfo] = React.useState({
-    name: '',
-    memberId: '',
-    email: '',
-    phone: '',
-  });
-  const [borrowNote, setBorrowNote] = React.useState('');
-  const [fieldErrors, setFieldErrors] = React.useState({});
-  const stepOrder = ['book', 'borrower', 'options'];
-  const stepLabels = ['Thông tin sách', 'Thông tin người mượn', 'Tùy chọn mượn'];
-  const currentStepIndex = Math.max(stepOrder.indexOf(step), 0);
-
-  const todayValue = useMemo(() => new Date().toISOString().slice(0, 10), []);
-
-const dueDate = useMemo(() => {
-  const baseDate = pickupDate || todayValue;
-  const due = new Date(`${baseDate}T00:00:00`);
-  due.setDate(due.getDate() + duration);
-  return due;
-}, [pickupDate, duration, todayValue]);
-
-const canConfirm =
-  step === 'options' &&
-  agreed &&
-  pickupDate >= todayValue &&
-  borrowNote.trim().length <= 500;
-
-  const validateBorrowerInfo = () => {
-    const errors = {};
-    const name = borrowerInfo.name.trim();
-    const memberId = borrowerInfo.memberId.trim();
-    const email = borrowerInfo.email.trim();
-    const phone = borrowerInfo.phone.trim();
-
-    if (!name) {
-      errors.name = 'Vui lòng nhập họ và tên.';
-    } else if (name.length < 2) {
-      errors.name = 'Họ và tên phải có ít nhất 2 ký tự.';
-    }
-
-    if (!memberId) {
-      errors.memberId = 'Vui lòng nhập mã thành viên.';
-    } else if (!/^USR-\d{4,}$/i.test(memberId)) {
-      errors.memberId = 'Mã thành viên cần có dạng USR-1001.';
-    }
-
-    if (!email) {
-      errors.email = 'Vui lòng nhập email.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Email không hợp lệ.';
-    }
-
-    if (!phone) {
-      errors.phone = 'Vui lòng nhập số điện thoại.';
-    } else if (!/^(0|\+84)[0-9\s.-]{8,13}$/.test(phone)) {
-      errors.phone = 'Số điện thoại không hợp lệ.';
-    }
-
-    return errors;
-  };
-
-  const validateLoanOptions = () => {
-    const errors = {};
-
-    if (!pickupDate) {
-      errors.pickupDate = 'Vui lòng chọn ngày nhận sách.';
-    } else if (pickupDate < todayValue) {
-      errors.pickupDate = 'Ngày nhận sách không được trước hôm nay.';
-    }
-
-    if (borrowNote.trim().length > 500) {
-      errors.note = 'Ghi chú không được vượt quá 500 ký tự.';
-    }
-
-    if (!agreed) {
-      errors.agreed = 'Vui lòng đồng ý với quy định mượn sách.';
-    }
-
-    return errors;
-  };
-
-  const handleConfirm = () => {
-    const errors = validateLoanOptions();
-
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
-    const unpaidFineSummary = getMemberUnpaidFineSummary(borrowerInfo.memberId);
-    if (unpaidFineSummary.count > 0) {
-      setFieldErrors({
-        agreed: `Thanh vien ${borrowerInfo.memberId} dang co ${unpaidFineSummary.count} phieu phat chua thanh toan.`,
-      });
-      return;
-    }
-
-    const loanInfo = {
-      borrowerInfo,
-      pickupDate,
-      dueDate: dueDate.toISOString().slice(0, 10),
-      duration,
-      note: borrowNote.trim(),
-    };
-
-    addBorrowRecord({
-      memberId: Number(String(borrowerInfo.memberId).replace(/\D/g, '')) || Date.now(),
-      memberName: borrowerInfo.name.trim(),
-      memberCode: borrowerInfo.memberId.trim().toUpperCase(),
-      email: borrowerInfo.email.trim(),
-      bookId: book.id,
-      bookTitle: book.title,
-      barcode: `HOME-${book.id}-${Date.now().toString().slice(-5)}`,
-      borrowDate: pickupDate,
-      dueDate: loanInfo.dueDate,
-      returnDate: '',
-      status: 'BORROWED',
-      note: loanInfo.note,
-    });
-
-    setStep('success');
-    setTimeout(() => onConfirm(loanInfo), 3000);
-  };
-
-  const goNextStep = () => {
-    if (step === 'borrower') {
-      const errors = validateBorrowerInfo();
-
-      if (Object.keys(errors).length > 0) {
-        setFieldErrors(errors);
-        return;
-      }
-    }
-
-    setFieldErrors({});
-    setStep(stepOrder[Math.min(currentStepIndex + 1, stepOrder.length - 1)]);
-  };
-
-  const goPreviousStep = () => {
-    setFieldErrors({});
-    setStep(stepOrder[Math.max(currentStepIndex - 1, 0)]);
-  };
-
-  if (step === 'success') {
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#FAF7F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-        <div style={{ textAlign: 'center', maxWidth: 480, padding: 40 }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', fontSize: 40 }}>✓</div>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 12px' }}>Gửi yêu cầu mượn sách thành công!</h2>
-          <p style={{ fontSize: 15, color: '#7A5C44', lineHeight: 1.75, margin: '0 0 28px' }}>
-            Yêu cầu mượn <strong style={{ color: '#2C1A0E' }}>"{book.title}"</strong> đã được ghi nhận. Vui lòng nhận sách tại quầy thư viện trước ngày <strong style={{ color: '#C78A3B' }}>{new Date(pickupDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-          </p>
-          <div style={{ background: '#FFF', borderRadius: 12, padding: '20px 24px', border: '1px solid rgba(78,52,46,0.1)', marginBottom: 28, textAlign: 'left' }}>
-            {[
-              { label: 'Sách', value: book.title },
-              { label: 'Thời hạn mượn', value: `${duration} ngày` },
-              { label: 'Ngày nhận sách', value: new Date(pickupDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }) },
-              { label: 'Ngày trả sách', value: dueDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }) },
-            ].map(r => (
-              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(78,52,46,0.07)' }}>
-                <span style={{ fontSize: 13, color: '#A08060' }}>{r.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#2C1A0E' }}>{r.value}</span>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: 12, color: '#A08060' }}>Đang quay lại danh mục sách...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#FAF7F2', overflowY: 'auto', fontFamily: 'Lato, sans-serif' }}>
-      {/* Top bar */}
-      <div style={{ background: '#4E342E', padding: '0 48px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <BookOpen size={20} color="#C78A3B" />
-          <span style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: '#FAF7F2' }}>Đăng ký mượn sách</span>
-        </div>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#C4A882', borderRadius: 8, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, fontFamily: 'Lato, sans-serif' }}>
-          <X size={15} /> Hủy
-        </button>
-      </div>
-
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px 60px' }}>
-        {/* Step indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 36 }}>
-          {stepLabels.map((s, i) => (
-            <React.Fragment key={s}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 26, height: 26, borderRadius: '50%', background: i <= currentStepIndex ? '#C78A3B' : '#EDE0CE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: i <= currentStepIndex ? '#FFF' : '#8B6B4A' }}>{i + 1}</div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: i === currentStepIndex ? '#4E342E' : '#A08060' }}>{s}</span>
-              </div>
-              {i < 2 && <div style={{ flex: 1, height: 1, background: i < currentStepIndex ? '#C78A3B' : 'rgba(78,52,46,0.15)', maxWidth: 60 }} />}
-            </React.Fragment>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 28, alignItems: 'start' }}>
-          {/* Left - form */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* Section 1: Book */}
-            {step === 'book' && (
-            <div style={{ background: '#FFF', borderRadius: 14, border: '1px solid rgba(78,52,46,0.1)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(78,52,46,0.08)', background: '#F5EFE6' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#C78A3B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Bước 1 - Thông tin sách</p>
-              </div>
-              <div style={{ padding: '20px 24px', display: 'flex', gap: 20 }}>
-                <img src={book.cover} alt={book.title} style={{ width: 80, height: 112, objectFit: 'cover', borderRadius: 8, flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 10, background: '#EDE0CE', color: '#7A5C44', padding: '3px 10px', borderRadius: 100, fontWeight: 700 }}>{getCategoryLabel(book.category)}</span>
-                  <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 700, color: '#2C1A0E', margin: '10px 0 4px', lineHeight: 1.3 }}>{book.title}</h3>
-                  <p style={{ fontSize: 14, color: '#7A5C44', margin: '0 0 10px' }}>Tác giả: {book.author}</p>
-                  <StarRating rating={book.rating} size={14} />
-                  <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
-                    <span style={{ fontSize: 12, color: '#A08060' }}>{book.pages} trang</span>
-                    <span style={{ fontSize: 12, color: '#A08060' }}>{book.year}</span>
-                    <span style={{ fontSize: 12, color: '#A08060' }}>ISBN {book.isbn}</span>
-                  </div>
-                  <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E8F5E9', color: '#388e3c', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 100 }}>
-                    Còn có thể mượn
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Section 2: Borrower info */}
-            {step === 'borrower' && (
-            <div style={{ background: '#FFF', borderRadius: 14, border: '1px solid rgba(78,52,46,0.1)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(78,52,46,0.08)', background: '#F5EFE6' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#C78A3B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Bước 2 - Thông tin người mượn</p>
-              </div>
-              <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                {[
-                  { label: 'Họ và tên', placeholder: 'Ví dụ: Nguyễn Văn A', key: 'name', type: 'text' },
-                  { label: 'Mã thành viên', placeholder: 'Ví dụ: USR-1001', key: 'memberId', type: 'text' },
-                  { label: 'Địa chỉ email', placeholder: 'ban@email.com', key: 'email', type: 'email' },
-                  { label: 'Số điện thoại', placeholder: '+84 xxx xxx xxx', key: 'phone', type: 'tel' },
-                ].map(f => (
-                  <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: '#4E342E', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{f.label}</label>
-                    <input
-                      type={f.type}
-                      value={borrowerInfo[f.key]}
-                      placeholder={f.placeholder}
-                      onChange={e => {
-                        setBorrowerInfo(current => ({ ...current, [f.key]: e.target.value }));
-                        setFieldErrors(current => ({ ...current, [f.key]: undefined }));
-                      }}
-                      style={{ padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${fieldErrors[f.key] ? '#C62828' : 'rgba(78,52,46,0.18)'}`, fontSize: 13, color: '#2C1A0E', background: '#FAF7F2', fontFamily: 'Lato, sans-serif', outline: 'none' }}
-                      onFocus={e => (e.currentTarget.style.borderColor = '#C78A3B')}
-                      onBlur={e => (e.currentTarget.style.borderColor = fieldErrors[f.key] ? '#C62828' : 'rgba(78,52,46,0.18)')}
-                    />
-                    {fieldErrors[f.key] && (
-                      <span style={{ fontSize: 11, color: '#C62828', lineHeight: 1.4 }}>{fieldErrors[f.key]}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            )}
-
-            {/* Section 3: Loan options */}
-            {step === 'options' && (
-            <div style={{ background: '#FFF', borderRadius: 14, border: '1px solid rgba(78,52,46,0.1)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(78,52,46,0.08)', background: '#F5EFE6' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#C78A3B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Bước 3 - Tùy chọn mượn</p>
-              </div>
-              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#4E342E', margin: '0 0 12px' }}>Thời hạn mượn</p>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    {[14, 21, 28].map(d => (
-                      <button key={d} onClick={() => setDuration(d)} style={{
-                        flex: 1, padding: '14px 0', borderRadius: 10, cursor: 'pointer', border: '2px solid',
-                        fontFamily: 'Lato, sans-serif', transition: 'all 0.15s', textAlign: 'center',
-                        borderColor: duration === d ? '#C78A3B' : 'rgba(78,52,46,0.15)',
-                        background: duration === d ? '#FFF8EE' : '#FAF7F2',
-                      }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: duration === d ? '#C78A3B' : '#2C1A0E', fontFamily: 'Playfair Display, serif' }}>{d}</div>
-                         <div style={{ fontSize: 11, color: '#A08060', marginTop: 2 }}>ngày</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4E342E', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Ngày nhận sách mong muốn</label>
-                  <input type="date" value={pickupDate} min={todayValue}
-                    onChange={e => {
-                      setPickupDate(e.target.value);
-                      setFieldErrors(current => ({ ...current, pickupDate: undefined }));
-                    }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${fieldErrors.pickupDate ? '#C62828' : 'rgba(78,52,46,0.18)'}`, fontSize: 13, color: '#2C1A0E', background: '#FAF7F2', fontFamily: 'Lato, sans-serif', outline: 'none', width: '100%' }}
-                    onFocus={e => (e.currentTarget.style.borderColor = '#C78A3B')}
-                    onBlur={e => (e.currentTarget.style.borderColor = fieldErrors.pickupDate ? '#C62828' : 'rgba(78,52,46,0.18)')}
-                  />
-                  {fieldErrors.pickupDate && (
-                    <span style={{ display: 'block', fontSize: 11, color: '#C62828', lineHeight: 1.4, marginTop: 6 }}>{fieldErrors.pickupDate}</span>
-                  )}
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#4E342E', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Ghi chú (không bắt buộc)</label>
-                  <textarea rows={3} value={borrowNote} maxLength={500} placeholder="Yêu cầu đặc biệt hoặc ghi chú cho thủ thư"
-                    onChange={e => {
-                      setBorrowNote(e.target.value);
-                      setFieldErrors(current => ({ ...current, note: undefined }));
-                    }}
-                    style={{ padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${fieldErrors.note ? '#C62828' : 'rgba(78,52,46,0.18)'}`, fontSize: 13, color: '#2C1A0E', background: '#FAF7F2', fontFamily: 'Lato, sans-serif', outline: 'none', resize: 'none', width: '100%' }}
-                    onFocus={e => (e.currentTarget.style.borderColor = '#C78A3B')}
-                    onBlur={e => (e.currentTarget.style.borderColor = fieldErrors.note ? '#C62828' : 'rgba(78,52,46,0.18)')}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 6 }}>
-                    {fieldErrors.note ? (
-                      <span style={{ fontSize: 11, color: '#C62828', lineHeight: 1.4 }}>{fieldErrors.note}</span>
-                    ) : <span />}
-                    <span style={{ fontSize: 11, color: '#A08060' }}>{borrowNote.length}/500</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            )}
-            {step === 'options' && (
-            <div style={{ background: '#FFF', borderRadius: 14, border: '1px solid rgba(78,52,46,0.1)', padding: '20px 24px' }}>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
-                <div
-                  onClick={() => {
-                    setAgreed(v => !v);
-                    setFieldErrors(current => ({ ...current, agreed: undefined }));
-                  }}
-                  style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${fieldErrors.agreed ? '#C62828' : agreed ? '#C78A3B' : 'rgba(78,52,46,0.25)'}`, background: agreed ? '#C78A3B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, cursor: 'pointer', transition: 'all 0.15s' }}
-                >
-                  {agreed && <span style={{ color: '#FFF', fontSize: 12, fontWeight: 700 }}>✓</span>}
-                </div>
-                <span style={{ fontSize: 13, color: '#5A3E36', lineHeight: 1.65 }}>
-                  Tôi đồng ý với <span style={{ color: '#C78A3B', fontWeight: 600 }}>quy định mượn sách của thư viện</span>. Tôi sẽ trả sách đúng hạn và chịu trách nhiệm nếu sách bị hư hỏng hoặc thất lạc.
-                </span>
-              </label>
-              {fieldErrors.agreed && (
-                <p style={{ fontSize: 11, color: '#C62828', margin: '10px 0 0 32px', lineHeight: 1.4 }}>{fieldErrors.agreed}</p>
-              )}
-            </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-              {step !== 'book' && (
-                <button onClick={goPreviousStep} style={{ minWidth: 118, padding: '11px 18px', borderRadius: 8, border: '1.5px solid rgba(78,52,46,0.18)', background: 'transparent', color: '#7A5C44', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'Lato, sans-serif', textAlign: 'center' }}>
-                  {'Quay l\u1ea1i'}
-                </button>
-              )}
-              {step !== 'options' && (
-                <button onClick={goNextStep} style={{ minWidth: 118, padding: '12px 24px', borderRadius: 8, border: 'none', background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'Lato, sans-serif', textAlign: 'center' }}>
-                  {'Ti\u1ebfp t\u1ee5c'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Right - summary */}
-          <div style={{ position: 'sticky', top: 80 }}>
-            <div style={{ background: '#FFF', borderRadius: 14, border: '1px solid rgba(78,52,46,0.1)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', background: '#4E342E' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#C78A3B', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px' }}>Tóm tắt mượn sách</p>
-                <p style={{ fontSize: 13, color: '#C4A882', margin: 0 }}>Kiểm tra trước khi xác nhận</p>
-              </div>
-              <div style={{ padding: '20px 24px' }}>
-                <div style={{ display: 'flex', gap: 14, marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid rgba(78,52,46,0.08)' }}>
-                  <img src={book.cover} alt={book.title} style={{ width: 52, height: 72, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
-                  <div>
-                    <p style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 700, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3 }}>{book.title}</p>
-                    <p style={{ fontSize: 12, color: '#7A5C44', margin: 0 }}>Tác giả: {book.author}</p>
-                  </div>
-                </div>
-
-                {[
-                  { label: 'Thời hạn mượn', value: `${duration} ngày` },
-                  { label: 'Ngày nhận sách', value: pickupDate ? new Date(pickupDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-' },
-                  { label: 'Ngày trả sách', value: dueDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' }) },
-                  { label: 'Phí trễ hạn', value: '5.000 VND / ngày' },
-                  { label: 'Phí mượn', value: 'Miễn phí' },
-                ].map(r => (
-                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid rgba(78,52,46,0.06)' }}>
-                    <span style={{ fontSize: 12, color: '#A08060' }}>{r.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: r.label === 'Phí mượn' ? '#2E7D32' : '#2C1A0E' }}>{r.value}</span>
-                  </div>
-                ))}
-
-                <div style={{ background: '#FFF8EE', borderRadius: 8, padding: '10px 14px', margin: '14px 0', border: '1px solid rgba(199,138,59,0.2)', display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 18 }}>i</span>
-                  <p style={{ fontSize: 12, color: '#7A5C44', margin: 0, lineHeight: 1.6 }}>
-                    Vui lòng mang theo <strong>thẻ thành viên</strong> khi nhận sách tại quầy thư viện.
-                  </p>
-                </div>
-
-                <button onClick={handleConfirm} disabled={!canConfirm}
-                  style={{
-                    width: '100%', padding: '14px', borderRadius: 10, border: 'none',
-                    background: canConfirm ? '#C78A3B' : '#EDE0CE',
-                    color: canConfirm ? '#FFF' : '#A08060',
-                    cursor: canConfirm ? 'pointer' : 'not-allowed',
-                    fontSize: 14, fontWeight: 700, fontFamily: 'Lato, sans-serif',
-                    transition: 'background 0.2s', marginTop: 4,
-                  }}
-                  onMouseEnter={e => { if (canConfirm) e.currentTarget.style.background = '#4E342E'; }}
-                  onMouseLeave={e => { if (canConfirm) e.currentTarget.style.background = '#C78A3B'; }}
-                >
-                  Xác nhận yêu cầu mượn
-                </button>
-                {!canConfirm && (
-                  <p style={{ fontSize: 11, color: '#A08060', textAlign: 'center', marginTop: 8 }}>
-                    Vui lòng đồng ý với quy định mượn sách để tiếp tục.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // -- Book Information Panel (sidebar-style) --
-const BookInfoPanel = ({ book, action, onClose, onViewDetails, onAction }) => (
+const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, onAction }) => (
   <div style={{
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, zIndex: 300,
     background: '#FFF', boxShadow: '-8px 0 40px rgba(78,52,46,0.12)',
@@ -584,36 +86,34 @@ const BookInfoPanel = ({ book, action, onClose, onViewDetails, onAction }) => (
     <div style={{ padding: 24 }}>
       {/* Cover */}
       <div style={{ borderRadius: 10, overflow: 'hidden', height: 260, background: '#EDE0CE', marginBottom: 20 }}>
-        <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
 
       {/* Badge */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <span style={{
-          background: book.available ? '#E8F5E9' : '#FFEBEE',
-          color: book.available ? '#388e3c' : '#c62828',
+          background: book.availabilityStatus === 'AVAILABLE' ? '#E8F5E9' : '#FFEBEE',
+          color: book.availabilityStatus === 'AVAILABLE' ? '#388e3c' : '#c62828',
           padding: '4px 12px', borderRadius: 100, fontSize: 12, fontWeight: 700,
         }}>
-          {book.available ? 'Còn sách' : 'Đã mượn'}
+          {book.availabilityStatus === 'AVAILABLE' ? 'Còn sách' : 'Không khả dụng'}
         </span>
         <span style={{ background: '#EDE0CE', color: '#7A5C44', padding: '4px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600 }}>
-          {getCategoryLabel(book.category)}
+          {getCategoryLabel(book.categoryName || 'Chưa phân loại')}
         </span>
       </div>
 
       <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 700, color: '#2C1A0E', margin: '0 0 6px', lineHeight: 1.3 }}>
         {book.title}
       </h2>
-      <p style={{ color: '#7A5C44', fontSize: 14, margin: '0 0 12px' }}>Tác giả: {book.author}</p>
-      <StarRating rating={book.rating} size={14} />
+      <p style={{ color: '#7A5C44', fontSize: 14, margin: '0 0 12px' }}>Tác giả: {book.authorName || 'Không rõ tác giả'}</p>
 
       <div style={{ height: 1, background: 'rgba(78,52,46,0.1)', margin: '20px 0' }} />
 
       {/* Info rows */}
       {[
-        { icon: Calendar, label: 'Năm xuất bản', value: book.year },
-        { icon: Hash, label: 'Số trang', value: book.pages },
-        { icon: Tag, label: 'ISBN', value: book.isbn },
+        { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
+        { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
       ].map(({ icon: Icon, label, value }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0E8D8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -629,21 +129,22 @@ const BookInfoPanel = ({ book, action, onClose, onViewDetails, onAction }) => (
       <div style={{ height: 1, background: 'rgba(78,52,46,0.1)', margin: '20px 0' }} />
 
       <p style={{ fontSize: 14, color: '#5A3E36', lineHeight: 1.7, margin: '0 0 24px' }}>
-        {book.description}
+        {book.description || 'Chưa có mô tả cho sách này.'}
       </p>
 
       <button
         onClick={onViewDetails}
+        disabled={detailLoading}
         style={{
           width: '100%', padding: '12px', borderRadius: 8, border: 'none',
-          background: '#C78A3B', color: '#FFF', cursor: 'pointer',
+          background: '#C78A3B', color: '#FFF', cursor: detailLoading ? 'wait' : 'pointer',
           fontSize: 14, fontWeight: 700, transition: 'background 0.2s',
           fontFamily: 'Lato, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
         onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
         onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
       >
-        Xem chi tiết đầy đủ <ArrowRight size={16} />
+        {detailLoading ? 'Đang tải chi tiết...' : 'Xem chi tiết đầy đủ'} <ArrowRight size={16} />
       </button>
       <button
         onClick={onAction}
@@ -802,16 +303,16 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
         {/* Left */}
         <div>
           <div style={{ borderRadius: 12, overflow: 'hidden', height: 300, background: '#EDE0CE', marginBottom: 16 }}>
-            <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {!book.available && (
+            {book.availabilityStatus !== 'AVAILABLE' && (
               <button style={{
                 padding: '10px', borderRadius: 8, border: 'none', background: '#EDE0CE',
                 color: '#A08060', cursor: 'not-allowed', fontSize: 13, fontWeight: 700,
                 fontFamily: 'Lato, sans-serif',
               }} disabled>
-                Hiện đã được mượn
+                Không khả dụng
               </button>
             )}
             <button onClick={onAction} style={{
@@ -831,22 +332,21 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
             <span style={{
-              background: book.available ? '#E8F5E9' : '#FFEBEE',
-              color: book.available ? '#388e3c' : '#c62828',
+              background: book.availabilityStatus === 'AVAILABLE' ? '#E8F5E9' : '#FFEBEE',
+              color: book.availabilityStatus === 'AVAILABLE' ? '#388e3c' : '#c62828',
               padding: '4px 12px', borderRadius: 100, fontSize: 11, fontWeight: 700,
             }}>
-              {book.available ? 'Còn sách' : 'Đã mượn'}
+              {book.availabilityStatus === 'AVAILABLE' ? 'Còn sách' : 'Không khả dụng'}
             </span>
             <span style={{ background: '#EDE0CE', color: '#7A5C44', padding: '4px 12px', borderRadius: 100, fontSize: 11, fontWeight: 600 }}>
-              {getCategoryLabel(book.category)}
+              {getCategoryLabel(book.categoryName || 'Chưa phân loại')}
             </span>
           </div>
 
           <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 8px', lineHeight: 1.2 }}>
             {book.title}
           </h2>
-          <p style={{ color: '#7A5C44', fontSize: 15, margin: '0 0 14px' }}>Tác giả: {book.author}</p>
-          <StarRating rating={book.rating} size={16} />
+          <p style={{ color: '#7A5C44', fontSize: 15, margin: '0 0 14px' }}>Tác giả: {book.authorName || 'Không rõ tác giả'}</p>
 
           <div style={{ height: 1, background: 'rgba(78,52,46,0.1)', margin: '22px 0' }} />
 
@@ -854,17 +354,15 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
             Giới thiệu sách
           </h4>
           <p style={{ fontSize: 15, color: '#5A3E36', lineHeight: 1.8, margin: '0 0 24px' }}>
-            {book.description}
+            {book.description || 'Chưa có mô tả cho sách này.'}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { icon: Calendar, label: 'Năm xuất bản', value: book.year },
-              { icon: Hash, label: 'Số trang', value: `${book.pages} trang` },
-              { icon: Tag, label: 'ISBN', value: book.isbn },
-              { icon: Clock, label: 'Thời gian đọc ước tính', value: `${Math.round(book.pages / 50)} giờ` },
-              { icon: User, label: 'Tác giả', value: book.author },
-              { icon: BookOpen, label: 'Thể loại', value: getCategoryLabel(book.category) },
+              { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
+              { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
+              { icon: User, label: 'Tác giả', value: book.authorName || 'Không rõ tác giả' },
+              { icon: BookOpen, label: 'Thể loại', value: getCategoryLabel(book.categoryName || 'Chưa phân loại') },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} style={{ background: '#FFF', borderRadius: 10, padding: '14px 16px', border: '1px solid rgba(78,52,46,0.08)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -890,7 +388,6 @@ const HomePage = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showMembership, setShowMembership] = useState(false);
-  const [showBorrow, setShowBorrow] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [authState, setAuthState] = useState(getStoredAuthState);
@@ -904,6 +401,7 @@ const HomePage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchingBooks, setSearchingBooks] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState(null);
@@ -938,9 +436,24 @@ const HomePage = () => {
   const handleBookAction = (book) => {
     const action = getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] });
     setShowDetails(false);
-    setShowBorrow(false);
     setSelectedBook(null);
     navigate(action.path);
+  };
+
+  const handleViewDetails = async () => {
+    if (!selectedBook?.bookId) return;
+
+    try {
+      setDetailLoading(true);
+      const result = await publicBrowseApi.detail(selectedBook.bookId);
+      if (!result?.book) throw new Error('Không thể tải chi tiết sách.');
+      setSelectedBook(result.book);
+      setShowDetails(true);
+    } catch (error) {
+      showToast(error.message || 'Không thể tải chi tiết sách.');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -958,6 +471,7 @@ const HomePage = () => {
     navigate(isLoggedIn ? '/membership' : '/login');
   };
 
+  // @spec FR-FE01-001, FR-FE01-003, FR-FE01-008, FR-FE01-010
   useEffect(() => {
     if (!isLoggedIn) {
       return undefined;
@@ -981,23 +495,14 @@ const HomePage = () => {
         setLoadingBooks(true);
         setBookError('');
 
-        const [booksResponse, categoriesResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/books`),
-          fetch(`${API_BASE_URL}/books/categories`),
-        ]);
+        const booksResult = await publicBrowseApi.list();
 
-        const booksResult = await booksResponse.json();
-        const categoriesResult = await categoriesResponse.json();
-
-        if (!booksResponse.ok || !booksResult.success) {
-          throw new Error(booksResult.message || 'Không thể tải danh sách sách');
+        if (!Array.isArray(booksResult.data)) {
+          throw new Error(booksResult.error?.message || 'Không thể tải danh sách sách');
         }
 
         setBooks(booksResult.data || []);
-
-        if (categoriesResponse.ok && categoriesResult.success) {
-          setCategories(categoriesResult.data || []);
-        }
+        setCategories([]);
       } catch (error) {
         console.error('Fetch home data error:', error);
         setBookError(error.message || 'Đã xảy ra lỗi khi tải dữ liệu từ database');
@@ -1009,10 +514,10 @@ const HomePage = () => {
     fetchHomeData();
   }, []);
 
-  const fallbackCategories = Array.from(new Set(books.map((book) => book.category).filter(Boolean))).map((category, index) => ({
+  const fallbackCategories = Array.from(new Set(books.map((book) => book.categoryName).filter(Boolean))).map((category, index) => ({
     id: index + 1,
     name: category,
-    count: books.filter((book) => book.category === category).length,
+    count: books.filter((book) => book.categoryName === category).length,
     icon: getCategoryIcon(category),
   }));
 
@@ -1021,10 +526,11 @@ const HomePage = () => {
 
   const filteredAll = activeCategory === 'Tất cả'
     ? books
-    : books.filter((book) => book.category === activeCategory);
+    : books.filter((book) => book.categoryName === activeCategory);
 
   const filtered = showAll ? filteredAll : filteredAll.slice(0, 6);
 
+  // @spec FR-FE01-002, FR-FE01-003, FR-FE01-007, FR-FE01-011
   const handleSearch = async () => {
     const keyword = searchQuery.trim();
 
@@ -1036,8 +542,8 @@ const HomePage = () => {
       return;
     }
 
-    if (keyword.length > 100) {
-      setSearchError('Từ khóa tìm kiếm không được vượt quá 100 ký tự.');
+    if (keyword.length > 200) {
+      setSearchError('Từ khóa tìm kiếm không được vượt quá 200 ký tự.');
       return;
     }
 
@@ -1046,12 +552,10 @@ const HomePage = () => {
       setSearchError('');
       setActiveSearch(keyword);
 
-      const params = new URLSearchParams({ q: keyword });
-      const response = await fetch(`${API_BASE_URL}/books?${params.toString()}`);
-      const result = await response.json();
+      const result = await publicBrowseApi.list({ q: keyword });
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || result.error?.message || 'Không thể tìm kiếm sách.');
+      if (!Array.isArray(result.data)) {
+        throw new Error(result.error?.message || 'Không thể tìm kiếm sách.');
       }
 
       setSearchResults(result.data || []);
@@ -1346,7 +850,7 @@ const HomePage = () => {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 22, alignItems: 'stretch' }}>
               {searchResults.map(book => (
-                <div key={book.id} style={{
+                <div key={book.bookId} style={{
                   background: '#FAF7F2', borderRadius: 12, overflow: 'hidden',
                   border: '1px solid rgba(78,52,46,0.07)', boxShadow: '0 2px 10px rgba(78,52,46,0.05)',
                   cursor: 'pointer', transition: 'all 0.25s',
@@ -1357,21 +861,21 @@ const HomePage = () => {
                   onClick={() => { setSelectedBook(book); setShowDetails(false); }}
                 >
                   <div style={{ position: 'relative', height: 210, background: '#EDE0CE' }}>
-                    <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <div style={{
                       position: 'absolute', top: 8, right: 8, padding: '3px 8px', borderRadius: 4,
-                      background: book.available ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
+                      background: book.availabilityStatus === 'AVAILABLE' ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
                       color: '#FFF', fontSize: 10, fontWeight: 700,
                     }}>
-                      {book.available ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
+                      {book.availabilityStatus === 'AVAILABLE' ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
                     </div>
                   </div>
                   <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.category)}</p>
+                    <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>{getCategoryLabel(book.categoryName || 'Chưa phân loại')}</p>
                     <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>{book.title}</h3>
-                    <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
+                    <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
                     <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
-                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: book.available ? '#C78A3B' : 'transparent', color: book.available ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
+                      style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'Lato, sans-serif', transition: 'all 0.2s' }}
                     >{getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label}</button>
                   </div>
                 </div>
@@ -1418,7 +922,7 @@ const HomePage = () => {
         {/* Lưới sách */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 22, alignItems: 'stretch' }}>
           {filtered.map(book => (
-            <div key={book.id}
+            <div key={book.bookId}
               style={{
                 background: '#FFF', borderRadius: 12, overflow: 'hidden',
                 border: '1px solid rgba(78,52,46,0.07)',
@@ -1431,24 +935,24 @@ const HomePage = () => {
               onClick={() => { setSelectedBook(book); setShowDetails(false); }}
             >
               <div style={{ position: 'relative', height: 210, background: '#EDE0CE' }}>
-                <img src={book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 <div style={{
                   position: 'absolute', top: 8, right: 8,
                   padding: '3px 8px', borderRadius: 4,
-                  background: book.available ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
+                  background: book.availabilityStatus === 'AVAILABLE' ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
                   color: '#FFF', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
                 }}>
-                  {book.available ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
+                  {book.availabilityStatus === 'AVAILABLE' ? 'CÒN SÁCH' : 'KHÔNG KHẢ DỤNG'}
                 </div>
               </div>
               <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <p style={{ fontSize: 10, color: '#C78A3B', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px', minHeight: 13, ...textClamp(1) }}>
-                  {getCategoryLabel(book.category)}
+                  {getCategoryLabel(book.categoryName || 'Chưa phân loại')}
                 </p>
                 <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: 14, fontWeight: 600, color: '#2C1A0E', margin: '0 0 3px', lineHeight: 1.3, minHeight: 36, ...textClamp(2) }}>
                   {book.title}
                 </h3>
-                <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.author}</p>
+                <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
                 <button
                   onClick={e => { e.stopPropagation(); setSelectedBook(book); setShowDetails(false); }}
                   style={{
@@ -1636,22 +1140,14 @@ const HomePage = () => {
       )}
 
       {/* -- BOOK INFO PANEL -- */}
-      {selectedBook && !showDetails && !showBorrow && (
+      {selectedBook && !showDetails && (
         <BookInfoPanel
           book={selectedBook}
           action={selectedBookAction}
+          detailLoading={detailLoading}
           onClose={() => setSelectedBook(null)}
-          onViewDetails={() => setShowDetails(true)}
+          onViewDetails={handleViewDetails}
           onAction={() => handleBookAction(selectedBook)}
-        />
-      )}
-
-      {/* -- BORROW MODAL -- */}
-      {selectedBook && showBorrow && (
-        <BorrowModal
-          book={selectedBook}
-          onClose={() => setShowBorrow(false)}
-          onConfirm={() => { setShowBorrow(false); setSelectedBook(null); showToast(`Mượn "${selectedBook.title}" thành công!`); }}
         />
       )}
 

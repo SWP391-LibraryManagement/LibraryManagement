@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const env = require('../config/env');
 const errors = require('../utils/safeErrors');
 const {
-  addHours,
   addMinutes,
   addDays,
   generateRandomToken,
@@ -56,10 +55,11 @@ function createAuthService({
   userRepository,
   authTokenRepository,
   auditLogRepository,
-  notificationRepository,
+  notificationRequester,
   emailService,
   accountSetupRepository,
   clock = () => new Date(),
+  otpGenerator = generateOtp,
   exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
   if (!userRepository) {
@@ -74,8 +74,9 @@ function createAuthService({
     auditLogRepository = require('../repositories/auditLogRepository');
   }
 
-  if (!notificationRepository) {
-    notificationRepository = require('../repositories/notificationRepository');
+  if (!notificationRequester) {
+    const { defaultNotificationService } = require('./notificationService');
+    notificationRequester = defaultNotificationService.createSourceNotificationRequester('FE02');
   }
 
   if (!emailService) {
@@ -109,25 +110,6 @@ function createAuthService({
     }
   }
 
-  /** Tạo notification trong DB, bỏ qua lỗi */
-  async function createNotification({ userId, recipientEmail, templateCode, safePayload }) {
-    if (!notificationRepository || typeof notificationRepository.createNotification !== 'function') {
-      return;
-    }
-
-    const insertedCount = await notificationRepository.createNotification({
-      userId,
-      recipientEmail,
-      templateCode,
-      sourceFeature: 'FE02',
-      safePayload,
-    });
-
-    if (insertedCount === 0) {
-      console.warn(`[auth notification] Template ${templateCode} was not found; notification was not queued.`);
-    }
-  }
-
   /** Gửi email qua emailService, bỏ qua lỗi để không làm gián đoạn luồng chính */
   async function sendEmail(emailFnName, params, label) {
     if (!emailService || typeof emailService[emailFnName] !== 'function') {
@@ -149,11 +131,11 @@ function createAuthService({
 
   /** Tạo OTP token mới (thu hồi token cũ cùng loại trước) */
   async function createOtpToken(userId, tokenType, ttlMinutes, ip = null) {
-    const otp = generateOtp();
+    const otp = String(otpGenerator());
     const expiresAt = addMinutes(clock(), ttlMinutes);
 
     await authTokenRepository.revokeActiveTokensForUserType(userId, tokenType);
-    await authTokenRepository.createToken({
+    const record = await authTokenRepository.createToken({
       userId,
       tokenType,
       tokenHash: hashToken(otp),
@@ -161,7 +143,33 @@ function createAuthService({
       createdByIp: ip,
     });
 
-    return { otp, expiresAt };
+    return { otp, expiresAt, record };
+  }
+
+  // @spec BR-FE02-020 BR-FE02-021 FR-FE02-022 FR-FE02-023
+  async function requestOtpDelivery({
+    type,
+    userId,
+    recipientEmail,
+    otp,
+    expiresInMinutes,
+    tokenId,
+  }) {
+    try {
+      return await notificationRequester.createNotificationRequest({
+        type,
+        channel: 'EMAIL',
+        userId,
+        recipientEmail,
+        templateKey: type,
+        templateData: { otp, expiresInMinutes },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: tokenId,
+        idempotencyKey: `FE02:${type}:${tokenId}`,
+      });
+    } catch (_error) {
+      return { status: 'FAILED' };
+    }
   }
 
   /** Xác thực OTP token, ném lỗi nếu không hợp lệ hoặc hết hạn */
@@ -276,26 +284,6 @@ function createAuthService({
     return { token, record };
   }
 
-  /** Gửi email xác thực kèm OTP */
-  async function sendVerificationMessage({ userId, recipientEmail, otp }) {
-    try {
-      await createNotification({
-        userId,
-        recipientEmail,
-        templateCode: 'ACCOUNT_VERIFICATION',
-        safePayload: { purpose: 'ACCOUNT_VERIFICATION' },
-      });
-    } catch (notifyError) {
-      console.error('[auth notification] Failed to queue verification notification:', notifyError.message);
-    }
-
-    await sendEmail('sendVerificationOtpEmail', {
-      to: recipientEmail,
-      otp,
-      expiresInMinutes: env.emailVerificationTtlHours * 60,
-    }, 'verification');
-  }
-
   // -------------------------------------------------------------------------
   // Public service methods
   // -------------------------------------------------------------------------
@@ -331,17 +319,21 @@ function createAuthService({
     const passwordHash = await hashPassword(password);
     const createdUser = await userRepository.createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName });
 
-    const expiresAt = addHours(clock(), env.emailVerificationTtlHours);
-    const otp = generateOtp();
-    await authTokenRepository.createToken({
+    const expiresInMinutes = env.emailVerificationTtlHours * 60;
+    const { otp, record } = await createOtpToken(
+      createdUser.userId,
+      'EMAIL_VERIFY',
+      expiresInMinutes,
+      context.ip
+    );
+    await requestOtpDelivery({
+      type: 'ACCOUNT_VERIFICATION',
       userId: createdUser.userId,
-      tokenType: 'EMAIL_VERIFY',
-      tokenHash: hashToken(otp),
-      expiresAt,
-      createdByIp: context.ip || null,
+      recipientEmail: email,
+      otp,
+      expiresInMinutes,
+      tokenId: record.tokenId,
     });
-
-    await sendVerificationMessage({ userId: createdUser.userId, recipientEmail: email, otp });
 
     await writeAudit(context, 'AUTH_REGISTER', {
       userId: createdUser.userId,
@@ -349,13 +341,7 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = { userId: createdUser.userId, email, message: 'Verification email sent' };
-    if (exposeDebugTokens) {
-      response.debugOtp = otp;
-      response.debugVerificationToken = otp;
-    }
-
-    return response;
+    return { userId: createdUser.userId, email, message: 'Verification email sent' };
   }
 
   // @spec FR-FE02-016 — reject an expired/malformed/non-matching verification token; account stays INACTIVE and a resend is offered (AF-FE02-002, BR-FE02-004)
@@ -412,9 +398,22 @@ function createAuthService({
     let otp = null;
 
     if (user && user.status !== 'ACTIVE') {
-      const result = await createOtpToken(user.userId, 'EMAIL_VERIFY', env.emailVerificationTtlHours * 60, context.ip);
+      const expiresInMinutes = env.emailVerificationTtlHours * 60;
+      const result = await createOtpToken(
+        user.userId,
+        'EMAIL_VERIFY',
+        expiresInMinutes,
+        context.ip
+      );
       otp = result.otp;
-      await sendVerificationMessage({ userId: user.userId, recipientEmail: user.email, otp });
+      await requestOtpDelivery({
+        type: 'ACCOUNT_VERIFICATION',
+        userId: user.userId,
+        recipientEmail: user.email,
+        otp,
+        expiresInMinutes,
+        tokenId: result.record.tokenId,
+      });
     }
 
     await writeAudit(context, 'AUTH_RESEND_VERIFICATION', {
@@ -423,13 +422,7 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = { message: 'Verification email sent' };
-    if (exposeDebugTokens && otp) {
-      response.debugOtp = otp;
-      response.debugVerificationToken = otp;
-    }
-
-    return response;
+    return { message: 'Verification email sent' };
   }
 
   async function login(input, context = {}) {
@@ -473,7 +466,8 @@ function createAuthService({
 
     if (user.status !== 'ACTIVE') {
       await writeAudit(context, 'AUTH_LOGIN_INACTIVE', { userId: user.userId, targetId: user.userId });
-      throw errors.forbidden('ACCOUNT_INACTIVE', 'Account is not active.');
+      // @spec BR-FE02-007 NFR-FE02-SEC-010 - keep inactive and unknown accounts indistinguishable publicly.
+      throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
     const passwordValid = await verifyPassword(password, user.passwordHash);
@@ -502,6 +496,7 @@ function createAuthService({
     };
   }
 
+  // @spec FR-FE02-026
   async function refreshToken(input, context = {}) {
     const tokenHash = hashToken(String(input.refreshToken || '').trim());
     const tokenRecord = await authTokenRepository.findActiveTokenByHash('REFRESH', tokenHash);
@@ -518,7 +513,7 @@ function createAuthService({
     const { accessToken, expiresIn } = await issueAccessTokenForUser(user, tokenRecord.tokenId);
     await writeAudit(context, 'AUTH_REFRESH_TOKEN', { userId: user.userId, targetId: user.userId });
 
-    return { accessToken, expiresIn };
+    return { accessToken, expiresIn, refreshToken: input.refreshToken };
   }
 
   async function logout(input, context = {}) {
@@ -595,23 +590,14 @@ function createAuthService({
     if (user && user.status === 'ACTIVE' && user.emailVerifiedAt) {
       const result = await createOtpToken(user.userId, 'PASSWORD_RESET', env.passwordResetTtlMinutes, context.ip);
       otp = result.otp;
-
-      try {
-        await createNotification({
-          userId: user.userId,
-          recipientEmail: user.email,
-          templateCode: 'PASSWORD_RESET',
-          safePayload: { purpose: 'PASSWORD_RESET' },
-        });
-      } catch (notifyError) {
-        console.error('[auth notification] Failed to queue password reset notification:', notifyError.message);
-      }
-
-      await sendEmail('sendPasswordResetOtpEmail', {
-        to: user.email,
+      await requestOtpDelivery({
+        type: 'PASSWORD_RESET',
+        userId: user.userId,
+        recipientEmail: user.email,
         otp,
         expiresInMinutes: env.passwordResetTtlMinutes,
-      }, 'password reset OTP');
+        tokenId: result.record.tokenId,
+      });
     }
 
     await writeAudit(context, 'AUTH_PASSWORD_RESET_REQUEST', {
@@ -620,13 +606,7 @@ function createAuthService({
       metadata: { email },
     });
 
-    const response = { message: 'Password reset email sent' };
-    if (exposeDebugTokens && otp) {
-      response.debugOtp = otp;
-      response.debugResetToken = otp;
-    }
-
-    return response;
+    return { message: 'Password reset email sent' };
   }
 
   async function resetPassword(input, context = {}) {
@@ -640,7 +620,7 @@ function createAuthService({
       );
 
       if (setupCandidate) {
-        // @spec FR-FE02-024, FR-FE02-025 - setup activation is purpose-bound and atomic.
+        // @spec FR-FE02-024, FR-FE02-025, FR-FE11-029 - setup activation is purpose-bound and atomic.
         const setupResult = await accountSetupRepository.completeSetup({
           tokenHash,
           passwordHash: await hashPassword(input.newPassword),

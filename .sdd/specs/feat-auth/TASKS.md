@@ -1,6 +1,6 @@
 ﻿# TASKS.md - FE02 Authentication
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - OTP/REFRESH RECONCILIATION AUTOMATED PASS; HUMAN CLOSEOUT PENDING
 Date: 2026-07-15
 Owner: Dat
 
@@ -85,27 +85,30 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Files: `.sdd/specs/feat-auth/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`, `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`.
   - DoD: FE02 and FE10 agree on OTP variables, source ownership, token-ID idempotency, single delivery ownership, non-blocking failure, resend semantics, and `CHANGE_PASSWORD_OTP` exclusion; no implementation files change.
 
-- [ ] **FE02-T030 - Add RED requester-integration tests.**
+- [x] **FE02-T030 - Add RED requester-integration tests.**
   - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022; AC-FE02-001, AC-FE02-014.
   - Files: `backend/tests/authRoutes.test.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`.
   - DoD: failing tests prove register, resend verification, and forgot password make exactly one FE10 requester call containing `otp`, `expiresInMinutes`, `AuthToken`, token ID, and token-ID idempotency; tests reject direct notification writes, direct verification/reset email sends, and `debugOtp`/`debugVerificationToken`/`debugResetToken` HTTP fields.
 
-- [ ] **FE02-T031 - Migrate verification/reset delivery to FE10.**
+- [x] **FE02-T031 - Migrate verification/reset delivery to FE10.**
   - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022.
   - Dependencies: FE10-S02 and FE10-S03.
   - Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
   - DoD: `createOtpToken` returns the persisted token record; verification/reset call only the requester bound to `FE02`; duplicate direct notification/email paths and HTTP debug-token fields are removed; tests capture OTPs through injected dependencies; legacy token acceptance and direct `CHANGE_PASSWORD_OTP` email remain unchanged.
+  - Evidence: the FE10 schema/OpenAPI fan-in is present and the current FE02/FE10 focused cross-feature gate passes as part of 4 suites/154 tests.
 
-- [ ] **FE02-T032 - Lock non-blocking failure and resend behavior.**
+- [x] **FE02-T032 - Lock non-blocking failure and resend behavior.**
   - Maps to: BR-FE02-022; FR-FE02-023; AC-FE02-019; EC-FE02-009.
   - Files: `backend/tests/authRoutes.test.js`, `backend/src/services/authService.js`.
   - DoD: FE10 `FAILED` status or safe exception does not roll back user/token state or alter generic forgot-password semantics; no OTP reaches logs/audits/responses; resend creates a new token ID and notification key.
+  - Evidence: requester failure/resend behavior, token-ID idempotency, no debug credential fields, and unchanged `CHANGE_PASSWORD_OTP` ownership pass in the current FE02/FE10 focused gate.
 
-- [ ] **FE02-T033 - Pass the cross-feature validation gate.**
+- [~] **FE02-T033 - Pass the cross-feature validation gate.**
   - Maps to: ADR-004 verification contract and all FE02 follow-up requirements.
   - Dependencies: FE02-T030 to FE02-T032; FE10-S02 to FE10-S04.
   - Files: `.sdd/specs/feat-auth/TASKS.md`, `.sdd/specs/feat-auth/CHANGELOG.md`; implementation files change only for review fixes.
   - DoD: focused FE02/FE10 tests and affected integration tests pass; traceability and secret scans pass; `git diff --check` passes; human review confirms `CHANGE_PASSWORD_OTP` and legacy-token behavior were not widened.
+  - Evidence: focused cross-feature tests pass 154/154, traceability is 26/26, and diff hygiene passes; final human closeout remains open.
 
 ## FE02/FE11 Account Setup Tasks
 
@@ -134,3 +137,22 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Maps to: BR-FE02-014, BR-FE02-015, BR-FE02-017; FR-FE02-013, FR-FE02-014; AC-FE02-022..024; Q-FE02-014..016.
   - DoD: self-registration is Member-only, FE11 owns staff/admin creation, account setup expiry is exactly 24 hours, refresh-token exchange does not require an access token, and every normalized rule has deterministic traceability.
   - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.
+
+- [x] **FE02-T039 - Close the API and canonical OTP evidence gap.**
+  - Maps to: FR-FE02-003, FR-FE02-012, FR-FE02-015, FR-FE02-019; AC-FE02-002, AC-FE02-016, AC-FE02-018.
+  - Files: `backend/tests/authRoutes.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`, `TECH_DEBT.md`.
+  - DoD: API tests prove duplicate registration and weak registration/reset passwords persist no unauthorized state; canonical `{ email, otp }` verification/reset activates or updates only the eligible account and consumes the purpose-bound OTP.
+  - Evidence: focused auth validation passes 30/30; `TD-018` is resolved by `0040e0f`, and PR CI run `29680011551` passes.
+
+- [x] **FE02-T040 - Reconcile Phase 1 login abuse and enumeration policy.**
+  - Maps to: BR-FE02-007, BR-FE02-008, NFR-FE02-SEC-005, NFR-FE02-SEC-010, Q-FE02-005; AC-FE02-005, AC-FE02-007, AC-FE02-008.
+  - Files: `backend/src/services/authService.js`, `backend/tests/authRoutes.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`, `TECH_DEBT.md`.
+  - DoD: known-account lockout remains the approved Phase 1 control; IP-wide limiting is not claimed; inactive and unknown accounts return the same generic public login error while locked accounts retain their approved lock message.
+  - Evidence: the RED parity regression failed on `403 ACCOUNT_INACTIVE`; GREEN passes with `401 INVALID_CREDENTIALS`, the internal inactive audit event remains, and PR CI run `29680011551` passes on `0040e0f`.
+
+- [x] **FE02-T041 - Enforce HTTPS before authentication credential processing.**
+  - Maps to: AC-FE02-024, BR-FE02-017, NFR-FE02-SEC-003.
+  - Files: `backend/src/middleware/httpsEnforcement.js`, `backend/src/app.js`, `backend/tests/httpsEnforcement.test.js`, `TEST_PLAN.md`, `CHANGELOG.md`.
+  - RED: deployed plain-HTTP auth requests reached the auth service and returned `200`; redirect policy was also absent.
+  - GREEN: production auth requests reject with `400 HTTPS_REQUIRED` before JSON/auth dispatch, trusted `X-Forwarded-Proto: https` passes, and explicit `308` redirect policy uses only a validated `HTTPS_CANONICAL_HOST`.
+  - Validation: focused transport suite `3/3`; full backend and traceability remain merge-gate checks.

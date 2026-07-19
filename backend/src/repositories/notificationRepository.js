@@ -162,7 +162,7 @@ async function createRequest({
     { column: 'NotificationType', param: 'NotificationType', type: sql.NVarChar(50), value: type },
     { column: 'Channel', param: 'Channel', type: sql.NVarChar(20), value: channel },
     { column: 'UserId', param: 'UserId', type: sql.Int, value: userId || null },
-    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(100), value: recipientEmail },
+    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(255), value: recipientEmail },
     { column: 'TemplateId', param: 'TemplateId', type: sql.Int, value: templateId },
     { column: 'TemplateKey', param: 'TemplateKey', type: sql.NVarChar(100), value: templateKey },
     { column: 'Title', param: 'Title', type: sql.NVarChar(255), value: title || null },
@@ -199,7 +199,7 @@ async function createNotification({
   return insertNotification(pool, [
     { column: 'TemplateId', param: 'TemplateId', type: sql.Int, value: template.templateId },
     { column: 'UserId', param: 'UserId', type: sql.Int, value: userId || null },
-    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(100), value: recipientEmail },
+    { column: 'RecipientEmail', param: 'RecipientEmail', type: sql.NVarChar(255), value: recipientEmail },
     { column: 'TemplateKey', param: 'TemplateKey', type: sql.NVarChar(100), value: templateCode },
     { column: 'Title', param: 'Title', type: sql.NVarChar(255), value: template.subject },
     { column: 'Body', param: 'Body', type: sql.NVarChar(sql.MAX), value: template.body },

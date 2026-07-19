@@ -2,8 +2,8 @@ const { mkdirSync } = require('fs');
 const { randomUUID } = require('crypto');
 const { test, expect } = require('@playwright/test');
 
-const FRONTEND_URL = 'http://127.0.0.1:4173';
-const BACKEND_URL = 'http://127.0.0.1:3100';
+const FRONTEND_URL = process.env.E2E_FRONTEND_URL || 'http://127.0.0.1:4173';
+const BACKEND_URL = process.env.E2E_BACKEND_URL || 'http://127.0.0.1:3100';
 const FIXED_NOW = new Date('2026-07-14T00:00:00.000Z');
 
 async function login(page, email, password, expectedPath) {
@@ -108,7 +108,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
 
   await page.goto(`${FRONTEND_URL}/reports/borrowing`);
   await expect(page.getByText(/Dữ liệu báo cáo đã được cập nhật/i)).toBeVisible();
-  const requestKpi = page.locator('.kpi-card').filter({ hasText: 'Tổng yêu cầu' });
+  const requestKpi = page.locator('.kpi-card').filter({ hasText: 'Tổng bản ghi' });
   await expect(requestKpi.getByText('1', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'output/playwright/system-golden-path-desktop.png' });
   await page.screenshot({

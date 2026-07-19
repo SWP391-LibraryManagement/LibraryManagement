@@ -1,12 +1,12 @@
 # PLAN.md - FE03 User Profile
 
-# Version: 0.2.0
+# Version: 0.2.1
 
-# Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+# Status: APPROVED - T-FE03-016 AUTOMATED, LIVE SQL, AND AGENT BROWSER VALIDATION COMPLETE; HUMAN REVIEW PENDING
 
 # Owner: Dat
 
-# Last Updated: 2026-06-20
+# Last Updated: 2026-07-19
 
 ---
 
@@ -230,4 +230,4 @@ Do not implement:
 
 ## 8. Approval
 
-This normalized plan is baseline-approved by Nhat on 2026-07-17. Existing implementation evidence remains historical; the code owner must separately align direct `avatarUrl` mutation and mandatory audit behavior before claiming implementation conformance.
+This normalized plan is baseline-approved by Nhat on 2026-07-17. T-FE03-016 aligns direct `avatarUrl` rejection, mandatory audit behavior, missing-profile locking, avatar compensation, and safe cleanup logging. Automated, disposable SQL Server, and agent browser validation pass; human B7/L4 review remains pending.

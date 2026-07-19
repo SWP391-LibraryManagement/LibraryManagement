@@ -1,16 +1,23 @@
 /** FE07 - UC30 My Borrowing History + UC31 Gia hạn sách. */
 
-import { useEffect, useMemo, useState } from 'react';
-import { Search, RefreshCw, ChevronLeft, ChevronRight, History, AlertTriangle, CalendarClock } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { RefreshCw, ChevronLeft, ChevronRight, History, AlertTriangle, CalendarClock } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { fmtDate, mapBorrowRequestsToHistoryRows } from '../../utils/libraryFeatureViewModels';
+import { fmtDate, mapBorrowDetailsToHistoryRows } from '../../utils/libraryFeatureViewModels';
 
 const TABS = [{ key: 'all', label: 'Tất cả' }, { key: 'active', label: 'Đang mượn' }, { key: 'overdue', label: 'Quá hạn' }, { key: 'returned', label: 'Đã trả' }];
-const PAGE_SIZE = 4;
+// @spec FR-FE07-028
+const HISTORY_STATUS_BY_TAB = {
+  all: undefined,
+  active: 'BORROWED',
+  overdue: 'OVERDUE',
+  returned: 'RETURNED',
+};
+const PAGE_SIZE = 20;
 const canRenew = (row) => row.status === 'Borrowed' && row.renewalsLeft > 0;
 
 function addDays(date, days) {
@@ -22,50 +29,38 @@ function addDays(date, days) {
 export default function BorrowingHistoryPage() {
   const [rows, setRows] = useState([]);
   const [tab, setTab] = useState('all');
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 0 });
   const [renewRow, setRenewRow] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
   const [toast, showToast, clearToast] = useToast();
 
-  async function loadHistory() {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setNotice(null);
+    const status = HISTORY_STATUS_BY_TAB[tab];
     try {
-      const data = await borrowingApi.listMine();
-      setRows(mapBorrowRequestsToHistoryRows(data.borrowRequests || []));
+      const data = await borrowingApi.listMine({ status, page, limit: PAGE_SIZE });
+      setRows(mapBorrowDetailsToHistoryRows(data.borrowings || []));
+      setPagination(data.pagination || { page, limit: PAGE_SIZE, total: 0, totalPages: 0 });
     } catch (error) {
       setRows([]);
+      setPagination({ page, limit: PAGE_SIZE, total: 0, totalPages: 0 });
       setNotice(error.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { loadHistory(); }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadHistory]);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return rows.filter((row) => {
-      const byTab = tab === 'all'
-        ? true
-        : tab === 'active'
-          ? row.status === 'Borrowed'
-          : tab === 'overdue'
-            ? row.status === 'Overdue'
-            : row.status === 'Returned';
-      return byTab && (!query || `${row.title} ${row.author}`.toLowerCase().includes(query));
-    });
-  }, [rows, tab, search]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const totalPages = Math.max(1, pagination.totalPages || 0);
+  const safePage = Math.min(pagination.page || page, totalPages);
 
   async function confirmRenew() {
     if (!renewRow || renewing) return;
@@ -110,22 +105,16 @@ export default function BorrowingHistoryPage() {
             ))}
           </div>
         )}
-        filters={(
-          <div className="search-input">
-            <Search size={16} />
-            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Tìm sách..." aria-label="Tìm" />
-          </div>
-        )}
       />
 
       <DataTable
         caption="Borrowing history table"
         headers={['Sách', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
         loading={loading}
-        isEmpty={pageRows.length === 0}
+        isEmpty={rows.length === 0}
         emptyState={<EmptyState icon={History} title="Không có bản ghi nào" />}
       >
-        {pageRows.map((row) => (
+        {rows.map((row) => (
           <tr key={row.id} className={row.status === 'Overdue' ? 'row-overdue' : ''}>
             <td data-label="Sách">
               <div className="row-flex">
@@ -153,7 +142,7 @@ export default function BorrowingHistoryPage() {
 
       {!loading && (
         <div className="pagination">
-          <span className="muted">{filtered.length} bản ghi • trang {safePage}/{totalPages}</span>
+          <span className="muted">{pagination.total} bản ghi • trang {safePage}/{totalPages}</span>
           <div className="page-controls">
             <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>
             {Array.from({ length: totalPages }, (_, index) => (

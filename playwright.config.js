@@ -1,6 +1,11 @@
 const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
+const frontendPort = Number(process.env.E2E_FRONTEND_PORT || 4173);
+const backendPort = Number(process.env.E2E_BACKEND_PORT || 3100);
+const frontendUrl = `http://127.0.0.1:${frontendPort}`;
+const backendUrl = `http://127.0.0.1:${backendPort}`;
+
 module.exports = defineConfig({
   testDir: './tests/e2e',
   timeout: 60000,
@@ -12,7 +17,7 @@ module.exports = defineConfig({
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
   ],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: frontendUrl,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -20,17 +25,18 @@ module.exports = defineConfig({
   webServer: [
     {
       command: 'node tests/e2e/support/systemTestServer.js',
-      url: 'http://127.0.0.1:3100/health',
+      url: `${backendUrl}/health`,
+      env: { ...process.env, E2E_BACKEND_PORT: String(backendPort) },
       reuseExistingServer: false,
       timeout: 30000,
     },
     {
-      command: 'npx vite --host 127.0.0.1 --port 4173 --strictPort',
+      command: `npx vite --host 127.0.0.1 --port ${frontendPort} --strictPort`,
       cwd: path.join(__dirname, 'frontend'),
-      url: 'http://127.0.0.1:4173/login',
+      url: `${frontendUrl}/login`,
       env: {
         ...process.env,
-        VITE_API_BASE_URL: 'http://127.0.0.1:3100/api',
+        VITE_API_BASE_URL: `${backendUrl}/api`,
       },
       reuseExistingServer: false,
       timeout: 30000,

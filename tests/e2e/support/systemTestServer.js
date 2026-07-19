@@ -12,8 +12,8 @@ const {
 } = require('../../../backend/tests/helpers/systemIntegrationHarness');
 
 const HOST = '127.0.0.1';
-const PORT = 3100;
-const setup = makeSystemIntegrationApp();
+const PORT = Number(process.env.E2E_BACKEND_PORT || 3100);
+let setup = makeSystemIntegrationApp();
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
@@ -51,11 +51,13 @@ function latestBorrowState() {
 
 async function handleControl(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/__e2e__/setup') {
-    const { memberEmail, librarianEmail, password } = await readJson(req);
+    const { memberEmail, librarianEmail, adminEmail, password } = await readJson(req);
     if (!memberEmail || !librarianEmail || !password) {
       sendJson(res, 400, { error: 'memberEmail, librarianEmail, and password are required.' });
       return;
     }
+
+    setup = makeSystemIntegrationApp();
 
     const member = await createVerifiedActor({ setup, email: memberEmail, password });
     const librarian = await createVerifiedActor({
@@ -65,7 +67,20 @@ async function handleControl(req, res, pathname) {
       role: 'LIBRARIAN',
       approveMember: false,
     });
-    sendJson(res, 201, { memberUserId: member.userId, librarianUserId: librarian.userId });
+    const admin = adminEmail
+      ? await createVerifiedActor({
+          setup,
+          email: adminEmail,
+          password,
+          role: 'ADMIN',
+          approveMember: false,
+        })
+      : null;
+    sendJson(res, 201, {
+      memberUserId: member.userId,
+      librarianUserId: librarian.userId,
+      ...(admin ? { adminUserId: admin.userId } : {}),
+    });
     return;
   }
 

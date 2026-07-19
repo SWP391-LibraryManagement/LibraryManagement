@@ -58,6 +58,10 @@ function makeApp({ userId = 7, profileService, authError } = {}) {
 }
 
 describe('FE03 profile routes', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('GET /api/profile/me requires authentication', async () => {
     const { app, profileService } = makeApp();
 
@@ -166,5 +170,46 @@ describe('FE03 profile routes', () => {
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('AVATAR_FILE_REQUIRED');
     expect(profileService.updateMyAvatar).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['GET', 'getMyProfile'],
+    ['PUT', 'updateMyProfile'],
+    ['POST', 'updateMyAvatar'],
+  ])('%s profile controller returns a safe generic error when %s fails', async (method, serviceMethod) => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const service = {
+      getMyProfile: jest.fn(async () => ({})),
+      updateMyProfile: jest.fn(async () => ({})),
+      updateMyAvatar: jest.fn(async () => ({})),
+    };
+    service[serviceMethod].mockRejectedValueOnce(new Error('profile controller failure'));
+    const { app } = makeApp({ profileService: service });
+
+    let call;
+    if (method === 'POST') {
+      call = request(app)
+        .post('/api/profile/me/avatar')
+        .set('Authorization', 'Bearer token')
+        .attach('avatar', Buffer.from([0x89, 0x50, 0x4e, 0x47]), {
+          filename: 'avatar.png',
+          contentType: 'image/png',
+        });
+    } else {
+      call = request(app)[method.toLowerCase()]('/api/profile/me')
+        .set('Authorization', 'Bearer token');
+      if (method === 'PUT') {
+        call = call.send({ fullName: 'Updated Member' });
+      }
+    }
+
+    const response = await call;
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toMatchObject({
+      code: 'INTERNAL_ERROR',
+      message: 'Internal server error.',
+    });
+    expect(JSON.stringify(response.body)).not.toContain('profile controller failure');
   });
 });

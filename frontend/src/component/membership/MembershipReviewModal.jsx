@@ -48,8 +48,10 @@ export default function MembershipReviewModal({ application, saving, onApprove, 
           className="textarea"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
+          maxLength={500}
           placeholder="Bắt buộc khi từ chối đơn."
         />
+        <small className="ph-sub">{reason.length}/500 ký tự</small>
       </div>
     </Modal>
   );

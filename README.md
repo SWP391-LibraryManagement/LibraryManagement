@@ -9,15 +9,21 @@ documentation, and review.
 
 ## Implemented Scope
 
-The current production-aligned release candidate includes:
+The current production-aligned reconciliation candidate tracks all twelve approved feature specs. The table separates automated slice evidence from remaining human integration gates:
 
 | Feature | Scope | Status boundary |
 | --- | --- | --- |
+| FE01 Public / Browse | Public catalog search, detail, and availability summary | Automated slice complete; owner/staging confirmation pending |
 | FE02 Authentication | Register, verification, login, refresh, logout, password change/reset, token validation | Ready for human staging acceptance |
+| FE03 User Profile | Profile read/update, avatar, validation, and ownership boundaries | Automated/live SQL/browser pass; human review pending |
+| FE04 Membership | Member application, status, approval/rejection, role boundaries | Focused reconciliation pass; owner/H3 pending |
+| FE05 Book Management | Catalog reads, metadata, versioned status commands, derived availability | Focused reconciliation pass; owner/H3 pending |
+| FE06 Inventory | Copy metadata/status, rowversion, locked workflow/parent checks, audit | Focused/live SQL pass; owner/H3 pending |
 | FE07 Borrowing | Member requests, staff approval/rejection, return, renewal, member history | Complete; staging recheck required |
 | FE08 Reservation | Member reservation lifecycle and staff queue/hold processing | Ready for human staging acceptance |
 | FE09 Fine | Server-side overdue calculation, collection, paid/waive/cancel, owner/staff access | Backend ready; legacy frontend is not release evidence |
 | FE10 Notification | Safe templates, sensitive delivery boundaries, queue processing, retry, audit | Complete backend; inbox UI is deferred |
+| FE11 User & Role | Admin users, role actions, lifecycle, permissions, and audit surfaces | Named reconciliation slices complete; whole-feature/H3 pending |
 | FE12 Reporting | Borrowing, inventory, and user aggregate reports | Complete; staging recheck required |
 
 Features marked `NOT STARTED` or `DRAFT` in the project test plan are outside this release candidate.
@@ -143,11 +149,11 @@ the [system integration runbook](docs/testing/system-integration-demo-runbook.md
 
 The current observed baseline is:
 
-- backend: 307 tests across 24 suites;
-- frontend: 38 tests;
-- coverage: 93.02% statements, 83.22% branches, 96.37% functions, 92.94% lines;
+- backend: 905 tests across 53 suites;
+- frontend: 149 tests;
+- coverage: see the dated reconciliation validation record for the latest measured thresholds;
 - Playwright system golden path: passing;
-- traceability: six implemented features meet the enforced threshold;
+- traceability: all twelve feature specs currently report 100% FR tag coverage; implementation completion remains a separate gate;
 - production dependency audit: no unresolved Critical/High finding.
 
 Evidence:
@@ -194,6 +200,7 @@ are never executed automatically by CI.
   the production-aligned server API instead.
 - FE10 notification inbox UI is not part of the completed acceptance scope.
 - SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
+- Deployed authentication transport must set `NODE_ENV=production`; set `TRUST_PROXY=true` only behind a trusted TLS-terminating proxy, and optionally set `HTTPS_REDIRECT=true` with a validated `HTTPS_CANONICAL_HOST` to redirect plain HTTP auth requests.
 - The frontend production bundle has a non-blocking chunk-size advisory.
 - SMTP delivery is unavailable unless a staging mail provider is configured.
 

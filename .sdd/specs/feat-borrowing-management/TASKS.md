@@ -1,12 +1,12 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - V0.5.1 RECONCILIATION IMPLEMENTED; FINAL INTEGRATION/HUMAN GATES PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-16
 
-Workflow State: SPEC v0.5.0 and FE07-T031 through FE07-T038 approved; reconciliation implementation not started
+Workflow State: FE07-T031 through FE07-T037 and FE07-T040 are agent-side complete; FE07-T038 awaits final repository rerun and human acceptance
 
 ---
 
@@ -57,7 +57,7 @@ Checked tasks below describe the implementation completed against the earlier ap
 
 ## 3.2 V0.5.0 Reconciliation Tasks
 
-- [ ] **FE07-T031 - Add RED canonical eligibility and parent-book tests.**
+- [x] **FE07-T031 - Add RED canonical eligibility and parent-book tests.**
   - Maps to: BR-FE07-004, BR-FE07-007, BR-FE07-008, BR-FE07-023, BR-FE07-026; FR-FE07-001, FR-FE07-004, FR-FE07-015, FR-FE07-018, FR-FE07-024, FR-FE07-026; AC-FE07-001, AC-FE07-002, AC-FE07-004, AC-FE07-005, AC-FE07-016, AC-FE07-018.
   - Files: `backend/tests/borrowingRoutes.test.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Dependency: approved SPEC v0.5.0.
@@ -65,7 +65,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify RED: `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/sql/borrowingConcurrency.sqltest.js` fails only on missing v0.5.0 behavior.
   - DoD: every blocked branch preserves requests, details, copies, reservations, and audit state and returns the approved safe code.
 
-- [ ] **FE07-T032 - Add RED member-scoped five-copy concurrency tests.**
+- [x] **FE07-T032 - Add RED member-scoped five-copy concurrency tests.**
   - Maps to: BR-FE07-005; FR-FE07-014, FR-FE07-019; AC-FE07-003, AC-FE07-019; NFR-FE07-TXN-001, NFR-FE07-TXN-003.
   - Files: `backend/tests/borrowingRepository.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Dependency: FE07-T031.
@@ -73,7 +73,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify RED: the new test demonstrates the current missing/incorrect member serialization before implementation.
   - DoD: test also asserts no deadlock, loser remains `PENDING`, and loser copy/reservation/audit state is unchanged.
 
-- [ ] **FE07-T033 - Reconcile canonical eligibility and parent-book guards.**
+- [x] **FE07-T033 - Reconcile canonical eligibility and parent-book guards.**
   - Maps to: BR-FE07-004, BR-FE07-007, BR-FE07-008, BR-FE07-023, BR-FE07-024; FR-FE07-001, FR-FE07-004, FR-FE07-015, FR-FE07-018, FR-FE07-023, FR-FE07-024, FR-FE07-026; AC-FE07-001, AC-FE07-002, AC-FE07-004, AC-FE07-005, AC-FE07-015, AC-FE07-016, AC-FE07-018.
   - Files: `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/borrowingRoutes.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Dependency: FE07-T031.
@@ -81,7 +81,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify: focused route/SQL tests pass all eligibility, parent, queue, hold-owner, and rollback cases.
   - DoD: application history is never used as membership eligibility and `BOOK_INACTIVE` changes no state.
 
-- [ ] **FE07-T034 - Implement member-first approval locking and transaction metadata.**
+- [x] **FE07-T034 - Implement member-first approval locking and transaction metadata.**
   - Maps to: BR-FE07-005, BR-FE07-008 through BR-FE07-010, BR-FE07-025, BR-FE07-026; FR-FE07-004, FR-FE07-005, FR-FE07-012, FR-FE07-014, FR-FE07-019, FR-FE07-022, FR-FE07-025; AC-FE07-003 through AC-FE07-005, AC-FE07-017, AC-FE07-019; NFR-FE07-TXN-001, NFR-FE07-TXN-003.
   - Files: `backend/src/repositories/borrowingRepository.js`, `backend/src/repositories/auditLogRepository.js`, `backend/tests/borrowingRepository.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Dependency: FE07-T032, FE07-T033.
@@ -89,7 +89,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify: SQL tests pass same-copy, same-member/different-copy, reservation fulfillment, metadata, and injected audit failure cases without deadlock.
   - DoD: `activeBorrowedCount + requestedDetailCount` never exceeds five and all approval metadata is non-null on committed approved records.
 
-- [ ] **FE07-T035 - Reconcile Ho Chi Minh date policy and rejection reason.**
+- [x] **FE07-T035 - Reconcile Ho Chi Minh date policy and rejection reason.**
   - Maps to: BR-FE07-010, BR-FE07-011, BR-FE07-016, BR-FE07-027; FR-FE07-005 through FR-FE07-007, FR-FE07-021, FR-FE07-027; AC-FE07-004, AC-FE07-006 through AC-FE07-008, AC-FE07-020, AC-FE07-021; NFR-FE07-LOG-001, NFR-FE07-TIME-001.
   - Files: create `backend/src/utils/libraryBusinessTime.js`, `backend/src/validators/borrowingValidators.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/borrowingRoutes.test.js`, `backend/tests/sql/borrowingConcurrency.sqltest.js`.
   - Dependency: FE07-T034.
@@ -98,7 +98,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify: focused route/SQL tests pass and invalid commands preserve request/detail/copy/audit state.
   - DoD: UTC persistence is allowed only when API/business-date conversion is deterministic and tested.
 
-- [ ] **FE07-T036 - Align schema, model, OpenAPI, and traceability metadata.**
+- [x] **FE07-T036 - Align schema, model, OpenAPI, and traceability metadata.**
   - Maps to: BR-FE07-019, BR-FE07-020, BR-FE07-026, BR-FE07-027; FR-FE07-002, FR-FE07-005, FR-FE07-006, FR-FE07-013, FR-FE07-027; AC-FE07-004, AC-FE07-013, AC-FE07-021.
   - Files: `database/Librarymanagement.sql`, `backend/src/models/BorrowRequest.js`, `backend/src/models/BorrowDetail.js`, `backend/src/docs/openapi.yaml`, `backend/tests/borrowingContract.test.js`, `backend/tests/models.test.js`.
   - Dependency: FE07-T034, FE07-T035.
@@ -107,7 +107,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify: `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingContract.test.js tests/models.test.js` passes.
   - DoD: no persisted `OVERDUE`, new `CANCELLED` behavior, or FE09 fine write is introduced.
 
-- [ ] **FE07-T037 - Reconcile frontend v0.5.0 errors and truthful state.**
+- [x] **FE07-T037 - Reconcile frontend v0.5.0 errors and truthful state.**
   - Maps to: AC-FE07-002 through AC-FE07-005, AC-FE07-015 through AC-FE07-021; NFR-FE07-UX-001.
   - Files: `frontend/src/page/borrowing/*`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/borrowingFrontend.test.js`.
   - Dependency: FE07-T033 through FE07-T036.
@@ -116,7 +116,7 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Verify: `node --test frontend/test/borrowingFrontend.test.js` passes.
   - DoD: UI never fabricates approval/return success or eligibility evidence.
 
-- [ ] **FE07-T038 - Run v0.5.0 focused validation and review gate.**
+- [~] **FE07-T038 - Run v0.5.0 focused validation and review gate.**
   - Maps to: all new/reconciled v0.5.0 BR/FR/AC IDs and the Definition of Done.
   - Files: `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`, `.sdd/specs/feat-borrowing-management/CHANGELOG.md`, changed FE07 implementation/tests.
   - Dependency: FE07-T031 through FE07-T037.
@@ -140,10 +140,10 @@ Checked tasks below describe the implementation completed against the earlier ap
 
 ### 4.1 Pending V0.5.0 Validation
 
-- [ ] Focused borrowing route/repository/contract/model tests pass for FE07-T031 through FE07-T037.
-- [ ] Live SQL concurrency evidence proves same-member five-copy serialization and approved lock order.
-- [ ] Frontend v0.5.0 regression tests pass.
-- [ ] Traceability and `git diff --check` pass.
+- [x] Focused borrowing route/repository/contract/model tests pass: 66/66.
+- [x] Live SQL concurrency evidence proves same-member five-copy serialization and approved lock order as part of the 61/61 aggregate SQL run.
+- [x] Frontend v0.5.1 regression tests pass: 18/18.
+- [~] Traceability passes at 28/28; `git diff --check` remains part of the final repository rerun.
 - [ ] Nhat confirms human review of the reconciliation implementation.
 
 ## 5. Traceability
@@ -204,9 +204,10 @@ Checked tasks below describe the implementation completed against the earlier ap
   - DoD: both member and staff history endpoints share the exact filters, date semantics, defaults, bounds, validation order, and stable ordering; implementation files remain unchanged.
   - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.
 
-- [ ] **FE07-T040 - Align history implementation and focused tests.**
+- [x] **FE07-T040 - Align history implementation and focused tests.**
   - Maps to: BR-FE07-028, FR-FE07-028, AC-FE07-022.
   - DoD: invalid values fail before query, member scope is enforced, default/boundary pagination and inclusive date filters pass, and stable ordering is covered for member and staff endpoints.
+  - Evidence: `/me` now consumes detail-status filters and returns `{ borrowings, pagination }`; the member page sends canonical server `status/page/limit`, removes client-side page slicing, and maps detail rows. Focused backend 66/66 and frontend 18/18 pass.
 
 ## 6. Still Outside This Slice
 

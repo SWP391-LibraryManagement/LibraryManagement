@@ -1,5 +1,9 @@
 const { sql, getPool } = require('../config/db');
 
+function escapeLikePattern(value) {
+  return String(value).replace(/[\\%_[\]]/g, (match) => `\\${match}`);
+}
+
 const reservationSelect = `
   SELECT
     r.ReservationId,
@@ -76,6 +80,21 @@ function mapReservation(row) {
   };
 }
 
+function mapReservationCandidate(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    copyId: row.CopyId,
+    bookId: row.BookId,
+    title: row.Title,
+    authorName: row.AuthorName || null,
+    copyStatus: row.CopyStatus,
+    activeReservationCount: Number(row.ActiveReservationCount || 0),
+  };
+}
+
 async function getMemberEligibility(userId) {
   const pool = await getPool();
   const result = await pool
@@ -139,7 +158,7 @@ async function countActiveReservationsForUser(userId) {
       SELECT COUNT(*) AS ActiveCount
       FROM Reservations
       WHERE UserId = @UserId
-        AND Status = 'ACTIVE'
+        AND Status IN ('ACTIVE', 'NOTIFIED')
     `);
 
   return result.recordset[0]?.ActiveCount || 0;
@@ -155,7 +174,7 @@ async function findActiveReservationByUserAndCopy(userId, copyId) {
       ${reservationSelect}
       WHERE r.UserId = @UserId
         AND r.CopyId = @CopyId
-        AND r.Status = 'ACTIVE'
+        AND r.Status IN ('ACTIVE', 'NOTIFIED')
     `);
 
   return mapReservation(result.recordset[0]);
@@ -172,6 +191,56 @@ async function findReservationById(reservationId) {
     `);
 
   return mapReservation(result.recordset[0]);
+}
+
+// @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+async function listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) {
+  const pool = await getPool();
+  const request = pool.request();
+  const normalizedQuery = String(q).trim();
+  const offset = (Number(page) - 1) * Number(limit);
+
+  request
+    .input(
+      'Search',
+      sql.NVarChar(402),
+      normalizedQuery ? `%${escapeLikePattern(normalizedQuery)}%` : null
+    )
+    .input('Offset', sql.Int, offset)
+    .input('Limit', sql.Int, Number(limit));
+
+  const result = await request.query(`
+    SELECT
+      bc.CopyId,
+      bc.BookId,
+      b.Title,
+      a.AuthorName,
+      bc.Status AS CopyStatus,
+      (
+        SELECT COUNT(*)
+        FROM Reservations activeReservation
+        WHERE activeReservation.CopyId = bc.CopyId
+          AND activeReservation.Status = 'ACTIVE'
+      ) AS ActiveReservationCount,
+      COUNT(*) OVER() AS TotalRows
+    FROM BookCopies bc
+    INNER JOIN Books b ON b.BookId = bc.BookId
+    LEFT JOIN Authors a ON a.AuthorId = b.AuthorId
+    WHERE b.Status = 'ACTIVE'
+      AND bc.Status IN ('BORROWED', 'RESERVED')
+      AND (
+        @Search IS NULL
+        OR b.Title LIKE @Search ESCAPE '\\'
+        OR COALESCE(a.AuthorName, '') LIKE @Search ESCAPE '\\'
+      )
+    ORDER BY b.Title ASC, b.BookId ASC, bc.CopyId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+  `);
+
+  return {
+    rows: result.recordset.map(mapReservationCandidate),
+    total: Number(result.recordset[0]?.TotalRows || 0),
+  };
 }
 
 async function createReservation({ userId, copyId }) {
@@ -210,7 +279,7 @@ async function createReservation({ userId, copyId }) {
   }
 }
 
-async function listReservations({ userId, bookId, memberId, status } = {}) {
+async function listReservations({ userId, bookId, memberId, status, page = 1, limit = 20 } = {}) {
   const pool = await getPool();
   const request = pool.request();
   const where = [];
@@ -236,16 +305,26 @@ async function listReservations({ userId, bookId, memberId, status } = {}) {
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  request.input('Offset', sql.Int, (Number(page) - 1) * Number(limit));
+  request.input('Limit', sql.Int, Number(limit));
+  const countResult = await request.query(`
+    SELECT COUNT(*) AS Total
+    FROM Reservations r
+    INNER JOIN BookCopies bc ON r.CopyId = bc.CopyId
+    ${whereClause}
+  `);
   const result = await request.query(`
     ${reservationSelect}
     ${whereClause}
-    ORDER BY r.ReservedAt DESC, r.ReservationId DESC
+    ORDER BY r.ReservedAt ASC, r.ReservationId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
   `);
 
-  return result.recordset.map(mapReservation);
+  return { rows: result.recordset.map(mapReservation), total: countResult.recordset[0]?.Total || 0 };
 }
 
-// @spec BR-FE08-003, BR-FE08-015 - cancellation locks the copy before revalidating the reservation.
+// @spec BR-FE08-003, BR-FE08-015, FR-FE08-028
+// Cancellation locks the copy before revalidating the reservation.
 async function cancelReservation(reservationId) {
   const pool = await getPool();
   const copyLookup = await pool
@@ -413,7 +492,8 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
   }
 }
 
-// @spec FR-FE08-019, BR-FE08-015 - expiration locks sorted copies before reservation rows.
+// @spec FR-FE08-019, FR-FE08-028, BR-FE08-015
+// Expiration locks sorted copies before reservation rows.
 async function expireOverdueHolds(now) {
   const pool = await getPool();
   const candidateResult = await pool
@@ -522,6 +602,7 @@ module.exports = {
   countActiveReservationsForUser,
   findActiveReservationByUserAndCopy,
   findReservationById,
+  listReservationCandidates,
   createReservation,
   listReservations,
   cancelReservation,

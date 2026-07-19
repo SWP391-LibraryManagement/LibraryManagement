@@ -3,19 +3,29 @@
  * API thật: /api/reservations, /api/reservations/me, /api/reservations/:id/cancel.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Bookmark, BookOpen, Search, X, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { DEMO_RESERVABLE, fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+
+const CANDIDATE_PAGE_SIZE = 20;
+const EMPTY_CANDIDATE_PAGINATION = {
+  page: 1,
+  limit: CANDIDATE_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+};
 
 export default function MyReservationsPage() {
-  const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [candidatePagination, setCandidatePagination] = useState(EMPTY_CANDIDATE_PAGINATION);
+  const [candidateLoading, setCandidateLoading] = useState(false);
+  const [candidateError, setCandidateError] = useState(null);
   const [search, setSearch] = useState('');
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
@@ -37,33 +47,56 @@ export default function MyReservationsPage() {
     }
   }
 
+  const loadCandidates = useCallback(async (query = '', page = 1) => {
+    setCandidateLoading(true);
+    setCandidateError(null);
+    try {
+      const data = await reservationApi.listCandidates({
+        q: query.trim(),
+        page,
+        limit: CANDIDATE_PAGE_SIZE,
+      });
+      setCandidates(data.data || []);
+      setCandidatePagination(data.pagination || {
+        ...EMPTY_CANDIDATE_PAGINATION,
+        page,
+      });
+    } catch (error) {
+      setCandidates([]);
+      setCandidatePagination({ ...EMPTY_CANDIDATE_PAGINATION, page: 1 });
+      setCandidateError(error.message);
+    } finally {
+      setCandidateLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => { loadReservations(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const matches = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return DEMO_RESERVABLE.filter((book) => !query || `${book.title} ${book.author}`.toLowerCase().includes(query));
-  }, [search]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { loadCandidates(search, 1); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [loadCandidates, search]);
 
-  async function reserve(book) {
-    if (book.availableCopies > 0) {
-      showToast(`"${book.title}" đang có bản khả dụng. Vui lòng tạo yêu cầu mượn thay vì đặt chỗ.`, 'info');
-      return;
-    }
-    if (reservations.some((item) => item.title === book.title && !['Cancelled', 'Expired'].includes(item.status))) {
-      showToast(`Bạn đã có đặt chỗ đang hoạt động cho "${book.title}".`, 'info');
+  async function reserve(candidate) {
+    if (reservations.some((item) => item.copyId === candidate.copyId && !['Cancelled', 'Expired'].includes(item.status))) {
+      showToast(`Bạn đã có đặt chỗ đang hoạt động cho "${candidate.title}".`, 'info');
       return;
     }
 
     try {
-      const data = await reservationApi.create(book.copyId);
+      const data = await reservationApi.create(candidate.copyId);
       const next = mapReservation(data.reservation);
-      setReservations((current) => [next, ...current]);
+      await Promise.all([
+        loadReservations(),
+        loadCandidates(search, candidatePagination.page),
+      ]);
       showToast(`Đã đặt "${next.title}". Vị trí hiện tại: #${next.queue}.`, 'success');
     } catch (error) {
       showToast(error.message, 'error');
+      await loadCandidates(search, candidatePagination.page);
     }
   }
 
@@ -72,7 +105,10 @@ export default function MyReservationsPage() {
     setCancelling(true);
     try {
       await reservationApi.cancel(cancelTarget.reservationId, 'Cancelled by member from UI');
-      setReservations((current) => current.filter((item) => item.id !== cancelTarget.id));
+      await Promise.all([
+        loadReservations(),
+        loadCandidates(search, candidatePagination.page),
+      ]);
       showToast(`Đã hủy đặt chỗ "${cancelTarget.title}".`, 'info');
       setCancelTarget(null);
     } catch (error) {
@@ -87,7 +123,7 @@ export default function MyReservationsPage() {
       active="my-reservations"
       title="Đặt chỗ của tôi"
       subtitle="Đặt sách và theo dõi vị trí trong hàng đợi."
-      actions={<button className="btn btn-outline" onClick={loadReservations} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => Promise.all([loadReservations(), loadCandidates(search, candidatePagination.page)])} disabled={loading || candidateLoading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={notice.type} title={notice.title}>{notice.message}</DataNotice>}
 
@@ -101,23 +137,28 @@ export default function MyReservationsPage() {
             </div>
           )}
         />
+        {candidateError && <DataNotice type="error" title="Không thể tải sách có thể đặt chỗ">{candidateError}</DataNotice>}
         <div className="queue-list">
-          {matches.map((book) => (
-            <div className="queue-item" key={book.id}>
+          {candidateLoading && <DataNotice type="info" title="Đang tải dữ liệu">Danh sách đang được đồng bộ từ thư viện.</DataNotice>}
+          {!candidateLoading && candidates.map((candidate) => (
+            <div className="queue-item" key={candidate.copyId}>
               <span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} />
-              <div className="stack-sm" style={{ flex: 1 }}><strong>{book.title}</strong><span className="muted" style={{ fontSize: 13 }}>{book.author}</span></div>
-              <span className={`badge badge-${book.availableCopies > 0 ? 'available' : 'waiting'}`}>
-                {book.availableCopies > 0 ? `${book.availableCopies} bản khả dụng • hãy mượn ngay` : `${book.queue} người đang chờ • ${book.eta}`}
+              <div className="stack-sm" style={{ flex: 1 }}><strong>{candidate.title}</strong><span className="muted" style={{ fontSize: 13 }}>{candidate.authorName || 'Chưa rõ tác giả'}</span></div>
+              <span className="badge badge-waiting">
+                {candidate.activeReservationCount} người đang chờ • {candidate.copyStatus === 'RESERVED' ? 'Đang được giữ' : 'Đang được mượn'}
               </span>
-              {book.availableCopies > 0 ? (
-                <button className="btn btn-outline btn-sm" onClick={() => navigate('/borrowing/new')}><BookOpen size={14} /> Mượn ngay</button>
-              ) : (
-                <button className="btn btn-primary btn-sm" onClick={() => reserve(book)}><Bookmark size={14} /> Đặt chỗ</button>
-              )}
+              <button className="btn btn-primary btn-sm" onClick={() => reserve(candidate)}><Bookmark size={14} /> Đặt chỗ</button>
             </div>
           ))}
-          {matches.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách" />}
+          {!candidateLoading && candidates.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách có thể đặt chỗ" />}
         </div>
+        {candidatePagination.totalPages > 1 && (
+          <div className="pagination" aria-label="Phân trang danh sách sách có thể đặt chỗ">
+            <button className="btn btn-outline btn-sm" disabled={candidatePagination.page <= 1 || candidateLoading} onClick={() => loadCandidates(search, candidatePagination.page - 1)}>Trang trước</button>
+            <span>Trang {candidatePagination.page}/{candidatePagination.totalPages} • {candidatePagination.total} bản sao</span>
+            <button className="btn btn-outline btn-sm" disabled={candidatePagination.page >= candidatePagination.totalPages || candidateLoading} onClick={() => loadCandidates(search, candidatePagination.page + 1)}>Trang sau</button>
+          </div>
+        )}
       </div>
 
       <div className="lib-card member-reservation-list">

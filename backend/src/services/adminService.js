@@ -1,5 +1,6 @@
 const adminRepository = require('../repositories/adminRepository');
 const auditLogRepository = require('../repositories/auditLogRepository');
+const borrowingRepository = require('../repositories/borrowingRepository');
 const { adminPermissionPolicy } = require('../policies/adminPermissionPolicy');
 const errors = require('../utils/safeErrors');
 
@@ -487,6 +488,7 @@ function getPermissions() {
   };
 }
 
+// @spec FR-FE11-031
 async function getDashboard() {
   return adminRepository.getDashboard();
 }
@@ -551,24 +553,84 @@ async function listBorrowings(filters = {}) {
 }
 
 async function listRequests(filters = {}) {
-  const status = cleanText(filters.status, 20).toUpperCase();
+  const page = filters.page === undefined ? 1 : positiveInt(filters.page, 'Page');
+  const limit = filters.limit === undefined ? 20 : positiveInt(filters.limit, 'Limit');
+  if (limit > 100) {
+    throw errors.badRequest('VALIDATION_ERROR', 'Limit must be between 1 and 100.');
+  }
+  const q = cleanText(filters.q, 100) || undefined;
+  const status = cleanText(filters.status, 20).toUpperCase() || undefined;
   if (status && !REQUEST_STATUSES.has(status)) {
     throw errors.badRequest('INVALID_REQUEST_STATUS', 'Request status is invalid.');
   }
 
-  const fromDate = optionalDate(filters.fromDate, 'From date');
-  const toDate = optionalDate(filters.toDate, 'To date');
-  if (fromDate && toDate && fromDate > toDate) {
+  const from = optionalDate(filters.from, 'From date') || undefined;
+  const to = optionalDate(filters.to, 'To date') || undefined;
+  if (from && to && from > to) {
     throw errors.badRequest('INVALID_DATE_RANGE', 'From date cannot be after to date.');
   }
 
+  const result = await adminRepository.listRequests({ page, limit, q, status, from, to });
+  const total = Number(result.total || 0);
   return {
-    data: await adminRepository.listRequests({
-      q: cleanText(filters.q, 100),
-      status,
-      fromDate,
-      toDate,
-    }),
+    data: (result.rows || []).map((row) => ({
+      requestId: row.requestId,
+      requestDate: row.requestDate,
+      status: row.status,
+      member: {
+        userId: row.memberUserId,
+        fullName: row.memberName,
+        email: row.memberEmail,
+        phoneNumber: row.memberPhoneNumber,
+      },
+      itemCount: Number(row.itemCount || 0),
+      bookTitles: [...(row.bookTitles || [])],
+      categories: [...(row.categories || [])],
+    })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+    },
+  };
+}
+
+async function getRequestDetail(requestIdInput) {
+  const requestId = positiveInt(requestIdInput, 'Request ID');
+  const request = await borrowingRepository.findBorrowRequestById(requestId);
+  if (!request) {
+    throw errors.notFound('BORROW_REQUEST_NOT_FOUND', 'Borrow request was not found.');
+  }
+
+  return {
+    requestId: request.requestId,
+    requestDate: request.requestDate,
+    status: request.status,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt || null,
+    member: {
+      userId: request.member?.userId,
+      memberId: request.member?.memberId || null,
+      fullName: request.member?.fullName || null,
+      email: request.member?.email,
+      phoneNumber: request.member?.phone || null,
+      status: request.member?.status,
+    },
+    items: (request.details || []).map((detail) => ({
+      borrowDetailId: detail.borrowDetailId,
+      copyId: detail.copy?.copyId,
+      barcode: detail.copy?.barcode || null,
+      title: detail.copy?.title || null,
+      author: detail.copy?.author || null,
+      location: detail.copy?.location || null,
+      status: detail.status,
+    })),
+    lifecycle: {
+      approvedAt: request.approvedAt || null,
+      rejectedAt: request.rejectedAt || null,
+      processedAt: request.processedAt || null,
+    },
   };
 }
 
@@ -583,4 +645,5 @@ module.exports = {
   deactivateResource,
   listBorrowings,
   listRequests,
+  getRequestDetail,
 };

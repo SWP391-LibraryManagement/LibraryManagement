@@ -1,5 +1,38 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-19 - Open Reservation Limit Corrected
+
+- Counted both `ACTIVE` and `NOTIFIED` rows for the maximum-three-open-reservations rule.
+- Treated an existing `NOTIFIED` row as a duplicate for the same member and physical copy.
+- Added route, SQL-source, and live SQL regression coverage while preserving the existing conflict codes.
+
+## 2026-07-19 - V0.4.4 Member-Safe Candidate Contract Approved
+
+- Approved protected member-only `GET /api/reservations/candidates` as the source of physical `CopyId` targets.
+- Locked the safe projection to `copyId`, `bookId`, title, nullable author, `BORROWED`/`RESERVED` status, and active queue count.
+- Preserved FE01 public redaction, FE06 staff inventory access, and `POST /api/reservations { copyId }` mutation semantics.
+- Added server-owned `q`/page/limit behavior, deterministic ordering, implementation tasks FE08-T035 through FE08-T039, and SQL/browser validation gates.
+- User approved Option A and the written design on 2026-07-19; implementation and focused/full automated validation are now complete, while human H3 integration remains open.
+
+## 2026-07-19 - V0.4.4 Candidate Catalog Validated
+
+- Added the member-only SQL-backed candidate catalog and migrated the member page off `DEMO_RESERVABLE`.
+- Validated the redacted six-field projection, eligible statuses, server search/pagination, real `copyId` mutation, and canonical refresh through backend, frontend, SQL, and browser gates.
+- Aggregate disposable SQL validation passes `9/9` suites and `69/69` tests after two migration passes; cleanup leaves no disposable database or login.
+- Closed `TD-028` for agent-side validation; final H3, merge, and post-merge `main` CI remain human gates.
+
+## 2026-07-19 - Reservation Candidate Drift Recorded
+
+- The final product-drift scan confirmed that reservation mutations and lifecycle state are server-authoritative, but `MyReservationsPage` still displays hardcoded `DEMO_RESERVABLE` copy candidates.
+- Registered `TD-028` for an approved member-safe FE01/FE06/FE08 copy-selection contract; reconciliation did not invent a new endpoint or expose staff-only copy metadata.
+
+## 2026-07-19 - V0.4.3 Reservation Reconciliation
+
+- Locked canonical pagination, `copyId` queue processing, stable ordering, deterministic empty/ineligible/notification-failure outcomes, and immutable terminal timestamps.
+- Reconciled FE07 priority and held-owner fulfillment with the shared copy/reservation lock order and transaction rollback boundary.
+- Kept member/staff pages on canonical server lifecycle state with refresh-after-mutation behavior and no local fulfillment/deletion simulation.
+- Passed focused backend/shared tests 77/77, frontend 9/9, traceability 28/28, diff hygiene, and disposable SQL reservation-boundary evidence; final human integration remains open.
+
 ## 2026-07-18 - Truthful Member Reservation State
 
 - Removed member-side demo reservation substitution, simulated create success, and local-only cancellation success when FE08 APIs fail.

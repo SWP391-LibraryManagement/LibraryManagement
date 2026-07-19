@@ -15,7 +15,7 @@ test('report routes allow staff and redirect unauthenticated or member users', a
 
   assert.equal(typeof getReportRouteRedirect, 'function');
   assert.equal(getReportRouteRedirect({ authenticated: false, roles: [] }), '/login');
-  assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['MEMBER'] }), '/home');
+  assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['MEMBER'] }), '/forbidden');
   assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }), null);
   assert.equal(getReportRouteRedirect({ authenticated: true, roles: ['ADMIN'] }), null);
 });
@@ -44,6 +44,10 @@ test('FE12 report pages do not substitute demo statistics after API failures', a
     new URL('../src/api/libraryFeatureApi.js', import.meta.url),
     'utf8',
   );
+  const viewModelSource = await readFile(
+    new URL('../src/utils/libraryFeatureViewModels.js', import.meta.url),
+    'utf8',
+  );
 
   for (const page of pages) {
     const source = await readFile(new URL(page, import.meta.url), 'utf8');
@@ -54,6 +58,7 @@ test('FE12 report pages do not substitute demo statistics after API failures', a
 
   assert.match(apiSource, /function authorizedReportRequest[\s\S]*getReportErrorMessage/);
   assert.equal((apiSource.match(/return authorizedReportRequest/g) || []).length, 3);
+  assert.doesNotMatch(viewModelSource, /DEMO_REPORTS|requestStatusCounts|copyStatusCounts|membersByStatus/);
 });
 
 test('inventory report reads category options from the authorized payload', async () => {
@@ -64,8 +69,8 @@ test('inventory report reads category options from the authorized payload', asyn
 
   assert.match(source, /setCategories\(response\?\.data\?\.categories \|\| \[\]\)/);
   assert.doesNotMatch(source, /setCategories\(response\?\.categories \|\| \[\]\)/);
-  assert.match(source, /Đầu sách theo thể loại/);
-  assert.doesNotMatch(source, /Bản sao theo thể loại/);
+  assert.match(source, /Bản sao theo trạng thái/);
+  assert.doesNotMatch(source, /categoryCounts|Đầu sách theo thể loại/);
 });
 
 test('report layouts can shrink and keep responsive split rules', async () => {

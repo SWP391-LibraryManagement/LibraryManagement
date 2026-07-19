@@ -1,368 +1,406 @@
-const bookRepository = require('../repositories/bookRepository');
+const defaultBookRepository = require('../repositories/bookRepository');
+const defaultAuditLogRepository = require('../repositories/auditLogRepository');
 const AppException = require('../CustomException/AppException');
 
 const DEFAULT_COVER =
   'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=420&fit=crop&auto=format';
-const VALID_STATUSES = new Set(['ACTIVE', 'INACTIVE']);
+const BOOK_STATUSES = new Set(['ACTIVE', 'INACTIVE']);
+const SORT_FIELDS = new Set(['title', 'publishYear', 'createdAt']);
+const SORT_ORDERS = new Set(['asc', 'desc']);
+const PROTECTED_MUTATION_FIELDS = [
+  'status',
+  'copyStatus',
+  'availabilityStatus',
+  'available',
+  'availableCopies',
+  'totalCopies',
+  'lockedCopies',
+  'version',
+];
 
 function trimString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function normalizePositiveInt(value, fieldName, { required = false, max = Number.MAX_SAFE_INTEGER } = {}) {
+function badField(field, message) {
+  return new AppException(400, 'INVALID_BOOK_FIELD', message, [{ field, message }]);
+}
+
+function normalizePositiveInt(
+  value,
+  fieldName,
+  { required = false, max = Number.MAX_SAFE_INTEGER } = {}
+) {
   if (value === undefined || value === null || value === '') {
-    if (required) {
-      throw new AppException(400, 'INVALID_BOOK_FIELD', `${fieldName} là bắt buộc.`);
-    }
+    if (required) throw badField(fieldName, `${fieldName} là bắt buộc.`);
     return null;
   }
 
-  const numberValue = Number(value);
-  if (!Number.isInteger(numberValue) || numberValue <= 0 || numberValue > max) {
-    throw new AppException(400, 'INVALID_BOOK_FIELD', `${fieldName} không hợp lệ.`);
+  const normalized = Number(value);
+  if (!Number.isInteger(normalized) || normalized <= 0 || normalized > max) {
+    throw badField(fieldName, `${fieldName} không hợp lệ.`);
   }
-
-  return numberValue;
-}
-
-function normalizeDecimal(value, fieldName, { min = 0, max = 5, defaultValue = 0 } = {}) {
-  if (value === undefined || value === null || value === '') {
-    return defaultValue;
-  }
-
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue) || numberValue < min || numberValue > max) {
-    throw new AppException(400, 'INVALID_BOOK_FIELD', `${fieldName} phải nằm trong khoảng ${min}-${max}.`);
-  }
-
-  return Math.round(numberValue * 10) / 10;
+  return normalized;
 }
 
 function normalizeOptionalText(value, fieldName, maxLength) {
   const text = trimString(value);
-  if (!text) {
-    return '';
-  }
-
   if (text.length > maxLength) {
-    throw new AppException(400, 'INVALID_BOOK_FIELD', `${fieldName} không được vượt quá ${maxLength} ký tự.`);
+    throw badField(fieldName, `${fieldName} không được vượt quá ${maxLength} ký tự.`);
   }
-
   return text;
 }
 
+function normalizeRating(value) {
+  if (value === undefined || value === null || value === '') return 0;
+  const text = String(value).trim();
+  const rating = Number(text);
+  if (!/^\d(?:\.\d)?$/.test(text) || !Number.isFinite(rating) || rating < 0 || rating > 5) {
+    throw badField('rating', 'Đánh giá phải từ 0.0 đến 5.0 và có tối đa một chữ số thập phân.');
+  }
+  return rating;
+}
+
 function normalizeCoverUrl(value) {
-  const coverUrl = normalizeOptionalText(value, 'Cover URL', 255);
-
-  if (!coverUrl) {
-    return '';
+  const coverUrl = normalizeOptionalText(value, 'coverUrl', 255);
+  if (!coverUrl) return '';
+  if (!coverUrl.startsWith('/') && !/^https?:\/\/[^\s]+$/i.test(coverUrl)) {
+    throw badField('coverUrl', 'Cover URL phải là đường dẫn bắt đầu bằng / hoặc URL http(s).');
   }
-
-  const isSafePath = coverUrl.startsWith('/');
-  const isSafeUrl = /^https?:\/\/[^\s]+$/i.test(coverUrl);
-
-  if (!isSafePath && !isSafeUrl) {
-    throw new AppException(400, 'INVALID_BOOK_FIELD', 'Cover URL phải là đường dẫn bắt đầu bằng / hoặc URL http(s).');
-  }
-
   return coverUrl;
 }
 
-function mapBook(book) {
-  if (!book) {
-    return null;
+function normalizeQueryText(filters, fieldName, maxLength) {
+  if (filters[fieldName] === undefined) return '';
+  const value = trimString(filters[fieldName]);
+  if (!value) return '';
+  if (value.length > maxLength) {
+    throw new AppException(
+      400,
+      'INVALID_BOOK_QUERY',
+      `${fieldName} phải có từ 1 đến ${maxLength} ký tự khi được cung cấp.`
+    );
   }
-
-  return {
-    id: book.id,
-    title: book.title,
-    isbn: book.isbn || '',
-    categoryId: book.categoryId || null,
-    category: book.category || 'Chưa phân loại',
-    authorId: book.authorId || null,
-    author: book.author || 'Không rõ tác giả',
-    publisherId: book.publisherId || null,
-    publisher: book.publisher || 'Không rõ nhà xuất bản',
-    year: book.year || '',
-    description: book.description || '',
-    cover: book.cover || DEFAULT_COVER,
-    rating: book.rating === null || book.rating === undefined ? 0 : Number(book.rating),
-    pages: book.pages || '',
-    status: book.status || 'ACTIVE',
-    available: Number(book.availableCopies || 0) > 0,
-    totalCopies: book.totalCopies || 0,
-    availableCopies: book.availableCopies || 0,
-    lockedCopies: book.lockedCopies || 0,
-    createdAt: book.createdAt,
-    updatedAt: book.updatedAt,
-  };
+  return value;
 }
 
-function normalizeFilters(filters = {}) {
-  const q = typeof filters.q === 'string' ? filters.q.trim() : '';
-  const category = typeof filters.category === 'string' ? filters.category.trim() : '';
-  const page = normalizePositiveInt(filters.page, 'Page', { max: 100000 }) || 1;
-  const limit = normalizePositiveInt(filters.limit, 'Limit', { max: 100 }) || 20;
-  const categoryId = normalizePositiveInt(filters.categoryId, 'Category ID');
-  const authorId = normalizePositiveInt(filters.authorId, 'Author ID');
-  const publisherId = normalizePositiveInt(filters.publisherId, 'Publisher ID');
-  const sort = trimString(filters.sort) || 'createdAt';
-  const order = trimString(filters.order).toLowerCase() || 'desc';
+function normalizeListFilters(filters = {}, { staff = false } = {}) {
+  // @spec FR-FE05-017
+  const status = trimString(filters.status).toUpperCase();
+  const sort = trimString(filters.sort) || 'title';
+  const order = (trimString(filters.order) || 'asc').toLowerCase();
 
-  if (q.length > 200) {
-    throw new AppException(400, 'INVALID_SEARCH_QUERY', 'Từ khóa tìm kiếm không được vượt quá 100 ký tự.');
+  if (status && (!staff || !BOOK_STATUSES.has(status))) {
+    throw new AppException(400, 'INVALID_BOOK_STATUS', 'Trạng thái sách không hợp lệ.');
   }
-
-  if (category.length > 80) {
-    throw new AppException(400, 'INVALID_CATEGORY_FILTER', 'Tên thể loại không được vượt quá 80 ký tự.');
+  if (!SORT_FIELDS.has(sort)) {
+    throw new AppException(400, 'INVALID_BOOK_SORT', 'Trường sắp xếp sách không hợp lệ.');
   }
-
-  if (!['title', 'publishYear', 'createdAt'].includes(sort) || !['asc', 'desc'].includes(order)) {
-    throw new AppException(400, 'INVALID_BOOK_QUERY', 'Invalid book sort or order value.');
+  if (!SORT_ORDERS.has(order)) {
+    throw new AppException(400, 'INVALID_BOOK_ORDER', 'Thứ tự sắp xếp sách không hợp lệ.');
   }
 
   return {
-    q,
-    category: category && category !== 'Tất cả' ? category : '',
-    page,
-    limit,
-    categoryId,
-    authorId,
-    publisherId,
+    q: normalizeQueryText(filters, 'q', 200),
+    category: filters.category === undefined ? '' : normalizeQueryText(filters, 'category', 100),
+    categoryId: normalizePositiveInt(filters.categoryId, 'categoryId'),
+    authorId: normalizePositiveInt(filters.authorId, 'authorId'),
+    publisherId: normalizePositiveInt(filters.publisherId, 'publisherId'),
+    status: staff ? status : 'ACTIVE',
+    page: normalizePositiveInt(filters.page, 'page') || 1,
+    limit: normalizePositiveInt(filters.limit, 'limit', { max: 100 }) || 20,
     sort,
     order,
   };
 }
 
-async function getHomeBooks(filters = {}) {
-  const normalizedFilters = normalizeFilters(filters);
-  const result = await bookRepository.getHomeBooks(normalizedFilters);
+function availabilityStatus(book) {
+  if (book?.availabilityStatus) return book.availabilityStatus;
+  return book?.status === 'ACTIVE' && Number(book?.availableCopies || 0) > 0
+    ? 'AVAILABLE'
+    : 'UNAVAILABLE';
+}
 
-  const data = result.rows.map((book) => ({
+function nullableValue(value) {
+  if (value === undefined || value === null || value === '') return null;
+  return value;
+}
+
+function mapPublicBook(book) {
+  const availability = availabilityStatus(book);
+  return {
+    bookId: book.id,
+    title: book.title,
+    isbn: nullableValue(book.isbn),
+    categoryName: nullableValue(book.category),
+    authorName: nullableValue(book.author),
+    publisherName: nullableValue(book.publisher),
+    publishYear: nullableValue(book.year),
+    description: nullableValue(book.description),
+    coverUrl: nullableValue(book.cover || book.coverUrl),
+    availabilityStatus: availability,
+  };
+}
+
+function mapBook(book, { staff = false } = {}) {
+  if (!book) return null;
+  if (!staff) return mapPublicBook(book);
+
+  const availability = availabilityStatus(book);
+  return {
     id: book.id,
     title: book.title,
-    author: book.author || 'Không rõ tác giả',
+    isbn: book.isbn || '',
     category: book.category || 'Chưa phân loại',
+    author: book.author || 'Không rõ tác giả',
     publisher: book.publisher || 'Không rõ nhà xuất bản',
-    year: book.year || 'Không rõ',
-    isbn: book.isbn || 'Chưa có ISBN',
-    description: book.description || 'Chưa có mô tả cho sách này.',
-    cover: book.cover || DEFAULT_COVER,
-    available: Boolean(book.available),
-    totalCopies: book.totalCopies || 0,
-    availableCopies: book.availableCopies || 0,
+    year: book.year || '',
+    description: book.description || '',
+    cover: book.cover || book.coverUrl || DEFAULT_COVER,
     rating: book.rating === null || book.rating === undefined ? 0 : Number(book.rating),
     pages: book.pages || 0,
-  }));
+    available: availability === 'AVAILABLE',
+    availabilityStatus: availability,
+    totalCopies: Number(book.totalCopies || 0),
+    availableCopies: Number(book.availableCopies || 0),
+    categoryId: book.categoryId || null,
+    authorId: book.authorId || null,
+    publisherId: book.publisherId || null,
+    status: book.status,
+    version: book.version,
+    lockedCopies: Number(book.lockedCopies || 0),
+    createdAt: book.createdAt,
+    updatedAt: book.updatedAt,
+  };
+}
 
+function normalizeRepositoryList(result) {
+  if (Array.isArray(result)) return { rows: result, total: result.length };
+  return { rows: result?.rows || [], total: Number(result?.total || 0) };
+}
+
+function listResponse(result, filters, { staff = false } = {}) {
+  const normalized = normalizeRepositoryList(result);
   return {
-    data,
+    items: normalized.rows.map((book) => mapBook(book, { staff })),
     pagination: {
-      page: normalizedFilters.page,
-      limit: normalizedFilters.limit,
-      total: result.total,
-      totalPages: Math.max(Math.ceil(result.total / normalizedFilters.limit), 1),
+      page: filters.page,
+      limit: filters.limit,
+      total: normalized.total,
+      totalPages: normalized.total === 0 ? 0 : Math.ceil(normalized.total / filters.limit),
     },
   };
 }
 
-function normalizeManagementFilters(filters = {}) {
-  const normalized = normalizeFilters(filters);
-  const status = trimString(filters.status).toUpperCase();
-  const page = normalizePositiveInt(filters.page, 'Trang', { max: 100000 }) || 1;
-  const limit = normalizePositiveInt(filters.limit, 'Số dòng mỗi trang', { max: 100 }) || 20;
-  const categoryId = normalizePositiveInt(filters.categoryId, 'Thể loại');
-
-  if (status && !VALID_STATUSES.has(status)) {
-    throw new AppException(400, 'INVALID_BOOK_STATUS', 'Trạng thái sách không hợp lệ.');
+function normalizeIfMatch(value) {
+  const version = trimString(Array.isArray(value) ? value[0] : value).replace(/^W\//, '').replace(/^"|"$/g, '');
+  if (!version) {
+    throw new AppException(409, 'STALE_BOOK_STATE', 'Book version is missing or stale. Reload before retrying.');
   }
-
-  return {
-    q: normalized.q,
-    status,
-    categoryId,
-    page,
-    limit,
-  };
+  return version;
 }
 
-async function getManagementBooks(filters = {}) {
-  const normalized = normalizeManagementFilters(filters);
-  const result = await bookRepository.getManagementBooks(normalized);
-
-  return {
-    data: result.rows.map(mapBook),
-    pagination: {
-      page: normalized.page,
-      limit: normalized.limit,
-      total: result.total,
-      totalPages: Math.max(Math.ceil(result.total / normalized.limit), 1),
-    },
-  };
-}
-
-async function getBookById(bookId, { includeInactive = false } = {}) {
-  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  const book = await bookRepository.getBookById(id);
-
-  if (!book || (!includeInactive && book.status === 'INACTIVE')) {
-    throw new AppException(404, 'BOOK_NOT_FOUND', 'Không tìm thấy sách.');
-  }
-
-  return mapBook(book);
-}
-
-async function getMetadata() {
-  return bookRepository.getMetadata();
-}
-
-async function validateReferences(payload) {
-  const [categoryExists, authorExists, publisherExists] = await Promise.all([
-    bookRepository.referenceExists('Categories', 'CategoryId', payload.categoryId),
-    bookRepository.referenceExists('Authors', 'AuthorId', payload.authorId),
-    payload.publisherId ? bookRepository.referenceExists('Publishers', 'PublisherId', payload.publisherId) : true,
-  ]);
-
-  if (!categoryExists) {
-    throw new AppException(400, 'INVALID_CATEGORY', 'Thể loại không tồn tại.');
-  }
-
-  if (!authorExists) {
-    throw new AppException(400, 'INVALID_AUTHOR', 'Tác giả không tồn tại.');
-  }
-
-  if (!publisherExists) {
-    throw new AppException(400, 'INVALID_PUBLISHER', 'Nhà xuất bản không tồn tại.');
-  }
-}
-
-async function normalizeBookPayload(body = {}, existingBookId = null) {
-  const title = normalizeOptionalText(body.title, 'Tên sách', 255);
-  const isbn = normalizeOptionalText(body.isbn, 'ISBN', 50);
-  const categoryId = normalizePositiveInt(body.categoryId, 'Thể loại', { required: true });
-  const authorId = normalizePositiveInt(body.authorId, 'Tác giả', { required: true });
-  const publisherId = normalizePositiveInt(body.publisherId, 'Nhà xuất bản');
-  const publishYear = normalizePositiveInt(body.publishYear, 'Năm xuất bản');
-  const pages = normalizePositiveInt(body.pages, 'Số trang');
-  const rating = normalizeDecimal(body.rating, 'Đánh giá');
-  const description = normalizeOptionalText(body.description, 'Mô tả', 2000);
-  const coverUrl = normalizeCoverUrl(body.coverUrl || body.cover);
-  const status = trimString(body.status).toUpperCase() || 'ACTIVE';
-  const currentYear = new Date().getFullYear();
-
-  if (!title) {
-    throw new AppException(400, 'TITLE_REQUIRED', 'Tên sách là bắt buộc.');
-  }
-
-  if (publishYear && publishYear > currentYear) {
-    throw new AppException(400, 'INVALID_PUBLISH_YEAR', 'Năm xuất bản không được lớn hơn năm hiện tại.');
-  }
-
-  if (isbn && await bookRepository.isbnExists(isbn, existingBookId)) {
-    throw new AppException(400, 'DUPLICATE_ISBN', 'ISBN đã tồn tại.');
-  }
-
-  if (!VALID_STATUSES.has(status)) {
-    throw new AppException(400, 'INVALID_BOOK_STATUS', 'Invalid book status.');
-  }
-
-  const payload = {
-    title,
-    isbn,
-    categoryId,
-    authorId,
-    publisherId,
-    publishYear,
-    pages,
-    rating,
-    description,
-    coverUrl,
-    status,
-  };
-
-  await validateReferences(payload);
-  return payload;
-}
-
-async function createBook(body = {}, actorUserId = null) {
-  if (body.status !== undefined || body.copyStatus !== undefined || body.availabilityStatus !== undefined) {
-    throw new AppException(400, 'READ_ONLY_BOOK_STATE', 'Book and copy state cannot be supplied with catalog metadata.');
-  }
-  const payload = await normalizeBookPayload(body);
-  payload.status = 'ACTIVE';
-  return mapBook(await bookRepository.createBook(payload, actorUserId));
-}
-
-async function updateBook(bookId, body = {}, actorUserId = null) {
-  if (body.status !== undefined || body.copyStatus !== undefined || body.availabilityStatus !== undefined) {
-    throw new AppException(400, 'READ_ONLY_BOOK_STATE', 'Use catalog state commands; FE05 cannot mutate copy state.');
-  }
-  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  const existing = await getBookById(id, { includeInactive: true });
-  const payload = await normalizeBookPayload(body, id);
-  payload.status = existing.status;
-  return mapBook(await bookRepository.updateBook(id, payload, actorUserId));
-}
-
-function normalizeTransitionReason(body = {}) {
-  const reason = trimString(body.reason);
+function normalizeReason(value) {
+  const reason = trimString(value);
   if (!reason || reason.length > 500) {
-    throw new AppException(400, 'INVALID_ACTION_REASON', 'Reason must contain between 1 and 500 characters.');
+    throw badField('reason', 'Lý do phải có từ 1 đến 500 ký tự.');
   }
   return reason;
 }
 
-async function deactivateBook(bookId, body = {}, actorUserId = null) {
-  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  const book = await getBookById(id, { includeInactive: true });
+function rejectProtectedFields(body = {}, { allowCreateStatus = false } = {}) {
+  for (const field of PROTECTED_MUTATION_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
+    if (allowCreateStatus && field === 'status' && trimString(body.status).toUpperCase() === 'ACTIVE') {
+      continue;
+    }
+    throw badField(field, `${field} không thuộc hợp đồng cập nhật metadata FE05.`);
+  }
+}
 
-  if (book.status === 'INACTIVE') {
-    throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already inactive.');
+function createBookService({
+  bookRepository = defaultBookRepository,
+  auditLogRepository = defaultAuditLogRepository,
+} = {}) {
+  async function validateReferences(payload) {
+    const [categoryExists, authorExists, publisherExists] = await Promise.all([
+      bookRepository.referenceExists('Categories', 'CategoryId', payload.categoryId),
+      bookRepository.referenceExists('Authors', 'AuthorId', payload.authorId),
+      payload.publisherId
+        ? bookRepository.referenceExists('Publishers', 'PublisherId', payload.publisherId)
+        : true,
+    ]);
+    if (!categoryExists) throw badField('categoryId', 'Thể loại không tồn tại hoặc không hoạt động.');
+    if (!authorExists) throw badField('authorId', 'Tác giả không tồn tại hoặc không hoạt động.');
+    if (!publisherExists) throw badField('publisherId', 'Nhà xuất bản không tồn tại hoặc không hoạt động.');
   }
 
-  return mapBook(await bookRepository.setBookStatus(id, 'INACTIVE', normalizeTransitionReason(body), actorUserId));
-}
+  async function normalizeBookPayload(body = {}, { existingBookId = null, create = false } = {}) {
+    rejectProtectedFields(body, { allowCreateStatus: create });
+    const title = normalizeOptionalText(body.title, 'title', 255);
+    const isbn = normalizeOptionalText(body.isbn, 'isbn', 20);
+    const categoryId = normalizePositiveInt(body.categoryId, 'categoryId', { required: true });
+    const authorId = normalizePositiveInt(body.authorId, 'authorId', { required: true });
+    const publisherId = normalizePositiveInt(body.publisherId, 'publisherId');
+    const publishYear = normalizePositiveInt(body.publishYear, 'publishYear');
+    const pages = normalizePositiveInt(body.pages, 'pages', { max: 10000 });
+    const rating = normalizeRating(body.rating);
+    const description = normalizeOptionalText(body.description, 'description', 2000);
+    const coverUrl = normalizeCoverUrl(body.coverUrl || body.cover);
 
-async function reactivateBook(bookId, body = {}, actorUserId = null) {
-  const id = normalizePositiveInt(bookId, 'Book ID', { required: true });
-  const book = await getBookById(id, { includeInactive: true });
+    if (!title) throw badField('title', 'Tên sách là bắt buộc.');
+    if (publishYear && publishYear > new Date().getFullYear()) {
+      throw badField('publishYear', 'Năm xuất bản không được lớn hơn năm hiện tại.');
+    }
+    if (isbn && (await bookRepository.isbnExists(isbn, existingBookId))) {
+      throw badField('isbn', 'ISBN đã tồn tại.');
+    }
 
-  if (book.status === 'ACTIVE') {
-    throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already active.');
+    const payload = {
+      title,
+      isbn,
+      categoryId,
+      authorId,
+      publisherId,
+      publishYear,
+      pages,
+      rating,
+      description,
+      coverUrl,
+      status: 'ACTIVE',
+    };
+    await validateReferences(payload);
+    return payload;
   }
 
-  return mapBook(await bookRepository.setBookStatus(id, 'ACTIVE', normalizeTransitionReason(body), actorUserId));
+  async function writeAudit({ action, actorUserId, book, metadata, transaction }) {
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') return;
+    await auditLogRepository.create({
+      userId: actorUserId || null,
+      action,
+      targetType: 'BOOK',
+      targetId: book.id,
+      metadata: { version: book.version, ...metadata },
+      transaction,
+    });
+  }
+
+  function assertMutationResult(result) {
+    if (!result) throw new AppException(404, 'BOOK_NOT_FOUND', 'Không tìm thấy sách.');
+    if (result.outcome === 'STALE') {
+      throw new AppException(409, 'STALE_BOOK_STATE', 'Book version is missing or stale. Reload before retrying.');
+    }
+    if (result.outcome === 'INVALID_TRANSITION') {
+      throw new AppException(409, 'INVALID_BOOK_TRANSITION', 'Book is already in the requested status.');
+    }
+    return result.book || result;
+  }
+
+  // @spec FR-FE01-003, FR-FE01-004, FR-FE01-008, FR-FE01-010, FR-FE01-013
+  // @spec FR-FE05-001 FR-FE05-002 FR-FE05-009 FR-FE05-010 FR-FE05-020 FR-FE05-024
+  async function getHomeBooks(filters = {}) {
+    const normalized = normalizeListFilters(filters);
+    const response = listResponse(await bookRepository.getHomeBooks(normalized), normalized);
+    return { data: response.items, pagination: response.pagination };
+  }
+
+  // @spec FR-FE05-004 FR-FE05-009 FR-FE05-010 FR-FE05-020 FR-FE05-024
+  async function getManagementBooks(filters = {}) {
+    const normalized = normalizeListFilters(filters, { staff: true });
+    return listResponse(await bookRepository.getManagementBooks(normalized), normalized, { staff: true });
+  }
+
+  // @spec FR-FE01-005, FR-FE01-006, FR-FE01-008, FR-FE01-009, FR-FE01-010, FR-FE01-012, FR-FE01-013
+  // @spec FR-FE05-003 FR-FE05-014 FR-FE05-019 FR-FE05-020
+  async function getBookById(bookId, { staff = false } = {}) {
+    const id = normalizePositiveInt(bookId, 'bookId', { required: true });
+    const book = await bookRepository.getBookById(id);
+    if (!book || (!staff && book.status !== 'ACTIVE')) {
+      throw new AppException(404, 'BOOK_NOT_FOUND', 'Không tìm thấy sách.');
+    }
+    return mapBook(book, { staff });
+  }
+
+  async function getMetadata() {
+    return bookRepository.getMetadata();
+  }
+
+  // @spec FR-FE05-005 FR-FE05-006 FR-FE05-011 FR-FE05-012 FR-FE05-013 FR-FE05-016 FR-FE05-018 FR-FE05-026
+  async function createBook(body = {}, actorUserId = null) {
+    const payload = await normalizeBookPayload(body, { create: true });
+    const book = await bookRepository.createBook(payload, {
+      actorUserId,
+      auditLogRepository,
+      onBeforeCommit: ({ book: createdBook, transaction }) =>
+        writeAudit({ action: 'BOOK_CREATE', actorUserId, book: createdBook, transaction }),
+    });
+    return mapBook(book, { staff: true });
+  }
+
+  // @spec FR-FE05-007 FR-FE05-011 FR-FE05-012 FR-FE05-013 FR-FE05-014 FR-FE05-016 FR-FE05-018 FR-FE05-021 FR-FE05-023 FR-FE05-026
+  async function updateBook(bookId, body = {}, actorUserId = null, ifMatch) {
+    const id = normalizePositiveInt(bookId, 'bookId', { required: true });
+    const expectedVersion = normalizeIfMatch(ifMatch);
+    const payload = await normalizeBookPayload(body, { existingBookId: id });
+    const result = await bookRepository.updateBook(id, payload, expectedVersion, {
+      actorUserId,
+      auditLogRepository,
+      onBeforeCommit: ({ book, transaction }) =>
+        writeAudit({ action: 'BOOK_UPDATE', actorUserId, book, transaction }),
+    });
+    return mapBook(assertMutationResult(result), { staff: true });
+  }
+
+  async function changeStatus(bookId, targetStatus, body, actorUserId, ifMatch) {
+    const id = normalizePositiveInt(bookId, 'bookId', { required: true });
+    const expectedVersion = normalizeIfMatch(ifMatch);
+    const reason = normalizeReason(body?.reason);
+    const action = targetStatus === 'ACTIVE' ? 'BOOK_REACTIVATE' : 'BOOK_DEACTIVATE';
+    const result = await bookRepository.changeBookStatus(id, targetStatus, expectedVersion, {
+      actorUserId,
+      auditLogRepository,
+      onBeforeCommit: ({ book, transaction }) =>
+        writeAudit({ action, actorUserId, book, metadata: { reason }, transaction }),
+    });
+    return mapBook(assertMutationResult(result), { staff: true });
+  }
+
+  // @spec FR-FE05-008 FR-FE05-018 FR-FE05-019 FR-FE05-023 FR-FE05-025
+  function deactivateBook(bookId, body, actorUserId, ifMatch) {
+    return changeStatus(bookId, 'INACTIVE', body, actorUserId, ifMatch);
+  }
+
+  // @spec FR-FE05-022 FR-FE05-023 FR-FE05-025
+  function reactivateBook(bookId, body, actorUserId, ifMatch) {
+    return changeStatus(bookId, 'ACTIVE', body, actorUserId, ifMatch);
+  }
+
+  async function getCategories() {
+    const categories = await bookRepository.getCategories();
+    const total = categories.reduce((sum, item) => sum + Number(item.count || 0), 0);
+    return [
+      { id: 0, name: 'Tất cả', count: total, icon: '📚' },
+      ...categories.map((item) => ({ ...item, icon: '📖' })),
+    ];
+  }
+
+  return {
+    getHomeBooks,
+    getCategories,
+    getMetadata,
+    getManagementBooks,
+    getBookById,
+    createBook,
+    updateBook,
+    deactivateBook,
+    reactivateBook,
+  };
 }
 
-async function getCategories() {
-  const categories = await bookRepository.getCategories();
-
-  const total = categories.reduce((sum, item) => sum + item.count, 0);
-
-  return [
-    {
-      id: 0,
-      name: 'Tất cả',
-      count: total,
-      icon: '📚',
-    },
-    ...categories.map((item) => ({
-      id: item.id,
-      name: item.name,
-      count: item.count,
-      icon: '📖',
-    })),
-  ];
-}
+const defaultBookService = createBookService();
 
 module.exports = {
-  getHomeBooks,
-  getCategories,
-  getMetadata,
-  getManagementBooks,
-  getBookById,
-  createBook,
-  updateBook,
-  deactivateBook,
-  reactivateBook,
+  createBookService,
+  defaultBookService,
+  ...defaultBookService,
 };

@@ -98,7 +98,7 @@ function usePostCommitReadbackFailure(operation) {
         if (query.includes('SELECT bd.CopyId')) {
           return { recordset: [{ CopyId: 7 }] };
         }
-        if (query.includes('SELECT CopyId, Status')) {
+        if (query.includes('SELECT bc.CopyId, bc.Status')) {
           return { recordset: [{ CopyId: 7, Status: 'AVAILABLE' }] };
         }
         if (query.includes('COUNT(*) AS ActiveCount')) {
@@ -133,7 +133,7 @@ test('borrow request and detail SQL toDate filters use an exclusive next-day bou
   const detailCapture = useRecordset();
   await borrowingRepository.listBorrowDetails({ toDate: '2026-06-11' });
 
-  expect(detailCapture.query).toContain('br.RequestDate < @ToDateExclusive');
+  expect(detailCapture.query).toContain('COALESCE(bd.BorrowDate, br.RequestDate) < @ToDateExclusive');
   expect(detailCapture.inputs.ToDateExclusive.toISOString()).toBe('2026-06-12T00:00:00.000Z');
 });
 

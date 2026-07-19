@@ -26,14 +26,34 @@ test('OpenAPI documents FE07 input constraints and supported history filters', (
     'fromDate',
     'toDate',
   ]);
-  expect(parameterNames('/api/borrow-requests/me')).toEqual(['status', 'fromDate', 'toDate']);
+  expect(parameterNames('/api/borrow-requests/me')).toEqual([
+    'status',
+    'fromDate',
+    'toDate',
+    'page',
+    'limit',
+  ]);
   expect(parameterNames('/api/members/{memberId}/borrowings')).toEqual([
     'memberId',
     'status',
     'fromDate',
     'toDate',
+    'page',
+    'limit',
   ]);
   expect(document.paths['/api/members/{memberId}/borrowings'].get.parameters[0].schema.minimum).toBe(1);
+
+  const detailStatuses = ['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE'];
+  for (const endpoint of ['/api/borrow-requests/me', '/api/members/{memberId}/borrowings']) {
+    const operation = document.paths[endpoint].get;
+    const statusParameter = operation.parameters.find((parameter) => parameter.name === 'status');
+
+    expect(statusParameter.schema.enum).toEqual(detailStatuses);
+    expect(statusParameter.schema.description).toMatch(/OVERDUE.*derived/i);
+    expect(operation.responses['200'].$ref).toBe(
+      '#/components/responses/MemberBorrowingsResponse'
+    );
+  }
 });
 
 test('OpenAPI binds FE07 action bodies to the current runtime requests', () => {
@@ -54,8 +74,13 @@ test('OpenAPI binds FE07 action bodies to the current runtime requests', () => {
   expect(document.components.schemas.BorrowDetailReturnInput.required).toEqual(['condition']);
   expect(document.paths['/api/borrow-details/{borrowDetailId}/return'].patch.requestBody.required).toBe(true);
   expect(document.components.schemas.BorrowDetailReturnInput.properties.returnDate.description).toMatch(
-    /server date/i
+    /Asia\/Ho_Chi_Minh.*Future.*pre-borrow/i
   );
+  expect(document.components.schemas.MemberBorrowingsPayload.required).toEqual([
+    'borrowings',
+    'pagination',
+  ]);
+  expect(document.components.schemas.BorrowRequest.required).toContain('createdBy');
 
   for (const schemaName of [
     'BorrowRequestApproveInput',

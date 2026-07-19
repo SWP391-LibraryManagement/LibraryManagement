@@ -1,6 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-
 import { DataToolbar } from '../shared/OperationalPatterns';
 
 export default function Filter({ filters, onChange, onReset }) {
@@ -13,24 +11,22 @@ export default function Filter({ filters, onChange, onReset }) {
   return (
     <div className="lib-card" style={{ marginBottom: 18 }}>
       <DataToolbar
-        primary={(
-          <div className="search-input">
-            <SearchIcon fontSize="small" />
-            <input value={filters.title} onChange={(event) => update('title', event.target.value)} placeholder="Tên đầu sách" aria-label="Lọc theo tên đầu sách" />
-          </div>
-        )}
+        primary={<input className="input" value={filters.barcode} onChange={(event) => update('barcode', event.target.value)} placeholder="Barcode" aria-label="Lọc theo barcode" />}
         filters={(
           <>
-            <input className="input" value={filters.author} onChange={(event) => update('author', event.target.value)} placeholder="Tác giả" aria-label="Lọc theo tác giả" />
-            <input className="input" type="number" value={filters.fromYear} onChange={(event) => update('fromYear', event.target.value)} placeholder="Từ năm" aria-label="Lọc từ năm xuất bản" />
-            <input className="input" type="number" value={filters.toYear} onChange={(event) => update('toYear', event.target.value)} placeholder="Đến năm" aria-label="Lọc đến năm xuất bản" />
+            <input className="input" value={filters.location} onChange={(event) => update('location', event.target.value)} placeholder="Vị trí" aria-label="Lọc theo vị trí" />
+            <select className="select" value={filters.status} onChange={(event) => update('status', event.target.value)} aria-label="Lọc theo trạng thái">
+              <option value="">Mọi trạng thái</option>
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="BORROWED">BORROWED</option>
+              <option value="RESERVED">RESERVED</option>
+              <option value="DAMAGED">DAMAGED</option>
+              <option value="LOST">LOST</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
           </>
         )}
-        actions={(
-          <button type="button" className="btn btn-outline" onClick={onReset} disabled={!hasFilters}>
-            <RestartAltIcon fontSize="small" /> Đặt lại
-          </button>
-        )}
+        actions={<button type="button" className="btn btn-outline" onClick={onReset} disabled={!hasFilters}><RestartAltIcon fontSize="small" /> Đặt lại</button>}
       />
     </div>
   );

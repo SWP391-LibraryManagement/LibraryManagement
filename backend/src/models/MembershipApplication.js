@@ -13,4 +13,12 @@ module.exports = defineModel({
     { attribute: 'reviewedBy', name: 'ReviewedBy', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },
     { attribute: 'reviewNote', name: 'ReviewNote', type: 'NVARCHAR(500)', nullable: true },
   ],
+  indexes: [
+    {
+      name: 'UX_MembershipApplications_User_Pending',
+      unique: true,
+      columns: ['userId'],
+      where: { status: 'PENDING' },
+    },
+  ],
 });

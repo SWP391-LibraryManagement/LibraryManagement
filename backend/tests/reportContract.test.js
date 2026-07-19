@@ -24,12 +24,16 @@ test('OpenAPI documents the implemented FE12 report filters', () => {
     'status',
     'bookId',
     'userId',
+    'page',
+    'limit',
   ]);
   expect(parameterNames('/api/reports/inventory')).toEqual([
     'categoryId',
     'bookId',
     'status',
     'location',
+    'page',
+    'limit',
   ]);
   expect(parameterNames('/api/reports/users')).toEqual([
     'fromDate',
@@ -37,6 +41,8 @@ test('OpenAPI documents the implemented FE12 report filters', () => {
     'roleId',
     'status',
     'membershipStatus',
+    'page',
+    'limit',
   ]);
 });
 
@@ -92,17 +98,23 @@ test('OpenAPI binds every FE12 success response to its runtime report payload sh
     '/api/reports/borrowing': {
       response: 'BorrowingReportResponse',
       schema: 'BorrowingReport',
-      properties: ['totals', 'requestStatusCounts', 'detailStatusCounts', 'borrowCountByPeriod', 'topBorrowedBooks'],
+      metricProperties: ['activeLoans', 'overdueLoans', 'borrowCountByPeriod', 'topBorrowedBooks'],
     },
     '/api/reports/inventory': {
       response: 'InventoryReportResponse',
       schema: 'InventoryReport',
-      properties: ['totals', 'copyStatusCounts', 'categoryCounts', 'lowAvailabilityBooks'],
+      metricProperties: ['totalBooks', 'totalCopies', 'copiesByStatus', 'lowStockBooks'],
     },
     '/api/reports/users': {
       response: 'UserStatisticsReportResponse',
       schema: 'UserStatisticsReport',
-      properties: ['totals', 'usersByStatus', 'usersByRole', 'membersByStatus', 'newMembersByPeriod'],
+      metricProperties: [
+        'totalMembers',
+        'usersByStatus',
+        'usersByRole',
+        'membershipByStatus',
+        'newMembersByPeriod',
+      ],
     },
   };
 
@@ -110,13 +122,22 @@ test('OpenAPI binds every FE12 success response to its runtime report payload sh
     expect(document.paths[endpoint].get.responses['200']).toEqual({
       $ref: `#/components/responses/${expected.response}`,
     });
-    expect(Object.keys(document.components.schemas[expected.schema].properties)).toEqual(expected.properties);
+    expect(Object.keys(document.components.schemas[expected.schema].properties)).toEqual([
+      'metrics',
+      'rows',
+      'page',
+      'limit',
+      'totalRows',
+    ]);
+    expect(Object.keys(document.components.schemas[expected.schema].properties.metrics.properties)).toEqual(
+      expected.metricProperties
+    );
   }
 
-  expect(document.components.schemas.BorrowingReport.properties.topBorrowedBooks.items.properties)
+  expect(document.components.schemas.BorrowingReport.properties.metrics.properties.topBorrowedBooks.items.properties)
     .toEqual(expect.objectContaining({ bookId: expect.any(Object), title: expect.any(Object), borrowCount: expect.any(Object) }));
-  expect(document.components.schemas.InventoryReport.properties.lowAvailabilityBooks.items.properties)
-    .toEqual(expect.objectContaining({ copies: expect.any(Object), totalCopies: expect.any(Object), availableCopies: expect.any(Object) }));
-  expect(document.components.schemas.UserStatisticsReport.properties.totals.properties)
-    .toEqual(expect.objectContaining({ users: expect.any(Object), members: expect.any(Object) }));
+  expect(document.components.schemas.InventoryReport.properties.metrics.properties.lowStockBooks.items.properties)
+    .toEqual(expect.objectContaining({ bookId: expect.any(Object), title: expect.any(Object), effectiveAvailability: expect.any(Object) }));
+  expect(document.components.schemas.UserStatisticsReport.properties.metrics.properties)
+    .toEqual(expect.objectContaining({ totalMembers: expect.any(Object), usersByStatus: expect.any(Object) }));
 });

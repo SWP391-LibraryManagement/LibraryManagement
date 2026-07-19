@@ -1,12 +1,12 @@
 # CONTEXT.md - FE08 Reservation Management
 
-# Version: 0.2.1
+# Version: 0.2.2
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
@@ -37,6 +37,7 @@ The feature prevents ad-hoc manual waiting lists and helps librarians know who s
 FE08 includes:
 
 - Reserve book.
+- Member-safe candidate search and selection for physical copies.
 - Cancel reservation.
 - View reservation list.
 - Process reservation queue.
@@ -124,12 +125,13 @@ Potential issue to review:
 | Q-FE08-007 | No eligible queue entry returns no selection and leaves copy/reservation state unchanged. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-008 | FE10 notification failure preserves the committed hold and writes a failure audit; no automatic retry worker is in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-009 | Notification/expiry timestamps survive terminal transitions; only cancelled rows have `CancelledAt`. | Spec normalization 2026-07-17 | APPROVED |
+| Q-FE08-011 | Option A: a protected member-only candidate API returns a six-field redacted row per active-book `BORROWED`/`RESERVED` copy; search and pagination are server-owned and `POST /api/reservations { copyId }` remains authoritative. | FE08 design approval 2026-07-19 | APPROVED |
 
 ---
 
 ## 10. Notes For Implementation Later
 
-- `SPEC.md` v0.4.2 is baseline-approved; implementation must follow the approved plan/tasks and remains pending.
-- `PLAN.md` and `TASKS.md` must record the historical B7 slice separately from the v0.4.2 normalization tasks.
+- `SPEC.md` v0.4.4 is baseline-approved; lifecycle normalization and the member-safe candidate slice are automated-validated, with human integration still pending.
+- `PLAN.md` and `TASKS.md` record the historical B7 slice separately from the v0.4.3/v0.4.4 reconciliation tasks.
 - Queue processing should be transactional.
 - Members must never cancel another member's reservation.

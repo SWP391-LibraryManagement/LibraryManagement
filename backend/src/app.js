@@ -12,7 +12,7 @@ const { createNotificationRoutes } = require('./routes/notificationRoutes');
 const { createReportRoutes } = require('./routes/reportRoutes');
 const { createReservationRoutes } = require('./routes/reservationRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
-const { createBookRoutes, createAdminBookRoutes } = require('./routes/bookRoutes');
+const { createAdminBookRoutes, createBookRoutes } = require('./routes/bookRoutes');
 const { createFineRoutes } = require('./routes/fineRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createAdminRoutes } = require('./routes/adminRoutes');
@@ -21,6 +21,7 @@ const { createMembershipRoutes } = require('./routes/membershipRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
+const { createHttpsEnforcementMiddleware } = require('./middleware/httpsEnforcement');
 const { defaultAuthService } = require('./services/authService');
 const { defaultBorrowingService } = require('./services/borrowingService');
 const { defaultNotificationService } = require('./services/notificationService');
@@ -81,9 +82,12 @@ function createApp({
 
   const app = express();
 
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true');
   app.use(helmet());
   app.use(cors(corsOptionsFromEnvironment()));
   app.use(compression());
+  // Reject or redirect auth transport before parsing credentials or dispatching auth routes.
+  app.use(createHttpsEnforcementMiddleware());
   app.use(express.json());
   app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
 

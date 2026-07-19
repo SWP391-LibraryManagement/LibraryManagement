@@ -9,6 +9,10 @@ test('membership page uses canonical API data and never substitutes demo applica
   assert.match(source, /membershipApi\.listApplications\(/);
   assert.match(source, /setLoadError\(error\.message\)/);
   assert.doesNotMatch(source, /DEMO_APPLICATIONS|an\.nguyen@example\.com/);
+  assert.match(source, /membershipStatusView/);
+  assert.match(source, /currentApplication/);
+  assert.doesNotMatch(source, /setMyStatus\(EMPTY_STATUS\)/);
+  assert.doesNotMatch(source, /status:\s*'PENDING',\s*appliedAt:\s*new Date/);
 });
 
 test('membership application follows the approved empty-body contract', async () => {
@@ -24,4 +28,30 @@ test('membership application follows the approved empty-body contract', async ()
 test('librarian navigation exposes the FE04 review workspace', async () => {
   const navigation = await readFile(new URL('../src/utils/appNavigation.js', import.meta.url), 'utf8');
   assert.match(navigation, /key: 'membership-review', label: 'Duyệt hội viên', path: '\/membership'/);
+});
+
+test('membership errors stay truthful and never claim demo fallback data', async () => {
+  const messages = await readFile(new URL('../src/api/apiErrorMessages.js', import.meta.url), 'utf8');
+  const api = await readFile(new URL('../src/api/libraryFeatureApi.js', import.meta.url), 'utf8');
+
+  assert.match(messages, /export function getMembershipErrorMessage/);
+  assert.match(api, /getMembershipErrorMessage/);
+  assert.match(api, /authorizedMembershipRequest/);
+  assert.doesNotMatch(
+    messages.match(/export function getMembershipErrorMessage[\s\S]*?(?=\nexport function|$)/)?.[0] || '',
+    /demo/i
+  );
+});
+
+test('membership review and list enforce canonical server boundaries', async () => {
+  const page = await readFile(new URL('../src/page/MembershipPage.jsx', import.meta.url), 'utf8');
+  const modal = await readFile(new URL('../src/component/membership/MembershipReviewModal.jsx', import.meta.url), 'utf8');
+  const status = await readFile(new URL('../src/component/membership/MyMembershipStatus.jsx', import.meta.url), 'utf8');
+
+  assert.match(page, /q:\s*search\.trim\(\)\s*\|\|\s*undefined/);
+  assert.doesNotMatch(page, /filteredApplications/);
+  assert.match(page, /await loadData\(\)/);
+  assert.match(modal, /maxLength=\{500\}/);
+  assert.match(status, /membershipStatusView/);
+  assert.match(status, /currentApplication/);
 });

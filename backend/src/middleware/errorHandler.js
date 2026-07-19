@@ -14,9 +14,7 @@ function errorHandler(error, req, res, next) {
     console.error('[api error]', {
       code,
       method: req.method,
-      path: req.originalUrl,
-      message: error.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
+      path: req.path,
     });
   }
 

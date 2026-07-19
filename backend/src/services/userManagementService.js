@@ -87,7 +87,7 @@ function validateLength(value, max, code, label) {
 }
 
 function validateEmail(email) {
-  if (!email || email.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw errors.badRequest('INVALID_EMAIL', 'Valid email is required.');
   }
 }
@@ -145,9 +145,8 @@ function throwRoleMutationError(outcome) {
 
 function createUserManagementService({
   userRepository,
+  userLifecycleRepository,
   userRoleRepository,
-  authTokenRepository,
-  auditLogRepository,
   accountSetupRepository,
   notificationRequester,
   clock = () => new Date(),
@@ -160,12 +159,8 @@ function createUserManagementService({
     userRoleRepository = require('../repositories/userRoleRepository');
   }
 
-  if (!authTokenRepository) {
-    authTokenRepository = require('../repositories/authTokenRepository');
-  }
-
-  if (!auditLogRepository) {
-    auditLogRepository = require('../repositories/auditLogRepository');
+  if (!userLifecycleRepository) {
+    userLifecycleRepository = require('../repositories/userLifecycleRepository');
   }
 
   if (!accountSetupRepository) {
@@ -177,38 +172,6 @@ function createUserManagementService({
     notificationRequester = defaultNotificationService.createSourceNotificationRequester('FE11');
   }
 
-  async function writeAudit(context, action, targetId, metadata) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
-      return;
-    }
-
-    await auditLogRepository.create({
-      userId: context.adminUserId,
-      action,
-      targetType: 'USER',
-      targetId,
-      metadata,
-      ipAddress: context.ip || null,
-      userAgent: context.userAgent || null,
-    });
-  }
-
-  async function getExistingUser(userId) {
-    const parsedUserId = Number(userId);
-
-    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
-      throw errors.badRequest('INVALID_USER_ID', 'User id is invalid.');
-    }
-
-    const user = await userRepository.getManagedUserById(parsedUserId);
-
-    if (!user) {
-      throw errors.badRequest('USER_NOT_FOUND', 'User was not found.');
-    }
-
-    return user;
-  }
-
   function validateCreateInput(input) {
     const email = normalizeEmail(input.email);
     const fullName = cleanString(input.fullName);
@@ -216,12 +179,16 @@ function createUserManagementService({
     const username = cleanString(input.username) || deriveUsername(email);
     const phone = cleanString(input.phone);
     const address = cleanString(input.address);
+    const department = cleanString(input.department);
+    const specialization = cleanString(input.specialization);
 
     validateEmail(email);
     validateUsername(username);
     validatePhone(phone);
     validateLength(fullName, 100, 'FULL_NAME_TOO_LONG', 'Full name');
     validateLength(address, 255, 'ADDRESS_TOO_LONG', 'Address');
+    validateLength(department, 100, 'DEPARTMENT_TOO_LONG', 'Department');
+    validateLength(specialization, 100, 'SPECIALIZATION_TOO_LONG', 'Specialization');
 
     if (!fullName) {
       throw errors.badRequest('FULL_NAME_REQUIRED', 'Full name is required.');
@@ -231,12 +198,21 @@ function createUserManagementService({
       throw errors.badRequest('INVALID_USER_TYPE', 'User type must be member or librarian.');
     }
 
+    if (roleName !== 'LIBRARIAN' && (department || specialization)) {
+      throw errors.badRequest(
+        'VALIDATION_ERROR',
+        'Department and specialization are only allowed for Librarian accounts.'
+      );
+    }
+
     return {
       email,
       username,
       fullName,
       phone,
       address,
+      department,
+      specialization,
       roleName,
     };
   }
@@ -295,25 +271,15 @@ function createUserManagementService({
     };
   }
 
-  // @spec FR-FE11-003, FR-FE11-009, FR-FE11-037 - create inactive state, then deliver non-blockingly.
+  // @spec FR-FE11-003, FR-FE11-005, FR-FE11-006, FR-FE11-009, FR-FE11-022, FR-FE11-037
   async function createUser(input, context = {}) {
     const normalized = validateCreateInput(input);
-
-    const duplicateEmail = await userRepository.findByEmail(normalized.email);
-    if (duplicateEmail) {
-      throw errors.conflict('EMAIL_ALREADY_EXISTS', 'Email already exists.');
-    }
-
-    const duplicateUsername = await userRepository.findByUsername(normalized.username);
-    if (duplicateUsername) {
-      throw errors.conflict('USERNAME_ALREADY_EXISTS', 'Username is already in use.');
-    }
 
     const now = clock();
     const passwordHash = await hashPassword(generateRandomToken());
     const setupToken = generateRandomToken();
     const expiresAt = addHours(now, ACCOUNT_SETUP_TTL_HOURS);
-    const { user: createdUser, tokenId } = await accountSetupRepository.createPendingAccount({
+    const creation = await accountSetupRepository.createPendingAccount({
       ...normalized,
       passwordHash,
       tokenHash: hashToken(setupToken),
@@ -323,6 +289,24 @@ function createUserManagementService({
       userAgent: context.userAgent || null,
       now,
     });
+
+    if (creation.outcome === 'ADMIN_NOT_FOUND') {
+      throw errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.');
+    }
+    if (creation.outcome === 'ADMIN_REQUIRED') {
+      throw errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.');
+    }
+    if (creation.outcome === 'EMAIL_ALREADY_EXISTS') {
+      throw errors.conflict('EMAIL_ALREADY_EXISTS', 'Email already exists.');
+    }
+    if (creation.outcome === 'USERNAME_ALREADY_EXISTS') {
+      throw errors.conflict('USERNAME_ALREADY_EXISTS', 'Username is already in use.');
+    }
+    if (creation.outcome !== 'CREATED') {
+      throw errors.internal();
+    }
+
+    const { user: createdUser, tokenId } = creation;
 
     const setupLink = `${env.frontendBaseUrl.replace(/\/$/, '')}/forgot-password?token=${encodeURIComponent(
       setupToken
@@ -377,6 +361,14 @@ function createUserManagementService({
       cooldownSeconds: ACCOUNT_SETUP_RESEND_COOLDOWN_SECONDS,
     });
 
+    if (rotation.outcome === 'ADMIN_NOT_FOUND') {
+      throw errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.');
+    }
+
+    if (rotation.outcome === 'ADMIN_REQUIRED') {
+      throw errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.');
+    }
+
     if (rotation.outcome === 'MISSING') {
       throw errors.notFound('USER_NOT_FOUND', 'User was not found.');
     }
@@ -427,64 +419,116 @@ function createUserManagementService({
     };
   }
 
+  // @spec FR-FE11-010, FR-FE11-021, FR-FE11-028
   async function updateUser(userId, input, context = {}) {
-    const existing = await getExistingUser(userId);
-    const updates = {
-      email: input.email === undefined ? undefined : normalizeEmail(input.email),
-      fullName: input.fullName === undefined ? undefined : cleanString(input.fullName),
-      phone: input.phone === undefined ? undefined : cleanString(input.phone),
-      address: input.address === undefined ? undefined : cleanString(input.address),
-    };
-
-    if (updates.email !== undefined) {
-      validateEmail(updates.email);
-
-      const duplicateEmail = await userRepository.findByEmail(updates.email);
-      if (duplicateEmail && duplicateEmail.userId !== existing.userId) {
-        throw errors.conflict('EMAIL_ALREADY_EXISTS', 'Email already exists.');
-      }
+    const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
+    const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
+    if (!Number.isFinite(expectedUpdatedAt.getTime())) {
+      throw errors.badRequest('VALIDATION_ERROR', 'Expected updated timestamp is invalid.');
     }
 
+    const updates = {};
+    if (input.email !== undefined) updates.email = normalizeEmail(input.email);
+    if (input.fullName !== undefined) updates.fullName = cleanString(input.fullName);
+    if (input.phone !== undefined) updates.phone = cleanString(input.phone);
+    if (input.address !== undefined) updates.address = cleanString(input.address);
+    if (input.department !== undefined) updates.department = cleanString(input.department);
+    if (input.specialization !== undefined) {
+      updates.specialization = cleanString(input.specialization);
+    }
+
+    if (!Object.keys(updates).length) {
+      throw errors.badRequest('VALIDATION_ERROR', 'At least one editable field is required.');
+    }
+    if (updates.email !== undefined) validateEmail(updates.email);
     if (updates.fullName !== undefined && !updates.fullName) {
       throw errors.badRequest('FULL_NAME_REQUIRED', 'Full name is required.');
     }
     validatePhone(updates.phone);
     validateLength(updates.fullName, 100, 'FULL_NAME_TOO_LONG', 'Full name');
     validateLength(updates.address, 255, 'ADDRESS_TOO_LONG', 'Address');
+    validateLength(updates.department, 100, 'DEPARTMENT_TOO_LONG', 'Department');
+    validateLength(updates.specialization, 100, 'SPECIALIZATION_TOO_LONG', 'Specialization');
 
-    await userRepository.updateManagedUser(existing.userId, updates);
-    await writeAudit(context, 'USER_UPDATE', existing.userId, { fields: Object.keys(updates) });
-    return userRepository.getManagedUserById(existing.userId);
+    const result = await userLifecycleRepository.updateManagedUser({
+      adminUserId: context.adminUserId,
+      userId: parsedUserId,
+      expectedUpdatedAt,
+      changes: updates,
+      ipAddress: context.ip || null,
+      userAgent: context.userAgent || null,
+      now: clock(),
+    });
+    const outcomeErrors = {
+      ADMIN_NOT_FOUND: () => errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.'),
+      ADMIN_REQUIRED: () => errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
+      USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
+      STALE_USER_STATE: () => errors.conflict('STALE_USER_STATE', 'User state is stale.'),
+      EMAIL_ALREADY_EXISTS: () => errors.conflict('EMAIL_ALREADY_EXISTS', 'Email already exists.'),
+      VALIDATION_ERROR: () => errors.badRequest(
+        'VALIDATION_ERROR',
+        'Librarian fields are only allowed for Librarian accounts.'
+      ),
+    };
+
+    if (!['UPDATED', 'NO_CHANGE'].includes(result.outcome)) {
+      const createError = outcomeErrors[result.outcome];
+      if (!createError) throw errors.internal();
+      throw createError();
+    }
+
+    return userRepository.getManagedUserById(parsedUserId);
   }
 
+  // @spec FR-FE11-018, FR-FE11-019
   async function updateStatus(userId, input, context = {}) {
-    const existing = await getExistingUser(userId);
+    const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
     const status = String(input.status || '').trim().toUpperCase();
 
     if (status !== 'INACTIVE') {
       throw errors.badRequest('INVALID_STATUS', 'Only INACTIVE status is supported for this action.');
     }
-
-    if (existing.userId === context.adminUserId) {
-      throw errors.badRequest('CANNOT_DEACTIVATE_SELF', 'Admins cannot deactivate themselves.');
+    const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
+    if (!Number.isFinite(expectedUpdatedAt.getTime())) {
+      throw errors.badRequest('VALIDATION_ERROR', 'Expected updated timestamp is invalid.');
     }
 
-    const activeBorrowingCount = await userRepository.countActiveBorrowingsByUserId(existing.userId);
-    if (activeBorrowingCount > 0) {
-      throw errors.badRequest(
+    const result = await userLifecycleRepository.deactivateManagedUser({
+      adminUserId: context.adminUserId,
+      userId: parsedUserId,
+      expectedUpdatedAt,
+      ipAddress: context.ip || null,
+      userAgent: context.userAgent || null,
+      now: clock(),
+    });
+    const outcomeErrors = {
+      ADMIN_NOT_FOUND: () => errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.'),
+      ADMIN_REQUIRED: () => errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
+      USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
+      CANNOT_DEACTIVATE_SELF: () => errors.badRequest(
+        'CANNOT_DEACTIVATE_SELF',
+        'Admins cannot deactivate themselves.'
+      ),
+      STALE_USER_STATE: () => errors.conflict('STALE_USER_STATE', 'User state is stale.'),
+      ACCOUNT_PENDING_ACTIVATION: () => errors.conflict(
+        'ACCOUNT_PENDING_ACTIVATION',
+        'Pending activation accounts cannot be deactivated.'
+      ),
+      ACTIVE_BORROWINGS_EXIST: () => errors.conflict(
         'ACTIVE_BORROWINGS_EXIST',
-        `This user has ${activeBorrowingCount} active borrowed item(s).`
-      );
+        `This user has ${result.activeBorrowingCount} active borrowed item(s).`,
+        { activeBorrowingCount: result.activeBorrowingCount }
+      ),
+      VALIDATION_ERROR: () => errors.badRequest('VALIDATION_ERROR', 'User cannot be deactivated.'),
+    };
+
+    if (!['DEACTIVATED', 'ALREADY_DEACTIVATED'].includes(result.outcome)) {
+      const createError = outcomeErrors[result.outcome];
+      if (!createError) throw errors.internal();
+      throw createError();
     }
 
-    await userRepository.updateManagedUserStatus(existing.userId, status);
-
-    if (authTokenRepository && typeof authTokenRepository.revokeActiveTokensForUser === 'function') {
-      await authTokenRepository.revokeActiveTokensForUser(existing.userId);
-    }
-
-    await writeAudit(context, 'USER_DEACTIVATE', existing.userId, { status });
-    return userRepository.getManagedUserById(existing.userId);
+    return userRepository.getManagedUserById(parsedUserId);
   }
 
   // @spec FR-FE11-012, FR-FE11-013, FR-FE11-014, FR-FE11-017

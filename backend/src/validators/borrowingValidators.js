@@ -48,14 +48,26 @@ const listBorrowRequestsValidators = [
     .optional({ nullable: true, checkFalsy: true })
     .custom(isDateOnly)
     .withMessage('To date must use YYYY-MM-DD.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
+  query('toDate')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value, { req }) => !req.query.fromDate || value >= req.query.fromDate)
+    .withMessage('To date must be on or after from date.'),
   handleValidationErrors,
 ];
 
-const memberBorrowingsValidators = [
-  param('memberId')
-    .isInt({ min: 1 })
-    .withMessage('Member ID must be a positive integer.')
-    .toInt(),
+const historyQueryFieldValidators = [
   query('status')
     .optional({ nullable: true, checkFalsy: true })
     .trim()
@@ -69,6 +81,35 @@ const memberBorrowingsValidators = [
     .optional({ nullable: true, checkFalsy: true })
     .custom(isDateOnly)
     .withMessage('To date must use YYYY-MM-DD.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
+  query('toDate')
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value, { req }) => !req.query.fromDate || value >= req.query.fromDate)
+    .withMessage('To date must be on or after from date.'),
+];
+
+const memberHistoryValidators = [
+  ...historyQueryFieldValidators,
+  handleValidationErrors,
+];
+
+const memberBorrowingsValidators = [
+  param('memberId')
+    .isInt({ min: 1 })
+    .withMessage('Member ID must be a positive integer.')
+    .toInt(),
+  ...historyQueryFieldValidators,
   handleValidationErrors,
 ];
 
@@ -141,6 +182,7 @@ const renewBorrowDetailValidators = [
 module.exports = {
   createBorrowRequestValidators,
   listBorrowRequestsValidators,
+  memberHistoryValidators,
   memberBorrowingsValidators,
   approveBorrowRequestValidators,
   rejectBorrowRequestValidators,

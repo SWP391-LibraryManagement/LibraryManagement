@@ -17,7 +17,7 @@ CREATE TABLE Roles (
 CREATE TABLE Users (
     UserId INT IDENTITY PRIMARY KEY,
     Username NVARCHAR(50) UNIQUE NOT NULL,
-    Email NVARCHAR(100) UNIQUE NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
     PasswordHash NVARCHAR(255) NOT NULL,
     Phone NVARCHAR(20),
     Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
@@ -27,8 +27,11 @@ CREATE TABLE Users (
     LastLoginAt DATETIME NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
+    DeactivatedAt DATETIME NULL,
     CONSTRAINT CK_Users_Status CHECK (Status IN ('ACTIVE', 'INACTIVE', 'LOCKED'))
 );
+
+CREATE UNIQUE INDEX UX_Users_Email ON Users(Email);
 
 CREATE TABLE UserRoles (
     UserId INT NOT NULL,
@@ -46,6 +49,8 @@ CREATE TABLE UserProfiles (
     Address NVARCHAR(255),
     DateOfBirth DATE,
     AvatarUrl NVARCHAR(255),
+    Department NVARCHAR(100) NULL,
+    Specialization NVARCHAR(100) NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
     FOREIGN KEY (UserId) REFERENCES Users(UserId)
@@ -76,6 +81,10 @@ CREATE TABLE MembershipApplications (
     FOREIGN KEY (ReviewedBy) REFERENCES Users(UserId),
     CONSTRAINT CK_MembershipApplications_Status CHECK (Status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
+
+CREATE UNIQUE INDEX UX_MembershipApplications_User_Pending
+ON MembershipApplications(UserId)
+WHERE Status = 'PENDING';
 
 CREATE TABLE AuthTokens (
     TokenId INT IDENTITY PRIMARY KEY,
@@ -118,7 +127,7 @@ CREATE TABLE Publishers (
 CREATE TABLE Books (
     BookId INT IDENTITY PRIMARY KEY,
     Title NVARCHAR(255) NOT NULL,
-    ISBN NVARCHAR(50) NULL,
+    ISBN NVARCHAR(20) NULL,
     CategoryId INT,
     AuthorId INT,
     PublisherId INT,
@@ -132,6 +141,7 @@ CREATE TABLE Books (
     UpdatedBy INT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
+    RowVersion ROWVERSION NOT NULL,
     FOREIGN KEY (CategoryId) REFERENCES Categories(CategoryId),
     FOREIGN KEY (AuthorId) REFERENCES Authors(AuthorId),
     FOREIGN KEY (PublisherId) REFERENCES Publishers(PublisherId),
@@ -150,6 +160,7 @@ CREATE TABLE BookCopies (
     Location NVARCHAR(100),
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
+    Version ROWVERSION NOT NULL,
     FOREIGN KEY (BookId) REFERENCES Books(BookId),
     CONSTRAINT CK_BookCopies_Status CHECK (Status IN ('AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'))
 );
@@ -246,7 +257,7 @@ CREATE TABLE Notifications (
     TemplateId INT NULL,
     TemplateKey NVARCHAR(100) NULL,
     UserId INT NULL,
-    RecipientEmail NVARCHAR(100) NOT NULL,
+    RecipientEmail NVARCHAR(255) NOT NULL,
     Channel NVARCHAR(20) NOT NULL DEFAULT 'EMAIL',
     Status NVARCHAR(20) NOT NULL DEFAULT 'PENDING',
     Title NVARCHAR(255) NULL,
@@ -597,8 +608,8 @@ WHERE bd.RequestId = 2
 
 INSERT INTO NotificationTemplates (TemplateCode, Subject, Body)
 VALUES
-('ACCOUNT_VERIFICATION','Verify your account','Please verify your library account: {{verificationLink}}.'),
-('PASSWORD_RESET','Reset your password','Please reset your library account password: {{resetLink}}.'),
+('ACCOUNT_VERIFICATION','Verify your account','Your library verification code is {{otp}}. It expires in {{expiresInMinutes}} minutes.'),
+('PASSWORD_RESET','Reset your password','Your library password reset code is {{otp}}. It expires in {{expiresInMinutes}} minutes.'),
 ('ACCOUNT_SETUP','Set up your library account','Complete your library account setup: {{setupLink}}. This link expires in {{expiresInHours}} hours.'),
 ('RESERVATION_READY','Book reservation ready','Your reserved book is ready.'),
 ('DUE_DATE_REMINDER','Library due date reminder','Please review your borrowing due date.'),

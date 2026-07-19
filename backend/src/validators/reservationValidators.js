@@ -12,10 +12,8 @@ const createReservationValidators = [
     .withMessage('Copy ID must be a positive integer.')
     .toInt(),
   body('bookId')
-    .optional({ nullable: true, checkFalsy: true })
-    .isInt({ min: 1 })
-    .withMessage('Book ID must be a positive integer.')
-    .toInt(),
+    .not().exists()
+    .withMessage('Book ID is not supported; use copyId.'),
   handleValidationErrors,
 ];
 
@@ -25,6 +23,39 @@ const listMyReservationsValidators = [
     .trim()
     .isIn(reservationStatuses)
     .withMessage('Status is not supported.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
+  handleValidationErrors,
+];
+
+const listReservationCandidatesValidators = [
+  query('q')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Search query must be at most 200 characters.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
   handleValidationErrors,
 ];
 
@@ -44,6 +75,18 @@ const listReservationsValidators = [
     .trim()
     .isIn(reservationStatuses)
     .withMessage('Status is not supported.'),
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt()
+    .default(1),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt()
+    .default(20),
   handleValidationErrors,
 ];
 
@@ -83,15 +126,14 @@ const processQueueValidators = [
     .withMessage('Copy ID must be a positive integer.')
     .toInt(),
   body('bookId')
-    .optional({ nullable: true, checkFalsy: true })
-    .isInt({ min: 1 })
-    .withMessage('Book ID must be a positive integer.')
-    .toInt(),
+    .not().exists()
+    .withMessage('Book ID is not supported; use copyId.'),
   handleValidationErrors,
 ];
 
 module.exports = {
   createReservationValidators,
+  listReservationCandidatesValidators,
   listMyReservationsValidators,
   listReservationsValidators,
   cancelReservationValidators,

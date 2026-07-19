@@ -1,12 +1,12 @@
 # CONTEXT.md - FE03 User Profile
 
-# Version: 0.2.0
+# Version: 0.2.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-06-20
+# Last Updated: 2026-07-19
 
 # Feature folder: `.sdd/specs/feat-user-profile/`
 
@@ -127,7 +127,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-002 | FE03 cannot update email; email changes go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-004 | Phase 1 originally supported avatar URL text only. This revision proposes local avatar file upload with backend-generated `avatarUrl`. | User request 2026-06-20 | DRAFT REVISION |
+| Q-FE03-004 | Phase 1 supports local avatar file upload with backend-generated `avatarUrl`, server-local managed storage, JPG/JPEG/PNG/WebP, and a 2 MB limit. | User decision 2026-06-25 | APPROVED |
 | Q-FE03-005 | Profile updates write audit logs. | Review packet 2026-06-10 | APPROVED |
 | Q-FE03-006 | Missing profiles are auto-created, protected/unknown fields are rejected, status is read-only, and avatarUrl changes only through upload. | Spec normalization 2026-07-17 | APPROVED |
 

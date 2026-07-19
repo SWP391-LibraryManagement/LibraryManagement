@@ -1,27 +1,33 @@
 openapi: 3.0.3
 info:
-  title: Library Management System API — FE07/FE08/FE10/FE11/FE12
+  title: Library Management System API — FE05/FE07/FE08/FE10/FE11/FE12
   version: 1.0.0
   description: >
-    API documentation for FE07 Borrowing, FE08 Reservation, FE10 Notification,
+    API documentation for FE05 Book Management, FE07 Borrowing, FE08 Reservation, FE10 Notification,
     FE11 Admin Audit Logs and Permissions, and FE12 Reporting.
     All endpoints require a Bearer JWT obtained from /api/auth/login.
 servers:
   - url: /
     description: Same-origin server
 tags:
+  - name: Book Management
+    description: FE05 — public catalog reads and librarian/admin catalog mutations
   - name: Borrowing
     description: FE07 — borrow requests, approval, return, renewal
   - name: Reservation
     description: FE08 — reservation queue, hold, expire
   - name: Notification
     description: FE10 — notification requests and delivery
+  - name: Fine Management
+    description: FE09 — overdue fine calculation and resolution
   - name: Reporting
     description: FE12 — read-only aggregate reports
   - name: Admin Audit
     description: FE11 — Admin-only searchable and redacted audit log view
   - name: Admin Permissions
     description: FE11 — Admin-only canonical read-only permission policy
+  - name: Admin Requests
+    description: FE11 — Admin-only canonical FE07 request list and detail views
 components:
   securitySchemes:
     bearerAuth:
@@ -107,6 +113,32 @@ components:
       properties:
         notificationId: { type: integer }
         status: { type: string, enum: [PENDING, SENT, DELIVERED, FAILED, SKIPPED, CANCELLED] }
+    SensitiveOtpNotificationRequest:
+      type: object
+      additionalProperties: false
+      description: Internal-only FE02 requester contract; this schema is never accepted by staff HTTP.
+      required: [type, channel, recipientEmail, templateKey, templateData, sourceEntityType, sourceEntityId, idempotencyKey]
+      properties:
+        type: { type: string, enum: [ACCOUNT_VERIFICATION, PASSWORD_RESET] }
+        channel: { type: string, enum: [EMAIL] }
+        userId: { type: integer, minimum: 1 }
+        recipientEmail: { type: string, format: email }
+        templateKey: { type: string, enum: [ACCOUNT_VERIFICATION, PASSWORD_RESET] }
+        templateData:
+          type: object
+          additionalProperties: false
+          required: [otp, expiresInMinutes]
+          properties:
+            otp:
+              type: string
+              pattern: '^\d{6}$'
+              writeOnly: true
+            expiresInMinutes: { type: integer, minimum: 1 }
+        sourceEntityType: { type: string, enum: [AuthToken] }
+        sourceEntityId: { type: integer, minimum: 1 }
+        idempotencyKey:
+          type: string
+          pattern: '^FE02:(ACCOUNT_VERIFICATION|PASSWORD_RESET):[1-9]\d*$'
     ProcessPendingSummary:
       type: object
       additionalProperties: false
@@ -147,6 +179,35 @@ components:
           properties:
             code: { type: string, example: ROLE_REQUIRED }
             message: { type: string, example: Access is denied. }
+    ReservationCandidate:
+      type: object
+      additionalProperties: false
+      required: [copyId, bookId, title, authorName, copyStatus, activeReservationCount]
+      properties:
+        copyId: { type: integer, minimum: 1 }
+        bookId: { type: integer, minimum: 1 }
+        title: { type: string }
+        authorName: { type: string, nullable: true }
+        copyStatus: { type: string, enum: [BORROWED, RESERVED] }
+        activeReservationCount: { type: integer, minimum: 0 }
+    ReservationCandidatePagination:
+      type: object
+      additionalProperties: false
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    ReservationCandidateListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ReservationCandidate' }
+        pagination: { $ref: '#/components/schemas/ReservationCandidatePagination' }
     AdminPermissionRole:
       type: object
       additionalProperties: false
@@ -271,6 +332,87 @@ components:
           type: array
           items: { $ref: '#/components/schemas/AuditLogEntry' }
         pagination: { $ref: '#/components/schemas/AuditLogPagination' }
+    AdminRequestMemberSummary:
+      type: object
+      additionalProperties: false
+      required: [userId, fullName, email, phoneNumber]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        fullName: { type: string, nullable: true }
+        email: { type: string, format: email }
+        phoneNumber: { type: string, nullable: true }
+    AdminRequestListItem:
+      type: object
+      additionalProperties: false
+      required: [requestId, requestDate, status, member, itemCount, bookTitles, categories]
+      properties:
+        requestId: { type: integer, minimum: 1 }
+        requestDate: { type: string, format: date-time }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
+        member: { $ref: '#/components/schemas/AdminRequestMemberSummary' }
+        itemCount: { type: integer, minimum: 0 }
+        bookTitles:
+          type: array
+          items: { type: string }
+        categories:
+          type: array
+          uniqueItems: true
+          items: { type: string }
+    AdminRequestListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/AdminRequestListItem' }
+        pagination: { $ref: '#/components/schemas/AuditLogPagination' }
+    AdminRequestDetailMember:
+      type: object
+      additionalProperties: false
+      required: [userId, memberId, fullName, email, phoneNumber, status]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        memberId: { type: integer, nullable: true, minimum: 1 }
+        fullName: { type: string, nullable: true }
+        email: { type: string, format: email }
+        phoneNumber: { type: string, nullable: true }
+        status: { type: string, enum: [ACTIVE, INACTIVE, LOCKED] }
+    AdminRequestDetailItem:
+      type: object
+      additionalProperties: false
+      required: [borrowDetailId, copyId, barcode, title, author, location, status]
+      properties:
+        borrowDetailId: { type: integer, minimum: 1 }
+        copyId: { type: integer, minimum: 1 }
+        barcode: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+        author: { type: string, nullable: true }
+        location: { type: string, nullable: true }
+        status: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED] }
+    AdminRequestLifecycle:
+      type: object
+      additionalProperties: false
+      required: [approvedAt, rejectedAt, processedAt]
+      properties:
+        approvedAt: { type: string, format: date-time, nullable: true }
+        rejectedAt: { type: string, format: date-time, nullable: true }
+        processedAt: { type: string, format: date-time, nullable: true }
+    AdminRequestDetail:
+      type: object
+      additionalProperties: false
+      required: [requestId, requestDate, status, createdAt, updatedAt, member, items, lifecycle]
+      properties:
+        requestId: { type: integer, minimum: 1 }
+        requestDate: { type: string, format: date-time }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time, nullable: true }
+        member: { $ref: '#/components/schemas/AdminRequestDetailMember' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AdminRequestDetailItem' }
+        lifecycle: { $ref: '#/components/schemas/AdminRequestLifecycle' }
     BorrowRequestCreateInput:
       type: object
       additionalProperties: false
@@ -301,7 +443,7 @@ components:
         returnDate:
           type: string
           format: date
-          description: Optional; omitted values default to the server date.
+          description: Optional; omitted values default to the current Asia/Ho_Chi_Minh business date. Future and pre-borrow dates are rejected.
         notes: { type: string, maxLength: 500 }
     BorrowDetailRenewInput:
       type: object
@@ -310,12 +452,15 @@ components:
         notes: { type: string, maxLength: 500 }
     BorrowRequest:
       type: object
-      required: [requestId, userId, requestDate, status, details]
+      required: [requestId, userId, requestDate, status, createdBy, details]
       properties:
         requestId: { type: integer, minimum: 1 }
         userId: { type: integer, minimum: 1 }
         requestDate: { type: string, format: date-time }
         status: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
+        createdBy: { type: integer, minimum: 1 }
+        approvedBy: { type: integer, minimum: 1, nullable: true }
+        approvedAt: { type: string, format: date-time, nullable: true }
         details:
           type: array
           items: { $ref: '#/components/schemas/BorrowDetail' }
@@ -358,11 +503,12 @@ components:
           items: { $ref: '#/components/schemas/BorrowRequest' }
     MemberBorrowingsPayload:
       type: object
-      required: [borrowings]
+      required: [borrowings, pagination]
       properties:
         borrowings:
           type: array
           items: { $ref: '#/components/schemas/BorrowDetail' }
+        pagination: { $ref: '#/components/schemas/AuditLogPagination' }
     BorrowRequestPayload:
       type: object
       required: [borrowRequest]
@@ -382,104 +528,429 @@ components:
     BorrowingReport:
       type: object
       additionalProperties: false
-      required: [totals, requestStatusCounts, detailStatusCounts, borrowCountByPeriod, topBorrowedBooks]
+      required: [metrics, rows, page, limit, totalRows]
       properties:
-        totals:
+        metrics:
           type: object
           additionalProperties: false
-          required: [requests, details, activeLoans, overdueLoans]
+          required: [activeLoans, overdueLoans, borrowCountByPeriod, topBorrowedBooks]
           properties:
-            requests: { type: integer, minimum: 0 }
-            details: { type: integer, minimum: 0 }
             activeLoans: { type: integer, minimum: 0 }
             overdueLoans: { type: integer, minimum: 0 }
-        requestStatusCounts:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        detailStatusCounts:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        borrowCountByPeriod:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        topBorrowedBooks:
+            borrowCountByPeriod:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+            topBorrowedBooks:
+              type: array
+              maxItems: 10
+              items:
+                type: object
+                additionalProperties: false
+                required: [bookId, title, borrowCount]
+                properties:
+                  bookId: { type: integer }
+                  title: { type: string, nullable: true }
+                  borrowCount: { type: integer, minimum: 0 }
+        rows:
           type: array
           items:
             type: object
             additionalProperties: false
-            required: [bookId, title, borrowCount]
+            required: [borrowDetailId, requestId, userId, bookId, copyId, status, borrowDate, dueDate, returnDate]
             properties:
-              bookId: { type: integer }
-              title: { type: string, nullable: true }
-              borrowCount: { type: integer, minimum: 0 }
+              borrowDetailId: { type: integer, minimum: 1 }
+              requestId: { type: integer, minimum: 1 }
+              userId: { type: integer, minimum: 1 }
+              bookId: { type: integer, minimum: 1, nullable: true }
+              copyId: { type: integer, minimum: 1 }
+              status: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE, UNKNOWN] }
+              borrowDate: { type: string, format: date, nullable: true }
+              dueDate: { type: string, format: date, nullable: true }
+              returnDate: { type: string, format: date, nullable: true }
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        totalRows: { type: integer, minimum: 0 }
     InventoryReport:
       type: object
       additionalProperties: false
-      required: [totals, copyStatusCounts, categoryCounts, lowAvailabilityBooks]
+      required: [metrics, rows, page, limit, totalRows]
       properties:
-        totals:
+        metrics:
           type: object
           additionalProperties: false
-          required: [books, copies]
+          required: [totalBooks, totalCopies, copiesByStatus, lowStockBooks]
           properties:
-            books: { type: integer, minimum: 0 }
-            copies: { type: integer, minimum: 0 }
-        copyStatusCounts:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        categoryCounts:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        lowAvailabilityBooks:
+            totalBooks: { type: integer, minimum: 0 }
+            totalCopies: { type: integer, minimum: 0 }
+            copiesByStatus:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+            lowStockBooks:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [bookId, title, effectiveAvailability]
+                properties:
+                  bookId: { type: integer }
+                  title: { type: string, nullable: true }
+                  effectiveAvailability: { type: integer, minimum: 0 }
+        rows:
           type: array
           items:
             type: object
             additionalProperties: false
-            required: [bookId, title, categoryId, categoryName, copies, totalCopies, availableCopies]
+            required: [bookId, title, copyId, barcode, location, status, effectiveAvailability]
             properties:
               bookId: { type: integer }
               title: { type: string, nullable: true }
-              categoryId: { type: integer, nullable: true }
-              categoryName: { type: string, nullable: true }
-              copies:
-                type: array
-                items:
-                  type: object
-                  additionalProperties: false
-                  required: [copyId, status, location]
-                  properties:
-                    copyId: { type: integer }
-                    status: { type: string }
-                    location: { type: string, nullable: true }
-              totalCopies: { type: integer, minimum: 0 }
-              availableCopies: { type: integer, minimum: 0 }
+              copyId: { type: integer }
+              barcode: { type: string, nullable: true }
+              location: { type: string, nullable: true }
+              status: { type: string, enum: [AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE, UNKNOWN] }
+              effectiveAvailability: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        totalRows: { type: integer, minimum: 0 }
     UserStatisticsReport:
       type: object
       additionalProperties: false
-      required: [totals, usersByStatus, usersByRole, membersByStatus, newMembersByPeriod]
+      required: [metrics, rows, page, limit, totalRows]
       properties:
-        totals:
+        metrics:
           type: object
           additionalProperties: false
-          required: [users, members]
+          required: [totalMembers, usersByStatus, usersByRole, membershipByStatus, newMembersByPeriod]
           properties:
-            users: { type: integer, minimum: 0 }
-            members: { type: integer, minimum: 0 }
-        usersByStatus:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        usersByRole:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        membersByStatus:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
-        newMembersByPeriod:
-          type: object
-          additionalProperties: { type: integer, minimum: 0 }
+            totalMembers: { type: integer, minimum: 0 }
+            usersByStatus:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+            usersByRole:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+            membershipByStatus:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+            newMembersByPeriod:
+              type: object
+              additionalProperties: { type: integer, minimum: 0 }
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [userId, status, roles, membershipStatus, createdAt, approvedAt]
+            properties:
+              userId: { type: integer, minimum: 1 }
+              status: { type: string, enum: [ACTIVE, INACTIVE, LOCKED, UNKNOWN] }
+              roles:
+                type: array
+                items: { type: string, enum: [ADMIN, LIBRARIAN, MEMBER, GUEST, UNKNOWN] }
+              membershipStatus: { type: string, enum: [PENDING, APPROVED, REJECTED, INACTIVE, UNKNOWN], nullable: true }
+              createdAt: { type: string, format: date-time, nullable: true }
+              approvedAt: { type: string, format: date-time, nullable: true }
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        totalRows: { type: integer, minimum: 0 }
+    Fine:
+      type: object
+      additionalProperties: false
+      required: [fineId, userId, borrowDetailId, overdueDays, ratePerDay, amount, paidAmount, reason, status]
+      properties:
+        fineId: { type: integer, minimum: 1 }
+        userId: { type: integer, minimum: 1 }
+        borrowDetailId: { type: integer, minimum: 1 }
+        overdueDays: { type: integer, minimum: 0 }
+        ratePerDay: { type: number, minimum: 0 }
+        amount: { type: number, exclusiveMinimum: 0 }
+        paidAmount: { type: number, minimum: 0 }
+        reason: { type: string, enum: [OVERDUE] }
+        status: { type: string, enum: [UNPAID, PAID, WAIVED, CANCELLED] }
+        paidAt: { type: string, format: date-time, nullable: true }
+        collectedBy: { type: integer, minimum: 1, nullable: true }
+        paymentMethod: { type: string, minLength: 1, maxLength: 50, nullable: true }
+        calculatedAt: { type: string, format: date-time }
+        member: { type: object, nullable: true }
+        bookTitle: { type: string, nullable: true }
+        barcode: { type: string, nullable: true }
+    FineListPayload:
+      type: object
+      additionalProperties: false
+      required: [fines, page, limit, total, totalPages]
+      properties:
+        fines:
+          type: array
+          items: { $ref: '#/components/schemas/Fine' }
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    FineMutationPayload:
+      type: object
+      additionalProperties: false
+      required: [fine]
+      properties:
+        fine: { $ref: '#/components/schemas/Fine' }
+    FinePaymentInput:
+      type: object
+      additionalProperties: false
+      required: [paymentMethod]
+      properties:
+        paymentMethod: { type: string, minLength: 1, maxLength: 50 }
+        note: { type: string, maxLength: 500 }
+    FineResolutionInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+    Book:
+      type: object
+      additionalProperties: false
+      required: [id, title, category, author, availabilityStatus]
+      properties:
+        id: { type: integer, minimum: 1 }
+        title: { type: string }
+        isbn: { type: string, maxLength: 20 }
+        category: { type: string }
+        author: { type: string }
+        publisher: { type: string }
+        year: { type: integer, nullable: true }
+        description: { type: string }
+        cover: { type: string }
+        rating: { type: number, minimum: 0, maximum: 5, multipleOf: 0.1 }
+        pages: { type: integer, minimum: 0, maximum: 10000 }
+        available: { type: boolean }
+        availabilityStatus: { type: string, enum: [AVAILABLE, UNAVAILABLE] }
+        totalCopies: { type: integer, minimum: 0 }
+        availableCopies: { type: integer, minimum: 0 }
+        categoryId: { type: integer, nullable: true, minimum: 1 }
+        authorId: { type: integer, nullable: true, minimum: 1 }
+        publisherId: { type: integer, nullable: true, minimum: 1 }
+        status: { type: string, enum: [ACTIVE, INACTIVE] }
+        version: { type: string, description: Opaque SQL rowversion token }
+        createdAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true }
+    BookPagination:
+      type: object
+      additionalProperties: false
+      required: [page, limit, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    PublicBookSummary:
+      type: object
+      additionalProperties: false
+      required: [bookId, title, availabilityStatus]
+      properties:
+        bookId: { type: integer, minimum: 1 }
+        title: { type: string }
+        isbn: { type: string, maxLength: 20, nullable: true }
+        categoryName: { type: string, nullable: true }
+        authorName: { type: string, nullable: true }
+        publisherName: { type: string, nullable: true }
+        publishYear: { type: integer, nullable: true }
+        description: { type: string, nullable: true }
+        coverUrl: { type: string, nullable: true }
+        availabilityStatus: { type: string, enum: [AVAILABLE, UNAVAILABLE] }
+    PublicBookListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PublicBookSummary' }
+        pagination: { $ref: '#/components/schemas/BookPagination' }
+    PublicBookResponse:
+      type: object
+      additionalProperties: false
+      required: [book]
+      properties:
+        book: { $ref: '#/components/schemas/PublicBookSummary' }
+    BookListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, pagination]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Book' }
+        pagination: { $ref: '#/components/schemas/BookPagination' }
+    BookResponse:
+      type: object
+      additionalProperties: false
+      required: [book]
+      properties:
+        book: { $ref: '#/components/schemas/Book' }
+    BookInput:
+      type: object
+      additionalProperties: false
+      required: [title, categoryId, authorId]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
+        isbn: { type: string, maxLength: 20 }
+        categoryId: { type: integer, minimum: 1 }
+        authorId: { type: integer, minimum: 1 }
+        publisherId: { type: integer, nullable: true, minimum: 1 }
+        publishYear: { type: integer, nullable: true, minimum: 1 }
+        pages: { type: integer, nullable: true, minimum: 1, maximum: 10000 }
+        rating: { type: number, minimum: 0, maximum: 5, multipleOf: 0.1 }
+        coverUrl: { type: string, maxLength: 255 }
+        description: { type: string, maxLength: 2000 }
+    BookStatusInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
 security:
   - bearerAuth: []
 paths:
+  /api/books:
+    get:
+      tags: [Book Management]
+      summary: Search active public books (FR-FE05-001/002/009/010)
+      security: []
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: categoryId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: authorId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: publisherId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200': { description: Active public catalog page, content: { application/json: { schema: { $ref: '#/components/schemas/PublicBookListResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/books:
+    get:
+      tags: [Book Management]
+      summary: List books for librarians/admins (FR-FE05-004/009/010)
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 200 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [ACTIVE, INACTIVE] } }
+        - { name: categoryId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [title, publishYear, createdAt], default: title } }
+        - { name: order, in: query, required: false, schema: { type: string, enum: [asc, desc], default: asc } }
+      responses:
+        '200': { description: Staff catalog page, content: { application/json: { schema: { $ref: '#/components/schemas/BookListResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+  /api/admin/requests:
+    get:
+      tags: [Admin Requests]
+      summary: List FE07 borrow requests for the FE11 Admin request-management view (FR-FE11-034)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: q, in: query, required: false, schema: { type: string, minLength: 1, maxLength: 100 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] } }
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Canonical paginated Admin request list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminRequestListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/requests/{requestId}:
+    get:
+      tags: [Admin Requests]
+      summary: Read one authoritative FE07 borrow request through the FE11 safe projection (FR-FE11-034)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: requestId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Canonical safe Admin request detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminRequestDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/books/metadata:
+    get:
+      tags: [Book Management]
+      summary: Read book metadata options (FR-FE05-005/013)
+      responses:
+        '200': { description: Categories, authors, and publishers }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/books/{bookId}:
+    get:
+      tags: [Book Management]
+      summary: View a book detail (FR-FE05-003/014/019/020)
+      security: []
+      parameters:
+        - { name: bookId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Public-safe active book detail, content: { application/json: { schema: { $ref: '#/components/schemas/PublicBookResponse' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Book Management]
+      summary: Update book metadata with optimistic concurrency (FR-FE05-007/016/023)
+      parameters:
+        - { name: bookId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: If-Match, in: header, required: true, schema: { type: string }, description: Last-seen opaque rowversion token }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/BookInput' } }
+      responses:
+        '200': { description: Updated book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/books/{bookId}/deactivate:
+    patch:
+      tags: [Book Management]
+      summary: Deactivate a book without mutating copies (FR-FE05-008/019/023/025)
+      parameters:
+        - { name: bookId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: If-Match, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/BookStatusInput' } }
+      responses:
+        '200': { description: Inactive book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/books/{bookId}/reactivate:
+    patch:
+      tags: [Book Management]
+      summary: Reactivate a book without mutating copies (FR-FE05-022/023/025)
+      parameters:
+        - { name: bookId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: If-Match, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/BookStatusInput' } }
+      responses:
+        '200': { description: Active book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /api/admin/permissions:
     get:
       tags: [Admin Permissions]
@@ -555,11 +1026,13 @@ paths:
       tags: [Borrowing]
       summary: Member views own borrowing history (FR-FE07-010)
       parameters:
-        - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE], description: OVERDUE is derived from a past-due BORROWED detail. } }
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
-        '200': { $ref: '#/components/responses/BorrowRequestListResponse' }
+        '200': { $ref: '#/components/responses/MemberBorrowingsResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
@@ -572,6 +1045,8 @@ paths:
         - { name: status, in: query, required: false, schema: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE], description: OVERDUE is derived from a past-due BORROWED detail. } }
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/MemberBorrowingsResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
@@ -686,6 +1161,25 @@ paths:
         '200': { description: List of reservations }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /api/reservations/candidates:
+    get:
+      tags: [Reservation]
+      summary: Member lists safe physical-copy reservation candidates (FR-FE08-029)
+      description: Member-only read path. Returns active-book BORROWED/RESERVED copies without barcode, location, owner, email, timestamps, or version metadata.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Paginated member-safe reservation candidate catalog
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReservationCandidateListResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/reservations/me:
     get:
       tags: [Reservation]
@@ -745,22 +1239,28 @@ paths:
   /api/notifications/requests:
     post:
       tags: [Notification]
-      summary: Create a notification request (FR-FE10-001..005)
+      summary: Create a non-sensitive staff notification request (FR-FE10-003..005)
+      description: >
+        Librarian/Admin HTTP boundary for non-sensitive notification types only.
+        Sensitive authentication notifications must be requested internally through the FE02- or
+        FE11-bound requester. HTTP callers cannot provide sourceFeature.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [type, templateKey]
               properties:
-                type: { type: string }
+                type:
+                  type: string
+                  enum: [RESERVATION_AVAILABLE, DUE_DATE_REMINDER, OVERDUE_NOTICE, FINE_NOTICE, GENERAL_SYSTEM]
                 channel: { type: string, enum: [EMAIL] }
                 userId: { type: integer, minimum: 1 }
                 recipientEmail: { type: string, format: email }
                 templateKey: { type: string }
                 templateData: { type: object }
-                sourceFeature: { type: string }
                 sourceEntityType: { type: string }
                 sourceEntityId:
                   type: integer
@@ -778,9 +1278,17 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/NotificationSummary' }
-        '400': { $ref: '#/components/responses/ValidationError' }
+        '400':
+          description: Invalid request, including SOURCE_FEATURE_HTTP_FORBIDDEN when sourceFeature is supplied.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SafeError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403':
+          description: Sensitive authentication types return SENSITIVE_NOTIFICATION_INTERNAL_ONLY.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SafeError' }
   /api/notifications/process-pending:
     post:
       tags: [Notification]
@@ -828,12 +1336,15 @@ paths:
     get:
       tags: [Reporting]
       summary: Borrowing report (FR-FE12-001)
+      description: Detailed rows use BorrowDate DESC, BorrowDetailId DESC.
       parameters:
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED, REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE] } }
         - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: userId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/BorrowingReportResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
@@ -843,11 +1354,14 @@ paths:
     get:
       tags: [Reporting]
       summary: Inventory report (FR-FE12-002)
+      description: Detailed rows use Title ASC, BookId ASC, CopyId ASC.
       parameters:
         - { name: categoryId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: status, in: query, required: false, schema: { type: string, enum: [AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE] } }
         - { name: location, in: query, required: false, schema: { type: string, maxLength: 100 } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/InventoryReportResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
@@ -857,14 +1371,183 @@ paths:
     get:
       tags: [Reporting]
       summary: User statistics report (FR-FE12-003/008)
+      description: Detailed rows use CreatedAt DESC, UserId DESC and exclude personal profile fields.
       parameters:
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: roleId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: status, in: query, required: false, schema: { type: string, enum: [ACTIVE, INACTIVE, LOCKED] } }
         - { name: membershipStatus, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, INACTIVE] } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
       responses:
         '200': { $ref: '#/components/responses/UserStatisticsReportResponse' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /api/fines/me:
+    get:
+      tags: [Fine Management]
+      summary: List the authenticated member's fines (FE09)
+      parameters:
+        - { name: status, in: query, required: false, schema: { type: string, enum: [UNPAID, PAID, WAIVED, CANCELLED] } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200':
+          description: Own fines with deterministic pagination
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineListPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/fines:
+    get:
+      tags: [Fine Management]
+      summary: List fines for staff (FE09)
+      description: Librarian/Admin only. Results are always ordered by FineId ASC.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
+        - { name: userId, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [UNPAID, PAID, WAIVED, CANCELLED] } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200':
+          description: FineId ASC list with deterministic pagination
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineListPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/fines/{fineId}:
+    get:
+      tags: [Fine Management]
+      summary: Read one fine for its owner or staff (FE09)
+      parameters:
+        - { name: fineId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Fine detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/fines/calculate:
+    post:
+      tags: [Fine Management]
+      summary: Calculate an overdue fine from stored borrowing dates (FE09)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [borrowDetailId]
+              properties:
+                borrowDetailId: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Existing or non-overdue calculation result }
+        '201': { description: Newly created fine calculation }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/fines/{fineId}/collections:
+    post:
+      tags: [Fine Management]
+      summary: Record one full offline collection (FE09)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [paymentMethod]
+              properties:
+                paymentMethod: { type: string, minLength: 1, maxLength: 50 }
+                note: { type: string, maxLength: 500 }
+      parameters:
+        - { name: fineId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: Fine resolved as PAID with full payment metadata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/fines/{fineId}/paid:
+    patch:
+      tags: [Fine Management]
+      summary: Reconcile one full payment (FE09)
+      parameters:
+        - { name: fineId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FinePaymentInput' }
+      responses:
+        '200':
+          description: Fine resolved as PAID
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/fines/{fineId}/waive:
+    patch:
+      tags: [Fine Management]
+      summary: Waive an unpaid fine as Admin (FE09)
+      parameters:
+        - { name: fineId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FineResolutionInput' }
+      responses:
+        '200':
+          description: Fine resolved as WAIVED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/fines/{fineId}/cancel:
+    patch:
+      tags: [Fine Management]
+      summary: Cancel an unpaid fine as Admin (FE09)
+      parameters:
+        - { name: fineId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FineResolutionInput' }
+      responses:
+        '200':
+          description: Fine resolved as CANCELLED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }

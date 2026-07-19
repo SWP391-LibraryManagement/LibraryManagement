@@ -18,6 +18,20 @@ async function loadBorrowingViewModels() {
   }
 }
 
+test('shared view models retain only the documented FE07 temporary candidate catalog', async () => {
+  const source = await readFile(
+    new URL('../src/utils/libraryFeatureViewModels.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(source, /export const DEMO_BORROW_CATALOG/);
+  assert.doesNotMatch(source, /export const DEMO_RESERVABLE/);
+  assert.doesNotMatch(
+    source,
+    /DEMO_MY_RESERVATIONS|DEMO_ALL_RESERVATIONS|DEMO_BORROW_ROWS|DEMO_ADMIN_REQUESTS|DEMO_MEMBERS/
+  );
+});
+
 test('FE07 route access redirects guests and wrong roles', async () => {
   const { getBorrowingRouteRedirect } = await loadBorrowingAccess();
 
@@ -137,6 +151,52 @@ test('pending requests are separated from active borrowed copies and history', a
   assert.equal(member.current[0].status, 'Borrowed');
   assert.equal(member.history.length, 1);
   assert.equal(member.history[0].status, 'Returned');
+});
+
+test('member history maps canonical borrow-detail rows without a request envelope', async () => {
+  const { mapBorrowDetailsToHistoryRows } = await loadBorrowingViewModels();
+  const rows = mapBorrowDetailsToHistoryRows([
+    {
+      borrowDetailId: 41,
+      requestId: 17,
+      copyId: 9,
+      borrowDate: '2026-07-01',
+      dueDate: '2026-07-15',
+      returnDate: null,
+      renewalCount: 0,
+      status: 'OVERDUE',
+      copy: { title: 'Clean Architecture', author: 'Robert C. Martin' },
+    },
+  ]);
+
+  assert.deepEqual(rows, [{
+    id: 41,
+    borrowDetailId: 41,
+    requestId: 17,
+    title: 'Clean Architecture',
+    author: 'Robert C. Martin',
+    borrowDate: '2026-07-01',
+    dueDate: '2026-07-15',
+    returnDate: null,
+    status: 'Overdue',
+    renewalsLeft: 0,
+  }]);
+});
+
+test('member history uses canonical server filtering and pagination', async () => {
+  const source = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /mapBorrowDetailsToHistoryRows/);
+  assert.match(source, /const PAGE_SIZE = 20/);
+  assert.match(source, /active:\s*'BORROWED'/);
+  assert.match(source, /overdue:\s*'OVERDUE'/);
+  assert.match(source, /returned:\s*'RETURNED'/);
+  assert.match(source, /borrowingApi\.listMine\(\{ status, page, limit: PAGE_SIZE \}\)/);
+  assert.match(source, /data\.borrowings \|\| \[\]/);
+  assert.match(source, /setPagination\(data\.pagination/);
+  assert.match(source, /pagination\.totalPages/);
+  assert.match(source, /pagination\.total/);
+  assert.doesNotMatch(source, /filtered\.slice/);
 });
 
 test('approval UI does not invent audit notes or eligibility evidence', async () => {

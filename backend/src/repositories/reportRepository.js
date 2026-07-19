@@ -1,6 +1,11 @@
 const { sql, getPool } = require('../config/db');
 
 const ACTUAL_LOAN_DETAIL_STATUSES = new Set(['BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
+const BORROW_DETAIL_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
+const COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
+const USER_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
+const MEMBERSHIP_STATUSES = new Set(['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE']);
+const ROLE_STATUSES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
 
 function groupCount(items, keySelector) {
   const result = {};
@@ -14,12 +19,50 @@ function groupCount(items, keySelector) {
 }
 
 function toDateKey(value) {
+  if (value == null) {
+    return null;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return null;
   }
 
   return date.toISOString().slice(0, 10);
+}
+
+function toLibraryDateKey(value = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function normalizeStatus(value, allowedStatuses) {
+  if (value == null) return null;
+  const normalized = String(value).toUpperCase();
+  return allowedStatuses.has(normalized) ? normalized : 'UNKNOWN';
+}
+
+function pagination(filters = {}) {
+  const page = Number(filters.page) || 1;
+  const limit = Number(filters.limit) || 20;
+  return { page, limit, offset: (page - 1) * limit };
+}
+
+// @spec FR-FE12-010
+function buildReport(metrics, rows, filters = {}) {
+  const { page, limit, offset } = pagination(filters);
+  return {
+    metrics,
+    rows: rows.slice(offset, offset + limit),
+    page,
+    limit,
+    totalRows: rows.length,
+  };
 }
 
 function toExclusiveNextDay(value) {
@@ -45,24 +88,25 @@ function isWithinDateRange(value, filters = {}) {
   return true;
 }
 
-async function getBorrowRows(filters = {}) {
+async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
   const pool = await getPool();
   const request = pool.request();
   const where = ['1=1'];
 
   if (filters.fromDate) {
     request.input('FromDate', sql.DateTime, new Date(filters.fromDate));
-    where.push('br.RequestDate >= @FromDate');
+    where.push('bd.BorrowDate >= @FromDate');
   }
 
   if (filters.toDate) {
     request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(filters.toDate));
-    where.push('br.RequestDate < @ToDateExclusive');
+    where.push('bd.BorrowDate < @ToDateExclusive');
   }
 
   if (filters.status === 'OVERDUE') {
+    request.input('BusinessDate', sql.Date, new Date(`${businessDate}T00:00:00.000Z`));
     where.push("bd.Status = 'BORROWED'");
-    where.push('bd.DueDate < CAST(GETDATE() AS DATE)');
+    where.push('bd.DueDate < @BusinessDate');
   } else if (filters.status) {
     request.input('Status', sql.NVarChar(20), filters.status);
     where.push('(br.Status = @Status OR bd.Status = @Status)');
@@ -102,7 +146,7 @@ async function getBorrowRows(filters = {}) {
     LEFT JOIN Books b ON bc.BookId = b.BookId
     LEFT JOIN Users u ON br.UserId = u.UserId
     WHERE ${where.join(' AND ')}
-    ORDER BY br.RequestDate DESC, br.RequestId DESC, bd.BorrowDetailId ASC
+    ORDER BY bd.BorrowDate DESC, bd.BorrowDetailId DESC
   `);
 
   return result.recordset;
@@ -123,6 +167,16 @@ async function getInventoryRows(filters = {}) {
     where.push('b.BookId = @BookId');
   }
 
+  if (filters.status) {
+    request.input('CopyStatus', sql.NVarChar(20), filters.status);
+    where.push('bc.Status = @CopyStatus');
+  }
+
+  if (filters.location) {
+    request.input('Location', sql.NVarChar(100), filters.location);
+    where.push('bc.Location = @Location');
+  }
+
   const result = await request.query(`
     SELECT
       b.BookId,
@@ -130,13 +184,20 @@ async function getInventoryRows(filters = {}) {
       b.CategoryId,
       c.CategoryName,
       bc.CopyId,
+      bc.Barcode,
       bc.Status AS CopyStatus,
-      bc.Location
+      bc.Location,
+      (
+        SELECT COUNT(*)
+        FROM BookCopies availabilityCopy
+        WHERE availabilityCopy.BookId = b.BookId
+          AND availabilityCopy.Status = 'AVAILABLE'
+      ) AS EffectiveAvailability
     FROM Books b
     LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
     LEFT JOIN BookCopies bc ON b.BookId = bc.BookId
     WHERE ${where.join(' AND ')}
-    ORDER BY b.BookId, bc.CopyId
+    ORDER BY b.Title ASC, b.BookId ASC, bc.CopyId ASC
   `);
 
   return result.recordset;
@@ -146,6 +207,7 @@ async function getUserRows(filters = {}) {
   const pool = await getPool();
   const request = pool.request();
   const where = ['1=1'];
+  const approvalPeriodConditions = ['m.ApprovedAt IS NOT NULL'];
 
   if (filters.roleId) {
     request.input('RoleId', sql.Int, filters.roleId);
@@ -162,6 +224,16 @@ async function getUserRows(filters = {}) {
     where.push('m.Status = @MembershipStatus');
   }
 
+  if (filters.fromDate) {
+    request.input('FromDate', sql.DateTime, new Date(filters.fromDate));
+    approvalPeriodConditions.push('m.ApprovedAt >= @FromDate');
+  }
+
+  if (filters.toDate) {
+    request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(filters.toDate));
+    approvalPeriodConditions.push('m.ApprovedAt < @ToDateExclusive');
+  }
+
   const result = await request.query(`
     SELECT
       u.UserId,
@@ -170,35 +242,34 @@ async function getUserRows(filters = {}) {
       ur.RoleId,
       r.RoleName,
       m.Status AS MemberStatus,
-      m.ApprovedAt AS MemberApprovedAt
+      m.ApprovedAt AS MemberApprovedAt,
+      CASE WHEN ${approvalPeriodConditions.join(' AND ')} THEN 1 ELSE 0 END AS IsInApprovalPeriod
     FROM Users u
     LEFT JOIN UserRoles ur ON u.UserId = ur.UserId
     LEFT JOIN Roles r ON ur.RoleId = r.RoleId
     LEFT JOIN Members m ON u.UserId = m.UserId
     WHERE ${where.join(' AND ')}
-    ORDER BY u.UserId
+    ORDER BY u.CreatedAt DESC, u.UserId DESC
   `);
 
   return result.recordset;
 }
 
 async function getBorrowingReport(filters = {}) {
-  const rows = await getBorrowRows(filters);
+  const today = toLibraryDateKey();
+  const rows = await getBorrowRows(filters, today);
   const detailRows = rows.filter((row) => row.BorrowDetailId);
-  const requestRows = Array.from(
-    new Map(rows.filter((row) => row.RequestId).map((row) => [row.RequestId, row])).values()
-  );
-  const now = new Date();
 
   const borrowCountByPeriod = {};
   const topBorrowedBooks = {};
 
   for (const row of detailRows) {
-    if (!ACTUAL_LOAN_DETAIL_STATUSES.has(row.DetailStatus)) {
+    const detailStatus = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
+    if (!ACTUAL_LOAN_DETAIL_STATUSES.has(detailStatus)) {
       continue;
     }
 
-    const periodKey = toDateKey(row.BorrowDate || row.RequestDate);
+    const periodKey = toDateKey(row.BorrowDate);
 
     if (periodKey) {
       borrowCountByPeriod[periodKey] = (borrowCountByPeriod[periodKey] || 0) + 1;
@@ -214,30 +285,58 @@ async function getBorrowingReport(filters = {}) {
     }
   }
 
-  const detailCountByStatus = groupCount(detailRows, (row) => row.DetailStatus);
-  const requestCountByStatus = groupCount(requestRows, (row) => row.RequestStatus);
-
-  const activeLoans = detailRows.filter((row) => row.DetailStatus === 'BORROWED').length;
+  const activeLoans = detailRows.filter(
+    (row) => normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES) === 'BORROWED'
+  ).length;
   const overdueLoans = detailRows.filter(
-    (row) =>
-      row.DetailStatus === 'OVERDUE' ||
-      (row.DetailStatus === 'BORROWED' && row.DueDate && new Date(row.DueDate) < now)
+    (row) => {
+      const status = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
+      return status === 'OVERDUE' || (status === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < today);
+    }
   ).length;
 
-  return {
-    totals: {
-      requests: new Set(requestRows.map((row) => row.RequestId)).size,
-      details: detailRows.length,
+  const detailedRows = [...detailRows]
+    .sort(
+      (left, right) =>
+        new Date(right.BorrowDate || 0).getTime() - new Date(left.BorrowDate || 0).getTime() ||
+        right.BorrowDetailId - left.BorrowDetailId
+    )
+    .map((row) => {
+      const rawStatus = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
+      const status =
+        rawStatus === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < today
+          ? 'OVERDUE'
+          : rawStatus;
+      return {
+        borrowDetailId: row.BorrowDetailId,
+        requestId: row.RequestId,
+        userId: row.UserId,
+        bookId: row.BookId,
+        copyId: row.CopyId,
+        status,
+        borrowDate: toDateKey(row.BorrowDate),
+        dueDate: toDateKey(row.DueDate),
+        returnDate: toDateKey(row.ReturnDate),
+      };
+    });
+
+  return buildReport(
+    {
       activeLoans,
       overdueLoans,
+      borrowCountByPeriod,
+      topBorrowedBooks: Object.values(topBorrowedBooks)
+        .sort(
+          (left, right) =>
+            right.borrowCount - left.borrowCount ||
+            String(left.title || '').localeCompare(String(right.title || '')) ||
+            left.bookId - right.bookId
+        )
+        .slice(0, 10),
     },
-    requestStatusCounts: requestCountByStatus,
-    detailStatusCounts: detailCountByStatus,
-    borrowCountByPeriod,
-    topBorrowedBooks: Object.values(topBorrowedBooks)
-      .sort((left, right) => right.borrowCount - left.borrowCount)
-      .slice(0, 5),
-  };
+    detailedRows,
+    filters
+  );
 }
 
 async function getInventoryReport(filters = {}) {
@@ -262,6 +361,9 @@ async function getInventoryReport(filters = {}) {
         title: row.Title || null,
         categoryId: row.CategoryId,
         categoryName: row.CategoryName || null,
+        effectiveAvailability: row.EffectiveAvailability == null
+          ? null
+          : Number(row.EffectiveAvailability),
         copies: [],
       });
     }
@@ -275,26 +377,48 @@ async function getInventoryReport(filters = {}) {
     }
   }
 
-  const copyStatusCounts = groupCount(copies, (row) => row.CopyStatus);
   const books = Array.from(booksById.values());
-  const categoryCounts = groupCount(books, (book) => book.categoryName);
-  const lowAvailabilityBooks = books
-    .map((book) => ({
-      ...book,
-      totalCopies: book.copies.length,
-      availableCopies: book.copies.filter((copy) => copy.status === 'AVAILABLE').length,
+  const availabilityByBookId = new Map(
+    books.map((book) => [
+      book.bookId,
+      book.effectiveAvailability == null
+        ? book.copies.filter((copy) => normalizeStatus(copy.status, COPY_STATUSES) === 'AVAILABLE').length
+        : book.effectiveAvailability,
+    ])
+  );
+  const detailedRows = copies
+    .map((row) => ({
+      bookId: row.BookId,
+      title: row.Title || null,
+      copyId: row.CopyId,
+      barcode: row.Barcode || null,
+      location: row.Location || null,
+      status: normalizeStatus(row.CopyStatus, COPY_STATUSES),
+      effectiveAvailability: availabilityByBookId.get(row.BookId) || 0,
     }))
-    .filter((book) => book.availableCopies <= 2);
+    .sort(
+      (left, right) =>
+        String(left.title || '').localeCompare(String(right.title || '')) ||
+        left.bookId - right.bookId ||
+        left.copyId - right.copyId
+    );
 
-  return {
-    totals: {
-      books: booksById.size,
-      copies: copies.length,
+  return buildReport(
+    {
+      totalBooks: booksById.size,
+      totalCopies: copies.length,
+      copiesByStatus: groupCount(copies, (row) => normalizeStatus(row.CopyStatus, COPY_STATUSES)),
+      lowStockBooks: books
+        .map((book) => ({
+          bookId: book.bookId,
+          title: book.title,
+          effectiveAvailability: availabilityByBookId.get(book.bookId) || 0,
+        }))
+        .filter((book) => book.effectiveAvailability <= 2),
     },
-    copyStatusCounts,
-    categoryCounts,
-    lowAvailabilityBooks,
-  };
+    detailedRows,
+    filters
+  );
 }
 
 async function getUserStatistics(filters = {}) {
@@ -305,22 +429,28 @@ async function getUserStatistics(filters = {}) {
     if (!usersById.has(row.UserId)) {
       usersById.set(row.UserId, {
         userId: row.UserId,
-        status: row.UserStatus,
+        status: normalizeStatus(row.UserStatus, USER_STATUSES),
         createdAt: row.CreatedAt,
         memberApprovedAt: row.MemberApprovedAt,
+        isInApprovalPeriod: row.IsInApprovalPeriod == null
+          ? isWithinDateRange(row.MemberApprovedAt, filters)
+          : Boolean(row.IsInApprovalPeriod),
         roles: new Set(),
-        memberStatus: row.MemberStatus || null,
+        memberStatus: normalizeStatus(row.MemberStatus, MEMBERSHIP_STATUSES),
       });
     }
 
     if (row.RoleName) {
-      usersById.get(row.UserId).roles.add(row.RoleName);
+      usersById.get(row.UserId).roles.add(normalizeStatus(row.RoleName, ROLE_STATUSES));
     }
   }
 
   const users = Array.from(usersById.values());
   const usersByStatus = groupCount(users, (user) => user.status);
-  const membersByStatus = groupCount(users.filter((user) => user.memberStatus), (user) => user.memberStatus);
+  const membershipByStatus = groupCount(
+    users.filter((user) => user.memberStatus),
+    (user) => user.memberStatus
+  );
   const usersByRole = {};
 
   for (const user of users) {
@@ -331,7 +461,7 @@ async function getUserStatistics(filters = {}) {
 
   const newMembersByPeriod = {};
   for (const user of users.filter(
-    (item) => item.memberStatus === 'APPROVED' && isWithinDateRange(item.memberApprovedAt, filters)
+    (item) => item.memberStatus === 'APPROVED' && item.isInApprovalPeriod
   )) {
     const periodKey = toDateKey(user.memberApprovedAt);
 
@@ -340,16 +470,32 @@ async function getUserStatistics(filters = {}) {
     }
   }
 
-  return {
-    totals: {
-      users: users.length,
-      members: users.filter((user) => user.memberStatus === 'APPROVED').length,
+  const detailedRows = users
+    .map((user) => ({
+      userId: user.userId,
+      status: user.status,
+      roles: Array.from(user.roles).sort(),
+      membershipStatus: user.memberStatus,
+      createdAt: user.createdAt || null,
+      approvedAt: user.memberApprovedAt || null,
+    }))
+    .sort(
+      (left, right) =>
+        new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime() ||
+        right.userId - left.userId
+    );
+
+  return buildReport(
+    {
+      totalMembers: users.filter((user) => user.roles.has('MEMBER')).length,
+      usersByStatus,
+      usersByRole,
+      membershipByStatus,
+      newMembersByPeriod,
     },
-    usersByStatus,
-    usersByRole,
-    membersByStatus,
-    newMembersByPeriod,
-  };
+    detailedRows,
+    filters
+  );
 }
 
 module.exports = {

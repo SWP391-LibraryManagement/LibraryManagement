@@ -1,11 +1,9 @@
 const errors = require('../utils/safeErrors');
+const { overdueDaysBetween } = require('../utils/libraryBusinessTime');
 
-// FE09 Fine Management — server-side calculation, collection and paid-marking.
-// This service is the production-aligned implementation required by SPEC §11.1: fines are computed
-// from stored borrowing data, never from client input (BR-FE09-007, BR-FE09-008, NFR-FE09-SEC-004).
-
-const DAILY_FINE_RATE = 5000; // VND per overdue day per copy (BR-FE09-005, DEC-GEN-003)
+const DAILY_FINE_RATE = 5000;
 const OVERDUE_REASON = 'OVERDUE';
+const FINE_STATUSES = new Set(['UNPAID', 'PAID', 'WAIVED', 'CANCELLED']);
 
 function normalizeRole(role) {
   return String(role || '').toUpperCase();
@@ -16,6 +14,10 @@ function hasAnyRole(user, allowedRoles) {
   return allowedRoles.map(normalizeRole).some((role) => currentRoles.includes(role));
 }
 
+function hasOwn(value, property) {
+  return Object.prototype.hasOwnProperty.call(value || {}, property);
+}
+
 function toPositiveInteger(value, fieldName) {
   const numberValue = Number(value);
   if (!Number.isInteger(numberValue) || numberValue <= 0) {
@@ -24,16 +26,69 @@ function toPositiveInteger(value, fieldName) {
   return numberValue;
 }
 
-function toDateOnly(date) {
-  const value = new Date(date);
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+function parseListInteger(value, defaultValue, fieldName, maximum) {
+  if (value === undefined) return defaultValue;
+
+  const raw = String(value);
+  const parsed = Number(raw);
+  if (!/^\d+$/.test(raw) || !Number.isInteger(parsed) || parsed < 1 || (maximum && parsed > maximum)) {
+    throw errors.badRequest('INVALID_FINE_FILTER', `${fieldName} is invalid.`);
+  }
+  return parsed;
 }
 
-// Overdue days start the day AFTER the due date (BR-FE09-006). Returns 0 when not overdue.
-function overdueDaysBetween(dueDate, referenceDate) {
-  const due = toDateOnly(dueDate).getTime();
-  const reference = toDateOnly(referenceDate).getTime();
-  return Math.max(0, Math.round((reference - due) / 86400000));
+function normalizeListFilters(filters = {}, { allowSearch = true, userId } = {}) {
+  // @spec FR-FE09-016 - reject invalid list controls before repository access.
+  const page = parseListInteger(filters.page, 1, 'Page');
+  const limit = parseListInteger(filters.limit, 20, 'Limit', 100);
+  let status;
+
+  if (filters.status !== undefined) {
+    status = String(filters.status);
+    if (!FINE_STATUSES.has(status)) {
+      throw errors.badRequest('INVALID_FINE_FILTER', 'Status is invalid.');
+    }
+  }
+
+  let selectedUserId = userId;
+  if (selectedUserId === undefined && filters.userId !== undefined) {
+    selectedUserId = toPositiveInteger(filters.userId, 'User ID');
+  }
+
+  let q;
+  if (allowSearch && filters.q !== undefined) {
+    q = String(filters.q).trim();
+    if (q.length > 200) {
+      throw errors.badRequest('INVALID_FINE_FILTER', 'Search query must not exceed 200 characters.');
+    }
+    if (!q) q = undefined;
+  }
+
+  return { q, userId: selectedUserId, status, page, limit };
+}
+
+function normalizePaymentInput(input = {}) {
+  if (hasOwn(input, 'collectedAmount')) {
+    throw errors.badRequest(
+      'PARTIAL_PAYMENT_NOT_SUPPORTED',
+      'Phase 1 records only full fine collection; client amounts are not accepted.'
+    );
+  }
+
+  const paymentMethod = String(input.paymentMethod || '').trim();
+  if (!paymentMethod) {
+    throw errors.badRequest('PAYMENT_METHOD_REQUIRED', 'Payment method is required.');
+  }
+  if (paymentMethod.length > 50) {
+    throw errors.badRequest('PAYMENT_METHOD_TOO_LONG', 'Payment method must not exceed 50 characters.');
+  }
+
+  const note = String(input.note || '').trim();
+  if (note.length > 500) {
+    throw errors.badRequest('COLLECTION_NOTE_TOO_LONG', 'Collection note must not exceed 500 characters.');
+  }
+
+  return { paymentMethod, note: note || null };
 }
 
 function createFineManagementService({
@@ -41,19 +96,18 @@ function createFineManagementService({
   auditLogRepository,
   clock = () => new Date(),
 } = {}) {
-  if (!fineRepository) {
-    fineRepository = require('../repositories/fineRepository');
-  }
+  if (!fineRepository) fineRepository = require('../repositories/fineRepository');
+  if (!auditLogRepository) auditLogRepository = require('../repositories/auditLogRepository');
 
-  if (!auditLogRepository) {
-    auditLogRepository = require('../repositories/auditLogRepository');
-  }
-
-  // @spec NFR-FE09-LOG-001 — calculate/collect/paid/waive/cancel actions are written to the audit log (INV-8)
-  async function writeAudit(context, action, extra = {}) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
-      return;
+  async function inTransaction(work) {
+    if (typeof fineRepository.withTransaction === 'function') {
+      return fineRepository.withTransaction(work);
     }
+    return work(undefined);
+  }
+
+  async function writeAudit(context, action, extra = {}, transaction) {
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') return;
 
     await auditLogRepository.create({
       userId: extra.userId ?? context?.userId ?? null,
@@ -63,11 +117,11 @@ function createFineManagementService({
       metadata: extra.metadata || null,
       ipAddress: context?.ip || null,
       userAgent: context?.userAgent || null,
+      transaction,
     });
   }
 
   function requireStaff(actor) {
-    // @spec FR-FE09-009, BR-FE09-004 — only librarian/admin may calculate, collect, or mark fines paid
     if (!hasAnyRole(actor, ['LIBRARIAN', 'ADMIN'])) {
       throw errors.forbidden('STAFF_ROLE_REQUIRED', 'Only librarian or admin can manage fines.');
     }
@@ -79,216 +133,234 @@ function createFineManagementService({
     }
   }
 
-  // @spec FR-FE09-003, FR-FE09-004, FR-FE09-005, FR-FE09-006 — compute overdue fine from stored
-  // due/return dates; create an UNPAID fine only when the amount is positive (AF-FE09-001, EC-FE09-004/007).
-  async function calculateFine(input, actor, context = {}) {
+  // @spec FR-FE09-003 FR-FE09-004 FR-FE09-005 FR-FE09-006 FR-FE09-017
+  async function calculateFine(input = {}, actor, context = {}) {
     requireStaff(actor);
-
     const borrowDetailId = toPositiveInteger(input.borrowDetailId, 'Borrow detail ID');
-    const detail = await fineRepository.getBorrowDetailForFine(borrowDetailId);
 
-    // @spec EC-FE09-002 — reject calculation when the borrow detail does not exist
-    if (!detail) {
-      throw errors.notFound('BORROW_DETAIL_NOT_FOUND', 'Borrow detail was not found.');
-    }
+    return inTransaction(async (transaction) => {
+      const detail = await fineRepository.getBorrowDetailForFine(borrowDetailId, transaction);
+      if (!detail) {
+        throw errors.notFound('BORROW_DETAIL_NOT_FOUND', 'Borrow detail was not found.');
+      }
+      if (!detail.dueDate) {
+        throw errors.badRequest('MISSING_DUE_DATE', 'Borrow detail has no due date; cannot calculate a fine.');
+      }
 
-    // @spec EC-FE09-003 — reject calculation when the borrow detail has no due date (incomplete data)
-    if (!detail.dueDate) {
-      throw errors.badRequest('MISSING_DUE_DATE', 'Borrow detail has no due date; cannot calculate a fine.');
-    }
+      const calculatedAt = clock();
+      const referenceDate = detail.returnDate || calculatedAt;
+      const overdueDays = overdueDaysBetween(detail.dueDate, referenceDate);
+      const amount = overdueDays * DAILY_FINE_RATE;
 
-    const referenceDate = detail.returnDate ? new Date(detail.returnDate) : clock();
-    const overdueDays = overdueDaysBetween(detail.dueDate, referenceDate);
-    const amount = overdueDays * DAILY_FINE_RATE;
+      if (amount <= 0) {
+        return { fine: null, created: false, overdueDays: 0, amount: 0 };
+      }
 
-    // @spec FR-FE09-004 — not overdue (or amount <= 0): no fine is created
-    if (amount <= 0) {
-      return { fine: null, created: false, overdueDays: 0, amount: 0 };
-    }
+      const result = await fineRepository.createFine(
+        {
+          userId: detail.userId,
+          borrowDetailId,
+          overdueDays,
+          ratePerDay: DAILY_FINE_RATE,
+          amount,
+          reason: OVERDUE_REASON,
+          createdBy: actor.userId,
+          calculatedAt,
+        },
+        transaction
+      );
+      const fine = await fineRepository.findFineById(result.fineId, transaction);
 
-    // @spec FR-FE09-006 — do not create a duplicate active overdue fine for the same borrow detail (AF-FE09-002, EC-FE09-006)
-    const existing = await fineRepository.findActiveFineByBorrowDetail(borrowDetailId, OVERDUE_REASON);
-    if (existing) {
-      return { fine: existing, created: false, overdueDays: existing.overdueDays, amount: existing.amount };
-    }
+      if (result.created || result.changed) {
+        await writeAudit(
+          context,
+          'FINE_CALCULATE',
+          {
+            userId: actor.userId,
+            targetId: fine.fineId,
+            metadata: {
+              borrowDetailId,
+              memberId: detail.userId,
+              overdueDays: fine.overdueDays,
+              amount: fine.amount,
+              result: result.created ? 'CREATED' : 'RECALCULATED',
+            },
+          },
+          transaction
+        );
+      }
 
-    const result = await fineRepository.createFine({
-      userId: detail.userId,
-      borrowDetailId,
-      overdueDays,
-      ratePerDay: DAILY_FINE_RATE,
-      amount,
-      reason: OVERDUE_REASON,
-      createdBy: actor.userId,
-      calculatedAt: clock(),
+      return {
+        fine,
+        created: result.created,
+        overdueDays: fine?.overdueDays ?? overdueDays,
+        amount: fine?.amount ?? amount,
+      };
     });
-
-    if (!result.created) {
-      // Lost the race to another calculate request; return the fine that won.
-      const winner = await fineRepository.findFineById(result.fineId);
-      return { fine: winner, created: false, overdueDays: winner?.overdueDays ?? overdueDays, amount: winner?.amount ?? amount };
-    }
-
-    const fine = await fineRepository.findFineById(result.fineId);
-
-    await writeAudit(context, 'FINE_CALCULATE', {
-      userId: actor.userId,
-      targetId: fine.fineId,
-      metadata: { borrowDetailId, memberId: detail.userId, overdueDays, amount },
-    });
-
-    return { fine, created: true, overdueDays, amount };
   }
 
-  // @spec FR-FE09-001, BR-FE09-002, NFR-FE09-SEC-002 — a member sees only their own fines
+  // @spec FR-FE09-001
   async function listMyFines(filters, actor) {
-    const fines = await fineRepository.listFines({
-      userId: actor.userId,
-      status: filters.status || undefined,
-    });
-
-    return { fines };
+    const normalized = normalizeListFilters(filters, { allowSearch: false, userId: actor.userId });
+    const result = await fineRepository.listFines(normalized);
+    return {
+      fines: result.rows,
+      page: normalized.page,
+      limit: normalized.limit,
+      total: result.total,
+      totalPages: result.total === 0 ? 0 : Math.ceil(result.total / normalized.limit),
+    };
   }
 
-  // @spec FR-FE09-002, BR-FE09-003 — staff may list fines and filter by member/status
+  // @spec FR-FE09-002 FR-FE09-011
   async function listFines(filters, actor) {
     requireStaff(actor);
-
-    const fines = await fineRepository.listFines({
-      userId: filters.userId ? Number(filters.userId) : undefined,
-      status: filters.status || undefined,
-    });
-
-    return { fines };
+    const normalized = normalizeListFilters(filters);
+    const result = await fineRepository.listFines(normalized);
+    return {
+      fines: result.rows,
+      page: normalized.page,
+      limit: normalized.limit,
+      total: result.total,
+      totalPages: result.total === 0 ? 0 : Math.ceil(result.total / normalized.limit),
+    };
   }
 
-  // @spec BR-FE09-002, NFR-FE09-SEC-002 — owner or staff only; a member cannot read another member's fine
   async function getFine(fineIdInput, actor) {
     const fineId = toPositiveInteger(fineIdInput, 'Fine ID');
     const fine = await fineRepository.findFineById(fineId);
-
-    if (!fine) {
-      throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
-    }
+    if (!fine) throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
 
     if (!hasAnyRole(actor, ['LIBRARIAN', 'ADMIN']) && fine.userId !== actor.userId) {
       throw errors.forbidden('FINE_OWNER_REQUIRED', 'You can view only your own fines.');
     }
-
     return { fine };
   }
 
-  // @spec FR-FE09-007 — staff records a collection; PAID iff fully collected, 0 <= collectedAmount <= amount (INV-4, INV-5)
+  // @spec FR-FE09-007 FR-FE09-009 FR-FE09-010 FR-FE09-012 FR-FE09-013
   async function recordCollection(fineIdInput, input, actor, context = {}) {
     requireStaff(actor);
-
     const fineId = toPositiveInteger(fineIdInput, 'Fine ID');
-    const fine = await fineRepository.findFineById(fineId);
 
-    if (!fine) {
-      throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
-    }
+    return inTransaction(async (transaction) => {
+      const fine = await fineRepository.findFineById(fineId, transaction);
+      if (!fine) throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
+      if (fine.status !== 'UNPAID') {
+        throw errors.conflict('FINE_NOT_COLLECTIBLE', `Fine is already ${fine.status} and cannot be collected.`);
+      }
 
-    // @spec EC-FE09-009, INV-6 — no collection against a resolved (PAID/WAIVED/CANCELLED) fine
-    if (fine.status !== 'UNPAID') {
-      throw errors.conflict('FINE_NOT_COLLECTIBLE', `Fine is already ${fine.status} and cannot be collected.`);
-    }
+      const payment = normalizePaymentInput(input);
+      const updated = await fineRepository.recordCollection(
+        {
+          fineId,
+          paymentMethod: payment.paymentMethod,
+          collectedBy: actor.userId,
+          paidAt: clock(),
+        },
+        transaction
+      );
+      if (!updated) {
+        throw errors.conflict('FINE_NOT_COLLECTIBLE', 'Fine is no longer collectible.');
+      }
 
-    if (input.collectedAmount !== undefined) {
-      throw errors.badRequest('COLLECTED_AMOUNT_NOT_ALLOWED', 'Partial or client-supplied collection amounts are not supported in Phase 1.');
-    }
-    const collectedAmount = fine.amount;
-    const fullyCollected = true;
-    const updated = await fineRepository.recordCollection({
-      fineId,
-      collectedAmount,
-      paymentMethod: input.paymentMethod,
-      collectedBy: actor.userId,
-      paidAt: clock(),
+      await writeAudit(
+        context,
+        'FINE_COLLECT',
+        {
+          userId: actor.userId,
+          targetId: fineId,
+          metadata: {
+            amount: updated.amount,
+            paymentMethod: payment.paymentMethod,
+            note: payment.note,
+            result: 'PAID',
+          },
+        },
+        transaction
+      );
+      return { fine: updated };
     });
-
-    if (!updated) {
-      throw errors.conflict('FINE_NOT_COLLECTIBLE', 'Fine is no longer collectible.');
-    }
-
-    await writeAudit(context, 'FINE_COLLECT', {
-      userId: actor.userId,
-      targetId: fineId,
-      metadata: { collectedAmount, fullyCollected, note: input.note || null },
-    });
-
-    return { fine: updated };
   }
 
-  // @spec FR-FE09-008, BR-FE09-012 — staff marks an UNPAID fine PAID and records PaidAt (AF-FE09-004, EC-FE09-009)
+  // @spec FR-FE09-008 FR-FE09-009 FR-FE09-010
   async function markPaid(fineIdInput, input, actor, context = {}) {
     requireStaff(actor);
-
     const fineId = toPositiveInteger(fineIdInput, 'Fine ID');
-    const fine = await fineRepository.findFineById(fineId);
 
-    if (!fine) {
-      throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
-    }
+    return inTransaction(async (transaction) => {
+      const fine = await fineRepository.findFineById(fineId, transaction);
+      if (!fine) throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
+      if (fine.status !== 'UNPAID') {
+        throw errors.conflict('FINE_NOT_PAYABLE', `Fine is already ${fine.status}.`);
+      }
 
-    if (fine.status !== 'UNPAID') {
-      throw errors.conflict('FINE_NOT_PAYABLE', `Fine is already ${fine.status}.`);
-    }
+      const payment = normalizePaymentInput(input);
+      const updated = await fineRepository.markPaid(
+        {
+          fineId,
+          collectedBy: actor.userId,
+          paidAt: clock(),
+          paymentMethod: payment.paymentMethod,
+        },
+        transaction
+      );
+      if (!updated) throw errors.conflict('FINE_NOT_PAYABLE', 'Fine is no longer payable.');
 
-    const updated = await fineRepository.markPaid({
-      fineId,
-      collectedBy: actor.userId,
-      paidAt: clock(),
-      paymentMethod: input.paymentMethod,
+      await writeAudit(
+        context,
+        'FINE_MARK_PAID',
+        {
+          userId: actor.userId,
+          targetId: fineId,
+          metadata: {
+            amount: updated.amount,
+            paymentMethod: payment.paymentMethod,
+            note: payment.note,
+            result: 'PAID',
+          },
+        },
+        transaction
+      );
+      return { fine: updated };
     });
-
-    if (!updated) {
-      throw errors.conflict('FINE_NOT_PAYABLE', 'Fine is no longer payable.');
-    }
-
-    await writeAudit(context, 'FINE_MARK_PAID', {
-      userId: actor.userId,
-      targetId: fineId,
-      metadata: { amount: updated.amount, note: input.note || null },
-    });
-
-    return { fine: updated };
   }
 
-  // @spec Q-FE09-005, BR-FE09-011 — admin waives or cancels an UNPAID fine with a required reason + audit log
   async function resolveWithoutCollection(fineIdInput, input, actor, context, targetStatus, action) {
+    // @spec FR-FE09-010 FR-FE09-014 FR-FE09-015
     requireAdmin(actor);
-
     const fineId = toPositiveInteger(fineIdInput, 'Fine ID');
-    const reason = String(input.reason || '').trim();
-
-    if (!reason || reason.length > 500) {
+    const reason = String(input?.reason || '').trim();
+    if (!reason) {
       throw errors.badRequest('REASON_REQUIRED', 'A reason is required to waive or cancel a fine.');
     }
-
-    const fine = await fineRepository.findFineById(fineId);
-
-    if (!fine) {
-      throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
+    if (reason.length > 500) {
+      throw errors.badRequest('REASON_TOO_LONG', 'Reason must not exceed 500 characters.');
     }
 
-    if (fine.status !== 'UNPAID') {
-      throw errors.conflict('FINE_NOT_RESOLVABLE', `Fine is already ${fine.status}.`);
-    }
+    return inTransaction(async (transaction) => {
+      const fine = await fineRepository.findFineById(fineId, transaction);
+      if (!fine) throw errors.notFound('FINE_NOT_FOUND', 'Fine was not found.');
+      if (fine.status !== 'UNPAID') {
+        throw errors.conflict('FINE_NOT_RESOLVABLE', `Fine is already ${fine.status}.`);
+      }
 
-    const updated = await fineRepository.resolveFine({ fineId, status: targetStatus });
+      const updated = await fineRepository.resolveFine({ fineId, status: targetStatus }, transaction);
+      if (!updated) {
+        throw errors.conflict('FINE_NOT_RESOLVABLE', 'Fine is no longer resolvable.');
+      }
 
-    if (!updated) {
-      throw errors.conflict('FINE_NOT_RESOLVABLE', 'Fine is no longer resolvable.');
-    }
-
-    await writeAudit(context, action, {
-      userId: actor.userId,
-      targetId: fineId,
-      metadata: { reason },
+      await writeAudit(
+        context,
+        action,
+        {
+          userId: actor.userId,
+          targetId: fineId,
+          metadata: { reason, result: targetStatus },
+        },
+        transaction
+      );
+      return { fine: updated };
     });
-
-    return { fine: updated };
   }
 
   async function waiveFine(fineIdInput, input, actor, context = {}) {

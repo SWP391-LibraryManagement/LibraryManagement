@@ -128,13 +128,21 @@ function getReservationApiMethod(reservationApiSource, method) {
 
 test('reservation API routes every method through the reservation resolver', async () => {
   const reservationApiSource = getReservationApiObject(await loadReservationApiSource());
-  const methods = ['create', 'listMine', 'cancel', 'listAll', 'processQueue', 'process', 'expireHolds'];
+  const methods = ['create', 'listCandidates', 'listMine', 'cancel', 'listAll', 'processQueue', 'process', 'expireHolds'];
 
   for (const method of methods) {
     const methodSource = getReservationApiMethod(reservationApiSource, method);
     assert.match(methodSource, /\bauthorizedReservationRequest\(/, method);
     assert.doesNotMatch(methodSource, /\bauthorizedRequest\(/, method);
   }
+});
+
+test('reservation candidate API uses the protected server catalog contract', async () => {
+  const reservationApiSource = getReservationApiObject(await loadReservationApiSource());
+  const listCandidatesSource = getReservationApiMethod(reservationApiSource, 'listCandidates');
+
+  assert.match(listCandidatesSource, /method: 'get', url: '\/reservations\/candidates', params/);
+  assert.match(listCandidatesSource, /authorizedReservationRequest\(/);
 });
 
 test('reservation API posts hold expiration without a request body', async () => {
@@ -186,6 +194,10 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
     assert.match(source, /ConfirmAction/);
   }
   assert.doesNotMatch(mine, /DEMO_MY_RESERVATIONS|RS-DEMO|Backend chưa nhận yêu cầu/);
+  assert.doesNotMatch(mine, /DEMO_RESERVABLE|useMemo/);
+  assert.match(mine, /reservationApi\.listCandidates/);
+  assert.match(mine, /candidate\.copyId/);
+  assert.doesNotMatch(mine, /candidate\.availableCopies|candidate\.eta|book\.availableCopies|book\.eta/);
   assert.match(mine, /setReservations\(\[\]\)/);
   assert.match(mine, /await reservationApi\.cancel\(cancelTarget\.reservationId/);
   assert.doesNotMatch(staff, /DEMO_ALL_RESERVATIONS/);

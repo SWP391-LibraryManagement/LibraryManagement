@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-19 - Deterministic Policy Implementation Reconciliation
+
+- Replaced legacy report payloads with the exact `{ metrics, rows, page, limit, totalRows }` contract across backend, OpenAPI, frontend consumers, and cross-feature tests.
+- Added page/limit validation, stable report-specific ordering, canonical unknown-ID/status behavior, and date-only borrowing row serialization.
+- Allowed both Librarian and Admin to view all three reports and made every successful view write safe metadata without filters or rows.
+- Applied inventory status/location filters to the same copy while preserving full-book effective availability for low-stock calculations.
+- Evaluated user approval-period date bounds in SQL without narrowing global user/status/role metrics.
+- Added deterministic policy, repository, frontend-envelope, and no-export regression coverage; full automated suites, lint, build, traceability, and diff hygiene pass.
+- Bound overdue filtering to the same application-computed `Asia/Ho_Chi_Minh` business date used by report aggregation, removed the invalid `RequestDate` fallback for missing `BorrowDate`, and aligned the in-memory `OVERDUE` filter with production derived-status behavior.
+- Removed the unused legacy `DEMO_REPORTS` fixture so future report work cannot silently reuse the obsolete payload.
+- Fresh Playwright acceptance passed across all three canonical report screens, zero-result filtering, mobile overflow, Member denial, and Guest redirect.
+- SQL-backed system integration now passes on disposable SQL Server with cleanup evidence; human re-review and any commit/push/merge decision remain pending.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật approved the normalized FE12 report filters, deterministic responses, database-side processing, audit, and out-of-scope export policy as the Phase 1 baseline; implementation follow-up remains pending.

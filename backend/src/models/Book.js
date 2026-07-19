@@ -7,7 +7,7 @@ module.exports = defineModel({
   columns: [
     { attribute: 'bookId', name: 'BookId', type: 'INT', primaryKey: true, identity: true },
     { attribute: 'title', name: 'Title', type: 'NVARCHAR(255)', required: true },
-    { attribute: 'isbn', name: 'ISBN', type: 'NVARCHAR(50)', nullable: true, uniqueWhenNotNull: true },
+    { attribute: 'isbn', name: 'ISBN', type: 'NVARCHAR(20)', nullable: true, uniqueWhenNotNull: true },
     { attribute: 'categoryId', name: 'CategoryId', type: 'INT', nullable: true, references: { table: 'Categories', column: 'CategoryId' } },
     { attribute: 'authorId', name: 'AuthorId', type: 'INT', nullable: true, references: { table: 'Authors', column: 'AuthorId' } },
     { attribute: 'publisherId', name: 'PublisherId', type: 'INT', nullable: true, references: { table: 'Publishers', column: 'PublisherId' } },
@@ -19,6 +19,7 @@ module.exports = defineModel({
     { attribute: 'updatedBy', name: 'UpdatedBy', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
+    { attribute: 'version', name: 'RowVersion', type: 'ROWVERSION', required: true, generated: true },
   ],
   indexes: [{ name: 'UX_Books_ISBN_NotNull', columns: ['ISBN'], unique: true, filter: 'ISBN IS NOT NULL' }],
 });

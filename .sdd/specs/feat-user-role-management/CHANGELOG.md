@@ -1,5 +1,24 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-19 - Finalization Wave B Implemented And H2-Ready
+
+- Added feature-specific FE11 Playwright acceptance for Admin Dashboard evidence and Request Management server pagination, filtering, authoritative detail, all-filtered-row CSV, pending controls, completed read-only behavior, and FE07 terminal-state `409` enforcement.
+- Extended the isolated E2E harness with optional Admin setup, FE07/auth-backed Admin request reads, safe user-directory reads, and a fresh integration app per test.
+- RED-GREEN exposed both the missing Admin fixture and cross-test shared-state contamination before the harness changes were accepted.
+- Fresh focused evidence passes 80/80 backend, 48/48 frontend, 10/10 system integration, 2/2 Playwright, and 100% FE11 traceability.
+- `FE11-REQ01..FE11-REQ03` are implemented. Draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; `FE11-ACC01`, `TD-025`, H2/H3, and human integration acceptance remain open.
+
+## 2026-07-19 - Finalization Wave A Implemented And H2-Ready
+
+- Added the guarded idempotent FE11 migration, deterministic `UX_Users_Email`, canonical 255-character user/notification email persistence, nullable `DeactivatedAt`, and nullable 100-character Librarian fields.
+- Added transaction-authoritative create/resend acting-Admin checks, safe deterministic duplicate conflicts, Librarian create/read/update persistence, and the effective `COALESCE(UpdatedAt, CreatedAt)` DTO version.
+- Added optimistic/no-op managed-user updates and atomic ACTIVE/LOCKED deactivation with pending-activation distinction, active-borrowing guard, active REFRESH revocation, safe audit metadata, and rollback.
+- Aligned FE07 approval to the approved member-first lock order and added mutation-enabled SQL race-test coverage without changing FE07 ownership or borrowing rules.
+- Removed implicit development Admin access; update/deactivation now send the loaded effective version, support Librarian fields, and reload authoritative state.
+- Final diff review added three RED-GREEN regressions: migration type/nullability enforcement, transaction-authoritative actor priority before duplicate-email disclosure, and rejection of setup completion for accounts with non-null `DeactivatedAt`.
+- Wave A remains uncommitted pending H2. `FE11-LIFE06`, Wave B browser acceptance, final merge/CI evidence, and whole-feature B7 closeout remain open.
+- Applied the FE11 migration twice and passed the shared live SQL concurrency/system suites on a disposable SQL Server runtime; cleanup evidence is recorded in the full-reconciliation Live SQL review.
+
 ## 2026-07-19 - Finalization Batch Governance Activated
 
 - Bumped `SPEC.md` to 0.4.3 and activated the approved Full-depth Hybrid SDD+ADD Finalization Batch; product implementation has not started.

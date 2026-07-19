@@ -448,7 +448,7 @@ async function listBorrowRequests({ userId, memberId, status, fromDate, toDate }
   return mapBorrowRequests(result.recordset);
 }
 
-async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
+async function listBorrowDetails({ userId, status, fromDate, toDate, page = 1, limit = 20, today } = {}) {
   const pool = await getPool();
   const request = pool.request();
   const where = [];
@@ -460,7 +460,8 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
 
   if (status === 'OVERDUE') {
     where.push("bd.Status = 'BORROWED'");
-    where.push('bd.DueDate < CAST(GETDATE() AS DATE)');
+    request.input('Today', sql.Date, today || new Date());
+    where.push('bd.DueDate < @Today');
   } else if (status) {
     request.input('Status', sql.NVarChar(20), status);
     where.push('bd.Status = @Status');
@@ -468,25 +469,38 @@ async function listBorrowDetails({ userId, status, fromDate, toDate } = {}) {
 
   if (fromDate) {
     request.input('FromDate', sql.DateTime, new Date(fromDate));
-    where.push('br.RequestDate >= @FromDate');
+    where.push('COALESCE(bd.BorrowDate, br.RequestDate) >= @FromDate');
   }
 
   if (toDate) {
     request.input('ToDateExclusive', sql.DateTime, toExclusiveNextDay(toDate));
-    where.push('br.RequestDate < @ToDateExclusive');
+    where.push('COALESCE(bd.BorrowDate, br.RequestDate) < @ToDateExclusive');
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const offset = (Number(page) - 1) * Number(limit);
+  request.input('Offset', sql.Int, offset);
+  request.input('Limit', sql.Int, Number(limit));
+  const countResult = await request.query(`
+    SELECT COUNT(*) AS Total
+    FROM BorrowDetails bd
+    INNER JOIN BorrowRequests br ON bd.RequestId = br.RequestId
+    ${whereClause}
+  `);
   const result = await request.query(`
     ${borrowDetailSelect}
     ${whereClause}
-    ORDER BY br.RequestDate DESC, bd.BorrowDetailId ASC
+    ORDER BY CASE WHEN bd.BorrowDate IS NULL THEN 1 ELSE 0 END,
+             bd.BorrowDate DESC,
+             bd.BorrowDetailId DESC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
   `);
 
-  return result.recordset.map(mapBorrowDetail);
+  return { rows: result.recordset.map(mapBorrowDetail), total: countResult.recordset[0]?.Total || 0 };
 }
 
-// @spec BR-FE07-005, BR-FE07-025, FR-FE07-019, FR-FE07-022, FR-FE07-025 - approval
+// @spec BR-FE07-005, BR-FE07-025, FR-FE07-019, FR-FE07-022, FR-FE07-025
+// @spec FR-FE08-023, FR-FE08-025, FR-FE08-026, FR-FE08-028
 // serializes borrowing and matching reservation fulfillment (NFR-FE07-TXN-001).
 async function approveBorrowRequest({
   requestId,
@@ -503,7 +517,34 @@ async function approveBorrowRequest({
   let fulfilledReservationIds = [];
 
   try {
-    // Lock the request first to get its member, then the member to serialize every approval for them.
+    // Resolve the member without a row lock, then acquire one stable member-scoped
+    // transaction lock before locking copies, request/details, and reservations.
+    const memberKeyResult = await new sql.Request(transaction)
+      .input('RequestId', sql.Int, requestId)
+      .query(`
+        SELECT RequestId, UserId
+        FROM BorrowRequests
+        WHERE RequestId = @RequestId
+      `);
+
+    if (!memberKeyResult.recordset.length) {
+      await transaction.rollback();
+      return { outcome: 'REQUEST_NOT_APPROVABLE' };
+    }
+
+    const memberUserId = memberKeyResult.recordset[0].UserId;
+    await new sql.Request(transaction)
+      .input('MemberLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${memberUserId}`)
+      .query(`
+        DECLARE @LockResult int;
+        EXEC @LockResult = sp_getapplock
+          @Resource = @MemberLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        IF @LockResult < 0 THROW 51001, 'Unable to acquire borrowing member lock.', 1;
+      `);
+
     const requestResult = await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
       .query(`
@@ -518,7 +559,6 @@ async function approveBorrowRequest({
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
 
-    const memberUserId = requestResult.recordset[0].UserId;
     const memberResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, memberUserId)
       .query(`
@@ -580,7 +620,7 @@ async function approveBorrowRequest({
       .input('RequestId', sql.Int, requestId)
       .query(`
         SELECT bd.CopyId
-        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+        FROM BorrowDetails bd
         WHERE bd.RequestId = @RequestId
           AND bd.Status = 'REQUESTED'
       `);
@@ -600,9 +640,10 @@ async function approveBorrowRequest({
       const copyResult = await new sql.Request(transaction)
         .input('CopyId', sql.Int, copyId)
         .query(`
-          SELECT CopyId, Status
-          FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
-          WHERE CopyId = @CopyId
+          SELECT bc.CopyId, bc.Status, b.Status AS BookStatus
+          FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
+          WHERE bc.CopyId = @CopyId
         `);
 
       if (!copyResult.recordset.length) {
@@ -612,6 +653,15 @@ async function approveBorrowRequest({
 
       lockedCopies.set(copyId, copyResult.recordset[0]);
     }
+
+    await new sql.Request(transaction)
+      .input('RequestId', sql.Int, requestId)
+      .query(`
+        SELECT bd.CopyId
+        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+        WHERE bd.RequestId = @RequestId
+          AND bd.Status = 'REQUESTED'
+      `);
 
     const fulfilledReservations = [];
 
@@ -628,6 +678,10 @@ async function approveBorrowRequest({
                    ReservationId ASC
         `);
       const copy = lockedCopies.get(copyId);
+      if (copy.BookStatus === 'INACTIVE') {
+        await transaction.rollback();
+        return { outcome: 'BOOK_INACTIVE' };
+      }
       const activeReservation = reservationResult.recordset.find(
         (reservation) => reservation.Status === 'ACTIVE'
       );

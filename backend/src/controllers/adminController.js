@@ -69,7 +69,14 @@ function createAdminController(service = adminService) {
     },
     listRequests: async (req, res, next) => {
       try {
-        return res.status(200).json(await service.listRequests(req.query));
+        return res.status(200).json(await service.listRequests(req.validatedRequestQuery));
+      } catch (error) {
+        return next(error);
+      }
+    },
+    getRequestDetail: async (req, res, next) => {
+      try {
+        return res.status(200).json(await service.getRequestDetail(req.validatedRequestId));
       } catch (error) {
         return next(error);
       }

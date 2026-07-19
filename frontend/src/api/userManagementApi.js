@@ -118,6 +118,7 @@ function getErrorMessage(error, fallback = 'Request failed. Please try again.') 
     INVALID_PHONE: 'Số điện thoại không hợp lệ.',
     FULL_NAME_REQUIRED: 'Họ và tên là bắt buộc.',
     ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
+    ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
     CANNOT_DEACTIVATE_SELF: 'Admin không thể tự vô hiệu hóa tài khoản của mình.',
     LAST_ADMIN_ROLE: 'Không thể gỡ vai trò Admin cuối cùng.',
     LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
@@ -192,12 +193,12 @@ export async function updateManagedUser(userId, payload) {
   }
 }
 
-export async function deactivateManagedUser(userId) {
+export async function deactivateManagedUser(userId, expectedUpdatedAt) {
   try {
     const response = await authorizedRequest({
       method: 'patch',
       url: `/users/${userId}/status`,
-      data: { status: 'INACTIVE' },
+      data: { status: 'INACTIVE', expectedUpdatedAt },
     });
     return response.data;
   } catch (error) {

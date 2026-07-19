@@ -114,17 +114,6 @@ function EditProfileDialog({
           />
         </label>
 
-        <label className="ep-field">
-          <span>Avatar URL</span>
-          <input
-            name="avatarUrl"
-            value={profile.avatarUrl}
-            onChange={onChange}
-            maxLength={255}
-            placeholder="https://..."
-          />
-        </label>
-
         <div className="ep-actions">
           <button type="button" className="ep-btn ep-btn-cancel" onClick={onClose} disabled={isSaving}>
             Hủy
@@ -184,7 +173,6 @@ export default function UserProfile() {
       phone: profile?.phone || "",
       dateOfBirth: toDateInputValue(profile?.dateOfBirth),
       address: profile?.address || "",
-      avatarUrl: profile?.avatarUrl || "",
     });
     setAvatarFile(null);
     setEditErrorMessage("");
@@ -246,10 +234,6 @@ export default function UserProfile() {
     try {
       const updatedProfile = await uploadMyAvatar(avatarFile);
       setProfile(updatedProfile);
-      setEditForm((current) => ({
-        ...current,
-        avatarUrl: updatedProfile.avatarUrl || "",
-      }));
       setAvatarFile(null);
     } catch (error) {
       setEditErrorMessage(error.message);

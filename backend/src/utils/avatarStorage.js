@@ -23,8 +23,25 @@ async function saveAvatarFile(file) {
   return `${PUBLIC_AVATAR_PATH}/${filename}`;
 }
 
+// @spec BR-FE03-017
+async function deleteAvatarFile(avatarUrl) {
+  const match = String(avatarUrl || '').match(/^\/uploads\/avatars\/([A-Za-z0-9][A-Za-z0-9._-]*)$/);
+  if (!match) return false;
+
+  const absolutePath = path.join(AVATAR_UPLOAD_DIR, match[1]);
+
+  try {
+    await fs.unlink(absolutePath);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+
+  return true;
+}
+
 module.exports = {
   saveAvatarFile,
+  deleteAvatarFile,
   AVATAR_UPLOAD_DIR,
   PUBLIC_AVATAR_PATH,
 };

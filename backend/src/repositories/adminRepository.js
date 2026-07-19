@@ -271,54 +271,117 @@ async function listRequests(filters = {}) {
   const where = ['1 = 1'];
 
   if (filters.q) {
-    bindSearch(request, filters.q);
+    request.input('Search', sql.NVarChar(202), `%${escapeLikePattern(filters.q)}%`);
     where.push(`(
-      b.Title LIKE '%' + @search + '%' ESCAPE '\\'
-      OR u.Email LIKE '%' + @search + '%' ESCAPE '\\'
-      OR up.FullName LIKE '%' + @search + '%' ESCAPE '\\'
+      b.Title LIKE @Search ESCAPE '\\'
+      OR u.Email LIKE @Search ESCAPE '\\'
+      OR up.FullName LIKE @Search ESCAPE '\\'
     )`);
   }
 
   if (filters.status) {
-    request.input('status', sql.NVarChar(20), filters.status);
-    where.push('br.Status = @status');
+    request.input('Status', sql.NVarChar(20), filters.status);
+    where.push('br.Status = @Status');
   }
 
-  if (filters.fromDate) {
-    request.input('fromDate', sql.Date, filters.fromDate);
-    where.push('CAST(br.RequestDate AS DATE) >= @fromDate');
+  if (filters.from) {
+    request.input('From', sql.Date, filters.from);
+    where.push('br.RequestDate >= @From');
   }
 
-  if (filters.toDate) {
-    request.input('toDate', sql.Date, filters.toDate);
-    where.push('CAST(br.RequestDate AS DATE) <= @toDate');
+  if (filters.to) {
+    const toExclusive = new Date(`${filters.to}T00:00:00.000Z`);
+    toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
+    request.input('ToExclusive', sql.Date, toExclusive);
+    where.push('br.RequestDate < @ToExclusive');
   }
+
+  const page = Number(filters.page || 1);
+  const limit = Number(filters.limit || 20);
+  request
+    .input('Offset', sql.Int, (page - 1) * limit)
+    .input('Limit', sql.Int, limit);
 
   const result = await request.query(`
-    SELECT
-      br.RequestId AS id,
-      br.RequestDate AS requestDate,
-      br.Status AS status,
-      u.UserId AS userId,
-      COALESCE(up.FullName, u.Email) AS memberName,
-      u.Email AS email,
-      u.Phone AS phone,
-      STRING_AGG(b.Title, ', ') AS bookTitles,
-      STRING_AGG(c.CategoryName, ', ') AS categories,
-      COUNT(bd.BorrowDetailId) AS itemCount
+    SELECT DISTINCT br.RequestId
+    INTO #FilteredRequests
     FROM BorrowRequests br
     INNER JOIN Users u ON br.UserId = u.UserId
     LEFT JOIN UserProfiles up ON u.UserId = up.UserId
     LEFT JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
     LEFT JOIN BookCopies bc ON bd.CopyId = bc.CopyId
     LEFT JOIN Books b ON bc.BookId = b.BookId
+    WHERE ${where.join(' AND ')};
+
+    SELECT COUNT(*) AS total FROM #FilteredRequests;
+
+    WITH PagedRequests AS (
+      SELECT
+        br.RequestId,
+        br.RequestDate,
+        br.Status,
+        u.UserId,
+        COALESCE(up.FullName, u.Email) AS FullName,
+        u.Email,
+        u.Phone AS PhoneNumber
+      FROM BorrowRequests br
+      INNER JOIN #FilteredRequests filtered ON filtered.RequestId = br.RequestId
+      INNER JOIN Users u ON br.UserId = u.UserId
+      LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+      ORDER BY br.RequestDate DESC, br.RequestId DESC
+      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+    )
+    SELECT
+      pr.RequestId,
+      pr.RequestDate,
+      pr.Status AS RequestStatus,
+      pr.UserId,
+      pr.FullName,
+      pr.Email,
+      pr.PhoneNumber,
+      bd.BorrowDetailId,
+      b.Title,
+      c.CategoryName
+    FROM PagedRequests pr
+    LEFT JOIN BorrowDetails bd ON pr.RequestId = bd.RequestId
+    LEFT JOIN BookCopies bc ON bd.CopyId = bc.CopyId
+    LEFT JOIN Books b ON bc.BookId = b.BookId
     LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
-    WHERE ${where.join(' AND ')}
-    GROUP BY br.RequestId, br.RequestDate, br.Status, u.UserId, up.FullName, u.Email, u.Phone
-    ORDER BY br.RequestDate DESC;
+    ORDER BY pr.RequestDate DESC, pr.RequestId DESC, bd.BorrowDetailId ASC;
   `);
 
-  return result.recordset;
+  const rowsByRequestId = new Map();
+  for (const row of result.recordsets?.[1] || []) {
+    if (!rowsByRequestId.has(row.RequestId)) {
+      rowsByRequestId.set(row.RequestId, {
+        requestId: row.RequestId,
+        requestDate: row.RequestDate,
+        status: row.RequestStatus,
+        memberUserId: row.UserId,
+        memberName: row.FullName,
+        memberEmail: row.Email,
+        memberPhoneNumber: row.PhoneNumber || null,
+        itemCount: 0,
+        bookTitles: [],
+        categories: [],
+      });
+    }
+    const requestRow = rowsByRequestId.get(row.RequestId);
+    if (row.BorrowDetailId) requestRow.itemCount += 1;
+    if (row.Title !== null && row.Title !== undefined) requestRow.bookTitles.push(row.Title);
+    if (
+      row.CategoryName !== null
+      && row.CategoryName !== undefined
+      && !requestRow.categories.includes(row.CategoryName)
+    ) {
+      requestRow.categories.push(row.CategoryName);
+    }
+  }
+
+  return {
+    rows: [...rowsByRequestId.values()],
+    total: Number(result.recordsets?.[0]?.[0]?.total || 0),
+  };
 }
 
 module.exports = {

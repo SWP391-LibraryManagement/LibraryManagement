@@ -22,16 +22,6 @@ function normalizeProfile(profile) {
   };
 }
 
-function denormalizeAvatarUrl(avatarUrl) {
-  const apiOrigin = getApiOrigin();
-
-  if (avatarUrl?.startsWith(`${apiOrigin}/uploads/avatars/`)) {
-    return avatarUrl.slice(apiOrigin.length);
-  }
-
-  return avatarUrl;
-}
-
 function getStoredAccessToken() {
   return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
 }
@@ -53,12 +43,12 @@ function getErrorMessage(error, fallback = 'Could not load profile.') {
   return error.response?.data?.error?.message || fallback;
 }
 
+// @spec BR-FE03-016 FR-FE03-006
 function buildProfileUpdatePayload(profile) {
   return {
     fullName: profile.fullName?.trim() || null,
     address: profile.address?.trim() || null,
     dateOfBirth: profile.dateOfBirth || null,
-    avatarUrl: denormalizeAvatarUrl(profile.avatarUrl?.trim()) || null,
     phone: profile.phone?.trim() || null,
   };
 }

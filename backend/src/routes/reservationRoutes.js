@@ -3,6 +3,7 @@ const { createReservationController } = require('../controllers/reservationContr
 const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
 const {
   createReservationValidators,
+  listReservationCandidatesValidators,
   listMyReservationsValidators,
   listReservationsValidators,
   cancelReservationValidators,
@@ -21,6 +22,14 @@ function createReservationRoutes({ authService, reservationService } = {}) {
     requireAnyRole('MEMBER'),
     createReservationValidators,
     controller.create
+  );
+
+  router.get(
+    '/candidates',
+    authenticate,
+    requireAnyRole('MEMBER'),
+    listReservationCandidatesValidators,
+    controller.listCandidates
   );
 
   router.get(

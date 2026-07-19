@@ -1,12 +1,12 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - V0.5.1 RECONCILIATION IMPLEMENTED; FINAL INTEGRATION/HUMAN GATES PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-16
 
-Workflow State: SPEC v0.5.0 and reconciliation plan approved; FE07-T031 through FE07-T038 not started
+Workflow State: FE07-T031 through FE07-T037 and FE07-T040 are agent-side complete; FE07-T038 final repository/human closeout remains open
 
 ---
 

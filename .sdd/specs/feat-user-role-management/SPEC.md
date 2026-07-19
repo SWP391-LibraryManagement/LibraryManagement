@@ -625,7 +625,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-016 | Admin console shows only approved sections and hides removed workflows | FR-FE11-030 | BR-FE11-016 | Planned admin-navigation component case | Not Started |
 | AC-FE11-017 | Permissions view displays role counts and read-only permission matrix from FE11 data | FR-FE11-032 | BR-FE11-017 | Planned permissions-view integration case | Not Started |
 | AC-FE11-018 | Audit-log view is searchable/filterable and redacts sensitive fields | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | Planned audit-log redaction integration case | Not Started |
-| AC-FE11-019 | Pending requests expose only approved actions; completed requests remain view-only | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03 and FE11-ACC01 | Not Started |
+| AC-FE11-019 | Pending requests expose only approved actions; completed requests remain view-only | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | READY FOR REVIEW |
 | AC-FE11-020 | Setup delivery failure leaves committed account inactive and exposes no credential | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-021 | Eligible Admin resend rotates setup token/event/key after cooldown | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Existing FE11-S01..S07 rotation/delivery evidence plus pending FE11-LIFE02 actor revalidation | PARTIAL |
 | AC-FE11-022 | Ineligible/cooldown-limited resend is rejected without credential creation | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
@@ -651,11 +651,11 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FE11-LIFE02/LIFE03 Librarian validation cases | Not Started |
 | FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | FE11-S01..S07 invalid, expired, used, revoked, and ineligible setup-token coverage | COMPLETE (B7) |
 | FR-FE11-030 | Approved admin sidebar is displayed; removed items hidden | BR-FE11-016 | Q-FE11-011, EC-FE11-016 | Planned admin-navigation component case | Not Started |
-| FR-FE11-031 | Admin dashboard displays read-only operational summaries | BR-FE11-020 | Q-FE11-012 | FE11-ACC01 evidence-only service/route/browser cases | Not Started |
+| FR-FE11-031 | Admin dashboard displays read-only operational summaries | BR-FE11-020 | Q-FE11-012 | FE11-ACC01 evidence-only service/route/browser cases; Wave B validation | READY FOR REVIEW |
 | FR-FE11-032 | Permissions role summary and matrix are displayed | BR-FE11-017 | MF-FE11-011 | Planned permissions-view integration case | Not Started |
 | FR-FE11-033 | Audit logs are searchable/filterable and redacted | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | Planned audit-log redaction integration case | Not Started |
-| FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02 and FE11-ACC01 | Not Started |
-| FR-FE11-035 | Completed request actions are disabled/rejected | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03 and FE11-ACC01 | Not Started |
+| FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02; Wave B validation | READY FOR REVIEW |
+| FR-FE11-035 | Completed request actions are disabled/rejected | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; Wave B validation | READY FOR REVIEW |
 | FR-FE11-037 | FE10 setup delivery failure preserves inactive source state and returns safe status | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FE11-S01..S07 safe delivery failure and resend eligibility/cooldown coverage | COMPLETE (B7) |
 | FR-FE11-038 | Ineligible or cooldown-limited setup resend creates no credential | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S01..S07 safe delivery failure and resend eligibility/cooldown coverage | COMPLETE (B7) |
 

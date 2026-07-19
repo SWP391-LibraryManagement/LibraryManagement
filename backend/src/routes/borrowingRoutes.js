@@ -4,6 +4,7 @@ const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddle
 const {
   createBorrowRequestValidators,
   listBorrowRequestsValidators,
+  memberHistoryValidators,
   memberBorrowingsValidators,
   approveBorrowRequestValidators,
   rejectBorrowRequestValidators,
@@ -28,7 +29,7 @@ function createBorrowingRoutes({ authService, borrowingService } = {}) {
     '/borrow-requests/me',
     authenticate,
     requireAnyRole('MEMBER'),
-    listBorrowRequestsValidators,
+    memberHistoryValidators,
     controller.listMine
   );
 

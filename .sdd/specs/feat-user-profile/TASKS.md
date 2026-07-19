@@ -1,12 +1,12 @@
 # TASKS.md - FE03 User Profile
 
-# Version: 0.2.0
+# Version: 0.2.1
 
-# Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+# Status: APPROVED - FE03-T016 AUTOMATED, LIVE SQL, AND AGENT BROWSER VALIDATION COMPLETE; HUMAN ACCEPTANCE PENDING
 
 # Owner: Dat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 ---
 
@@ -39,7 +39,7 @@ Traceability: BR-FE03-004, BR-FE03-010, FR-FE03-001, FR-FE03-007, AC-FE03-008
 
 ### T-FE03-003 - Add Profile Validation
 
-- [x] Validate allowed update fields: `fullName`, `address`, `dateOfBirth`, `avatarUrl`, `phone`.
+- [x] Validate allowed update fields: `fullName`, `address`, `dateOfBirth`, and `phone`; reject direct `avatarUrl` mutation.
 - [x] Reject protected fields: `password`, `passwordHash`, `role`, `roles`, `roleId`, `status`, `email`, `membershipStatus`, `membershipApproval`, `userId`, `profileId`.
 - [x] Return field-level validation errors.
 - [x] Ensure invalid requests do not write partial data.
@@ -52,7 +52,7 @@ Traceability: BR-FE03-005, BR-FE03-006, BR-FE03-007, BR-FE03-008, BR-FE03-009, F
 - [x] Add parameterized query to find profile by `UserId`.
 - [x] Add parameterized query to create a blank `UserProfiles` record.
 - [x] Add parameterized query to update `Users.Phone`.
-- [x] Add parameterized query to update `UserProfiles.FullName`, `Address`, `DateOfBirth`, and `AvatarUrl`.
+- [x] Add parameterized query to update `UserProfiles.FullName`, `Address`, and `DateOfBirth`; keep `AvatarUrl` in the upload-only repository operation.
 - [x] Add audit-log insert when the existing schema supports it.
 
 Traceability: PRE-FE03-002, PRE-FE03-003, Q-FE03-003, Q-FE03-005, SAFE-003
@@ -94,7 +94,7 @@ Traceability: FT12, AC-FE03-001, AC-FE03-002, AC-FE03-003, AC-FE03-008
 - [x] Test invalid date of birth is rejected.
 - [x] Test future date of birth is rejected.
 - [x] Test invalid phone is rejected.
-- [x] Test invalid avatar URL is rejected.
+- [x] Test direct `avatarUrl` submission is rejected as read-only.
 - [x] Test protected fields are rejected and unchanged.
 - [x] Test invalid update does not partially change profile data.
 
@@ -182,12 +182,14 @@ Traceability: Definition of Done, `.agents/AGENTS.md` Testing Rules
 
 ### T-FE03-016 - Align Profile PUT And Audit Behavior
 
-- [ ] Remove `avatarUrl` from allowed `PUT /api/profile/me` fields and reject protected, unknown, or read-only fields atomically.
-- [ ] Require one safe audit entry for every successful profile-field and avatar database update.
-- [ ] Confirm missing-profile creation remains deterministic and account `status` remains read-only in the safe DTO.
-- [ ] Add focused tests for AC-FE03-012..014 without changing unrelated FE03 behavior.
+- [x] Remove `avatarUrl` from allowed `PUT /api/profile/me` fields and reject protected, unknown, or read-only fields atomically.
+- [x] Require one safe audit entry for every successful profile-field and avatar database update.
+- [x] Confirm missing-profile creation remains deterministic and account `status` remains read-only in the safe DTO.
+- [x] Add focused tests for AC-FE03-012..014 without changing unrelated FE03 behavior.
 
 Traceability: BR-FE03-016..017, FR-FE03-001, FR-FE03-006, FR-FE03-010, AC-FE03-012..014
+
+Evidence: `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`.
 
 ---
 
@@ -196,4 +198,4 @@ Traceability: BR-FE03-016..017, FR-FE03-001, FR-FE03-006, FR-FE03-010, AC-FE03-0
 - Implement tasks in order.
 - Do not add new dependencies unless the existing backend tools cannot satisfy the task.
 - Do not change database schema in FE03 unless a separate spec/RFC update is approved.
-- Keep frontend work out of this task list.
+- Keep frontend work limited to the approved avatar upload UI and PUT allowlist reconciliation in T-FE03-014/T-FE03-016.

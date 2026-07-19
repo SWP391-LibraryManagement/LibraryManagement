@@ -1,5 +1,22 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-19 - Server-Controlled Fine List And L4 Closure
+
+- Moved Fine Management search, status filtering, and pagination fully onto canonical `/api/fines` query parameters and the `{ fines, page, limit, total, totalPages }` response envelope.
+- Removed browser-side list normalization, filtering, sorting, slicing, and derived total-page ownership; retained page-scoped summary metrics with explicit labels.
+- Added a deterministic query builder, focused source tests, accessible status/pagination labels, and a Playwright L4 flow covering page 1/2, combined search/status filters, server totals, and mobile overflow.
+- Focused frontend tests pass 6/6, full frontend passes 146/146, lint/build pass, FE09 browser acceptance passes 1/1, the full isolated browser suite passes 3/3, and PR CI run `29680600893` passes on `dfe45ae`.
+- Closed `TD-004`; final project human integration acceptance remains open.
+
+## 2026-07-19 - Agent-Side v0.4.0 Reconciliation
+
+- Completed FE09-T013 through FE09-T020 on the Core server boundary under Hybrid SDD+ADD: contract-first tests, explicit `Asia/Ho_Chi_Minh` business time, in-place `UNPAID` recalculation, terminal history preservation, and locked duplicate prevention.
+- Removed partial-payment semantics from collection and paid reconciliation; both transitions now require a trimmed payment method and atomically set full payment metadata.
+- Added shared transaction boundaries for fine mutation plus audit writes, deterministic rollback behavior, concurrent terminal-winner handling, and allow-listed audit metadata (`amount`, `paymentMethod`, `note`, `reason`, `result`).
+- Added deterministic list validation/envelope/search/order, canonical FE09 OpenAPI operations, SQL static/concurrency evidence, and 100% FE09 FR traceability.
+- Passed all 9/9 FE09 SQL cases on disposable SQL Server, including concurrent duplicate calculation, one-winner collection, eligibility, and audit rollback; cleanup evidence is recorded in the full-reconciliation Live SQL review.
+- Recorded the frontend boundary: canonical API ownership is verified, while fully server-controlled list presentation and browser/L4 acceptance remain deferred TD-004 and project gates.
+
 ## 2026-07-19 - Production Boundary Reconciliation In Progress
 
 - Removed legacy create/update/delete fine routes from the production router and converted their tests to assert `404`.

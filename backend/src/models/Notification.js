@@ -10,7 +10,7 @@ module.exports = defineModel({
     { attribute: 'templateId', name: 'TemplateId', type: 'INT', nullable: true, references: { table: 'NotificationTemplates', column: 'TemplateId' } },
     { attribute: 'templateKey', name: 'TemplateKey', type: 'NVARCHAR(100)', nullable: true },
     { attribute: 'userId', name: 'UserId', type: 'INT', nullable: true, references: { table: 'Users', column: 'UserId' } },
-    { attribute: 'recipientEmail', name: 'RecipientEmail', type: 'NVARCHAR(100)', required: true },
+    { attribute: 'recipientEmail', name: 'RecipientEmail', type: 'NVARCHAR(255)', required: true },
     { attribute: 'channel', name: 'Channel', type: 'NVARCHAR(20)', required: true, default: 'EMAIL', allowedValues: ['EMAIL'] },
     { attribute: 'status', name: 'Status', type: 'NVARCHAR(20)', required: true, default: 'PENDING', allowedValues: ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SKIPPED', 'CANCELLED'] },
     { attribute: 'title', name: 'Title', type: 'NVARCHAR(255)', nullable: true },

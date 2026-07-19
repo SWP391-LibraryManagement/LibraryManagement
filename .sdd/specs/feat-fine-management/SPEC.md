@@ -2,11 +2,11 @@
 
 # Version: 0.4.1
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: APPROVED BASELINE 2026-07-17 - AGENT-SIDE RECONCILIATION READY FOR REVIEW
 
 # Owner: Dung
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature ID: FE09
 
@@ -454,27 +454,27 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Intent | Status |
 | -------------- | ---------------- | ------------------- | ------ |
-| BR-FE09-001 | UC41-UC44 | Guest access denied on all fine endpoints | Planned |
+| BR-FE09-001 | UC41-UC44 | Guest access denied on all fine endpoints | Ready for review |
 | BR-FE09-002 | UC41 | Member own-fines isolation test | Ready for review |
-| BR-FE09-003 | UC41 | Staff lookup by member/status test | Planned |
+| BR-FE09-003 | UC41 | Staff lookup by member/status test | Ready for review |
 | BR-FE09-004 | UC43, UC44 | Member collection/paid forbidden test | Ready for review |
 | BR-FE09-005 | UC42 | Server calculation rate test | Ready for review |
 | BR-FE09-006 | UC42 | Day-after-due-date boundary test | Ready for review |
 | BR-FE09-007 | UC42 | Stored-date/server-date calculation test | Ready for review |
 | BR-FE09-008 | UC42 | Client amount/overdueDays ignored test | Ready for review |
 | BR-FE09-009 | UC42 | Concurrent duplicate calculation test | Ready for review |
-| BR-FE09-010 | UC42, UC41 | Fine foreign-key/member-context test | Planned |
-| BR-FE09-011 | UC41, UC44 | Resolved fines remain visible test | Planned |
+| BR-FE09-010 | UC42, UC41 | Fine foreign-key/member-context test | Ready for review |
+| BR-FE09-011 | UC41, UC44 | Resolved fines remain visible test | Ready for review |
 | BR-FE09-012 | UC44 | Paid status, PaidAmount, PaidAt test | Ready for review |
 | BR-FE09-013 | UC42 | Paid fine does not block FE07 test | Ready for review |
 | BR-FE09-014 | UC42 | Unpaid positive fine blocks FE07 test | Ready for review |
-| BR-FE09-015 | UC42-UC44 | Audit coverage for all state changes | Planned |
-| BR-FE09-016 | UC43, UC44 | Online payment endpoint absence/scope test | Planned |
+| BR-FE09-015 | UC42-UC44 | Audit coverage for all state changes | Ready for review |
+| BR-FE09-016 | UC43, UC44 | Online payment endpoint absence/scope test | Ready for review |
 | BR-FE09-017 | UC43, UC44 | Full collection directly resolves fine test | Ready for review |
-| BR-FE09-018 | UC41 | Fixed `FineId ASC` list order test | Planned |
-| BR-FE09-019 | UC42 | `Asia/Ho_Chi_Minh` date boundary test | Planned |
+| BR-FE09-018 | UC41 | Fixed `FineId ASC` list order test | Ready for review |
+| BR-FE09-019 | UC42 | `Asia/Ho_Chi_Minh` date boundary test | Ready for review |
 | FR-FE09-001 | UC41 | Member own-fines endpoint | Ready for review |
-| FR-FE09-002 | UC41 | Staff list/detail filter endpoint | Planned |
+| FR-FE09-002 | UC41 | Staff list/detail filter endpoint | Ready for review |
 | FR-FE09-003 | UC42 | Overdue-day calculation endpoint | Ready for review |
 | FR-FE09-004 | UC42 | Non-overdue creates no fine | Ready for review |
 | FR-FE09-005 | UC42 | Positive overdue amount calculation | Ready for review |
@@ -482,16 +482,16 @@ This feature does not include:
 | FR-FE09-007 | UC43 | Full collection records payment metadata | Ready for review |
 | FR-FE09-008 | UC44 | Mark-paid state transition | Ready for review |
 | FR-FE09-009 | UC43, UC44 | Role guard test | Ready for review |
-| FR-FE09-010 | UC41-UC44 | FE07/FE12 status readback contract | Planned |
-| FR-FE09-011 | UC41 | Paginated fixed-order staff list | Planned |
+| FR-FE09-010 | UC41-UC44 | FE07/FE12 status readback contract | Ready for review |
+| FR-FE09-011 | UC41 | Paginated fixed-order staff list | Ready for review |
 | FR-FE09-012 | UC43, UC44 | Full offline collection resolves fine | Ready for review |
-| FR-FE09-013 | UC43, UC44 | Resolved-fine collection conflict | Planned |
-| FR-FE09-014 | UC44 | Admin waive with reason and audit | Planned |
-| FR-FE09-015 | UC44 | Admin cancel with reason and audit | Planned |
-| FR-FE09-016 | UC41 | Invalid list query rejected before repository | Planned |
-| FR-FE09-017 | UC42 | Business-date calculation boundary | Planned |
+| FR-FE09-013 | UC43, UC44 | Resolved-fine collection conflict | Ready for review |
+| FR-FE09-014 | UC44 | Admin waive with reason and audit | Ready for review |
+| FR-FE09-015 | UC44 | Admin cancel with reason and audit | Ready for review |
+| FR-FE09-016 | UC41 | Invalid list query rejected before repository | Ready for review |
+| FR-FE09-017 | UC42 | Business-date calculation boundary | Ready for review |
 | AC-FE09-001 | UC41 | Own-fines response contains only actor records | Ready for review |
-| AC-FE09-002 | UC41 | Staff selected-member fines response | Planned |
+| AC-FE09-002 | UC41 | Staff selected-member fines response | Ready for review |
 | AC-FE09-003 | UC42 | Overdue amount equals days * 5000 | Ready for review |
 | AC-FE09-004 | UC42 | On-time return creates no fine | Ready for review |
 | AC-FE09-005 | UC42 | Recalculation updates `UNPAID` fine without duplication | Ready for review |
@@ -500,11 +500,11 @@ This feature does not include:
 | AC-FE09-008 | UC43, UC44 | Member cannot collect or mark paid | Ready for review |
 | AC-FE09-009 | UC42 | Paid fine no longer blocks borrowing | Ready for review |
 | AC-FE09-010 | UC42 | Unpaid positive fine blocks borrowing/renewal | Ready for review |
-| AC-FE09-011 | UC41 | Fixed-order searchable/filterable list | Planned |
+| AC-FE09-011 | UC41 | Fixed-order searchable/filterable list | Ready for review |
 | AC-FE09-012 | UC43 | Full collection resolves and unblocks FE07 | Ready for review |
-| AC-FE09-013 | UC44 | Valid admin waive is terminal and audited | Planned |
-| AC-FE09-014 | UC44 | Valid admin cancel is terminal and audited | Planned |
-| AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Planned |
+| AC-FE09-013 | UC44 | Valid admin waive is terminal and audited | Ready for review |
+| AC-FE09-014 | UC44 | Valid admin cancel is terminal and audited | Ready for review |
+| AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Ready for review |
 
 ---
 

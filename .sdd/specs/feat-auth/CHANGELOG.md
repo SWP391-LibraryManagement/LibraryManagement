@@ -1,10 +1,31 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - HTTPS transport enforcement
+
+- Added a deployment-aware HTTPS middleware before JSON parsing and auth route dispatch.
+- Plain HTTP authentication requests now reject with `400 HTTPS_REQUIRED` by default; optional `HTTPS_REDIRECT=true` redirects only to a validated `HTTPS_CANONICAL_HOST`.
+- Trusted reverse-proxy deployments may pass `X-Forwarded-Proto: https` only when `TRUST_PROXY=true`; focused transport tests pass `3/3`.
+
+## 2026-07-19 - API Evidence And Login Enumeration Reconciliation
+
+- Added API regressions for duplicate registration and weak registration/reset passwords with explicit no-persistence assertions.
+- Added canonical `{ email, otp }` verification and password-reset coverage, including OTP consumption and password-state assertions.
+- Kept the internal `AUTH_LOGIN_INACTIVE` audit event while returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts.
+- Closed the IP-wide rate-limit question as an approved Phase 1 non-goal under `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005`.
+- Focused `authRoutes.test.js` validation passes 30/30; full backend regression passes 893/893 with coverage, system integration, and traceability green; PR CI run `29680011551` passes on implementation commit `0040e0f`.
+
+## 2026-07-19 - OTP Requester And Refresh Reconciliation
+
+- Fanned the FE02 verification/reset requester into the canonical FE10 sensitive-provider boundary with token-ID idempotency and no duplicate direct delivery path.
+- Preserved non-blocking provider failure, resend token rotation, legacy token acceptance, and direct `CHANGE_PASSWORD_OTP` ownership.
+- Aligned refresh exchange with FR-FE02-026 by returning the submitted refresh token unchanged.
+- The current FE02/FE10 focused cross-feature gate passes 154/154 with FE02 traceability 26/26; final human closeout remains open.
+
 ## 2026-07-19 - FE11 Finalization Schema Contract Activated
 
 - Bumped `SPEC.md` to 0.6.3 and activated the shared FE11 migration dependency without changing FE02 login, registration, OTP, refresh, or setup-consumption behavior.
 - Confirmed `Users.Email` at 255 characters and documented FE11's non-null managed-user concurrency version as `COALESCE(UpdatedAt, CreatedAt)` for nullable legacy rows.
-- Kept schema implementation and live migration evidence pending the FE11 Finalization Wave A gate.
+- The FE11 shared schema migration subsequently passed two disposable SQL Server executions; see the full-reconciliation Live SQL review.
 
 ## 2026-07-17 - Phase 1 Baseline Approved
 

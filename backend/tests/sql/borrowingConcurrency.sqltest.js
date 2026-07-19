@@ -298,9 +298,9 @@ async function returnDetail(borrowDetailId, actorUserId, returnDate) {
   });
 }
 
-function installTwoPartyRequestLockBarrier() {
+function installTwoPartyMemberLockBarrier() {
   const originalQuery = sql.Request.prototype.query;
-  const arrivalRequestIds = [];
+  const arrivalResources = [];
   let arrivalCount = 0;
   let released = false;
   let restored = false;
@@ -322,23 +322,22 @@ function installTwoPartyRequestLockBarrier() {
   }
 
   const timeout = setTimeout(
-    () => release(new Error('FE07 SQL approval barrier expected two request-lock arrivals.')),
+    () => release(new Error('FE07 SQL approval barrier expected two member-lock arrivals.')),
     5000
   );
 
-  sql.Request.prototype.query = async function queryWithRequestLockBarrier(queryText, ...args) {
-    const isPendingRequestLock =
+  sql.Request.prototype.query = async function queryWithMemberLockBarrier(queryText, ...args) {
+    const isMemberLock =
       typeof queryText === 'string' &&
-      queryText.includes('FROM BorrowRequests WITH (UPDLOCK, HOLDLOCK)') &&
-      queryText.includes("Status = 'PENDING'");
+      queryText.includes('sp_getapplock') &&
+      this.parameters.MemberLockResource;
 
-    if (!isPendingRequestLock) {
+    if (!isMemberLock) {
       return originalQuery.call(this, queryText, ...args);
     }
 
-    const queryResult = await originalQuery.call(this, queryText, ...args);
     arrivalCount += 1;
-    arrivalRequestIds.push(this.parameters.RequestId.value);
+    arrivalResources.push(this.parameters.MemberLockResource.value);
     if (arrivalCount === 2) {
       release();
     }
@@ -348,12 +347,12 @@ function installTwoPartyRequestLockBarrier() {
       throw barrierError;
     }
 
-    return queryResult;
+    return originalQuery.call(this, queryText, ...args);
   };
 
   return {
     getArrivalCount: () => arrivalCount,
-    getArrivalRequestIds: () => [...arrivalRequestIds],
+    getArrivalResources: () => [...arrivalResources],
     restore: () => {
       if (restored) {
         return;
@@ -362,7 +361,7 @@ function installTwoPartyRequestLockBarrier() {
       restored = true;
       clearTimeout(timeout);
       if (!released) {
-        release(new Error('FE07 SQL approval barrier aborted before two request-lock arrivals.'));
+        release(new Error('FE07 SQL approval barrier aborted before two member-lock arrivals.'));
       }
       sql.Request.prototype.query = originalQuery;
     },
@@ -803,22 +802,23 @@ test('concurrent SQL approvals for different copies stop at five active borrowed
       status: 'REQUESTED',
     });
 
-    const requestLockBarrier = installTwoPartyRequestLockBarrier();
+    const memberLockBarrier = installTwoPartyMemberLockBarrier();
     let results;
     let settledApprovalResults;
     const approvalPromises = [approve(firstRequestId, actorUserId), approve(secondRequestId, actorUserId)];
     try {
       results = await Promise.all(approvalPromises);
     } finally {
-      requestLockBarrier.restore();
-      requestLockBarrier.restore();
+      memberLockBarrier.restore();
+      memberLockBarrier.restore();
       settledApprovalResults = await Promise.allSettled(approvalPromises);
     }
 
-    expect(requestLockBarrier.getArrivalCount()).toBe(2);
-    expect(requestLockBarrier.getArrivalRequestIds().sort((left, right) => left - right)).toEqual(
-      [firstRequestId, secondRequestId].sort((left, right) => left - right)
-    );
+    expect(memberLockBarrier.getArrivalCount()).toBe(2);
+    expect(memberLockBarrier.getArrivalResources()).toEqual([
+      `FE07-BORROW-MEMBER-${borrowerUserId}`,
+      `FE07-BORROW-MEMBER-${borrowerUserId}`,
+    ]);
     expect(settledApprovalResults.map((result) => result.status)).toEqual(['fulfilled', 'fulfilled']);
 
     expect(results.map((result) => result.outcome).sort()).toEqual([
