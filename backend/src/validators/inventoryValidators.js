@@ -21,22 +21,25 @@ const listInventoryValidators = [
     .isIn(COPY_STATUSES)
     .withMessage('Copy status is not supported.'),
   query('barcode')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ nullable: true })
     .trim()
+    .notEmpty()
     .isLength({ max: 100 })
     .withMessage('Barcode must be at most 100 characters.'),
   query('location')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ nullable: true })
     .trim()
+    .notEmpty()
     .isLength({ max: 100 })
+    .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),
   query('page')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ nullable: true })
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer.')
     .toInt(),
   query('limit')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ nullable: true })
     .isInt({ min: 1, max: 100 })
     .withMessage('Limit must be between 1 and 100.')
     .toInt(),
@@ -68,16 +71,13 @@ const createCopyValidators = [
     .withMessage('Barcode is required.')
     .isLength({ max: 100 })
     .withMessage('Barcode must be at most 100 characters.'),
-  body('status')
-    .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .toUpperCase()
-    .isIn(MANUAL_STATUSES)
-    .withMessage('Copy status is not supported for manual inventory management.'),
   body('location')
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ nullable: true })
+    .isString()
     .trim()
+    .notEmpty()
     .isLength({ max: 100 })
+    .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),
   handleValidationErrors,
 ];
@@ -93,16 +93,15 @@ const updateCopyValidators = [
     .isLength({ max: 100 })
     .withMessage('Barcode must be at most 100 characters.'),
   body('status')
-    .optional({ nullable: true, checkFalsy: true })
-    .trim()
-    .toUpperCase()
-    .isIn(MANUAL_STATUSES)
-    .withMessage('Copy status is not supported for manual inventory management.'),
+    .custom((value) => value === undefined)
+    .withMessage('Copy status must use the dedicated status command.'),
   body('location')
     .optional({ nullable: true })
     .isString()
     .trim()
+    .notEmpty()
     .isLength({ max: 100 })
+    .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),
   handleValidationErrors,
 ];
@@ -116,10 +115,11 @@ const updateCopyStatusValidators = [
     .isIn(MANUAL_STATUSES)
     .withMessage('Copy status is not supported for manual inventory management.'),
   body('reason')
-    .optional({ nullable: true, checkFalsy: true })
+    .isString()
     .trim()
-    .isLength({ max: 255 })
-    .withMessage('Reason must be at most 255 characters.'),
+    .notEmpty()
+    .isLength({ max: 500 })
+    .withMessage('Reason must be between 1 and 500 characters.'),
   handleValidationErrors,
 ];
 

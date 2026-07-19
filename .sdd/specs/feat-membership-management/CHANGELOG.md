@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-19 - Canonical Membership Reconciliation
+
+- Added the pending-only filtered unique index, model metadata, ADR decision, and idempotent FE04
+  migration while preserving approved/rejected application history.
+- Made apply/review/member/audit mutations atomic, serialized in-memory races, locked SQL reviews,
+  and returned the canonical applicant-safe status envelope.
+- Added exact post-commit `MEMBERSHIP_RESULT` requester behavior with safe non-blocking delivery
+  status and no provider-error exposure.
+- Reconciled the membership UI with canonical server fields, truthful error states, server-side
+  search, refresh-after-mutation behavior, and 500-character rejection limits.
+- Recorded fresh non-SQL evidence: backend 619/619, frontend 122/122, coverage thresholds, lint,
+  build, import, FE04 trace 12/12, and diff hygiene pass.
+- Applied the FE04 migration twice on a disposable SQL Server and passed all 10/10 FE04 SQL cases;
+  cleanup is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Browser/cross-feature human acceptance remains pending.
+
 ## 2026-07-18 - Member And Librarian UI Integration
 
 - Exposed the existing FE04 review workspace in Librarian navigation while preserving the Admin Console review integration.

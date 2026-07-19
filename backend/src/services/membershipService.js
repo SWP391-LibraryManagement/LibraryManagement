@@ -19,25 +19,37 @@ function toPositiveInteger(value, fieldName) {
   return numberValue;
 }
 
+function toSafeApplication(application) {
+  if (!application) return null;
+
+  return {
+    applicationId: application.applicationId,
+    userId: application.userId,
+    status: application.status,
+    appliedAt: application.appliedAt || null,
+    approvedAt: application.approvedAt || null,
+    rejectionReason: application.rejectionReason || null,
+  };
+}
+
 function toStatusResponse(application, member) {
   // Members is the canonical eligibility projection consumed by FE07/FE08.
   // Application status is only a fallback before a canonical member row exists.
   const status = member?.status || application?.status || 'NONE';
 
   return {
-    status,
     membershipStatusView: status,
     memberStatus: member?.status || null,
-    currentApplication: application || null,
-    applicationId: application?.applicationId || null,
-    userId: application?.userId || member?.userId || null,
-    appliedAt: application?.appliedAt || null,
-    approvedAt: application?.approvedAt || member?.approvedAt || null,
-    reviewedBy: application?.reviewedBy || null,
-    rejectionReason: application?.rejectionReason || null,
-    application: application || null,
-    member: member || null,
+    currentApplication: toSafeApplication(application),
   };
+}
+
+function isPendingApplicationConflict(error) {
+  return (
+    error?.code === 'MEMBERSHIP_PENDING_CONFLICT' ||
+    error?.number === 2601 ||
+    error?.number === 2627
+  );
 }
 
 function createMembershipService({
@@ -53,7 +65,15 @@ function createMembershipService({
     auditLogRepository = require('../repositories/auditLogRepository');
   }
 
-  async function writeAudit(context, action, actor, application, metadata = {}) {
+  async function writeAudit(
+    context,
+    action,
+    actor,
+    application,
+    member,
+    metadata = {},
+    transaction
+  ) {
     if (!auditLogRepository || typeof auditLogRepository.create !== 'function') return;
 
     await auditLogRepository.create({
@@ -61,12 +81,20 @@ function createMembershipService({
       action,
       targetType: 'MEMBERSHIP_APPLICATION',
       targetId: application?.applicationId || null,
-      metadata: { userId: application?.userId, status: application?.status, ...metadata },
+      metadata: {
+        userId: application?.userId,
+        memberId: member?.memberId || null,
+        status: application?.status,
+        result: application?.status,
+        ...metadata,
+      },
       ipAddress: context?.ip || null,
       userAgent: context?.userAgent || null,
+      transaction,
     });
   }
 
+  // @spec FR-FE04-012
   async function notifyMembershipResult(application) {
     if (!notificationRequester || typeof notificationRequester.createNotificationRequest !== 'function') {
       return 'NOT_CONFIGURED';
@@ -88,15 +116,17 @@ function createMembershipService({
         sourceEntityId: application.applicationId,
         idempotencyKey: `FE04:MEMBERSHIP_RESULT:${application.applicationId}:${application.status}`,
       });
-      return delivery?.status === 'SENT' ? 'SENT' : 'FAILED';
+      return ['PENDING', 'SENT', 'FAILED'].includes(delivery?.status)
+        ? delivery.status
+        : 'FAILED';
     } catch {
       return 'FAILED';
     }
   }
 
-  function requireMember(actor) {
-    if (!hasAnyRole(actor, ['MEMBER'])) {
-      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'Only registered members can perform this action.');
+  function requireAuthenticatedActor(actor) {
+    if (!Number.isInteger(Number(actor?.userId)) || Number(actor.userId) <= 0) {
+      throw errors.unauthorized('UNAUTHORIZED', 'Authentication is required.');
     }
   }
 
@@ -106,8 +136,9 @@ function createMembershipService({
     }
   }
 
+  // @spec FR-FE04-001 FR-FE04-002 FR-FE04-003 FR-FE04-010 FR-FE04-011
   async function apply(actor, context = {}) {
-    requireMember(actor);
+    requireAuthenticatedActor(actor);
 
     const user = await membershipRepository.findUser(actor.userId);
     if (!user) {
@@ -131,13 +162,35 @@ function createMembershipService({
       throw errors.conflict('MEMBERSHIP_ALREADY_APPROVED', 'Membership is already approved.');
     }
 
-    const application = await membershipRepository.createApplication(actor.userId);
-    await writeAudit(context, 'MEMBERSHIP_APPLICATION_SUBMITTED', actor, application);
-    return { application, ...toStatusResponse(application, { ...member, status: 'PENDING' }) };
+    let application;
+    try {
+      application = await membershipRepository.createApplication(actor.userId, {
+        onBeforeCommit: ({ application: pendingApplication, member: pendingMember, transaction }) =>
+          writeAudit(
+            context,
+            'MEMBERSHIP_APPLICATION_SUBMITTED',
+            actor,
+            pendingApplication,
+            pendingMember,
+            { timestamp: pendingApplication.appliedAt },
+            transaction
+          ),
+      });
+    } catch (error) {
+      if (isPendingApplicationConflict(error)) {
+        throw errors.conflict(
+          'MEMBERSHIP_APPLICATION_PENDING',
+          'A pending membership application already exists.'
+        );
+      }
+      throw error;
+    }
+
+    return toStatusResponse(application, application.member || { ...member, status: 'PENDING' });
   }
 
   async function getMyStatus(actor) {
-    requireMember(actor);
+    requireAuthenticatedActor(actor);
     const [application, member] = await Promise.all([
       membershipRepository.findLatestByUserId(actor.userId),
       membershipRepository.findMemberByUserId(actor.userId),
@@ -146,6 +199,7 @@ function createMembershipService({
     return toStatusResponse(application, member);
   }
 
+  // @spec FR-FE04-009
   async function listApplications(filters, actor) {
     requireStaff(actor);
 
@@ -165,7 +219,18 @@ function createMembershipService({
   async function approve(applicationIdInput, actor, context = {}) {
     requireStaff(actor);
     const applicationId = toPositiveInteger(applicationIdInput, 'Application ID');
-    const result = await membershipRepository.approve(applicationId, actor.userId);
+    const result = await membershipRepository.approve(applicationId, actor.userId, {
+      onBeforeCommit: ({ application, member, decisionAt, transaction }) =>
+        writeAudit(
+          context,
+          'MEMBERSHIP_APPLICATION_APPROVED',
+          actor,
+          application,
+          member,
+          { decisionAt },
+          transaction
+        ),
+    });
 
     if (!result) {
       throw errors.notFound('MEMBERSHIP_APPLICATION_NOT_FOUND', 'Membership application was not found.');
@@ -174,9 +239,18 @@ function createMembershipService({
       throw errors.conflict('MEMBERSHIP_APPLICATION_NOT_PENDING', 'Only pending applications can be approved.');
     }
 
-    await writeAudit(context, 'MEMBERSHIP_APPLICATION_APPROVED', actor, result);
     const notificationStatus = await notifyMembershipResult(result);
-    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'APPROVED', approvedAt: result.approvedAt }), notificationStatus };
+    return {
+      ...toStatusResponse(
+        result,
+        result.member || {
+          userId: result.userId,
+          status: 'APPROVED',
+          approvedAt: result.approvedAt,
+        }
+      ),
+      notificationStatus,
+    };
   }
 
   async function reject(applicationIdInput, reason, actor, context = {}) {
@@ -191,7 +265,18 @@ function createMembershipService({
       throw errors.badRequest('REJECTION_REASON_TOO_LONG', 'Rejection reason must be at most 500 characters.');
     }
 
-    const result = await membershipRepository.reject(applicationId, actor.userId, cleanReason);
+    const result = await membershipRepository.reject(applicationId, actor.userId, cleanReason, {
+      onBeforeCommit: ({ application, member, decisionAt, transaction }) =>
+        writeAudit(
+          context,
+          'MEMBERSHIP_APPLICATION_REJECTED',
+          actor,
+          application,
+          member,
+          { decisionAt, reason: cleanReason },
+          transaction
+        ),
+    });
 
     if (!result) {
       throw errors.notFound('MEMBERSHIP_APPLICATION_NOT_FOUND', 'Membership application was not found.');
@@ -200,9 +285,14 @@ function createMembershipService({
       throw errors.conflict('MEMBERSHIP_APPLICATION_NOT_PENDING', 'Only pending applications can be rejected.');
     }
 
-    await writeAudit(context, 'MEMBERSHIP_APPLICATION_REJECTED', actor, result, { reason: cleanReason });
     const notificationStatus = await notifyMembershipResult(result);
-    return { application: result, ...toStatusResponse(result, { userId: result.userId, status: 'REJECTED' }), notificationStatus };
+    return {
+      ...toStatusResponse(
+        result,
+        result.member || { userId: result.userId, status: 'REJECTED' }
+      ),
+      notificationStatus,
+    };
   }
 
   return {

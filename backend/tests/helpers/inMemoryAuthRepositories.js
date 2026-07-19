@@ -2,15 +2,25 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function makeInMemoryAuthDependencies() {
+function makeInMemoryAuthDependencies(options = {}) {
   let nextUserId = 1;
   let nextTokenId = 1;
+  let nextNotificationId = 1;
+  let nextOtpIndex = 0;
   const users = [];
   const profiles = [];
   const rolesByUserId = new Map();
   const tokens = [];
   const auditLogs = [];
   const notifications = [];
+  const notificationRequests = [];
+  const directEmails = [];
+  const generatedOtps = [];
+  const otpSequence = options.otpSequence || ['123456', '234567', '345678', '456789'];
+  const notificationRequesterControl = {
+    status: options.notificationStatus || 'SENT',
+    error: null,
+  };
   const accountSetupControl = {
     failureStage: null,
     completionFailureStage: null,
@@ -244,6 +254,45 @@ function makeInMemoryAuthDependencies() {
     },
   };
 
+  const notificationRequester = {
+    async createNotificationRequest(entry) {
+      notificationRequests.push(clone(entry));
+
+      if (notificationRequesterControl.error) {
+        throw notificationRequesterControl.error;
+      }
+
+      const result = {
+        notificationId: nextNotificationId,
+        status: notificationRequesterControl.status,
+      };
+      nextNotificationId += 1;
+      return result;
+    },
+  };
+
+  function otpGenerator() {
+    const otp = otpSequence[nextOtpIndex] || String(567890 + nextOtpIndex).slice(-6);
+    nextOtpIndex += 1;
+    generatedOtps.push(otp);
+    return otp;
+  }
+
+  const emailService = {
+    async sendVerificationOtpEmail(entry) {
+      directEmails.push(clone({ method: 'sendVerificationOtpEmail', ...entry }));
+      return { sent: true, providerMessageId: 'test-verification-message' };
+    },
+    async sendPasswordResetOtpEmail(entry) {
+      directEmails.push(clone({ method: 'sendPasswordResetOtpEmail', ...entry }));
+      return { sent: true, providerMessageId: 'test-reset-message' };
+    },
+    async sendChangePasswordOtpEmail(entry) {
+      directEmails.push(clone({ method: 'sendChangePasswordOtpEmail', ...entry }));
+      return { sent: true, providerMessageId: 'test-change-password-message' };
+    },
+  };
+
   const accountSetupRepository = {
     async createPendingAccount(input) {
       const now = input.now || new Date();
@@ -270,6 +319,8 @@ function makeInMemoryAuthDependencies() {
         userId: user.userId,
         fullName: input.fullName,
         address: input.address || null,
+        department: input.department || null,
+        specialization: input.specialization || null,
       };
 
       if (accountSetupControl.failureStage === 'role') {
@@ -315,7 +366,7 @@ function makeInMemoryAuthDependencies() {
       tokens.push(token);
       auditLogs.push(audit);
 
-      return clone({ user, tokenId: token.tokenId });
+      return clone({ outcome: 'CREATED', user, tokenId: token.tokenId });
     },
 
     async completeSetup({ tokenHash, passwordHash, now, context = {} }) {
@@ -477,6 +528,9 @@ function makeInMemoryAuthDependencies() {
     authTokenRepository,
     auditLogRepository,
     notificationRepository,
+    notificationRequester,
+    otpGenerator,
+    emailService,
     accountSetupRepository,
     state: {
       users,
@@ -484,6 +538,10 @@ function makeInMemoryAuthDependencies() {
       tokens,
       auditLogs,
       notifications,
+      notificationRequests,
+      directEmails,
+      generatedOtps,
+      notificationRequesterControl,
       rolesByUserId,
       accountSetupControl,
     },

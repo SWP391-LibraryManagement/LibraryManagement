@@ -1,8 +1,8 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.3
-Status: BASE VALIDATION COMPLETE; HISTORY CONTRACT CASE PLANNED
-Last Updated: 2026-07-14
+Version: 0.2.4
+Status: V0.5.1 AGENT-SIDE AND LIVE SQL VALIDATION COMPLETE; HUMAN INTEGRATION PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
 Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -42,13 +42,13 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 
 ## 5. Current Evidence
 
-- `backend/tests/borrowingRoutes.test.js` (41 tests; direct AC-FE07-001..014 coverage, unknown-member lookup, reject-race conflict, granular transaction-outcome safe errors, reject/renew audit rollback, strict calendar-date validation, derived `OVERDUE`, history isolation, and all four renewal blockers).
+- Focused FE07 route/repository/contract/model gate: 66/66 tests pass, including canonical member/staff history filters, server pagination, inclusive dates, stable ordering, derived `OVERDUE`, and owner scope.
 - `backend/tests/models.test.js` (4 tests; persisted FE07 status and nullable-due-date metadata).
 - `backend/tests/borrowingContract.test.js` (4 tests; FE07 OpenAPI inputs, filters, runtime FineCandidate fields, response payloads, and safe errors).
 - `backend/tests/reportRepository.test.js` (9 tests; includes derived `OVERDUE` SQL filtering).
-- `backend/tests/sql/borrowingConcurrency.sqltest.js` (14 tests; includes real SQL approval eligibility outcomes and audit-failure rollback coverage for create, approval, return, reject, and renew transactions).
+- `backend/tests/sql/borrowingConcurrency.sqltest.js` passes in the aggregate 61/61 disposable SQL Server run and covers member-scoped serialization, reservation priority/fulfillment, eligibility outcomes, and audit-failure rollback.
 - `backend/tests/integration.test.js`.
-- `frontend/test/borrowingFrontend.test.js` (route access, truthful API/mutation state, server-owned return date, truthful approval evidence, pending/current/history partitioning, modal namespace/focus management, responsive layout, and mobile pagination).
+- `frontend/test/borrowingFrontend.test.js`: 18/18 pass, including the canonical detail envelope and server-owned history status/pagination contract.
 - Browser acceptance against the real backend: guest/member/staff access, approval, renewal, normal return, network failure, modal visibility, and desktop/mobile overflow checks.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
@@ -57,7 +57,7 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 - TD-007 resolved: Phase 1 borrow policy is all-or-nothing (spec aligned to code, BR-FE07-022). TD-008 (model `allowedValues` sync) resolved.
 - FR-FE07-022 rollback evidence is real SQL transaction coverage; the in-memory route rollback tests remain supplemental only.
 - The temporary create-request catalog remains until FE01/FE06 expose the production browsing/copy-selection integration required by FE07.
-- Automated and browser validation are complete; Nhat confirmed human review on 2026-07-14.
+- Historical browser validation and human review cover the earlier baseline. Final v0.5.1 repository regression and human integration acceptance remain required.
 
 ## 7. Required Commands / Evidence Before Merge
 

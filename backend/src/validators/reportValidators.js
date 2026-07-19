@@ -18,6 +18,19 @@ const copyStatuses = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'I
 const userStatuses = ['ACTIVE', 'INACTIVE', 'LOCKED'];
 const membershipStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE'];
 
+const paginationValidators = [
+  query('page')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt(),
+  query('limit')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100.')
+    .toInt(),
+];
+
 function isDateOnly(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -72,6 +85,7 @@ const borrowingReportValidators = [
     .isInt({ min: 1 })
     .withMessage('User ID must be a positive integer.')
     .toInt(),
+  ...paginationValidators,
   handleValidationErrors,
 ];
 
@@ -96,6 +110,7 @@ const inventoryReportValidators = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('Location must be at most 100 characters.'),
+  ...paginationValidators,
   handleValidationErrors,
 ];
 
@@ -116,6 +131,7 @@ const userStatisticsValidators = [
     .trim()
     .isIn(membershipStatuses)
     .withMessage('Membership status is not supported.'),
+  ...paginationValidators,
   handleValidationErrors,
 ];
 

@@ -45,7 +45,7 @@ test('FE11 role mutation plan preserves names for UI and emits catalog IDs', asy
 
 test('FE11 role saves validate the full plan and assign before revoking', async () => {
   const source = await readFile(pagePath, 'utf8');
-  const saveRoles = source.match(/async function saveRoles\(nextRoles\)[\s\S]*?\r?\n {2}}\r?\n\r?\n {2}return \(/)?.[0] || '';
+  const saveRoles = source.match(/async function saveRoles\(nextRoles\)[\s\S]*?\r?\n {2}}\r?\n\r?\n {2}if \(!access\.authenticated\)/)?.[0] || '';
 
   assert.match(
     saveRoles,
@@ -190,4 +190,55 @@ test('FE11 Permissions derives the view from server data without a hardcoded mat
   assert.match(source, /permissionPolicy\.permissions\.map/);
   assert.doesNotMatch(source, /const permissionRows =/);
   assert.doesNotMatch(source, /const permissionModules =/);
+});
+
+test('FE11 Admin access never uses an implicit development bypass', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.doesNotMatch(source, /allowDevUserManagementWithoutLogin|MODE !== 'production'/);
+  assert.match(source, /import \{ Navigate, useNavigate \} from 'react-router-dom';/);
+  assert.match(source, /function readStoredAdminAccess\(\)/);
+  assert.match(source, /<Navigate to="\/login" replace/);
+  assert.match(source, /<Navigate to="\/home" replace/);
+});
+
+test('FE11 lifecycle payloads include effective version and Librarian fields', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /expectedUpdatedAt: modal\.user\.updatedAt/);
+  assert.match(source, /deactivateManagedUser\(user\.userId, user\.updatedAt\)/);
+  assert.match(source, /department: form\.department\.trim\(\) \|\| null/);
+  assert.match(source, /specialization: form\.specialization\.trim\(\) \|\| null/);
+  assert.match(source, /form\.type === 'librarian' && \(/);
+  assert.match(source, /\['ACTIVE', 'LOCKED'\]\.includes\(user\.status\)/);
+});
+
+test('FE11 form validation accepts canonical widths and rejects overlength Librarian fields', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  const functionMatch = source.match(/function validateUserForm\(form\) \{[^]*?\n\}/);
+  assert.ok(functionMatch, 'validateUserForm must exist');
+  const validateUserForm = new Function(`${functionMatch[0]}; return validateUserForm;`)();
+  const email255 = `${'a'.repeat(242)}@example.test`;
+  const valid = validateUserForm({
+    type: 'librarian',
+    email: email255,
+    fullName: 'x'.repeat(100),
+    phone: '',
+    address: '',
+    department: 'x'.repeat(100),
+    specialization: 'x'.repeat(100),
+  });
+  assert.deepEqual(valid, {});
+
+  const invalid = validateUserForm({
+    type: 'librarian',
+    email: 'librarian@example.test',
+    fullName: 'Librarian',
+    phone: '',
+    address: '',
+    department: 'x'.repeat(101),
+    specialization: 'x'.repeat(101),
+  });
+  assert.ok(invalid.department);
+  assert.ok(invalid.specialization);
 });

@@ -70,7 +70,7 @@ async function createVerifiedUser({
 
   await request(app)
     .post('/api/auth/verify-email')
-    .send({ token: registerResponse.body.debugVerificationToken })
+    .send({ token: authDependencies.state.generatedOtps.at(-1) })
     .expect(200);
 
   authDependencies.state.rolesByUserId.set(userId, [role]);
@@ -78,6 +78,7 @@ async function createVerifiedUser({
   if (role === 'MEMBER' && approveMember) {
     borrowingDependencies.approveMember(userId);
   }
+
 
   const loginResponse = await request(app)
     .post('/api/auth/login')
@@ -158,6 +159,7 @@ function installTwoPartyBorrowDetailReadBarrier(
     }
 
     return detail;
+
   };
 
   return {
@@ -238,6 +240,7 @@ describe('FE07 borrowing management', () => {
       userId: queueOwner.userId,
       copyId: 1,
       status: 'ACTIVE',
+
       reservedAt: new Date('2026-06-09T00:00:00.000Z'),
     });
 
@@ -318,6 +321,7 @@ describe('FE07 borrowing management', () => {
     expect(response.body.error).not.toHaveProperty('reservationOwnerId');
     expect(JSON.stringify(response.body)).not.toContain(holdOwnerEmail);
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+
   });
 
   test('borrow approval fulfills reservation held for the requesting member', async () => {
@@ -398,6 +402,7 @@ describe('FE07 borrowing management', () => {
       .post('/api/borrow-requests')
       .set('Authorization', authHeader(member.accessToken))
       .send({ copyIds: [1] })
+
       .expect(201);
     const requestId = createResponse.body.borrowRequest.requestId;
     const reservationAuditFailingRepository = makeReservationAuditFailingRepository(
@@ -478,6 +483,7 @@ describe('FE07 borrowing management', () => {
     });
     expect(approveResponse.body.borrowRequest.details[0].dueDate).toBeTruthy();
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+
       'BORROWED'
     );
     expect(notificationStub.service.createSourceNotificationRequester).toHaveBeenCalledTimes(1);
@@ -505,8 +511,8 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(member.accessToken));
 
     expect(ownHistoryResponse.status).toBe(200);
-    expect(ownHistoryResponse.body.borrowRequests).toHaveLength(1);
-    expect(ownHistoryResponse.body.borrowRequests[0].userId).toBe(member.userId);
+    expect(ownHistoryResponse.body.borrowings).toHaveLength(1);
+    expect(ownHistoryResponse.body.borrowings[0].userId).toBe(member.userId);
   });
 
   test('return processing updates detail, copy, completion, and fine candidate data', async () => {
@@ -558,6 +564,7 @@ describe('FE07 borrowing management', () => {
     });
     expect(returnResponse.body.fineCandidate.overdueDays).toBe(9);
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+
       'DAMAGED'
     );
     expect(
@@ -638,6 +645,7 @@ describe('FE07 borrowing management', () => {
       borrowingDependencies,
       email: 'renew.other@example.test',
     });
+
     const librarian = await createVerifiedUser({
       app,
       authDependencies,
@@ -718,6 +726,7 @@ describe('FE07 borrowing management', () => {
       app,
       authDependencies,
       borrowingDependencies,
+
       email: 'renewal-race.member@example.test',
     });
     const librarian = await createVerifiedUser({
@@ -798,6 +807,7 @@ describe('FE07 borrowing management', () => {
 
   test('requester failures do not block completed approval or renewal state changes', async () => {
     const notificationStub = makeNotificationRequesterStub({ error: new Error('provider failure') });
+
     const { app, authDependencies, borrowingDependencies } = makeTestApp({ notificationStub });
     const member = await createVerifiedUser({
       app,
@@ -878,6 +888,7 @@ describe('FE07 borrowing management', () => {
   });
 
   // AC-FE07-012, FR-FE07-011: every selected-member and supported filter predicate is required.
+
   test('librarian retrieves only the matching selected-member borrowing with status and date filters', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const member = await createVerifiedUser({
@@ -950,6 +961,19 @@ describe('FE07 borrowing management', () => {
     borrowingDependencies.state.borrowRequests.find(
       (item) => item.requestId === otherMatching.body.borrowRequest.requestId
     ).requestDate = new Date('2026-06-10T00:00:00.000Z');
+    for (const [created, borrowDate] of [
+      [selectedIncluded, '2026-06-11T18:00:00.000Z'],
+      [selectedWrongStatus, '2026-06-11T18:00:00.000Z'],
+      [selectedBeforeRange, '2026-06-08T00:00:00.000Z'],
+      [selectedAfterRange, '2026-06-12T00:00:00.000Z'],
+      [otherMatching, '2026-06-10T00:00:00.000Z'],
+    ]) {
+      const detail = borrowingDependencies.state.borrowDetails.find(
+
+        (item) => item.requestId === created.body.borrowRequest.requestId
+      );
+      if (detail) detail.borrowDate = new Date(borrowDate);
+    }
 
     const response = await request(app)
       .get(`/api/members/${member.userId}/borrowings`)
@@ -1017,8 +1041,8 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(member.accessToken));
 
     expect(response.status).toBe(200);
-    expect(response.body.borrowRequests).toHaveLength(1);
-    expect(response.body.borrowRequests[0].requestId).toBe(
+    expect(response.body.borrowings).toHaveLength(1);
+    expect(response.body.borrowings[0].requestId).toBe(
       included.body.borrowRequest.requestId
     );
   });
@@ -1026,6 +1050,7 @@ describe('FE07 borrowing management', () => {
   // AC-FE07-012, FR-FE07-011: OVERDUE is derived from a past-due BORROWED detail.
   test('librarian filters selected-member borrowings by derived OVERDUE status', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1065,7 +1090,7 @@ describe('FE07 borrowing management', () => {
     expect(response.body.borrowings).toHaveLength(1);
     expect(response.body.borrowings[0]).toMatchObject({
       borrowDetailId,
-      status: 'BORROWED',
+      status: 'OVERDUE',
       dueDate: '2000-01-01',
     });
   });
@@ -1102,10 +1127,11 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(member.accessToken));
 
     expect(response.status).toBe(200);
-    expect(response.body.borrowRequests).toHaveLength(1);
-    expect(response.body.borrowRequests[0]).toMatchObject({
+    expect(response.body.borrowings).toHaveLength(1);
+    expect(response.body.borrowings[0]).toMatchObject({
       requestId: ownRequest.body.borrowRequest.requestId,
       userId: member.userId,
+
     });
   });
 
@@ -1150,6 +1176,165 @@ describe('FE07 borrowing management', () => {
     expect(unapprovedResponse.status).toBe(403);
     expect(unapprovedResponse.body.error.code).toBe('MEMBERSHIP_NOT_APPROVED');
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+  });
+
+  test('inactive parent book cannot create a borrow request and changes no state', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'inactive-parent-book.member@example.test',
+    });
+
+    borrowingDependencies.state.books[0].status = 'INACTIVE';
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('BOOK_INACTIVE');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+    expect(borrowingDependencies.state.borrowDetails).toHaveLength(0);
+  });
+
+  test('approval rechecks an inactive parent book and preserves pending state', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'approval-inactive-parent-book.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'approval-inactive-parent-book.librarian@example.test',
+
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    borrowingDependencies.state.books[0].status = 'INACTIVE';
+
+    const response = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(409);
+
+    expect(response.body.error.code).toBe('BOOK_INACTIVE');
+    expect(borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
+    expect(borrowingDependencies.state.borrowDetails[0].status).toBe('REQUESTED');
+    expect(borrowingDependencies.state.copies[0].status).toBe('AVAILABLE');
+  });
+
+  test('future return date is rejected against the server business date', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'future-return.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'future-return.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${approved.body.borrowRequest.details[0].borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-11' })
+      .expect(400);
+
+    expect(response.body.error.code).toBe('INVALID_RETURN_DATE');
+    expect(borrowingDependencies.state.borrowDetails[0].status).toBe('BORROWED');
+    expect(borrowingDependencies.state.copies[0].status).toBe('BORROWED');
+  });
+
+  test('history returns deterministic pagination metadata and borrow-date ordering', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'history-pagination.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'history-pagination.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const first = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+
+      .send({ copyIds: [1] })
+      .expect(201);
+    const second = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [2] })
+      .expect(201);
+    for (const created of [first, second]) {
+      await request(app)
+        .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({})
+        .expect(200);
+    }
+
+    borrowingDependencies.state.borrowDetails[0].borrowDate = new Date('2026-06-08T00:00:00.000Z');
+    borrowingDependencies.state.borrowDetails[1].borrowDate = new Date('2026-06-09T00:00:00.000Z');
+    const response = await request(app)
+      .get('/api/members/' + member.userId + '/borrowings')
+      .query({ page: 1, limit: 1, fromDate: '2026-06-08', toDate: '2026-06-09' })
+      .set('Authorization', authHeader(librarian.accessToken))
+      .expect(200);
+
+    expect(response.body.pagination).toEqual({ page: 1, limit: 1, total: 2, totalPages: 2 });
+    expect(response.body.borrowings).toHaveLength(1);
+    expect(response.body.borrowings[0].borrowDate).toBe('2026-06-09');
+
+    const memberResponse = await request(app)
+      .get('/api/borrow-requests/me')
+      .query({ status: 'BORROWED', page: 1, limit: 1, fromDate: '2026-06-08', toDate: '2026-06-09' })
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(memberResponse.body.pagination).toEqual({
+      page: 1,
+      limit: 1,
+      total: 2,
+      totalPages: 2,
+    });
+    expect(memberResponse.body.borrowings).toHaveLength(1);
+    expect(memberResponse.body.borrowings[0].borrowDate).toBe('2026-06-09');
   });
 
   // AC-FE07-003, FR-FE07-014: exceeding 5 active borrowed copies is rejected.
@@ -1204,6 +1389,7 @@ describe('FE07 borrowing management', () => {
       authDependencies,
       borrowingDependencies,
       email: 'unavailable.member@example.test',
+
     });
     const librarian = await createVerifiedUser({
       app,
@@ -1284,6 +1470,7 @@ describe('FE07 borrowing management', () => {
       status: 'RETURNED',
     });
     expect(returnResponse.body.borrowDetail.returnDate).toBeTruthy();
+
     expect(returnResponse.body.fineCandidate).toMatchObject({
       borrowDetailId,
       condition: 'NORMAL',
@@ -1364,6 +1551,7 @@ describe('FE07 borrowing management', () => {
   // FR-FE07-021, FR-FE07-022: a conditional repository return chooses one winner after both
   // handlers read BORROWED, so the loser returns a conflict with no success-shaped data or audit.
   test('concurrent returns allow one winner and one return audit', async () => {
+
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const member = await createVerifiedUser({
       app,
@@ -1444,6 +1632,7 @@ describe('FE07 borrowing management', () => {
     const storedDetail = borrowingDependencies.state.borrowDetails.find(
       (detail) => detail.borrowDetailId === borrowDetailId
     );
+
     expect(storedDetail).toMatchObject({ status: 'RETURNED' });
     expect(storedDetail.returnDate).toBeTruthy();
     expect(borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
@@ -1523,6 +1712,7 @@ describe('FE07 borrowing management', () => {
     );
     expect(borrowedForCopyOne).toHaveLength(1);
   });
+
 
   // BR-FE07-005, FR-FE07-022: approval must re-check the member limit atomically so two
   // different available copies cannot both be approved after separate prechecks at four loans.
@@ -1604,6 +1794,7 @@ describe('FE07 borrowing management', () => {
     // approval runs. This exposes whether the repository itself closes the race.
     borrowingDependencies.borrowingRepository.countActiveBorrowedCopies = async (userId) => {
       const activeCount = await countActiveBorrowedCopies(userId);
+
       waitingApprovals += 1;
       if (waitingApprovals === 2) {
         releaseBothApprovals();
@@ -1685,6 +1876,7 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
   });
 
+
   // AC-FE07-010, FR-FE07-020: each blocker rejects renewal without changing the due date.
   test.each([
     ['overdue', 'BORROW_DETAIL_OVERDUE'],
@@ -1764,6 +1956,7 @@ describe('FE07 borrowing management', () => {
   // FR-FE07-022, NFR-FE07-TXN-001: an audit failure rolls back request and detail creation.
   test('audit failure rolls back borrow request creation without adding an audit row', async () => {
     const setup = makeTestApp();
+
     const member = await createVerifiedUser({
       app: setup.app,
       authDependencies: setup.authDependencies,
@@ -1844,6 +2037,7 @@ describe('FE07 borrowing management', () => {
       .send({ notes: 'reviewed' });
 
     expect(response.status).toBe(500);
+
     expect(failingAuditLogRepository.create).toHaveBeenCalledTimes(1);
     expect(failingAuditLogRepository.create).toHaveBeenCalledWith({
       userId: librarian.userId,
@@ -1924,6 +2118,7 @@ describe('FE07 borrowing management', () => {
         copyId: 1,
         condition: 'NORMAL',
         overdueDays: 0,
+
         notes: 'intact',
       },
       ipAddress: expect.any(String),
@@ -2004,6 +2199,7 @@ describe('FE07 borrowing management', () => {
       approveMember: false,
     });
     const created = await request(setup.app)
+
       .post('/api/borrow-requests')
       .set('Authorization', authHeader(member.accessToken))
       .send({ copyIds: [1] })
@@ -2021,6 +2217,57 @@ describe('FE07 borrowing management', () => {
 
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe('BORROW_REQUEST_NOT_PENDING');
+  });
+
+  // @spec BR-FE11-019, FR-FE11-035, AC-FE11-019
+  test('terminal requests reject FE07 approve and reject without state or success-audit changes', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'terminal-request.member@example.test',
+    });
+    const admin = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'terminal-request.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
+    const created = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestId = created.body.borrowRequest.requestId;
+
+    setup.borrowingDependencies.state.borrowRequests[0].status = 'COMPLETED';
+    const snapshot = () => JSON.parse(JSON.stringify({
+      requests: setup.borrowingDependencies.state.borrowRequests,
+      details: setup.borrowingDependencies.state.borrowDetails,
+      copies: setup.borrowingDependencies.state.copies,
+      reservations: setup.borrowingDependencies.state.reservations,
+      audits: setup.authDependencies.state.auditLogs,
+    }));
+    const before = snapshot();
+
+    const approveResponse = await request(setup.app)
+      .patch(`/api/borrow-requests/${requestId}/approve`)
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({});
+    expect(approveResponse.status).toBe(409);
+    expect(approveResponse.body.error.code).toBe('BORROW_REQUEST_NOT_PENDING');
+    expect(snapshot()).toEqual(before);
+
+    const rejectResponse = await request(setup.app)
+      .patch(`/api/borrow-requests/${requestId}/reject`)
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({ reason: 'Must remain terminal.' });
+    expect(rejectResponse.status).toBe(409);
+    expect(rejectResponse.body.error.code).toBe('BORROW_REQUEST_NOT_PENDING');
+    expect(snapshot()).toEqual(before);
   });
 
   test('audit failure rolls back a rejection without changing the pending request', async () => {
@@ -2084,6 +2331,7 @@ describe('FE07 borrowing management', () => {
       .post('/api/borrow-requests')
       .set('Authorization', authHeader(member.accessToken))
       .send({ copyIds: [1] })
+
       .expect(201);
     const approved = await request(setup.app)
       .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
@@ -2164,6 +2412,7 @@ describe('FE07 borrowing management', () => {
     const response = await request(app)
       .patch(`/api/borrow-details/${approved.body.borrowRequest.details[0].borrowDetailId}/return`)
       .set('Authorization', authHeader(librarian.accessToken))
+
       .send({ condition: 'NORMAL', returnDate: invalidDate });
 
     expect(response.status).toBe(400);

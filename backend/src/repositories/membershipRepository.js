@@ -67,9 +67,11 @@ async function findUser(userId) {
   return result.recordset[0] || null;
 }
 
-async function findMemberByUserId(userId) {
-  const pool = await getPool();
-  const result = await pool.request().input('UserId', sql.Int, userId).query(`
+async function findMemberByUserId(userId, transaction) {
+  const request = transaction
+    ? new sql.Request(transaction)
+    : (await getPool()).request();
+  const result = await request.input('UserId', sql.Int, userId).query(`
     SELECT TOP 1
       MemberId,
       UserId,
@@ -108,7 +110,7 @@ async function hasBlockingApplication(userId) {
   return result.recordset[0]?.Status || null;
 }
 
-async function createApplication(userId) {
+async function createApplication(userId, { onBeforeCommit } = {}) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
   await transaction.begin();
@@ -130,17 +132,27 @@ async function createApplication(userId) {
     `);
 
     const applicationId = result.recordset[0].ApplicationId;
+    const application = await findById(applicationId, transaction);
+    const member = await findMemberByUserId(userId, transaction);
+    application.member = member;
+
+    if (typeof onBeforeCommit === 'function') {
+      await onBeforeCommit({ application, member, transaction });
+    }
+
     await transaction.commit();
-    return findById(applicationId);
+    return application;
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
 }
 
-async function findById(applicationId) {
-  const pool = await getPool();
-  const result = await pool.request().input('ApplicationId', sql.Int, applicationId).query(`
+async function findById(applicationId, transaction) {
+  const request = transaction
+    ? new sql.Request(transaction)
+    : (await getPool()).request();
+  const result = await request.input('ApplicationId', sql.Int, applicationId).query(`
     ${applicationSelect}
     WHERE ma.ApplicationId = @ApplicationId
   `);
@@ -196,15 +208,15 @@ async function listApplications({ q, status, page = 1, limit = 20 } = {}) {
   };
 }
 
-async function approve(applicationId, reviewerId) {
-  return review(applicationId, reviewerId, 'APPROVED', null);
+async function approve(applicationId, reviewerId, options) {
+  return review(applicationId, reviewerId, 'APPROVED', null, options);
 }
 
-async function reject(applicationId, reviewerId, reason) {
-  return review(applicationId, reviewerId, 'REJECTED', reason);
+async function reject(applicationId, reviewerId, reason, options) {
+  return review(applicationId, reviewerId, 'REJECTED', reason, options);
 }
 
-async function review(applicationId, reviewerId, status, reason) {
+async function review(applicationId, reviewerId, status, reason, { onBeforeCommit } = {}) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
   const decisionAt = new Date();
@@ -213,7 +225,11 @@ async function review(applicationId, reviewerId, status, reason) {
   try {
     const current = await new sql.Request(transaction)
       .input('ApplicationId', sql.Int, applicationId)
-      .query('SELECT TOP 1 ApplicationId, UserId, Status FROM MembershipApplications WHERE ApplicationId = @ApplicationId');
+      .query(`
+        SELECT TOP 1 ApplicationId, UserId, Status
+        FROM MembershipApplications WITH (UPDLOCK, HOLDLOCK)
+        WHERE ApplicationId = @ApplicationId
+      `);
 
     const row = current.recordset[0];
     if (!row) {
@@ -226,7 +242,7 @@ async function review(applicationId, reviewerId, status, reason) {
       return { invalidStatus: row.Status };
     }
 
-    await new sql.Request(transaction)
+    const applicationUpdate = await new sql.Request(transaction)
       .input('ApplicationId', sql.Int, applicationId)
       .input('ReviewerId', sql.Int, reviewerId)
       .input('ReviewNote', sql.NVarChar(500), reason || null)
@@ -238,7 +254,13 @@ async function review(applicationId, reviewerId, status, reason) {
             ReviewedBy = @ReviewerId,
             ReviewNote = @ReviewNote
         WHERE ApplicationId = @ApplicationId
+          AND Status = 'PENDING'
       `);
+
+    if (applicationUpdate.rowsAffected?.[0] !== 1) {
+      await transaction.rollback();
+      return { invalidStatus: row.Status };
+    }
 
     await new sql.Request(transaction)
       .input('UserId', sql.Int, row.UserId)
@@ -259,8 +281,17 @@ async function review(applicationId, reviewerId, status, reason) {
           VALUES (@UserId, '${status}', ${status === 'APPROVED' ? '@DecisionAt' : 'NULL'}, ${status === 'APPROVED' ? '@ReviewerId' : 'NULL'}, GETDATE(), GETDATE());
       `);
 
+    const application = await findById(applicationId, transaction);
+    const member = await findMemberByUserId(row.UserId, transaction);
+    application.member = member;
+    application.decisionAt = decisionAt;
+
+    if (typeof onBeforeCommit === 'function') {
+      await onBeforeCommit({ application, member, decisionAt, transaction });
+    }
+
     await transaction.commit();
-    return findById(applicationId);
+    return application;
   } catch (error) {
     await transaction.rollback();
     throw error;

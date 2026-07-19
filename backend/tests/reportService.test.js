@@ -32,8 +32,17 @@ describe('FE12 report service coverage', () => {
     expect(auditLogRepository.create).toHaveBeenCalledTimes(3);
     expect(auditLogRepository.create).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ userId: LIBRARIAN.userId, action: 'REPORT_BORROWING_VIEW' })
+      expect.objectContaining({
+        userId: LIBRARIAN.userId,
+        action: 'REPORT_BORROWING_VIEW',
+        metadata: {
+          reportType: 'BORROWING',
+          result: 'SUCCESS',
+          timestamp: expect.anything(),
+        },
+      })
     );
+    expect(JSON.stringify(auditLogRepository.create.mock.calls)).not.toContain('BORROWED');
   });
 
   test('rejects missing and member roles for all staff report operations', async () => {

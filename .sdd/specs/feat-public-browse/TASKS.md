@@ -1,12 +1,12 @@
 # TASKS.md - FE01 Public / Browse
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - FE01 IMPLEMENTED AND AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
 
 Owner: Dung
 
 Updated: 2026-07-17
 
-Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation not started
+Workflow State: FE01-T001 through FE01-T007 are agent-side complete; FE01-T008 final review remains open
 
 ---
 
@@ -21,7 +21,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
 
 ## Ordered Tasks
 
-- [ ] **FE01-T001 - Add RED public browse contract tests.**
+- [x] **FE01-T001 - Add RED public browse contract tests.**
   - Maps to: BR-FE01-001 through BR-FE01-014; FR-FE01-001 through FR-FE01-013; AC-FE01-001 through AC-FE01-013; NFR-FE01-SEC-001 through NFR-FE01-SEC-004; NFR-FE01-PERF-001/002.
   - Files: create `backend/tests/publicBrowseRoutes.test.js`, create `backend/tests/publicBrowseRepository.test.js`, create `backend/tests/sql/publicBrowseAvailability.sqltest.js`, create `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE05 owner confirms the shared public response envelope and FE06 owner confirms the availability fixture contract.
@@ -29,7 +29,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify RED: focused commands fail only on the missing v0.3.1 public behavior or missing dedicated test fixtures, not on malformed test setup.
   - DoD: every BR/FR/AC is represented by an assertion or an explicit integration test mapping, including SQL latest-commit availability and frontend unavailable/null states.
 
-- [ ] **FE01-T002 - Reconcile canonical public route and validation boundary.**
+- [x] **FE01-T002 - Reconcile canonical public route and validation boundary.**
   - Maps to: BR-FE01-001 through BR-FE01-007, BR-FE01-013; FR-FE01-001 through FR-FE01-007, FR-FE01-011/012; AC-FE01-001 through AC-FE01-007, AC-FE01-010/011/012; NFR-FE01-SEC-001/003.
   - Files: `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
   - Dependency: FE01-T001 and FE05 shared-route boundary approval.
@@ -37,7 +37,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: focused route tests assert `200`, `400`, `404`, and safe generic `500` responses, no authentication requirement, no stack traces, and no public access to mutation routes.
   - DoD: `/api/public/*` aliases and FE01-owned `/api/books/categories` behavior are absent from the FE01 contract; shared FE05 management routes remain intact.
 
-- [ ] **FE01-T003 - Reconcile database-side public filtering, pagination, and availability.**
+- [x] **FE01-T003 - Reconcile database-side public filtering, pagination, and availability.**
   - Maps to: BR-FE01-003, BR-FE01-005, BR-FE01-006, BR-FE01-008, BR-FE01-011 through BR-FE01-013; FR-FE01-002/003/008/009/011; AC-FE01-002/003/009/010/011; NFR-FE01-PERF-001/002.
   - Files: `backend/src/repositories/bookRepository.js`, `backend/src/services/bookService.js`, `backend/tests/publicBrowseRepository.test.js`, `backend/tests/sql/publicBrowseAvailability.sqltest.js`.
   - Dependency: FE01-T001 and FE01-T002.
@@ -45,7 +45,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: repository tests inspect parameterized predicates, `OFFSET/FETCH`, stable ordering, empty search, missing optional joins, zero/one available-copy cases, and no full-catalog application filtering.
   - DoD: the query reflects the latest committed database state on every request and never uses a hardcoded or stale UI-only availability value.
 
-- [ ] **FE01-T004 - Implement public-safe list/detail projection and error behavior.**
+- [x] **FE01-T004 - Implement public-safe list/detail projection and error behavior.**
   - Maps to: BR-FE01-004, BR-FE01-007, BR-FE01-010, BR-FE01-014; FR-FE01-004 through FR-FE01-006, FR-FE01-010/013; AC-FE01-004 through AC-FE01-008, AC-FE01-012/013; NFR-FE01-SEC-002/003/004.
   - Files: `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/repositories/bookRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
   - Dependency: FE01-T002 and FE01-T003.
@@ -53,7 +53,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: route tests assert exact public field allowlists, null preservation, hidden-book behavior, malformed-versus-missing ID behavior, and generic database failure responses.
   - DoD: no public response contains internal copy counts, staff fields, protected records, SQL details, or stack traces.
 
-- [ ] **FE01-T005 - Add the public browse API client and server-backed HomePage data flow.**
+- [x] **FE01-T005 - Add the public browse API client and server-backed HomePage data flow.**
   - Maps to: FR-FE01-001 through FR-FE01-005, FR-FE01-008 through FR-FE01-013; AC-FE01-001 through AC-FE01-005, AC-FE01-009/010/013; NFR-FE01-UX-001/002.
   - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE01-T004 and the approved public response envelope.
@@ -62,7 +62,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: frontend tests inspect request URLs/parameters, list/detail loading, refresh after query changes, and safe handling of API errors.
   - DoD: HomePage no longer treats local mock arrays, local fake borrow completion, or legacy category fetches as FE01 data sources.
 
-- [ ] **FE01-T006 - Complete public browse loading, empty, unavailable, and null-metadata states.**
+- [x] **FE01-T006 - Complete public browse loading, empty, unavailable, and null-metadata states.**
   - Maps to: BR-FE01-002, BR-FE01-004, BR-FE01-008, BR-FE01-014; FR-FE01-001, FR-FE01-003 through FR-FE01-005, FR-FE01-010/013; AC-FE01-001, AC-FE01-003 through AC-FE01-005, AC-FE01-009/013; NFR-FE01-UX-001/002.
   - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE01-T005.
@@ -71,7 +71,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: focused frontend tests cover a public guest, empty search, no matches, unavailable book, null metadata, missing detail, and safe generic error.
   - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions.
 
-- [ ] **FE01-T007 - Close API documentation, test plan, and traceability.**
+- [x] **FE01-T007 - Close API documentation, test plan, and traceability.**
   - Maps to: all FE01 BR/FR/AC/NFR IDs and the Definition of Done.
   - Files: `backend/src/docs/openapi.yaml`, `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`, `.sdd/specs/feat-public-browse/SPEC.md` only if the shared response envelope is formally clarified before implementation.
   - Dependency: FE01-T001 through FE01-T006.
@@ -79,7 +79,7 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
   - Verify: `rg` confirms every FE01 BR/FR/AC ID maps to a task and test; no `/api/public/*`, category-endpoint, exact-copy-count, or stale `Đã mượn` contract remains in active FE01 docs.
   - DoD: documentation never claims implementation or test completion without recorded evidence.
 
-- [ ] **FE01-T008 - Pass focused validation and human review.**
+- [~] **FE01-T008 - Pass focused validation and human review.**
   - Maps to: all FE01 requirements and project Definition of Done.
   - Files: all FE01 implementation/test files changed by T001-T007 and `.sdd/specs/feat-public-browse/CHANGELOG.md`.
   - Dependency: FE01-T007.
@@ -114,8 +114,8 @@ Workflow State: SPEC v0.3.1 and implementation tasks approved; implementation no
 
 ## Completion Gate
 
-- [ ] FE01-T001 through FE01-T008 are complete and independently reviewed.
-- [ ] Focused backend, SQL, frontend, traceability, and diff checks pass.
+- [~] FE01-T001 through FE01-T007 are complete; FE01-T008 awaits human integration review.
+- [x] Focused backend, SQL, frontend, traceability, and diff checks pass.
 - [ ] FE05 owner confirms shared public catalog response compatibility.
 - [ ] FE06 owner confirms availability aggregation and no copy mutation.
 - [ ] Nhat confirms final public-safe DTO, guest UX states, and read-only boundary.

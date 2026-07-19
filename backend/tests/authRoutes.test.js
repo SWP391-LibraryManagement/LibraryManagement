@@ -11,12 +11,19 @@ const { makeInMemoryAuthDependencies } = require('./helpers/inMemoryAuthReposito
 
 const FIXED_NOW = new Date('2026-07-15T02:00:00.000Z');
 
-function makeTestApp({ clock } = {}) {
-  const dependencies = makeInMemoryAuthDependencies();
+function makeTestApp({ clock, dependencyOptions } = {}) {
+  const dependencies = makeInMemoryAuthDependencies(dependencyOptions);
   const authService = createAuthService({ ...dependencies, clock });
   const app = createApp({ authService });
+  app.locals.authTestDependencies = dependencies;
 
   return { app, dependencies };
+}
+
+function capturedOtp(app) {
+  const generatedOtp = app.locals.authTestDependencies.state.generatedOtps.at(-1);
+  expect(generatedOtp).toEqual(expect.any(String));
+  return generatedOtp;
 }
 
 async function createPendingSetupAccount(dependencies, overrides = {}) {
@@ -52,10 +59,11 @@ async function registerAndVerify(app, email = 'member@example.test', password = 
     });
 
   expect(registerResponse.status).toBe(201);
+  const verificationOtp = capturedOtp(app);
 
   const verifyResponse = await request(app)
     .post('/api/auth/verify-email')
-    .send({ token: registerResponse.body.debugVerificationToken });
+    .send({ token: verificationOtp });
 
   expect(verifyResponse.status).toBe(200);
 
@@ -72,6 +80,207 @@ async function login(app, email = 'member@example.test', password = 'Password1!'
 }
 
 describe('FE02 auth vertical slice', () => {
+  // @spec BR-FE02-020 BR-FE02-021 FR-FE02-002 FR-FE02-022 AC-FE02-001
+  test('registration requests one FE10 verification OTP delivery using the persisted token ID', async () => {
+    const { app, dependencies } = makeTestApp();
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'requester-register@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(201);
+    const token = dependencies.state.tokens.find((item) => item.tokenType === 'EMAIL_VERIFY');
+    expect(dependencies.state.notificationRequests).toEqual([
+      {
+        type: 'ACCOUNT_VERIFICATION',
+        channel: 'EMAIL',
+        userId: 1,
+        recipientEmail: 'requester-register@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { otp: '123456', expiresInMinutes: 1440 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: token.tokenId,
+        idempotencyKey: `FE02:ACCOUNT_VERIFICATION:${token.tokenId}`,
+      },
+    ]);
+    expect(dependencies.state.notifications).toHaveLength(0);
+    expect(dependencies.state.directEmails).toHaveLength(0);
+    expect(response.body.debugOtp).toBeUndefined();
+    expect(response.body.debugVerificationToken).toBeUndefined();
+  });
+
+  // @spec BR-FE02-020 BR-FE02-021 FR-FE02-002 FR-FE02-022 AC-FE02-001
+  test('verification resend creates a new token-ID requester event without direct delivery', async () => {
+    const { app, dependencies } = makeTestApp();
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'requester-resend@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      })
+      .expect(201);
+
+    dependencies.state.notificationRequests.length = 0;
+    dependencies.state.notifications.length = 0;
+    dependencies.state.directEmails.length = 0;
+
+    const response = await request(app)
+      .post('/api/auth/resend-verification')
+      .send({ email: 'requester-resend@example.test' });
+
+    expect(response.status).toBe(200);
+    const token = dependencies.state.tokens.at(-1);
+    expect(token.tokenId).toBe(2);
+    expect(dependencies.state.notificationRequests).toEqual([
+      {
+        type: 'ACCOUNT_VERIFICATION',
+        channel: 'EMAIL',
+        userId: 1,
+        recipientEmail: 'requester-resend@example.test',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        templateData: { otp: '234567', expiresInMinutes: 1440 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: token.tokenId,
+        idempotencyKey: `FE02:ACCOUNT_VERIFICATION:${token.tokenId}`,
+      },
+    ]);
+    expect(dependencies.state.notifications).toHaveLength(0);
+    expect(dependencies.state.directEmails).toHaveLength(0);
+    expect(response.body.debugOtp).toBeUndefined();
+    expect(response.body.debugVerificationToken).toBeUndefined();
+  });
+
+  // @spec BR-FE02-020 BR-FE02-021 FR-FE02-011 FR-FE02-022 AC-FE02-014
+  test('forgot password requests one FE10 reset OTP delivery using the persisted token ID', async () => {
+    const { app, dependencies } = makeTestApp();
+    const user = await dependencies.userRepository.createRegisteredUser({
+      username: 'requester-reset',
+      email: 'requester-reset@example.test',
+      passwordHash: await bcrypt.hash('Password1!', 4),
+      phoneNumber: null,
+      fullName: 'Requester Reset',
+    });
+    await dependencies.userRepository.markEmailVerified(user.userId);
+
+    const response = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'requester-reset@example.test' });
+
+    expect(response.status).toBe(200);
+    const token = dependencies.state.tokens.find((item) => item.tokenType === 'PASSWORD_RESET');
+    expect(dependencies.state.notificationRequests).toEqual([
+      {
+        type: 'PASSWORD_RESET',
+        channel: 'EMAIL',
+        userId: user.userId,
+        recipientEmail: 'requester-reset@example.test',
+        templateKey: 'PASSWORD_RESET',
+        templateData: { otp: '123456', expiresInMinutes: 15 },
+        sourceEntityType: 'AuthToken',
+        sourceEntityId: token.tokenId,
+        idempotencyKey: `FE02:PASSWORD_RESET:${token.tokenId}`,
+      },
+    ]);
+    expect(dependencies.state.notifications).toHaveLength(0);
+    expect(dependencies.state.directEmails).toHaveLength(0);
+    expect(response.body.debugOtp).toBeUndefined();
+    expect(response.body.debugResetToken).toBeUndefined();
+  });
+
+  // @spec BR-FE02-022 FR-FE02-023 AC-FE02-019
+  test('verification requester exception does not roll back registration or expose the OTP', async () => {
+    const { app, dependencies } = makeTestApp();
+    dependencies.state.notificationRequesterControl.error = new Error(
+      'provider failure containing otp 123456'
+    );
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'requester-failure-register@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      userId: 1,
+      email: 'requester-failure-register@example.test',
+      message: 'Verification email sent',
+    });
+    expect(dependencies.state.users).toHaveLength(1);
+    expect(dependencies.state.users[0].status).toBe('INACTIVE');
+    expect(dependencies.state.tokens).toEqual([
+      expect.objectContaining({ tokenId: 1, tokenType: 'EMAIL_VERIFY' }),
+    ]);
+    expect(dependencies.state.notificationRequests).toHaveLength(1);
+    expect(JSON.stringify({ body: response.body, audits: dependencies.state.auditLogs })).not.toContain(
+      '123456'
+    );
+  });
+
+  // @spec BR-FE02-022 FR-FE02-023 AC-FE02-019
+  test('password-reset requester exception keeps the generic response and persisted reset token', async () => {
+    const { app, dependencies } = makeTestApp();
+    const user = await dependencies.userRepository.createRegisteredUser({
+      username: 'requester-failure-reset',
+      email: 'requester-failure-reset@example.test',
+      passwordHash: await bcrypt.hash('Password1!', 4),
+      phoneNumber: null,
+      fullName: 'Requester Failure Reset',
+    });
+    await dependencies.userRepository.markEmailVerified(user.userId);
+    dependencies.state.notificationRequesterControl.error = new Error(
+      'provider failure containing otp 123456'
+    );
+
+    const response = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'requester-failure-reset@example.test' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'Password reset email sent' });
+    expect(dependencies.state.tokens).toEqual([
+      expect.objectContaining({ tokenId: 1, tokenType: 'PASSWORD_RESET' }),
+    ]);
+    expect(dependencies.state.notificationRequests).toHaveLength(1);
+    expect(JSON.stringify({ body: response.body, audits: dependencies.state.auditLogs })).not.toContain(
+      '123456'
+    );
+  });
+
+  // @spec BR-FE02-022 FR-FE02-023 AC-FE02-019
+  test('safe FE10 FAILED status preserves public verification and reset semantics', async () => {
+    const registerSetup = makeTestApp({ dependencyOptions: { notificationStatus: 'FAILED' } });
+    const registered = await request(registerSetup.app)
+      .post('/api/auth/register')
+      .send({
+        email: 'requester-failed-status@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+    expect(registered.status).toBe(201);
+    expect(registered.body).toEqual(
+      expect.objectContaining({ message: 'Verification email sent' })
+    );
+
+    const user = registerSetup.dependencies.state.users[0];
+    await registerSetup.dependencies.userRepository.markEmailVerified(user.userId);
+    const forgot = await request(registerSetup.app)
+      .post('/api/auth/forgot-password')
+      .send({ email: user.email });
+    expect(forgot.status).toBe(200);
+    expect(forgot.body).toEqual({ message: 'Password reset email sent' });
+    expect(registerSetup.dependencies.state.tokens.at(-1)).toEqual(
+      expect.objectContaining({ tokenType: 'PASSWORD_RESET' })
+    );
+  });
+
   test('register -> verify email -> login -> me succeeds', async () => {
     const { app, dependencies } = makeTestApp();
 
@@ -90,13 +299,12 @@ describe('FE02 auth vertical slice', () => {
       email: 'member@example.test',
       message: 'Verification email sent',
     });
-    expect(registerResponse.body.debugVerificationToken).toEqual(expect.any(String));
     expect(dependencies.state.users[0].status).toBe('INACTIVE');
-    expect(dependencies.state.notifications.at(-1).templateCode).toBe('ACCOUNT_VERIFICATION');
+    const verificationOtp = capturedOtp(app);
 
     const verifyResponse = await request(app)
       .post('/api/auth/verify-email')
-      .send({ token: registerResponse.body.debugVerificationToken });
+      .send({ token: verificationOtp });
 
     expect(verifyResponse.status).toBe(200);
     expect(verifyResponse.body.message).toBe('Account verified. You can now login.');
@@ -144,9 +352,10 @@ describe('FE02 auth vertical slice', () => {
         confirmPassword: 'Password1!',
       });
 
+    const verificationOtp = capturedOtp(app);
     await request(app)
       .post('/api/auth/verify-email')
-      .send({ token: registerResponse.body.debugVerificationToken });
+      .send({ token: verificationOtp });
 
     const loginResponse = await request(app)
       .post('/api/auth/login')
@@ -182,28 +391,26 @@ describe('FE02 auth vertical slice', () => {
         password: 'Password1!',
         confirmPassword: 'Password1!',
       });
+    const oldVerificationOtp = capturedOtp(app);
 
     const resendResponse = await request(app)
       .post('/api/auth/resend-verification')
       .send({ email: 'resend@example.test' });
 
     expect(resendResponse.status).toBe(200);
-    expect(resendResponse.body).toMatchObject({
-      message: 'Verification email sent',
-      debugVerificationToken: expect.any(String),
-    });
-    expect(dependencies.state.notifications.at(-1).templateCode).toBe('ACCOUNT_VERIFICATION');
+    expect(resendResponse.body.message).toBe('Verification email sent');
     expect(dependencies.state.tokens[0].revokedAt).toEqual(expect.any(Date));
+    const newVerificationOtp = capturedOtp(app);
 
     const oldTokenResponse = await request(app)
       .post('/api/auth/verify-email')
-      .send({ token: registerResponse.body.debugVerificationToken });
+      .send({ token: oldVerificationOtp });
 
     expect(oldTokenResponse.status).toBe(400);
 
     const newTokenResponse = await request(app)
       .post('/api/auth/verify-email')
-      .send({ token: resendResponse.body.debugVerificationToken });
+      .send({ token: newVerificationOtp });
 
     expect(newTokenResponse.status).toBe(200);
   });
@@ -223,6 +430,7 @@ describe('FE02 auth vertical slice', () => {
     expect(refreshResponse.body).toMatchObject({
       accessToken: expect.any(String),
       expiresIn: 900,
+      refreshToken: loginResponse.body.refreshToken,
     });
 
     const logoutResponse = await request(app)
@@ -298,16 +506,13 @@ describe('FE02 auth vertical slice', () => {
       .send({ email: 'reset@example.test' });
 
     expect(forgotResponse.status).toBe(200);
-    expect(forgotResponse.body).toMatchObject({
-      message: 'Password reset email sent',
-      debugResetToken: expect.any(String),
-    });
-    expect(dependencies.state.notifications.at(-1).templateCode).toBe('PASSWORD_RESET');
+    expect(forgotResponse.body.message).toBe('Password reset email sent');
+    const resetOtp = capturedOtp(app);
 
     const resetResponse = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: forgotResponse.body.debugResetToken,
+        token: resetOtp,
         newPassword: 'ResetPassword1!',
       });
 
@@ -317,7 +522,7 @@ describe('FE02 auth vertical slice', () => {
     const reusedTokenResponse = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: forgotResponse.body.debugResetToken,
+        token: resetOtp,
         newPassword: 'AnotherPassword1!',
       });
 
@@ -403,12 +608,13 @@ describe('FE02 auth vertical slice', () => {
         password: 'Password1!',
         confirmPassword: 'Password1!',
       });
+    const verificationOtp = capturedOtp(app);
 
     dependencies.state.tokens[0].expiresAt = new Date(Date.now() - 60_000);
 
     const response = await request(app)
       .post('/api/auth/verify-email')
-      .send({ token: registerResponse.body.debugVerificationToken });
+      .send({ token: verificationOtp });
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('EXPIRED_VERIFICATION_TOKEN');
@@ -421,6 +627,7 @@ describe('FE02 auth vertical slice', () => {
     const forgotResponse = await request(app)
       .post('/api/auth/forgot-password')
       .send({ email: 'expired-reset@example.test' });
+    const resetOtp = capturedOtp(app);
 
     dependencies.state.tokens.find((token) => token.tokenType === 'PASSWORD_RESET').expiresAt =
       new Date(Date.now() - 60_000);
@@ -428,7 +635,7 @@ describe('FE02 auth vertical slice', () => {
     const response = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: forgotResponse.body.debugResetToken,
+        token: resetOtp,
         newPassword: 'ResetPassword1!',
       });
 

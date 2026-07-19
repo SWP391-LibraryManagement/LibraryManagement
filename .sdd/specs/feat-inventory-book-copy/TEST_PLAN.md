@@ -1,8 +1,8 @@
 ﻿# FE06 Test Plan - Inventory / Book Copy Management
 
-Version: 0.2.0
-Status: DRAFT - deferred (TD-005); planned targets only
-Last Updated: 2026-06-25
+Version: 0.3.0
+Status: READY FOR REVIEW - focused and live SQL evidence recorded; acceptance pending
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-inventory-book-copy/SPEC.md`
 Feature IDs: `BR-FE06-*`, `FR-FE06-*`, `AC-FE06-*`
@@ -24,7 +24,7 @@ Physical book copy creation, barcode/identifier uniqueness, copy status, availab
 
 ## 3. API / Integration Test Targets
 
-- Create/list/update/deactivate copy happy paths once endpoints exist.
+- Create/list/update/status/deactivate copy happy paths.
 - Duplicate barcode rejected.
 - Invalid status transition rejected.
 - Forbidden role rejected.
@@ -39,13 +39,18 @@ Physical book copy creation, barcode/identifier uniqueness, copy status, availab
 
 ## 5. Current Evidence
 
-- Inventory report endpoint exists under FE12 (`GET /reports/inventory`).
-- Dedicated FE06 copy management routes were not found in current backend route inventory.
+- Focused route tests: `31/31` pass.
+- FE06 frontend contract tests: `6/6` pass.
+- FE06 SQL contract/concurrency suite: `6/6` pass, including the mutable rowversion/transaction case on disposable SQL Server.
+- Full backend `633/633` and frontend `124/124` pass.
+- Coverage thresholds pass: statements 92.51%, branches 82.46%, functions 97.10%, lines 92.44%.
+- Frontend lint/build, OpenAPI parse, traceability `24/24`, import smoke, and diff checks pass.
 
 ## 6. Gaps
 
-- FE06 `PLAN.md` and `TASKS.md` are `NOT STARTED`.
-- Dedicated copy management API/tests need to be planned or confirmed.
+- Disposable SQL Server execution, two-pass FE06 migration application, and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Browser/L4 acceptance plus FE05/FE07/FE08 ownership confirmation remain open.
+- Human B7 integration review remains mandatory before commit or merge.
 
 ## 7. Required Commands / Evidence Before Merge
 

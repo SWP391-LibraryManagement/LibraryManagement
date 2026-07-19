@@ -2,6 +2,8 @@ import axios from 'axios';
 import {
   getBorrowingErrorMessage,
   getLibraryFeatureErrorMessage,
+  getInventoryErrorMessage,
+  getMembershipErrorMessage,
   getReportErrorMessage,
   getReservationErrorMessage,
 } from './apiErrorMessages';
@@ -92,9 +94,37 @@ function authorizedReservationRequest(config, fallbackMessage) {
   return authorizedRequest(config, fallbackMessage, getReservationErrorMessage);
 }
 
+function authorizedMembershipRequest(config, fallbackMessage) {
+  return authorizedRequest(config, fallbackMessage, getMembershipErrorMessage);
+}
+
 function authorizedReportRequest(config, fallbackMessage) {
   return authorizedRequest(config, fallbackMessage, getReportErrorMessage);
 }
+
+async function publicBrowseRequest(request, fallbackMessage) {
+  try {
+    const response = await request();
+    return response.data;
+  } catch (error) {
+    throw new Error(getLibraryFeatureErrorMessage(error, fallbackMessage), { cause: error });
+  }
+}
+
+export const publicBrowseApi = {
+  list(params = {}) {
+    return publicBrowseRequest(
+      () => api.get('/books', { params }),
+      'Không thể tải danh mục sách công khai.',
+    );
+  },
+  detail(bookId) {
+    return publicBrowseRequest(
+      () => api.get(`/books/${bookId}`),
+      'Không thể tải chi tiết sách.',
+    );
+  },
+};
 
 export const borrowingApi = {
   createRequest(copyIds) {
@@ -164,25 +194,44 @@ export const reportApi = {
 
 export const inventoryApi = {
   list(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/inventory', params }, 'Không thể tải dữ liệu kho sách.');
+    return authorizedRequest({ method: 'get', url: '/inventory', params }, 'Không thể tải dữ liệu kho sách.', getInventoryErrorMessage);
   },
   getCopy(copyId) {
-    return authorizedRequest({ method: 'get', url: `/book-copies/${copyId}` }, 'Không thể tải thông tin bản sao.');
+    return authorizedRequest({ method: 'get', url: `/book-copies/${copyId}` }, 'Không thể tải thông tin bản sao.', getInventoryErrorMessage);
   },
   getByBarcode(barcode) {
-    return authorizedRequest({ method: 'get', url: `/book-copies/barcode/${barcode}` }, 'Không thể tìm bản sao theo mã vạch.');
+    return authorizedRequest({ method: 'get', url: `/book-copies/barcode/${barcode}` }, 'Không thể tìm bản sao theo mã vạch.', getInventoryErrorMessage);
   },
   createCopy(bookId, data) {
-    return authorizedRequest({ method: 'post', url: `/books/${bookId}/copies`, data }, 'Không thể thêm bản sao.');
+    return authorizedRequest({
+      method: 'post',
+      url: `/books/${bookId}/copies`,
+      data: { barcode: data.barcode, location: data.location },
+    }, 'Không thể thêm bản sao.', getInventoryErrorMessage);
   },
-  updateCopy(copyId, data) {
-    return authorizedRequest({ method: 'put', url: `/book-copies/${copyId}`, data }, 'Không thể cập nhật bản sao.');
+  updateCopy(copyId, data, version) {
+    return authorizedRequest({
+      method: 'put',
+      url: `/book-copies/${copyId}`,
+      headers: { 'If-Match': version },
+      data,
+    }, 'Không thể cập nhật bản sao.', getInventoryErrorMessage);
   },
-  updateStatus(copyId, data) {
-    return authorizedRequest({ method: 'patch', url: `/book-copies/${copyId}/status`, data }, 'Không thể cập nhật trạng thái bản sao.');
+  updateStatus(copyId, data, version) {
+    return authorizedRequest({
+      method: 'patch',
+      url: `/book-copies/${copyId}/status`,
+      headers: { 'If-Match': version },
+      data,
+    }, 'Không thể cập nhật trạng thái bản sao.', getInventoryErrorMessage);
   },
-  deactivate(copyId) {
-    return authorizedRequest({ method: 'delete', url: `/book-copies/${copyId}` }, 'Không thể ngừng sử dụng bản sao.');
+  deactivate(copyId, reason, version) {
+    return authorizedRequest({
+      method: 'delete',
+      url: `/book-copies/${copyId}`,
+      headers: { 'If-Match': version },
+      data: { reason },
+    }, 'Không thể ngừng sử dụng bản sao.', getInventoryErrorMessage);
   },
 };
 
@@ -209,18 +258,18 @@ export const fineApi = {
 
 export const membershipApi = {
   getMyStatus() {
-    return authorizedRequest({ method: 'get', url: '/membership/status/me' }, 'Không thể tải trạng thái hội viên.');
+    return authorizedMembershipRequest({ method: 'get', url: '/membership/status/me' }, 'Không thể tải trạng thái hội viên.');
   },
   apply(data = {}) {
-    return authorizedRequest({ method: 'post', url: '/membership/applications', data }, 'Không thể nộp đơn đăng ký hội viên.');
+    return authorizedMembershipRequest({ method: 'post', url: '/membership/applications', data }, 'Không thể nộp đơn đăng ký hội viên.');
   },
   listApplications(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/membership/applications', params }, 'Không thể tải danh sách đơn đăng ký hội viên.');
+    return authorizedMembershipRequest({ method: 'get', url: '/membership/applications', params }, 'Không thể tải danh sách đơn đăng ký hội viên.');
   },
   approve(applicationId) {
-    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/approve`, data: {} }, 'Không thể duyệt đơn đăng ký hội viên.');
+    return authorizedMembershipRequest({ method: 'patch', url: `/membership/applications/${applicationId}/approve`, data: {} }, 'Không thể duyệt đơn đăng ký hội viên.');
   },
   reject(applicationId, reason) {
-    return authorizedRequest({ method: 'patch', url: `/membership/applications/${applicationId}/reject`, data: { reason } }, 'Không thể từ chối đơn đăng ký hội viên.');
+    return authorizedMembershipRequest({ method: 'patch', url: `/membership/applications/${applicationId}/reject`, data: { reason } }, 'Không thể từ chối đơn đăng ký hội viên.');
   },
 };

@@ -9,7 +9,7 @@ function hasAnyRole(user, allowedRoles) {
   return allowedRoles.map(normalizeRole).some((role) => currentRoles.includes(role));
 }
 
-function createReportService({ reportRepository, auditLogRepository } = {}) {
+function createReportService({ reportRepository, auditLogRepository, clock = () => new Date() } = {}) {
   if (!reportRepository) {
     reportRepository = require('../repositories/reportRepository');
   }
@@ -46,12 +46,22 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
     }
   }
 
+  // @spec FR-FE12-009
+  function successMetadata(reportType) {
+    return {
+      reportType,
+      result: 'SUCCESS',
+      timestamp: clock().toISOString(),
+    };
+  }
+
   async function getBorrowingReport(filters, actor, context = {}) {
     requireStaff(actor);
     const report = await reportRepository.getBorrowingReport(filters);
 
     await writeAudit(context, 'REPORT_BORROWING_VIEW', {
       userId: actor.userId,
+      metadata: successMetadata('BORROWING'),
     });
 
     return report;
@@ -63,6 +73,7 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
 
     await writeAudit(context, 'REPORT_INVENTORY_VIEW', {
       userId: actor.userId,
+      metadata: successMetadata('INVENTORY'),
     });
 
     return report;
@@ -74,6 +85,7 @@ function createReportService({ reportRepository, auditLogRepository } = {}) {
 
     await writeAudit(context, 'REPORT_USERS_VIEW', {
       userId: actor.userId,
+      metadata: successMetadata('USERS'),
     });
 
     return report;

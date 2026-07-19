@@ -51,7 +51,8 @@ function mapManagedUser(row) {
     return null;
   }
 
-  return {
+  const roles = mapManagedRoles(row.Roles);
+  const result = {
     userId: row.UserId,
     username: row.Username,
     email: row.Email,
@@ -61,9 +62,16 @@ function mapManagedUser(row) {
     address: row.Address,
     lastLoginAt: row.LastLoginAt,
     createdAt: row.CreatedAt,
-    updatedAt: row.UpdatedAt,
-    roles: mapManagedRoles(row.Roles),
+    updatedAt: row.EffectiveUpdatedAt ?? row.UpdatedAt ?? row.CreatedAt,
+    roles,
   };
+
+  if (roles.includes('LIBRARIAN')) {
+    result.department = row.Department ?? null;
+    result.specialization = row.Specialization ?? null;
+  }
+
+  return result;
 }
 
 function mapManagedUserDetail(row) {
@@ -131,9 +139,11 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        u.UpdatedAt,
+        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
+        up.Department,
+        up.Specialization,
         roleList.Roles,
         COUNT(*) OVER() AS TotalCount
       FROM Users u
@@ -160,6 +170,8 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
         u.UpdatedAt,
         up.FullName,
         up.Address,
+        up.Department,
+        up.Specialization,
         roleList.Roles
     )
     SELECT *
@@ -196,9 +208,11 @@ async function getManagedUserById(userId) {
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        u.UpdatedAt,
+        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
+        up.Department,
+        up.Specialization,
         roleList.Roles
       FROM Users u
       LEFT JOIN UserProfiles up ON u.UserId = up.UserId
@@ -224,6 +238,8 @@ async function getManagedUserById(userId) {
         u.UpdatedAt,
         up.FullName,
         up.Address,
+        up.Department,
+        up.Specialization,
         roleList.Roles
     `);
 
@@ -245,9 +261,11 @@ async function getManagedUserDetailById(userId) {
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        u.UpdatedAt,
+        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
+        up.Department,
+        up.Specialization,
         roleList.Roles,
         COALESCE((
           SELECT COUNT(*)
@@ -290,7 +308,7 @@ async function findByEmail(email) {
   const pool = await getPool();
   const result = await pool
     .request()
-    .input('Email', sql.NVarChar(100), email)
+    .input('Email', sql.NVarChar(255), email)
     .query('SELECT TOP 1 * FROM Users WHERE LOWER(Email) = LOWER(@Email)');
 
   return mapUser(result.recordset[0]);
@@ -310,7 +328,7 @@ async function findByEmailOrUsername(identifier) {
   const pool = await getPool();
   const result = await pool
     .request()
-    .input('Identifier', sql.NVarChar(100), identifier)
+    .input('Identifier', sql.NVarChar(255), identifier)
     .query(`
       SELECT TOP 1 *
       FROM Users
@@ -383,7 +401,7 @@ async function createRegisteredUser({ username, email, passwordHash, phoneNumber
   try {
     const userResult = await new sql.Request(transaction)
       .input('Username', sql.NVarChar(50), username)
-      .input('Email', sql.NVarChar(100), email)
+      .input('Email', sql.NVarChar(255), email)
       .input('PasswordHash', sql.NVarChar(255), passwordHash)
       .input('Phone', sql.NVarChar(20), phoneNumber || null)
       .query(`
@@ -430,7 +448,7 @@ async function createAdminManagedUser({ username, email, passwordHash, phone, fu
   try {
     const userResult = await new sql.Request(transaction)
       .input('Username', sql.NVarChar(50), username)
-      .input('Email', sql.NVarChar(100), email)
+      .input('Email', sql.NVarChar(255), email)
       .input('PasswordHash', sql.NVarChar(255), passwordHash)
       .input('Phone', sql.NVarChar(20), phone || null)
       .query(`
@@ -479,7 +497,7 @@ async function updateManagedUser(userId, updates) {
       const existing = await findById(userId);
       await new sql.Request(transaction)
         .input('UserId', sql.Int, userId)
-        .input('Email', sql.NVarChar(100), updates.email === undefined ? existing.email : updates.email)
+        .input('Email', sql.NVarChar(255), updates.email === undefined ? existing.email : updates.email)
         .input('Phone', sql.NVarChar(20), updates.phone === undefined ? existing.phone : updates.phone)
         .query(`
           UPDATE Users

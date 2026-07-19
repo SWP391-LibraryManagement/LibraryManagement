@@ -1,12 +1,12 @@
 # PLAN.md - FE05 Book Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: READY FOR REVIEW - FE05 reconciliation and live SQL complete; human gates pending
 
 Owner: Dung
 
-Updated: 2026-07-16
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.5.0 and implementation plan approved; implementation not started
+Workflow State: FE05-T001 through FE05-T008 executed in isolated worktree; merge-gate and human acceptance remain open
 
 > **For implementation agents:** Execute `TASKS.md` in order. Preserve FE05 catalog ownership, begin each behavior task with focused failing tests, and do not mutate FE06 copy lifecycle state from FE05.
 

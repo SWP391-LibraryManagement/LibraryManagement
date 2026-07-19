@@ -1,12 +1,12 @@
 # PLAN.md - FE04 Membership Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - RECONCILIATION AND LIVE SQL GREEN; HUMAN REVIEW PENDING
 
 Owner: Dat
 
-Updated: 2026-07-17
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.2.0 and implementation plan approved; implementation not started
+Workflow State: SPEC v0.2.1 implementation, cross-feature fan-in, and disposable SQL Server evidence are GREEN; final browser/human acceptance remains open
 
 > **For implementation agents:** Execute `TASKS.md` in order. Every behavior task starts with a failing focused test, adds the smallest implementation that satisfies the approved spec, and ends with the listed verification gate.
 
@@ -18,7 +18,7 @@ Reconcile the existing FE04 prototype with the approved canonical membership con
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-membership-management/SPEC.md` v0.2.0.
+- `.sdd/specs/feat-membership-management/SPEC.md` v0.2.1.
 - `.sdd/specs/feat-membership-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-membership-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
@@ -39,6 +39,16 @@ The repository already contains FE04 routes, controller, service, repository, va
 | FE10 delivery occurs once after commit and is non-blocking | The current service has no FE04-bound notification requester integration. |
 | Registered active users may apply/view status | Routes currently require the `MEMBER` role, which is not the same as an active registered account and can block pre-membership applicants. |
 | Applicant UI shows server truth | The page currently falls back to fabricated demo status/application data after API failure. |
+
+### 3.1 2026-07-19 Implementation Checkpoint
+
+- Canonical apply/status/re-application, atomic review/audit callbacks, FE04-bound post-commit
+  delivery, protected staff list, truthful frontend state, and all FE04 FR source tags are GREEN.
+- The filtered pending-only unique index is present in baseline/model/ADR and the idempotent
+  migration; static SQL contract tests pass.
+- Mutable SQL concurrency/rollback execution remains pending because no approved
+  `DB_SERVER`/`DB_NAME` plus `FE04_SQL_TEST_ALLOW_MUTATION=true` environment is available.
+- Human acceptance and FE07/FE08 integration confirmation remain mandatory before B7.
 
 ## 4. Scope
 

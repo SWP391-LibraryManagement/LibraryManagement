@@ -255,9 +255,15 @@ describe('FE11 user management routes', () => {
       .post('/api/users')
       .set('Authorization', 'Bearer token')
       .send({
-        email: 'new@example.test',
-        fullName: 'New Librarian',
-        type: 'librarian',
+        email: '  NEW@example.test  ',
+        username: '  new.librarian  ',
+        fullName: '  New Librarian  ',
+        type: ' LIBRARIAN ',
+        phone: ' 0900000000 ',
+        address: '  Main Library  ',
+        department: '  Reference  ',
+        specialization: '  Research Support  ',
+        ignored: 'must not reach the service',
       });
 
     expect(response.status).toBe(201);
@@ -268,9 +274,62 @@ describe('FE11 user management routes', () => {
       setupDeliveryStatus: 'SENT',
     });
     expect(userManagementService.createUser).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'new@example.test' }),
+      {
+        email: 'new@example.test',
+        username: 'new.librarian',
+        fullName: 'New Librarian',
+        type: 'librarian',
+        phone: '0900000000',
+        address: 'Main Library',
+        department: 'Reference',
+        specialization: 'Research Support',
+      },
       expect.objectContaining({ adminUserId: 99 })
     );
+  });
+
+  test.each([
+    [{ type: 'guest', email: 'new@example.test', fullName: 'New User' }, 'type'],
+    [{ type: 'member', email: 'invalid-email', fullName: 'New User' }, 'email'],
+    [{ type: 'member', email: `${'a'.repeat(243)}@example.test`, fullName: 'New User' }, 'email'],
+    [{ type: 'member', email: 'new@example.test', fullName: '' }, 'fullName'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'x'.repeat(101) }, 'fullName'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'New User', username: 'bad user' }, 'username'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'New User', phone: 'abc' }, 'phone'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'New User', address: 'x'.repeat(256) }, 'address'],
+    [{ type: 'librarian', email: 'new@example.test', fullName: 'New User', department: 'x'.repeat(101) }, 'department'],
+    [{ type: 'librarian', email: 'new@example.test', fullName: 'New User', specialization: 'x'.repeat(101) }, 'specialization'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'New User', department: 'Reference' }, 'department'],
+    [{ type: 'member', email: 'new@example.test', fullName: 'New User', specialization: 'Research' }, 'specialization'],
+  ])('POST /api/users rejects invalid create field %s', async (payload, field) => {
+    const userManagementService = { createUser: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .post('/api/users')
+      .set('Authorization', 'Bearer token')
+      .send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field })])
+    );
+    expect(userManagementService.createUser).not.toHaveBeenCalled();
+  });
+
+  test('POST /api/users authorizes before validating an invalid body', async () => {
+    const userManagementService = { createUser: jest.fn() };
+    const app = makeApp({ roles: ['MEMBER'], userManagementService });
+
+    const response = await request(app)
+      .post('/api/users')
+      .set('Authorization', 'Bearer token')
+      .send({ type: 'guest', email: 'invalid', fullName: '' });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.createUser).not.toHaveBeenCalled();
   });
 
   test('POST /api/users/:userId/resend-setup passes validated target and Admin context', async () => {
@@ -347,6 +406,136 @@ describe('FE11 user management routes', () => {
       ])
     );
     expect(userManagementService.resendSetup).not.toHaveBeenCalled();
+  });
+
+  test('PUT /api/users/:userId passes normalized optimistic update data', async () => {
+    const updatedUser = { userId: 7, fullName: 'Updated Name', roles: ['LIBRARIAN'] };
+    const userManagementService = { updateUser: jest.fn(async () => updatedUser) };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .put('/api/users/7')
+      .set('Authorization', 'Bearer token')
+      .send({
+        expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
+        email: ' LIBRARIAN@example.test ',
+        department: ' Reference ',
+        ignored: 'must not reach service',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(updatedUser);
+    expect(userManagementService.updateUser).toHaveBeenCalledWith(
+      7,
+      {
+        expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
+        email: 'librarian@example.test',
+        department: 'Reference',
+      },
+      expect.objectContaining({ adminUserId: 99 })
+    );
+  });
+
+  test.each([
+    ['0', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: 'Name' }, 'userId'],
+    ['7', { fullName: 'Name' }, 'expectedUpdatedAt'],
+    ['7', { expectedUpdatedAt: 'not-a-date', fullName: 'Name' }, 'expectedUpdatedAt'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z' }, '_error'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', email: 'invalid' }, 'email'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: '' }, 'fullName'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', department: 'x'.repeat(101) }, 'department'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', specialization: 'x'.repeat(101) }, 'specialization'],
+  ])('PUT /api/users/%s rejects invalid update payload', async (userId, payload, field) => {
+    const userManagementService = { updateUser: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .put(`/api/users/${userId}`)
+      .set('Authorization', 'Bearer token')
+      .send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field })])
+    );
+    expect(userManagementService.updateUser).not.toHaveBeenCalled();
+  });
+
+  test('PUT /api/users/:userId authorizes before validating the body', async () => {
+    const userManagementService = { updateUser: jest.fn() };
+    const app = makeApp({ roles: ['MEMBER'], userManagementService });
+
+    const response = await request(app)
+      .put('/api/users/0')
+      .set('Authorization', 'Bearer token')
+      .send({ expectedUpdatedAt: 'not-a-date' });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.updateUser).not.toHaveBeenCalled();
+  });
+
+  test('PATCH /api/users/:userId/status passes normalized optimistic deactivation data', async () => {
+    const deactivatedUser = { userId: 7, status: 'INACTIVE', roles: ['MEMBER'] };
+    const userManagementService = { updateStatus: jest.fn(async () => deactivatedUser) };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .patch('/api/users/7/status')
+      .set('Authorization', 'Bearer token')
+      .send({
+        status: ' inactive ',
+        expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
+        ignored: 'must not reach service',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(deactivatedUser);
+    expect(userManagementService.updateStatus).toHaveBeenCalledWith(
+      7,
+      {
+        status: 'INACTIVE',
+        expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
+      },
+      expect.objectContaining({ adminUserId: 99 })
+    );
+  });
+
+  test.each([
+    ['0', { status: 'INACTIVE', expectedUpdatedAt: '2026-07-19T08:00:00.000Z' }, 'userId'],
+    ['7', { status: 'ACTIVE', expectedUpdatedAt: '2026-07-19T08:00:00.000Z' }, 'status'],
+    ['7', { status: 'INACTIVE' }, 'expectedUpdatedAt'],
+    ['7', { status: 'INACTIVE', expectedUpdatedAt: 'not-a-date' }, 'expectedUpdatedAt'],
+  ])('PATCH /api/users/%s/status rejects invalid deactivation payload', async (userId, payload, field) => {
+    const userManagementService = { updateStatus: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .patch(`/api/users/${userId}/status`)
+      .set('Authorization', 'Bearer token')
+      .send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field })])
+    );
+    expect(userManagementService.updateStatus).not.toHaveBeenCalled();
+  });
+
+  test('PATCH /api/users/:userId/status authorizes before validation', async () => {
+    const userManagementService = { updateStatus: jest.fn() };
+    const app = makeApp({ roles: ['MEMBER'], userManagementService });
+
+    const response = await request(app)
+      .patch('/api/users/0/status')
+      .set('Authorization', 'Bearer token')
+      .send({ status: 'ACTIVE', expectedUpdatedAt: 'not-a-date' });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+    expect(userManagementService.updateStatus).not.toHaveBeenCalled();
   });
 
   test('POST /api/users/:userId/roles passes normalized IDs and Admin context', async () => {

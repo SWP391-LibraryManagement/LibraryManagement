@@ -11,6 +11,41 @@ function mapUser(row) {
   };
 }
 
+async function rollbackWith(transaction, outcome) {
+  await transaction.rollback();
+  return { outcome };
+}
+
+function getSqlErrorNumber(error) {
+  return error?.number ?? error?.originalError?.info?.number;
+}
+
+function isDeterministicEmailConflict(error) {
+  return [2601, 2627].includes(getSqlErrorNumber(error))
+    && /UX_Users_Email/i.test(String(error?.message || error?.originalError?.message || ''));
+}
+
+async function lockActingAdmin(transaction, adminUserId) {
+  const result = await new sql.Request(transaction)
+    .input('AdminUserId', sql.Int, adminUserId)
+    .query(`
+      SELECT
+        u.UserId,
+        u.Status,
+        CASE WHEN EXISTS (
+          SELECT 1
+          FROM UserRoles ur WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN Roles r WITH (UPDLOCK, HOLDLOCK) ON r.RoleId = ur.RoleId
+          WHERE ur.UserId = u.UserId
+            AND UPPER(r.RoleName) = 'ADMIN'
+        ) THEN 1 ELSE 0 END AS IsAdmin
+      FROM Users u WITH (UPDLOCK, HOLDLOCK)
+      WHERE u.UserId = @AdminUserId
+    `);
+
+  return result.recordset[0];
+}
+
 // @spec BR-FE11-024, FR-FE11-003, FR-FE11-009 - source state commits or rolls back together.
 async function createPendingAccount({
   username,
@@ -19,6 +54,8 @@ async function createPendingAccount({
   phone,
   fullName,
   address,
+  department,
+  specialization,
   roleName,
   tokenHash,
   expiresAt,
@@ -33,17 +70,48 @@ async function createPendingAccount({
   await transaction.begin();
 
   try {
+    const actor = await lockActingAdmin(transaction, adminUserId);
+    if (!actor) {
+      return rollbackWith(transaction, 'ADMIN_NOT_FOUND');
+    }
+    if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
+      return rollbackWith(transaction, 'ADMIN_REQUIRED');
+    }
+
+    const emailConflict = await new sql.Request(transaction)
+      .input('Email', sql.NVarChar(255), email)
+      .query(`
+        SELECT TOP 1 UserId
+        FROM Users WITH (UPDLOCK, HOLDLOCK)
+        WHERE LOWER(Email) = LOWER(@Email)
+      `);
+    if (emailConflict.recordset[0]) {
+      return rollbackWith(transaction, 'EMAIL_ALREADY_EXISTS');
+    }
+
+    const usernameConflict = await new sql.Request(transaction)
+      .input('Username', sql.NVarChar(50), username)
+      .query(`
+        SELECT TOP 1 UserId
+        FROM Users WITH (UPDLOCK, HOLDLOCK)
+        WHERE LOWER(Username) = LOWER(@Username)
+      `);
+    if (usernameConflict.recordset[0]) {
+      return rollbackWith(transaction, 'USERNAME_ALREADY_EXISTS');
+    }
+
     const userResult = await new sql.Request(transaction)
       .input('Username', sql.NVarChar(50), username)
-      .input('Email', sql.NVarChar(100), email)
+      .input('Email', sql.NVarChar(255), email)
       .input('PasswordHash', sql.NVarChar(255), passwordHash)
       .input('Phone', sql.NVarChar(20), phone || null)
       .input('Now', sql.DateTime, now)
       .query(`
-        INSERT INTO Users (Username, Email, PasswordHash, Phone, Status, CreatedAt)
+        INSERT INTO Users
+          (Username, Email, PasswordHash, Phone, Status, CreatedAt, UpdatedAt)
         OUTPUT INSERTED.UserId, INSERTED.Username, INSERTED.Email, INSERTED.Phone,
                INSERTED.Status, INSERTED.CreatedAt
-        VALUES (@Username, @Email, @PasswordHash, @Phone, 'INACTIVE', @Now)
+        VALUES (@Username, @Email, @PasswordHash, @Phone, 'INACTIVE', @Now, @Now)
       `);
 
     const user = mapUser(userResult.recordset[0]);
@@ -52,10 +120,14 @@ async function createPendingAccount({
       .input('UserId', sql.Int, user.userId)
       .input('FullName', sql.NVarChar(100), fullName)
       .input('Address', sql.NVarChar(255), address || null)
+      .input('Department', sql.NVarChar(100), department || null)
+      .input('Specialization', sql.NVarChar(100), specialization || null)
       .input('Now', sql.DateTime, now)
       .query(`
-        INSERT INTO UserProfiles (UserId, FullName, Address, CreatedAt)
-        VALUES (@UserId, @FullName, @Address, @Now)
+        INSERT INTO UserProfiles
+          (UserId, FullName, Address, Department, Specialization, CreatedAt)
+        VALUES
+          (@UserId, @FullName, @Address, @Department, @Specialization, @Now)
       `);
 
     const roleResult = await new sql.Request(transaction)
@@ -107,9 +179,12 @@ async function createPendingAccount({
       `);
 
     await transaction.commit();
-    return { user, tokenId };
+    return { outcome: 'CREATED', user, tokenId };
   } catch (error) {
     await transaction.rollback();
+    if (isDeterministicEmailConflict(error)) {
+      return { outcome: 'EMAIL_ALREADY_EXISTS' };
+    }
     throw error;
   }
 }
@@ -131,7 +206,8 @@ async function completeSetup({ tokenHash, passwordHash, now = new Date(), contex
           t.ExpiresAt,
           t.UsedAt,
           t.RevokedAt,
-          u.Status
+          u.Status,
+          u.DeactivatedAt
         FROM AuthTokens t WITH (UPDLOCK, HOLDLOCK)
         INNER JOIN Users u WITH (UPDLOCK, HOLDLOCK) ON u.UserId = t.UserId
         WHERE t.TokenType = 'ACCOUNT_SETUP'
@@ -145,7 +221,12 @@ async function completeSetup({ tokenHash, passwordHash, now = new Date(), contex
       return { matched: false };
     }
 
-    if (setup.UsedAt || setup.RevokedAt || setup.Status !== 'INACTIVE') {
+    if (
+      setup.UsedAt
+      || setup.RevokedAt
+      || setup.Status !== 'INACTIVE'
+      || setup.DeactivatedAt
+    ) {
       await transaction.rollback();
       return { matched: true, outcome: 'INVALID' };
     }
@@ -170,6 +251,7 @@ async function completeSetup({ tokenHash, passwordHash, now = new Date(), contex
         OUTPUT INSERTED.UserId
         WHERE UserId = @UserId
           AND Status = 'INACTIVE'
+          AND DeactivatedAt IS NULL
       `);
 
     if (!userUpdate.recordset.length) {
@@ -247,6 +329,14 @@ async function rotateSetupToken({
   await transaction.begin();
 
   try {
+    const actor = await lockActingAdmin(transaction, adminUserId);
+    if (!actor) {
+      return rollbackWith(transaction, 'ADMIN_NOT_FOUND');
+    }
+    if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
+      return rollbackWith(transaction, 'ADMIN_REQUIRED');
+    }
+
     const setupHistoryResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
       .query(`

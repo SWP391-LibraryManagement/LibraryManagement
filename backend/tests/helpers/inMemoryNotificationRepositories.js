@@ -21,15 +21,15 @@ function makeInMemoryNotificationDependencies() {
     {
       templateId: 1,
       templateCode: 'ACCOUNT_VERIFICATION',
-      subject: 'Verify {{name}}',
-      body: 'Verification link: {{verificationLink}}',
+      subject: 'Verify your library account',
+      body: 'Verification code: {{otp}}. Expires in {{expiresInMinutes}} minutes.',
       status: 'ACTIVE',
     },
     {
       templateId: 2,
       templateCode: 'PASSWORD_RESET',
-      subject: 'Reset password',
-      body: 'Use this safe reset link: {{resetLink}}',
+      subject: 'Reset your library password',
+      body: 'Password reset code: {{otp}}. Expires in {{expiresInMinutes}} minutes.',
       status: 'ACTIVE',
     },
     {

@@ -31,7 +31,7 @@ const expectedMessages = {
   BORROW_REQUEST_NOT_PENDING: 'Chỉ yêu cầu đang chờ xử lý mới có thể được duyệt hoặc từ chối.',
   BORROW_DETAIL_NOT_FOUND: 'Không tìm thấy lượt mượn sách này.',
   BORROW_DETAIL_NOT_BORROWED: 'Chỉ sách đang được mượn mới có thể trả hoặc gia hạn.',
-  INVALID_RETURN_DATE: 'Ngày trả sách không thể sớm hơn ngày mượn.',
+  INVALID_RETURN_DATE: 'Ngày trả phải nằm trong khoảng từ ngày mượn đến ngày hiện tại.',
   RENEWAL_LIMIT_REACHED: 'Sách này đã được gia hạn một lần và không thể gia hạn thêm.',
   BORROW_DETAIL_OVERDUE: 'Sách đã quá hạn nên không thể gia hạn.',
   BORROW_DETAIL_OWNER_REQUIRED: 'Bạn chỉ có thể gia hạn sách do chính mình mượn.',

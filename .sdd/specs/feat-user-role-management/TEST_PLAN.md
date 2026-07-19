@@ -1,7 +1,7 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.3.8
-Status: FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; WAVE A/WAVE B TESTS PLANNED
+Version: 0.4.0
+Status: FE11 FINALIZATION WAVES A/B H2 READY; INTEGRATION PENDING
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
@@ -116,6 +116,8 @@ User administration, role listing, role assignment/revocation, account status ma
 - Evidence-metadata B7 evidence: exactly 22 approved Test Case/Status rows changed, all deferred rows stayed `Not Started`, and full regression/CI passed; PR #35 and post-merge CI `29652617587` passed.
 - TD-023 H2-ready evidence: backend policy/service RED-GREEN and Admin-first route tests; frontend exact-sidebar/API/derivation/isolation RED-GREEN; 606/606 backend, 120/120 frontend, coverage/lint/build/OpenAPI/health/traceability/browser regression PASS.
 - TD-023 B7 evidence: H2/H3 approved on 2026-07-19; PR #37 passed `foundation-checks` run `29654621448`, merged as `356130e4`, and exact post-merge `main` CI run `29655548150` passed.
+- Finalization Wave A H2 evidence: schema, account setup hardening, lifecycle repository, FE07 serialization, frontend access/payloads, and full regression are recorded in `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`; the subsequent disposable SQL Server pass is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Finalization Wave B H2 evidence: canonical Request Management and Admin Dashboard browser coverage are recorded in `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; fresh results are 80/80 focused backend, 48/48 focused frontend, 10/10 system integration, and 2/2 isolated Playwright tests.
 
 ## 6. Gaps
 
@@ -123,8 +125,8 @@ User administration, role listing, role assignment/revocation, account status ma
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
-- The approved Finalization Batch now governs TD-012, remaining TD-014/015/016, TD-017, TD-025, and feature-specific FE11 browser acceptance; product implementation has not started.
-- `TD-021` stays `PARTIAL` only for unavailable live SQL Server migration/concurrency evidence; static contracts, code, and browser acceptance cannot be deferred.
+- Finalization Wave A `FE11-LIFE01..FE11-LIFE05` and Wave B `FE11-REQ01..FE11-REQ03` are implemented locally and H2-ready; `FE11-LIFE06`, `FE11-ACC01`, and feature closeout remain open.
+- Both SQL and feature-specific FE11 browser execution portions of `TD-021` now pass locally. Exact PR/CI association and human integration acceptance remain before final closeout.
 
 ## 7. Transactional Role Slice
 

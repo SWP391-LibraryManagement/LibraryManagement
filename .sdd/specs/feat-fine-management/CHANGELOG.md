@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-19 - Agent-Side v0.4.0 Reconciliation
+
+- Completed FE09-T013 through FE09-T020 on the Core server boundary under Hybrid SDD+ADD: contract-first tests, explicit `Asia/Ho_Chi_Minh` business time, in-place `UNPAID` recalculation, terminal history preservation, and locked duplicate prevention.
+- Removed partial-payment semantics from collection and paid reconciliation; both transitions now require a trimmed payment method and atomically set full payment metadata.
+- Added shared transaction boundaries for fine mutation plus audit writes, deterministic rollback behavior, concurrent terminal-winner handling, and allow-listed audit metadata (`amount`, `paymentMethod`, `note`, `reason`, `result`).
+- Added deterministic list validation/envelope/search/order, canonical FE09 OpenAPI operations, SQL static/concurrency evidence, and 100% FE09 FR traceability.
+- Passed all 9/9 FE09 SQL cases on disposable SQL Server, including concurrent duplicate calculation, one-winner collection, eligibility, and audit rollback; cleanup evidence is recorded in the full-reconciliation Live SQL review.
+- Recorded the frontend boundary: canonical API ownership is verified, while fully server-controlled list presentation and browser/L4 acceptance remain deferred TD-004 and project gates.
+
 ## 2026-07-18 - Librarian Fine Page Restored
 
 - Restored the `Quản lý tiền phạt` sidebar item and `/librarian/fines` page after clarifying that only the redundant embedded book workspace should be removed.

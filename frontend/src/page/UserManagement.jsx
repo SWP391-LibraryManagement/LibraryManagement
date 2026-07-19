@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   Activity,
@@ -44,7 +44,6 @@ import {
   createManagedUser,
   deactivateManagedUser,
   assignManagedUserRole,
-  ensureManagedUserAccess,
   fetchManagedUser,
   fetchRoles,
   fetchUsers,
@@ -56,6 +55,11 @@ import {
   buildPermissionRoleSummary,
   roleAllowsPermission,
 } from '../utils/adminPermissions';
+import {
+  buildRequestCsv,
+  buildRequestListParams,
+  collectAllRequestRows,
+} from '../utils/adminRequestExport';
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
 
 const roleLabels = {
@@ -72,7 +76,6 @@ const statusLabels = {
 };
 const editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER'];
 const ROLE_CATALOG_ERROR = 'Không thể tải danh mục vai trò. Vui lòng thử lại.';
-const allowDevUserManagementWithoutLogin = import.meta.env.MODE !== 'production';
 
 function normalizeEditableRoleCatalog(roleCatalog = []) {
   const seenNames = new Set();
@@ -164,6 +167,8 @@ function validateUserForm(form) {
   const fullName = form.fullName.trim();
   const phone = form.phone.trim();
   const address = form.address.trim();
+  const department = String(form.department || '').trim();
+  const specialization = String(form.specialization || '').trim();
 
   if (!fullName) {
     errors.fullName = 'Họ và tên là bắt buộc.';
@@ -173,7 +178,7 @@ function validateUserForm(form) {
 
   if (!email) {
     errors.email = 'Email là bắt buộc.';
-  } else if (email.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  } else if (email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.email = 'Vui lòng nhập email hợp lệ.';
   }
 
@@ -185,23 +190,35 @@ function validateUserForm(form) {
     errors.address = 'Địa chỉ không được vượt quá 255 ký tự.';
   }
 
+  if (form.type === 'librarian' && department.length > 100) {
+    errors.department = 'Phòng ban không được vượt quá 100 ký tự.';
+  }
+
+  if (form.type === 'librarian' && specialization.length > 100) {
+    errors.specialization = 'Chuyên môn không được vượt quá 100 ký tự.';
+  }
+
   return errors;
 }
 
-function getStoredAdminUser() {
-  const rawUser = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+function readStoredAdminAccess() {
+  for (const storage of [localStorage, sessionStorage]) {
+    const rawUser = storage.getItem('authUser');
+    const hasToken = Boolean(storage.getItem('accessToken') || storage.getItem('refreshToken'));
+    if (!rawUser || !hasToken) continue;
 
-  if (!rawUser) {
-    return null;
+    try {
+      const user = JSON.parse(rawUser);
+      const roles = Array.isArray(user.roles)
+        ? user.roles.map((role) => String(role || '').toUpperCase())
+        : [];
+      return { authenticated: true, isAdmin: roles.includes('ADMIN'), user };
+    } catch {
+      // Continue in case the other storage contains a valid session.
+    }
   }
 
-  try {
-    const user = JSON.parse(rawUser);
-    const roles = Array.isArray(user.roles) ? user.roles.map((role) => String(role || '').toUpperCase()) : [];
-    return roles.includes('ADMIN') ? user : null;
-  } catch {
-    return null;
-  }
+  return { authenticated: false, isAdmin: false, user: null };
 }
 
 function getPrimaryRole(user) {
@@ -248,6 +265,16 @@ function downloadCsv(filename, rows) {
   return true;
 }
 
+function downloadCsvText(filename, csv) {
+  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function RoleBadge({ role }) {
   return <span className={`um-badge role-${role.toLowerCase()}`}>{roleLabels[role] || role}</span>;
 }
@@ -278,6 +305,8 @@ function UserModal({ mode, user, onClose, onSubmit }) {
     email: user?.email || '',
     phone: user?.phoneNumber || '',
     address: user?.address || '',
+    department: user?.department || '',
+    specialization: user?.specialization || '',
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -356,6 +385,27 @@ function UserModal({ mode, user, onClose, onSubmit }) {
             <textarea value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
             {errors.address && <span className="um-field-error">{errors.address}</span>}
           </label>
+
+          {form.type === 'librarian' && (
+            <>
+              <label>
+                Phòng ban
+                <input
+                  value={form.department}
+                  onChange={(event) => setForm({ ...form, department: event.target.value })}
+                />
+                {errors.department && <span className="um-field-error">{errors.department}</span>}
+              </label>
+              <label>
+                Chuyên môn
+                <input
+                  value={form.specialization}
+                  onChange={(event) => setForm({ ...form, specialization: event.target.value })}
+                />
+                {errors.specialization && <span className="um-field-error">{errors.specialization}</span>}
+              </label>
+            </>
+          )}
 
           <div className="um-note">
             Tài khoản mới ở trạng thái chưa kích hoạt. Người dùng phải hoàn tất thiết lập mật khẩu qua email trước khi đăng nhập.
@@ -652,6 +702,7 @@ function LibraryModal({ resource, metadata, item, onClose, onSubmit }) {
 
 const ADMIN_TABLE_PAGE_SIZE = 8;
 const AUDIT_TABLE_PAGE_SIZE = 20;
+const REQUEST_TABLE_PAGE_SIZE = 20;
 const EMPTY_AUDIT_FILTERS = { q: '', action: '', actorId: '', from: '', to: '' };
 
 function buildAuditLogParams({ page = 1, limit = AUDIT_TABLE_PAGE_SIZE, ...filters } = {}) {
@@ -709,7 +760,8 @@ function AdminTablePagination({
 
 function UserManagement() {
   const navigate = useNavigate();
-  const currentAdmin = getStoredAdminUser();
+  const access = readStoredAdminAccess();
+  const currentAdmin = access.user;
   const [activeSection, setActiveSection] = useState('dashboard');
   const [users, setUsers] = useState([]);
   const [userStats, setUserStats] = useState({
@@ -775,14 +827,22 @@ function UserManagement() {
   const [borrowingActionSaving, setBorrowingActionSaving] = useState(false);
   const [borrowingPage, setBorrowingPage] = useState(1);
   const [requests, setRequests] = useState([]);
-  const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', fromDate: '', toDate: '' });
+  const [requestFilter, setRequestFilter] = useState({ q: '', status: 'ALL', from: '', to: '' });
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState('');
   const [requestsUpdatedAt, setRequestsUpdatedAt] = useState(null);
   const [viewRequest, setViewRequest] = useState(null);
+  const [requestDetailLoading, setRequestDetailLoading] = useState(false);
   const [requestRejectionReason, setRequestRejectionReason] = useState('');
   const [requestActionSaving, setRequestActionSaving] = useState(false);
+  const [requestExporting, setRequestExporting] = useState(false);
   const [requestPage, setRequestPage] = useState(1);
+  const [requestPagination, setRequestPagination] = useState({
+    page: 1,
+    limit: REQUEST_TABLE_PAGE_SIZE,
+    total: 0,
+    totalPages: 0,
+  });
   const [membershipApplications, setMembershipApplications] = useState([]);
   const [membershipFilter, setMembershipFilter] = useState({ status: 'ALL', search: '', page: 1, totalPages: 1 });
   const [membershipLoading, setMembershipLoading] = useState(false);
@@ -796,7 +856,6 @@ function UserManagement() {
   const isUserDirectorySection = activeSection === 'users';
   const pagedLibraryRows = libraryRows.slice((libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE, libraryPage * ADMIN_TABLE_PAGE_SIZE);
   const pagedBorrowings = borrowings.slice((borrowingPage - 1) * ADMIN_TABLE_PAGE_SIZE, borrowingPage * ADMIN_TABLE_PAGE_SIZE);
-  const pagedRequests = requests.slice((requestPage - 1) * ADMIN_TABLE_PAGE_SIZE, requestPage * ADMIN_TABLE_PAGE_SIZE);
   const sectionMeta = {
     dashboard: { eyebrow: 'Tổng quan quản trị', title: 'Dashboard' },
     users: { eyebrow: 'Danh sách tài khoản', title: 'Quản lý người dùng' },
@@ -832,17 +891,8 @@ function UserManagement() {
   }
 
   async function requireAdminSession() {
-    if (allowDevUserManagementWithoutLogin) {
-      return true;
-    }
-
-    try {
-      if (getStoredAdminUser() || (await ensureManagedUserAccess())) {
-        return true;
-      }
-    } catch {
-      // Fall through to the shared login prompt below.
-    }
+    const currentAccess = readStoredAdminAccess();
+    if (currentAccess.authenticated && currentAccess.isAdmin) return true;
 
     setToast({ type: 'error', message: 'You need to login with an Admin account to create, update, or manage users.' });
     return false;
@@ -1106,7 +1156,7 @@ function UserManagement() {
     }
   // The loaders intentionally read current filters when the active admin section changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status]);
+  }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status, requestPage]);
 
   useEffect(() => {
     if (activeSection !== 'permissions') return;
@@ -1123,7 +1173,8 @@ function UserManagement() {
     page = auditPagination.page,
     { announce = false, filters = auditFilters } = {}
   ) {
-    if (!getStoredAdminUser()) {
+    const auditAccess = readStoredAdminAccess();
+    if (!auditAccess.authenticated || !auditAccess.isAdmin) {
       setAuditLogs([]);
       setAuditError('Vui lòng đăng nhập bằng tài khoản quản trị viên để xem nhật ký hoạt động.');
       return;
@@ -1329,29 +1380,79 @@ function UserManagement() {
   }
 
   async function loadRequests({ announce = false } = {}) {
-    if (requestFilter.fromDate && requestFilter.toDate && requestFilter.fromDate > requestFilter.toDate) {
+    if (requestFilter.from && requestFilter.to && requestFilter.from > requestFilter.to) {
       setToast({ type: 'error', message: 'Ngày bắt đầu không được sau ngày kết thúc.' });
       return;
     }
     setRequestsLoading(true);
     setRequestsError('');
     try {
-      const result = await adminApi.requests({
-        q: requestFilter.q.trim(),
-        status: requestFilter.status === 'ALL' ? '' : requestFilter.status,
-        fromDate: requestFilter.fromDate,
-        toDate: requestFilter.toDate,
-      });
+      const result = await adminApi.requests(
+        buildRequestListParams(requestFilter, requestPage, REQUEST_TABLE_PAGE_SIZE)
+      );
       setRequests(result.data || []);
-      setRequestPage(1);
+      setRequestPagination(result.pagination || {
+        page: requestPage,
+        limit: REQUEST_TABLE_PAGE_SIZE,
+        total: 0,
+        totalPages: 0,
+      });
       setRequestsUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới danh sách yêu cầu.' });
     } catch (error) {
       setRequests([]);
+      setRequestPagination({
+        page: requestPage,
+        limit: REQUEST_TABLE_PAGE_SIZE,
+        total: 0,
+        totalPages: 0,
+      });
       setRequestsError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
       setRequestsLoading(false);
+    }
+  }
+
+  function applyRequestFilters() {
+    if (requestPage === 1) loadRequests();
+    else setRequestPage(1);
+  }
+
+  async function openRequestDetail(row) {
+    setRequestDetailLoading(true);
+    setRequestRejectionReason('');
+    try {
+      setViewRequest(await adminApi.requestDetail(row.requestId));
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setRequestDetailLoading(false);
+    }
+  }
+
+  async function exportRequests() {
+    if (requestExporting) return;
+    setRequestExporting(true);
+    try {
+      const filters = buildRequestListParams(
+        requestFilter,
+        1,
+        100
+      );
+      delete filters.page;
+      delete filters.limit;
+      const rows = await collectAllRequestRows(adminApi.requests, filters);
+      if (rows.length === 0) {
+        setToast({ type: 'error', message: 'Không có yêu cầu phù hợp để xuất.' });
+        return;
+      }
+      downloadCsvText('requests.csv', buildRequestCsv(rows));
+      setToast({ type: 'success', message: 'Đã xuất toàn bộ yêu cầu phù hợp.' });
+    } catch (error) {
+      setToast({ type: 'error', message: error.message });
+    } finally {
+      setRequestExporting(false);
     }
   }
 
@@ -1415,14 +1516,15 @@ function UserManagement() {
     }
   }
 
+  // @spec FR-FE11-035
   async function approveBorrowRequest() {
     if (!viewRequest || requestActionSaving) return;
     setRequestActionSaving(true);
     try {
-      await borrowingApi.approve(viewRequest.id);
-      setViewRequest(null);
+      await borrowingApi.approve(viewRequest.requestId);
       await loadRequests();
       await loadBorrowings();
+      setViewRequest(await adminApi.requestDetail(viewRequest.requestId));
       setToast({ type: 'success', message: 'Đã duyệt yêu cầu mượn.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
@@ -1440,10 +1542,10 @@ function UserManagement() {
     }
     setRequestActionSaving(true);
     try {
-      await borrowingApi.reject(viewRequest.id, reason);
-      setViewRequest(null);
+      await borrowingApi.reject(viewRequest.requestId, reason);
       setRequestRejectionReason('');
       await loadRequests();
+      setViewRequest(await adminApi.requestDetail(viewRequest.requestId));
       setToast({ type: 'success', message: 'Đã từ chối yêu cầu mượn.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
@@ -1504,10 +1606,15 @@ function UserManagement() {
     try {
       if (modal?.mode === 'edit') {
         await updateManagedUser(modal.user.userId, {
+          expectedUpdatedAt: modal.user.updatedAt,
           fullName: form.fullName.trim(),
           email: form.email.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim(),
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          ...(form.type === 'librarian' ? {
+            department: form.department.trim() || null,
+            specialization: form.specialization.trim() || null,
+          } : {}),
         });
         setToast({ type: 'success', message: 'Đã cập nhật thông tin người dùng.' });
       } else {
@@ -1515,15 +1622,19 @@ function UserManagement() {
           type: form.type,
           fullName: form.fullName.trim(),
           email: form.email.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim(),
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          ...(form.type === 'librarian' ? {
+            department: form.department.trim() || null,
+            specialization: form.specialization.trim() || null,
+          } : {}),
         });
         setToast({ type: 'success', message: 'Đã tạo tài khoản chưa kích hoạt và gửi email thiết lập mật khẩu.' });
       }
 
       setModal(null);
       setSelectedUser(null);
-      await refreshUserDirectory(1);
+      await refreshUserDirectory(modal?.mode === 'edit' ? pagination.page : 1);
     } catch (error) {
       setToast({ type: 'error', message: error.message });
       throw error;
@@ -1540,10 +1651,10 @@ function UserManagement() {
     }
 
     try {
-      await deactivateManagedUser(user.userId);
+      await deactivateManagedUser(user.userId, user.updatedAt);
       setToast({ type: 'success', message: 'Đã vô hiệu hóa tài khoản người dùng.' });
       setSelectedUser(null);
-      await refreshUserDirectory();
+      await refreshUserDirectory(pagination.page);
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     }
@@ -1596,6 +1707,9 @@ function UserManagement() {
       throw error;
     }
   }
+
+  if (!access.authenticated) return <Navigate to="/login" replace />;
+  if (!access.isAdmin) return <Navigate to="/home" replace />;
 
   return (
     <div className="um-shell">
@@ -1840,36 +1954,33 @@ function UserManagement() {
               {requestsError && <strong>Không thể tải dữ liệu: {requestsError}</strong>}
             </div>
             <div className="um-toolbar requests">
-              <div className="um-search"><Search size={18} /><input value={requestFilter.q} placeholder="Tìm theo tên sách, tên hoặc email thành viên..." onKeyDown={(event) => { if (event.key === 'Enter') loadRequests(); }} onChange={(event) => setRequestFilter((current) => ({ ...current, q: event.target.value }))} /></div>
+              <div className="um-search"><Search size={18} /><input value={requestFilter.q} placeholder="Tìm theo tên sách, tên hoặc email thành viên..." onKeyDown={(event) => { if (event.key === 'Enter') applyRequestFilters(); }} onChange={(event) => setRequestFilter((current) => ({ ...current, q: event.target.value }))} /></div>
               <select aria-label="Lọc trạng thái" value={requestFilter.status} onChange={(event) => setRequestFilter((current) => ({ ...current, status: event.target.value }))}>{requestStatuses.map((status) => <option key={status} value={status}>{requestStatusLabels[status]}</option>)}</select>
-              <input aria-label="Từ ngày" type="date" value={requestFilter.fromDate} onChange={(event) => setRequestFilter((current) => ({ ...current, fromDate: event.target.value }))} />
-              <input aria-label="Đến ngày" type="date" value={requestFilter.toDate} onChange={(event) => setRequestFilter((current) => ({ ...current, toDate: event.target.value }))} />
-              <button className="um-secondary-button" disabled={requestsLoading} onClick={() => loadRequests()}>Tìm kiếm</button>
-              <button className="um-primary-button" disabled={requestsLoading || requests.length === 0} onClick={() => downloadCsv('requests.csv', requests)}><FileDown size={16} /> Xuất CSV</button>
+              <input aria-label="Từ ngày" type="date" value={requestFilter.from} onChange={(event) => setRequestFilter((current) => ({ ...current, from: event.target.value }))} />
+              <input aria-label="Đến ngày" type="date" value={requestFilter.to} onChange={(event) => setRequestFilter((current) => ({ ...current, to: event.target.value }))} />
+              <button className="um-secondary-button" disabled={requestsLoading} onClick={applyRequestFilters}>Tìm kiếm</button>
+              <button className="um-primary-button" disabled={requestsLoading || requestExporting} onClick={exportRequests}><FileDown size={16} /> {requestExporting ? 'Đang xuất...' : 'Xuất CSV'}</button>
             </div>
             <section className="um-content">
               <table className="um-table request-table">
                 <thead><tr><th>STT</th><th>Tên sách</th><th>Tài khoản</th><th>Số điện thoại</th><th>Thể loại</th><th>Thời gian đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>
-                  {pagedRequests.map((row, index) => (
-                    <tr key={row.id}>
-                      <td>{(requestPage - 1) * ADMIN_TABLE_PAGE_SIZE + index + 1}</td>
-                      <td><strong>{row.bookTitles || '-'}</strong></td>
-                      <td>{row.memberName}</td>
-                      <td>{row.phone || '-'}</td>
-                      <td>{row.categories || '-'}</td>
+                  {requests.map((row, index) => (
+                    <tr key={row.requestId}>
+                      <td>{(requestPage - 1) * requestPagination.limit + index + 1}</td>
+                      <td><strong>{row.bookTitles?.join(' | ') || '-'}</strong></td>
+                      <td>{row.member?.fullName || row.member?.email || '-'}</td>
+                      <td>{row.member?.phoneNumber || '-'}</td>
+                      <td>{row.categories?.join(' | ') || '-'}</td>
                       <td>{formatDate(row.requestDate)}</td>
                       <td><span className={`um-badge status-${String(row.status || '').toLowerCase()}`}>{requestStatusLabels[row.status] || row.status}</span></td>
                       <td>
                         <div className="um-row-actions">
                           {row.status === 'PENDING' && (
-                            <button className="um-primary-button" onClick={() => { setRequestRejectionReason(''); setViewRequest(row); }}><Eye size={16} /> Xử lý</button>
+                            <button className="um-primary-button" disabled={requestDetailLoading} onClick={() => openRequestDetail(row)}><Eye size={16} /> Xử lý</button>
                           )}
-                          {row.status === 'APPROVED' && (
-                            <button className="um-secondary-button" onClick={() => setActiveSection('circulation')}><BookCopy size={16} /> Mượn trả</button>
-                          )}
-                          {['COMPLETED', 'REJECTED', 'CANCELLED'].includes(row.status) && (
-                            <button className="um-secondary-button" onClick={() => { setRequestRejectionReason(''); setViewRequest(row); }}><Eye size={16} /> Chi tiết</button>
+                          {['APPROVED', 'COMPLETED', 'REJECTED', 'CANCELLED'].includes(row.status) && (
+                            <button className="um-secondary-button" disabled={requestDetailLoading} onClick={() => openRequestDetail(row)}><Eye size={16} /> Chi tiết</button>
                           )}
                         </div>
                       </td>
@@ -1879,7 +1990,7 @@ function UserManagement() {
               </table>
               {requests.length === 0 && !requestsLoading && <div className="um-empty">Không tìm thấy yêu cầu mượn sách.</div>}
               {requestsLoading && <div className="um-empty">Đang tải danh sách yêu cầu...</div>}
-              <AdminTablePagination page={requestPage} totalItems={requests.length} onPageChange={setRequestPage} />
+              <AdminTablePagination page={requestPage} totalItems={requestPagination.total} pageSize={requestPagination.limit} onPageChange={setRequestPage} />
             </section>
           </section>
         )}
@@ -2015,7 +2126,7 @@ function UserManagement() {
                       <button
                         className="um-icon-button danger"
                         title="Vô hiệu hóa"
-                        disabled={user.status !== 'ACTIVE'}
+                        disabled={!['ACTIVE', 'LOCKED'].includes(user.status)}
                         onClick={() => deactivateUser(user)}
                       >
                         <PowerOff size={16} />
@@ -2418,6 +2529,12 @@ function UserManagement() {
               {selectedUser.phoneNumber || '-'}
             </p>
             <p>{selectedUser.address || '-'}</p>
+            {selectedUser.roles?.includes('LIBRARIAN') && (
+              <>
+                <p>{selectedUser.department || '-'}</p>
+                <p>{selectedUser.specialization || '-'}</p>
+              </>
+            )}
             <p>
               <Calendar size={16} />
               Ngày tạo {formatDate(selectedUser.createdAt)}
@@ -2451,7 +2568,7 @@ function UserManagement() {
             </button>
             <button
               className="um-danger-button"
-              disabled={selectedUser.status !== 'ACTIVE'}
+              disabled={!['ACTIVE', 'LOCKED'].includes(selectedUser.status)}
               onClick={() => deactivateUser(selectedUser)}
             >
               <PowerOff size={16} />
@@ -2498,14 +2615,14 @@ function UserManagement() {
         <div className="um-modal-backdrop" onMouseDown={() => { if (!requestActionSaving) setViewRequest(null); }}>
           <div className="um-modal" role="dialog" aria-modal="true" aria-labelledby="request-detail-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className="um-modal-header">
-              <div><p>Chi tiết yêu cầu</p><h2 id="request-detail-title">Yêu cầu #{viewRequest.id}</h2></div>
+              <div><p>Chi tiết yêu cầu</p><h2 id="request-detail-title">Yêu cầu #{viewRequest.requestId}</h2></div>
               <button type="button" className="um-icon-button" disabled={requestActionSaving} onClick={() => setViewRequest(null)} aria-label="Đóng"><X size={18} /></button>
             </div>
             <div className="um-modal-body detail">
-              <p><strong>Tài khoản:</strong> {viewRequest.memberName} - {viewRequest.email}</p>
-              <p><strong>Số điện thoại:</strong> {viewRequest.phone || '-'}</p>
-              <p><strong>Sách:</strong> {viewRequest.bookTitles || '-'}</p>
-              <p><strong>Thể loại:</strong> {viewRequest.categories || '-'}</p>
+              <p><strong>Tài khoản:</strong> {viewRequest.member?.fullName || '-'} - {viewRequest.member?.email || '-'}</p>
+              <p><strong>Số điện thoại:</strong> {viewRequest.member?.phoneNumber || '-'}</p>
+              <p><strong>Sách:</strong> {viewRequest.items?.map((item) => item.title).filter(Boolean).join(' | ') || '-'}</p>
+              <p><strong>Mã bản sao:</strong> {viewRequest.items?.map((item) => item.barcode).filter(Boolean).join(' | ') || '-'}</p>
               <p><strong>Thời gian đặt:</strong> {formatDate(viewRequest.requestDate)}</p>
               <p><strong>Trạng thái:</strong> {requestStatusLabels[viewRequest.status] || viewRequest.status}</p>
               {viewRequest.status === 'PENDING' && (

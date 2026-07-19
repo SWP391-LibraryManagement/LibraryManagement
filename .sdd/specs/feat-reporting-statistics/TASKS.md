@@ -1,12 +1,12 @@
 # TASKS.md - FE12 Reporting & Statistics
 
-Status: APPROVED - BASELINE 2026-07-17; NORMALIZATION IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - BASELINE 2026-07-17; DETERMINISTIC IMPLEMENTATION AUTOMATED VALIDATION COMPLETE; HUMAN RE-REVIEW PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-17
+Updated: 2026-07-19
 
-Workflow State: B5 implementation, B6 validation, and B7 integration complete
+Workflow State: Historical base slice completed B7; deterministic follow-up completed B5 and automated B6, with browser/human B7 pending
 
 ---
 
@@ -38,7 +38,10 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
 - [x] FE12-T18 Add accessibility: table captions, header scopes, form labels, keyboard support.
 - [x] FE12-T19 Add loading, empty, and error states on all screens.
 
-## 4. Validation
+## 4. Historical Base-Slice Validation (2026-07-13)
+
+These results describe the previously integrated base slice and remain historical evidence only;
+the deterministic-wave evidence is recorded in Section 9.1.
 
 - [x] `npm.cmd --prefix backend test` passed: 18 suites, 236 tests.
 - [x] `npm.cmd --prefix frontend test` passed: 24 tests.
@@ -49,7 +52,7 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
   borrowing/inventory/users, Guest redirect to `/login`, Member redirect to `/forbidden`,
   inventory category filtering, truthful error/empty states, and responsive layout checks.
 
-## 4. Traceability
+## 5. Base Traceability
 
 | Spec ID | Covered by |
 | --- | --- |
@@ -59,11 +62,15 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
 | BR-FE12-004 | FE12-T04, FE12-T10 |
 | BR-FE12-005 | FE12-T05, FE12-T11 |
 | BR-FE12-006 | FE12-T06, FE12-T12 |
+| BR-FE12-007 | FE12-T06, FE12-T12, FE12-N02, FE12-N03 |
 | BR-FE12-008 | FE12-T02, FE12-T13 |
 | BR-FE12-009 | FE12-T02, FE12-T13 |
 | BR-FE12-010 | FE12-T04, FE12-T05, FE12-T06 |
 | BR-FE12-011 | FE12-T06, FE12-T12 |
 | BR-FE12-012 | FE12-T04, FE12-T05, FE12-T06 |
+| BR-FE12-013 | FE12-N03 |
+| BR-FE12-014 | FE12-N02, FE12-N03 |
+| BR-FE12-015 | FE12-N02, FE12-N03, FE12-N04 |
 | FR-FE12-001 | FE12-T10 |
 | FR-FE12-002 | FE12-T11 |
 | FR-FE12-003 | FE12-T12 |
@@ -72,14 +79,16 @@ Workflow State: B5 implementation, B6 validation, and B7 integration complete
 | FR-FE12-006 | FE12-T10 |
 | FR-FE12-007 | FE12-T03, FE12-T10, FE12-T11, FE12-T12 |
 | FR-FE12-008 | FE12-T06, FE12-T12 |
+| FR-FE12-009 | FE12-N02, FE12-N03 |
+| FR-FE12-010 | FE12-N02, FE12-N03, FE12-N04 |
 
-## 5. Still Outside This Slice
+## 6. Still Outside This Slice
 
 - CSV/PDF export.
 - Dashboards.
 - BI warehouse integration.
 
-## 6. FE12 B6 Validation Hardening
+## 7. FE12 B6 Validation Hardening
 
 B5 implementation status: COMPLETE. The initial B6 automated/manual browser validation
 completed, then independent reviews opened follow-up findings. Remediation and fresh full
@@ -105,7 +114,7 @@ verification pass, the final independent re-review is clean, and Nhat confirmed 
 Detailed evidence is recorded in
 `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md`.
 
-## 7. B7 Integration And Review Closeout
+## 8. Historical B7 Integration And Review Closeout
 
 - [x] Nhat confirmed the human review gate and selected local merge.
 - [x] Commit `58747bc10657ed1accb44950ae0c5edbd178a242` reached `main` and `origin/main`.
@@ -115,8 +124,29 @@ Detailed evidence is recorded in
 - [x] Detailed evidence is recorded in
   `.sdd/reviews/fe12-b7-integration-review-closeout-2026-07-13.md`.
 
-## 8. Deterministic Policy Follow-up
+## 9. Deterministic Policy Follow-up
 
 - [x] FE12-N01 Normalize all-report access, unknown-ID/status behavior, pagination/order, audit, export scope, and traceability in documentation.
-- [ ] FE12-N02 Code owner validates or aligns implementation for BR-FE12-003, BR-FE12-008, BR-FE12-010, BR-FE12-014..015 and FR-FE12-009..010 after human approval.
-- [ ] FE12-N03 Add focused contract tests for unknown IDs, `UNKNOWN` status grouping, page/limit bounds, stable ordering, successful audit, and absence of export surfaces.
+- [x] FE12-N02 Align access, validation, canonical metrics/rows envelopes, unknown status/ID policy, stable ordering, safe success audit, and date-only row serialization with the approved deterministic contract.
+- [x] FE12-N03 Add focused contract tests for unknown IDs, `UNKNOWN` status grouping, page/limit bounds, stable ordering, successful audit, date-only borrowing rows, and absence of export surfaces.
+- [x] FE12-N04 Align all three frontend report consumers and cross-feature integration assertions to `{ metrics, rows, page, limit, totalRows }` without legacy response fields.
+- [x] FE12-N05 Apply inventory `status` and `location` to the same SQL copy row, retain full-book availability for low-stock calculations, and evaluate user approval-period date bounds in SQL without changing global totals.
+- [x] FE12-N06 Run focused/full automated validation, lint, build, traceability, and diff hygiene; record the deterministic-wave evidence.
+- [x] FE12-N07 Run fresh browser acceptance for canonical borrowing/inventory/user screens, zero-result filtering, mobile layout, and Member/Guest denial.
+- [ ] FE12-N08 Obtain human integration review before commit, push, merge, or deterministic-wave B7 closeout.
+
+### 9.1 Deterministic-Wave Automated Evidence
+
+- [x] Focused FE12 backend gate passed: 6 suites, 46 tests.
+- [x] Full backend suite passed: 39 suites, 615 tests.
+- [x] Backend coverage threshold passed: 92.54% statements, 82.33% branches, 97.14% functions, 92.47% lines.
+- [x] Focused FE12 frontend gate passed: 12 tests; full frontend suite passed: 121 tests.
+- [x] Frontend lint and production build passed.
+- [x] Traceability enforcement passed with FE12 at 10/10 tagged FRs (100%).
+- [x] `git diff --check` passed.
+- [x] Playwright system golden path passed: 1/1 before repository review remediation; exact-diff isolated Playwright CLI acceptance then re-verified all three deterministic report screens, zero-result behavior, mobile overflow, Member 403, and Guest login redirect on port 4184 without reusing the occupied FE03 port 4173.
+- [x] SQL-backed system integration passes in `backend/tests/sql/systemIntegration.sqltest.js` on the disposable reconciliation database with cleanup evidence.
+- [ ] Human B7/L4 acceptance remains pending.
+
+Detailed automated evidence is recorded in
+`.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.

@@ -9,11 +9,8 @@ const ALLOWED_AVATAR_TYPES = {
   'image/png': ['.png'],
   'image/webp': ['.webp'],
 };
-const PROTECTED_FIELDS = new Set([
-  'password', 'passwordHash', 'role', 'roles', 'roleId',
-  'status', 'email', 'membershipStatus', 'membershipApproval',
-  'userId', 'profileId',
-]);
+const EDITABLE_PROFILE_FIELDS = new Set(['fullName', 'address', 'dateOfBirth', 'phone']);
+const MANAGED_AVATAR_PATTERN = /^\/uploads\/avatars\/[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // Byte signatures cho từng loại ảnh
 const IMAGE_SIGNATURES = {
@@ -59,19 +56,6 @@ function validateLength(value, max, field, label, details) {
   }
 }
 
-/** Kiểm tra avatarUrl là đường dẫn nội bộ hoặc URL http/https hợp lệ */
-function validateAvatarUrl(value, details) {
-  if (!value) return;
-  if (/^\/uploads\/avatars\/[A-Za-z0-9._-]+$/.test(value)) return;
-
-  try {
-    const parsed = new URL(value);
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported protocol');
-  } catch {
-    details.push({ field: 'avatarUrl', code: 'INVALID_AVATAR_URL', message: 'URL ảnh đại diện phải là đường dẫn http hoặc https hợp lệ.' });
-  }
-}
-
 /** Kiểm tra số điện thoại hợp lệ */
 function validatePhone(value, details) {
   if (!value) return;
@@ -96,17 +80,29 @@ function validateDateOfBirth(value, clock, details) {
 }
 
 /** Validate và chuẩn hoá dữ liệu cập nhật profile, ném lỗi nếu có field không hợp lệ */
+// @spec BR-FE03-016 FR-FE03-005 FR-FE03-006 AC-FE03-013
 function validateProfileUpdate(input = {}, clock = () => new Date()) {
-  const protectedFields = Object.keys(input).filter((f) => PROTECTED_FIELDS.has(f));
-  if (protectedFields.length > 0) {
-    throw errors.badRequest('PROTECTED_FIELD_SUBMITTED', 'Không thể cập nhật các trường được bảo vệ tại đây.', { fields: protectedFields });
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).length === 0) {
+    throw errors.badRequest(
+      'INVALID_PROFILE_DATA',
+      'Dữ liệu cập nhật hồ sơ không hợp lệ.',
+      [{ field: 'body', code: 'PROFILE_UPDATE_REQUIRED', message: 'Cần cung cấp ít nhất một trường hồ sơ.' }]
+    );
+  }
+
+  const rejectedFields = Object.keys(input).filter((field) => !EDITABLE_PROFILE_FIELDS.has(field));
+  if (rejectedFields.length > 0) {
+    throw errors.badRequest(
+      'PROTECTED_FIELD_SUBMITTED',
+      'Chỉ các trường hồ sơ đã được phê duyệt mới có thể cập nhật tại đây.',
+      { fields: rejectedFields }
+    );
   }
 
   const updates = {
     fullName: cleanString(input.fullName),
     address: cleanString(input.address),
     dateOfBirth: normalizeDateOnly(input.dateOfBirth),
-    avatarUrl: cleanString(input.avatarUrl),
     phone: cleanString(input.phone),
   };
 
@@ -118,8 +114,6 @@ function validateProfileUpdate(input = {}, clock = () => new Date()) {
   const details = [];
   validateLength(updates.fullName, 100, 'fullName', 'Full name', details);
   validateLength(updates.address, 255, 'address', 'Address', details);
-  validateLength(updates.avatarUrl, 255, 'avatarUrl', 'Avatar URL', details);
-  validateAvatarUrl(updates.avatarUrl, details);
   validatePhone(updates.phone, details);
   validateDateOfBirth(updates.dateOfBirth, clock, details);
 
@@ -139,6 +133,7 @@ function hasValidImageSignature(file) {
 }
 
 /** Validate file avatar: kích thước, loại file, byte signature */
+// @spec FR-FE03-009
 function validateAvatarUpload(file) {
   if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
     throw errors.badRequest('AVATAR_FILE_REQUIRED', 'Vui lòng cung cấp file ảnh đại diện.');
@@ -157,6 +152,7 @@ function validateAvatarUpload(file) {
 }
 
 /** Chuyển record DB thành DTO an toàn để trả về client */
+// @spec FR-FE03-007
 function toSafeProfileDto(record) {
   if (!record) return null;
 
@@ -180,6 +176,18 @@ function changedFields(before, updates) {
   return Object.keys(updates).filter((f) => updates[f] !== undefined && updates[f] !== before?.[f]);
 }
 
+function buildAuditEntry(userId, context, fields) {
+  return {
+    userId,
+    action: 'PROFILE_UPDATE',
+    targetType: 'USER_PROFILE',
+    targetId: userId,
+    metadata: { fields },
+    ipAddress: context.ip || null,
+    userAgent: context.userAgent || null,
+  };
+}
+
 // --- Factory ---
 
 function createProfileService({
@@ -187,6 +195,7 @@ function createProfileService({
   auditLogRepository,
   avatarStorage,
   clock = () => new Date(),
+  logger = console,
 } = {}) {
   if (!profileRepository) profileRepository = require('../repositories/profileRepository');
   if (!auditLogRepository) auditLogRepository = require('../repositories/auditLogRepository');
@@ -195,6 +204,7 @@ function createProfileService({
   // --- Internal helpers ---
 
   /** Load profile theo userId, tạo blank nếu chưa có, ném lỗi nếu user không tồn tại */
+  // @spec FR-FE03-001 AC-FE03-012
   async function getExistingProfile(userId) {
     const parsedUserId = Number(userId);
     if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
@@ -203,7 +213,7 @@ function createProfileService({
 
     let profile = await profileRepository.findByUserId(parsedUserId);
     if (!profile) {
-      throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
+      throw errors.notFound('PROFILE_ACCOUNT_NOT_FOUND', 'Profile account not found.');
     }
 
     if (!profile.profileId) {
@@ -213,22 +223,20 @@ function createProfileService({
     return profile;
   }
 
-  /** Ghi audit log, bỏ qua lỗi để không làm gián đoạn luồng chính */
-  async function writeAudit(userId, context, fields) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') return;
+  function requireAuditRepository() {
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
+      throw errors.internal('PROFILE_AUDIT_UNAVAILABLE', 'Profile update could not be completed.');
+    }
+  }
+
+  async function cleanManagedAvatar(avatarUrl, failureMessage) {
+    if (!MANAGED_AVATAR_PATTERN.test(avatarUrl || '')) return;
+    if (!avatarStorage || typeof avatarStorage.deleteAvatarFile !== 'function') return;
 
     try {
-      await auditLogRepository.create({
-        userId,
-        action: 'PROFILE_UPDATE',
-        targetType: 'USER_PROFILE',
-        targetId: userId,
-        metadata: { fields },
-        ipAddress: context.ip || null,
-        userAgent: context.userAgent || null,
-      });
-    } catch (error) {
-      console.error('[profile audit] Failed to write PROFILE_UPDATE:', error.message);
+      await avatarStorage.deleteAvatarFile(avatarUrl);
+    } catch {
+      logger.error(failureMessage);
     }
   }
 
@@ -238,29 +246,49 @@ function createProfileService({
     return toSafeProfileDto(await getExistingProfile(userId));
   }
 
+  // @spec FR-FE03-004 BR-FE03-017 FR-FE03-010
   async function updateMyProfile(userId, input, context = {}) {
     const existing = await getExistingProfile(userId);
     const updates = validateProfileUpdate(input, clock);
-    const updated = await profileRepository.updateByUserId(existing.userId, updates);
     const fields = changedFields(existing, updates);
+    if (fields.length === 0) return toSafeProfileDto(existing);
 
-    if (fields.length > 0) await writeAudit(existing.userId, context, fields);
+    requireAuditRepository();
+    const updated = await profileRepository.updateByUserId(existing.userId, updates, {
+      auditLogRepository,
+      auditEntry: buildAuditEntry(existing.userId, context, fields),
+    });
 
     return toSafeProfileDto(updated);
   }
 
+  // @spec FR-FE03-008 BR-FE03-017 FR-FE03-010 AC-FE03-014
   async function updateMyAvatar(userId, file, context = {}) {
     const existing = await getExistingProfile(userId);
     validateAvatarUpload(file);
+    requireAuditRepository();
 
     const avatarUrl = await avatarStorage.saveAvatarFile({
       userId: existing.userId,
       buffer: file.buffer,
       mimeType: file.mimeType,
     });
-    const updated = await profileRepository.updateAvatarByUserId(existing.userId, avatarUrl);
 
-    if (avatarUrl !== existing.avatarUrl) await writeAudit(existing.userId, context, ['avatarUrl']);
+    let updated;
+
+    try {
+      updated = await profileRepository.updateAvatarByUserId(existing.userId, avatarUrl, {
+        auditLogRepository,
+        auditEntry: buildAuditEntry(existing.userId, context, ['avatarUrl']),
+      });
+    } catch (error) {
+      await cleanManagedAvatar(avatarUrl, 'Failed to clean up an uncommitted avatar file.');
+      throw error;
+    }
+
+    if (existing.avatarUrl && existing.avatarUrl !== avatarUrl) {
+      await cleanManagedAvatar(existing.avatarUrl, 'Failed to clean up a replaced avatar file.');
+    }
 
     return toSafeProfileDto(updated);
   }

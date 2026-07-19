@@ -1,8 +1,8 @@
 ﻿# FE03 Test Plan - User Profile
 
-Version: 0.2.0
-Status: READY FOR REVIEW - SPEC NORMALIZED; IMPLEMENTATION FOLLOW-UP PENDING
-Last Updated: 2026-06-25
+Version: 0.2.3
+Status: FE03-T016 AUTOMATED, LIVE SQL, AND AGENT BROWSER PASS; HUMAN ACCEPTANCE PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-user-profile/SPEC.md`
 Feature IDs: `BR-FE03-*`, `FR-FE03-*`, `AC-FE03-*`
@@ -44,11 +44,21 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 
 - `backend/tests/profileRoutes.test.js`
 - `backend/tests/profileService.test.js`
+- `backend/tests/profileRepository.test.js`
+- `backend/tests/avatarStorage.test.js`
+- `backend/tests/securityRegression.test.js`
+- `frontend/test/profileFrontend.test.js`
+- `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`
+- Source traceability: FR-FE03 `10/10` tagged after reconciliation.
+- Fresh reconciliation focused gate: backend 5 suites / 48 tests; frontend 3/3.
+- Exact-diff isolated Playwright CLI acceptance on port `4185`: valid upload, invalid type,
+  oversized file, exact PUT allowlist, and 0 console errors/warnings passed. Evidence screenshot:
+  `output/playwright/fe03-exact-profile-updated.png`.
 
 ## 6. Gaps
 
-- FE03 spec/plan currently has avatar revision status.
-- Manual UI verification for profile/avatar should be recorded before claiming done.
+- Human UI acceptance for profile/avatar must be recorded before claiming done; agent browser evidence is already present.
+- `backend/tests/sql/profileConcurrency.sqltest.js` passes 6/6 on disposable SQL Server, proving one-row first-view serialization plus profile/avatar audit rollback. Aggregate SQL evidence and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 
 ## 7. Required Commands / Evidence Before Merge
 

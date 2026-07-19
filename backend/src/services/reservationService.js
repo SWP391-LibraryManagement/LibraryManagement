@@ -170,13 +170,25 @@ function createReservationService({
   async function listMyReservations(filters, actor) {
     requireMember(actor);
 
-    const reservations = await reservationRepository.listReservations({
+    const repositoryFilters = {
       userId: actor.userId,
       status: filters.status || undefined,
-    });
+    };
+    if (filters.page || filters.limit) {
+      repositoryFilters.page = Number(filters.page) || 1;
+      repositoryFilters.limit = Number(filters.limit) || 20;
+    }
+    const result = await reservationRepository.listReservations(repositoryFilters);
+    const reservations = Array.isArray(result) ? result : result.rows;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const total = Array.isArray(result) ? reservations.length : result.total;
 
     return {
       reservations,
+      ...(Array.isArray(result) && !filters.page && !filters.limit
+        ? {}
+        : { pagination: { page, limit, total, totalPages: total === 0 ? 0 : Math.ceil(total / limit) } }),
     };
   }
 
@@ -225,17 +237,30 @@ function createReservationService({
     };
   }
 
+  // @spec FR-FE08-027
   async function listReservations(filters, actor) {
     requireStaff(actor);
 
-    const reservations = await reservationRepository.listReservations({
+    const repositoryFilters = {
       bookId: filters.bookId ? Number(filters.bookId) : undefined,
       memberId: filters.memberId ? Number(filters.memberId) : undefined,
       status: filters.status || undefined,
-    });
+    };
+    if (filters.page || filters.limit) {
+      repositoryFilters.page = Number(filters.page) || 1;
+      repositoryFilters.limit = Number(filters.limit) || 20;
+    }
+    const result = await reservationRepository.listReservations(repositoryFilters);
+    const reservations = Array.isArray(result) ? result : result.rows;
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
+    const total = Array.isArray(result) ? reservations.length : result.total;
 
     return {
       reservations,
+      ...(Array.isArray(result) && !filters.page && !filters.limit
+        ? {}
+        : { pagination: { page, limit, total, totalPages: total === 0 ? 0 : Math.ceil(total / limit) } }),
     };
   }
 

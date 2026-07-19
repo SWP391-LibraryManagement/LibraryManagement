@@ -6,6 +6,7 @@ const { createReservationService } = require('../../src/services/reservationServ
 const { createFineManagementService } = require('../../src/services/fineManagementService');
 const { createNotificationService } = require('../../src/services/notificationService');
 const { createReportService } = require('../../src/services/reportService');
+const errors = require('../../src/utils/safeErrors');
 const { makeInMemoryAuthDependencies } = require('./inMemoryAuthRepositories');
 const { makeInMemoryBorrowingDependencies } = require('./inMemoryBorrowingRepositories');
 const { makeInMemoryReservationDependencies } = require('./inMemoryReservationRepositories');
@@ -43,6 +44,223 @@ function syncReservationClaims(sourceState, targetState, copyId) {
     ...retainedClaims,
     ...sourceClaims.map((reservation) => ({ ...reservation }))
   );
+}
+
+function createSystemProfileService(authState) {
+  return {
+    async getMyProfile(userId) {
+      const user = authState.users.find((item) => item.userId === Number(userId));
+      if (!user) return null;
+      const profile = authState.profiles.find((item) => item.userId === Number(userId)) || {};
+
+      return {
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        phone: user.phone ?? null,
+        status: user.status,
+        createdAt: user.createdAt,
+        profileId: profile.profileId ?? null,
+        fullName: profile.fullName ?? user.fullName ?? null,
+        address: profile.address ?? null,
+        dateOfBirth: profile.dateOfBirth ?? null,
+        avatarUrl: profile.avatarUrl ?? null,
+      };
+    },
+  };
+}
+
+function uniqueValues(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function createSystemAdminService(authState, borrowingDependencies) {
+  const { state, borrowingRepository } = borrowingDependencies;
+
+  function memberView(userId) {
+    const user = authState.users.find((item) => item.userId === Number(userId));
+    const profile = authState.profiles.find((item) => item.userId === Number(userId));
+    return {
+      userId: Number(userId),
+      memberId: Number(userId),
+      fullName: profile?.fullName || user?.fullName || user?.username || null,
+      email: user?.email || null,
+      phoneNumber: user?.phone || null,
+      status: user?.status || null,
+    };
+  }
+
+  function requestItems(requestId) {
+    return state.borrowDetails
+      .filter((detail) => detail.requestId === Number(requestId))
+      .map((detail) => {
+        const copy = state.copies.find((item) => item.copyId === detail.copyId);
+        const book = state.books.find((item) => item.bookId === copy?.bookId);
+        return {
+          borrowDetailId: detail.borrowDetailId,
+          copyId: detail.copyId,
+          barcode: copy?.barcode || null,
+          title: book?.title || null,
+          author: book?.author || null,
+          category: book?.category || null,
+          location: copy?.location || null,
+          status: detail.status,
+        };
+      });
+  }
+
+  function listRow(request) {
+    const items = requestItems(request.requestId);
+    return {
+      requestId: request.requestId,
+      requestDate: request.requestDate,
+      status: request.status,
+      member: memberView(request.userId),
+      itemCount: items.length,
+      bookTitles: uniqueValues(items.map((item) => item.title)),
+      categories: uniqueValues(items.map((item) => item.category)),
+    };
+  }
+
+  return {
+    async getDashboard() {
+      const totalMembers = [...authState.rolesByUserId.values()]
+        .filter((roles) => roles.includes('MEMBER')).length;
+      const borrowed = state.borrowDetails.filter((detail) => detail.status === 'BORROWED');
+      return {
+        summary: {
+          totalBooks: state.books.length,
+          totalMembers,
+          totalAuthors: uniqueValues(state.books.map((book) => book.author)).length,
+          totalBorrowed: borrowed.length,
+          overdueBorrowed: borrowed.filter(
+            (detail) => detail.dueDate && new Date(detail.dueDate) < FIXED_NOW
+          ).length,
+        },
+        charts: { mostBorrowed: [], overdue: [], returnedToday: [] },
+      };
+    },
+
+    async listRequests(filters = {}) {
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      const q = String(filters.q || '').trim().toLowerCase();
+      const rows = state.borrowRequests
+        .map(listRow)
+        .filter((row) => {
+          if (filters.status && row.status !== filters.status) return false;
+          const requestDate = new Date(row.requestDate).toISOString().slice(0, 10);
+          if (filters.from && requestDate < filters.from) return false;
+          if (filters.to && requestDate > filters.to) return false;
+          if (!q) return true;
+          const searchable = [
+            row.member.fullName,
+            row.member.email,
+            ...row.bookTitles,
+            ...row.categories,
+          ].filter(Boolean).join(' ').toLowerCase();
+          return searchable.includes(q);
+        })
+        .sort((left, right) => {
+          const dateOrder = new Date(right.requestDate) - new Date(left.requestDate);
+          return dateOrder || right.requestId - left.requestId;
+        });
+      const start = (page - 1) * limit;
+      return {
+        data: rows.slice(start, start + limit),
+        pagination: {
+          page,
+          limit,
+          total: rows.length,
+          totalPages: rows.length === 0 ? 0 : Math.ceil(rows.length / limit),
+        },
+      };
+    },
+
+    async getRequestDetail(requestId) {
+      const request = await borrowingRepository.findBorrowRequestById(requestId);
+      if (!request) {
+        throw errors.notFound('BORROW_REQUEST_NOT_FOUND', 'Borrow request was not found.');
+      }
+      return {
+        requestId: request.requestId,
+        requestDate: request.requestDate,
+        status: request.status,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt || null,
+        member: memberView(request.userId),
+        items: requestItems(request.requestId).map(({ category, ...item }) => item),
+        lifecycle: {
+          approvedAt: request.approvedAt || null,
+          rejectedAt: request.rejectedAt || null,
+          processedAt: request.processedAt || null,
+        },
+      };
+    },
+  };
+}
+
+function createSystemUserManagementService(authState) {
+  const roleCatalog = [
+    { roleId: 1, roleName: 'ADMIN' },
+    { roleId: 2, roleName: 'LIBRARIAN' },
+    { roleId: 3, roleName: 'MEMBER' },
+    { roleId: 4, roleName: 'GUEST' },
+  ];
+
+  function managedUser(user) {
+    const profile = authState.profiles.find((item) => item.userId === user.userId);
+    return {
+      userId: user.userId,
+      username: user.username,
+      email: user.email,
+      phone: user.phone || null,
+      status: user.status,
+      fullName: profile?.fullName || user.fullName || null,
+      address: profile?.address || null,
+      department: profile?.department || null,
+      specialization: profile?.specialization || null,
+      lastLoginAt: user.lastLoginAt || null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt || user.createdAt,
+      roles: [...(authState.rolesByUserId.get(user.userId) || [])],
+    };
+  }
+
+  return {
+    async listUsers(filters = {}) {
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      const search = String(filters.search || '').trim().toLowerCase();
+      const rows = authState.users
+        .map(managedUser)
+        .filter((user) => {
+          if (filters.status && user.status !== filters.status) return false;
+          if (filters.role && !user.roles.includes(filters.role)) return false;
+          if (!search) return true;
+          return [user.fullName, user.email, user.username, user.phone]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(search);
+        })
+        .sort((left, right) => right.userId - left.userId);
+      const start = (page - 1) * limit;
+      return {
+        data: rows.slice(start, start + limit),
+        pagination: {
+          page,
+          limit,
+          total: rows.length,
+          totalPages: rows.length === 0 ? 0 : Math.ceil(rows.length / limit),
+        },
+      };
+    },
+
+    async listRoles() {
+      return { data: roleCatalog.map((role) => ({ ...role })) };
+    },
+  };
 }
 
 function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
@@ -96,6 +314,12 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     reportRepository: reportDependencies.reportRepository,
     auditLogRepository: authDependencies.auditLogRepository,
   });
+  const profileService = createSystemProfileService(authDependencies.state);
+  const adminService = createSystemAdminService(
+    authDependencies.state,
+    borrowingDependencies
+  );
+  const userManagementService = createSystemUserManagementService(authDependencies.state);
   const services = {
     authService,
     borrowingService,
@@ -103,6 +327,9 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     fineManagementService,
     notificationService,
     reportService,
+    profileService,
+    adminService,
+    userManagementService,
   };
   const dependencies = {
     authDependencies,
@@ -140,7 +367,9 @@ async function createVerifiedActor({
   const userId = registered.body.userId;
   await request(setup.app)
     .post('/api/auth/verify-email')
-    .send({ token: registered.body.debugVerificationToken })
+    .send({
+      token: setup.dependencies.authDependencies.state.generatedOtps.at(-1),
+    })
     .expect(200);
   setup.dependencies.authDependencies.state.rolesByUserId.set(userId, [role]);
 

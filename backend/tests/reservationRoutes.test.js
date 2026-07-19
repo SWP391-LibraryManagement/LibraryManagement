@@ -63,7 +63,7 @@ async function createVerifiedUser({
 
   const verifyResponse = await request(app)
     .post('/api/auth/verify-email')
-    .send({ token: registerResponse.body.debugVerificationToken });
+    .send({ token: authDependencies.state.generatedOtps.at(-1) });
 
   expect(verifyResponse.status).toBe(200);
 
@@ -808,5 +808,95 @@ describe('FE08 reservation management', () => {
 
     expect(staffCreateResponse.status).toBe(403);
     expect(staffCreateResponse.body.error.code).toBe('ROLE_REQUIRED');
+  });
+
+  test('process-queue accepts only copyId and rejects bookId without mutating state', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue-copy-only.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1, bookId: 1 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(reservationDependencies.state.reservations).toHaveLength(0);
+  });
+
+  test('reservation list uses bounded pagination and ReservedAt ascending stable order', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'list-pagination.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'list-pagination.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app, authDependencies, reservationDependencies,
+      email: 'list-pagination.lib@example.test', role: 'LIBRARIAN', approveMember: false,
+    });
+
+    const first = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    const response = await request(app)
+      .get('/api/reservations')
+      .query({ page: 1, limit: 1 })
+      .set('Authorization', authHeader(librarian.accessToken))
+      .expect(200);
+
+    expect(response.body.pagination).toEqual({ page: 1, limit: 1, total: 2, totalPages: 2 });
+    expect(response.body.reservations).toHaveLength(1);
+    expect(response.body.reservations[0].reservationId).toBe(first.body.reservation.reservationId);
+
+    const invalid = await request(app)
+      .get('/api/reservations')
+      .query({ page: 0 })
+      .set('Authorization', authHeader(librarian.accessToken));
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('notified cancellation retains notification history', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app, authDependencies, reservationDependencies, email: 'timestamp-retention.member@example.test',
+    });
+    const created = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    const reservation = reservationDependencies.state.reservations[0];
+    reservation.status = 'NOTIFIED';
+    reservation.notifiedAt = new Date('2026-07-18T00:00:00.000Z');
+    reservation.expiresAt = new Date('2026-07-20T00:00:00.000Z');
+    reservationDependencies.state.copies[0].status = 'RESERVED';
+
+    await request(app)
+      .patch(`/api/reservations/${created.body.reservation.reservationId}/cancel`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({})
+      .expect(200);
+
+    expect(reservation.notifiedAt.toISOString()).toBe('2026-07-18T00:00:00.000Z');
+    expect(reservation.expiresAt.toISOString()).toBe('2026-07-20T00:00:00.000Z');
+    expect(reservation.cancelledAt).toBeTruthy();
   });
 });

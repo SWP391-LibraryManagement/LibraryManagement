@@ -8,6 +8,7 @@ function createProfileRoutes({ authService, profileService } = {}) {
   const controller = createProfileController(profileService);
   const authenticate = createAuthenticate(authService);
 
+  // @spec FR-FE03-002 FR-FE03-003
   router.get('/me', authenticate, controller.getMe);
   router.put('/me', authenticate, controller.updateMe);
   router.post('/me/avatar', authenticate, avatarUpload, controller.updateAvatar);

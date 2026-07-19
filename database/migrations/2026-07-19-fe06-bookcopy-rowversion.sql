@@ -1,0 +1,4 @@
+IF COL_LENGTH('BookCopies', 'Version') IS NULL
+BEGIN
+    ALTER TABLE BookCopies ADD Version ROWVERSION NOT NULL;
+END;

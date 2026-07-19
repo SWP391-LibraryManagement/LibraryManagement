@@ -252,7 +252,7 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | Paginated public book summaries | `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. |
+| GET | `/api/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. |
 | GET | `/api/books/{bookId}` | Guest/Member | - | Public book detail | Implemented public detail endpoint; must return only public-safe fields. |
 
 ---

@@ -87,6 +87,26 @@ describe('System integration', () => {
       .expect(200);
   });
 
+  test('SIT-001A serves the authenticated header profile from the integrated fixture state', async () => {
+    const setup = makeSystemIntegrationApp();
+    const member = await createVerifiedActor({
+      setup,
+      email: 'sit.profile.member@example.test',
+    });
+
+    const response = await request(setup.app)
+      .get('/api/profile/me')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      userId: member.userId,
+      email: 'sit.profile.member@example.test',
+      fullName: 'sit.profile.member',
+      status: 'ACTIVE',
+    });
+  });
+
   test('SIT-002 FE07 approval creates FE10 data and FE12 activity', async () => {
     const setup = makeSystemIntegrationApp();
     const member = await createVerifiedActor({
@@ -125,9 +145,11 @@ describe('System integration', () => {
       .get('/api/reports/borrowing?fromDate=2026-07-01&toDate=2026-07-31')
       .set('Authorization', authHeader(librarian.accessToken))
       .expect(200);
-    expect(report.body.totals.requests).toBe(1);
-    expect(report.body.totals.activeLoans).toBe(1);
-    expect(report.body.requestStatusCounts.APPROVED).toBe(1);
+    expect(report.body.metrics.activeLoans).toBe(1);
+    expect(report.body.totalRows).toBe(1);
+    expect(report.body.rows).toEqual([
+      expect.objectContaining({ status: 'BORROWED', copyId: 1 }),
+    ]);
   });
 
   test('SIT-007 keeps notification requests idempotent and response-safe', async () => {
@@ -210,12 +232,12 @@ describe('System integration', () => {
       .set('Authorization', authHeader(librarian.accessToken))
       .expect(200);
 
-    expect(borrowingReport.body.totals).toMatchObject({
-      requests: 2,
-      details: 2,
-      activeLoans: 1,
-    });
-    expect(Object.values(borrowingReport.body.borrowCountByPeriod).reduce(
+    expect(borrowingReport.body).toEqual(expect.objectContaining({
+      metrics: expect.objectContaining({ activeLoans: 1 }),
+      rows: [expect.objectContaining({ status: 'BORROWED' })],
+      totalRows: 1,
+    }));
+    expect(Object.values(borrowingReport.body.metrics.borrowCountByPeriod).reduce(
       (sum, count) => sum + count,
       0
     )).toBe(1);

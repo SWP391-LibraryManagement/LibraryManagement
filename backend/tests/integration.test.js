@@ -88,7 +88,7 @@ async function createVerifiedUser({
   const userId = registerResponse.body.userId;
   await request(app)
     .post('/api/auth/verify-email')
-    .send({ token: registerResponse.body.debugVerificationToken })
+    .send({ token: authDependencies.state.generatedOtps.at(-1) })
     .expect(200);
 
   authDependencies.state.rolesByUserId.set(userId, [role]);
@@ -275,8 +275,13 @@ describe('Integration: End-to-End Flows', () => {
         .set('Authorization', `Bearer ${accessToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('totals');
-      expect(response.body.totals).toHaveProperty('requests');
+      expect(response.body).toEqual(expect.objectContaining({
+        metrics: expect.objectContaining({ activeLoans: 0, overdueLoans: 0 }),
+        rows: [],
+        page: 1,
+        limit: 20,
+        totalRows: 0,
+      }));
     });
   });
 

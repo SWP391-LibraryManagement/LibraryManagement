@@ -9,7 +9,9 @@
     "create-admin": "node scripts/createAdmin.js",
     "test": "jest --runInBand",
     "test:integration:system": "jest --runInBand --runTestsByPath tests/systemIntegration.test.js",
+    "test:sql:fe03": "jest --runInBand --testMatch \"**/profileConcurrency.sqltest.js\"",
     "test:sql:fe07": "jest --runInBand --testMatch \"**/*.sqltest.js\"",
+    "test:sql:fe05": "jest --runInBand --testMatch \"**/bookConcurrency.sqltest.js\"",
     "test:sql:system": "jest --runInBand --testMatch \"**/systemIntegration.sqltest.js\"",
     "test:coverage": "jest --runInBand --coverage",
     "test:coverage:ci": "jest --runInBand --coverage --coverageReporters=text-summary"

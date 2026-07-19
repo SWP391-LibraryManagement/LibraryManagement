@@ -210,7 +210,7 @@ async function createReservation({ userId, copyId }) {
   }
 }
 
-async function listReservations({ userId, bookId, memberId, status } = {}) {
+async function listReservations({ userId, bookId, memberId, status, page = 1, limit = 20 } = {}) {
   const pool = await getPool();
   const request = pool.request();
   const where = [];
@@ -236,16 +236,26 @@ async function listReservations({ userId, bookId, memberId, status } = {}) {
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  request.input('Offset', sql.Int, (Number(page) - 1) * Number(limit));
+  request.input('Limit', sql.Int, Number(limit));
+  const countResult = await request.query(`
+    SELECT COUNT(*) AS Total
+    FROM Reservations r
+    INNER JOIN BookCopies bc ON r.CopyId = bc.CopyId
+    ${whereClause}
+  `);
   const result = await request.query(`
     ${reservationSelect}
     ${whereClause}
-    ORDER BY r.ReservedAt DESC, r.ReservationId DESC
+    ORDER BY r.ReservedAt ASC, r.ReservationId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
   `);
 
-  return result.recordset.map(mapReservation);
+  return { rows: result.recordset.map(mapReservation), total: countResult.recordset[0]?.Total || 0 };
 }
 
-// @spec BR-FE08-003, BR-FE08-015 - cancellation locks the copy before revalidating the reservation.
+// @spec BR-FE08-003, BR-FE08-015, FR-FE08-028
+// Cancellation locks the copy before revalidating the reservation.
 async function cancelReservation(reservationId) {
   const pool = await getPool();
   const copyLookup = await pool
@@ -413,7 +423,8 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
   }
 }
 
-// @spec FR-FE08-019, BR-FE08-015 - expiration locks sorted copies before reservation rows.
+// @spec FR-FE08-019, FR-FE08-028, BR-FE08-015
+// Expiration locks sorted copies before reservation rows.
 async function expireOverdueHolds(now) {
   const pool = await getPool();
   const candidateResult = await pool

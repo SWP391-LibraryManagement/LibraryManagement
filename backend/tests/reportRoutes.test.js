@@ -58,7 +58,7 @@ async function createVerifiedUser({
 
   await request(app)
     .post('/api/auth/verify-email')
-    .send({ token: registerResponse.body.debugVerificationToken })
+    .send({ token: authDependencies.state.generatedOtps.at(-1) })
     .expect(200);
 
   authDependencies.state.rolesByUserId.set(userId, [role]);
@@ -120,10 +120,9 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(librarian.accessToken));
 
     expect(borrowingReportResponse.status).toBe(200);
-    expect(borrowingReportResponse.body.totals.activeLoans).toBe(1);
-    expect(borrowingReportResponse.body.requestStatusCounts.APPROVED).toBe(1);
-    expect(borrowingReportResponse.body.detailStatusCounts.BORROWED).toBe(1);
-    expect(borrowingReportResponse.body.topBorrowedBooks[0]).toMatchObject({
+    expect(borrowingReportResponse.body.metrics.activeLoans).toBe(1);
+    expect(borrowingReportResponse.body.rows[0].status).toBe('OVERDUE');
+    expect(borrowingReportResponse.body.metrics.topBorrowedBooks[0]).toMatchObject({
       bookId: 1,
       borrowCount: 1,
     });
@@ -134,8 +133,8 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(librarian.accessToken));
 
     expect(inventoryReportResponse.status).toBe(200);
-    expect(inventoryReportResponse.body.totals.books).toBeGreaterThan(0);
-    expect(inventoryReportResponse.body.copyStatusCounts.BORROWED).toBeGreaterThanOrEqual(1);
+    expect(inventoryReportResponse.body.metrics.totalBooks).toBeGreaterThan(0);
+    expect(inventoryReportResponse.body.metrics.copiesByStatus.BORROWED).toBeGreaterThanOrEqual(1);
   });
 
   test('user statistics hide personal data and support empty filters', async () => {
@@ -160,7 +159,7 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(admin.accessToken));
 
     expect(userStatsResponse.status).toBe(200);
-    expect(userStatsResponse.body.totals.users).toBeGreaterThanOrEqual(2);
+    expect(Object.values(userStatsResponse.body.metrics.usersByStatus).reduce((sum, count) => sum + count, 0)).toBeGreaterThanOrEqual(2);
     expect(JSON.stringify(userStatsResponse.body)).not.toContain('report.user.member@example.test');
     expect(JSON.stringify(userStatsResponse.body)).not.toContain('passwordHash');
 
@@ -175,8 +174,9 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(admin.accessToken));
 
     expect(emptyResponse.status).toBe(200);
-    expect(emptyResponse.body.totals.requests).toBe(0);
-    expect(emptyResponse.body.topBorrowedBooks).toEqual([]);
+    expect(emptyResponse.body.metrics.activeLoans).toBe(0);
+    expect(emptyResponse.body.metrics.topBorrowedBooks).toEqual([]);
+    expect(emptyResponse.body.rows).toEqual([]);
   });
 
   test('user date filters keep totals global and limit new members by approval date', async () => {
@@ -205,8 +205,8 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(admin.accessToken));
 
     expect(response.status).toBe(200);
-    expect(response.body.totals.users).toBe(2);
-    expect(response.body.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
+    expect(Object.values(response.body.metrics.usersByStatus).reduce((sum, count) => sum + count, 0)).toBe(2);
+    expect(response.body.metrics.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
   });
 
   test('inventory report returns books with two or fewer available copies as low stock', async () => {
@@ -229,11 +229,10 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(librarian.accessToken));
 
     expect(response.status).toBe(200);
-    expect(response.body.lowAvailabilityBooks).toEqual([
+    expect(response.body.metrics.lowStockBooks).toEqual([
       expect.objectContaining({
         bookId: 1,
-        totalCopies: 7,
-        availableCopies: 2,
+        effectiveAvailability: 2,
       }),
     ]);
   });
@@ -358,8 +357,9 @@ describe('FE12 reporting and statistics', () => {
       .set('Authorization', authHeader(librarian.accessToken));
 
     expect(response.status).toBe(200);
-    expect(response.body.totals.books).toBe(0);
-    expect(response.body.totals.copies).toBe(0);
+    expect(response.body.metrics.totalBooks).toBe(0);
+    expect(response.body.metrics.totalCopies).toBe(0);
+    expect(response.body.rows).toEqual([]);
   });
 
   // NFR-FE12-LOG: viewing a report writes an audit log entry.
@@ -386,7 +386,11 @@ describe('FE12 reporting and statistics', () => {
     expect(reportViewEntry).toEqual(
       expect.objectContaining({
         action: 'REPORT_BORROWING_VIEW',
-        metadata: null,
+        metadata: expect.objectContaining({
+          reportType: 'BORROWING',
+          result: 'SUCCESS',
+          timestamp: expect.any(String),
+        }),
       })
     );
     expect(JSON.stringify(reportViewEntry)).not.toContain('2026-06-10');

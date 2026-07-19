@@ -19,88 +19,6 @@ export const DEMO_RESERVABLE = [
   { id: 'BK-022', copyId: 3, title: 'Atomic Habits', author: 'James Clear', availableCopies: 0, queue: 4, eta: 'khoảng 12 ngày' },
 ];
 
-export const DEMO_MY_RESERVATIONS = [
-  { id: 'RS-501', reservationId: 501, copyId: 1, title: 'Sapiens', author: 'Yuval Noah Harari', reservedDate: '2026-06-08', queue: 1, status: 'Waiting' },
-  { id: 'RS-502', reservationId: 502, copyId: 2, title: 'Design Patterns', author: 'Erich Gamma', reservedDate: '2026-06-05', queue: 0, status: 'Ready to pick up', deadline: '2026-06-18' },
-  { id: 'RS-503', reservationId: 503, copyId: 3, title: 'Refactoring', author: 'Martin Fowler', reservedDate: '2026-05-20', queue: 0, status: 'Expired' },
-];
-
-export const DEMO_ALL_RESERVATIONS = [
-  { id: 'RS-501', reservationId: 501, copyId: 1, member: 'Nguyễn Văn An', book: 'Clean Code', reservedDate: '2026-06-08', queue: 1, status: 'Waiting' },
-  { id: 'RS-510', reservationId: 510, copyId: 1, member: 'Trần Thị Bình', book: 'Clean Code', reservedDate: '2026-06-09', queue: 2, status: 'Waiting' },
-  { id: 'RS-511', reservationId: 511, copyId: 1, member: 'Lê Hoàng Cường', book: 'Clean Code', reservedDate: '2026-06-10', queue: 3, status: 'Waiting' },
-  { id: 'RS-502', reservationId: 502, copyId: 4, member: 'Phạm Thu Hà', book: 'Sapiens', reservedDate: '2026-06-05', queue: 1, status: 'Ready to pick up', deadline: '2026-06-22' },
-  { id: 'RS-520', reservationId: 520, copyId: 4, member: 'Đỗ Minh Khoa', book: 'Sapiens', reservedDate: '2026-06-07', queue: 2, status: 'Waiting' },
-  { id: 'RS-530', reservationId: 530, copyId: 3, member: 'Vũ Thanh Mai', book: 'Atomic Habits', reservedDate: '2026-06-11', queue: 1, status: 'Waiting' },
-];
-
-export const DEMO_BORROW_ROWS = [
-  { id: 1, borrowDetailId: 1, requestId: 101, title: 'Clean Code', author: 'Robert C. Martin', borrowDate: '2026-06-02', dueDate: '2026-06-16', returnDate: null, status: 'Borrowed', renewalsLeft: 1 },
-  { id: 2, borrowDetailId: 2, requestId: 102, title: 'The Pragmatic Programmer', author: 'Andrew Hunt', borrowDate: '2026-05-20', dueDate: '2026-06-03', returnDate: null, status: 'Overdue', renewalsLeft: 0 },
-  { id: 3, borrowDetailId: 3, requestId: 103, title: 'Sapiens', author: 'Yuval Noah Harari', borrowDate: '2026-05-01', dueDate: '2026-05-15', returnDate: '2026-05-14', status: 'Returned', renewalsLeft: 0 },
-  { id: 4, borrowDetailId: 4, requestId: 104, title: 'Nhà Giả Kim', author: 'Paulo Coelho', borrowDate: '2026-06-10', dueDate: '2026-06-24', returnDate: null, status: 'Borrowed', renewalsLeft: 0 },
-  { id: 5, borrowDetailId: 5, requestId: 105, title: 'Đắc Nhân Tâm', author: 'Dale Carnegie', borrowDate: '2026-06-12', dueDate: '2026-06-26', returnDate: null, status: 'Pending', renewalsLeft: 0 },
-];
-
-export const DEMO_ADMIN_REQUESTS = [
-  { id: 'REQ-1042', requestId: 1042, member: 'Nguyễn Văn An', memberId: 'MB-0231', email: 'an.nguyen@example.com', phone: '0905 123 456', membershipActive: true, unpaidFines: 0, book: 'Clean Code', author: 'Robert C. Martin', copyId: 1, branch: 'Chi nhánh Trung tâm', copyAvailable: true, requestDate: '2026-06-14', borrowDate: '2026-06-15', dueDate: '2026-06-29', status: 'Pending' },
-  { id: 'REQ-1043', requestId: 1043, member: 'Trần Thị Bình', memberId: 'MB-0198', email: 'binh.tran@example.com', phone: '0912 987 654', membershipActive: true, unpaidFines: 25000, book: 'Sapiens', author: 'Yuval Noah Harari', copyId: 5, branch: 'Chi nhánh Quận 7', copyAvailable: true, requestDate: '2026-06-14', borrowDate: '2026-06-15', dueDate: '2026-06-29', status: 'Pending' },
-  { id: 'REQ-1044', requestId: 1044, member: 'Lê Hoàng Cường', memberId: 'MB-0420', email: 'cuong.le@example.com', phone: '0987 222 333', membershipActive: false, unpaidFines: 0, book: 'Design Patterns', author: 'Erich Gamma', copyId: 7, branch: 'Chi nhánh Trung tâm', copyAvailable: false, requestDate: '2026-06-13', borrowDate: '2026-06-15', dueDate: '2026-06-29', status: 'Pending' },
-];
-
-export const DEMO_MEMBERS = [
-  {
-    id: '1', name: 'Nguyễn Văn An', email: 'an.nguyen@example.com', phone: '0905 123 456', membership: 'Active', totalFines: 0, activeReservations: 1,
-    current: [
-      { book: 'Clean Code', borrowDate: '2026-06-02', dueDate: '2026-06-16', status: 'Borrowed' },
-      { book: 'Nhà Giả Kim', borrowDate: '2026-06-10', dueDate: '2026-06-24', status: 'Borrowed' },
-    ],
-    history: [
-      { book: 'Sapiens', borrowDate: '2026-05-01', returnDate: '2026-05-14', status: 'Returned' },
-      { book: 'Design Patterns', borrowDate: '2026-04-10', returnDate: '2026-04-22', status: 'Returned' },
-      { book: 'Refactoring', borrowDate: '2026-05-28', returnDate: null, status: 'Overdue' },
-    ],
-  },
-  {
-    id: '2', name: 'Trần Thị Bình', email: 'binh.tran@example.com', phone: '0912 987 654', membership: 'Active', totalFines: 25000, activeReservations: 0,
-    current: [{ book: 'The Pragmatic Programmer', borrowDate: '2026-05-20', dueDate: '2026-06-03', status: 'Overdue' }],
-    history: [{ book: 'Đắc Nhân Tâm', borrowDate: '2026-03-02', returnDate: '2026-03-16', status: 'Returned' }],
-  },
-];
-
-export const DEMO_REPORTS = {
-  borrowing: {
-    totals: { requests: 1284, details: 1496, activeLoans: 342, overdueLoans: 57 },
-    requestStatusCounts: { PENDING: 46, APPROVED: 972, COMPLETED: 221, REJECTED: 45 },
-    detailStatusCounts: { BORROWED: 342, OVERDUE: 57, RETURNED: 1038, REQUESTED: 59 },
-    borrowCountByPeriod: { '2026-01': 120, '2026-02': 98, '2026-03': 145, '2026-04': 132, '2026-05': 167, '2026-06': 189 },
-    topBorrowedBooks: [
-      { title: 'Clean Code', author: 'Robert C. Martin', borrowCount: 87, category: 'Lập trình' },
-      { title: 'Sapiens', author: 'Yuval Noah Harari', borrowCount: 76, category: 'Lịch sử' },
-      { title: 'Atomic Habits', author: 'James Clear', borrowCount: 71, category: 'Kỹ năng' },
-      { title: 'Nhà Giả Kim', author: 'Paulo Coelho', borrowCount: 64, category: 'Tiểu thuyết' },
-      { title: 'Đắc Nhân Tâm', author: 'Dale Carnegie', borrowCount: 59, category: 'Kỹ năng' },
-    ],
-  },
-  inventory: {
-    totals: { books: 2140, copies: 6580 },
-    copyStatusCounts: { AVAILABLE: 4230, BORROWED: 2180, DAMAGED: 110, LOST: 60 },
-    categoryCounts: { 'Lập trình': 1820, 'Lịch sử': 940, 'Tiểu thuyết': 1560, 'Kỹ năng': 1280, 'Khác': 980 },
-    lowAvailabilityBooks: [
-      { title: 'Clean Code', categoryName: 'Lập trình', totalCopies: 12, availableCopies: 2 },
-      { title: 'Atomic Habits', categoryName: 'Kỹ năng', totalCopies: 10, availableCopies: 0 },
-      { title: 'Design Patterns', categoryName: 'Lập trình', totalCopies: 6, availableCopies: 1 },
-    ],
-  },
-  users: {
-    totals: { users: 3420, members: 2910 },
-    usersByStatus: { ACTIVE: 2910, INACTIVE: 476, BLOCKED: 34 },
-    usersByRole: { MEMBER: 2910, LIBRARIAN: 18, ADMIN: 5 },
-    membersByStatus: { APPROVED: 2910, PENDING: 34 },
-    newMembersByPeriod: { '2026-01': 3010, '2026-02': 3095, '2026-03': 3180, '2026-04': 3250, '2026-05': 3340, '2026-06': 3420 },
-  },
-};
-
 export function fmtDate(value) {
   if (!value) return '—';
   const date = new Date(value);
@@ -157,6 +75,24 @@ export function mapBorrowRequestsToHistoryRows(borrowRequests = []) {
     status: statusToUi(detail.status, { expiresAt: detail.dueDate }),
     renewalsLeft: detail.status === 'BORROWED' ? Math.max(0, 1 - Number(detail.renewalCount || 0)) : 0,
   })));
+}
+
+// @spec FR-FE07-028
+export function mapBorrowDetailsToHistoryRows(details = []) {
+  return details.map((detail) => ({
+    id: detail.borrowDetailId || `${detail.requestId}-${detail.copyId}`,
+    borrowDetailId: detail.borrowDetailId,
+    requestId: detail.requestId,
+    title: detail.copy?.title || `Bản sao #${detail.copyId}`,
+    author: detail.copy?.author || '-',
+    borrowDate: detail.borrowDate || detail.createdAt,
+    dueDate: detail.dueDate,
+    returnDate: detail.returnDate,
+    status: statusToUi(detail.status, { expiresAt: detail.dueDate }),
+    renewalsLeft: detail.status === 'BORROWED'
+      ? Math.max(0, 1 - Number(detail.renewalCount || 0))
+      : 0,
+  }));
 }
 
 export function mapBorrowRequestsToAdminRows(borrowRequests = []) {

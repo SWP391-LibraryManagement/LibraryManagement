@@ -29,6 +29,7 @@ function makeRepository(initialProfile = makeProfile()) {
     profile: initialProfile,
     createdBlank: false,
     updatedPayloads: [],
+    updateOptions: [],
   };
 
   return {
@@ -47,15 +48,23 @@ function makeRepository(initialProfile = makeProfile()) {
         });
         return state.profile;
       }),
-      updateByUserId: jest.fn(async (userId, updates) => {
+      updateByUserId: jest.fn(async (userId, updates, options = {}) => {
         state.updatedPayloads.push({ userId, updates });
+        state.updateOptions.push(options);
+        if (options.auditLogRepository && options.auditEntry) {
+          await options.auditLogRepository.create(options.auditEntry);
+        }
         state.profile = {
           ...state.profile,
           ...Object.fromEntries(Object.entries(updates).filter((entry) => entry[1] !== undefined)),
         };
         return state.profile;
       }),
-      updateAvatarByUserId: jest.fn(async (userId, avatarUrl) => {
+      updateAvatarByUserId: jest.fn(async (userId, avatarUrl, options = {}) => {
+        state.updateOptions.push(options);
+        if (options.auditLogRepository && options.auditEntry) {
+          await options.auditLogRepository.create(options.auditEntry);
+        }
         state.profile = {
           ...state.profile,
           avatarUrl,
@@ -109,6 +118,18 @@ describe('FE03 profile service', () => {
     });
   });
 
+  test('getMyProfile returns the approved not-found error when the account is missing', async () => {
+    const { repository } = makeRepository(null);
+    const service = createProfileService({ profileRepository: repository });
+
+    await expect(service.getMyProfile(999)).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'PROFILE_ACCOUNT_NOT_FOUND',
+    });
+
+    expect(repository.createBlankProfile).not.toHaveBeenCalled();
+  });
+
   test('updateMyProfile saves allowed fields and writes audit for changed fields', async () => {
     const { repository } = makeRepository();
     const auditLogRepository = {
@@ -126,7 +147,6 @@ describe('FE03 profile service', () => {
         fullName: ' Updated Member ',
         address: 'New Address',
         dateOfBirth: '1999-12-31',
-        avatarUrl: 'https://example.test/new.png',
         phone: '+84900000001',
       },
       { ip: '127.0.0.1', userAgent: 'jest' }
@@ -138,8 +158,17 @@ describe('FE03 profile service', () => {
         fullName: 'Updated Member',
         address: 'New Address',
         dateOfBirth: '1999-12-31',
-        avatarUrl: 'https://example.test/new.png',
         phone: '+84900000001',
+      }),
+      expect.objectContaining({
+        auditLogRepository,
+        auditEntry: expect.objectContaining({
+          userId: 1,
+          action: 'PROFILE_UPDATE',
+          targetType: 'USER_PROFILE',
+          targetId: 1,
+          metadata: { fields: ['fullName', 'address', 'dateOfBirth', 'phone'] },
+        }),
       })
     );
     expect(auditLogRepository.create).toHaveBeenCalledWith(
@@ -149,7 +178,7 @@ describe('FE03 profile service', () => {
         targetType: 'USER_PROFILE',
         targetId: 1,
         metadata: expect.objectContaining({
-          fields: expect.arrayContaining(['fullName', 'address', 'dateOfBirth', 'avatarUrl', 'phone']),
+          fields: ['fullName', 'address', 'dateOfBirth', 'phone'],
         }),
       })
     );
@@ -178,6 +207,41 @@ describe('FE03 profile service', () => {
     expect(repository.updateByUserId).not.toHaveBeenCalled();
   });
 
+  test('empty profile update is rejected without a write or audit', async () => {
+    const { repository } = makeRepository();
+    const auditLogRepository = { create: jest.fn(async () => undefined) };
+    const service = createProfileService({ profileRepository: repository, auditLogRepository });
+
+    await expect(service.updateMyProfile(1, {})).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_PROFILE_DATA',
+      details: [expect.objectContaining({ field: 'body' })],
+    });
+
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+    expect(auditLogRepository.create).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['read-only avatarUrl', { avatarUrl: '/uploads/avatars/forbidden.png' }],
+    ['unknown field', { nickname: 'not-approved' }],
+  ])('%s rejects the entire PUT payload before repository update', async (_label, field) => {
+    const { repository } = makeRepository();
+    const service = createProfileService({
+      profileRepository: repository,
+      auditLogRepository: { create: jest.fn(async () => undefined) },
+    });
+
+    await expect(
+      service.updateMyProfile(1, { fullName: 'Allowed Name', ...field })
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'PROTECTED_FIELD_SUBMITTED',
+    });
+
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
   test('invalid profile update returns field-level errors and does not partially update', async () => {
     const { repository } = makeRepository();
     const service = createProfileService({
@@ -189,7 +253,6 @@ describe('FE03 profile service', () => {
       service.updateMyProfile(1, {
         fullName: 'A'.repeat(101),
         dateOfBirth: '2999-01-01',
-        avatarUrl: 'ftp://example.test/avatar.png',
         phone: '123',
       })
     ).rejects.toMatchObject({
@@ -198,7 +261,6 @@ describe('FE03 profile service', () => {
       details: expect.arrayContaining([
         expect.objectContaining({ field: 'fullName' }),
         expect.objectContaining({ field: 'dateOfBirth' }),
-        expect.objectContaining({ field: 'avatarUrl' }),
         expect.objectContaining({ field: 'phone' }),
       ]),
     });
@@ -207,11 +269,10 @@ describe('FE03 profile service', () => {
   });
 
   test('validateProfileUpdate accepts nullable optional fields', () => {
-    expect(validateProfileUpdate({ fullName: '', address: null, avatarUrl: '', phone: '' })).toEqual({
+    expect(validateProfileUpdate({ fullName: '', address: null, phone: '' })).toEqual({
       fullName: null,
       address: null,
       dateOfBirth: undefined,
-      avatarUrl: null,
       phone: null,
     });
   });
@@ -243,7 +304,16 @@ describe('FE03 profile service', () => {
         buffer: expect.any(Buffer),
       })
     );
-    expect(repository.updateAvatarByUserId).toHaveBeenCalledWith(1, '/uploads/avatars/1-generated.png');
+    expect(repository.updateAvatarByUserId).toHaveBeenCalledWith(
+      1,
+      '/uploads/avatars/1-generated.png',
+      expect.objectContaining({
+        auditLogRepository,
+        auditEntry: expect.objectContaining({
+          metadata: { fields: ['avatarUrl'] },
+        }),
+      })
+    );
     expect(repository.updateAvatarByUserId).not.toHaveBeenCalledWith(
       1,
       expect.stringContaining('fakepath')
@@ -255,6 +325,69 @@ describe('FE03 profile service', () => {
       })
     );
     expect(result.avatarUrl).toBe('/uploads/avatars/1-generated.png');
+  });
+
+  test('updateMyAvatar deletes the new file when the database or audit transaction fails', async () => {
+    const { repository } = makeRepository();
+    const transactionError = new Error('profile transaction failed');
+    repository.updateAvatarByUserId.mockRejectedValueOnce(transactionError);
+    const avatarStorage = {
+      saveAvatarFile: jest.fn(async () => '/uploads/avatars/1-new.png'),
+      deleteAvatarFile: jest.fn(async () => true),
+    };
+    const service = createProfileService({
+      profileRepository: repository,
+      auditLogRepository: { create: jest.fn(async () => undefined) },
+      avatarStorage,
+    });
+
+    await expect(service.updateMyAvatar(1, validPngFile())).rejects.toBe(transactionError);
+
+    expect(avatarStorage.deleteAvatarFile).toHaveBeenCalledWith('/uploads/avatars/1-new.png');
+  });
+
+  test('updateMyAvatar removes the replaced managed file only after the transaction commits', async () => {
+    const { repository } = makeRepository(makeProfile({ avatarUrl: '/uploads/avatars/1-old.png' }));
+    const avatarStorage = {
+      saveAvatarFile: jest.fn(async () => '/uploads/avatars/1-new.png'),
+      deleteAvatarFile: jest.fn(async () => true),
+    };
+    const service = createProfileService({
+      profileRepository: repository,
+      auditLogRepository: { create: jest.fn(async () => undefined) },
+      avatarStorage,
+    });
+
+    await expect(service.updateMyAvatar(1, validPngFile())).resolves.toMatchObject({
+      avatarUrl: '/uploads/avatars/1-new.png',
+    });
+
+    expect(avatarStorage.deleteAvatarFile).toHaveBeenCalledWith('/uploads/avatars/1-old.png');
+  });
+
+  test('old-avatar cleanup failure is logged without path or PII and does not roll back', async () => {
+    const { repository } = makeRepository(makeProfile({ avatarUrl: '/uploads/avatars/1-old.png' }));
+    const avatarStorage = {
+      saveAvatarFile: jest.fn(async () => '/uploads/avatars/1-new.png'),
+      deleteAvatarFile: jest.fn(async () => {
+        throw new Error('C:\\sensitive\\uploads\\avatars\\1-old.png');
+      }),
+    };
+    const logger = { error: jest.fn() };
+    const service = createProfileService({
+      profileRepository: repository,
+      auditLogRepository: { create: jest.fn(async () => undefined) },
+      avatarStorage,
+      logger,
+    });
+
+    await expect(service.updateMyAvatar(1, validPngFile())).resolves.toMatchObject({
+      avatarUrl: '/uploads/avatars/1-new.png',
+    });
+
+    expect(logger.error).toHaveBeenCalledWith('Failed to clean up a replaced avatar file.');
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain('sensitive');
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain('1-old.png');
   });
 
   test('updateMyAvatar rejects invalid upload without changing avatar', async () => {

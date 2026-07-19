@@ -8,7 +8,14 @@ describe('admin circulation route boundary', () => {
     expect(source).toContain("router.get('/borrowings', requireAdmin, controller.listBorrowings)");
     expect(source).not.toContain("router.post('/borrowings'");
     expect(source).not.toContain("router.put('/borrowings/:id'");
-    expect(source).toContain("router.get('/requests', requireAdmin, controller.listRequests)");
+    expect(source).toContain(
+      "router.get('/requests', requireAdmin, requestListQueryValidators, controller.listRequests)"
+    );
+    expect(source).toContain(
+      "router.get('/requests/:requestId', requireAdmin, requestIdValidators, controller.getRequestDetail)"
+    );
     expect(source).not.toContain("router.patch('/requests/:id/status'");
+    expect(source).not.toContain("router.patch('/requests/:requestId/approve'");
+    expect(source).not.toContain("router.patch('/requests/:requestId/reject'");
   });
 });

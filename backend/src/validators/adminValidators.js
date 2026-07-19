@@ -1,5 +1,7 @@
-const { matchedData, query } = require('express-validator');
+const { matchedData, param, query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
+
+const REQUEST_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'CANCELLED'];
 
 function isDateOnly(value) {
   const text = String(value);
@@ -70,9 +72,77 @@ const auditLogQueryValidators = [
   assignValidatedAuditQuery,
 ];
 
+function assignValidatedRequestQuery(req, res, next) {
+  const data = matchedData(req, { locations: ['query'] });
+  req.validatedRequestQuery = {
+    page: data.page ?? 1,
+    limit: data.limit ?? 20,
+    ...(data.q ? { q: data.q } : {}),
+    ...(data.status ? { status: data.status } : {}),
+    ...(data.from ? { from: data.from } : {}),
+    ...(data.to ? { to: data.to } : {}),
+  };
+  return next();
+}
+
+function assignValidatedRequestId(req, res, next) {
+  const data = matchedData(req, { locations: ['params'] });
+  req.validatedRequestId = data.requestId;
+  return next();
+}
+
+const requestListQueryValidators = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer.')
+    .toInt(),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be an integer between 1 and 100.')
+    .toInt(),
+  query('q')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Search must be between 1 and 100 characters.'),
+  query('status')
+    .optional()
+    .trim()
+    .toUpperCase()
+    .isIn(REQUEST_STATUSES)
+    .withMessage('Status is invalid.'),
+  query('from')
+    .optional()
+    .custom(isDateOnly)
+    .withMessage('From date must use YYYY-MM-DD.'),
+  query('to')
+    .optional()
+    .custom(isDateOnly)
+    .withMessage('To date must use YYYY-MM-DD.')
+    .bail()
+    .custom(validateAuditDateRange),
+  handleValidationErrors,
+  assignValidatedRequestQuery,
+];
+
+const requestIdValidators = [
+  param('requestId')
+    .isInt({ min: 1 })
+    .withMessage('Request ID must be a positive integer.')
+    .toInt(),
+  handleValidationErrors,
+  assignValidatedRequestId,
+];
+
 module.exports = {
   isDateOnly,
   validateAuditDateRange,
   assignValidatedAuditQuery,
   auditLogQueryValidators,
+  assignValidatedRequestQuery,
+  assignValidatedRequestId,
+  requestListQueryValidators,
+  requestIdValidators,
 };

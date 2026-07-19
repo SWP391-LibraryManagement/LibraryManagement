@@ -12,7 +12,7 @@ const { createNotificationRoutes } = require('./routes/notificationRoutes');
 const { createReportRoutes } = require('./routes/reportRoutes');
 const { createReservationRoutes } = require('./routes/reservationRoutes');
 const { createUserManagementRoutes } = require('./routes/userManagementRoutes');
-const { createBookRoutes } = require('./routes/bookRoutes');
+const { createAdminBookRoutes, createBookRoutes } = require('./routes/bookRoutes');
 const { createFineRoutes } = require('./routes/fineRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createAdminRoutes } = require('./routes/adminRoutes');
@@ -111,7 +111,8 @@ function createApp({
   app.use('/api/users', createUserManagementRoutes({ authService, userManagementService }));
   app.use('/api/admin', createAdminRoutes({ authService, adminService }));
   app.use('/api', createInventoryRoutes({ authService, inventoryService }));
-  app.use('/api/books', createBookRoutes());
+  app.use('/api/books', createBookRoutes({ authService }));
+  app.use('/api/admin/books', createAdminBookRoutes({ authService }));
   app.use('/api/fines', createFineRoutes({ authService, fineManagementService }));
 
   // API docs (Swagger UI). Optional: skip silently if the spec file is missing/invalid.

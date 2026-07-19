@@ -119,3 +119,17 @@ test('FE11 user-management API no longer owns Audit Logs', async () => {
   assert.doesNotMatch(source, /export async function fetchAuditLogs/);
   assert.doesNotMatch(source, /\/users\/audit-logs/);
 });
+
+test('FE11 deactivation sends the loaded effective version and maps pending activation', async () => {
+  const source = await readFile(apiPath, 'utf8');
+
+  assert.match(
+    source,
+    /export async function deactivateManagedUser\(userId, expectedUpdatedAt\)/,
+  );
+  assert.match(
+    source,
+    /data: \{ status: 'INACTIVE', expectedUpdatedAt \}/,
+  );
+  assert.match(source, /ACCOUNT_PENDING_ACTIVATION:/);
+});

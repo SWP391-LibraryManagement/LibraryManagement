@@ -1,8 +1,8 @@
 # FE09 Test Plan - Fine Management
 
 Version: 0.3.0
-Status: READY FOR REVIEW
-Last Updated: 2026-07-17
+Status: READY FOR HUMAN/INTEGRATION REVIEW
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.0
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
@@ -17,8 +17,8 @@ cancelled terminal states, audit logging, FE07 eligibility readback, determinist
 role-protected visibility. The legacy prototype CRUD (`fineService.js`) is kept only for the demo UI
 and is covered separately by `fineRoutes.test.js`; it is not production completion evidence.
 
-The normalization tasks are contract work awaiting human review. Historical test results do not prove
-FE09-T013 through FE09-T020 are complete.
+FE09-T013 through FE09-T020 now have agent-side RED/GREEN and live SQL evidence. Browser/L4 and
+project human acceptance remain release gates.
 
 ## 2. Unit / Service Test Targets
 
@@ -50,45 +50,46 @@ FE09-T013 through FE09-T020 are complete.
 - Overdue return -> Librarian calculates the fine -> Librarian records one full offline collection -> payment metadata and audit are committed -> FE07 no longer blocks the member.
 - Admin waives or cancels an unpaid fine with a valid reason -> the fine remains visible, becomes terminal, and the audit record is committed atomically.
 - Staff lists fines with omitted pagination -> the first 20 records appear in `FineId ASC` order; invalid filters are rejected without a data query.
-- Frontend `FineManagement.jsx` remains a documented TD-004 migration boundary and must not be presented as production server-side completion.
+- Frontend `FineManagement.jsx` owns canonical API state and has no browser-storage fallback; fully server-controlled list presentation remains a documented TD-004 boundary and must not be presented as browser/L4 completion.
 
 ## 5. Current Evidence
 
-- `backend/tests/fineManagementRoutes.test.js` contains the historical server-side route coverage (11 tests; AC-FE09-001..010).
+- `backend/tests/fineManagementRoutes.test.js` contains the reconciled server-side route coverage (21 tests; AC-FE09-001..015 plus transaction and validation cases).
 - `backend/tests/fineRoutes.test.js` covers the retained legacy prototype CRUD separately.
-- FE09-T013 through FE09-T020 focused contract, SQL concurrency, and frontend-boundary tests have not yet been added; no completion claim is made for them.
+- `backend/tests/fineContract.test.js` covers the eight canonical OpenAPI operations and the timezone boundary.
+- `backend/tests/sql/fineConcurrency.sqltest.js` passes all three static transaction/contract checks and six mutable SQL cases on the disposable SQL Server runtime.
+- `frontend/test/fineManagementFrontend.test.js` covers canonical API ownership, no demo storage, and the deferred UI boundary.
 
 ## 6. Gaps
 
-- FE09-T013 through FE09-T020 remain pending focused validation and human review of the normalized contract.
-- TD-004: migrate the frontend from legacy CRUD/browser storage to the approved server-side API and add the corresponding UI pagination.
-- A SQL Server-backed environment is still required for persistence, duplicate-calculation, and atomic state/audit concurrency evidence.
+- TD-004: complete browser/L4 acceptance and, if required by the owner, move list search/filter/pagination controls fully onto the server query contract; this is not claimed by the focused source tests.
+- Persistence, duplicate-calculation, terminal-winner, eligibility, and atomic rollback evidence passed on disposable SQL Server; see `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Online payment, partial payment, automatic scheduling, and lost/damaged fine policies remain outside Phase 1.
 
 ## 7. NFR Coverage
 
 | NFR ID | Test target | Evidence state |
 | ------ | ----------- | -------------- |
-| NFR-FE09-SEC-001 | Authentication on all fine endpoints and staff-only manual calculation. | Historical route coverage; complete endpoint matrix pending FE09-T013/T014. |
-| NFR-FE09-SEC-002 | Member own-fine isolation for list and detail. | Historical own-list evidence; detail isolation pending FE09-T018. |
-| NFR-FE09-SEC-003 | Librarian/Admin collection/paid guards and Admin-only waive/cancel guards. | Partial historical evidence; normalized route cases pending FE09-T016/T017. |
-| NFR-FE09-SEC-004 | Calculation ignores client amount, overdue days, and date inputs. | Historical calculation evidence; expanded tampering cases pending FE09-T015. |
-| NFR-FE09-SEC-005 | Validate IDs, status, payment method, note, reason, and pagination before repository access. | Pending FE09-T013/T014/T018. |
-| NFR-FE09-TXN-001 | Atomic fine creation and duplicate detection under concurrency. | Repository foundation exists; SQL concurrency evidence pending FE09-T015. |
-| NFR-FE09-TXN-002 | Atomic payment/reason/state/audit update with rollback and one terminal winner. | Pending FE09-T016/T017. |
-| NFR-FE09-PERF-001 | Pagination defaults/bounds and fixed `FineId ASC` ordering. | Pending FE09-T018. |
-| NFR-FE09-PERF-002 | Borrow-detail calculation lookup uses key-based access. | Repository review and focused contract evidence pending FE09-T015. |
-| NFR-FE09-LOG-001 | Calculation, collection, paid, waive, cancel, and failed mutation are traceable. | Partial historical evidence; complete audit matrix pending FE09-T016/T017. |
-| NFR-FE09-LOG-002 | Audit/log output excludes unnecessary personal data. | Pending FE09-T013/T016/T017 security assertions. |
-| NFR-FE09-UX-001 | Fine display includes amount, reason, status, and borrowing context. | Server contract pending FE09-T018; production frontend remains TD-004. |
-| NFR-FE09-UX-002 | Error responses distinguish missing, unauthorized, and terminal conflicts. | Deterministic codes specified; route assertions pending FE09-T013/T014. |
-| NFR-FE09-TIME-001 | Returned and active loans use `Asia/Ho_Chi_Minh` business date. | Pending FE09-T015 timezone-boundary tests. |
+| NFR-FE09-SEC-001 | Authentication on all fine endpoints and staff-only manual calculation. | Route middleware plus focused role/permission evidence; browser/L4 remains open. |
+| NFR-FE09-SEC-002 | Member own-fine isolation for list and detail. | Focused own-list and foreign-detail tests pass. |
+| NFR-FE09-SEC-003 | Librarian/Admin collection/paid guards and Admin-only waive/cancel guards. | Focused role matrix passes. |
+| NFR-FE09-SEC-004 | Calculation ignores client amount, overdue days, and date inputs. | Focused tampering test passes. |
+| NFR-FE09-SEC-005 | Validate IDs, status, payment method, note, reason, and pagination before repository access. | Focused validation matrix passes. |
+| NFR-FE09-TXN-001 | Atomic fine creation and duplicate detection under concurrency. | In-memory and live SQL duplicate-calculation/rollback cases pass. |
+| NFR-FE09-TXN-002 | Atomic payment/reason/state/audit update with rollback and one terminal winner. | In-memory and live SQL terminal-winner/rollback cases pass. |
+| NFR-FE09-PERF-001 | Pagination defaults/bounds and fixed `FineId ASC` ordering. | Focused list contract passes. |
+| NFR-FE09-PERF-002 | Borrow-detail calculation lookup uses key-based access. | Repository lookup is primary-key bounded and covered by source review. |
+| NFR-FE09-LOG-001 | Calculation, collection, paid, waive, cancel, and failed mutation are traceable. | Focused audit metadata and rollback tests pass. |
+| NFR-FE09-LOG-002 | Audit/log output excludes unnecessary personal data. | Audit metadata is allow-listed to fine context and safe note/reason fields. |
+| NFR-FE09-UX-001 | Fine display includes amount, reason, status, and borrowing context. | API DTO/OpenAPI and frontend source checks pass; browser/L4 pending. |
+| NFR-FE09-UX-002 | Error responses distinguish missing, unauthorized, and terminal conflicts. | Deterministic error-code assertions pass. |
+| NFR-FE09-TIME-001 | Returned and active loans use `Asia/Ho_Chi_Minh` business date. | Focused boundary test passes; live environment confirmation pending. |
 
 ## 8. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/fineManagementRoutes.test.js tests/fineRoutes.test.js tests/fineContract.test.js
-npm.cmd --prefix backend test -- --runTestsByPath tests/sql/fineConcurrency.sqltest.js
+npm.cmd --prefix backend run test:sql:fe09
 node --test frontend/test/fineManagementFrontend.test.js
 npm.cmd run trace:enforce
 git diff --check

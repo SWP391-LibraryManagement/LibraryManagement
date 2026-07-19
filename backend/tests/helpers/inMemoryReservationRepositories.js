@@ -178,11 +178,17 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         })
         .sort(
           (left, right) =>
-            new Date(right.reservedAt).getTime() - new Date(left.reservedAt).getTime() ||
-            right.reservationId - left.reservationId
+            new Date(left.reservedAt).getTime() - new Date(right.reservedAt).getTime() ||
+            left.reservationId - right.reservationId
         );
 
-      return filteredReservations.map(mapReservation);
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      const start = (page - 1) * limit;
+      return {
+        rows: filteredReservations.slice(start, start + limit).map(mapReservation),
+        total: filteredReservations.length,
+      };
     },
 
     async cancelReservation(reservationId) {

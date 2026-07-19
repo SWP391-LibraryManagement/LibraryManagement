@@ -3,8 +3,8 @@
  * API that: GET /api/reports/borrowing.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, BookMarked, AlertTriangle, ClipboardList, Calendar, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BookOpen, BookMarked, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 
 import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -15,6 +15,7 @@ import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildDateRangeReportParams } from '../../utils/reportFilters';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
+const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 
 export default function BorrowingReportPage() {
   const [from, setFrom] = useState('');
@@ -46,17 +47,18 @@ export default function BorrowingReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const periodData = useMemo(
-    () => objectToChart(report?.borrowCountByPeriod, (label) => label.length >= 7 ? label.slice(5) : label),
-    [report]
+  const metrics = report?.metrics || {};
+  const rows = report?.rows || [];
+  const totalRows = report?.totalRows || 0;
+  const periodData = objectToChart(
+    metrics.borrowCountByPeriod,
+    (label) => label.length >= 7 ? label.slice(5) : label
   );
-  const topBooks = report?.topBorrowedBooks || [];
-  const totals = report?.totals || {};
+  const topBooks = metrics.topBorrowedBooks || [];
   const kpis = [
-    { label: 'Tổng yêu cầu', value: totals.requests, icon: ClipboardList, hint: 'BorrowRequests' },
-    { label: 'Tổng bản ghi', value: totals.details, icon: BookOpen, hint: 'BorrowDetails' },
-    { label: 'Đang mượn', value: totals.activeLoans, icon: BookMarked, hint: 'BORROWED' },
-    { label: 'Quá hạn', value: totals.overdueLoans, icon: AlertTriangle, hint: 'OVERDUE' },
+    { label: 'Tổng bản ghi', value: totalRows, icon: BookOpen, hint: 'BorrowDetails' },
+    { label: 'Đang mượn', value: metrics.activeLoans, icon: BookMarked, hint: 'BORROWED' },
+    { label: 'Quá hạn', value: metrics.overdueLoans, icon: AlertTriangle, hint: 'OVERDUE' },
   ];
 
   return (
@@ -97,8 +99,9 @@ export default function BorrowingReportPage() {
           </div>
 
           <div className="stat-strip">
-            {Object.entries(report?.requestStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> request {status}</span>)}
-            {Object.entries(report?.detailStatusCounts || {}).map(([status, value]) => <span className="stat-chip" key={status}><strong>{fmtNumber(value)}</strong> detail {status}</span>)}
+            <span className="stat-chip"><strong>{fmtNumber(rows.length)}</strong> dòng trên trang {report?.page || 1}</span>
+            <span className="stat-chip"><strong>{fmtNumber(totalRows)}</strong> tổng bản ghi</span>
+            <span className="stat-chip"><strong>{fmtNumber(report?.limit || 20)}</strong> dòng/trang</span>
           </div>
 
           <div className="split">
@@ -113,20 +116,22 @@ export default function BorrowingReportPage() {
           </div>
 
           <div className="lib-card">
-            <h3 className="lib-card-title">Chi tiết top sách</h3>
+            <h3 className="lib-card-title">Chi tiết mượn/trả ({fmtNumber(totalRows)})</h3>
             <DataTable
-              caption="Top borrowed books table"
-              headers={['#', 'Sách', 'Tác giả', 'Nhóm', 'Lượt mượn']}
-              isEmpty={!topBooks.length}
-              emptyState={<EmptyState icon={BookOpen} title="Không có dữ liệu top sách" />}
+              caption="Borrowing report detail rows"
+              headers={['Mã', 'Người dùng', 'Sách / Bản sao', 'Trạng thái', 'Ngày mượn', 'Hạn trả', 'Ngày trả']}
+              isEmpty={!rows.length}
+              emptyState={<EmptyState icon={BookOpen} title="Không có chi tiết mượn/trả" />}
             >
-              {topBooks.map((book, index) => (
-                <tr key={`${book.bookId || book.title}-${index}`}>
-                  <td data-label="#">{index + 1}</td>
-                  <td data-label="Sách"><strong>{book.title || `Book #${book.bookId}`}</strong></td>
-                  <td data-label="Tác giả">{book.author || '-'}</td>
-                  <td data-label="Nhóm"><Badge status="default">{book.category || book.categoryName || 'Nguồn FE07'}</Badge></td>
-                  <td data-label="Lượt mượn"><strong>{fmtNumber(book.borrowCount)}</strong></td>
+              {rows.map((row) => (
+                <tr key={row.borrowDetailId}>
+                  <td data-label="Mã"><strong>#{row.borrowDetailId}</strong></td>
+                  <td data-label="Người dùng">#{row.userId}</td>
+                  <td data-label="Sách / Bản sao">Book #{row.bookId || '-'} / Copy #{row.copyId}</td>
+                  <td data-label="Trạng thái"><Badge status={row.status}>{row.status}</Badge></td>
+                  <td data-label="Ngày mượn">{fmtDate(row.borrowDate)}</td>
+                  <td data-label="Hạn trả">{fmtDate(row.dueDate)}</td>
+                  <td data-label="Ngày trả">{fmtDate(row.returnDate)}</td>
                 </tr>
               ))}
             </DataTable>

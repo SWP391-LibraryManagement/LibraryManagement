@@ -264,6 +264,30 @@ function createNotificationService({
     }
   }
 
+  // @spec BR-FE10-002 BR-FE10-010 FR-FE10-005 FR-FE10-009
+  function validateSensitiveTemplateData(type, templateData) {
+    if (!['ACCOUNT_VERIFICATION', 'PASSWORD_RESET'].includes(type)) {
+      return;
+    }
+
+    if (typeof templateData.otp !== 'string' || !/^\d{6}$/.test(templateData.otp)) {
+      throw errors.badRequest(
+        'INVALID_SENSITIVE_TEMPLATE_DATA',
+        'Sensitive authentication template data is invalid.'
+      );
+    }
+
+    if (
+      !Number.isInteger(templateData.expiresInMinutes) ||
+      templateData.expiresInMinutes <= 0
+    ) {
+      throw errors.badRequest(
+        'INVALID_SENSITIVE_TEMPLATE_DATA',
+        'Sensitive authentication template data is invalid.'
+      );
+    }
+  }
+
   function validateServiceBoundaryInput(input, { isInternal = false } = {}) {
     if (isInternal && (!input || typeof input !== 'object' || Array.isArray(input))) {
       throw errors.badRequest(
@@ -455,6 +479,7 @@ function createNotificationService({
     };
   }
 
+  // @spec FR-FE10-010 AC-FE10-010
   async function createNotificationRequestWithSource(
     input,
     { sourceFeature, auditUserId, isInternal },
@@ -554,6 +579,7 @@ function createNotificationService({
     const recipient = await resolveRecipient(requestInput);
 
     validateTemplateData(template, rawTemplateData);
+    validateSensitiveTemplateData(type, rawTemplateData);
 
     const renderedTitle = renderTemplate(template.subject, rawTemplateData);
     const renderedBody = renderTemplate(template.body, rawTemplateData);

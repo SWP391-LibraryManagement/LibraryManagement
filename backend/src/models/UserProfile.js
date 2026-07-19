@@ -11,6 +11,8 @@ module.exports = defineModel({
     { attribute: 'address', name: 'Address', type: 'NVARCHAR(255)', nullable: true },
     { attribute: 'dateOfBirth', name: 'DateOfBirth', type: 'DATE', nullable: true },
     { attribute: 'avatarUrl', name: 'AvatarUrl', type: 'NVARCHAR(255)', nullable: true },
+    { attribute: 'department', name: 'Department', type: 'NVARCHAR(100)', nullable: true },
+    { attribute: 'specialization', name: 'Specialization', type: 'NVARCHAR(100)', nullable: true },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
   ],

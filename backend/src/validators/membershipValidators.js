@@ -3,13 +3,15 @@ const { handleValidationErrors } = require('./authValidators');
 
 const applicationStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
 
+// @spec NFR-FE04-SEC-004 EC-FE04-005
 const applicationIdParamValidator = [
   param('applicationId')
-    .isInt({ min: 1 })
+    .isInt({ min: 1, max: 2147483647 })
     .withMessage('Application ID must be a positive integer.')
     .toInt(),
 ];
 
+// @spec NFR-FE04-SEC-004 NFR-FE04-PERF-001
 const listApplicationsValidators = [
   query('q')
     .optional({ nullable: true, checkFalsy: true })
@@ -40,6 +42,7 @@ const approveApplicationValidators = [
   handleValidationErrors,
 ];
 
+// @spec BR-FE04-010 NFR-FE04-SEC-004 EC-FE04-008
 const rejectApplicationValidators = [
   ...applicationIdParamValidator,
   body('reason')

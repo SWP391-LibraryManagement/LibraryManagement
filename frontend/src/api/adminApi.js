@@ -37,6 +37,12 @@ export const adminApi = {
   requests(params = {}) {
     return authorizedRequest({ method: 'get', url: '/admin/requests', params }, 'Khong the tai yeu cau.');
   },
+  requestDetail(requestId) {
+    return authorizedRequest(
+      { method: 'get', url: `/admin/requests/${requestId}` },
+      'Khong the tai chi tiet yeu cau.'
+    );
+  },
   permissions() {
     return authorizedRequest(
       { method: 'get', url: '/admin/permissions' },

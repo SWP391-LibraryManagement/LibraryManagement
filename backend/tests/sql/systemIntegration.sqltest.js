@@ -471,12 +471,27 @@ test('[SIT-SQL-001] FE07 return is visible to FE09 and FE12 through shared SQL s
     librarian,
     librarianContext
   );
-  expect(report.totals).toEqual({ requests: 1, details: 1, activeLoans: 0, overdueLoans: 0 });
-  expect(report.requestStatusCounts).toEqual({ COMPLETED: 1 });
-  expect(report.detailStatusCounts).toEqual({ RETURNED: 1 });
-  expect(report.borrowCountByPeriod).toEqual({ '2026-07-14': 1 });
-  expect(report.topBorrowedBooks).toEqual([
+  expect(report).toMatchObject({ page: 1, limit: 20, totalRows: 1 });
+  expect(report.metrics).toMatchObject({
+    activeLoans: 0,
+    overdueLoans: 0,
+    borrowCountByPeriod: { '2026-07-14': 1 },
+  });
+  expect(report.metrics.topBorrowedBooks).toEqual([
     expect.objectContaining({ bookId, borrowCount: 1 }),
+  ]);
+  expect(report.rows).toEqual([
+    expect.objectContaining({
+      borrowDetailId: detailId,
+      requestId,
+      userId: member.userId,
+      bookId,
+      copyId,
+      status: 'RETURNED',
+      borrowDate: '2026-07-14',
+      dueDate: '2026-06-30',
+      returnDate: '2026-07-14',
+    }),
   ]);
 
   const auditRows = await pool

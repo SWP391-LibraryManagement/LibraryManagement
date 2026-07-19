@@ -10,7 +10,8 @@ function formatDate(value) {
 
 export default function MyMembershipStatus({ status }) {
   const current = status || {};
-  const statusKey = String(current.status || 'NONE').toUpperCase();
+  const statusKey = String(current.membershipStatusView || 'NONE').toUpperCase();
+  const currentApplication = current.currentApplication || {};
 
   return (
     <section className="lib-card">
@@ -24,9 +25,9 @@ export default function MyMembershipStatus({ status }) {
       </div>
 
       <div className="info-list">
-        <div className="info-row"><CalendarClock size={16} /> Ngày nộp: <strong>{formatDate(current.appliedAt)}</strong></div>
-        <div className="info-row"><CalendarClock size={16} /> Ngày duyệt: <strong>{formatDate(current.approvedAt)}</strong></div>
-        {current.rejectionReason && <div className="alert-box danger">{current.rejectionReason}</div>}
+        <div className="info-row"><CalendarClock size={16} /> Ngày nộp: <strong>{formatDate(currentApplication.appliedAt)}</strong></div>
+        <div className="info-row"><CalendarClock size={16} /> Ngày duyệt: <strong>{formatDate(currentApplication.approvedAt)}</strong></div>
+        {currentApplication.rejectionReason && <div className="alert-box danger">{currentApplication.rejectionReason}</div>}
       </div>
     </section>
   );

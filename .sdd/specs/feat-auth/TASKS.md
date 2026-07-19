@@ -1,6 +1,6 @@
 ﻿# TASKS.md - FE02 Authentication
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - OTP/REFRESH RECONCILIATION AUTOMATED PASS; HUMAN CLOSEOUT PENDING
 Date: 2026-07-15
 Owner: Dat
 
@@ -85,27 +85,30 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Files: `.sdd/specs/feat-auth/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`, `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`.
   - DoD: FE02 and FE10 agree on OTP variables, source ownership, token-ID idempotency, single delivery ownership, non-blocking failure, resend semantics, and `CHANGE_PASSWORD_OTP` exclusion; no implementation files change.
 
-- [ ] **FE02-T030 - Add RED requester-integration tests.**
+- [x] **FE02-T030 - Add RED requester-integration tests.**
   - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022; AC-FE02-001, AC-FE02-014.
   - Files: `backend/tests/authRoutes.test.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`.
   - DoD: failing tests prove register, resend verification, and forgot password make exactly one FE10 requester call containing `otp`, `expiresInMinutes`, `AuthToken`, token ID, and token-ID idempotency; tests reject direct notification writes, direct verification/reset email sends, and `debugOtp`/`debugVerificationToken`/`debugResetToken` HTTP fields.
 
-- [ ] **FE02-T031 - Migrate verification/reset delivery to FE10.**
+- [x] **FE02-T031 - Migrate verification/reset delivery to FE10.**
   - Maps to: BR-FE02-020, BR-FE02-021; FR-FE02-002, FR-FE02-011, FR-FE02-022.
   - Dependencies: FE10-S02 and FE10-S03.
   - Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
   - DoD: `createOtpToken` returns the persisted token record; verification/reset call only the requester bound to `FE02`; duplicate direct notification/email paths and HTTP debug-token fields are removed; tests capture OTPs through injected dependencies; legacy token acceptance and direct `CHANGE_PASSWORD_OTP` email remain unchanged.
+  - Evidence: the FE10 schema/OpenAPI fan-in is present and the current FE02/FE10 focused cross-feature gate passes as part of 4 suites/154 tests.
 
-- [ ] **FE02-T032 - Lock non-blocking failure and resend behavior.**
+- [x] **FE02-T032 - Lock non-blocking failure and resend behavior.**
   - Maps to: BR-FE02-022; FR-FE02-023; AC-FE02-019; EC-FE02-009.
   - Files: `backend/tests/authRoutes.test.js`, `backend/src/services/authService.js`.
   - DoD: FE10 `FAILED` status or safe exception does not roll back user/token state or alter generic forgot-password semantics; no OTP reaches logs/audits/responses; resend creates a new token ID and notification key.
+  - Evidence: requester failure/resend behavior, token-ID idempotency, no debug credential fields, and unchanged `CHANGE_PASSWORD_OTP` ownership pass in the current FE02/FE10 focused gate.
 
-- [ ] **FE02-T033 - Pass the cross-feature validation gate.**
+- [~] **FE02-T033 - Pass the cross-feature validation gate.**
   - Maps to: ADR-004 verification contract and all FE02 follow-up requirements.
   - Dependencies: FE02-T030 to FE02-T032; FE10-S02 to FE10-S04.
   - Files: `.sdd/specs/feat-auth/TASKS.md`, `.sdd/specs/feat-auth/CHANGELOG.md`; implementation files change only for review fixes.
   - DoD: focused FE02/FE10 tests and affected integration tests pass; traceability and secret scans pass; `git diff --check` passes; human review confirms `CHANGE_PASSWORD_OTP` and legacy-token behavior were not widened.
+  - Evidence: focused cross-feature tests pass 154/154, traceability is 26/26, and diff hygiene passes; final human closeout remains open.
 
 ## FE02/FE11 Account Setup Tasks
 

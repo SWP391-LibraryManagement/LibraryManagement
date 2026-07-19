@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-19 - OTP, FE02, FE04, And Schema Fan-In
+
+- Synchronized the canonical baseline and FE10 OTP templates with the FE11-owned shared schema widths; the migration passed two disposable SQL Server executions.
+- Fanned FE02 verification/reset delivery into the FE02-bound sensitive requester without duplicate delivery or persisted OTP content.
+- Added the FE04-only `MEMBERSHIP_RESULT` source boundary with non-blocking post-commit delivery semantics.
+- The focused FE02/FE10/integration gate passes 154/154 with full FE10/FE02 traceability; real-provider and final human closeout remain open.
+
+## 2026-07-19 - OTP Provider Boundary Reconciliation
+
+- Implemented the FE02-only verification/reset OTP ownership boundary with provider-memory rendering, canonical OTP variables, safe source metadata, and no raw/rendered sensitive persistence or response exposure.
+- Added an idempotent OTP-template migration, OpenAPI separation of staff HTTP and internal FE02 requests, and focused/integration regression coverage.
+- Recorded fresh evidence at 131/131 focused tests, 623/623 full backend tests, passing coverage thresholds, and 10/10 FE10 source FR tags.
+- S03/S04 were subsequently fanned into the full reconciliation worktree; this historical note records the earlier isolated state.
+
 ## 2026-07-19 - Recipient Email Width Synchronization Activated
 
 - Bumped `SPEC.md` to 0.4.2 and set the persisted `recipientEmail` contract to 255 characters so FE11 account-setup delivery cannot truncate a valid user email.

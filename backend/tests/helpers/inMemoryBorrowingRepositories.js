@@ -15,7 +15,7 @@ function toExclusiveNextDay(value) {
 function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
   let nextRequestId = 1;
   let nextDetailId = 1;
-  const books = clone(initialState.books || [{ bookId: 1, title: 'Clean Code' }]);
+  const books = clone(initialState.books || [{ bookId: 1, title: 'Clean Code', status: 'ACTIVE' }]);
   const copies = clone(
     initialState.copies || [
       { copyId: 1, bookId: 1, barcode: 'BC1', status: 'AVAILABLE', location: 'A1' },
@@ -104,6 +104,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       bookId: copy.bookId,
       barcode: copy.barcode,
       status: copy.status,
+      bookStatus: book?.status || 'ACTIVE',
       location: copy.location,
       title: book?.title || null,
     };
@@ -357,7 +358,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     },
 
     async listBorrowDetails(filters = {}) {
-      return borrowDetails
+      const filtered = borrowDetails
         .filter((detail) => {
           if (filters.userId && detail.userId !== Number(filters.userId)) {
             return false;
@@ -381,20 +382,30 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
           const borrowRequest = borrowRequests.find(
             (request) => request.requestId === detail.requestId
           );
-          const requestDate = new Date(borrowRequest.requestDate);
+          const effectiveDate = detail.borrowDate || borrowRequest.requestDate;
 
-          if (filters.fromDate && requestDate < new Date(filters.fromDate)) {
+          if (filters.fromDate && new Date(effectiveDate) < new Date(`${filters.fromDate}T00:00:00Z`)) {
             return false;
           }
 
-          if (filters.toDate && requestDate >= toExclusiveNextDay(filters.toDate)) {
+          if (filters.toDate && new Date(effectiveDate) >= toExclusiveNextDay(filters.toDate)) {
             return false;
           }
 
           return true;
         })
-        .sort((left, right) => right.borrowDetailId - left.borrowDetailId)
-        .map(mapDetail);
+        .sort((left, right) => {
+          const leftDate = left.borrowDate ? new Date(left.borrowDate).getTime() : -Infinity;
+          const rightDate = right.borrowDate ? new Date(right.borrowDate).getTime() : -Infinity;
+          return rightDate - leftDate || right.borrowDetailId - left.borrowDetailId;
+        });
+      const page = Number(filters.page) || 1;
+      const limit = Number(filters.limit) || 20;
+      const start = (page - 1) * limit;
+      return {
+        rows: filtered.slice(start, start + limit).map(mapDetail),
+        total: filtered.length,
+      };
     },
 
     async approveBorrowRequest({
@@ -446,6 +457,9 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
       const borrowabilityResults = requestedDetails.map((detail) => {
         const copy = getCopy(detail.copyId);
+        if (copy && getBook(copy.bookId)?.status === 'INACTIVE') {
+          return { detail, copy, outcome: 'BOOK_INACTIVE' };
+        }
         return {
           detail,
           copy,

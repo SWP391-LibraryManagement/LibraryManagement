@@ -351,9 +351,9 @@ This feature does not include:
 | BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-011 | UC60 | FT61 | Ready for review |
 | BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-013 | UC58, UC59, UC60 | Planned out-of-scope contract check: no export endpoint/control exists | Ready for review |
-| BR-FE12-014 | UC58, UC59, UC60 | Planned successful-report audit case | Ready for review |
-| BR-FE12-015 | UC58, UC59, UC60 | Planned pagination/default/order case | Ready for review |
+| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` no-export route/OpenAPI/frontend check | Automated evidence; human re-review pending |
+| BR-FE12-014 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` safe successful-view audit cases | Automated evidence; human re-review pending |
+| BR-FE12-015 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` pagination/order cases | Automated evidence; human re-review pending |
 | FR-FE12-001 | UC58 | FT59 | Ready for review |
 | FR-FE12-002 | UC59 | FT60 | Ready for review |
 | FR-FE12-003 | UC60 | FT61 | Ready for review |
@@ -362,8 +362,8 @@ This feature does not include:
 | FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-008 | UC60 | FT61 | Ready for review |
-| FR-FE12-009 | UC58, UC59, UC60 | Planned successful-report audit case | Ready for review |
-| FR-FE12-010 | UC58, UC59, UC60 | Planned pagination/default/order case | Ready for review |
+| FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
+| FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
 | AC-FE12-001 | UC58 | FT59 | Ready for review |
 | AC-FE12-002 | UC59 | FT60 | Ready for review |
 | AC-FE12-003 | UC60 | FT61 | Ready for review |
@@ -372,8 +372,8 @@ This feature does not include:
 | AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-008 | UC60 | FT61 | Ready for review |
-| AC-FE12-009 | UC58, UC59, UC60 | Planned successful-report audit case | Ready for review |
-| AC-FE12-010 | UC58, UC59, UC60 | Planned pagination/default/order case | Ready for review |
+| AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
+| AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
 
 ### 16.1 Coverage Summary
 

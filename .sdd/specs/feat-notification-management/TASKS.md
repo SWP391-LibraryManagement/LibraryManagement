@@ -1,10 +1,10 @@
 # TASKS.md - FE10 Notification Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: APPROVED - OTP/FE02/FE04/SCHEMA AUTOMATED PASS; HUMAN CLOSEOUT PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-15
+Updated: 2026-07-19
 
 ---
 
@@ -202,7 +202,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S02 Add RED Boundary And OTP Contract Tests
 
-- [ ] Status: PENDING
+- [x] Status: RED TESTS COMPLETE
 - Dependencies: FE10-S01 human approval.
 - Maps to: BR-FE10-002 to BR-FE10-005, BR-FE10-010, BR-FE10-011; FR-FE10-001, FR-FE10-002, FR-FE10-005, FR-FE10-009; AC-FE10-001, AC-FE10-002, AC-FE10-006.
 - Files: `backend/tests/notificationRoutes.test.js`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/integration.test.js`.
@@ -210,15 +210,16 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S03 Implement Sensitive Source Ownership And Provider Delivery
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE - IMPLEMENTATION, BASELINE SCHEMA, AND AUTOMATED VALIDATION GREEN
 - Dependencies: FE10-S02 RED evidence.
 - Maps to: G8, G9; BR-FE10-003, BR-FE10-004, BR-FE10-010 to BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-005; AC-FE10-001, AC-FE10-002, AC-FE10-006, AC-FE10-007.
 - Files: `backend/src/services/notificationService.js`, `backend/src/validators/notificationValidators.js`, `backend/src/services/emailService.js`, `backend/src/controllers/notificationController.js`, `database/Librarymanagement.sql`, `backend/src/docs/openapi.yaml`, `backend/tests/helpers/inMemoryNotificationRepositories.js`, `backend/tests/notificationRoutes.test.js`, `backend/tests/integration.test.js`.
 - DoD: only FE02-bound requester accepts sensitive types; HTTP cannot set `sourceFeature`; OTP templates require `otp`/`expiresInMinutes`; configured provider adapter sends rendered content; persistence/audit/log/response contain no OTP or rendered sensitive content; source metadata uses `FE02`/`AuthToken`/token ID.
+- Evidence: service, OpenAPI, canonical baseline, and the idempotent OTP-template migration are synchronized; the migration passed two disposable SQL Server executions and the current FE02/FE10 focused gate passes.
 
 ### FE10-S04 Integrate FE02 Without Duplicate Delivery
 
-- [ ] Status: PENDING
+- [x] Status: COMPLETE - FE02 REQUESTER FAN-IN GREEN
 - Dependencies: FE10-S03; FE02-T030 RED evidence.
 - Maps to: G10; BR-FE10-005, BR-FE10-006, BR-FE10-012, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-008; AC-FE10-001, AC-FE10-002, AC-FE10-008, AC-FE10-009; FE02-T031, FE02-T032.
 - Files: `backend/src/services/authService.js`, `backend/src/repositories/authTokenRepository.js`, `backend/tests/helpers/inMemoryAuthRepositories.js`, `backend/tests/authRoutes.test.js`.
@@ -226,11 +227,12 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S05 Pass Cross-Feature Validation And Human Review
 
-- [ ] Status: PENDING
+- [~] Status: AUTOMATED CROSS-FEATURE VALIDATION PASS; FINAL HUMAN CLOSEOUT PENDING
 - Dependencies: FE10-S02 to FE10-S04; FE02-T030 to FE02-T032.
 - Maps to: ADR-004 verification contract and all G8-G10 traceability rows.
 - Files: FE10/FE02 `TASKS.md` and `CHANGELOG.md`; implementation files only for approved review fixes.
 - DoD: focused FE10/FE02 and affected integration tests pass; old link/deferred contract scans have no active matches; OTP leakage scan passes; traceability and `git diff --check` pass; diff contains no frontend, FE09 caller, new dependency, schema-table/index migration, or `CHANGE_PASSWORD_OTP` migration; human review is recorded before commit/merge.
+- Evidence: focused FE02/FE10/integration gate passes 154/154, traceability is 10/10 for FE10 and 26/26 for FE02, diff hygiene passes, and Live SQL migration cleanup is recorded; human closeout remains open.
 
 ## 10. FE11 Account Setup Follow-up Tasks
 
@@ -263,7 +265,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S09 Add FE04 Membership-Result Source Boundary
 
-- [ ] Status: READY FOR IMPLEMENTATION - BASELINE APPROVED
+- [x] Status: COMPLETE - FE04 SOURCE BOUNDARY AND FAN-IN GREEN
 - Dependency: FE04/FE10 requester contract revision.
 - Maps to: Q-FE10-009, BR-FE10-005, BR-FE10-011, FR-FE10-006, FR-FE10-009.
 - DoD: FE04 is accepted by the construction-bound allowlist, only FE04 may submit `MEMBERSHIP_RESULT`, status/timestamp behavior is tested, and delivery failure remains non-blocking after the membership decision commits.

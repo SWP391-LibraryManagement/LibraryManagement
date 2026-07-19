@@ -12,20 +12,21 @@ function createMembershipRoutes({ authService, membershipService } = {}) {
   const controller = createMembershipController(membershipService);
   const authenticate = createAuthenticate(authService);
 
+  // @spec BR-FE04-001 BR-FE04-002 FR-FE04-001 AC-FE04-001 AC-FE04-008
   router.post(
     '/applications',
     authenticate,
-    requireAnyRole('MEMBER'),
     controller.apply
   );
 
+  // @spec BR-FE04-011 FR-FE04-007 AC-FE04-007 AC-FE04-008
   router.get(
     '/status/me',
     authenticate,
-    requireAnyRole('MEMBER'),
     controller.getMyStatus
   );
 
+  // @spec BR-FE04-006 BR-FE04-007 NFR-FE04-PERF-001
   router.get(
     '/applications',
     authenticate,
@@ -34,6 +35,7 @@ function createMembershipRoutes({ authService, membershipService } = {}) {
     controller.listApplications
   );
 
+  // @spec BR-FE04-006 BR-FE04-008 FR-FE04-004 AC-FE04-003 AC-FE04-005
   router.patch(
     '/applications/:applicationId/approve',
     authenticate,
@@ -42,6 +44,7 @@ function createMembershipRoutes({ authService, membershipService } = {}) {
     controller.approve
   );
 
+  // @spec BR-FE04-007 BR-FE04-008 BR-FE04-010 FR-FE04-005 AC-FE04-004 AC-FE04-005
   router.patch(
     '/applications/:applicationId/reject',
     authenticate,

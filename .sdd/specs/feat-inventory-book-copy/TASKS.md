@@ -1,12 +1,12 @@
 # TASKS.md - FE06 Inventory / Book Copy Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: READY FOR REVIEW - FE06 reconciliation and live SQL complete; merge/human gates pending
 
 Owner: Dat
 
-Updated: 2026-07-16
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; implementation not started
+Workflow State: FE06-T001 through FE06-T008 executed; final integration remains gated
 
 ---
 
@@ -20,7 +20,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
 
 ## Ordered Tasks
 
-- [ ] **FE06-T001 - Add RED route, SQL concurrency, and frontend contract tests.**
+- [x] **FE06-T001 - Add RED route, SQL concurrency, and frontend contract tests.**
   - Maps to: BR-FE06-001 through BR-FE06-018; FR-FE06-001 through FR-FE06-024; AC-FE06-001 through AC-FE06-014.
   - Files: `backend/tests/inventoryRoutes.test.js`, create `backend/tests/helpers/inMemoryInventoryRepositories.js`, create `backend/tests/sql/inventoryConcurrency.sqltest.js`, `frontend/test/inventoryOperationalFrontend.test.js`.
   - Dependency: none.
@@ -28,7 +28,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify RED: focused backend/SQL/frontend commands fail only on missing v0.4.0 behavior.
   - DoD: every AC has at least one assertion and rollback tests inspect copy, workflow, and audit state.
 
-- [ ] **FE06-T002 - Add BookCopies rowversion and document the mutation contract.**
+- [x] **FE06-T002 - Add BookCopies rowversion and document the mutation contract.**
   - Maps to: BR-FE06-010, BR-FE06-012, BR-FE06-016; FR-FE06-010, FR-FE06-017 through FR-FE06-019; AC-FE06-006, AC-FE06-009, AC-FE06-012; NFR-FE06-TXN-001/002.
   - Files: `database/Librarymanagement.sql`, `.sdd/rfcs/ADR-002-database-design.md`, `backend/src/models/BookCopy.js`, `backend/src/docs/openapi.yaml`.
   - Dependency: FE06-T001.
@@ -36,7 +36,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: SQL tests can read/compare/advance versions and show no physical delete path.
   - DoD: schema changes remain reviewable and do not alter FE05 metadata or FE07/FE08 workflow columns.
 
-- [ ] **FE06-T003 - Reconcile validators, headers, and safe API responses.**
+- [x] **FE06-T003 - Reconcile validators, headers, and safe API responses.**
   - Maps to: BR-FE06-001 through BR-FE06-004, BR-FE06-011, BR-FE06-016 through BR-FE06-018; FR-FE06-001 through FR-FE06-005, FR-FE06-009, FR-FE06-011 through FR-FE06-014, FR-FE06-018, FR-FE06-020, FR-FE06-021, FR-FE06-023, FR-FE06-024; AC-FE06-001 through AC-FE06-005, AC-FE06-010, AC-FE06-012 through AC-FE06-014; NFR-FE06-SEC-001 through NFR-FE06-SEC-004.
   - Files: `backend/src/routes/inventoryRoutes.js`, `backend/src/controllers/inventoryController.js`, `backend/src/validators/inventoryValidators.js`, `backend/src/docs/openapi.yaml`.
   - Dependency: FE06-T001, FE06-T002.
@@ -44,7 +44,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: route tests return deterministic safe `400`, `401`, `403`, `404`, and `409` responses.
   - DoD: invalid supplied pagination is rejected before repository query and response fields exclude unrelated protected data.
 
-- [ ] **FE06-T004 - Reconcile inventory list, counts, and lookups.**
+- [x] **FE06-T004 - Reconcile inventory list, counts, and lookups.**
   - Maps to: BR-FE06-003 through BR-FE06-006, BR-FE06-009, BR-FE06-018; FR-FE06-001 through FR-FE06-003, FR-FE06-008, FR-FE06-009, FR-FE06-024; AC-FE06-001 through AC-FE06-003, AC-FE06-009, AC-FE06-014; NFR-FE06-PERF-001 through NFR-FE06-PERF-003.
   - Files: `backend/src/services/inventoryService.js`, `backend/src/repositories/inventoryRepository.js`, `backend/tests/inventoryRoutes.test.js`.
   - Dependency: FE06-T003.
@@ -52,7 +52,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: focused route tests pass omitted/default pagination, invalid pagination, combined filters, counts, barcode hit/miss, and inactive availability cases.
   - DoD: only `AVAILABLE` copies count as stored available; effective borrow/public availability still also requires active parent book.
 
-- [ ] **FE06-T005 - Implement atomic create and metadata update.**
+- [x] **FE06-T005 - Implement atomic create and metadata update.**
   - Maps to: BR-FE06-002, BR-FE06-003, BR-FE06-009, BR-FE06-011 through BR-FE06-013, BR-FE06-015, BR-FE06-016; FR-FE06-004, FR-FE06-005, FR-FE06-010 through FR-FE06-012, FR-FE06-018, FR-FE06-019, FR-FE06-021, FR-FE06-022; AC-FE06-004 through AC-FE06-006, AC-FE06-011, AC-FE06-012.
   - Files: `backend/src/services/inventoryService.js`, `backend/src/repositories/inventoryRepository.js`, `backend/src/repositories/auditLogRepository.js`, `backend/tests/inventoryRoutes.test.js`, `backend/tests/sql/inventoryConcurrency.sqltest.js`.
   - Dependency: FE06-T002 through FE06-T004.
@@ -60,7 +60,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: focused route/SQL tests pass active/inactive parent, duplicate barcode, invalid location, stale version, and audit-failure rollback cases.
   - DoD: update cannot accept status or FE05 metadata and returns the advanced version.
 
-- [ ] **FE06-T006 - Implement transactional manual status and deactivation commands.**
+- [x] **FE06-T006 - Implement transactional manual status and deactivation commands.**
   - Maps to: BR-FE06-004 through BR-FE06-008, BR-FE06-010, BR-FE06-012, BR-FE06-014 through BR-FE06-017; FR-FE06-006 through FR-FE06-008, FR-FE06-010, FR-FE06-013 through FR-FE06-020, FR-FE06-022, FR-FE06-023; AC-FE06-006 through AC-FE06-013; NFR-FE06-TXN-001/002, NFR-FE06-LOG-001.
   - Files: `backend/src/services/inventoryService.js`, `backend/src/repositories/inventoryRepository.js`, `backend/src/repositories/auditLogRepository.js`, `backend/tests/inventoryRoutes.test.js`, `backend/tests/sql/inventoryConcurrency.sqltest.js`.
   - Dependency: FE06-T005.
@@ -69,7 +69,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: focused route/SQL tests pass all state-matrix and rollback cases without deadlock.
   - DoD: duplicate current-version deactivation returns current copy plus `changed = false` and writes no second transition audit.
 
-- [ ] **FE06-T007 - Replace mock inventory ownership with server-backed frontend state.**
+- [x] **FE06-T007 - Replace mock inventory ownership with server-backed frontend state.**
   - Maps to: AC-FE06-001 through AC-FE06-014; NFR-FE06-UX-001/002.
   - Files: `frontend/src/page/InventoryPage.jsx`, `frontend/src/component/inventory/InventoryManagement.jsx`, `frontend/src/component/inventory/BookCopies.jsx`, `frontend/src/component/inventory/Filter.jsx`, `frontend/src/component/inventory/StatusBadge.jsx`, `frontend/src/api/libraryFeatureApi.js`, `frontend/test/inventoryOperationalFrontend.test.js`.
   - Dependency: FE06-T003 through FE06-T006.
@@ -78,7 +78,7 @@ Workflow State: SPEC v0.4.0 and prototype reconciliation tasks approved; impleme
   - Verify: `node --test frontend/test/inventoryOperationalFrontend.test.js` passes.
   - DoD: UI clearly separates book metadata from copy state and never fabricates successful copy mutations.
 
-- [ ] **FE06-T008 - Close traceability and verification evidence.**
+- [x] **FE06-T008 - Close traceability and verification evidence.**
   - Maps to: all FE06 BR/FR/AC IDs and the Definition of Done.
   - Files: changed FE06 implementation/tests, `.sdd/specs/feat-inventory-book-copy/TEST_PLAN.md`, `.sdd/specs/feat-inventory-book-copy/CHANGELOG.md`.
   - Dependency: FE06-T001 through FE06-T007.

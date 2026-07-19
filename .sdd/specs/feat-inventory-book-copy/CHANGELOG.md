@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-19 - Hybrid inventory reconciliation evidence
+
+- Executed FE06-T001 through FE06-T008 from RED tests through focused and full local validation in `feat/fe06-inventory-reconciliation`.
+- Added `BookCopies.Version` rowversion, optimistic `If-Match`, fixed lock order, atomic audit transactions, strict location/reason/pagination validation, and idempotent deactivation.
+- Replaced mock inventory ownership with canonical server-backed list/count/copy state and truthful FE07/FE08/stale conflict guidance.
+- Updated OpenAPI, ADR/model/schema/migration, traceability, and test evidence.
+- Applied the FE06 migration twice and passed the complete 6/6 FE06 SQL suite on disposable SQL Server with cleanup evidence.
+- Browser acceptance, cross-feature owner confirmation, and human integration remain open.
+
 ## 2026-07-17 - Phase 1 Baseline Approved
 
 - Nhật confirmed the normalized FE06 inventory contract as the Phase 1 baseline; prototype reconciliation implementation remains pending.

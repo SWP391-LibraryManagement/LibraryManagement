@@ -61,7 +61,8 @@ function createInventoryController(inventoryService = defaultInventoryService) {
           req.params.copyId,
           req.body,
           req.user,
-          requestContext(req)
+          requestContext(req),
+          req.headers['if-match']
         );
         return res.status(200).json(result);
       } catch (error) {
@@ -76,7 +77,8 @@ function createInventoryController(inventoryService = defaultInventoryService) {
           req.params.copyId,
           req.body,
           req.user,
-          requestContext(req)
+          requestContext(req),
+          req.headers['if-match']
         );
         return res.status(200).json(result);
       } catch (error) {
@@ -89,8 +91,10 @@ function createInventoryController(inventoryService = defaultInventoryService) {
       try {
         const result = await inventoryService.deactivateCopy(
           req.params.copyId,
+          req.body,
           req.user,
-          requestContext(req)
+          requestContext(req),
+          req.headers['if-match']
         );
         return res.status(200).json(result);
       } catch (error) {

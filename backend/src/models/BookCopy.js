@@ -17,6 +17,7 @@ module.exports = defineModel({
       allowedValues: ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'],
     },
     { attribute: 'location', name: 'Location', type: 'NVARCHAR(100)', nullable: true },
+    { attribute: 'version', name: 'Version', type: 'ROWVERSION', required: true },
     { attribute: 'createdAt', name: 'CreatedAt', type: 'DATETIME', required: true, default: 'GETDATE()' },
     { attribute: 'updatedAt', name: 'UpdatedAt', type: 'DATETIME', nullable: true },
   ],

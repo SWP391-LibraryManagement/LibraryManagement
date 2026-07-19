@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ClipboardList, RefreshCw } from 'lucide-react';
 
@@ -11,7 +11,11 @@ import MembershipReviewModal from '../component/membership/MembershipReviewModal
 import MyMembershipStatus from '../component/membership/MyMembershipStatus';
 import { DataNotice, LoadingBlock, Toast, useToast } from '../component/shared/Feedback';
 
-const EMPTY_STATUS = { status: 'NONE', appliedAt: null, approvedAt: null };
+const EMPTY_STATUS = {
+  membershipStatusView: 'NONE',
+  memberStatus: null,
+  currentApplication: null,
+};
 
 function getStoredUser() {
   try {
@@ -40,11 +44,23 @@ function normalizeApplication(application) {
   };
 }
 
+function normalizeMyStatus(response) {
+  if (!response) return EMPTY_STATUS;
+  return {
+    membershipStatusView: String(
+      response.membershipStatusView || response.memberStatus || 'NONE'
+    ).toUpperCase(),
+    memberStatus: response.memberStatus || null,
+    currentApplication: response.currentApplication || null,
+  };
+}
+
+// @spec FR-FE04-007 FR-FE04-009
 export default function MembershipPage() {
   const authUser = getStoredUser();
   const roles = Array.isArray(authUser?.roles) ? authUser.roles.map((role) => String(role).toUpperCase()) : null;
   const canReview = roles?.some((role) => ['ADMIN', 'LIBRARIAN'].includes(role));
-  const [myStatus, setMyStatus] = useState(EMPTY_STATUS);
+  const [myStatus, setMyStatus] = useState(null);
   const [applications, setApplications] = useState([]);
   const [statusFilter, setStatusFilter] = useState('PENDING');
   const [search, setSearch] = useState('');
@@ -62,6 +78,7 @@ export default function MembershipPage() {
     try {
       if (canReview) {
         const list = normalizeList(await membershipApi.listApplications({
+          q: search.trim() || undefined,
           status: statusFilter === 'ALL' ? undefined : statusFilter,
           page,
           limit: 10,
@@ -70,12 +87,9 @@ export default function MembershipPage() {
         setTotalPages(list.totalPages);
       } else {
         const status = await membershipApi.getMyStatus();
-        setMyStatus(status || EMPTY_STATUS);
+        setMyStatus(normalizeMyStatus(status));
       }
     } catch (error) {
-      setMyStatus(EMPTY_STATUS);
-      setApplications([]);
-      setTotalPages(1);
       setLoadError(error.message);
     } finally {
       setLoading(false);
@@ -92,7 +106,7 @@ export default function MembershipPage() {
     setSaving(true);
     try {
       const result = await membershipApi.apply(formData);
-      setMyStatus(result || { status: 'PENDING', appliedAt: new Date().toISOString() });
+      setMyStatus(normalizeMyStatus(result));
       showToast('Đã nộp đơn đăng ký hội viên.', 'success');
       await loadData();
     } catch (error) {
@@ -122,14 +136,19 @@ export default function MembershipPage() {
   }
 
   async function rejectSelected(reason) {
-    if (!reason.trim()) {
+    const cleanReason = reason.trim();
+    if (!cleanReason) {
       showToast('Lý do từ chối là bắt buộc.', 'error');
+      return;
+    }
+    if (cleanReason.length > 500) {
+      showToast('Lý do từ chối không được vượt quá 500 ký tự.', 'error');
       return;
     }
 
     setSaving(true);
     try {
-      await membershipApi.reject(selected.applicationId || selected.id, reason.trim());
+      await membershipApi.reject(selected.applicationId || selected.id, cleanReason);
       showToast('Đã từ chối đơn đăng ký hội viên.', 'success');
       setSelected(null);
       await loadData();
@@ -139,12 +158,6 @@ export default function MembershipPage() {
       setSaving(false);
     }
   }
-
-  const filteredApplications = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return applications;
-    return applications.filter((item) => `${item.applicationId || item.id || ''} ${item.fullName || item.name || item.userName || ''} ${item.email || ''}`.toLowerCase().includes(keyword));
-  }, [applications, search]);
 
   if (!roles) return <Navigate to="/login" replace />;
 
@@ -159,12 +172,12 @@ export default function MembershipPage() {
 
       {loading ? <LoadingBlock rows={4} /> : (
         <>
-          {!canReview && (
+          {!canReview && myStatus && (
             <div className="split member-membership-grid">
               <MyMembershipStatus status={myStatus} />
               <MembershipApplicationForm
                 applicant={authUser}
-                disabled={!['NONE', 'REJECTED'].includes(String(myStatus.status || 'NONE').toUpperCase())}
+                disabled={!['NONE', 'REJECTED'].includes(myStatus.membershipStatusView)}
                 saving={saving}
                 onSubmit={applyForMembership}
               />
@@ -193,7 +206,7 @@ export default function MembershipPage() {
                 onReload={loadData}
               />
               <MembershipApplicationsTable
-                applications={filteredApplications}
+                applications={applications}
                 page={page}
                 totalPages={totalPages}
                 onPageChange={setPage}

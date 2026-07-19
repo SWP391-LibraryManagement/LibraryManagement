@@ -1,8 +1,8 @@
 # FE10 Test Plan - Notification Management
 
-Version: 0.3.0
-Status: READY FOR REVIEW - OTP AND ACCOUNT SETUP REVISION
-Last Updated: 2026-07-15
+Version: 0.3.2
+Status: OTP/FE02/FE04/SCHEMA AUTOMATED AND SQL PASS; HUMAN CLOSEOUT PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
 Feature IDs: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
@@ -40,15 +40,21 @@ Notification requests, source/type ownership, sensitive in-memory delivery, temp
 
 ## 5. Current Evidence
 
-- `backend/tests/notificationRoutes.test.js` (10 tests: create/idempotency, template-data missing,
-  unsupported type/channel, unknown template, recipient required/not-found, userId resolve + audit,
-  payload sanitize/redaction, process-pending success/failure/empty, RBAC 401/403).
+- `backend/tests/notificationRoutes.test.js` covers canonical ownership, OTP/account-setup
+  provider-memory delivery, safe persistence/audit/response boundaries, idempotency, queueing,
+  processing, retry, and validation failures.
 - `backend/tests/integration.test.js`
+- `backend/tests/fe10OtpTemplateMigration.test.js`
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
+- Fresh OTP boundary gate: 3 suites / 131 tests passed.
+- Full backend regression gate: 39 suites / 623 tests passed.
+- Coverage: 92.57% statements, 82.72% branches, 97.12% functions, 92.50% lines.
 
 ## 6. Gaps
 
-- FE10-S02..S08 remain pending until the written OTP/account-setup contract is reviewed.
+- `database/Librarymanagement.sql`, FE11-owned shared widths, and the FE10 OTP migration are synchronized; the migration passed two disposable SQL Server executions.
+- FE10-S04 FE02 requester integration and FE10-S09 FE04 membership-result integration are fanned into this worktree.
+- Focused FE02/FE10/integration validation passes 154/154. Real provider acceptance and final human review remain pending.
 
 ## 7. Required Commands / Evidence Before Merge
 

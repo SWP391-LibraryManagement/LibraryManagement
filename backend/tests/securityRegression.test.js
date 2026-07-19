@@ -102,6 +102,29 @@ describe('security regressions', () => {
     });
   });
 
+  test('5xx server logs omit raw errors, stacks, and query-string personal data', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const app = makeApp({
+      adminService: {
+        getDashboard: jest.fn(async () => {
+          throw new Error('sensitive-internal-marker C:\\private\\database.sql');
+        }),
+      },
+    });
+
+    const response = await request(app)
+      .get('/api/admin/dashboard?email=member@example.test')
+      .set('Authorization', 'Bearer test-token');
+
+    expect(response.status).toBe(500);
+    const logged = JSON.stringify(errorSpy.mock.calls);
+    expect(logged).toContain('/api/admin/dashboard');
+    expect(logged).not.toContain('sensitive-internal-marker');
+    expect(logged).not.toContain('database.sql');
+    expect(logged).not.toContain('member@example.test');
+    expect(logged).not.toContain('stack');
+  });
+
   test('production CORS does not allow an unconfigured origin', async () => {
     process.env.NODE_ENV = 'production';
     process.env.CORS_ORIGINS = 'https://library.example.test';

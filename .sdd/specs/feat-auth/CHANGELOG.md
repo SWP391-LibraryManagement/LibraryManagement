@@ -1,10 +1,17 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-19 - OTP Requester And Refresh Reconciliation
+
+- Fanned the FE02 verification/reset requester into the canonical FE10 sensitive-provider boundary with token-ID idempotency and no duplicate direct delivery path.
+- Preserved non-blocking provider failure, resend token rotation, legacy token acceptance, and direct `CHANGE_PASSWORD_OTP` ownership.
+- Aligned refresh exchange with FR-FE02-026 by returning the submitted refresh token unchanged.
+- The current FE02/FE10 focused cross-feature gate passes 154/154 with FE02 traceability 26/26; final human closeout remains open.
+
 ## 2026-07-19 - FE11 Finalization Schema Contract Activated
 
 - Bumped `SPEC.md` to 0.6.3 and activated the shared FE11 migration dependency without changing FE02 login, registration, OTP, refresh, or setup-consumption behavior.
 - Confirmed `Users.Email` at 255 characters and documented FE11's non-null managed-user concurrency version as `COALESCE(UpdatedAt, CreatedAt)` for nullable legacy rows.
-- Kept schema implementation and live migration evidence pending the FE11 Finalization Wave A gate.
+- The FE11 shared schema migration subsequently passed two disposable SQL Server executions; see the full-reconciliation Live SQL review.
 
 ## 2026-07-17 - Phase 1 Baseline Approved
 

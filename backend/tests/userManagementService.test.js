@@ -178,6 +178,122 @@ describe('FE11 transactional account setup creation', () => {
     expect(notificationRequester.createNotificationRequest).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(result)).not.toContain('provider-secret');
   });
+
+  test('persists trimmed Librarian fields and rejects them for Member creation', async () => {
+    const librarianHarness = makeHarness();
+    await librarianHarness.service.createUser(
+      {
+        email: 'fields.librarian@example.test',
+        username: 'fields.librarian',
+        fullName: 'Fields Librarian',
+        type: 'librarian',
+        department: '  Reference  ',
+        specialization: '  Research Support  ',
+      },
+      { adminUserId: 99 }
+    );
+
+    expect(librarianHarness.dependencies.state.profiles[0]).toMatchObject({
+      department: 'Reference',
+      specialization: 'Research Support',
+    });
+
+    const memberHarness = makeHarness();
+    await expect(memberHarness.service.createUser(
+      {
+        email: 'fields.member@example.test',
+        username: 'fields.member',
+        fullName: 'Fields Member',
+        type: 'member',
+        department: 'Reference',
+      },
+      { adminUserId: 99 }
+    )).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'VALIDATION_ERROR',
+    });
+    expect(memberHarness.dependencies.state.users).toHaveLength(0);
+  });
+
+  test('delivers a valid 255-character email without truncation', async () => {
+    const harness = makeHarness();
+    const email = `${'a'.repeat(242)}@example.test`;
+
+    await harness.service.createUser(
+      {
+        email,
+        username: 'long.email',
+        fullName: 'Long Email',
+        type: 'member',
+      },
+      { adminUserId: 99 }
+    );
+
+    expect(email).toHaveLength(255);
+    expect(harness.notificationRequester.createNotificationRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ recipientEmail: email })
+    );
+  });
+
+  test.each([
+    ['ADMIN_NOT_FOUND', 404, 'ADMIN_NOT_FOUND'],
+    ['ADMIN_REQUIRED', 403, 'ADMIN_REQUIRED'],
+    ['EMAIL_ALREADY_EXISTS', 409, 'EMAIL_ALREADY_EXISTS'],
+    ['USERNAME_ALREADY_EXISTS', 409, 'USERNAME_ALREADY_EXISTS'],
+  ])('maps repository create outcome %s before delivery', async (outcome, statusCode, code) => {
+    const accountSetupRepository = {
+      createPendingAccount: jest.fn(async () => ({ outcome })),
+    };
+    const notificationRequester = { createNotificationRequest: jest.fn() };
+    const service = createUserManagementService({
+      userRepository: {
+        findByEmail: jest.fn(async () => null),
+        findByUsername: jest.fn(async () => null),
+      },
+      accountSetupRepository,
+      notificationRequester,
+      clock: () => FIXED_NOW,
+    });
+
+    await expect(service.createUser(
+      {
+        email: 'outcome@example.test',
+        username: 'outcome.user',
+        fullName: 'Outcome User',
+        type: 'member',
+      },
+      { adminUserId: 99 }
+    )).rejects.toMatchObject({ statusCode, code });
+    expect(notificationRequester.createNotificationRequest).not.toHaveBeenCalled();
+  });
+
+  test('uses the transaction-authoritative actor outcome before duplicate email disclosure', async () => {
+    const accountSetupRepository = {
+      createPendingAccount: jest.fn(async () => ({ outcome: 'ADMIN_REQUIRED' })),
+    };
+    const notificationRequester = { createNotificationRequest: jest.fn() };
+    const service = createUserManagementService({
+      userRepository: {
+        findByEmail: jest.fn(async () => ({ userId: 7 })),
+        findByUsername: jest.fn(async () => null),
+      },
+      accountSetupRepository,
+      notificationRequester,
+      clock: () => FIXED_NOW,
+    });
+
+    await expect(service.createUser(
+      {
+        email: 'existing@example.test',
+        username: 'new.user',
+        fullName: 'New User',
+        type: 'member',
+      },
+      { adminUserId: 99 }
+    )).rejects.toMatchObject({ statusCode: 403, code: 'ADMIN_REQUIRED' });
+    expect(accountSetupRepository.createPendingAccount).toHaveBeenCalledTimes(1);
+    expect(notificationRequester.createNotificationRequest).not.toHaveBeenCalled();
+  });
 });
 
 describe('FE11 admin account setup resend', () => {
@@ -385,6 +501,200 @@ describe('FE11 admin account setup resend', () => {
     expect(harness.dependencies.state.tokens[0].revokedAt).toBeNull();
     expect(harness.dependencies.state.auditLogs).toHaveLength(1);
     expect(harness.notificationRequester.createNotificationRequest).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    ['ADMIN_NOT_FOUND', 404, 'ADMIN_NOT_FOUND'],
+    ['ADMIN_REQUIRED', 403, 'ADMIN_REQUIRED'],
+  ])('maps repository resend actor outcome %s before delivery', async (outcome, statusCode, code) => {
+    const accountSetupRepository = {
+      rotateSetupToken: jest.fn(async () => ({ outcome })),
+    };
+    const notificationRequester = { createNotificationRequest: jest.fn() };
+    const service = createUserManagementService({
+      userRepository: {},
+      accountSetupRepository,
+      notificationRequester,
+      clock: () => FIXED_NOW,
+    });
+
+    await expect(service.resendSetup(7, { adminUserId: 99 })).rejects.toMatchObject({
+      statusCode,
+      code,
+    });
+    expect(notificationRequester.createNotificationRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('FE11 transactional managed-user update service', () => {
+  function makeUpdateHarness(outcome = 'UPDATED') {
+    const updatedUser = {
+      userId: 7,
+      email: 'updated@example.test',
+      fullName: 'Updated Name',
+      roles: ['LIBRARIAN'],
+      updatedAt: FIXED_NOW,
+    };
+    const userRepository = {
+      getManagedUserById: jest.fn(async () => updatedUser),
+    };
+    const userLifecycleRepository = {
+      updateManagedUser: jest.fn(async () => ({
+        outcome,
+        changedFields: outcome === 'UPDATED' ? ['email', 'fullName'] : undefined,
+      })),
+    };
+    const auditLogRepository = { create: jest.fn() };
+    const service = createUserManagementService({
+      userRepository,
+      userLifecycleRepository,
+      auditLogRepository,
+      userRoleRepository: {},
+      authTokenRepository: {},
+      accountSetupRepository: {},
+      notificationRequester: { createNotificationRequest: jest.fn() },
+      clock: () => FIXED_NOW,
+    });
+    return { service, userRepository, userLifecycleRepository, auditLogRepository, updatedUser };
+  }
+
+  test.each(['UPDATED', 'NO_CHANGE'])('%s returns authoritative readback without standalone audit', async (outcome) => {
+    const harness = makeUpdateHarness(outcome);
+    const expectedUpdatedAt = new Date('2026-07-19T08:00:00.000Z');
+
+    await expect(harness.service.updateUser(
+      7,
+      {
+        expectedUpdatedAt,
+        email: ' UPDATED@example.test ',
+        fullName: ' Updated Name ',
+        department: ' Reference ',
+      },
+      { adminUserId: 99, ip: '127.0.0.1', userAgent: 'jest' }
+    )).resolves.toEqual(harness.updatedUser);
+
+    expect(harness.userLifecycleRepository.updateManagedUser).toHaveBeenCalledWith({
+      adminUserId: 99,
+      userId: 7,
+      expectedUpdatedAt,
+      changes: {
+        email: 'updated@example.test',
+        fullName: 'Updated Name',
+        department: 'Reference',
+      },
+      ipAddress: '127.0.0.1',
+      userAgent: 'jest',
+      now: FIXED_NOW,
+    });
+    expect(harness.userRepository.getManagedUserById).toHaveBeenCalledWith(7);
+    expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['ADMIN_NOT_FOUND', 404, 'ADMIN_NOT_FOUND'],
+    ['ADMIN_REQUIRED', 403, 'ADMIN_REQUIRED'],
+    ['USER_NOT_FOUND', 404, 'USER_NOT_FOUND'],
+    ['STALE_USER_STATE', 409, 'STALE_USER_STATE'],
+    ['EMAIL_ALREADY_EXISTS', 409, 'EMAIL_ALREADY_EXISTS'],
+    ['VALIDATION_ERROR', 400, 'VALIDATION_ERROR'],
+  ])('maps update outcome %s safely', async (outcome, statusCode, code) => {
+    const harness = makeUpdateHarness(outcome);
+
+    await expect(harness.service.updateUser(
+      7,
+      {
+        expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
+        fullName: 'Updated Name',
+      },
+      { adminUserId: 99 }
+    )).rejects.toMatchObject({ statusCode, code });
+
+    expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
+    expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('FE11 atomic managed-user deactivation service', () => {
+  function makeDeactivateHarness(result = { outcome: 'DEACTIVATED', previousStatus: 'ACTIVE' }) {
+    const deactivatedUser = {
+      userId: 7,
+      status: 'INACTIVE',
+      roles: ['MEMBER'],
+      updatedAt: FIXED_NOW,
+    };
+    const userRepository = {
+      getManagedUserById: jest.fn(async () => deactivatedUser),
+    };
+    const userLifecycleRepository = {
+      deactivateManagedUser: jest.fn(async () => result),
+    };
+    const authTokenRepository = { revokeActiveTokensForUser: jest.fn() };
+    const auditLogRepository = { create: jest.fn() };
+    const service = createUserManagementService({
+      userRepository,
+      userLifecycleRepository,
+      authTokenRepository,
+      auditLogRepository,
+      userRoleRepository: {},
+      accountSetupRepository: {},
+      notificationRequester: { createNotificationRequest: jest.fn() },
+      clock: () => FIXED_NOW,
+    });
+    return {
+      service,
+      userRepository,
+      userLifecycleRepository,
+      authTokenRepository,
+      auditLogRepository,
+      deactivatedUser,
+    };
+  }
+
+  test.each(['DEACTIVATED', 'ALREADY_DEACTIVATED'])('%s returns authoritative readback', async (outcome) => {
+    const harness = makeDeactivateHarness({ outcome, previousStatus: 'ACTIVE' });
+    const expectedUpdatedAt = new Date('2026-07-19T08:00:00.000Z');
+
+    await expect(harness.service.updateStatus(
+      7,
+      { status: 'INACTIVE', expectedUpdatedAt },
+      { adminUserId: 99, ip: '127.0.0.1', userAgent: 'jest' }
+    )).resolves.toEqual(harness.deactivatedUser);
+
+    expect(harness.userLifecycleRepository.deactivateManagedUser).toHaveBeenCalledWith({
+      adminUserId: 99,
+      userId: 7,
+      expectedUpdatedAt,
+      ipAddress: '127.0.0.1',
+      userAgent: 'jest',
+      now: FIXED_NOW,
+    });
+    expect(harness.authTokenRepository.revokeActiveTokensForUser).not.toHaveBeenCalled();
+    expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    [{ outcome: 'ADMIN_NOT_FOUND' }, 404, 'ADMIN_NOT_FOUND'],
+    [{ outcome: 'ADMIN_REQUIRED' }, 403, 'ADMIN_REQUIRED'],
+    [{ outcome: 'USER_NOT_FOUND' }, 404, 'USER_NOT_FOUND'],
+    [{ outcome: 'CANNOT_DEACTIVATE_SELF' }, 400, 'CANNOT_DEACTIVATE_SELF'],
+    [{ outcome: 'STALE_USER_STATE' }, 409, 'STALE_USER_STATE'],
+    [{ outcome: 'ACCOUNT_PENDING_ACTIVATION' }, 409, 'ACCOUNT_PENDING_ACTIVATION'],
+    [{ outcome: 'ACTIVE_BORROWINGS_EXIST', activeBorrowingCount: 2 }, 409, 'ACTIVE_BORROWINGS_EXIST'],
+  ])('maps deactivation outcome %s safely', async (result, statusCode, code) => {
+    const harness = makeDeactivateHarness(result);
+
+    await expect(harness.service.updateStatus(
+      7,
+      {
+        status: 'INACTIVE',
+        expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
+      },
+      { adminUserId: 99 }
+    )).rejects.toMatchObject({ statusCode, code });
+
+    expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
+    expect(harness.authTokenRepository.revokeActiveTokensForUser).not.toHaveBeenCalled();
+    expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
   });
 });
 

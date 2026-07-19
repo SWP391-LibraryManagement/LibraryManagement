@@ -9,7 +9,7 @@ const ROLE_IDS = {
 };
 const VALID_COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
 
-function makeReportRepository() {
+function makeReportRepository({ borrowDetails } = {}) {
   const authState = {
     users: [
       { userId: 1, status: 'ACTIVE' },
@@ -47,7 +47,7 @@ function makeReportRepository() {
       { requestId: 10, userId: 1, requestDate: new Date('2026-01-10T12:00:00.000Z'), status: 'APPROVED' },
       { requestId: 20, userId: 2, requestDate: new Date('2026-01-10T12:00:00.000Z'), status: 'PENDING' },
     ],
-    borrowDetails: [
+    borrowDetails: borrowDetails || [
       // Detail userId is deliberately not the request owner: SQL filters br.UserId, not a detail field.
       { borrowDetailId: 101, requestId: 10, userId: 99, copyId: 1, borrowDate: new Date('2025-12-31T00:00:00.000Z'), dueDate: new Date('2099-01-01T00:00:00.000Z'), status: 'BORROWED' },
       { borrowDetailId: 102, requestId: 10, userId: 1, copyId: 2, borrowDate: new Date('2026-01-11T00:00:00.000Z'), dueDate: new Date('2026-01-12T00:00:00.000Z'), status: 'RETURNED' },
@@ -69,23 +69,21 @@ function makeReportRepository() {
 }
 
 describe('in-memory FE12 report repository parity', () => {
-  test('borrowing date filters retain every joined detail from requests in the request-date range', async () => {
+  test('borrowing date filters apply to BorrowDate', async () => {
     const report = await makeReportRepository().getBorrowingReport({
-      fromDate: '2026-01-10',
-      toDate: '2026-01-10',
+      fromDate: '2026-01-11',
+      toDate: '2026-01-12',
     });
 
-    expect(report.totals).toMatchObject({ requests: 2, details: 6, activeLoans: 1 });
-    expect(report.requestStatusCounts).toEqual({ APPROVED: 1, PENDING: 1 });
-    expect(report.detailStatusCounts).toEqual({ BORROWED: 1, RETURNED: 1, REQUESTED: 1, LOST: 1, DAMAGED: 1, OVERDUE: 1 });
+    expect(report.totalRows).toBe(5);
+    expect(report.rows.map((row) => row.borrowDetailId)).toEqual([204, 203, 202, 201, 102]);
   });
 
   test('borrowing book filters retain only matching joined rows and deduplicate request totals', async () => {
     const report = await makeReportRepository().getBorrowingReport({ bookId: 1 });
 
-    expect(report.totals).toMatchObject({ requests: 1, details: 2, activeLoans: 1 });
-    expect(report.requestStatusCounts).toEqual({ APPROVED: 1 });
-    expect(report.detailStatusCounts).toEqual({ BORROWED: 1, RETURNED: 1 });
+    expect(report.totalRows).toBe(2);
+    expect(report.metrics.activeLoans).toBe(1);
   });
 
   test('borrowing request-status and owner filters select matching joined rows', async () => {
@@ -93,72 +91,93 @@ describe('in-memory FE12 report repository parity', () => {
     const statusReport = await repository.getBorrowingReport({ status: 'APPROVED' });
     const ownerReport = await repository.getBorrowingReport({ userId: 1 });
 
-    expect(statusReport.totals).toMatchObject({ requests: 1, details: 2 });
-    expect(statusReport.detailStatusCounts).toEqual({ BORROWED: 1, RETURNED: 1 });
-    expect(ownerReport.totals).toMatchObject({ requests: 1, details: 2 });
-    expect(ownerReport.detailStatusCounts).toEqual({ BORROWED: 1, RETURNED: 1 });
+    expect(statusReport.totalRows).toBe(2);
+    expect(ownerReport.totalRows).toBe(2);
   });
 
   test('requested-only details do not create in-memory borrowing activity metrics', async () => {
     const report = await makeReportRepository().getBorrowingReport({ bookId: 2 });
 
-    expect(report.borrowCountByPeriod).toEqual({});
-    expect(report.topBorrowedBooks).toEqual([]);
+    expect(report.metrics.borrowCountByPeriod).toEqual({});
+    expect(report.metrics.topBorrowedBooks).toEqual([]);
   });
 
   test('in-memory borrowing activity metrics include actual-loan statuses and exclude requested details', async () => {
     const report = await makeReportRepository().getBorrowingReport();
 
-    expect(report.borrowCountByPeriod).toEqual({
+    expect(report.metrics.borrowCountByPeriod).toEqual({
       '2025-12-31': 1,
       '2026-01-11': 1,
       '2026-01-12': 3,
     });
-    expect(report.topBorrowedBooks).toEqual(expect.arrayContaining([
+    expect(report.metrics.topBorrowedBooks).toEqual(expect.arrayContaining([
       { bookId: 1, title: 'Book One', borrowCount: 2 },
       { bookId: 4, title: 'Book Four', borrowCount: 1 },
       { bookId: 5, title: 'Book Five', borrowCount: 2 },
     ]));
-    expect(report.topBorrowedBooks).not.toEqual(expect.arrayContaining([
+    expect(report.metrics.topBorrowedBooks).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ bookId: 2 }),
     ]));
+  });
+
+  test('in-memory borrowing period metrics do not substitute RequestDate when BorrowDate is missing', async () => {
+    const report = await makeReportRepository({
+      borrowDetails: [
+        {
+          borrowDetailId: 101,
+          requestId: 10,
+          copyId: 1,
+          borrowDate: null,
+          dueDate: new Date('2026-01-20T00:00:00.000Z'),
+          status: 'RETURNED',
+        },
+      ],
+    }).getBorrowingReport();
+
+    expect(report.metrics.borrowCountByPeriod).toEqual({});
+  });
+
+  test('in-memory OVERDUE filter includes derived past-due borrowed details', async () => {
+    const report = await makeReportRepository({
+      borrowDetails: [
+        {
+          borrowDetailId: 101,
+          requestId: 10,
+          copyId: 1,
+          borrowDate: new Date('2020-01-01T00:00:00.000Z'),
+          dueDate: new Date('2020-01-15T00:00:00.000Z'),
+          status: 'BORROWED',
+        },
+      ],
+    }).getBorrowingReport({ status: 'OVERDUE' });
+
+    expect(report.totalRows).toBe(1);
+    expect(report.rows[0].status).toBe('OVERDUE');
   });
 
   test('in-memory low-stock rows mirror the production category and copy envelope', async () => {
     const report = await makeReportRepository().getInventoryReport({ bookId: 1 });
 
-    expect(report.lowAvailabilityBooks).toEqual([
-      {
-        bookId: 1,
-        title: 'Book One',
-        categoryId: 10,
-        categoryName: 'Programming',
-        copies: [
-          { copyId: 1, status: 'AVAILABLE', location: 'A1' },
-          { copyId: 2, status: 'BORROWED', location: 'A2' },
-        ],
-        totalCopies: 2,
-        availableCopies: 1,
-      },
+    expect(report.metrics.lowStockBooks).toEqual([
+      { bookId: 1, title: 'Book One', effectiveAvailability: 1 },
     ]);
 
     const allRows = await makeReportRepository().getInventoryReport();
-    expect(allRows.categoryCounts).toEqual({ Programming: 1, Technology: 1, UNKNOWN: 3 });
-    expect(allRows.copyStatusCounts).toEqual({ AVAILABLE: 2, BORROWED: 1, LOST: 1, DAMAGED: 1 });
-    expect(Object.keys(allRows.copyStatusCounts).every((status) => VALID_COPY_STATUSES.has(status))).toBe(true);
-    expect(allRows.lowAvailabilityBooks).toEqual(expect.arrayContaining([
-      expect.objectContaining({ bookId: 2, categoryName: 'Technology' }),
-      expect.objectContaining({ bookId: 3, categoryName: null, copies: [] }),
+    expect(allRows.metrics.copiesByStatus).toEqual({ AVAILABLE: 2, BORROWED: 1, LOST: 1, DAMAGED: 1 });
+    expect(Object.keys(allRows.metrics.copiesByStatus).every((status) => VALID_COPY_STATUSES.has(status))).toBe(true);
+    expect(allRows.metrics.lowStockBooks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ bookId: 2, effectiveAvailability: 1 }),
+      expect.objectContaining({ bookId: 3, effectiveAvailability: 0 }),
     ]));
   });
 
   test('user role filters constrain every aggregate to the selected SQL role rows', async () => {
     const report = await makeReportRepository().getUserStatistics({ roleId: ROLE_IDS.LIBRARIAN });
 
-    expect(report.totals).toEqual({ users: 2, members: 0 });
-    expect(report.usersByStatus).toEqual({ INACTIVE: 1, LOCKED: 1 });
-    expect(report.usersByRole).toEqual({ LIBRARIAN: 2 });
-    expect(report.membersByStatus).toEqual({ PENDING: 1, INACTIVE: 1 });
+    expect(report.metrics.totalMembers).toBe(0);
+    expect(report.metrics.usersByStatus).toEqual({ INACTIVE: 1, LOCKED: 1 });
+    expect(report.metrics.usersByRole).toEqual({ LIBRARIAN: 2 });
+    expect(report.metrics.membershipByStatus).toEqual({ PENDING: 1, INACTIVE: 1 });
   });
 
   test('user status and membership filters apply before role and membership aggregates', async () => {
@@ -166,11 +185,11 @@ describe('in-memory FE12 report repository parity', () => {
     const activeReport = await repository.getUserStatistics({ status: 'ACTIVE' });
     const pendingReport = await repository.getUserStatistics({ membershipStatus: 'PENDING' });
 
-    expect(activeReport.totals).toEqual({ users: 2, members: 1 });
-    expect(activeReport.usersByRole).toEqual({ ADMIN: 1, MEMBER: 1 });
-    expect(activeReport.membersByStatus).toEqual({ APPROVED: 1, REJECTED: 1 });
-    expect(pendingReport.totals).toEqual({ users: 1, members: 0 });
-    expect(pendingReport.usersByRole).toEqual({ LIBRARIAN: 1 });
-    expect(pendingReport.membersByStatus).toEqual({ PENDING: 1 });
+    expect(activeReport.metrics.totalMembers).toBe(1);
+    expect(activeReport.metrics.usersByRole).toEqual({ ADMIN: 1, MEMBER: 1 });
+    expect(activeReport.metrics.membershipByStatus).toEqual({ APPROVED: 1, REJECTED: 1 });
+    expect(pendingReport.metrics.totalMembers).toBe(0);
+    expect(pendingReport.metrics.usersByRole).toEqual({ LIBRARIAN: 1 });
+    expect(pendingReport.metrics.membershipByStatus).toEqual({ PENDING: 1 });
   });
 });

@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-19 - Hybrid reconciliation evidence
+
+- Executed FE05-T001 through FE05-T008 from RED tests through focused verification in the isolated `feat/fe05-book-reconciliation` worktree.
+- Reconciled frontend reads with `/api/admin/books`, server-owned pagination, canonical `{ items, pagination }`/`{ book }` responses, and `If-Match` version propagation.
+- Added confirmation/reason UX for reasoned deactivate/reactivate commands and mapped `STALE_BOOK_STATE` to a truthful reload message.
+- Added the missing FE05 SQL suite and fixed rowversion comparison to normalize raw `mssql` buffers instead of comparing driver binary strings with API hex versions.
+- Passed focused backend 45/45, FE05 SQL 7/7, frontend 6/6, traceability 26/26, diff hygiene, and the aggregate 61/61 SQL gate with cleanup.
+- Browser acceptance and human integration gates remain open.
+
 ## 2026-07-18 - Librarian Book Management Navigation
 
 - Added the dedicated Librarian sidebar entry and route `/librarian/books` for FE05 book management.

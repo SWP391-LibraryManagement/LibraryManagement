@@ -1,4 +1,5 @@
 const { sql, getPool } = require('../config/db');
+const AppException = require('../CustomException/AppException');
 
 const copySelect = `
   SELECT
@@ -7,6 +8,7 @@ const copySelect = `
     bc.Barcode,
     bc.Status AS CopyStatus,
     bc.Location,
+    bc.Version AS CopyVersion,
     bc.CreatedAt AS CopyCreatedAt,
     bc.UpdatedAt AS CopyUpdatedAt,
     b.Title,
@@ -23,17 +25,20 @@ const copySelect = `
   LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
 `;
 
-function mapCopy(row) {
-  if (!row) {
-    return null;
-  }
+function encodeVersion(value) {
+  if (Buffer.isBuffer(value)) return value.toString('base64');
+  return value === undefined || value === null ? null : String(value);
+}
 
+function mapCopy(row) {
+  if (!row) return null;
   return {
     copyId: row.CopyId,
     bookId: row.BookId,
     barcode: row.Barcode,
     status: row.CopyStatus,
     location: row.Location,
+    version: encodeVersion(row.CopyVersion),
     createdAt: row.CopyCreatedAt,
     updatedAt: row.CopyUpdatedAt,
     book: {
@@ -50,10 +55,7 @@ function mapCopy(row) {
 }
 
 function mapBook(row) {
-  if (!row) {
-    return null;
-  }
-
+  if (!row) return null;
   return {
     bookId: row.BookId,
     title: row.Title,
@@ -66,125 +68,120 @@ function mapBook(row) {
   };
 }
 
-async function findBookById(bookId) {
+async function requestFor(transaction) {
+  return transaction ? new sql.Request(transaction) : (await getPool()).request();
+}
+
+async function withTransaction(callback) {
   const pool = await getPool();
-  const result = await pool
-    .request()
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+  try {
+    const result = await callback(transaction);
+    await transaction.commit();
+    return result;
+  } catch (error) {
+    try {
+      await transaction.rollback();
+    } catch (_rollbackError) {
+      // Preserve the original mutation error.
+    }
+    throw error;
+  }
+}
+
+async function findBookById(bookId, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('BookId', sql.Int, bookId)
     .query(`
-      SELECT
-        b.BookId,
-        b.Title,
-        b.ISBN,
-        b.PublishYear,
-        b.Status AS BookStatus,
-        a.AuthorName,
-        c.CategoryName,
-        p.PublisherName
+      SELECT b.BookId, b.Title, b.ISBN, b.PublishYear, b.Status AS BookStatus,
+             a.AuthorName, c.CategoryName, p.PublisherName
       FROM Books b
       LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
       LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
       LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
       WHERE b.BookId = @BookId
     `);
-
   return mapBook(result.recordset[0]);
 }
 
-async function findCopyById(copyId) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function findCopyById(copyId, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('CopyId', sql.Int, copyId)
-    .query(`
-      ${copySelect}
-      WHERE bc.CopyId = @CopyId
-    `);
-
+    .query(`${copySelect} WHERE bc.CopyId = @CopyId`);
   return mapCopy(result.recordset[0]);
 }
 
-async function findCopyByBarcode(barcode) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function findCopyByBarcode(barcode, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('Barcode', sql.NVarChar(100), barcode)
-    .query(`
-      ${copySelect}
-      WHERE bc.Barcode = @Barcode
-    `);
-
+    .query(`${copySelect} WHERE bc.Barcode = @Barcode`);
   return mapCopy(result.recordset[0]);
+}
+
+function addFilterInputs(request, filters = {}) {
+  const clauses = ['1 = 1'];
+  if (filters.bookId) {
+    request.input('BookId', sql.Int, filters.bookId);
+    clauses.push('bc.BookId = @BookId');
+  }
+  if (filters.status) {
+    request.input('Status', sql.NVarChar(20), filters.status);
+    clauses.push('bc.Status = @Status');
+  }
+  if (filters.barcode) {
+    request.input('Barcode', sql.NVarChar(100), `%${filters.barcode}%`);
+    clauses.push('bc.Barcode LIKE @Barcode');
+  }
+  if (filters.location) {
+    request.input('Location', sql.NVarChar(100), `%${filters.location}%`);
+    clauses.push('bc.Location LIKE @Location');
+  }
+  return clauses.join(' AND ');
 }
 
 async function listInventory(filters = {}) {
   const page = filters.page || 1;
   const limit = filters.limit || 20;
-  const offset = (page - 1) * limit;
-  const pool = await getPool();
-  const request = pool.request();
-  const where = ['1=1'];
-
-  if (filters.bookId) {
-    request.input('BookId', sql.Int, filters.bookId);
-    where.push('bc.BookId = @BookId');
-  }
-
-  if (filters.status) {
-    request.input('Status', sql.NVarChar(20), filters.status);
-    where.push('bc.Status = @Status');
-  }
-
-  if (filters.barcode) {
-    request.input('Barcode', sql.NVarChar(100), `%${filters.barcode}%`);
-    where.push('bc.Barcode LIKE @Barcode');
-  }
-
-  if (filters.location) {
-    request.input('Location', sql.NVarChar(100), `%${filters.location}%`);
-    where.push('bc.Location LIKE @Location');
-  }
-
-  request.input('Offset', sql.Int, offset);
-  request.input('Limit', sql.Int, limit);
-
-  const whereClause = where.join(' AND ');
-  const [rowsResult, totalResult] = await Promise.all([
-    request.query(`
-      ${copySelect}
-      WHERE ${whereClause}
-      ORDER BY b.Title ASC, bc.CopyId ASC
-      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
-    `),
-    pool.request()
-      .input('BookId', sql.Int, filters.bookId || null)
-      .input('Status', sql.NVarChar(20), filters.status || null)
-      .input('Barcode', sql.NVarChar(100), filters.barcode ? `%${filters.barcode}%` : null)
-      .input('Location', sql.NVarChar(100), filters.location ? `%${filters.location}%` : null)
-      .query(`
-        SELECT COUNT(*) AS Total
-        FROM BookCopies bc
-        WHERE (@BookId IS NULL OR bc.BookId = @BookId)
-          AND (@Status IS NULL OR bc.Status = @Status)
-          AND (@Barcode IS NULL OR bc.Barcode LIKE @Barcode)
-          AND (@Location IS NULL OR bc.Location LIKE @Location)
-      `),
-  ]);
-
+  const request = await requestFor();
+  const whereClause = addFilterInputs(request, filters);
+  request.input('Offset', sql.Int, (page - 1) * limit).input('Limit', sql.Int, limit);
+  const result = await request.query(`
+    ${copySelect}
+    WHERE ${whereClause}
+    ORDER BY b.Title ASC, bc.CopyId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+    SELECT COUNT_BIG(*) AS Total
+    FROM BookCopies bc
+    WHERE ${whereClause};
+  `);
   return {
-    copies: rowsResult.recordset.map(mapCopy),
-    pagination: {
-      page,
-      limit,
-      total: totalResult.recordset[0]?.Total || 0,
-    },
+    copies: result.recordsets[0].map(mapCopy),
+    pagination: { page, limit, total: Number(result.recordsets[1]?.[0]?.Total || 0) },
   };
 }
 
-async function createCopy({ bookId, barcode, status, location }) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function countInventoryByStatus(filters = {}) {
+  const request = await requestFor();
+  const whereClause = addFilterInputs(request, filters);
+  const result = await request.query(`
+    SELECT bc.Status, COUNT_BIG(*) AS Total
+    FROM BookCopies bc
+    WHERE ${whereClause}
+    GROUP BY bc.Status
+  `);
+  return result.recordset.reduce((counts, row) => {
+    counts[row.Status] = Number(row.Total || 0);
+    return counts;
+  }, {});
+}
+
+async function createCopy({ bookId, barcode, status, location }, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('BookId', sql.Int, bookId)
     .input('Barcode', sql.NVarChar(100), barcode)
     .input('Status', sql.NVarChar(20), status)
@@ -194,79 +191,83 @@ async function createCopy({ bookId, barcode, status, location }) {
       OUTPUT INSERTED.CopyId
       VALUES (@BookId, @Barcode, @Status, @Location)
     `);
-
-  return findCopyById(result.recordset[0].CopyId);
+  return findCopyById(result.recordset[0].CopyId, transaction);
 }
 
-async function updateCopy(copyId, patch = {}) {
-  const current = await findCopyById(copyId);
-
-  if (!current) {
-    return null;
-  }
-
-  const pool = await getPool();
-  await pool
-    .request()
+async function lockCopyForMutation(copyId, expectedVersion, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('CopyId', sql.Int, copyId)
-    .input('Barcode', sql.NVarChar(100), patch.barcode ?? current.barcode)
-    .input('Status', sql.NVarChar(20), patch.status ?? current.status)
-    .input('Location', sql.NVarChar(100), patch.location ?? current.location)
+    .input('ExpectedVersion', sql.NVarChar(512), expectedVersion)
+    .query(`
+      SELECT TOP 1 CopyId, BookId, Barcode, Status AS CopyStatus, Location, Version AS RowVersion
+      FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
+      WHERE CopyId = @CopyId;
+      SELECT TOP 1 BorrowDetailId
+      FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
+      WHERE CopyId = @CopyId AND Status IN ('BORROWED', 'OVERDUE');
+      SELECT TOP 1 ReservationId
+      FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+      WHERE CopyId = @CopyId AND Status = 'ACTIVE';
+    `);
+  const row = result.recordsets[0]?.[0];
+  if (!row) throw new AppException(404, 'COPY_NOT_FOUND', 'Book copy was not found.');
+  if (encodeVersion(row.RowVersion) !== expectedVersion) {
+    throw new AppException(409, 'STALE_COPY_STATE', 'Copy version is missing or stale. Reload before retrying.');
+  }
+  return { row, borrow: result.recordsets[1]?.[0], reservation: result.recordsets[2]?.[0] };
+}
+
+async function updateCopy(copyId, patch = {}, expectedVersion, transaction) {
+  const locked = await lockCopyForMutation(copyId, expectedVersion, transaction);
+  const request = await requestFor(transaction);
+  await request
+    .input('CopyId', sql.Int, copyId)
+    .input('Barcode', sql.NVarChar(100), patch.barcode ?? locked.row.Barcode)
+    .input('Location', sql.NVarChar(100), patch.location ?? locked.row.Location)
     .query(`
       UPDATE BookCopies
-      SET Barcode = @Barcode,
-          Status = @Status,
-          Location = @Location,
-          UpdatedAt = GETDATE()
+      SET Barcode = @Barcode, Location = @Location, UpdatedAt = GETDATE()
       WHERE CopyId = @CopyId
     `);
-
-  return findCopyById(copyId);
+  return findCopyById(copyId, transaction);
 }
 
-async function updateCopyStatus(copyId, status) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function updateCopyStatus(copyId, status, expectedVersion, transaction) {
+  const locked = await lockCopyForMutation(copyId, expectedVersion, transaction);
+  const request = await requestFor(transaction);
+  await request
     .input('CopyId', sql.Int, copyId)
     .input('Status', sql.NVarChar(20), status)
     .query(`
       UPDATE BookCopies
-      SET Status = @Status,
-          UpdatedAt = GETDATE()
+      SET Status = @Status, UpdatedAt = GETDATE()
       WHERE CopyId = @CopyId
     `);
-
-  return findCopyById(copyId);
+  return findCopyById(copyId, transaction);
 }
 
-async function hasActiveBorrow(copyId) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function hasActiveBorrow(copyId, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('CopyId', sql.Int, copyId)
     .query(`
       SELECT TOP 1 BorrowDetailId
       FROM BorrowDetails
-      WHERE CopyId = @CopyId
-        AND Status IN ('BORROWED', 'OVERDUE')
+      WHERE CopyId = @CopyId AND Status IN ('BORROWED', 'OVERDUE')
     `);
-
   return result.recordset.length > 0;
 }
 
-async function hasActiveReservation(copyId) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function hasActiveReservation(copyId, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
     .input('CopyId', sql.Int, copyId)
     .query(`
       SELECT TOP 1 ReservationId
       FROM Reservations
-      WHERE CopyId = @CopyId
-        AND Status = 'ACTIVE'
+      WHERE CopyId = @CopyId AND Status = 'ACTIVE'
     `);
-
   return result.recordset.length > 0;
 }
 
@@ -275,6 +276,8 @@ module.exports = {
   findCopyById,
   findCopyByBarcode,
   listInventory,
+  countInventoryByStatus,
+  withTransaction,
   createCopy,
   updateCopy,
   updateCopyStatus,

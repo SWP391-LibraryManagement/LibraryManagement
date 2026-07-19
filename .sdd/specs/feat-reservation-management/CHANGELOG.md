@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-19 - Reservation Candidate Drift Recorded
+
+- The final product-drift scan confirmed that reservation mutations and lifecycle state are server-authoritative, but `MyReservationsPage` still displays hardcoded `DEMO_RESERVABLE` copy candidates.
+- Registered `TD-028` for an approved member-safe FE01/FE06/FE08 copy-selection contract; reconciliation did not invent a new endpoint or expose staff-only copy metadata.
+
+## 2026-07-19 - V0.4.3 Reservation Reconciliation
+
+- Locked canonical pagination, `copyId` queue processing, stable ordering, deterministic empty/ineligible/notification-failure outcomes, and immutable terminal timestamps.
+- Reconciled FE07 priority and held-owner fulfillment with the shared copy/reservation lock order and transaction rollback boundary.
+- Kept member/staff pages on canonical server lifecycle state with refresh-after-mutation behavior and no local fulfillment/deletion simulation.
+- Passed focused backend/shared tests 77/77, frontend 9/9, traceability 28/28, diff hygiene, and disposable SQL reservation-boundary evidence; final human integration remains open.
+
 ## 2026-07-18 - Truthful Member Reservation State
 
 - Removed member-side demo reservation substitution, simulated create success, and local-only cancellation success when FE08 APIs fail.

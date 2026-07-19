@@ -1,8 +1,8 @@
 # FE08 Test Plan - Reservation Management
 
-Version: 0.3.0
-Status: READY FOR REVIEW
-Last Updated: 2026-07-17
+Version: 0.3.1
+Status: V0.4.3 AUTOMATED AND LIVE SQL BOUNDARY PASS; HUMAN INTEGRATION PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.4.2
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
@@ -59,8 +59,10 @@ as historical evidence and do not prove FE08-T028 through FE08-T033 are complete
 
 ## 6. Gaps
 
-- FE08-T028 through FE08-T033 remain pending focused validation and human review of the normalized contract.
-- A SQL Server-backed environment is still required for true persistence and lock/concurrency evidence.
+- FE08-T028 through FE08-T033 pass the focused backend/shared-boundary gate at 77/77 and frontend at 9/9; traceability is 28/28.
+- The FE07/FE08 reservation priority, held-owner fulfillment, race, and rollback paths pass in the disposable SQL Server borrowing suite recorded in the full-reconciliation Live SQL review.
+- Final whole-repository and human integration acceptance remain open.
+- `TD-028`: the member reservation candidate list still comes from `DEMO_RESERVABLE`; mutations remain server-authoritative, but a member-safe copy-selection API contract is required before the static catalog can be removed.
 - Automatic queue processing, automatic hold-expiration jobs, and FE10 delivery workers remain outside Phase 1.
 
 ## 7. NFR Coverage

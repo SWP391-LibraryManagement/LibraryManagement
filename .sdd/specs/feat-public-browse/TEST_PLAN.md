@@ -1,8 +1,8 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.3.0
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
-Last Updated: 2026-07-17
+Version: 0.3.1
+Status: IMPLEMENTED AND AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
@@ -42,13 +42,14 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 
 ## 5. Current Evidence
 
-- Public browse behavior is partly served by `backend/src/routes/bookRoutes.js` and `frontend/src/page/HomePage.jsx`.
-- The approved implementation decomposition is recorded in `PLAN.md` and `TASKS.md`.
+- Dedicated FE01 backend route/repository tests pass 9/9.
+- FE01 frontend contract tests pass 4/4.
+- The public availability SQL suite passes in the aggregate 61/61 disposable SQL Server run.
+- Traceability is 13/13 and `git diff --check` passes.
 
 ## 6. Gaps
 
-- Dedicated FE01 backend/frontend test files are planned but not started.
-- FE01 implementation/test completion must not be claimed until FE01-T001 through FE01-T008 have evidence.
+- Final FE05/FE06 ownership confirmation and human integration review remain required before FE01-T008 can close.
 
 ## 7. Required Commands / Evidence Before Merge
 

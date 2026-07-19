@@ -23,170 +23,163 @@ function mapProfileRow(row) {
   };
 }
 
+const PROFILE_SELECT_SQL = `
+  SELECT TOP 1
+    u.UserId,
+    u.Username,
+    u.Email,
+    u.Phone,
+    u.Status,
+    u.CreatedAt,
+    u.UpdatedAt,
+    up.ProfileId,
+    up.FullName,
+    up.Address,
+    up.DateOfBirth,
+    up.AvatarUrl,
+    up.CreatedAt AS ProfileCreatedAt,
+    up.UpdatedAt AS ProfileUpdatedAt
+  FROM Users u
+  LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+  WHERE u.UserId = @UserId
+`;
+
 async function findByUserId(userId) {
   const pool = await getPool();
   const result = await pool
     .request()
     .input('UserId', sql.Int, userId)
-    .query(`
-      SELECT TOP 1
-        u.UserId,
-        u.Username,
-        u.Email,
-        u.Phone,
-        u.Status,
-        u.CreatedAt,
-        u.UpdatedAt,
-        up.ProfileId,
-        up.FullName,
-        up.Address,
-        up.DateOfBirth,
-        up.AvatarUrl,
-        up.CreatedAt AS ProfileCreatedAt,
-        up.UpdatedAt AS ProfileUpdatedAt
-      FROM Users u
-      LEFT JOIN UserProfiles up ON u.UserId = up.UserId
-      WHERE u.UserId = @UserId
-    `);
+    .query(PROFILE_SELECT_SQL);
 
   return mapProfileRow(result.recordset[0]);
 }
 
+// @spec FR-FE03-001 AC-FE03-012
 async function createBlankProfile(userId) {
   const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .query(`
-      IF NOT EXISTS (SELECT 1 FROM UserProfiles WHERE UserId = @UserId)
-      BEGIN
-        INSERT INTO UserProfiles (UserId)
-        VALUES (@UserId);
-      END
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
 
-      SELECT TOP 1
-        u.UserId,
-        u.Username,
-        u.Email,
-        u.Phone,
-        u.Status,
-        u.CreatedAt,
-        u.UpdatedAt,
-        up.ProfileId,
-        up.FullName,
-        up.Address,
-        up.DateOfBirth,
-        up.AvatarUrl,
-        up.CreatedAt AS ProfileCreatedAt,
-        up.UpdatedAt AS ProfileUpdatedAt
-      FROM Users u
-      INNER JOIN UserProfiles up ON u.UserId = up.UserId
-      WHERE u.UserId = @UserId
-    `);
+  try {
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(`
+        IF NOT EXISTS (
+          SELECT 1
+          FROM UserProfiles WITH (UPDLOCK, HOLDLOCK)
+          WHERE UserId = @UserId
+        )
+        BEGIN
+          INSERT INTO UserProfiles (UserId)
+          VALUES (@UserId);
+        END
+      `);
 
-  return mapProfileRow(result.recordset[0]);
+    const result = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(PROFILE_SELECT_SQL);
+
+    await transaction.commit();
+    return mapProfileRow(result.recordset[0]);
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 }
 
-async function updateByUserId(userId, updates) {
+// @spec FR-FE03-010
+async function updateByUserId(userId, updates, { auditLogRepository, auditEntry } = {}) {
+  if (!auditLogRepository || typeof auditLogRepository.create !== 'function' || !auditEntry) {
+    throw new Error('Profile updates require an audit entry.');
+  }
+
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
 
   try {
-    const existingResult = await new sql.Request(transaction)
-      .input('UserId', sql.Int, userId)
-      .query(`
-        SELECT TOP 1
-          u.Phone,
-          up.FullName,
-          up.Address,
-          up.DateOfBirth,
-          up.AvatarUrl
-        FROM Users u
-        LEFT JOIN UserProfiles up ON u.UserId = up.UserId
-        WHERE u.UserId = @UserId
-      `);
+    if (updates.phone !== undefined) {
+      await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .input('Phone', sql.NVarChar(20), updates.phone)
+        .query(`
+          UPDATE Users
+          SET Phone = @Phone,
+              UpdatedAt = GETDATE()
+          WHERE UserId = @UserId
+        `);
+    }
 
-    const existing = existingResult.recordset[0] || {};
+    const profileAssignments = [];
+    const profileRequest = new sql.Request(transaction).input('UserId', sql.Int, userId);
 
-    await new sql.Request(transaction)
-      .input('UserId', sql.Int, userId)
-      .input('Phone', sql.NVarChar(20), updates.phone === undefined ? existing.Phone || null : updates.phone)
-      .query(`
-        UPDATE Users
-        SET Phone = @Phone,
+    if (updates.fullName !== undefined) {
+      profileAssignments.push('FullName = @FullName');
+      profileRequest.input('FullName', sql.NVarChar(100), updates.fullName);
+    }
+    if (updates.address !== undefined) {
+      profileAssignments.push('Address = @Address');
+      profileRequest.input('Address', sql.NVarChar(255), updates.address);
+    }
+    if (updates.dateOfBirth !== undefined) {
+      profileAssignments.push('DateOfBirth = @DateOfBirth');
+      profileRequest.input('DateOfBirth', sql.Date, updates.dateOfBirth);
+    }
+
+    if (profileAssignments.length > 0) {
+      await profileRequest.query(`
+        UPDATE UserProfiles
+        SET ${profileAssignments.join(',\n            ')},
             UpdatedAt = GETDATE()
         WHERE UserId = @UserId
       `);
+    }
 
-    await new sql.Request(transaction)
+    await auditLogRepository.create({ ...auditEntry, transaction });
+    const result = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
-      .input(
-        'FullName',
-        sql.NVarChar(100),
-        updates.fullName === undefined ? existing.FullName || null : updates.fullName
-      )
-      .input(
-        'Address',
-        sql.NVarChar(255),
-        updates.address === undefined ? existing.Address || null : updates.address
-      )
-      .input(
-        'DateOfBirth',
-        sql.Date,
-        updates.dateOfBirth === undefined ? existing.DateOfBirth || null : updates.dateOfBirth
-      )
-      .input(
-        'AvatarUrl',
-        sql.NVarChar(255),
-        updates.avatarUrl === undefined ? existing.AvatarUrl || null : updates.avatarUrl
-      )
-      .query(`
-        MERGE UserProfiles AS target
-        USING (SELECT @UserId AS UserId) AS source
-        ON target.UserId = source.UserId
-        WHEN MATCHED THEN
-          UPDATE SET
-            FullName = @FullName,
-            Address = @Address,
-            DateOfBirth = @DateOfBirth,
-            AvatarUrl = @AvatarUrl,
-            UpdatedAt = GETDATE()
-        WHEN NOT MATCHED THEN
-          INSERT (UserId, FullName, Address, DateOfBirth, AvatarUrl)
-          VALUES (@UserId, @FullName, @Address, @DateOfBirth, @AvatarUrl);
-      `);
+      .query(PROFILE_SELECT_SQL);
 
     await transaction.commit();
+    return mapProfileRow(result.recordset[0]);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
-
-  return findByUserId(userId);
 }
 
-async function updateAvatarByUserId(userId, avatarUrl) {
-  const pool = await getPool();
-  await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .input('AvatarUrl', sql.NVarChar(255), avatarUrl)
-    .query(`
-      MERGE UserProfiles AS target
-      USING (SELECT @UserId AS UserId) AS source
-      ON target.UserId = source.UserId
-      WHEN MATCHED THEN
-        UPDATE SET
-          AvatarUrl = @AvatarUrl,
-          UpdatedAt = GETDATE()
-      WHEN NOT MATCHED THEN
-        INSERT (UserId, AvatarUrl)
-        VALUES (@UserId, @AvatarUrl);
-    `);
+// @spec BR-FE03-017 FR-FE03-010
+async function updateAvatarByUserId(userId, avatarUrl, { auditLogRepository, auditEntry } = {}) {
+  if (!auditLogRepository || typeof auditLogRepository.create !== 'function' || !auditEntry) {
+    throw new Error('Avatar updates require an audit entry.');
+  }
 
-  return findByUserId(userId);
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+
+  try {
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('AvatarUrl', sql.NVarChar(255), avatarUrl)
+      .query(`
+        UPDATE UserProfiles
+        SET AvatarUrl = @AvatarUrl,
+            UpdatedAt = GETDATE()
+        WHERE UserId = @UserId
+      `);
+
+    await auditLogRepository.create({ ...auditEntry, transaction });
+    const result = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(PROFILE_SELECT_SQL);
+    await transaction.commit();
+    return mapProfileRow(result.recordset[0]);
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 }
 
 module.exports = {

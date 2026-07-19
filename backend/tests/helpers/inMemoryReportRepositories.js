@@ -3,6 +3,41 @@ function clone(value) {
 }
 
 const ACTUAL_LOAN_DETAIL_STATUSES = new Set(['BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
+const BORROW_DETAIL_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
+const COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
+const USER_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
+const MEMBERSHIP_STATUSES = new Set(['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE']);
+const ROLE_STATUSES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
+
+function normalizeStatus(value, allowedStatuses) {
+  if (value == null) return null;
+  const normalized = String(value).toUpperCase();
+  return allowedStatuses.has(normalized) ? normalized : 'UNKNOWN';
+}
+
+function toDateKey(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+}
+
+function toLibraryDateKey(value = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function buildReport(metrics, rows, filters = {}) {
+  const page = Number(filters.page) || 1;
+  const limit = Number(filters.limit) || 20;
+  const offset = (page - 1) * limit;
+  return { metrics, rows: rows.slice(offset, offset + limit), page, limit, totalRows: rows.length };
+}
 
 function matchesDateRange(value, filters = {}) {
   if (!filters.fromDate && !filters.toDate) {
@@ -20,29 +55,35 @@ function matchesDateRange(value, filters = {}) {
 function makeInMemoryReportDependencies(authState, borrowingState) {
   const reportRepository = {
     async getBorrowingReport(filters = {}) {
+      const today = toLibraryDateKey();
       // Mirror getBorrowRows: filters apply to each request/detail joined row.
       const rows = borrowingState.borrowRequests.flatMap((request) => {
         if (filters.userId && request.userId !== Number(filters.userId)) {
           return [];
         }
-        if (!matchesDateRange(request.requestDate || request.createdAt, filters)) {
-          return [];
-        }
-
         const details = borrowingState.borrowDetails.filter(
           (detail) => detail.requestId === request.requestId
         );
         const joinedDetails = details.length ? details : [null];
 
         return joinedDetails.flatMap((detail) => {
+          if (!detail || !matchesDateRange(detail.borrowDate, filters)) {
+            return [];
+          }
           const copy = detail
             ? borrowingState.copies.find((item) => item.copyId === detail.copyId)
             : null;
 
-          if (filters.status
+          const detailStatus = normalizeStatus(detail?.status, BORROW_DETAIL_STATUSES);
+          if (filters.status === 'OVERDUE') {
+            const dueDateKey = toDateKey(detail?.dueDate);
+            if (detailStatus !== 'BORROWED' || !dueDateKey || dueDateKey >= today) {
+              return [];
+            }
+          } else if (filters.status
             && request.status !== filters.status
-            && detail?.status !== filters.status) {
-            return [];
+            && detailStatus !== filters.status) {
+              return [];
           }
           if (filters.bookId && (!copy || copy.bookId !== Number(filters.bookId))) {
             return [];
@@ -51,21 +92,18 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
           return [{ request, detail, copy }];
         });
       });
-      const details = rows.filter((row) => row.detail).map((row) => row.detail);
-      const requests = Array.from(
-        new Map(rows.map((row) => [row.request.requestId, row.request])).values()
-      );
+      const details = rows.map((row) => row.detail);
 
       const borrowCountByPeriod = {};
       const topBorrowedBooks = {};
 
       for (const { request, detail, copy } of rows.filter((row) => row.detail)) {
-        if (!ACTUAL_LOAN_DETAIL_STATUSES.has(detail.status)) {
+        const status = normalizeStatus(detail.status, BORROW_DETAIL_STATUSES);
+        if (!ACTUAL_LOAN_DETAIL_STATUSES.has(status)) {
           continue;
         }
 
-        const periodSource = detail.borrowDate || request.requestDate || request.createdAt;
-        const dateKey = periodSource ? new Date(periodSource).toISOString().slice(0, 10) : null;
+        const dateKey = toDateKey(detail.borrowDate);
         if (!dateKey) {
           continue;
         }
@@ -81,29 +119,52 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
       }
 
-      return {
-        totals: {
-          requests: new Set(requests.map((request) => request.requestId)).size,
-          details: details.length,
-          activeLoans: details.filter((detail) => detail.status === 'BORROWED').length,
-          overdueLoans: details.filter(
-            (detail) => detail.status === 'OVERDUE'
-              || (detail.status === 'BORROWED' && detail.dueDate && new Date(detail.dueDate) < new Date())
+      const detailedRows = [...rows]
+        .sort(
+          (left, right) =>
+            new Date(right.detail?.borrowDate || 0).getTime() - new Date(left.detail?.borrowDate || 0).getTime() ||
+            right.detail.borrowDetailId - left.detail.borrowDetailId
+        )
+        .map(({ request, detail, copy }) => {
+          const rawStatus = normalizeStatus(detail.status, BORROW_DETAIL_STATUSES);
+          const dueDateKey = detail.dueDate
+            ? new Date(detail.dueDate).toISOString().slice(0, 10)
+            : null;
+          return {
+            borrowDetailId: detail.borrowDetailId,
+            requestId: request.requestId,
+            userId: request.userId,
+            bookId: copy?.bookId || null,
+            copyId: detail.copyId,
+            status:
+              rawStatus === 'BORROWED' && dueDateKey && dueDateKey < today
+                ? 'OVERDUE'
+                : rawStatus,
+            borrowDate: toDateKey(detail.borrowDate),
+            dueDate: toDateKey(detail.dueDate),
+            returnDate: toDateKey(detail.returnDate),
+          };
+        });
+
+      return buildReport(
+        {
+          activeLoans: details.filter(
+            (detail) => normalizeStatus(detail.status, BORROW_DETAIL_STATUSES) === 'BORROWED'
           ).length,
+          overdueLoans: detailedRows.filter((row) => row.status === 'OVERDUE').length,
+          borrowCountByPeriod,
+          topBorrowedBooks: Object.values(topBorrowedBooks)
+            .sort(
+              (left, right) =>
+                right.borrowCount - left.borrowCount ||
+                String(left.title || '').localeCompare(String(right.title || '')) ||
+                left.bookId - right.bookId
+            )
+            .slice(0, 10),
         },
-        requestStatusCounts: requests.reduce((accumulator, request) => {
-          accumulator[request.status] = (accumulator[request.status] || 0) + 1;
-          return accumulator;
-        }, {}),
-        detailStatusCounts: details.reduce((accumulator, detail) => {
-          accumulator[detail.status] = (accumulator[detail.status] || 0) + 1;
-          return accumulator;
-        }, {}),
-        borrowCountByPeriod,
-        topBorrowedBooks: Object.values(topBorrowedBooks)
-          .sort((left, right) => right.borrowCount - left.borrowCount)
-          .slice(0, 5),
-      };
+        detailedRows,
+        filters
+      );
     },
 
     async getInventoryReport(filters = {}) {
@@ -151,41 +212,54 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         return true;
       });
 
-      const categoryCounts = books.reduce((accumulator, book) => {
-        const categoryName = resolveCategoryName(book) || 'UNKNOWN';
-        accumulator[categoryName] = (accumulator[categoryName] || 0) + 1;
-        return accumulator;
-      }, {});
+      const availabilityByBookId = new Map(
+        books.map((book) => [
+          book.bookId,
+          borrowingState.copies.filter(
+            (copy) => copy.bookId === book.bookId && normalizeStatus(copy.status, COPY_STATUSES) === 'AVAILABLE'
+          ).length,
+        ])
+      );
+      const detailedRows = copies
+        .map((copy) => {
+          const book = borrowingState.books.find((item) => item.bookId === copy.bookId);
+          return {
+            bookId: copy.bookId,
+            title: book?.title || null,
+            copyId: copy.copyId,
+            barcode: copy.barcode || null,
+            location: copy.location || null,
+            status: normalizeStatus(copy.status, COPY_STATUSES),
+            effectiveAvailability: availabilityByBookId.get(copy.bookId) || 0,
+          };
+        })
+        .sort(
+          (left, right) =>
+            String(left.title || '').localeCompare(String(right.title || '')) ||
+            left.bookId - right.bookId ||
+            left.copyId - right.copyId
+        );
 
-      const copyStatusCounts = copies.reduce((accumulator, copy) => {
-        accumulator[copy.status] = (accumulator[copy.status] || 0) + 1;
-        return accumulator;
-      }, {});
-
-      return {
-        totals: {
-          books: books.length,
-          copies: copies.length,
+      return buildReport(
+        {
+          totalBooks: books.length,
+          totalCopies: copies.length,
+          copiesByStatus: copies.reduce((accumulator, copy) => {
+            const status = normalizeStatus(copy.status, COPY_STATUSES);
+            accumulator[status] = (accumulator[status] || 0) + 1;
+            return accumulator;
+          }, {}),
+          lowStockBooks: books
+            .map((book) => ({
+              bookId: book.bookId,
+              title: book.title || null,
+              effectiveAvailability: availabilityByBookId.get(book.bookId) || 0,
+            }))
+            .filter((book) => book.effectiveAvailability <= 2),
         },
-        copyStatusCounts,
-        categoryCounts,
-        lowAvailabilityBooks: books
-          .map((book) => {
-            const bookCopies = borrowingState.copies.filter((copy) => copy.bookId === book.bookId);
-            return {
-              ...book,
-              categoryName: resolveCategoryName(book),
-              copies: bookCopies.map((copy) => ({
-                copyId: copy.copyId,
-                status: copy.status || null,
-                location: copy.location || null,
-              })),
-              totalCopies: bookCopies.length,
-              availableCopies: bookCopies.filter((copy) => copy.status === 'AVAILABLE').length,
-            };
-          })
-          .filter((book) => book.availableCopies <= 2),
-      };
+        detailedRows,
+        filters
+      );
     },
 
     async getUserStatistics(filters = {}) {
@@ -209,9 +283,10 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
 
         return [{
           ...user,
-          memberStatus,
+          status: normalizeStatus(user.status, USER_STATUSES),
+          memberStatus: normalizeStatus(memberStatus, MEMBERSHIP_STATUSES),
           memberApprovedAt: borrowingState.memberApprovedAt.get(user.userId) || null,
-          roles: selectedRoles.map((role) => String(role).toUpperCase()),
+          roles: selectedRoles.map((role) => normalizeStatus(role, ROLE_STATUSES)),
         }];
       });
 
@@ -227,20 +302,14 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
       }
 
-      const members = users.filter((user) => user.memberStatus === 'APPROVED');
-
-      return {
-        totals: {
-          users: users.length,
-          members: members.length,
-        },
-        usersByStatus,
-        usersByRole,
-        membersByStatus: users.filter((user) => user.memberStatus).reduce((accumulator, user) => {
+      const approvedMembers = users.filter((user) => user.memberStatus === 'APPROVED');
+      const membershipByStatus = users
+        .filter((user) => user.memberStatus)
+        .reduce((accumulator, user) => {
           accumulator[user.memberStatus] = (accumulator[user.memberStatus] || 0) + 1;
           return accumulator;
-        }, {}),
-        newMembersByPeriod: members.reduce((accumulator, user) => {
+        }, {});
+      const newMembersByPeriod = approvedMembers.reduce((accumulator, user) => {
           const approvedAt = user.memberApprovedAt;
           if (!approvedAt) {
             return accumulator;
@@ -256,8 +325,33 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
 
           accumulator[periodKey] = (accumulator[periodKey] || 0) + 1;
           return accumulator;
-        }, {}),
-      };
+        }, {});
+      const detailedRows = users
+        .map((user) => ({
+          userId: user.userId,
+          status: user.status,
+          roles: [...user.roles].sort(),
+          membershipStatus: user.memberStatus,
+          createdAt: user.createdAt || null,
+          approvedAt: user.memberApprovedAt || null,
+        }))
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime() ||
+            right.userId - left.userId
+        );
+
+      return buildReport(
+        {
+          totalMembers: users.filter((user) => user.roles.includes('MEMBER')).length,
+          usersByStatus,
+          usersByRole,
+          membershipByStatus,
+          newMembersByPeriod,
+        },
+        detailedRows,
+        filters
+      );
     },
   };
 

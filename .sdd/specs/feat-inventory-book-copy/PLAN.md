@@ -1,12 +1,12 @@
 # PLAN.md - FE06 Inventory / Book Copy Management
 
-Status: APPROVED - BASELINE 2026-07-17; IMPLEMENTATION FOLLOW-UP PENDING
+Status: READY FOR REVIEW - FE06 reconciliation and live SQL complete; human gates pending
 
 Owner: Dat
 
-Updated: 2026-07-16
+Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.0 and implementation plan approved; implementation not started
+Workflow State: FE06-T001 through FE06-T008 executed in isolated worktree; integration review remains open
 
 > **For implementation agents:** Execute `TASKS.md` in order. Every manual copy mutation must be proven with focused RED/GREEN tests, matching `If-Match`, transactional conflict checks, and an atomic audit write.
 

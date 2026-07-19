@@ -1,8 +1,8 @@
 ﻿# FE04 Test Plan - Membership Management
 
-Version: 0.2.0
-Status: DRAFT - not started (planned targets)
-Last Updated: 2026-06-25
+Version: 0.2.1
+Status: AUTOMATED AND LIVE SQL PASS; HUMAN ACCEPTANCE PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-membership-management/SPEC.md`
 Feature IDs: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
@@ -17,7 +17,7 @@ Membership application, approval/rejection, membership status, and integration w
 ## 2. Unit Test Targets
 
 - Membership application eligibility.
-- Status transition rules: pending, approved, rejected, suspended/expired if present in spec.
+- Status transition rules: `PENDING`, `APPROVED`, `REJECTED`, and canonical member `INACTIVE`.
 - Duplicate active/pending application prevention.
 - Effect of membership status on borrowing/reservation eligibility.
 
@@ -40,18 +40,33 @@ Membership application, approval/rejection, membership status, and integration w
 
 ## 5. Current Evidence
 
-- No dedicated membership route/test file was found in the current backend route inventory.
+- `backend/tests/membershipRoutes.test.js`: 18/18 pass for active applicant access, canonical
+  response/privacy, apply/re-apply, staff list, validation, atomic rollback, concurrency, audit, and
+  FE10 delivery behavior.
+- `backend/tests/sql/membershipConcurrency.sqltest.js`: 10/10 static and mutable SQL cases pass on the disposable SQL Server runtime.
+- `frontend/test/membershipFrontend.test.js`: 5/5 pass for canonical server truth, empty-body apply,
+  truthful errors, server-side search, mutation refresh, and rejection bounds.
+- Full backend: 38 suites / 619 tests pass. Coverage: 92.51% statements, 82.46% branches, 97.10%
+  functions, 92.44% lines.
+- Full frontend: 122/122 tests pass; ESLint and Vite production build pass.
+- Backend import health, FE04 traceability 12/12, and `git diff --check` pass.
 
 ## 6. Gaps
 
-- FE04 `PLAN.md` and `TASKS.md` are `NOT STARTED`.
-- Routes/controllers/tests need to be planned or confirmed before claiming implementation.
+- Disposable SQL Server evidence is complete: the FE04 migration ran twice, all six mutable cases passed, and database/login cleanup is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Fan FE04 into the same post-FE11 schema baseline as FE10/FE02 and rerun cross-feature tests.
+- Capture browser acceptance for registered applicant, Librarian/Admin review, failure state, and
+  rejected re-application.
+- Dat/FE07/FE08 owners and the final human reviewer must confirm eligibility and system fit.
 
 ## 7. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test
+npm.cmd --prefix backend run test:sql:fe04
+npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
+git diff --check
 ```

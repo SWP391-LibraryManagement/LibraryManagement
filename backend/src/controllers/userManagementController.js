@@ -39,7 +39,10 @@ function createUserManagementController(userManagementService = defaultUserManag
 
     createUser: async (req, res, next) => {
       try {
-        const result = await userManagementService.createUser(req.body, requestContext(req));
+        const result = await userManagementService.createUser(
+          req.validatedUserCreate || req.body,
+          requestContext(req)
+        );
         return res.status(201).json(result);
       } catch (error) {
         return next(error);
@@ -61,7 +64,11 @@ function createUserManagementController(userManagementService = defaultUserManag
 
     updateUser: async (req, res, next) => {
       try {
-        const result = await userManagementService.updateUser(req.params.userId, req.body, requestContext(req));
+        const result = await userManagementService.updateUser(
+          req.params.userId,
+          req.validatedUserUpdate || req.body,
+          requestContext(req)
+        );
         return res.status(200).json(result);
       } catch (error) {
         return next(error);
@@ -70,7 +77,11 @@ function createUserManagementController(userManagementService = defaultUserManag
 
     updateStatus: async (req, res, next) => {
       try {
-        const result = await userManagementService.updateStatus(req.params.userId, req.body, requestContext(req));
+        const result = await userManagementService.updateStatus(
+          req.params.userId,
+          req.validatedUserStatus || req.body,
+          requestContext(req)
+        );
         return res.status(200).json(result);
       } catch (error) {
         return next(error);

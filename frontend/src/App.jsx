@@ -13,6 +13,7 @@ import ReportRouteGuard from './component/report/ReportRouteGuard';
 import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
 import MembershipPage from './page/MembershipPage';
 import HomePage from './page/HomePage';
+import ForbiddenPage from './page/error/ForbiddenPage';
 
 // FE07 · Borrowing Management
 import BorrowRequestPage from './page/borrowing/BorrowRequestPage';
@@ -37,6 +38,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route path="/home" element={<HomeRoutePage />} />
       <Route path="/homepage" element={<HomePage />} />

@@ -1,7 +1,7 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED - FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; PRODUCT IMPLEMENTATION NOT STARTED
-Implementation State: IN PROGRESS - GOVERNANCE ONLY
+Status: APPROVED - FE11 FINALIZATION BATCH GOVERNANCE ACTIVE; WAVES A/B H2 READY
+Implementation State: IN PROGRESS - WAVES A/B H2 READY; INTEGRATION PENDING
 
 Date: 2026-07-19
 
@@ -212,50 +212,60 @@ Owner: Dung
 
 ## FE11 Finalization Batch Tasks
 
-- [ ] **FE11-FIN01 - Approve and activate the FE11 Finalization Batch.**
+- [x] **FE11-FIN01 - Approve and activate the FE11 Finalization Batch.**
   - Maps to: TD-012, TD-014, TD-015, TD-016, TD-017, TD-025.
   - DoD: approved design/plan, synchronized Core contracts, two-wave ownership, validation commands, and debt activation are merged before product work.
+  - Evidence: PR #39 passed `foundation-checks` run `29658802446`, merged as `62ac2d1`, and exact post-merge `main` CI run `29658912068` passed.
 
-- [ ] **FE11-LIFE01 - Add the idempotent schema migration and synchronized contracts.**
+- [x] **FE11-LIFE01 - Add the idempotent schema migration and synchronized contracts.**
   - Maps to: TD-012, TD-016; FR-FE11-010/021; FE02/FE03/FE10 shared schema dependencies.
   - DoD: five target columns, deterministic email uniqueness, models, bindings, baseline, static tests, and optional live-twice evidence agree.
+  - Evidence: idempotent migration, baseline/model/binding synchronization, static schema tests, and two successful disposable SQL Server executions are recorded in the Wave A and full-reconciliation validation records.
 
-- [ ] **FE11-LIFE02 - Persist and return Librarian fields safely.**
+- [x] **FE11-LIFE02 - Persist and return Librarian fields safely.**
   - Maps to: BR-FE11-015/024..026; FR-FE11-003/005/009/010/017/028; AC-FE11-005/011; TD-012/014.
   - DoD: create/read/update use 100-character nullable fields only for current Librarian targets; create/resend revalidate the active acting Admin transactionally; duplicate create conflicts are safe and deterministic.
+  - Evidence: account-setup repository, safe DTO, service, route, and duplicate/actor RED-GREEN cases are recorded in the Wave A validation record.
 
-- [ ] **FE11-LIFE03 - Implement optimistic and no-op managed-user updates.**
+- [x] **FE11-LIFE03 - Implement optimistic and no-op managed-user updates.**
   - Maps to: BR-FE11-004/010/014/027; FR-FE11-004/007/020/021/023; AC-FE11-004/008/023; TD-014/015/016.
   - DoD: actor/target locks, effective version, duplicate mapping, no-op behavior, safe audit allowlist, and rollback are proven.
+  - Evidence: lifecycle repository/service/route tests prove locked outcomes, stale/no-op/effective updates, safe audit metadata, and rollback.
 
-- [ ] **FE11-LIFE04 - Implement atomic deactivation and credential invalidation.**
+- [x] **FE11-LIFE04 - Implement atomic deactivation and credential invalidation.**
   - Maps to: BR-FE11-003/006/010/015/027; FR-FE11-008/011/016..019/023; AC-FE11-007/009/012/023; TD-014/015/016.
   - DoD: lifecycle-mode guards, active borrowing block, REFRESH revocation, audit, rollback, and FE07 approval serialization are proven.
+  - Evidence: lifecycle/borrowing repository tests and the live SQL race suite prove the allowed serialized outcomes; the impossible inactive-member/newly-approved-request state does not commit.
 
-- [ ] **FE11-LIFE05 - Align the Admin UI and remove implicit development Admin access.**
+- [x] **FE11-LIFE05 - Align the Admin UI and remove implicit development Admin access.**
   - Maps to: NFR-FE11-SEC-001/002/004; AC-FE11-004/007/011/012/023; TD-017.
   - DoD: every mode requires stored authenticated Admin state; update/deactivate send the effective version and reload authoritative state.
+  - Evidence: frontend API/page tests, full frontend regression, lint/build, and browser regression are recorded in the Wave A validation record.
 
 - [ ] **FE11-LIFE06 - Pass Wave A H2/H3/B7 integration.**
   - Depends on: FE11-LIFE01..FE11-LIFE05.
 
-- [ ] **FE11-REQ01 - Canonicalize Admin request list and detail reads.**
+- [x] **FE11-REQ01 - Canonicalize Admin request list and detail reads.**
   - Maps to: BR-FE11-019/026; FR-FE11-034; AC-FE11-019; TD-025.
+  - Evidence: canonical Admin-first route/service/repository tests pass; browser acceptance proves server pagination and authoritative detail against the shared FE07 state.
 
-- [ ] **FE11-REQ02 - Align request pagination, detail, actions, and CSV UI.**
+- [x] **FE11-REQ02 - Align request pagination, detail, actions, and CSV UI.**
   - Maps to: FR-FE11-034/035; AC-FE11-019; TD-025.
+  - Evidence: frontend contract tests and `E2E-FE11-ACC01` prove two-page server data, frozen-filter CSV across all 21 matching rows, and status-specific detail controls.
 
-- [ ] **FE11-REQ03 - Prove FE07 terminal-state immutability.**
+- [x] **FE11-REQ03 - Prove FE07 terminal-state immutability.**
   - Maps to: BR-FE11-019; FR-FE11-035; FE07 request lifecycle invariants; TD-025.
+  - Evidence: focused backend tests and browser acceptance prove completed detail is read-only and direct FE07 approve/reject attempts both return `409 BORROW_REQUEST_NOT_PENDING`.
 
 - [ ] **FE11-ACC01 - Pass FE11 browser acceptance and Wave B integration.**
   - Depends on: FE11-REQ01..FE11-REQ03.
   - Includes: evidence-only Admin Dashboard coverage for FR-FE11-031 without redesigning FE12 ownership.
+  - Local evidence: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; H2/H3, exact PR/CI association, and human integration acceptance remain required.
 
 - [ ] **FE11-FIN02 - Publish final FE11 B7 closeout.**
   - Depends on: FE11-LIFE06, FE11-ACC01.
-  - DoD: all four PRs and exact main CI runs are recorded; FE11 is complete through B7; only unavailable live SQL evidence may remain under TD-021.
+  - DoD: all four PRs and exact main CI runs are recorded; FE11 is complete through B7 and no SQL or browser residual remains under TD-021.
 
 ## Deferred FE11 Work
 
-The completed implementation slices are account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`, and Admin navigation/permissions `FE11-PERM01..FE11-PERM06`. The remaining FE11 work is now governed only by `FE11-FIN01..FE11-FIN02`; no product implementation or completion is claimed until its named H2/H3/B7 evidence exists. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
+The completed B7 slices remain account setup `FE11-S01..S07`, transactional backend role assignment/revocation `FE11-R01..R05`, safe user list/detail `FE11-U01..U06`, the bounded Admin role-action UI contract `FE11-UIR01..UIR05`, Fast-Track Batch 1 `FE11-AUD01`/`FE11-ENV01`/`FE11-META01`, and Admin navigation/permissions `FE11-PERM01..FE11-PERM06`. Wave A `FE11-LIFE01..FE11-LIFE05` is implemented and validation-ready but not integrated; `FE11-LIFE06`, Wave B, and final closeout remain open. Existing prototype behavior is not evidence of whole-feature FE11 conformance.
