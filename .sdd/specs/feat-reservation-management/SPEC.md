@@ -1,18 +1,18 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.4.3
+# Version: 0.4.4
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-19
 
 # Feature ID: FE08
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
-> Source of truth for FE08 Reservation Management. Revision v0.4.3 also makes notification/expiry timestamp history immutable across terminal transitions. Nhat approved this baseline on 2026-07-17; implementation changes still require focused validation and human review before merge.
+> Source of truth for FE08 Reservation Management. Revision v0.4.4 adds the approved member-safe reservation-candidate catalog while preserving the `CopyId` mutation contract and immutable terminal timestamp history. Candidate implementation still requires focused validation and final human review before merge.
 
 ---
 
@@ -33,6 +33,7 @@ Reservation Management protects fairness and prevents confusion when many member
 The system shall:
 
 - Allow eligible members to reserve unavailable physical copies.
+- Allow members to discover unavailable physical-copy targets through a protected, redacted server catalog.
 - Allow members to cancel their own `ACTIVE` reservations or `NOTIFIED` holds.
 - Allow librarians/admins to view and process reservation queues.
 - Update reservation status when a copy becomes available or when reservation is cancelled.
@@ -50,7 +51,7 @@ The system shall:
 
 | Actor | Description | Permission / Responsibility |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | Create reservation, cancel own reservation, view own reservation status. |
+| Member | Registered library user | View safe reservation candidates, create reservation, cancel own reservation, view own reservation status. |
 | Librarian | Library staff | View reservation list, process reservation queue, release/expire reservations when allowed. |
 | Admin | System administrator | Has librarian permissions and can view reservation reports/audit. |
 | Guest | Unauthenticated visitor | No reservation permissions. |
@@ -67,6 +68,7 @@ The feature can only start when:
 - PRE-FE08-003: A member creating a reservation has canonical `Members.Status = APPROVED`.
 - PRE-FE08-004: The requested physical copy exists and its parent book exists.
 - PRE-FE08-005: Phase 1 policy is fixed: target `CopyId`, maximum 3 open reservations (`ACTIVE` or `NOTIFIED`), a 2-calendar-day notified hold, manual queue processing, and queue order by `ReservedAt ASC, ReservationId ASC`.
+- PRE-FE08-006: Candidate catalog access requires an authenticated `MEMBER`; FE01 public browse and FE06 staff inventory contracts are not widened.
 
 ---
 
@@ -205,6 +207,7 @@ The feature can only start when:
 - FR-FE08-026: IF FE07 evaluates a copy with an active queue or another member's notified hold, FE08 reservation state shall prevent the ordinary borrow operation without exposing the reservation owner.
 - FR-FE08-027: IF a supplied reservation-list `page` or `limit` violates the Phase 1 pagination bounds, the system shall reject the request without normalizing the value or querying reservations.
 - FR-FE08-028: WHEN a `NOTIFIED` reservation becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, the system shall preserve its original `NotifiedAt` and `ExpiresAt`; cancellation shall additionally set `CancelledAt`, while non-cancelled states keep `CancelledAt = null`.
+- FR-FE08-029: WHEN an authenticated member requests `GET /api/reservations/candidates`, the system shall return a paginated, server-owned catalog of active-book physical copies whose status is `BORROWED` or `RESERVED`, expose only the approved safe projection, and leave `POST /api/reservations { copyId }` authoritative for all mutation-time checks.
 
 ---
 
@@ -224,6 +227,8 @@ The feature can only start when:
 - AC-FE08-012: Given a copy has active reservation priority, when another member attempts to borrow it, then the operation is denied and queue order is preserved.
 - AC-FE08-013: Given omitted reservation-list pagination, when staff lists reservations, then `page = 1` and `limit = 20` are used; invalid supplied values are rejected without normalization.
 - AC-FE08-014: Given a reservation that reached `NOTIFIED`, when it later becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, then its original `NotifiedAt` and `ExpiresAt` remain unchanged; only `CANCELLED` has a non-null `CancelledAt`.
+- AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, and `activeReservationCount`; barcode, location, owner, email, timestamps, and version are absent.
+- AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
 
 ---
 
@@ -272,6 +277,7 @@ The feature can only start when:
 | expiresAt | datetime | Required after first notification | Server sets `NotifiedAt + 2 calendar days`; immutable thereafter and preserved in `NOTIFIED`, `FULFILLED`, `EXPIRED`, or notified-then-cancelled rows. Null only when the reservation never reached `NOTIFIED`. |
 | notifiedAt | datetime | Required after first notification | Server timestamp for the original hold notification; immutable and preserved after every terminal transition. Null only when the reservation never reached `NOTIFIED`. |
 | cancelledAt | datetime | Required only when `status = CANCELLED` | Server timestamp; never client-supplied. Must be null for every non-cancelled state. |
+| candidate projection | read-only DTO | Yes for candidate reads | Exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus` (`BORROWED` or `RESERVED`), and `activeReservationCount`; no staff-only or reservation-owner fields. |
 
 ### 10.3 State Model & Transition Rules (Reservation)
 
@@ -347,6 +353,7 @@ stateDiagram-v2
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | POST | `/api/reservations` | Member | `{ copyId: number }` | Created reservation | Phase 1 target is the physical copy identified by `CopyId`. |
+| GET | `/api/reservations/candidates` | Member | Query: `q?, page?, limit?` | `{ data, pagination }` safe candidate catalog | Defaults `page = 1`, `limit = 20`; `q` max 200; active books and `BORROWED`/`RESERVED` copies only; order by title, book ID, copy ID. |
 | GET | `/api/reservations/me` | Member | Query: `status?, page?, limit?` | Own reservations | Defaults `page = 1`, `limit = 20`; invalid page/limit returns validation error. |
 | PATCH | `/api/reservations/{reservationId}/cancel` | Member | Optional reason | Cancelled reservation | Own reservation only. |
 | GET | `/api/reservations` | Librarian/Admin | Query: `bookId?, memberId?, status?, page?, limit?` | Reservation list | Defaults `page = 1`, `limit = 20`; order is `ReservedAt ASC, ReservationId ASC`. |
@@ -362,6 +369,7 @@ stateDiagram-v2
 - NFR-FE08-SEC-001: Reservation endpoints must require authentication except public browsing dependencies.
 - NFR-FE08-SEC-002: Members must not view or cancel other members' reservations.
 - NFR-FE08-SEC-003: Librarian/admin permissions must be checked on the server.
+- NFR-FE08-SEC-004: Candidate reads must require the `MEMBER` role and must not expose barcode, location, reservation owner, member email, reservation timestamps, rowversion, or other staff-only metadata.
 
 ### 12.2 Transaction Integrity
 
@@ -372,6 +380,7 @@ stateDiagram-v2
 
 - NFR-FE08-PERF-001: Reservation lists use `page = 1` and `limit = 20` by default; supplied `page` is an integer >= 1 and `limit` is an integer 1..100.
 - NFR-FE08-PERF-002: Queue lookup filters by exact `CopyId` and `Status = ACTIVE` and orders by `ReservedAt ASC, ReservationId ASC`.
+- NFR-FE08-PERF-003: Candidate reads default to `page = 1` and `limit = 20`, reject `page < 1` or `limit` outside `1..100`, accept trimmed `q` up to 200 characters, and order by `Book.Title ASC, Book.BookId ASC, BookCopy.CopyId ASC`.
 
 ### 12.4 Logging and Audit
 
@@ -402,6 +411,7 @@ This feature does not include:
 | Dependency | Type | Notes |
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | Identifies actor. |
+| FE01 Public Browse | Internal | Keeps public book reads copy-ID-free; the protected FE08 endpoint owns member candidate selection. |
 | FE04 Membership Management | Internal | Confirms member eligibility. |
 | FE06 Inventory / Book Copy Management | Internal | Provides copy availability/status. |
 | FE07 Borrowing Management | Internal | FE07 create/approval and normal-return transaction enforce FE08 queue priority. FE07 approval for the same notified member and copy is the only fulfillment trigger; return releases a normal copy to stored `AVAILABLE` while preserving an `ACTIVE` queue claim for manual FE08 processing. |
@@ -425,6 +435,7 @@ This feature does not include:
 | Q-FE08-008 | A failed FE10 request leaves the committed hold in place and writes a failure audit; no automatic retry worker is included in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-009 | `NotifiedAt` and `ExpiresAt` are immutable history after notification and survive fulfillment, expiration, or cancellation; `CancelledAt` belongs only to cancelled rows. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE08-010 | `queuePosition` is derived from the canonical queue order and only `POST /api/reservations/process-queue` is the Phase 1 queue-processing endpoint. | Queue contract normalization 2026-07-17 | APPROVED |
+| Q-FE08-011 | Candidate selection uses protected member-only `GET /api/reservations/candidates`; it returns one safe row per eligible physical copy, keeps FE01/FE06 boundaries unchanged, and preserves `POST /api/reservations { copyId }`. | User approval `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN`, 2026-07-19 | APPROVED |
 
 ---
 
@@ -477,6 +488,7 @@ This feature does not include:
 | FR-FE08-026 | UC36, UC39 | FE08-T025 and FE07-T029 safe priority-conflict tests | Planned |
 | FR-FE08-027 | UC38 | FE08-T028 pagination validation test | Planned |
 | FR-FE08-028 | UC37, UC39, UC40 | FE08-T030 terminal timestamp-retention tests | Planned |
+| FR-FE08-029 | UC36 | FE08-T035 route/service/redaction tests; FE08-T036 SQL projection tests; FE08-T038 browser acceptance | Planned |
 | AC-FE08-001 | UC36 | FT37 eligible unavailable-copy reservation test | Ready for review |
 | AC-FE08-002 | UC36 | FT37 duplicate active reservation rejection test | Ready for review |
 | AC-FE08-003 | UC36 | FT37 available-copy reservation rejection test | Ready for review |
@@ -491,6 +503,10 @@ This feature does not include:
 | AC-FE08-012 | UC36, UC39 | FE08-T025 and FE07-T029 reservation-priority tests | Planned |
 | AC-FE08-013 | UC38 | FE08-T028 pagination defaults/bounds test | Planned |
 | AC-FE08-014 | UC37, UC39, UC40 | FE08-T030 fulfilled/expired/cancelled timestamp-retention cases | Planned |
+| AC-FE08-015 | UC36 | FE08-T035 safe-key route tests; FE08-T036 SQL redaction tests | Planned |
+| AC-FE08-016 | UC36 | FE08-T037 frontend source/API tests; FE08-T038 browser acceptance | Planned |
+| NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Planned |
+| NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Planned |
 
 ---
 
@@ -513,3 +529,11 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [ ] Confirm `process-queue` accepts only staff `copyId` input.
 - [ ] Confirm pagination defaults/bounds and stable queue/list ordering.
 - [ ] Confirm FE10 failure is recorded as an audit event without an automatic retry worker.
+
+### 17.2 Revision v0.4.4 Candidate Catalog Gate
+
+- [x] User approved protected member-only Option A on 2026-07-19.
+- [x] User approved the written candidate design on 2026-07-19.
+- [x] Candidate response fields, eligible statuses, query bounds, ordering, and redaction are explicit.
+- [x] FE01 public browse, FE06 staff inventory, and `POST { copyId }` contracts remain unchanged.
+- [ ] Candidate implementation, SQL-backed evidence, browser acceptance, and final integration review pass.

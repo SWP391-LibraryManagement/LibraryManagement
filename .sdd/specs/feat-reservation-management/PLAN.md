@@ -1,12 +1,12 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: APPROVED - V0.4.3 RECONCILIATION AUTOMATED-VALIDATED; HUMAN INTEGRATION PENDING
+Status: APPROVED - V0.4.4 CANDIDATE CONTRACT; IMPLEMENTATION IN PROGRESS
 
 Owner: Nhat
 
-Updated: 2026-07-17
+Updated: 2026-07-19
 
-Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repository/human integration remains open
+Workflow State: FE08-T028 through FE08-T034 are agent-side complete; FE08-T035 through FE08-T039 implement approved TD-028; final repository/human integration remains open
 
 ---
 
@@ -23,6 +23,8 @@ Included:
 - Server-backed refresh after hold expiration.
 - FE07 handoff that preserves queue priority and fulfills the notified owner's hold during borrow approval.
 - Deterministic reservation-list pagination and stable queue/list ordering.
+- Protected member-safe reservation-candidate search and pagination backed by SQL state.
+- Removal of the hardcoded `DEMO_RESERVABLE` catalog.
 
 Not included:
 
@@ -41,6 +43,7 @@ Not included:
 | Maximum active reservations is 3 | Service rejects the fourth active reservation for the same member. |
 | Hold window is 2 calendar days | Queue processing sets `ExpiresAt` to now + 2 days. |
 | Queue processing is manual in Phase 1 | Staff triggers `/api/reservations/process-queue`. |
+| Member candidate source is FE08 protected API | `GET /api/reservations/candidates` returns one redacted row per active-book `BORROWED`/`RESERVED` copy; FE01 and FE06 contracts remain unchanged. |
 
 ---
 
@@ -108,6 +111,15 @@ Not included:
 - Reconcile `QueuePosition`, `NotifiedAt`, `ExpiresAt`, and `CancelledAt` with immutable notification-history semantics: notified/expiry timestamps survive terminal transitions, while `CancelledAt` exists only for cancelled rows.
 - Preserve the shared `BookCopies -> Reservations` lock order for queue, cancellation, expiration, and FE07 fulfillment.
 
+### 3.9 V0.4.4 Reservation Candidate Catalog
+
+- Add member-only `GET /api/reservations/candidates` with optional `q`, `page`, and `limit`.
+- Return exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus`, and `activeReservationCount` in `{ data, pagination }`.
+- Filter to active books and physical copies in `BORROWED` or `RESERVED`; order by title, book ID, then copy ID.
+- Keep the read path parameterized, read-only, unaudited, and independent from FE01 public browse and FE06 staff inventory.
+- Keep `POST /api/reservations { copyId }` authoritative for member eligibility, duplicate, limit, and stale-copy conflict checks.
+- Replace `DEMO_RESERVABLE` with server candidate state; search and pagination are server-owned, and the UI does not invent ETA or availability counts.
+
 ---
 
 ## 4. Review Notes
@@ -116,6 +128,7 @@ Not included:
 - Frontend lifecycle rendering, queue semantics, error isolation, and hold-expiration processing are aligned with `SPEC.md`.
 - FE07 approval may fulfill only the matching notified reservation; automatic queue processing after return remains out of scope for Phase 1.
 - The v0.4.2 contract normalization is not implementation completion evidence; FE08-T028 through FE08-T033 remain pending.
+- The v0.4.4 candidate contract was explicitly approved on 2026-07-19; it does not close TD-028 until FE08-T035 through FE08-T039 and all validation gates pass.
 
 ## 5. B7 Closeout Evidence
 
@@ -131,6 +144,9 @@ Not included:
 | FE08 frontend | `node --test frontend/test/reservationFrontend.test.js` | Canonical lifecycle, error isolation, and server-refresh cases pass when the focused file exists. |
 | Traceability | `npm.cmd run trace:enforce` | FE08 changed files satisfy the traceability threshold. |
 | Diff hygiene | `git diff --check` | No whitespace errors. |
+| FE08 candidate backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js` | Role, validation, search, pagination, redaction, order, and no-mutation cases pass. |
+| FE08 candidate SQL | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/reservationCandidates.sqltest.js` | Real SQL filtering, active counts, ordering, pagination, and safe projection pass on disposable SQL Server. |
+| FE08 candidate browser | isolated Playwright `tests/e2e/fe08-reservation-candidate-catalog.spec.js` | Member catalog/search/create/refresh flow passes without protected metadata exposure. |
 
 ## 7. V0.4.3 Baseline Review And Implementation Gate
 
@@ -138,3 +154,11 @@ Not included:
 - [x] Nhat confirmed skip/empty-queue/no-retry notification policies on 2026-07-17.
 - [x] Nhat confirmed pagination and stable ordering on 2026-07-17.
 - [x] Nhat confirmed FE07 fulfillment remains the only `NOTIFIED -> FULFILLED` trigger on 2026-07-17.
+
+## 8. V0.4.4 Candidate Review And Implementation Gate
+
+- [x] User approved TD-028 Option A on 2026-07-19.
+- [x] User approved `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md` on 2026-07-19.
+- [x] Implementation plan recorded in `docs/superpowers/plans/2026-07-19-fe08-reservation-candidate-catalog.md`.
+- [ ] FE08-T035 through FE08-T039 implementation and evidence pass.
+- [ ] Decision Gate A and final H3 packet are updated against the final green PR head.

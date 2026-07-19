@@ -105,6 +105,33 @@ Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repos
   - DoD: SPEC, PLAN, TASKS, TEST_PLAN, and CHANGELOG agree that notification timestamps are immutable history and `CancelledAt` is cancellation-only; implementation files remain unchanged.
   - Review state: documentation complete and human review confirmed by Nhat on 2026-07-17.
 
+- [x] **FE08-T035 - Approve and trace the member-safe candidate contract.**
+  - Maps to: FR-FE08-029, AC-FE08-015/016, NFR-FE08-SEC-004, NFR-FE08-PERF-003, Q-FE08-011.
+  - Files: FE08 `SPEC.md`, `PLAN.md`, `TASKS.md`, `CHANGELOG.md`; candidate design and implementation plan.
+  - DoD: Option A and the written design are explicitly human-approved; query, projection, role, ordering, and non-goals are unambiguous.
+
+- [ ] **FE08-T036 - Implement and validate the backend candidate API.**
+  - Maps to: FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003.
+  - Files: FE08 validators/routes/controller/service/repository, OpenAPI, in-memory helper, route tests, and `backend/tests/sql/reservationCandidates.sqltest.js`.
+  - RED: role, query, safe-key, status, search, ordering, pagination, active-count, and no-mutation cases fail before the route exists.
+  - GREEN: member-only `{ data, pagination }` projection passes focused Jest and disposable SQL Server suites.
+
+- [ ] **FE08-T037 - Replace `DEMO_RESERVABLE` with canonical server candidates.**
+  - Maps to: FR-FE08-029, AC-FE08-015/016, NFR-FE08-PERF-003.
+  - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/reservation/MyReservationsPage.jsx`, `frontend/src/utils/libraryFeatureViewModels.js`, `frontend/test/reservationFrontend.test.js`.
+  - RED: source tests fail while the page imports the demo catalog or lacks `reservationApi.listCandidates`.
+  - GREEN: server search/page state, loading/empty/error states, real `copyId` mutation, and post-mutation refresh pass without invented ETA or availability counts.
+
+- [ ] **FE08-T038 - Add isolated browser acceptance for candidate selection.**
+  - Maps to: FR-FE08-029, AC-FE08-015/016.
+  - Files: `tests/e2e/fe08-reservation-candidate-catalog.spec.js` and deterministic E2E support only if required.
+  - DoD: member catalog, search query, safe payload, real reservation creation, canonical refresh, and mobile overflow pass on isolated ports.
+
+- [ ] **FE08-T039 - Close TD-028 with full validation evidence.**
+  - Maps to: all v0.4.4 candidate IDs.
+  - Files: `TECH_DEBT.md`, focused validation review, full acceptance packet, and PR evidence.
+  - DoD: focused/full backend/frontend/coverage/integration/SQL/E2E/traceability/safety gates pass; TD-028 moves to RESOLVED; final H3 remains explicit.
+
 ## 5. Validation
 
 - [x] `npm.cmd --prefix frontend test` - 14/14 tests passed.
@@ -119,6 +146,13 @@ Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repos
 - [x] `npm.cmd run trace:enforce` passes with FE08 coverage 28/28.
 - [x] `git diff --check` passes.
 - [x] Nhat confirmed human review of the normalized contract on 2026-07-17.
+
+### 5.2 Pending V0.4.4 Candidate Validation
+
+- [ ] FE08-T036 backend route and SQL tests pass.
+- [ ] FE08-T037 frontend tests, lint, and build pass with no `DEMO_RESERVABLE` reference.
+- [ ] FE08-T038 isolated browser acceptance passes.
+- [ ] FE08-T039 full regression, traceability, safety, evidence, PR CI, and human acceptance closeout pass.
 
 ## 6. Traceability
 
@@ -151,6 +185,11 @@ Workflow State: FE08-T028 through FE08-T034 are agent-side complete; final repos
 | NFR-FE08-UX-001 | FE08-T21, FE08-T22, FE08-T24, FE08-T27 |
 | FR-FE08-018/020/021/027 | FE08-T028, FE08-T029 |
 | AC-FE08-013 | FE08-T028, FE08-T032 |
+| FR-FE08-029 | FE08-T035, FE08-T036, FE08-T037, FE08-T038, FE08-T039 |
+| AC-FE08-015 | FE08-T035, FE08-T036, FE08-T037, FE08-T038 |
+| AC-FE08-016 | FE08-T035, FE08-T037, FE08-T038 |
+| NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
+| NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
 ## 7. Still Outside This Slice
 

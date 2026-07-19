@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-19 - V0.4.4 Member-Safe Candidate Contract Approved
+
+- Approved protected member-only `GET /api/reservations/candidates` as the source of physical `CopyId` targets.
+- Locked the safe projection to `copyId`, `bookId`, title, nullable author, `BORROWED`/`RESERVED` status, and active queue count.
+- Preserved FE01 public redaction, FE06 staff inventory access, and `POST /api/reservations { copyId }` mutation semantics.
+- Added server-owned `q`/page/limit behavior, deterministic ordering, implementation tasks FE08-T035 through FE08-T039, and SQL/browser validation gates.
+- Implementation remains in progress; `TD-028` stays open until all focused/full evidence and human integration gates pass.
+
 ## 2026-07-19 - Reservation Candidate Drift Recorded
 
 - The final product-drift scan confirmed that reservation mutations and lifecycle state are server-authoritative, but `MyReservationsPage` still displays hardcoded `DEMO_RESERVABLE` copy candidates.
