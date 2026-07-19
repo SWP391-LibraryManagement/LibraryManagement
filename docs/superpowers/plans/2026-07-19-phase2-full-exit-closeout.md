@@ -30,29 +30,29 @@
 - Consumes: feature `TASKS.md` text.
 - Produces: `parseImplementationState(text)` and `shouldEnforce(state)` for `NOT_STARTED`, `PARTIAL`, `COMPLETE`, and `DEFERRED`.
 
-- [ ] **Step 1: Add the focused test command**
+- [x] **Step 1: Add the focused test command**
 
 Add `"test:traceability-state": "node --test scripts/traceability-state.test.js"` to root scripts.
 
-- [ ] **Step 2: Write RED state tests**
+- [x] **Step 2: Write RED state tests**
 
 Cover parsing all four valid states, enforcing only `PARTIAL`/`COMPLETE`, and rejecting missing or invalid metadata.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run: `npm.cmd run test:traceability-state`
 
 Expected: FAIL because `scripts/traceability-state.js` does not exist.
 
-- [ ] **Step 4: Implement the pure helper**
+- [x] **Step 4: Implement the pure helper**
 
 Use one anchored `Implementation State:` line and export the valid-state set, parser, and enforcement decision.
 
-- [ ] **Step 5: Wire the traceability checker**
+- [x] **Step 5: Wire the traceability checker**
 
 Replace the broad top-level `Status:` heuristic with explicit implementation-state parsing. Report `Implementation state`, fail enforcement on missing/invalid metadata, and preserve `--enforce` plus `--min=<n>` behavior.
 
-- [ ] **Step 6: Run GREEN**
+- [x] **Step 6: Run GREEN**
 
 Run:
 
@@ -75,7 +75,7 @@ Expected: helper tests PASS; traceability initially fails until Task 2 adds meta
 - Consumes: PR #40/#41 reconciliation evidence and PR #42-#44 OTP evidence.
 - Produces: exactly one `Implementation State: COMPLETE` line per feature and current status text that points to the canonical exit review.
 
-- [ ] **Step 1: Add implementation metadata**
+- [x] **Step 1: Add implementation metadata**
 
 Insert exactly one line in every feature `TASKS.md`:
 
@@ -83,19 +83,19 @@ Insert exactly one line in every feature `TASKS.md`:
 Implementation State: COMPLETE
 ```
 
-- [ ] **Step 2: Close FE11 integration tasks from existing evidence**
+- [x] **Step 2: Close FE11 integration tasks from existing evidence**
 
 Mark `FE11-LIFE06`, `FE11-ACC01`, and `FE11-FIN02` complete. Cite PR #40 merge `1555111`, final PR CI `29685838610`, post-merge `main` CI `29685953839`, Live SQL `9/9` suites and `69/69` tests, browser `4/4`, and the approved human acceptance packet.
 
-- [ ] **Step 3: Normalize current feature status headers**
+- [x] **Step 3: Normalize current feature status headers**
 
 Use `COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED` for active top-level PLAN/TASKS/TEST_PLAN status headers. Preserve detailed historical entries and explicit future/deferred boundaries.
 
-- [ ] **Step 4: Add current changelog closeout entries**
+- [x] **Step 4: Add current changelog closeout entries**
 
 For affected features, add a dated entry that states Phase 2 reconciliation is accepted through PR #40/#41. FE02 and FE10 additionally cite PR #42-#44 for OTP completion. Do not alter older historical statements.
 
-- [ ] **Step 5: Verify metadata consistency**
+- [x] **Step 5: Verify metadata consistency**
 
 Run a PowerShell assertion that all twelve features contain exactly one `Implementation State: COMPLETE` line and no current header contains `HUMAN ... PENDING`, `INTEGRATION PENDING`, or `READY FOR REVIEW`.
 
@@ -112,15 +112,15 @@ Run a PowerShell assertion that all twelve features contain exactly one `Impleme
 - Consumes: completed Phase 2 feature metadata and validation record.
 - Produces: one consistent current phase: `Phase 3 - Polish and Delivery`.
 
-- [ ] **Step 1: Replace stale root plan text**
+- [x] **Step 1: Replace stale root plan text**
 
 Record Phase 2 as complete and define Phase 3 checkpoints: deployment/staging evidence, durable operational configuration, documentation/demo/presentation readiness, and non-blocking performance polish.
 
-- [ ] **Step 2: Update agent memory**
+- [x] **Step 2: Update agent memory**
 
 Change `.agents/CLAUDE.md` current phase to Phase 3, retain the exact Phase 2 evidence, and preserve deferred boundaries such as real provider delivery, notification inbox UI, durable avatar storage, shared SQL CI, and bundle splitting.
 
-- [ ] **Step 3: Align project-facing status**
+- [x] **Step 3: Align project-facing status**
 
 Ensure `README.md` and final-release status identify Phase 2 as accepted and Phase 3 as the current delivery phase without claiming production SLA or real SMTP/staging proof.
 
@@ -133,11 +133,11 @@ Ensure `README.md` and final-release status identify Phase 2 as accepted and Pha
 - Consumes: local validation output, PR #40-#44 evidence, feature metadata, and residual-boundary records.
 - Produces: the canonical Phase 2 exit decision across L1-L4.
 
-- [ ] **Step 1: Run metadata and stale-state checks**
+- [x] **Step 1: Run metadata and stale-state checks**
 
 Verify all twelve features are `COMPLETE`, FE11 exit tasks are checked, `plan.md` and `.agents/CLAUDE.md` agree, and no active source says Phase 2 implementation or human integration remains pending.
 
-- [ ] **Step 2: Run automated gates**
+- [x] **Step 2: Run automated gates**
 
 Run:
 
@@ -157,11 +157,11 @@ git diff --check
 
 If local dependencies are absent, install from lockfiles before running the gate. Use isolated browser ports and do not stop unrelated processes.
 
-- [ ] **Step 3: Record all four validation layers**
+- [x] **Step 3: Record all four validation layers**
 
 The review must record L1 automated checks, L2 spec/traceability compliance, L3 Constitution/security/scope compliance, and L4 human acceptance plus PR/main evidence. Residual deferred items must be explicitly non-blocking and outside Phase 2.
 
-- [ ] **Step 4: Run final scope checks**
+- [x] **Step 4: Run final scope checks**
 
 Confirm the diff contains only traceability tooling, SDD/status documentation, and the Phase 2 exit record; no product, schema, API, dependency, or runtime behavior changed.
 

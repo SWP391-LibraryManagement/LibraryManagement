@@ -13,9 +13,9 @@
 
 Last Updated: 2026-07-19
 
-> Traceability note: every implemented feature now meets the Validation-Gate L2 bar (FR `@spec`
-> coverage ≥ 70%). FE07 and FE08 are at 100%, FE02 was completed to 100%, and the CI workflow now runs
-> `npm run trace:enforce` (was report-only) so the gate is enforced on every PR.
+> Traceability note: all twelve Phase 2 feature packages declare `Implementation State: COMPLETE`
+> and report 100% FR `@spec` coverage. The CI workflow runs `npm run trace:enforce`, which parses
+> implementation state explicitly rather than inferring delivery from specification approval text.
 
 ---
 

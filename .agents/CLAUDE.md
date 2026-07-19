@@ -1,8 +1,8 @@
 # CLAUDE.md — Library Management System
 
-# Version: 0.3.5
+# Version: 0.3.6
 
-# Status: ACTIVE (Phase 2 — Core Development)
+# Status: ACTIVE (Phase 3 - Polish and Delivery)
 
 # Last Updated: 2026-07-19
 
@@ -17,11 +17,11 @@
 ## 0. Project Summary And Current Phase
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
-- **Current phase**: Phase 2 — Core Development. Foundation (Constitution, scaffolding, CI) is in place.
+- **Current phase**: Phase 3 - Polish and Delivery. Phase 2 Core Development is complete for the approved FE01-FE12 scope.
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server through the `mssql` package with parameterized queries, RESTful API.
-- **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. This approval locks the normalized contracts as the source of truth; it does not claim that implementation, tests, or deferred follow-up tasks are complete.
+- **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. Phase 2 implementation, reconciliation, validation, human acceptance, merge, and exact post-merge CI are complete for that approved scope; explicit future/deferred work remains outside the completion claim.
   - The approved FE01-FE12 Phase 1 reconciliation is implemented, H3-accepted, and merged through PR #40 as `1555111`; post-merge `main` CI `29685953839` passed. Explicit future/deferred boundaries remain documented and are not part of this completion claim.
-  - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. Slice 3 operational-page UX planning is next.
+  - Shared App Shell and FE02 Authentication/OTP UX Slices 1-2 are **COMPLETE through B7**: Nhat confirmed human review, merge commit `01c66ef0434f278e00eb8b219d81cd33c6aa05d0` reached `main`, E2E remediation commit `232ee4c` aligned the golden path, and GitHub Actions CI run `29358045198` passed on final `main` commit `6eee4599d54e5a22e540a8c9890a262e7535ca6c`. See `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
   - FE07 B7 evidence (merge `aeed0df`, CI `29308540692`) remains historical baseline evidence; it does not prove the v0.5.1 history contract.
   - FE08 B7 evidence (commit `2360438`, CI `29217437981`) remains historical baseline evidence; the approved v0.4.4 candidate catalog and TD-028 Option A are complete in merged PR #40.
   - FE10 historical G1-G7, ADR-004/G8-G10 OTP delivery, FE11 `ACCOUNT_SETUP`, and G12 FE04 membership-result integration are complete through their approved slices; real provider delivery, inbox UI, and FE09 caller integration remain deferred.
@@ -29,6 +29,7 @@
 - **Current delivery mode**: Fast-Track Hybrid is the approved bounded-batch workflow. Use the three-lane pipeline and H1/H2/H3 authority model from `docs/superpowers/specs/2026-07-18-fast-track-hybrid-delivery-mode-design.md`. The first activation batch covers FE11 `TD-024`, `TD-026`, and `TD-027`; its task/debt state and product-work authorization become usable only when the governance activation PR reaches `main`.
 - **Current code state**: backend is a layered Express app (`routes → controllers → services → repositories`) using `mssql` repositories and SQL-oriented models, with implemented endpoints for auth, borrowing, reservation, notification, and reporting; controllers also exist for book, fine, and user-management. Frontend (React + Vite) has login/register/forgot-password, BookManagement, borrowing, reservation, fine, report, and Admin pages. A backend test suite (`backend/tests/`) and CI workflow (`.github/workflows/ci.yml`) are active.
 - **Current reconciliation state**: PR #40 corrected the approved FE01-FE12 Phase 1 drift, including FE02 HTTPS transport, FE04 role boundaries, FE05 mutation ownership, FE06 transactional races, FE08 open-reservation/candidate ownership, and FE11 finalization slices. H2/H3, merge, and post-merge CI are complete; non-blocking future boundaries remain in release limitations and feature out-of-scope sections.
+- **Phase 2 exit state**: every FE01-FE12 `TASKS.md` declares `Implementation State: COMPLETE`; the enforced traceability gate reports 100% FR coverage for all twelve features. The canonical exit evidence is `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 - **Traceability**: implementation code should carry `@spec <ID>` tags (e.g. `// @spec FR-FE07-004`) mapping back to `SPEC.md`. A checker lives at [`scripts/check-traceability.js`](../scripts/check-traceability.js) and runs in CI.
 
 ---

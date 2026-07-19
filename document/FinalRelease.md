@@ -10,7 +10,7 @@ Project: SWP391 Library Management System
 
 Group/project code: `6-LMS`
 
-Release status: FE01-FE12 reconciliation accepted and merged; post-merge `main` CI passed
+Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery active
 
 ## I. Deliverable Package
 
