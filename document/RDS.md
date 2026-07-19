@@ -98,8 +98,7 @@ An actor is a person, role, or external service that interacts with the Library 
 | 2 | Member | Registered library user who can manage profile information, browse books, request membership, borrow books, reserve books, view borrowing/reservation history, and view fines. |
 | 3 | Librarian | Library staff who manages book copies, borrowing requests, returns, reservations, membership review support, and fine-related operations. |
 | 4 | Admin | System administrator who manages users, roles, permissions, audit logs, system dashboards, and administrative library operations. |
-| 5 | Notification Service | Internal/external delivery service used by the system to send verification, password reset, account setup, borrowing, reservation, membership, and fine notifications. |
-| 6 | Database System | Persistent storage used by the application to save users, roles, books, copies, borrowings, reservations, fines, membership applications, notifications, and audit logs. |
+| 5 | EmailService | Internal/external delivery service used by the system to send verification, password reset, account setup, borrowing, reservation, membership, and fine notifications. |
 
 ### 1.2 Use Cases
 
@@ -111,46 +110,42 @@ A use case describes a sequence of interactions between an external actor and th
 
 ```mermaid
 flowchart TB
-  subgraph Actors[Actors]
+  subgraph TopRow[" "]
     direction LR
-    Guest[Guest]
-    Member[Member]
-    Librarian[Librarian]
-    Admin[Admin]
-    NotificationService[Notification Service]
-    DatabaseSystem[Database System]
+    subgraph LeftActors[" "]
+      direction TB
+      Guest[Guest]
+      Member[Member]
+    end
+
+    subgraph LMS[Library Management System]
+      direction TB
+      UC01{"Browse<br/>Books"}
+      UC02{"Manage<br/>Account<br/>Access"}
+      UC03{"Manage<br/>Profile"}
+      UC04{"Apply For<br/>Membership"}
+      UC05{"Manage<br/>Books"}
+      UC06{"Manage<br/>Book Copies"}
+      UC07{"Borrow<br/>Books"}
+      UC08{"Reserve<br/>Books"}
+      UC09{"Manage<br/>Fines"}
+      UC10{"Send<br/>Notifications"}
+      UC11{"Manage Users<br/>And Roles"}
+      UC12{"Generate<br/>Reports"}
+    end
+
+    subgraph RightActors[" "]
+      direction TB
+      Librarian[Librarian]
+      Admin[Admin]
+    end
   end
 
-  subgraph PublicMember[Public And Member Use Cases]
-    direction LR
-    UC01((Browse Books))
-    UC02((Manage Account Access))
-    UC03((Manage Profile))
-    UC04((Apply For Membership))
-    UC07((Borrow Books))
-    UC08((Reserve Books))
-    UC09((Manage Fines))
-  end
-
-  subgraph StaffAdmin[Staff And Admin Use Cases]
-    direction LR
-    UC05((Manage Books))
-    UC06((Manage Book Copies))
-    UC07S((Process Borrowing))
-    UC08S((Manage Reservations))
-    UC09S((Manage Fines))
-    UC11((Manage Users And Roles))
-    UC12((Generate Reports))
-  end
-
-  subgraph Support[Support Use Cases]
-    direction LR
-    UC10((Send Notifications))
-    UCDB((Persist Library Data))
-  end
+  EmailService[EmailService]
 
   Guest --> UC01
   Guest --> UC02
+
   Member --> UC01
   Member --> UC02
   Member --> UC03
@@ -159,49 +154,59 @@ flowchart TB
   Member --> UC08
   Member --> UC09
 
+  Librarian --> UC04
   Librarian --> UC05
   Librarian --> UC06
-  Librarian --> UC07S
-  Librarian --> UC08S
-  Librarian --> UC09S
+  Librarian --> UC07
+  Librarian --> UC08
+  Librarian --> UC09
+  Librarian --> UC10
   Librarian --> UC12
+
+  Admin --> UC04
   Admin --> UC05
   Admin --> UC06
-  Admin --> UC07S
-  Admin --> UC08S
-  Admin --> UC09S
+  Admin --> UC07
+  Admin --> UC08
+  Admin --> UC09
+  Admin --> UC10
   Admin --> UC11
   Admin --> UC12
+
+  EmailService --> UC10
 
   UC02 -. "<<include>>" .-> UC10
   UC04 -. "<<include>>" .-> UC10
   UC08 -. "<<include>>" .-> UC10
   UC09 -. "<<include>>" .-> UC10
   UC11 -. "<<include>>" .-> UC10
-  UC07S -. "<<include>>" .-> UC06
-  UC08S -. "<<include>>" .-> UC06
-  UC07S -. "<<extend>>" .-> UC09S
+  UC07 -. "<<include>>" .-> UC06
+  UC08 -. "<<include>>" .-> UC06
+  UC07 -. "<<extend>>" .-> UC09
 
-  NotificationService --> UC10
-  DatabaseSystem --> UCDB
+  classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
+  class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
+  style TopRow fill:transparent,stroke:transparent;
+  style LeftActors fill:transparent,stroke:transparent;
+  style RightActors fill:transparent,stroke:transparent;
 ```
 
 #### b. Use Case List
 
 | UC ID | Use Case Name | Primary Actor(s) | Supporting Actor(s) | Outcome |
 | ----- | ------------- | ---------------- | ------------------- | ------- |
-| UC-01 | Browse Books | Guest, Member | Database System | Actor can search, browse, and view public book information and current availability. |
-| UC-02 | Manage Account Access | Guest, Member, Admin-created user | Notification Service, Database System | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
-| UC-03 | Manage Profile | Member | Database System | Member can view and update profile information, including avatar where supported. |
-| UC-04 | Apply For Membership | Member, Librarian, Admin | Notification Service, Database System | Member can submit a membership application and authorized staff can approve or reject it. |
-| UC-05 | Manage Books | Librarian, Admin | Database System | Authorized staff can create, update, deactivate, reactivate, search, and view book catalog records. |
-| UC-06 | Manage Book Copies | Librarian, Admin | Database System | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
-| UC-07 | Borrow Books | Member, Librarian, Admin | Notification Service, Database System | Member can request borrowing; authorized staff can approve, reject, process returns, renew borrowing, and maintain borrowing history. |
-| UC-08 | Reserve Books | Member, Librarian, Admin | Notification Service, Database System | Member can reserve or cancel reservations; authorized staff can manage queues and fulfill held reservations. |
-| UC-09 | Manage Fines | Member, Librarian, Admin | Notification Service, Database System | Member can view fine information; authorized staff can calculate, collect, mark paid, or resolve fines. |
-| UC-10 | Send Notifications | Notification Service, Librarian, Admin | Database System | System can create and deliver account, reservation, due date, fine, membership, and account setup notifications. |
-| UC-11 | Manage Users And Roles | Admin | Notification Service, Database System | Admin can manage users, librarian accounts, roles, permissions, admin request review view, and audit logs. |
-| UC-12 | Generate Reports | Librarian, Admin | Database System | Authorized staff can view borrowing reports, inventory reports, and user statistics. |
+| UC-01 | Browse Books | Guest, Member | Internal database | Actor can search, browse, and view public book information and current availability. |
+| UC-02 | Manage Account Access | Guest, Member, Admin-created user | EmailService, Internal database | Actor can register, verify email, login, logout, change password, request password reset, reset password, and complete admin-created account setup. |
+| UC-03 | Manage Profile | Member | Internal database | Member can view and update profile information, including avatar where supported. |
+| UC-04 | Apply For Membership | Member, Librarian, Admin | EmailService, Internal database | Member can submit a membership application and authorized staff can approve or reject it. |
+| UC-05 | Manage Books | Librarian, Admin | Internal database | Authorized staff can create, update, deactivate, reactivate, search, and view book catalog records. |
+| UC-06 | Manage Book Copies | Librarian, Admin | Internal database | Authorized staff can manage physical copies, barcodes, location, status, and inventory availability. |
+| UC-07 | Borrow Books | Member, Librarian, Admin | EmailService, Internal database | Member can request borrowing; authorized staff can approve, reject, process returns, renew borrowing, and maintain borrowing history. |
+| UC-08 | Reserve Books | Member, Librarian, Admin | EmailService, Internal database | Member can reserve or cancel reservations; authorized staff can manage queues and fulfill held reservations. |
+| UC-09 | Manage Fines | Member, Librarian, Admin | EmailService, Internal database | Member can view fine information; authorized staff can calculate, collect, mark paid, or resolve fines. |
+| UC-10 | Send Notifications | EmailService, Librarian, Admin | Internal database | System can create and deliver account, reservation, due date, fine, membership, and account setup notifications. |
+| UC-11 | Manage Users And Roles | Admin | EmailService, Internal database | Admin can manage users, librarian accounts, roles, permissions, admin request review view, and audit logs. |
+| UC-12 | Generate Reports | Librarian, Admin | Internal database | Authorized staff can view borrowing reports, inventory reports, and user statistics. |
 
 #### c. Use Case Relationships
 
@@ -215,4 +220,4 @@ flowchart TB
 | UC-08 includes UC-10 | Reservation availability and queue events can trigger notifications. |
 | UC-09 includes UC-10 | Fine and overdue events can trigger due date or fine notifications. |
 | UC-11 includes UC-10 | Admin-created user accounts can trigger account setup notifications. |
-| UC-01 to UC-12 include database persistence or reads | Each use case reads from or writes to the database according to its feature data contract. |
+| UC-01 to UC-12 use internal database reads or persistence | Each use case reads from or writes to the database according to its feature data contract; the database is an internal component, not a use case actor in this diagram. |
