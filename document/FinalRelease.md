@@ -5,7 +5,7 @@
 Version: 1.0  
 Release date: 2026-07-19  
 Project: SWP391 Library Management System  
-Group/project code: `<GROUP_CODE>-LMS`  
+Group/project code: `6-LMS`  
 Release status: Ready for human staging acceptance
 
 ## I. Deliverable Package
