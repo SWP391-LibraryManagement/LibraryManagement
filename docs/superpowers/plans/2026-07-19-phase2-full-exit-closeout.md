@@ -193,4 +193,3 @@ Confirm `origin/main`, PR state, CI result, phase metadata, feature implementati
 - [ ] **Step 6: Complete the goal**
 
 Mark the goal complete only when all prior steps pass and Phase 3 is the single current phase in repository context.
-

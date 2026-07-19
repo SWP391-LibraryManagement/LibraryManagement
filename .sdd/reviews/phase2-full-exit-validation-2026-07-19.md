@@ -90,4 +90,3 @@ The FE01-FE12 human walkthrough, Option A, FE10 design, and final H3 decisions a
 ## Exit Gate
 
 Local Phase 2 exit validation is complete. The remaining gate is mechanical integration of this closeout: required PR CI, merge, exact post-merge `main` CI, and a final stale-state/worktree audit. Phase 3 becomes authoritative on `main` only after those gates pass.
-
