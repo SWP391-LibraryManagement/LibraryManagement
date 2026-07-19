@@ -939,3 +939,38 @@ flowchart TB
 | -- | ------------- | ------------------------- |
 | BR-GEN-003 | Report Authorization | Only authorized librarian/admin users can access reports. |
 | BR-GEN-010 | Report Audit Context | Important administrative report access or related actions may be logged when required. |
+
+## 2. Common Functions
+
+### 2.1 UC-2_Login System
+
+#### a. Functional Description
+
+| Field | Description |
+| ----- | ----------- |
+| UC ID and Name | UC-2_Login System |
+| Created By | DatDT |
+| Date Created | 2026-07-19 |
+| Primary Actor | Guest, Member, Librarian, Admin |
+| Secondary Actors | Internal database |
+| Trigger | User clicks the Login button from the login screen, or user accesses an authenticated feature directly by URL. |
+| Description | As a user, I want to log into the system so that I can use authenticated features and access my role-based account workspace. |
+| Preconditions | PRE-1: User account has been created.<br/>PRE-2: User account is active and email has been verified.<br/>PRE-3: User account is not locked. |
+| Postconditions | POST-1: User logs in successfully.<br/>POST-2: System returns session/token data for authenticated access.<br/>POST-3: System records the successful login event for audit/logging. |
+| Normal Flow | 2.0 Login System<br/>1. User accesses the Login screen.<br/>2. User enters email and password.<br/>3. User clicks the Login button.<br/>4. System validates the login input.<br/>5. System verifies the password against the stored password hash.<br/>6. System checks account status, email verification status, and lock status.<br/>7. System allows the user to access authenticated features.<br/>8. System records the successful login event.<br/>9. System redirects the user to the Home page or the previous requested page. |
+| Alternative Flows | 2.1 Forgot Password<br/>1. User clicks the Forgot Password link.<br/>2. System opens the Forgot Password screen.<br/>3. User submits email address.<br/>4. System sends password reset instruction if the account is eligible.<br/><br/>2.2 Register Account<br/>1. User clicks the Register link.<br/>2. System opens the Register screen.<br/>3. User submits registration information.<br/>4. System creates an inactive account and sends verification email if data is valid. |
+| Exceptions | 2.0.E1 System cannot authenticate the user<br/>1. System shows a safe error message.<br/>2. User may retry login.<br/>3. User may click Forgot Password and continue with password reset.<br/>4. User may click Register and continue with account registration.<br/><br/>2.0.E2 Account is not verified<br/>1. System rejects login.<br/>2. System instructs user to verify email or request a new verification code.<br/><br/>2.0.E3 Account is locked<br/>1. System rejects login until the lock expires or a supported recovery flow is completed. |
+| Priority | Must Have |
+| Frequency of Use | High, multiple times per day |
+| Business Rules | FR1, FR2, FR3, FR4 |
+| Other Information | Google Login and Facebook Login are not included in the current Phase 1 implementation. |
+| Assumptions | User logs in with system account credentials using email and password. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| FR1 | Password Hashing | User password must be hashed with bcrypt before storage. |
+| FR2 | Invalid Login | User cannot be authenticated if login details are incorrect, email is not verified, account is inactive, or account is locked. |
+| FR3 | Account Locking | If a known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the account is locked for 30 minutes. |
+| FR4 | Session Validation | Every protected request must validate the session/token before processing. |
