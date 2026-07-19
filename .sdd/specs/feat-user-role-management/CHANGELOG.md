@@ -6,7 +6,7 @@
 - Extended the isolated E2E harness with optional Admin setup, FE07/auth-backed Admin request reads, safe user-directory reads, and a fresh integration app per test.
 - RED-GREEN exposed both the missing Admin fixture and cross-test shared-state contamination before the harness changes were accepted.
 - Fresh focused evidence passes 80/80 backend, 48/48 frontend, 10/10 system integration, 2/2 Playwright, and 100% FE11 traceability.
-- `FE11-REQ01..FE11-REQ03` are implemented locally. `FE11-ACC01`, `TD-025`, exact PR/CI association, and human integration acceptance remain open.
+- `FE11-REQ01..FE11-REQ03` are implemented. Draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; `FE11-ACC01`, `TD-025`, H2/H3, and human integration acceptance remain open.
 
 ## 2026-07-19 - Finalization Wave A Implemented And H2-Ready
 

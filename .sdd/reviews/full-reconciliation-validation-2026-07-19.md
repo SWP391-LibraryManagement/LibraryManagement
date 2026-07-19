@@ -1,6 +1,6 @@
 # FE01-FE12 Full Reconciliation Validation - 2026-07-19
 
-Status: LOCAL AUTOMATED, SPEC, AND SAFETY GATES PASS; PR/CI AND HUMAN ACCEPTANCE PENDING
+Status: LOCAL AUTOMATED, SPEC, SAFETY, AND PR CI GATES PASS; HUMAN ACCEPTANCE PENDING
 
 Branch: `feat/full-reconciliation`
 
@@ -46,6 +46,13 @@ This depth is required because the reconciliation spans FE01-FE12 and changes se
 | Product drift scan | obsolete shared demo exports | PASS - only documented `DEMO_BORROW_CATALOG` and tracked-debt `DEMO_RESERVABLE` remain |
 | Diff hygiene | `git diff --check` | PASS |
 
+## Pull Request And CI Evidence
+
+- Draft PR: `#40` (`feat/full-reconciliation` -> `main`).
+- Validated commit: `422246ba5b67aeff297253a28b8a724c99ed80f6`.
+- GitHub Actions run: `29679154327`.
+- Result: PASS - `foundation-checks` completed traceability, backend tests, system integration, coverage, frontend lint/tests/build, Playwright E2E, and backend health import.
+
 ## Upstream Integration
 
 After draft PR #40 was opened, `origin/main` had advanced to `3f63a13`. The feature branch merged that state without force-pushing or discarding the new release/RDS/SDS documents.
@@ -82,7 +89,7 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 | 1. Automated checks | PASS locally | Unit, integration, coverage, lint, build, deployment, E2E, Live SQL, OpenAPI, import, audits, traceability, and diff checks pass |
 | 2. Spec compliance | READY FOR REVIEW | FE01-FE12 traceability is 100%; feature specs/tasks/evidence are reconciled; approved deferred debt remains explicit |
 | 3. Constitution and safety | PASS locally | Approved stack retained; protected actions remain server-authorized; SQL mutation was isolated; no saved credentials or high-confidence secrets detected |
-| 4. Acceptance verification | PENDING | Draft PR, exact CI association, and explicit human integration acceptance are still required |
+| 4. Acceptance verification | PARTIAL | Draft PR #40 and exact CI run `29679154327` pass; explicit human integration acceptance is still required |
 
 ## Residual Risks And Decisions
 
@@ -94,4 +101,4 @@ A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `
 
 ## Execution Boundary
 
-Draft PR #40 targets `main`. The work must not be merged or marked complete until the updated merge commit passes the full local gates and exact PR checks, and a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.
+Draft PR #40 targets `main`, and CI run `29679154327` passes on merge commit `422246b`. The work must not be merged or marked complete until a human reviewer explicitly accepts the integrated FE01-FE12 result and the listed residual boundaries.

@@ -260,7 +260,7 @@ Owner: Dung
 - [ ] **FE11-ACC01 - Pass FE11 browser acceptance and Wave B integration.**
   - Depends on: FE11-REQ01..FE11-REQ03.
   - Includes: evidence-only Admin Dashboard coverage for FR-FE11-031 without redesigning FE12 ownership.
-  - Local evidence: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; H2/H3, exact PR/CI association, and human integration acceptance remain required.
+  - Evidence: `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; H2/H3 and human integration acceptance remain required.
 
 - [ ] **FE11-FIN02 - Publish final FE11 B7 closeout.**
   - Depends on: FE11-LIFE06, FE11-ACC01.

@@ -126,7 +126,7 @@ User administration, role listing, role assignment/revocation, account status ma
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
 - Finalization Wave A `FE11-LIFE01..FE11-LIFE05` and Wave B `FE11-REQ01..FE11-REQ03` are implemented locally and H2-ready; `FE11-LIFE06`, `FE11-ACC01`, and feature closeout remain open.
-- Both SQL and feature-specific FE11 browser execution portions of `TD-021` now pass locally. Exact PR/CI association and human integration acceptance remain before final closeout.
+- Both SQL and feature-specific FE11 browser execution portions of `TD-021` pass. Draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; human integration acceptance remains before final closeout.
 
 ## 7. Transactional Role Slice
 
