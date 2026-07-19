@@ -192,6 +192,48 @@ describe('FE02 auth vertical slice', () => {
     expect(response.body.debugResetToken).toBeUndefined();
   });
 
+  // @spec BR-FE02-020 BR-FE02-021 FR-FE02-011 FR-FE02-022 AC-FE02-014
+  test('repeated forgot-password creates a new token event and requester key without direct delivery', async () => {
+    const { app, dependencies } = makeTestApp();
+    const user = await dependencies.userRepository.createRegisteredUser({
+      username: 'requester-reset-repeat',
+      email: 'requester-reset-repeat@example.test',
+      passwordHash: await bcrypt.hash('Password1!', 4),
+      phoneNumber: null,
+      fullName: 'Requester Reset Repeat',
+    });
+    await dependencies.userRepository.markEmailVerified(user.userId);
+
+    await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: user.email })
+      .expect(200);
+    await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: user.email })
+      .expect(200);
+
+    const resetTokens = dependencies.state.tokens.filter(
+      (item) => item.tokenType === 'PASSWORD_RESET'
+    );
+    expect(resetTokens).toHaveLength(2);
+    expect(resetTokens[0].revokedAt).toEqual(expect.any(Date));
+    expect(resetTokens[1].tokenId).not.toBe(resetTokens[0].tokenId);
+    expect(dependencies.state.notificationRequests).toEqual([
+      expect.objectContaining({
+        type: 'PASSWORD_RESET',
+        sourceEntityId: resetTokens[0].tokenId,
+        idempotencyKey: `FE02:PASSWORD_RESET:${resetTokens[0].tokenId}`,
+      }),
+      expect.objectContaining({
+        type: 'PASSWORD_RESET',
+        sourceEntityId: resetTokens[1].tokenId,
+        idempotencyKey: `FE02:PASSWORD_RESET:${resetTokens[1].tokenId}`,
+      }),
+    ]);
+    expect(dependencies.state.directEmails).toHaveLength(0);
+  });
+
   // @spec BR-FE02-022 FR-FE02-023 AC-FE02-019
   test('verification requester exception does not roll back registration or expose the OTP', async () => {
     const { app, dependencies } = makeTestApp();

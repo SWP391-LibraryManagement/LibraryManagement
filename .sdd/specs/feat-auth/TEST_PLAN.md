@@ -1,7 +1,7 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.2
-Status: READY FOR REVIEW - DEBT RECONCILIATION COMPLETE
+Version: 0.3.3
+Status: OTP DELIVERY HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING
 Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
@@ -47,14 +47,15 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
-- Focused API evidence: `backend/tests/authRoutes.test.js` passes 30/30, including TD-018 and TD-020 regressions.
+- Focused API evidence: `backend/tests/authRoutes.test.js` passes 31/31, including TD-018/TD-020 regressions and repeated reset-token event/idempotency rotation.
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
+- Focused FE02/FE10/migration/integration evidence passes 170/170; full backend passes 916/916 with configured coverage.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
-- No enforced Jest line/branch coverage threshold yet (Week 11 target).
-- Final FE01-FE12 human integration acceptance remains outside this focused FE02 automated gate.
+- Configured Jest global coverage thresholds pass for statements, branches, functions, and lines.
+- Human acceptance is approved for the injected FE10 delivery boundary; real SMTP remains out of scope. Integration PR and exact post-merge `main` CI remain required.
 
 ## 7. Required Commands / Evidence Before Merge
 

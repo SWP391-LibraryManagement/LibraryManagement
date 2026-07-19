@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-19 - OTP Integration Human Acceptance And Evidence Expansion
+
+- Expanded ADR-004 ownership evidence across both sensitive types and every allowlisted non-FE02 requester, with exact safe HTTP source-override assertions and no side effects.
+- Added repeated FE02 password-reset event coverage proving new token-ID idempotency without duplicate direct delivery.
+- Focused FE02/FE10 validation passes 170/170; full backend passes 916/916 with configured coverage; frontend, system, deployment, traceability, OpenAPI/import, and isolated-port browser E2E gates pass.
+- No product correction was required because the approved boundary already conforms. The user granted standing human acceptance; integration PR and exact post-merge `main` CI remain required.
+
 ## 2026-07-19 - OTP, FE02, FE04, And Schema Fan-In
 
 - Synchronized the canonical baseline and FE10 OTP templates with the FE11-owned shared schema widths; the migration passed two disposable SQL Server executions.

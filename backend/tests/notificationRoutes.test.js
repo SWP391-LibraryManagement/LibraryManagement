@@ -788,15 +788,16 @@ describe('FE10 notification management', () => {
   });
 
   test('rejects an allowlisted sourceFeature supplied through HTTP', async () => {
-    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const { app, authDependencies, notificationDependencies, emailProviderMessages } = makeTestApp();
     const admin = await createVerifiedUser({
       app,
       authDependencies,
       email: 'notif.http-source-normalization@example.test',
       role: 'ADMIN',
     });
+    const auditCountBefore = authDependencies.state.auditLogs.length;
 
-    await request(app)
+    const response = await request(app)
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
@@ -805,11 +806,19 @@ describe('FE10 notification management', () => {
         templateKey: 'DUE_DATE_REMINDER',
         templateData: { dueDate: '2026-07-20' },
         sourceFeature: ' fe07 ',
-      })
-      .expect(400);
+      });
 
-
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: {
+        code: 'SOURCE_FEATURE_HTTP_FORBIDDEN',
+        message: 'Notification source cannot be supplied through HTTP.',
+      },
+    });
     expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(notificationDependencies.state.attempts).toHaveLength(0);
+    expect(emailProviderMessages).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCountBefore);
   });
 
   // BR-FE10-002: a template key outside the canonical pair is rejected before lookup.
@@ -1066,11 +1075,16 @@ describe('FE10 notification management', () => {
   );
 
   // @spec BR-FE10-011 FR-FE10-005 AC-FE10-006
-  test.each([
-    ['ACCOUNT_VERIFICATION', 'FE07'],
-    ['PASSWORD_RESET', 'SYSTEM'],
-  ])('rejects %s from the requester bound to %s', async (type, sourceFeature) => {
-    const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
+  const nonFe02Sources = ['FE04', 'FE07', 'FE08', 'FE09', 'FE11', 'SYSTEM'];
+  const fe02SensitiveTypes = ['ACCOUNT_VERIFICATION', 'PASSWORD_RESET'];
+
+  test.each(
+    fe02SensitiveTypes.flatMap((type) =>
+      nonFe02Sources.map((sourceFeature) => [type, sourceFeature])
+    )
+  )('rejects %s from the requester bound to %s', async (type, sourceFeature) => {
+    const { notificationService, notificationDependencies, authDependencies, emailProviderMessages } =
+      makeTestApp();
     const requester = notificationService.createSourceNotificationRequester(sourceFeature);
 
     await expect(
@@ -1088,6 +1102,8 @@ describe('FE10 notification management', () => {
       message: 'Sensitive authentication notifications must be requested internally.',
     });
     expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(notificationDependencies.state.attempts).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
     expect(emailProviderMessages).toHaveLength(0);
   });
 

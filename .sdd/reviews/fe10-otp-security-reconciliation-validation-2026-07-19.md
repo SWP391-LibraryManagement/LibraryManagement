@@ -1,66 +1,78 @@
 # FE10 OTP Security Reconciliation Validation - 2026-07-19
 
-Status: AUTOMATED B6 PASS FOR FE10-S03; SHARED SCHEMA, FE02 FAN-IN, SQL, AND HUMAN REVIEW PENDING
+Status: HUMAN ACCEPTANCE APPROVED; INTEGRATION PR AND POST-MERGE MAIN CI PENDING
 
-Branch: `feat/fe10-otp-security-reconciliation`
+Branch: `feat/phase2-fe10-otp-integration`
+
+Design commit: `d6f4600`
+
+Plan commits: `32b03c2`, `30fca57`
 
 ## Decision
 
-Use Hybrid delivery with Full depth for the sensitive OTP Core. FE02 owns OTP generation and
-validation; FE10 owns construction-bound source authorization, provider-memory rendering,
-safe persistence, idempotency, and delivery attempts. OpenAPI/test-fixture alignment is bounded
-Shell work against that approved Core contract.
+Use Hybrid delivery with Full depth for the sensitive OTP Core and Light depth for evidence-only closeout. FE02 owns OTP generation and validation; FE10 owns construction-bound source authorization, provider-memory rendering, safe persistence, idempotency, and delivery attempts.
+
+The implementation on `origin/main@e89c10b` already conforms to ADR-004. This slice expands direct verification evidence and reconciles the human/integration gate without manufacturing a product-code change.
 
 ## Scope
 
-- FE02-bound `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` requests accept only canonical `otp` and
-  `expiresInMinutes` data with positive `AuthToken` IDs and exact source-derived idempotency keys.
-- Staff HTTP and non-FE02 requesters cannot submit those sensitive types or override
-  `sourceFeature`.
-- Sensitive content is rendered only for the configured provider adapter and is absent from
-  notification rows, safe payloads, audits, logs, attempts, OpenAPI responses, and replay DTOs.
-- The idempotent migration replaces superseded link-template variables without modifying the
-  shared baseline schema owned by FE11 Wave A.
+- FE02-bound `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` requests accept canonical OTP data, positive `AuthToken` IDs, and exact source-derived idempotency keys.
+- Staff HTTP and every allowlisted non-FE02 requester are denied those sensitive types.
+- HTTP `sourceFeature` returns the exact safe contract error with no persistence, attempt, provider, or audit side effect.
+- Sensitive content reaches the injected/configured provider only and remains absent from notification rows, safe payloads, audits, logs, attempts, responses, and replay DTOs.
+- Verification/reset make one requester call per token; repeated verification or reset requests create a new token ID and event key without duplicate direct delivery.
+- `CHANGE_PASSWORD_OTP`, legacy token acceptance, FE11 setup, FE04 result delivery, FE09 caller integration, frontend behavior, real SMTP, schema tables/indexes, and new dependencies remain outside this slice.
+
+## Requirement Audit
+
+| ADR-004 verification item | Direct evidence | Result |
+| --- | --- | --- |
+| 1. Staff HTTP cannot submit either sensitive type | `notificationRoutes.test.js` canonical HTTP rejection matrix | PASS |
+| 2. Non-FE02 requesters cannot submit either sensitive type | Full cross-product of both types and `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | PASS |
+| 3. FE02 can submit both canonical OTP templates | Bound requester and FE02 auth route tests | PASS |
+| 4. Provider receives OTP while saved/exposed surfaces do not | Provider-memory, persistence, audit, log, response, failure, and replay assertions | PASS |
+| 5. FE02 performs one request per token without direct duplicate send | Registration, resend, and forgot-password requester assertions | PASS |
+| 6. Delivery failure does not roll back source flow | Requester exception and safe `FAILED` status tests | PASS |
+| 7. Resend creates a new token ID and key | Verification resend plus repeated password-reset event tests | PASS |
+
+No new assertion exposed production non-conformance. Production files remain unchanged.
 
 ## Automated Evidence
 
 | Check | Result |
 | --- | --- |
-| Focused FE10 OTP/migration/integration gate | PASS - 3 suites, 131 tests |
-| Full backend suite | PASS - 39 suites, 623 tests |
-| Backend coverage | PASS - 92.57% statements, 82.72% branches, 97.12% functions, 92.50% lines |
-| OpenAPI and migration contract | PASS through focused tests |
-| FE10 source traceability | PASS - 10/10 FR tags, 100% |
-| Diff hygiene | PASS - `git diff --check` |
+| Notification ownership boundary | PASS - 1 suite, 125 tests |
+| FE02 auth requester boundary | PASS - 1 suite, 31 tests |
+| Focused FE10/FE02/migration/integration gate | PASS - 4 suites, 170 tests |
+| Full backend suite | PASS - 53 suites, 916 tests |
+| Backend coverage | PASS - 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
+| Frontend tests | PASS - 149/149 |
+| Frontend lint/build | PASS; build retains the known non-blocking chunk advisory |
+| System integration | PASS - 10/10 |
+| Deployment tests | PASS - 7/7 |
+| Browser E2E | PASS - 4/4 on isolated ports `4187/3102` |
+| OpenAPI/backend import | PASS |
+| FE10/FE02 traceability | PASS - 10/10 and 26/26; project enforcement PASS |
+| Diff hygiene | PASS at current pre-H2 checkpoint |
+
+The first E2E attempt failed before test execution because another historical worktree owned port `4173`. Process inspection identified that Vite server; the suite then passed on supported isolated ports without terminating or modifying the other worktree.
 
 ## Validation Layers
 
-| Layer | Status | Evidence / Gap |
+| Layer | Status | Evidence / remaining boundary |
 | --- | --- | --- |
-| L1 Automated | PASS for configured non-SQL checks | Focused/full tests, coverage, OpenAPI/migration tests, traceability, and diff hygiene pass |
-| L2 Spec compliance | PASS for FE10-S03 local scope | G8-G9, FR-FE10-001/002/005/009, sensitive ownership, variables, source IDs, idempotency, and leakage boundaries map to code/tests |
-| L3 Constitution/safety | PASS for current diff | No secret persistence, no provider credentials, protected HTTP boundary, parameterized existing repositories, no new dependency or table/index schema change |
-| L4 Acceptance | PARTIAL | Injected provider behavior is exercised; real provider delivery and human integration review remain pending |
+| L1 Automated | PASS | Focused/full backend, coverage, frontend, system, deployment, E2E, OpenAPI/import, traceability, and diff checks pass |
+| L2 Spec compliance | PASS | All seven ADR-004 verification items map directly to code/tests; FE10/FE02 FR traceability is 100% |
+| L3 Constitution/safety | PASS | Server ownership, no OTP persistence/logging, safe errors, existing parameterized repositories, approved stack, and no schema/dependency expansion are preserved |
+| L4 Acceptance | APPROVED | User approved the design and granted standing acceptance for the injected-provider scope on 2026-07-19; real SMTP remains out of scope |
 
-## Remaining Gates
+## SQL And Existing Integration Evidence
 
-- Synchronize the approved OTP templates and recipient-email width into the shared
-  `database/Librarymanagement.sql` only after FE11 Wave A establishes the schema baseline.
-- Fan in the GREEN FE02 requester changes from `feat/fe02-otp-requester-reconciliation` and rerun
-  focused/full cross-feature validation on the same baseline.
-- Run SQL-backed migration/template/idempotency checks with an approved mutable SQL Server
-  environment; no `DB_SERVER`/`DB_NAME` configuration is present in this worktree.
-- Complete human review before commit, push, PR publication, or merge of this reconciliation wave.
+This slice changes no schema, migration, repository SQL, or production behavior. The canonical OTP template migration and shared schema synchronization previously passed two disposable SQL Server executions and were merged through PR #40. Fresh SQL mutation is neither required nor authorized for this evidence-only boundary expansion.
 
-## Scope Control
+## H2/H3 And Integration Boundary
 
-- No frontend, FE09 caller, `CHANGE_PASSWORD_OTP`, dependency, table, or index expansion was added.
-
-## Post-Origin Sync Revalidation
-
-- Fast-forwarded the dirty feature worktree from `62ac2d1` to `origin/main@b2ad9b1` without overlap, commit, stash, or loss of local changes.
-- Fresh focused verification after the sync: notification routes, OTP migration contract, and integration tests passed 131/131.
-- Added `verificationLink`/`resetLink` matches are confined to negative regression fixtures that
-  prove the superseded link contract is rejected; no active delivery or persistence path uses them.
-- No commit, push, PR, or merge was created.
-- The primary checkout, FE11 exact diff, and unrelated worktrees were not modified.
+- H2 review scope hash excluding this self-recording validation packet: `9d8e3920600a1e515392459ebb022e981c99213a`.
+- H2 result: PASS with no findings. The reviewed generated diff changes only two test files plus FE02/FE10/design/plan/evidence Markdown; no product source, schema, dependency, frontend product, FE09 caller, or `CHANGE_PASSWORD_OTP` behavior changes exist.
+- Standing user approval authorizes commit, PR publication, H3 merge, post-merge monitoring, and the exact mechanical closeout after required checks pass.
+- Do not mark FE10-S05 or FE02-T033 complete through B7 until the integration PR merges and its exact post-merge `main` CI succeeds.

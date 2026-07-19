@@ -1,6 +1,6 @@
 ﻿# TASKS.md - FE02 Authentication
 
-Status: APPROVED - OTP/REFRESH RECONCILIATION AUTOMATED PASS; HUMAN CLOSEOUT PENDING
+Status: APPROVED - OTP DELIVERY HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING; REFRESH EVIDENCE UNCHANGED
 Date: 2026-07-15
 Owner: Dat
 
@@ -76,7 +76,7 @@ Password reset and frontend integration may follow only if the team explicitly s
 - [x] Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
 - [x] B7 evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`.
 
-This evidence closes the Authentication/OTP UX task group only; the FE02 baseline is approved while OTP delivery implementation follow-up remains pending.
+This evidence closes the Authentication/OTP UX task group only. The separate FE02/FE10 OTP delivery implementation and automated validation are complete; human acceptance is approved, while the integration PR and exact post-merge `main` CI remain required.
 
 ## FE02/FE10 OTP Delivery Follow-up Tasks
 
@@ -108,7 +108,8 @@ This evidence closes the Authentication/OTP UX task group only; the FE02 baselin
   - Dependencies: FE02-T030 to FE02-T032; FE10-S02 to FE10-S04.
   - Files: `.sdd/specs/feat-auth/TASKS.md`, `.sdd/specs/feat-auth/CHANGELOG.md`; implementation files change only for review fixes.
   - DoD: focused FE02/FE10 tests and affected integration tests pass; traceability and secret scans pass; `git diff --check` passes; human review confirms `CHANGE_PASSWORD_OTP` and legacy-token behavior were not widened.
-  - Evidence: focused cross-feature tests pass 154/154, traceability is 26/26, and diff hygiene passes; final human closeout remains open.
+  - Status: HUMAN ACCEPTANCE APPROVED; PR/MAIN CI PENDING.
+  - Evidence: focused cross-feature tests pass 170/170; full backend passes 916/916 with configured coverage; FE02 traceability is 26/26; frontend, system, deployment, browser E2E, OpenAPI/import, leakage, and diff checks pass. Expanded tests cover every allowlisted non-FE02 requester for both sensitive types, exact HTTP source-override errors, and repeated password-reset token-ID/idempotency rotation. No production correction was required.
 
 ## FE02/FE11 Account Setup Tasks
 
