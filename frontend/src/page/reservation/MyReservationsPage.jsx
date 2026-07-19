@@ -11,6 +11,7 @@ import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const CANDIDATE_PAGE_SIZE = 20;
 const EMPTY_CANDIDATE_PAGINATION = {
@@ -164,7 +165,7 @@ export default function MyReservationsPage() {
       <div className="lib-card member-reservation-list">
         <h3 className="lib-card-title">Đặt chỗ của tôi</h3>
         <DataTable
-          caption="My reservations table"
+          caption="Danh sách đặt chỗ của tôi"
           headers={['Sách', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
           loading={loading}
           loadingRows={3}
@@ -182,7 +183,7 @@ export default function MyReservationsPage() {
                     ? <span className="muted">-</span>
                     : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue}</span>}
               </td>
-              <td data-label="Trạng thái"><Badge status={item.status} />{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
+              <td data-label="Trạng thái"><Badge status={item.status}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
                 {!['Expired', 'Cancelled'].includes(item.status) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
               </td>

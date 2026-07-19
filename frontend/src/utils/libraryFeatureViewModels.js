@@ -94,12 +94,12 @@ export function mapBorrowRequestsToAdminRows(borrowRequests = []) {
     const detail = firstDetail(request) || {};
     const details = request.details || [];
     const title = details.length > 1
-      ? details.map((item) => item.copy?.title || `Copy #${item.copyId}`).join(', ')
-      : detail.copy?.title || `Copy #${detail.copyId || '-'}`;
+      ? details.map((item) => item.copy?.title || `Bản sao #${item.copyId}`).join(', ')
+      : detail.copy?.title || `Bản sao #${detail.copyId || '-'}`;
     return {
       id: `REQ-${request.requestId}`,
       requestId: request.requestId,
-      member: request.member?.fullName || request.member?.username || request.member?.email || `Member #${request.userId}`,
+      member: request.member?.fullName || request.member?.username || request.member?.email || `Thành viên #${request.userId}`,
       username: request.member?.username || '-',
       memberId: request.member?.memberId || request.userId,
       email: request.member?.email || '-',
@@ -134,7 +134,7 @@ export function mapBorrowRequestsToReturnRows(borrowRequests = []) {
       id: `L-${detail.borrowDetailId}`,
       borrowDetailId: detail.borrowDetailId,
       requestId: request.requestId,
-      member: detail.member?.fullName || request.member?.fullName || detail.member?.username || detail.member?.email || request.member?.email || `Member #${detail.userId}`,
+      member: detail.member?.fullName || request.member?.fullName || detail.member?.username || detail.member?.email || request.member?.email || `Thành viên #${detail.userId}`,
       memberId: detail.member?.memberId || request.member?.memberId || detail.userId,
       username: detail.member?.username || request.member?.username || '-',
       email: detail.member?.email || request.member?.email || '-',
@@ -177,12 +177,12 @@ export function mapReservation(reservation) {
     id: `RS-${reservation.reservationId}`,
     reservationId: reservation.reservationId,
     copyId: reservation.copyId,
-    title: reservation.copy?.title || `Copy #${reservation.copyId}`,
+    title: reservation.copy?.title || `Bản sao #${reservation.copyId}`,
     author: reservation.copy?.author || '-',
     barcode: reservation.copy?.barcode || '-',
     location: reservation.copy?.location || '-',
     copyStatus: reservation.copy?.status || null,
-    member: reservation.member?.fullName || reservation.member?.username || reservation.member?.email || `Member #${reservation.userId}`,
+    member: reservation.member?.fullName || reservation.member?.username || reservation.member?.email || `Thành viên #${reservation.userId}`,
     username: reservation.member?.username || null,
     email: reservation.member?.email || null,
     reservedDate: reservation.reservedAt || reservation.createdAt,

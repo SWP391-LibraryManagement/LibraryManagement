@@ -17,14 +17,14 @@ const CATEGORY_LABELS = {
 };
 
 const CATEGORY_ICONS = {
-  Programming: 'Code',
-  Database: 'DB',
+  Programming: 'Mã',
+  Database: 'CSDL',
   AI: 'AI',
-  Novel: 'Novel',
+  Novel: 'Tiểu thuyết',
 };
 
 const getCategoryLabel = (category) => CATEGORY_LABELS[category] || category || 'Chưa phân loại';
-const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'Book';
+const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'Sách';
 
 const getStoredAuthState = () => {
   try {

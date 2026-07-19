@@ -78,3 +78,22 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
   assert.match(recovery, /Chào mừng trở lại/);
   assert.match(recovery, /Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện/);
 });
+
+test('public and member pages translate generated copy while preserving source data', async () => {
+  const home = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+  const history = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
+  const mine = await readFile(new URL('../src/page/reservation/MyReservationsPage.jsx', import.meta.url), 'utf8');
+  const viewModels = await readFile(new URL('../src/utils/libraryFeatureViewModels.js', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(home, /Programming: 'Code'|Novel: 'Novel'|\|\| 'Book'/);
+  assert.match(home, /Programming: 'Mã'|Programming: 'Lập trình'/);
+  assert.match(history, /caption="Lịch sử mượn sách"/);
+  assert.match(history, /aria-label="Trang trước"/);
+  assert.match(history, /aria-label="Trang sau"/);
+  assert.match(history, /getStatusLabel\(row\.status\)/);
+  assert.match(mine, /caption="Danh sách đặt chỗ của tôi"/);
+  assert.match(mine, /getStatusLabel\(item\.status\)/);
+  assert.doesNotMatch(viewModels, /`Copy #|`Member #/);
+  assert.match(viewModels, /`Bản sao #/);
+  assert.match(viewModels, /`Thành viên #/);
+});
