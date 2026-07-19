@@ -578,6 +578,14 @@ flowchart TB
 | Other Information | Public browse must not expose barcode, borrower, location, or staff-only inventory data. |
 | Assumptions | Only active books are shown in public catalog views. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-FE05-001 | Public Book Search | Guests may only search books and view book details. |
+| BR-FE05-009 | Hide Inactive Books | Deactivated books must not appear in public search/detail results. |
+| BR-FE05-013 | Derived Availability | Public availability is available only when an active book has at least one available copy. |
+
 ### 1.2 UC-02 Manage Account Access
 
 #### a. Functionalities
@@ -601,6 +609,15 @@ flowchart TB
 | Business Rules | BR-GEN-003 |
 | Other Information | Passwords and tokens must never be stored in plain text. |
 | Assumptions | Email address is unique per user account. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-FE02-004 | Email Verification | A registered user account must be verified via email before activation. |
+| BR-FE02-005 | Password Hashing | A user password must be hashed with bcrypt before storage. |
+| BR-FE02-007 | Login Privacy | Login must not reveal whether a user email is registered. |
+| BR-FE02-012 | Token Validation | Every protected request must validate the session/token before processing. |
 
 ### 1.3 UC-03 Manage Profile
 
@@ -626,6 +643,13 @@ flowchart TB
 | Other Information | Actor can update own profile only unless an admin workflow explicitly allows otherwise. |
 | Assumptions | Profile data belongs to an existing authenticated user. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-003 | Authorized Profile Access | Only authorized users can access protected profile functions. |
+| BR-GEN-002 | Unique Member Identity | A member must have a unique identifier linked to account/profile data. |
+
 ### 1.4 UC-04 Apply For Membership
 
 #### a. Functionalities
@@ -649,6 +673,14 @@ flowchart TB
 | Business Rules | BR-GEN-002, BR-GEN-003 |
 | Other Information | Phase 1 does not include membership payment or points-based membership. |
 | Assumptions | Membership approval does not change the user's login role. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-002 | Unique Member | A member must have a unique identifier. |
+| BR-GEN-003 | Authorized Review | Only authorized users can manage members and membership review actions. |
+| BR-GEN-010 | Audit Staff Action | Important administrative membership actions must be logged. |
 
 ### 1.5 UC-05 Manage Books
 
@@ -674,6 +706,15 @@ flowchart TB
 | Other Information | Public visibility depends on book active/inactive state. |
 | Assumptions | Book metadata is managed separately from physical copy inventory. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-FE05-002 | Add Book Authorization | Only librarians and admins may add books. |
+| BR-FE05-003 | Update Book Authorization | Only librarians and admins may update books. |
+| BR-FE05-005 | Unique ISBN | ISBN must be unique across all books. |
+| BR-FE05-010 | Book Audit | Every create, update, deactivate, and reactivate action must be auditable. |
+
 ### 1.6 UC-06 Manage Book Copies
 
 #### a. Functionalities
@@ -697,6 +738,14 @@ flowchart TB
 | Business Rules | BR-GEN-003, BR-GEN-004, BR-GEN-010 |
 | Other Information | Copy status is the source for availability-sensitive workflows. |
 | Assumptions | One physical copy has one unique barcode. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-004 | Availability Required | A book cannot be borrowed if available quantity is 0. |
+| BR-GEN-003 | Inventory Authorization | Only authorized users can manage inventory and copy records. |
+| BR-GEN-010 | Inventory Audit | Important administrative inventory actions must be logged. |
 
 ### 1.7 UC-07 Borrow Books
 
@@ -722,6 +771,16 @@ flowchart TB
 | Other Information | Default loan duration is 14 calendar days. |
 | Assumptions | Staff approval is required before a request becomes an active loan. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-004 | Copy Availability | A book cannot be borrowed if available quantity is 0. |
+| BR-GEN-005 | Borrow Limit | A member cannot borrow more than 5 active borrowed copies at the same time. |
+| BR-GEN-006 | Borrowing Restriction | A member with overdue books or unpaid fines may be restricted from borrowing. |
+| BR-GEN-007 | Borrow Transaction Record | Every borrow transaction must store member, book, borrow date, due date, status, and creator. |
+| BR-GEN-008 | Return Transaction Update | Every return transaction must update the related borrowing transaction. |
+
 ### 1.8 UC-08 Reserve Books
 
 #### a. Functionalities
@@ -745,6 +804,14 @@ flowchart TB
 | Business Rules | BR-GEN-003, BR-GEN-004, BR-GEN-006 |
 | Other Information | Reservation fulfillment is completed through borrowing workflow. |
 | Assumptions | Reservation queue processing respects copy availability. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-003 | Reservation Authorization | Only authorized users can manage reservation operations. |
+| BR-GEN-004 | Copy Availability | Reservation queue processing depends on physical copy availability. |
+| BR-GEN-006 | Member Eligibility | Members with overdue books or unpaid fines may be restricted from reservation-to-borrow fulfillment. |
 
 ### 1.9 UC-09 Manage Fines
 
@@ -770,6 +837,14 @@ flowchart TB
 | Other Information | Phase 1 overdue fine is 5,000 VND per overdue day per copy, starting the day after due date. |
 | Assumptions | Fine payment is recorded offline; online payment gateway is out of scope. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-006 | Fine Borrowing Blocker | A member with unpaid fines may be restricted from borrowing. |
+| BR-GEN-009 | Traceable Fine Calculation | Fine calculation must be traceable and testable. |
+| BR-GEN-010 | Fine Audit | Important administrative fine actions must be logged. |
+
 ### 1.10 UC-10 Send Notifications
 
 #### a. Functionalities
@@ -793,6 +868,14 @@ flowchart TB
 | Business Rules | BR-GEN-003, BR-GEN-010 |
 | Other Information | Verification, reset, and setup notifications must be requested internally by the owning feature boundary. |
 | Assumptions | Email is the only supported delivery channel in Phase 1. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-FE02-020 | Safe Auth Notification | Account verification and password reset notifications must not expose OTPs in production responses. |
+| BR-FE02-022 | Notification Failure Boundary | Notification delivery failure must not roll back completed source transactions. |
+| BR-GEN-010 | Notification Audit | Important administrative notification-related actions must be logged. |
 
 ### 1.11 UC-11 Manage Users And Roles
 
@@ -818,6 +901,14 @@ flowchart TB
 | Other Information | Admin views must not expose sensitive password or token data. |
 | Assumptions | Only Admin can manage role assignments. |
 
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-003 | Admin Authorization | Only authorized users can manage users, roles, and permissions. |
+| BR-FE02-015 | Server-Side Roles | A user's roles are determined by the UserRoles table and must be verified on sensitive operations. |
+| BR-GEN-010 | Admin Audit | Important administrative actions must be logged. |
+
 ### 1.12 UC-12 Generate Reports
 
 #### a. Functionalities
@@ -841,3 +932,10 @@ flowchart TB
 | Business Rules | BR-GEN-003, BR-GEN-010 |
 | Other Information | Reporting is read-only and must not mutate source records. |
 | Assumptions | Reports are generated from existing library operational data. |
+
+#### b. Business Rules
+
+| ID | Business Rule | Business Rule Description |
+| -- | ------------- | ------------------------- |
+| BR-GEN-003 | Report Authorization | Only authorized librarian/admin users can access reports. |
+| BR-GEN-010 | Report Audit Context | Important administrative report access or related actions may be logged when required. |
