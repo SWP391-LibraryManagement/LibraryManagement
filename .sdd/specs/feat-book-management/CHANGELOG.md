@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-20 - Vietnamese UI localization and typography
+
+- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
+- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
+- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+
 ## 2026-07-19 - Phase 3 Azure staging migration hardening
 
 - Reproduced the staging schema drift where the deployed FE05 catalog query failed because `Books.RowVersion` was missing.

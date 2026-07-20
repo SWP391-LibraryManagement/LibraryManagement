@@ -1,6 +1,6 @@
 /* ============================================================================
    app-shell.css — Khung & primitive dùng chung cho FE07/FE08/FE10/FE12
-   Theme thư viện kem/be, nhấn nâu/vàng (#c78a3b), tiêu đề serif (Georgia).
+   Theme thư viện kem/be, nhấn nâu/vàng (#c78a3b), tiêu đề serif (Noto Serif).
    Các trang feature TÁI SỬ DỤNG các class ở đây, không tự bịa style mới.
    ============================================================================ */
 
@@ -17,7 +17,7 @@
   --lib-radius: 16px;
   --lib-radius-sm: 10px;
   --lib-shadow: 0 6px 20px -8px rgba(80, 60, 20, 0.18);
-  --lib-heading: 'Times New Roman', 'Noto Serif', serif;
+  --lib-heading: var(--heading);
 
   /* status colors */
   --st-green: #2f8f5b;     --st-green-bg: #e7f4ec;
@@ -34,7 +34,7 @@
   width: 100%;
   background: var(--lib-cream);
   color: var(--lib-ink);
-  font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-family: var(--sans);
   overflow: hidden;
 }
 

@@ -13,6 +13,7 @@ import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/sha
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildDateRangeReportParams } from '../../utils/reportFilters';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
@@ -74,9 +75,9 @@ export default function BorrowingReportPage() {
         filters={(
           <div className="field report-date-filter">
             <Calendar size={16} className="muted" />
-            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" />
+            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
             <span className="muted">-</span>
-            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" />
+            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
             <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
           </div>
         )}
@@ -111,14 +112,14 @@ export default function BorrowingReportPage() {
             </div>
             <div className="lib-card">
               <h3 className="lib-card-title">Top sách mượn nhiều</h3>
-              {topBooks.length ? <BarChart data={topBooks.map((book) => ({ label: (book.title || `Book ${book.bookId}`).split(' ')[0], value: book.borrowCount || 0 }))} height={200} /> : <EmptyState title="Chưa có sách trong báo cáo" />}
+              {topBooks.length ? <BarChart data={topBooks.map((book) => ({ label: (book.title || `Sách ${book.bookId}`).split(' ')[0], value: book.borrowCount || 0 }))} height={200} /> : <EmptyState title="Chưa có sách trong báo cáo" />}
             </div>
           </div>
 
           <div className="lib-card">
             <h3 className="lib-card-title">Chi tiết mượn/trả ({fmtNumber(totalRows)})</h3>
             <DataTable
-              caption="Borrowing report detail rows"
+              caption="Chi tiết báo cáo mượn trả"
               headers={['Mã', 'Người dùng', 'Sách / Bản sao', 'Trạng thái', 'Ngày mượn', 'Hạn trả', 'Ngày trả']}
               isEmpty={!rows.length}
               emptyState={<EmptyState icon={BookOpen} title="Không có chi tiết mượn/trả" />}
@@ -127,8 +128,8 @@ export default function BorrowingReportPage() {
                 <tr key={row.borrowDetailId}>
                   <td data-label="Mã"><strong>#{row.borrowDetailId}</strong></td>
                   <td data-label="Người dùng">#{row.userId}</td>
-                  <td data-label="Sách / Bản sao">Book #{row.bookId || '-'} / Copy #{row.copyId}</td>
-                  <td data-label="Trạng thái"><Badge status={row.status}>{row.status}</Badge></td>
+                  <td data-label="Sách / Bản sao">Sách #{row.bookId || '-'} / Bản sao #{row.copyId}</td>
+                  <td data-label="Trạng thái"><Badge status={row.status}>{getStatusLabel(row.status)}</Badge></td>
                   <td data-label="Ngày mượn">{fmtDate(row.borrowDate)}</td>
                   <td data-label="Hạn trả">{fmtDate(row.dueDate)}</td>
                   <td data-label="Ngày trả">{fmtDate(row.returnDate)}</td>

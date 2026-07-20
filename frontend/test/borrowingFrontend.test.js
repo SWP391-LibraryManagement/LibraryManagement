@@ -275,7 +275,7 @@ test('borrowing pagination wraps instead of hiding later pages on mobile', async
 
   assert.match(styles, /\.pagination\s*\{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(styles, /\.page-controls\s*\{[^}]*flex-wrap:\s*wrap;/s);
-  assert.match(styles, /--lib-heading:\s*'Times New Roman',\s*'Noto Serif',\s*serif;/);
+  assert.match(styles, /--lib-heading:\s*var\(--heading\);/);
 });
 
 test('FE07 member pages use shared operational patterns without changing API calls', async () => {

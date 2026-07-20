@@ -13,7 +13,7 @@ export default function LogoutConfirmModal({ onClose, onConfirm, busy = false })
         style={{ width: 'min(420px, 100%)', background: '#FAF7F2', borderRadius: 14, boxShadow: '0 24px 80px rgba(30,18,10,0.32)', overflow: 'hidden' }}
       >
         <div style={{ padding: '22px 24px', borderBottom: '1px solid rgba(78,52,46,0.12)' }}>
-          <h2 id="logout-confirm-title" style={{ margin: '0 0 8px', fontFamily: 'Playfair Display, serif', fontSize: 22, color: '#2C1A0E' }}>
+          <h2 id="logout-confirm-title" style={{ margin: '0 0 8px', fontFamily: 'var(--heading)', fontSize: 22, color: '#2C1A0E' }}>
             Xác nhận đăng xuất
           </h2>
           <p style={{ margin: 0, color: '#7A5C44', fontSize: 14, lineHeight: 1.6 }}>

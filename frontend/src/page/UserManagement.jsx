@@ -61,21 +61,42 @@ import {
   collectAllRequestRows,
 } from '../utils/adminRequestExport';
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
+import { getBooleanLabel, getRoleLabel, getStatusLabel } from '../utils/uiLabels';
 
-const roleLabels = {
-  ADMIN: 'Admin',
-  LIBRARIAN: 'Librarian',
-  MEMBER: 'Member',
-  GUEST: 'Guest',
-};
-
-const statusLabels = {
-  ACTIVE: 'Active',
-  INACTIVE: 'Inactive',
-  LOCKED: 'Locked',
-};
 const editableRoles = ['ADMIN', 'LIBRARIAN', 'MEMBER'];
 const ROLE_CATALOG_ERROR = 'Không thể tải danh mục vai trò. Vui lòng thử lại.';
+const PERMISSION_LABELS = {
+  USER_VIEW: 'Xem người dùng',
+  USER_CREATE: 'Tạo tài khoản',
+  USER_UPDATE: 'Cập nhật tài khoản',
+  USER_DEACTIVATE: 'Vô hiệu hóa tài khoản',
+  ROLE_MANAGE: 'Quản lý vai trò',
+  AUDIT_VIEW: 'Xem nhật ký hoạt động',
+  CATALOG_MANAGE: 'Quản lý danh mục thư viện',
+  METADATA_MANAGE: 'Quản lý tác giả, nhà xuất bản và danh mục',
+  BORROW_APPROVE_REJECT: 'Duyệt hoặc từ chối yêu cầu mượn',
+  RETURN_RENEW_PROCESS: 'Xử lý trả và gia hạn sách',
+  FINE_CALCULATE_COLLECT: 'Tính và thu tiền phạt',
+  FINE_WAIVE_CANCEL: 'Miễn hoặc hủy tiền phạt',
+  REPORT_VIEW: 'Xem báo cáo',
+  BORROW_REQUEST_CREATE: 'Tạo yêu cầu mượn',
+  BORROW_HISTORY_VIEW_OWN: 'Xem lịch sử mượn của mình',
+};
+const MODULE_LABELS = {
+  USER_ROLE: 'Người dùng và vai trò',
+  LIBRARY: 'Thư viện',
+  BORROW_RETURN: 'Mượn và trả',
+  FINE: 'Tiền phạt',
+  REPORTS: 'Báo cáo',
+};
+
+function getPermissionLabel(permission) {
+  return PERMISSION_LABELS[permission?.permissionKey] || 'Quyền chưa xác định';
+}
+
+function getModuleLabel(module) {
+  return MODULE_LABELS[module?.moduleKey] || 'Chức năng chưa xác định';
+}
 
 function normalizeEditableRoleCatalog(roleCatalog = []) {
   const seenNames = new Set();
@@ -234,7 +255,7 @@ function formatDate(value) {
     return '-';
   }
 
-  return new Date(value).toLocaleDateString('en-GB', {
+  return new Date(value).toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -276,11 +297,11 @@ function downloadCsvText(filename, csv) {
 }
 
 function RoleBadge({ role }) {
-  return <span className={`um-badge role-${role.toLowerCase()}`}>{roleLabels[role] || role}</span>;
+  return <span className={`um-badge role-${role.toLowerCase()}`}>{getRoleLabel(role)}</span>;
 }
 
 function StatusBadge({ status }) {
-  return <span className={`um-badge status-${status.toLowerCase()}`}>{statusLabels[status] || status}</span>;
+  return <span className={`um-badge status-${status.toLowerCase()}`}>{getStatusLabel(status)}</span>;
 }
 
 function Toast({ toast, onClose }) {
@@ -462,7 +483,7 @@ function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
     }
 
     if (selectedRoles.size === 0) {
-      setError('Every user must keep at least one role.');
+      setError('Mỗi người dùng phải giữ ít nhất một vai trò.');
       return;
     }
 
@@ -482,10 +503,10 @@ function RoleModal({ user, roles, savingBlocked, onClose, onSave }) {
       <form className="um-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={handleSave}>
         <div className="um-modal-header">
           <div>
-            <p>FE11 roles</p>
+            <p>Vai trò FE11</p>
             <h2>Quản lý vai trò</h2>
           </div>
-          <button type="button" className="um-icon-button" disabled={saving} onClick={onClose} aria-label="Close">
+          <button type="button" className="um-icon-button" disabled={saving} onClick={onClose} aria-label="Đóng">
             <X size={18} />
           </button>
         </div>
@@ -660,17 +681,17 @@ function LibraryModal({ item, onClose, onSubmit }) {
       <form className="um-modal wide" onMouseDown={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); onSubmit(form); }}>
         <div className="um-modal-header">
           <div>
-            <p>{item ? 'Update' : 'Create'}</p>
+            <p>{item ? 'Cập nhật' : 'Tạo mới'}</p>
             <h2>Danh mục thư viện</h2>
           </div>
-          <button type="button" className="um-icon-button" onClick={onClose}><X size={18} /></button>
+          <button type="button" className="um-icon-button" onClick={onClose} aria-label="Đóng"><X size={18} /></button>
         </div>
         <div className="um-modal-body">
           <label>Tên<input value={form.name} onChange={(e) => update('name', e.target.value)} required maxLength={100} /></label>
         </div>
         <div className="um-modal-actions">
-          <button type="button" className="um-secondary-button" onClick={onClose}>Cancel</button>
-          <button type="submit" className="um-primary-button">Save</button>
+          <button type="button" className="um-secondary-button" onClick={onClose}>Hủy</button>
+          <button type="submit" className="um-primary-button">Lưu thay đổi</button>
         </div>
       </form>
     </div>
@@ -847,7 +868,7 @@ function UserManagement() {
   const pagedLibraryRows = libraryRows.slice((libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE, libraryPage * ADMIN_TABLE_PAGE_SIZE);
   const pagedBorrowings = borrowings.slice((borrowingPage - 1) * ADMIN_TABLE_PAGE_SIZE, borrowingPage * ADMIN_TABLE_PAGE_SIZE);
   const sectionMeta = {
-    dashboard: { eyebrow: 'Tổng quan quản trị', title: 'Dashboard' },
+    dashboard: { eyebrow: 'Tổng quan quản trị', title: 'Tổng quan' },
     users: { eyebrow: 'Danh sách tài khoản', title: 'Quản lý người dùng' },
     permissions: { eyebrow: 'Kiểm soát truy cập', title: 'Phân quyền' },
     audit: { eyebrow: 'Theo dõi hệ thống', title: 'Nhật ký hoạt động' },
@@ -884,7 +905,7 @@ function UserManagement() {
     const currentAccess = readStoredAdminAccess();
     if (currentAccess.authenticated && currentAccess.isAdmin) return true;
 
-    setToast({ type: 'error', message: 'You need to login with an Admin account to create, update, or manage users.' });
+    setToast({ type: 'error', message: 'Bạn cần đăng nhập bằng tài khoản quản trị viên để tạo, cập nhật hoặc quản lý người dùng.' });
     return false;
   }
 
@@ -1233,7 +1254,7 @@ function UserManagement() {
       const result = await adminApi.dashboard();
       setDashboardData(result);
       setDashboardUpdatedAt(new Date());
-      if (announce) setToast({ type: 'success', message: 'Dashboard đã được cập nhật.' });
+      if (announce) setToast({ type: 'success', message: 'Tổng quan đã được cập nhật.' });
     } catch (error) {
       setDashboardError(error.message);
       setToast({ type: 'error', message: error.message });
@@ -1280,7 +1301,7 @@ function UserManagement() {
       }
       setLibraryModal(null);
       await loadLibrary();
-      setToast({ type: 'success', message: 'Library data saved.' });
+      setToast({ type: 'success', message: 'Dữ liệu thư viện đã được lưu.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     }
@@ -1552,7 +1573,7 @@ function UserManagement() {
         : fine
     );
 
-    savePaymentRows(nextRows, 'Payment confirmed and fine marked as paid.');
+    savePaymentRows(nextRows, 'Đã xác nhận thanh toán và đánh dấu khoản phạt là đã thanh toán.');
   }
 
   function refusePayment(fineId) {
@@ -1571,12 +1592,12 @@ function UserManagement() {
         : fine
     );
 
-    savePaymentRows(nextRows, 'Payment refused. Fine is returned to unpaid follow-up.');
+    savePaymentRows(nextRows, 'Đã từ chối thanh toán; khoản phạt được chuyển về trạng thái chưa thanh toán.');
   }
 
   async function submitModal(form) {
     if (!(await requireAdminSession())) {
-      throw new Error('Admin login required.');
+      throw new Error('Cần đăng nhập bằng tài khoản quản trị viên.');
     }
 
     try {
@@ -1640,7 +1661,7 @@ function UserManagement() {
     if (!roleUser) return;
 
     if (!(await requireAdminSession())) {
-      throw new Error('Admin login required.');
+      throw new Error('Cần đăng nhập bằng tài khoản quản trị viên.');
     }
 
     const { assignments, revocations } = buildRoleMutationPlan(
@@ -1757,7 +1778,7 @@ function UserManagement() {
               <span>
                 {dashboardUpdatedAt
                   ? `Cập nhật lần cuối lúc ${dashboardUpdatedAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
-                  : dashboardLoading ? 'Đang tải dữ liệu dashboard...' : 'Chưa tải dữ liệu dashboard.'}
+                  : dashboardLoading ? 'Đang tải dữ liệu tổng quan...' : 'Chưa tải dữ liệu tổng quan.'}
               </span>
               {dashboardError && <strong>Không thể làm mới: {dashboardError}</strong>}
             </div>
@@ -1818,7 +1839,7 @@ function UserManagement() {
             <div className="um-toolbar">
               <div className="um-search">
                 <Search size={18} />
-                <input value={libraryQuery} placeholder="Search library data..." onChange={(event) => setLibraryQuery(event.target.value)} />
+                <input value={libraryQuery} placeholder="Tìm dữ liệu thư viện..." onChange={(event) => setLibraryQuery(event.target.value)} />
               </div>
               {libraryResource === 'books' && (
                 <select value={libraryStatus} onChange={(event) => setLibraryStatus(event.target.value)}>
@@ -1917,7 +1938,7 @@ function UserManagement() {
               {borrowings.length === 0 && !borrowingsLoading && (
                 <div className="um-empty">
                   <strong>Chưa có giao dịch mượn trả trong database.</strong>
-                  <span>Giao dịch sẽ xuất hiện sau khi Member gửi yêu cầu và Admin/Librarian duyệt theo đúng quy trình.</span>
+                  <span>Giao dịch sẽ xuất hiện sau khi thành viên gửi yêu cầu và quản trị viên hoặc thủ thư duyệt theo đúng quy trình.</span>
                 </div>
               )}
               {borrowingsLoading && <div className="um-empty">Đang tải dữ liệu...</div>}
@@ -1984,7 +2005,7 @@ function UserManagement() {
               <div className="um-panel-title">
                 <div>
                   <h2>Đơn đăng ký hội viên</h2>
-                  <p>Admin hoặc thủ thư xét duyệt các đơn đăng ký theo trạng thái.</p>
+                  <p>Quản trị viên hoặc thủ thư xét duyệt các đơn đăng ký theo trạng thái.</p>
                 </div>
               </div>
               <MembershipFilter
@@ -2031,9 +2052,9 @@ function UserManagement() {
 
           <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
             <option value="ALL">Tất cả vai trò</option>
-            <option value="ADMIN">Admin</option>
-            <option value="LIBRARIAN">Librarian</option>
-            <option value="MEMBER">Member</option>
+            <option value="ADMIN">Quản trị viên</option>
+            <option value="LIBRARIAN">Thủ thư</option>
+            <option value="MEMBER">Thành viên</option>
           </select>
 
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -2127,13 +2148,13 @@ function UserManagement() {
             <table className="um-table">
               <thead>
                 <tr>
-                  <th>Fine</th>
-                  <th>Member</th>
-                  <th>Book</th>
-                  <th>Amount</th>
-                  <th>Collected by</th>
-                  <th>Method</th>
-                  <th>Actions</th>
+                  <th>Tiền phạt</th>
+                  <th>Thành viên</th>
+                  <th>Sách</th>
+                  <th>Số tiền</th>
+                  <th>Người thu</th>
+                  <th>Phương thức</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -2149,7 +2170,7 @@ function UserManagement() {
                     </td>
                     <td>
                       <strong>{fine.bookTitle || '-'}</strong>
-                      <span>Borrow detail #{fine.borrowDetailId || '-'}</span>
+                      <span>Chi tiết mượn #{fine.borrowDetailId || '-'}</span>
                     </td>
                     <td>{formatCurrency(fine.amount)}</td>
                     <td>{fine.collectedBy || '-'}</td>
@@ -2158,11 +2179,11 @@ function UserManagement() {
                       <div className="um-row-actions">
                         <button className="um-primary-button" onClick={() => confirmPayment(fine.fineId)}>
                           <Check size={16} />
-                          Confirm
+                          Xác nhận
                         </button>
                         <button className="um-danger-button" onClick={() => refusePayment(fine.fineId)}>
                           <X size={16} />
-                          Refuse
+                          Từ chối
                         </button>
                       </div>
                     </td>
@@ -2173,8 +2194,8 @@ function UserManagement() {
             {pendingPayments.length === 0 && (
               <div className="um-empty">
                 <Banknote size={28} />
-                <strong>No payment waiting for admin review</strong>
-                <span>Librarian payment records will appear here after collection is recorded.</span>
+                <strong>Chưa có khoản thanh toán chờ quản trị viên duyệt</strong>
+                <span>Bản ghi thanh toán của thủ thư sẽ xuất hiện sau khi ghi nhận thu tiền.</span>
               </div>
             )}
           </section>
@@ -2213,26 +2234,26 @@ function UserManagement() {
                 <article key={role.roleName}>
                   <RoleBadge role={role.roleName} />
                   <strong>{role.count}</strong>
-                  <span>{role.label} accounts</span>
+                  <span>{getRoleLabel(role.roleName)} tài khoản</span>
                 </article>
               ))}
             </div>
             <section className="um-panel-grid permissions">
               <div className="um-panel">
-                <h2>Module Coverage</h2>
+                <h2>Mức bao phủ chức năng</h2>
                 <table className="um-permission-table compact">
                   <thead>
                     <tr>
-                      <th>Module</th>
-                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{role.label}</th>)}
+                      <th>Chức năng</th>
+                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{getRoleLabel(role.roleName)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {permissionModuleCoverage.map((module) => (
                       <tr key={module.moduleKey}>
-                        <td>{module.moduleLabel}</td>
+                        <td>{getModuleLabel(module)}</td>
                         {permissionPolicy.roles.map((role) => (
-                          <td key={role.roleName}>{module.counts[role.roleName] || 0} rules</td>
+                          <td key={role.roleName}>{module.counts[role.roleName] || 0} quy tắc</td>
                         ))}
                       </tr>
                     ))}
@@ -2240,21 +2261,21 @@ function UserManagement() {
                 </table>
               </div>
               <div className="um-panel">
-                <h2>Permission Matrix</h2>
+                <h2>Ma trận phân quyền</h2>
                 <table className="um-permission-table">
                   <thead>
                     <tr>
-                      <th>Permission</th>
-                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{role.label}</th>)}
+                      <th>Quyền</th>
+                      {permissionPolicy.roles.map((role) => <th key={role.roleName}>{getRoleLabel(role.roleName)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {permissionPolicy.permissions.map((permission) => (
                       <tr key={permission.permissionKey}>
-                        <td>{permission.label}</td>
+                        <td>{getPermissionLabel(permission)}</td>
                         {permissionPolicy.roles.map((role) => (
                           <td key={role.roleName}>
-                            {roleAllowsPermission(permission, role.roleName) ? 'Yes' : '-'}
+                            {getBooleanLabel(roleAllowsPermission(permission, role.roleName))}
                           </td>
                         ))}
                       </tr>
@@ -2322,7 +2343,7 @@ function UserManagement() {
                 }))}
               />
               <input
-                aria-label="Actor ID"
+                aria-label="Mã người thực hiện"
                 type="number"
                 min="1"
                 step="1"
@@ -2444,14 +2465,14 @@ function UserManagement() {
         {activeSection === 'reports' && (
           <section className="um-panel-grid">
             <div className="um-panel">
-              <h2>Status Report</h2>
+              <h2>Báo cáo trạng thái</h2>
               <div className="um-report-bars">
                 {['ACTIVE', 'INACTIVE', 'LOCKED'].map((status) => {
                   const count = users.filter((user) => user.status === status).length;
                   const pct = users.length ? Math.round((count / users.length) * 100) : 0;
                   return (
                     <div key={status}>
-                      <span>{statusLabels[status]}</span>
+                      <span>{getStatusLabel(status)}</span>
                       <strong>{count}</strong>
                       <div><i style={{ width: `${pct}%` }} /></div>
                     </div>
@@ -2460,7 +2481,7 @@ function UserManagement() {
               </div>
             </div>
             <div className="um-panel">
-              <h2>Role Distribution</h2>
+              <h2>Phân bố vai trò</h2>
               <div className="um-chart-card">
                 <div className="um-donut" style={{ background: roleChart.background }}>
                   <span>{roleChart.total}</span>
@@ -2481,13 +2502,13 @@ function UserManagement() {
 
       {selectedUser && (
         <aside className="um-drawer">
-          <button className="um-icon-button" onClick={() => setSelectedUser(null)} aria-label="Close details">
+          <button className="um-icon-button" onClick={() => setSelectedUser(null)} aria-label="Đóng chi tiết">
             <X size={18} />
           </button>
           <div className={`um-large-avatar ${getPrimaryRole(selectedUser).toLowerCase()}`}>
             {(selectedUser.fullName || selectedUser.email || '?').slice(0, 1).toUpperCase()}
           </div>
-          <h2>{selectedUser.fullName || 'No name'}</h2>
+          <h2>{selectedUser.fullName || 'Chưa có tên'}</h2>
           <div className="um-badge-row">
             {(selectedUser.roles || []).map((role) => (
               <RoleBadge key={role} role={role} />
@@ -2522,24 +2543,24 @@ function UserManagement() {
           <div className="um-related-summary">
             <div>
               <BookCopy size={17} />
-              <span>Active borrowings</span>
+              <span>Lượt mượn đang hoạt động</span>
               <strong>{selectedUser.relatedSummary?.activeBorrowingCount ?? 0}</strong>
             </div>
             <div>
               <Banknote size={17} />
-              <span>Unpaid fines</span>
+              <span>Tiền phạt chưa thanh toán</span>
               <strong>{formatCurrency(selectedUser.relatedSummary?.unpaidFineTotal ?? 0)}</strong>
             </div>
             <div>
               <ClipboardList size={17} />
-              <span>Open reservations</span>
+              <span>Lượt đặt chỗ đang mở</span>
               <strong>{selectedUser.relatedSummary?.openReservationCount ?? 0}</strong>
             </div>
           </div>
           <div className="um-drawer-actions">
             <button className="um-primary-button" onClick={() => openEditModal(selectedUser)}>
               <Edit2 size={16} />
-              Edit
+              Chỉnh sửa
             </button>
             <button className="um-secondary-button" onClick={() => openRoleModal(selectedUser)}>
               <Shield size={16} />
@@ -2662,7 +2683,7 @@ function UserManagement() {
       )}
 
       <style>{`
-        .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: Inter, system-ui, sans-serif; }
+        .um-shell { min-height: 100vh; background: #f5f7fb; color: #1f2937; display: flex; font-family: var(--sans); }
         .um-sidebar { width: 248px; background: #17202a; color: #edf2f7; padding: 22px 16px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; }
         .um-brand { display: flex; gap: 12px; align-items: center; padding: 4px 6px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .um-brand-mark { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; background: #2f80ed; color: #fff; }
@@ -2845,7 +2866,7 @@ function UserManagement() {
           --um-muted: #6b6153;
           background: var(--um-canvas);
           color: var(--um-ink);
-          font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+          font-family: var(--sans);
         }
         .um-sidebar {
           background: var(--um-surface);
@@ -2866,7 +2887,7 @@ function UserManagement() {
         }
         .um-brand strong {
           color: var(--um-ink);
-          font-family: Georgia, 'Times New Roman', serif;
+          font-family: var(--heading);
           font-size: 17px;
         }
         .um-brand span,
@@ -2912,9 +2933,8 @@ function UserManagement() {
         .um-modal-header h2,
         .um-drawer h2 {
           color: var(--um-ink);
-          /* Georgia on Windows/Chrome renders some precomposed Vietnamese
-             characters (notably "ầ" in "yêu cầu") with a displaced mark. */
-          font-family: 'Times New Roman', 'Noto Serif', serif;
+          /* Use the shared Unicode-capable heading font for Vietnamese diacritics. */
+          font-family: var(--heading);
         }
         .um-primary-button {
           background: var(--um-accent);
@@ -2958,7 +2978,7 @@ function UserManagement() {
         .um-audit-summary strong em { margin-left: 3px; color: var(--um-muted); font-size: 14px; font-style: normal; font-weight: 600; }
         .um-audit-summary article div > span { overflow: hidden; color: var(--um-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
         .um-audit-table-heading { margin-bottom: -18px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--um-line); border-bottom: 0; border-radius: 16px 16px 0 0; background: var(--um-surface); }
-        .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: 'Times New Roman', 'Noto Serif', serif; font-size: 21px; }
+        .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: var(--heading); font-size: 21px; }
         .um-audit-table-heading p { margin: 0; color: var(--um-muted); font-size: 13px; }
         .um-audit-table-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--um-accent-dark); background: var(--um-accent-soft); font-size: 12px; font-weight: 700; white-space: nowrap; }
         .um-table-wrap { overflow: hidden; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }

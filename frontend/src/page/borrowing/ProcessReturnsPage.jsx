@@ -219,7 +219,7 @@ export default function ProcessReturnsPage() {
               <div className="return-detail-heading">
                 <div className="app-avatar">{String(selected.member).slice(0, 1)}</div>
                 <div><h3>{selected.member}</h3><span className="muted">Lượt #{selected.borrowDetailId} • Yêu cầu #{selected.requestId}</span></div>
-                {overdueDays > 0 ? <Badge status="Overdue">Quá hạn</Badge> : <Badge status="Available">Đang mượn</Badge>}
+                {overdueDays > 0 ? <Badge status="Overdue">Quá hạn</Badge> : <Badge status="Available">Đúng hạn</Badge>}
               </div>
               <div className="info-list return-member-info">
                 <div className="info-row"><Hash size={16} /><span className="muted">Mã hội viên:</span> <strong>{selected.memberId}</strong></div>

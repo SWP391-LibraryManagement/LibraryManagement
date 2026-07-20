@@ -8,6 +8,7 @@ import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapBorrowDetailsToHistoryRows } from '../../utils/libraryFeatureViewModels';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const TABS = [{ key: 'all', label: 'Tất cả' }, { key: 'active', label: 'Đang mượn' }, { key: 'overdue', label: 'Quá hạn' }, { key: 'returned', label: 'Đã trả' }];
 // @spec FR-FE07-028
@@ -108,7 +109,7 @@ export default function BorrowingHistoryPage() {
       />
 
       <DataTable
-        caption="Borrowing history table"
+        caption="Lịch sử mượn sách"
         headers={['Sách', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
         loading={loading}
         isEmpty={rows.length === 0}
@@ -128,7 +129,7 @@ export default function BorrowingHistoryPage() {
             <td data-label="Ngày mượn">{fmtDate(row.borrowDate)}</td>
             <td data-label="Hạn trả">{fmtDate(row.dueDate)}</td>
             <td data-label="Ngày trả">{fmtDate(row.returnDate)}</td>
-            <td data-label="Trạng thái"><Badge status={row.status} /></td>
+            <td data-label="Trạng thái"><Badge status={row.status}>{getStatusLabel(row.status)}</Badge></td>
             <td data-label="Thao tác" style={{ textAlign: 'right' }}>
               {canRenew(row) && (
                 <button className="btn btn-outline btn-sm" onClick={() => setRenewRow(row)}>
@@ -144,11 +145,11 @@ export default function BorrowingHistoryPage() {
         <div className="pagination">
           <span className="muted">{pagination.total} bản ghi • trang {safePage}/{totalPages}</span>
           <div className="page-controls">
-            <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Previous page"><ChevronLeft size={16} /></button>
+            <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Trang trước"><ChevronLeft size={16} /></button>
             {Array.from({ length: totalPages }, (_, index) => (
               <button key={index} className={`page-btn${safePage === index + 1 ? ' active' : ''}`} onClick={() => setPage(index + 1)}>{index + 1}</button>
             ))}
-            <button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Next page"><ChevronRight size={16} /></button>
+            <button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Trang sau"><ChevronRight size={16} /></button>
           </div>
         </div>
       )}

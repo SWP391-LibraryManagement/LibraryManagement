@@ -100,15 +100,15 @@ async function authorizedRequest(config) {
   }
 }
 
-function getErrorMessage(error, fallback = 'Request failed. Please try again.') {
+function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng thử lại.') {
   const code = error.response?.data?.error?.code;
 
   if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
-    return 'Please login with an Admin account before doing this action.';
+    return 'Vui lòng đăng nhập bằng tài khoản quản trị viên để thực hiện thao tác này.';
   }
 
   if (code === 'ADMIN_REQUIRED' || error.response?.status === 403) {
-    return 'Your account does not have Admin permission for this action.';
+    return 'Tài khoản của bạn không có quyền quản trị viên cho thao tác này.';
   }
 
   const messages = {
@@ -119,15 +119,15 @@ function getErrorMessage(error, fallback = 'Request failed. Please try again.') 
     FULL_NAME_REQUIRED: 'Họ và tên là bắt buộc.',
     ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
     ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
-    CANNOT_DEACTIVATE_SELF: 'Admin không thể tự vô hiệu hóa tài khoản của mình.',
-    LAST_ADMIN_ROLE: 'Không thể gỡ vai trò Admin cuối cùng.',
+    CANNOT_DEACTIVATE_SELF: 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.',
+    LAST_ADMIN_ROLE: 'Không thể gỡ vai trò quản trị viên cuối cùng.',
     LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
   };
 
   if (messages[code]) return messages[code];
 
-  return error.response?.data?.error?.message || fallback;
+  return fallback;
 }
 
 export async function fetchUsers(params = {}) {
@@ -139,7 +139,7 @@ export async function fetchUsers(params = {}) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load users.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể tải danh sách người dùng.'), { cause: error });
   }
 }
 
@@ -151,7 +151,7 @@ export async function fetchManagedUser(userId) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load user details.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể tải chi tiết người dùng.'), { cause: error });
   }
 }
 
@@ -163,7 +163,7 @@ export async function fetchRoles() {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not load roles.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể tải danh sách vai trò.'), { cause: error });
   }
 }
 
@@ -176,7 +176,7 @@ export async function createManagedUser(payload) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not create user.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể tạo người dùng.'), { cause: error });
   }
 }
 
@@ -189,7 +189,7 @@ export async function updateManagedUser(userId, payload) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not update user.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể cập nhật người dùng.'), { cause: error });
   }
 }
 
@@ -202,7 +202,7 @@ export async function deactivateManagedUser(userId, expectedUpdatedAt) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not deactivate user.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể vô hiệu hóa người dùng.'), { cause: error });
   }
 }
 
@@ -215,7 +215,7 @@ export async function assignManagedUserRole(userId, roleId) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not assign role.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể gán vai trò.'), { cause: error });
   }
 }
 
@@ -227,6 +227,6 @@ export async function revokeManagedUserRole(userId, roleId) {
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Could not revoke role.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể gỡ vai trò.'), { cause: error });
   }
 }

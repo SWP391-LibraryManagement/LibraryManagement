@@ -17,6 +17,7 @@ import AppLayout from '../component/layout/AppLayout';
 import { Badge, DataNotice, EmptyState, Toast, useToast } from '../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../component/shared/OperationalPatterns';
 import { FINE_LIST_PAGE_SIZE, buildFineListParams } from '../utils/fineListQuery';
+import { getStatusLabel } from '../utils/uiLabels';
 import '../styles/fine-management.css';
 
 const STATUS_OPTIONS = [
@@ -238,11 +239,11 @@ export default function FineManagement() {
               {pageRows.map((fine) => (
                 <tr key={fine.fineId} className={String(fine.fineId) === String(selectedFineId) ? 'selected' : ''} onClick={() => setSelectedFineId(String(fine.fineId))}>
                   <td data-label="Mã phiếu">#{fine.fineId}</td>
-                  <td data-label="Thành viên"><strong>{fine.member?.fullName || fine.member?.username || `User #${fine.userId}`}</strong></td>
+                  <td data-label="Thành viên"><strong>{fine.member?.fullName || fine.member?.username || `Người dùng #${fine.userId}`}</strong></td>
                   <td data-label="Sách / barcode"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong><span className="field-hint">{fine.barcode || '—'}</span></td>
                   <td data-label="Quá hạn">{fine.overdueDays} ngày</td>
                   <td data-label="Số tiền">{formatCurrency(fine.amount)}</td>
-                  <td data-label="Trạng thái"><Badge status={fine.status}>{STATUS_OPTIONS.find(([value]) => value === fine.status)?.[1] || fine.status}</Badge></td>
+                  <td data-label="Trạng thái"><Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge></td>
                 </tr>
               ))}
             </DataTable>
@@ -285,7 +286,7 @@ export default function FineManagement() {
 function FineDetail({ fine, compact = false, isAdmin = false, reason = '', setReason, onResolve, loading = false }) {
   return (
     <aside className={`fine-panel fine-detail-panel ${compact ? 'compact' : ''}`}>
-      <div className="fine-panel-head"><div><p>Phiếu đang chọn</p><h2>{fine ? `Phiếu phạt #${fine.fineId}` : 'Chưa chọn phiếu'}</h2></div>{fine && <Badge status={fine.status}>{fine.status}</Badge>}</div>
+      <div className="fine-panel-head"><div><p>Phiếu đang chọn</p><h2>{fine ? `Phiếu phạt #${fine.fineId}` : 'Chưa chọn phiếu'}</h2></div>{fine && <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>}</div>
       {fine ? <><div className="fine-detail-card"><div><span>Thành viên</span><strong>{fine.member?.fullName || fine.member?.username}</strong><small>{fine.member?.email}</small></div><div><span>Sách</span><strong>{fine.bookTitle || '—'}</strong><small>{fine.barcode || '—'}</small></div></div><dl className="fine-details"><div><dt>Chi tiết mượn</dt><dd>#{fine.borrowDetailId}</dd></div><div><dt>Quá hạn</dt><dd>{fine.overdueDays} ngày</dd></div><div><dt>Mức/ngày</dt><dd>{formatCurrency(fine.ratePerDay)}</dd></div><div><dt>Tổng tiền</dt><dd><strong>{formatCurrency(fine.amount)}</strong></dd></div><div><dt>Đã thu</dt><dd>{formatCurrency(fine.paidAmount)}</dd></div><div><dt>Ngày tính</dt><dd>{formatDate(fine.calculatedAt)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{formatDate(fine.paidAt)}</dd></div></dl>{isAdmin && fine.status === 'UNPAID' && setReason && <div className="fine-admin-resolution"><label>Lý do miễn/hủy<textarea value={reason} maxLength="500" onChange={(event) => setReason(event.target.value)} /></label><div><button type="button" className="btn btn-outline" disabled={loading} onClick={() => onResolve('waive')}><ShieldCheck size={15} /> Miễn phạt</button><button type="button" className="btn btn-danger" disabled={loading} onClick={() => onResolve('cancel')}><XCircle size={15} /> Hủy phiếu</button></div></div>}</> : <EmptyState icon={ReceiptText} title="Chọn một phiếu để xem chi tiết" />}
     </aside>
   );

@@ -32,7 +32,7 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--sans);
 }
 
 /* ---------- Page header (breadcrumb bar) ---------- */
@@ -186,7 +186,7 @@
 
 .ph-name {
   font-size: 1.5rem;
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--heading);
   color: #ffffff;
   margin: 0;
   white-space: nowrap;
@@ -266,7 +266,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--up-fg);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--sans);
   margin: 0 0 1rem;
 }
 
@@ -349,7 +349,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--up-fg);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--sans);
   margin: 0 0 1rem;
 }
 
@@ -519,7 +519,7 @@
   text-align: center;
   font-size: 1.1rem;
   font-weight: 600;
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--heading);
   color: var(--up-fg);
   margin: 0 0 0.25rem;
 }
@@ -614,7 +614,7 @@
 .ep-heading {
   font-size: 1.1rem;
   font-weight: 600;
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--heading);
   color: var(--up-fg);
   margin: 0 0 0.25rem;
 }
@@ -850,7 +850,7 @@
 .cp-heading {
   font-size: 1.1rem;
   font-weight: 600;
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: var(--heading);
   color: var(--up-fg);
   margin: 0;
 }

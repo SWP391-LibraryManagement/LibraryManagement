@@ -130,7 +130,7 @@ test('FE11 Audit exposes the approved action and actor filters', async () => {
 
   assert.match(source, /aria-label="Lọc hành động"[\s\S]*?value=\{auditFilters\.action\}/);
   assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?action: event\.target\.value/);
-  assert.match(source, /aria-label="Actor ID"[\s\S]*?type="number"[\s\S]*?value=\{auditFilters\.actorId\}/);
+  assert.match(source, /aria-label="Mã người thực hiện"[\s\S]*?type="number"[\s\S]*?value=\{auditFilters\.actorId\}/);
   assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?actorId: event\.target\.value/);
 });
 
@@ -268,4 +268,49 @@ test('FE11 form validation accepts canonical widths and rejects overlength Libra
   });
   assert.ok(invalid.department);
   assert.ok(invalid.specialization);
+});
+
+test('FE11 Admin copy uses shared Vietnamese labels and locale without changing raw values', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /import \{ getBooleanLabel, getRoleLabel, getStatusLabel \} from '\.\.\/utils\/uiLabels';/);
+  assert.doesNotMatch(source, /const roleLabels =/);
+  assert.doesNotMatch(source, /const statusLabels =/);
+  assert.match(source, /<RoleBadge role=\{role\.roleName\} \/>/);
+  assert.match(source, /getRoleLabel\(role\)/);
+  assert.match(source, /getStatusLabel\(status\)/);
+  assert.match(source, /getBooleanLabel\(roleAllowsPermission\(permission, role\.roleName\)\)/);
+  assert.match(source, /toLocaleDateString\('vi-VN'/);
+  assert.doesNotMatch(source, /toLocaleDateString\('en-GB'/);
+
+  for (const message of [
+    'Mỗi người dùng phải giữ ít nhất một vai trò.',
+    'Bạn cần đăng nhập bằng tài khoản quản trị viên để tạo, cập nhật hoặc quản lý người dùng.',
+    'Dữ liệu thư viện đã được lưu.',
+    'Đã xác nhận thanh toán và đánh dấu khoản phạt là đã thanh toán.',
+    'Đã từ chối thanh toán; khoản phạt được chuyển về trạng thái chưa thanh toán.',
+    'Cần đăng nhập bằng tài khoản quản trị viên.',
+    'Tìm dữ liệu thư viện...',
+    'Báo cáo trạng thái',
+    'Phân bố vai trò',
+    'Đóng chi tiết',
+    'Chưa có tên',
+    'Lượt mượn đang hoạt động',
+    'Tiền phạt chưa thanh toán',
+    'Mã người thực hiện',
+    'Chỉnh sửa',
+  ]) {
+    assert.match(source, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});
+
+test('FE11 permission matrix localizes backend-owned labels without changing keys', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /function getPermissionLabel\(permission\)/);
+  assert.match(source, /function getModuleLabel\(module\)/);
+  assert.match(source, /getPermissionLabel\(permission\)/);
+  assert.match(source, /getModuleLabel\(module\)/);
+  assert.doesNotMatch(source, /\{module\.moduleLabel\}/);
+  assert.doesNotMatch(source, /\{permission\.label\}/);
 });

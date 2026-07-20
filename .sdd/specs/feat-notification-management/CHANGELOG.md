@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-20 - Vietnamese UI localization and typography
+
+- Localized shared frontend labels, accessibility names, and safe error feedback used around notification-related surfaces.
+- Preserved notification-template payloads, delivery behavior, API contracts, raw enum values, permissions, and business rules.
+- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+
 ## 2026-07-19 - Phase 2 Exit Closeout
 
 - feat-notification-management is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.

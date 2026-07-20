@@ -98,7 +98,7 @@ export function Modal({ title, eyebrow, onClose, children, actions, width }) {
             {eyebrow && <p className="muted" style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>{eyebrow}</p>}
             <h2 id={titleId} className="lib-modal-title">{title}</h2>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Đóng">
             <X size={18} />
           </button>
         </div>

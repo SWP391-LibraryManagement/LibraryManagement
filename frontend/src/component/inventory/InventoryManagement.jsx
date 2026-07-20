@@ -85,7 +85,7 @@ export default function InventoryManagement() {
         />
       </div>
       <DataTable
-        caption="Inventory copies table"
+        caption="Danh sách bản sao trong kho"
         headers={['ID', 'Đầu sách', 'Barcode', 'Vị trí', 'Trạng thái']}
         isEmpty={!items.length}
         emptyState={<EmptyState icon={Inventory2Icon} title="Chưa có bản sao phù hợp" />}
@@ -93,7 +93,7 @@ export default function InventoryManagement() {
         {items.map((copy) => (
           <tr key={copy.copyId} onClick={() => openBook(copy.book)} style={{ cursor: 'pointer' }}>
             <td data-label="ID">#{copy.copyId}</td>
-            <td data-label="Đầu sách">{copy.book?.title || `Book #${copy.bookId}`}</td>
+            <td data-label="Đầu sách">{copy.book?.title || `Sách #${copy.bookId}`}</td>
             <td data-label="Barcode"><strong>{copy.barcode}</strong></td>
             <td data-label="Vị trí">{copy.location || '-'}</td>
             <td data-label="Trạng thái"><StatusBadge status={copy.status} /></td>

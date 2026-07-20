@@ -20,6 +20,7 @@ import AppLayout from '../../component/layout/AppLayout';
 import { Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable } from '../../component/shared/OperationalPatterns';
 import { fmtDate, statusToUi } from '../../utils/libraryFeatureViewModels';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const PAGE_SIZE = 8;
 const STATUS_OPTIONS = [
@@ -31,15 +32,6 @@ const STATUS_OPTIONS = [
   { value: 'DAMAGED', label: 'Hư hỏng' },
   { value: 'LOST', label: 'Mất sách' },
 ];
-
-const STATUS_LABELS = {
-  REQUESTED: 'Chờ duyệt',
-  BORROWED: 'Đang mượn',
-  OVERDUE: 'Quá hạn',
-  RETURNED: 'Đã trả',
-  DAMAGED: 'Hư hỏng',
-  LOST: 'Mất sách',
-};
 
 function normalize(value) {
   return String(value || '')
@@ -213,7 +205,7 @@ export default function MemberBorrowingDetailsPage() {
               <article className="member-profile-card">
                 <div className="app-avatar">{selectedMember.name.slice(0, 1).toUpperCase()}</div>
                 <div className="member-profile-main"><h2>{selectedMember.name}</h2><span className="muted">@{selectedMember.username}</span></div>
-                <Badge status={selectedMember.status}>{selectedMember.status === 'ACTIVE' ? 'Hoạt động' : selectedMember.status}</Badge>
+                <Badge status={selectedMember.status}>{getStatusLabel(selectedMember.status)}</Badge>
                 <div className="member-profile-meta">
                   <span><Hash size={15} /> Mã hội viên: <strong>{selectedMember.memberId}</strong></span>
                   <span><Mail size={15} /> {selectedMember.email}</span>
@@ -251,7 +243,7 @@ export default function MemberBorrowingDetailsPage() {
                       <td data-label="Ngày mượn">{fmtDate(row.borrowDate)}</td>
                       <td data-label="Hạn trả">{fmtDate(row.dueDate)}</td>
                       <td data-label="Ngày trả">{fmtDate(row.returnDate)}</td>
-                      <td data-label="Trạng thái"><Badge status={row.status}>{STATUS_LABELS[row.rawStatus] || row.status}</Badge></td>
+                      <td data-label="Trạng thái"><Badge status={row.status}>{getStatusLabel(row.status)}</Badge></td>
                     </tr>
                   ))}
                 </DataTable>
