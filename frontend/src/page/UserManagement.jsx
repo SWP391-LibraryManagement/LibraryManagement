@@ -1123,6 +1123,7 @@ function UserManagement() {
   }
 
   useEffect(() => {
+    if (!access.authenticated || !access.isAdmin) return undefined;
     const timer = setTimeout(() => {
       loadUsers(1);
     }, 350);
@@ -1130,26 +1131,29 @@ function UserManagement() {
     return () => clearTimeout(timer);
   // loadUsers reads the latest filter state through this effect's dependency list.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, roleFilter, statusFilter]);
+  }, [search, roleFilter, statusFilter, access.authenticated, access.isAdmin]);
 
   useEffect(() => {
+    if (!access.authenticated || !access.isAdmin) return undefined;
     const timer = setTimeout(() => {
       loadUserStatistics();
     }, 0);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [access.authenticated, access.isAdmin]);
 
   useEffect(() => {
+    if (!access.authenticated || !access.isAdmin) return undefined;
     const timer = setTimeout(() => {
       loadRoles().catch(() => {});
     }, 0);
 
     return () => clearTimeout(timer);
   // The timer keeps state-setting catalog work outside the synchronous effect body.
-  }, []);
+  }, [access.authenticated, access.isAdmin]);
 
   useEffect(() => {
+    if (!access.authenticated || !access.isAdmin) return undefined;
     if (activeSection === 'dashboard') {
       loadDashboard();
     }
@@ -1167,10 +1171,11 @@ function UserManagement() {
     }
   // The loaders intentionally read current filters when the active admin section changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status, requestPage]);
+  }, [activeSection, libraryResource, membershipFilter.page, membershipFilter.status, requestPage, access.authenticated, access.isAdmin]);
 
   useEffect(() => {
-    if (activeSection !== 'permissions') return;
+    if (activeSection !== 'permissions') return undefined;
+    if (!access.authenticated || !access.isAdmin) return undefined;
     const timer = setTimeout(() => {
       loadPermissions();
       loadUserStatistics();
@@ -1178,7 +1183,7 @@ function UserManagement() {
 
     return () => clearTimeout(timer);
   // Each loader owns its own state and retry lifecycle.
-  }, [activeSection]);
+  }, [activeSection, access.authenticated, access.isAdmin]);
 
   async function loadAuditLogs(
     page = auditPagination.page,
@@ -1217,13 +1222,14 @@ function UserManagement() {
   }
 
   useEffect(() => {
-    if (activeSection !== 'audit') return;
+    if (activeSection !== 'audit') return undefined;
+    if (!access.authenticated || !access.isAdmin) return undefined;
     const timer = setTimeout(() => loadAuditLogs(1), 0);
 
     return () => clearTimeout(timer);
   // The loader intentionally reads the current pagination state only when invoked.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection]);
+  }, [activeSection, access.authenticated, access.isAdmin]);
 
   useEffect(() => {
     function refreshPayments() {

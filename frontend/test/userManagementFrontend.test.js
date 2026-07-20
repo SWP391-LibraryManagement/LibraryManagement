@@ -211,6 +211,14 @@ test('FE11 Admin access never uses an implicit development bypass', async () => 
   assert.match(source, /<Navigate to="\/home" replace/);
 });
 
+test('FE11 does not request protected data before an unauthenticated redirect', async () => {
+  const source = await readFile(pagePath, 'utf8');
+  const protectedEffects = source.match(/useEffect\(\(\) => \{[\s\S]*?if \(activeSection === 'dashboard'\)[\s\S]*?\}, \[activeSection, libraryResource, membershipFilter\.page, membershipFilter\.status, requestPage, access\.authenticated, access\.isAdmin\]\);/)?.[0] || '';
+
+  assert.match(source, /if \(!access\.authenticated \|\| !access\.isAdmin\) return(?: undefined)?;/);
+  assert.match(protectedEffects, /if \(!access\.authenticated \|\| !access\.isAdmin\) return(?: undefined)?;/);
+});
+
 // @spec AC-FE05-012, FR-FE05-021, FR-FE05-025
 test('FE11 Library view is read-only for FE05 books and directs mutations to canonical BookManagement', async () => {
   const source = await readFile(pagePath, 'utf8');

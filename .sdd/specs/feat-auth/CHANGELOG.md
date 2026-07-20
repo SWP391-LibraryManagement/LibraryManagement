@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-20 - Strict Bearer authorization parsing
+
+- Reject malformed `Authorization` headers with extra segments before token verification.
+- Preserve valid Bearer tokens while preventing ambiguous header parsing from reaching protected services.
+- Added backend regression coverage for the malformed-header boundary.
+
+## 2026-07-20 - Standalone email verification recovery
+
+- Added a standalone `/verify-email` route so users can recover registration verification after closing or reloading the registration page.
+- Duplicate-registration handling now routes the user to email verification instead of leaving a dead-end at `EMAIL_ALREADY_REGISTERED`.
+- Password-recovery UI now links users to account verification without changing the backend's inactive-account and anti-enumeration rules.
+- Added frontend regression coverage for the route, duplicate-registration redirect, OTP resend cooldown, and inactive-account recovery path.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
