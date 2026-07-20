@@ -4,7 +4,7 @@
 
 # Status: APPROVED - BASELINE 2026-07-17
 
-# Implementation Status: AUTOMATED PASS - HUMAN INTEGRATION REVIEW PENDING
+# Implementation Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 # Owner: Dat
 
@@ -22,10 +22,11 @@
 
 > Source of truth for FE06 Inventory / Book Copy Management. Revision v0.4.2 reconciles the approved v0.4.0 concurrency, audit, parent-book, API, and frontend contracts with the implemented behavior.
 >
-> **Implementation status (2026-07-19): automated reconciliation passes.** FE06 now uses SQL
+> **Historical reconciliation snapshot (2026-07-19; superseded):** FE06 used SQL
 > `rowversion` / `If-Match`, same-transaction conflict and audit handling, parent-book ACTIVE guards,
-> mandatory status-change reasons, and server-backed inventory UI. Cross-feature owner confirmation,
-> final H3, merge, and post-merge `main` CI remain open.
+> mandatory status-change reasons, and server-backed inventory UI. At that checkpoint, cross-feature
+> owner confirmation, final H3, merge, and post-merge `main` CI remained open; the canonical Phase 2
+> exit evidence above records their subsequent completion.
 
 ---
 

@@ -118,6 +118,35 @@ test('librarian and report surfaces remove known English interface copy', async 
   assert.doesNotMatch(files.userReport, /User ID|Membership|User statistics/);
 });
 
+test('operational status controls render Vietnamese labels while preserving raw values', async () => {
+  const userManagement = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const bookCopies = await readFile(new URL('../src/component/inventory/BookCopies.jsx', import.meta.url), 'utf8');
+  const inventoryFilter = await readFile(new URL('../src/component/inventory/Filter.jsx', import.meta.url), 'utf8');
+  const borrowRequests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
+  const borrowRequest = await readFile(new URL('../src/page/borrowing/BorrowRequestPage.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(userManagement, /All statuses|>ACTIVE<|>INACTIVE<|Copy #|No library data found\./);
+  assert.match(userManagement, /getStatusLabel\(row\.status \|\| 'ACTIVE'\)/);
+  assert.match(userManagement, /getStatusLabel\(status\)/);
+  assert.match(userManagement, /<option value="ACTIVE">\{getStatusLabel\('ACTIVE'\)\}<\/option>/);
+  assert.match(userManagement, /<option value="INACTIVE">\{getStatusLabel\('INACTIVE'\)\}<\/option>/);
+  assert.match(userManagement, /setLibraryStatus\(event\.target\.value\)/);
+  assert.match(bookCopies, /getStatusLabel\(status\)/);
+  assert.match(bookCopies, /value=\{nextStatus\}/);
+  assert.match(bookCopies, /status: event\.target\.value/);
+  assert.match(bookCopies, /<option key=\{status\} value=\{status\}>\{getStatusLabel\(status\)\}<\/option>/);
+  assert.match(inventoryFilter, /getStatusLabel\(status\)/);
+  assert.match(inventoryFilter, /value=\{filters\.status\}/);
+  assert.match(inventoryFilter, /update\('status', event\.target\.value\)/);
+  assert.match(inventoryFilter, /<option key=\{status\} value=\{status\}>\{getStatusLabel\(status\)\}<\/option>/);
+  assert.match(borrowRequests, /getStatusLabel\(detail\.status\)/);
+  assert.match(borrowRequests, /value=\{statusFilter\}/);
+  assert.match(borrowRequests, /setStatusFilter\(event\.target\.value\)/);
+  assert.match(borrowRequests, /<option key=\{option\.value\} value=\{option\.value\}>\{option\.label\}<\/option>/);
+  assert.doesNotMatch(borrowRequest, /Copy #/);
+  assert.match(borrowRequest, /Bản sao #/);
+});
+
 test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', async () => {
   const adminApi = await readFile(new URL('../src/api/adminApi.js', import.meta.url), 'utf8');
   const authApi = await readFile(new URL('../src/api/authApi.js', import.meta.url), 'utf8');

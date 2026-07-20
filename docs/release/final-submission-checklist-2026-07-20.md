@@ -2,43 +2,68 @@
 
 ## Release decision
 
-The approved FE01-FE12 scope and Phase 3 delivery package are complete. The next
-canonical source release is `v1.0.2`; create the tag only after H3 approval,
-merge to `main`, and exact post-merge CI pass.
+The approved FE01-FE12 baseline and Phase 3 delivery are integrated, but the
+current reconciliation is not yet final: it is H2-approved with H3 pending,
+the dedicated localized desktop/mobile visual review is pending, and no
+demonstration video/link is published. Release `v1.0.2` is published at
+`c988af1`; `cce59d0` is the validated post-release application baseline. A
+future `v1.0.3` must use the later reviewed `main` SHA after this reconciliation
+receives H2, merges through H3, and passes exact post-merge CI.
 
 ## Submission package
 
 | Item | Status | Evidence |
 | --- | --- | --- |
-| Source code | PENDING H3 | GitHub release/tag `v1.0.2` after merge and exact post-merge CI. |
-| Requirements and design | PASS | `document/RDS.md` and `document/SDS.md`. |
+| Source code | PASS published baseline / H2-APPROVED reconciliation | `v1.0.2` is published at `c988af1`; application baseline `cce59d0` contains PR #57/#58, while this reconciliation awaits H3 integration. |
+| Requirements and design | PASS baseline / H2-APPROVED reconciliation | `document/RDS.md`, `document/SDS.md`, and the FE02/test-plan source-of-truth reconciliation in this batch. |
 | Final release document | PASS | `document/FinalRelease.md`. |
 | User documentation | PASS | `docs/user-manual.md` and system overview. |
 | Phase 3 final report | PASS | `docs/release/phase3-final-report.md`. |
-| Final governance closeout | H2-READY | `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`; implementation remains uncommitted. |
+| Final governance closeout | PASS for PR #54; current reconciliation H2-APPROVED | `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md` and `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`. |
 | Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA; Vietnamese briefing at `docs/briefing-thuyet-trinh-du-an-vi.docx`. |
 | Rehearsal | PASS | `docs/release/phase3-rehearsal-record.md` and demo runbook. |
-| Automated quality | PASS | 916 backend tests, 152 frontend tests, coverage gate, lint, build, and 4/4 browser E2E. |
+| Remote application-baseline quality | PASS | CI `29712597463` passed 917 backend tests across 53 suites and 171 frontend tests for `cce59d0`; staging workflow `29712612188` also passed. |
+| Fresh local reconciliation quality | H2-APPROVED | The reviewed reconciliation passed 917 backend tests across 53 suites, 172 frontend tests, coverage, lint, build, traceability, deployment tests, and 4/4 browser E2E. |
 | Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
 | Demonstration video/link | NOT PUBLISHED | No external video URL was provided or fabricated. |
 | Authenticated Azure user observation | PASS | Live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
 | Real SMTP inbox delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search were observed. |
+| Vietnamese UI localization | AUTOMATED/STAGING PASS; HUMAN VISUAL REVIEW PENDING | PR #58 merged; CI/staging pass, while the dedicated desktop/mobile visual check remains open in `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`. |
 
-## Final operator checks
+## Verify the published `v1.0.2` release now
 
-Run these commands only after H3 approval, merge to `main`, and exact
-post-merge CI pass:
+These verification checks can run immediately. The tag must resolve to `c988af1`:
 
 ```powershell
 git fetch origin --tags
 git rev-list -n 1 v1.0.2
 gh release view v1.0.2 --repo SWP391-LibraryManagement/LibraryManagement
+```
+
+## Verify a future post-reconciliation release
+
+Run the first checks only after H2 approval, merge through H3, and exact
+post-merge CI pass. Treat the resulting `origin/main` SHA as the only eligible
+future release source; do not reuse `cce59d0` or retroactively approve PR #57/#58:
+
+```powershell
+git fetch origin --tags
+git rev-parse origin/main
 gh run list --repo SWP391-LibraryManagement/LibraryManagement --branch main --limit 5
+```
+
+Only if the team later publishes `v1.0.3`, verify that release separately:
+
+```powershell
+git rev-list -n 1 v1.0.3
+gh release view v1.0.3 --repo SWP391-LibraryManagement/LibraryManagement
 ```
 
 ## Residual limitations
 
 - Notification inbox UI remains outside the approved Phase 1 scope.
+- Dedicated human desktop/mobile visual acceptance remains pending for the current Vietnamese localization reconciliation.
+- The demonstration video/link remains unpublished.
 - Avatar storage on App Service is not production-durable.
 - CI has no shared disposable SQL Server service.
 - Student-credit staging has no production SLA.

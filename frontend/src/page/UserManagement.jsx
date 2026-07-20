@@ -1843,9 +1843,9 @@ function UserManagement() {
               </div>
               {libraryResource === 'books' && (
                 <select value={libraryStatus} onChange={(event) => setLibraryStatus(event.target.value)}>
-                  <option value="ALL">All statuses</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
+                  <option value="ALL">Mọi trạng thái</option>
+                  <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
+                  <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
                 </select>
               )}
               <button className="um-secondary-button" disabled={libraryLoading} onClick={() => loadLibrary()}>Tìm kiếm</button>
@@ -1872,7 +1872,7 @@ function UserManagement() {
                       <td>{row.publisher || '-'}</td>
                       <td>{row.publishYear || row.year || '-'}</td>
                       <td>{row.availableCopies || 0}/{row.totalCopies || 0}</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td><span className="um-readonly-note">Chỉ xem; chỉnh sửa tại Quản lý sách.</span></td>
                     </tr>
                   ) : (
@@ -1880,13 +1880,13 @@ function UserManagement() {
                       <td>{(libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE + index + 1}</td>
                       <td><strong>{row.name}</strong></td>
                       <td>{formatDate(row.createdAt)}</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td><div className="um-row-actions"><button className="um-icon-button" title="Chỉnh sửa" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" title="Vô hiệu hóa" disabled={row.status === 'INACTIVE'} onClick={() => deactivateMetadata(row)}><PowerOff size={16} /></button></div></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {libraryRows.length === 0 && <div className="um-empty">No library data found.</div>}
+              {libraryRows.length === 0 && <div className="um-empty">Không tìm thấy dữ liệu thư viện.</div>}
               <AdminTablePagination page={libraryPage} totalItems={libraryRows.length} onPageChange={setLibraryPage} />
             </section>
           </section>
@@ -1901,7 +1901,7 @@ function UserManagement() {
             <div className="um-toolbar">
               <div className="um-search"><Search size={18} /><input value={borrowingFilter.q} placeholder="Tìm thành viên, sách hoặc barcode..." onKeyDown={(event) => { if (event.key === 'Enter') loadBorrowings(); }} onChange={(event) => setBorrowingFilter((current) => ({ ...current, q: event.target.value }))} /></div>
               <select value={borrowingFilter.status} onChange={(event) => setBorrowingFilter((current) => ({ ...current, status: event.target.value }))}>
-                {borrowingStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                {borrowingStatuses.map((status) => <option key={status} value={status}>{getStatusLabel(status)}</option>)}
               </select>
               <button className="um-secondary-button" disabled={borrowingsLoading} onClick={() => loadBorrowings()}>Tìm kiếm</button>
               <button className="um-secondary-button" disabled={borrowingsLoading || borrowings.length === 0} onClick={() => downloadCsv('borrowings.csv', borrowings)}><FileDown size={16} /> Xuất CSV</button>
@@ -1917,12 +1917,12 @@ function UserManagement() {
                       <td>#{row.requestId}</td>
                       <td><strong>{row.memberName}</strong></td>
                       <td>{row.bookTitle}</td>
-                      <td>{row.barcode || `Copy #${row.copyId}`}</td>
+                      <td>{row.barcode || `Bản sao #${row.copyId}`}</td>
                       <td>{formatDate(row.borrowDate)}</td>
                       <td>{formatDate(row.dueDate)}</td>
                       <td>{formatDate(row.returnDate)}</td>
                       <td>{row.renewalCount || 0}/1</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td>
                         <div className="um-row-actions">
                           {row.status === 'REQUESTED' && <button className="um-secondary-button" onClick={() => setActiveSection('requests')}>Xử lý yêu cầu</button>}

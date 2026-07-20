@@ -8,6 +8,22 @@
 
 **Tech Stack:** React 19, Vite 8, Bootstrap 5, MUI, Node test runner, CSS custom properties, existing Axios API modules.
 
+## Current Implementation Closeout - 2026-07-20
+
+PR #58 is merged as `cce59d0`. Application-baseline CI `29712597463` and staging
+workflow `29712612188` pass the frontend localization tests, lint, build,
+browser E2E, and six-check staging smoke. The authoritative L1-L4 evidence is
+`.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
+
+The later H2-approved governance reconciliation repairs five residual
+presentation-only label surfaces and strengthens the raw-value regression;
+fresh local frontend evidence is 172/172. These follow-up edits remain subject
+to H3 before merge.
+
+The granular RED-GREEN task boxes below are retained as the historical execution
+plan. The final checklist is the current acceptance snapshot; a dedicated
+human responsive browser review remains explicitly pending.
+
 ## Global Constraints
 
 - The product language is fixed Vietnamese; do not add a language switcher or an i18n framework.
@@ -1084,10 +1100,10 @@ git commit -m "docs: record Vietnamese UI localization"
 
 ## Final Verification Checklist
 
-- [ ] All frontend-generated interface text is Vietnamese except approved technical terms and technical identifiers.
-- [ ] Book titles, author names, email addresses, barcode values, and user-entered content remain unchanged.
-- [ ] Raw role/status/API values remain unchanged in logic and requests.
-- [ ] Known API errors are Vietnamese and unknown failures use Vietnamese fallbacks.
-- [ ] `lang="vi"`, page title, `Be Vietnam Pro`, and `Noto Serif` are wired correctly.
+- [x] All frontend-generated interface text is Vietnamese except approved technical terms and technical identifiers.
+- [x] Book titles, author names, email addresses, barcode values, and user-entered content remain unchanged.
+- [x] Raw role/status/API values remain unchanged in logic and requests.
+- [x] Known API errors are Vietnamese and unknown failures use Vietnamese fallbacks.
+- [x] `lang="vi"`, page title, `Be Vietnam Pro`, and `Noto Serif` are wired correctly.
 - [ ] Desktop and mobile checks show correct Vietnamese glyph rendering and no overflow.
-- [ ] `npm --prefix frontend test`, lint, build, traceability, and `git diff --check` all pass.
+- [x] `npm --prefix frontend test`, lint, build, traceability, and `git diff --check` all pass.

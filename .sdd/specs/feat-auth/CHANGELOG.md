@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-20 - Reconcile FE02/FE10 OTP source of truth
+
+- Updated the FE02 specification to match the approved ADR-004 and merged implementation: FE02 owns OTP credentials, while the FE02-bound FE10 requester owns verification/reset delivery and safe notification outcomes.
+- Preserved legacy token compatibility, non-blocking delivery failure, token-ID idempotency, and the separate direct `CHANGE_PASSWORD_OTP` path.
+
 ## 2026-07-20 - Strict Bearer authorization parsing
 
 - Reject malformed `Authorization` headers with extra segments before token verification.

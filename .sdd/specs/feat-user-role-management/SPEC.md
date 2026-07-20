@@ -702,7 +702,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Email case-sensitivity for uniqueness is decided.
 - [x] Role hierarchy and multiple role support are confirmed.
 - [x] User data retention policy after deactivation is defined.
-- [ ] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed; migration is required before implementation.
+- [x] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed by the merged FE11 finalization migration and Phase 2 exit evidence.
 - [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
 - [x] FE02, FE03 dependencies are checked for conflicts.
 - [x] Every acceptance criterion can become a test.

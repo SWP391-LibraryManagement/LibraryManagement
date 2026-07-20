@@ -2,7 +2,9 @@
 
 Date: 2026-07-20
 
-Status: Approved for implementation planning
+Status: IMPLEMENTED - PR #58 MERGED; APPLICATION-BASELINE AND LOCAL RECONCILIATION EVIDENCE RECORDED
+
+Implementation evidence: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
 ## 1. Goal
 

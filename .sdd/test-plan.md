@@ -1,10 +1,10 @@
 # TEST PLAN - Library Management System
 
-Version: 0.2.0
+Version: 0.3.0
 
-Status: APPROVED
+Status: APPROVED POLICY - H2-APPROVED CURRENT-STATE RECONCILIATION
 
-Last Updated: 2026-06-25
+Last Updated: 2026-07-20
 
 Canonical Location: `.sdd/test-plan.md`
 
@@ -83,16 +83,16 @@ fine calculation, notification triggers, reporting aggregation, input validation
 Frontend coverage is not yet enforced by component tests. Until frontend test tooling is added, every
 frontend PR must at minimum pass lint/build and include manual UI verification notes.
 
-### 1.3 Current Coverage Status (2026-07-14)
+### 1.3 Current Coverage Status (2026-07-20)
 
-- Backend Jest tests: `npm --prefix backend test` -> **307 tests / 24 suites passing**.
-- Completed-module coverage: statements **93.02%**, branches **83.22%**, functions **96.37%**, lines **92.94%**.
+- Backend Jest tests: `npm.cmd --prefix backend run test:coverage:ci` -> **917 tests / 53 suites passing**.
+- Configured coverage: statements **92.68%**, branches **81.66%**, functions **96.59%**, lines **92.61%**.
 - Jest enforces a global 80 percent threshold for all four metrics through `npm --prefix backend run test:coverage:ci` and CI.
-- Frontend: **38 tests passing**; `npm --prefix frontend run lint` and `npm --prefix frontend run build` pass.
+- Frontend: **172 tests passing** in the fresh local reconciliation; `npm.cmd --prefix frontend run lint` and `npm.cmd --prefix frontend run build` pass. CI run `29712597463` remains the earlier 171-test post-PR #58 baseline.
 - Traceability gate: `npm run trace:enforce` (min 70% FR `@spec` coverage for implemented features) —
-  **enforced in CI** (`.github/workflows/ci.yml`). Six implemented features are at 100%.
-- SQL Server shared-state integration is available through the mutation-gated local `test:sql:system` suite.
-- Browser E2E is enabled through Playwright Chromium and runs in CI.
+  **enforced in CI** (`.github/workflows/ci.yml`). All twelve features are `COMPLETE` with **243/243 FR tags (100%)**.
+- System integration: **10/10** in-memory system tests pass. SQL-backed suites remain explicitly mutation-gated and are not part of the default CI job.
+- Browser E2E: **4/4** Playwright Chromium suites pass in CI and on the current main commit.
 
 ---
 
@@ -238,26 +238,26 @@ readiness summary; it intentionally does **not** restate per-feature test cases.
 | `backend/tests/reservationRoutes.test.js` | FE08 reservation routes |
 | `backend/tests/userManagementRoutes.test.js` | FE11 user & role routes |
 
-Remaining gaps (tracked in `TECH_DEBT.md`): broader frontend component tests; a disposable SQL Server
-service in shared CI; dedicated `bookRoutes` tests for FE01/FE05; service-level tests for FE11
-(TD-015); and full FE09 browser coverage after the legacy frontend is aligned to the server API.
+Current non-blocking boundaries are tracked in `TECH_DEBT.md` and the Phase 2/3 validation packets:
+shared disposable SQL Server CI, production-durable avatar storage, the deferred FE10 inbox UI,
+and production-SLA evidence. The legacy FE09 browser page is not authoritative release evidence.
 
 ### 5.4 Per-Feature Readiness Summary
 
 | Feature | Spec | Plan/Tasks | Automated Evidence | FR `@spec` | Readiness Note |
 | --- | --- | --- | --- | --- | --- |
-| FE01 Public / Browse | Approved | Not started | Indirect via book routes | 0% | Needs dedicated route tests |
-| FE02 Authentication | Approved | Ready for review | `authRoutes`, `authUtils` | 100% | Add API tests for duplicate email / weak password (TD-018) |
-| FE03 User Profile | Draft (avatar) | Draft / manual verify | `profileRoutes`, `profileService` | 0% (tagging pending) | Record manual avatar UI evidence |
-| FE04 Membership | Approved | Not started | None | 0% | Needs plan/tasks/routes/tests |
-| FE05 Book Management | Approved | Not started | Route exists, no test | 0% | Reconcile prototype with spec |
-| FE06 Inventory / Copy | Approved | Not started (deferred) | Inventory report only | 0% | TD-005 deferred |
-| FE07 Borrowing | Approved | Ready for review | `borrowingRoutes`, `integration` | 100% | Edge/boundary audited; Week 11 coverage check |
-| FE08 Reservation | Approved | Ready for review | `reservationRoutes`, `integration` | 100% | Queue/notification mapped to AC |
-| FE09 Fine | Approved | Ready for review | `fineManagementRoutes` (+ legacy `fineRoutes`) | 100% | Server-side done (TD-001/002/003); frontend align = TD-004 |
-| FE10 Notification | Approved | Ready for review | `notificationRoutes`, `integration` | 100% | Add inbox UI/manual/E2E evidence |
-| FE11 User & Role | Approved | Not started | `userManagementRoutes` | 0% | Service tests missing (TD-015); RBAC/validation debt TD-012..014 |
-| FE12 Reporting | Approved | Ready for review | `reportRoutes` | 100% | Add frontend/manual report evidence |
+| FE01 Public / Browse | Approved | Complete | Public browse routes + Phase 2 exit packet | 100% | Accepted; future catalog expansion remains out of scope |
+| FE02 Authentication | Approved | Complete | Auth routes, OTP boundary, security regressions | 100% | Accepted; FE02/FE10 contract synchronized 2026-07-20 |
+| FE03 User Profile | Approved | Complete | Profile routes/services + ownership/concurrency tests | 100% | Durable avatar storage remains an operations boundary |
+| FE04 Membership | Approved | Complete | Membership routes/services + concurrency tests | 100% | Payment and expiry automation remain out of scope |
+| FE05 Book Management | Approved | Complete | Book routes, migrations, availability and audit tests | 100% | Bulk import and multi-category remain out of scope |
+| FE06 Inventory / Copy | Approved | Complete | Inventory routes, rowversion and concurrency evidence | 100% | RFID/hardware remains out of scope |
+| FE07 Borrowing | Approved | Complete | Borrowing routes, services, integration and E2E | 100% | Scheduler and partial per-item request remain out of scope |
+| FE08 Reservation | Approved | Complete | Reservation routes, queue, candidate catalog and E2E | 100% | Book-level reservation remains out of scope |
+| FE09 Fine | Approved | Complete | Server-side fine calculation/collection and E2E | 100% | Legacy browser page is non-authoritative |
+| FE10 Notification | Approved | Complete | Notification routes, safe templates and requester boundaries | 100% | Inbox UI and FE09 caller integration remain deferred |
+| FE11 User & Role | Approved | Complete | User lifecycle, permissions, audit and schema evidence | 100% | Bulk lifecycle extensions remain out of scope |
+| FE12 Reporting | Approved | Complete | Reporting routes, deterministic policy and E2E | 100% | Export and realtime dashboard remain out of scope |
 
 ---
 

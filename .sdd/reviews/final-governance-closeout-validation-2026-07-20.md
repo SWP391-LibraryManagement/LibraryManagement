@@ -1,5 +1,9 @@
 # Final Governance Closeout Validation - 2026-07-20
 
+> Historical candidate packet: the pre-merge wording below describes the PR #54
+> candidate snapshot. The authoritative post-integration state is recorded in
+> the addendum at the end of this file.
+
 ## Decision
 
 This closeout uses Hybrid SDD + ADD at Standard depth. The FE11 Audit Log
@@ -111,3 +115,11 @@ H2 may review the complete local diff and this L1-L4 packet. H2 approval would
 authorize the reviewed commit set, branch push, and PR publication under the
 repository Fast-Track contract. This validation does not authorize H3, merge,
 post-merge CI substitution, release creation, or tag creation.
+
+## Post-integration update - 2026-07-20
+
+- PR #54 merged as `c988af1`; `v1.0.2` is published and its foundation CI passed.
+- PR #57 merged as `562bb5d`; PR #58 merged as `cce59d0`.
+- Application-baseline CI `29712597463` passed traceability (12/12 features, 243/243 FR tags), backend 917/917 tests with configured coverage, system integration 10/10, frontend 171/171 tests, lint, build, Playwright 4/4, and backend import health.
+- Application-baseline staging workflow `29712612188` passed quality gate, backend/frontend deployment, and six-check smoke (`frontend`, `health`, `sql-catalog`, `allowed-cors`, `blocked-cors`, `protected-route`).
+- `cce59d0` is the validated post-release application baseline. Any future `v1.0.3` must point to the later reviewed `main` SHA after a new reconciliation/release PR completes its own H2/H3 and exact post-merge CI; this addendum does not grant that authority.
