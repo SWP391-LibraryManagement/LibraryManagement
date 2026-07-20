@@ -393,6 +393,15 @@ export default function ForgotPasswordForm() {
                   Đổi email
                 </Button>
               )}
+              {!isSetupMode && (
+                <Button
+                  type="button"
+                  variant="text"
+                  onClick={() => navigate('/verify-email', { state: { email } })}
+                >
+                  Xác thực email
+                </Button>
+              )}
               <Button type="button" variant="text" onClick={() => navigate('/login')}>
                 Quay lại đăng nhập
               </Button>

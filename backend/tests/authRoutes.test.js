@@ -1074,4 +1074,17 @@ describe('FE02 auth vertical slice', () => {
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe('INVALID_TOKEN');
   });
+
+  test('bearer headers with extra segments are rejected before token verification', async () => {
+    const { app, dependencies } = makeTestApp();
+    const sessionLookup = jest.spyOn(dependencies.authTokenRepository, 'findActiveTokenById');
+
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Bearer valid-token trailing-data');
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('UNAUTHORIZED');
+    expect(sessionLookup).not.toHaveBeenCalled();
+  });
 });
