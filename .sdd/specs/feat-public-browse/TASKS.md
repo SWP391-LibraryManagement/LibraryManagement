@@ -1,13 +1,13 @@
 # TASKS.md - FE01 Public / Browse
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP H2/H3 PENDING
+Implementation State: COMPLETE FOR BASELINE
 
 Owner: Dung
 
-Updated: 2026-07-17
+Updated: 2026-07-20
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. The responsive HomePage follow-up is locally implemented and remains pending fresh H2/H3 review before integration.
 
 ---
 
@@ -70,7 +70,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - RED: assert loading, no-results, unavailable, missing-cover, missing-author/category/publisher, and not-found detail states before implementation.
   - GREEN: show `Còn sách` only for `AVAILABLE`, show `Không khả dụng` otherwise, preserve books with null optional fields, render the safe no-cover fallback, show understandable empty/error states, and route member-only actions to their owning authentication/membership/borrowing flows without implementing those flows in FE01.
   - Verify: focused frontend tests cover a public guest, empty search, no matches, unavailable book, null metadata, missing detail, and safe generic error.
-  - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions.
+  - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions; the responsive HomePage follow-up keeps the existing login/register, membership, and account routes reachable on mobile. Local implementation is complete; H2/H3 acceptance remains pending before integration.
 
 - [x] **FE01-T007 - Close API documentation, test plan, and traceability.**
   - Maps to: all FE01 BR/FR/AC/NFR IDs and the Definition of Done.

@@ -11,9 +11,10 @@
 ## Global Constraints
 
 - Preserve the approved Node.js + Express.js, React + Bootstrap, SQL Server, REST stack.
-- Do not change business behavior, schema, API payloads, permissions, or deployment configuration. Frontend source changes are limited to presentation-only labels already required by the approved localization design.
+- Do not change business behavior, schema, API payloads, permissions, or deployment configuration. Frontend source changes are limited to presentation-only labels already required by the approved localization design plus the requestor-approved H3 responsive HomePage shell follow-up documented in that design.
 - Keep `SPEC.md` as the source of truth and record observable behavior changes in the feature changelog.
-- Human H2 approval is recorded for the exact reviewed diff; commit, branch push, and draft PR publication are authorized.
+- Human H2 approval is recorded for published commit `31d4bba`; the responsive
+  follow-up requires fresh H2 review before commit/push.
 - Do not claim H3 approval, merge, create `v1.0.3`, or publish a video from this batch.
 - Validate all four layers: automated checks, spec compliance, constitution/safety, and acceptance evidence.
 
@@ -191,7 +192,31 @@ Use `getStatusLabel` only for displayed option/badge text. Keep raw status value
 node --test frontend/test/vietnameseUi.test.js
 ```
 
-Observed: 13/13 focused localization tests pass, followed by 172/172 full frontend tests.
+Observed: 13/13 focused localization tests pass, followed by 172/172 full frontend tests before the separate responsive follow-up; Task 4B raises the current total to 173/173.
+
+---
+
+### Task 4B: Close The H3 Responsive Shell Gap
+
+**Files:**
+- Modify: `frontend/src/page/HomePage.jsx`
+- Modify: `frontend/test/appShellFrontend.test.js`
+- Modify: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`
+- Modify: `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`
+
+**Interfaces:**
+
+- Consumes: the existing HomePage routes, account actions, and responsive
+  acceptance requirement from the localization design.
+- Produces: an accessible mobile menu and narrow-screen layout rules while
+  preserving every existing navigation/account action and raw value.
+
+- [x] **Step 1: Add RED source and browser contracts.**
+- [x] **Step 2: Implement the minimal responsive shell and preserve membership access.**
+- [x] **Step 3: Verify 173/173 frontend tests, lint, build, 4/4 permanent E2E,
+  and focused 1440px/390px browser screenshots.**
+- [ ] **Step 4: Complete fresh H2 review, human visual acceptance, H3, merge, and
+  exact post-merge CI.**
 
 ---
 

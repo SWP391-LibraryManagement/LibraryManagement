@@ -1,20 +1,21 @@
 # Governance And Release Reconciliation Validation - 2026-07-20
 
-Status: H2-APPROVED - H3 PENDING
+Status: H2 RE-REVIEW REQUIRED - H3 PENDING
 
 ## Decision
 
 This closeout uses Hybrid SDD + ADD at Full depth. FE02 authentication and
 sensitive OTP delivery ownership are Core; release metadata, test inventory,
-localization closeout, and project memory are reversible Shell artifacts.
+localization closeout, responsive presentation, and project memory are
+reversible Shell artifacts.
 
 The batch changes no backend, schema, API, authorization, permission,
-dependency, or deployment configuration. Frontend changes are bounded to five
-presentation-only label surfaces plus one localization regression test; raw
-values, requests, comparisons, CSS state keys, and business behavior remain
-unchanged. Human H2 approval was received in the Codex task on 2026-07-20 for
-this exact reviewed scope, authorizing commit, branch push, and draft PR
-publication. H3 remains required before merge.
+dependency, or deployment configuration. Frontend changes are bounded to six
+presentation-only surfaces plus two localization regressions; raw values,
+requests, comparisons, CSS state keys, and business behavior remain unchanged.
+Human H2 approval was received in the Codex task on 2026-07-20 for the
+published `31d4bba` scope. The current responsive HomePage correction is waiting
+for fresh H2 review before commit/push; H3 remains required before merge.
 
 ## Changed Scope
 
@@ -32,10 +33,13 @@ publication. H3 remains required before merge.
 - Repaired residual Vietnamese presentation labels in user management,
   inventory, and borrowing surfaces while preserving all API/status values, and
   extended the source-level localization regression to prevent recurrence.
+- Added an accessible HomePage mobile menu plus responsive nav, CTA,
+  benefit-card, and footer layout rules; existing navigation/auth actions remain
+  unchanged.
 
 ## L1 - Automated Checks
 
-Fresh local validation on the pre-commit reconciliation diff reviewed at H2:
+Fresh local validation on the current responsive correction diff:
 
 | Command | Result |
 | --- | --- |
@@ -43,15 +47,16 @@ Fresh local validation on the pre-commit reconciliation diff reviewed at H2:
 | `npm.cmd run test:traceability-state` | PASS; 3/3 |
 | `npm.cmd --prefix backend run test:coverage:ci` | PASS; 53/53 suites, 917/917 tests; statements 92.68%, branches 81.66%, functions 96.59%, lines 92.61% |
 | `npm.cmd --prefix backend run test:integration:system` | PASS; 10/10 |
-| `npm.cmd --prefix frontend test` | PASS; 172/172 fresh local reconciliation (remote CI `29712597463` remains the earlier 171/171 baseline) |
+| `npm.cmd --prefix frontend test` | PASS; 173/173 (remote CI `29712597463` remains the earlier 171/171 baseline) |
 | `npm.cmd --prefix frontend run lint` | PASS |
 | `npm.cmd --prefix frontend run build` | PASS |
 | `npm.cmd run test:deployment` | PASS; 8/8 |
-| `npm.cmd run test:e2e` | PASS; 4/4 in 25.7 seconds |
+| `npm.cmd run test:e2e` | PASS; 4/4 in 31.0 seconds |
+| Focused H3 responsive Playwright review | PASS (automated); 1/1 at 1440px and 390px; screenshots under `output/playwright/h3-visual/` |
 | OpenAPI parse | PASS; `OPENAPI_PARSE_OK` |
 | Backend import | PASS; `BACKEND_IMPORT_OK` |
 | `git diff --check` | PASS for tracked files; no whitespace errors |
-| `git status --short` plus explicit reads of untracked files | PASS; untracked plan/validation files inspected separately because `git diff` excludes them |
+| `git status --short` and `git diff --stat` | PASS; temporary visual harness removed after evidence capture |
 
 ## L2 - Spec And Traceability
 
@@ -69,9 +74,8 @@ Fresh local validation on the pre-commit reconciliation diff reviewed at H2:
 
 ## L3 - Constitution And Safety
 
-- The tracked diff is limited to SDD/release/plan/review/agent-memory artifacts,
-  five bounded frontend presentation files, and one frontend regression test;
-  the three untracked plan/validation files were inspected separately.
+- The reviewed diff is limited to SDD/release/plan/review/agent-memory artifacts,
+  six bounded frontend presentation files, and two frontend regression tests.
 - No backend product source, schema, API contract, permission, dependency,
   workflow, or deployment file changed. Frontend edits only localize displayed
   labels and do not alter raw status values, request payloads, comparisons,
@@ -88,13 +92,15 @@ Fresh local validation on the pre-commit reconciliation diff reviewed at H2:
 | Canonical project test inventory matches current gates | PASS | Fresh L1 results above |
 | Published release and post-release source are distinguished | PASS | Local Git/tag inspection and GitHub release evidence |
 | Localization implementation has a dedicated L1-L4 packet | PASS | `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md` |
-| Human H2 review of this reconciliation diff | PASS | Approved in the Codex task on 2026-07-20; exact reviewed commit/push/draft PR authorized |
+| Human H2 review of the published reconciliation commit | PASS | Approved in the Codex task on 2026-07-20 for `31d4bba`; current responsive correction still requires fresh H2 review |
+| Automated responsive desktop/mobile review | PASS | Focused Playwright 1/1 with menu/footer/CTA checks and screenshots; the run logged `GET /api/books` `INTERNAL_ERROR`, so public book-card/detail content remains unverified |
 | Human H3/new `v1.0.3` release decision | PENDING | H3 remains mandatory before merge; tag creation remains outside this approval |
 
 ## Residual Boundaries
 
 - A dedicated localized desktop/mobile visual review remains pending human
-  acceptance.
+  acceptance; the focused run could not verify public book-card/detail content
+  because the E2E backend returned `INTERNAL_ERROR` for `GET /api/books`.
 - Demonstration video/link remains unpublished.
 - Default CI has no shared disposable SQL Server service; current E2E/system
   tests use deterministic harnesses, while historical live SQL evidence remains

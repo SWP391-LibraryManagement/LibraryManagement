@@ -15,10 +15,12 @@ workflow `29712612188` pass the frontend localization tests, lint, build,
 browser E2E, and six-check staging smoke. The authoritative L1-L4 evidence is
 `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
-The later H2-approved governance reconciliation repairs five residual
-presentation-only label surfaces and strengthens the raw-value regression;
-fresh local frontend evidence is 172/172. These follow-up edits remain subject
-to H3 before merge.
+The later governance reconciliation repairs five residual presentation-only
+label surfaces and strengthens the raw-value regression. Its responsive follow-up
+adds the HomePage mobile menu, CTA, benefit-card, and footer layout contract;
+fresh local frontend evidence is 173/173. The published reconciliation is H2
+approved, while the responsive follow-up remains subject to fresh H2 review and
+H3 before merge.
 
 The granular RED-GREEN task boxes below are retained as the historical execution
 plan. The final checklist is the current acceptance snapshot; a dedicated
@@ -46,7 +48,9 @@ human responsive browser review remains explicitly pending.
 - Modify `frontend/src/api/apiErrorMessages.js`: safe Vietnamese API fallback behavior.
 - Modify `frontend/src/api/authApi.js`, `frontend/src/api/profileApi.js`, `frontend/src/api/userManagementApi.js`, and `frontend/src/api/adminApi.js`: module-specific Vietnamese fallback copy.
 - Modify `frontend/index.html`, `frontend/src/index.css`, and existing visual styles: global language metadata and font tokens.
-- Modify existing pages/components in place: user-facing text only; do not restructure feature ownership.
+- Modify existing pages/components in place: user-facing text only, except the
+  approved H3 responsive shell follow-up for HomePage navigation access and
+  narrow-screen layout; do not restructure feature ownership.
 - Modify affected `.sdd/specs/feat-*/CHANGELOG.md` files: record the cross-feature presentation change.
 
 ---
@@ -1079,6 +1083,12 @@ Verify at 1440px and 390px widths:
 
 Expected: no missing glyph boxes, detached combining marks, text overlap, clipped primary actions, or horizontal page overflow. `Email`, `OTP`, and `Barcode` remain unchanged; book titles/authors remain source data.
 
+Automated focused evidence: Playwright review 1/1 at 1440px and 390px passed
+the login, public mobile menu/footer/CTA, and protected borrowing checks; images
+are under `output/playwright/h3-visual/`. The run logged `GET /api/books`
+`INTERNAL_ERROR`, so public book-card/detail content still needs human or
+environment-backed acceptance.
+
 - [ ] **Step 8: Review final diff against the design**
 
 ```powershell
@@ -1087,7 +1097,9 @@ git diff --stat
 git diff -- frontend docs/superpowers/specs/2026-07-20-vietnamese-ui-localization-design.md .sdd/specs
 ```
 
-Expected: only localization, typography, tests, and related changelog files are changed; no backend, database, API contract, or permission files are modified.
+Expected: only localization, typography, responsive presentation, tests, and
+related governance/changelog files are changed; no backend, database, API
+contract, or permission files are modified.
 
 - [ ] **Step 9: Commit Task 7**
 

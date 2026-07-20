@@ -47,10 +47,11 @@ backend and 151 frontend test counts are not the current reconciliation totals.
 | SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
 
 Later evidence is tracked separately: remote application-baseline CI `29712597463`
-passed 917 backend tests and 171 frontend tests for `cce59d0`; the fresh local,
-H2-approved reconciliation passed 917 backend tests across 53 suites
-and 172 frontend tests. Dedicated localized desktop/mobile visual acceptance
-and demonstration-video publication remain open.
+passed 917 backend tests and 171 frontend tests for `cce59d0`; published commit
+`31d4bba` recorded the H2-approved reconciliation baseline, while the current
+responsive follow-up passes 173 frontend tests and requires fresh H2/H3 review.
+Dedicated localized desktop/mobile visual acceptance and demonstration-video
+publication remain open.
 
 ## Live SQL and migration result
 

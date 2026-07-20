@@ -309,7 +309,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 
 ## 8. Acceptance Criteria
 
-- AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists the verification OTP hash, submits one FE02-bound notification request, and FE10 delivers one verification OTP email.
+- AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists the verification OTP hash, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one verification OTP email.
 - AC-FE02-002: Given a valid six-digit verification OTP and registered email, when the user submits them, then the account is activated and the user can login; a valid legacy verification token produces the same result.
 - AC-FE02-003: Given an expired verification OTP/token, when the user submits it, then the system rejects it and offers to resend.
 - AC-FE02-004: Given valid email and password and active account, when user logs in, then the system returns a valid session/token.
@@ -322,7 +322,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 - AC-FE02-011: Given authenticated user, when user logs out, then the session/token is invalidated.
 - AC-FE02-012: Given an authenticated user with the correct current password, when the user changes password, then the system updates the password and returns success without revoking other active refresh/session credentials.
 - AC-FE02-013: Given authenticated user with incorrect current password, when user changes password, then the system rejects the change.
-- AC-FE02-014: Given valid registered active email, when user requests password reset, then FE02 persists the reset OTP hash, submits one FE02-bound notification request, and FE10 delivers one six-digit reset OTP email.
+- AC-FE02-014: Given valid registered active email, when user requests password reset, then FE02 persists the reset OTP hash, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one six-digit reset OTP email.
 - AC-FE02-015: Given invalid registered email, when user requests password reset, then the system returns success message (no user enumeration).
 - AC-FE02-016: Given a valid reset OTP/email or legacy password-reset token for an eligible `ACTIVE` account, when the user submits a new password, then the system updates the password, invalidates the reset credential, and never activates an `INACTIVE` account or unlocks a `LOCKED` account.
 - AC-FE02-017: Given an expired reset OTP/token, when the user submits a new password, then the system rejects the request.
@@ -619,7 +619,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the OTP hash, submits one FE02-bound request, and FE10 delivers one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021 | FT05 | Ready for review |
+| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021 | FT05 | Ready for review |
 | AC-FE02-002 | Valid verification OTP/email or legacy token submitted -> account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT05 | Ready for review |
 | AC-FE02-003 | Expired verification OTP/token submitted -> system rejects, offers resend | FR-FE02-003, FR-FE02-016 | BR-FE02-004 | FT05 | Ready for review |
 | AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Ready for review |
@@ -632,7 +632,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE02-011 | Authenticated user logs out -> session/token invalidated | FR-FE02-007 | BR-FE02-011 | FT08 | Ready for review |
 | AC-FE02-012 | Authenticated user changes password with correct current password -> system updates password and returns success without revoking other sessions | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006, BR-FE02-026 | FT09 | Ready for review |
 | AC-FE02-013 | Authenticated user changes password with incorrect current password -> system rejects change | FR-FE02-010 | BR-FE02-018, BR-FE02-019 | FT09 | Ready for review |
-| AC-FE02-014 | Guest requests password reset with valid active registered email -> system persists the OTP hash, submits one FE02-bound request, and FE10 delivers one reset OTP email | FR-FE02-011, FR-FE02-022 | BR-FE02-013, BR-FE02-014, BR-FE02-016, BR-FE02-020, BR-FE02-021 | FT10 | Ready for review |
+| AC-FE02-014 | Guest requests password reset with valid active registered email -> system persists the OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one reset OTP email | FR-FE02-011, FR-FE02-022 | BR-FE02-013, BR-FE02-014, BR-FE02-016, BR-FE02-020, BR-FE02-021 | FT10 | Ready for review |
 | AC-FE02-015 | Guest requests password reset with invalid email -> system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT10 | Ready for review |
 | AC-FE02-016 | Valid reset OTP/legacy reset token updates an eligible ACTIVE account and never activates INACTIVE or unlocks LOCKED | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014, BR-FE02-025 | FT11 | Ready for review |
 | AC-FE02-017 | Expired reset token + new password submitted -> system rejects request | FR-FE02-012 | BR-FE02-014 | FT11 | Ready for review |

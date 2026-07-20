@@ -1,10 +1,11 @@
 # Plan
 
-Current phase: Phase 3 - Polish and Delivery baseline integrated; the active governance/localization reconciliation is **H2-approved with H3 pending**.
+Current phase: Phase 3 - Polish and Delivery baseline integrated; the published governance/localization reconciliation is **H2-approved with responsive H2 re-review and H3 pending**.
 
 Published release: `v1.0.2` at `c988af1`. The validated application baseline
-is `cce59d0`, 20 commits ahead after PR #57/#58. This governance reconciliation
-requires H2, H3/merge, and exact post-merge CI before the team decides whether
+is `cce59d0`, 20 commits ahead after PR #57/#58. The published reconciliation
+commit `31d4bba` has H2 approval; its responsive follow-up requires fresh H2
+review, then H3/merge plus exact post-merge CI before the team decides whether
 the resulting later `main` SHA becomes `v1.0.3`. No new product scope is active
 in this plan.
 
@@ -18,7 +19,7 @@ Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product r
 - Final report, release document, rehearsal record, presentation deck, and
   four-layer validation packet are tracked.
 - Route-level code splitting resolved the previous entry-bundle advisory.
-- PR #58 Vietnamese UI localization and strict bearer-header verification are merged in application baseline `cce59d0`; the residual presentation-label reconciliation is H2-approved and recorded in `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
+- PR #58 Vietnamese UI localization and strict bearer-header verification are merged in application baseline `cce59d0`; published reconciliation commit `31d4bba` is H2-approved, while its responsive follow-up requires fresh H2/H3 review as recorded in `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
 ## External Submission Items
 
