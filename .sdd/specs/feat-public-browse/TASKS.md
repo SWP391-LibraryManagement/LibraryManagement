@@ -1,7 +1,7 @@
 # TASKS.md - FE01 Public / Browse
 
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP H2/H3 PENDING
-Implementation State: COMPLETE FOR BASELINE
+Implementation State: COMPLETE
 
 Owner: Dung
 
