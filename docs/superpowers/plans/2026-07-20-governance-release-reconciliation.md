@@ -13,8 +13,8 @@
 - Preserve the approved Node.js + Express.js, React + Bootstrap, SQL Server, REST stack.
 - Do not change business behavior, schema, API payloads, permissions, or deployment configuration. Frontend source changes are limited to presentation-only labels already required by the approved localization design plus the requestor-approved H3 responsive HomePage shell follow-up documented in that design.
 - Keep `SPEC.md` as the source of truth and record observable behavior changes in the feature changelog.
-- Human H2 approval is recorded for published commit `31d4bba`; the responsive
-  follow-up requires fresh H2 review before commit/push.
+- Human H2 approval is recorded for published commits `962ceb1` and `daaeea6`;
+  H3 remains required before merge.
 - Do not claim H3 approval, merge, create `v1.0.3`, or publish a video from this batch.
 - Validate all four layers: automated checks, spec compliance, constitution/safety, and acceptance evidence.
 
@@ -215,7 +215,7 @@ Observed: 13/13 focused localization tests pass, followed by 172/172 full fronte
 - [x] **Step 2: Implement the minimal responsive shell and preserve membership access.**
 - [x] **Step 3: Verify 173/173 frontend tests, lint, build, 4/4 permanent E2E,
   and focused 1440px/390px browser screenshots.**
-- [ ] **Step 4: Complete fresh H2 review, human visual acceptance, H3, merge, and
+- [ ] **Step 4: Complete human visual acceptance, H3, merge, and
   exact post-merge CI.**
 
 ---

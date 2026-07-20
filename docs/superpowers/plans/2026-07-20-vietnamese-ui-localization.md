@@ -19,8 +19,7 @@ The later governance reconciliation repairs five residual presentation-only
 label surfaces and strengthens the raw-value regression. Its responsive follow-up
 adds the HomePage mobile menu, CTA, benefit-card, and footer layout contract;
 fresh local frontend evidence is 173/173. The published reconciliation is H2
-approved, while the responsive follow-up remains subject to fresh H2 review and
-H3 before merge.
+approved, while the responsive follow-up remains subject to H3 before merge.
 
 The granular RED-GREEN task boxes below are retained as the historical execution
 plan. The final checklist is the current acceptance snapshot; a dedicated

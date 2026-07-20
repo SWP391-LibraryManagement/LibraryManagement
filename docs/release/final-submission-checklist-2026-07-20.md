@@ -4,8 +4,7 @@
 
 The approved FE01-FE12 baseline and Phase 3 delivery are integrated, but the
 current reconciliation is not yet final: the published `31d4bba` scope was
-H2-approved, the responsive correction requires fresh H2 review, H3 remains
-pending, the dedicated localized desktop/mobile visual acceptance is pending,
+H2-approved, H3 remains pending, the dedicated localized desktop/mobile visual acceptance is pending,
 and no demonstration video/link is published. Release `v1.0.2` is published at
 `c988af1`; `cce59d0` is the validated post-release application baseline. A
 future `v1.0.3` must use the later reviewed `main` SHA after this reconciliation
@@ -15,8 +14,8 @@ merges through H3 and passes exact post-merge CI.
 
 | Item | Status | Evidence |
 | --- | --- | --- |
-| Source code | PASS published baseline / H2 re-review required | `v1.0.2` is published at `c988af1`; application baseline `cce59d0` contains PR #57/#58, while the responsive correction awaits H2/H3 integration review. |
-| Requirements and design | PASS baseline / responsive H2 re-review required | `document/RDS.md`, `document/SDS.md`, and the FE02/test-plan source-of-truth reconciliation in this batch. |
+| Source code | PASS published baseline / H2-APPROVED | `v1.0.2` is published at `c988af1`; application baseline `cce59d0` contains PR #57/#58, while PR #59 awaits H3 integration review. |
+| Requirements and design | PASS baseline / H2-APPROVED | `document/RDS.md`, `document/SDS.md`, and the FE02/test-plan source-of-truth reconciliation in this batch. |
 | Final release document | PASS | `document/FinalRelease.md`. |
 | User documentation | PASS | `docs/user-manual.md` and system overview. |
 | Phase 3 final report | PASS | `docs/release/phase3-final-report.md`. |
@@ -24,7 +23,7 @@ merges through H3 and passes exact post-merge CI.
 | Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA; Vietnamese briefing at `docs/briefing-thuyet-trinh-du-an-vi.docx`. |
 | Rehearsal | PASS | `docs/release/phase3-rehearsal-record.md` and demo runbook. |
 | Remote application-baseline quality | PASS | CI `29712597463` passed 917 backend tests across 53 suites and 171 frontend tests for `cce59d0`; staging workflow `29712612188` also passed. |
-| Fresh local reconciliation quality | AUTOMATED PASS / H2 RE-REVIEW REQUIRED | The current correction passes 173 frontend tests, lint, build, traceability, and 4/4 browser E2E; prior backend/coverage/deployment evidence remains recorded for the unchanged backend scope. |
+| Fresh local reconciliation quality | AUTOMATED PASS / H2-APPROVED | The current correction passes 173 frontend tests, lint, build, traceability, and 4/4 browser E2E; prior backend/coverage/deployment evidence remains recorded for the unchanged backend scope. |
 | Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
 | Demonstration video/link | NOT PUBLISHED | No external video URL was provided or fabricated. |
 | Authenticated Azure user observation | PASS | Live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |

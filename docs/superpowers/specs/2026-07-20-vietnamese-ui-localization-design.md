@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: IMPLEMENTED - PR #58 MERGED; RESPONSIVE FOLLOW-UP LOCAL, FRESH H2/H3 PENDING
+Status: IMPLEMENTED - PR #58 MERGED; RESPONSIVE FOLLOW-UP H2-APPROVED, H3 PENDING
 
 Implementation evidence: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
@@ -114,8 +114,8 @@ existing public links and account actions (including `Đăng kí hội viên`),
 desktop navigation/auth controls are hidden at the mobile breakpoint, and the
 CTA, benefit-card, and footer grids collapse at the narrow breakpoint. The
 follow-up preserves existing routes, permissions, API payloads, and action
-semantics; it adds no API, schema, or business behavior. Fresh H2 review and H3
-acceptance remain required before merge.
+semantics; it adds no API, schema, or business behavior. H3 acceptance remains
+required before merge.
 
 ## 6. Testing and Verification
 

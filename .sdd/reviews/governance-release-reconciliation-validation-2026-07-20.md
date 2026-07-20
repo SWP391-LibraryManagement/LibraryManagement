@@ -1,6 +1,6 @@
 # Governance And Release Reconciliation Validation - 2026-07-20
 
-Status: H2 RE-REVIEW REQUIRED - H3 PENDING
+Status: H2-APPROVED - H3 PENDING
 
 ## Decision
 
@@ -14,8 +14,8 @@ dependency, or deployment configuration. Frontend changes are bounded to six
 presentation-only surfaces plus two localization regressions; raw values,
 requests, comparisons, CSS state keys, and business behavior remain unchanged.
 Human H2 approval was received in the Codex task on 2026-07-20 for the
-published `31d4bba` scope. The current responsive HomePage correction is waiting
-for fresh H2 review before commit/push; H3 remains required before merge.
+published reconciliation plus responsive HomePage correction (`962ceb1` and
+`daaeea6`). H3 remains required before merge.
 
 ## Changed Scope
 
@@ -52,6 +52,7 @@ Fresh local validation on the current responsive correction diff:
 | `npm.cmd --prefix frontend run build` | PASS |
 | `npm.cmd run test:deployment` | PASS; 8/8 |
 | `npm.cmd run test:e2e` | PASS; 4/4 in 31.0 seconds |
+| PR #59 CI run `29719151571` | PASS; foundation-checks completed successfully after commits `962ceb1` and `daaeea6` |
 | Focused H3 responsive Playwright review | PASS (automated); 1/1 at 1440px and 390px; screenshots under `output/playwright/h3-visual/` |
 | OpenAPI parse | PASS; `OPENAPI_PARSE_OK` |
 | Backend import | PASS; `BACKEND_IMPORT_OK` |
@@ -92,7 +93,7 @@ Fresh local validation on the current responsive correction diff:
 | Canonical project test inventory matches current gates | PASS | Fresh L1 results above |
 | Published release and post-release source are distinguished | PASS | Local Git/tag inspection and GitHub release evidence |
 | Localization implementation has a dedicated L1-L4 packet | PASS | `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md` |
-| Human H2 review of the published reconciliation commit | PASS | Approved in the Codex task on 2026-07-20 for `31d4bba`; current responsive correction still requires fresh H2 review |
+| Human H2 review of the complete reconciliation diff | PASS | Approved in the Codex task on 2026-07-20; commits `962ceb1` and `daaeea6` contain the reviewed responsive/evidence correction |
 | Automated responsive desktop/mobile review | PASS | Focused Playwright 1/1 with menu/footer/CTA checks and screenshots; the run logged `GET /api/books` `INTERNAL_ERROR`, so public book-card/detail content remains unverified |
 | Human H3/new `v1.0.3` release decision | PENDING | H3 remains mandatory before merge; tag creation remains outside this approval |
 

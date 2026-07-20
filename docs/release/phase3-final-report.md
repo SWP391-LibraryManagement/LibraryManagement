@@ -48,8 +48,9 @@ backend and 151 frontend test counts are not the current reconciliation totals.
 
 Later evidence is tracked separately: remote application-baseline CI `29712597463`
 passed 917 backend tests and 171 frontend tests for `cce59d0`; published commit
-`31d4bba` recorded the H2-approved reconciliation baseline, while the current
-responsive follow-up passes 173 frontend tests and requires fresh H2/H3 review.
+`31d4bba`, `962ceb1`, and `daaeea6` record the H2-approved reconciliation and
+responsive follow-up; the current correction passes 173 frontend tests and
+requires H3 review.
 Dedicated localized desktop/mobile visual acceptance and demonstration-video
 publication remain open.
 
