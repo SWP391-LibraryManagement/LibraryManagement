@@ -47,11 +47,11 @@ Physical book copy creation, barcode/identifier uniqueness, copy status, availab
 - Frontend lint/build, OpenAPI parse, traceability `24/24`, import smoke, and diff checks pass.
 - Disposable schema plus FE06 migration pass 1/2 and pass 2/2 succeeded; cleanup returned `DB_CLEAN` and `LOGIN_CLEAN`.
 
-## 6. Gaps
+## 6. Historical Pre-Exit Gaps (Superseded)
 
 - Disposable SQL Server execution, two-pass FE06 migration application, and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Browser/L4 acceptance plus FE05/FE07/FE08 ownership confirmation remain open.
-- Human B7 integration review remains mandatory before commit or merge.
+- At this pre-exit checkpoint, browser/L4 acceptance plus FE05/FE07/FE08 ownership confirmation remained open.
+- H3, merge, and exact post-merge `main` CI later closed those gates; canonical completion evidence is `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
 ## 7. Required Commands / Evidence Before Merge
 

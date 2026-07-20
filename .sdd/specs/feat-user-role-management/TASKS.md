@@ -272,7 +272,7 @@ Owner: Dung
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018.
   - DoD: the Admin UI exposes canonical `q`, `action`, `actorId`, `from`, and `to` filter inputs; source-level RED-GREEN regression evidence exists; API, schema, authorization, pagination, and redaction remain unchanged.
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
-  - Review state: implementation and automated validation are prepared for H2; commit, push, H3, merge, exact post-merge CI, and tag `v1.0.2` remain pending.
+  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 carries H2-approved commits `962ceb1` and `daaeea6`, while H3 remains pending. Any future `v1.0.3` remains a separate post-merge release decision.
 
 ## Deferred FE11 Work
 

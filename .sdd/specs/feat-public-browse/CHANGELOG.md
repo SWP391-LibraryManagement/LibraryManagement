@@ -5,6 +5,7 @@
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
 - Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
 - Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
+- Added the requestor-approved responsive HomePage shell follow-up: mobile navigation keeps the existing browse, account, and membership actions reachable without changing their routes or API behavior.
 
 ## 2026-07-19 - Phase 2 Exit Closeout
 

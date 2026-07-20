@@ -6,7 +6,7 @@
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-20
 
 # Feature ID: FE10
 
@@ -22,7 +22,7 @@
 >
 > Initial Phase 1 decisions were approved on 2026-06-10. G1-G7 were approved on 2026-07-13. G8-G10 and ADR-004 were approved by Nhat on 2026-07-15 and supersede the deferred OTP/link contract.
 >
-> ADR-005 adds canonical FE11 account-setup delivery. Nhat approved the combined FE10 baseline on 2026-07-17; implementation changes still require focused validation and human review before merge.
+> ADR-005 adds canonical FE11 account-setup delivery. Nhat approved the combined FE10 baseline on 2026-07-17; the approved implementation, human acceptance, PR integration, and exact post-merge `main` CI are complete for the Phase 1 scope.
 
 ---
 

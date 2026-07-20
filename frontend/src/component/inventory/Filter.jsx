@@ -1,5 +1,8 @@
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { DataToolbar } from '../shared/OperationalPatterns';
+import { getStatusLabel } from '../../utils/uiLabels';
+
+const STATUS_OPTIONS = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'];
 
 export default function Filter({ filters, onChange, onReset }) {
   function update(field, value) {
@@ -17,12 +20,7 @@ export default function Filter({ filters, onChange, onReset }) {
             <input className="input" value={filters.location} onChange={(event) => update('location', event.target.value)} placeholder="Vị trí" aria-label="Lọc theo vị trí" />
             <select className="select" value={filters.status} onChange={(event) => update('status', event.target.value)} aria-label="Lọc theo trạng thái">
               <option value="">Mọi trạng thái</option>
-              <option value="AVAILABLE">AVAILABLE</option>
-              <option value="BORROWED">BORROWED</option>
-              <option value="RESERVED">RESERVED</option>
-              <option value="DAMAGED">DAMAGED</option>
-              <option value="LOST">LOST</option>
-              <option value="INACTIVE">INACTIVE</option>
+              {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{getStatusLabel(status)}</option>)}
             </select>
           </>
         )}

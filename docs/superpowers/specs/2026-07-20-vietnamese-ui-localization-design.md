@@ -2,7 +2,9 @@
 
 Date: 2026-07-20
 
-Status: Approved for implementation planning
+Status: IMPLEMENTED - PR #58 MERGED; RESPONSIVE FOLLOW-UP H2-APPROVED, H3 PENDING
+
+Implementation evidence: `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
 ## 1. Goal
 
@@ -102,6 +104,18 @@ This boundary prevents localization from changing API behavior or business rules
 - User-entered names, titles, author names, email addresses, and barcode values are not
   altered.
 - Frontend tests, lint, and production build pass.
+
+### 5.1 H3 Responsive Acceptance Follow-up (2026-07-20)
+
+After the H3 visual review identified a missing mobile navigation contract, the
+requestor approved this bounded responsive shell follow-up for the same
+reconciliation: `HomePage` exposes an accessible mobile menu containing the
+existing public links and account actions (including `Đăng kí hội viên`),
+desktop navigation/auth controls are hidden at the mobile breakpoint, and the
+CTA, benefit-card, and footer grids collapse at the narrow breakpoint. The
+follow-up preserves existing routes, permissions, API payloads, and action
+semantics; it adds no API, schema, or business behavior. H3 acceptance remains
+required before merge.
 
 ## 6. Testing and Verification
 

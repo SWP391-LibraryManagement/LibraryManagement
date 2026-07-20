@@ -173,6 +173,21 @@ test('homepage membership promotion is visible only to signed-out guests', async
   assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
 });
 
+test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /aria-label=\{menuOpen \? 'Đóng menu điều hướng' : 'Mở menu điều hướng'\}/);
+  assert.match(source, /className="home-mobile-menu"/);
+  assert.match(source, /className="home-nav-links"/);
+  assert.match(source, /className="home-footer-grid"/);
+  assert.match(source, /className="home-cta-grid"/);
+  assert.match(source, /className="home-benefit-grid"/);
+  assert.match(source, /setMenuOpen\(false\); navigate\('\/membership'\).*Đăng kí hội viên/s);
+  assert.match(source, /\.home-nav-links, \.home-nav-account, \.home-nav-desktop-action \{ display: none !important; \}/);
+  assert.match(source, /\.home-footer-grid \{ grid-template-columns: 1fr !important; \}/);
+  assert.match(source, /\.home-cta-grid, \.home-benefit-grid \{ grid-template-columns: 1fr !important; \}/);
+});
+
 test('admin console keeps its sections while using the warm librarian visual system', async () => {
   const source = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
 

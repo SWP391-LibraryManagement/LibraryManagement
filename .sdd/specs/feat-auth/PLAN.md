@@ -182,7 +182,7 @@ The frontend hardening slice `FE02-T024` through `FE02-T028` completed automated
 
 The first same-commit CI run exposed stale golden-path assumptions. Commit `232ee4c` aligned the E2E password locator, `/home` login destination, and browser clock with the approved UX/runtime contracts. Final `main` commit `6eee459` passed GitHub Actions CI run `29358045198`.
 
-Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes only the approved Authentication/OTP UX hardening slice. The separate FE02/FE10 delivery implementation and automated validation are complete; human acceptance is approved, while the integration PR and exact post-merge `main` CI remain required.
+Detailed evidence is recorded in `.sdd/reviews/library-ux-b7-integration-closeout-2026-07-15.md`. This closes the approved Authentication/OTP UX hardening slice. The separate FE02/FE10 delivery implementation, human acceptance, PR #42-#44 integration, and exact post-merge `main` CI are complete and recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
 ## 13. FE02/FE10 OTP Delivery Follow-up
 

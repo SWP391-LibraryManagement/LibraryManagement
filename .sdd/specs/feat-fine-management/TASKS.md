@@ -7,7 +7,7 @@ Owner: Dung
 
 Updated: 2026-07-19
 
-Workflow State: SPEC v0.4.1 normalized; historical T001-T011 evidence remains separate and FE09-T012 through FE09-T021 are agent-side complete
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
 ---
 

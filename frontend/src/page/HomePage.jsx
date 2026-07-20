@@ -23,6 +23,13 @@ const CATEGORY_ICONS = {
   Novel: 'Tiểu thuyết',
 };
 
+const HOME_NAVIGATION_ITEMS = [
+  { label: 'Danh mục sách', id: 'section-books' },
+  { label: 'Thành viên', id: 'section-cta' },
+  { label: 'Giới thiệu', id: 'section-footer' },
+  { label: 'Liên hệ', id: 'section-footer' },
+];
+
 const getCategoryLabel = (category) => CATEGORY_LABELS[category] || category || 'Chưa phân loại';
 const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'Sách';
 
@@ -519,6 +526,7 @@ const HomePage = () => {
 
   const displayCategories = categories.length > 0 ? categories : fallbackCategories;
   const filterTabs = ['Tất cả', ...displayCategories.filter((category) => category.name !== 'Tất cả').map((category) => category.name)];
+  const navigationItems = HOME_NAVIGATION_ITEMS.filter((item) => !isLoggedIn || item.id !== 'section-cta');
 
   const filteredAll = activeCategory === 'Tất cả'
     ? books
@@ -611,7 +619,7 @@ const HomePage = () => {
       )}
 
       {/* -- NAV -- */}
-      <nav style={{
+      <nav className="home-nav" style={{
         position: 'sticky', top: 0, zIndex: 200,
         background: 'rgba(250,247,242,0.95)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(78,52,46,0.1)',
@@ -624,13 +632,8 @@ const HomePage = () => {
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-          {[
-            { label: 'Danh mục sách', id: 'section-books' },
-            { label: 'Thành viên', id: 'section-cta' },
-            { label: 'Giới thiệu', id: 'section-footer' },
-            { label: 'Liên hệ', id: 'section-footer' },
-          ].filter((item) => !isLoggedIn || item.id !== 'section-cta').map(item => (
+        <div className="home-nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+          {navigationItems.map(item => (
             <button key={item.label} onClick={() => scrollTo(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5A3E36', textDecoration: 'none', fontSize: 14, fontWeight: 500, transition: 'color 0.2s', fontFamily: 'var(--sans)', padding: 0 }}
               onMouseEnter={e => (e.currentTarget.style.color = '#C78A3B')}
               onMouseLeave={e => (e.currentTarget.style.color = '#5A3E36')}
@@ -640,7 +643,7 @@ const HomePage = () => {
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {isLoggedIn ? (
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div className="home-nav-account" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               {showUserMenu && <button type="button" aria-label="Đóng menu tài khoản" onClick={() => setShowUserMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 240, border: 0, background: 'transparent', cursor: 'default' }} />}
               <button
                 type="button"
@@ -693,7 +696,7 @@ const HomePage = () => {
               )}
             </div>
           ) : (
-            <>
+            <div className="home-nav-desktop-action" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button onClick={goToLogin} style={{
                 padding: '7px 18px', borderRadius: 6, border: '1.5px solid #8B6B4A',
                 background: 'transparent', color: '#8B6B4A', cursor: 'pointer', fontWeight: 600, fontSize: 13,
@@ -710,9 +713,14 @@ const HomePage = () => {
                 onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
                 onMouseLeave={e => (e.currentTarget.style.background = '#C78A3B')}
               >Đăng ký</button>
-            </>
+            </div>
           )}
-          <button onClick={() => setMenuOpen(!menuOpen)}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+            aria-controls="home-mobile-menu"
+            aria-expanded={menuOpen}
             style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', color: '#4E342E' }}
             className="mobile-menu-btn"
           >
@@ -720,6 +728,72 @@ const HomePage = () => {
           </button>
         </div>
       </nav>
+
+      {menuOpen && (
+        <div
+          id="home-mobile-menu"
+          className="home-mobile-menu"
+          style={{
+            position: 'sticky', top: 64, zIndex: 190, background: '#FFFDF8',
+            borderBottom: '1px solid rgba(78,52,46,0.12)', padding: '14px 20px 18px',
+            flexDirection: 'column', gap: 6, boxShadow: '0 12px 24px rgba(44,26,14,0.1)',
+          }}
+        >
+          {navigationItems.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                scrollTo(item.id);
+              }}
+              style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: 'transparent', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 600, fontFamily: 'var(--sans)' }}
+            >
+              {item.label}
+            </button>
+          ))}
+          <div style={{ height: 1, background: 'rgba(78,52,46,0.1)', margin: '6px 0' }} />
+          {isLoggedIn ? (
+            <>
+              <button type="button" onClick={() => { setMenuOpen(false); navigate('/profile'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                Thông tin cá nhân
+              </button>
+              {showAdminConsoleAction && (
+                <button type="button" onClick={() => { setMenuOpen(false); navigate('/admin/users'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                  Trang quản trị
+                </button>
+              )}
+              {showLibrarianConsoleAction && (
+                <button type="button" onClick={() => { setMenuOpen(false); navigate('/home'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                  Khu vực thủ thư
+                </button>
+              )}
+              {showMemberAccountActions && (
+                <>
+                  <button type="button" onClick={() => { setMenuOpen(false); navigate('/borrowing/history'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                    Lịch sử mượn sách
+                  </button>
+                  <button type="button" onClick={() => { setMenuOpen(false); navigate('/membership'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                    Đăng kí hội viên
+                  </button>
+                </>
+              )}
+              <button type="button" onClick={() => { setMenuOpen(false); setShowLogoutConfirm(true); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#FBE9E6', color: '#C1452F', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                Đăng xuất
+              </button>
+            </>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button type="button" onClick={() => { setMenuOpen(false); goToLogin(); }} style={{ padding: '10px 12px', borderRadius: 8, border: '1.5px solid #8B6B4A', background: 'transparent', color: '#8B6B4A', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                Đăng nhập
+              </button>
+              <button type="button" onClick={() => { setMenuOpen(false); goToMembership(); }} style={{ padding: '10px 12px', borderRadius: 8, border: 0, background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--sans)' }}>
+                Đăng ký
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* -- HERO -- */}
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 520 }}>
@@ -969,7 +1043,7 @@ const HomePage = () => {
 
       {/* -- CTA -- */}
       {!isLoggedIn && <section id="section-cta" style={{ background: '#EDE0CE', padding: '72px 80px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div className="home-cta-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           {/* Left */}
           <div>
             <p style={{ fontSize: 11, color: '#C78A3B', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 14 }}>
@@ -1001,7 +1075,7 @@ const HomePage = () => {
           </div>
 
           {/* Right - benefit cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="home-benefit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { icon: '01', title: 'Mượn sách linh hoạt', desc: 'Mượn tối đa 5 cuốn cùng lúc theo quy định thư viện.' },
               { icon: '02', title: 'Thông báo sách mới', desc: 'Nhận thông báo sớm khi có đầu sách mới.' },
@@ -1031,8 +1105,8 @@ const HomePage = () => {
 
       {/* -- FOOTER -- */}
       <footer id="section-footer" style={{ background: '#1E120A' }}>
-        <div style={{ padding: '52px 80px 28px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 40 }}>
+        <div className="home-footer-shell" style={{ padding: '52px 80px 28px' }}>
+          <div className="home-footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 40 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <BookOpen size={20} color="#C78A3B" />
@@ -1077,7 +1151,7 @@ const HomePage = () => {
               </div>
             ))}
           </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="home-footer-bottom" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: '#4A3428', margin: 0 }}>© 2026 Quản Lý Thư Viện. Mọi quyền được bảo lưu.</p>
             <div style={{ display: 'flex', gap: 18 }}>
               {['Quyền riêng tư', 'Điều khoản', 'Cookie'].map(item => (
@@ -1174,12 +1248,22 @@ const HomePage = () => {
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .home-mobile-menu { display: none; }
         @media (max-width: 900px) {
+          .home-nav { padding: 0 24px !important; }
+          .home-nav-links, .home-nav-account, .home-nav-desktop-action { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
+          .home-mobile-menu { display: flex; }
         }
         @media (max-width: 768px) {
           section { grid-template-columns: 1fr !important; }
-          footer > div:first-child { grid-template-columns: 1fr 1fr !important; }
+          .home-nav { padding: 0 18px !important; }
+          .home-nav > div:first-child span { font-size: 17px !important; }
+          .home-footer-shell { padding: 40px 24px 24px !important; }
+          .home-footer-grid { grid-template-columns: 1fr !important; }
+          .home-cta-grid, .home-benefit-grid { grid-template-columns: 1fr !important; }
+          .home-footer-bottom { align-items: flex-start !important; flex-direction: column !important; gap: 14px !important; }
+          .home-footer-bottom > div { flex-wrap: wrap; }
         }
         * { scrollbar-width: none; }
         *::-webkit-scrollbar { display: none; }

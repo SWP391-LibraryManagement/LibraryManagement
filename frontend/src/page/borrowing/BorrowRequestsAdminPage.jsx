@@ -8,6 +8,7 @@ import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapBorrowRequestsToAdminRows } from '../../utils/libraryFeatureViewModels';
+import { getStatusLabel } from '../../utils/uiLabels';
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
@@ -295,7 +296,7 @@ export default function BorrowRequestsAdminPage() {
                       <span className="muted">Bản sao #{detail.copyId} • {detail.barcode}</span>
                       <span className="muted"><MapPin size={13} /> {detail.location}</span>
                     </div>
-                    <Badge status={detail.status}>{detail.status === 'AVAILABLE' ? 'Sẵn sàng' : detail.status}</Badge>
+                    <Badge status={detail.status}>{getStatusLabel(detail.status)}</Badge>
                   </article>
                 ))}
               </div>
