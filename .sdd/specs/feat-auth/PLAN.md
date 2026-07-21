@@ -59,7 +59,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Password hashing | `bcrypt`; cost factor 10 for Phase 1 unless performance review changes it. |
 | Access token | JWT, 15-minute expiry. |
 | Refresh token | Random token, stored as hash in `AuthTokens`, 7-day expiry. |
-| Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 24-hour expiry; legacy token links remain accepted. |
+| Email verification credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy token links remain accepted. |
 | Password reset credential | Primary flow is a random six-digit OTP, stored as a hash in `AuthTokens`, 15-minute expiry; legacy password-reset tokens remain accepted. |
 | Account setup token | FE11 issues/rotates it with an exact 24-hour expiry; FE10 delivers it through the FE11-bound requester; FE02 consumes it and atomically activates the account. |
 | Roles | Flat roles from `Roles`/`UserRoles`. |
@@ -202,3 +202,10 @@ ADR-004 and Nhat's 2026-07-15 approval authorize the following ordered implement
 3. Prove password-reset credentials cannot activate ordinary inactive accounts.
 4. Preserve the existing `/api/auth/reset-password` compatibility shape while separating reset and setup business branches.
 5. Validate expired, used, revoked, ineligible, and concurrent setup attempts without partial persistence.
+
+## 15. Verification OTP 15-Minute Follow-up
+
+1. Add RED registration/resend and environment-configuration tests for an exact 15-minute verification OTP lifetime.
+2. Introduce canonical `EMAIL_VERIFICATION_TTL_MINUTES=15` with temporary legacy-hour fallback.
+3. Keep FE02 credential ownership and FE10 rendering/delivery ownership unchanged.
+4. Validate focused and full backend tests, traceability, secret/leakage checks, and Azure staging email evidence before integration.

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-21 - Reduce email-verification OTP lifetime to 15 minutes
+
+- Approved a 15-minute lifetime for registration and resend verification OTPs while preserving FE02/FE10 ownership and legacy verification-token compatibility.
+- Added a canonical minute-based environment setting with a temporary legacy-hour fallback and regression coverage for both paths.
+- Aligned Azure staging settings and verified the provider-rendered email reports a 15-minute expiry after a full service restart.
+
 ## 2026-07-20 - Reconcile FE02/FE10 OTP source of truth
 
 - Updated the FE02 specification to match the approved ADR-004 and merged implementation: FE02 owns OTP credentials, while the FE02-bound FE10 requester owns verification/reset delivery and safe notification outcomes.

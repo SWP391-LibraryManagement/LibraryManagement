@@ -158,3 +158,9 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - RED: deployed plain-HTTP auth requests reached the auth service and returned `200`; redirect policy was also absent.
   - GREEN: production auth requests reject with `400 HTTPS_REQUIRED` before JSON/auth dispatch, trusted `X-Forwarded-Proto: https` passes, and explicit `308` redirect policy uses only a validated `HTTPS_CANONICAL_HOST`.
   - Validation: focused transport suite `3/3`; full backend and traceability remain merge-gate checks.
+
+- [x] **FE02-T042 - Reduce email-verification OTP lifetime to 15 minutes.**
+  - Maps to: BR-FE02-020, BR-FE02-021, BR-FE02-027; FR-FE02-002; AC-FE02-001, AC-FE02-003; NFR-FE02-SEC-008.
+  - Files: `backend/src/config/env.js`, `backend/src/services/authService.js`, `backend/.env.example`, `backend/tests/authRoutes.test.js`, `backend/tests/envConfig.test.js`, FE02 specification/change records.
+  - DoD: registration and resend issue exact 15-minute verification OTPs; canonical minute configuration is validated; legacy hour configuration temporarily remains compatible; focused/full tests, traceability, leakage checks, Azure health, and a Gmail-rendered 15-minute expiry pass.
+  - Evidence: RED failed 5 assertions against the 24-hour implementation; GREEN focused validation passes 35/35, full backend coverage passes 920/920, FE02 traceability remains 26/26, Azure `/health` returns 200, and the post-restart Gmail message renders a 15-minute expiry.
