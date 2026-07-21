@@ -2,7 +2,7 @@
 
 ## Status
 
-APPROVED IN CHAT by Nhat on 2026-07-22 with the exact phrase `duyệt demo hotfix`. Written-design review remains the final gate before implementation planning and RED-GREEN work.
+APPROVED IN CHAT by Nhat on 2026-07-22 with the exact phrase `duyệt demo hotfix`. Written-design review was approved by the follow-up instruction `tiếp tục đi`; implementation planning and RED-GREEN work may proceed.
 
 ## Batch Contract
 
