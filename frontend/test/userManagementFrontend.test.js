@@ -10,6 +10,8 @@ const userRolePath = new URL('../src/page/admin/users/UserRoleModal.jsx', import
 const userDrawerPath = new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url);
 const adminPermissionsPath = new URL('../src/page/admin/permissions/AdminPermissionsSection.jsx', import.meta.url);
 const adminAuditPath = new URL('../src/page/admin/audit/AdminAuditSection.jsx', import.meta.url);
+const adminLibraryPath = new URL('../src/page/admin/library/AdminLibrarySection.jsx', import.meta.url);
+const adminCirculationPath = new URL('../src/page/admin/circulation/AdminCirculationSection.jsx', import.meta.url);
 
 test('FE11 modular user owners preserve lifecycle, role and safe-detail contracts', async () => {
   const [section, presentation, editor, role, drawer] = await Promise.all([
@@ -63,6 +65,24 @@ test('FE11 modular audit keeps canonical filters while localizing safe presentat
   }
   assert.doesNotMatch(source, /<span>\{log\.action\}<\/span>/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML|log\.metadata|JSON\.stringify\(log\.details/);
+});
+
+test('FE11 modular library and circulation preserve ownership without hidden membership or payment paths', async () => {
+  const [library, circulation, page] = await Promise.all([
+    readFile(adminLibraryPath, 'utf8'),
+    readFile(adminCirculationPath, 'utf8'),
+    readFile(new URL('../src/page/admin/AdminConsolePage.jsx', import.meta.url), 'utf8'),
+  ]);
+  assert.match(library, /adminApi\.libraryBooks/);
+  assert.doesNotMatch(library, /adminApi\.(?:createBook|updateBook|deactivateBook)/);
+  assert.match(library, /\/librarian\/books/);
+  assert.match(circulation, /adminApi\.borrowings/);
+  assert.match(circulation, /borrowingApi\.renewDetail/);
+  assert.match(circulation, /borrowingApi\.returnDetail/);
+
+  const adminSource = `${library}\n${circulation}\n${page}`;
+  assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords|MembershipApplicationsTable|MembershipFilter|MembershipReviewModal/);
+  assert.doesNotMatch(adminSource, /activeSection === ['"](?:membership|payments)['"]/);
 });
 
 test('FE11 row selection fetches detail before opening the drawer', async () => {

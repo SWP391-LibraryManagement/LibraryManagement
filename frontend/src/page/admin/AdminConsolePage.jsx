@@ -4,8 +4,10 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { readStoredAdminAccess } from './adminAccess';
 import './admin-console.css';
 import { AdminAuditSection } from './audit/AdminAuditSection';
+import { AdminCirculationSection } from './circulation/AdminCirculationSection';
 import { AdminShell } from './components/AdminShell';
 import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
+import { AdminLibrarySection } from './library/AdminLibrarySection';
 import { AdminPermissionsSection } from './permissions/AdminPermissionsSection';
 import { AdminRequestsSection } from './requests/AdminRequestsSection';
 import { AdminUsersSection } from './users/AdminUsersSection';
@@ -52,6 +54,10 @@ export default function AdminConsolePage() {
         <AdminPermissionsSection />
       ) : activeSection === 'audit' ? (
         <AdminAuditSection onToast={setToast} />
+      ) : activeSection === 'library' ? (
+        <AdminLibrarySection onToast={setToast} />
+      ) : activeSection === 'circulation' ? (
+        <AdminCirculationSection onToast={setToast} onOpenRequests={() => setActiveSection('requests')} />
       ) : (
         <section className="admin-section-placeholder">
           <p className="admin-page-eyebrow">Admin Console</p>

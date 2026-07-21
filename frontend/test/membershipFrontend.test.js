@@ -64,3 +64,8 @@ test('membership review and list enforce canonical server boundaries', async () 
   assert.match(status, /membershipStatusView/);
   assert.match(status, /currentApplication/);
 });
+
+test('FE04 remains in its canonical workspace instead of the Admin Console', async () => {
+  const adminPage = await readFile(new URL('../src/page/admin/AdminConsolePage.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(adminPage, /MembershipApplicationsTable|MembershipFilter|MembershipReviewModal|activeSection === 'membership'/);
+});
