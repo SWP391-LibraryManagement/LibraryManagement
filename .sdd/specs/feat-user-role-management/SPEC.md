@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.5.0
+# Version: 0.5.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-07-20
+# Last Updated: 2026-07-22
 
 # Feature ID: FE11
 
@@ -23,6 +23,8 @@
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
 > The admin-created account setup revision is approved through `ADR-005-admin-created-account-setup-boundary.md`. The FE11 Finalization Batch governance contract was approved on 2026-07-19; Wave A/Wave B product implementation was reviewed through PR #59 H2/H3 and merged as `eed2688`. Current-main release acceptance remains separately tracked.
+>
+> Approved 2026-07-22 navigation overlay: the Admin sidebar adds FE04 Membership Review after All Users. FE11 owns only the shell/navigation entry; FE04 retains list/review API and business ownership. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 
 ---
 
@@ -51,7 +53,7 @@ The system shall:
 - Allow admins to deactivate user accounts.
 - Allow admins to deactivate librarian accounts.
 - Allow admins to manage user role assignments (assign/revoke roles).
-- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs; keep role assignment/revocation inside All Users rather than exposing a separate Permissions sidebar item.
+- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs; keep role assignment/revocation inside All Users rather than exposing a separate Permissions sidebar item.
 - Provide read-only permission/reporting views that summarize users, roles, access rules, and audit activity without duplicating FE12 reporting scope.
 - Keep every user management action traceable for audit.
 
@@ -198,7 +200,7 @@ The feature can only start when:
 
 1. Admin opens the admin console.
 2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user, and fine sources.
-3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs.
+3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs.
 4. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
 5. The system keeps role assignment and revocation available from All Users and does not show a separate Permissions sidebar entry.
 
@@ -271,7 +273,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-013: Admin never enters, sees, or creates passwords directly. Password setup generates a one-time token link sent via email, and the user sets their own password through FE02.
 - BR-FE11-014: User information updates must preserve creation date and update the UpdatedAt timestamp.
 - BR-FE11-015: Librarian accounts are user accounts with the Librarian role and must follow the same security, audit, and deactivation rules as other user accounts.
-- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only the seven approved sections and must not include `Permissions`, `Confirm Payment`, or `Confirm Borrow`. Manage Roles remains available from All Users.
+- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only the eight approved sections, including FE04 Membership Review after All Users, and must not include `Permissions`, `Confirm Payment`, or `Confirm Borrow`. Manage Roles remains available from All Users.
 - BR-FE11-017: Permissions UI is a read-only role summary/matrix unless a separate role-editing action is explicitly performed under Manage Roles.
 - BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
 - BR-FE11-019: Admin Request Management may show FE07 request data, but completed requests are read-only; only pending requests may expose action controls.
@@ -351,7 +353,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-013: Given user without Admin role, when admin assigns Admin role, then UserRoles table is updated.
 - AC-FE11-014: Given user with Admin role, when admin revokes Admin role (not last admin), then UserRoles table is updated.
 - AC-FE11-015: Given last admin user, when admin attempts to revoke Admin role, then system rejects action.
-- AC-FE11-016: Given admin opens the console sidebar, then the approved sections are visible and Confirm Payment / Confirm Borrow are not visible.
+- AC-FE11-016: Given admin opens the console sidebar, then the eight approved sections are visible in order, Membership Review follows All Users, and Permissions / Confirm Payment / Confirm Borrow are not visible.
 - AC-FE11-017: Given admin opens Permissions, then role counts and permission matrix are displayed using FE11 role data.
 - AC-FE11-018: Given admin opens Audit Logs, then log rows can be reviewed without exposing sensitive credential/token fields.
 - AC-FE11-019: Given admin opens Request Management, then pending requests can expose approved action controls and completed requests are view-only.
@@ -542,6 +544,7 @@ This feature does not include:
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | User/role info is used for access control. |
 | FE03 User Profile | Internal | User profile updates here relate to user data. |
+| FE04 Membership Management | Internal UI integration | FE11 exposes the Admin shell entry; FE04 owns the embedded membership list/review data, mutations, authorization, audit, and result notification. |
 | FE10 Notification Management | Internal | Only the requester bound to `FE11` renders and delivers canonical `ACCOUNT_SETUP` links using safe `AuthToken` source metadata. |
 | SQL Server database | Technical | Stores FE11 source state; Wave A must synchronize `Users.Email`, `Users.DeactivatedAt`, `UserProfiles.Department`, `UserProfiles.Specialization`, `Notifications.RecipientEmail`, and deterministic `UX_Users_Email` through the approved idempotent migration. |
 
@@ -561,7 +564,7 @@ This feature does not include:
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-010 | Admin-created account delivery may safely fail after source commit; the account remains `INACTIVE` with its setup token and can be resent through the approved flow. | User correction 2026-06-21; ADR-005 refinement 2026-07-15 | APPROVED |
-| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs. Permissions is removed from the sidebar while Manage Roles remains available from All Users; Confirm Payment and Confirm Borrow remain removed. | User correction 2026-07-22 | APPROVED |
+| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs. Membership Review embeds FE04 after All Users; Permissions remains removed while Manage Roles stays in All Users; Confirm Payment and Confirm Borrow remain removed. | User corrections 2026-07-22 | APPROVED |
 | Q-FE11-012 | Admin Reports content is consolidated into Dashboard for this prototype; detailed reporting remains FE12. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-013 | Admin Request Management is read-only for completed requests and action-enabled only for pending/chờ xác nhận requests. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-014 | Admin-created accounts start `INACTIVE` and become `ACTIVE` only after valid FE02 password setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
@@ -630,7 +633,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-013 | User without Admin role receives Admin role assignment -> UserRoles updated | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
 | AC-FE11-014 | User with Admin role has role revoked (not last admin) -> UserRoles updated | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
 | AC-FE11-015 | Last remaining admin attempts to revoke Admin role -> system rejects action | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
-| AC-FE11-016 | Admin console shows only approved sections and hides removed workflows | FR-FE11-030 | BR-FE11-016 | Planned admin-navigation component case | Not Started |
+| AC-FE11-016 | Admin console shows the exact eight approved sections with Membership Review after All Users and hides removed workflows | FR-FE11-030 | BR-FE11-016 | Approved Admin Membership integration design; implementation pending | Approved design |
 | AC-FE11-017 | Permissions view displays role counts and read-only permission matrix from FE11 data | FR-FE11-032 | BR-FE11-017 | Planned permissions-view integration case | Not Started |
 | AC-FE11-018 | Audit-log view is searchable/filterable and redacts sensitive fields | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; final governance closeout validation | COMPLETE (B7 + final closeout) |
 | AC-FE11-019 | Pending requests expose only approved actions; completed requests remain view-only | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | READY FOR REVIEW |

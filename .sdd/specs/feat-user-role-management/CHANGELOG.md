@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Admin Membership Review integration approved
+
+- Approved an eighth Admin sidebar entry, `Duyệt hội viên`, after User Management while keeping Permissions removed and Manage Roles available from User Management.
+- Assigned shell/navigation ownership to FE11 and retained list/review data and mutation ownership in FE04 without adding an Admin API alias.
+- Recorded the responsive embedded-module design; implementation and validation have not started.
+
 ## 2026-07-22 - Authenticated Admin presentation corrections locally validated
 
 - Removed only the standalone Permissions destination from the Admin sidebar; role management remains available in User Management.

@@ -2,6 +2,8 @@
 
 Status: APPROVED BY HUMAN - 2026-07-22
 
+> Amendment approved 2026-07-22: `2026-07-22-admin-membership-review-integration-design.md` supersedes only this document's seven-entry navigation lock and FE04-outside-Admin boundary. Permissions/payment remain removed and all other refactor decisions remain active.
+
 Date: 2026-07-22
 
 Scope: FE11 Admin Console presentation and frontend structure; `FR-FE11-030..035`, `AC-FE11-016..019`, `NFR-FE11-UX-001..004`

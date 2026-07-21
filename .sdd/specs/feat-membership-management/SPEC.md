@@ -20,6 +20,8 @@
 
 > Source of truth for FE04 Membership Management. Revision v0.2.2 aligns the approved workflow with the current code baseline without expanding implementation scope.
 
+> Approved 2026-07-22 presentation overlay: authenticated Admins receive an embedded FE04 review section inside the Admin Console. The existing `/membership` Member/Librarian workspace, FE04 API, state machine, schema, authorization, audit, and notification contracts remain unchanged. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
+
 ---
 
 ## 1. Feature Overview
@@ -92,7 +94,7 @@ The feature can only start when:
 
 ### MF-FE04-002: Approve Membership Application
 
-1. Librarian/admin opens pending membership applications.
+1. Librarian/admin opens pending membership applications from the canonical staff workspace or the embedded Admin Console review section.
 2. Librarian/admin reviews applicant information.
 3. Librarian/admin chooses approve.
 4. The system verifies the application is still `PENDING`.
@@ -187,6 +189,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE04-011: When approval/rejection succeeds, the system shall update the application, canonical member projection, reviewer metadata, decision timestamps, and corresponding audit entry in one transaction; approval uses the same timestamp for both `ApprovedAt` fields, while rejection keeps `Members.ApprovedAt = null`. Any failure rolls the transaction back.
 - FR-FE04-012: When approval/rejection commits and audit logging succeeds, the system shall request one idempotent FE10 delivery with `type = GENERAL_SYSTEM` and `templateKey = MEMBERSHIP_RESULT` through the FE04-bound requester when configured, then return safe delivery status without rolling back the decision if delivery fails.
 - FR-FE04-013: When a member submits a membership application, the system shall verify `fullName`, `phone`, `dateOfBirth`, and `address` on the server and reject the request with the missing field names if any required field is blank or absent.
+- FR-FE04-014: When an authenticated Admin selects Membership Review in the Admin Console, the system shall render the canonical FE04 list, filter, pagination, approve, and reject workflow inside the Admin shell without creating an Admin-specific API alias or changing the existing Member/Librarian `/membership` workspace.
 
 ---
 
@@ -204,6 +207,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE04-010: Given FE10 delivery fails after a review decision commits, then the application/member decision remains committed and the response exposes only safe `notificationStatus`.
 - AC-FE04-011: Given an active account with the `MEMBER` role, FE07/FE08 eligibility is not blocked by `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` FE04 status.
 - AC-FE04-012: Given an eligible member with an incomplete personal profile, when the member applies, then the API returns `400 MEMBERSHIP_PROFILE_INCOMPLETE` with the missing field names and creates no membership application or member projection; the UI disables submission and links to `/profile`.
+- AC-FE04-013: Given an authenticated Admin in the Admin Console, when Membership Review is selected, then the embedded FE04 section uses canonical server filters and mutations, exposes decisions only for `PENDING` applications, reloads authoritative data after success/conflict, and remains usable without document-level overflow at 1440, 1366, 1280, and 390 pixels.
 
 ---
 
@@ -307,8 +311,9 @@ Use these stable IDs for tasks and tests.
 
 - NFR-FE04-UX-001: Applicants must see clear status: no application, pending, approved, rejected.
 - NFR-FE04-UX-002: The member status and application views must explain the FE07 entitlement clearly: non-approved accounts receive 3 copies per business day and canonical `APPROVED` membership receives 5 copies per business day.
-- NFR-FE04-UX-002: Rejected applicants must see the stored rejection reason without protected reviewer/internal data.
-- NFR-FE04-UX-003: When required profile data is incomplete, the application UI must name the missing fields, disable submission, and link to `/profile`.
+- NFR-FE04-UX-003: Rejected applicants must see the stored rejection reason without protected reviewer/internal data.
+- NFR-FE04-UX-004: When required profile data is incomplete, the application UI must name the missing fields, disable submission, and link to `/profile`.
+- NFR-FE04-UX-005: The embedded Admin review section must use an accessible wide-screen table and responsive cards at 1440px and below, preserve server-owned filtering/pagination, and present FE10 delivery failure as a non-blocking warning after a committed decision.
 
 ---
 
@@ -388,6 +393,8 @@ This feature does not include:
 | FR-FE04-010 | UC13 | re-application projection/history | Automated pass; human review pending |
 | FR-FE04-011 | UC14, UC15 | atomic application/member/audit review cases | Automated pass; human review pending |
 | FR-FE04-012 | UC14, UC15 | FE10 failure preserves decision | Automated pass; human review pending |
+| FR-FE04-013 | UC13 | profile completeness enforcement and member guidance | Automated pass; human review pending |
+| FR-FE04-014 | UC14, UC15 | Admin Console embedded FE04 source/browser contract | Approved design; implementation pending |
 | AC-FE04-001 | UC13 | apply happy path | Automated pass; human review pending |
 | AC-FE04-002 | UC13 | duplicate pending rejection | Automated pass; human review pending |
 | AC-FE04-003 | UC14 | approval + notification | Automated pass; human review pending |
@@ -399,15 +406,17 @@ This feature does not include:
 | AC-FE04-009 | UC13 | rejected re-application | Automated pass; human review pending |
 | AC-FE04-010 | UC14, UC15 | failed notification preserves decision | Automated pass; human review pending |
 | AC-FE04-011 | UC29, UC36 | active + canonical approved eligibility | Automated pass; human review pending |
+| AC-FE04-012 | UC13 | incomplete profile rejection and `/profile` recovery path | Automated pass; human review pending |
+| AC-FE04-013 | UC14, UC15 | Admin Console navigation, review, conflict, notification, and responsive browser cases | Approved design; implementation pending |
 
 ### 16.1 Coverage Summary
 
 | Requirement Type | Total IDs | Mapped IDs | Coverage |
 | ---------------- | --------- | ---------- | -------- |
 | Business Rules (BR-FE04) | 18 | 18 | 100% |
-| Functional Requirements (FR-FE04) | 12 | 12 | 100% |
-| Acceptance Criteria (AC-FE04) | 11 | 11 | 100% |
-| **Total** | **41** | **41** | **100%** |
+| Functional Requirements (FR-FE04) | 14 | 14 | 100% |
+| Acceptance Criteria (AC-FE04) | 13 | 13 | 100% |
+| **Total** | **45** | **45** | **100%** |
 
 ---
 
