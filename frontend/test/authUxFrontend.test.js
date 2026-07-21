@@ -82,11 +82,15 @@ test('registration fields use current MUI slots and accessible password controls
 test('login routes admins to user management and other roles through home', async () => {
   const source = await readFile(new URL('../src/page/LoginPage.jsx', import.meta.url), 'utf8');
   const form = await readFile(new URL('../src/component/login/LoginForm.jsx', import.meta.url), 'utf8');
+  const card = await readFile(new URL('../src/component/login/AuthCard.jsx', import.meta.url), 'utf8');
 
   assert.match(source, /getPostLoginPath\(result\.roles\)/);
   assert.match(source, /includes\('ADMIN'\) \? '\/admin\/users' : '\/home'/);
   assert.doesNotMatch(source, /navigate\('\/librarian\/fines'\)/);
   assert.doesNotMatch(source, /navigate\('\/borrowing\/history'\)/);
+  assert.match(source, /navigate\('\/homepage'\)/);
+  assert.match(card, /Trở về Homepage/);
+  assert.match(card, /className="login-home-button"/);
   assert.match(form, /autoComplete: 'email'/);
   assert.match(form, /autoComplete: 'current-password'/);
   assert.match(form, /aria-label=\{showPassword \? 'Ẩn mật khẩu' : 'Hiện mật khẩu'\}/);

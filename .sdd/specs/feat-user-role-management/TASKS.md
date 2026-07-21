@@ -250,9 +250,9 @@ Owner: Dung
   - Maps to: BR-FE11-019/026; FR-FE11-034; AC-FE11-019; TD-025.
   - Evidence: canonical Admin-first route/service/repository tests pass; browser acceptance proves server pagination and authoritative detail against the shared FE07 state.
 
-- [x] **FE11-REQ02 - Align request pagination, detail, actions, and CSV UI.**
+- [x] **FE11-REQ02 - Align request pagination, detail, actions, and DOCX UI.**
   - Maps to: FR-FE11-034/035; AC-FE11-019; TD-025.
-  - Evidence: frontend contract tests and `E2E-FE11-ACC01` prove two-page server data, frozen-filter CSV across all 21 matching rows, and status-specific detail controls.
+  - Evidence: frontend contract tests and `E2E-FE11-ACC01` prove two-page server data, frozen-filter DOCX across all 21 matching rows, and status-specific detail controls.
 
 - [x] **FE11-REQ03 - Prove FE07 terminal-state immutability.**
   - Maps to: BR-FE11-019; FR-FE11-035; FE07 request lifecycle invariants; TD-025.

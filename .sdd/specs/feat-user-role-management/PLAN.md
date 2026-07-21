@@ -262,7 +262,7 @@ Implementation State: WAVE A AND WAVE B INTEGRATED; HISTORICAL BATCH RECORD
 
 1. Governance activation PR: contracts, tasks, validation commands, and debt state only.
 2. Wave A: schema/email synchronization, Librarian fields, transactional create/resend hardening, optimistic/no-op updates, atomic deactivation, FE07 serialization dependency, and Admin access hardening.
-3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, CSV, Dashboard evidence, and FE11 browser acceptance.
+3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, DOCX export, Dashboard evidence, and FE11 browser acceptance.
 4. Documentation closeout: exact PR/merge/main-CI evidence and whole-feature B7 state.
 
 ### Core Contracts

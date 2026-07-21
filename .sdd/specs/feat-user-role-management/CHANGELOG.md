@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-21 - Replace Admin CSV exports with DOCX
+
+- Replaced Library, Borrowing, and Request Management CSV controls with valid Word `.docx` downloads.
+- Preserved frozen-filter all-page request export and the approved safe request projection.
+- Kept long Admin account emails on one line with ellipsis and a full-value tooltip.
+- Formatted DOCX tables in landscape mode with fixed proportional widths, compact cells, localized statuses, and short dates to prevent narrow-column distortion.
+
 ## 2026-07-20 - Post-integration governance status
 
 - PR #54 merged as `c988af1` with foundation CI success; the earlier H2-Ready wording below is a historical candidate snapshot.

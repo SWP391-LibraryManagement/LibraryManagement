@@ -251,7 +251,8 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.match(source, /adminApi\.deactivateResource\(libraryResource, row\.id\)/);
   assert.match(source, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
   assert.doesNotMatch(source, /deleteLibraryItem/);
-  assert.match(source, /new Blob\(\['\\uFEFF', csv\]/);
+  assert.match(source, /downloadDocx\(/);
+  assert.doesNotMatch(source, /text\/csv|Xuất CSV|\.csv'/);
   assert.match(source, /<td>\{formatDate\(row\.createdAt\)\}<\/td>/);
   assert.doesNotMatch(source, /row\.createdAt \|\| 'Không lưu trong DB'/);
 });

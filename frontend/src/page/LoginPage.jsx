@@ -58,6 +58,10 @@ export default function LoginPage() {
     navigate('/register');
   };
 
+  const handleBackHome = () => {
+    navigate('/homepage');
+  };
+
   return (
     <div className="login-page">
       {/* Left Side - Background Panel */}
@@ -73,6 +77,7 @@ export default function LoginPage() {
           onSubmit={handleLogin}
           onForgotPassword={handleForgotPassword}
           onRegister={handleRegister}
+          onBackHome={handleBackHome}
           feedback={feedback}
           isSubmitting={isSubmitting}
         />
