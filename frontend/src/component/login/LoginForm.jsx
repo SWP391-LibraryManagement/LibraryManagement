@@ -18,11 +18,13 @@ import {
   Person,
   Lock
 } from '@mui/icons-material';
+import { validateLoginFields } from '../../utils/authUx';
 
 export default function LoginForm({
   onSubmit,
   onForgotPassword,
   onRegister,
+  onInputChange,
   feedback,
   isSubmitting = false
 }) {
@@ -30,12 +32,29 @@ export default function LoginForm({
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit(email, password, rememberMe);
-    }
+    if (isSubmitting) return;
+
+    const nextErrors = validateLoginFields({ email, password });
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0 || !onSubmit) return;
+
+    onSubmit(email.trim(), password, rememberMe);
+  };
+
+  const handleEmailChange = (value) => {
+    setEmail(value);
+    setFieldErrors((current) => ({ ...current, email: '' }));
+    onInputChange?.();
+  };
+
+  const handlePasswordChange = (value) => {
+    setPassword(value);
+    setFieldErrors((current) => ({ ...current, password: '' }));
+    onInputChange?.();
   };
 
   const handleTogglePasswordVisibility = () => {
@@ -43,7 +62,7 @@ export default function LoginForm({
   };
 
   return (
-    <form className="login-form" onSubmit={handleSubmit}>
+    <form className="login-form" onSubmit={handleSubmit} noValidate>
       {/* Email Field */}
       <TextField
         fullWidth
@@ -51,11 +70,15 @@ export default function LoginForm({
         placeholder="Nhập tài khoản của bạn"
         variant="outlined"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => handleEmailChange(e.target.value)}
         required
+        disabled={isSubmitting}
+        error={Boolean(fieldErrors.email)}
+        helperText={fieldErrors.email}
         slotProps={{
           htmlInput: {
             autoComplete: 'email',
+            maxLength: 256,
           },
           input: {
             startAdornment: (
@@ -75,11 +98,15 @@ export default function LoginForm({
         type={showPassword ? 'text' : 'password'}
         variant="outlined"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => handlePasswordChange(e.target.value)}
         required
+        disabled={isSubmitting}
+        error={Boolean(fieldErrors.password)}
+        helperText={fieldErrors.password}
         slotProps={{
           htmlInput: {
             autoComplete: 'current-password',
+            maxLength: 256,
           },
           input: {
             startAdornment: (
@@ -120,6 +147,7 @@ export default function LoginForm({
             <Checkbox
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={isSubmitting}
               sx={{
                 color: '#8b5a2b',
                 '&.Mui-checked': {

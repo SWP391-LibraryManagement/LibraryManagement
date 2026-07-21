@@ -43,7 +43,7 @@ Owner: Dung
 - [x] **FE11-S07 - Pass the account-setup validation gate.**
   - Dependencies: FE11-S02..S06.
   - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; confirms human review.
-  - Validation state: PASS on 2026-07-15; 
+  - Validation state: PASS on 2026-07-15;
 
 - [x] **FE11-S08 - Normalize the remaining FE11 specification contract.**
   - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.
@@ -271,7 +271,7 @@ Owner: Dung
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018.
   - DoD: the Admin UI exposes canonical `q`, `action`, `actorId`, `from`, and `to` filter inputs; source-level RED-GREEN regression evidence exists; API, schema, authorization, pagination, and redaction remain unchanged.
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
-  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 carries H2-approved commits `962ceb1` and `daaeea6`, while H3 remains pending. Any future `v1.0.3` remains a separate post-merge release decision.
+  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 merged the H3-reviewed commits `962ceb1` and `daaeea6` as `eed2688`. Any future `v1.0.3` remains a separate current-main release decision.
 
 - [x] **FE11-UIA01 - Simplify the Admin Audit Log filter toolbar.**
   - Maps to: BR-FE11-018, FR-FE11-033, AC-FE11-018.
@@ -286,6 +286,29 @@ Owner: Dung
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.
+## Admin Console Full Frontend Refactor Tasks
+
+- [x] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
+  - Evidence: pure helper RED-GREEN tests cover navigation order, chart selection, explicit permission decisions, and localized safe audit presentation.
+- [x] **FE11-UXR02 - Build the responsive Admin shell and shared presentation primitives.**
+  - Evidence: guarded shell, accessible mobile navigation, labeled controls, focus visibility, and reduced-motion contracts pass focused and full frontend validation.
+- [x] **FE11-UXR03 - Migrate Dashboard and User Management with desktop/mobile parity.**
+  - Evidence: API-backed dashboard and modular user lifecycle/role/detail flows pass source contracts; Playwright proves desktop table/mobile cards and no page overflow.
+- [x] **FE11-UXR04 - Migrate Requests, Permissions, and Audit without changing API ownership.**
+  - Evidence: FE07 request mutations, FE11 permission/audit reads, FE12 role counts, safe audit projection, pagination, terminal actions, and DOCX export pass focused/full tests.
+- [x] **FE11-UXR05 - Migrate Library/Circulation and remove unreachable membership/payment Admin code.**
+  - Evidence: FE05 book mutations remain canonical outside Admin; circulation keeps FE07 return/renew ownership; source guards prove no hidden FE04/FE09 Admin paths.
+- [x] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
+  - Evidence: the legacy entry is an exact one-line compatibility export; frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint/build, and browser E2E 4/4 pass.
+- [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**
+  - Automated evidence: staging workflow `29871576856` deployed `903a1a2`; backend, frontend, smoke, health, and direct SPA route checks passed.
+  - Review result: authenticated human review on 2026-07-22 found three presentation corrections; acceptance remains open until FE11-UXR08 is deployed and reviewed.
+- [ ] **FE11-UXR08 - Correct authenticated Admin navigation, User Management responsiveness, and Audit density.**
+  - Maps to: BR-FE11-016, BR-FE11-017..018; FR-FE11-030/032/033; AC-FE11-016..018; Q-FE11-011.
+  - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
+  - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.
+  - Evidence: implementation commit `157b59b`; frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and authenticated responsive screenshots pass. Staging workflow `29873466035` deployed `8627508` with backend/frontend/smoke success; renewed authenticated human approval remains pending.
+
 ## 2026-07-22 corrective batch
 
 - [x] Remove edit-user-information actions from list and detail UI.

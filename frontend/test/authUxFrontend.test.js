@@ -2,15 +2,19 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import {
+import * as authUx from '../src/utils/authUx.js';
+
+const {
   RESEND_COOLDOWN_SECONDS,
+  getLoginErrorMessage,
   getPasswordRequirements,
   getAccountSetupErrorMessage,
   maskEmail,
   normalizeOtp,
+  validateLoginFields,
   validatePasswordSetupFields,
   validateRegistrationFields,
-} from '../src/utils/authUx.js';
+} = authUx;
 
 test('auth UX masks email without exposing the full local part', () => {
   assert.equal(maskEmail('nhat@example.com'), 'n***t@example.com');
@@ -46,6 +50,60 @@ test('registration validation maps errors to fields and keeps a 60 second cooldo
     },
   );
   assert.equal(normalizeOtp('12a 34-56'), '123456');
+});
+
+test('login validation rejects blank and overlength fields without enforcing password complexity', () => {
+  assert.equal(typeof validateLoginFields, 'function');
+  assert.deepEqual(
+    validateLoginFields({ email: '   ', password: '' }),
+    {
+      email: 'Vui lòng nhập email hoặc tên đăng nhập.',
+      password: 'Vui lòng nhập mật khẩu.',
+    },
+  );
+  assert.deepEqual(
+    validateLoginFields({ email: 'a'.repeat(256), password: 'p'.repeat(256) }),
+    {
+      email: 'Email hoặc tên đăng nhập không được vượt quá 255 ký tự.',
+      password: 'Mật khẩu không được vượt quá 255 ký tự.',
+    },
+  );
+  assert.deepEqual(
+    validateLoginFields({ email: 'member-name', password: 'legacy-password' }),
+    {},
+  );
+});
+
+test('login error mapping keeps enumeration safe and gives locked accounts recovery guidance', () => {
+  assert.equal(typeof getLoginErrorMessage, 'function');
+  assert.equal(
+    getLoginErrorMessage({ response: { data: { error: { code: 'INVALID_CREDENTIALS' } } } }),
+    'Email hoặc tên đăng nhập hoặc mật khẩu không đúng.',
+  );
+  assert.equal(
+    getLoginErrorMessage({ response: { data: { error: { code: 'ACCOUNT_LOCKED' } } } }),
+    'Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng đặt lại mật khẩu hoặc thử lại sau 30 phút.',
+  );
+  assert.equal(
+    getLoginErrorMessage({ response: { data: { error: { code: 'VALIDATION_ERROR' } } } }),
+    'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.',
+  );
+  assert.equal(
+    getLoginErrorMessage({ response: { data: { error: { code: 'HTTPS_REQUIRED' } } } }),
+    'Kết nối không an toàn. Vui lòng tải lại trang bằng HTTPS.',
+  );
+});
+
+test('login error mapping uses environment-neutral network and server fallbacks', () => {
+  assert.equal(typeof getLoginErrorMessage, 'function');
+  assert.equal(
+    getLoginErrorMessage({}),
+    'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.',
+  );
+  assert.equal(
+    getLoginErrorMessage({ response: { data: { error: { code: 'SOMETHING_INTERNAL' } } } }),
+    'Đăng nhập thất bại. Vui lòng thử lại.',
+  );
 });
 
 test('auth API does not log or reference debug credentials', async () => {

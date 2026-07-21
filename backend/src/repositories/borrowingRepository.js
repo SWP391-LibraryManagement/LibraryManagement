@@ -135,6 +135,7 @@ function toExclusiveNextDay(value) {
   return date;
 }
 
+// @spec FR-FE07-029
 function mapBorrowDetail(row) {
   if (!row || !row.BorrowDetailId) {
     return null;
@@ -143,13 +144,13 @@ function mapBorrowDetail(row) {
   return {
     borrowDetailId: row.BorrowDetailId,
     requestId: row.RequestId,
-    requestStatus: row.RequestStatus,
     userId: row.UserId,
     copyId: row.CopyId,
     borrowDate: toDateOnly(row.BorrowDate),
     dueDate: toDateOnly(row.DueDate),
     returnDate: toDateOnly(row.ReturnDate),
     renewalCount: row.RenewalCount,
+    requestStatus: row.RequestStatus,
     status: row.DetailStatus,
     createdAt: row.DetailCreatedAt,
     updatedAt: row.DetailUpdatedAt,

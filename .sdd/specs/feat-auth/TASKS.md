@@ -164,3 +164,11 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Files: `backend/src/config/env.js`, `backend/src/services/authService.js`, `backend/.env.example`, `backend/tests/authRoutes.test.js`, `backend/tests/envConfig.test.js`, FE02 specification/change records.
   - DoD: registration and resend issue exact 15-minute verification OTPs; canonical minute configuration is validated; legacy hour configuration temporarily remains compatible; focused/full tests, traceability, leakage checks, Azure health, and a Gmail-rendered 15-minute expiry pass.
   - Evidence: RED failed 5 assertions against the 24-hour implementation; GREEN focused validation passes 35/35, full backend coverage passes 920/920, FE02 traceability remains 26/26, Azure `/health` returns 200, and the post-restart Gmail message renders a 15-minute expiry.
+
+## Login Validation And Feedback Hardening
+
+- [x] **FE02-T043 - Harden login presentation validation and safe localized errors.**
+  - Maps to: AC-FE02-004 to AC-FE02-008; BR-FE02-007; NFR-FE02-SEC-010, NFR-FE02-SEC-011, NFR-FE02-UX-001, NFR-FE02-UX-002, NFR-FE02-UX-008.
+  - Files: `frontend/src/utils/authUx.js`, `frontend/src/component/login/LoginForm.jsx`, `frontend/src/component/login/AuthCard.jsx`, `frontend/src/page/LoginPage.jsx`, `frontend/src/api/authApi.js`, `backend/src/validators/authValidators.js`, focused frontend/backend tests, and FE02 records.
+  - DoD: blank/whitespace and overlength login values receive field-level Vietnamese feedback; pending submissions cannot duplicate; unknown/inactive accounts remain generic; locked accounts receive approved recovery guidance; network feedback is environment-neutral; identifiers up to 255 characters pass server validation; focused and full validation gates pass.
+  - Evidence: TDD RED reproduced missing helpers/wiring, the 100-character backend rejection, native browser validation bypassing Vietnamese field feedback, and an unreachable overlength branch at the HTML boundary. GREEN validation passes 209/209 full frontend tests, 33/33 focused backend auth tests, 924/924 full backend tests, frontend lint/build, and `trace:enforce`; headless Chromium confirms blank and 256-character submissions render the approved field-level Vietnamese messages and invalid-credential feedback remains generic and clears on edit.

@@ -50,11 +50,19 @@ User administration, role listing, role assignment/revocation, account status ma
 
 ## 3.2 TD-023 Current Targets
 
-- Exact eight-entry Admin Console sidebar and reachable Permissions section.
+- Historical TD-023 baseline: exact eight-entry Admin Console sidebar and reachable Permissions section; the sidebar-only correction is governed by Section 3.2.1.
 - Admin-first `GET /api/admin/permissions` with exact role/permission DTO keys and 15 canonical rows.
 - Fresh response objects, valid/deduplicated role arrays, and no repository/write dependency.
 - FE12 `usersByRole` counts composed independently from FE11 matrix data.
 - Derived module coverage/matrix cells, retryable isolated errors, and no hardcoded frontend matrix fallback.
+
+## 3.2.1 FE11-UXR08 Authenticated UX Correction Targets
+
+- Exact seven-entry Admin Console sidebar without Permissions; User Management still exposes its Manage Roles actions.
+- User Management uses cards before the fixed 1040px table would force horizontal scrolling at 1280px and 1366px.
+- Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`; mapped action choices show Vietnamese labels while submitting raw values.
+- Safe Audit details remain allowlisted and read-only behind a per-row disclosure; API, authorization, pagination, and redaction stay unchanged.
+- Responsive browser coverage includes 1280x720, 1366x768, 1440x900, and 390x844.
 
 ## 3.3 Finalization Wave A Targets
 

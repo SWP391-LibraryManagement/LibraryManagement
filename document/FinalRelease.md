@@ -11,8 +11,8 @@ Project: SWP391 Library Management System
 Group/project code: `6-LMS`
 
 Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery integrated on `main`.
-Published source release: `v1.0.2` at `c988af1`. The validated post-release application baseline is `cce59d0`; a future `v1.0.3` must point to the later reviewed `main` SHA after this reconciliation merges and exact post-merge CI passes.
-Current reconciliation status: H2-approved with H3 pending. Dedicated localized desktop/mobile visual acceptance and publication of a demonstration video/link remain open.
+Published source release: `v1.0.2` at `c988af1`. PR #59 reconciliation merged as `eed2688`; current `main` is `a8729f9` and its CI/deployment evidence passes. A future `v1.0.3` requires review of the later current-main batch and explicit release approval.
+Current remaining evidence: dedicated localized desktop/mobile visual acceptance passed on 2026-07-21; publication of a demonstration video/link remains open.
 
 ## I. Deliverable Package
 
@@ -93,7 +93,7 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 | Item | Link / Location | Notes |
 | --- | --- | --- |
 | Published tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.2` | Published at `c988af1`; it predates the current `main` localization/auth-hardening commits. |
-| Post-release application baseline | `cce59d0` | PR #57/#58 product baseline validated by CI/staging; a future tag must use the later reviewed post-reconciliation `main` SHA. |
+| Current reviewed application candidate | `a8729f9` | Current `main` after PR #59 and later product commits; CI `29824756487` and staging deployment `29824944954` pass. Final release decision remains human-owned. |
 | Demonstration video | `PENDING — not published` | The tracked deck and runbook are the reproducible local demonstration evidence. |
 | Staging frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` | Observed public frontend origin in the Phase 3 staging evidence. |
 | Staging backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` | Observed `200` health endpoint in the Phase 3 staging evidence. |
@@ -533,7 +533,7 @@ Release limitation:
 | 5 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
 | 6 | Route-level code splitting resolves the prior entry-chunk advisory; total JavaScript remains a future optimization target if browser telemetry requires it. |
 | 7 | Staging is a student-credit environment, not a production SLA environment. |
-| 8 | Dedicated human desktop/mobile visual acceptance of the current Vietnamese localization reconciliation remains pending. |
+| 8 | Dedicated human desktop/mobile visual acceptance of the current Vietnamese localization reconciliation passed on 2026-07-21. |
 | 9 | The demonstration video/link is not published. |
 
 ### 14. Final Acceptance Checklist
@@ -550,6 +550,7 @@ Release limitation:
 | Public staging acceptance | PASS: frontend, health, SQL catalog, strict CORS, and anonymous protected route. |
 | Authenticated staging acceptance | PASS: live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
 | Real SMTP inbox delivery | PASS: notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search were observed. |
+| Human desktop/mobile visual acceptance | PASS: project reviewer confirmed the retained 12-screen UI audit on 2026-07-21. |
 | Historical Phase 2 merge and CI | PR #40 and Phase 2 closeout PR #45/#46 merged; `main` CI `29690856461` passed. |
 | Phase 3 merge and post-merge CI | PR #48 merged as `4d02fc4`; `main` CI `29696519912` and staging workflow `29696612260` passed. |
 

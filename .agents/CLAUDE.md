@@ -18,7 +18,7 @@
 
 - **Project**: Library Management System for SWP391. Helps librarians and administrators manage books, members, borrowing, returning, overdue fines, and reports.
 - **Current phase**: Phase 3 - Polish and Delivery. Phase 2 Core Development is complete for the approved FE01-FE12 scope.
-- **Post-release application baseline**: `cce59d0` after PR #57/#58; published `v1.0.2` remains at `c988af1`. The current reconciliation is H2-approved; a future release tag must use the later reviewed `main` SHA after H3 integration and exact post-merge CI.
+- **Post-release application baseline**: PR #59 reconciliation merged as `eed2688`; current `main` is `a8729f9` after later product commits, while published `v1.0.2` remains at `c988af1`. A future release tag requires review of the later batch, current dependency audit, and explicit human release approval.
 - **Approved stack**: Node.js + Express.js backend, React + Bootstrap frontend, SQL Server through the `mssql` package with parameterized queries, RESTful API.
 - **Current SDD scope**: FE01-FE12 baseline documentation is **APPROVED** by Nhat on 2026-07-17. Phase 2 implementation, reconciliation, validation, human acceptance, merge, and exact post-merge CI are complete for that approved scope; explicit future/deferred work remains outside the completion claim.
   - The approved FE01-FE12 Phase 1 reconciliation is implemented, H3-accepted, and merged through PR #40 as `1555111`; post-merge `main` CI `29685953839` passed. Explicit future/deferred boundaries remain documented and are not part of this completion claim.

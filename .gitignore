@@ -22,7 +22,15 @@ out/
 coverage/
 playwright-report/
 test-results/
-output/playwright/
+output/playwright/*
+!output/playwright/release-member-reservations-mobile-fixed.png
+!output/playwright/release-admin-users-mobile-fixed.png
+.playwright-cli/
+
+# Generated deployment diagnostics/packages
+backend/*.zip
+output/azure-mail-*/
+output/*.zip
 
 # IDE
 .vscode/

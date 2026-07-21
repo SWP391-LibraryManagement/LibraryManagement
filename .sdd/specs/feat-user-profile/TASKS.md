@@ -9,6 +9,12 @@ Implementation State: COMPLETE
 
 # Last Updated: 2026-07-19
 
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact
+post-merge `main` CI are recorded in
+`.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Unchecked manual
+verification statements retained below are historical execution snapshots
+superseded by that evidence, not current open implementation tasks.
+
 ---
 
 ## Task Status Legend

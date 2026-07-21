@@ -1,12 +1,12 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.5
+# Version: 0.6.6
 
-# Status: APPROVED BASELINE 2026-07-17 - 15-MINUTE VERIFICATION OTP REVISION
+# Status: APPROVED BASELINE 2026-07-17 - LOGIN VALIDATION AND FEEDBACK HARDENING
 
 # Owner: Dat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-22
 
 # Feature ID: FE02
 
@@ -18,7 +18,7 @@
 > `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
 > historical planning/evidence snapshots, not the current delivery state.
 
-> Source of truth for FE02 Authentication. Version 0.6.5 records the user-approved 15-minute verification OTP revision on top of the H2-approved Phase 1 baseline; H3 remains required before integration. It is intentionally detailed because FE02 is the foundation of all access control and security in the system.
+> Source of truth for FE02 Authentication. Version 0.6.6 records the user-approved login validation and safe localized feedback hardening on top of the 15-minute verification OTP revision and H2-approved Phase 1 baseline; H3 remains required before integration. It is intentionally detailed because FE02 is the foundation of all access control and security in the system.
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
@@ -523,12 +523,13 @@ stateDiagram-v2
 ### 12.5 Usability
 
 - NFR-FE02-UX-001: Error messages must be clear but not reveal sensitive details (e.g., "Invalid email or password", not "Email not found").
-- NFR-FE02-UX-002: Registration and login forms must provide password strength indicators.
+- NFR-FE02-UX-002: Registration, account-setup, password-change, and password-reset forms must provide the approved password-requirement guidance when a user creates a new password. Login must not reject an existing password based on creation-time complexity rules.
 - NFR-FE02-UX-003: Verification email must clearly identify the six-digit OTP and its expiry without exposing unrelated account data.
 - NFR-FE02-UX-004: Password reset email must clearly identify the six-digit OTP and its expiry without implying that the email contains a reset link.
 - NFR-FE02-UX-005: Registration shall show account-details and email-verification steps, preserve non-secret values after recoverable failures, and focus the OTP input when verification begins.
 - NFR-FE02-UX-006: The frontend shall prevent duplicate resend requests while pending and apply a visible 60-second cooldown after a successful verification or reset OTP resend.
 - NFR-FE02-UX-007: OTP controls shall accept exactly six digits and use a masked destination email in user-facing copy.
+- NFR-FE02-UX-008: The login frontend shall reject blank or whitespace-only identifiers, blank passwords, and identifier/password values longer than 255 characters before submission; it shall render field-level Vietnamese feedback and map stable safe API error codes without exposing raw backend messages or distinguishing unknown from inactive accounts.
 
 ---
 

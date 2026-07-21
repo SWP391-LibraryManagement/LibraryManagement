@@ -78,6 +78,7 @@ export default function LoginPage() {
           onForgotPassword={handleForgotPassword}
           onRegister={handleRegister}
           onBackHome={handleBackHome}
+          onInputChange={() => setFeedback(null)}
           feedback={feedback}
           isSubmitting={isSubmitting}
         />

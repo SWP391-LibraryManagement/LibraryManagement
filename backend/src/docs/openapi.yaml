@@ -466,7 +466,7 @@ components:
           items: { $ref: '#/components/schemas/BorrowDetail' }
     BorrowDetail:
       type: object
-      required: [borrowDetailId, requestId, copyId, status, renewalCount]
+      required: [borrowDetailId, requestId, copyId, status, requestStatus, renewalCount]
       properties:
         borrowDetailId: { type: integer, minimum: 1 }
         requestId: { type: integer, minimum: 1 }
@@ -475,6 +475,7 @@ components:
         dueDate: { type: string, format: date, nullable: true }
         returnDate: { type: string, format: date, nullable: true }
         renewalCount: { type: integer, minimum: 0, maximum: 1 }
+        requestStatus: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED] }
         status:
           type: string
           enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED]

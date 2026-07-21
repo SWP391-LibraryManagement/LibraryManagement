@@ -56,7 +56,7 @@ test('major surfaces no longer hardcode superseded UI fonts', async () => {
   const files = [
     '../src/page/HomePage.jsx',
     '../src/page/BookManagement.jsx',
-    '../src/page/UserManagement.jsx',
+    '../src/page/admin/admin-console.css',
     '../src/styles/UserProfile.css',
     '../src/component/layout/LogoutConfirmModal.jsx',
   ];
@@ -118,7 +118,11 @@ test('librarian and report surfaces remove known English interface copy', async 
 });
 
 test('operational status controls render Vietnamese labels while preserving raw values', async () => {
-  const userManagement = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const userManagement = (await Promise.all([
+    '../src/page/admin/users/UserBadges.jsx',
+    '../src/page/admin/library/AdminLibrarySection.jsx',
+    '../src/page/admin/circulation/AdminCirculationSection.jsx',
+  ].map((file) => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n');
   const bookCopies = await readFile(new URL('../src/component/inventory/BookCopies.jsx', import.meta.url), 'utf8');
   const inventoryFilter = await readFile(new URL('../src/component/inventory/Filter.jsx', import.meta.url), 'utf8');
   const borrowRequests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
@@ -129,7 +133,7 @@ test('operational status controls render Vietnamese labels while preserving raw 
   assert.match(userManagement, /getStatusLabel\(status\)/);
   assert.match(userManagement, /<option value="ACTIVE">\{getStatusLabel\('ACTIVE'\)\}<\/option>/);
   assert.match(userManagement, /<option value="INACTIVE">\{getStatusLabel\('INACTIVE'\)\}<\/option>/);
-  assert.match(userManagement, /setLibraryStatus\(event\.target\.value\)/);
+  assert.match(userManagement, /setStatus\(event\.target\.value\)/);
   assert.match(bookCopies, /getStatusLabel\(status\)/);
   assert.match(bookCopies, /value=\{nextStatus\}/);
   assert.match(bookCopies, /status: event\.target\.value/);
@@ -151,7 +155,15 @@ test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', 
   const authApi = await readFile(new URL('../src/api/authApi.js', import.meta.url), 'utf8');
   const profileApi = await readFile(new URL('../src/api/profileApi.js', import.meta.url), 'utf8');
   const userManagementApi = await readFile(new URL('../src/api/userManagementApi.js', import.meta.url), 'utf8');
-  const userManagement = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const userManagement = (await Promise.all([
+    '../src/page/admin/AdminConsolePage.jsx',
+    '../src/page/admin/users/AdminUsersSection.jsx',
+    '../src/page/admin/library/AdminLibrarySection.jsx',
+    '../src/page/admin/circulation/AdminCirculationSection.jsx',
+    '../src/page/admin/requests/AdminRequestsSection.jsx',
+    '../src/page/admin/permissions/AdminPermissionsSection.jsx',
+    '../src/page/admin/audit/AdminAuditSection.jsx',
+  ].map((file) => readFile(new URL(file, import.meta.url), 'utf8')))).join('\n');
   const apiSources = [authApi, profileApi, userManagementApi].join('\n');
   const userFacingSources = [adminApi, apiSources, userManagement].join('\n');
 
@@ -188,7 +200,9 @@ const forbiddenCopyByFile = new Map([
   ['../src/page/report/BorrowingReportPage.jsx', [/Borrowing report detail rows/, /From date/, /To date/]],
   ['../src/page/report/InventoryReportPage.jsx', [/Low inventory books table/, /Inventory report detail rows/, /Book ID/]],
   ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /['">]Membership(?:\s|['"<])/]],
-  ['../src/page/UserManagement.jsx', [/Every user must keep at least one role/, /Status Report/, /Role Distribution/, /Close details/, /No name/, /Active borrowings/, /Unpaid fines/, /Search library data/]],
+  ['../src/page/admin/users/AdminUsersSection.jsx', [/Every user must keep at least one role/, /Status Report/, /Role Distribution/]],
+  ['../src/page/admin/users/UserDetailDrawer.jsx', [/Close details/, /No name/, /Active borrowings/, /Unpaid fines/]],
+  ['../src/page/admin/library/AdminLibrarySection.jsx', [/Search library data/]],
   ['../src/api/userManagementApi.js', [/Request failed\. Please try again/, /Could not /, /Please login with an Admin account/]],
   ['../src/api/profileApi.js', [/Could not load profile/, /Could not update profile/, /Could not upload avatar/]],
 ]);

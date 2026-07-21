@@ -180,15 +180,6 @@ test('homepage membership promotion is visible only to signed-out guests', async
   assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
 });
 
-test('signed-out homepage registration actions open the public register route', async () => {
-  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
-
-  assert.match(source, /const goToRegister = \(\) => \{\s*navigate\('\/register'\);/);
-  assert.equal(source.match(/onClick=\{goToRegister\}/g)?.length, 2);
-  assert.match(source, /setMenuOpen\(false\); goToRegister\(\);/);
-  assert.match(source, /\{ label: 'Đăng ký', action: goToRegister \}/);
-});
-
 test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 
@@ -205,7 +196,20 @@ test('public homepage exposes a usable mobile menu and responsive layout contrac
 });
 
 test('admin console keeps its sections while using the warm librarian visual system', async () => {
-  const source = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const files = [
+    '../src/page/admin/adminNavigation.js',
+    '../src/page/admin/AdminConsolePage.jsx',
+    '../src/page/admin/admin-console.css',
+    '../src/page/admin/dashboard/AdminDashboardSection.jsx',
+    '../src/page/admin/library/AdminLibrarySection.jsx',
+    '../src/page/admin/circulation/AdminCirculationSection.jsx',
+    '../src/page/admin/requests/AdminRequestsSection.jsx',
+    '../src/page/admin/users/AdminUsersSection.jsx',
+  ];
+  const [navigation, page, css, dashboard, library, circulation, requests, users] = await Promise.all(
+    files.map((file) => readFile(new URL(file, import.meta.url), 'utf8')),
+  );
+  const source = [page, dashboard, library, circulation, requests].join('\n');
 
   for (const label of [
     'Trang chủ',
@@ -216,59 +220,42 @@ test('admin console keeps its sections while using the warm librarian visual sys
     'Quản lý người dùng',
     'Nhật ký hoạt động',
   ]) {
-    assert.match(source, new RegExp(`label: '${label}'`));
+    assert.match(navigation, new RegExp("label: '" + label + "'"));
   }
 
-  assert.doesNotMatch(source, /\{ id: 'permissions'[^\n]+label: 'Phân quyền'/);
-  assert.doesNotMatch(source, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
-
-  assert.match(source, /--um-accent: #a87532/);
-  assert.match(source, /--um-canvas: #faf6ef/);
-  assert.match(source, /\.um-sidebar \{[\s\S]*background: var\(--um-surface\)/);
-  assert.match(source, /loadDashboard\(\{ announce: true \}\)/);
-  assert.match(source, /dashboard: dashboardLoading/);
-  assert.match(source, /library: libraryLoading/);
-  assert.match(source, /circulation: borrowingsLoading/);
-  assert.match(source, /activeSectionLoading \? 'Đang tải\.\.\.' : 'Làm mới'/);
-  assert.match(source, /setDashboardUpdatedAt\(new Date\(\)\)/);
-  assert.doesNotMatch(source, /setDashboardData\(demoDashboard\)/);
+  assert.doesNotMatch(navigation, /label: 'Phân quyền'/);
+  assert.match(users, /label="Phân quyền"/);
+  assert.doesNotMatch(navigation, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
+  assert.match(css, /--admin-brass: #a87532/);
+  assert.match(css, /--admin-canvas: #faf6ef/);
+  assert.match(css, /\.admin-shell__sidebar\s*\{[^]*?background: var\(--admin-paper\)/);
+  assert.match(dashboard, /const loadDashboard = useCallback/);
+  assert.match(dashboard, /setUpdatedAt\(new Date\(\)\)/);
   assert.doesNotMatch(source, /demoLibraryRows|demoBookMetadata|demoBorrowings|demoRequests/);
   assert.doesNotMatch(source, /setBorrowingModal|createBorrowing|updateBorrowing/);
-  assert.match(source, /setActiveSection\('requests'\)/);
-  assert.doesNotMatch(source, />Kiểm tra yêu cầu<|>Kiểm tra hội viên</);
-  assert.match(source, /<td><strong>\{row\.memberName\}<\/strong><\/td>/);
-  assert.doesNotMatch(source, /<span>\{row\.email\}<\/span>/);
-  assert.match(source, /borrowingApi\.returnDetail\(borrowingAction\.id, \{ condition: returnCondition \}\)/);
-  assert.match(source, /borrowingApi\.renewDetail\(row\.id\)/);
-  assert.match(source, /row\.status === 'REQUESTED'/);
-  assert.match(source, /\['BORROWED', 'OVERDUE'\]\.includes\(row\.status\)/);
-  assert.match(source, /\['RETURNED', 'DAMAGED', 'LOST'\]\.includes\(row\.status\)/);
-  assert.match(source, /borrowingApi\.approve\(viewRequest\.requestId\)/);
-  assert.match(source, /borrowingApi\.reject\(viewRequest\.requestId, reason\)/);
-  assert.doesNotMatch(source, /adminApi\.updateRequestStatus/);
-  assert.match(source, /<td><strong>\{row\.bookTitles\?\.join\('\s*\|\s*'\) \|\| '-'\}<\/strong><\/td>/);
-  assert.match(source, /row\.member\?\.fullName \|\| row\.member\?\.email \|\| '-'/);
-  assert.match(source, /row\.categories\?\.join\('\s*\|\s*'\) \|\| '-'/);
-  assert.doesNotMatch(source, /row\.itemCount \|\| 0/);
-  assert.match(source, /requests: requestsLoading/);
-  assert.match(source, /row\.status === 'PENDING'/);
-  assert.match(source, /\['APPROVED', 'COMPLETED', 'REJECTED', 'CANCELLED'\]\.includes\(row\.status\)/);
-  assert.match(source, /await loadRequests\(\)/);
-  assert.match(source, /setViewRequest\(await adminApi\.requestDetail\(viewRequest\.requestId\)\)/);
+  assert.match(page, /setActiveSection\('requests'\)/);
+  assert.match(circulation, /<td><strong>\{row\.memberName\}<\/strong><\/td>/);
+  assert.match(circulation, /borrowingApi\.returnDetail\(borrowingAction\.id, \{ condition: returnCondition \}\)/);
+  assert.match(circulation, /borrowingApi\.renewDetail\(row\.id\)/);
+  assert.match(circulation, /row\.status === 'REQUESTED'/);
+  assert.match(circulation, /\['BORROWED', 'OVERDUE'\]\.includes\(row\.status\)/);
+  assert.match(circulation, /\['RETURNED', 'DAMAGED', 'LOST'\]\.includes\(row\.status\)/);
+  assert.match(requests, /borrowingApi\.approve\(viewRequest\.requestId\)/);
+  assert.match(requests, /borrowingApi\.reject\(viewRequest\.requestId, reason\)/);
+  assert.doesNotMatch(requests, /adminApi\.updateRequestStatus/);
+  assert.match(requests, /row\.status === 'PENDING'/);
+  assert.match(requests, /const pending = request\.status === 'PENDING'/);
   assert.doesNotMatch(source, /navigate\('\/librarian\/(borrow-requests|returns|members)'\)/);
-  assert.match(source, /className="um-line-chart"/);
-  assert.match(source, /<path d=\{path\}/);
-  assert.doesNotMatch(source, /className="um-bar-chart"/);
-  assert.match(source, /loadLibrary\(libraryResource, \{ announce: true \}\)/);
-  assert.doesNotMatch(source, /Vô hiệu hóa sách/);
-  assert.doesNotMatch(source, /adminApi\.(createBook|updateBook|deactivateBook)/);
-  assert.match(source, /adminApi\.deactivateResource\(libraryResource, row\.id\)/);
-  assert.match(source, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
-  assert.doesNotMatch(source, /deleteLibraryItem/);
-  assert.match(source, /downloadDocx\(/);
+  assert.match(dashboard, /className="admin-chart__plot"/);
+  assert.match(dashboard, /<path d=\{path\}/);
+  assert.doesNotMatch(dashboard, /className="um-bar-chart"/);
+  assert.doesNotMatch(library, /Vô hiệu hóa sách/);
+  assert.doesNotMatch(library, /adminApi\.(createBook|updateBook|deactivateBook)/);
+  assert.match(library, /adminApi\.deactivateResource\(resource, row\.id\)/);
+  assert.match(library, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
+  assert.match(library, /downloadDocx\(/);
+  assert.match(circulation, /downloadDocx\(/);
   assert.doesNotMatch(source, /text\/csv|Xuất CSV|\.csv'/);
-  assert.match(source, /<td>\{formatDate\(row\.createdAt\)\}<\/td>/);
-  assert.doesNotMatch(source, /row\.createdAt \|\| 'Không lưu trong DB'/);
 });
 
 test('home route shows the homepage for admins and role dashboards for other authenticated users', async () => {

@@ -75,8 +75,105 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   const adminToken = await storedAccessToken(page);
   expect(adminToken).toBeTruthy();
   const adminHeaders = { Authorization: `Bearer ${adminToken}` };
-  const bookSummary = page.locator('.um-stat.dashboard-card').filter({ hasText: 'Tổng số sách' });
+  const userHeading = page.getByRole('heading', { name: 'Quản lý người dùng', exact: true });
+  await expect(userHeading).toBeVisible();
+
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await expect(page.locator('.admin-user-table')).toBeVisible();
+  await expect(page.locator('.admin-user-cards')).toBeHidden();
+
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1366, height: 768 },
+    { width: 1280, height: 720 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(page.locator('.admin-user-table')).toBeHidden();
+    await expect(page.locator('.admin-user-cards')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Phân quyền', exact: true }).first()).toBeVisible();
+    expect(await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+    )).toBe(false);
+    await page.screenshot({
+      path: `output/playwright/admin-user-management-${viewport.width}.png`,
+      fullPage: true,
+    });
+  }
+
+  await expect(page.locator('.admin-shell__sidebar .admin-shell__nav-item')).toHaveCount(7);
+  await expect(page.locator('.admin-shell__sidebar').getByRole('button', { name: 'Phân quyền', exact: true })).toHaveCount(0);
+
+  await page.route('**/api/admin/audit-logs**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: [{
+          logId: 9001,
+          action: 'AUTH_LOGIN_SUCCESS',
+          actor: { userId: 1, fullName: 'Quản trị viên', email: adminEmail },
+          target: { type: 'USER', id: 1, label: adminEmail },
+          details: { status: 'ACTIVE', changedFields: ['status'] },
+          ipAddress: '127.0.0.1',
+          createdAt: '2026-07-22T08:00:00.000Z',
+        }],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      }),
+    });
+  });
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.getByRole('button', { name: 'Nhật ký hoạt động', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Nhật ký hoạt động', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Hành động')).toHaveAttribute('placeholder', 'Nhập hoặc chọn hành động');
+  await expect(page.getByLabel('Mã người thực hiện')).toBeVisible();
+  await expect(page.locator('#admin-audit-action-options option[value="AUTH_LOGIN_SUCCESS"]')).toHaveText('Đăng nhập thành công');
+  const searchBox = await page.getByLabel('Tìm nhật ký').boundingBox();
+  const fromBox = await page.getByLabel('Từ ngày').boundingBox();
+  expect(searchBox).toBeTruthy();
+  expect(fromBox).toBeTruthy();
+  expect(fromBox.y).toBeGreaterThan(searchBox.y);
+  await expect(page.locator('.admin-audit-table thead th')).toHaveText([
+    'Hành động',
+    'Người thực hiện',
+    'Đối tượng',
+    'IP',
+    'Thời gian',
+  ]);
+  await expect(page.getByText('Xem chi tiết (2)', { exact: true })).toHaveCount(0);
+  const auditCellWidths = await page.locator('.admin-audit-table tbody tr').first().locator('td').evaluateAll(
+    (cells) => cells.map((cell) => Math.round(cell.getBoundingClientRect().width)),
+  );
+  expect(auditCellWidths[0]).toBeGreaterThanOrEqual(120);
+  expect(auditCellWidths).toHaveLength(5);
+  expect(auditCellWidths[3]).toBeGreaterThanOrEqual(90);
+  expect(auditCellWidths[4]).toBeGreaterThanOrEqual(120);
+  const auditRowBox = await page.locator('.admin-audit-table tbody tr').first().boundingBox();
+  expect(auditRowBox).toBeTruthy();
+  expect(auditRowBox.height).toBeLessThan(220);
+  expect(await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  )).toBe(false);
+  await page.screenshot({ path: 'output/playwright/admin-audit-1366.png', fullPage: true });
+
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click();
+  const bookSummary = page.locator('.admin-dashboard__stat').filter({ hasText: 'Tổng số sách' });
   await expect(bookSummary.getByText('1', { exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Mở menu quản trị', exact: true }).click();
+  await page.getByRole('button', { name: 'Quản lý người dùng', exact: true }).click();
+  await expect(userHeading).toBeVisible();
+  await expect(page.locator('.admin-user-table')).toBeHidden();
+  await expect(page.locator('.admin-user-cards')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Phân quyền', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Vô hiệu hóa', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true })).toHaveCount(0);
+  expect(await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  )).toBe(false);
+  await page.screenshot({ path: 'output/playwright/admin-user-management-390.png', fullPage: true });
+  await page.setViewportSize({ width: 1366, height: 768 });
 
   const approved = await request.patch(
     `${BACKEND_URL}/api/borrow-requests/${completedRequestId}/approve`,
@@ -103,21 +200,21 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
     total: 22,
     totalPages: 2,
   });
-  await expect(page.locator('table.request-table tbody tr')).toHaveCount(20);
-  await expect(page.getByText('Trang 1/2 · 22 bản ghi', { exact: true })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Danh sách yêu cầu mượn' }).locator('tbody tr')).toHaveCount(20);
+  await expect(page.getByText('Trang 1/2 · 22 mục', { exact: true })).toBeVisible();
 
   const secondPageResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 2, limit: 20 })
   );
   await page.locator('[aria-label="Phân trang"]').getByRole('button', { name: '2', exact: true }).click();
   expect((await secondPageResponse).status()).toBe(200);
-  await expect(page.locator('table.request-table tbody tr')).toHaveCount(2);
+  await expect(page.getByRole('table', { name: 'Danh sách yêu cầu mượn' }).locator('tbody tr')).toHaveCount(2);
 
   await page.getByLabel('Lọc trạng thái').selectOption('PENDING');
   const pendingResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 1, limit: 20, status: 'PENDING' })
   );
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
   const pendingPage = await pendingResponse;
   expect(pendingPage.status()).toBe(200);
   expect((await pendingPage.json()).pagination.total).toBe(21);
@@ -147,7 +244,7 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   const completedResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 1, limit: 20, status: 'COMPLETED' })
   );
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
   const completedPage = await completedResponse;
   expect(completedPage.status()).toBe(200);
   expect((await completedPage.json()).pagination.total).toBe(1);

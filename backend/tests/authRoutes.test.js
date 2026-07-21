@@ -507,6 +507,20 @@ describe('FE02 auth vertical slice', () => {
     expect(dependencies.state.users[0].failedLoginCount).toBe(1);
   });
 
+  test('login accepts a registered email longer than 100 characters within the 255-character contract', async () => {
+    const { app } = makeTestApp();
+    const email = `${'a'.repeat(64)}@${'b'.repeat(30)}.${'c'.repeat(30)}.com`;
+
+    expect(email.length).toBeGreaterThan(100);
+    expect(email.length).toBeLessThanOrEqual(255);
+    await registerAndVerify(app, email);
+
+    const response = await login(app, email);
+
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe(email);
+  });
+
   test('protected me endpoint rejects missing token', async () => {
     const { app } = makeTestApp();
 

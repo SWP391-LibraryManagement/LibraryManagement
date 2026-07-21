@@ -69,3 +69,8 @@ test('FE09 connects calculation, list selection, and payment workflows', async (
   assert.match(page, /Hãy chọn một phiếu chưa thanh toán/);
   assert.match(page, /paymentOptions\.map/);
 });
+
+test('FE09 remains server-backed outside the Admin Console', async () => {
+  const adminPage = await readFile(new URL('../src/page/admin/AdminConsolePage.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(adminPage, /getFineRecords|saveFineRecords|activeSection === 'payments'/);
+});

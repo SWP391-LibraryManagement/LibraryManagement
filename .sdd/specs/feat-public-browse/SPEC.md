@@ -2,7 +2,7 @@
 
 # Version: 0.3.1
 
-# Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H2-APPROVED, H3 PENDING
+# Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59
 
 # Owner: Dung
 
@@ -12,9 +12,10 @@
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1/2
-> baseline. The bounded responsive HomePage addendum is locally implemented but
-> has H2 approval and remains pending H3 review before integration.
+> Current delivery status (2026-07-21): `COMPLETE` for the approved Phase 1/2
+> baseline and the bounded responsive HomePage addendum. PR #59 merged the
+> addendum after green CI and responsive evidence review; current-main human
+> visual acceptance remains a separate release decision.
 > `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > are authoritative for current implementation state. Older `Not Started`,
 > `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
@@ -23,8 +24,9 @@
 > Source of truth for FE01 Public / Browse. Revision v0.3.0 is approved as the baseline after its availability dependency was made explicit.
 
 > Responsive addendum boundary: the mobile navigation and narrow-screen layout
-> requirement below is approved for local follow-up work, but is not part of the
-> integrated baseline until H3 acceptance is recorded.
+> requirement below is integrated through PR #59. The remaining release review
+> is human visual acceptance of the current main candidate, not an implementation
+> or merge gate.
 
 ---
 

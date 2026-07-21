@@ -285,7 +285,7 @@ Implementation State: WAVE A AND WAVE B INTEGRATED; HISTORICAL BATCH RECORD
 
 ## 16. Final Governance Closeout
 
-Implementation State: COMPLETE - PR #54 INTEGRATED; PR #59 H2-APPROVED, RESPONSIVE FOLLOW-UP H3 PENDING
+Implementation State: COMPLETE - PR #54 INTEGRATED; PR #59 H2/H3-APPROVED AND MERGED AS `eed2688`
 
 ### Scope
 
@@ -322,3 +322,19 @@ npm.cmd run smoke:staging
 - H3, merge, and exact post-merge `main` CI are tracked by PR #59; `v1.0.2` is
   already published at `c988af1`. Any future `v1.0.3` must use a later reviewed
   `main` SHA after its own release gates.
+
+## 18. Admin Console Full Frontend Refactor Slice
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+This Shell-only refactor preserves `/admin/users`, all FE11/FE07/FE12 API and ownership contracts, server authorization, safe DTOs, and database state. It splits the Admin Console into a guarded shell, shared presentation primitives, and independent Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules.
+
+Implementation order: governance -> pure presentation RED/GREEN -> shared shell -> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation -> legacy removal -> full validation and Azure Staging acceptance.
+
+## 19. Authenticated Admin UX Correction Slice
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+This bounded Hybrid correction updates the FE11 sidebar contract from eight to seven visible entries while preserving Manage Roles in User Management and leaving the permission API/policy unchanged. Shell work switches the user directory to its existing card view before its 1040px table overflows, keeps all canonical Audit filters, presents mapped actions accessibly, and moves safe detail metadata behind a per-row disclosure.
+
+Implementation order: spec/design reconciliation -> focused RED tests -> navigation correction -> responsive user breakpoint -> Audit filter/detail correction -> full frontend validation -> responsive browser acceptance -> Azure Staging review.

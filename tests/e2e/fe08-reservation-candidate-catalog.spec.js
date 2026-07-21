@@ -96,6 +96,19 @@ test('[E2E-FE08-ACC01] member searches safe SQL-shaped candidates and creates a 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(page.getByLabel('Tìm sách')).toBeVisible();
+  const candidateRow = page.locator('.member-reservation-catalog .queue-item').first();
+  const candidateBadge = candidateRow.locator('.badge');
+  const candidateAction = candidateRow.getByRole('button');
+  await expect(candidateRow).toBeVisible();
+  await expect(candidateBadge).toBeVisible();
+  await expect(candidateAction).toBeVisible();
+  const [rowBox, badgeBox, actionBox] = await Promise.all([
+    candidateRow.boundingBox(),
+    candidateBadge.boundingBox(),
+    candidateAction.boundingBox(),
+  ]);
+  expect(badgeBox.x + badgeBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width + 1);
+  expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width + 1);
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   );

@@ -13,6 +13,7 @@ export default function AuthCard(props) {
     onForgotPassword,
     onRegister,
     onBackHome,
+    onInputChange,
     feedback,
     isSubmitting
   } = props;
@@ -50,6 +51,7 @@ export default function AuthCard(props) {
           onSubmit={onSubmit}
           onForgotPassword={onForgotPassword}
           onRegister={onRegister}
+          onInputChange={onInputChange}
           feedback={feedback}
           isSubmitting={isSubmitting}
         />

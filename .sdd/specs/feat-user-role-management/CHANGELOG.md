@@ -1,5 +1,25 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Authenticated Admin presentation corrections locally validated
+
+- Removed only the standalone Permissions destination from the Admin sidebar; role management remains available in User Management.
+- Changed User Management to responsive cards at 1440px and below so the page no longer requires horizontal dragging before the table adapts.
+- Retained all five canonical Audit filters, added readable Vietnamese action suggestions, and collapsed safe details per row in bounded readable columns.
+- Changed no API, schema, authentication, authorization, role policy, pagination, or audit-redaction behavior.
+- Fresh local validation passes frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and responsive visual checks at 1440/1366/1280/390.
+- Azure Staging workflow `29873466035` deployed `8627508` successfully; backend, frontend, smoke, health, and direct `/admin/users` SPA checks passed.
+- `FE11-UXR08` remains open pending renewed authenticated human acceptance.
+
+## 2026-07-22 - Admin Console modular refactor implemented and locally validated
+
+- Replaced the historical Admin monolith with a guarded, responsive shell and separate Dashboard, Users, Requests, Permissions, Audit, Library, and Circulation modules while keeping `/admin/users`.
+- Added desktop table/mobile card parity, accessible mobile navigation, labeled actions, safe localized presentation, explicit empty/error/loading states, and reduced-motion/focus contracts.
+- Preserved FE05, FE07, FE11, and FE12 ownership boundaries and removed only unreachable Admin membership/payment code; no API, schema, authorization, or business rule changed.
+- Cut the legacy entry to an exact one-line compatibility export and updated frontend/E2E contracts to follow the new module owners.
+- Fresh local validation passes frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint, build, and browser E2E 4/4.
+- Azure Staging workflow `29871576856` deployed `903a1a2` successfully; backend, frontend, smoke, health, and direct `/admin/users` SPA checks passed.
+- `FE11-UXR01..FE11-UXR06` are complete. Explicit authenticated human desktop/mobile staging approval remains under `FE11-UXR07`.
+
 ## 2026-07-22 - Remove Permissions From Admin Sidebar
 
 - Removed the visible `Phân quyền` entry from the Admin sidebar, leaving seven approved navigation entries.
@@ -313,6 +333,13 @@
 - Clarified that admin Reports-style content is consolidated into Dashboard while detailed reporting remains FE12.
 - Added request-management rule: pending requests may expose action controls; completed requests are view-only.
 - Added BR-FE11-016..020, FR-FE11-030..035, AC-FE11-016..019, EC-FE11-016..018, and Q-FE11-011..013.
+## 2026-07-22 - Admin Console full frontend refactor approved
+
+- Approved a Shell-only modular refactor under `FE11-UXR01..UXR07`.
+- Preserves all backend, API, authorization, database, FE07 mutation, FE11 permission/audit, and FE12 reporting contracts.
+- Adds responsive user cards, decision-focused charts, labeled actions, localized audit presentation, distinct permission decisions, persistent filter labels, and explicit loading/error/empty states.
+- Removes only unreachable Admin Console membership/payment code; canonical FE04 and FE09 functionality remains unchanged.
+
 ## 2026-07-22 admin console correction
 
 - Removed user edit actions and the Audit safe-details column; contained wide tables inside the content area.
