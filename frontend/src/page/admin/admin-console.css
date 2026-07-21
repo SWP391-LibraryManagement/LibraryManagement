@@ -1,0 +1,211 @@
+.admin-console {
+  --admin-ink: #2a2118;
+  --admin-paper: #fffdf8;
+  --admin-canvas: #faf6ef;
+  --admin-brass: #a87532;
+  --admin-brass-dark: #7b5528;
+  --admin-success: #18794e;
+  --admin-danger: #b42318;
+  --admin-muted: #6b6153;
+  --admin-line: #e7ddca;
+  min-height: 100vh;
+  background: var(--admin-canvas);
+  color: var(--admin-ink);
+  font-family: var(--sans);
+}
+
+.admin-console :where(button, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--admin-brass) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-page-header,
+.admin-filter-bar,
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-page-header h1,
+.admin-empty-state h2,
+.admin-page-eyebrow,
+.admin-pagination p {
+  margin: 0;
+}
+
+.admin-page-eyebrow {
+  margin-bottom: 4px;
+  color: var(--admin-brass-dark);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-page-header__actions,
+.admin-filter-actions,
+.admin-pagination__controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-button,
+.admin-action-button,
+.admin-pagination button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: var(--admin-paper);
+  color: var(--admin-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-button,
+.admin-action-button {
+  padding: 9px 14px;
+}
+
+.admin-button svg,
+.admin-action-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-button:disabled,
+.admin-action-button:disabled,
+.admin-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-action-button--primary,
+.admin-pagination button[aria-current='page'] {
+  border-color: var(--admin-brass-dark);
+  background: var(--admin-brass-dark);
+  color: #fff;
+}
+
+.admin-action-button--danger {
+  border-color: color-mix(in srgb, var(--admin-danger) 28%, transparent);
+  color: var(--admin-danger);
+}
+
+.admin-filter-bar {
+  align-items: end;
+  padding: 18px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-filter-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.admin-field {
+  display: grid;
+  gap: 6px;
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-field input,
+.admin-field select {
+  min-height: 42px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--admin-ink);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.admin-empty-state {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 32px;
+  border: 1px dashed var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+  color: var(--admin-muted);
+  text-align: center;
+}
+
+.admin-empty-state > svg {
+  width: 32px;
+  height: 32px;
+  color: var(--admin-brass);
+}
+
+.admin-empty-state p {
+  max-width: 52ch;
+  margin: 0;
+}
+
+.admin-pagination {
+  margin-top: 18px;
+  color: var(--admin-muted);
+  font-size: 0.9rem;
+}
+
+.admin-pagination button {
+  min-width: 40px;
+  padding: 8px 10px;
+}
+
+.admin-user-cards {
+  display: none;
+}
+
+.is-spinning {
+  animation: admin-spin 0.8s linear infinite;
+}
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 900px) {
+  .admin-page-header,
+  .admin-filter-bar,
+  .admin-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-page-header__actions > *,
+  .admin-filter-actions > * {
+    flex: 1;
+  }
+
+  .admin-user-table { display: none; }
+  .admin-user-cards { display: grid; gap: 12px; }
+  .admin-filter-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-console *,
+  .admin-console *::before,
+  .admin-console *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
