@@ -769,6 +769,70 @@
 .admin-toast--success { background: var(--admin-success); }
 .admin-toast--error { background: var(--admin-danger); }
 
+.admin-requests {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-text-error {
+  color: var(--admin-danger);
+}
+
+.admin-request-directory {
+  min-width: 0;
+  padding: 0 18px 18px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-data-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+}
+
+.admin-data-table th,
+.admin-data-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--admin-line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-data-table th {
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--admin-brass) 5%, transparent);
+}
+
+.admin-badge--request-pending { background: #fef3c7; color: #92400e; }
+.admin-badge--request-approved { background: #dbeafe; color: #1d4ed8; }
+.admin-badge--request-completed { background: #dcfce7; color: #15803d; }
+.admin-badge--request-rejected,
+.admin-badge--request-cancelled { background: #fee2e2; color: #b91c1c; }
+
+.admin-request-detail p {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  color: var(--admin-muted);
+}
+
+.admin-request-detail p strong {
+  color: var(--admin-ink);
+}
+
 .admin-page-header,
 .admin-filter-bar,
 .admin-pagination {
@@ -1044,6 +1108,15 @@
   .admin-user-drawer {
     width: 100%;
     border-left: 0;
+  }
+
+  .admin-request-directory {
+    padding: 0 12px 12px;
+  }
+
+  .admin-request-detail p {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .admin-page-header,

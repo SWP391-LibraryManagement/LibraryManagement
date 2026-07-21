@@ -71,19 +71,23 @@ test('request DOCX rows use only approved columns', () => {
 });
 
 test('Admin Request Management consumes server pagination and authoritative detail', async () => {
-  const page = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const page = await readFile(new URL('../src/page/admin/requests/AdminRequestsSection.jsx', import.meta.url), 'utf8');
   const api = await readFile(new URL('../src/api/adminApi.js', import.meta.url), 'utf8');
   const exportUtility = await readFile(new URL('../src/utils/adminRequestExport.js', import.meta.url), 'utf8');
 
   assert.match(api, /requestDetail\(requestId\)/);
   assert.match(api, /url: `\/admin\/requests\/\$\{requestId\}`/);
-  assert.match(page, /buildRequestListParams\(requestFilter, requestPage, REQUEST_TABLE_PAGE_SIZE\)/);
+  assert.match(page, /buildRequestListParams\(filters, page, REQUEST_TABLE_PAGE_SIZE\)/);
   assert.match(page, /setRequestPagination\(result\.pagination/);
   assert.match(page, /await adminApi\.requestDetail\(row\.requestId\)/);
   assert.match(page, /collectAllRequestRows\(adminApi\.requests/);
   assert.doesNotMatch(page, /fromDate|toDate/);
   assert.doesNotMatch(exportUtility, /filters\.fromDate|filters\.toDate/);
   assert.match(page, /downloadDocx\(/);
+  assert.match(page, /<AdminDateField id="request-from" label="Từ ngày"/);
+  assert.match(page, /<AdminDateField id="request-to" label="Đến ngày"/);
+  assert.match(page, /aria-label="Lọc trạng thái"/);
+  assert.match(page, /const REQUEST_TABLE_PAGE_SIZE = 20/);
   assert.doesNotMatch(page, /Xuất CSV|\.csv'/);
   assert.match(exportUtility, /REQUEST_DOCX_COLUMNS/);
 });

@@ -5,6 +5,7 @@ import { readStoredAdminAccess } from './adminAccess';
 import './admin-console.css';
 import { AdminShell } from './components/AdminShell';
 import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
+import { AdminRequestsSection } from './requests/AdminRequestsSection';
 import { AdminUsersSection } from './users/AdminUsersSection';
 
 export default function AdminConsolePage() {
@@ -43,6 +44,8 @@ export default function AdminConsolePage() {
         <AdminUsersSection onToast={setToast} />
       ) : activeSection === 'dashboard' ? (
         <AdminDashboardSection />
+      ) : activeSection === 'requests' ? (
+        <AdminRequestsSection onToast={setToast} />
       ) : (
         <section className="admin-section-placeholder">
           <p className="admin-page-eyebrow">Admin Console</p>

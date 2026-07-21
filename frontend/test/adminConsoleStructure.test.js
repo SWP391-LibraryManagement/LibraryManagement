@@ -80,3 +80,15 @@ test('Admin users render one directory as a desktop table and mobile cards with 
   assert.match(page, /activeSection === 'users'/);
   assert.match(page, /<AdminUsersSection/);
 });
+
+test('Admin requests preserve server pagination, FE07 actions and labeled date filters', async () => {
+  const requests = await readFile(new URL('requests/AdminRequestsSection.jsx', root), 'utf8');
+  const page = await readFile(new URL('AdminConsolePage.jsx', root), 'utf8');
+  assert.match(requests, /adminApi\.requests/);
+  assert.match(requests, /borrowingApi\.approve\(/);
+  assert.match(requests, /borrowingApi\.reject\(/);
+  assert.match(requests, /AdminFilterBar/);
+  assert.match(requests, /AdminDateField/);
+  assert.match(page, /activeSection === 'requests'/);
+  assert.match(page, /<AdminRequestsSection/);
+});
