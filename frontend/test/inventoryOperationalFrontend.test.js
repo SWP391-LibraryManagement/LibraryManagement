@@ -18,6 +18,14 @@ test('FE06 inventory is server-backed and consumes the exact list envelope', asy
   assert.doesNotMatch(management, /onChanged=\{async \(\) => \{\}\}/);
 });
 
+test('FE06 inventory exposes an explicit copy-management action', async () => {
+  const management = await readFrontend('../src/component/inventory/InventoryManagement.jsx');
+
+  assert.match(management, /headers=\{\[[^\]]*'Thao tác'/s);
+  assert.match(management, /Quản lý bản sao/);
+  assert.match(management, /openBook\(copy\.book\)/);
+});
+
 // @spec AC-FE06-004, BR-FE06-013, FR-FE06-004
 test('copy create leaves status server-controlled and keeps book metadata outside FE06', async () => {
   const copies = await readFrontend('../src/component/inventory/BookCopies.jsx');

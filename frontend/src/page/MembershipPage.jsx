@@ -149,7 +149,7 @@ export default function MembershipPage() {
     setSaving(true);
     try {
       await membershipApi.reject(selected.applicationId || selected.id, cleanReason);
-      showToast('Đã từ chối đơn đăng ký hội viên.', 'success');
+      showToast('Đã từ chối đơn đăng ký hội viên.', 'info');
       setSelected(null);
       await loadData();
     } catch (error) {

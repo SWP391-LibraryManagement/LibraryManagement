@@ -157,3 +157,8 @@ Before Week 5 implementation starts:
 - [x] Document required schema changes through the Week 4 database gap review and this ADR.
 - [x] Confirm token/session/audit tables for FE02 and FE11 before auth implementation.
 - [ ] Team review of the revised SQL script before merge.
+## 2026-07-22 deployed metadata reconciliation
+
+Some pre-baseline staging databases contain `Authors`, `Publishers`, and `Categories` without the canonical `Status` and `CreatedAt` columns. The Admin library repository already relies on those fields for list/export/deactivation, so code-only deployment can produce `INTERNAL_ERROR` even when the frontend bundle is current.
+
+The reviewable, transactional, idempotent reconciliation script is `database/migrations/2026-07-22-library-metadata-compatibility.sql`. It adds only missing columns with canonical defaults, preserves existing rows, validates supported status values, and must be applied to an existing environment before deploying repository code that reads those columns.

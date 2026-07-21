@@ -49,15 +49,15 @@ test('update, deactivate, and reactivate propagate the last-seen version through
 });
 
 // @spec AC-FE05-008, AC-FE05-013, AC-FE05-016, BR-FE05-018, NFR-FE05-UX-002
-test('deactivate and reactivate require confirmation plus a trimmed reason up to 500 characters', async () => {
+test('deactivate and reactivate require one trimmed reason without a duplicate confirmation input', async () => {
   const { page } = await sources();
 
   assert.match(page, /deactivat/i);
   assert.match(page, /reactivat/i);
-  assert.match(page, /Confirm|xác nhận/i);
   assert.match(page, /textarea|aria-label=['"][^'"]*(?:lý do|reason)/i);
   assert.match(page, /reason\.trim\(\)|trim\(\).*reason/i);
   assert.match(page, /500/);
+  assert.doesNotMatch(page, /statusConfirmed|bm-confirm-line/);
 });
 
 // @spec AC-FE05-010, AC-FE05-014
@@ -71,10 +71,21 @@ test('book mutations reload canonical state and stale conflicts instruct staff t
 });
 
 // @spec AC-FE05-017, FR-FE05-026
-test('frontend field bounds match ISBN, pages, and rating precision contract', async () => {
+test('frontend field bounds match ISBN and pages while rating remains outside staff forms', async () => {
   const { page } = await sources();
 
   assert.match(page, /maxLength=\{20\}|isbn\.length\s*>\s*20/i);
   assert.match(page, /10000/);
-  assert.match(page, /step=['"]0\.1['"]|Number\.isInteger\([^)]*rating[^)]*\*\s*10\)|rating[^\n]{0,180}one decimal/i);
+  assert.doesNotMatch(page, /Điểm đánh giá|form\.rating|detailBook\.rating/);
+});
+
+test('staff search and filters share the canonical paginated admin list', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /if \(q\) params\.set\('q', q\)/);
+  assert.match(page, /if \(status\) params\.set\('status', status\)/);
+  assert.match(page, /if \(categoryId\) params\.set\('categoryId', categoryId\)/);
+  assert.match(page, /handleSearch[\s\S]*loadBooks\(\{ q: keyword, pageNumber: 1 \}\)/);
+  assert.match(page, /handleApplyFilters[\s\S]*status: statusFilter[\s\S]*categoryId: categoryFilter/);
+  assert.doesNotMatch(page, /setSearchResults|searchResults|apiRequest\(`\/books\?\$\{params/);
 });

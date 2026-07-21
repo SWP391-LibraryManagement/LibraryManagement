@@ -141,15 +141,15 @@ test('FE11 Audit controls reset pagination and refresh with applied filters', as
   assert.match(source, /loadAuditLogs\(auditPagination\.page, \{ announce: true, filters: auditFilters \}\)/);
 });
 
-test('FE11 Audit renders only the nested safe DTO as React text', async () => {
+test('FE11 Audit renders the safe actor and target summary without the details column', async () => {
   const source = await readFile(pagePath, 'utf8');
   assert.match(source, /log\.actor\?\.fullName/);
   assert.match(source, /log\.actor\?\.email/);
   assert.match(source, /log\.target\?\.label/);
   assert.match(source, /log\.target\?\.type/);
   assert.match(source, /log\.target\?\.id/);
-  assert.match(source, /formatAuditDetailEntries\(log\.details\)/);
   assert.match(source, /pageSize=\{auditPagination\.limit \|\| AUDIT_TABLE_PAGE_SIZE\}/);
+  assert.doesNotMatch(source, /Chi tiết an toàn|getAuditDetailEntries/);
   assert.doesNotMatch(source, /log\.metadata/);
   assert.doesNotMatch(source, /JSON\.stringify\(log\.details/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
@@ -296,10 +296,11 @@ test('FE11 Admin copy uses shared Vietnamese labels and locale without changing 
     'Chưa có tên',
     'Lượt mượn đang hoạt động',
     'Tiền phạt chưa thanh toán',
-    'Chỉnh sửa',
   ]) {
     assert.match(source, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
+  assert.doesNotMatch(source, /title="Chỉnh sửa" onClick=\{\(\) => openEditModal\(user\)\}/);
+  assert.doesNotMatch(source, /onClick=\{\(\) => openEditModal\(selectedUser\)\}/);
 });
 
 test('FE11 permission matrix localizes backend-owned labels without changing keys', async () => {

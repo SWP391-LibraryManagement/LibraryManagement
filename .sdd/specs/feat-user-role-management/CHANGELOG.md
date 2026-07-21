@@ -313,3 +313,6 @@
 - Clarified that admin Reports-style content is consolidated into Dashboard while detailed reporting remains FE12.
 - Added request-management rule: pending requests may expose action controls; completed requests are view-only.
 - Added BR-FE11-016..020, FR-FE11-030..035, AC-FE11-016..019, EC-FE11-016..018, and Q-FE11-011..013.
+## 2026-07-22 admin console correction
+
+- Removed user edit actions and the Audit safe-details column; contained wide tables inside the content area.

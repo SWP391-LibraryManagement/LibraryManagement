@@ -111,3 +111,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [ ] Full merge-gate suites pass when the implementation branch is ready.
 - [ ] FE06 owner confirms FE05 performs no copy-status mutation.
 - [ ] Dung confirms public/staff endpoint and stale-write UX behavior.
+## 2026-07-22 corrective batch
+
+- [x] Connect staff search and draft filters to the same paginated Admin book list and add regression coverage.
+- [x] Remove rating from Librarian/Admin book list, detail, create, and update surfaces without widening the API contract.
+- [x] Remove the duplicate status-confirmation checkbox while retaining reason and `If-Match` safeguards.
+- [x] Add a reviewable metadata compatibility migration for deployed databases.

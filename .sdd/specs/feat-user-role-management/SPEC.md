@@ -708,3 +708,8 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] FE02, FE03 dependencies are checked for conflicts.
 - [x] Every acceptance criterion can become a test.
 - [x] Security requirements (bcrypt cost, SQL injection prevention) are reviewed.
+## 2026-07-22 admin-console correction
+
+- Admin User Management is view/create/role/deactivate oriented in this prototype; edit-user-information buttons are hidden from both rows and the detail drawer while the protected backend update contract remains available for compatibility.
+- The Audit Logs table displays Action, Actor, Target, IP, and Time only. Safe detail projection remains a backend security boundary but is not rendered as an extra table column.
+- Wide Admin tables scroll inside their own content region and must not force the whole console behind horizontal page scrolling.

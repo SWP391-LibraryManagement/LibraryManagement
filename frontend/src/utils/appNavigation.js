@@ -45,7 +45,9 @@ const HOME_ITEM = { key: 'home', label: 'Tổng quan', path: '/home' };
 const LIBRARY_HOME_ITEM = { key: 'library-home', label: 'Thư viện', path: '/homepage' };
 
 export function getVisibleNavigation(roles = []) {
+  const isStaff = roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role));
   const items = APP_NAV_GROUPS
+    .filter((group) => group.label !== 'Thành viên' || !isStaff)
     .filter((group) => group.roles.some((role) => roles.includes(role)))
     .flatMap((group) => group.items);
   const canOpenLibraryHome = roles.some((role) => ['MEMBER', 'LIBRARIAN', 'ADMIN'].includes(role));

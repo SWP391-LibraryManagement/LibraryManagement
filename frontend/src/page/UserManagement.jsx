@@ -717,15 +717,6 @@ function buildAuditLogParams({ page = 1, limit = AUDIT_TABLE_PAGE_SIZE, ...filte
   return params;
 }
 
-function formatAuditDetailEntries(details) {
-  return Object.entries(details || {}).filter(([, value]) => (
-    ['string', 'number', 'boolean'].includes(typeof value)
-    || (Array.isArray(value) && value.every((item) => (
-      item === null || ['string', 'number', 'boolean'].includes(typeof item)
-    )))
-  ));
-}
-
 function getAuditTarget(log) {
   const targetType = log.target?.type || '';
   const reportType = targetType.toUpperCase() === 'REPORT' ? log.details?.reportType : null;
@@ -733,17 +724,6 @@ function getAuditTarget(log) {
     label: reportType || log.target?.label || (log.target?.id ? `#${log.target.id}` : '-'),
     type: targetType,
   };
-}
-
-function getAuditDetailEntries(log) {
-  if (log.target?.type?.toUpperCase() !== 'REPORT') return formatAuditDetailEntries(log.details);
-  return formatAuditDetailEntries(log.details).filter(([key]) => key !== 'reportType');
-}
-
-function formatAuditDetailValue(value) {
-  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
-  if (typeof value === 'boolean') return value ? 'Có' : 'Không';
-  return String(value);
 }
 
 function AdminTablePagination({
@@ -911,12 +891,6 @@ function UserManagement() {
   async function openCreateModal() {
     if (await requireAdminSession()) {
       setModal({ mode: 'create' });
-    }
-  }
-
-  async function openEditModal(user) {
-    if (await requireAdminSession()) {
-      setModal({ mode: 'edit', user });
     }
   }
 
@@ -1712,9 +1686,6 @@ function UserManagement() {
   if (!access.authenticated) return <Navigate to="/login" replace />;
   if (!access.isAdmin) return <Navigate to="/home" replace />;
 
-  const showAuditDetails = activeSection === 'audit'
-    && auditLogs.some((log) => getAuditDetailEntries(log).length > 0);
-
   return (
     <div className="um-shell">
       <Sidebar
@@ -2124,9 +2095,6 @@ function UserManagement() {
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
                     <div className="um-row-actions" onClick={(event) => event.stopPropagation()}>
-                      <button className="um-icon-button" title="Chỉnh sửa" onClick={() => openEditModal(user)}>
-                        <Edit2 size={16} />
-                      </button>
                       <button className="um-icon-button" title="Quản lý vai trò" onClick={() => openRoleModal(user)}>
                         <Shield size={16} />
                       </button>
@@ -2391,7 +2359,6 @@ function UserManagement() {
                   <th>Hành động</th>
                   <th>Người thực hiện</th>
                   <th>Đối tượng</th>
-                  {showAuditDetails && <th>Chi tiết an toàn</th>}
                   <th>IP</th>
                   <th>Thời gian</th>
                 </tr>
@@ -2408,18 +2375,6 @@ function UserManagement() {
                       <strong>{getAuditTarget(log).label}</strong>
                       {getAuditTarget(log).type && <small>{getAuditTarget(log).type}</small>}
                     </td>
-                    {showAuditDetails && <td>
-                      {getAuditDetailEntries(log).length === 0 ? '-' : (
-                        <dl className="um-audit-details">
-                          {getAuditDetailEntries(log).map(([key, value]) => (
-                            <div key={key}>
-                              <dt>{key}</dt>
-                              <dd>{formatAuditDetailValue(value)}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                      )}
-                    </td>}
                     <td><code>{log.ipAddress || '-'}</code></td>
                     <td>{new Date(log.createdAt).toLocaleString('vi-VN')}</td>
                   </tr>
@@ -2544,10 +2499,6 @@ function UserManagement() {
             </div>
           </div>
           <div className="um-drawer-actions">
-            <button className="um-primary-button" onClick={() => openEditModal(selectedUser)}>
-              <Edit2 size={16} />
-              Chỉnh sửa
-            </button>
             <button className="um-secondary-button" onClick={() => openRoleModal(selectedUser)}>
               <Shield size={16} />
               Vai trò
@@ -2685,7 +2636,7 @@ function UserManagement() {
         .um-session strong { display: block; min-width: 0; max-width: 100%; color: #fff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .um-sidebar-footer button { min-height: 42px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font-size: 16px; text-align: left; }
         .um-sidebar-footer button:hover { background: #243244; color: #fff; }
-        .um-main { flex: 1; min-width: 0; padding: 26px 30px; }
+        .um-main { flex: 1; min-width: 0; max-width: calc(100vw - 260px); padding: 26px 30px; overflow-x: hidden; }
         .um-topbar, .um-toolbar, .um-content, .um-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
         .um-topbar { padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
         .um-topbar p { margin: 0 0 4px; color: #2f80ed; font-size: 12px; font-weight: 700; text-transform: uppercase; }
@@ -2708,7 +2659,7 @@ function UserManagement() {
         .um-search input, .um-toolbar select, .um-modal input, .um-modal textarea, .um-modal select { border: 1px solid #d7dee8; border-radius: 8px; background: #fff; color: #1f2937; outline: none; }
         .um-search input { border: 0; flex: 1; min-width: 0; }
         .um-toolbar select { min-height: 40px; padding: 0 12px; }
-        .um-content { overflow: auto; }
+        .um-content { min-width: 0; overflow-x: auto; overflow-y: visible; }
         .um-panel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
         .um-panel-grid.permissions { align-items: start; }
         .um-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; }
@@ -2967,14 +2918,13 @@ function UserManagement() {
         .um-audit-table-heading h2 { margin: 0 0 4px; color: var(--um-ink); font-family: var(--heading); font-size: 21px; }
         .um-audit-table-heading p { margin: 0; color: var(--um-muted); font-size: 13px; }
         .um-audit-table-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--um-accent-dark); background: var(--um-accent-soft); font-size: 12px; font-weight: 700; white-space: nowrap; }
-        .um-table-wrap { overflow: hidden; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }
-        .um-audit-table { min-width: 1180px; }
+        .um-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--um-line); border-radius: 0 0 16px 16px; background: var(--um-surface); box-shadow: 0 8px 20px rgba(77, 52, 31, 0.06); }
+        .um-audit-table { min-width: 860px; }
         .um-audit-table th:nth-child(1) { width: 17%; }
         .um-audit-table th:nth-child(2) { width: 19%; }
         .um-audit-table th:nth-child(3) { width: 16%; }
-        .um-audit-table th:nth-child(4) { width: 25%; }
-        .um-audit-table th:nth-child(5) { width: 8%; }
-        .um-audit-table th:nth-child(6) { width: 15%; }
+        .um-audit-table th:nth-child(4) { width: 12%; }
+        .um-audit-table th:nth-child(5) { width: 18%; }
         .um-audit-table td { vertical-align: middle; }
         .um-audit-table td strong, .um-audit-table td small { display: block; }
         .um-audit-table td small { margin-top: 4px; color: var(--um-muted); font-size: 12px; }
@@ -3033,6 +2983,7 @@ function UserManagement() {
         .um-admin-section .membership-toolbar .btn { white-space: nowrap; }
         @media (max-width: 900px) {
           .um-shell { display: block; }
+          .um-main { max-width: 100%; }
           .um-sidebar { width: 100%; height: auto; position: static; }
           .um-nav, .um-sidebar-footer { flex-direction: row; flex-wrap: wrap; }
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }

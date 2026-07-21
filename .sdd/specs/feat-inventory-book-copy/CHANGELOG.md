@@ -109,3 +109,6 @@
 ## 2026-07-18 - Navigation label clarification
 
 - Renamed the librarian navigation and page title from “Quản lý kho sách” to “Quản lí kho”.
+## 2026-07-22
+
+- Added an explicit per-row copy-management action and verified canonical server filters.

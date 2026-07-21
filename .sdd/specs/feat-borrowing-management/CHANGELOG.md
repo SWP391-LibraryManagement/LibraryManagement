@@ -219,3 +219,6 @@
 - Added accent-insensitive member and transaction search, canonical status filtering, eight-row pagination, summary counters, and responsive profile/table layouts.
 - Displayed canonical member, contact, book, copy, barcode, location, loan, due, return, and status fields from the existing FE07 database relationships.
 - Kept the screen restricted to Librarian/Admin and connected it to the shared borrow-request and member-borrowing endpoints without demo fallback data.
+## 2026-07-22
+
+- Stabilized the Process Returns workspace as a non-colliding single-column layout.

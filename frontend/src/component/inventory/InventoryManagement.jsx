@@ -104,7 +104,7 @@ export default function InventoryManagement() {
       </div>
       <DataTable
         caption="Danh sách bản sao trong kho"
-        headers={['ID', 'Đầu sách', 'Barcode', 'Vị trí', 'Trạng thái']}
+        headers={['ID', 'Đầu sách', 'Barcode', 'Vị trí', 'Trạng thái', 'Thao tác']}
         isEmpty={!items.length}
         emptyState={<EmptyState icon={Inventory2Icon} title="Chưa có bản sao phù hợp" />}
       >
@@ -115,6 +115,11 @@ export default function InventoryManagement() {
             <td data-label="Barcode"><strong>{copy.barcode}</strong></td>
             <td data-label="Vị trí">{copy.location || '-'}</td>
             <td data-label="Trạng thái"><StatusBadge status={copy.status} /></td>
+            <td data-label="Thao tác">
+              <button type="button" className="btn btn-primary btn-sm" onClick={(event) => { event.stopPropagation(); openBook(copy.book); }}>
+                Quản lý bản sao
+              </button>
+            </td>
           </tr>
         ))}
       </DataTable>

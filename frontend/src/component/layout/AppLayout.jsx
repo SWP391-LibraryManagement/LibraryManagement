@@ -56,7 +56,7 @@ function getCurrentRoles() {
   }
 }
 
-export default function AppLayout({ title, subtitle, actions, children, showSidebar = true }) {
+export default function AppLayout({ title, subtitle, actions, children, showSidebar = true, contentClassName = '' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [navigationOpenState, setNavigationOpen] = useState(false);
@@ -195,7 +195,7 @@ export default function AppLayout({ title, subtitle, actions, children, showSide
           navigationOpen={navigationOpen}
         />
 
-        <main className="app-content">
+        <main className={`app-content ${contentClassName}`.trim()}>
           <PageHeader title={title} subtitle={subtitle} actions={actions} />
           {children}
         </main>

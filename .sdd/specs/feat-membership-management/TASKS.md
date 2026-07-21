@@ -129,3 +129,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [x] Full configured non-SQL merge-gate suites pass locally; rerun after SQL/fan-in changes.
 - [ ] No secret, raw notification credential, or real personal data is added.
 - [ ] Dat and the cross-feature FE07/FE08 owners confirm the canonical eligibility contract.
+## 2026-07-22 corrective batch
+
+- [x] Use neutral feedback for a completed membership rejection.
+- [x] Hide member-only sidebar workflows from multi-role Librarian/Admin actors.

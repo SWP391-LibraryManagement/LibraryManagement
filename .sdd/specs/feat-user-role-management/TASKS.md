@@ -286,3 +286,9 @@ Owner: Dung
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.
+## 2026-07-22 corrective batch
+
+- [x] Remove edit-user-information actions from list and detail UI.
+- [x] Remove the Audit safe-details column while preserving safe server projection.
+- [x] Contain wide user/audit tables within the Admin content area.
+- [x] Keep Permissions absent from the approved Admin sidebar.
