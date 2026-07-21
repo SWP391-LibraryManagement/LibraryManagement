@@ -51,7 +51,7 @@ The system shall:
 - Allow admins to deactivate user accounts.
 - Allow admins to deactivate librarian accounts.
 - Allow admins to manage user role assignments (assign/revoke roles).
-- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs.
+- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs.
 - Provide read-only permission/reporting views that summarize users, roles, access rules, and audit activity without duplicating FE12 reporting scope.
 - Keep every user management action traceable for audit.
 
@@ -198,8 +198,8 @@ The feature can only start when:
 
 1. Admin opens the admin console.
 2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user, and fine sources.
-3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs.
-4. The system does not show the removed `Confirm Payment` or `Confirm Borrow` sidebar entries.
+3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs.
+4. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
 
 ### MF-FE11-011: View Permissions
 
@@ -211,7 +211,7 @@ The feature can only start when:
 
 1. Admin opens Audit Logs.
 2. The system lists important administrative/system actions with actor, action, target, timestamp, and safe details.
-3. Admin may search/filter logs.
+3. Admin may search logs and filter by date range. The API continues to support optional `action` and `actorId` filters for integrations, but the simplified Admin toolbar does not render separate controls for them.
 4. Audit logs are read-only from the UI.
 
 ### MF-FE11-013: Manage Admin Request Review View
@@ -270,7 +270,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-013: Admin never enters, sees, or creates passwords directly. Password setup generates a one-time token link sent via email, and the user sets their own password through FE02.
 - BR-FE11-014: User information updates must preserve creation date and update the UpdatedAt timestamp.
 - BR-FE11-015: Librarian accounts are user accounts with the Librarian role and must follow the same security, audit, and deactivation rules as other user accounts.
-- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only approved admin sections and must not include the removed `Confirm Payment` or `Confirm Borrow` workflows.
+- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only approved admin sections and must not include the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` entries.
 - BR-FE11-017: Permissions UI is a read-only role summary/matrix unless a separate role-editing action is explicitly performed under Manage Roles.
 - BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
 - BR-FE11-019: Admin Request Management may show FE07 request data, but completed requests are read-only; only pending requests may expose action controls.
@@ -304,7 +304,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-030: When admin opens the console, the system shall display approved sidebar sections and shall hide removed Confirm Payment / Confirm Borrow navigation items.
 - FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
 - FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
-- FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries.
+- FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries; the visible toolbar shall contain text search and date-range controls without separate `action` or `actorId` inputs.
 - FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/DOCX-export controls and view detail; export shall include every server page matching the frozen filters and only the approved request projection.
 - FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
 - FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revalidate the active acting Admin inside the source transaction, revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery only after commit.
@@ -560,7 +560,7 @@ This feature does not include:
 | Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
 | Q-FE11-010 | Admin-created account delivery may safely fail after source commit; the account remains `INACTIVE` with its setup token and can be resent through the approved flow. | User correction 2026-06-21; ADR-005 refinement 2026-07-15 | APPROVED |
-| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Permissions, and Audit Logs; Confirm Payment and Confirm Borrow are removed from sidebar. | User correction 2026-06-30 | APPROVED |
+| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, and Audit Logs; Permissions, Confirm Payment, and Confirm Borrow are removed from sidebar. | User correction 2026-07-22 | APPROVED |
 | Q-FE11-012 | Admin Reports content is consolidated into Dashboard for this prototype; detailed reporting remains FE12. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-013 | Admin Request Management is read-only for completed requests and action-enabled only for pending/chờ xác nhận requests. | User correction 2026-06-30 | APPROVED |
 | Q-FE11-014 | Admin-created accounts start `INACTIVE` and become `ACTIVE` only after valid FE02 password setup completion. | Nhat confirmation 2026-07-15 | APPROVED |

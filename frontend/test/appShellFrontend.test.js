@@ -199,13 +199,13 @@ test('admin console keeps its sections while using the warm librarian visual sys
     'Thư viện',
     'Quản lý mượn trả',
     'Quản lý yêu cầu',
-    'Phân quyền',
     'Quản lý người dùng',
     'Nhật ký hoạt động',
   ]) {
     assert.match(source, new RegExp(`label: '${label}'`));
   }
 
+  assert.doesNotMatch(source, /\{ id: 'permissions'[^\n]+label: 'Phân quyền'/);
   assert.doesNotMatch(source, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
 
   assert.match(source, /--um-accent: #a87532/);

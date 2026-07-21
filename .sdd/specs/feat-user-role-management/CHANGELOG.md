@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Remove Permissions From Admin Sidebar
+
+- Removed the visible `Phân quyền` entry from the Admin sidebar, leaving seven approved navigation entries.
+- Preserved the existing permission API, policy, authorization enforcement, and internal permission-view implementation.
+- Updated FE11 navigation requirements, task traceability, and frontend regression coverage.
+
+## 2026-07-22 - Simplify Admin Audit Log Filters
+
+- Removed the separate `AUTH_LOGIN_SUCCESS` action input and adjacent actor-ID input from the Admin Audit Log toolbar.
+- Kept text search, date-range filtering, pagination, redaction, and the backend `action`/`actorId` query contract unchanged.
+- Updated FE11 requirements, task traceability, and frontend regression coverage for the simplified toolbar.
+
 ## 2026-07-21 - Replace Admin CSV exports with DOCX
 
 - Replaced Library, Borrowing, and Request Management CSV controls with valid Word `.docx` downloads.
