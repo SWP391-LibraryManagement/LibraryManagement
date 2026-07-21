@@ -3,6 +3,36 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const pagePath = new URL('../src/page/UserManagement.jsx', import.meta.url);
+const adminUsersPath = new URL('../src/page/admin/users/AdminUsersSection.jsx', import.meta.url);
+const userPresentationPath = new URL('../src/page/admin/users/userPresentation.js', import.meta.url);
+const userEditorPath = new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url);
+const userRolePath = new URL('../src/page/admin/users/UserRoleModal.jsx', import.meta.url);
+const userDrawerPath = new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url);
+
+test('FE11 modular user owners preserve lifecycle, role and safe-detail contracts', async () => {
+  const [section, presentation, editor, role, drawer] = await Promise.all([
+    readFile(adminUsersPath, 'utf8'),
+    readFile(userPresentationPath, 'utf8'),
+    readFile(userEditorPath, 'utf8'),
+    readFile(userRolePath, 'utf8'),
+    readFile(userDrawerPath, 'utf8'),
+  ]);
+
+  assert.match(section, /deactivateManagedUser\(user\.userId, user\.updatedAt\)/);
+  assert.match(section, /assignManagedUserRole\(roleUser\.userId, roleId\)/);
+  assert.match(section, /revokeManagedUserRole\(roleUser\.userId, roleId\)/);
+  assert.ok(section.indexOf('of assignments') < section.indexOf('of revocations'));
+  assert.match(section, /createLatestRequestGuard/);
+  assert.match(presentation, /export function validateUserForm/);
+  assert.match(presentation, /export function buildRoleMutationPlan/);
+  assert.match(editor, /expectedUpdatedAt/);
+  assert.match(editor, /department/);
+  assert.match(editor, /specialization/);
+  assert.match(role, /setSelectedRoles\(new Set\(user\.roles \|\| \[\]\)\)/);
+  assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
+  assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
+  assert.match(drawer, /relatedSummary\?\.openReservationCount/);
+});
 
 test('FE11 row selection fetches detail before opening the drawer', async () => {
   const source = await readFile(pagePath, 'utf8');

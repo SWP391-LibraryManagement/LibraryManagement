@@ -54,12 +54,14 @@ test('FE11 list params omit UI sentinels and empty search', async () => {
 });
 
 test('FE11 Admin UI reads phoneNumber instead of response phone', async () => {
-  const source = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const section = await readFile(new URL('../src/page/admin/users/AdminUsersSection.jsx', import.meta.url), 'utf8');
+  const editor = await readFile(new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url), 'utf8');
+  const drawer = await readFile(new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url), 'utf8');
 
-  assert.match(source, /phone:\s*user\?\.phoneNumber\s*\|\|\s*''/);
-  assert.match(source, /user\.phoneNumber\s*\|\|\s*'-'/);
-  assert.match(source, /selectedUser\.phoneNumber\s*\|\|\s*'-'/);
-  assert.doesNotMatch(source, /user\?\.phone\s*\|\|/);
+  assert.match(editor, /phone:\s*user\?\.phoneNumber\s*\|\|\s*''/);
+  assert.match(section, /user\.phoneNumber\s*\|\|\s*'-'/);
+  assert.match(drawer, /user\.phoneNumber\s*\|\|\s*'-'/);
+  assert.doesNotMatch(`${section}\n${editor}\n${drawer}`, /user\?\.phone\s*\|\|/);
 });
 
 test('FE11 detail 404 classifier reads the wrapped Axios cause safely', async () => {

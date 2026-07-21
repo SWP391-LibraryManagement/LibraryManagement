@@ -66,3 +66,17 @@ test('Admin dashboard keeps API ownership, stale-response guard and operational 
   assert.match(page, /activeSection === 'dashboard'/);
   assert.match(page, /<AdminDashboardSection \/>/);
 });
+
+test('Admin users render one directory as a desktop table and mobile cards with visible actions', async () => {
+  const users = await readFile(new URL('users/AdminUsersSection.jsx', root), 'utf8');
+  const page = await readFile(new URL('AdminConsolePage.jsx', root), 'utf8');
+  assert.match(users, /className="admin-user-table"/);
+  assert.match(users, /className="admin-user-cards"/);
+  assert.equal(users.match(/users\.map\(/g)?.length, 2);
+  for (const label of ['Chỉnh sửa', 'Phân quyền', 'Vô hiệu hóa']) {
+    assert.match(users, new RegExp(`label="${label}"`));
+  }
+  assert.match(users, /Tài khoản này đã ngừng hoạt động\./);
+  assert.match(page, /activeSection === 'users'/);
+  assert.match(page, /<AdminUsersSection/);
+});
