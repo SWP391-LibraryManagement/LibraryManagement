@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -62,6 +62,8 @@ import {
   REQUEST_DOCX_COLUMNS,
 } from '../utils/adminRequestExport';
 import { downloadDocx } from '../utils/adminDocxExport';
+import { normalizeAdminUserStatistics } from '../utils/adminStatistics';
+import { createLatestRequestGuard } from '../utils/latestRequestGuard';
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
 import { getBooleanLabel, getRoleLabel, getStatusLabel } from '../utils/uiLabels';
 
@@ -272,6 +274,13 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
+function formatChartLabel(label, maxLength = 15) {
+  const normalized = String(label ?? '').trim() || 'Không tên';
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1)}…`
+    : normalized;
+}
+
 const LIBRARY_DOCX_COLUMNS = [
   { key: 'id', label: 'ID' },
   { key: 'title', label: 'Tên sách' },
@@ -429,7 +438,9 @@ function UserModal({ mode, user, onClose, onSubmit }) {
           )}
 
           <div className="um-note">
-            Tài khoản mới ở trạng thái chưa kích hoạt. Người dùng phải hoàn tất thiết lập mật khẩu qua email trước khi đăng nhập.
+            {isEdit
+              ? 'Tài khoản hiện tại giữ nguyên trạng thái đăng nhập.'
+              : 'Tài khoản mới ở trạng thái chưa kích hoạt. Người dùng phải hoàn tất thiết lập mật khẩu qua email trước khi đăng nhập.'}
           </div>
         </div>
 
@@ -653,14 +664,14 @@ function AdminLineChart({ title, rows }) {
             <title>{`${point.label}: ${point.value} lượt`}</title>
             <circle cx={point.x} cy={point.y} r="4" />
             <text className="value" x={point.x} y={Math.max(point.y - 9, 14)}>{point.value}</text>
-            <text x={point.x} y={height - 9}>{String(point.label).slice(0, 12)}</text>
+            <text x={point.x} y={height - 9}>{formatChartLabel(point.label)}</text>
           </g>
         ))}
       </svg>
       <div className="um-chart-list">
         {data.slice(0, 8).map((item, index) => (
           <div key={`${item.label}-${index}`}>
-            <span>{index + 1}. {item.label}</span>
+            <span title={String(item.label)}>{index + 1}. {formatChartLabel(item.label, 24)}</span>
             <strong>{item.value}</strong>
           </div>
         ))}
@@ -774,7 +785,7 @@ function UserManagement() {
   const navigate = useNavigate();
   const access = readStoredAdminAccess();
   const currentAdmin = access.user;
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState('users');
   const [users, setUsers] = useState([]);
   const [userStats, setUserStats] = useState({
     total: 0,
@@ -863,6 +874,7 @@ function UserManagement() {
   const [membershipSaving, setMembershipSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const requestGuards = useRef(new Map());
   const hasActiveFilters = search.trim() || roleFilter !== 'ALL' || statusFilter !== 'ALL';
   const isUserDirectorySection = activeSection === 'users';
   const pagedLibraryRows = libraryRows.slice((libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE, libraryPage * ADMIN_TABLE_PAGE_SIZE);
@@ -890,6 +902,16 @@ function UserManagement() {
     permissions: permissionsLoading || userStatsLoading,
     audit: auditLoading,
   }[activeSection] || false;
+
+  function beginLatestRequest(name) {
+    let guard = requestGuards.current.get(name);
+    if (!guard) {
+      guard = createLatestRequestGuard();
+      requestGuards.current.set(name, guard);
+    }
+
+    return { guard, token: guard.begin() };
+  }
 
   function handleLogout() {
     localStorage.removeItem('accessToken');
@@ -1036,11 +1058,13 @@ function UserManagement() {
   }, [roleSummary]);
 
   async function loadPermissions({ announce = false } = {}) {
+    const { guard, token } = beginLatestRequest('permissions');
     setPermissionsLoading(true);
     setPermissionsError('');
 
     try {
       const result = await adminApi.permissions();
+      if (!guard.isLatest(token)) return;
       setPermissionPolicy({
         roles: result.roles || [],
         permissions: result.permissions || [],
@@ -1050,45 +1074,34 @@ function UserManagement() {
         setToast({ type: 'success', message: 'Đã làm mới ma trận phân quyền.' });
       }
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setPermissionsError(error.message);
       if (announce) setToast({ type: 'error', message: error.message });
     } finally {
-      setPermissionsLoading(false);
+      if (guard.isLatest(token)) setPermissionsLoading(false);
     }
   }
 
   async function loadUserStatistics() {
+    const { guard, token } = beginLatestRequest('user-statistics');
     setUserStatsLoading(true);
     setUserStatsError('');
 
     try {
       const result = await reportApi.users();
-      const toCount = (value) => {
-        const count = Number(value);
-        return Number.isFinite(count) && count >= 0 ? count : 0;
-      };
-      const totals = result?.totals || {};
-      const usersByStatus = result?.usersByStatus || {};
-      const usersByRole = Object.fromEntries(
-        Object.entries(result?.usersByRole || {}).map(([roleName, count]) => [roleName, toCount(count)])
-      );
-
-      setUserStats({
-        total: toCount(totals.users),
-        active: toCount(usersByStatus.ACTIVE),
-        inactive: toCount(usersByStatus.INACTIVE),
-        librarians: toCount(usersByRole.LIBRARIAN),
-        usersByRole,
-      });
+      if (!guard.isLatest(token)) return;
+      setUserStats(normalizeAdminUserStatistics(result));
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setUserStatsError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setUserStatsLoading(false);
+      if (guard.isLatest(token)) setUserStatsLoading(false);
     }
   }
 
   async function loadUsers(page = pagination.page, overrides = {}) {
+    const { guard, token } = beginLatestRequest('users');
     const nextRole = overrides.role ?? roleFilter;
     const nextStatus = overrides.status ?? statusFilter;
     const nextSearch = overrides.search ?? search;
@@ -1103,15 +1116,17 @@ function UserManagement() {
         status: nextStatus,
         search: nextSearch.trim(),
       });
+      if (!guard.isLatest(token)) return;
       setUsers(result.data || []);
       setPagination(result.pagination || { page, limit: pagination.limit, total: 0, totalPages: 1 });
       setUsersUpdatedAt(new Date());
       if (overrides.announce) setToast({ type: 'success', message: 'Đã làm mới danh sách người dùng.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setUsersError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setLoading(false);
+      if (guard.isLatest(token)) setLoading(false);
     }
   }
 
@@ -1140,6 +1155,8 @@ function UserManagement() {
     }, 0);
 
     return () => clearTimeout(timer);
+  // loadUserStatistics is intentionally scheduled only when Admin access changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access.authenticated, access.isAdmin]);
 
   useEffect(() => {
@@ -1155,18 +1172,23 @@ function UserManagement() {
   useEffect(() => {
     if (!access.authenticated || !access.isAdmin) return undefined;
     if (activeSection === 'dashboard') {
+      // eslint-disable-next-line react-hooks/immutability
       loadDashboard();
     }
     if (activeSection === 'library') {
+      // eslint-disable-next-line react-hooks/immutability
       loadLibrary(libraryResource);
     }
     if (activeSection === 'circulation') {
+      // eslint-disable-next-line react-hooks/immutability
       loadBorrowings();
     }
     if (activeSection === 'requests') {
+      // eslint-disable-next-line react-hooks/immutability
       loadRequests();
     }
     if (activeSection === 'membership') {
+      // eslint-disable-next-line react-hooks/immutability
       loadMembershipApplications();
     }
   // The loaders intentionally read current filters when the active admin section changes.
@@ -1183,6 +1205,7 @@ function UserManagement() {
 
     return () => clearTimeout(timer);
   // Each loader owns its own state and retry lifecycle.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection, access.authenticated, access.isAdmin]);
 
   async function loadAuditLogs(
@@ -1196,6 +1219,7 @@ function UserManagement() {
       return;
     }
 
+    const { guard, token } = beginLatestRequest('audit');
     setAuditLoading(true);
     setAuditError('');
     try {
@@ -1204,6 +1228,7 @@ function UserManagement() {
         page,
         limit: AUDIT_TABLE_PAGE_SIZE,
       }));
+      if (!guard.isLatest(token)) return;
       setAuditLogs(result.data || []);
       setAuditPagination(result.pagination || {
         page,
@@ -1214,10 +1239,11 @@ function UserManagement() {
       setAuditUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới nhật ký hoạt động.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setAuditError(error.message);
       if (announce) setToast({ type: 'error', message: error.message });
     } finally {
-      setAuditLoading(false);
+      if (guard.isLatest(token)) setAuditLoading(false);
     }
   }
 
@@ -1248,22 +1274,26 @@ function UserManagement() {
   }
 
   async function loadDashboard({ announce = false } = {}) {
+    const { guard, token } = beginLatestRequest('dashboard');
     setDashboardLoading(true);
     setDashboardError('');
     try {
       const result = await adminApi.dashboard();
+      if (!guard.isLatest(token)) return;
       setDashboardData(result);
       setDashboardUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Tổng quan đã được cập nhật.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setDashboardError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setDashboardLoading(false);
+      if (guard.isLatest(token)) setDashboardLoading(false);
     }
   }
 
   async function loadLibrary(resource = libraryResource, { announce = false } = {}) {
+    const { guard, token } = beginLatestRequest('library');
     setLibraryLoading(true);
     setLibraryError('');
     try {
@@ -1274,16 +1304,18 @@ function UserManagement() {
       const result = resource === 'books'
         ? await adminApi.libraryBooks(params)
         : await adminApi.libraryResource(resource, params);
+      if (!guard.isLatest(token)) return;
       setLibraryRows(result.data || []);
       setLibraryPage(1);
       setLibraryUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Dữ liệu thư viện đã được làm mới.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setLibraryRows([]);
       setLibraryError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setLibraryLoading(false);
+      if (guard.isLatest(token)) setLibraryLoading(false);
     }
   }
 
@@ -1320,6 +1352,7 @@ function UserManagement() {
   }
 
   async function loadBorrowings({ announce = false } = {}) {
+    const { guard, token } = beginLatestRequest('borrowings');
     setBorrowingsLoading(true);
     setBorrowingsError('');
     try {
@@ -1327,16 +1360,18 @@ function UserManagement() {
         q: borrowingFilter.q.trim(),
         status: borrowingFilter.status === 'ALL' ? '' : borrowingFilter.status,
       });
+      if (!guard.isLatest(token)) return;
       setBorrowings(result.data || []);
       setBorrowingPage(1);
       setBorrowingsUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới dữ liệu mượn trả.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setBorrowings([]);
       setBorrowingsError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setBorrowingsLoading(false);
+      if (guard.isLatest(token)) setBorrowingsLoading(false);
     }
   }
 
@@ -1381,12 +1416,14 @@ function UserManagement() {
       setToast({ type: 'error', message: 'Ngày bắt đầu không được sau ngày kết thúc.' });
       return;
     }
+    const { guard, token } = beginLatestRequest('requests');
     setRequestsLoading(true);
     setRequestsError('');
     try {
       const result = await adminApi.requests(
         buildRequestListParams(requestFilter, requestPage, REQUEST_TABLE_PAGE_SIZE)
       );
+      if (!guard.isLatest(token)) return;
       setRequests(result.data || []);
       setRequestPagination(result.pagination || {
         page: requestPage,
@@ -1397,6 +1434,7 @@ function UserManagement() {
       setRequestsUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới danh sách yêu cầu.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setRequests([]);
       setRequestPagination({
         page: requestPage,
@@ -1407,7 +1445,7 @@ function UserManagement() {
       setRequestsError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setRequestsLoading(false);
+      if (guard.isLatest(token)) setRequestsLoading(false);
     }
   }
 
@@ -1459,6 +1497,7 @@ function UserManagement() {
   }
 
   async function loadMembershipApplications({ announce = false, page = membershipFilter.page } = {}) {
+    const { guard, token } = beginLatestRequest('membership');
     setMembershipLoading(true);
     setMembershipError('');
     try {
@@ -1468,16 +1507,18 @@ function UserManagement() {
         page,
         limit: 10,
       }));
+      if (!guard.isLatest(token)) return;
       setMembershipApplications(result.items);
       setMembershipFilter((current) => ({ ...current, page, totalPages: result.totalPages }));
       setMembershipUpdatedAt(new Date());
       if (announce) setToast({ type: 'success', message: 'Đã làm mới danh sách đơn đăng ký hội viên.' });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       setMembershipApplications([]);
       setMembershipError(error.message);
       setToast({ type: 'error', message: error.message });
     } finally {
-      setMembershipLoading(false);
+      if (guard.isLatest(token)) setMembershipLoading(false);
     }
   }
 
@@ -2048,7 +2089,7 @@ function UserManagement() {
             <Search size={18} />
             <input
               value={search}
-              placeholder="Tìm theo tên, email, username, số điện thoại hoặc ID..."
+              placeholder="Tìm theo tên, email hoặc ID..."
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -2083,7 +2124,7 @@ function UserManagement() {
           )}
         </section>}
 
-        {isUserDirectorySection && <section className="um-content">
+        {isUserDirectorySection && <section className="um-content user-directory-content">
           <table className="um-table">
             <thead>
               <tr>
@@ -2093,6 +2134,7 @@ function UserManagement() {
                 <th>Vai trò</th>
                 <th>Trạng thái</th>
                 <th>Ngày tạo</th>
+                <th>Lần đăng nhập</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
@@ -2123,6 +2165,7 @@ function UserManagement() {
                     <StatusBadge status={user.status} />
                   </td>
                   <td>{formatDate(user.createdAt)}</td>
+                  <td>{formatDate(user.lastLoginAt)}</td>
                   <td>
                     <div className="um-row-actions" onClick={(event) => event.stopPropagation()}>
                       <button className="um-icon-button" title="Chỉnh sửa" onClick={() => openEditModal(user)}>
@@ -2751,7 +2794,7 @@ function UserManagement() {
         .um-line-chart text.value { fill: #2a2118; font-size: 11px; font-weight: 800; }
         .um-chart-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; border-top: 1px solid #eef2f7; padding-top: 12px; }
         .um-chart-list div { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 8px 10px; }
-        .um-chart-list span { color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .um-chart-list span { min-width: 0; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .um-chart-list strong { color: #1d4ed8; }
         .um-chart-empty { min-height: 180px; display: grid; place-items: center; align-content: center; gap: 7px; color: #6b6153; text-align: center; }
         .um-chart-empty svg { color: #a87532; }
@@ -2796,6 +2839,20 @@ function UserManagement() {
         .um-report-bars div div { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
         .um-report-bars i { display: block; height: 100%; background: #2f80ed; border-radius: inherit; }
         .um-table { width: 100%; border-collapse: collapse; min-width: 850px; }
+        .um-content.user-directory-content { overflow-x: auto; overflow-y: visible; scrollbar-gutter: stable; }
+        .um-content.user-directory-content .um-table { min-width: 100%; table-layout: fixed; }
+        .um-content.user-directory-content .um-table th,
+        .um-content.user-directory-content .um-table td { overflow-wrap: anywhere; }
+        .um-content.user-directory-content .um-table th:nth-child(1) { width: 21%; }
+        .um-content.user-directory-content .um-table th:nth-child(2) { width: 11%; }
+        .um-content.user-directory-content .um-table th:nth-child(3) { width: 9%; }
+        .um-content.user-directory-content .um-table th:nth-child(4) { width: 16%; }
+        .um-content.user-directory-content .um-table th:nth-child(5) { width: 12%; }
+        .um-content.user-directory-content .um-table th:nth-child(6) { width: 11%; }
+        .um-content.user-directory-content .um-table th:nth-child(7) { width: 10%; }
+        .um-content.user-directory-content .um-table th:nth-child(8) { width: 10%; }
+        .um-content.user-directory-content .um-badge-row { flex-wrap: wrap; align-items: flex-start; }
+        .um-content.user-directory-content .um-row-actions { flex-wrap: wrap; }
         .um-permission-table { width: 100%; border-collapse: collapse; }
         .um-permission-table th, .um-permission-table td { border-bottom: 1px solid #eef2f7; padding: 12px 10px; text-align: left; }
         .um-permission-table th { color: #64748b; font-size: 12px; text-transform: uppercase; }
@@ -3055,8 +3112,14 @@ function UserManagement() {
         .um-admin-section .membership-toolbar .btn { white-space: nowrap; }
         @media (max-width: 900px) {
           .um-shell { display: block; }
-          .um-sidebar { width: 100%; height: auto; position: static; }
+          .um-sidebar { width: 100%; height: auto; position: static; padding: 14px; gap: 12px; }
+          .um-brand { padding: 4px 6px 10px; }
           .um-nav, .um-sidebar-footer { flex-direction: row; flex-wrap: wrap; }
+          .um-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+          .um-nav button { min-height: 38px; padding: 0 8px; font-size: 13px; }
+          .um-sidebar-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-top: 10px; }
+          .um-sidebar-footer button { min-height: 38px; padding: 0 8px; font-size: 13px; }
+              .um-content.user-directory-content .um-table { min-width: 980px; table-layout: auto; }
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }
           .um-topbar { gap: 14px; }
           .um-actions { width: 100%; flex-wrap: wrap; }

@@ -75,14 +75,55 @@ test('FE11 user cards use independent FE12 statistics instead of list summaries'
   const source = await readFile(pagePath, 'utf8');
 
   assert.match(source, /import \{ borrowingApi, membershipApi, reportApi \} from '\.\.\/api\/libraryFeatureApi';/);
+  assert.match(source, /import \{ normalizeAdminUserStatistics \} from '\.\.\/utils\/adminStatistics';/);
   assert.match(source, /async function loadUserStatistics\(\)/);
   assert.match(source, /const result = await reportApi\.users\(\)/);
-  assert.match(source, /totals\.users/);
-  assert.match(source, /usersByStatus\.ACTIVE/);
-  assert.match(source, /usersByStatus\.INACTIVE/);
-  assert.match(source, /usersByRole\.LIBRARIAN/);
+  assert.match(source, /setUserStats\(normalizeAdminUserStatistics\(result\)\)/);
   assert.doesNotMatch(source, /result\.summary/);
   assert.doesNotMatch(source, /users\.filter\(\(user\) => user\.roles/);
+});
+
+test('FE11 opens the user directory when an admin lands on the admin route', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /const \[activeSection, setActiveSection\] = useState\('users'\)/);
+});
+
+test('FE11 user directory table and chart labels have responsive contracts', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /className="um-content user-directory-content"/);
+  assert.match(source, /function formatChartLabel\(label, maxLength = 15\)/);
+  assert.match(source, /formatChartLabel\(point\.label\)/);
+  assert.match(source, /title=\{String\(item\.label\)\}/);
+  assert.match(source, /\.um-content\.user-directory-content \.um-table\s*\{[^}]*table-layout: fixed/s);
+  assert.match(source, /\.um-content\.user-directory-content \.um-table th:nth-child\(7\)/);
+  assert.match(source, /\.um-content\.user-directory-content \.um-badge-row \{ flex-wrap: wrap/);
+  assert.match(source, /\.um-nav \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
+
+test('FE11 user directory copy and columns match the searchable DTO contract', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
+  assert.match(source, /<th>Lần đăng nhập<\/th>/);
+  assert.match(source, /formatDate\(user\.lastLoginAt\)/);
+  assert.match(source, /\.um-content\.user-directory-content \.um-table th:nth-child\(8\)/);
+});
+
+test('FE11 account setup note is shown only when creating an account', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /\{isEdit\s*\?\s*'Tài khoản hiện tại giữ nguyên trạng thái đăng nhập\.'\s*:\s*'Tài khoản mới ở trạng thái chưa kích hoạt\./);
+});
+
+test('FE11 async admin loaders ignore stale responses', async () => {
+  const source = await readFile(pagePath, 'utf8');
+
+  assert.match(source, /createLatestRequestGuard/);
+  assert.match(source, /function beginLatestRequest\(name\)/);
+  assert.match(source, /const \{ guard, token \} = beginLatestRequest\('users'\)/);
+  assert.match(source, /if \(!guard\.isLatest\(token\)\) return;/);
 });
 
 test('FE11 list and statistics failures are stored independently', async () => {
