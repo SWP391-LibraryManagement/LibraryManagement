@@ -156,7 +156,7 @@ test('FE11 Audit renders only the nested safe DTO as React text', async () => {
   assert.doesNotMatch(source, /log\.(?:actorName|actorEmail|targetName|targetEmail|targetType|targetId)/);
 });
 
-test('FE11 Admin sidebar exposes exactly the approved eight entries in order', async () => {
+test('FE11 Admin sidebar exposes exactly the approved seven entries in order', async () => {
   const source = await readFile(pagePath, 'utf8');
   const sidebar = source.match(/function Sidebar\([^]*?\n}\r?\n\r?\nfunction AdminLineChart/)?.[0] || '';
   const entries = [...sidebar.matchAll(/\{ id: '([^']+)'[^\n]+label: '([^']+)'/g)]
@@ -169,10 +169,9 @@ test('FE11 Admin sidebar exposes exactly the approved eight entries in order', a
     ['circulation', 'Quản lý mượn trả'],
     ['requests', 'Quản lý yêu cầu'],
     ['users', 'Quản lý người dùng'],
-    ['permissions', 'Phân quyền'],
     ['audit', 'Nhật ký hoạt động'],
   ]);
-  assert.doesNotMatch(sidebar, /membership|Confirm Payment|Confirm Borrow/);
+  assert.doesNotMatch(sidebar, /permissions|Phân quyền|membership|Confirm Payment|Confirm Borrow/);
 });
 
 test('FE11 Permissions loads FE11 matrix and FE12 counts independently', async () => {

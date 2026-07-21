@@ -557,7 +557,6 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
     { id: 'circulation', icon: BookCopy, label: 'Quản lý mượn trả' },
     { id: 'requests', icon: ClipboardList, label: 'Quản lý yêu cầu' },
     { id: 'users', icon: Users, label: 'Quản lý người dùng' },
-    { id: 'permissions', icon: Shield, label: 'Phân quyền' },
     { id: 'audit', icon: ClipboardList, label: 'Nhật ký hoạt động' },
   ];
 
