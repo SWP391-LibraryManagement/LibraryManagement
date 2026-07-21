@@ -57,3 +57,15 @@ test('FE09 terminal records are not exposed to arbitrary edit or delete actions'
   assert.match(page, /fineApi\.cancel/);
   assert.match(page, /isAdmin/);
 });
+
+test('FE09 connects calculation, list selection, and payment workflows', async () => {
+  const page = await readFile(pagePath, 'utf8');
+
+  assert.doesNotMatch(page, /Quy trình FE09/);
+  assert.match(page, /setWorkflowFine\(result\.fine\)/);
+  assert.match(page, /setActiveSection\(result\.fine\?\.status === 'UNPAID' \? 'collect' : 'list'\)/);
+  assert.match(page, /onCollect=\{\(\) => changeSection\('collect'\)\}/);
+  assert.match(page, /onMarkPaid=\{\(\) => changeSection\('paid'\)\}/);
+  assert.match(page, /Hãy chọn một phiếu chưa thanh toán/);
+  assert.match(page, /paymentOptions\.map/);
+});

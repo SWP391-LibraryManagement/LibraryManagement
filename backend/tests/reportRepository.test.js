@@ -36,6 +36,27 @@ beforeEach(() => {
   getPool.mockReset();
 });
 
+test('report searches are parameterized and user rows use increasing IDs', async () => {
+  const borrowing = useRecordset([]);
+  await reportRepository.getBorrowingReport({ q: '1984' });
+  expect(borrowing.inputs.Search).toBe('%1984%');
+  expect(borrowing.query).toContain('b.Title LIKE @Search');
+
+  const inventory = useRecordset([]);
+  await reportRepository.getInventoryReport({ q: 'BC14' });
+  expect(inventory.inputs.Search).toBe('%BC14%');
+  expect(inventory.query).toContain('bc.Barcode LIKE @Search');
+
+  const users = useRecordset([
+    { UserId: 9, UserStatus: 'ACTIVE', CreatedAt: new Date('2026-01-01') },
+    { UserId: 2, UserStatus: 'ACTIVE', CreatedAt: new Date('2026-07-01') },
+  ]);
+  const report = await reportRepository.getUserStatistics({ q: 'member' });
+  expect(users.inputs.Search).toBe('%member%');
+  expect(users.query).toContain('ORDER BY u.UserId ASC');
+  expect(report.rows.map((row) => row.userId)).toEqual([2, 9]);
+});
+
 test('borrowing request status counts deduplicate joined detail rows', async () => {
   useRecordset([
     {

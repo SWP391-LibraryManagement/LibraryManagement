@@ -31,6 +31,13 @@ const paginationValidators = [
     .toInt(),
 ];
 
+// @spec FR-FE12-011
+const searchValidator = query('q')
+  .optional({ nullable: true, checkFalsy: true })
+  .trim()
+  .isLength({ max: 200 })
+  .withMessage('Search query must be at most 200 characters.');
+
 function isDateOnly(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -69,6 +76,7 @@ const commonDateValidators = [
 ];
 
 const borrowingReportValidators = [
+  searchValidator,
   ...commonDateValidators,
   query('status')
     .optional({ nullable: true, checkFalsy: true })
@@ -90,6 +98,7 @@ const borrowingReportValidators = [
 ];
 
 const inventoryReportValidators = [
+  searchValidator,
   query('categoryId')
     .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
@@ -115,6 +124,7 @@ const inventoryReportValidators = [
 ];
 
 const userStatisticsValidators = [
+  searchValidator,
   ...commonDateValidators,
   query('roleId')
     .optional({ nullable: true, checkFalsy: true })

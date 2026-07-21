@@ -93,6 +93,11 @@ async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
   const request = pool.request();
   const where = ['1=1'];
 
+  if (filters.q) {
+    request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
+    where.push("(b.Title LIKE @Search OR bc.Barcode LIKE @Search OR u.Username LIKE @Search OR u.Email LIKE @Search OR CONVERT(NVARCHAR(20), br.UserId) LIKE @Search)");
+  }
+
   if (filters.fromDate) {
     request.input('FromDate', sql.DateTime, new Date(filters.fromDate));
     where.push('bd.BorrowDate >= @FromDate');
@@ -157,6 +162,11 @@ async function getInventoryRows(filters = {}) {
   const request = pool.request();
   const where = ['1=1'];
 
+  if (filters.q) {
+    request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
+    where.push('(b.Title LIKE @Search OR bc.Barcode LIKE @Search OR bc.Location LIKE @Search OR CONVERT(NVARCHAR(20), b.BookId) LIKE @Search)');
+  }
+
   if (filters.categoryId) {
     request.input('CategoryId', sql.Int, filters.categoryId);
     where.push('b.CategoryId = @CategoryId');
@@ -209,6 +219,21 @@ async function getUserRows(filters = {}) {
   const where = ['1=1'];
   const approvalPeriodConditions = ['m.ApprovedAt IS NOT NULL'];
 
+  if (filters.q) {
+    request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
+    where.push(`(
+      CONVERT(NVARCHAR(20), u.UserId) LIKE @Search
+      OR u.Status LIKE @Search
+      OR m.Status LIKE @Search
+      OR EXISTS (
+        SELECT 1
+        FROM UserRoles searchUr
+        INNER JOIN Roles searchRole ON searchUr.RoleId = searchRole.RoleId
+        WHERE searchUr.UserId = u.UserId AND searchRole.RoleName LIKE @Search
+      )
+    )`);
+  }
+
   if (filters.roleId) {
     request.input('RoleId', sql.Int, filters.roleId);
     where.push('ur.RoleId = @RoleId');
@@ -249,7 +274,7 @@ async function getUserRows(filters = {}) {
     LEFT JOIN Roles r ON ur.RoleId = r.RoleId
     LEFT JOIN Members m ON u.UserId = m.UserId
     WHERE ${where.join(' AND ')}
-    ORDER BY u.CreatedAt DESC, u.UserId DESC
+    ORDER BY u.UserId ASC
   `);
 
   return result.recordset;
@@ -479,11 +504,7 @@ async function getUserStatistics(filters = {}) {
       createdAt: user.createdAt || null,
       approvedAt: user.memberApprovedAt || null,
     }))
-    .sort(
-      (left, right) =>
-        new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime() ||
-        right.userId - left.userId
-    );
+    .sort((left, right) => left.userId - right.userId);
 
   return buildReport(
     {

@@ -2,9 +2,6 @@
 .fine-panel-head p { color: #8a581d; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; }
 .fine-panel-head h2,
 .fine-guide-panel h2 { margin: 0; color: #111827; letter-spacing: 0; }
-.fine-policy { max-width: none; display: flex; gap: 12px; padding: 15px 18px; border: 1px solid #e6d5bb; border-radius: 14px; background: #f7efe2; color: #8a581d; }
-.fine-policy strong, .fine-policy span { display: block; }
-.fine-policy span { color: #475569; font-size: 13px; margin-top: 3px; }
 .fine-workflow-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .fine-workflow-tabs .tab { min-height: 44px; }
 .fine-workflow-tabs .tab > span { width: 23px; height: 23px; border-radius: 50%; display: grid; place-items: center; background: #f2e7d5; color: #8a581d; font-size: 12px; font-weight: 800; }
@@ -41,6 +38,7 @@
 .fine-details { display: grid; gap: 10px; margin: 0; }
 .fine-details div { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 9px; }
 .fine-details dd { margin: 0; color: #111827; text-align: right; }
+.fine-payment-actions { display: grid; gap: 10px; margin-top: 18px; }
 .fine-form-panel { display: flex; flex-direction: column; gap: 15px; }
 .fine-form-panel label { display: grid; gap: 7px; color: #334155; font-size: 13px; font-weight: 800; }
 .fine-form-panel select, .fine-form-panel textarea, .fine-form-panel input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 11px 12px; resize: vertical; min-height: 42px; }

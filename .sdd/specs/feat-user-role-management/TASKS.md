@@ -12,7 +12,6 @@ Owner: Dung
 - [x] **FE11-S01 - Draft the cross-feature account-setup contract.**
   - Maps to: BR-FE11-005, BR-FE11-021..025; FR-FE11-003, 009, 036..038; AC-FE11-003, 006, 010, 020..022; ADR-005.
   - DoD: FE02, FE10, FE11, API, state, transaction, delivery, failure, and resend semantics use one deterministic contract; implementation files remain unchanged.
-  - Review state: Nhat reviewed the approved contract before implementation.
 
 - [x] **FE11-S02 - Add RED FE11 creation tests.**
   - Files: `backend/tests/userManagementService.test.js`, `backend/tests/userManagementRoutes.test.js`, test helpers.
@@ -43,8 +42,8 @@ Owner: Dung
 
 - [x] **FE11-S07 - Pass the account-setup validation gate.**
   - Dependencies: FE11-S02..S06.
-  - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; Nhat confirms human review.
-  - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
+  - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; confirms human review.
+  - Validation state: PASS on 2026-07-15; 
 
 - [x] **FE11-S08 - Normalize the remaining FE11 specification contract.**
   - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.

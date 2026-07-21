@@ -16,6 +16,20 @@ test('adds the selected category ID to the inventory report query', async () => 
   assert.deepEqual(buildInventoryReportParams('7'), { categoryId: 7 });
 });
 
+test('builds complete report filters and omits blank values', async () => {
+  const { buildBorrowingReportParams, buildInventoryReportParams, buildUserReportParams } = await loadReportFilters();
+
+  assert.deepEqual(buildBorrowingReportParams({ q: '1984', status: 'BORROWED', userId: '7', bookId: '' }), {
+    q: '1984', status: 'BORROWED', userId: 7,
+  });
+  assert.deepEqual(buildInventoryReportParams({ q: 'BC14', categoryId: '2', status: 'AVAILABLE' }), {
+    q: 'BC14', categoryId: 2, status: 'AVAILABLE',
+  });
+  assert.deepEqual(buildUserReportParams({ q: '10', status: 'ACTIVE', membershipStatus: '' }), {
+    q: '10', status: 'ACTIVE',
+  });
+});
+
 test('omits the category ID when the inventory report filter is blank', async () => {
   const { buildInventoryReportParams } = await loadReportFilters();
 

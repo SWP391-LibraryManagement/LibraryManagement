@@ -1,8 +1,8 @@
 # FE09 Test Plan - Fine Management
 
-Version: 0.3.2
+Version: 0.3.3
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-21
 
 Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
@@ -51,6 +51,7 @@ Project human acceptance remains a release gate.
 - Admin waives or cancels an unpaid fine with a valid reason -> the fine remains visible, becomes terminal, and the audit record is committed atomically.
 - Staff lists fines with omitted pagination -> the first 20 records appear in `FineId ASC` order; invalid filters are rejected without a data query.
 - Frontend `FineManagement.jsx` sends canonical search/status/page/limit queries, consumes the server list envelope, and renders responsive desktop/mobile pagination without browser-side filtering or slicing.
+- Frontend preserves one canonical selected fine from calculation or list selection through collection/paid reconciliation, including when that fine is outside the currently rendered list page; payment steps reject missing or terminal selections.
 
 ## 5. Current Evidence
 

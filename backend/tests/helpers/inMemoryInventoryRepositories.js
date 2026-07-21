@@ -134,6 +134,9 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
       control.listCalls.push(clone(filters));
       const filtered = copies
         .filter((copy) => {
+          const book = books.find((item) => item.bookId === copy.bookId);
+          const searchText = [copy.copyId, copy.bookId, copy.barcode, copy.location, book?.title, book?.isbn, book?.authorName, book?.categoryName].join(' ').toLowerCase();
+          if (filters.q && !searchText.includes(String(filters.q).toLowerCase())) return false;
           if (filters.bookId && copy.bookId !== Number(filters.bookId)) return false;
           if (filters.status && copy.status !== filters.status) return false;
           if (filters.barcode && !copy.barcode.includes(filters.barcode)) return false;
@@ -155,7 +158,11 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
     async countInventoryByStatus(filters = {}) {
       return copies
         .filter((copy) => {
+          const book = books.find((item) => item.bookId === copy.bookId);
+          const searchText = [copy.copyId, copy.bookId, copy.barcode, copy.location, book?.title, book?.isbn, book?.authorName, book?.categoryName].join(' ').toLowerCase();
+          if (filters.q && !searchText.includes(String(filters.q).toLowerCase())) return false;
           if (filters.bookId && copy.bookId !== Number(filters.bookId)) return false;
+          if (filters.status && copy.status !== filters.status) return false;
           if (filters.barcode && !copy.barcode.includes(filters.barcode)) return false;
           if (filters.location && !String(copy.location || '').includes(filters.location)) return false;
           return true;

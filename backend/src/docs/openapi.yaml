@@ -1338,6 +1338,7 @@ paths:
       summary: Borrowing report (FR-FE12-001)
       description: Detailed rows use BorrowDate DESC, BorrowDetailId DESC.
       parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: status, in: query, required: false, schema: { type: string, enum: [PENDING, APPROVED, REJECTED, COMPLETED, CANCELLED, REQUESTED, BORROWED, RETURNED, LOST, DAMAGED, OVERDUE] } }
@@ -1356,6 +1357,7 @@ paths:
       summary: Inventory report (FR-FE12-002)
       description: Detailed rows use Title ASC, BookId ASC, CopyId ASC.
       parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: categoryId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: bookId, in: query, required: false, schema: { type: integer, minimum: 1 } }
         - { name: status, in: query, required: false, schema: { type: string, enum: [AVAILABLE, BORROWED, RESERVED, DAMAGED, LOST, INACTIVE] } }
@@ -1371,8 +1373,9 @@ paths:
     get:
       tags: [Reporting]
       summary: User statistics report (FR-FE12-003/008)
-      description: Detailed rows use CreatedAt DESC, UserId DESC and exclude personal profile fields.
+      description: Detailed rows use UserId ASC and exclude personal profile fields.
       parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }
         - { name: fromDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: toDate, in: query, required: false, schema: { type: string, format: date } }
         - { name: roleId, in: query, required: false, schema: { type: integer, minimum: 1 } }

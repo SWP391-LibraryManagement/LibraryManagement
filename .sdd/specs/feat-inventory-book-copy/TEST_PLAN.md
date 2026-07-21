@@ -55,6 +55,11 @@ Physical book copy creation, barcode/identifier uniqueness, copy status, availab
 
 ## 7. Required Commands / Evidence Before Merge
 
+- Verify `q`, barcode, location, status, and book filters combine before pagination and grouped counts.
+- Verify the safe list projection includes copy identifiers/status/version/location and approved parent-book metadata only.
+- Verify Librarian/Admin access, Member/Guest denial, FE07 borrow conflicts, and FE08 reservation conflicts remain enforced.
+- Verify API failures render an error state and are not mislabeled as a valid empty inventory.
+
 ```powershell
 npm.cmd --prefix backend test
 npm.cmd --prefix frontend run lint

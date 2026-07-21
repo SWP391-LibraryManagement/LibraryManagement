@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-21 - Connected Librarian fine workflow
+
+- Removed the redundant FE09 process notice from the Librarian workspace.
+- Preserved the canonical fine returned by calculation and payment mutations so list selection, collection, and paid reconciliation operate on the same fine even across server pagination/filter boundaries.
+- Added direct actions from an unpaid fine detail to collection or paid reconciliation and rejected payment-step entry when no unpaid fine is selected.
+- Added FE09 workflow-continuity acceptance coverage without changing server permissions, payment policy, FE07 eligibility, or FE12 reporting ownership.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

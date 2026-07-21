@@ -1,12 +1,12 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.4.1
+# Version: 0.4.2
 
 # Status: APPROVED BASELINE 2026-07-17 - PHASE 2 EXIT COMPLETE
 
 # Owner: Dung
 
-# Last Updated: 2026-07-20
+# Last Updated: 2026-07-21
 
 # Feature ID: FE09
 
@@ -211,6 +211,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE09-015: When an admin cancels an unpaid fine with a valid reason, the system shall set status `CANCELLED` and write the audit record atomically.
 - FR-FE09-016: IF a supplied fine-list page, limit, status, or user ID is invalid, the system shall reject the request without normalizing the value or querying fines.
 - FR-FE09-017: When calculating a fine, the system shall derive overdue days from the `Asia/Ho_Chi_Minh` business date and stored due/return dates.
+- FR-FE09-018: The Librarian/Admin fine workspace shall preserve the selected fine across list, calculation, collection, and paid-reconciliation steps. A newly calculated overdue fine shall become the selected `UNPAID` fine for collection, and payment steps shall reject entry unless an `UNPAID` fine is selected, including when that selected fine is outside the currently rendered server page.
 
 ---
 
@@ -231,6 +232,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-013: Given an unpaid fine and a valid admin reason, when the admin waives the fine, then status becomes `WAIVED`, the fine remains visible, and an audit record is written atomically.
 - AC-FE09-014: Given an unpaid fine and a valid admin reason, when the admin cancels the fine, then status becomes `CANCELLED`, the fine remains visible, and an audit record is written atomically.
 - AC-FE09-015: Given a fine calculation at a timezone boundary, when the server business date is evaluated, then overdue days use `Asia/Ho_Chi_Minh` consistently.
+- AC-FE09-016: Given a Librarian/Admin calculates or selects an unpaid fine, when moving to collection or paid reconciliation, then the same fine ID, member, borrowing context, and amount remain selected; after success, the returned canonical `PAID` fine is shown and FE07/FE12 consume the resolved state.
 
 ---
 
@@ -496,6 +498,7 @@ This feature does not include:
 | FR-FE09-015 | UC44 | Admin cancel with reason and audit | Ready for review |
 | FR-FE09-016 | UC41 | Invalid list query rejected before repository | Ready for review |
 | FR-FE09-017 | UC42 | Business-date calculation boundary | Ready for review |
+| FR-FE09-018 | UC41-UC44 | Selected-fine workflow continuity source/UI test | Ready for review |
 | AC-FE09-001 | UC41 | Own-fines response contains only actor records | Ready for review |
 | AC-FE09-002 | UC41 | Staff selected-member fines response | Ready for review |
 | AC-FE09-003 | UC42 | Overdue amount equals days * 5000 | Ready for review |
@@ -511,6 +514,7 @@ This feature does not include:
 | AC-FE09-013 | UC44 | Valid admin waive is terminal and audited | Ready for review |
 | AC-FE09-014 | UC44 | Valid admin cancel is terminal and audited | Ready for review |
 | AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Ready for review |
+| AC-FE09-016 | UC41-UC44 | Calculate/select -> collect/paid preserves one canonical fine | Ready for review |
 
 ---
 

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { BookOpen, BookMarked, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
+import { BookOpen, BookMarked, AlertTriangle, Calendar, RefreshCw, Search } from 'lucide-react';
 
 import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -12,7 +12,7 @@ import { BarChart, LineChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
-import { buildDateRangeReportParams } from '../../utils/reportFilters';
+import { buildBorrowingReportParams } from '../../utils/reportFilters';
 import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
@@ -21,21 +21,23 @@ const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 export default function BorrowingReportPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
+  const [userId, setUserId] = useState('');
+  const [bookId, setBookId] = useState('');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
-  const [noticeType, setNoticeType] = useState('info');
 
-  async function loadReport() {
+  async function loadReport(event) {
+    event?.preventDefault();
     setLoading(true);
+    setNotice('');
     try {
-      const data = await reportApi.borrowing(buildDateRangeReportParams(from, to));
+      const data = await reportApi.borrowing(buildBorrowingReportParams({ q: query, fromDate: from, toDate: to, status, userId, bookId }));
       setReport(data);
-      setNoticeType('success');
-      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
-      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -69,19 +71,23 @@ export default function BorrowingReportPage() {
       subtitle="Báo cáo mượn/trả được lấy trực tiếp từ FE07, không chỉnh sửa dữ liệu nguồn."
       actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
+      {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
 
-      <DataToolbar
+      <form onSubmit={loadReport}><DataToolbar
+        search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, tài khoản..." aria-label="Tìm trong báo cáo mượn trả" /></>}
         filters={(
           <div className="field report-date-filter">
             <Calendar size={16} className="muted" />
             <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
             <span className="muted">-</span>
             <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
-            <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
+            <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái mượn"><option value="">Tất cả trạng thái</option><option value="BORROWED">Đang mượn</option><option value="OVERDUE">Quá hạn</option><option value="RETURNED">Đã trả</option><option value="REQUESTED">Chờ xử lý</option></select>
+            <input type="number" min="1" className="input" value={userId} onChange={(event) => setUserId(event.target.value)} placeholder="Mã người dùng" aria-label="Mã người dùng" />
+            <input type="number" min="1" className="input" value={bookId} onChange={(event) => setBookId(event.target.value)} placeholder="Mã sách" aria-label="Mã sách" />
+            <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>Áp dụng</button>
           </div>
         )}
-      />
+      /></form>
 
       {loading ? <LoadingBlock rows={4} /> : !report ? (
         <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">

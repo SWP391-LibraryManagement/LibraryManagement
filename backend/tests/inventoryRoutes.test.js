@@ -123,6 +123,25 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
     expect(response.body.countsByStatus.RESERVED ?? 0).toBe(0);
   });
 
+  // @spec FR-FE06-025 AC-FE06-015
+  test('inventory search combines safe text search with copy filters', async () => {
+    const { app, staff } = await makeStaffSetup('LIBRARIAN');
+
+    const response = await request(app)
+      .get('/api/inventory?q=Clean&status=AVAILABLE&location=A1&page=1&limit=20')
+      .set('Authorization', authHeader(staff.accessToken))
+      .expect(200);
+
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0]).toEqual(expect.objectContaining({
+      barcode: 'BC-001',
+      location: 'A1',
+      status: 'AVAILABLE',
+    }));
+    expect(response.body.items[0].book).toEqual(expect.objectContaining({ title: 'Clean Code' }));
+    expect(response.body.countsByStatus.AVAILABLE).toBe(1);
+  });
+
   // @spec AC-FE06-014, BR-FE06-018, FR-FE06-024
   test('inventory pagination defaults are exact and invalid supplied values never query inventory', async () => {
     const { app, staff, inventoryDependencies } = await makeStaffSetup();

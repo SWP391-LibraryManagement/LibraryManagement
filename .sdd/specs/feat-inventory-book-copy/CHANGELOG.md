@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-21 - Inventory Search And Error-State Correction
+
+- Added parameterized cross-field inventory search and combined it with canonical copy filters.
+- Changed the UI to apply draft filters explicitly instead of requesting on every keystroke.
+- Kept rows, totals, pagination, and status counts aligned and separated backend errors from valid empty results.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

@@ -9,6 +9,11 @@ const idParam = (name, label) =>
     .toInt();
 
 const listInventoryValidators = [
+  query('q')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Search query must be at most 200 characters.'),
   query('bookId')
     .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
