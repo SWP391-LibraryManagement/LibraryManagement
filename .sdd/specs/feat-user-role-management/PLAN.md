@@ -1,22 +1,25 @@
 # PLAN.md - FE11 User & Role Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: APPROVED REVISION - PERSONAL DATA OWNERSHIP IMPLEMENTATION PENDING
 
-Date: 2026-07-20
+Date: 2026-07-22
 
-Current Extension: Admin Console Membership Review integration approved 2026-07-22; implementation pending under FE11-UXR09 and FE04-ADM01..ADM05.
+Current Extension: Personal-data ownership correction approved 2026-07-22; implementation pending under FE11-PDO02..PDO04.
+
+Concurrent Extension: Admin Console Membership Review integration approved 2026-07-22; implementation pending under FE11-UXR09 and FE04-ADM01..ADM05.
 
 Owner: Dung
 
 ## 1. Purpose
 
-Preserve completed FE11 slice evidence and reconcile the final Admin Audit Log
-presentation contract. Sections 3-15 retain historical planning and integration
-snapshots; Section 16 is the current closeout boundary.
+Preserve completed FE11 slice evidence while correcting personal-data ownership.
+Sections 3-20 retain historical planning and integration snapshots; Section 21
+is the current personal-data ownership implementation boundary.
 
-The approved Phase 1 FE11 scope is complete through B7. Historical pending or
-deferred statements below describe earlier checkpoints and do not override the
-current status header or Section 16.
+The previously approved Phase 1 FE11 baseline is complete through B7. The later
+2026-07-22 ownership decision supersedes only the broad existing-user update
+contract and must be implemented before the revised FE11 scope can be called
+complete. Historical completion evidence does not prove Section 21.
 
 ## 2. Source Documents
 
@@ -346,3 +349,66 @@ Implementation order: spec/design reconciliation -> focused RED tests -> navigat
 Decision: APPROVED BY HUMAN - 2026-07-22.
 
 The later approved integration supersedes only the seven-entry navigation count and FE04-outside-Admin boundary above. FE11 adds the eighth `Duyệt hội viên` shell entry after All Users; FE04 owns the embedded list/review data and mutations. The executable plan is `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`; Permissions remains absent and no backend production/API/schema change is allowed.
+
+## 21. Personal Data Ownership Correction
+
+Decision: APPROVED BY USER - 2026-07-22.
+
+Implementation State: DOCUMENTATION RECONCILED; PRODUCT CHANGES PENDING.
+
+### Goal And Ownership
+
+- FE03 remains the sole Phase 1 owner of authenticated self-service changes to `fullName`, `phone`, and `address`.
+- Existing-account email remains read-only in Phase 1; any future change must use an explicitly approved FE02 verification flow.
+- FE11 Admin may view personal fields but must not edit them after account creation.
+- FE11 Admin may update only `department` and `specialization` for a target that currently has the Librarian role.
+- Create-account inputs remain unchanged because Admin must supply initial identity/contact data before the new user can complete setup.
+
+### Files And Responsibilities
+
+| File | Responsibility in this correction |
+| --- | --- |
+| `backend/tests/userManagementRoutes.test.js` | Prove the HTTP boundary rejects personal/unknown fields and preserves Admin-first authorization. |
+| `backend/tests/userManagementService.test.js` | Prove only current-Librarian work fields reach the repository and map forbidden attempts to `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`. |
+| `backend/tests/userRepository.test.js` | Prove allowed work-field updates keep optimistic concurrency/no-op/audit semantics and cannot write personal columns. |
+| `backend/src/validators/userManagementValidators.js` | Replace the broad update allowlist with `expectedUpdatedAt`, `department`, and `specialization`; reject personal/unknown fields deterministically. |
+| `backend/src/services/userManagementService.js` | Enforce target-role ownership and map personal-field attempts without calling the update repository. |
+| `backend/src/repositories/userRepository.js` | Narrow update SQL and audit metadata to Librarian work fields only. |
+| `frontend/test/userManagementApi.test.js` | Prove the Admin adapter sends only the revised work-field request shape. |
+| `frontend/test/userManagementFrontend.test.js` | Prove existing personal values are read-only and only current Librarians expose work-field editing. |
+| `frontend/src/page/admin/users/AdminUsersSection.jsx` | Separate create payloads from existing-Librarian work updates. |
+| `frontend/src/page/admin/users/UserEditorModal.jsx` | Render personal fields read-only in edit mode and expose editable work fields only for current Librarians. |
+| `frontend/src/page/admin/users/userPresentation.js` | Validate creation fields separately from Librarian work-field updates. |
+| `frontend/src/api/userManagementApi.js` | Send the canonical `PUT` body without personal fields. |
+| `backend/src/docs/openapi.yaml`, `docs/api/api-contract.md` | Publish the same narrowed request/error contract after implementation. |
+
+### Canonical API Change
+
+`PUT /api/users/{userId}` accepts exactly:
+
+```json
+{
+  "expectedUpdatedAt": "2026-07-22T00:00:00.000Z",
+  "department": "Circulation",
+  "specialization": "Reader services"
+}
+```
+
+Both work fields are optional nullable strings with maximum length 100. The target must currently be a Librarian. Any `fullName`, `phone`, `address`, `email`, or unknown field makes the whole request fail with HTTP `403` and code `PERSONAL_PROFILE_ADMIN_FORBIDDEN`; no field, effective version, or success audit may change.
+
+### Test-First Implementation Order
+
+1. Add route RED cases for each forbidden personal field, mixed allowed/forbidden payloads, unknown fields, non-Librarian targets, and the allowed Librarian work-only shape. Expected initial result: the current broad validator/service accepts at least the personal-field cases.
+2. Add service/repository RED cases proving forbidden input causes no repository call, work fields are the only update keys, stale/no-op behavior remains unchanged, and audit details contain no personal field.
+3. Narrow validator, service, and repository behavior until the focused backend tests pass.
+4. Add frontend RED cases proving personal controls are read-only in existing-user mode, Member/Admin targets have no work-field Save action, and current Librarians submit only `expectedUpdatedAt`, `department`, and `specialization`.
+5. Split create/edit validation and payload construction, then make the focused frontend tests pass.
+6. Synchronize OpenAPI/shared API documentation and run full backend, frontend, E2E, traceability, security, and diff checks.
+
+### Completion Gate
+
+- Every existing-user personal-field attempt is rejected server-side, including direct and mixed HTTP payloads.
+- The Admin UI contains no editable existing-user name, phone, address, or email control.
+- Only current Librarian department/specialization changes can advance `UpdatedAt` or write an update-success audit.
+- FE03 self-service profile behavior and FE02 account setup/authentication regressions remain green.
+- `FE11-PDO02..PDO04` are complete with fresh automated evidence; historical FE11-LIFE03 evidence alone is not accepted.

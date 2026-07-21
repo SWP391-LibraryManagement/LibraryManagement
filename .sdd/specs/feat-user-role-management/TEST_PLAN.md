@@ -1,8 +1,8 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.4.0
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Version: 0.5.0
+Status: APPROVED REVISION - PERSONAL DATA OWNERSHIP TESTS PENDING
+Last Updated: 2026-07-22
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
@@ -12,7 +12,7 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 
 ## 1. Test Scope
 
-User administration, role listing, role assignment/revocation, account status management, and audit logs.
+User administration, read-only Admin access to personal profile information, current-Librarian work-field updates, role listing/assignment/revocation, account status management, and audit logs. FE03 self-service profile mutation is a dependency/regression boundary, not an FE11 Admin mutation.
 
 ## 2. Unit Test Targets
 
@@ -37,7 +37,7 @@ User administration, role listing, role assignment/revocation, account status ma
 - `POST /users`: inactive state, valid unusable bcrypt hash, atomic rollback, FE10 safe delivery status.
 - `POST /users/:userId/resend-setup`: eligibility, cooldown, rotation, safe provider failure, authorization.
 - `GET /users` and `GET /users/:userId`: only `UserManagementView` fields and approved related summaries are returned; credential/token/session/link fields are absent.
-- `PUT /users/:userId`: matching `expectedUpdatedAt` updates allowed fields; stale state returns `409 STALE_USER_STATE`; forbidden fields are rejected.
+- `PUT /users/:userId`: only a current Librarian's `department`/`specialization` may be updated with matching `expectedUpdatedAt`; personal/unknown/mixed payloads return atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; stale allowed state returns `409 STALE_USER_STATE`.
 - `PATCH /users/:userId/status`: valid transition, invalid transition.
 - `POST /users/:userId/roles`: assign role, invalid role, duplicate, forbidden.
 - `DELETE /users/:userId/roles/:roleId`: revoke role, invalid role, forbidden.
@@ -72,14 +72,16 @@ User administration, role listing, role assignment/revocation, account status ma
 - Responsive acceptance covers table above 1440px, cards at/below 1440px, and no page overflow at 1440/1366/1280/390.
 - Existing User Management role actions, Audit correction, FE04 `/membership`, and FE11 Request Management remain regression gates.
 
-## 3.3 Finalization Wave A Targets
+## 3.3 Finalization Wave A Historical Targets
+
+These targets record the 2026-07-19 baseline. Broad personal/email update evidence is superseded by Q-FE11-026 and cannot close the current ownership correction.
 
 - Idempotent static migration checks for the five approved columns, deterministic `UX_Users_Email`, baseline/model/binding synchronization, and optional live execution twice.
 - `UserManagementView.updatedAt` falls back to `CreatedAt` only when storage `UpdatedAt` is null; update/deactivation compare that same effective value.
 - Create and setup resend lock/revalidate the active acting Admin inside their source transactions; create duplicate email maps safely and requests no delivery.
 - Create-route validation covers type/email/name/optional-field lengths, Librarian-only fields, normalized payloads, and Admin-first authorization.
-- Librarian fields persist on create/read/update, remain maximum 100 characters, and are omitted for non-Librarian targets.
-- Update tests cover stale state, duplicate email, no-op, effective change, audit allowlist, and rollback.
+- Librarian work fields persist on create/read/update, remain maximum 100 characters, and are omitted for non-Librarian targets.
+- Retained update tests cover Librarian work-field stale state, no-op, effective change, audit allowlist, and rollback; duplicate-email/personal-update cases must be replaced by Section 3.5.
 - Deactivation tests cover pending activation, already-deactivated idempotence, `ACTIVE`/`LOCKED`, self-target, active borrowings, REFRESH revocation, audit, rollback, and FE07 approval serialization.
 - Frontend tests cover effective `expectedUpdatedAt`, Librarian fields, authoritative reload, `ACCOUNT_PENDING_ACTIVATION`, and removal of implicit development Admin access.
 
@@ -93,10 +95,23 @@ User administration, role listing, role assignment/revocation, account status ma
 - Evidence-only Admin Dashboard service/route/browser coverage for FR-FE11-031 without production redesign.
 - Feature-specific Playwright coverage for Admin access, Librarian update/deactivation, Permissions, request pagination/detail/terminal behavior, and DOCX.
 
+## 3.5 FE11-PDO Personal Data Ownership Targets
+
+- Route validation rejects each of `fullName`, `phone`, `address`, and `email`, including an unchanged current email, with `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` after Admin authorization.
+- A payload mixing `department` or `specialization` with any forbidden/unknown field is rejected as one atomic request; no allowed field is partially applied.
+- Service tests prove forbidden input never calls the update repository and never creates a success audit.
+- Repository tests prove update SQL can write only `UserProfiles.Department`, `UserProfiles.Specialization`, and the effective update timestamp for a current Librarian; personal columns are absent from the update path.
+- Allowed work-field tests retain 100-character/null normalization, optimistic concurrency, no-op, rollback, safe DTO, and safe audit semantics.
+- Frontend tests prove existing-user name, phone, address, and email are read-only; Member/Admin targets expose no work-field update action; only current Librarians submit `expectedUpdatedAt`, `department`, and `specialization`.
+- FE03 regression proves an authenticated user can still update their own `fullName`, `phone`, and `address`; FE02 regression proves email remains read-only and account setup/authentication is unchanged.
+- Browser acceptance inspects the Admin detail/edit experience and confirms direct forbidden API attempts fail even if the UI is bypassed.
+
 ## 4. E2E / Manual Acceptance Flow
 
 - Admin creates user.
-- Admin updates Librarian fields and deactivates an `ACTIVE`/`LOCKED` fixture using the loaded effective version.
+- Admin views personal fields as read-only, updates only a current Librarian's department/specialization, and deactivates an `ACTIVE`/`LOCKED` fixture using the loaded effective version.
+- Admin attempts direct and mixed personal-field updates and receives `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` with no visible or persisted change.
+- The authenticated account owner updates name/phone/address through FE03; the Admin read view reflects the new values without gaining edit ownership.
 - Admin assigns/removes role.
 - Admin reviews Dashboard operational summaries and canonical Request Management across more than one server page.
 - Pending requests expose FE07-owned actions; terminal requests remain view-only; DOCX contains all filtered pages safely.
@@ -134,14 +149,18 @@ User administration, role listing, role assignment/revocation, account status ma
 - TD-023 B7 evidence: H2/H3 approved on 2026-07-19; PR #37 passed `foundation-checks` run `29654621448`, merged as `356130e4`, and exact post-merge `main` CI run `29655548150` passed.
 - Finalization Wave A H2 evidence: schema, account setup hardening, lifecycle repository, FE07 serialization, frontend access/payloads, and full regression are recorded in `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`; the subsequent disposable SQL Server pass is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Finalization Wave B H2 evidence: canonical Request Management and Admin Dashboard browser coverage are recorded in `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; fresh results are 80/80 focused backend, 48/48 focused frontend, 10/10 system integration, and 2/2 isolated Playwright tests.
+- Personal-data ownership evidence does not exist yet. Historical FE11-LIFE03 results prove the broader contract that Q-FE11-026 now supersedes and must not be reused as passing evidence for FE11-PDO02..PDO04.
 
 ## 6. Gaps
+
+- The runtime currently contains the superseded broad Admin update path; FE11-PDO02..PDO04 must add failing tests, narrow backend/UI behavior, and publish fresh acceptance evidence.
+- Until FE11-PDO02..PDO04 pass, the revised FE11 scope is not implementation-complete even though the earlier Phase 2 baseline and its evidence remain historical facts.
 
 - Account setup, transactional backend role mutation, safe list/detail, and Admin role-action UI are complete through human review, merge, and post-merge CI.
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
-- Finalization Wave A `FE11-LIFE01..FE11-LIFE05` and Wave B `FE11-REQ01..FE11-REQ03` are implemented locally and H2-ready; `FE11-LIFE06`, `FE11-ACC01`, and feature closeout remain open.
+- Finalization Wave A and Wave B evidence remains valid for unchanged behavior, but broad personal/email update evidence is explicitly superseded by Q-FE11-026.
 - Both SQL and feature-specific FE11 browser execution portions of `TD-021` pass. Draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; human integration acceptance remains before final closeout.
 
 ## 7. Transactional Role Slice
