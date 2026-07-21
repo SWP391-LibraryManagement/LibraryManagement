@@ -5,6 +5,8 @@ Implementation State: COMPLETE
 
 Date: 2026-07-20
 
+Current Extension: FE11-UXR09 was approved on 2026-07-22 and is not implemented.
+
 Owner: Dung
 
 ## Account Setup Tasks
@@ -308,6 +310,7 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
   - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.
   - Evidence: implementation commit `157b59b`; frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and authenticated responsive screenshots pass. Staging workflow `29873466035` deployed `8627508` with backend/frontend/smoke success; renewed authenticated human approval remains pending.
+  - Supersession: FE11-UXR09 changes only the current final sidebar count from seven to eight by adding FE04 Membership Review; all UXR08 User Management, Audit, and Permissions-removal corrections remain required.
 
 ## 2026-07-22 corrective batch
 
@@ -315,3 +318,8 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] Remove the Audit safe-details column while preserving safe server projection.
 - [x] Contain wide user/audit tables within the Admin content area.
 - [x] Keep Permissions absent from the approved Admin sidebar.
+
+- [ ] **FE11-UXR09 - Integrate FE04 Membership Review into the Admin Console.**
+  - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016; FR-FE04-014, AC-FE04-013.
+  - Depends on: FE04-ADM01..FE04-ADM05.
+  - DoD: sidebar has exactly eight entries with Membership Review after All Users and no Permissions; the embedded Admin-native FE04 module passes source, responsive browser, Azure Staging, and explicit human review without changing FE04 API/business ownership.

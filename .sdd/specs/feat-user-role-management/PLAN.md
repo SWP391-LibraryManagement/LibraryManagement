@@ -4,6 +4,8 @@ Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 Date: 2026-07-20
 
+Current Extension: Admin Console Membership Review integration approved 2026-07-22; implementation pending under FE11-UXR09 and FE04-ADM01..ADM05.
+
 Owner: Dung
 
 ## 1. Purpose
@@ -338,3 +340,9 @@ Decision: APPROVED BY HUMAN - 2026-07-22.
 This bounded Hybrid correction updates the FE11 sidebar contract from eight to seven visible entries while preserving Manage Roles in User Management and leaving the permission API/policy unchanged. Shell work switches the user directory to its existing card view before its 1040px table overflows, keeps all canonical Audit filters, presents mapped actions accessibly, and moves safe detail metadata behind a per-row disclosure.
 
 Implementation order: spec/design reconciliation -> focused RED tests -> navigation correction -> responsive user breakpoint -> Audit filter/detail correction -> full frontend validation -> responsive browser acceptance -> Azure Staging review.
+
+## 20. Admin Console Membership Review Integration
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+The later approved integration supersedes only the seven-entry navigation count and FE04-outside-Admin boundary above. FE11 adds the eighth `Duyệt hội viên` shell entry after All Users; FE04 owns the embedded list/review data and mutations. The executable plan is `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`; Permissions remains absent and no backend production/API/schema change is allowed.

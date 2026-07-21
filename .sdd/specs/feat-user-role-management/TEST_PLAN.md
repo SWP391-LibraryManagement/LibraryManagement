@@ -64,6 +64,14 @@ User administration, role listing, role assignment/revocation, account status ma
 - Safe Audit details remain allowlisted and read-only behind a per-row disclosure; API, authorization, pagination, and redaction stay unchanged.
 - Responsive browser coverage includes 1280x720, 1366x768, 1440x900, and 390x844.
 
+## 3.2.2 FE11-UXR09 Admin Membership Review Integration Targets
+
+- The current sidebar contract is exactly eight entries: the seven UXR08 entries plus FE04 Membership Review after All Users; Permissions remains absent.
+- FE11 owns navigation/composition only. Tests reject `adminApi` or `/api/admin/membership` ownership and require canonical `membershipApi` calls.
+- Source and browser tests prove server filters/pagination, pending-only actions, safe rejection/notification feedback, authoritative conflict reload, and final-state read-only presentation.
+- Responsive acceptance covers table above 1440px, cards at/below 1440px, and no page overflow at 1440/1366/1280/390.
+- Existing User Management role actions, Audit correction, FE04 `/membership`, and FE11 Request Management remain regression gates.
+
 ## 3.3 Finalization Wave A Targets
 
 - Idempotent static migration checks for the five approved columns, deterministic `UX_Users_Email`, baseline/model/binding synchronization, and optional live execution twice.

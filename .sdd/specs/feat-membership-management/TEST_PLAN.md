@@ -70,3 +70,12 @@ npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 git diff --check
 ```
+
+## 8. Admin Console Membership Review Integration Targets
+
+- Exact eight-entry Admin navigation with Membership Review after All Users and without Permissions.
+- Canonical FE04 list params `q`, `status`, `page`, `limit=10`; no `/api/admin/membership` alias.
+- Pending-only review actions, 1..500 rejection reason, authoritative reload after success/conflict, and safe FE10 `FAILED` warning.
+- Admin table above 1440px and cards at/below 1440px; no document overflow at 1440/1366/1280/390.
+- Real authenticated Admin rejection, rejected-member re-application, and approval in `tests/e2e/fe04-admin-membership-review.spec.js` plus existing `/membership` and FE11 regression coverage.
+- Human Azure Staging review remains distinct from automated screenshots.
