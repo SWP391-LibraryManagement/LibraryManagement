@@ -196,8 +196,9 @@ Week 13 uses separate staging services:
 - Azure App Service F1 for the backend;
 - Azure SQL Database only inside the confirmed free allowance or Azure for Students credit.
 
-Deployment is staging-only and manually dispatched after quality gates pass. Database schema changes
-are never executed automatically by CI.
+Deployment is staging-only and automatically triggered by pushes to `main` after the quality gates
+pass; `workflow_dispatch` remains available for a manual rerun. Database schema changes are never
+executed automatically by CI.
 
 Observed Phase 3 staging origins:
 
