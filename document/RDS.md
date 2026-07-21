@@ -117,7 +117,7 @@ A use case describes a sequence of interactions between an external actor and th
 
 #### a. Diagram(s)
 
-Figure 1 shows the system-wide actor-to-goal view. Figures 2 to 4 decompose the grouped business areas so mandatory `<<include>>` behavior and conditional `<<extend>>` behavior remain readable.
+Figure 1 maps the approved `UC-01` to `UC-12` scope directly to its external actors. Figures 2 to 4 decompose the grouped business areas so mandatory `<<include>>` behavior and conditional `<<extend>>` behavior remain readable.
 
 ##### Figure 1. Overall Use Case Diagram
 
@@ -125,101 +125,88 @@ Figure 1 shows the system-wide actor-to-goal view. Figures 2 to 4 decompose the 
 flowchart LR
   subgraph LeftActors[" "]
     direction TB
-    Guest[Guest]
-    Member[Member]
+    Guest["&lt;&lt;actor&gt;&gt;<br/>Guest"]
+    Member["&lt;&lt;actor&gt;&gt;<br/>Member"]
   end
 
   subgraph LMS[Library Management System]
     direction LR
-    subgraph AccessGroup["Authentication, public browsing, and profile"]
+    subgraph AccessGroup["Access and membership"]
       direction TB
-      Register(["Register Account"])
-      Login(["Log In"])
-      RecoverPassword(["Recover Password"])
-      BrowseBooks(["Browse Books"])
-      ViewBookDetails(["View Book Details"])
-      UpdateProfile(["Update Profile"])
+      UC01(["UC-01<br/>Browse Books"])
+      UC02(["UC-02<br/>Manage Account Access"])
+      UC03(["UC-03<br/>Manage Profile"])
+      UC04(["UC-04<br/>Apply for Membership"])
     end
 
-    subgraph MemberGroup["Membership, borrowing, reservation, and fines"]
+    subgraph OperationsGroup["Library operations"]
       direction TB
-      ApplyMembership(["Apply for Membership"])
-      CreateBorrowRequest(["Create Borrow Request"])
-      ManageOwnReservations(["Manage Own Reservations"])
-      ViewBorrowingHistory(["View Borrowing History"])
-      ViewFines(["View Fines"])
-      ReviewMembership(["Review Membership Applications"])
-      ReviewBorrowRequests(["Review Borrow Requests"])
-      ProcessReturn(["Process Return"])
-      ManageReservationQueue(["Manage Reservation Queue"])
-      ManageFines(["Manage Fines"])
+      UC05(["UC-05<br/>Manage Books"])
+      UC06(["UC-06<br/>Manage Book Copies"])
+      UC07(["UC-07<br/>Borrow Books"])
+      UC08(["UC-08<br/>Reserve Books"])
+      UC09(["UC-09<br/>Manage Fines"])
+      UC10(["UC-10<br/>Send Notifications"])
     end
 
-    subgraph StaffGroup["Catalog, inventory, administration, and reporting"]
+    subgraph GovernanceGroup["Administration and reporting"]
       direction TB
-      ManageBooks(["Manage Books"])
-      ManageBookCopies(["Manage Book Copies"])
-      SendNotifications(["Send Notifications"])
-      ManageUsersRoles(["Manage Users and Roles"])
-      GenerateReports(["Generate Reports"])
+      UC11(["UC-11<br/>Manage Users and Roles"])
+      UC12(["UC-12<br/>Generate Reports"])
     end
   end
 
   subgraph RightActors[" "]
     direction TB
-    Librarian[Librarian]
-    Admin[Admin]
-    EmailService[EmailService]
+    Librarian["&lt;&lt;actor&gt;&gt;<br/>Librarian"]
+    Admin["&lt;&lt;actor&gt;&gt;<br/>Admin"]
+    EmailService["&lt;&lt;external system&gt;&gt;<br/>EmailService"]
   end
 
-  Guest --- Register
-  Guest --- Login
-  Guest --- RecoverPassword
-  Guest --- BrowseBooks
-  Guest --- ViewBookDetails
+  Guest --- UC01
+  Guest --- UC02
 
-  Member --- BrowseBooks
-  Member --- ViewBookDetails
-  Member --- UpdateProfile
-  Member --- ApplyMembership
-  Member --- CreateBorrowRequest
-  Member --- ManageOwnReservations
-  Member --- ViewBorrowingHistory
-  Member --- ViewFines
+  Member --- UC01
+  Member --- UC02
+  Member --- UC03
+  Member --- UC04
+  Member --- UC07
+  Member --- UC08
+  Member --- UC09
 
-  UpdateProfile --- Librarian
-  ReviewMembership --- Librarian
-  ReviewBorrowRequests --- Librarian
-  ProcessReturn --- Librarian
-  ManageReservationQueue --- Librarian
-  ManageFines --- Librarian
-  ManageBooks --- Librarian
-  ManageBookCopies --- Librarian
-  SendNotifications --- Librarian
-  GenerateReports --- Librarian
+  UC02 --- Librarian
+  UC03 --- Librarian
+  UC04 --- Librarian
+  UC05 --- Librarian
+  UC06 --- Librarian
+  UC07 --- Librarian
+  UC08 --- Librarian
+  UC09 --- Librarian
+  UC10 --- Librarian
+  UC12 --- Librarian
 
-  UpdateProfile --- Admin
-  ReviewMembership --- Admin
-  ReviewBorrowRequests --- Admin
-  ProcessReturn --- Admin
-  ManageReservationQueue --- Admin
-  ManageFines --- Admin
-  ManageBooks --- Admin
-  ManageBookCopies --- Admin
-  SendNotifications --- Admin
-  ManageUsersRoles --- Admin
-  GenerateReports --- Admin
+  UC02 --- Admin
+  UC03 --- Admin
+  UC04 --- Admin
+  UC05 --- Admin
+  UC06 --- Admin
+  UC07 --- Admin
+  UC08 --- Admin
+  UC09 --- Admin
+  UC10 --- Admin
+  UC11 --- Admin
+  UC12 --- Admin
 
-  SendNotifications --- EmailService
+  UC10 --- EmailService
 
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
-  class Register,Login,RecoverPassword,BrowseBooks,ViewBookDetails,UpdateProfile,ApplyMembership,CreateBorrowRequest,ManageOwnReservations,ViewBorrowingHistory,ViewFines,ReviewMembership,ReviewBorrowRequests,ProcessReturn,ManageReservationQueue,ManageFines,ManageBooks,ManageBookCopies,SendNotifications,ManageUsersRoles,GenerateReports usecase;
+  class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12 usecase;
   class Guest,Member,Librarian,Admin,EmailService actor;
   style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
   style AccessGroup fill:#f8fafc,stroke:#94a3b8;
-  style MemberGroup fill:#f8fafc,stroke:#94a3b8;
-  style StaffGroup fill:#f8fafc,stroke:#94a3b8;
+  style OperationsGroup fill:#f8fafc,stroke:#94a3b8;
+  style GovernanceGroup fill:#f8fafc,stroke:#94a3b8;
   style LeftActors fill:transparent,stroke:transparent;
   style RightActors fill:transparent,stroke:transparent;
 ```
@@ -242,6 +229,8 @@ flowchart LR
       VerifyEmail(["Verify Email"])
       Login(["Log In"])
       RecoverPassword(["Recover Password"])
+      ChangePassword(["Change Password"])
+      Logout(["Log Out"])
     end
     subgraph PublicBrowsing["Public Book Browsing"]
       direction LR
@@ -277,18 +266,31 @@ flowchart LR
 
   Member --- BrowseBooks
   Member --- ViewBookDetails
+  Member --- VerifyEmail
+  Member --- Login
+  Member --- RecoverPassword
+  Member --- ChangePassword
+  Member --- Logout
   Member --- ViewProfile
   Member --- UpdateProfile
   Member --- UploadAvatar
   Member --- ApplyMembership
   Member --- ViewMembershipStatus
 
+  Login --- Librarian
+  RecoverPassword --- Librarian
+  ChangePassword --- Librarian
+  Logout --- Librarian
   ViewProfile --- Librarian
   UpdateProfile --- Librarian
   UploadAvatar --- Librarian
   ApproveMembership --- Librarian
   RejectMembership --- Librarian
 
+  Login --- Admin
+  RecoverPassword --- Admin
+  ChangePassword --- Admin
+  Logout --- Admin
   ViewProfile --- Admin
   UpdateProfile --- Admin
   UploadAvatar --- Admin
@@ -304,7 +306,7 @@ flowchart LR
 
   classDef usecase fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
   classDef actor fill:#ffffff,stroke:#333333,stroke-width:1px,font-size:12px,color:#111111;
-  class Register,VerifyEmail,Login,RecoverPassword,BrowseBooks,ViewBookDetails,ViewProfile,UpdateProfile,UploadAvatar,ApplyMembership,ViewMembershipStatus,ApproveMembership,RejectMembership,SendNotifications usecase;
+  class Register,VerifyEmail,Login,RecoverPassword,ChangePassword,Logout,BrowseBooks,ViewBookDetails,ViewProfile,UpdateProfile,UploadAvatar,ApplyMembership,ViewMembershipStatus,ApproveMembership,RejectMembership,SendNotifications usecase;
   class Guest,Member,Librarian,Admin,EmailService actor;
   style LMS fill:#ffffff,stroke:#111111,stroke-width:2px;
   style Authentication fill:#f8fafc,stroke:#94a3b8;
