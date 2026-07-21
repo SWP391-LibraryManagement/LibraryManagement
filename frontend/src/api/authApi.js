@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getLoginErrorMessage } from '../utils/authUx';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -42,7 +43,7 @@ export async function loginAccount({ email, password }) {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'), {
+    throw new Error(getLoginErrorMessage(error), {
       cause: error,
     });
   }

@@ -90,8 +90,25 @@ const resendVerificationValidators = [
 ];
 
 const loginValidators = [
-  body('email').isString().trim().notEmpty().withMessage('Email or username is required.').isLength({ max: 100 }),
-  body('password').isString().notEmpty().withMessage('Password is required.').isLength({ max: 255 }),
+  body('email')
+    .isString()
+    .withMessage('Email or username is required.')
+    .bail()
+    .trim()
+    .notEmpty()
+    .withMessage('Email or username is required.')
+    .bail()
+    .isLength({ max: 255 })
+    .withMessage('Email or username must be at most 255 characters.'),
+  body('password')
+    .isString()
+    .withMessage('Password is required.')
+    .bail()
+    .notEmpty()
+    .withMessage('Password is required.')
+    .bail()
+    .isLength({ max: 255 })
+    .withMessage('Password must be at most 255 characters.'),
   handleValidationErrors,
 ];
 

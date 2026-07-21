@@ -21,6 +21,44 @@ export function getPasswordRequirements(password) {
   };
 }
 
+// @spec AC-FE02-004 to AC-FE02-008, NFR-FE02-SEC-011, NFR-FE02-UX-001
+export function validateLoginFields(values = {}) {
+  const errors = {};
+  const email = String(values.email || '').trim();
+  const password = String(values.password || '');
+
+  if (!email) {
+    errors.email = 'Vui lòng nhập email hoặc tên đăng nhập.';
+  } else if (email.length > 255) {
+    errors.email = 'Email hoặc tên đăng nhập không được vượt quá 255 ký tự.';
+  }
+
+  if (!password) {
+    errors.password = 'Vui lòng nhập mật khẩu.';
+  } else if (password.length > 255) {
+    errors.password = 'Mật khẩu không được vượt quá 255 ký tự.';
+  }
+
+  return errors;
+}
+
+// @spec AC-FE02-005 to AC-FE02-008, BR-FE02-007, NFR-FE02-UX-001
+export function getLoginErrorMessage(error) {
+  if (!error?.response) {
+    return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.';
+  }
+
+  const code = error.response?.data?.error?.code;
+  const messages = {
+    INVALID_CREDENTIALS: 'Email hoặc tên đăng nhập hoặc mật khẩu không đúng.',
+    ACCOUNT_LOCKED: 'Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng đặt lại mật khẩu hoặc thử lại sau 30 phút.',
+    VALIDATION_ERROR: 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.',
+    HTTPS_REQUIRED: 'Kết nối không an toàn. Vui lòng tải lại trang bằng HTTPS.',
+  };
+
+  return messages[code] || 'Đăng nhập thất bại. Vui lòng thử lại.';
+}
+
 export function validatePasswordSetupFields(values = {}) {
   const errors = {};
   const newPassword = String(values.newPassword || '');

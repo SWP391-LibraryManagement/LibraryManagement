@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-22 - Harden login validation and localized error feedback
+
+- Added field-level Vietnamese validation for blank, whitespace-only, and overlength login values while keeping backend validation authoritative.
+- Mapped stable safe login error codes so invalid credentials remain enumeration-safe and locked accounts receive the approved reset-or-wait guidance without exposing raw backend messages.
+- Replaced the login screen's localhost-specific network failure copy with an environment-neutral message and cleared stale feedback while users edit credentials.
+- Aligned the combined email/username server validator with the approved 255-character email boundary and added a long-email register/verify/login regression.
+- Clarified that password-strength guidance applies when creating a new password, not when entering an existing password at login.
+- Disabled native form validation for login submission so the approved Vietnamese field messages render instead of browser-default English prompts while retaining required-field semantics.
+- Capped the input buffer at 256 characters so the field-level overlength error is observable at the 255-character boundary without allowing unbounded client input.
+
 ## 2026-07-21 - Reduce email-verification OTP lifetime to 15 minutes
 
 - Approved a 15-minute lifetime for registration and resend verification OTPs while preserving FE02/FE10 ownership and legacy verification-token compatibility.
