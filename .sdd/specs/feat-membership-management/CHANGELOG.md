@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-22 - Require complete profile before application
+
+- Required non-empty full name, phone, date of birth, and address before creating a membership application; avatar remains optional.
+- Added server-side enforcement plus member-facing missing-field guidance and a link to `/profile`.
+
 ## 2026-07-21 - Connect approval to borrowing allowance
 
 - Kept borrowing available to active `MEMBER` accounts without FE04 approval at a 3-copy daily limit.

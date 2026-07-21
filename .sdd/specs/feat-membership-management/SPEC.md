@@ -1,12 +1,12 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.3.1
+# Version: 0.3.2
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-22
 
 # Feature ID: FE04
 
@@ -74,6 +74,7 @@ The feature can only start when:
 - PRE-FE04-003: The user's account has `Users.Status = ACTIVE`; `INACTIVE` and `LOCKED` accounts cannot apply.
 - PRE-FE04-004: The user has neither an approved membership nor a pending application; a user whose canonical membership is `REJECTED` may create one new `PENDING` application under BR-FE04-016.
 - PRE-FE04-005: Approval/rejection actor has Librarian or Admin permission according to FE11.
+- PRE-FE04-006: Before applying, the member profile contains non-empty `fullName`, `phone`, `dateOfBirth`, and `address`; avatar remains optional.
 
 ---
 
@@ -82,7 +83,7 @@ The feature can only start when:
 ### MF-FE04-001: Apply For Membership
 
 1. Authenticated user with the `MEMBER` role opens membership application.
-2. The system checks whether the user is eligible to apply.
+2. The system checks whether the user is eligible to apply and has completed the required personal profile fields.
 3. The user submits the application.
 4. The system validates duplicate and status rules.
 5. In one transaction, the system creates a `MembershipApplications` record with status `PENDING` and creates/updates the user's canonical `Members` projection to `PENDING`.
@@ -167,6 +168,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE04-016: A rejected user may re-apply; the new application starts `PENDING`, previous applications remain unchanged, and the canonical member projection returns to `PENDING`.
 - BR-FE04-017: Membership does not expire in Phase 1; `EXPIRED` is not a valid application/member state.
 - BR-FE04-018: After approval/rejection commits and audit logging succeeds, FE04 requests one FE10 notification when the requester is configured, with `type = GENERAL_SYSTEM`, `templateKey = MEMBERSHIP_RESULT`, application source metadata, and idempotency key `FE04:MEMBERSHIP_RESULT:<applicationId>:<finalStatus>`; notification failure is non-blocking and must not change the membership decision.
+- BR-FE04-019: A membership application requires non-empty `fullName`, `phone`, `dateOfBirth`, and `address` from the authenticated user's FE03 profile; avatar is optional, and FE04 must reject incomplete profiles before creating an application or member projection.
 
 ---
 
@@ -184,6 +186,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE04-010: When a rejected user reapplies, the system shall create a new pending application, preserve prior history, and atomically set `Members.Status = PENDING`.
 - FR-FE04-011: When approval/rejection succeeds, the system shall update the application, canonical member projection, reviewer metadata, decision timestamps, and corresponding audit entry in one transaction; approval uses the same timestamp for both `ApprovedAt` fields, while rejection keeps `Members.ApprovedAt = null`. Any failure rolls the transaction back.
 - FR-FE04-012: When approval/rejection commits and audit logging succeeds, the system shall request one idempotent FE10 delivery with `type = GENERAL_SYSTEM` and `templateKey = MEMBERSHIP_RESULT` through the FE04-bound requester when configured, then return safe delivery status without rolling back the decision if delivery fails.
+- FR-FE04-013: When a member submits a membership application, the system shall verify `fullName`, `phone`, `dateOfBirth`, and `address` on the server and reject the request with the missing field names if any required field is blank or absent.
 
 ---
 
@@ -200,6 +203,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE04-009: Given a rejected user with no pending application, when the user reapplies, then a new `PENDING` application is created, prior history remains unchanged, and `Members.Status` becomes `PENDING`.
 - AC-FE04-010: Given FE10 delivery fails after a review decision commits, then the application/member decision remains committed and the response exposes only safe `notificationStatus`.
 - AC-FE04-011: Given an active account with the `MEMBER` role, FE07/FE08 eligibility is not blocked by `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` FE04 status.
+- AC-FE04-012: Given an eligible member with an incomplete personal profile, when the member applies, then the API returns `400 MEMBERSHIP_PROFILE_INCOMPLETE` with the missing field names and creates no membership application or member projection; the UI disables submission and links to `/profile`.
 
 ---
 
@@ -219,6 +223,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE04-010 | Database or audit update fails during review | Roll back application/member status, timestamp, reviewer, and audit changes. |
 | EC-FE04-011 | Concurrent re-application creates duplicate pending rows | A filtered unique pending-only constraint plus transactional checks allow one pending row and return a deterministic conflict to the loser. |
 | EC-FE04-012 | FE10 notification request/delivery fails | Keep committed membership decision and return safe `FAILED` delivery status. When requester is not configured, return `NOT_CONFIGURED`. |
+| EC-FE04-013 | Required personal profile field is blank or absent | Reject before mutation with `MEMBERSHIP_PROFILE_INCOMPLETE` and the missing field names. |
 
 ---
 
@@ -268,7 +273,7 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/membership/applications` | Authenticated `MEMBER` | `{}` | Created application and canonical `PENDING` status | Active account only; preserves prior history. |
+| POST | `/api/membership/applications` | Authenticated `MEMBER` | `{}` | Created application and canonical `PENDING` status | Active account with complete `fullName`, `phone`, `dateOfBirth`, and `address`; preserves prior history. |
 | GET | `/api/membership/status/me` | Authenticated `MEMBER` | - | Status response with `status`, `membershipStatusView`, `memberStatus`, `currentApplication`, `application`, and `member` | `NONE`/`null` values are returned deterministically before the first application; otherwise canonical status comes from `Members`. |
 | GET | `/api/membership/applications` | Librarian/Admin | Query: `q?, status?, page?, limit?` | `{ applications, page, limit, total, totalPages }` | Protected review list; `q` searches application ID, name, username, or email. |
 | PATCH | `/api/membership/applications/{applicationId}/approve` | Librarian/Admin | `{}` | Approved application + safe `notificationStatus` | Pending only; application/member/audit commit together, then FE10 is requested. |
@@ -303,6 +308,7 @@ Use these stable IDs for tasks and tests.
 - NFR-FE04-UX-001: Applicants must see clear status: no application, pending, approved, rejected.
 - NFR-FE04-UX-002: The member status and application views must explain the FE07 entitlement clearly: non-approved accounts receive 3 copies per business day and canonical `APPROVED` membership receives 5 copies per business day.
 - NFR-FE04-UX-002: Rejected applicants must see the stored rejection reason without protected reviewer/internal data.
+- NFR-FE04-UX-003: When required profile data is incomplete, the application UI must name the missing fields, disable submission, and link to `/profile`.
 
 ---
 

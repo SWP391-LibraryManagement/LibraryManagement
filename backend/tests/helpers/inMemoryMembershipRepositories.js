@@ -166,7 +166,15 @@ function makeInMemoryMembershipDependencies(authState, options = {}) {
 
   const membershipRepository = {
     async findUser(userId) {
-      return clone(getUser(userId));
+      const user = getUser(userId);
+      if (!user) return null;
+      const profile = authState.profiles.find((item) => item.userId === Number(userId)) || {};
+      return clone({
+        ...user,
+        fullName: profile.fullName ?? user.fullName ?? null,
+        address: profile.address ?? null,
+        dateOfBirth: profile.dateOfBirth ?? null,
+      });
     },
 
     async findMemberByUserId(userId) {

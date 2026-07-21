@@ -102,6 +102,12 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - DoD: evidence records exact test counts/results, remaining external dependency risks, and human review status without claiming unrun checks.
   - Evidence: FE04 trace is 12/12 and disposable SQL Server validation passes 10/10 FE04 SQL cases with cleanup. Final repository reruns, browser acceptance, cross-feature review, and human acceptance remain open.
 
+- [x] **FE04-T010 - Require a complete personal profile before application.**
+  - Maps to: BR-FE04-019, FR-FE04-013, AC-FE04-012, NFR-FE04-UX-003.
+  - Files: FE04 service/repository, member application UI, and focused backend/frontend tests.
+  - GREEN: require non-empty `fullName`, `phone`, `dateOfBirth`, and `address` on the server; disable submission and link incomplete users to `/profile`; keep avatar optional and the request body empty.
+  - Verify: focused FE04 backend/frontend tests, frontend lint, and diff hygiene pass.
+
 ## Requirement-To-Task Coverage
 
 | Requirement IDs | Planned tasks |
@@ -110,17 +116,20 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | BR-FE04-006 through BR-FE04-010 | FE04-T001, FE04-T003, FE04-T005 |
 | BR-FE04-011 through BR-FE04-017 | FE04-T002, FE04-T004, FE04-T005, FE04-T007 |
 | BR-FE04-018 | FE04-T006 |
+| BR-FE04-019 | FE04-T010 |
 | FR-FE04-001 through FR-FE04-003 | FE04-T004 |
 | FR-FE04-004 through FR-FE04-006 | FE04-T005 |
 | FR-FE04-007 through FR-FE04-009 | FE04-T003, FE04-T004, FE04-T007 |
 | FR-FE04-010, FR-FE04-011 | FE04-T002, FE04-T004, FE04-T005 |
 | FR-FE04-012 | FE04-T006 |
+| FR-FE04-013 | FE04-T010 |
 | AC-FE04-001, AC-FE04-002 | FE04-T004 |
 | AC-FE04-003 through AC-FE04-006 | FE04-T005, FE04-T006 |
 | AC-FE04-007, AC-FE04-008 | FE04-T003, FE04-T004, FE04-T007 |
 | AC-FE04-009 | FE04-T004 |
 | AC-FE04-010 | FE04-T006 |
 | AC-FE04-011 | FE04-T007 |
+| AC-FE04-012 | FE04-T010 |
 
 ## Completion Gate
 

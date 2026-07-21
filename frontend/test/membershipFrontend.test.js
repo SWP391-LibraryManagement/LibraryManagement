@@ -15,11 +15,16 @@ test('membership page uses canonical API data and never substitutes demo applica
   assert.doesNotMatch(source, /status:\s*'PENDING',\s*appliedAt:\s*new Date/);
 });
 
-test('membership application follows the approved empty-body contract', async () => {
+test('membership application requires a complete personal profile and keeps the empty-body contract', async () => {
   const form = await readFile(new URL('../src/component/membership/MembershipApplicationForm.jsx', import.meta.url), 'utf8');
   const api = await readFile(new URL('../src/api/libraryFeatureApi.js', import.meta.url), 'utf8');
+  const page = await readFile(new URL('../src/page/MembershipPage.jsx', import.meta.url), 'utf8');
 
   assert.match(form, /onSubmit\(\{\}\)/);
+  for (const field of ['fullName', 'phone', 'dateOfBirth', 'address']) assert.match(form, new RegExp(`profile\\?\\.${field}`));
+  assert.match(form, /missingFields\.length > 0/);
+  assert.match(form, /to="\/profile"/);
+  assert.match(page, /fetchMyProfile\(\)/);
   assert.doesNotMatch(form, /fullName:|phone:|address:|note:/);
   assert.match(api, /apply\(data = \{\}\)/);
   assert.match(api, /url: '\/membership\/applications', data/);

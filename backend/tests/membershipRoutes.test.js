@@ -26,7 +26,7 @@ function makeTestApp({ membershipOptions, auditLogRepository, notificationReques
   return { app, authDependencies, membershipDependencies };
 }
 
-async function createVerifiedUser({ app, authDependencies, email, roles = ['MEMBER'] }) {
+async function createVerifiedUser({ app, authDependencies, email, roles = ['MEMBER'], completeProfile = true }) {
   const password = 'Password1!';
   const registerResponse = await request(app)
     .post('/api/auth/register')
@@ -40,6 +40,15 @@ async function createVerifiedUser({ app, authDependencies, email, roles = ['MEMB
   expect(registerResponse.status).toBe(201);
 
   const userId = registerResponse.body.userId;
+  if (completeProfile) {
+    authDependencies.state.users.find((user) => user.userId === userId).phone = '0900000000';
+    authDependencies.state.profiles.push({
+      userId,
+      fullName: email.split('@')[0],
+      address: 'Test address',
+      dateOfBirth: '2000-01-01',
+    });
+  }
   await request(app)
     .post('/api/auth/verify-email')
     .send({ token: authDependencies.state.generatedOtps.at(-1) })
@@ -132,6 +141,30 @@ describe('FE04 membership management', () => {
       (item) => item.userId === applicant.userId
     );
     expect(member).toEqual(expect.objectContaining({ userId: applicant.userId, status: 'PENDING' }));
+  });
+
+  // @spec BR-FE04-019 FR-FE04-013 AC-FE04-012
+  test('member must complete required personal profile fields before applying', async () => {
+    const { app, authDependencies, membershipDependencies } = makeTestApp();
+    const applicant = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'membership.incomplete-profile@example.test',
+      completeProfile: false,
+    });
+    authDependencies.state.users.find((user) => user.userId === applicant.userId).fullName = null;
+
+    const response = await request(app)
+      .post('/api/membership/applications')
+      .set('Authorization', authHeader(applicant.accessToken))
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toEqual(expect.objectContaining({
+      code: 'MEMBERSHIP_PROFILE_INCOMPLETE',
+      details: { missingFields: ['fullName', 'phone', 'dateOfBirth', 'address'] },
+    }));
+    expect(membershipDependencies.state.applications).toHaveLength(0);
   });
 
   // @spec BR-FE04-013 BR-FE04-015 AC-FE04-001

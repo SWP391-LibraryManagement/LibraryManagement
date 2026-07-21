@@ -67,13 +67,23 @@ async function insertUser(seed, suffix) {
     .input('Username', sql.NVarChar(50), `${seed.key}-${suffix}`.slice(0, 50))
     .input('Email', sql.NVarChar(100), `${seed.key}.${suffix}@example.test`.slice(0, 100))
     .input('PasswordHash', sql.NVarChar(255), 'fe04-sql-test-password-hash')
+    .input('Phone', sql.NVarChar(20), '0900000000')
     .query(`
-      INSERT INTO Users (Username, Email, PasswordHash, Status, EmailVerifiedAt)
+      INSERT INTO Users (Username, Email, PasswordHash, Phone, Status, EmailVerifiedAt)
       OUTPUT INSERTED.UserId
-      VALUES (@Username, @Email, @PasswordHash, 'ACTIVE', GETDATE())
+      VALUES (@Username, @Email, @PasswordHash, @Phone, 'ACTIVE', GETDATE())
     `);
 
   const userId = result.recordset[0].UserId;
+  await pool.request()
+    .input('UserId', sql.Int, userId)
+    .input('FullName', sql.NVarChar(100), 'FE04 SQL Test User')
+    .input('Address', sql.NVarChar(255), 'Test address')
+    .input('DateOfBirth', sql.Date, '2000-01-01')
+    .query(`
+      INSERT INTO UserProfiles (UserId, FullName, Address, DateOfBirth)
+      VALUES (@UserId, @FullName, @Address, @DateOfBirth)
+    `);
   seed.userIds.push(userId);
   return userId;
 }

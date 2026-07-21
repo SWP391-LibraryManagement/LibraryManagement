@@ -136,7 +136,7 @@ function createMembershipService({
     }
   }
 
-  // @spec FR-FE04-001 FR-FE04-002 FR-FE04-003 FR-FE04-010 FR-FE04-011
+  // @spec FR-FE04-001 FR-FE04-002 FR-FE04-003 FR-FE04-010 FR-FE04-011 FR-FE04-013
   async function apply(actor, context = {}) {
     requireAuthenticatedActor(actor);
 
@@ -147,6 +147,23 @@ function createMembershipService({
 
     if ((user.Status || user.status) !== 'ACTIVE') {
       throw errors.forbidden('USER_ACCOUNT_INACTIVE', 'User account is not active.');
+    }
+
+    const missingFields = [
+      ['fullName', user.FullName ?? user.fullName],
+      ['phone', user.Phone ?? user.phone],
+      ['dateOfBirth', user.DateOfBirth ?? user.dateOfBirth],
+      ['address', user.Address ?? user.address],
+    ]
+      .filter(([, value]) => value == null || String(value).trim() === '')
+      .map(([field]) => field);
+
+    if (missingFields.length) {
+      throw errors.badRequest(
+        'MEMBERSHIP_PROFILE_INCOMPLETE',
+        'Complete the required personal profile fields before applying for membership.',
+        { missingFields }
+      );
     }
 
     const member = await membershipRepository.findMemberByUserId(actor.userId);
