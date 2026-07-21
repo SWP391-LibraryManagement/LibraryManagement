@@ -175,6 +175,15 @@ test('homepage membership promotion is visible only to signed-out guests', async
   assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
 });
 
+test('signed-out homepage registration actions open the public register route', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const goToRegister = \(\) => \{\s*navigate\('\/register'\);/);
+  assert.equal(source.match(/onClick=\{goToRegister\}/g)?.length, 2);
+  assert.match(source, /setMenuOpen\(false\); goToRegister\(\);/);
+  assert.match(source, /\{ label: 'Đăng ký', action: goToRegister \}/);
+});
+
 test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 
