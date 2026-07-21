@@ -1,0 +1,86 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor Guest
+actor Member
+actor Librarian
+actor Admin
+actor "Email Service" as EmailService
+
+rectangle "Library Management System" {
+  package "Authentication" {
+    usecase "Register Account" as Register
+    usecase "Verify Email" as VerifyEmail
+    usecase "Log In" as Login
+    usecase "Recover Password" as RecoverPassword
+    usecase "Change Password" as ChangePassword
+    usecase "Log Out" as Logout
+  }
+
+  package "Public Book Browsing" {
+    usecase "Browse Books" as BrowseBooks
+    usecase "View Book Details" as ViewBookDetails
+  }
+
+  package "Profile, Membership, and Notifications" {
+    usecase "View Profile" as ViewProfile
+    usecase "Update Profile" as UpdateProfile
+    usecase "Upload Avatar" as UploadAvatar
+    usecase "Apply for Membership" as ApplyMembership
+    usecase "View Membership Status" as ViewMembershipStatus
+    usecase "Approve Membership Application" as ApproveMembership
+    usecase "Reject Membership Application" as RejectMembership
+    usecase "Send Notifications" as SendNotifications
+  }
+}
+
+Guest -- Register
+Guest -- VerifyEmail
+Guest -- Login
+Guest -- RecoverPassword
+Guest -- BrowseBooks
+Guest -- ViewBookDetails
+
+Member -- VerifyEmail
+Member -- Login
+Member -- RecoverPassword
+Member -- ChangePassword
+Member -- Logout
+Member -- BrowseBooks
+Member -- ViewBookDetails
+Member -- ViewProfile
+Member -- UpdateProfile
+Member -- UploadAvatar
+Member -- ApplyMembership
+Member -- ViewMembershipStatus
+
+Login -- Librarian
+RecoverPassword -- Librarian
+ChangePassword -- Librarian
+Logout -- Librarian
+ViewProfile -- Librarian
+UpdateProfile -- Librarian
+UploadAvatar -- Librarian
+ApproveMembership -- Librarian
+RejectMembership -- Librarian
+
+Login -- Admin
+RecoverPassword -- Admin
+ChangePassword -- Admin
+Logout -- Admin
+ViewProfile -- Admin
+UpdateProfile -- Admin
+UploadAvatar -- Admin
+ApproveMembership -- Admin
+RejectMembership -- Admin
+
+SendNotifications -- EmailService
+
+Register ..> SendNotifications : <<include>>
+RecoverPassword ..> SendNotifications : <<include>>
+ApproveMembership ..> SendNotifications : <<include>>
+RejectMembership ..> SendNotifications : <<include>>
+@enduml

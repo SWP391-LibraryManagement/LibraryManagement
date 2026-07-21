@@ -470,10 +470,6 @@ const HomePage = () => {
     setShowLogoutConfirm(false);
   };
 
-  const goToMembership = () => {
-    navigate(isLoggedIn ? '/membership' : '/login');
-  };
-
   // @spec FR-FE01-001, FR-FE01-003, FR-FE01-008, FR-FE01-010
   useEffect(() => {
     if (!isLoggedIn) {
@@ -705,7 +701,7 @@ const HomePage = () => {
                 onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
               >Đăng nhập</button>
-              <button onClick={goToMembership} style={{
+              <button onClick={goToRegister} style={{
                 padding: '7px 18px', borderRadius: 6, border: 'none',
                 background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 600, fontSize: 13,
                 transition: 'background 0.2s',
@@ -787,7 +783,7 @@ const HomePage = () => {
               <button type="button" onClick={() => { setMenuOpen(false); goToLogin(); }} style={{ padding: '10px 12px', borderRadius: 8, border: '1.5px solid #8B6B4A', background: 'transparent', color: '#8B6B4A', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--sans)' }}>
                 Đăng nhập
               </button>
-              <button type="button" onClick={() => { setMenuOpen(false); goToMembership(); }} style={{ padding: '10px 12px', borderRadius: 8, border: 0, background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--sans)' }}>
+              <button type="button" onClick={() => { setMenuOpen(false); goToRegister(); }} style={{ padding: '10px 12px', borderRadius: 8, border: 0, background: '#C78A3B', color: '#FFF', cursor: 'pointer', fontWeight: 700, fontFamily: 'var(--sans)' }}>
                 Đăng ký
               </button>
             </div>
@@ -1125,7 +1121,7 @@ const HomePage = () => {
               ]},
               { title: 'Tài khoản', links: [
                 { label: 'Đăng nhập', action: () => {} },
-                { label: 'Đăng ký', action: () => {} },
+                { label: 'Đăng ký', action: goToRegister },
                 { label: 'Sách đang mượn', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
                 { label: 'Lịch sử đọc', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
               ]},

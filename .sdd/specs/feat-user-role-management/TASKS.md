@@ -273,6 +273,16 @@ Owner: Dung
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
   - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 merged the H3-reviewed commits `962ceb1` and `daaeea6` as `eed2688`. Any future `v1.0.3` remains a separate current-main release decision.
 
+- [x] **FE11-UIA01 - Simplify the Admin Audit Log filter toolbar.**
+  - Maps to: BR-FE11-018, FR-FE11-033, AC-FE11-018.
+  - Files: `frontend/src/page/UserManagement.jsx`, `frontend/test/userManagementFrontend.test.js`, `SPEC.md`, `CHANGELOG.md`.
+  - DoD: remove the visible `action` and `actorId` inputs, retain text/date filters and the unchanged backend query contract, and pass focused frontend regression tests.
+
+- [x] **FE11-UIN01 - Remove Permissions from the Admin sidebar.**
+  - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016.
+  - Files: `frontend/src/page/UserManagement.jsx`, affected frontend tests, `SPEC.md`, `CHANGELOG.md`.
+  - DoD: the sidebar exposes exactly seven approved entries without `Permissions`; permission APIs and authorization behavior remain unchanged.
+
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.

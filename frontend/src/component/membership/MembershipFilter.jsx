@@ -15,9 +15,11 @@ export default function MembershipFilter({ status, search, onStatusChange, onSea
         <option value="ALL">Tất cả</option>
       </select>
       <button type="button" className="btn btn-outline" onClick={onSearch} disabled={loading}><Search size={16} /> Tìm kiếm</button>
-      <button type="button" className="btn btn-outline" onClick={onReload} disabled={loading}>
-        <RefreshCw size={16} className={loading ? 'is-spinning' : ''} /> {loading ? 'Đang tải...' : 'Tải lại'}
-      </button>
+      {onReload && (
+        <button type="button" className="btn btn-outline" onClick={onReload} disabled={loading}>
+          <RefreshCw size={16} className={loading ? 'is-spinning' : ''} /> {loading ? 'Đang tải...' : 'Tải lại'}
+        </button>
+      )}
     </div>
   );
 }

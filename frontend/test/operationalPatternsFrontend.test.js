@@ -48,6 +48,7 @@ test('staff navigation includes separate Books, Inventory and Fines pages', asyn
       'borrowing-report',
       'inventory-report',
       'user-statistics',
+      'profile',
     ],
   );
   assert.equal(navigation.getActiveNavigationKey('/librarian/inventory'), 'inventory-management');

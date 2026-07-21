@@ -529,6 +529,45 @@ describe('FE07 borrowing management', () => {
     expect(ownHistoryResponse.body.borrowings[0].userId).toBe(member.userId);
   });
 
+  test('member history exposes a rejected request without rewriting the detail status', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'rejected.history.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'rejected.history.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const requestId = created.body.borrowRequest.requestId;
+
+    await request(app)
+      .patch(`/api/borrow-requests/${requestId}/reject`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ reason: 'Không đủ điều kiện xử lý.' })
+      .expect(200);
+
+    const history = await request(app)
+      .get('/api/borrow-requests/me')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(history.body.borrowings).toHaveLength(1);
+    expect(history.body.borrowings[0]).toMatchObject({ requestId, requestStatus: 'REJECTED', status: 'REQUESTED' });
+    expect(borrowingDependencies.state.borrowDetails[0].status).toBe('REQUESTED');
+  });
+
   test('return processing updates detail, copy, completion, and fine candidate data', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const member = await createVerifiedUser({
