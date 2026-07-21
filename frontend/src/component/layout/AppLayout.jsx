@@ -43,6 +43,7 @@ const NAV_ICONS = {
   'borrowing-report': BarChart2,
   'inventory-report': Boxes,
   'user-statistics': UserCog,
+  profile: UserCog,
 };
 
 function getCurrentRoles() {

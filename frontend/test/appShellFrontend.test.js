@@ -14,11 +14,11 @@ test('navigation visibility follows stored roles', () => {
   assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
-    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
+    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations', 'profile'],
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
-    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'membership-review', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics'],
+    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'membership-review', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics', 'profile'],
   );
 });
 
@@ -31,6 +31,7 @@ test('active navigation is derived from the current URL', () => {
   assert.equal(getActiveNavigationKey('/librarian/books'), 'book-management');
   assert.equal(getActiveNavigationKey('/librarian/fines'), 'fine-management');
   assert.equal(getActiveNavigationKey('/reports/inventory'), 'inventory-report');
+  assert.equal(getActiveNavigationKey('/profile'), 'profile');
   assert.equal(getActiveNavigationKey('/unknown'), null);
 });
 
@@ -142,12 +143,12 @@ test('staff dashboard summarizes operational queues', () => {
   );
 });
 
-test('personal profile keeps the account header without rendering the operational sidebar', async () => {
+test('personal profile inherits the shared app layout and sidebar', async () => {
   const profilePage = await readFile(new URL('../src/page/UserProfilePage.jsx', import.meta.url), 'utf8');
 
-  assert.match(profilePage, /import Header from "\.\.\/component\/layout\/Header";/);
-  assert.match(profilePage, /<Header \/>/);
-  assert.doesNotMatch(profilePage, /AppLayout/);
+  assert.match(profilePage, /import AppLayout from "\.\.\/component\/layout\/AppLayout";/);
+  assert.match(profilePage, /<AppLayout>/);
+  assert.doesNotMatch(profilePage, /import Header/);
 });
 
 test('profile logout clears the canonical stored user and uses readable Vietnamese copy', async () => {

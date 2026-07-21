@@ -32,6 +32,13 @@ export const APP_NAV_GROUPS = [
       { key: 'user-statistics', label: 'Thống kê người dùng', path: '/reports/users' },
     ],
   },
+  {
+    label: 'Tài khoản',
+    roles: ['MEMBER', 'LIBRARIAN', 'ADMIN'],
+    items: [
+      { key: 'profile', label: 'Thông tin cá nhân', path: '/profile' },
+    ],
+  },
 ];
 
 const HOME_ITEM = { key: 'home', label: 'Tổng quan', path: '/home' };
