@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { readStoredAdminAccess } from './adminAccess';
 import './admin-console.css';
 import { AdminShell } from './components/AdminShell';
+import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
 
 export default function AdminConsolePage() {
   const navigate = useNavigate();
@@ -30,11 +31,15 @@ export default function AdminConsolePage() {
       onHome={() => navigate('/home')}
       onLogout={handleLogout}
     >
-      <section className="admin-section-placeholder">
-        <p className="admin-page-eyebrow">Admin Console</p>
-        <h1>Đang chuẩn bị khu vực {activeSection}</h1>
-        <p>Các nghiệp vụ hiện tại vẫn hoạt động trên màn hình Admin cũ trong giai đoạn chuyển đổi.</p>
-      </section>
+      {activeSection === 'dashboard' ? (
+        <AdminDashboardSection />
+      ) : (
+        <section className="admin-section-placeholder">
+          <p className="admin-page-eyebrow">Admin Console</p>
+          <h1>Đang chuẩn bị khu vực {activeSection}</h1>
+          <p>Các nghiệp vụ hiện tại vẫn hoạt động trên màn hình Admin cũ trong giai đoạn chuyển đổi.</p>
+        </section>
+      )}
     </AdminShell>
   );
 }

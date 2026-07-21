@@ -55,3 +55,14 @@ test('Admin page resolves stored access before protected section composition', a
   assert.match(page, /<Navigate to="\/home" replace \/>/);
   assert.ok(page.indexOf('!access.authenticated') < page.indexOf('<AdminShell'));
 });
+
+test('Admin dashboard keeps API ownership, stale-response guard and operational chart rules', async () => {
+  const dashboard = await readFile(new URL('dashboard/AdminDashboardSection.jsx', root), 'utf8');
+  const page = await readFile(new URL('AdminConsolePage.jsx', root), 'utf8');
+  assert.match(dashboard, /adminApi\.dashboard\(\)/);
+  assert.match(dashboard, /createLatestRequestGuard/);
+  assert.equal(dashboard.match(/selectOperationalChartRows\(/g)?.length, 3);
+  assert.match(dashboard, /Dữ liệu sẽ xuất hiện khi có giao dịch phù hợp\./);
+  assert.match(page, /activeSection === 'dashboard'/);
+  assert.match(page, /<AdminDashboardSection \/>/);
+});
