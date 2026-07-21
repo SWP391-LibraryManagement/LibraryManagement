@@ -25,6 +25,15 @@ test('membership application follows the approved empty-body contract', async ()
   assert.match(api, /url: '\/membership\/applications', data/);
 });
 
+test('membership UI explains the connected FE07 daily borrowing allowance', async () => {
+  const form = await readFile(new URL('../src/component/membership/MembershipApplicationForm.jsx', import.meta.url), 'utf8');
+  const status = await readFile(new URL('../src/component/membership/MyMembershipStatus.jsx', import.meta.url), 'utf8');
+
+  assert.match(form, /Tăng hạn mức từ 3 lên 5 sách mỗi ngày/);
+  assert.match(status, /statusKey === 'APPROVED' \? 5 : 3/);
+  assert.match(status, /sách\/ngày/);
+});
+
 test('librarian navigation exposes the FE04 review workspace', async () => {
   const navigation = await readFile(new URL('../src/utils/appNavigation.js', import.meta.url), 'utf8');
   assert.match(navigation, /key: 'membership-review', label: 'Duyệt hội viên', path: '\/membership'/);

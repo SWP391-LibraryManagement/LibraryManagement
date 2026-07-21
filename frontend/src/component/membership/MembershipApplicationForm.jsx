@@ -11,7 +11,7 @@ export default function MembershipApplicationForm({ disabled, saving, onSubmit }
       <h2 className="lib-card-title">Gửi đơn đăng ký</h2>
       <p className="muted">Đơn sử dụng thông tin tài khoản và hồ sơ cá nhân đã xác thực của bạn.</p>
       <div className="membership-benefits">
-        <span><CheckCircle2 size={16} /> Mượn tối đa 5 sách</span>
+        <span><CheckCircle2 size={16} /> Tăng hạn mức từ 3 lên 5 sách mỗi ngày</span>
         <span><CheckCircle2 size={16} /> Gia hạn theo quy định</span>
         <span><CheckCircle2 size={16} /> Tham gia hàng đợi đặt chỗ</span>
       </div>

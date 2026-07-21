@@ -4,6 +4,7 @@
 
 - Kept borrowing available to active `MEMBER` accounts without FE04 approval at a 3-copy daily limit.
 - Defined canonical `APPROVED` membership as the entitlement for a 5-copy daily limit consumed by FE07.
+- Updated the member-facing status and application benefits to show the current 3-or-5-copy daily allowance explicitly.
 
 ## 2026-07-21 - Decouple membership applications from circulation authorization
 

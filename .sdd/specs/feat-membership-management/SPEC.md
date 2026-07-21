@@ -301,6 +301,7 @@ Use these stable IDs for tasks and tests.
 ### 12.5 Usability
 
 - NFR-FE04-UX-001: Applicants must see clear status: no application, pending, approved, rejected.
+- NFR-FE04-UX-002: The member status and application views must explain the FE07 entitlement clearly: non-approved accounts receive 3 copies per business day and canonical `APPROVED` membership receives 5 copies per business day.
 - NFR-FE04-UX-002: Rejected applicants must see the stored rejection reason without protected reviewer/internal data.
 
 ---

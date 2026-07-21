@@ -12,6 +12,7 @@ export default function MyMembershipStatus({ status }) {
   const current = status || {};
   const statusKey = String(current.membershipStatusView || 'NONE').toUpperCase();
   const currentApplication = current.currentApplication || {};
+  const dailyBorrowLimit = statusKey === 'APPROVED' ? 5 : 3;
 
   return (
     <section className="lib-card">
@@ -25,6 +26,7 @@ export default function MyMembershipStatus({ status }) {
       </div>
 
       <div className="info-list">
+        <div className="info-row"><UserCheck size={16} /> Hạn mức mượn: <strong>{dailyBorrowLimit} sách/ngày</strong></div>
         <div className="info-row"><CalendarClock size={16} /> Ngày nộp: <strong>{formatDate(currentApplication.appliedAt)}</strong></div>
         <div className="info-row"><CalendarClock size={16} /> Ngày duyệt: <strong>{formatDate(currentApplication.approvedAt)}</strong></div>
         {currentApplication.rejectionReason && <div className="alert-box danger">{currentApplication.rejectionReason}</div>}
