@@ -276,3 +276,13 @@ Owner: Dung
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.
+
+## Admin Console Full Frontend Refactor Tasks
+
+- [ ] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
+- [ ] **FE11-UXR02 - Build the responsive Admin shell and shared presentation primitives.**
+- [ ] **FE11-UXR03 - Migrate Dashboard and User Management with desktop/mobile parity.**
+- [ ] **FE11-UXR04 - Migrate Requests, Permissions, and Audit without changing API ownership.**
+- [ ] **FE11-UXR05 - Migrate Library/Circulation and remove unreachable membership/payment Admin code.**
+- [ ] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
+- [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**

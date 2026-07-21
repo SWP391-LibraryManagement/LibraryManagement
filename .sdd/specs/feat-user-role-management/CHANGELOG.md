@@ -301,3 +301,9 @@
 - Clarified that admin Reports-style content is consolidated into Dashboard while detailed reporting remains FE12.
 - Added request-management rule: pending requests may expose action controls; completed requests are view-only.
 - Added BR-FE11-016..020, FR-FE11-030..035, AC-FE11-016..019, EC-FE11-016..018, and Q-FE11-011..013.
+## 2026-07-22 - Admin Console full frontend refactor approved
+
+- Approved a Shell-only modular refactor under `FE11-UXR01..UXR07`.
+- Preserves all backend, API, authorization, database, FE07 mutation, FE11 permission/audit, and FE12 reporting contracts.
+- Adds responsive user cards, decision-focused charts, labeled actions, localized audit presentation, distinct permission decisions, persistent filter labels, and explicit loading/error/empty states.
+- Removes only unreachable Admin Console membership/payment code; canonical FE04 and FE09 functionality remains unchanged.

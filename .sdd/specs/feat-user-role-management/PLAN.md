@@ -322,3 +322,11 @@ npm.cmd run smoke:staging
 - H3, merge, and exact post-merge `main` CI are tracked by PR #59; `v1.0.2` is
   already published at `c988af1`. Any future `v1.0.3` must use a later reviewed
   `main` SHA after its own release gates.
+
+## 18. Admin Console Full Frontend Refactor Slice
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+This Shell-only refactor preserves `/admin/users`, all FE11/FE07/FE12 API and ownership contracts, server authorization, safe DTOs, and database state. It splits the Admin Console into a guarded shell, shared presentation primitives, and independent Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules.
+
+Implementation order: governance -> pure presentation RED/GREEN -> shared shell -> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation -> legacy removal -> full validation and Azure Staging acceptance.
