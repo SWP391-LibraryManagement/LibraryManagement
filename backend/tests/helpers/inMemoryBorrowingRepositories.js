@@ -190,6 +190,25 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
   }
 
   const borrowingRepository = {
+    async listBorrowCandidates({ bookId = null, q = '', userId }) {
+      const normalizedQuery = q.toLowerCase();
+      return books
+        .filter((book) => book.status === 'ACTIVE')
+        .filter((book) => !bookId || book.bookId === Number(bookId))
+        .filter((book) => !normalizedQuery || book.title.toLowerCase().includes(normalizedQuery))
+        .map((book) => ({
+          bookId: book.bookId,
+          title: book.title,
+          author: book.author || 'Không rõ tác giả',
+          category: book.category || 'Chưa phân loại',
+          copies: copies
+            .filter((copy) => copy.bookId === book.bookId)
+            .filter((copy) => ['NORMAL_AVAILABLE', 'HELD_FOR_MEMBER'].includes(classifyCopyBorrowability(copy, userId).outcome))
+            .map((copy) => ({ copyId: copy.copyId, barcode: copy.barcode, location: copy.location })),
+        }))
+        .filter((book) => book.copies.length > 0);
+    },
+
     async getMemberEligibility(userId) {
       const user = getUser(userId);
 
@@ -427,16 +446,12 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       }
 
       const member = getUser(request.userId);
-      if (!member || !memberStatuses.has(request.userId)) {
+      if (!member) {
         return { outcome: 'REQUEST_NOT_APPROVABLE' };
       }
 
       if (member.status !== 'ACTIVE') {
         return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
-      }
-
-      if (memberStatuses.get(request.userId) !== 'APPROVED') {
-        return { outcome: 'MEMBERSHIP_NOT_APPROVED' };
       }
 
       if (await this.hasBlockingFine(request.userId)) {

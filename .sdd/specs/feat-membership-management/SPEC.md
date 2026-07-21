@@ -1,12 +1,12 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.2.3
+# Version: 0.3.0
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-21
 
 # Feature ID: FE04
 
@@ -30,7 +30,7 @@ Membership Management
 
 ### 1.2 Business Context
 
-The library needs a controlled way to decide which registered users are approved members. Approved membership is required before borrowing books, reserving books, and using other Phase 1 member services.
+The library keeps an optional membership application and review record for administrative tracking. Borrowing and reservation authorization is owned by FE07/FE08 and is based on an active account with the `MEMBER` role; FE04 approval is not a prerequisite for those workflows.
 
 Membership Management provides an application and review workflow. It must be separate from account creation and role assignment so that authentication and authorization remain clean.
 
@@ -42,7 +42,7 @@ The system shall:
 - Allow authorized librarians/admins to approve membership applications.
 - Allow authorized librarians/admins to reject membership applications.
 - Allow users to view their own membership status.
-- Maintain traceable membership application status for borrowing and reservation eligibility.
+- Maintain traceable membership application status without changing FE07/FE08 role authorization.
 
 ### 1.4 Scope Level
 
@@ -58,7 +58,7 @@ The system shall:
 | ----- | ----------- | --------------------------- |
 | Guest | Unauthenticated visitor | No membership application access; must register/login first. |
 | Member Applicant | Authenticated user with the `MEMBER` role applying for membership | Submit membership application and view own membership status. |
-| Member | User with approved membership | View membership status. |
+| Member | Authenticated user with the `MEMBER` role | Use FE07/FE08 when the account is active; optionally view/apply for FE04 membership status. |
 | Librarian | Library staff | Review, approve, or reject membership applications. |
 | Admin | System administrator | Has membership review permissions. |
 | Notification Service | Internal feature | Receives a safe `MEMBERSHIP_RESULT` request after approval/rejection commits when the FE04 requester is configured. |
@@ -180,7 +180,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE04-006: If a non-authorized actor attempts approval/rejection, then the system shall deny access.
 - FR-FE04-007: When an authenticated `MEMBER` views membership status, the system shall return only that user's deterministic status fields, canonical member status when present, and current/latest application; users with no member/application receive `membershipStatusView = NONE`.
 - FR-FE04-008: If the application is not pending, then the system shall reject approve/reject state changes.
-- FR-FE04-009: When FE07/FE08 checks eligibility, the system shall classify the user as an approved member only when `Users.Status = ACTIVE` and `Members.Status = APPROVED`.
+- FR-FE04-009: FE04 shall expose its own application/member status for administration, but FE07/FE08 shall authorize active `MEMBER` accounts independently of that status.
 - FR-FE04-010: When a rejected user reapplies, the system shall create a new pending application, preserve prior history, and atomically set `Members.Status = PENDING`.
 - FR-FE04-011: When approval/rejection succeeds, the system shall update the application, canonical member projection, reviewer metadata, decision timestamps, and corresponding audit entry in one transaction; approval uses the same timestamp for both `ApprovedAt` fields, while rejection keeps `Members.ApprovedAt = null`. Any failure rolls the transaction back.
 - FR-FE04-012: When approval/rejection commits and audit logging succeeds, the system shall request one idempotent FE10 delivery with `type = GENERAL_SYSTEM` and `templateKey = MEMBERSHIP_RESULT` through the FE04-bound requester when configured, then return safe delivery status without rolling back the decision if delivery fails.
@@ -199,7 +199,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE04-008: Given a guest, when viewing membership status or applying, then the system requires authentication.
 - AC-FE04-009: Given a rejected user with no pending application, when the user reapplies, then a new `PENDING` application is created, prior history remains unchanged, and `Members.Status` becomes `PENDING`.
 - AC-FE04-010: Given FE10 delivery fails after a review decision commits, then the application/member decision remains committed and the response exposes only safe `notificationStatus`.
-- AC-FE04-011: Given FE07/FE08 checks eligibility, then only an `ACTIVE` user with canonical `Members.Status = APPROVED` passes.
+- AC-FE04-011: Given an active account with the `MEMBER` role, FE07/FE08 eligibility is not blocked by `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` FE04 status.
 
 ---
 
@@ -325,8 +325,8 @@ This feature does not include:
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | Provides account identity and authenticated user. |
 | FE03 User Profile | Internal | Provides profile data for review if needed. |
-| FE07 Borrowing Management | Internal | Requires approved membership for borrowing. |
-| FE08 Reservation Management | Internal | May require approved membership for reservation. |
+| FE07 Borrowing Management | Independent consumer | Uses active account plus `MEMBER` role; FE04 does not gate borrowing. |
+| FE08 Reservation Management | Independent consumer | Uses active account plus `MEMBER` role; FE04 does not gate reservation. |
 | FE10 Notification Management | Internal | Receives non-blocking `MEMBERSHIP_RESULT` requests after approval/rejection commits when configured. |
 | FE11 User & Role Management | Internal | Provides librarian/admin roles. |
 | SQL Server database | Technical | Current SQL script has `Members` and `MembershipApplications`; FE04 keeps them transactionally consistent. |

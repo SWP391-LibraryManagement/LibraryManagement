@@ -110,10 +110,6 @@ function createReservationService({
     }
 
     // @spec FR-FE08-013 — reject reservation when membership is not approved (EC-FE08-003, BR-FE08-005)
-    if (eligibility.memberStatus !== 'APPROVED') {
-      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to reserve books.');
-    }
-
     return eligibility;
   }
 

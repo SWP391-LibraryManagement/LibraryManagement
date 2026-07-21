@@ -127,10 +127,6 @@ function createBorrowingService({
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
-    if (eligibility.memberStatus !== 'APPROVED') {
-      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
-    }
-
     return eligibility;
   }
 
@@ -219,6 +215,15 @@ function createBorrowingService({
         'A member cannot have more than 5 active borrowed copies.'
       );
     }
+  }
+
+  async function listBorrowCandidates(filters = {}, actor) {
+    requireMember(actor);
+    const bookId = filters.bookId ? toPositiveInteger(filters.bookId, 'Book ID') : null;
+    const q = String(filters.q || '').trim();
+    return {
+      books: await borrowingRepository.listBorrowCandidates({ bookId, q, userId: actor.userId }),
+    };
   }
 
   async function createBorrowRequest(input, actor, context = {}) {
@@ -389,9 +394,6 @@ function createBorrowingService({
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
-    if (approvalResult?.outcome === 'MEMBERSHIP_NOT_APPROVED') {
-      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
-    }
 
     if (approvalResult?.outcome === 'BOOK_INACTIVE') {
       throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be borrowed.');
@@ -650,6 +652,7 @@ function createBorrowingService({
   }
 
   return {
+    listBorrowCandidates,
     createBorrowRequest,
     listMyBorrowRequests,
     listBorrowRequests,

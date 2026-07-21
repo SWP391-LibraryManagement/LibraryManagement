@@ -10,6 +10,8 @@ import {
 import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/dashboardViewModel.js';
 
 test('navigation visibility follows stored roles', () => {
+  assert.equal(getVisibleNavigation(['MEMBER'])[0].label, 'Home');
+  assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
     ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
@@ -74,7 +76,7 @@ test('shared profile menu remains compatible with the header contract', async ()
   assert.doesNotMatch(source, /function BookCopies/);
 });
 
-test('authenticated sidebar renders Thư viện above the role dashboard overview', async () => {
+test('authenticated sidebar renders role-aware library Home above the dashboard overview', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
 
   const homePosition = source.indexOf("onClick={() => navigateFromShell('/homepage')}");
@@ -82,8 +84,8 @@ test('authenticated sidebar renders Thư viện above the role dashboard overvie
   assert.ok(homePosition >= 0);
   assert.ok(overviewPosition > homePosition);
   assert.match(source, /showLibraryHome &&/);
-  assert.match(source, /<span>Thư viện<\/span>/);
-  assert.match(source, /aria-label="Thư viện"/);
+  assert.match(source, /<span>\{isMember \? 'Home' : 'Thư viện'\}<\/span>/);
+  assert.match(source, /aria-label=\{isMember \? 'Home' : 'Thư viện'\}/);
 });
 
 test('account menus hide member-only actions from admin and librarian roles', async () => {

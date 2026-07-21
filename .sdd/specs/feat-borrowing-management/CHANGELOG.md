@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-21 - Use role-based member eligibility
+
+- Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
+- Kept librarian/admin approval of each borrow request as the FE07 circulation control.
+- Removed book ratings from the member borrow-request candidate response and confirmation UI.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

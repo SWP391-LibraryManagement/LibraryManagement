@@ -1,18 +1,3 @@
-export const DEMO_BORROW_CATALOG = [
-  { id: 'BK-001', title: 'Clean Code', author: 'Robert C. Martin', category: 'Lập trình', rating: 4.7, copies: [
-    { id: 1, branch: 'Chi nhánh Trung tâm', shelf: 'A-12' },
-    { id: 2, branch: 'Chi nhánh Quận 7', shelf: 'B-04' },
-  ] },
-  { id: 'BK-002', title: 'The Pragmatic Programmer', author: 'Andrew Hunt, David Thomas', category: 'Lập trình', rating: 4.6, copies: [
-    { id: 4, branch: 'Chi nhánh Trung tâm', shelf: 'A-15' },
-  ] },
-  { id: 'BK-003', title: 'Sapiens: Lược sử loài người', author: 'Yuval Noah Harari', category: 'Lịch sử', rating: 4.8, copies: [
-    { id: 5, branch: 'Chi nhánh Trung tâm', shelf: 'D-02' },
-    { id: 6, branch: 'Chi nhánh Quận 7', shelf: 'D-03' },
-  ] },
-  { id: 'BK-004', title: 'Nhà Giả Kim', author: 'Paulo Coelho', category: 'Tiểu thuyết', rating: 4.5, copies: [] },
-];
-
 export function fmtDate(value) {
   if (!value) return '—';
   const date = new Date(value);

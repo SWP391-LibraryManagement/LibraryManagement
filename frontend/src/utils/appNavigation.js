@@ -42,8 +42,11 @@ export function getVisibleNavigation(roles = []) {
     .filter((group) => group.roles.some((role) => roles.includes(role)))
     .flatMap((group) => group.items);
   const canOpenLibraryHome = roles.some((role) => ['MEMBER', 'LIBRARIAN', 'ADMIN'].includes(role));
+  const libraryHomeItem = roles.includes('MEMBER') && !roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role))
+    ? { ...LIBRARY_HOME_ITEM, label: 'Home' }
+    : LIBRARY_HOME_ITEM;
   return [
-    ...(canOpenLibraryHome ? [LIBRARY_HOME_ITEM] : []),
+    ...(canOpenLibraryHome ? [libraryHomeItem] : []),
     HOME_ITEM,
     ...items,
   ];

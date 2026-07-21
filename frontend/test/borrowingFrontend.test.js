@@ -18,13 +18,13 @@ async function loadBorrowingViewModels() {
   }
 }
 
-test('shared view models retain only the documented FE07 temporary candidate catalog', async () => {
+test('shared view models no longer retain a temporary FE07 candidate catalog', async () => {
   const source = await readFile(
     new URL('../src/utils/libraryFeatureViewModels.js', import.meta.url),
     'utf8'
   );
 
-  assert.match(source, /export const DEMO_BORROW_CATALOG/);
+  assert.doesNotMatch(source, /export const DEMO_BORROW_CATALOG/);
   assert.doesNotMatch(source, /export const DEMO_RESERVABLE/);
   assert.doesNotMatch(
     source,
@@ -106,7 +106,10 @@ test('borrow request helper copy is readable Vietnamese', async () => {
   const adminSource = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
   const memberSource = await readFile(new URL('../src/page/borrowing/MemberBorrowingDetailsPage.jsx', import.meta.url), 'utf8');
 
-  assert.match(source, /Hệ thống sẽ kiểm tra tư cách thành viên, giới hạn 5 sách, sách quá hạn, phí phạt và tình trạng bản sao\./);
+  assert.doesNotMatch(source, /Kiểm tra điều kiện|Bản sao sẽ được kiểm tra lại|Hệ thống sẽ tự chọn|Thủ thư sẽ chuẩn bị/);
+  assert.match(source, /notice && <DataNotice/);
+  assert.doesNotMatch(source, /Bản sao \/ Vị trí|copy\.barcode|copy\.location/);
+  assert.doesNotMatch(source, /\bStar\b|selected\.rating|toFixed\(1\)/);
   assert.doesNotMatch(source, /Backend mới l-|Chon mot cu-n/);
   assert.doesNotMatch(adminSource, /backend re-check|Backend sẽ re-check/);
   assert.match(memberSource, /placeholder="Tìm tên, email, mã\.\.\."/);
@@ -286,6 +289,10 @@ test('FE07 member pages use shared operational patterns without changing API cal
   assert.match(request, /EmptyState/);
   assert.doesNotMatch(request, /<div className="empty">/);
   assert.match(request, /borrowingApi\.createRequest\(\[Number\(copyId\)\]\)/);
+  assert.match(request, /borrowingApi\.listCandidates\(\)/);
+  assert.match(request, /searchParams\.get\('bookId'\)/);
+  assert.match(request, /Number\(book\.bookId\) === requestedBookId/);
+  assert.doesNotMatch(request, /DEMO_BORROW_CATALOG/);
 
   assert.match(history, /DataToolbar/);
   assert.match(history, /DataTable/);

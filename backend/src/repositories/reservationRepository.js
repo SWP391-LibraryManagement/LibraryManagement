@@ -417,12 +417,10 @@ async function findNextActiveReservationForCopy(copyId) {
     .input('CopyId', sql.Int, copyId)
     .query(`
       ${reservationSelect}
-      LEFT JOIN Members m ON r.UserId = m.UserId
       WHERE r.CopyId = @CopyId
         AND r.Status = 'ACTIVE'
         AND bc.Status = 'AVAILABLE'
         AND u.Status = 'ACTIVE'
-        AND m.Status = 'APPROVED'
       ORDER BY r.ReservedAt ASC, r.ReservationId ASC
     `);
 

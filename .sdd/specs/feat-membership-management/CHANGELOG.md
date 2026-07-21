@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-21 - Decouple membership applications from circulation authorization
+
+- Made FE04 application status independent from FE07 borrowing and FE08 reservation eligibility.
+- Active accounts with the `MEMBER` role can use circulation workflows without FE04 approval.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

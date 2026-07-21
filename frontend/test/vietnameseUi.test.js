@@ -71,9 +71,8 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
   const recovery = await readFile(new URL('../src/component/forgotpassword/BackgroundPanel.jsx', import.meta.url), 'utf8');
 
   assert.match(navigation, /label: 'Thư viện'/);
-  assert.doesNotMatch(navigation, /label: 'Home'/);
-  assert.match(layout, /aria-label="Thư viện"/);
-  assert.doesNotMatch(layout, />Home</);
+  assert.match(navigation, /label: 'Home'/);
+  assert.match(layout, /isMember \? 'Home' : 'Thư viện'/);
   assert.match(feedback, /aria-label="Đóng"/);
   assert.match(recovery, /Chào mừng trở lại/);
   assert.match(recovery, /Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện/);
@@ -143,8 +142,8 @@ test('operational status controls render Vietnamese labels while preserving raw 
   assert.match(borrowRequests, /value=\{statusFilter\}/);
   assert.match(borrowRequests, /setStatusFilter\(event\.target\.value\)/);
   assert.match(borrowRequests, /<option key=\{option\.value\} value=\{option\.value\}>\{option\.label\}<\/option>/);
-  assert.doesNotMatch(borrowRequest, /Copy #/);
-  assert.match(borrowRequest, /Bản sao #/);
+  assert.doesNotMatch(borrowRequest, /Copy #|Bản sao #|copy\.barcode|copy\.location/);
+  assert.doesNotMatch(borrowRequest, /Hệ thống sẽ tự chọn|Kiểm tra điều kiện/);
 });
 
 test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', async () => {

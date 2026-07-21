@@ -268,8 +268,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
           return (
             reservation.copyId === Number(copyId) &&
             reservation.status === 'ACTIVE' &&
-            user?.status === 'ACTIVE' &&
-            memberStatuses.get(reservation.userId) === 'APPROVED'
+            user?.status === 'ACTIVE'
           );
         })
         .sort(

@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.5.1
+# Version: 0.6.0
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-21
 
 # Feature ID: FE07
 
@@ -71,7 +71,7 @@ The system shall:
 The feature can only start when:
 
 - PRE-FE07-001: The user account exists and has an active status.
-- PRE-FE07-002: The member has canonical `Members.Status = APPROVED` before borrowing.
+- PRE-FE07-002: The actor has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 membership approval is not required.
 - PRE-FE07-003: The requested book copy exists in `BookCopies`.
 - PRE-FE07-004: Protected actions are performed by an authenticated actor with the correct role.
 - PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5, default loan duration is 14 calendar days, and renewal limit is 1 renewal per borrowed copy.
@@ -147,7 +147,7 @@ The feature can only start when:
 
 ### AF-FE07-001: Member Is Not Eligible
 
-1. The system detects inactive membership, unpaid blocking fine, overdue active loan, or exceeded borrow limit.
+1. The system detects an inactive account, unpaid blocking fine, overdue active loan, or exceeded borrow limit.
 2. The system rejects the request or approval action.
 3. The system returns a clear error message explaining the blocking reason.
 
@@ -180,7 +180,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-001: A guest cannot create, approve, process, or view protected borrowing records.
 - BR-FE07-002: A member can create borrow requests only for their own account.
 - BR-FE07-003: A librarian/admin can view and process borrow requests for any member.
-- BR-FE07-004: A member must have `Users.Status = ACTIVE` and canonical `Members.Status = APPROVED` before borrowing or renewal.
+- BR-FE07-004: A member must have the `MEMBER` role and `Users.Status = ACTIVE` before borrowing or renewal; FE04 membership application status does not block FE07.
 - BR-FE07-005: At create and approval, `activeBorrowedCount + requestedDetailCount` must be less than or equal to 5. `activeBorrowedCount` counts only the member's current `BorrowDetails.Status = BORROWED`; approval acquires the member-scoped lock and relevant rows in the order defined by NFR-FE07-TXN-003 before calculating the count, so concurrent approvals cannot exceed 5.
 - BR-FE07-006: A member with overdue active loans or any unpaid fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy.
 - BR-FE07-007: A copy can be borrowed only when FE07 classifies it as borrowable under BR-FE07-023.
@@ -230,7 +230,7 @@ Use these stable IDs for tasks and tests.
 These EARS requirements cover error and abnormal conditions. Each traces back to an existing Edge Case (EC-*), Business Rule (BR-*), or Alternative Flow (AF-*).
 
 - FR-FE07-014: IF `activeBorrowedCount + requestedDetailCount > 5` at create or approval, the system shall reject the whole action with `BORROW_LIMIT_EXCEEDED` and change no record. Approval must acquire the member-scoped lock and relevant rows in the NFR-FE07-TXN-003 order before performing this calculation. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
-- FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive or the membership is not approved, the system shall reject the action and return an eligibility error explaining the blocking reason. (Source: BR-FE07-004, EC-FE07-002, EC-FE07-003, AF-FE07-001)
+- FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive, the system shall reject the action and return an eligibility error; an active `MEMBER` may proceed without FE04 approval. (Source: BR-FE07-004, EC-FE07-002, AF-FE07-001)
 - FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
 - FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any copy that fails BR-FE07-023, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
 - FR-FE07-018: IF any copy fails the reservation-aware borrowability contract at the moment of approval, the system shall reject the whole approval, keep all data unchanged (request stays `PENDING`), and return the safe blocking conflict. (Phase 1 policy: all-or-nothing.) (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
@@ -304,7 +304,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 | ------ | ----------------------- |
 | Users | Stores member, librarian, and admin accounts. |
 | UserRoles | Checks actor permission. |
-| Members | Canonical FE04 membership eligibility projection; only `APPROVED` passes. |
+| Users/UserRoles | Canonical FE02/FE11 account and role authorization; active `MEMBER` passes. |
 | Books | Provides book display information and the required `ACTIVE` parent status guard. |
 | BookCopies | Tracks physical copy status and location. |
 | BorrowRequests | Stores borrow request header and workflow status. |
@@ -525,6 +525,7 @@ stateDiagram-v2
 ### 12.5 Usability
 
 - NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, reservation queue priority, reservation state conflict, unpaid fine, overdue loan, or invalid state.
+- NFR-FE07-UX-002: The member borrow-request confirmation shall show only circulation-relevant book information and shall not display ratings.
 - NFR-FE07-TIME-001: Borrow, due, return, and overdue business dates use `Asia/Ho_Chi_Minh`; persisted timestamps may use UTC internally only if API/business-date conversion remains deterministic.
 
 ---
@@ -547,7 +548,7 @@ This feature does not include:
 | Dependency | Type | Notes |
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | Required for actor identity. |
-| FE04 Membership Management | Internal | Determines membership approval/status. |
+| FE04 Membership Management | Independent | Tracks optional membership applications; does not gate FE07. |
 | FE06 Inventory / Book Copy Management | Internal | Provides copy availability and status updates. |
 | FE08 Reservation Management | Internal | FE08 owns queue order, hold selection, cancellation, and expiration. FE07 reads `ACTIVE`/`NOTIFIED` claims for create/approval/renewal and changes only matching requester-owned `NOTIFIED` holds to `FULFILLED` during approval. |
 | FE09 Fine Management | Internal | Checked on 2026-06-10: any unpaid fine with amount greater than 0 blocks new borrowing and renewal. FE09 owns fine calculation/creation from FE07 return data. |
@@ -590,7 +591,7 @@ This feature does not include:
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
 | AC-FE07-001 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
-| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "inactive account or unapproved membership cannot create a borrow request" | Ready for review |
+| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Ready for review |
 | AC-FE07-003 | UC29, UC32 | Planned: 4 active + 2 requested is rejected at create/approval | Planned |
 | AC-FE07-004 | UC32 | Planned: approval persists approver, borrow date, due date, copy/reservation/audit atomically | Planned |
 | AC-FE07-005 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
@@ -653,7 +654,7 @@ This feature does not include:
 | FR-FE07-012 | UC32, UC35 | Planned: BORROWED copy blocks another approval test | Planned |
 | FR-FE07-013 | UC33 | FT34 | Ready for review |
 | FR-FE07-014 | UC29, UC32 | Planned: active count + request count boundary/rollback test | Planned |
-| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account or unapproved membership cannot create a borrow request" | Ready for review |
+| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Ready for review |
 | FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
 | FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
 | FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |

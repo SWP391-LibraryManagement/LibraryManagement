@@ -2,6 +2,15 @@ const { defaultBorrowingService } = require('../services/borrowingService');
 
 function createBorrowingController(borrowingService = defaultBorrowingService) {
   return {
+    listCandidates: async (req, res, next) => {
+      try {
+        const result = await borrowingService.listBorrowCandidates(req.query, req.user);
+        return res.status(200).json(result);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     // @spec FR-FE07-001, FR-FE07-002, FR-FE07-003
     createRequest: async (req, res, next) => {
       try {

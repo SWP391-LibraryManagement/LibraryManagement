@@ -765,7 +765,7 @@ describe('FE08 reservation management', () => {
     expect(response.body.error.code).toBe('MEMBER_ACCOUNT_INACTIVE');
   });
 
-  test('rejects reservation when membership is not approved (FR-FE08-013)', async () => {
+  test('allows an active MEMBER to reserve without FE04 approval (FR-FE08-013)', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
     const member = await createVerifiedUser({
       app,
@@ -780,8 +780,8 @@ describe('FE08 reservation management', () => {
       .set('Authorization', authHeader(member.accessToken))
       .send({ copyId: 1 });
 
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe('MEMBERSHIP_NOT_APPROVED');
+    expect(response.status).toBe(201);
+    expect(response.body.reservation).toMatchObject({ userId: member.userId, status: 'ACTIVE' });
   });
 
   test('rejects reservation when the copy does not exist (FR-FE08-014)', async () => {

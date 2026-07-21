@@ -127,6 +127,9 @@ export const publicBrowseApi = {
 };
 
 export const borrowingApi = {
+  listCandidates(params = {}) {
+    return authorizedBorrowingRequest({ method: 'get', url: '/borrow-requests/candidates', params }, 'Không thể tải danh sách sách có thể mượn.');
+  },
   createRequest(copyIds) {
     return authorizedBorrowingRequest({ method: 'post', url: '/borrow-requests', data: { copyIds } }, 'Không thể gửi yêu cầu mượn.');
   },

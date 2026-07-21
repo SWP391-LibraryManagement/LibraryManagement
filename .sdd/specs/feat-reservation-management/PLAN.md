@@ -59,7 +59,7 @@ Not included:
 ### 3.2 Create Reservation
 
 - Validate `copyId`.
-- Confirm the actor is an active user with approved membership.
+- Confirm the actor is an active user with the `MEMBER` role; FE04 approval is not required.
 - Reject available, damaged, lost, or inactive copies.
 - Reject duplicate active reservations for the same copy.
 - Reject when the member already has 3 active reservations.

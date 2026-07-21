@@ -1,34 +1,70 @@
 /**
  * FE07 - UC29 - Create Borrow Request (Member)
- * API thật: POST /api/borrow-requests với copyIds.
+ * API thật: GET /api/borrow-requests/candidates và POST /api/borrow-requests.
  */
 
-import { useMemo, useState } from 'react';
-import { Search, BookOpen, MapPin, CheckCircle2, Star } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, BookOpen, CheckCircle2 } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataToolbar } from '../../component/shared/OperationalPatterns';
-import { DEMO_BORROW_CATALOG } from '../../utils/libraryFeatureViewModels';
 
 export default function BorrowRequestPage() {
+  const [searchParams] = useSearchParams();
+  const requestedBookId = Number(searchParams.get('bookId'));
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState(DEMO_BORROW_CATALOG[0]);
-  const [copyId, setCopyId] = useState(DEMO_BORROW_CATALOG[0].copies[0]?.id || '');
+  const [books, setBooks] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [copyId, setCopyId] = useState('');
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState('Bản sao sẽ được kiểm tra lại khi bạn gửi yêu cầu.');
+  const [notice, setNotice] = useState('');
   const [noticeType, setNoticeType] = useState('info');
   const [toast, showToast, clearToast] = useToast();
 
+  useEffect(() => {
+    let active = true;
+    borrowingApi.listCandidates()
+      .then((data) => {
+        if (!active) return;
+        const nextBooks = data.books || [];
+        const requestedBook = Number.isInteger(requestedBookId) && requestedBookId > 0
+          ? nextBooks.find((book) => Number(book.bookId) === requestedBookId)
+          : null;
+        const nextSelected = requestedBook || nextBooks[0] || null;
+        setBooks(nextBooks);
+        setSelected(nextSelected);
+        setCopyId(nextSelected?.copies[0]?.copyId || '');
+        if (requestedBookId > 0 && !requestedBook) {
+          setNotice('Sách bạn chọn hiện không còn bản sao có thể mượn. Vui lòng chọn sách khác.');
+          setNoticeType('error');
+        }
+      })
+      .catch((error) => {
+        if (!active) return;
+        setBooks([]);
+        setSelected(null);
+        setCopyId('');
+        setNotice(error.message);
+        setNoticeType('error');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [requestedBookId]);
+
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return DEMO_BORROW_CATALOG.filter((book) => !q || `${book.title} ${book.author}`.toLowerCase().includes(q));
-  }, [query]);
+    const normalizedQuery = query.trim().toLowerCase();
+    return books.filter((book) => !normalizedQuery || `${book.title} ${book.author}`.toLowerCase().includes(normalizedQuery));
+  }, [books, query]);
 
   function pickBook(book) {
     setSelected(book);
-    setCopyId(book.copies[0]?.id || '');
+    setCopyId(book.copies[0]?.copyId || '');
+    setNotice('');
+    setNoticeType('info');
   }
 
   const available = selected?.copies.length || 0;
@@ -56,45 +92,22 @@ export default function BorrowRequestPage() {
 
   return (
     <AppLayout active="borrow-request" title="Tạo yêu cầu mượn" subtitle="Tìm sách và gửi yêu cầu mượn tới thủ thư.">
-      <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể gửi yêu cầu' : 'Kiểm tra điều kiện'}>{notice}</DataNotice>
+      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể gửi yêu cầu' : 'Kết quả gửi yêu cầu'}>{notice}</DataNotice>}
       <div className="split member-borrow-grid">
-        <div>
-          <div className="lib-card member-catalog-card">
-            <DataToolbar
-              primary={(
-                <div className="search-input" style={{ width: '100%' }}>
-                  <Search size={18} />
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" />
-                </div>
-              )}
-            />
-            <div className="queue-list" style={{ marginTop: 16 }}>
-              {results.map((book) => {
-                const isActive = book.id === selected?.id;
-                const canBorrow = book.copies.length > 0;
-                return <button type="button" key={book.id} onClick={() => pickBook(book)} className={`queue-item${isActive ? ' head' : ''}`} style={{ cursor: 'pointer' }}><span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} /><span className="stack-sm" style={{ flex: 1, textAlign: 'left' }}><strong>{book.title}</strong><span className="muted" style={{ fontSize: 13 }}>{book.author}</span></span><span className={`badge badge-${canBorrow ? 'available' : 'overdue'}`}>{canBorrow ? `${book.copies.length} bản` : 'Hết'}</span></button>;
-              })}
-              {results.length === 0 && (
-                <EmptyState icon={BookOpen} title="Không tìm thấy sách phù hợp">
-                  Hãy thử tên sách hoặc tác giả khác.
-                </EmptyState>
-              )}
-            </div>
+        <div className="lib-card member-catalog-card">
+          <DataToolbar primary={<div className="search-input" style={{ width: '100%' }}><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" /></div>} />
+          <div className="queue-list" style={{ marginTop: 16 }}>
+            {results.map((book) => <button type="button" key={book.bookId} onClick={() => pickBook(book)} className={`queue-item${book.bookId === selected?.bookId ? ' head' : ''}`} style={{ cursor: 'pointer' }}><span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} /><span className="stack-sm" style={{ flex: 1, textAlign: 'left' }}><strong>{book.title}</strong><span className="muted" style={{ fontSize: 13 }}>{book.author}</span></span><span className="badge badge-available">{book.copies.length} bản</span></button>)}
+            {!loading && results.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách có thể mượn">Hãy thử tên sách hoặc tác giả khác.</EmptyState>}
+            {loading && <EmptyState icon={BookOpen} title="Đang tải danh sách sách..." />}
           </div>
         </div>
 
         <form className="panel member-selection-panel" onSubmit={handleSubmit}>
           {selected ? <>
-            <div className="row-flex" style={{ alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
-              <span className="book-cover"><BookOpen size={30} /></span>
-              <div className="stack-sm"><h3 className="lib-card-title" style={{ margin: 0 }}>{selected.title}</h3><span className="muted">{selected.author}</span><span className="row-flex" style={{ gap: 6, marginTop: 4 }}><Star size={14} color="#a87532" fill="#a87532" /><span style={{ fontSize: 13 }}>{selected.rating.toFixed(1)}</span><span className="badge badge-default" style={{ marginLeft: 6 }}>{selected.category}</span></span><span className={`badge badge-${available ? 'available' : 'overdue'}`} style={{ marginTop: 8, width: 'fit-content' }}>{available ? `${available} bản sao khả dụng` : 'Tất cả bản sao đã được mượn'}</span></div>
-            </div>
-            <div className="form-grid">
-              <div className="field"><label htmlFor="copy"><MapPin size={14} style={{ verticalAlign: -2 }} /> Bản sao / Chi nhánh</label><select id="copy" className="select" value={copyId} onChange={(e) => setCopyId(e.target.value)} disabled={!available}>{available ? selected.copies.map((copy) => <option key={copy.id} value={copy.id}>{copy.branch} • Kệ {copy.shelf} (Bản sao #{copy.id})</option>) : <option>Không có bản sao khả dụng</option>}</select></div>
-              <span className="field-hint">Hệ thống sẽ kiểm tra tư cách thành viên, giới hạn 5 sách, sách quá hạn, phí phạt và tình trạng bản sao.</span>
-            </div>
+            <div className="row-flex" style={{ alignItems: 'flex-start', gap: 16, marginBottom: 18 }}><span className="book-cover"><BookOpen size={30} /></span><div className="stack-sm"><h3 className="lib-card-title" style={{ margin: 0 }}>{selected.title}</h3><span className="muted">{selected.author}</span><span className="badge badge-default" style={{ marginTop: 4, width: 'fit-content' }}>{selected.category}</span><span className="badge badge-available" style={{ marginTop: 8, width: 'fit-content' }}>{available} bản sao khả dụng</span></div></div>
             <div style={{ marginTop: 20 }}><button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={!available || submitting}><CheckCircle2 size={18} /> {submitting ? 'Đang gửi...' : 'Gửi yêu cầu mượn'}</button></div>
-          </> : <EmptyState icon={BookOpen} title="Chọn một cuốn sách để gửi yêu cầu mượn" />}
+          </> : <EmptyState icon={BookOpen} title={loading ? 'Đang tải sách...' : 'Chọn một cuốn sách để gửi yêu cầu mượn'} />}
         </form>
       </div>
       <Toast toast={toast} onClose={clearToast} />
