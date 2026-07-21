@@ -517,6 +517,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 - Staff search, status filter, category filter, pagination, and totals use one canonical `/api/admin/books` query; search must not use the active-only public catalog as a separate result source.
 - The Librarian/Admin book form and detail/list views do not expose `rating`; the API/database field remains backward-compatible and server validated when supplied by another approved client.
 - Deactivate/reactivate retains the canonical non-empty audit reason and `If-Match`, but the staff UI generates a bounded operation reason instead of displaying a reason input or duplicate checkbox.
+- The Librarian update form exposes the catalog status as `Còn sách` (`ACTIVE`) or `Không khả dụng` (`INACTIVE`) and invokes the dedicated deactivate/reactivate command after metadata update; metadata PUT still cannot mutate status or physical-copy state.
 - Metadata selectors depend on the deployed `Authors`, `Publishers`, and `Categories` compatibility columns documented in ADR-002 and the 2026-07-22 migration.
 
 Phase 1 approval checklist (completed on 2026-06-10):

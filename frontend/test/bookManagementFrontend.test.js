@@ -88,3 +88,14 @@ test('staff search and filters share the canonical paginated admin list', async 
   assert.match(page, /handleApplyFilters[\s\S]*status: statusFilter[\s\S]*categoryId: categoryFilter/);
   assert.doesNotMatch(page, /setSearchResults|searchResults|apiRequest\(`\/books\?\$\{params/);
 });
+
+test('book update exposes catalog status without sending status through metadata PUT', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /<span>Trạng thái sách<\/span>/);
+  assert.match(page, /<option value="ACTIVE">Còn sách<\/option>/);
+  assert.match(page, /<option value="INACTIVE">Không khả dụng<\/option>/);
+  assert.match(page, /updateForm\.status !== selectedBook\.status/);
+  assert.match(page, /activating \? 'reactivate' : 'deactivate'/);
+  assert.doesNotMatch(page, /function makePayload[\s\S]*?status:\s*form\.status[\s\S]*?\n\s*}/);
+});

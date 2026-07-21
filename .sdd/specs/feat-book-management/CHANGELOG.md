@@ -154,3 +154,5 @@
 - Connected Librarian/Admin search, status, and category filters to the canonical staff book list.
 - Removed staff-facing rating controls/details and book-status reason/confirmation inputs while preserving a generated audit reason.
 - Added deployed metadata schema reconciliation for Authors, Publishers, and Categories.
+- Added `Còn sách`/`Không khả dụng` catalog-status selection to the Librarian update form; the UI continues to use the dedicated version-safe reactivate/deactivate APIs and does not mutate physical-copy status.
+- Documented that deployed Book Management requires both the FE05 rowversion migration and the library-metadata compatibility migration because code deployment does not apply SQL migrations.

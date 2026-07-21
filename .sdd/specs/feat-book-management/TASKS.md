@@ -117,3 +117,4 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [x] Remove rating from Librarian/Admin book list, detail, create, and update surfaces without widening the API contract.
 - [x] Remove the status reason/confirmation inputs while retaining a generated audit reason and `If-Match` safeguards.
 - [x] Add a reviewable metadata compatibility migration for deployed databases.
+- [x] Expose catalog status in the Librarian update form while preserving dedicated status commands, generated audit reasons, and `If-Match` safeguards.

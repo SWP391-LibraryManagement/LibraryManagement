@@ -22,6 +22,7 @@ const DEFAULT_FORM = {
   pages: '',
   coverUrl: '',
   description: '',
+  status: 'ACTIVE',
 };
 
 async function apiRequest(path, options = {}) {
@@ -48,6 +49,7 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     coverUrl: book.cover || '',
     description: book.description || '',
+    status: book.status || 'ACTIVE',
   };
 }
 
@@ -123,6 +125,7 @@ function BookForm({
   submitLabel,
   onSubmit,
   disabled,
+  showStatus = false,
 }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
@@ -189,6 +192,17 @@ function BookForm({
         <textarea value={form.description} onChange={(event) => update('description', event.target.value)} rows={4} maxLength={2000} />
         <FieldError message={errors.description} />
       </label>
+
+      {showStatus ? (
+        <label className="bm-wide">
+          <span>Trạng thái sách</span>
+          <select value={form.status} onChange={(event) => update('status', event.target.value)}>
+            <option value="ACTIVE">Còn sách</option>
+            <option value="INACTIVE">Không khả dụng</option>
+          </select>
+          <small>Trạng thái này điều khiển việc hiển thị sách trong danh mục; trạng thái từng bản sao vẫn được quản lý tại Quản lý kho.</small>
+        </label>
+      ) : null}
 
       <button className="bm-primary" type="submit" disabled={disabled}>
         <Save size={17} />
@@ -437,11 +451,23 @@ export default function BookManagement() {
 
     try {
       setSaving(true);
-      const result = await apiRequest(`/books/${selectedBookId}`, {
+      let result = await apiRequest(`/books/${selectedBookId}`, {
         method: 'PUT',
         headers: { 'If-Match': selectedBook.version },
         body: JSON.stringify(makePayload(updateForm)),
       });
+      if (updateForm.status !== selectedBook.status) {
+        const activating = updateForm.status === 'ACTIVE';
+        result = await apiRequest(`/books/${selectedBookId}/${activating ? 'reactivate' : 'deactivate'}`, {
+          method: 'PATCH',
+          headers: { 'If-Match': result.book.version },
+          body: JSON.stringify({
+            reason: activating
+              ? 'Kích hoạt lại từ biểu mẫu cập nhật thông tin sách.'
+              : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
+          }),
+        });
+      }
       const nextBooks = await loadBooks();
       setDetailBook(nextBooks.find((book) => Number(book.id) === Number(selectedBookId)) || result.book);
       showToast('Đã cập nhật thông tin sách và tải lại trạng thái chuẩn.');
@@ -675,6 +701,7 @@ export default function BookManagement() {
                 submitLabel="Lưu thay đổi"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
+                showStatus
               />
             ) : (
               <div className="bm-empty">Chọn sách trước khi cập nhật.</div>

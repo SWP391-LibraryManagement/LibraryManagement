@@ -156,6 +156,10 @@ Before executing:
 4. For an existing pre-reconciliation database, execute these approved idempotent migrations in
    order:
 
+   Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
+   `Books.RowVersion` or the metadata `Status` columns are absent. Deploying backend/frontend code
+   does not apply these SQL migrations automatically.
+
 ```text
 database/migrations/2026-07-19-fe04-membership-concurrency.sql
 database/migrations/2026-07-19-fe05-book-rowversion.sql
