@@ -39,6 +39,15 @@ test('librarian navigation exposes the FE04 review workspace', async () => {
   assert.match(navigation, /key: 'membership-review', label: 'Duyệt hội viên', path: '\/membership'/);
 });
 
+test('librarian membership review renders one reload action', async () => {
+  const page = await readFile(new URL('../src/page/MembershipPage.jsx', import.meta.url), 'utf8');
+  const filter = await readFile(new URL('../src/component/membership/MembershipFilter.jsx', import.meta.url), 'utf8');
+
+  assert.equal(page.match(/Tải lại/g)?.length, 1);
+  assert.doesNotMatch(page, /onReload=\{loadData\}/);
+  assert.match(filter, /\{onReload && \(/);
+});
+
 test('membership errors stay truthful and never claim demo fallback data', async () => {
   const messages = await readFile(new URL('../src/api/apiErrorMessages.js', import.meta.url), 'utf8');
   const api = await readFile(new URL('../src/api/libraryFeatureApi.js', import.meta.url), 'utf8');

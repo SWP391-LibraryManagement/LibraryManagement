@@ -192,9 +192,6 @@ export default function MembershipPage() {
                   <h2 className="lib-card-title" style={{ margin: 0 }}>Danh sách đơn đăng ký</h2>
                   <p className="ph-sub">Chỉ đơn đang chờ mới có thể được duyệt hoặc từ chối.</p>
                 </div>
-                <button type="button" className="btn btn-outline" style={{ marginLeft: 'auto' }} onClick={loadData} disabled={loading}>
-                  <RefreshCw size={16} /> Tải lại
-                </button>
               </div>
 
               <MembershipFilter
@@ -203,7 +200,6 @@ export default function MembershipPage() {
                 loading={loading}
                 onStatusChange={(value) => { setStatusFilter(value); setPage(1); }}
                 onSearchChange={setSearch}
-                onReload={loadData}
               />
               <MembershipApplicationsTable
                 applications={applications}
