@@ -1,12 +1,12 @@
 # CONTEXT.md - FE02 Authentication
 
-# Version: 0.2.0
+# Version: 0.2.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-15
+# Last Updated: 2026-07-21
 
 # Feature folder: `.sdd/specs/feat-auth/`
 
@@ -85,7 +85,7 @@ Potential issues to review:
 
 - Password storage must use bcrypt or similar hashing, not plain text or simple MD5.
 - Session/token strategy must be defined: JWT, session cookies, or both?
-- Reset/setup credentials have approved expiry: password-reset OTP 15 minutes; admin-created account setup token exactly 24 hours after issuance.
+- Verification/reset/setup credentials have approved expiry: email-verification and password-reset OTPs 15 minutes; admin-created account setup token exactly 24 hours after issuance.
 - Login attempt rate limiting to prevent brute force attacks.
 - Email verification mechanism for registration and password reset.
 - Admin-created accounts from FE11 remain `INACTIVE` and unable to login until FE02 atomically completes password setup and activates them.

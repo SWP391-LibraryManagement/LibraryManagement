@@ -14,6 +14,40 @@ function numberFromEnv(name, defaultValue) {
   return parsed;
 }
 
+function positiveIntegerFromEnv(name, defaultValue) {
+  const value = numberFromEnv(name, defaultValue);
+
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Invalid positive integer environment value for ${name}`);
+  }
+
+  return value;
+}
+
+function emailVerificationTtlMinutesFromEnv() {
+  const minuteValue = process.env.EMAIL_VERIFICATION_TTL_MINUTES;
+
+  if (minuteValue !== undefined && minuteValue !== '') {
+    return positiveIntegerFromEnv('EMAIL_VERIFICATION_TTL_MINUTES', 15);
+  }
+
+  const legacyHourValue = process.env.EMAIL_VERIFICATION_TTL_HOURS;
+
+  if (legacyHourValue !== undefined && legacyHourValue !== '') {
+    const legacyMinutes = numberFromEnv('EMAIL_VERIFICATION_TTL_HOURS', 0.25) * 60;
+
+    if (!Number.isInteger(legacyMinutes) || legacyMinutes <= 0) {
+      throw new Error(
+        'Invalid positive integer minute conversion for EMAIL_VERIFICATION_TTL_HOURS'
+      );
+    }
+
+    return legacyMinutes;
+  }
+
+  return 15;
+}
+
 function booleanFromEnv(name, defaultValue) {
   const rawValue = process.env[name];
 
@@ -38,7 +72,7 @@ module.exports = {
   bcryptCost: numberFromEnv('BCRYPT_COST', 10),
   accessTokenTtlSeconds: numberFromEnv('ACCESS_TOKEN_TTL_SECONDS', 15 * 60),
   refreshTokenTtlDays: numberFromEnv('REFRESH_TOKEN_TTL_DAYS', 7),
-  emailVerificationTtlHours: numberFromEnv('EMAIL_VERIFICATION_TTL_HOURS', 24),
+  emailVerificationTtlMinutes: emailVerificationTtlMinutesFromEnv(),
   passwordResetTtlMinutes: numberFromEnv('PASSWORD_RESET_TTL_MINUTES', 15),
   changePasswordOtpTtlMinutes: numberFromEnv('CHANGE_PASSWORD_OTP_TTL_MINUTES', 10),
   maxFailedLoginAttempts: numberFromEnv('MAX_FAILED_LOGIN_ATTEMPTS', 5),

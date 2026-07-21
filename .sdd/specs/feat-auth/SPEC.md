@@ -1,12 +1,12 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.4
+# Version: 0.6.5
 
-# Status: APPROVED BASELINE 2026-07-17 - H2-APPROVED RECONCILIATION
+# Status: APPROVED BASELINE 2026-07-17 - 15-MINUTE VERIFICATION OTP REVISION
 
 # Owner: Dat
 
-# Last Updated: 2026-07-20
+# Last Updated: 2026-07-21
 
 # Feature ID: FE02
 
@@ -18,7 +18,7 @@
 > `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
 > historical planning/evidence snapshots, not the current delivery state.
 
-> Source of truth for FE02 Authentication. Version 0.6.4 is the H2-approved reconciliation for the approved Phase 1 baseline; H3 remains required before integration. It is intentionally detailed because FE02 is the foundation of all access control and security in the system.
+> Source of truth for FE02 Authentication. Version 0.6.5 records the user-approved 15-minute verification OTP revision on top of the H2-approved Phase 1 baseline; H3 remains required before integration. It is intentionally detailed because FE02 is the foundation of all access control and security in the system.
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
@@ -96,7 +96,7 @@ The feature can only start when:
 4. The system hashes the password with bcrypt.
 5. The system creates a user record with status `INACTIVE`.
 6. The system assigns the `Member` role through `UserRoles`; self-registration cannot create a `Librarian` or `Admin` account.
-7. The system generates a six-digit email verification OTP with 24-hour expiration and stores only its hash.
+7. The system generates a six-digit email verification OTP with 15-minute expiration and stores only its hash.
 8. FE02 submits one `ACCOUNT_VERIFICATION` request through `createSourceNotificationRequester('FE02')`; FE10 delivers the OTP and records only safe source metadata, status, and attempt information.
 9. The system shows the OTP verification step and asks the user to check their inbox.
 
@@ -268,13 +268,14 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-024: Successful account setup must atomically update the password hash, email verification timestamp, lock fields, `INACTIVE -> ACTIVE` status, setup-token usage/revocation, and auth audit entry.
 - BR-FE02-025: Password-reset OTP/token processing must never activate an ordinary inactive account; only a valid `ACCOUNT_SETUP` token may activate an admin-created setup account.
 - BR-FE02-026: A successful password change updates the stored password hash and audit trail. The current code baseline does not revoke other active refresh/session credentials.
+- BR-FE02-027: A self-registration email-verification OTP expires exactly 15 minutes after issuance; resend revokes the prior active verification OTP and issues a new 15-minute credential.
 
 ---
 
 ## 7. Functional Requirements
 
 - FR-FE02-001: When a guest submits valid registration data, the system shall create a new user with `INACTIVE` status.
-- FR-FE02-002: When a user is registered, FE02 shall create a six-digit verification OTP with a 24-hour expiry, store only its hash, and submit one FE02-bound `ACCOUNT_VERIFICATION` notification request containing the token ID and required template data; legacy verification tokens remain accepted for compatibility.
+- FR-FE02-002: When a user is registered, FE02 shall create a six-digit verification OTP with a 15-minute expiry, store only its hash, and submit one FE02-bound `ACCOUNT_VERIFICATION` notification request containing the token ID and required template data; legacy verification tokens remain accepted for compatibility.
 - FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, the system shall activate the user account and invalidate the OTP/token.
 - FR-FE02-004: When a user submits login form with valid credentials and active account, the system shall create a session/token and return it to the client.
 - FR-FE02-005: When a user submits login form with invalid email or password, the system shall reject the request and not reveal whether the email exists.
@@ -309,7 +310,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 
 ## 8. Acceptance Criteria
 
-- AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists the verification OTP hash, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one verification OTP email.
+- AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists a verification OTP hash with an exact 15-minute expiry, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one verification OTP email.
 - AC-FE02-002: Given a valid six-digit verification OTP and registered email, when the user submits them, then the account is activated and the user can login; a valid legacy verification token produces the same result.
 - AC-FE02-003: Given an expired verification OTP/token, when the user submits it, then the system rejects it and offers to resend.
 - AC-FE02-004: Given valid email and password and active account, when user logs in, then the system returns a valid session/token.
@@ -394,7 +395,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | tokenId | integer | Conditional | `AuthTokens` primary key; used to identify and consume persisted auth credentials. |
 | tokenType | enum/string | Conditional | Distinguishes verification OTP, password reset, account setup, refresh, and compatibility-only change-password OTP purposes. |
 | tokenHash | string | Conditional | Hash of the raw OTP/token; raw credentials are never persisted. |
-| expiresAt | datetime | Conditional | Server-enforced credential expiry. Verification OTP and account setup are 24 hours; password-reset OTP is 15 minutes. |
+| expiresAt | datetime | Conditional | Server-enforced credential expiry. Verification OTP and password-reset OTP are 15 minutes; account setup is 24 hours. |
 | usedAt | datetime | No | Set when a one-time credential is consumed. |
 | revokedAt | datetime | No | Set when an older credential is invalidated or a refresh token is revoked. |
 
@@ -429,7 +430,7 @@ stateDiagram-v2
 | From | To | Trigger / Event | Điều kiện | FR / BR liên quan |
 | ---- | -- | --------------- | --------- | ----------------- |
 | `[*]` (none) | INACTIVE/PENDING_ACTIVATION | Guest đăng ký tài khoản | Dữ liệu đăng ký hợp lệ, email chưa tồn tại | MF-FE02-001, FR-FE02-001, BR-FE02-001, BR-FE02-004 |
-| INACTIVE/PENDING_ACTIVATION | ACTIVE | Người dùng xác minh email | Verification token hợp lệ, chưa hết hạn (24h), khớp user | MF-FE02-002, FR-FE02-003, BR-FE02-004 |
+| INACTIVE/PENDING_ACTIVATION | ACTIVE | Người dùng xác minh email | Verification token hợp lệ, chưa hết hạn (15 phút), khớp user | MF-FE02-002, FR-FE02-003, BR-FE02-004, BR-FE02-027 |
 | INACTIVE/PENDING_ACTIVATION | ACTIVE | Hoàn tất thiết lập mật khẩu cho tài khoản admin tạo | `ACCOUNT_SETUP` hợp lệ, chưa dùng/chưa thu hồi, `deactivatedAt` null | MF-FE02-010, FR-FE02-024, BR-FE02-023, BR-FE02-024 |
 | ACTIVE | LOCKED | Số lần đăng nhập sai đạt ngưỡng | failedLoginCount đạt 5 trong rolling 15-minute window | MF-FE02-004, FR-FE02-006, BR-FE02-008, BR-FE02-009 |
 | LOCKED | ACTIVE | Tự động mở khóa sau 30 phút | `lockedUntil` đã qua thời điểm hiện tại | AF-FE02-003, EC-FE02-006 |
@@ -486,7 +487,7 @@ stateDiagram-v2
 - NFR-FE02-SEC-005: Known accounts lock after 5 consecutive failed password attempts in a rolling 15-minute window. IP-wide request limiting is not implemented in the current code baseline.
 - NFR-FE02-SEC-006: Account lockout must occur at 5 consecutive failed password attempts within 15 minutes and last exactly 30 minutes unless automatic unlock occurs after `lockedUntil`; Phase 1 has no admin-unlock action.
 - NFR-FE02-SEC-007: Verification and reset tokens must be cryptographically secure (high entropy).
-- NFR-FE02-SEC-008: Verification OTPs expire after 24 hours, password-reset OTPs after 15 minutes, and admin-created account setup tokens after 24 hours.
+- NFR-FE02-SEC-008: Verification OTPs and password-reset OTPs expire after 15 minutes; admin-created account setup tokens expire after 24 hours.
 - NFR-FE02-SEC-009: Password reset must require email verification; old password verification alone is insufficient.
 - NFR-FE02-SEC-010: Login responses must not reveal whether email is registered (prevent user enumeration).
 - NFR-FE02-SEC-011: All inputs (email, password, token) must be validated and sanitized on the server.
@@ -584,6 +585,7 @@ This feature does not include:
 | Q-FE02-015 | Every FE11 `ACCOUNT_SETUP` token expires exactly 24 hours after issuance. | Cross-feature normalization 2026-07-17 | APPROVED |
 | Q-FE02-016 | `/api/auth/refresh-token` authenticates the client by the submitted refresh token, does not require a valid access token, returns a new access token, and returns the submitted refresh token unchanged. | Auth contract normalization 2026-07-17; code alignment 2026-07-19 | APPROVED |
 | Q-FE02-017 | Persisted user status values are `ACTIVE`, `INACTIVE`, and `LOCKED`; FE11 deactivation uses `INACTIVE` plus `deactivatedAt`, and Phase 1 has no reactivation flow. | Cross-feature lifecycle normalization 2026-07-17 | APPROVED |
+| Q-FE02-018 | Self-registration email-verification OTPs expire exactly 15 minutes after issuance; resend replaces the prior active OTP with a new 15-minute credential. | Nhat confirmation 2026-07-21 | APPROVED |
 
 ---
 
@@ -610,6 +612,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE02-015 | `ACCOUNT_SETUP` expires exactly 24 hours after issuance. | APPROVED |
 | Q-FE02-016 | Refresh-token exchange does not require a valid access token and returns a new access token while keeping the submitted refresh token unchanged. | APPROVED |
 | Q-FE02-017 | `INACTIVE` uses `deactivatedAt` to distinguish pending activation from FE11 deactivation; Phase 1 has no reactivation flow. | APPROVED |
+| Q-FE02-018 | Email-verification OTPs expire after 15 minutes and resend starts a new 15-minute lifetime. | APPROVED |
 
 ---
 
@@ -619,7 +622,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021 | FT05 | Ready for review |
+| AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the 15-minute OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | FT05 | Ready for review |
 | AC-FE02-002 | Valid verification OTP/email or legacy token submitted -> account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT05 | Ready for review |
 | AC-FE02-003 | Expired verification OTP/token submitted -> system rejects, offers resend | FR-FE02-003, FR-FE02-016 | BR-FE02-004 | FT05 | Ready for review |
 | AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Ready for review |
