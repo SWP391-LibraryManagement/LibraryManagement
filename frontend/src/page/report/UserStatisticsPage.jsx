@@ -71,6 +71,7 @@ export default function UserStatisticsPage() {
 
   return (
     <AppLayout
+      contentClassName="report-content"
       active="user-statistics"
       title="Thống kê người dùng"
       subtitle="Thống kê người dùng dạng aggregate, tránh lộ thông tin cá nhân không cần thiết."

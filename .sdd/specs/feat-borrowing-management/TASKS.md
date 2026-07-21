@@ -225,3 +225,6 @@ Checked tasks below describe the implementation completed against the earlier ap
 - [x] Detailed evidence is recorded in `.sdd/reviews/fe07-b7-integration-review-closeout-2026-07-14.md`.
 
 This closeout remains historical evidence for the earlier approved baseline. It does not mark FE07-T031 through FE07-T038 complete.
+## 2026-07-22 corrective batch
+
+- [x] Stabilize Process Returns layout while preserving canonical return commands and selection behavior.

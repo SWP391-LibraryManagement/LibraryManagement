@@ -428,3 +428,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Confirm atomic application/member/audit writes and the filtered pending-only concurrent-apply guard.
 - [x] Confirm mandatory rejection reason and Phase 1 no-expiry behavior.
 - [x] Confirm non-blocking idempotent FE10 `MEMBERSHIP_RESULT` delivery.
+## 2026-07-22 staff-console correction
+
+- A successful rejection is presented as a neutral informational outcome (“Đã từ chối”), not as an approval-style success notification; failed rejection requests continue to show an error and must not close the review state.
+- Member-only navigation is suppressed whenever the authenticated actor also has Librarian or Admin responsibility.

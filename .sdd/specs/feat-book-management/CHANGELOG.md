@@ -149,3 +149,8 @@
 - Renamed the destructive-looking Delete area to the actual soft-deactivation behavior while preserving catalog and workflow history.
 - After creation, reset incompatible management filters and navigate to the page containing the new canonical book record.
 - Display continuous row numbers across pages while retaining the immutable database BookId for API calls and cross-feature relationships.
+## 2026-07-22
+
+- Connected Librarian/Admin search, status, and category filters to the canonical staff book list.
+- Removed staff-facing rating controls/details and the duplicate book-status checkbox.
+- Added deployed metadata schema reconciliation for Authors, Publishers, and Categories.

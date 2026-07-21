@@ -693,3 +693,6 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Confirm `activeBorrowedCount + requestedDetailCount <= 5` and member-scoped approval locking.
 - [x] Confirm required request/approval/borrow metadata and `Asia/Ho_Chi_Minh` business dates.
 - [x] Confirm future return-date rejection and mandatory rejection reason.
+## 2026-07-22 return-workspace correction
+
+- The Process Returns list and selected-loan detail use a stable single-column workspace so the seven-column transaction table cannot collide with the detail panel at desktop or narrow widths.

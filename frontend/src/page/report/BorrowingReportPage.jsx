@@ -66,6 +66,7 @@ export default function BorrowingReportPage() {
 
   return (
     <AppLayout
+      contentClassName="report-content"
       active="borrowing-report"
       title="Báo cáo mượn/trả"
       subtitle="Báo cáo mượn/trả được lấy trực tiếp từ FE07, không chỉnh sửa dữ liệu nguồn."

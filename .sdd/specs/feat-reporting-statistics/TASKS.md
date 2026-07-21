@@ -152,3 +152,8 @@ Detailed evidence is recorded in
 
 Detailed automated evidence is recorded in
 `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.
+## 2026-07-22 corrective batch
+
+- [x] Reconfirm borrowing, inventory, and user report filters map to server query parameters.
+- [x] Reconfirm charts consume deterministic backend metrics with no fake fallback.
+- [x] Reduce report-only bottom whitespace and retain responsive layout tests.

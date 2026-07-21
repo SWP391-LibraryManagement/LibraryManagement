@@ -144,3 +144,6 @@
 - Corrected the inventory category chart label to describe unique book counts.
 - Strengthened the borrowing date-range integration test with real source data and matching
   in-memory filter behavior.
+## 2026-07-22
+
+- Verified all report filters/charts remain backend-owned and reduced report-only bottom spacing.
