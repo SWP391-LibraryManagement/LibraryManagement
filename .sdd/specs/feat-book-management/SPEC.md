@@ -516,7 +516,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 - Staff search, status filter, category filter, pagination, and totals use one canonical `/api/admin/books` query; search must not use the active-only public catalog as a separate result source.
 - The Librarian/Admin book form and detail/list views do not expose `rating`; the API/database field remains backward-compatible and server validated when supplied by another approved client.
-- Deactivate/reactivate requires the canonical non-empty reason and `If-Match`; the staff UI must not add a second checkbox input that duplicates the command confirmation.
+- Deactivate/reactivate retains the canonical non-empty audit reason and `If-Match`, but the staff UI generates a bounded operation reason instead of displaying a reason input or duplicate checkbox.
 - Metadata selectors depend on the deployed `Authors`, `Publishers`, and `Categories` compatibility columns documented in ADR-002 and the 2026-07-22 migration.
 
 Phase 1 approval checklist (completed on 2026-06-10):

@@ -702,3 +702,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 ## 2026-07-22 return-workspace correction
 
 - The Process Returns list and selected-loan detail use a stable single-column workspace so the seven-column transaction table cannot collide with the detail panel at desktop or narrow widths.
+- Approve and reject commands capture an explicit request target, validate its numeric ID, call the canonical FE07 endpoint, and reload server state. Existing databases must include the canonical BorrowRequests workflow timestamp columns through the 2026-07-22 compatibility migration.

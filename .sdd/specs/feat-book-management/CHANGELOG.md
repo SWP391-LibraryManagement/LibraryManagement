@@ -152,5 +152,5 @@
 ## 2026-07-22
 
 - Connected Librarian/Admin search, status, and category filters to the canonical staff book list.
-- Removed staff-facing rating controls/details and the duplicate book-status checkbox.
+- Removed staff-facing rating controls/details and book-status reason/confirmation inputs while preserving a generated audit reason.
 - Added deployed metadata schema reconciliation for Authors, Publishers, and Categories.

@@ -227,3 +227,4 @@
 ## 2026-07-22
 
 - Stabilized the Process Returns workspace as a non-colliding single-column layout.
+- Hardened approve/reject target handling and added the deployed BorrowRequests workflow-column migration.

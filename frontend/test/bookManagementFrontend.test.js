@@ -49,15 +49,14 @@ test('update, deactivate, and reactivate propagate the last-seen version through
 });
 
 // @spec AC-FE05-008, AC-FE05-013, AC-FE05-016, BR-FE05-018, NFR-FE05-UX-002
-test('deactivate and reactivate require one trimmed reason without a duplicate confirmation input', async () => {
+test('deactivate and reactivate hide the reason input while retaining an audit reason', async () => {
   const { page } = await sources();
 
   assert.match(page, /deactivat/i);
   assert.match(page, /reactivat/i);
-  assert.match(page, /textarea|aria-label=['"][^'"]*(?:lý do|reason)/i);
-  assert.match(page, /reason\.trim\(\)|trim\(\).*reason/i);
-  assert.match(page, /500/);
-  assert.doesNotMatch(page, /statusConfirmed|bm-confirm-line/);
+  assert.match(page, /const reason = selectedBook\.status/);
+  assert.match(page, /Ngừng hoạt động từ giao diện quản lý sách/);
+  assert.doesNotMatch(page, /statusReason|Lý do \(bắt buộc|aria-label="Lý do thay đổi trạng thái"/);
 });
 
 // @spec AC-FE05-010, AC-FE05-014

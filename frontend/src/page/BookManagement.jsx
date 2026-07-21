@@ -214,7 +214,6 @@ export default function BookManagement() {
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
   const [addErrors, setAddErrors] = useState({});
   const [updateErrors, setUpdateErrors] = useState({});
-  const [statusReason, setStatusReason] = useState('');
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -295,7 +294,6 @@ export default function BookManagement() {
       const timer = window.setTimeout(() => {
         setUpdateForm(toForm(selectedBook));
         setDetailBook(selectedBook);
-        setStatusReason('');
       }, 0);
 
       return () => window.clearTimeout(timer);
@@ -460,11 +458,9 @@ export default function BookManagement() {
       return;
     }
 
-    const reason = statusReason.trim();
-    if (!reason || reason.length > 500) {
-      showToast('Vui lòng nhập lý do từ 1 đến 500 ký tự.', 'error');
-      return;
-    }
+    const reason = selectedBook.status === 'INACTIVE'
+      ? 'Kích hoạt lại từ giao diện quản lý sách.'
+      : 'Ngừng hoạt động từ giao diện quản lý sách.';
 
     try {
       setSaving(true);
@@ -490,7 +486,6 @@ export default function BookManagement() {
       } else {
         setDetailBook(refreshedBook);
       }
-      setStatusReason('');
       showToast(selectedBook.status === 'INACTIVE'
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
         : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
@@ -699,16 +694,6 @@ export default function BookManagement() {
                 <p>{selectedBook.status === 'INACTIVE'
                   ? 'Kích hoạt lại chỉ đổi trạng thái catalog; bản sao và lịch sử vẫn giữ nguyên.'
                   : 'Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.'}</p>
-                <label>
-                  <span>Lý do (bắt buộc, tối đa 500 ký tự)</span>
-                  <textarea
-                    value={statusReason}
-                    onChange={(event) => setStatusReason(event.target.value)}
-                    maxLength={500}
-                    rows={3}
-                    aria-label="Lý do thay đổi trạng thái"
-                  />
-                </label>
                 <button className="bm-danger" onClick={handleStatusChange} disabled={saving}>
                   <Trash2 size={17} />
                   {selectedBook.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Ngừng hoạt động'}

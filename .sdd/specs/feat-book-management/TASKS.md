@@ -115,5 +115,5 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 - [x] Connect staff search and draft filters to the same paginated Admin book list and add regression coverage.
 - [x] Remove rating from Librarian/Admin book list, detail, create, and update surfaces without widening the API contract.
-- [x] Remove the duplicate status-confirmation checkbox while retaining reason and `If-Match` safeguards.
+- [x] Remove the status reason/confirmation inputs while retaining a generated audit reason and `If-Match` safeguards.
 - [x] Add a reviewable metadata compatibility migration for deployed databases.

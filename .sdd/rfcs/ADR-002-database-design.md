@@ -162,3 +162,5 @@ Before Week 5 implementation starts:
 Some pre-baseline staging databases contain `Authors`, `Publishers`, and `Categories` without the canonical `Status` and `CreatedAt` columns. The Admin library repository already relies on those fields for list/export/deactivation, so code-only deployment can produce `INTERNAL_ERROR` even when the frontend bundle is current.
 
 The reviewable, transactional, idempotent reconciliation script is `database/migrations/2026-07-22-library-metadata-compatibility.sql`. It adds only missing columns with canonical defaults, preserves existing rows, validates supported status values, and must be applied to an existing environment before deploying repository code that reads those columns.
+
+The same staging review found that older `BorrowRequests` tables can predate the canonical approval/rejection timestamps. `database/migrations/2026-07-22-borrow-request-workflow-columns.sql` idempotently adds missing `ApprovedAt`, `RejectedAt`, `ProcessedAt`, and `UpdatedAt` columns so the FE07 approve/reject transactions can execute on an upgraded database.

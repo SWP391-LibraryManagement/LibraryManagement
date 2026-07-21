@@ -552,3 +552,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 
 - Inventory keyword, barcode, location, and status controls submit only trimmed, applied values to the canonical server list endpoint.
 - Every inventory row exposes an explicit “Quản lý bản sao” action that opens the existing create/update/status/deactivate workflow; row click remains a convenience only.
+- Inventory rows are deterministically ordered by `CopyId ASC`; apply, reset, reload, and pagination explicitly call the server with the currently applied filter set.

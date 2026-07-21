@@ -165,7 +165,7 @@ async function listInventory(filters = {}) {
   const result = await request.query(`
     ${copySelect}
     WHERE ${whereClause}
-    ORDER BY b.Title ASC, bc.CopyId ASC
+    ORDER BY bc.CopyId ASC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
     SELECT COUNT_BIG(*) AS Total
     FROM BookCopies bc

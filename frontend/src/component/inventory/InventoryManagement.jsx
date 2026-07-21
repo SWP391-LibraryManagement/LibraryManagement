@@ -22,7 +22,6 @@ export default function InventoryManagement() {
   const [bookCopies, setBookCopies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
-  const [reloadKey, setReloadKey] = useState(0);
   const [toast, showToast, clearToast] = useToast();
 
   const loadInventory = useCallback(async ({ pageNumber = page, nextFilter = appliedFilter } = {}) => {
@@ -55,7 +54,9 @@ export default function InventoryManagement() {
   useEffect(() => {
     const timer = window.setTimeout(() => loadInventory(), 0);
     return () => window.clearTimeout(timer);
-  }, [loadInventory, reloadKey]);
+    // Initial load only; filter, reset, reload, pagination, and mutations load explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function openBook(book) {
     setCopiesBook(book);
@@ -76,18 +77,23 @@ export default function InventoryManagement() {
     }
   }
 
-  function resetFilters() {
+  async function resetFilters() {
     setFilter(EMPTY_FILTER);
     setAppliedFilter(EMPTY_FILTER);
     setPage(1);
-    setReloadKey((current) => current + 1);
+    await loadInventory({ pageNumber: 1, nextFilter: EMPTY_FILTER });
   }
 
-  function applyFilters(event) {
+  async function applyFilters(event) {
     event.preventDefault();
-    setAppliedFilter(filter);
+    const nextFilter = { ...filter };
+    setAppliedFilter(nextFilter);
     setPage(1);
-    setReloadKey((current) => current + 1);
+    await loadInventory({ pageNumber: 1, nextFilter });
+  }
+
+  async function changePage(nextPage) {
+    await loadInventory({ pageNumber: nextPage, nextFilter: appliedFilter });
   }
 
   const statusCards = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'];
@@ -99,7 +105,7 @@ export default function InventoryManagement() {
         <DataToolbar
           primary={<strong>Kho bản sao: {totalItems}</strong>}
           filters={statusCards.map((status) => <span className="stat-chip" key={status}>{status}: {countsByStatus[status] || 0}</span>)}
-          actions={<button type="button" className="btn btn-outline" onClick={() => loadInventory()} disabled={loading}>{loading ? 'Đang tải...' : 'Tải lại'}</button>}
+          actions={<button type="button" className="btn btn-outline" onClick={() => loadInventory({ pageNumber: 1, nextFilter: appliedFilter })} disabled={loading}>{loading ? 'Đang tải...' : 'Tải lại kết quả đã lọc'}</button>}
         />
       </div>
       <DataTable
@@ -117,7 +123,7 @@ export default function InventoryManagement() {
             <td data-label="Trạng thái"><StatusBadge status={copy.status} /></td>
             <td data-label="Thao tác">
               <button type="button" className="btn btn-primary btn-sm" onClick={(event) => { event.stopPropagation(); openBook(copy.book); }}>
-                Quản lý bản sao
+                Thêm / sửa / trạng thái
               </button>
             </td>
           </tr>
@@ -126,8 +132,8 @@ export default function InventoryManagement() {
       <div className="lib-card" style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Trang {page}/{totalPages || 1}</span>
         <div className="row-flex">
-          <button type="button" className="btn btn-outline" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Trước</button>
-          <button type="button" className="btn btn-outline" disabled={!totalPages || page >= totalPages} onClick={() => setPage((current) => current + 1)}>Sau</button>
+          <button type="button" className="btn btn-outline" disabled={loading || page <= 1} onClick={() => changePage(page - 1)}>Trước</button>
+          <button type="button" className="btn btn-outline" disabled={loading || !totalPages || page >= totalPages} onClick={() => changePage(page + 1)}>Sau</button>
         </div>
       </div>
       {copiesBook && <BookCopies book={copiesBook} copies={bookCopies} onClose={() => setCopiesBook(null)} onChanged={reloadAfterMutation} showToast={showToast} />}

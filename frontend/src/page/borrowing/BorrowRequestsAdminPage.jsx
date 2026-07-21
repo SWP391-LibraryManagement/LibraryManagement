@@ -50,7 +50,7 @@ export default function BorrowRequestsAdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [approveTarget, setApproveTarget] = useState(null);
-  const [rejecting, setRejecting] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionPending, setActionPending] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -125,9 +125,14 @@ export default function BorrowRequestsAdminPage() {
 
   async function handleApprove() {
     if (!approveTarget || actionPending) return;
+    const requestId = Number(approveTarget.requestId);
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      showToast('Mã yêu cầu mượn không hợp lệ. Vui lòng tải lại danh sách.', 'error');
+      return;
+    }
     setActionPending(true);
     try {
-      await borrowingApi.approve(approveTarget.requestId);
+      await borrowingApi.approve(requestId);
       setApproveTarget(null);
       await loadRequests();
       showToast(`Đã duyệt yêu cầu ${approveTarget.id}.`, 'success');
@@ -139,12 +144,17 @@ export default function BorrowRequestsAdminPage() {
   }
 
   async function handleReject() {
-    if (!selected || !rejectReason.trim() || actionPending) return;
+    if (!rejectTarget || !rejectReason.trim() || actionPending) return;
+    const requestId = Number(rejectTarget.requestId);
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      showToast('Mã yêu cầu mượn không hợp lệ. Vui lòng tải lại danh sách.', 'error');
+      return;
+    }
     setActionPending(true);
     try {
-      const rejectedId = selected.id;
-      await borrowingApi.reject(selected.requestId, rejectReason.trim());
-      setRejecting(false);
+      const rejectedId = rejectTarget.id;
+      await borrowingApi.reject(requestId, rejectReason.trim());
+      setRejectTarget(null);
       setRejectReason('');
       await loadRequests();
       showToast(`Đã từ chối yêu cầu ${rejectedId}.`, 'info');
@@ -232,7 +242,7 @@ export default function BorrowRequestsAdminPage() {
                     {row.rawStatus === 'PENDING' ? (
                       <>
                         <button type="button" className="btn btn-primary btn-sm" onClick={() => { setSelectedId(row.id); setApproveTarget(row); }}><ThumbsUp size={14} /> Duyệt</button>
-                        <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSelectedId(row.id); setRejectReason(''); setRejecting(true); }}><ThumbsDown size={14} /> Từ chối</button>
+                        <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSelectedId(row.id); setRejectReason(''); setRejectTarget(row); }}><ThumbsDown size={14} /> Từ chối</button>
                       </>
                     ) : (
                       <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelectedId(row.id)}><Eye size={14} /> Chi tiết</button>
@@ -303,7 +313,7 @@ export default function BorrowRequestsAdminPage() {
 
               {selected.rawStatus === 'PENDING' && (
                 <div className="borrow-request-actions">
-                  <button className="btn btn-danger" onClick={() => setRejecting(true)}><ThumbsDown size={16} /> Từ chối</button>
+                  <button className="btn btn-danger" onClick={() => { setRejectReason(''); setRejectTarget(selected); }}><ThumbsDown size={16} /> Từ chối</button>
                   <button className="btn btn-primary" onClick={() => setApproveTarget(selected)}><ThumbsUp size={16} /> Duyệt yêu cầu</button>
                 </div>
               )}
@@ -333,15 +343,15 @@ export default function BorrowRequestsAdminPage() {
         </ConfirmAction>
       )}
 
-      {rejecting && selected && (
+      {rejectTarget && (
         <ConfirmAction
           eyebrow="Từ chối yêu cầu"
-          title={`Từ chối ${selected.id}`}
+          title={`Từ chối ${rejectTarget.id}`}
           tone="danger"
           confirmLabel="Xác nhận từ chối"
           pending={actionPending}
           confirmDisabled={!rejectReason.trim()}
-          onCancel={() => { setRejecting(false); setRejectReason(''); }}
+          onCancel={() => { setRejectTarget(null); setRejectReason(''); }}
           onConfirm={handleReject}
         >
           <div className="field">
