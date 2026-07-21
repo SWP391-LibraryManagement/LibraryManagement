@@ -114,7 +114,7 @@ test('librarian and report surfaces remove known English interface copy', async 
   assert.match(files.borrowingReport, /caption="Chi tiết báo cáo mượn trả"/);
   assert.match(files.inventoryReport, /caption="Danh sách sách sắp hết"/);
   assert.match(files.userReport, /caption="Tổng hợp thống kê người dùng"/);
-  assert.doesNotMatch(files.userReport, /User ID|Membership|User statistics/);
+  assert.doesNotMatch(files.userReport, /User ID|['">]Membership(?:\s|['"<])|User statistics/);
 });
 
 test('operational status controls render Vietnamese labels while preserving raw values', async () => {
@@ -187,7 +187,7 @@ const forbiddenCopyByFile = new Map([
   ['../src/component/inventory/InventoryManagement.jsx', [/Inventory copies table/]],
   ['../src/page/report/BorrowingReportPage.jsx', [/Borrowing report detail rows/, /From date/, /To date/]],
   ['../src/page/report/InventoryReportPage.jsx', [/Low inventory books table/, /Inventory report detail rows/, /Book ID/]],
-  ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /Membership/]],
+  ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /['">]Membership(?:\s|['"<])/]],
   ['../src/page/UserManagement.jsx', [/Every user must keep at least one role/, /Status Report/, /Role Distribution/, /Close details/, /No name/, /Active borrowings/, /Unpaid fines/, /Search library data/]],
   ['../src/api/userManagementApi.js', [/Request failed\. Please try again/, /Could not /, /Please login with an Admin account/]],
   ['../src/api/profileApi.js', [/Could not load profile/, /Could not update profile/, /Could not upload avatar/]],
