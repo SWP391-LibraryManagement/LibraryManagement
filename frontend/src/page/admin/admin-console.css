@@ -1001,6 +1001,155 @@
   color: var(--admin-muted);
 }
 
+.admin-audit {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-audit-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-audit-summary article {
+  display: flex;
+  min-height: 110px;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-audit-summary article > svg {
+  width: 24px;
+  flex: 0 0 auto;
+  color: var(--admin-brass-dark);
+}
+
+.admin-audit-summary article div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.admin-audit-summary small,
+.admin-audit-summary span {
+  overflow: hidden;
+  color: var(--admin-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-audit-summary strong {
+  font-family: Georgia, serif;
+  font-size: 1.7rem;
+}
+
+.admin-audit-summary em {
+  margin-left: 3px;
+  color: var(--admin-muted);
+  font-size: 0.85rem;
+  font-style: normal;
+}
+
+.admin-audit-directory {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-audit-directory > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-audit-directory h2,
+.admin-audit-directory p {
+  margin: 0;
+}
+
+.admin-audit-directory p {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+}
+
+.admin-audit-directory > header > span {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--admin-brass) 10%, transparent);
+  color: var(--admin-brass-dark);
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.admin-audit-table {
+  min-width: 1120px;
+}
+
+.admin-audit-table td {
+  vertical-align: top;
+}
+
+.admin-audit-table td strong,
+.admin-audit-table td small {
+  display: block;
+}
+
+.admin-audit-table td small {
+  margin-top: 3px;
+  color: var(--admin-muted);
+}
+
+.admin-audit-action {
+  display: inline-flex;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--admin-brass) 10%, transparent);
+  color: var(--admin-brass-dark);
+  padding: 6px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.admin-audit-details {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.admin-audit-details div {
+  display: grid;
+  grid-template-columns: minmax(100px, auto) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.admin-audit-details dt {
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.admin-audit-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.76rem;
+}
+
+.admin-audit-directory > .admin-empty-state,
+.admin-audit-directory > .admin-pagination {
+  margin: 18px;
+}
+
 .admin-page-header,
 .admin-filter-bar,
 .admin-pagination {
@@ -1300,6 +1449,10 @@
   .admin-permission-sources article .admin-action-button,
   .admin-permission-sources article small {
     grid-column: 2;
+  }
+
+  .admin-audit-summary {
+    grid-template-columns: 1fr;
   }
 
   .admin-page-header,

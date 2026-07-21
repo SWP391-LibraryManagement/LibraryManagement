@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 
 import { readStoredAdminAccess } from './adminAccess';
 import './admin-console.css';
+import { AdminAuditSection } from './audit/AdminAuditSection';
 import { AdminShell } from './components/AdminShell';
 import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
 import { AdminPermissionsSection } from './permissions/AdminPermissionsSection';
@@ -49,6 +50,8 @@ export default function AdminConsolePage() {
         <AdminRequestsSection onToast={setToast} />
       ) : activeSection === 'permissions' ? (
         <AdminPermissionsSection />
+      ) : activeSection === 'audit' ? (
+        <AdminAuditSection onToast={setToast} />
       ) : (
         <section className="admin-section-placeholder">
           <p className="admin-page-eyebrow">Admin Console</p>

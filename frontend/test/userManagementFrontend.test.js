@@ -9,6 +9,7 @@ const userEditorPath = new URL('../src/page/admin/users/UserEditorModal.jsx', im
 const userRolePath = new URL('../src/page/admin/users/UserRoleModal.jsx', import.meta.url);
 const userDrawerPath = new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url);
 const adminPermissionsPath = new URL('../src/page/admin/permissions/AdminPermissionsSection.jsx', import.meta.url);
+const adminAuditPath = new URL('../src/page/admin/audit/AdminAuditSection.jsx', import.meta.url);
 
 test('FE11 modular user owners preserve lifecycle, role and safe-detail contracts', async () => {
   const [section, presentation, editor, role, drawer] = await Promise.all([
@@ -49,6 +50,19 @@ test('FE11 modular permissions keep FE11 policy and FE12 counts independent with
   assert.match(source, /permission-decision \$\{decision\.tone\}/);
   assert.doesNotMatch(source, /Ma trận FE11|Thống kê FE12/);
   assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
+});
+
+test('FE11 modular audit keeps canonical filters while localizing safe presentation', async () => {
+  const source = await readFile(adminAuditPath, 'utf8');
+  assert.match(source, /function buildAuditLogParams/);
+  assert.match(source, /adminApi\.auditLogs/);
+  assert.match(source, /formatAuditAction\(log\.action\)/);
+  assert.match(source, /formatAuditDetailKey\(key\)/);
+  for (const label of ['Hành động', 'Mã người thực hiện', 'Từ ngày', 'Đến ngày']) {
+    assert.match(source, new RegExp(label));
+  }
+  assert.doesNotMatch(source, /<span>\{log\.action\}<\/span>/);
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML|log\.metadata|JSON\.stringify\(log\.details/);
 });
 
 test('FE11 row selection fetches detail before opening the drawer', async () => {
