@@ -10,9 +10,9 @@ horizontal scrolling, and Audit preserves every canonical filter while making
 actions and safe row details easier to read.
 
 No backend, API, schema, authentication, authorization, role policy, lifecycle,
-pagination, or audit-redaction contract changed. `FE11-UXR08` and the parent
-`FE11-UXR07` remain open until this commit is deployed to Azure Staging and an
-authenticated human reviewer accepts the desktop/mobile presentation.
+pagination, or audit-redaction contract changed. Azure Staging deployment has
+passed. `FE11-UXR08` and the parent `FE11-UXR07` remain open until an
+authenticated human reviewer accepts the deployed desktop/mobile presentation.
 
 ## Corrected Presentation Boundary
 
@@ -74,10 +74,21 @@ button remains available.
   FR-FE11-030/032/033, AC-FE11-016..018, and Q-FE11-011.
 - **L3 Boundary safety:** PASS - production changes are limited to Admin
   presentation files; API ownership and security behavior are unchanged.
-- **L4 Integration:** LOCAL PASS - authenticated Chromium and responsive images
-  pass. Azure Staging deployment and explicit human visual approval are pending.
+- **L4 Integration:** AUTOMATED PASS - authenticated Chromium, responsive
+  images, Azure deployment, smoke test, health, and direct SPA route pass.
+  Explicit human visual approval remains pending.
 
 ## Azure Staging And Human Acceptance
 
-Pending deployment and authenticated human review. Automated browser evidence
-does not replace visual acceptance on the deployed environment.
+Workflow [29873466035](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29873466035)
+deployed `8627508e729f91deb74279bf7b47cd764c078934` successfully:
+
+- `deploy-backend`, `deploy-frontend`, and `smoke-test` all concluded `success`;
+- `GET https://app-library-api-staging-nhat714.azurewebsites.net/health`
+  returned HTTP 200 with `status: ok`;
+- `GET https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users`
+  returned HTTP 200 with the SPA root.
+
+Still pending: authenticated human review of User Management and Audit at the
+deployed desktop/mobile widths. Automated evidence does not replace that visual
+acceptance.

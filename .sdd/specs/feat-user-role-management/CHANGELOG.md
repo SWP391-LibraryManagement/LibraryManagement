@@ -7,7 +7,8 @@
 - Retained all five canonical Audit filters, added readable Vietnamese action suggestions, and collapsed safe details per row in bounded readable columns.
 - Changed no API, schema, authentication, authorization, role policy, pagination, or audit-redaction behavior.
 - Fresh local validation passes frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and responsive visual checks at 1440/1366/1280/390.
-- `FE11-UXR08` remains open pending Azure Staging deployment and renewed authenticated human acceptance.
+- Azure Staging workflow `29873466035` deployed `8627508` successfully; backend, frontend, smoke, health, and direct `/admin/users` SPA checks passed.
+- `FE11-UXR08` remains open pending renewed authenticated human acceptance.
 
 ## 2026-07-22 - Admin Console modular refactor implemented and locally validated
 
