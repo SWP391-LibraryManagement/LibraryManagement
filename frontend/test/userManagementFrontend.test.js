@@ -184,20 +184,13 @@ test('FE11 permissions keep policy and statistics independent with explicit deci
   assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
 });
 
-test('FE11 audit keeps canonical filters and omits the safe-details column', async () => {
+test('FE11 audit renders a paginated read-only list without search or filter controls', async () => {
   const source = await readAdminFile('audit/AdminAuditSection.jsx');
 
-  assert.match(source, /function buildAuditLogParams/);
-  assert.match(source, /adminApi\.auditLogs/);
+  assert.match(source, /adminApi\.auditLogs\(\{ page, limit: AUDIT_TABLE_PAGE_SIZE \}\)/);
   assert.match(source, /formatAuditAction\(log\.action\)/);
-  for (const label of ['Hành động', 'Mã người thực hiện', 'Từ ngày', 'Đến ngày']) {
-    assert.match(source, new RegExp(label));
-  }
-  assert.match(source, /className="admin-audit-filter-bar"/);
-  assert.match(source, /list="admin-audit-action-options"/);
-  assert.match(source, /<datalist id="admin-audit-action-options">/);
-  assert.match(source, /placeholder="Nhập hoặc chọn hành động"/);
-  assert.doesNotMatch(source, /placeholder="AUTH_LOGIN_SUCCESS"/);
+  assert.doesNotMatch(source, /AdminFilterBar|AdminDateField|buildAuditLogParams/);
+  assert.doesNotMatch(source, /auditFilters|appliedFilters|admin-audit-action-options/);
   assert.match(source, /log\.actor\?\.fullName/);
   assert.match(source, /log\.actor\?\.email/);
   assert.match(source, /log\.target\?\.label/);
@@ -214,7 +207,13 @@ test('FE11 library and circulation preserve canonical ownership boundaries', asy
 
   assert.match(library, /adminApi\.libraryBooks/);
   assert.doesNotMatch(library, /adminApi\.(?:createBook|updateBook|deactivateBook)/);
-  assert.match(library, /navigate\('\/librarian\/books'\)/);
+  assert.match(library, /import BookManagement from '\.\.\/\.\.\/BookManagement'/);
+  assert.match(library, /setBookManagementOpen\(true\)/);
+  assert.match(library, /<BookManagement \/>/);
+  assert.doesNotMatch(library, /navigate\('\/librarian\/books'\)/);
+  assert.match(library, /setAppliedFilters\(\{ q: query, status \}\)/);
+  assert.match(library, /q: appliedFilters\.q\.trim\(\)/);
+  assert.match(library, /status: appliedFilters\.status === 'ALL'/);
   assert.match(circulation, /adminApi\.borrowings/);
   assert.match(circulation, /borrowingApi\.renewDetail/);
   assert.match(circulation, /borrowingApi\.returnDetail/);

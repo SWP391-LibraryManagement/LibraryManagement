@@ -27,22 +27,11 @@ export default function AdminConsolePage() {
   if (!access.authenticated) return <Navigate to="/login" replace />;
   if (!access.isAdmin) return <Navigate to="/home" replace />;
 
-  function handleLogout() {
-    for (const storage of [localStorage, sessionStorage]) {
-      storage.removeItem('accessToken');
-      storage.removeItem('refreshToken');
-      storage.removeItem('authUser');
-    }
-    navigate('/login', { replace: true });
-  }
-
   return (
     <AdminShell
       activeSection={activeSection}
-      currentUser={access.user}
       onSectionChange={setActiveSection}
       onHome={() => navigate('/home')}
-      onLogout={handleLogout}
     >
       {activeSection === 'users' ? (
         <AdminUsersSection onToast={setToast} />

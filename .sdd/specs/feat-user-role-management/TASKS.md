@@ -315,3 +315,7 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] Remove the Audit safe-details column while preserving safe server projection.
 - [x] Contain wide user/audit tables within the Admin content area.
 - [x] Keep Permissions absent from the approved Admin sidebar.
+- [x] Remove all Audit search/filter controls while preserving read-only pagination, authorization, and redaction.
+- [x] Rebuild the Admin shell from the shared Member/Librarian `app-shell`, header, sidebar, brand, and responsive navigation primitives.
+- [x] Keep book-management actions inside Admin Library by embedding the canonical FE05 workspace instead of redirecting to `/librarian/books`.
+- [x] Verify Admin Library search/status filters reach the backend query and add frontend/backend regression coverage.

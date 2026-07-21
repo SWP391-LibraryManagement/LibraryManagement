@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Align Admin shell and simplify activity log
+
+- Reused the shared Member/Librarian application shell, account header, responsive sidebar, brand, and navigation styling for Admin Console.
+- Removed all visible search and filter controls from Activity Logs; retained the read-only table, server pagination, refresh, authorization, and safe redacted DTO.
+- Updated FE11 requirements, tasks, and frontend regression contracts to match the approved correction.
+- Embedded the canonical FE05 book-management workspace inside Admin Library, so Admin actions no longer navigate to the Librarian route.
+- Verified Admin Library search/status filters are forwarded to the backend and added regression coverage for normalized query values.
+
 ## 2026-07-22 - Authenticated Admin presentation corrections locally validated
 
 - Removed only the standalone Permissions destination from the Admin sidebar; role management remains available in User Management.

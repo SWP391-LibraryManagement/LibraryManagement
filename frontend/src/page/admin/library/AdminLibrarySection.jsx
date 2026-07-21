@@ -1,8 +1,8 @@
-import { BookOpen, Building2, Edit2, ExternalLink, FileDown, Plus, PowerOff, RefreshCw, Search, Tags, Users, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, Building2, Edit2, FileDown, Plus, PowerOff, RefreshCw, Search, Tags, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { adminApi } from '../../../api/adminApi';
+import BookManagement from '../../BookManagement';
 import { downloadDocx } from '../../../utils/adminDocxExport';
 import { createLatestRequestGuard } from '../../../utils/latestRequestGuard';
 import { getStatusLabel } from '../../../utils/uiLabels';
@@ -57,7 +57,6 @@ function MetadataModal({ item, onClose, onSubmit }) {
 }
 
 export function AdminLibrarySection({ onToast }) {
-  const navigate = useNavigate();
   const requestGuard = useRef(createLatestRequestGuard());
   const [resource, setResource] = useState('books');
   const [rows, setRows] = useState([]);
@@ -69,6 +68,7 @@ export function AdminLibrarySection({ onToast }) {
   const [error, setError] = useState('');
   const [updatedAt, setUpdatedAt] = useState(null);
   const [modal, setModal] = useState(null);
+  const [bookManagementOpen, setBookManagementOpen] = useState(false);
 
   const notify = useCallback((type, message) => onToast?.({ type, message }), [onToast]);
 
@@ -111,6 +111,7 @@ export function AdminLibrarySection({ onToast }) {
     setAppliedFilters({ q: '', status: 'ALL' });
     setPage(1);
     setModal(null);
+    setBookManagementOpen(false);
   }
 
   async function saveMetadata(form) {
@@ -149,6 +150,19 @@ export function AdminLibrarySection({ onToast }) {
 
   const pageRows = useMemo(() => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [page, rows]);
 
+  if (bookManagementOpen) {
+    return (
+      <section className="admin-library admin-library--book-management">
+        <AdminPageHeader
+          eyebrow="Kho dữ liệu thư viện"
+          title="Quản lý sách"
+          primaryAction={<AdminActionButton icon={ArrowLeft} label="Quay lại thư viện" onClick={() => setBookManagementOpen(false)} />}
+        />
+        <BookManagement />
+      </section>
+    );
+  }
+
   return (
     <section className="admin-library">
       <AdminPageHeader
@@ -157,7 +171,7 @@ export function AdminLibrarySection({ onToast }) {
         refreshing={loading}
         onRefresh={() => loadLibrary({ announce: true })}
         primaryAction={resource === 'books'
-          ? <AdminActionButton icon={ExternalLink} label="Mở Quản lý sách" tone="primary" onClick={() => navigate('/librarian/books')} />
+          ? <AdminActionButton icon={Edit2} label="Quản lý sách" tone="primary" onClick={() => setBookManagementOpen(true)} />
           : <AdminActionButton icon={Plus} label="Thêm mới" tone="primary" onClick={() => setModal({ item: null })} />}
       />
 
@@ -176,7 +190,7 @@ export function AdminLibrarySection({ onToast }) {
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             {resource === 'books' ? (
-              <><thead><tr><th>ID</th><th>Tên sách</th><th>ISBN</th><th>Danh mục</th><th>Tác giả</th><th>NXB</th><th>Năm</th><th>Bản sao</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.id}><td>#{row.id}</td><td><strong>{row.title}</strong></td><td>{row.isbn || '-'}</td><td>{row.category || '-'}</td><td>{row.author || '-'}</td><td>{row.publisher || '-'}</td><td>{row.publishYear || row.year || '-'}</td><td>{row.availableCopies || 0}/{row.totalCopies || 0}</td><td><span className={`admin-badge admin-badge--status-${String(row.status || 'ACTIVE').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td><td><AdminActionButton icon={ExternalLink} label="Quản lý sách" onClick={() => navigate('/librarian/books')} /></td></tr>)}</tbody></>
+              <><thead><tr><th>ID</th><th>Tên sách</th><th>ISBN</th><th>Danh mục</th><th>Tác giả</th><th>NXB</th><th>Năm</th><th>Bản sao</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>{pageRows.map((row) => <tr key={row.id}><td>#{row.id}</td><td><strong>{row.title}</strong></td><td>{row.isbn || '-'}</td><td>{row.category || '-'}</td><td>{row.author || '-'}</td><td>{row.publisher || '-'}</td><td>{row.publishYear || row.year || '-'}</td><td>{row.availableCopies || 0}/{row.totalCopies || 0}</td><td><span className={`admin-badge admin-badge--status-${String(row.status || 'ACTIVE').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td><td><AdminActionButton icon={Edit2} label="Quản lý sách" onClick={() => setBookManagementOpen(true)} /></td></tr>)}</tbody></>
             ) : (
               <><thead><tr><th>STT</th><th>Tên</th><th>Ngày tạo</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>{pageRows.map((row, index) => <tr key={row.id}><td>{(page - 1) * PAGE_SIZE + index + 1}</td><td><strong>{row.name}</strong></td><td>{formatDate(row.createdAt)}</td><td><span className={`admin-badge admin-badge--status-${String(row.status || 'ACTIVE').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td><td><div className="admin-user-actions"><AdminActionButton icon={Edit2} label="Chỉnh sửa" onClick={() => setModal({ item: row })} /><AdminActionButton icon={PowerOff} label="Vô hiệu hóa" tone="danger" disabled={row.status === 'INACTIVE'} onClick={() => deactivateMetadata(row)} /></div></td></tr>)}</tbody></>
             )}
