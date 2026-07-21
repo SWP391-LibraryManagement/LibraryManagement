@@ -8,6 +8,7 @@ const userPresentationPath = new URL('../src/page/admin/users/userPresentation.j
 const userEditorPath = new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url);
 const userRolePath = new URL('../src/page/admin/users/UserRoleModal.jsx', import.meta.url);
 const userDrawerPath = new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url);
+const adminPermissionsPath = new URL('../src/page/admin/permissions/AdminPermissionsSection.jsx', import.meta.url);
 
 test('FE11 modular user owners preserve lifecycle, role and safe-detail contracts', async () => {
   const [section, presentation, editor, role, drawer] = await Promise.all([
@@ -32,6 +33,22 @@ test('FE11 modular user owners preserve lifecycle, role and safe-detail contract
   assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
   assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
   assert.match(drawer, /relatedSummary\?\.openReservationCount/);
+});
+
+test('FE11 modular permissions keep FE11 policy and FE12 counts independent with explicit decisions', async () => {
+  const source = await readFile(adminPermissionsPath, 'utf8');
+  assert.match(source, /adminApi\.permissions\(\)/);
+  assert.match(source, /reportApi\.users\(\)/);
+  assert.match(source, /buildPermissionRoleSummary/);
+  assert.match(source, /buildPermissionModuleCoverage/);
+  assert.match(source, /roleAllowsPermission/);
+  assert.match(source, /getPermissionDecision/);
+  assert.match(source, /Dữ liệu phân quyền/);
+  assert.match(source, /Thống kê tài khoản theo vai trò/);
+  assert.match(source, /Một tài khoản có thể có nhiều vai trò/);
+  assert.match(source, /permission-decision \$\{decision\.tone\}/);
+  assert.doesNotMatch(source, /Ma trận FE11|Thống kê FE12/);
+  assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
 });
 
 test('FE11 row selection fetches detail before opening the drawer', async () => {

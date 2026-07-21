@@ -5,6 +5,7 @@ import { readStoredAdminAccess } from './adminAccess';
 import './admin-console.css';
 import { AdminShell } from './components/AdminShell';
 import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
+import { AdminPermissionsSection } from './permissions/AdminPermissionsSection';
 import { AdminRequestsSection } from './requests/AdminRequestsSection';
 import { AdminUsersSection } from './users/AdminUsersSection';
 
@@ -46,6 +47,8 @@ export default function AdminConsolePage() {
         <AdminDashboardSection />
       ) : activeSection === 'requests' ? (
         <AdminRequestsSection onToast={setToast} />
+      ) : activeSection === 'permissions' ? (
+        <AdminPermissionsSection />
       ) : (
         <section className="admin-section-placeholder">
           <p className="admin-page-eyebrow">Admin Console</p>

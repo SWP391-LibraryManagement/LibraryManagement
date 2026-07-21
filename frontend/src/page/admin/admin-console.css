@@ -833,6 +833,174 @@
   color: var(--admin-ink);
 }
 
+.admin-permissions {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-permissions__explanation {
+  margin: 0;
+  padding: 13px 15px;
+  border-left: 3px solid var(--admin-brass);
+  background: color-mix(in srgb, var(--admin-brass) 6%, var(--admin-paper));
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.admin-permission-sources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-permission-sources article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-permission-sources article > svg {
+  width: 23px;
+  color: var(--admin-brass-dark);
+}
+
+.admin-permission-sources article div {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-permission-sources article span,
+.admin-permission-sources article small {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+}
+
+.admin-permission-sources article small {
+  grid-column: 2 / -1;
+  color: var(--admin-danger);
+}
+
+.admin-permission-role-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-permission-role-cards article {
+  display: grid;
+  min-height: 110px;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-permission-role-cards strong {
+  font-family: Georgia, serif;
+  font-size: 1.8rem;
+}
+
+.admin-permission-role-cards article > span:last-child {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+}
+
+.admin-permission-panels {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.8fr) minmax(540px, 1.2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-permission-panels > section {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: var(--admin-paper);
+}
+
+.admin-permission-panels header {
+  padding: 18px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-permission-panels h2,
+.admin-permission-panels p {
+  margin: 0;
+}
+
+.admin-permission-panels p {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+}
+
+.admin-permission-table {
+  width: 100%;
+  min-width: 660px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-permission-table--compact { min-width: 560px; }
+
+.admin-permission-table th,
+.admin-permission-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--admin-line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-permission-table th {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background: #f4ecdd;
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.admin-permission-table td:not(:first-child),
+.admin-permission-table th:not(:first-child) {
+  text-align: center;
+}
+
+.permission-decision {
+  display: inline-flex;
+  min-width: 76px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.permission-decision.allowed {
+  border-color: color-mix(in srgb, var(--admin-success) 28%, transparent);
+  background: color-mix(in srgb, var(--admin-success) 8%, transparent);
+  color: var(--admin-success);
+}
+
+.permission-decision.denied {
+  background: #f6f3ed;
+  color: var(--admin-muted);
+}
+
 .admin-page-header,
 .admin-filter-bar,
 .admin-pagination {
@@ -1117,6 +1285,21 @@
   .admin-request-detail p {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .admin-permission-sources,
+  .admin-permission-role-cards,
+  .admin-permission-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-permission-sources article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-permission-sources article .admin-action-button,
+  .admin-permission-sources article small {
+    grid-column: 2;
   }
 
   .admin-page-header,
