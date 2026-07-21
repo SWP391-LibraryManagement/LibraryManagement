@@ -1149,6 +1149,50 @@ describe('FE07 borrowing management', () => {
     });
   });
 
+  // @spec FR-FE07-029, AC-FE07-023
+  test('member history exposes a rejected owning request without changing detail status', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'rejected-history.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'rejected-history.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
+    await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/reject`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ reason: 'Không thể xử lý yêu cầu này.' })
+      .expect(200);
+
+    const history = await request(app)
+      .get('/api/borrow-requests/me')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(history.body.borrowings).toEqual([
+      expect.objectContaining({
+        requestId: created.body.borrowRequest.requestId,
+        status: 'REQUESTED',
+        requestStatus: 'REJECTED',
+      }),
+    ]);
+  });
+
   // AC-FE07-002, FR-FE07-015: inactive accounts are rejected; active MEMBER accounts need no FE04 approval.
   test('inactive account is rejected while an active MEMBER can create a borrow request', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();

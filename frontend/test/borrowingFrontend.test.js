@@ -186,6 +186,32 @@ test('member history maps canonical borrow-detail rows without a request envelop
   }]);
 });
 
+// @spec FR-FE07-029, AC-FE07-023
+test('member history displays rejected requests without relabeling pending details', async () => {
+  const { mapBorrowDetailsToHistoryRows } = await loadBorrowingViewModels();
+  const { getStatusLabel } = await import('../src/utils/uiLabels.js');
+  const rows = mapBorrowDetailsToHistoryRows([
+    {
+      borrowDetailId: 51,
+      requestId: 21,
+      copyId: 1,
+      status: 'REQUESTED',
+      requestStatus: 'REJECTED',
+    },
+    {
+      borrowDetailId: 52,
+      requestId: 22,
+      copyId: 2,
+      status: 'REQUESTED',
+      requestStatus: 'PENDING',
+    },
+  ]);
+
+  assert.equal(rows[0].status, 'Rejected');
+  assert.equal(getStatusLabel(rows[0].status), 'Đã từ chối');
+  assert.equal(rows[1].status, 'Pending');
+});
+
 test('member history uses canonical server filtering and pagination', async () => {
   const source = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
 

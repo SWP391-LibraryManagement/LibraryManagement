@@ -64,10 +64,10 @@ Add this acceptance criterion and clarify both borrowing-history endpoints in Se
 - AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
 ```
 
-Add this exact row to Section 10.2:
+Replace the existing `requestStatus` row in Section 10.2 with this exact clarification:
 
 ```markdown
-| requestStatus | string | Yes in borrowing-history detail responses | Read-only status of the owning request: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED`; does not replace persisted `detailStatus`. |
+| requestStatus | string | Yes | Values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Borrowing-history detail responses expose this owning-request state separately from persisted `detailStatus`. |
 ```
 
 Append this exact sentence to the Notes cell for both history endpoints in Section 11:

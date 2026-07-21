@@ -104,6 +104,17 @@ test('OpenAPI binds FE07 action bodies to the current runtime requests', () => {
   }
 });
 
+// @spec FR-FE07-029, AC-FE07-023
+test('OpenAPI exposes the owning request status on borrowing detail responses', () => {
+  const borrowDetail = document.components.schemas.BorrowDetail;
+
+  expect(borrowDetail.required).toContain('requestStatus');
+  expect(borrowDetail.properties.requestStatus).toEqual({
+    type: 'string',
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'CANCELLED'],
+  });
+});
+
 test('OpenAPI reuses FE07 success and safe error responses across every borrowing endpoint', () => {
   const endpointMethods = [
     ['/api/borrow-requests', 'post', '201'],
