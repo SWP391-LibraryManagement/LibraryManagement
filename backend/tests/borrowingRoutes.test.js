@@ -179,6 +179,20 @@ function installTwoPartyBorrowDetailReadBarrier(
 }
 
 describe('FE07 borrowing management', () => {
+  test('member lists real borrow candidates and can filter the selected book', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({ app, authDependencies, borrowingDependencies, email: 'borrow.candidates@example.test' });
+
+    const response = await request(app)
+      .get('/api/borrow-requests/candidates?bookId=1')
+      .set('Authorization', authHeader(member.accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body.books).toHaveLength(1);
+    expect(response.body.books[0]).toMatchObject({ bookId: 1, title: 'Clean Code' });
+    expect(response.body.books[0].copies.map((copy) => copy.copyId)).toEqual([1, 2, 4, 5, 6, 7]);
+  });
+
   test('member creates a pending request only for available unique copies', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const member = await createVerifiedUser({
@@ -1135,8 +1149,8 @@ describe('FE07 borrowing management', () => {
     });
   });
 
-  // AC-FE07-002, FR-FE07-015: inactive account or unapproved membership is rejected.
-  test('inactive account or unapproved membership cannot create a borrow request', async () => {
+  // AC-FE07-002, FR-FE07-015: inactive accounts are rejected; active MEMBER accounts need no FE04 approval.
+  test('inactive account is rejected while an active MEMBER can create a borrow request', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
 
     const inactiveMember = await createVerifiedUser({
@@ -1173,9 +1187,9 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(unapprovedMember.accessToken))
       .send({ copyIds: [1] });
 
-    expect(unapprovedResponse.status).toBe(403);
-    expect(unapprovedResponse.body.error.code).toBe('MEMBERSHIP_NOT_APPROVED');
-    expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
+    expect(unapprovedResponse.status).toBe(201);
+    expect(unapprovedResponse.body.borrowRequest).toMatchObject({ userId: unapprovedMember.userId, status: 'PENDING' });
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
   });
 
   test('inactive parent book cannot create a borrow request and changes no state', async () => {
@@ -1377,6 +1391,34 @@ describe('FE07 borrowing management', () => {
     expect(overLimitResponse.status).toBe(409);
     expect(overLimitResponse.body.error.code).toBe('BORROW_LIMIT_EXCEEDED');
     // No extra request was created beyond the first (still-active) one.
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
+  });
+
+  test('member without approved membership is limited to 3 requested copies per day', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'daily-limit.standard@example.test',
+      approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4] })
+      .expect(201);
+
+    borrowingDependencies.state.borrowRequests[0].requestDate = new Date('2026-06-10T00:00:00.000Z');
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [5] })
+      .expect(409);
+
+    expect(response.body.error.code).toBe('BORROW_DAILY_LIMIT_EXCEEDED');
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
   });
 
@@ -2137,7 +2179,6 @@ describe('FE07 borrowing management', () => {
 
   test.each([
     ['MEMBER_ACCOUNT_INACTIVE', 403, 'MEMBER_ACCOUNT_INACTIVE'],
-    ['MEMBERSHIP_NOT_APPROVED', 403, 'MEMBERSHIP_NOT_APPROVED'],
     ['UNPAID_FINE_BLOCKS_BORROWING', 409, 'UNPAID_FINE_BLOCKS_BORROWING'],
     ['OVERDUE_LOAN_BLOCKS_BORROWING', 409, 'OVERDUE_LOAN_BLOCKS_BORROWING'],
     ['REQUEST_NOT_APPROVABLE', 409, 'BORROW_REQUEST_NOT_PENDING'],

@@ -8,7 +8,7 @@ import Filter from './Filter';
 import BookCopies from './BookCopies';
 import StatusBadge from './StatusBadge';
 
-const EMPTY_FILTER = { barcode: '', location: '', status: '' };
+const EMPTY_FILTER = { q: '', barcode: '', location: '', status: '' };
 
 export default function InventoryManagement() {
   const [items, setItems] = useState([]);
@@ -17,15 +17,20 @@ export default function InventoryManagement() {
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState(EMPTY_FILTER);
+  const [appliedFilter, setAppliedFilter] = useState(EMPTY_FILTER);
   const [copiesBook, setCopiesBook] = useState(null);
   const [bookCopies, setBookCopies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const [toast, showToast, clearToast] = useToast();
 
-  const loadInventory = useCallback(async ({ pageNumber = page, nextFilter = filter } = {}) => {
+  const loadInventory = useCallback(async ({ pageNumber = page, nextFilter = appliedFilter } = {}) => {
     setLoading(true);
+    setLoadError('');
     try {
       const params = { page: pageNumber, limit: 20 };
+      if (nextFilter.q.trim()) params.q = nextFilter.q.trim();
       if (nextFilter.barcode.trim()) params.barcode = nextFilter.barcode.trim();
       if (nextFilter.location.trim()) params.location = nextFilter.location.trim();
       if (nextFilter.status) params.status = nextFilter.status;
@@ -37,16 +42,20 @@ export default function InventoryManagement() {
       setPage(result.page || pageNumber);
     } catch (error) {
       showToast(error.message, 'error');
+      setLoadError(error.message);
       setItems([]);
+      setCountsByStatus({});
+      setTotalItems(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [filter, page, showToast]);
+  }, [appliedFilter, page, showToast]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => loadInventory(), 0);
     return () => window.clearTimeout(timer);
-  }, [loadInventory]);
+  }, [loadInventory, reloadKey]);
 
   async function openBook(book) {
     setCopiesBook(book);
@@ -69,14 +78,23 @@ export default function InventoryManagement() {
 
   function resetFilters() {
     setFilter(EMPTY_FILTER);
+    setAppliedFilter(EMPTY_FILTER);
     setPage(1);
+    setReloadKey((current) => current + 1);
+  }
+
+  function applyFilters(event) {
+    event.preventDefault();
+    setAppliedFilter(filter);
+    setPage(1);
+    setReloadKey((current) => current + 1);
   }
 
   const statusCards = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'];
 
   return (
     <>
-      <Filter filters={filter} onChange={(next) => { setFilter(next); setPage(1); }} onReset={resetFilters} />
+      <Filter filters={filter} onChange={setFilter} onApply={applyFilters} onReset={resetFilters} loading={loading} />
       <div className="lib-card" style={{ marginBottom: 18 }}>
         <DataToolbar
           primary={<strong>Kho bản sao: {totalItems}</strong>}
@@ -108,7 +126,8 @@ export default function InventoryManagement() {
         </div>
       </div>
       {copiesBook && <BookCopies book={copiesBook} copies={bookCopies} onClose={() => setCopiesBook(null)} onChanged={reloadAfterMutation} showToast={showToast} />}
-      {!items.length && !loading && <StatusNotice type="info" title="Không có dữ liệu">Thử điều chỉnh bộ lọc hoặc tải lại từ backend.</StatusNotice>}
+      {loadError && !loading && <StatusNotice type="error" title="Không thể tải dữ liệu kho">{loadError}</StatusNotice>}
+      {!loadError && !items.length && !loading && <StatusNotice type="info" title="Không có dữ liệu">Thử điều chỉnh bộ lọc hoặc tải lại từ backend.</StatusNotice>}
       <Toast toast={toast} onClose={clearToast} />
     </>
   );

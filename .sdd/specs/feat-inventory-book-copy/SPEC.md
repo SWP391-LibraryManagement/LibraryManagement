@@ -1,14 +1,14 @@
 # SPEC.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.4.2
+# Version: 0.4.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
-# Implementation Status: AUTOMATED PASS - HUMAN INTEGRATION REVIEW PENDING
+# Implementation Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 # Owner: Dat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-21
 
 # Feature ID: FE06
 
@@ -22,10 +22,11 @@
 
 > Source of truth for FE06 Inventory / Book Copy Management. Revision v0.4.2 reconciles the approved v0.4.0 concurrency, audit, parent-book, API, and frontend contracts with the implemented behavior.
 >
-> **Implementation status (2026-07-19): automated reconciliation passes.** FE06 now uses SQL
+> **Historical reconciliation snapshot (2026-07-19; superseded):** FE06 used SQL
 > `rowversion` / `If-Match`, same-transaction conflict and audit handling, parent-book ACTIVE guards,
-> mandatory status-change reasons, and server-backed inventory UI. Cross-feature owner confirmation,
-> final H3, merge, and post-merge `main` CI remain open.
+> mandatory status-change reasons, and server-backed inventory UI. At that checkpoint, cross-feature
+> owner confirmation, final H3, merge, and post-merge `main` CI remained open; the canonical Phase 2
+> exit evidence above records their subsequent completion.
 
 ---
 
@@ -180,6 +181,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE06-016: Every existing-copy mutation requires matching `If-Match` against SQL `rowversion`; status/deactivation mutations lock and recheck `BookCopies -> BorrowDetails -> Reservations` plus parent status before update.
 - BR-FE06-017: Manual copy-status transitions and deactivation require a trimmed reason containing 1 through 500 characters.
 - BR-FE06-018: Inventory pagination uses `page` default `1` and `limit` default `20`; `page` must be an integer greater than or equal to `1`, and `limit` must be an integer from `1` through `100`. Invalid supplied values are rejected rather than normalized.
+- BR-FE06-019: Inventory accepts an optional trimmed `q` up to 200 characters and applies it together with `bookId`, `status`, `barcode`, and `location` before pagination. Search matches safe copy/book fields: copy ID, book ID, title, ISBN, author, category, barcode, and location. Rows, totals, and grouped status counts use the same effective filters.
 
 ---
 
@@ -214,6 +216,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE06-022: IF the locked parent book is missing or inactive during copy creation or a manual transition into `AVAILABLE`, the system shall reject the mutation and preserve copy/audit state. (Source: PRE-FE06-006, BR-FE06-015, EC-FE06-011)
 - FR-FE06-023: IF a manual status-transition or deactivation reason is missing, blank, or longer than 500 characters, the system shall reject the command. (Source: BR-FE06-017, EC-FE06-012)
 - FR-FE06-024: IF a supplied inventory `page` or `limit` violates BR-FE06-018, the system shall reject the request with a validation error and shall not normalize the value or query inventory. (Source: BR-FE06-018, EC-FE06-013)
+- FR-FE06-025: When staff applies inventory search and filters, FE06 shall execute one canonical server query contract, return only the approved safe copy/book projection, and distinguish a load failure from a valid empty result in the UI.
 
 ---
 
@@ -233,6 +236,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE06-012: Given a staff update/deactivate/reactivate request with missing or stale `If-Match`, FE06 returns `409 STALE_COPY_STATE` and preserves state.
 - AC-FE06-013: Given a missing, blank, or over-500-character manual status/deactivation reason, FE06 rejects the command; a trimmed 1..500-character reason is accepted.
 - AC-FE06-014: Given omitted pagination values, when staff views inventory, then FE06 uses `page = 1` and `limit = 20`; given a supplied non-integer, `page < 1`, `limit < 1`, or `limit > 100`, FE06 rejects the request without normalization.
+- AC-FE06-015: Given a Librarian/Admin combines text search, barcode, location, and status filters, when applying them, then matching rows, `totalItems`, `totalPages`, and `countsByStatus` are derived from the same database-filtered set; a backend failure shows an error rather than “no data”.
 
 ---
 
@@ -381,7 +385,7 @@ stateDiagram-v2
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/inventory` | Librarian/Admin | Query: `bookId?, status?, barcode?, location?, page = 1, limit = 20` | `{ items, page, limit, totalItems, totalPages, countsByStatus }` | Protected; identical filters apply to rows/totals/counts; invalid supplied pagination returns validation error before query. |
+| GET | `/api/inventory` | Librarian/Admin | Query: `q?, bookId?, status?, barcode?, location?, page = 1, limit = 20` | `{ items, page, limit, totalItems, totalPages, countsByStatus }` | Protected; `q` is max 200; identical filters apply to rows/totals/counts; invalid supplied pagination returns validation error before query. |
 | GET | `/api/book-copies/{copyId}` | Librarian/Admin | - | Copy detail | Includes related book summary. |
 | GET | `/api/book-copies/barcode/{barcode}` | Librarian/Admin | - | Copy detail/status | Used for barcode lookup. |
 | POST | `/api/books/{bookId}/copies` | Librarian/Admin | `{ barcode, location? }` | Created `AVAILABLE` copy | Requires a locked active parent; client cannot control initial status. |

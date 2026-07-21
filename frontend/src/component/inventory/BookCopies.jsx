@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { inventoryApi } from '../../api/libraryFeatureApi';
 import { ConfirmAction, EmptyState, Modal } from '../shared/Feedback';
 import { DataTable, DataToolbar } from '../shared/OperationalPatterns';
+import { getStatusLabel } from '../../utils/uiLabels';
 import StatusBadge from './StatusBadge';
 
 const STATUS_OPTIONS = ['AVAILABLE', 'DAMAGED', 'LOST', 'INACTIVE'];
@@ -124,7 +125,7 @@ export default function BookCopies({ book, copies, onClose, onChanged = async ()
                       disabled={copy.status === 'BORROWED' || copy.status === 'RESERVED'}
                       aria-label={`Trạng thái bản sao ${copy.copyId}`}
                     >
-                      {[...new Set([copy.status, ...STATUS_OPTIONS])].map((status) => <option key={status} value={status}>{status}</option>)}
+                      {[...new Set([copy.status, ...STATUS_OPTIONS])].map((status) => <option key={status} value={status}>{getStatusLabel(status)}</option>)}
                     </select>
                   </div>
                 </td>

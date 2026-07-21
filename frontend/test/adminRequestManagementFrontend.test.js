@@ -3,9 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
-  buildRequestCsv,
+  buildRequestDocumentRows,
   buildRequestListParams,
   collectAllRequestRows,
+  REQUEST_DOCX_COLUMNS,
 } from '../src/utils/adminRequestExport.js';
 
 test('request query builder uses canonical names and omits UI sentinels', () => {
@@ -20,7 +21,7 @@ test('request query builder uses canonical names and omits UI sentinels', () => 
   );
 });
 
-test('CSV export traverses every server page with frozen filters', async () => {
+test('DOCX export traverses every server page with frozen filters', async () => {
   const calls = [];
   const loader = async (params) => {
     calls.push(params);
@@ -45,8 +46,8 @@ test('CSV export traverses every server page with frozen filters', async () => {
   ]);
 });
 
-test('request CSV uses only approved columns and neutralizes spreadsheet formulas', () => {
-  const csv = buildRequestCsv([{
+test('request DOCX rows use only approved columns', () => {
+  const [row] = buildRequestDocumentRows([{
     requestId: 25,
     requestDate: '2026-07-19T08:00:00.000Z',
     status: 'PENDING',
@@ -62,11 +63,11 @@ test('request CSV uses only approved columns and neutralizes spreadsheet formula
     passwordHash: 'must-not-leak',
   }]);
 
-  assert.match(csv, /^requestId,requestDate,status,memberUserId,memberName,memberEmail,memberPhoneNumber,itemCount,bookTitles,categories/m);
-  assert.match(csv, /'=HYPERLINK/);
-  assert.match(csv, /'\+cmd@example\.test/);
-  assert.match(csv, /Book A \| Book, B/);
-  assert.doesNotMatch(csv, /passwordHash|must-not-leak/);
+  assert.deepEqual(Object.keys(row), REQUEST_DOCX_COLUMNS.map(({ key }) => key));
+  assert.equal(row.memberName, '=HYPERLINK("bad")');
+  assert.equal(row.memberEmail, '+cmd@example.test');
+  assert.equal(row.bookTitles, 'Book A | Book, B');
+  assert.equal(row.passwordHash, undefined);
 });
 
 test('Admin Request Management consumes server pagination and authoritative detail', async () => {
@@ -82,5 +83,17 @@ test('Admin Request Management consumes server pagination and authoritative deta
   assert.match(page, /collectAllRequestRows\(adminApi\.requests/);
   assert.doesNotMatch(page, /fromDate|toDate/);
   assert.doesNotMatch(exportUtility, /filters\.fromDate|filters\.toDate/);
-  assert.doesNotMatch(page, /downloadCsv\('requests\.csv', requests\)/);
+  assert.match(page, /downloadDocx\(/);
+  assert.doesNotMatch(page, /Xuất CSV|\.csv'/);
+  assert.match(exportUtility, /REQUEST_DOCX_COLUMNS/);
+});
+
+test('Admin DOCX utility uses a readable fixed landscape table', async () => {
+  const source = await readFile(new URL('../src/utils/adminDocxExport.js', import.meta.url), 'utf8');
+
+  assert.match(source, /PageOrientation\.LANDSCAPE/);
+  assert.match(source, /TableLayoutType\.FIXED/);
+  assert.match(source, /columnWidths/);
+  assert.match(source, /toLocaleDateString\('vi-VN'\)/);
+  assert.match(source, /STATUS_LABELS/);
 });

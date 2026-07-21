@@ -56,10 +56,12 @@ import {
   roleAllowsPermission,
 } from '../utils/adminPermissions';
 import {
-  buildRequestCsv,
+  buildRequestDocumentRows,
   buildRequestListParams,
   collectAllRequestRows,
+  REQUEST_DOCX_COLUMNS,
 } from '../utils/adminRequestExport';
+import { downloadDocx } from '../utils/adminDocxExport';
 import { isManagedUserNotFound } from '../utils/userManagementQuery';
 import { getBooleanLabel, getRoleLabel, getStatusLabel } from '../utils/uiLabels';
 
@@ -270,31 +272,29 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-function downloadCsv(filename, rows) {
-  const dataRows = Array.isArray(rows) ? rows : [];
-  if (!dataRows.length) return false;
-  const columns = Object.keys(dataRows[0]);
-  const escapeCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-  const csv = [columns.join(','), ...dataRows.map((row) => columns.map((column) => escapeCell(row[column])).join(','))].join('\n');
-  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-  return true;
-}
+const LIBRARY_DOCX_COLUMNS = [
+  { key: 'id', label: 'ID' },
+  { key: 'title', label: 'Tên sách' },
+  { key: 'name', label: 'Tên' },
+  { key: 'isbn', label: 'ISBN' },
+  { key: 'category', label: 'Danh mục' },
+  { key: 'author', label: 'Tác giả' },
+  { key: 'publisher', label: 'Nhà xuất bản' },
+  { key: 'status', label: 'Trạng thái' },
+];
 
-function downloadCsvText(filename, csv) {
-  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
+const BORROWING_DOCX_COLUMNS = [
+  { key: 'id', label: 'Mã lượt' },
+  { key: 'requestId', label: 'Mã yêu cầu' },
+  { key: 'memberName', label: 'Thành viên' },
+  { key: 'bookTitle', label: 'Sách' },
+  { key: 'barcode', label: 'Barcode' },
+  { key: 'borrowDate', label: 'Ngày mượn' },
+  { key: 'dueDate', label: 'Ngày hạn' },
+  { key: 'returnDate', label: 'Ngày trả' },
+  { key: 'renewalCount', label: 'Số lần gia hạn' },
+  { key: 'status', label: 'Trạng thái' },
+];
 
 function RoleBadge({ role }) {
   return <span className={`um-badge role-${role.toLowerCase()}`}>{getRoleLabel(role)}</span>;
@@ -590,7 +590,7 @@ function Sidebar({ activeSection, currentUser, onSectionChange, onLogout, onNavi
       <div className="um-sidebar-footer">
         <div className="um-session">
           <span>Đang đăng nhập với</span>
-          <strong>{currentUser?.email || 'Tài khoản quản trị'}</strong>
+          <strong title={currentUser?.email || 'Tài khoản quản trị'}>{currentUser?.email || 'Tài khoản quản trị'}</strong>
         </div>
         <button type="button" onClick={onLogout}>
           <LogOut size={18} />
@@ -1444,8 +1444,13 @@ function UserManagement() {
         setToast({ type: 'error', message: 'Không có yêu cầu phù hợp để xuất.' });
         return;
       }
-      downloadCsvText('requests.csv', buildRequestCsv(rows));
-      setToast({ type: 'success', message: 'Đã xuất toàn bộ yêu cầu phù hợp.' });
+      await downloadDocx(
+        'requests.docx',
+        'Danh sách yêu cầu',
+        buildRequestDocumentRows(rows),
+        REQUEST_DOCX_COLUMNS
+      );
+      setToast({ type: 'success', message: 'Đã xuất toàn bộ yêu cầu phù hợp thành file DOCX.' });
     } catch (error) {
       setToast({ type: 'error', message: error.message });
     } finally {
@@ -1843,13 +1848,16 @@ function UserManagement() {
               </div>
               {libraryResource === 'books' && (
                 <select value={libraryStatus} onChange={(event) => setLibraryStatus(event.target.value)}>
-                  <option value="ALL">All statuses</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
+                  <option value="ALL">Mọi trạng thái</option>
+                  <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
+                  <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
                 </select>
               )}
               <button className="um-secondary-button" disabled={libraryLoading} onClick={() => loadLibrary()}>Tìm kiếm</button>
-              <button className="um-secondary-button" disabled={libraryLoading || libraryRows.length === 0} onClick={() => downloadCsv(`${libraryResource}.csv`, libraryRows)}><FileDown size={16} /> Xuất CSV</button>
+              <button className="um-secondary-button" disabled={libraryLoading || libraryRows.length === 0} onClick={async () => {
+                const columns = LIBRARY_DOCX_COLUMNS.filter(({ key }) => libraryRows.some((row) => row[key] !== undefined));
+                await downloadDocx(`${libraryResource}.docx`, 'Dữ liệu thư viện', libraryRows, columns);
+              }}><FileDown size={16} /> Xuất DOCX</button>
               {libraryResource !== 'books' && <button className="um-primary-button" onClick={() => setLibraryModal({ item: null })}><Plus size={16} /> Thêm mới</button>}
             </div>
             <section className="um-content">
@@ -1872,7 +1880,7 @@ function UserManagement() {
                       <td>{row.publisher || '-'}</td>
                       <td>{row.publishYear || row.year || '-'}</td>
                       <td>{row.availableCopies || 0}/{row.totalCopies || 0}</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td><span className="um-readonly-note">Chỉ xem; chỉnh sửa tại Quản lý sách.</span></td>
                     </tr>
                   ) : (
@@ -1880,13 +1888,13 @@ function UserManagement() {
                       <td>{(libraryPage - 1) * ADMIN_TABLE_PAGE_SIZE + index + 1}</td>
                       <td><strong>{row.name}</strong></td>
                       <td>{formatDate(row.createdAt)}</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status || 'ACTIVE'}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td><div className="um-row-actions"><button className="um-icon-button" title="Chỉnh sửa" onClick={() => setLibraryModal({ item: row })}><Edit2 size={16} /></button><button className="um-icon-button danger" title="Vô hiệu hóa" disabled={row.status === 'INACTIVE'} onClick={() => deactivateMetadata(row)}><PowerOff size={16} /></button></div></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {libraryRows.length === 0 && <div className="um-empty">No library data found.</div>}
+              {libraryRows.length === 0 && <div className="um-empty">Không tìm thấy dữ liệu thư viện.</div>}
               <AdminTablePagination page={libraryPage} totalItems={libraryRows.length} onPageChange={setLibraryPage} />
             </section>
           </section>
@@ -1901,10 +1909,10 @@ function UserManagement() {
             <div className="um-toolbar">
               <div className="um-search"><Search size={18} /><input value={borrowingFilter.q} placeholder="Tìm thành viên, sách hoặc barcode..." onKeyDown={(event) => { if (event.key === 'Enter') loadBorrowings(); }} onChange={(event) => setBorrowingFilter((current) => ({ ...current, q: event.target.value }))} /></div>
               <select value={borrowingFilter.status} onChange={(event) => setBorrowingFilter((current) => ({ ...current, status: event.target.value }))}>
-                {borrowingStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                {borrowingStatuses.map((status) => <option key={status} value={status}>{getStatusLabel(status)}</option>)}
               </select>
               <button className="um-secondary-button" disabled={borrowingsLoading} onClick={() => loadBorrowings()}>Tìm kiếm</button>
-              <button className="um-secondary-button" disabled={borrowingsLoading || borrowings.length === 0} onClick={() => downloadCsv('borrowings.csv', borrowings)}><FileDown size={16} /> Xuất CSV</button>
+              <button className="um-secondary-button" disabled={borrowingsLoading || borrowings.length === 0} onClick={() => downloadDocx('borrowings.docx', 'Danh sách mượn trả', borrowings, BORROWING_DOCX_COLUMNS)}><FileDown size={16} /> Xuất DOCX</button>
               <button className="um-primary-button" onClick={() => setActiveSection('requests')}>Xử lý yêu cầu</button>
             </div>
             <section className="um-content">
@@ -1917,12 +1925,12 @@ function UserManagement() {
                       <td>#{row.requestId}</td>
                       <td><strong>{row.memberName}</strong></td>
                       <td>{row.bookTitle}</td>
-                      <td>{row.barcode || `Copy #${row.copyId}`}</td>
+                      <td>{row.barcode || `Bản sao #${row.copyId}`}</td>
                       <td>{formatDate(row.borrowDate)}</td>
                       <td>{formatDate(row.dueDate)}</td>
                       <td>{formatDate(row.returnDate)}</td>
                       <td>{row.renewalCount || 0}/1</td>
-                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{row.status}</span></td>
+                      <td><span className={`um-badge status-${String(row.status || 'active').toLowerCase()}`}>{getStatusLabel(row.status || 'ACTIVE')}</span></td>
                       <td>
                         <div className="um-row-actions">
                           {row.status === 'REQUESTED' && <button className="um-secondary-button" onClick={() => setActiveSection('requests')}>Xử lý yêu cầu</button>}
@@ -1959,7 +1967,7 @@ function UserManagement() {
               <input aria-label="Từ ngày" type="date" value={requestFilter.from} onChange={(event) => setRequestFilter((current) => ({ ...current, from: event.target.value }))} />
               <input aria-label="Đến ngày" type="date" value={requestFilter.to} onChange={(event) => setRequestFilter((current) => ({ ...current, to: event.target.value }))} />
               <button className="um-secondary-button" disabled={requestsLoading} onClick={applyRequestFilters}>Tìm kiếm</button>
-              <button className="um-primary-button" disabled={requestsLoading || requestExporting} onClick={exportRequests}><FileDown size={16} /> {requestExporting ? 'Đang xuất...' : 'Xuất CSV'}</button>
+              <button className="um-primary-button" disabled={requestsLoading || requestExporting} onClick={exportRequests}><FileDown size={16} /> {requestExporting ? 'Đang xuất...' : 'Xuất DOCX'}</button>
             </div>
             <section className="um-content">
               <table className="um-table request-table">
@@ -2696,7 +2704,7 @@ function UserManagement() {
         .um-sidebar-footer { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; }
         .um-session { display: grid; gap: 7px; padding: 0 0 10px; color: #cbd5e1; }
         .um-session span { color: #9fb0c3; font-size: 12px; }
-        .um-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
+        .um-session strong { display: block; min-width: 0; max-width: 100%; color: #fff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .um-sidebar-footer button { min-height: 42px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font-size: 16px; text-align: left; }
         .um-sidebar-footer button:hover { background: #243244; color: #fff; }
         .um-main { flex: 1; min-width: 0; padding: 26px 30px; }

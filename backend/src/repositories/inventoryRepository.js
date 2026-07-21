@@ -124,6 +124,19 @@ async function findCopyByBarcode(barcode, transaction) {
 
 function addFilterInputs(request, filters = {}) {
   const clauses = ['1 = 1'];
+  if (filters.q) {
+    request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
+    clauses.push(`(
+      b.Title LIKE @Search
+      OR b.ISBN LIKE @Search
+      OR a.AuthorName LIKE @Search
+      OR c.CategoryName LIKE @Search
+      OR bc.Barcode LIKE @Search
+      OR bc.Location LIKE @Search
+      OR CONVERT(NVARCHAR(20), bc.CopyId) LIKE @Search
+      OR CONVERT(NVARCHAR(20), bc.BookId) LIKE @Search
+    )`);
+  }
   if (filters.bookId) {
     request.input('BookId', sql.Int, filters.bookId);
     clauses.push('bc.BookId = @BookId');
@@ -156,6 +169,9 @@ async function listInventory(filters = {}) {
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
     SELECT COUNT_BIG(*) AS Total
     FROM BookCopies bc
+    INNER JOIN Books b ON bc.BookId = b.BookId
+    LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
+    LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
     WHERE ${whereClause};
   `);
   return {
@@ -170,6 +186,9 @@ async function countInventoryByStatus(filters = {}) {
   const result = await request.query(`
     SELECT bc.Status, COUNT_BIG(*) AS Total
     FROM BookCopies bc
+    INNER JOIN Books b ON bc.BookId = b.BookId
+    LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
+    LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
     WHERE ${whereClause}
     GROUP BY bc.Status
   `);

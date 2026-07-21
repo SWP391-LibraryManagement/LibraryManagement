@@ -1,10 +1,12 @@
 # Plan
 
-Current phase: Phase 3 - Polish and Delivery **complete and integrated**.
+Current phase: Phase 3 - Polish and Delivery baseline integrated; the governance/localization reconciliation is **H2-approved with H3 pending**.
 
-Next canonical release: `v1.0.2`. The tag is created only after H3 approval,
-merge to `main`, and exact post-merge CI pass. No new product scope is active in
-this plan.
+Published release: `v1.0.2` at `c988af1`. The validated application baseline
+is `cce59d0`, 20 commits ahead after PR #57/#58. The published reconciliation
+commits `962ceb1` and `daaeea6` have H2 approval; H3/merge plus exact post-merge CI remain before the team decides whether
+the resulting later `main` SHA becomes `v1.0.3`. No new product scope is active
+in this plan.
 
 Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product reconciliation and human H3 were merged through PR #40/#41, FE02/FE10 OTP follow-up was merged through PR #42-#44, all twelve feature packages declare `Implementation State: COMPLETE`, and the enforced traceability gate reports 100% FR coverage.
 
@@ -16,6 +18,7 @@ Phase 2 Core Development is complete for the approved FE01-FE12 scope. Product r
 - Final report, release document, rehearsal record, presentation deck, and
   four-layer validation packet are tracked.
 - Route-level code splitting resolved the previous entry-bundle advisory.
+- PR #58 Vietnamese UI localization and strict bearer-header verification are merged in application baseline `cce59d0`; PR #59 commits `962ceb1` and `daaeea6` are H2-approved, while H3 remains pending as recorded in `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
 
 ## External Submission Items
 

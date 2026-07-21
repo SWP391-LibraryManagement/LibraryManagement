@@ -6,6 +6,8 @@ const {
 } = require('../utils/libraryBusinessTime');
 
 const MAX_ACTIVE_BORROWED_COPIES = 5;
+const APPROVED_MEMBER_DAILY_LIMIT = 5;
+const STANDARD_MEMBER_DAILY_LIMIT = 3;
 const LOAN_DAYS = 14;
 const RENEWAL_LIMIT = 1;
 const ACTIVE_BORROW_STATUSES = ['BORROWED', 'OVERDUE'];
@@ -127,11 +129,13 @@ function createBorrowingService({
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
-    if (eligibility.memberStatus !== 'APPROVED') {
-      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
-    }
-
     return eligibility;
+  }
+
+  function getDailyBorrowLimit(eligibility) {
+    return eligibility?.memberStatus === 'APPROVED'
+      ? APPROVED_MEMBER_DAILY_LIMIT
+      : STANDARD_MEMBER_DAILY_LIMIT;
   }
 
   // @spec FR-FE07-016 — block borrow/renew when member has an unpaid fine (>0) or an overdue active loan (BR-FE07-006, AF-FE07-001)
@@ -221,15 +225,42 @@ function createBorrowingService({
     }
   }
 
+  async function validateDailyBorrowLimit(userId, requestedCount, eligibility, mode = 'request') {
+    const businessDate = formatBusinessDate(clock());
+    const dailyLimit = getDailyBorrowLimit(eligibility);
+    const currentCount = mode === 'approval'
+      ? await borrowingRepository.countBorrowedCopiesOnDate?.(userId, businessDate) || 0
+      : await borrowingRepository.countRequestedCopiesOnDate?.(userId, businessDate) || 0;
+
+    if (currentCount + requestedCount > dailyLimit) {
+      throw errors.conflict(
+        'BORROW_DAILY_LIMIT_EXCEEDED',
+        `This account can borrow at most ${dailyLimit} copies per day.`
+      );
+    }
+
+    return dailyLimit;
+  }
+
+  async function listBorrowCandidates(filters = {}, actor) {
+    requireMember(actor);
+    const bookId = filters.bookId ? toPositiveInteger(filters.bookId, 'Book ID') : null;
+    const q = String(filters.q || '').trim();
+    return {
+      books: await borrowingRepository.listBorrowCandidates({ bookId, q, userId: actor.userId }),
+    };
+  }
+
   async function createBorrowRequest(input, actor, context = {}) {
     requireMember(actor);
 
     const userId = actor.userId;
     const copyIds = normalizeCopyIds(input.copyIds);
 
-    await ensureEligibleMember(userId);
+    const eligibility = await ensureEligibleMember(userId);
     await ensureNoBorrowingBlockers(userId);
     await validateBorrowLimit(userId, copyIds.length);
+    await validateDailyBorrowLimit(userId, copyIds.length, eligibility);
     await validateCopiesBorrowable(copyIds, userId);
 
     const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_CREATE', {
@@ -356,9 +387,15 @@ function createBorrowingService({
 
     const copyIds = borrowRequest.details.map((detail) => detail.copyId);
 
-    await ensureEligibleMember(borrowRequest.userId);
+    const eligibility = await ensureEligibleMember(borrowRequest.userId);
     await ensureNoBorrowingBlockers(borrowRequest.userId);
     await validateBorrowLimit(borrowRequest.userId, copyIds.length);
+    const dailyLimit = await validateDailyBorrowLimit(
+      borrowRequest.userId,
+      copyIds.length,
+      eligibility,
+      'approval'
+    );
     await validateCopiesBorrowable(copyIds, borrowRequest.userId);
 
     const approvalDate = clock();
@@ -373,6 +410,7 @@ function createBorrowingService({
       approvedBy: actor.userId,
       approvalDate,
       dueDate,
+      dailyLimit,
       auditLogRepository,
       auditEntry,
     });
@@ -385,13 +423,17 @@ function createBorrowingService({
       );
     }
 
+    if (approvalResult?.outcome === 'BORROW_DAILY_LIMIT_EXCEEDED') {
+      throw errors.conflict(
+        'BORROW_DAILY_LIMIT_EXCEEDED',
+        `This account can borrow at most ${dailyLimit} copies per day.`
+      );
+    }
+
     if (approvalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
-    if (approvalResult?.outcome === 'MEMBERSHIP_NOT_APPROVED') {
-      throw errors.forbidden('MEMBERSHIP_NOT_APPROVED', 'Approved membership is required to borrow books.');
-    }
 
     if (approvalResult?.outcome === 'BOOK_INACTIVE') {
       throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be borrowed.');
@@ -650,6 +692,7 @@ function createBorrowingService({
   }
 
   return {
+    listBorrowCandidates,
     createBorrowRequest,
     listMyBorrowRequests,
     listBorrowRequests,

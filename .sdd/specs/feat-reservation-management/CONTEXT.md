@@ -1,12 +1,12 @@
 # CONTEXT.md - FE08 Reservation Management
 
-# Version: 0.2.2
+# Version: 0.2.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-21
 
 # Feature folder: `.sdd/specs/feat-reservation-management/`
 
@@ -125,7 +125,7 @@ Potential issue to review:
 | Q-FE08-007 | No eligible queue entry returns no selection and leaves copy/reservation state unchanged. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-008 | FE10 notification failure preserves the committed hold and writes a failure audit; no automatic retry worker is in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-009 | Notification/expiry timestamps survive terminal transitions; only cancelled rows have `CancelledAt`. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE08-011 | Option A: a protected member-only candidate API returns a six-field redacted row per active-book `BORROWED`/`RESERVED` copy; search and pagination are server-owned and `POST /api/reservations { copyId }` remains authoritative. | FE08 design approval 2026-07-19 | APPROVED |
+| Q-FE08-011 | Option A: a protected member-only candidate API returns a seven-field redacted row per active-book `BORROWED`/`RESERVED` copy, including member-scoped `hasActiveReservation`; search and pagination are server-owned, already-reserved copies remain visible with duplicate action disabled, and `POST /api/reservations { copyId }` remains authoritative. | FE08 design approval 2026-07-19; member UI clarification 2026-07-21 | APPROVED |
 
 ---
 

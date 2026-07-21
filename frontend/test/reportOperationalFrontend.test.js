@@ -18,14 +18,17 @@ test('FE12 reports use shared toolbar and table patterns', async () => {
   }
 });
 
-test('FE12 report API and filter contracts remain unchanged', async () => {
+test('FE12 report pages submit complete canonical search and filter contracts', async () => {
   const borrowing = await readFile(new URL(reportPages[0], import.meta.url), 'utf8');
   const inventory = await readFile(new URL(reportPages[1], import.meta.url), 'utf8');
   const users = await readFile(new URL(reportPages[2], import.meta.url), 'utf8');
 
-  assert.match(borrowing, /reportApi\.borrowing\(buildDateRangeReportParams\(from, to\)\)/);
-  assert.match(inventory, /reportApi\.inventory\(buildInventoryReportParams\(selectedCategoryId\)\)/);
-  assert.match(users, /reportApi\.users\(buildDateRangeReportParams\(from, to\)\)/);
+  assert.match(borrowing, /buildBorrowingReportParams/);
+  assert.match(inventory, /buildInventoryReportParams/);
+  assert.match(users, /buildUserReportParams/);
+  for (const source of [borrowing, inventory, users]) {
+    assert.doesNotMatch(source, /Đã tải dữ liệu|Dữ liệu báo cáo đã được cập nhật/);
+  }
 });
 
 test('FE12 report pages consume the deterministic metrics and rows envelope', async () => {

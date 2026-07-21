@@ -2,6 +2,7 @@ const express = require('express');
 const { createBorrowingController } = require('../controllers/borrowingController');
 const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
 const {
+  listBorrowCandidatesValidators,
   createBorrowRequestValidators,
   listBorrowRequestsValidators,
   memberHistoryValidators,
@@ -16,6 +17,14 @@ function createBorrowingRoutes({ authService, borrowingService } = {}) {
   const router = express.Router();
   const controller = createBorrowingController(borrowingService);
   const authenticate = createAuthenticate(authService);
+
+  router.get(
+    '/borrow-requests/candidates',
+    authenticate,
+    requireAnyRole('MEMBER'),
+    listBorrowCandidatesValidators,
+    controller.listCandidates
+  );
 
   router.post(
     '/borrow-requests',

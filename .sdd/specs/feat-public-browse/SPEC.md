@@ -2,23 +2,29 @@
 
 # Version: 0.3.1
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H2-APPROVED, H3 PENDING
 
 # Owner: Dung
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-20
 
 # Feature ID: FE01
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
+> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1/2
+> baseline. The bounded responsive HomePage addendum is locally implemented but
+> has H2 approval and remains pending H3 review before integration.
 > `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > are authoritative for current implementation state. Older `Not Started`,
 > `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
 > historical planning/evidence snapshots, not the current delivery state.
 
 > Source of truth for FE01 Public / Browse. Revision v0.3.0 is approved as the baseline after its availability dependency was made explicit.
+
+> Responsive addendum boundary: the mobile navigation and narrow-screen layout
+> requirement below is approved for local follow-up work, but is not part of the
+> integrated baseline until H3 acceptance is recorded.
 
 ---
 
@@ -84,7 +90,8 @@ The feature can only start when:
 1. Guest opens the public home page.
 2. The system loads public navigation, search entry points, and the recent public books using the default browse ordering.
 3. The system displays login/register links for member-only actions.
-4. The system does not require authentication.
+4. At supported mobile widths, the system keeps the same browse and account/member actions reachable through an accessible navigation menu.
+5. The system does not require authentication.
 
 ### MF-FE01-002: Search Books
 

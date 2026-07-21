@@ -110,6 +110,7 @@ export default function BorrowingHistoryPage() {
 
       <DataTable
         caption="Lịch sử mượn sách"
+        className="member-history-table"
         headers={['Sách', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
         loading={loading}
         isEmpty={rows.length === 0}

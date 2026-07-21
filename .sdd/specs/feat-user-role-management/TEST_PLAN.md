@@ -73,9 +73,9 @@ User administration, role listing, role assignment/revocation, account status ma
 - Distinct-header server pagination, stable `RequestDate DESC, RequestId DESC` order, matching count/data filters, and safe array grouping without comma splitting.
 - Dedicated safe request detail with deterministic `400 VALIDATION_ERROR` and `404 BORROW_REQUEST_NOT_FOUND`.
 - FE07 remains the only approve/reject owner; every non-`PENDING` direct mutation returns `409 BORROW_REQUEST_NOT_PENDING` without success writes/audit.
-- Frontend server pagination, authoritative detail loading, safe all-page CSV export, terminal controls, and failure preservation.
+- Frontend server pagination, authoritative detail loading, safe all-page DOCX export, terminal controls, and failure preservation.
 - Evidence-only Admin Dashboard service/route/browser coverage for FR-FE11-031 without production redesign.
-- Feature-specific Playwright coverage for Admin access, Librarian update/deactivation, Permissions, request pagination/detail/terminal behavior, and CSV.
+- Feature-specific Playwright coverage for Admin access, Librarian update/deactivation, Permissions, request pagination/detail/terminal behavior, and DOCX.
 
 ## 4. E2E / Manual Acceptance Flow
 
@@ -83,7 +83,7 @@ User administration, role listing, role assignment/revocation, account status ma
 - Admin updates Librarian fields and deactivates an `ACTIVE`/`LOCKED` fixture using the loaded effective version.
 - Admin assigns/removes role.
 - Admin reviews Dashboard operational summaries and canonical Request Management across more than one server page.
-- Pending requests expose FE07-owned actions; terminal requests remain view-only; CSV contains all filtered pages safely.
+- Pending requests expose FE07-owned actions; terminal requests remain view-only; DOCX contains all filtered pages safely.
 - Non-admin cannot access admin screens/actions.
 - Audit log shows admin action.
 

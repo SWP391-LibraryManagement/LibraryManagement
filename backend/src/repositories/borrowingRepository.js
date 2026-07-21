@@ -189,6 +189,66 @@ function mapBorrowRequests(rows) {
   return Array.from(requestsById.values());
 }
 
+async function listBorrowCandidates({ bookId = null, q = '', userId }) {
+  const request = (await getPool()).request().input('UserId', sql.Int, userId);
+  const where = ["b.Status = 'ACTIVE'"];
+
+  if (bookId) {
+    request.input('BookId', sql.Int, bookId);
+    where.push('b.BookId = @BookId');
+  }
+  if (q) {
+    request.input('Search', sql.NVarChar(202), `%${q.replace(/[\\%_\[]/g, '\\$&')}%`);
+    where.push("(b.Title LIKE @Search ESCAPE '\\' OR COALESCE(a.AuthorName, '') LIKE @Search ESCAPE '\\')");
+  }
+
+  const result = await request.query(`
+    SELECT
+      b.BookId,
+      b.Title,
+      a.AuthorName,
+      c.CategoryName,
+      bc.CopyId,
+      bc.Barcode,
+      bc.Location
+    FROM Books b
+    LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
+    LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
+    INNER JOIN BookCopies bc ON b.BookId = bc.BookId
+    OUTER APPLY (
+      SELECT TOP 1 r.ReservationId, r.UserId, r.Status
+      FROM Reservations r
+      WHERE r.CopyId = bc.CopyId AND r.Status IN ('ACTIVE', 'NOTIFIED')
+      ORDER BY CASE WHEN r.Status = 'NOTIFIED' THEN 0 ELSE 1 END, r.ReservationId
+    ) claim
+    WHERE ${where.join(' AND ')}
+      AND (
+        (bc.Status = 'AVAILABLE' AND claim.ReservationId IS NULL)
+        OR (bc.Status = 'RESERVED' AND claim.Status = 'NOTIFIED' AND claim.UserId = @UserId)
+      )
+    ORDER BY b.Title, b.BookId, bc.CopyId;
+  `);
+
+  const books = new Map();
+  for (const row of result.recordset) {
+    if (!books.has(row.BookId)) {
+      books.set(row.BookId, {
+        bookId: row.BookId,
+        title: row.Title,
+        author: row.AuthorName || 'Không rõ tác giả',
+        category: row.CategoryName || 'Chưa phân loại',
+        copies: [],
+      });
+    }
+    books.get(row.BookId).copies.push({
+      copyId: row.CopyId,
+      barcode: row.Barcode,
+      location: row.Location || 'Chưa cập nhật',
+    });
+  }
+  return [...books.values()];
+}
+
 async function getMemberEligibility(userId) {
   const pool = await getPool();
   const result = await pool
@@ -282,6 +342,39 @@ async function countActiveBorrowedCopies(userId) {
     `);
 
   return result.recordset[0]?.ActiveCount || 0;
+}
+
+async function countRequestedCopiesOnDate(userId, businessDate) {
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('UserId', sql.Int, userId)
+    .input('BusinessDate', sql.Date, businessDate)
+    .query(`
+      SELECT COUNT(*) AS DailyCount
+      FROM BorrowRequests br
+      INNER JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
+      WHERE br.UserId = @UserId
+        AND br.RequestDate >= @BusinessDate
+        AND br.RequestDate < DATEADD(day, 1, @BusinessDate)
+        AND br.Status <> 'REJECTED'
+    `);
+  return result.recordset[0]?.DailyCount || 0;
+}
+
+async function countBorrowedCopiesOnDate(userId, businessDate) {
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('UserId', sql.Int, userId)
+    .input('BusinessDate', sql.Date, businessDate)
+    .query(`
+      SELECT COUNT(*) AS DailyCount
+      FROM BorrowRequests br
+      INNER JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
+      WHERE br.UserId = @UserId
+        AND bd.BorrowDate >= @BusinessDate
+        AND bd.BorrowDate < DATEADD(day, 1, @BusinessDate)
+    `);
+  return result.recordset[0]?.DailyCount || 0;
 }
 
 async function hasBlockingFine(userId) {
@@ -507,6 +600,7 @@ async function approveBorrowRequest({
   approvedBy,
   approvalDate,
   dueDate,
+  dailyLimit,
   auditLogRepository,
   auditEntry,
 }) {
@@ -569,7 +663,7 @@ async function approveBorrowRequest({
       `);
 
     const member = memberResult.recordset[0];
-    if (!member || !member.MemberId) {
+    if (!member) {
       await transaction.rollback();
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
@@ -577,11 +671,6 @@ async function approveBorrowRequest({
     if (member.UserStatus !== 'ACTIVE') {
       await transaction.rollback();
       return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
-    }
-
-    if (member.MemberStatus !== 'APPROVED') {
-      await transaction.rollback();
-      return { outcome: 'MEMBERSHIP_NOT_APPROVED' };
     }
 
     const fineResult = await new sql.Request(transaction)
@@ -734,6 +823,23 @@ async function approveBorrowRequest({
     if (activeCount + requestedCount > 5) {
       await transaction.rollback();
       return { outcome: 'BORROW_LIMIT_EXCEEDED' };
+    }
+
+    const dailyCountResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .input('ApprovalDate', sql.Date, approvalDate)
+      .query(`
+        SELECT COUNT(*) AS DailyCount
+        FROM BorrowRequests br WITH (HOLDLOCK)
+        INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK) ON br.RequestId = bd.RequestId
+        WHERE br.UserId = @UserId
+          AND bd.BorrowDate >= @ApprovalDate
+          AND bd.BorrowDate < DATEADD(day, 1, @ApprovalDate)
+      `);
+
+    if (Number(dailyCountResult.recordset[0]?.DailyCount || 0) + requestedCount > dailyLimit) {
+      await transaction.rollback();
+      return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED' };
     }
 
     await new sql.Request(transaction)
@@ -986,9 +1092,12 @@ async function renewBorrowDetail({ borrowDetailId, newDueDate, auditLogRepositor
 }
 
 module.exports = {
+  listBorrowCandidates,
   getMemberEligibility,
   findBorrowabilityByCopyIds,
   countActiveBorrowedCopies,
+  countRequestedCopiesOnDate,
+  countBorrowedCopiesOnDate,
   hasBlockingFine,
   hasOverdueActiveLoans,
   hasReservationConflict,

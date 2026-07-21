@@ -319,7 +319,7 @@ function createAuthService({
     const passwordHash = await hashPassword(password);
     const createdUser = await userRepository.createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName });
 
-    const expiresInMinutes = env.emailVerificationTtlHours * 60;
+    const expiresInMinutes = env.emailVerificationTtlMinutes;
     const { otp, record } = await createOtpToken(
       createdUser.userId,
       'EMAIL_VERIFY',
@@ -398,7 +398,7 @@ function createAuthService({
     let otp = null;
 
     if (user && user.status !== 'ACTIVE') {
-      const expiresInMinutes = env.emailVerificationTtlHours * 60;
+      const expiresInMinutes = env.emailVerificationTtlMinutes;
       const result = await createOtpToken(
         user.userId,
         'EMAIL_VERIFY',

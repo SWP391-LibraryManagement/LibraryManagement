@@ -5,9 +5,9 @@ Implementation State: COMPLETE
 
 Owner: Dung
 
-Updated: 2026-07-19
+Updated: 2026-07-21
 
-Workflow State: SPEC v0.4.1 normalized; historical T001-T011 evidence remains separate and FE09-T012 through FE09-T021 are agent-side complete
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
 ---
 
@@ -102,6 +102,12 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - GREEN: the UI sends trimmed `q`, optional non-`ALL` status, page, and limit; renders only server-returned rows; consumes `total`/`totalPages`; and labels page-scoped KPIs truthfully.
   - Verify: focused frontend 6/6, FE09 Playwright 1/1, full frontend 146/146, lint/build, complete isolated browser suite 3/3, and PR CI run `29680600893` pass on `dfe45ae`.
   - DoD: `TD-004` is resolved without changing fine mutations, backend contracts, schema, or Phase 1 policy.
+
+- [x] **FE09-T022 - Connect Librarian fine workflow selection.**
+  - Maps to: FR-FE09-018, AC-FE09-016, NFR-FE09-UX-001/002.
+  - Files: `frontend/src/page/FineManagement.jsx`, `frontend/src/styles/fine-management.css`, `frontend/test/fineManagementFrontend.test.js`, FE09 spec/evidence files.
+  - GREEN: remove the redundant process notice; carry one canonical fine from calculation/list selection into collection or paid reconciliation; reject payment steps without an `UNPAID` selection; retain mutation-returned state across list pagination/filter boundaries.
+  - DoD: the four Librarian fine sections operate on the same server-owned fine lifecycle and preserve FE07/FE12 status integration.
 
 ## Validation Status
 

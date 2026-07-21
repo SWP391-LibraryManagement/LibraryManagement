@@ -181,13 +181,14 @@ function createInventoryService({ inventoryRepository, auditLogRepository } = {}
     }
   }
 
-  // @spec FR-FE06-001 FR-FE06-008 FR-FE06-009 FR-FE06-024
+  // @spec FR-FE06-001 FR-FE06-008 FR-FE06-009 FR-FE06-024 FR-FE06-025
   async function listInventory(filters = {}, actor) {
     requireStaff(actor);
     const page = filters.page === undefined ? 1 : toPositiveInteger(filters.page, 'Page');
     const limit = filters.limit === undefined ? 20 : toPositiveInteger(filters.limit, 'Limit');
     if (limit > 100) throw errors.badRequest('VALIDATION_ERROR', 'Limit must be between 1 and 100.');
     const normalized = {
+      q: filters.q === undefined ? undefined : String(filters.q).trim(),
       bookId: filters.bookId === undefined ? undefined : toPositiveInteger(filters.bookId, 'Book ID'),
       status: filters.status === undefined ? undefined : normalizeStatus(filters.status),
       barcode: filters.barcode === undefined ? undefined : normalizeBarcode(filters.barcode),

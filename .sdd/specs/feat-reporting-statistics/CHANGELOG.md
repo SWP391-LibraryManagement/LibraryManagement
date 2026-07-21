@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-21 - Report Search And Filter Completion
+
+- Added server-side `q` search to all three staff reports and exposed the approved filters in the Librarian/Admin UI.
+- Changed user-detail ordering to increasing `UserId` and removed redundant successful-load notices.
+- Added FE12 requirements and tests for combined search/filter behavior and canonical cross-feature reporting data.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

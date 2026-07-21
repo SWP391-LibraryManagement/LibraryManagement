@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.4.4
+# Version: 0.5.0
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -305,7 +305,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
 - FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
 - FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries.
-- FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/export controls and view detail.
+- FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/DOCX-export controls and view detail; export shall include every server page matching the frozen filters and only the approved request projection.
 - FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
 - FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revalidate the active acting Admin inside the source transaction, revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery only after commit.
 - FR-FE11-037: IF FE10 setup delivery fails during create or resend, FE11 shall preserve the committed `INACTIVE` account/token state and return only safe `FAILED` delivery status.
@@ -513,6 +513,7 @@ The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, t
 - NFR-FE11-UX-001: Validation errors must be clear and explain what went wrong (e.g., "Email already exists", "Password too weak").
 - NFR-FE11-UX-002: Confirmation dialogs must appear before destructive actions (deactivate, revoke role).
 - NFR-FE11-UX-003: User list must display these columns: email, name, status, roles, last login, and created date.
+- NFR-FE11-UX-004: The Admin sidebar account email shall stay on one line with ellipsis and a full-value tooltip, and Admin data exports shall use valid `.docx` files rather than CSV downloads. Exported tables shall use landscape pages, fixed proportional column widths, compact readable text, localized statuses, and short Vietnamese dates.
 
 ---
 
@@ -702,7 +703,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Email case-sensitivity for uniqueness is decided.
 - [x] Role hierarchy and multiple role support are confirmed.
 - [x] User data retention policy after deactivation is defined.
-- [ ] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed; migration is required before implementation.
+- [x] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed by the merged FE11 finalization migration and Phase 2 exit evidence.
 - [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
 - [x] FE02, FE03 dependencies are checked for conflicts.
 - [x] Every acceptance criterion can become a test.

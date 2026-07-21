@@ -7,7 +7,7 @@ Owner: Nhat
 
 Updated: 2026-07-19
 
-Workflow State: FE08-T028 through FE08-T039 are agent-side complete; final repository/human integration remains open
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
 ---
 
@@ -148,7 +148,7 @@ Workflow State: FE08-T028 through FE08-T039 are agent-side complete; final repos
 ### 5.1 Pending V0.4.2 Validation
 
 - [x] FE08-T028 through FE08-T032 focused tests pass: backend/shared boundary 77/77 and frontend 9/9.
-- [x] `npm.cmd run trace:enforce` passes with FE08 coverage 28/28.
+- [x] `npm.cmd run trace:enforce` passes with FE08 coverage 29/29.
 - [x] `git diff --check` passes.
 - [x] Nhat confirmed human review of the normalized contract on 2026-07-17.
 
@@ -157,7 +157,7 @@ Workflow State: FE08-T028 through FE08-T039 are agent-side complete; final repos
 - [x] FE08-T036 backend route and SQL tests pass: focused backend `23/23`; SQL aggregate `9/9` suites, `69/69` tests.
 - [x] FE08-T037 current frontend tests `149/149`, lint, and build pass with no `DEMO_RESERVABLE` reference.
 - [x] FE08-T038 isolated browser acceptance passes: focused `1/1`; full Playwright `4/4` on `4185/3101`.
-- [x] FE08-T039 full regression, traceability, safety, and evidence gates pass; final H3, merge, and post-merge `main` CI remain open.
+- [x] FE08-T039 full regression, traceability, safety, and evidence gates pass; final H3, merge, and post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
 ## 6. Traceability
 

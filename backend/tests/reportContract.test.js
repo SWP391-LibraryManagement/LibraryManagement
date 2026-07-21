@@ -17,8 +17,13 @@ function responseCodes(endpoint) {
   return Object.keys(document.paths[endpoint].get.responses);
 }
 
+function parameter(endpoint, name) {
+  return document.paths[endpoint].get.parameters.find((item) => item.name === name);
+}
+
 test('OpenAPI documents the implemented FE12 report filters', () => {
   expect(parameterNames('/api/reports/borrowing')).toEqual([
+    'q',
     'fromDate',
     'toDate',
     'status',
@@ -28,6 +33,7 @@ test('OpenAPI documents the implemented FE12 report filters', () => {
     'limit',
   ]);
   expect(parameterNames('/api/reports/inventory')).toEqual([
+    'q',
     'categoryId',
     'bookId',
     'status',
@@ -36,6 +42,7 @@ test('OpenAPI documents the implemented FE12 report filters', () => {
     'limit',
   ]);
   expect(parameterNames('/api/reports/users')).toEqual([
+    'q',
     'fromDate',
     'toDate',
     'roleId',
@@ -76,10 +83,10 @@ test('OpenAPI report filters use the exact runtime status enums', () => {
     membership: ['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE'],
   };
   const openApiStatuses = {
-    borrowing: document.paths['/api/reports/borrowing'].get.parameters[2].schema.enum,
-    copy: document.paths['/api/reports/inventory'].get.parameters[2].schema.enum,
-    user: document.paths['/api/reports/users'].get.parameters[3].schema.enum,
-    membership: document.paths['/api/reports/users'].get.parameters[4].schema.enum,
+    borrowing: parameter('/api/reports/borrowing', 'status').schema.enum,
+    copy: parameter('/api/reports/inventory', 'status').schema.enum,
+    user: parameter('/api/reports/users', 'status').schema.enum,
+    membership: parameter('/api/reports/users', 'membershipStatus').schema.enum,
   };
   const validatorStatuses = {
     borrowing: borrowingStatuses,

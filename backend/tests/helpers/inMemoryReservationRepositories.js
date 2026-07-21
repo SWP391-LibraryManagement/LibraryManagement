@@ -128,7 +128,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       );
     },
 
-    async listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) {
+    async listReservationCandidates({ q = '', page = 1, limit = 20, userId } = {}) {
       const normalizedQuery = String(q).trim().toLowerCase();
       const rows = copies
         .map((copy) => ({ copy, book: getBook(copy.bookId) }))
@@ -154,6 +154,11 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
           activeReservationCount: reservations.filter(
             (reservation) => reservation.copyId === copy.copyId && reservation.status === 'ACTIVE'
           ).length,
+          hasActiveReservation: reservations.some((reservation) => (
+            reservation.copyId === copy.copyId
+            && reservation.userId === Number(userId)
+            && ['ACTIVE', 'NOTIFIED'].includes(reservation.status)
+          )),
         }));
 
       const start = (Number(page) - 1) * Number(limit);
@@ -268,8 +273,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
           return (
             reservation.copyId === Number(copyId) &&
             reservation.status === 'ACTIVE' &&
-            user?.status === 'ACTIVE' &&
-            memberStatuses.get(reservation.userId) === 'APPROVED'
+            user?.status === 'ACTIVE'
           );
         })
         .sort(

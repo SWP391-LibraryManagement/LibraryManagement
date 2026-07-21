@@ -132,3 +132,11 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
+
+## 10. Search And Filter Follow-up
+
+- Verify all three report endpoints accept a trimmed parameterized `q` and combine it with report-specific filters.
+- Verify borrowing search covers title, barcode, account identity, and user ID without SQL interpolation.
+- Verify inventory search covers title, barcode, location, and book ID while preserving low-stock calculations.
+- Verify user search covers safe non-PII identifiers/status fields and detail rows use `UserId ASC`.
+- Verify successful loading renders no redundant “Đã tải dữ liệu” notice while failures remain visible.

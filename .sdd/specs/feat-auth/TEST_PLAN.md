@@ -1,8 +1,8 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.3
+Version: 0.3.4
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-20
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
 Feature IDs: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -26,6 +26,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 ## 3. API / Integration Test Targets
 
 - `POST /auth/register`: happy path, duplicate email with no additional persistence/delivery, weak password with no persistence, invalid input.
+- FE02/FE10 OTP boundary: registration and password-reset flows submit exactly one FE02-bound requester call with `AuthToken` source ID and token-ID idempotency; direct duplicate delivery is rejected while `CHANGE_PASSWORD_OTP` remains FE02-owned.
 - `POST /auth/verify-email`: canonical email/OTP and legacy-token happy paths, invalid OTP, expired OTP, and credential consumption.
 - `POST /auth/resend-verification`: happy path, invalid user/state.
 - `POST /auth/login`: happy path, wrong password, inactive/unknown public-envelope parity, locked account, and automatic unlock.
@@ -47,15 +48,15 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
-- Focused API evidence: `backend/tests/authRoutes.test.js` passes 31/31, including TD-018/TD-020 regressions and repeated reset-token event/idempotency rotation.
+- Focused API evidence: `backend/tests/authRoutes.test.js` passes 32/32, including TD-018/TD-020 regressions, repeated reset-token event/idempotency rotation, and malformed Bearer-header rejection.
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
-- Focused FE02/FE10/migration/integration evidence passes 170/170; full backend passes 916/916 with configured coverage.
+- Current full backend evidence passes 917/917 with configured coverage; the historical FE02/FE10 focused slice passed 170/170 before the later Bearer-header regression was added.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
 - Configured Jest global coverage thresholds pass for statements, branches, functions, and lines.
-- Human acceptance, PR integration, and exact post-merge `main` CI passed for the injected FE10 delivery boundary; real SMTP remains out of scope.
+- Human acceptance, PR integration, and exact post-merge `main` CI passed for the injected FE10 delivery boundary; real SMTP delivery was later observed PASS in live run `c6e0c46421f0`.
 
 ## 7. Required Commands / Evidence Before Merge
 

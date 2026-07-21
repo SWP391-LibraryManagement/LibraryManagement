@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-21 - Replace Admin CSV exports with DOCX
+
+- Replaced Library, Borrowing, and Request Management CSV controls with valid Word `.docx` downloads.
+- Preserved frozen-filter all-page request export and the approved safe request projection.
+- Kept long Admin account emails on one line with ellipsis and a full-value tooltip.
+- Formatted DOCX tables in landscape mode with fixed proportional widths, compact cells, localized statuses, and short dates to prevent narrow-column distortion.
+
+## 2026-07-20 - Post-integration governance status
+
+- PR #54 merged as `c988af1` with foundation CI success; the earlier H2-Ready wording below is a historical candidate snapshot.
+- Current `main@cce59d0` includes the merged PR #57/#58 follow-up; current-head CI and staging evidence are recorded in `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
+- Published `v1.0.2` remains the tagged baseline; current `main@cce59d0` is an untagged application baseline, not a pre-authorized `v1.0.3` candidate. Any future `v1.0.3` must use the later reviewed post-reconciliation `main` SHA after H2, H3, and exact post-merge CI.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

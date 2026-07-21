@@ -1,12 +1,12 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.4.4
+# Version: 0.5.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-21
 
 # Feature ID: FE08
 
@@ -71,7 +71,7 @@ The feature can only start when:
 
 - PRE-FE08-001: The actor is authenticated; Member may create/cancel/view own reservations, and Librarian/Admin may view/process reservations.
 - PRE-FE08-002: A member creating a reservation has `Users.Status = ACTIVE`.
-- PRE-FE08-003: A member creating a reservation has canonical `Members.Status = APPROVED`.
+- PRE-FE08-003: A member creating a reservation has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 approval is not required.
 - PRE-FE08-004: The requested physical copy exists and its parent book exists.
 - PRE-FE08-005: Phase 1 policy is fixed: target `CopyId`, maximum 3 open reservations (`ACTIVE` or `NOTIFIED`), a 2-calendar-day notified hold, manual queue processing, and queue order by `ReservedAt ASC, ReservationId ASC`.
 - PRE-FE08-006: Candidate catalog access requires an authenticated `MEMBER`; FE01 public browse and FE06 staff inventory contracts are not widened.
@@ -162,7 +162,7 @@ The feature can only start when:
 - BR-FE08-002: A member can create reservations only for their own account.
 - BR-FE08-003: A member may cancel only their own reservation while its status is `ACTIVE` or `NOTIFIED`.
 - BR-FE08-004: Librarian/admin can view and process all reservation records.
-- BR-FE08-005: A member must have `Users.Status = ACTIVE` and canonical `Members.Status = APPROVED` to reserve.
+- BR-FE08-005: A member must have the `MEMBER` role and `Users.Status = ACTIVE` to reserve; FE04 status does not block FE08.
 - BR-FE08-006: A member cannot create a duplicate open reservation for the same reservation target; both `ACTIVE` and `NOTIFIED` reservations are open, while `FULFILLED`, `CANCELLED`, and `EXPIRED` are terminal.
 - BR-FE08-007: A reservation can be created only for an unavailable physical copy; `AVAILABLE`, `DAMAGED`, `LOST`, and inactive copies are rejected.
 - BR-FE08-008: The reservation queue must use stable order `ReservedAt ASC, ReservationId ASC`; Phase 1 defines no priority override.
@@ -197,7 +197,7 @@ The feature can only start when:
 
 - FR-FE08-011: IF the supplied member ID does not exist when a reservation is requested, the system shall reject the request and return a not-found error. (Source: EC-FE08-001)
 - FR-FE08-012: IF the member account status is inactive when a reservation is requested, the system shall reject the reservation. (Source: EC-FE08-002, BR-FE08-005)
-- FR-FE08-013: IF the member's membership status is not approved when a reservation is requested, the system shall reject the reservation. (Source: EC-FE08-003, BR-FE08-005, PRE-FE08-003)
+- FR-FE08-013: IF the member account is active and has the `MEMBER` role, the system shall allow eligibility evaluation without requiring FE04 approval. (Source: BR-FE08-005, PRE-FE08-003)
 - FR-FE08-014: IF the requested physical copy does not exist when a reservation is requested, the system shall reject the request and return a not-found error. (Source: EC-FE08-004, PRE-FE08-004)
 - FR-FE08-015: IF a member already holds 3 open reservations in `ACTIVE` or `NOTIFIED` state when a new reservation is requested, the system shall reject the request and report that the reservation limit is reached. (Source: Q-FE08-003, MF-FE08-001 step 3)
 - FR-FE08-016: IF a member attempts to cancel a reservation that they do not own, the system shall deny the action and return a forbidden error. (Source: EC-FE08-006, BR-FE08-003)
@@ -233,7 +233,7 @@ The feature can only start when:
 - AC-FE08-012: Given a copy has active reservation priority, when another member attempts to borrow it, then the operation is denied and queue order is preserved.
 - AC-FE08-013: Given omitted reservation-list pagination, when staff lists reservations, then `page = 1` and `limit = 20` are used; invalid supplied values are rejected without normalization.
 - AC-FE08-014: Given a reservation that reached `NOTIFIED`, when it later becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, then its original `NotifiedAt` and `ExpiresAt` remain unchanged; only `CANCELLED` has a non-null `CancelledAt`.
-- AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, and `activeReservationCount`; barcode, location, owner, email, timestamps, and version are absent.
+- AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount`, and the member-scoped boolean `hasActiveReservation`; barcode, location, owner, email, timestamps, and version are absent.
 - AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
 
 ---
@@ -263,7 +263,7 @@ The feature can only start when:
 | ------ | ----------------------- |
 | Users | Identifies member, librarian, admin. |
 | UserRoles | Checks permissions. |
-| Members | Canonical FE04 membership eligibility projection; only `APPROVED` passes. |
+| Users/UserRoles | Canonical FE02/FE11 account and role authorization; active `MEMBER` passes. |
 | Books | Provides book information for reservation display. |
 | BookCopies | Provides copy status and reservation target in current SQL. |
 | Reservations | Stores reservation records and queue order. |
@@ -283,7 +283,7 @@ The feature can only start when:
 | expiresAt | datetime | Required after first notification | Server sets `NotifiedAt + 2 calendar days`; immutable thereafter and preserved in `NOTIFIED`, `FULFILLED`, `EXPIRED`, or notified-then-cancelled rows. Null only when the reservation never reached `NOTIFIED`. |
 | notifiedAt | datetime | Required after first notification | Server timestamp for the original hold notification; immutable and preserved after every terminal transition. Null only when the reservation never reached `NOTIFIED`. |
 | cancelledAt | datetime | Required only when `status = CANCELLED` | Server timestamp; never client-supplied. Must be null for every non-cancelled state. |
-| candidate projection | read-only DTO | Yes for candidate reads | Exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus` (`BORROWED` or `RESERVED`), and `activeReservationCount`; no staff-only or reservation-owner fields. |
+| candidate projection | read-only DTO | Yes for candidate reads | Exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus` (`BORROWED` or `RESERVED`), `activeReservationCount`, and member-scoped `hasActiveReservation`; no staff-only or reservation-owner fields. |
 
 ### 10.3 State Model & Transition Rules (Reservation)
 
@@ -376,6 +376,7 @@ stateDiagram-v2
 - NFR-FE08-SEC-002: Members must not view or cancel other members' reservations.
 - NFR-FE08-SEC-003: Librarian/admin permissions must be checked on the server.
 - NFR-FE08-SEC-004: Candidate reads must require the `MEMBER` role and must not expose barcode, location, reservation owner, member email, reservation timestamps, rowversion, or other staff-only metadata.
+- NFR-FE08-UX-003: The member candidate list shall keep every eligible `BORROWED` or `RESERVED` copy visible, mark a member-owned `ACTIVE` or `NOTIFIED` reservation as `Đã đặt chỗ`, disable duplicate creation for that copy, and not show routine synchronization-success banners.
 
 ### 12.2 Transaction Integrity
 
@@ -441,7 +442,7 @@ This feature does not include:
 | Q-FE08-008 | A failed FE10 request leaves the committed hold in place and writes a failure audit; no automatic retry worker is included in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-009 | `NotifiedAt` and `ExpiresAt` are immutable history after notification and survive fulfillment, expiration, or cancellation; `CancelledAt` belongs only to cancelled rows. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE08-010 | `queuePosition` is derived from the canonical queue order and only `POST /api/reservations/process-queue` is the Phase 1 queue-processing endpoint. | Queue contract normalization 2026-07-17 | APPROVED |
-| Q-FE08-011 | Candidate selection uses protected member-only `GET /api/reservations/candidates`; it returns one safe row per eligible physical copy, keeps FE01/FE06 boundaries unchanged, and preserves `POST /api/reservations { copyId }`. | User approval `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN`, 2026-07-19 | APPROVED |
+| Q-FE08-011 | Candidate selection uses protected member-only `GET /api/reservations/candidates`; it returns one safe row per eligible physical copy plus member-scoped `hasActiveReservation`, keeps already-reserved copies visible with duplicate action disabled, keeps FE01/FE06 boundaries unchanged, and preserves `POST /api/reservations { copyId }`. | User approval `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN`, 2026-07-19; member UI clarification 2026-07-21 | APPROVED |
 
 ---
 
@@ -478,7 +479,7 @@ This feature does not include:
 | FR-FE08-010 | UC38 | FT39 | Ready for review |
 | FR-FE08-011 | UC36 (EC-FE08-001) | FE08-T11 member-not-found rejection test | Ready for review |
 | FR-FE08-012 | UC36 (EC-FE08-002) | rejects reservation when member account is inactive (FR-FE08-012) | Ready for review |
-| FR-FE08-013 | UC36 (EC-FE08-003) | FT37; rejects reservation when membership is not approved (FR-FE08-013) | Ready for review |
+| FR-FE08-013 | UC36 | reservationRoutes.test.js > "allows an active MEMBER to reserve without FE04 approval" | Ready for review |
 | FR-FE08-014 | UC36 (EC-FE08-004) | rejects reservation when the copy does not exist (FR-FE08-014) | Ready for review |
 | FR-FE08-015 | UC36 (Q-FE08-003) | route and SQL tests count `ACTIVE` plus `NOTIFIED` toward the three-open limit | Automated pass; human review pending |
 | FR-FE08-016 | UC37 (EC-FE08-006) | member cancels only their own `ACTIVE` or `NOTIFIED` reservation (FR-FE08-016) | Ready for review |

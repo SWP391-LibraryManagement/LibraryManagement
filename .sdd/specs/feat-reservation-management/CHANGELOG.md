@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-21 - Align reservation eligibility with member role
+
+- Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
+- Queue processing now skips inactive accounts without consulting FE04 application status.
+- Clarified that Librarian/Admin processes the reservation queue when a copy becomes available.
+- Kept borrowed/reserved candidates visible, added member-scoped `hasActiveReservation`, disabled duplicate reservation actions, and removed routine synchronization banners.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

@@ -15,8 +15,11 @@ Integration evidence: PR #48 merged as `4d02fc4`; post-merge `main` CI
 `29696519912` passed; staging workflow `29696612260` passed its quality gate,
 both deployments, and the SQL-aware six-check smoke.
 
-Next canonical source release: `v1.0.2`, created only after H3 approval, merge
-to `main`, and exact post-merge CI pass.
+At the time of this report, `v1.0.2` was the next canonical source release.
+It is now published at `c988af1`; `main@cce59d0` is the validated post-release
+application baseline after PR #57/#58, not a pre-authorized `v1.0.3` release
+SHA. Any future `v1.0.3` must use the later reviewed post-reconciliation `main`
+SHA after H2, H3, and exact post-merge CI.
 
 ## Architecture and traceability
 
@@ -26,6 +29,9 @@ Azure App Service, and Azure SQL. All 12 feature packages remain at 100% FR
 traceability; route guards and backend authorization remain authoritative.
 
 ## Evidence summary
+
+The table below preserves the historical PR #48 Phase 3 snapshot. Its 916
+backend and 151 frontend test counts are not the current reconciliation totals.
 
 | Area | Observed result |
 | --- | --- |
@@ -39,6 +45,14 @@ traceability; route guards and backend authorization remain authoritative.
 | Azure staging | Frontend, health, SQL catalog, exact CORS allow/deny, and anonymous protected-route checks pass. |
 | Authenticated Azure | Live run `c6e0c46421f0` passed Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
 | SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
+
+Later evidence is tracked separately: remote application-baseline CI `29712597463`
+passed 917 backend tests and 171 frontend tests for `cce59d0`; published commit
+`31d4bba`, `962ceb1`, and `daaeea6` record the H2-approved reconciliation and
+responsive follow-up; the current correction passes 173 frontend tests and
+requires H3 review.
+Dedicated localized desktop/mobile visual acceptance and demonstration-video
+publication remain open.
 
 ## Live SQL and migration result
 

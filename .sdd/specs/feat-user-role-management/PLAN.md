@@ -249,7 +249,7 @@ Integration State: COMPLETE THROUGH B7
 
 ## 15. FE11 Finalization Batch
 
-Implementation State: WAVE A IMPLEMENTED LOCALLY; H2 PENDING
+Implementation State: WAVE A AND WAVE B INTEGRATED; HISTORICAL BATCH RECORD
 
 ### Approved Sources
 
@@ -262,7 +262,7 @@ Implementation State: WAVE A IMPLEMENTED LOCALLY; H2 PENDING
 
 1. Governance activation PR: contracts, tasks, validation commands, and debt state only.
 2. Wave A: schema/email synchronization, Librarian fields, transactional create/resend hardening, optimistic/no-op updates, atomic deactivation, FE07 serialization dependency, and Admin access hardening.
-3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, CSV, Dashboard evidence, and FE11 browser acceptance.
+3. Wave B: canonical Admin request list/detail reads, server pagination, FE07-owned terminal actions, DOCX export, Dashboard evidence, and FE11 browser acceptance.
 4. Documentation closeout: exact PR/merge/main-CI evidence and whole-feature B7 state.
 
 ### Core Contracts
@@ -278,15 +278,14 @@ Implementation State: WAVE A IMPLEMENTED LOCALLY; H2 PENDING
 
 ### Gates
 
-- Product work is blocked until the governance PR passes checks, receives H3, and merges into `main`.
-- Wave A and Wave B generated changes remain uncommitted until their H2 reviews.
-- Every PR requires H3 after checks and before merge.
-- Only the closeout PR may transition whole FE11 to `COMPLETE THROUGH B7`.
-- All finalization task checkboxes remain open at governance activation; this section records authorization, not implementation evidence.
+- Historical gate: product work was blocked until the governance PR passed checks, received H3, and merged into `main`.
+- Historical gate: Wave A and Wave B generated changes remained uncommitted until their H2 reviews.
+- Historical gate: every PR required H3 after checks and before merge.
+- PR #54 superseded the activation snapshot and transitioned the approved FE11 scope through integration; current evidence is recorded in `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
 
 ## 16. Final Governance Closeout
 
-Implementation State: H2-READY AFTER LOCAL VALIDATION
+Implementation State: COMPLETE - PR #54 INTEGRATED; PR #59 H2-APPROVED, RESPONSIVE FOLLOW-UP H3 PENDING
 
 ### Scope
 
@@ -316,7 +315,10 @@ npm.cmd run smoke:staging
 
 ### Review Boundary
 
-- Generated closeout changes remain uncommitted until H2 reviews the complete
-  diff and L1-L4 evidence.
-- H3, merge, exact post-merge `main` CI, and creation of `v1.0.2` remain
-  integration steps after local acceptance.
+- Human H2 approved the published reconciliation and responsive HomePage
+  correction commits `962ceb1` and `daaeea6` with their L1-L4 evidence on
+  2026-07-20.
+- H3 remains mandatory before merge.
+- H3, merge, and exact post-merge `main` CI are tracked by PR #59; `v1.0.2` is
+  already published at `c988af1`. Any future `v1.0.3` must use a later reviewed
+  `main` SHA after its own release gates.

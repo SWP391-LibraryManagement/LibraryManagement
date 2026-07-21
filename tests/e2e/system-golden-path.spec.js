@@ -107,7 +107,6 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   expect((await paidResponse.json()).fine.status).toBe('PAID');
 
   await page.goto(`${FRONTEND_URL}/reports/borrowing`);
-  await expect(page.getByText(/Dữ liệu báo cáo đã được cập nhật/i)).toBeVisible();
   const requestKpi = page.locator('.kpi-card').filter({ hasText: 'Tổng bản ghi' });
   await expect(requestKpi.getByText('1', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'output/playwright/system-golden-path-desktop.png' });
@@ -118,7 +117,7 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByText(/Dữ liệu báo cáo đã được cập nhật/i)).toBeVisible();
+  await expect(requestKpi.getByText('1', { exact: true })).toBeVisible();
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   );

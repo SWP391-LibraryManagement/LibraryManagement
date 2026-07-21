@@ -1,14 +1,14 @@
-const REQUEST_CSV_COLUMNS = [
-  'requestId',
-  'requestDate',
-  'status',
-  'memberUserId',
-  'memberName',
-  'memberEmail',
-  'memberPhoneNumber',
-  'itemCount',
-  'bookTitles',
-  'categories',
+export const REQUEST_DOCX_COLUMNS = [
+  { key: 'requestId', label: 'Mã yêu cầu' },
+  { key: 'requestDate', label: 'Ngày yêu cầu' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'memberUserId', label: 'Mã thành viên' },
+  { key: 'memberName', label: 'Tên thành viên' },
+  { key: 'memberEmail', label: 'Email' },
+  { key: 'memberPhoneNumber', label: 'Số điện thoại' },
+  { key: 'itemCount', label: 'Số lượng sách' },
+  { key: 'bookTitles', label: 'Tên sách' },
+  { key: 'categories', label: 'Thể loại' },
 ];
 
 export function buildRequestListParams(filters = {}, page = 1, limit = 20) {
@@ -43,7 +43,7 @@ export async function collectAllRequestRows(requestLoader, filters = {}) {
   return rows;
 }
 
-function requestCsvRow(request) {
+function requestDocumentRow(request) {
   return {
     requestId: request.requestId,
     requestDate: request.requestDate,
@@ -58,17 +58,6 @@ function requestCsvRow(request) {
   };
 }
 
-function escapeCsvCell(value) {
-  let text = value === undefined || value === null ? '' : String(value);
-  text = text.replace(/^(\s*)([=+\-@])/, "$1'$2");
-  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-export function buildRequestCsv(requests = []) {
-  const header = REQUEST_CSV_COLUMNS.join(',');
-  const rows = requests.map((request) => {
-    const row = requestCsvRow(request);
-    return REQUEST_CSV_COLUMNS.map((column) => escapeCsvCell(row[column])).join(',');
-  });
-  return [header, ...rows].join('\n');
+export function buildRequestDocumentRows(requests = []) {
+  return requests.map(requestDocumentRow);
 }

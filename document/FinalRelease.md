@@ -10,7 +10,9 @@ Project: SWP391 Library Management System
 
 Group/project code: `6-LMS`
 
-Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery integrated on `main`
+Release status: Phase 2 Core Development accepted; Phase 3 Polish and Delivery integrated on `main`.
+Published source release: `v1.0.2` at `c988af1`. The validated post-release application baseline is `cce59d0`; a future `v1.0.3` must point to the later reviewed `main` SHA after this reconciliation merges and exact post-merge CI passes.
+Current reconciliation status: H2-approved with H3 pending. Dedicated localized desktop/mobile visual acceptance and publication of a demonstration video/link remain open.
 
 ## I. Deliverable Package
 
@@ -26,7 +28,7 @@ This section lists the final source code, database scripts, documents, test evid
 | 6 | `README.md` | 1.0 | Main project overview, implemented scope, architecture, setup commands, test commands, staging notes, limitations, and security notes. |
 | 7 | `.sdd/constitution.md` | 0.1.2 | Project constitution defining approved stack, source-of-truth rules, core business rules, testing rules, and definition of done. |
 | 8 | `.sdd/shared_context.md` | 1.0.0 | Shared project context, actors, core modules, data entities, and Phase 1 baseline business decisions. |
-| 9 | `.sdd/test-plan.md` | 0.2.0 | Approved master test policy, coverage target, validation gate, test strategy, and readiness summary. |
+| 9 | `.sdd/test-plan.md` | 0.3.0 | Approved test policy with an H2-approved current coverage/readiness reconciliation for FE01-FE12. |
 | 10 | `.sdd/specs/feat-public-browse/` | Baseline 2026-07-17 | FE01 Public / Browse specification package. |
 | 11 | `.sdd/specs/feat-auth/` | Baseline 2026-07-17 | FE02 Authentication specification package. |
 | 12 | `.sdd/specs/feat-user-profile/` | Baseline 2026-07-17 | FE03 User Profile specification package. |
@@ -90,7 +92,8 @@ The project backlog is tracked through `.sdd/specs/feat-{name}/SPEC.md`, `PLAN.m
 
 | Item | Link / Location | Notes |
 | --- | --- | --- |
-| Tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.2` | Create only after H3 approval, merge to `main`, and exact post-merge CI pass. |
+| Published tagged source code | `https://github.com/SWP391-LibraryManagement/LibraryManagement/releases/tag/v1.0.2` | Published at `c988af1`; it predates the current `main` localization/auth-hardening commits. |
+| Post-release application baseline | `cce59d0` | PR #57/#58 product baseline validated by CI/staging; a future tag must use the later reviewed post-reconciliation `main` SHA. |
 | Demonstration video | `PENDING — not published` | The tracked deck and runbook are the reproducible local demonstration evidence. |
 | Staging frontend | `https://lemon-wave-04db51100.7.azurestaticapps.net` | Observed public frontend origin in the Phase 3 staging evidence. |
 | Staging backend health | `https://app-library-api-staging-nhat714.azurewebsites.net/health` | Observed `200` health endpoint in the Phase 3 staging evidence. |
@@ -530,15 +533,17 @@ Release limitation:
 | 5 | Uploaded avatar storage on staging App Service needs durable storage before production-scale deployment. |
 | 6 | Route-level code splitting resolves the prior entry-chunk advisory; total JavaScript remains a future optimization target if browser telemetry requires it. |
 | 7 | Staging is a student-credit environment, not a production SLA environment. |
+| 8 | Dedicated human desktop/mobile visual acceptance of the current Vietnamese localization reconciliation remains pending. |
+| 9 | The demonstration video/link is not published. |
 
 ### 14. Final Acceptance Checklist
 
 | Check | Status |
 | --- | --- |
-| Backend automated tests pass | Current reconciliation evidence: 916 tests across 53 suites. |
-| Frontend tests pass | Current closeout evidence: 152/152 tests. |
+| Remote application-baseline CI | Run `29712597463` passed 917 backend tests across 53 suites and 171 frontend tests for `cce59d0`. |
+| Fresh local reconciliation tests | H2-approved reviewed diff passed 917 backend tests across 53 suites and 172/172 frontend tests. |
 | Frontend lint and build pass | Passed after route-level code splitting; no entry-chunk warning. |
-| Browser golden path passes | 4/4 Playwright tests passed in 24.4 seconds for the synthetic local flow. |
+| Browser golden path passes | Fresh local reconciliation: 4/4 Playwright tests passed in 25.7 seconds for the synthetic flow. |
 | Coverage gate | Passed with more than 80% for configured metrics. |
 | Security dependency audit | No unresolved Critical/High production dependency findings. |
 | Traceability gate | All twelve feature specs report 100% FR tag coverage. |

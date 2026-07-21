@@ -1,5 +1,16 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-21 - Connect approval to borrowing allowance
+
+- Kept borrowing available to active `MEMBER` accounts without FE04 approval at a 3-copy daily limit.
+- Defined canonical `APPROVED` membership as the entitlement for a 5-copy daily limit consumed by FE07.
+- Updated the member-facing status and application benefits to show the current 3-or-5-copy daily allowance explicitly.
+
+## 2026-07-21 - Decouple membership applications from circulation authorization
+
+- Made FE04 application status independent from FE07 borrowing and FE08 reservation eligibility.
+- Active accounts with the `MEMBER` role can use circulation workflows without FE04 approval.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

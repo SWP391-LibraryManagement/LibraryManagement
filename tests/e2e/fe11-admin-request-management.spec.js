@@ -130,16 +130,18 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(pendingDialog.getByRole('button', { name: 'Từ chối' })).toBeVisible();
   await pendingDialog.getByRole('button', { name: 'Đóng' }).click();
 
+  const exportResponse = page.waitForResponse(
+    (response) => isRequestListResponse(response, { page: 1, limit: 100, status: 'PENDING' })
+  );
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Xuất CSV', exact: true }).click(),
+    page.getByRole('button', { name: /DOCX/, exact: true }).click(),
   ]);
-  const csv = readFileSync(await download.path(), 'utf8');
-  const csvLines = csv.split(/\r?\n/).filter(Boolean);
-  expect(csvLines).toHaveLength(22);
-  expect(csv).toContain(String(pendingRequestIds[0]));
-  expect(csv).toContain(String(pendingRequestIds.at(-1)));
-  expect(csv).not.toContain(`\"${completedRequestId}\"`);
+  expect((await exportResponse).status()).toBe(200);
+  expect(download.suggestedFilename()).toBe('requests.docx');
+  const docx = readFileSync(await download.path());
+  expect(docx.subarray(0, 2).toString()).toBe('PK');
+  expect(docx.length).toBeGreaterThan(1000);
 
   await page.getByLabel('Lọc trạng thái').selectOption('COMPLETED');
   const completedResponse = page.waitForResponse(

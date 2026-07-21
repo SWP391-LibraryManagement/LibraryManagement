@@ -71,9 +71,8 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
   const recovery = await readFile(new URL('../src/component/forgotpassword/BackgroundPanel.jsx', import.meta.url), 'utf8');
 
   assert.match(navigation, /label: 'Thư viện'/);
-  assert.doesNotMatch(navigation, /label: 'Home'/);
-  assert.match(layout, /aria-label="Thư viện"/);
-  assert.doesNotMatch(layout, />Home</);
+  assert.match(navigation, /label: 'Home'/);
+  assert.match(layout, /isMember \? 'Home' : 'Thư viện'/);
   assert.match(feedback, /aria-label="Đóng"/);
   assert.match(recovery, /Chào mừng trở lại/);
   assert.match(recovery, /Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện/);
@@ -115,7 +114,36 @@ test('librarian and report surfaces remove known English interface copy', async 
   assert.match(files.borrowingReport, /caption="Chi tiết báo cáo mượn trả"/);
   assert.match(files.inventoryReport, /caption="Danh sách sách sắp hết"/);
   assert.match(files.userReport, /caption="Tổng hợp thống kê người dùng"/);
-  assert.doesNotMatch(files.userReport, /User ID|Membership|User statistics/);
+  assert.doesNotMatch(files.userReport, /User ID|['">]Membership(?:\s|['"<])|User statistics/);
+});
+
+test('operational status controls render Vietnamese labels while preserving raw values', async () => {
+  const userManagement = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
+  const bookCopies = await readFile(new URL('../src/component/inventory/BookCopies.jsx', import.meta.url), 'utf8');
+  const inventoryFilter = await readFile(new URL('../src/component/inventory/Filter.jsx', import.meta.url), 'utf8');
+  const borrowRequests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
+  const borrowRequest = await readFile(new URL('../src/page/borrowing/BorrowRequestPage.jsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(userManagement, /All statuses|>ACTIVE<|>INACTIVE<|Copy #|No library data found\./);
+  assert.match(userManagement, /getStatusLabel\(row\.status \|\| 'ACTIVE'\)/);
+  assert.match(userManagement, /getStatusLabel\(status\)/);
+  assert.match(userManagement, /<option value="ACTIVE">\{getStatusLabel\('ACTIVE'\)\}<\/option>/);
+  assert.match(userManagement, /<option value="INACTIVE">\{getStatusLabel\('INACTIVE'\)\}<\/option>/);
+  assert.match(userManagement, /setLibraryStatus\(event\.target\.value\)/);
+  assert.match(bookCopies, /getStatusLabel\(status\)/);
+  assert.match(bookCopies, /value=\{nextStatus\}/);
+  assert.match(bookCopies, /status: event\.target\.value/);
+  assert.match(bookCopies, /<option key=\{status\} value=\{status\}>\{getStatusLabel\(status\)\}<\/option>/);
+  assert.match(inventoryFilter, /getStatusLabel\(status\)/);
+  assert.match(inventoryFilter, /value=\{filters\.status\}/);
+  assert.match(inventoryFilter, /update\('status', event\.target\.value\)/);
+  assert.match(inventoryFilter, /<option key=\{status\} value=\{status\}>\{getStatusLabel\(status\)\}<\/option>/);
+  assert.match(borrowRequests, /getStatusLabel\(detail\.status\)/);
+  assert.match(borrowRequests, /value=\{statusFilter\}/);
+  assert.match(borrowRequests, /setStatusFilter\(event\.target\.value\)/);
+  assert.match(borrowRequests, /<option key=\{option\.value\} value=\{option\.value\}>\{option\.label\}<\/option>/);
+  assert.doesNotMatch(borrowRequest, /Copy #|Bản sao #|copy\.barcode|copy\.location/);
+  assert.doesNotMatch(borrowRequest, /Hệ thống sẽ tự chọn|Kiểm tra điều kiện/);
 });
 
 test('admin and API surfaces use accented Vietnamese copy with safe fallbacks', async () => {
@@ -159,7 +187,7 @@ const forbiddenCopyByFile = new Map([
   ['../src/component/inventory/InventoryManagement.jsx', [/Inventory copies table/]],
   ['../src/page/report/BorrowingReportPage.jsx', [/Borrowing report detail rows/, /From date/, /To date/]],
   ['../src/page/report/InventoryReportPage.jsx', [/Low inventory books table/, /Inventory report detail rows/, /Book ID/]],
-  ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /Membership/]],
+  ['../src/page/report/UserStatisticsPage.jsx', [/User statistics summary table/, /User statistics detail rows/, /User ID/, /['">]Membership(?:\s|['"<])/]],
   ['../src/page/UserManagement.jsx', [/Every user must keep at least one role/, /Status Report/, /Role Distribution/, /Close details/, /No name/, /Active borrowings/, /Unpaid fines/, /Search library data/]],
   ['../src/api/userManagementApi.js', [/Request failed\. Please try again/, /Could not /, /Please login with an Admin account/]],
   ['../src/api/profileApi.js', [/Could not load profile/, /Could not update profile/, /Could not upload avatar/]],

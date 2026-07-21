@@ -10,6 +10,8 @@ import {
 import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/dashboardViewModel.js';
 
 test('navigation visibility follows stored roles', () => {
+  assert.equal(getVisibleNavigation(['MEMBER'])[0].label, 'Home');
+  assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
     ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations'],
@@ -74,7 +76,7 @@ test('shared profile menu remains compatible with the header contract', async ()
   assert.doesNotMatch(source, /function BookCopies/);
 });
 
-test('authenticated sidebar renders Thư viện above the role dashboard overview', async () => {
+test('authenticated sidebar renders role-aware library Home above the dashboard overview', async () => {
   const source = await readFile(new URL('../src/component/layout/AppLayout.jsx', import.meta.url), 'utf8');
 
   const homePosition = source.indexOf("onClick={() => navigateFromShell('/homepage')}");
@@ -82,8 +84,8 @@ test('authenticated sidebar renders Thư viện above the role dashboard overvie
   assert.ok(homePosition >= 0);
   assert.ok(overviewPosition > homePosition);
   assert.match(source, /showLibraryHome &&/);
-  assert.match(source, /<span>Thư viện<\/span>/);
-  assert.match(source, /aria-label="Thư viện"/);
+  assert.match(source, /<span>\{isMember \? 'Home' : 'Thư viện'\}<\/span>/);
+  assert.match(source, /aria-label=\{isMember \? 'Home' : 'Thư viện'\}/);
 });
 
 test('account menus hide member-only actions from admin and librarian roles', async () => {
@@ -173,6 +175,21 @@ test('homepage membership promotion is visible only to signed-out guests', async
   assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
 });
 
+test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /aria-label=\{menuOpen \? 'Đóng menu điều hướng' : 'Mở menu điều hướng'\}/);
+  assert.match(source, /className="home-mobile-menu"/);
+  assert.match(source, /className="home-nav-links"/);
+  assert.match(source, /className="home-footer-grid"/);
+  assert.match(source, /className="home-cta-grid"/);
+  assert.match(source, /className="home-benefit-grid"/);
+  assert.match(source, /setMenuOpen\(false\); navigate\('\/membership'\).*Đăng kí hội viên/s);
+  assert.match(source, /\.home-nav-links, \.home-nav-account, \.home-nav-desktop-action \{ display: none !important; \}/);
+  assert.match(source, /\.home-footer-grid \{ grid-template-columns: 1fr !important; \}/);
+  assert.match(source, /\.home-cta-grid, \.home-benefit-grid \{ grid-template-columns: 1fr !important; \}/);
+});
+
 test('admin console keeps its sections while using the warm librarian visual system', async () => {
   const source = await readFile(new URL('../src/page/UserManagement.jsx', import.meta.url), 'utf8');
 
@@ -234,7 +251,8 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.match(source, /adminApi\.deactivateResource\(libraryResource, row\.id\)/);
   assert.match(source, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
   assert.doesNotMatch(source, /deleteLibraryItem/);
-  assert.match(source, /new Blob\(\['\\uFEFF', csv\]/);
+  assert.match(source, /downloadDocx\(/);
+  assert.doesNotMatch(source, /text\/csv|Xuất CSV|\.csv'/);
   assert.match(source, /<td>\{formatDate\(row\.createdAt\)\}<\/td>/);
   assert.doesNotMatch(source, /row\.createdAt \|\| 'Không lưu trong DB'/);
 });

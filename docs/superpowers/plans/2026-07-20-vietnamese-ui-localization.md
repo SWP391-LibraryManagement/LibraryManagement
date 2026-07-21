@@ -8,6 +8,23 @@
 
 **Tech Stack:** React 19, Vite 8, Bootstrap 5, MUI, Node test runner, CSS custom properties, existing Axios API modules.
 
+## Current Implementation Closeout - 2026-07-20
+
+PR #58 is merged as `cce59d0`. Application-baseline CI `29712597463` and staging
+workflow `29712612188` pass the frontend localization tests, lint, build,
+browser E2E, and six-check staging smoke. The authoritative L1-L4 evidence is
+`.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`.
+
+The later governance reconciliation repairs five residual presentation-only
+label surfaces and strengthens the raw-value regression. Its responsive follow-up
+adds the HomePage mobile menu, CTA, benefit-card, and footer layout contract;
+fresh local frontend evidence is 173/173. The published reconciliation is H2
+approved, while the responsive follow-up remains subject to H3 before merge.
+
+The granular RED-GREEN task boxes below are retained as the historical execution
+plan. The final checklist is the current acceptance snapshot; a dedicated
+human responsive browser review remains explicitly pending.
+
 ## Global Constraints
 
 - The product language is fixed Vietnamese; do not add a language switcher or an i18n framework.
@@ -30,7 +47,9 @@
 - Modify `frontend/src/api/apiErrorMessages.js`: safe Vietnamese API fallback behavior.
 - Modify `frontend/src/api/authApi.js`, `frontend/src/api/profileApi.js`, `frontend/src/api/userManagementApi.js`, and `frontend/src/api/adminApi.js`: module-specific Vietnamese fallback copy.
 - Modify `frontend/index.html`, `frontend/src/index.css`, and existing visual styles: global language metadata and font tokens.
-- Modify existing pages/components in place: user-facing text only; do not restructure feature ownership.
+- Modify existing pages/components in place: user-facing text only, except the
+  approved H3 responsive shell follow-up for HomePage navigation access and
+  narrow-screen layout; do not restructure feature ownership.
 - Modify affected `.sdd/specs/feat-*/CHANGELOG.md` files: record the cross-feature presentation change.
 
 ---
@@ -1063,6 +1082,12 @@ Verify at 1440px and 390px widths:
 
 Expected: no missing glyph boxes, detached combining marks, text overlap, clipped primary actions, or horizontal page overflow. `Email`, `OTP`, and `Barcode` remain unchanged; book titles/authors remain source data.
 
+Automated focused evidence: Playwright review 1/1 at 1440px and 390px passed
+the login, public mobile menu/footer/CTA, and protected borrowing checks; images
+are under `output/playwright/h3-visual/`. The run logged `GET /api/books`
+`INTERNAL_ERROR`, so public book-card/detail content still needs human or
+environment-backed acceptance.
+
 - [ ] **Step 8: Review final diff against the design**
 
 ```powershell
@@ -1071,7 +1096,9 @@ git diff --stat
 git diff -- frontend docs/superpowers/specs/2026-07-20-vietnamese-ui-localization-design.md .sdd/specs
 ```
 
-Expected: only localization, typography, tests, and related changelog files are changed; no backend, database, API contract, or permission files are modified.
+Expected: only localization, typography, responsive presentation, tests, and
+related governance/changelog files are changed; no backend, database, API
+contract, or permission files are modified.
 
 - [ ] **Step 9: Commit Task 7**
 
@@ -1084,10 +1111,10 @@ git commit -m "docs: record Vietnamese UI localization"
 
 ## Final Verification Checklist
 
-- [ ] All frontend-generated interface text is Vietnamese except approved technical terms and technical identifiers.
-- [ ] Book titles, author names, email addresses, barcode values, and user-entered content remain unchanged.
-- [ ] Raw role/status/API values remain unchanged in logic and requests.
-- [ ] Known API errors are Vietnamese and unknown failures use Vietnamese fallbacks.
-- [ ] `lang="vi"`, page title, `Be Vietnam Pro`, and `Noto Serif` are wired correctly.
+- [x] All frontend-generated interface text is Vietnamese except approved technical terms and technical identifiers.
+- [x] Book titles, author names, email addresses, barcode values, and user-entered content remain unchanged.
+- [x] Raw role/status/API values remain unchanged in logic and requests.
+- [x] Known API errors are Vietnamese and unknown failures use Vietnamese fallbacks.
+- [x] `lang="vi"`, page title, `Be Vietnam Pro`, and `Noto Serif` are wired correctly.
 - [ ] Desktop and mobile checks show correct Vietnamese glyph rendering and no overflow.
-- [ ] `npm --prefix frontend test`, lint, build, traceability, and `git diff --check` all pass.
+- [x] `npm --prefix frontend test`, lint, build, traceability, and `git diff --check` all pass.

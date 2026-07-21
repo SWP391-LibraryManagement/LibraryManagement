@@ -266,15 +266,16 @@ Download the backend publish profile from App Service and paste it directly into
 Paste the Static Web Apps deployment token directly into the second. Enable required reviewer
 approval for the environment when the repository plan supports it.
 
-## Run The First Manual Deployment
+## Automatic Deployment After Merge
 
-The workflow is intentionally manual:
+The staging workflow runs automatically for every push to `main` (including a pull-request merge):
 
-1. Merge and push `.github/workflows/deploy-staging.yml` to `main`.
-2. Open GitHub Actions -> `Deploy staging`.
-3. Select `main` and run the workflow.
-4. Approve the `staging` Environment when prompted.
-5. Confirm quality, backend deploy, frontend deploy, and smoke jobs all pass.
+1. Merge the approved change into `main`.
+2. GitHub Actions starts `Deploy staging` automatically.
+3. Approve the `staging` Environment when prompted, if environment approval is enabled.
+4. Confirm quality, backend deploy, frontend deploy, and smoke jobs all pass.
+
+`workflow_dispatch` remains enabled for a manual rerun from GitHub Actions when needed.
 
 No deployment should run if the quality gate fails.
 

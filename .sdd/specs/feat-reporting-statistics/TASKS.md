@@ -7,7 +7,7 @@ Owner: Nhat
 
 Updated: 2026-07-19
 
-Workflow State: Historical base slice completed B7; deterministic follow-up completed B5 and automated B6, with browser/human B7 pending
+Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
 ---
 
@@ -135,6 +135,7 @@ Detailed evidence is recorded in
 - [x] FE12-N06 Run focused/full automated validation, lint, build, traceability, and diff hygiene; record the deterministic-wave evidence.
 - [x] FE12-N07 Run fresh browser acceptance for canonical borrowing/inventory/user screens, zero-result filtering, mobile layout, and Member/Guest denial.
 - [ ] FE12-N08 Obtain human integration review before commit, push, merge, or deterministic-wave B7 closeout.
+- [x] FE12-N09 Add canonical search and complete report filters, remove successful-load banners, and order user rows by increasing `UserId`.
 
 ### 9.1 Deterministic-Wave Automated Evidence
 

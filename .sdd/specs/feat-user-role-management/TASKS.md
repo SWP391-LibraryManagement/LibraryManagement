@@ -12,7 +12,6 @@ Owner: Dung
 - [x] **FE11-S01 - Draft the cross-feature account-setup contract.**
   - Maps to: BR-FE11-005, BR-FE11-021..025; FR-FE11-003, 009, 036..038; AC-FE11-003, 006, 010, 020..022; ADR-005.
   - DoD: FE02, FE10, FE11, API, state, transaction, delivery, failure, and resend semantics use one deterministic contract; implementation files remain unchanged.
-  - Review state: Nhat reviewed the approved contract before implementation.
 
 - [x] **FE11-S02 - Add RED FE11 creation tests.**
   - Files: `backend/tests/userManagementService.test.js`, `backend/tests/userManagementRoutes.test.js`, test helpers.
@@ -43,8 +42,8 @@ Owner: Dung
 
 - [x] **FE11-S07 - Pass the account-setup validation gate.**
   - Dependencies: FE11-S02..S06.
-  - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; Nhat confirms human review.
-  - Validation state: PASS on 2026-07-15; Nhat confirmed the final Task 7 human review.
+  - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; confirms human review.
+  - Validation state: PASS on 2026-07-15; 
 
 - [x] **FE11-S08 - Normalize the remaining FE11 specification contract.**
   - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.
@@ -250,9 +249,9 @@ Owner: Dung
   - Maps to: BR-FE11-019/026; FR-FE11-034; AC-FE11-019; TD-025.
   - Evidence: canonical Admin-first route/service/repository tests pass; browser acceptance proves server pagination and authoritative detail against the shared FE07 state.
 
-- [x] **FE11-REQ02 - Align request pagination, detail, actions, and CSV UI.**
+- [x] **FE11-REQ02 - Align request pagination, detail, actions, and DOCX UI.**
   - Maps to: FR-FE11-034/035; AC-FE11-019; TD-025.
-  - Evidence: frontend contract tests and `E2E-FE11-ACC01` prove two-page server data, frozen-filter CSV across all 21 matching rows, and status-specific detail controls.
+  - Evidence: frontend contract tests and `E2E-FE11-ACC01` prove two-page server data, frozen-filter DOCX across all 21 matching rows, and status-specific detail controls.
 
 - [x] **FE11-REQ03 - Prove FE07 terminal-state immutability.**
   - Maps to: BR-FE11-019; FR-FE11-035; FE07 request lifecycle invariants; TD-025.
@@ -272,7 +271,7 @@ Owner: Dung
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018.
   - DoD: the Admin UI exposes canonical `q`, `action`, `actorId`, `from`, and `to` filter inputs; source-level RED-GREEN regression evidence exists; API, schema, authorization, pagination, and redaction remain unchanged.
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
-  - Review state: implementation and automated validation are prepared for H2; commit, push, H3, merge, exact post-merge CI, and tag `v1.0.2` remain pending.
+  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 carries H2-approved commits `962ceb1` and `daaeea6`, while H3 remains pending. Any future `v1.0.3` remains a separate post-merge release decision.
 
 ## Deferred FE11 Work
 

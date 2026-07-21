@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-21 - Tier daily borrowing by membership status
+
+- Added a 5-copy daily limit for FE04-approved members and a 3-copy daily limit for other active `MEMBER` accounts.
+- Enforced the tier during member request creation and Librarian/Admin approval while preserving the five-active-copy ceiling.
+- Kept FE04 non-blocking: membership approval increases the daily allowance instead of being required to borrow.
+
+## 2026-07-21 - Use role-based member eligibility
+
+- Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
+- Kept librarian/admin approval of each borrow request as the FE07 circulation control.
+- Removed book ratings from the member borrow-request candidate response and confirmation UI.
+- Stabilized the member borrowing-history card layout across toolbar, table, and pagination regions.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

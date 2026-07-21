@@ -104,7 +104,7 @@ AI/agent output must always be reviewed by a human before commit or merge.
 - BR-GEN-002: A member must have a unique identifier.
 - BR-GEN-003: Only authorized users can manage books, members, borrowing, returning, and fines.
 - BR-GEN-004: A book cannot be borrowed if its available quantity is 0.
-- BR-GEN-005: A member cannot borrow more than 5 active borrowed copies at the same time.
+- BR-GEN-005: A member cannot borrow more than 5 active borrowed copies at the same time. Per business day, an FE04-approved member may request/receive at most 5 copies, while a `MEMBER` account without approved FE04 membership may request/receive at most 3 copies.
 - BR-GEN-006: A member with overdue books or unpaid fines may be restricted from borrowing.
 - BR-GEN-007: Every borrow transaction must store member, book, borrow date, due date, status, and creator. The default loan duration is 14 calendar days.
 - BR-GEN-008: Every return transaction must update the related borrowing transaction.

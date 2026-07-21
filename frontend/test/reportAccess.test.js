@@ -53,7 +53,8 @@ test('FE12 report pages do not substitute demo statistics after API failures', a
     const source = await readFile(new URL(page, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /DEMO_REPORTS/);
     assert.doesNotMatch(source, /Demo fallback/);
-    assert.match(source, /type=\{noticeType\}/);
+    assert.match(source, /<DataNotice type="error"/);
+    assert.doesNotMatch(source, /noticeType|Đã tải dữ liệu|Dữ liệu báo cáo đã được cập nhật/);
   }
 
   assert.match(apiSource, /function authorizedReportRequest[\s\S]*getReportErrorMessage/);
@@ -100,7 +101,7 @@ test('report layouts can shrink and keep responsive split rules', async () => {
   }
 });
 
-test('date-filtered report pages start unfiltered and omit blank query values', async () => {
+test('date-filtered report pages start unfiltered and use compact report params', async () => {
   const borrowingPage = await readFile(
     new URL('../src/page/report/BorrowingReportPage.jsx', import.meta.url),
     'utf8',
@@ -110,10 +111,10 @@ test('date-filtered report pages start unfiltered and omit blank query values', 
     'utf8',
   );
 
+  assert.match(borrowingPage, /buildBorrowingReportParams/);
+  assert.match(userStatisticsPage, /buildUserReportParams/);
   for (const page of [borrowingPage, userStatisticsPage]) {
-    assert.match(page, /import \{ buildDateRangeReportParams \} from '..\/..\/utils\/reportFilters';/);
     assert.equal((page.match(/useState\(''\)/g) || []).length >= 2, true);
-    assert.match(page, /buildDateRangeReportParams\(from, to\)/);
     assert.doesNotMatch(page, /2026-01-01|2026-06-15/);
   }
 });

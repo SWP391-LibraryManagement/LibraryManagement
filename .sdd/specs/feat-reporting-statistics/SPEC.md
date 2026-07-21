@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.6
+# Version: 0.1.7
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-21
 
 # Feature ID: FE12
 
@@ -154,7 +154,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE12-012: Aggregate counts must be reproducible from source records.
 - BR-FE12-013: CSV, PDF, spreadsheet, and other report export are strictly out of scope for Phase 1; FE12 exposes no export endpoint or export control.
 - BR-FE12-014: Every successful Librarian/Admin report view must write one safe audit event identifying actor, report type, timestamp, and success without raw filter/query values or returned report rows.
-- BR-FE12-015: Detailed rows use `page=1`, `limit=20`, with `page>=1` and `limit=1..100`; stable ordering is borrowing `BorrowDate DESC, BorrowDetailId DESC`, inventory `Title ASC, BookId ASC, CopyId ASC`, and users `CreatedAt DESC, UserId DESC`.
+- BR-FE12-015: Detailed rows use `page=1`, `limit=20`, with `page>=1` and `limit=1..100`; stable ordering is borrowing `BorrowDate DESC, BorrowDetailId DESC`, inventory `Title ASC, BookId ASC, CopyId ASC`, and users `UserId ASC`.
+- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
 
 ---
 
@@ -170,6 +171,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE12-008: When user statistics are generated, the system shall return aggregate data by default rather than raw personal details.
 - FR-FE12-009: When an authorized report request succeeds, the system shall write the safe report-view audit event required by BR-FE12-014.
 - FR-FE12-010: When detailed rows are returned, the system shall apply the approved pagination defaults, bounds, and report-specific stable ordering from BR-FE12-015.
+- FR-FE12-011: When staff searches or filters a report, the system shall combine `q` with all supplied report-specific filters, reload canonical server metrics and rows, and avoid a redundant successful-load banner.
 
 ---
 
@@ -185,6 +187,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE12-008: Given user statistics, when results are returned, then unnecessary personal profile details are not exposed.
 - AC-FE12-009: Given a successful Librarian/Admin report view, when the response completes, then one safe audit event records actor, report type, timestamp, and success without raw filters or report rows.
 - AC-FE12-010: Given detailed report rows without explicit pagination, when returned, then `page=1`, `limit=20`, and the report-specific stable ordering apply; invalid bounds are rejected.
+- AC-FE12-011: Given a Librarian/Admin enters search text and report filters, when applying them, then filtering occurs before aggregation/pagination, user rows are ordered by increasing `userId`, and no “Đã tải dữ liệu” success notice is rendered.
 
 ---
 
@@ -235,6 +238,7 @@ Use these stable IDs for tasks and tests.
 | roleId | integer | No | Used for user statistics. |
 | page | integer | No | Defaults to 1; must be an integer at least 1 for detailed rows. |
 | limit | integer | No | Defaults to 20; must be an integer from 1 through 100. |
+| q | string | No | Trimmed free-text search, maximum 200 characters, using the report-specific fields in BR-FE12-016. |
 
 ---
 
@@ -258,9 +262,9 @@ Date filters for the borrowing report apply to `BorrowDate`; date filters for us
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/reports/borrowing` | Librarian/Admin | Query: `fromDate?, toDate?, status?, bookId?, userId?, page=1, limit=20` | `BorrowingReportResponse` from Section 10.3 | Stable row order: `BorrowDate DESC, BorrowDetailId DESC`. |
-| GET | `/api/reports/inventory` | Librarian/Admin | Query: `categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` from Section 10.3 | Stable row order: `Title ASC, BookId ASC, CopyId ASC`. |
-| GET | `/api/reports/users` | Librarian/Admin | Query: `roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` from Section 10.3 | Stable row order: `CreatedAt DESC, UserId DESC`; no raw personal profile details. |
+| GET | `/api/reports/borrowing` | Librarian/Admin | Query: `q?, fromDate?, toDate?, status?, bookId?, userId?, page=1, limit=20` | `BorrowingReportResponse` from Section 10.3 | Stable row order: `BorrowDate DESC, BorrowDetailId DESC`. |
+| GET | `/api/reports/inventory` | Librarian/Admin | Query: `q?, categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` from Section 10.3 | Stable row order: `Title ASC, BookId ASC, CopyId ASC`. |
+| GET | `/api/reports/users` | Librarian/Admin | Query: `q?, roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` from Section 10.3 | Stable row order: `UserId ASC`; no raw personal profile details. |
 
 ---
 

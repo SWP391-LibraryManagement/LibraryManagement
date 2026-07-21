@@ -4,7 +4,7 @@
  */
 
 import { Card } from '@mui/material';
-import { LocalLibrary } from '@mui/icons-material';
+import { ArrowBack, LocalLibrary } from '@mui/icons-material';
 import LoginForm from './LoginForm';
 
 export default function AuthCard(props) {
@@ -12,12 +12,16 @@ export default function AuthCard(props) {
     onSubmit,
     onForgotPassword,
     onRegister,
+    onBackHome,
     feedback,
     isSubmitting
   } = props;
 
   return (
     <div className="login-card-wrapper">
+      <button type="button" className="login-home-button" onClick={onBackHome}>
+        <ArrowBack fontSize="small" /> Trở về Homepage
+      </button>
       <Card className="auth-card" elevation={0}>
         {/* Header Section */}
         <div className="login-header">

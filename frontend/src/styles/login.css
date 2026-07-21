@@ -72,6 +72,33 @@
   max-width: 480px;
 }
 
+.login-home-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(139, 90, 43, 0.3);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #754a22;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.login-home-button:hover {
+  border-color: #8b5a2b;
+  background: rgba(255, 255, 255, 0.94);
+  transform: translateY(-1px);
+}
+
+.login-home-button:focus-visible {
+  outline: 3px solid rgba(168, 117, 50, 0.3);
+  outline-offset: 2px;
+}
+
 .auth-card {
   border-radius: 28px !important;
   padding: 2rem !important;

@@ -33,13 +33,18 @@ export default function MyReservationsPage() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
   const [toast, showToast, clearToast] = useToast();
+  const activeReservedCopyIds = new Set(
+    reservations
+      .filter((item) => !['Cancelled', 'Expired', 'Completed'].includes(item.status))
+      .map((item) => Number(item.copyId))
+  );
 
   async function loadReservations() {
     setLoading(true);
     try {
       const data = await reservationApi.listMine();
       setReservations((data.reservations || []).map(mapReservation));
-      setNotice({ type: 'success', title: 'Đã cập nhật dữ liệu', message: 'Danh sách đặt chỗ đã được đồng bộ với thư viện.' });
+      setNotice(null);
     } catch (error) {
       setReservations([]);
       setNotice({ type: 'error', title: 'Không thể tải đặt chỗ', message: error.message });
@@ -90,6 +95,9 @@ export default function MyReservationsPage() {
     try {
       const data = await reservationApi.create(candidate.copyId);
       const next = mapReservation(data.reservation);
+      setCandidates((current) => current.map((item) => (
+        item.copyId === candidate.copyId ? { ...item, hasActiveReservation: true } : item
+      )));
       await Promise.all([
         loadReservations(),
         loadCandidates(search, candidatePagination.page),
@@ -123,7 +131,7 @@ export default function MyReservationsPage() {
     <AppLayout
       active="my-reservations"
       title="Đặt chỗ của tôi"
-      subtitle="Đặt sách và theo dõi vị trí trong hàng đợi."
+      subtitle="Đặt sách và theo dõi hàng đợi. Thủ thư hoặc quản trị viên sẽ xử lý khi sách sẵn sàng."
       actions={<button className="btn btn-outline" onClick={() => Promise.all([loadReservations(), loadCandidates(search, candidatePagination.page)])} disabled={loading || candidateLoading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={notice.type} title={notice.title}>{notice.message}</DataNotice>}
@@ -140,17 +148,20 @@ export default function MyReservationsPage() {
         />
         {candidateError && <DataNotice type="error" title="Không thể tải sách có thể đặt chỗ">{candidateError}</DataNotice>}
         <div className="queue-list">
-          {candidateLoading && <DataNotice type="info" title="Đang tải dữ liệu">Danh sách đang được đồng bộ từ thư viện.</DataNotice>}
-          {!candidateLoading && candidates.map((candidate) => (
+          {!candidateLoading && candidates.map((candidate) => {
+            const alreadyReserved = candidate.hasActiveReservation
+              || activeReservedCopyIds.has(Number(candidate.copyId));
+            return (
             <div className="queue-item" key={candidate.copyId}>
               <span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} />
               <div className="stack-sm" style={{ flex: 1 }}><strong>{candidate.title}</strong><span className="muted" style={{ fontSize: 13 }}>{candidate.authorName || 'Chưa rõ tác giả'}</span></div>
               <span className="badge badge-waiting">
                 {candidate.activeReservationCount} người đang chờ • {candidate.copyStatus === 'RESERVED' ? 'Đang được giữ' : 'Đang được mượn'}
               </span>
-              <button className="btn btn-primary btn-sm" onClick={() => reserve(candidate)}><Bookmark size={14} /> Đặt chỗ</button>
+              <button className="btn btn-primary btn-sm" disabled={alreadyReserved} onClick={() => reserve(candidate)}><Bookmark size={14} /> {alreadyReserved ? 'Đã đặt chỗ' : 'Đặt chỗ'}</button>
             </div>
-          ))}
+            );
+          })}
           {!candidateLoading && candidates.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách có thể đặt chỗ" />}
         </div>
         {candidatePagination.totalPages > 1 && (

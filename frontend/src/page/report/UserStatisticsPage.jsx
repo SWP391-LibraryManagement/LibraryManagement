@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Users, UserPlus, UserCheck, Clock, Calendar, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, UserCheck, Clock, Calendar, RefreshCw, Search } from 'lucide-react';
 
 import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -12,7 +12,7 @@ import { LineChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import { objectToChart } from '../../utils/libraryFeatureViewModels';
-import { buildDateRangeReportParams } from '../../utils/reportFilters';
+import { buildUserReportParams } from '../../utils/reportFilters';
 import { getRoleLabel, getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
@@ -21,21 +21,22 @@ const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 export default function UserStatisticsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
+  const [membershipStatus, setMembershipStatus] = useState('');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
-  const [noticeType, setNoticeType] = useState('info');
 
-  async function loadReport() {
+  async function loadReport(event) {
+    event?.preventDefault();
     setLoading(true);
+    setNotice('');
     try {
-      const data = await reportApi.users(buildDateRangeReportParams(from, to));
+      const data = await reportApi.users(buildUserReportParams({ q: query, fromDate: from, toDate: to, status, membershipStatus }));
       setReport(data);
-      setNoticeType('success');
-      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
-      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -75,18 +76,21 @@ export default function UserStatisticsPage() {
       subtitle="Thống kê người dùng dạng aggregate, tránh lộ thông tin cá nhân không cần thiết."
       actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
-      <DataToolbar
+      {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
+      <form onSubmit={loadReport}><DataToolbar
+        search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm mã người dùng, vai trò, trạng thái..." aria-label="Tìm trong thống kê người dùng" /></>}
         filters={(
           <div className="field report-date-filter">
             <Calendar size={16} className="muted" />
             <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
             <span className="muted">-</span>
             <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
-            <button className="btn btn-primary btn-sm" onClick={loadReport} disabled={loading}>Áp dụng</button>
+            <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái tài khoản"><option value="">Tất cả tài khoản</option><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option><option value="LOCKED">Đã khóa</option></select>
+            <select className="select" value={membershipStatus} onChange={(event) => setMembershipStatus(event.target.value)} aria-label="Trạng thái hội viên"><option value="">Tất cả hội viên</option><option value="PENDING">Chờ duyệt</option><option value="APPROVED">Đã duyệt</option><option value="REJECTED">Từ chối</option><option value="INACTIVE">Ngừng hoạt động</option></select>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>Áp dụng</button>
           </div>
         )}
-      />
+      /></form>
 
       {loading ? <LoadingBlock rows={4} /> : !report ? (
         <EmptyState icon={Users} title="Không có dữ liệu báo cáo">

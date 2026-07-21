@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Library, Copy, CheckCircle2, BookMarked, AlertTriangle, Filter, RefreshCw, RotateCcw } from 'lucide-react';
+import { Library, Copy, CheckCircle2, BookMarked, AlertTriangle, Filter, RefreshCw, RotateCcw, Search } from 'lucide-react';
 
 import { authorizedRequest, reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -20,11 +20,14 @@ const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t
 
 export default function InventoryReportPage() {
   const [categoryId, setCategoryId] = useState('');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
+  const [location, setLocation] = useState('');
+  const [bookId, setBookId] = useState('');
   const [categories, setCategories] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
-  const [noticeType, setNoticeType] = useState('info');
 
   const loadCategories = useCallback(async () => {
     try {
@@ -38,16 +41,14 @@ export default function InventoryReportPage() {
     }
   }, []);
 
-  const loadReport = useCallback(async (selectedCategoryId = '') => {
+  const loadReport = useCallback(async (filters = {}) => {
     setLoading(true);
+    setNotice('');
     try {
-      const data = await reportApi.inventory(buildInventoryReportParams(selectedCategoryId));
+      const data = await reportApi.inventory(buildInventoryReportParams(filters));
       setReport(data);
-      setNoticeType('success');
-      setNotice('Dữ liệu báo cáo đã được cập nhật.');
     } catch (error) {
       setReport(null);
-      setNoticeType('error');
       setNotice(error.message);
     } finally {
       setLoading(false);
@@ -57,19 +58,23 @@ export default function InventoryReportPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       loadCategories();
-      loadReport('');
+      loadReport({});
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadCategories, loadReport]);
 
   function applyCategoryFilter(event) {
     event.preventDefault();
-    loadReport(categoryId);
+    loadReport({ q: query, categoryId, status, location, bookId });
   }
 
   function clearCategoryFilter() {
     setCategoryId('');
-    loadReport('');
+    setQuery('');
+    setStatus('');
+    setLocation('');
+    setBookId('');
+    loadReport({});
   }
 
   const metrics = report?.metrics || {};
@@ -96,13 +101,14 @@ export default function InventoryReportPage() {
       active="inventory-report"
       title="Báo cáo tồn kho"
       subtitle="Tổng hợp tình trạng bản sao và các đầu sách có tồn kho thấp."
-      actions={<button className="btn btn-outline" onClick={() => loadReport(categoryId)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport({ q: query, categoryId, status, location, bookId })} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
-      {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể tải báo cáo' : 'Đã tải dữ liệu'}>{notice}</DataNotice>}
+      {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
       <form onSubmit={applyCategoryFilter}>
         <DataToolbar
+          search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, vị trí..." aria-label="Tìm trong báo cáo tồn kho" /></>}
           filters={(
-            <div className="field">
+            <div className="field report-filter-row">
               <label htmlFor="inventory-category">Thể loại</label>
               <select
                 id="inventory-category"
@@ -115,6 +121,9 @@ export default function InventoryReportPage() {
                   <option key={category.id} value={category.id}>{category.name}</option>
                 ))}
               </select>
+              <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái bản sao"><option value="">Tất cả trạng thái</option><option value="AVAILABLE">Có sẵn</option><option value="BORROWED">Đang mượn</option><option value="RESERVED">Đang giữ chỗ</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Thất lạc</option><option value="INACTIVE">Ngừng sử dụng</option></select>
+              <input className="input" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Vị trí" aria-label="Vị trí" />
+              <input type="number" min="1" className="input" value={bookId} onChange={(event) => setBookId(event.target.value)} placeholder="Mã sách" aria-label="Mã sách" />
             </div>
           )}
           actions={(
@@ -126,7 +135,7 @@ export default function InventoryReportPage() {
                 className="icon-btn"
                 type="button"
                 onClick={clearCategoryFilter}
-                disabled={loading || !categoryId}
+                disabled={loading || !(query || categoryId || status || location || bookId)}
                 aria-label="Xóa bộ lọc thể loại"
                 title="Xóa bộ lọc thể loại"
               >

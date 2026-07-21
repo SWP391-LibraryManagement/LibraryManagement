@@ -29,6 +29,20 @@ const createBorrowRequestValidators = [
   handleValidationErrors,
 ];
 
+const listBorrowCandidatesValidators = [
+  query('bookId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Book ID must be a positive integer.')
+    .toInt(),
+  query('q')
+    .optional({ nullable: true, checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Search text must be at most 200 characters.'),
+  handleValidationErrors,
+];
+
 const listBorrowRequestsValidators = [
   query('status')
     .optional({ nullable: true, checkFalsy: true })
@@ -180,6 +194,7 @@ const renewBorrowDetailValidators = [
 ];
 
 module.exports = {
+  listBorrowCandidatesValidators,
   createBorrowRequestValidators,
   listBorrowRequestsValidators,
   memberHistoryValidators,
