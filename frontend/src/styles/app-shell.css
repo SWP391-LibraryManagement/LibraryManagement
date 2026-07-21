@@ -889,6 +889,24 @@
   .reservation-queue-card .queue-item { align-items: flex-start; flex-wrap: wrap; }
   .reservation-queue-card .queue-actions { width: 100%; margin-left: 48px; }
   .reservation-queue-card .queue-actions .btn { justify-content: center; width: 100%; }
+  .member-reservation-catalog .queue-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+  .member-reservation-catalog .queue-item .stack-sm { min-width: 0; overflow-wrap: anywhere; }
+  .member-reservation-catalog .queue-item > .badge {
+    grid-column: 2;
+    width: fit-content;
+    max-width: 100%;
+    line-height: 1.35;
+    white-space: normal;
+  }
+  .member-reservation-catalog .queue-item > .btn {
+    grid-column: 1 / -1;
+    justify-content: center;
+    width: 100%;
+  }
   .member-profile-card { grid-template-columns: auto minmax(0, 1fr); }
   .member-profile-card > .badge { grid-column: 2; width: fit-content; }
   .member-profile-meta { grid-column: 1 / -1; flex-direction: column; gap: 8px; }

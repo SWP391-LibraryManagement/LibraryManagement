@@ -22,7 +22,7 @@
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
-> The admin-created account setup revision is approved through `ADR-005-admin-created-account-setup-boundary.md`. The FE11 Finalization Batch governance contract was approved on 2026-07-19; Wave A/Wave B product implementation remains pending its named H2/H3 gates.
+> The admin-created account setup revision is approved through `ADR-005-admin-created-account-setup-boundary.md`. The FE11 Finalization Batch governance contract was approved on 2026-07-19; Wave A/Wave B product implementation was reviewed through PR #59 H2/H3 and merged as `eed2688`. Current-main release acceptance remains separately tracked.
 
 ---
 

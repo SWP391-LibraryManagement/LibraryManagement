@@ -78,6 +78,29 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   const bookSummary = page.locator('.um-stat.dashboard-card').filter({ hasText: 'Tổng số sách' });
   await expect(bookSummary.getByText('1', { exact: true })).toBeVisible();
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Quản lý người dùng', exact: true }).click();
+  const userHeading = page.getByRole('heading', { name: 'Quản lý người dùng', exact: true });
+  const topbarActions = page.locator('.um-topbar .um-actions');
+  const userContent = page.locator('.um-content');
+  await expect(userHeading).toBeVisible();
+  await expect(topbarActions).toBeVisible();
+  await expect(userContent).toBeVisible();
+  const [headingBox, actionsBox] = await Promise.all([
+    userHeading.boundingBox(),
+    topbarActions.boundingBox(),
+  ]);
+  expect(actionsBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height + 8);
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  );
+  expect(horizontalOverflow).toBe(false);
+  const internalTableScroll = await userContent.evaluate(
+    (element) => element.scrollWidth > element.clientWidth
+  );
+  expect(internalTableScroll).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 720 });
+
   const approved = await request.patch(
     `${BACKEND_URL}/api/borrow-requests/${completedRequestId}/approve`,
     { headers: adminHeaders, data: {} }

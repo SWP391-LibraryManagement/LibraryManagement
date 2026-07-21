@@ -47,12 +47,21 @@ backend and 151 frontend test counts are not the current reconciliation totals.
 | SMTP delivery | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search passed. |
 
 Later evidence is tracked separately: remote application-baseline CI `29712597463`
-passed 917 backend tests and 171 frontend tests for `cce59d0`; published commit
-`31d4bba`, `962ceb1`, and `daaeea6` record the H2-approved reconciliation and
-responsive follow-up; the current correction passes 173 frontend tests and
-requires H3 review.
-Dedicated localized desktop/mobile visual acceptance and demonstration-video
-publication remain open.
+passed 917 backend tests and 171 frontend tests for `cce59d0`; PR #59 merged the
+H3-reviewed reconciliation as `eed2688`. Current `main@a8729f9` passes CI
+`29824756487` with 923 backend tests, 178 frontend tests, coverage, lint, build,
+deployment checks, and 4/4 browser E2E; staging deployment `29824944954` also
+passes. The project reviewer confirmed dedicated localized desktop/mobile
+visual acceptance on 2026-07-21. A final release decision for the later product
+batch remains human-owned, and demonstration-video publication remains open.
+
+A subsequent local H2 closeout review found two contained `390px` presentation
+issues outside the original document-overflow guard: a clipped FE08 reservation
+badge and missing FE11 Admin topbar spacing. Mobile-only CSS fixes now pass the
+new bounding-box regressions, 178/178 frontend tests, lint/build, and all 4/4
+browser flows. Corrected screenshots are retained under `output/playwright/`;
+this local remediation is not represented by the published `v1.0.2` tag or the
+current remote `main` evidence above.
 
 ## Live SQL and migration result
 

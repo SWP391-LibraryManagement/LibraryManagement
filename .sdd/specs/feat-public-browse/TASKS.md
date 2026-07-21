@@ -1,13 +1,13 @@
 # TASKS.md - FE01 Public / Browse
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP H2-APPROVED, H3 PENDING
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP H3-APPROVED AND MERGED IN PR #59
 Implementation State: COMPLETE
 
 Owner: Dung
 
 Updated: 2026-07-20
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. The responsive HomePage follow-up is locally implemented, H2-approved, and remains pending H3 review before integration.
+Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the responsive HomePage follow-up after H3 review, and exact post-merge `main` CI is recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Current-main human visual acceptance remains a release-level review.
 
 ---
 
@@ -70,7 +70,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - RED: assert loading, no-results, unavailable, missing-cover, missing-author/category/publisher, and not-found detail states before implementation.
   - GREEN: show `Còn sách` only for `AVAILABLE`, show `Không khả dụng` otherwise, preserve books with null optional fields, render the safe no-cover fallback, show understandable empty/error states, and route member-only actions to their owning authentication/membership/borrowing flows without implementing those flows in FE01.
   - Verify: focused frontend tests cover a public guest, empty search, no matches, unavailable book, null metadata, missing detail, and safe generic error.
-  - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions; the responsive HomePage follow-up keeps the existing login/register, membership, and account routes reachable on mobile. Local implementation and H2 review are complete; H3 acceptance remains pending before integration.
+  - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions; the responsive HomePage follow-up keeps the existing login/register, membership, and account routes reachable on mobile. Local implementation, H2 review, and PR #59 H3 integration review are complete.
 
 - [x] **FE01-T007 - Close API documentation, test plan, and traceability.**
   - Maps to: all FE01 BR/FR/AC/NFR IDs and the Definition of Done.
@@ -80,12 +80,12 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Verify: `rg` confirms every FE01 BR/FR/AC ID maps to a task and test; no `/api/public/*`, category-endpoint, exact-copy-count, or stale `Đã mượn` contract remains in active FE01 docs.
   - DoD: documentation never claims implementation or test completion without recorded evidence.
 
-- [~] **FE01-T008 - Pass focused validation and human review.**
+- [x] **FE01-T008 - Pass focused validation and integration review.**
   - Maps to: all FE01 requirements and project Definition of Done.
   - Files: all FE01 implementation/test files changed by T001-T007 and `.sdd/specs/feat-public-browse/CHANGELOG.md`.
   - Dependency: FE01-T007.
   - Verify: run `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js`, run the SQL test when SQL configuration is available, run `node --test frontend/test/publicBrowseFrontend.test.js`, run `npm.cmd run trace:enforce`, and run `git diff --check`.
-  - DoD: focused evidence passes, public read-only ownership is reviewed by FE05/FE06 owners, Nhat reviews the final diff against SPEC v0.3.1, and no full merge claim is made until the repository merge gate is satisfied.
+  - DoD: focused evidence passes and PR #59 satisfies the repository H3 integration gate. Current-main human visual and owner sign-off is tracked in the release checklist.
 
 ## Requirement-To-Task Coverage
 
@@ -115,7 +115,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## Completion Gate
 
-- [~] FE01-T001 through FE01-T007 are complete; FE01-T008 awaits human integration review.
+- [x] FE01-T001 through FE01-T008 are complete through the PR #59 H3 merge gate; current-main human visual/owner sign-off remains release-level evidence.
 - [x] Focused backend, SQL, frontend, traceability, and diff checks pass.
 - [ ] FE05 owner confirms shared public catalog response compatibility.
 - [ ] FE06 owner confirms availability aggregation and no copy mutation.

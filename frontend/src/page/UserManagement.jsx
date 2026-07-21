@@ -3058,6 +3058,9 @@ function UserManagement() {
           .um-sidebar { width: 100%; height: auto; position: static; }
           .um-nav, .um-sidebar-footer { flex-direction: row; flex-wrap: wrap; }
           .um-topbar, .um-toolbar { align-items: stretch; flex-direction: column; }
+          .um-topbar { gap: 14px; }
+          .um-actions { width: 100%; flex-wrap: wrap; }
+          .um-actions > button { flex: 1 1 140px; }
           .um-stats, .um-stats.dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .um-permission-status-grid { grid-template-columns: 1fr; }
           .um-panel-grid, .um-role-summary { grid-template-columns: 1fr; }

@@ -43,7 +43,7 @@ Owner: Dung
 - [x] **FE11-S07 - Pass the account-setup validation gate.**
   - Dependencies: FE11-S02..S06.
   - DoD: focused and affected integration tests pass; traceability, secret scans, and `git diff --check` pass; confirms human review.
-  - Validation state: PASS on 2026-07-15; 
+  - Validation state: PASS on 2026-07-15;
 
 - [x] **FE11-S08 - Normalize the remaining FE11 specification contract.**
   - Maps to: BR-FE11-026..027; FR-FE11-002, FR-FE11-023; AC-FE11-002, AC-FE11-004, AC-FE11-016..019, AC-FE11-023; Q-FE11-017..018.
@@ -271,7 +271,7 @@ Owner: Dung
   - Maps to: BR-FE11-018, BR-FE11-026; FR-FE11-033; AC-FE11-018.
   - DoD: the Admin UI exposes canonical `q`, `action`, `actorId`, `from`, and `to` filter inputs; source-level RED-GREEN regression evidence exists; API, schema, authorization, pagination, and redaction remain unchanged.
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
-  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 carries H2-approved commits `962ceb1` and `daaeea6`, while H3 remains pending. Any future `v1.0.3` remains a separate post-merge release decision.
+  - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 merged the H3-reviewed commits `962ceb1` and `daaeea6` as `eed2688`. Any future `v1.0.3` remains a separate current-main release decision.
 
 ## Deferred FE11 Work
 

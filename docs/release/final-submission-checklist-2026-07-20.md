@@ -2,33 +2,52 @@
 
 ## Release decision
 
-The approved FE01-FE12 baseline and Phase 3 delivery are integrated, but the
-current reconciliation is not yet final: the published `31d4bba` scope was
-H2-approved, H3 remains pending, the dedicated localized desktop/mobile visual acceptance is pending,
-and no demonstration video/link is published. Release `v1.0.2` is published at
-`c988af1`; `cce59d0` is the validated post-release application baseline. A
-future `v1.0.3` must use the later reviewed `main` SHA after this reconciliation
-merges through H3 and passes exact post-merge CI.
+The approved FE01-FE12 baseline and Phase 3 delivery are integrated. PR #59
+was merged as `eed2688` after H3 review; the current `main` candidate is
+`a8729f9`, with CI `29824756487` and staging deployment `29824944954` passing.
+Dedicated localized desktop/mobile visual acceptance was confirmed by the
+project reviewer on 2026-07-21. The later H2-approved local candidate also repairs the two
+bounded mobile issues found during closeout (FE08 badge containment and FE11
+topbar spacing); it is verified locally but not yet released. A demonstration
+video/link remains open. Release `v1.0.2` remains published at `c988af1`; a
+future `v1.0.3` still requires explicit human release approval.
 
 ## Submission package
 
 | Item | Status | Evidence |
 | --- | --- | --- |
-| Source code | PASS published baseline / H2-APPROVED | `v1.0.2` is published at `c988af1`; application baseline `cce59d0` contains PR #57/#58, while PR #59 awaits H3 integration review. |
+| Source code | PASS published baseline / current candidate pending release decision | `v1.0.2` is published at `c988af1`; current `main@a8729f9` includes PR #59 and later product commits. |
 | Requirements and design | PASS baseline / H2-APPROVED | `document/RDS.md`, `document/SDS.md`, and the FE02/test-plan source-of-truth reconciliation in this batch. |
 | Final release document | PASS | `document/FinalRelease.md`. |
 | User documentation | PASS | `docs/user-manual.md` and system overview. |
 | Phase 3 final report | PASS | `docs/release/phase3-final-report.md`. |
-| Final governance closeout | PASS for PR #54; responsive correction H2/H3 pending | `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md` and `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`. |
+| Final governance closeout | LOCAL CLOSEOUT H2 PASS; NEW H3 AND RELEASE REVIEW PENDING | `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md` and `.sdd/reviews/governance-release-reconciliation-validation-2026-07-20.md`. |
 | Defense presentation | PASS | `docs/presentation/phase3-defense-deck.pptx` with source record and render QA; Vietnamese briefing at `docs/briefing-thuyet-trinh-du-an-vi.docx`. |
 | Rehearsal | PASS | `docs/release/phase3-rehearsal-record.md` and demo runbook. |
-| Remote application-baseline quality | PASS | CI `29712597463` passed 917 backend tests across 53 suites and 171 frontend tests for `cce59d0`; staging workflow `29712612188` also passed. |
-| Fresh local reconciliation quality | AUTOMATED PASS / H2-APPROVED | The current correction passes 173 frontend tests, lint, build, traceability, and 4/4 browser E2E; prior backend/coverage/deployment evidence remains recorded for the unchanged backend scope. |
+| Current-main quality | PASS | CI `29824756487` passed 923 backend tests across 54 suites, 178 frontend tests, coverage, lint, build, deployment tests, and 4/4 browser E2E. |
+| Current-main staging | PASS | Deployment workflow `29824944954` passed frontend/backend deployment and smoke checks. |
 | Public Azure staging | PASS | Frontend, health, SQL catalog, CORS allow/deny, and protected-route six-check smoke. |
 | Demonstration video/link | NOT PUBLISHED | No external video URL was provided or fabricated. |
 | Authenticated Azure user observation | PASS | Live run `c6e0c46421f0` verified Admin/Member/Librarian login, protected reads, borrow request, approval, and return. |
 | Real SMTP inbox delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP message search were observed. |
-| Vietnamese UI localization | AUTOMATED/STAGING PASS; HUMAN VISUAL REVIEW PENDING | PR #58 merged; focused responsive review 1/1 produced `output/playwright/h3-visual/`, while human acceptance remains open in `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md`. |
+| Vietnamese UI localization | PASS — RELEASED BASELINE; LOCAL H2 REMEDIATION VERIFIED | PR #58 merged; the closeout candidate adds passing FE08/FE11 mobile bounding-box regressions and two corrected 390px screenshots under `output/playwright/`. |
+
+## Automated closeout refresh — 2026-07-21
+
+After a clean reinstall from the final lockfiles, local validation passed with
+923/923 backend tests across 54 suites, 178/178 frontend tests, 10/10 system
+tests, 8/8 deployment tests, and 4/4 Playwright flows. Coverage remained above
+the configured thresholds (statements 92.61%, branches 81.55%, functions
+96.68%, lines 92.54%). Production dependency audits for the root, backend, and
+frontend workspaces each reported `0 vulnerabilities`; the CI workflow now
+enforces the same high-severity audit gates for all dependencies.
+
+The local mobile-remediation follow-up used TDD: both new assertions first
+failed for the observed geometry, then passed after mobile-only CSS changes.
+The refreshed scoped gate passed 178/178 frontend tests, lint, production build,
+4/4 Playwright flows, and 12/12-feature (243/243 FR) traceability. Visual
+evidence is retained as `release-member-reservations-mobile-fixed.png` and
+`release-admin-users-mobile-fixed.png` under `output/playwright/`.
 
 ## Verify the published `v1.0.2` release now
 
@@ -42,9 +61,8 @@ gh release view v1.0.2 --repo SWP391-LibraryManagement/LibraryManagement
 
 ## Verify a future post-reconciliation release
 
-Run the first checks only after H2 approval, merge through H3, and exact
-post-merge CI pass. Treat the resulting `origin/main` SHA as the only eligible
-future release source; do not reuse `cce59d0` or retroactively approve PR #57/#58:
+Run the checks against the exact reviewed `origin/main` SHA before any future
+release tag; do not reuse `cce59d0` or retroactively approve earlier PRs:
 
 ```powershell
 git fetch origin --tags
@@ -62,7 +80,7 @@ gh release view v1.0.3 --repo SWP391-LibraryManagement/LibraryManagement
 ## Residual limitations
 
 - Notification inbox UI remains outside the approved Phase 1 scope.
-- Dedicated human desktop/mobile visual acceptance remains pending for the current Vietnamese localization reconciliation.
+- Dedicated human desktop/mobile visual acceptance passed on 2026-07-21; the later local FE08/FE11 corrective evidence is H2-approved but remains subject to H3 and the final release decision.
 - The demonstration video/link remains unpublished.
 - Avatar storage on App Service is not production-durable.
 - CI has no shared disposable SQL Server service.

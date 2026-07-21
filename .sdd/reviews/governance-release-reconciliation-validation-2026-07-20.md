@@ -1,6 +1,6 @@
 # Governance And Release Reconciliation Validation - 2026-07-20
 
-Status: H2-APPROVED - H3 PENDING
+Status: LOCAL CLOSEOUT H2-APPROVED; H3 APPROVED FOR PR #59; NEW H3 AND RELEASE DECISIONS PENDING
 
 ## Decision
 
@@ -9,13 +9,18 @@ sensitive OTP delivery ownership are Core; release metadata, test inventory,
 localization closeout, responsive presentation, and project memory are
 reversible Shell artifacts.
 
-The batch changes no backend, schema, API, authorization, permission,
-dependency, or deployment configuration. Frontend changes are bounded to six
-presentation-only surfaces plus two localization regressions; raw values,
-requests, comparisons, CSS state keys, and business behavior remain unchanged.
+The earlier PR #59 batch changed no backend, schema, API, authorization,
+permission, dependency, or deployment configuration. The later local closeout
+candidate adds reviewed lockfile/package audit maintenance, CI audit gates, and
+two mobile-only presentation fixes with bounding-box regressions. It changes no
+schema, API, authorization, permission, or business behavior.
 Human H2 approval was received in the Codex task on 2026-07-20 for the
 published reconciliation plus responsive HomePage correction (`962ceb1` and
-`daaeea6`). H3 remains required before merge.
+`daaeea6`). PR #59 then merged as `eed2688` after H3 review and green CI.
+The later current-main product batch requires its own final release review.
+Human H2 approval for the complete local closeout diff was received in the
+Codex task on 2026-07-21. That approval authorizes this reviewed commit set and
+subsequent branch/PR publication, but not H3 merge or a release tag.
 
 ## Changed Scope
 
@@ -25,9 +30,9 @@ published reconciliation plus responsive HomePage correction (`962ceb1` and
 - Preserved legacy verification/reset token compatibility, non-blocking failure,
   token-ID idempotency, and the direct FE02 `CHANGE_PASSWORD_OTP` path.
 - Refreshed the canonical test-plan inventory and FE01-FE12 readiness snapshot.
-- Distinguished published `v1.0.2@c988af1` from the validated post-release
-  application baseline `cce59d0`; any future `v1.0.3` must point to the later
-  reviewed `main` SHA after this reconciliation merges.
+- Distinguished published `v1.0.2@c988af1` from current `main@a8729f9`; any
+  future `v1.0.3` must point to a human-approved reviewed SHA after the later
+  current-main batch.
 - Added post-integration governance and Vietnamese localization evidence without
   inventing H2/H3 approval or a release tag.
 - Repaired residual Vietnamese presentation labels in user management,
@@ -36,6 +41,11 @@ published reconciliation plus responsive HomePage correction (`962ceb1` and
 - Added an accessible HomePage mobile menu plus responsive nav, CTA,
   benefit-card, and footer layout rules; existing navigation/auth actions remain
   unchanged.
+- Updated vulnerable dependency resolutions and added root/backend/frontend
+  high-severity audit gates to CI; all three production audits report zero
+  vulnerabilities.
+- Added FE08 mobile card containment and FE11 Admin topbar spacing fixes plus
+  Playwright geometry assertions and corrected `390px` screenshots.
 
 ## L1 - Automated Checks
 
@@ -95,16 +105,68 @@ Fresh local validation on the current responsive correction diff:
 | Localization implementation has a dedicated L1-L4 packet | PASS | `.sdd/reviews/vietnamese-ui-localization-validation-2026-07-20.md` |
 | Human H2 review of the complete reconciliation diff | PASS | Approved in the Codex task on 2026-07-20; commits `962ceb1` and `daaeea6` contain the reviewed responsive/evidence correction |
 | Automated responsive desktop/mobile review | PASS | Focused Playwright 1/1 with menu/footer/CTA checks and screenshots; the run logged `GET /api/books` `INTERNAL_ERROR`, so public book-card/detail content remains unverified |
-| Human H3/new `v1.0.3` release decision | PENDING | H3 remains mandatory before merge; tag creation remains outside this approval |
+| Human current-main desktop/mobile visual review | PASS | Project reviewer confirmed review on 2026-07-21 using the 12 screenshots retained under `output/ui-ux-audit-2026-07-20/` |
+| PR #59 H3 integration review | PASS | Merge commit `eed2688` records H3 approval after green CI and responsive evidence review |
+| Human H2 review of the local closeout candidate | PASS | User approved H2 in the Codex task on 2026-07-21 after RED/GREEN evidence, full scoped regression, corrected screenshots, and complete diff review |
+| Human current-main release decision | PENDING | Current `main@a8729f9` is validated by CI/deployment, but tag creation remains outside this approval |
 
 ## Residual Boundaries
 
-- A dedicated localized desktop/mobile visual review remains pending human
-  acceptance; the focused run could not verify public book-card/detail content
-  because the E2E backend returned `INTERNAL_ERROR` for `GET /api/books`.
+- The earlier focused harness could not verify public book-card/detail content
+  because its E2E backend returned `INTERNAL_ERROR` for `GET /api/books`; the
+  retained current UI audit screenshots were subsequently accepted by the
+  project reviewer on 2026-07-21.
 - Demonstration video/link remains unpublished.
+- Current-main dependency audit is now enforced locally and in CI; the final
+  release packet must retain the zero-vulnerability audit evidence.
 - Default CI has no shared disposable SQL Server service; current E2E/system
   tests use deterministic harnesses, while historical live SQL evidence remains
   in the Phase 2 reconciliation packet.
 - Backend ESLint is not configured as a script/CI gate; no backend code changed
   in this batch.
+
+## Automated Closeout Addendum — 2026-07-21
+
+The current working copy was fast-forwarded to `main@a8729f9`, dependencies were
+reinstalled from the final lockfiles, and the following local gates passed:
+
+| Gate | Result |
+| --- | --- |
+| `npm.cmd run trace:enforce` | PASS; 12/12 features, 243/243 FR tags, 100% |
+| `npm.cmd --prefix backend test` | PASS; 54 suites, 923/923 tests |
+| `npm.cmd --prefix backend run test:integration:system` | PASS; 10/10 |
+| `npm.cmd --prefix backend run test:coverage:ci` | PASS; statements 92.61%, branches 81.55%, functions 96.68%, lines 92.54% |
+| `npm.cmd --prefix frontend test` | PASS; 178/178 |
+| frontend lint and build | PASS |
+| `npm.cmd run test:deployment` | PASS; 8/8 |
+| `npm.cmd run test:e2e` | PASS; 4/4 |
+| `npm audit --audit-level=high` (root/backend/frontend) | PASS; 0 vulnerabilities in each workspace |
+| `git diff --check` | PASS; no whitespace errors |
+
+The CI workflow now enforces high-severity audits for all three workspaces.
+Human desktop/mobile visual acceptance is recorded; demonstration-video
+publication and the human decision to tag a new release remain intentionally open.
+
+Artifact hygiene: removed the untracked deployment ZIPs/dump directory
+(`backend/.zip`, `backend/.env.zip`, and `output/azure-mail-20260721-145625*`),
+and retained only the 12 UI audit screenshots under
+`output/ui-ux-audit-2026-07-20/` as review evidence.
+
+## Local H2 Approval Addendum — 2026-07-21
+
+Decision: **PASS — COMMIT AUTHORIZED**
+
+- L1 automated: FE08 and FE11 geometry assertions were observed RED before the
+  fixes and GREEN afterward; 178/178 frontend tests, lint, production build,
+  4/4 Playwright flows, 12/12-feature and 243/243-FR traceability, and
+  `git diff --check` pass.
+- L2 spec: the implementation remains inside the approved Task 7 mobile visual
+  remediation and the release-closeout reconciliation plan.
+- L3 constitution/safety: no backend product source, schema, API, permission,
+  authorization, or business rule changed; dependency changes are bounded to
+  reviewed audit remediation; no secrets or real PII are included.
+- L4 acceptance: corrected FE08 and FE11 screenshots were inspected at `390px`,
+  with controls contained and the Admin table retaining internal scrolling.
+
+This H2 decision authorizes the reviewed local commit set. Branch push, PR
+publication, H3 merge approval, and any `v1.0.3` tag remain separate actions.

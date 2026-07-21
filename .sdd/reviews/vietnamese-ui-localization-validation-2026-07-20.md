@@ -7,8 +7,10 @@ design is a reversible Shell change around an accepted FE01-FE12 Core. Raw
 status values, API contracts, permissions, authentication semantics, business
 rules, and user-owned catalog/profile data remain unchanged.
 
-PR #58 is merged as `cce59d0`. This packet records application-baseline evidence; it
-does not invent a separate H2/H3 review record where GitHub metadata is absent.
+PR #58 is merged as `cce59d0`. PR #59 later merged the H3-reviewed reconciliation
+as `eed2688`; current-main CI/deployment evidence is recorded separately below.
+Human desktop/mobile visual acceptance was confirmed by the project reviewer in
+the Codex session on 2026-07-21 using the retained UI audit screenshots.
 
 ## L1 - Automated Checks
 
@@ -34,6 +36,23 @@ The focused responsive browser review passed 1/1 at 1440px and 390px and
 produced screenshots under `output/playwright/h3-visual/`. The visual harness
 also observed an `INTERNAL_ERROR` from `GET /api/books`, so book-card/detail
 content was not accepted as visual evidence in that run.
+
+Current-main follow-up: `origin/main@a8729f9` passed CI `29824756487` (923 backend
+tests, 178 frontend tests, lint, build, deployment checks, and 4/4 browser E2E)
+and staging deployment `29824944954` (frontend/backend deployment and smoke).
+These automated results are complemented by the human desktop/mobile acceptance
+recorded below.
+
+Local H2-candidate follow-up on 2026-07-21 identified two narrow `390px`
+presentation regressions that document-level overflow checks did not detect: the
+FE08 candidate badge extended beyond its card, and the FE11 Admin action row had
+no separation from the page heading. Test-first containment/spacing assertions
+failed on the original layout, then passed after mobile-only CSS remediation.
+Fresh evidence is 178/178 frontend tests, lint, production build, 4/4 Playwright
+flows, and screenshots
+`output/playwright/release-member-reservations-mobile-fixed.png` and
+`output/playwright/release-admin-users-mobile-fixed.png`. APIs, workflow behavior,
+desktop layout, and the Admin table's internal horizontal scrolling are unchanged.
 
 ## L2 - Spec And Traceability
 
@@ -63,14 +82,14 @@ content was not accepted as visual evidence in that run.
 | Raw values and user-owned content preserved | PASS | Source assertions and existing workflow tests |
 | Vietnamese metadata and typography wiring | PASS | Source tests and production build |
 | Current deployed frontend/backend remain healthy | PASS | Staging workflow `29712612188` six-check smoke |
-| Responsive desktop/mobile layout capture | PASS (automated) | Focused Playwright review 1/1 at 1440px and 390px; screenshots under `output/playwright/h3-visual/`; 390px menu/footer/CTA checks pass |
-| Dedicated localized desktop/mobile visual acceptance | PENDING HUMAN REVIEW | Human acceptance is still required; the focused run logged `GET /api/books` `INTERNAL_ERROR`, so public book-card/detail content remains unverified |
+| Responsive desktop/mobile layout capture | PASS — H2-APPROVED LOCAL CANDIDATE | Focused Playwright review 1/1 at 1440px and 390px; later FE08/FE11 bounding-box regressions pass on the remediated candidate; fixed screenshots are retained under `output/playwright/` |
+| Dedicated localized desktop/mobile visual acceptance | PASS — H2-APPROVED LOCAL CANDIDATE | Project reviewer confirmed the original 12-screen review on 2026-07-21; the corrective review additionally inspected FE08 reservations and FE11 Admin users at 390px after the two minimal fixes |
 
 ## Residual Boundaries
 
 - GitHub PR metadata does not contain a dedicated review record for PR #58;
   any future reconciliation/release PR must record its own H2/H3 evidence before
   a new release tag is created. This does not retroactively review PR #58.
-- Human visual acceptance and the demonstration video/link remain unpublished.
+- Human visual acceptance is recorded; the demonstration video/link remains unpublished.
 - Shared disposable SQL CI, durable avatar storage, and a production SLA remain
   outside the approved student-release scope.

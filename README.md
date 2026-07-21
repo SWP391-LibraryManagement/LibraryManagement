@@ -10,12 +10,12 @@ documentation, and review.
 ## Project Status
 
 - Phase 2 Core Development: the approved FE01-FE12 scope is integrated, subject to the documented release limitations below.
-- Current phase: Phase 3 - Polish and Delivery is integrated on `main`; the validated post-release application baseline is `cce59d0` after PR #57/#58. The current governance/localization reconciliation is H2-approved with H3 pending.
-- Published source release: `v1.0.2` at `c988af1`. The application baseline is 20 commits ahead; this reconciliation must merge through H3 and pass exact post-merge CI before the team chooses whether to tag the resulting later `main` SHA as `v1.0.3`.
+- Current phase: Phase 3 - Polish and Delivery is integrated on `main`; PR #59 governance/localization reconciliation was merged as `eed2688` after its H3 review. The current release decision still covers the later post-merge product commits.
+- Published source release: `v1.0.2` at `c988af1`. Current `origin/main` is `a8729f9`; CI `29824756487` and staging deployment `29824944954` pass for that SHA. The post-PR #59 batch, dependency audit, and desktop/mobile visuals are reviewed; a future `v1.0.3` still requires an explicit release decision.
 - Canonical Phase 2 evidence: PR #40/#41 for full reconciliation and PR #42-#44 for the FE02/FE10 OTP follow-up.
 - Deferred operational items remain explicit and do not become implied product claims during Phase 3.
-- Remote application-baseline CI `29712597463` and staging workflow `29712612188` pass traceability, 917 backend tests, 171 frontend tests, browser E2E, deployment, and the six-check staging smoke for `cce59d0`.
-- Fresh local reconciliation evidence passes 917 backend tests across 53 suites and 172 frontend tests. Human H2 is approved; H3, dedicated localized desktop/mobile visual review, and demonstration-video publication remain pending.
+- Historical application-baseline CI `29712597463` and staging workflow `29712612188` remain recorded for `cce59d0`.
+- Current-main CI `29824756487` passes 923 backend tests across 54 suites, 178 frontend tests, coverage, lint, build, deployment checks, and 4/4 browser E2E; staging workflow `29824944954` passes frontend/backend deployment and smoke checks. Dedicated localized desktop/mobile visual review passed on 2026-07-21; demonstration-video publication remains pending.
 
 ## Implemented Scope
 
@@ -160,12 +160,11 @@ the [system integration runbook](docs/testing/system-integration-demo-runbook.md
 
 The observed baselines are intentionally separated by evidence source:
 
-- remote CI run `29712597463` for application baseline `cce59d0`: 917 backend tests across 53 suites and 171 frontend tests;
-- fresh local H2-approved reconciliation: 917 backend tests across 53 suites and 172 frontend tests;
-- local coverage: statements 92.68%, branches 81.66%, functions 96.59%, and lines 92.61%;
-- Playwright system golden path: 4/4 passing in the fresh local reconciliation;
+- remote CI run `29824756487` for current `main@a8729f9`: 923 backend tests across 54 suites and 178 frontend tests;
+- current-main coverage: statements 92.61%, branches 81.55%, functions 96.68%, and lines 92.54%;
+- Playwright system golden path: 4/4 passing in current-main CI;
 - traceability: all twelve feature specs currently report 100% FR tag coverage; implementation completion remains a separate gate;
-- production dependency audit: no unresolved Critical/High finding.
+- dependency audit: local synchronized baseline passes root, backend, and frontend `npm audit --audit-level=high`; CI now enforces the same high-severity gate.
 
 Evidence:
 
@@ -227,7 +226,7 @@ delivery. Sanitized evidence is recorded in
 - FE09 legacy React UI can use local browser records for classroom continuity; release evidence uses
   the production-aligned server API instead.
 - FE10 notification inbox UI is not part of the completed acceptance scope.
-- The current Vietnamese localization reconciliation still requires dedicated human desktop/mobile visual acceptance.
+- The current Vietnamese localization reconciliation passed dedicated human desktop/mobile visual acceptance on 2026-07-21.
 - The demonstration video/link is not published.
 - SQL integration is local/manual because CI does not host a shared disposable SQL Server service.
 - Deployed authentication transport must set `NODE_ENV=production`; set `TRUST_PROXY=true` only behind a trusted TLS-terminating proxy, and optionally set `HTTPS_REDIRECT=true` with a validated `HTTPS_CANONICAL_HOST` to redirect plain HTTP auth requests.
