@@ -197,6 +197,7 @@ Checked tasks below describe the implementation completed against the earlier ap
 | NFR-FE07-TIME-001 | FE07-T035 |
 | NFR-FE07-UX-001 | FE07-T037 |
 | BR-FE07-028; FR-FE07-028; AC-FE07-022 | FE07-T039, FE07-T040 |
+| BR-FE07-029; FR-FE07-029; AC-FE07-023 | FE07-T041 |
 
 ### 5.2 V0.5.1 History Contract Tasks
 
@@ -209,6 +210,14 @@ Checked tasks below describe the implementation completed against the earlier ap
   - Maps to: BR-FE07-028, FR-FE07-028, AC-FE07-022.
   - DoD: invalid values fail before query, member scope is enforced, default/boundary pagination and inclusive date filters pass, and stable ordering is covered for member and staff endpoints.
   - Evidence: `/me` now consumes detail-status filters and returns `{ borrowings, pagination }`; the member page sends canonical server `status/page/limit`, removes client-side page slicing, and maps detail rows. Focused backend 66/66 and frontend 18/18 pass.
+
+- [x] **FE07-T041 - Show rejected borrow requests correctly in member history.**
+  - Maps to: BR-FE07-029, FR-FE07-029, AC-FE07-023.
+  - RED: reject a member request, reload `/api/borrow-requests/me`, and prove the response lacks `requestStatus = REJECTED`; prove the frontend maps the row to `Pending`.
+  - GREEN: expose `requestStatus` in SQL/in-memory read models and prefer it only for rejected member-history display.
+  - Verify: focused backend route/contract tests, frontend borrowing tests, lint/build, traceability, and diff hygiene pass.
+  - Evidence: backend focused 61/61, frontend FE07 21/21, full backend 925/925, full frontend 199/199, frontend lint, production build, FE07 traceability 29/29, and `git diff --check` passed on 2026-07-22.
+  - Review state: implementation verification and human review completed on 2026-07-22; the exact reviewed file set is authorized for commit.
 
 ## 6. Still Outside This Slice
 

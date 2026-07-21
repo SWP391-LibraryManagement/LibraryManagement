@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.0
+# Version: 0.7.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-22
 
 # Feature ID: FE07
 
@@ -206,6 +206,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-026: Every request stores `CreatedBy`; approval stores `ApprovedAt` and `ApprovedBy`; every approved detail stores `BorrowDate`. These fields are required transaction history, not optional audit-only metadata.
 - BR-FE07-027: Rejection requires a trimmed non-empty reason of at most 500 characters and stores it in the rejection audit metadata.
 - BR-FE07-028: Borrowing-history endpoints accept only `status?`, `fromDate?`, `toDate?`, `page?`, and `limit?`; defaults are `page=1`, `limit=20`, bounds are `page>=1`, `limit=1..100`, the date range is inclusive, and rows use stable `BorrowDate DESC (nulls last), BorrowDetailId DESC` ordering.
+- BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
 
 ---
 
@@ -225,6 +226,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-012: While a borrow detail is `BORROWED`, the related copy shall not be available for another borrow approval.
 - FR-FE07-013: When all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, the system shall update the request status to `COMPLETED`.
 - FR-FE07-028: When a member or authorized staff requests borrowing history, the system shall validate `status`, date-only `fromDate/toDate`, `page`, and `limit` before querying, apply the member scope, and return deterministic paginated results using the BR-FE07-028 ordering.
+- FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -273,6 +275,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-020: Given a return date before `BorrowDate` or after the current `Asia/Ho_Chi_Minh` business date, when return is submitted, then FE07 returns `INVALID_RETURN_DATE` and preserves all state.
 - AC-FE07-021: Given a pending request and missing/blank/overlength rejection reason, when staff rejects it, then FE07 rejects the command and leaves the request `PENDING`.
 - AC-FE07-022: Given a valid history request, when no pagination is supplied, then FE07 uses `page=1`, `limit=20`, inclusive date filters, and stable `BorrowDate DESC`/`BorrowDetailId DESC` ordering; invalid values are rejected before query execution.
+- AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
 
 ---
 
@@ -331,7 +334,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 | dueDate | date | Required when approved | `borrowDate + 14 calendar days`. |
 | returnDate | date | Required for returned/lost/damaged | Defaults to current `Asia/Ho_Chi_Minh` business date; must be between `borrowDate` and current business date inclusive. |
 | renewalCount | integer | Yes for renewal support | Defaults to 0; maximum 1 per `BorrowDetail`; existing SQL supports this field. |
-| requestStatus | string | Yes | Values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. |
+| requestStatus | string | Yes | Values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Borrowing-history detail responses expose this owning-request state separately from persisted `detailStatus`. |
 | detailStatus | string | Yes | Persisted values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`. `OVERDUE` is derived when `status = BORROWED` and `dueDate < today`. |
 | copyStatus | string | Yes | Approved values: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`; FE07 uses only its owned transitions. |
 | actionReason | string | Required for rejection; optional otherwise | Rejection reason is trimmed 1..500 characters and stored in audit metadata; return/renew notes remain optional. |
@@ -490,9 +493,9 @@ stateDiagram-v2
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | POST | `/api/borrow-requests` | Member | `{ copyIds: number[] }` | Created borrow request | Creates pending request. |
-| GET | `/api/borrow-requests/me` | Member | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated own borrowing history | `status` is a detail status including derived `OVERDUE`; date filters are inclusive and use BorrowDate, or RequestDate for still-requested rows; stable order is BorrowDate DESC nulls last, BorrowDetailId DESC. |
+| GET | `/api/borrow-requests/me` | Member | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated own borrowing history | `status` is a detail status including derived `OVERDUE`; date filters are inclusive and use BorrowDate, or RequestDate for still-requested rows; stable order is BorrowDate DESC nulls last, BorrowDetailId DESC. Each returned detail includes `requestStatus` from its owning request; `status` remains the detail status used by filters. |
 | GET | `/api/borrow-requests` | Librarian/Admin | Query: status, memberId | Borrow request list | Protected endpoint. |
-| GET | `/api/members/{memberId}/borrowings` | Librarian/Admin | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated selected-member borrowing history | Same validation, date semantics, member scope, bounds, and stable ordering as the member endpoint. |
+| GET | `/api/members/{memberId}/borrowings` | Librarian/Admin | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated selected-member borrowing history | Same validation, date semantics, member scope, bounds, and stable ordering as the member endpoint. Each returned detail includes `requestStatus` from its owning request; `status` remains the detail status used by filters. |
 | PATCH | `/api/borrow-requests/{requestId}/approve` | Librarian/Admin | Optional notes | Approved request | Transactional update. |
 | PATCH | `/api/borrow-requests/{requestId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected request | Reason required, trimmed, max 500; stored in audit metadata. |
 | PATCH | `/api/borrow-details/{borrowDetailId}/return` | Librarian/Admin | `{ condition: "NORMAL"|"DAMAGED"|"LOST", returnDate?: date, notes?: string }` | Updated borrow detail | Defaults to current `Asia/Ho_Chi_Minh` business date; future/pre-borrow dates are rejected; a normal return preserves any `ACTIVE` FE08 queue claim and its borrowing priority. |
@@ -586,7 +589,7 @@ This feature does not include:
 | API contract | Approved in Section 11 for Phase 1 RESTful API planning. Endpoints stay in this SPEC.md unless a shared API contract document is reintroduced. |
 | FE08 dependency | Approved integration: `ACTIVE` queue priority blocks ordinary create/approve, the notified owner may request the held copy, and FE07 approval atomically fulfills the matching reservation. FE08 retains queue ownership. |
 | FE09 dependency | No FE07 conflict after decision: unpaid fines block borrowing/renewal; FE07 exposes return data and FE09 owns fine calculation/creation. |
-| Testability | AC-FE07-001 to AC-FE07-022 are concrete and observable. The v0.5.1 history contract maps to a focused validation/pagination/order test before implementation conformance can be claimed. |
+| Testability | AC-FE07-001 to AC-FE07-023 are concrete and observable. The history contract maps to focused validation, pagination, ordering, and rejected-request display tests before implementation conformance can be claimed. |
 
 ---
 
@@ -616,6 +619,7 @@ This feature does not include:
 | AC-FE07-020 | UC33 | Planned: pre-borrow/future return date rejection test | Planned |
 | AC-FE07-021 | UC32 | Planned: required rejection reason boundary test | Planned |
 | AC-FE07-022 | UC30, UC34 | Planned: history filter/date/page/limit validation and stable-order case | Planned |
+| AC-FE07-023 | UC30 | borrowingRoutes.test.js > "member history exposes a rejected owning request without changing detail status"; borrowingFrontend.test.js > "member history displays rejected requests without relabeling pending details" | Complete |
 | BR-FE07-001 | UC29-UC35 | Planned: guest/protected borrowing authorization matrix | Planned |
 | BR-FE07-002 | UC29 | Planned: member request identity is token-bound test | Planned |
 | BR-FE07-003 | UC32-UC35 | Planned: staff cross-member processing authorization test | Planned |
@@ -644,6 +648,7 @@ This feature does not include:
 | BR-FE07-026 | UC29, UC32 | Planned: CreatedBy/ApprovedAt/ApprovedBy/BorrowDate persistence test | Planned |
 | BR-FE07-027 | UC32 | Planned: rejection reason stored in audit metadata test | Planned |
 | BR-FE07-028 | UC30, UC34 | Planned: deterministic history contract case | Planned |
+| BR-FE07-029 | UC30 | FE07-T041 | Complete |
 | FR-FE07-001 | UC29 | Planned: eligibility validation precedes request insert | Planned |
 | FR-FE07-002 | UC29 | Planned: PENDING request + REQUESTED details creation test | Planned |
 | FR-FE07-003 | UC29 | Planned: non-borrowable item rejects whole request test | Planned |
@@ -672,6 +677,7 @@ This feature does not include:
 | FR-FE07-026 | UC29, UC32 | Planned: parent book inactive create/approval rejection test | Planned |
 | FR-FE07-027 | UC32 | Planned: rejection reason trim/length validation test | Planned |
 | FR-FE07-028 | UC30, UC34 | Planned: member/staff history scope, filters, pagination, and order case | Planned |
+| FR-FE07-029 | UC30 | FE07-T041 | Complete |
 
 ---
 

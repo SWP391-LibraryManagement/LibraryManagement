@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-22 - Correct rejected request status in member history
+
+- Exposed the owning borrow-request status in canonical detail history rows.
+- Displayed rejected requests as `Đã từ chối` while preserving persisted detail status `REQUESTED` and existing history filters.
+
 ## 2026-07-21 - Tier daily borrowing by membership status
 
 - Added a 5-copy daily limit for FE04-approved members and a 3-copy daily limit for other active `MEMBER` accounts.

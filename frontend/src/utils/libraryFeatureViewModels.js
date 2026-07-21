@@ -56,22 +56,28 @@ export function mapBorrowRequestsToHistoryRows(borrowRequests = []) {
   })));
 }
 
-// @spec FR-FE07-028
+// @spec FR-FE07-028, FR-FE07-029
 export function mapBorrowDetailsToHistoryRows(details = []) {
-  return details.map((detail) => ({
-    id: detail.borrowDetailId || `${detail.requestId}-${detail.copyId}`,
-    borrowDetailId: detail.borrowDetailId,
-    requestId: detail.requestId,
-    title: detail.copy?.title || `Bản sao #${detail.copyId}`,
-    author: detail.copy?.author || '-',
-    borrowDate: detail.borrowDate || detail.createdAt,
-    dueDate: detail.dueDate,
-    returnDate: detail.returnDate,
-    status: statusToUi(detail.status, { expiresAt: detail.dueDate }),
-    renewalsLeft: detail.status === 'BORROWED'
-      ? Math.max(0, 1 - Number(detail.renewalCount || 0))
-      : 0,
-  }));
+  return details.map((detail) => {
+    const displayStatus = detail.requestStatus === 'REJECTED'
+      ? detail.requestStatus
+      : detail.status;
+
+    return {
+      id: detail.borrowDetailId || `${detail.requestId}-${detail.copyId}`,
+      borrowDetailId: detail.borrowDetailId,
+      requestId: detail.requestId,
+      title: detail.copy?.title || `Bản sao #${detail.copyId}`,
+      author: detail.copy?.author || '-',
+      borrowDate: detail.borrowDate || detail.createdAt,
+      dueDate: detail.dueDate,
+      returnDate: detail.returnDate,
+      status: statusToUi(displayStatus, { expiresAt: detail.dueDate }),
+      renewalsLeft: detail.status === 'BORROWED'
+        ? Math.max(0, 1 - Number(detail.renewalCount || 0))
+        : 0,
+    };
+  });
 }
 
 export function mapBorrowRequestsToAdminRows(borrowRequests = []) {

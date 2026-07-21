@@ -126,6 +126,10 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       return null;
     }
 
+    const owningRequest = borrowRequests.find(
+      (request) => request.requestId === detail.requestId
+    );
+
     return clone({
       borrowDetailId: detail.borrowDetailId,
       requestId: detail.requestId,
@@ -135,6 +139,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       dueDate: toDateOnly(detail.dueDate),
       returnDate: toDateOnly(detail.returnDate),
       renewalCount: detail.renewalCount,
+      requestStatus: owningRequest?.status || null,
       status: detail.status,
       createdAt: detail.createdAt,
       updatedAt: detail.updatedAt,
