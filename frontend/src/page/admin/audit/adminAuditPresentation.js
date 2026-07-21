@@ -30,3 +30,7 @@ export function formatAuditAction(action) {
 export function formatAuditDetailKey(key) {
   return DETAIL_LABELS[key] || key;
 }
+
+export function getAuditActionOptions() {
+  return Object.entries(ACTION_LABELS).map(([value, label]) => ({ value, label }));
+}

@@ -20,7 +20,7 @@ test('FE11 legacy admin entry delegates exactly to the modular console', async (
   assert.equal(source.trim(), "export { default } from './admin/AdminConsolePage';");
 });
 
-test('FE11 modular console guards access and owns all eight approved sections', async () => {
+test('FE11 modular console guards access and exposes seven approved navigation entries', async () => {
   const [page, access, navigation] = await Promise.all([
     readAdminFile('AdminConsolePage.jsx'),
     readAdminFile('adminAccess.js'),
@@ -45,9 +45,9 @@ test('FE11 modular console guards access and owns all eight approved sections', 
     ['circulation', 'Quản lý mượn trả'],
     ['requests', 'Quản lý yêu cầu'],
     ['users', 'Quản lý người dùng'],
-    ['permissions', 'Phân quyền'],
     ['audit', 'Nhật ký hoạt động'],
   ]);
+  assert.doesNotMatch(navigation, /id: 'permissions'/);
 });
 
 test('FE11 user module keeps detail, lifecycle and independent loading contracts', async () => {
@@ -141,7 +141,7 @@ test('FE11 desktop table and mobile cards expose the same visible actions', asyn
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
   assert.match(css, /\.admin-user-cards\s*\{\s*display: none;/s);
-  assert.match(css, /@media \(max-width: 900px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
+  assert.match(css, /@media \(max-width: 1440px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
 });
 
 test('FE11 editor and drawer explain account setup and safe related summaries', async () => {
@@ -188,6 +188,13 @@ test('FE11 audit keeps canonical filters and renders only safe nested DTO fields
   for (const label of ['Hành động', 'Mã người thực hiện', 'Từ ngày', 'Đến ngày']) {
     assert.match(source, new RegExp(label));
   }
+  assert.match(source, /className="admin-audit-filter-bar"/);
+  assert.match(source, /list="admin-audit-action-options"/);
+  assert.match(source, /<datalist id="admin-audit-action-options">/);
+  assert.match(source, /placeholder="Nhập hoặc chọn hành động"/);
+  assert.doesNotMatch(source, /placeholder="AUTH_LOGIN_SUCCESS"/);
+  assert.match(source, /<details className="admin-audit-details-disclosure">/);
+  assert.match(source, /<summary>Xem chi tiết \(\{details\.length\}\)<\/summary>/);
   assert.match(source, /log\.actor\?\.fullName/);
   assert.match(source, /log\.actor\?\.email/);
   assert.match(source, /log\.target\?\.label/);

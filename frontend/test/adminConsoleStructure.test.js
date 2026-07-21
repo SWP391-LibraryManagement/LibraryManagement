@@ -31,7 +31,18 @@ test('Admin CSS defines mobile cards, focus and reduced motion', async () => {
   assert.match(css, /\.admin-user-cards/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /@media \(max-width: 1440px\)/);
   assert.match(css, /@media \(max-width: 900px\)/);
+});
+
+test('Admin Audit table reserves readable space for action, IP, time, and compact details', async () => {
+  const css = await readFile(new URL('admin-console.css', root), 'utf8');
+  assert.match(css, /\.admin-audit-table\s*\{[^}]*min-width: 980px;[^}]*table-layout: fixed;/s);
+  assert.match(css, /\.admin-audit-column--action\s*\{ width: 15%; \}/);
+  assert.match(css, /\.admin-audit-column--ip\s*\{ width: 11%; \}/);
+  assert.match(css, /\.admin-audit-column--time\s*\{ width: 17%; \}/);
+  assert.match(css, /\.admin-audit-ip,\s*\.admin-audit-time\s*\{[^}]*white-space: nowrap;/s);
+  assert.match(css, /\.admin-audit-details div\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/s);
 });
 
 test('Admin shell derives accessible desktop and mobile navigation from one contract', async () => {

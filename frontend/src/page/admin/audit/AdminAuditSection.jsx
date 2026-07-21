@@ -10,10 +10,15 @@ import { AdminEmptyState } from '../components/AdminEmptyState';
 import { AdminFilterBar } from '../components/AdminFilterBar';
 import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminPagination } from '../components/AdminPagination';
-import { formatAuditAction, formatAuditDetailKey } from './adminAuditPresentation';
+import {
+  formatAuditAction,
+  formatAuditDetailKey,
+  getAuditActionOptions,
+} from './adminAuditPresentation';
 
 const AUDIT_TABLE_PAGE_SIZE = 20;
 const EMPTY_AUDIT_FILTERS = Object.freeze({ q: '', action: '', actorId: '', from: '', to: '' });
+const AUDIT_ACTION_OPTIONS = Object.freeze(getAuditActionOptions());
 
 function buildAuditLogParams({ page = 1, limit = AUDIT_TABLE_PAGE_SIZE, ...filters } = {}) {
   const params = { page, limit };
@@ -135,6 +140,7 @@ export function AdminAuditSection({ onToast }) {
       </section>
 
       <AdminFilterBar
+        className="admin-audit-filter-bar"
         actions={(
           <>
             <AdminActionButton icon={Search} label="Áp dụng" tone="primary" disabled={auditLoading} onClick={applyFilters} />
@@ -148,7 +154,10 @@ export function AdminAuditSection({ onToast }) {
         </label>
         <label className="admin-field">
           <span>Hành động</span>
-          <input value={auditFilters.action} maxLength={100} placeholder="AUTH_LOGIN_SUCCESS" onChange={(event) => setAuditFilters((current) => ({ ...current, action: event.target.value }))} />
+          <input list="admin-audit-action-options" value={auditFilters.action} maxLength={100} placeholder="Nhập hoặc chọn hành động" onChange={(event) => setAuditFilters((current) => ({ ...current, action: event.target.value }))} />
+          <datalist id="admin-audit-action-options">
+            {AUDIT_ACTION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </datalist>
         </label>
         <label className="admin-field">
           <span>Mã người thực hiện</span>
@@ -162,19 +171,40 @@ export function AdminAuditSection({ onToast }) {
         <header><div><h2>Danh sách hoạt động</h2><p>Theo dõi các thao tác quan trọng trong hệ thống.</p></div><span>Chỉ đọc</span></header>
         <div className="admin-table-scroll">
           <table className="admin-data-table admin-audit-table">
+            <colgroup>
+              <col className="admin-audit-column--action" />
+              <col className="admin-audit-column--actor" />
+              <col className="admin-audit-column--target" />
+              {showAuditDetails ? <col className="admin-audit-column--details" /> : null}
+              <col className="admin-audit-column--ip" />
+              <col className="admin-audit-column--time" />
+            </colgroup>
             <thead><tr><th>Hành động</th><th>Người thực hiện</th><th>Đối tượng</th>{showAuditDetails ? <th>Chi tiết an toàn</th> : null}<th>IP</th><th>Thời gian</th></tr></thead>
             <tbody>{auditLogs.map((log) => {
               const action = formatAuditAction(log.action);
               const target = getAuditTarget(log);
               const details = getAuditDetailEntries(log);
+              const createdAt = new Date(log.createdAt);
               return (
                 <tr key={log.logId}>
                   <td><span className="admin-audit-action" title={action.raw}>{action.label}</span></td>
-                  <td><strong>{log.actor?.fullName || log.actor?.email || 'Hệ thống'}</strong>{log.actor?.fullName && log.actor?.email ? <small>{log.actor.email}</small> : null}</td>
-                  <td><strong>{target.label}</strong>{target.type ? <small>{target.type}</small> : null}</td>
-                  {showAuditDetails ? <td>{details.length === 0 ? '-' : <dl className="admin-audit-details">{details.map(([key, value]) => <div key={key}><dt>{formatAuditDetailKey(key)}</dt><dd>{formatAuditDetailValue(value)}</dd></div>)}</dl>}</td> : null}
-                  <td><code>{log.ipAddress || '-'}</code></td>
-                  <td>{new Date(log.createdAt).toLocaleString('vi-VN')}</td>
+                  <td className="admin-audit-actor"><strong>{log.actor?.fullName || log.actor?.email || 'Hệ thống'}</strong>{log.actor?.fullName && log.actor?.email ? <small>{log.actor.email}</small> : null}</td>
+                  <td className="admin-audit-target"><strong title={target.label}>{target.label}</strong>{target.type ? <small>{target.type}</small> : null}</td>
+                  {showAuditDetails ? (
+                    <td>{details.length === 0 ? '-' : (
+                      <details className="admin-audit-details-disclosure">
+                        <summary>Xem chi tiết ({details.length})</summary>
+                        <dl className="admin-audit-details">{details.map(([key, value]) => <div key={key}><dt>{formatAuditDetailKey(key)}</dt><dd>{formatAuditDetailValue(value)}</dd></div>)}</dl>
+                      </details>
+                    )}</td>
+                  ) : null}
+                  <td className="admin-audit-ip"><code>{log.ipAddress || '-'}</code></td>
+                  <td className="admin-audit-time">
+                    <time dateTime={log.createdAt || undefined}>
+                      <span>{createdAt.toLocaleDateString('vi-VN')}</span>
+                      <small>{createdAt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</small>
+                    </time>
+                  </td>
                 </tr>
               );
             })}</tbody>

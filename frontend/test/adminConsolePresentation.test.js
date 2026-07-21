@@ -4,14 +4,17 @@ import test from 'node:test';
 import { ADMIN_NAVIGATION } from '../src/page/admin/adminNavigation.js';
 import { selectOperationalChartRows } from '../src/page/admin/dashboard/adminDashboardViewModel.js';
 import { getPermissionDecision } from '../src/page/admin/permissions/permissionPresentation.js';
-import { formatAuditAction, formatAuditDetailKey } from '../src/page/admin/audit/adminAuditPresentation.js';
+import {
+  formatAuditAction,
+  formatAuditDetailKey,
+  getAuditActionOptions,
+} from '../src/page/admin/audit/adminAuditPresentation.js';
 
-test('Admin navigation keeps the approved eight entries in order', () => {
+test('Admin navigation keeps the approved seven entries in order without Permissions', () => {
   assert.deepEqual(ADMIN_NAVIGATION.map(({ id, label }) => [id, label]), [
     ['home', 'Trang chủ'], ['dashboard', 'Tổng quan'], ['library', 'Thư viện'],
     ['circulation', 'Quản lý mượn trả'], ['requests', 'Quản lý yêu cầu'],
-    ['users', 'Quản lý người dùng'], ['permissions', 'Phân quyền'],
-    ['audit', 'Nhật ký hoạt động'],
+    ['users', 'Quản lý người dùng'], ['audit', 'Nhật ký hoạt động'],
   ]);
 });
 
@@ -41,4 +44,10 @@ test('Audit presentation localizes known values and preserves unknown safe value
   });
   assert.equal(formatAuditDetailKey('roleName'), 'Vai trò');
   assert.equal(formatAuditDetailKey('customKey'), 'customKey');
+  assert.deepEqual(getAuditActionOptions()[0], {
+    value: 'AUTH_LOGIN_ATTEMPT', label: 'Thử đăng nhập',
+  });
+  assert.ok(getAuditActionOptions().some(({ value, label }) => (
+    value === 'AUTH_LOGIN_SUCCESS' && label === 'Đăng nhập thành công'
+  )));
 });

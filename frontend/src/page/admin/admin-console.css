@@ -1094,8 +1094,16 @@
 }
 
 .admin-audit-table {
-  min-width: 1120px;
+  min-width: 980px;
+  table-layout: fixed;
 }
+
+.admin-audit-column--action { width: 15%; }
+.admin-audit-column--actor { width: 21%; }
+.admin-audit-column--target { width: 20%; }
+.admin-audit-column--details { width: 16%; }
+.admin-audit-column--ip { width: 11%; }
+.admin-audit-column--time { width: 17%; }
 
 .admin-audit-table td {
   vertical-align: top;
@@ -1109,6 +1117,29 @@
 .admin-audit-table td small {
   margin-top: 3px;
   color: var(--admin-muted);
+}
+
+.admin-audit-actor,
+.admin-audit-target {
+  overflow: hidden;
+}
+
+.admin-audit-actor strong,
+.admin-audit-actor small,
+.admin-audit-target strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-audit-ip,
+.admin-audit-time {
+  white-space: nowrap;
+}
+
+.admin-audit-time time {
+  display: grid;
+  gap: 2px;
 }
 
 .admin-audit-action {
@@ -1127,10 +1158,22 @@
   margin: 0;
 }
 
+.admin-audit-details-disclosure summary {
+  width: max-content;
+  color: var(--admin-brass-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-audit-details-disclosure[open] summary {
+  margin-bottom: 8px;
+}
+
 .admin-audit-details div {
   display: grid;
-  grid-template-columns: minmax(100px, auto) minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
 }
 
 .admin-audit-details dt {
@@ -1308,6 +1351,10 @@
   gap: 12px;
 }
 
+.admin-audit-filter-bar .admin-filter-grid {
+  grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(170px, 1fr));
+}
+
 .admin-field {
   display: grid;
   gap: 6px;
@@ -1373,6 +1420,11 @@
 
 @keyframes admin-spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1440px) {
+  .admin-user-table { display: none; }
+  .admin-user-cards { display: grid; gap: 12px; }
 }
 
 @media (max-width: 900px) {

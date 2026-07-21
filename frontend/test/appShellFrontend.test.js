@@ -199,8 +199,9 @@ test('admin console keeps its sections while using the warm librarian visual sys
     '../src/page/admin/library/AdminLibrarySection.jsx',
     '../src/page/admin/circulation/AdminCirculationSection.jsx',
     '../src/page/admin/requests/AdminRequestsSection.jsx',
+    '../src/page/admin/users/AdminUsersSection.jsx',
   ];
-  const [navigation, page, css, dashboard, library, circulation, requests] = await Promise.all(
+  const [navigation, page, css, dashboard, library, circulation, requests, users] = await Promise.all(
     files.map((file) => readFile(new URL(file, import.meta.url), 'utf8')),
   );
   const source = [page, dashboard, library, circulation, requests].join('\n');
@@ -211,13 +212,14 @@ test('admin console keeps its sections while using the warm librarian visual sys
     'Thư viện',
     'Quản lý mượn trả',
     'Quản lý yêu cầu',
-    'Phân quyền',
     'Quản lý người dùng',
     'Nhật ký hoạt động',
   ]) {
     assert.match(navigation, new RegExp("label: '" + label + "'"));
   }
 
+  assert.doesNotMatch(navigation, /label: 'Phân quyền'/);
+  assert.match(users, /label="Phân quyền"/);
   assert.doesNotMatch(navigation, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
   assert.match(css, /--admin-brass: #a87532/);
   assert.match(css, /--admin-canvas: #faf6ef/);
