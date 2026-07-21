@@ -89,7 +89,7 @@ test('FE11 role catalog and mutation plan use canonical numeric IDs', () => {
 
 test('FE11 role saves assign before revoking and recover authoritative detail', async () => {
   const section = await readAdminFile('users/AdminUsersSection.jsx');
-  const saveRoles = section.match(/async function saveRoles\(nextRoles\)[^]*?\n {2}}\n\n {2}function resetFilters/)?.[0] || '';
+  const saveRoles = section.match(/async function saveRoles\(nextRoles\)[^]*?\r?\n {2}}\r?\n\r?\n {2}function resetFilters/)?.[0] || '';
 
   assert.match(saveRoles, /for \(const \{ roleId \} of assignments\)/);
   assert.match(saveRoles, /assignManagedUserRole\(roleUser\.userId, roleId\)/);
