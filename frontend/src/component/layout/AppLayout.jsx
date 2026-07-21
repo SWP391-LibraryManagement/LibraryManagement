@@ -32,6 +32,7 @@ const NAV_ICONS = {
   'borrow-request': BookMarked,
   'borrowing-history': History,
   'my-reservations': Bookmark,
+  'my-fines': ReceiptText,
   'borrow-requests-admin': ClipboardList,
   'process-returns': PackageCheck,
   'reservations-librarian': CalendarClock,

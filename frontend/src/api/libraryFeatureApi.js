@@ -245,6 +245,12 @@ export const inventoryApi = {
 };
 
 export const fineApi = {
+  listMine(params = {}) {
+    return authorizedRequest(
+      { method: 'get', url: '/fines/me', params },
+      'Không thể tải tiền phạt của bạn.',
+    );
+  },
   list(params = {}) {
     return authorizedRequest({ method: 'get', url: '/fines', params }, 'Không thể tải danh sách phiếu phạt.');
   },

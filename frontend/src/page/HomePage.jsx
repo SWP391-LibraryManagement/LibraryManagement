@@ -164,113 +164,6 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
   </div>
 );
 
-// -- Modal quyền lợi thành viên --
-const MembershipModal = ({ onClose }) => (
-  <div style={{
-    position: 'fixed', inset: 0, zIndex: 400,
-    background: 'rgba(30,18,10,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 24,
-  }} onClick={onClose}>
-    <div
-      style={{
-        background: '#FAF7F2', borderRadius: 16, maxWidth: 720, width: '100%',
-        maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(30,18,10,0.35)',
-      }}
-      onClick={e => e.stopPropagation()}
-    >
-      {/* Header */}
-      <div style={{ background: '#4E342E', padding: '22px 32px', borderRadius: '16px 16px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ fontSize: 11, color: '#C78A3B', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 4px' }}>Gói thành viên</p>
-          <span style={{ fontFamily: 'var(--heading)', fontSize: 20, fontWeight: 700, color: '#FAF7F2' }}>
-            Quyền lợi dành cho thành viên
-          </span>
-        </div>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#C4A882', borderRadius: 8, padding: 8 }}>
-          <X size={18} />
-        </button>
-      </div>
-
-      <div style={{ padding: '32px 32px 36px' }}>
-        {/* Plans */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 36 }}>
-          {[
-            {
-              name: 'Cơ bản',
-              price: 'Miễn phí',
-              desc: 'Phù hợp với người đọc cơ bản',
-              color: '#8B6B4A',
-              features: ['Mượn tối đa 2 sách/tháng', 'Truy cập danh mục sách cơ bản', 'Xem lịch sử đọc/mượn', 'Nhận thông báo qua email'],
-            },
-            {
-              name: 'Cao cấp',
-              price: '99.000 VND/tháng',
-              desc: 'Dành cho người yêu sách thường xuyên',
-              color: '#C78A3B',
-              highlight: true,
-              features: ['Mượn sách không giới hạn', 'Ưu tiên sách mới', 'Danh sách đọc được cá nhân hóa', 'Sự kiện dành riêng cho thành viên', 'Sách điện tử và sách nói', 'Ưu tiên đặt trước sách'],
-            },
-          ].map(plan => (
-            <div key={plan.name} style={{
-              borderRadius: 12, padding: '28px 24px',
-              border: plan.highlight ? '2px solid #C78A3B' : '1.5px solid rgba(78,52,46,0.15)',
-              background: plan.highlight ? '#FFF8EE' : '#FFF',
-              position: 'relative',
-            }}>
-              {plan.highlight && (
-                <div style={{
-                  position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-                  background: '#C78A3B', color: '#FFF', fontSize: 11, fontWeight: 700,
-                  padding: '3px 14px', borderRadius: 100, letterSpacing: '0.06em', whiteSpace: 'nowrap',
-                }}>PHỔ BIẾN NHẤT</div>
-              )}
-              <p style={{ fontSize: 11, color: plan.color, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>{plan.name}</p>
-              <div style={{ fontFamily: 'var(--heading)', fontSize: 28, fontWeight: 700, color: '#2C1A0E', margin: '0 0 4px' }}>{plan.price}</div>
-              <p style={{ fontSize: 13, color: '#7A5C44', margin: '0 0 20px' }}>{plan.desc}</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {plan.features.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#3A2416' }}>
-                    <span style={{ width: 18, height: 18, borderRadius: '50%', background: plan.highlight ? '#C78A3B' : '#EDE0CE', color: plan.highlight ? '#FFF' : '#8B6B4A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, marginTop: 1, fontWeight: 700 }}>✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <button style={{
-                width: '100%', padding: '11px', borderRadius: 8, border: 'none',
-                background: plan.highlight ? '#C78A3B' : '#4E342E',
-                color: '#FFF', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-                fontFamily: 'var(--sans)', transition: 'background 0.2s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#4E342E')}
-                onMouseLeave={e => (e.currentTarget.style.background = plan.highlight ? '#C78A3B' : '#4E342E')}
-              >
-                {plan.price === 'Miễn phí' ? 'Bắt đầu miễn phí' : 'Chọn gói cao cấp'}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* FAQ */}
-        <h3 style={{ fontFamily: 'var(--heading)', fontSize: 18, fontWeight: 700, color: '#2C1A0E', margin: '0 0 16px' }}>
-          Câu hỏi thường gặp
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            { q: 'Tôi có thể giữ sách trong bao lâu?', a: 'Thời hạn mượn tiêu chuẩn là 14 ngày. Thành viên cao cấp có thể gia hạn đến 28 ngày.' },
-            { q: 'Tôi có thể hủy gói cao cấp không?', a: 'Có. Bạn có thể hủy bất cứ lúc nào. Quyền lợi vẫn có hiệu lực đến hết chu kỳ thanh toán.' },
-            { q: 'Có bao gồm sách điện tử không?', a: 'Sách điện tử và sách nói chỉ dành cho thành viên cao cấp.' },
-          ].map(item => (
-            <div key={item.q} style={{ background: '#FFF', borderRadius: 10, padding: '16px 20px', border: '1px solid rgba(78,52,46,0.09)' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#2C1A0E', margin: '0 0 6px' }}>{item.q}</p>
-              <p style={{ fontSize: 13, color: '#7A5C44', margin: 0, lineHeight: 1.65 }}>{item.a}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 // -- Modal chi tiết sách --
 const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
   <div style={{
@@ -388,7 +281,6 @@ const HomePage = () => {
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [selectedBook, setSelectedBook] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showMembership, setShowMembership] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [authState, setAuthState] = useState(getStoredAuthState);
@@ -538,7 +430,24 @@ const HomePage = () => {
       setActiveSearch('');
       setSearchResults([]);
       setSearchError('');
-      showToast('Vui lòng nhập từ khóa tìm kiếm.');
+      try {
+        setSearchingBooks(true);
+        setBookError('');
+        const result = await publicBrowseApi.list();
+
+        if (!Array.isArray(result.data)) {
+          throw new Error(result.error?.message || 'Không thể tải danh sách sách.');
+        }
+
+        setBooks(result.data || []);
+        setActiveCategory('Tất cả');
+        setShowAll(true);
+        scrollTo('section-books');
+      } catch (error) {
+        setBookError(error.message || 'Không thể tải danh sách sách.');
+      } finally {
+        setSearchingBooks(false);
+      }
       return;
     }
 
@@ -1073,10 +982,10 @@ const HomePage = () => {
           {/* Right - benefit cards */}
           <div className="home-benefit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              { icon: '01', title: 'Mượn sách linh hoạt', desc: 'Mượn tối đa 5 cuốn cùng lúc theo quy định thư viện.' },
-              { icon: '02', title: 'Thông báo sách mới', desc: 'Nhận thông báo sớm khi có đầu sách mới.' },
-              { icon: '03', title: 'Danh sách đọc', desc: 'Tạo và quản lý bộ sưu tập sách cá nhân.' },
-              { icon: '04', title: 'Sự kiện riêng', desc: 'Tham gia các buổi giao lưu tác giả và câu lạc bộ đọc sách dành cho thành viên.' },
+              { icon: '01', title: 'Đăng ký trực tuyến', desc: 'Tạo tài khoản và xác thực email để sử dụng hệ thống.' },
+              { icon: '02', title: 'Mượn sách có kiểm soát', desc: 'Tối đa 5 sách đang mượn tại cùng một thời điểm.' },
+              { icon: '03', title: 'Hạn mức rõ ràng', desc: 'Gửi tối đa 3 yêu cầu mỗi ngày khi chưa được duyệt hội viên.' },
+              { icon: '04', title: 'Quyền lợi hội viên', desc: 'Gửi tối đa 5 yêu cầu mỗi ngày sau khi được duyệt hội viên.' },
             ].map(item => (
               <div key={item.title} style={{
                 background: '#FAF7F2', borderRadius: 12, padding: '22px 20px',
@@ -1120,7 +1029,7 @@ const HomePage = () => {
                 { label: 'Bộ sưu tập số', action: () => showToast('Bộ sưu tập số sẽ sớm ra mắt!') },
               ]},
               { title: 'Tài khoản', links: [
-                { label: 'Đăng nhập', action: () => {} },
+                { label: 'Đăng nhập', action: goToLogin },
                 { label: 'Đăng ký', action: goToRegister },
                 { label: 'Sách đang mượn', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
                 { label: 'Lịch sử đọc', action: () => navigate(isLoggedIn ? '/borrowing/history' : '/login') },
@@ -1160,9 +1069,6 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
-
-      {/* -- MEMBERSHIP MODAL -- */}
-      {showMembership && <MembershipModal onClose={() => setShowMembership(false)} />}
 
       {showLogoutConfirm && (
         <div
