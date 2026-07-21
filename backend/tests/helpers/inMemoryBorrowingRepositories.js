@@ -253,6 +253,25 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       ).length;
     },
 
+    async countRequestedCopiesOnDate(userId, businessDate) {
+      const target = String(businessDate).slice(0, 10);
+      return borrowDetails.filter((detail) => {
+        const request = borrowRequests.find((item) => item.requestId === detail.requestId);
+        return detail.userId === Number(userId)
+          && request?.status !== 'REJECTED'
+          && toDateOnly(request?.requestDate) === target;
+      }).length;
+    },
+
+    async countBorrowedCopiesOnDate(userId, businessDate) {
+      const target = String(businessDate).slice(0, 10);
+      return borrowDetails.filter((detail) => (
+        detail.userId === Number(userId)
+        && detail.borrowDate
+        && toDateOnly(detail.borrowDate) === target
+      )).length;
+    },
+
     async hasBlockingFine(userId) {
       return fines.some(
         (fine) => fine.userId === Number(userId) && fine.status === 'UNPAID' && fine.amount > 0
@@ -432,6 +451,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       approvedBy,
       approvalDate,
       dueDate,
+      dailyLimit = 5,
       auditLogRepository,
       auditEntry,
     }) {
@@ -502,6 +522,17 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
       if (activeCount + requestedDetails.length > 5) {
         return { outcome: 'BORROW_LIMIT_EXCEEDED' };
+      }
+
+      const approvalDay = toDateOnly(approvalDate);
+      const dailyCount = borrowDetails.filter((detail) => (
+        detail.userId === request.userId
+        && detail.borrowDate
+        && toDateOnly(detail.borrowDate) === approvalDay
+      )).length;
+
+      if (dailyCount + requestedDetails.length > dailyLimit) {
+        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED' };
       }
 
       request.status = 'APPROVED';

@@ -92,6 +92,7 @@ function mapReservationCandidate(row) {
     authorName: row.AuthorName || null,
     copyStatus: row.CopyStatus,
     activeReservationCount: Number(row.ActiveReservationCount || 0),
+    hasActiveReservation: Boolean(row.HasActiveReservation),
   };
 }
 
@@ -194,7 +195,7 @@ async function findReservationById(reservationId) {
 }
 
 // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
-async function listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) {
+async function listReservationCandidates({ q = '', page = 1, limit = 20, userId } = {}) {
   const pool = await getPool();
   const request = pool.request();
   const normalizedQuery = String(q).trim();
@@ -207,7 +208,8 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) 
       normalizedQuery ? `%${escapeLikePattern(normalizedQuery)}%` : null
     )
     .input('Offset', sql.Int, offset)
-    .input('Limit', sql.Int, Number(limit));
+    .input('Limit', sql.Int, Number(limit))
+    .input('UserId', sql.Int, userId);
 
   const result = await request.query(`
     SELECT
@@ -222,6 +224,13 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20 } = {}) 
         WHERE activeReservation.CopyId = bc.CopyId
           AND activeReservation.Status = 'ACTIVE'
       ) AS ActiveReservationCount,
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM Reservations ownReservation
+        WHERE ownReservation.CopyId = bc.CopyId
+          AND ownReservation.UserId = @UserId
+          AND ownReservation.Status IN ('ACTIVE', 'NOTIFIED')
+      ) THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS HasActiveReservation,
       COUNT(*) OVER() AS TotalRows
     FROM BookCopies bc
     INNER JOIN Books b ON b.BookId = bc.BookId

@@ -1,10 +1,10 @@
 # FE08 Test Plan - Reservation Management
 
-Version: 0.4.4
+Version: 0.5.1
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-21
 
-Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.4.4
+Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.1
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -43,14 +43,14 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 - `POST /api/reservations/expire-holds`: overdue hold expiration, next eligible promotion, and unchanged state when no hold is overdue.
 - `PATCH /api/reservations/:reservationId/cancel`: owner-only success, foreign-owner denial, terminal-state conflict, and atomic release of a held copy.
 - FE07 integration: matching-owner fulfillment, other-member borrow denial, active-queue priority, renewal denial, and no reservation-owner disclosure.
-- Candidate catalog: member-only `GET /api/reservations/candidates`, active-book `BORROWED`/`RESERVED` filtering, six-field redaction, server search/pagination, deterministic order, active counts, and authoritative `POST /api/reservations { copyId }` mutation.
+- Candidate catalog: member-only `GET /api/reservations/candidates`, active-book `BORROWED`/`RESERVED` filtering, seven-field redaction including member-scoped `hasActiveReservation`, server search/pagination, deterministic order, active counts, disabled duplicate action, and authoritative `POST /api/reservations { copyId }` mutation.
 
 ## 4. E2E / Manual Acceptance Flows
 
 - Eligible member reserves an unavailable copy -> staff processes the queue -> FE10 notification is requested -> the same member borrows the held copy -> reservation becomes `FULFILLED` and copy becomes `BORROWED` atomically.
 - Two members queue for one copy -> the earliest eligible member is held first -> an ineligible entry is skipped without state loss -> an expired hold promotes the next eligible member.
 - Staff lists reservations with omitted pagination -> the first 20 records appear in stable order; invalid bounds return validation errors.
-- Member searches the candidate catalog -> the server returns safe rows, the member creates a real reservation by numeric `copyId`, and the canonical reservation list reloads.
+- Member searches the candidate catalog -> the server returns safe rows, including books already reserved by that member; the member creates a real reservation by numeric `copyId`, duplicate actions become disabled, and the canonical reservation list reloads.
 
 ## 5. Current Evidence
 

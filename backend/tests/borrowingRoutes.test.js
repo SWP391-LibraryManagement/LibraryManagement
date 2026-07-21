@@ -1394,6 +1394,34 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
   });
 
+  test('member without approved membership is limited to 3 requested copies per day', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'daily-limit.standard@example.test',
+      approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4] })
+      .expect(201);
+
+    borrowingDependencies.state.borrowRequests[0].requestDate = new Date('2026-06-10T00:00:00.000Z');
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [5] })
+      .expect(409);
+
+    expect(response.body.error.code).toBe('BORROW_DAILY_LIMIT_EXCEEDED');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
+  });
+
   // AC-FE07-005, FR-FE07-018: a copy that is no longer AVAILABLE at approval time is rejected
   // and the request/details/copy data stay unchanged.
   test('approval is rejected when a copy is no longer available and leaves data unchanged', async () => {

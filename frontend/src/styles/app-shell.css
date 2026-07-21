@@ -837,10 +837,19 @@
 .member-catalog-card .data-toolbar,
 .member-reservation-catalog .data-toolbar { margin-bottom: 14px; }
 .member-selection-panel { border-top: 3px solid var(--lib-accent); }
-.member-history-card { padding: 0; overflow: hidden; }
-.member-history-card .data-toolbar { margin: 0; border: 0; border-bottom: 1px solid var(--lib-line); border-radius: 0; }
-.member-history-card .operational-table-wrap { border: 0; border-radius: 0; }
-.member-history-card .pagination { padding: 14px 18px; margin: 0; border-top: 1px solid var(--lib-line); }
+.member-history-card { display: grid; gap: 16px; min-width: 0; padding: 20px; overflow: hidden; }
+.member-history-card .data-toolbar { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.member-history-card .lib-table-wrap { max-width: 100%; border-radius: var(--lib-radius-sm); }
+.member-history-table { min-width: 820px; table-layout: fixed; }
+.member-history-table th:first-child { width: 38%; }
+.member-history-table th:nth-child(2),
+.member-history-table th:nth-child(3),
+.member-history-table th:nth-child(4) { width: 12%; }
+.member-history-table th:nth-child(5) { width: 14%; }
+.member-history-table th:nth-child(6) { width: 12%; }
+.member-history-table td:first-child .row-flex { min-width: 0; }
+.member-history-table td:first-child .stack-sm { min-width: 0; overflow-wrap: anywhere; }
+.member-history-card .pagination { padding: 0; margin: 0; border-top: 0; }
 .member-reservation-catalog,
 .member-reservation-list { margin-bottom: 20px; }
 .member-reservation-list .lib-card-title { margin-bottom: 16px; }

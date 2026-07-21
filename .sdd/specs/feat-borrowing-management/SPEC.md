@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.6.0
+# Version: 0.7.0
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -74,7 +74,7 @@ The feature can only start when:
 - PRE-FE07-002: The actor has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 membership approval is not required.
 - PRE-FE07-003: The requested book copy exists in `BookCopies`.
 - PRE-FE07-004: Protected actions are performed by an authenticated actor with the correct role.
-- PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5, default loan duration is 14 calendar days, and renewal limit is 1 renewal per borrowed copy.
+- PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5; daily limit is 5 copies for canonical `Members.Status = APPROVED` and 3 copies otherwise; default loan duration is 14 calendar days; renewal limit is 1 renewal per borrowed copy.
 
 ---
 
@@ -181,6 +181,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-002: A member can create borrow requests only for their own account.
 - BR-FE07-003: A librarian/admin can view and process borrow requests for any member.
 - BR-FE07-004: A member must have the `MEMBER` role and `Users.Status = ACTIVE` before borrowing or renewal; FE04 membership application status does not block FE07.
+- BR-FE07-005A: FE04 approval determines the daily borrowing tier without blocking borrowing: canonical `Members.Status = APPROVED` permits 5 copies per `Asia/Ho_Chi_Minh` business day; `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` permits 3 copies per business day.
 - BR-FE07-005: At create and approval, `activeBorrowedCount + requestedDetailCount` must be less than or equal to 5. `activeBorrowedCount` counts only the member's current `BorrowDetails.Status = BORROWED`; approval acquires the member-scoped lock and relevant rows in the order defined by NFR-FE07-TXN-003 before calculating the count, so concurrent approvals cannot exceed 5.
 - BR-FE07-006: A member with overdue active loans or any unpaid fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy.
 - BR-FE07-007: A copy can be borrowed only when FE07 classifies it as borrowable under BR-FE07-023.
@@ -230,6 +231,7 @@ Use these stable IDs for tasks and tests.
 These EARS requirements cover error and abnormal conditions. Each traces back to an existing Edge Case (EC-*), Business Rule (BR-*), or Alternative Flow (AF-*).
 
 - FR-FE07-014: IF `activeBorrowedCount + requestedDetailCount > 5` at create or approval, the system shall reject the whole action with `BORROW_LIMIT_EXCEEDED` and change no record. Approval must acquire the member-scoped lock and relevant rows in the NFR-FE07-TXN-003 order before performing this calculation. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
+- FR-FE07-014A: IF the member's copies already requested on the request business day plus the new request exceed the FE04-derived daily tier, or copies already approved on the approval business day plus the approval exceed that tier, the system shall reject the whole action with `BORROW_DAILY_LIMIT_EXCEEDED`. The limit is 5 for `APPROVED` and 3 otherwise, using `Asia/Ho_Chi_Minh` dates.
 - FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive, the system shall reject the action and return an eligibility error; an active `MEMBER` may proceed without FE04 approval. (Source: BR-FE07-004, EC-FE07-002, AF-FE07-001)
 - FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
 - FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any copy that fails BR-FE07-023, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
@@ -251,6 +253,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-001: Given an eligible member and an `AVAILABLE` copy with no reservation claim, when the member creates a borrow request, then the system creates a `PENDING` borrow request with requested details marked `REQUESTED`.
 - AC-FE07-002: Given an inactive member, when the member creates a borrow request, then the system rejects the request.
 - AC-FE07-003: Given a member has 4 active borrowed details and submits/approves a request containing 2 details, when the limit is checked, then FE07 returns `BORROW_LIMIT_EXCEEDED` and preserves all state.
+- AC-FE07-003A: Given an active `MEMBER` without canonical FE04 approval has already requested 3 copies on the current business day, when another copy is requested, then FE07 returns `BORROW_DAILY_LIMIT_EXCEEDED`; given canonical status `APPROVED`, requests up to 5 copies that day are allowed subject to all other borrowing rules.
 - AC-FE07-004: Given a pending request and copies that still satisfy BR-FE07-023, when a librarian approves it, then FE07 stores approver/approval time/borrow dates, marks request/details/copies correctly, sets due dates to borrow date +14 days, and commits matching reservation/audit updates atomically.
 - AC-FE07-005: Given a pending request whose copy is no longer borrowable under BR-FE07-023, when a librarian approves it, then the system rejects approval and keeps data unchanged.
 - AC-FE07-006: Given a borrowed copy, when the librarian processes a normal return, then the system stores return date and marks the copy `AVAILABLE`; if an `ACTIVE` FE08 queue exists, the queue claim remains and ordinary borrowing stays blocked until FE08 resolves it.
@@ -526,6 +529,7 @@ stateDiagram-v2
 
 - NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, reservation queue priority, reservation state conflict, unpaid fine, overdue loan, or invalid state.
 - NFR-FE07-UX-002: The member borrow-request confirmation shall show only circulation-relevant book information and shall not display ratings.
+- NFR-FE07-UX-003: The member borrowing-history toolbar, table, and pagination shall remain visually separated without overlapping or breaking the card layout.
 - NFR-FE07-TIME-001: Borrow, due, return, and overdue business dates use `Asia/Ho_Chi_Minh`; persisted timestamps may use UTC internally only if API/business-date conversion remains deterministic.
 
 ---
@@ -562,7 +566,7 @@ This feature does not include:
 
 | ID | Question | Owner | Status |
 | -- | -------- | ----- | ------ |
-| Q-FE07-001 | What is the maximum number of active borrowed copies per member? | Team/Teacher | Resolved: 5 active borrowed copies per member (DEC-GEN-001). |
+| Q-FE07-001 | What is the maximum number of active borrowed copies per member? | Team/Teacher | Resolved: 5 active borrowed copies per member (DEC-GEN-001); daily tier is 5 for FE04-approved members and 3 for other active `MEMBER` accounts (user decision 2026-07-21). |
 | Q-FE07-002 | What is the default loan duration in days? | Team/Teacher | Resolved: 14 calendar days from persisted `BorrowDate`, which is the approval business date in `Asia/Ho_Chi_Minh` (DEC-GEN-002). |
 | Q-FE07-003 | How many renewals are allowed per borrow detail? | Team/Teacher | Resolved: 1 renewal per `BorrowDetail`, adding 14 calendar days from current due date. |
 | Q-FE07-004 | Does unpaid fine block new borrowing? If yes, what fine statuses/amounts block it? | Team/Teacher | Resolved: any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal. |

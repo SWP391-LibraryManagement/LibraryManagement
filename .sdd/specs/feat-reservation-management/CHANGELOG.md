@@ -4,6 +4,8 @@
 
 - Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.
 - Queue processing now skips inactive accounts without consulting FE04 application status.
+- Clarified that Librarian/Admin processes the reservation queue when a copy becomes available.
+- Kept borrowed/reserved candidates visible, added member-scoped `hasActiveReservation`, disabled duplicate reservation actions, and removed routine synchronization banners.
 
 ## 2026-07-20 - Vietnamese UI localization and typography
 

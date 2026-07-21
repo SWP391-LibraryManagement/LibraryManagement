@@ -11,7 +11,7 @@
 ## High-Level Business Rules
 
 - BR-G-001: A book cannot be borrowed if its available quantity is 0.
-- BR-G-002: A member cannot borrow more than 5 active borrowed copies at the same time.
+- BR-G-002: A member cannot borrow more than 5 active borrowed copies at the same time. Daily borrowing is tiered by FE04 status: `APPROVED` members have a 5-copy daily limit; other active `MEMBER` accounts have a 3-copy daily limit.
 - BR-G-003: A member with overdue books or unpaid fines may be restricted from borrowing.
 - BR-G-004: Every borrow and return transaction must be recorded.
 - BR-G-005: Fine calculation must be traceable and testable.

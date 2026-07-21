@@ -170,15 +170,16 @@ runtimeDescribe('FE08 live SQL reservation candidate catalog', () => {
       q: seed.key,
       page: 1,
       limit: 20,
+      userId: seed.userId,
     });
     expect(result.rows.map((row) => row.copyId)).toEqual([reservedCopyId, borrowedCopyId]);
     expect(result.rows).toEqual(expect.arrayContaining([
-      expect.objectContaining({ copyId: borrowedCopyId, copyStatus: 'BORROWED', activeReservationCount: 1 }),
-      expect.objectContaining({ copyId: reservedCopyId, copyStatus: 'RESERVED', activeReservationCount: 0 }),
+      expect.objectContaining({ copyId: borrowedCopyId, copyStatus: 'BORROWED', activeReservationCount: 1, hasActiveReservation: true }),
+      expect.objectContaining({ copyId: reservedCopyId, copyStatus: 'RESERVED', activeReservationCount: 0, hasActiveReservation: false }),
     ]));
     expect(result.rows.map((row) => Object.keys(row).sort())).toEqual([
-      ['activeReservationCount', 'authorName', 'bookId', 'copyId', 'copyStatus', 'title'],
-      ['activeReservationCount', 'authorName', 'bookId', 'copyId', 'copyStatus', 'title'],
+      ['activeReservationCount', 'authorName', 'bookId', 'copyId', 'copyStatus', 'hasActiveReservation', 'title'],
+      ['activeReservationCount', 'authorName', 'bookId', 'copyId', 'copyStatus', 'hasActiveReservation', 'title'],
     ]);
     expect(result.rows).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ copyId: availableCopyId }),

@@ -281,6 +281,14 @@ test('borrowing pagination wraps instead of hiding later pages on mobile', async
   assert.match(styles, /--lib-heading:\s*var\(--heading\);/);
 });
 
+test('member borrowing history keeps toolbar, table and pagination separated', async () => {
+  const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
+
+  assert.match(styles, /\.member-history-card\s*\{[^}]*display:\s*grid;[^}]*gap:\s*16px;[^}]*padding:\s*20px;/s);
+  assert.match(styles, /\.member-history-card \.data-toolbar\s*\{[^}]*padding:\s*0;[^}]*background:\s*transparent;/s);
+  assert.match(styles, /\.member-history-card \.lib-table-wrap\s*\{[^}]*border-radius:\s*var\(--lib-radius-sm\);/s);
+});
+
 test('FE07 member pages use shared operational patterns without changing API calls', async () => {
   const request = await readFile(new URL('../src/page/borrowing/BorrowRequestPage.jsx', import.meta.url), 'utf8');
   const history = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');

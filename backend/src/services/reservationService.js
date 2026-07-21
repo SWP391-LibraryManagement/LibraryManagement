@@ -173,6 +173,7 @@ function createReservationService({
       q: typeof filters.q === 'string' ? filters.q.trim() : '',
       page,
       limit,
+      userId: actor.userId,
     });
     const total = Number(result.total || 0);
 

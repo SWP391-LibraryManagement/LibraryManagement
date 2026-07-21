@@ -197,6 +197,12 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /DEMO_RESERVABLE|useMemo/);
   assert.match(mine, /reservationApi\.listCandidates/);
   assert.match(mine, /candidate\.copyId/);
+  assert.match(mine, /activeReservedCopyIds/);
+  assert.doesNotMatch(mine, /visibleCandidates/);
+  assert.match(mine, /candidate\.hasActiveReservation/);
+  assert.match(mine, /hasActiveReservation: true/);
+  assert.match(mine, /Đã đặt chỗ/);
+  assert.doesNotMatch(mine, /Danh sách đang được đồng bộ từ thư viện|Đã cập nhật dữ liệu/);
   assert.doesNotMatch(mine, /candidate\.availableCopies|candidate\.eta|book\.availableCopies|book\.eta/);
   assert.match(mine, /setReservations\(\[\]\)/);
   assert.match(mine, /await reservationApi\.cancel\(cancelTarget\.reservationId/);

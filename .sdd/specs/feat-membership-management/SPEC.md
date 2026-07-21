@@ -1,6 +1,6 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.3.0
+# Version: 0.3.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -325,7 +325,7 @@ This feature does not include:
 | ---------- | ---- | ----- |
 | FE02 Authentication | Internal | Provides account identity and authenticated user. |
 | FE03 User Profile | Internal | Provides profile data for review if needed. |
-| FE07 Borrowing Management | Independent consumer | Uses active account plus `MEMBER` role; FE04 does not gate borrowing. |
+| FE07 Borrowing Management | Independent consumer | Uses active account plus `MEMBER` role; FE04 does not gate borrowing, but canonical `APPROVED` status increases the daily allowance from 3 to 5 copies. |
 | FE08 Reservation Management | Independent consumer | Uses active account plus `MEMBER` role; FE04 does not gate reservation. |
 | FE10 Notification Management | Internal | Receives non-blocking `MEMBERSHIP_RESULT` requests after approval/rejection commits when configured. |
 | FE11 User & Role Management | Internal | Provides librarian/admin roles. |

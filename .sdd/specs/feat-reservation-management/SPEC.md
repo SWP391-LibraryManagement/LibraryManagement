@@ -1,6 +1,6 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.0
+# Version: 0.5.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -233,7 +233,7 @@ The feature can only start when:
 - AC-FE08-012: Given a copy has active reservation priority, when another member attempts to borrow it, then the operation is denied and queue order is preserved.
 - AC-FE08-013: Given omitted reservation-list pagination, when staff lists reservations, then `page = 1` and `limit = 20` are used; invalid supplied values are rejected without normalization.
 - AC-FE08-014: Given a reservation that reached `NOTIFIED`, when it later becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, then its original `NotifiedAt` and `ExpiresAt` remain unchanged; only `CANCELLED` has a non-null `CancelledAt`.
-- AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, and `activeReservationCount`; barcode, location, owner, email, timestamps, and version are absent.
+- AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount`, and the member-scoped boolean `hasActiveReservation`; barcode, location, owner, email, timestamps, and version are absent.
 - AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
 
 ---
@@ -283,7 +283,7 @@ The feature can only start when:
 | expiresAt | datetime | Required after first notification | Server sets `NotifiedAt + 2 calendar days`; immutable thereafter and preserved in `NOTIFIED`, `FULFILLED`, `EXPIRED`, or notified-then-cancelled rows. Null only when the reservation never reached `NOTIFIED`. |
 | notifiedAt | datetime | Required after first notification | Server timestamp for the original hold notification; immutable and preserved after every terminal transition. Null only when the reservation never reached `NOTIFIED`. |
 | cancelledAt | datetime | Required only when `status = CANCELLED` | Server timestamp; never client-supplied. Must be null for every non-cancelled state. |
-| candidate projection | read-only DTO | Yes for candidate reads | Exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus` (`BORROWED` or `RESERVED`), and `activeReservationCount`; no staff-only or reservation-owner fields. |
+| candidate projection | read-only DTO | Yes for candidate reads | Exactly `copyId`, `bookId`, `title`, nullable `authorName`, `copyStatus` (`BORROWED` or `RESERVED`), `activeReservationCount`, and member-scoped `hasActiveReservation`; no staff-only or reservation-owner fields. |
 
 ### 10.3 State Model & Transition Rules (Reservation)
 
@@ -376,6 +376,7 @@ stateDiagram-v2
 - NFR-FE08-SEC-002: Members must not view or cancel other members' reservations.
 - NFR-FE08-SEC-003: Librarian/admin permissions must be checked on the server.
 - NFR-FE08-SEC-004: Candidate reads must require the `MEMBER` role and must not expose barcode, location, reservation owner, member email, reservation timestamps, rowversion, or other staff-only metadata.
+- NFR-FE08-UX-003: The member candidate list shall keep every eligible `BORROWED` or `RESERVED` copy visible, mark a member-owned `ACTIVE` or `NOTIFIED` reservation as `Đã đặt chỗ`, disable duplicate creation for that copy, and not show routine synchronization-success banners.
 
 ### 12.2 Transaction Integrity
 
@@ -441,7 +442,7 @@ This feature does not include:
 | Q-FE08-008 | A failed FE10 request leaves the committed hold in place and writes a failure audit; no automatic retry worker is included in Phase 1. | Nhat normalization review 2026-07-17 | APPROVED |
 | Q-FE08-009 | `NotifiedAt` and `ExpiresAt` are immutable history after notification and survive fulfillment, expiration, or cancellation; `CancelledAt` belongs only to cancelled rows. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE08-010 | `queuePosition` is derived from the canonical queue order and only `POST /api/reservations/process-queue` is the Phase 1 queue-processing endpoint. | Queue contract normalization 2026-07-17 | APPROVED |
-| Q-FE08-011 | Candidate selection uses protected member-only `GET /api/reservations/candidates`; it returns one safe row per eligible physical copy, keeps FE01/FE06 boundaries unchanged, and preserves `POST /api/reservations { copyId }`. | User approval `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN`, 2026-07-19 | APPROVED |
+| Q-FE08-011 | Candidate selection uses protected member-only `GET /api/reservations/candidates`; it returns one safe row per eligible physical copy plus member-scoped `hasActiveReservation`, keeps already-reserved copies visible with duplicate action disabled, keeps FE01/FE06 boundaries unchanged, and preserves `POST /api/reservations { copyId }`. | User approval `APPROVE TD-028 - Option A` and `APPROVE FE08 DESIGN`, 2026-07-19; member UI clarification 2026-07-21 | APPROVED |
 
 ---
 

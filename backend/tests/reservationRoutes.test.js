@@ -155,6 +155,7 @@ describe('FE08 reservation management', () => {
       authorName: 'Robert C. Martin',
       copyStatus: 'BORROWED',
       activeReservationCount: 2,
+      hasActiveReservation: false,
     });
     expect(Object.keys(response.body.data[0]).sort()).toEqual([
       'activeReservationCount',
@@ -162,11 +163,22 @@ describe('FE08 reservation management', () => {
       'bookId',
       'copyId',
       'copyStatus',
+      'hasActiveReservation',
       'title',
     ]);
     expect(JSON.stringify(response.body)).not.toMatch(/barcode|location|owner|email|reservedAt|version/i);
     expect(JSON.stringify(reservationDependencies.state.reservations)).toBe(reservationsBefore);
     expect(authDependencies.state.auditLogs.length).toBe(auditCountBefore);
+
+    const ownResponse = await request(app)
+      .get('/api/reservations/candidates')
+      .query({ q: 'clean', page: 1, limit: 20 })
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .expect(200);
+
+    expect(ownResponse.body.data.find((item) => item.copyId === 1)).toMatchObject({
+      hasActiveReservation: true,
+    });
   });
 
   // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-PERF-003
