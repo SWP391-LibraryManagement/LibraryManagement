@@ -279,10 +279,17 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 
 ## Admin Console Full Frontend Refactor Tasks
 
-- [ ] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
-- [ ] **FE11-UXR02 - Build the responsive Admin shell and shared presentation primitives.**
-- [ ] **FE11-UXR03 - Migrate Dashboard and User Management with desktop/mobile parity.**
-- [ ] **FE11-UXR04 - Migrate Requests, Permissions, and Audit without changing API ownership.**
-- [ ] **FE11-UXR05 - Migrate Library/Circulation and remove unreachable membership/payment Admin code.**
-- [ ] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
+- [x] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
+  - Evidence: pure helper RED-GREEN tests cover navigation order, chart selection, explicit permission decisions, and localized safe audit presentation.
+- [x] **FE11-UXR02 - Build the responsive Admin shell and shared presentation primitives.**
+  - Evidence: guarded shell, accessible mobile navigation, labeled controls, focus visibility, and reduced-motion contracts pass focused and full frontend validation.
+- [x] **FE11-UXR03 - Migrate Dashboard and User Management with desktop/mobile parity.**
+  - Evidence: API-backed dashboard and modular user lifecycle/role/detail flows pass source contracts; Playwright proves desktop table/mobile cards and no page overflow.
+- [x] **FE11-UXR04 - Migrate Requests, Permissions, and Audit without changing API ownership.**
+  - Evidence: FE07 request mutations, FE11 permission/audit reads, FE12 role counts, safe audit projection, pagination, terminal actions, and DOCX export pass focused/full tests.
+- [x] **FE11-UXR05 - Migrate Library/Circulation and remove unreachable membership/payment Admin code.**
+  - Evidence: FE05 book mutations remain canonical outside Admin; circulation keeps FE07 return/renew ownership; source guards prove no hidden FE04/FE09 Admin paths.
+- [x] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
+  - Evidence: the legacy entry is an exact one-line compatibility export; frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint/build, and browser E2E 4/4 pass.
 - [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**
+  - Pending: Azure workflow/deployed SHA and explicit human staging visual approval. Automated responsive acceptance is recorded separately in `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`.
