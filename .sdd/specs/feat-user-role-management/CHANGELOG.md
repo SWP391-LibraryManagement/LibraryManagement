@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Simplify Admin Audit Log Filters
+
+- Removed the separate `AUTH_LOGIN_SUCCESS` action input and adjacent actor-ID input from the Admin Audit Log toolbar.
+- Kept text search, date-range filtering, pagination, redaction, and the backend `action`/`actorId` query contract unchanged.
+- Updated FE11 requirements, task traceability, and frontend regression coverage for the simplified toolbar.
+
 ## 2026-07-21 - Replace Admin CSV exports with DOCX
 
 - Replaced Library, Borrowing, and Request Management CSV controls with valid Word `.docx` downloads.

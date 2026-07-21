@@ -125,13 +125,13 @@ test('FE11 Audit query builder omits blanks and preserves nonblank server valida
   assert.equal(buildAuditLogParams({ actorId: 'invalid' }).actorId, 'invalid');
 });
 
-test('FE11 Audit exposes the approved action and actor filters', async () => {
+test('FE11 Audit keeps action and actor filters out of the simplified toolbar', async () => {
   const source = await readFile(pagePath, 'utf8');
 
-  assert.match(source, /aria-label="Lọc hành động"[\s\S]*?value=\{auditFilters\.action\}/);
-  assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?action: event\.target\.value/);
-  assert.match(source, /aria-label="Mã người thực hiện"[\s\S]*?type="number"[\s\S]*?value=\{auditFilters\.actorId\}/);
-  assert.match(source, /setAuditFilters\(\(current\) => \(\{[\s\S]*?actorId: event\.target\.value/);
+  assert.doesNotMatch(source, /aria-label="Lọc hành động"/);
+  assert.doesNotMatch(source, /placeholder="AUTH_LOGIN_SUCCESS"/);
+  assert.doesNotMatch(source, /aria-label="Mã người thực hiện"/);
+  assert.doesNotMatch(source, /value=\{auditFilters\.(?:action|actorId)\}/);
 });
 
 test('FE11 Audit controls reset pagination and refresh with applied filters', async () => {
@@ -297,7 +297,6 @@ test('FE11 Admin copy uses shared Vietnamese labels and locale without changing 
     'Chưa có tên',
     'Lượt mượn đang hoạt động',
     'Tiền phạt chưa thanh toán',
-    'Mã người thực hiện',
     'Chỉnh sửa',
   ]) {
     assert.match(source, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));

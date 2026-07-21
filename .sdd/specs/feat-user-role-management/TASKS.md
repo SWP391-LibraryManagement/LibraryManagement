@@ -273,6 +273,11 @@ Owner: Dung
   - Evidence: `frontend/test/userManagementFrontend.test.js`, `frontend/src/page/UserManagement.jsx`, and `.sdd/reviews/final-governance-closeout-validation-2026-07-20.md`.
   - Review state: historical pre-integration checkpoint. PR #54 and `v1.0.2` are complete; PR #59 carries H2-approved commits `962ceb1` and `daaeea6`, while H3 remains pending. Any future `v1.0.3` remains a separate post-merge release decision.
 
+- [x] **FE11-UIA01 - Simplify the Admin Audit Log filter toolbar.**
+  - Maps to: BR-FE11-018, FR-FE11-033, AC-FE11-018.
+  - Files: `frontend/src/page/UserManagement.jsx`, `frontend/test/userManagementFrontend.test.js`, `SPEC.md`, `CHANGELOG.md`.
+  - DoD: remove the visible `action` and `actorId` inputs, retain text/date filters and the unchanged backend query contract, and pass focused frontend regression tests.
+
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.

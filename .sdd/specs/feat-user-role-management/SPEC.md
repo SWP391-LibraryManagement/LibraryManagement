@@ -211,7 +211,7 @@ The feature can only start when:
 
 1. Admin opens Audit Logs.
 2. The system lists important administrative/system actions with actor, action, target, timestamp, and safe details.
-3. Admin may search/filter logs.
+3. Admin may search logs and filter by date range. The API continues to support optional `action` and `actorId` filters for integrations, but the simplified Admin toolbar does not render separate controls for them.
 4. Audit logs are read-only from the UI.
 
 ### MF-FE11-013: Manage Admin Request Review View
@@ -304,7 +304,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-030: When admin opens the console, the system shall display approved sidebar sections and shall hide removed Confirm Payment / Confirm Borrow navigation items.
 - FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
 - FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
-- FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries.
+- FR-FE11-033: When admin opens Audit Logs, the system shall display searchable/filterable read-only audit entries; the visible toolbar shall contain text search and date-range controls without separate `action` or `actorId` inputs.
 - FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/DOCX-export controls and view detail; export shall include every server page matching the frozen filters and only the approved request projection.
 - FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
 - FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revalidate the active acting Admin inside the source transaction, revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery only after commit.
