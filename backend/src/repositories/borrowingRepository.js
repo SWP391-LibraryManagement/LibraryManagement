@@ -143,6 +143,7 @@ function mapBorrowDetail(row) {
   return {
     borrowDetailId: row.BorrowDetailId,
     requestId: row.RequestId,
+    requestStatus: row.RequestStatus,
     userId: row.UserId,
     copyId: row.CopyId,
     borrowDate: toDateOnly(row.BorrowDate),

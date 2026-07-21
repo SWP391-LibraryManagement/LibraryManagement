@@ -283,7 +283,9 @@ function createBorrowingService({
   function projectHistoryBorrowings(rows, today) {
     return rows.map((detail) => ({
       ...detail,
-      status: detail.status === 'BORROWED' && detail.dueDate && detail.dueDate < today
+      status: detail.status === 'REQUESTED' && detail.requestStatus === 'REJECTED'
+        ? 'REJECTED'
+        : detail.status === 'BORROWED' && detail.dueDate && detail.dueDate < today
         ? 'OVERDUE'
         : detail.status,
     }));
