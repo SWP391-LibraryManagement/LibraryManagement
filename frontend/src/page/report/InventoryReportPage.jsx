@@ -98,6 +98,7 @@ export default function InventoryReportPage() {
 
   return (
     <AppLayout
+      contentClassName="report-content"
       active="inventory-report"
       title="Báo cáo tồn kho"
       subtitle="Tổng hợp tình trạng bản sao và các đầu sách có tồn kho thấp."

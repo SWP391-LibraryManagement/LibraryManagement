@@ -339,3 +339,7 @@
 - Preserves all backend, API, authorization, database, FE07 mutation, FE11 permission/audit, and FE12 reporting contracts.
 - Adds responsive user cards, decision-focused charts, labeled actions, localized audit presentation, distinct permission decisions, persistent filter labels, and explicit loading/error/empty states.
 - Removes only unreachable Admin Console membership/payment code; canonical FE04 and FE09 functionality remains unchanged.
+
+## 2026-07-22 admin console correction
+
+- Removed user edit actions and the Audit safe-details column; contained wide tables inside the content area.

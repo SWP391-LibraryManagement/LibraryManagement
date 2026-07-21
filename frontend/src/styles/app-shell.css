@@ -154,6 +154,7 @@
 }
 
 .app-content { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 32px 60px; }
+.app-content.report-content { padding-bottom: 24px; }
 
 /* ---- Page header --------------------------------------------------------- */
 .ph { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
@@ -360,13 +361,13 @@
 .return-search .input { width: 100%; height: 46px; padding-left: 40px; padding-right: 40px; background: #fff; }
 .return-search .icon-btn { position: absolute; right: 4px; width: 34px; height: 34px; }
 .return-search > .btn { height: 46px; flex-shrink: 0; white-space: nowrap; }
-.return-workspace { grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr); }
+.return-workspace { grid-template-columns: minmax(0, 1fr); }
 .return-list-card { min-width: 0; overflow: hidden; border: 1px solid var(--lib-line); border-radius: var(--lib-radius); background: var(--lib-surface); box-shadow: var(--lib-shadow); }
 .return-list-card .lib-table-wrap { border: 0; border-radius: 0; box-shadow: none; }
 .return-list-card .lib-table tbody tr { cursor: pointer; }
 .return-list-card .lib-table tbody tr.is-selected { background: var(--lib-accent-bg); box-shadow: inset 3px 0 var(--lib-accent); }
 .return-pagination { margin: 0; padding: 14px 16px; border-top: 1px solid var(--lib-line); background: #fffdf8; }
-.return-detail { position: sticky; top: 0; }
+.return-detail { position: static; }
 .return-detail-heading { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 12px; margin-bottom: 16px; }
 .return-detail-heading h3 { margin: 0 0 2px; font-family: var(--lib-heading); font-size: 19px; }
 .return-member-info { padding: 14px; border-radius: var(--lib-radius-sm); background: var(--lib-cream); }

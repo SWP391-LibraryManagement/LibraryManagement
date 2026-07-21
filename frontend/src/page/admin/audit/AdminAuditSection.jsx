@@ -1,5 +1,5 @@
 import { Activity, ClipboardList, Clock3, FilterX, RefreshCw, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { adminApi } from '../../../api/adminApi';
 import { createLatestRequestGuard } from '../../../utils/latestRequestGuard';
@@ -12,7 +12,6 @@ import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminPagination } from '../components/AdminPagination';
 import {
   formatAuditAction,
-  formatAuditDetailKey,
   getAuditActionOptions,
 } from './adminAuditPresentation';
 
@@ -33,15 +32,6 @@ function buildAuditLogParams({ page = 1, limit = AUDIT_TABLE_PAGE_SIZE, ...filte
   return params;
 }
 
-function formatAuditDetailEntries(details) {
-  return Object.entries(details || {}).filter(([, value]) => (
-    ['string', 'number', 'boolean'].includes(typeof value)
-    || (Array.isArray(value) && value.every((item) => (
-      item === null || ['string', 'number', 'boolean'].includes(typeof item)
-    )))
-  ));
-}
-
 function getAuditTarget(log) {
   const targetType = log.target?.type || '';
   const reportType = targetType.toUpperCase() === 'REPORT' ? log.details?.reportType : null;
@@ -49,18 +39,6 @@ function getAuditTarget(log) {
     label: reportType || log.target?.label || (log.target?.id ? `#${log.target.id}` : '-'),
     type: targetType,
   };
-}
-
-function getAuditDetailEntries(log) {
-  const entries = formatAuditDetailEntries(log.details);
-  if (log.target?.type?.toUpperCase() !== 'REPORT') return entries;
-  return entries.filter(([key]) => key !== 'reportType');
-}
-
-function formatAuditDetailValue(value) {
-  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ');
-  if (typeof value === 'boolean') return value ? 'Có' : 'Không';
-  return String(value);
 }
 
 export function AdminAuditSection({ onToast }) {
@@ -118,10 +96,6 @@ export function AdminAuditSection({ onToast }) {
     setAppliedFilters({ ...EMPTY_AUDIT_FILTERS });
   }
 
-  const showAuditDetails = useMemo(
-    () => auditLogs.some((log) => getAuditDetailEntries(log).length > 0),
-    [auditLogs],
-  );
   const hasFilters = Object.values(auditFilters).some(Boolean);
 
   return (
@@ -175,29 +149,19 @@ export function AdminAuditSection({ onToast }) {
               <col className="admin-audit-column--action" />
               <col className="admin-audit-column--actor" />
               <col className="admin-audit-column--target" />
-              {showAuditDetails ? <col className="admin-audit-column--details" /> : null}
               <col className="admin-audit-column--ip" />
               <col className="admin-audit-column--time" />
             </colgroup>
-            <thead><tr><th>Hành động</th><th>Người thực hiện</th><th>Đối tượng</th>{showAuditDetails ? <th>Chi tiết an toàn</th> : null}<th>IP</th><th>Thời gian</th></tr></thead>
+            <thead><tr><th>Hành động</th><th>Người thực hiện</th><th>Đối tượng</th><th>IP</th><th>Thời gian</th></tr></thead>
             <tbody>{auditLogs.map((log) => {
               const action = formatAuditAction(log.action);
               const target = getAuditTarget(log);
-              const details = getAuditDetailEntries(log);
               const createdAt = new Date(log.createdAt);
               return (
                 <tr key={log.logId}>
                   <td><span className="admin-audit-action" title={action.raw}>{action.label}</span></td>
                   <td className="admin-audit-actor"><strong>{log.actor?.fullName || log.actor?.email || 'Hệ thống'}</strong>{log.actor?.fullName && log.actor?.email ? <small>{log.actor.email}</small> : null}</td>
                   <td className="admin-audit-target"><strong title={target.label}>{target.label}</strong>{target.type ? <small>{target.type}</small> : null}</td>
-                  {showAuditDetails ? (
-                    <td>{details.length === 0 ? '-' : (
-                      <details className="admin-audit-details-disclosure">
-                        <summary>Xem chi tiết ({details.length})</summary>
-                        <dl className="admin-audit-details">{details.map(([key, value]) => <div key={key}><dt>{formatAuditDetailKey(key)}</dt><dd>{formatAuditDetailValue(value)}</dd></div>)}</dl>
-                      </details>
-                    )}</td>
-                  ) : null}
                   <td className="admin-audit-ip"><code>{log.ipAddress || '-'}</code></td>
                   <td className="admin-audit-time">
                     <time dateTime={log.createdAt || undefined}>

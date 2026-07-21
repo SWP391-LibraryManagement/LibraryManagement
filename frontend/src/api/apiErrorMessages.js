@@ -48,6 +48,7 @@ const RESERVATION_ERROR_MESSAGES = {
 };
 
 const MEMBERSHIP_ERROR_MESSAGES = {
+  MEMBERSHIP_PROFILE_INCOMPLETE: 'Vui lòng hoàn tất họ tên, số điện thoại, ngày sinh và địa chỉ trước khi đăng ký hội viên.',
   MEMBERSHIP_APPLICATION_PENDING: 'Bạn đã có một đơn đăng ký đang chờ duyệt.',
   MEMBERSHIP_ALREADY_APPROVED: 'Tài khoản này đã là hội viên được duyệt.',
   MEMBERSHIP_APPLICATION_NOT_PENDING: 'Đơn đăng ký này không còn ở trạng thái chờ duyệt.',

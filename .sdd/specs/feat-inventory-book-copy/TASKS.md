@@ -113,3 +113,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [ ] Full merge-gate suites pass when the implementation branch is ready.
 - [ ] FE05/FE07/FE08 owners confirm state ownership and lock-order compatibility.
 - [ ] Dat confirms server-backed inventory and stale/conflict UX behavior.
+## 2026-07-22 corrective batch
+
+- [x] Verify inventory search/filter parameters remain server-backed.
+- [x] Add a visible per-row copy-management action and regression coverage.

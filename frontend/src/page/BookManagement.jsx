@@ -20,7 +20,6 @@ const DEFAULT_FORM = {
   publisherId: '',
   publishYear: '',
   pages: '',
-  rating: '0',
   coverUrl: '',
   description: '',
 };
@@ -47,7 +46,6 @@ function toForm(book) {
     publisherId: book.publisherId ? String(book.publisherId) : '',
     publishYear: book.year ? String(book.year) : '',
     pages: book.pages ? String(book.pages) : '',
-    rating: book.rating === undefined || book.rating === null ? '0' : String(book.rating),
     coverUrl: book.cover || '',
     description: book.description || '',
   };
@@ -60,7 +58,6 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
   const isbn = form.isbn.trim();
   const publishYear = form.publishYear ? Number(form.publishYear) : null;
   const pages = form.pages ? Number(form.pages) : null;
-  const rating = form.rating === '' ? 0 : Number(form.rating);
   const duplicate = isbn && currentBooks.some((book) => (
     String(book.isbn || '').toLowerCase() === isbn.toLowerCase() && Number(book.id) !== Number(editingBookId)
   ));
@@ -75,9 +72,6 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
     errors.publishYear = `Năm xuất bản không được lớn hơn ${currentYear}.`;
   }
   if (pages && (!Number.isInteger(pages) || pages < 1 || pages > 10000)) errors.pages = 'Số trang phải từ 1 đến 10000.';
-  if (!Number.isFinite(rating) || rating < 0 || rating > 5 || !Number.isInteger(rating * 10)) {
-    errors.rating = 'Điểm đánh giá phải từ 0 đến 5 và có tối đa một chữ số thập phân.';
-  }
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'URL ảnh bìa phải bắt đầu bằng http(s) hoặc /.';
   }
@@ -95,7 +89,6 @@ function makePayload(form) {
     publisherId: form.publisherId ? Number(form.publisherId) : null,
     publishYear: form.publishYear ? Number(form.publishYear) : null,
     pages: form.pages ? Number(form.pages) : null,
-    rating: form.rating === '' ? 0 : Number(form.rating),
     coverUrl: form.coverUrl.trim(),
     description: form.description.trim(),
   };
@@ -185,12 +178,6 @@ function BookForm({
         <FieldError message={errors.pages} />
       </label>
 
-      <label>
-        <span>Điểm đánh giá</span>
-        <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => update('rating', event.target.value)} />
-        <FieldError message={errors.rating} />
-      </label>
-
       <label className="bm-wide">
         <span>URL ảnh bìa</span>
         <input value={form.coverUrl} onChange={(event) => update('coverUrl', event.target.value)} maxLength={255} />
@@ -217,15 +204,16 @@ export default function BookManagement() {
   const [selectedBookId, setSelectedBookId] = useState('');
   const [detailBook, setDetailBook] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState('ACTIVE');
+  const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
   const [addForm, setAddForm] = useState(DEFAULT_FORM);
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
   const [addErrors, setAddErrors] = useState({});
   const [updateErrors, setUpdateErrors] = useState({});
-  const [statusConfirmed, setStatusConfirmed] = useState(false);
   const [statusReason, setStatusReason] = useState('');
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -252,7 +240,12 @@ export default function BookManagement() {
     });
   };
 
-  const loadBooks = useCallback(async ({ status = statusFilter, categoryId = categoryFilter, pageNumber = page } = {}) => {
+  const loadBooks = useCallback(async ({
+    q = appliedSearchQuery,
+    status = appliedStatusFilter,
+    categoryId = appliedCategoryFilter,
+    pageNumber = page,
+  } = {}) => {
     const requestedPage = Number(pageNumber) || 1;
     const params = new URLSearchParams({
       page: String(requestedPage),
@@ -260,6 +253,7 @@ export default function BookManagement() {
       sort: 'title',
       order: 'asc',
     });
+    if (q) params.set('q', q);
     if (status) params.set('status', status);
     if (categoryId) params.set('categoryId', categoryId);
     const result = await apiRequest(`/admin/books?${params.toString()}`);
@@ -277,7 +271,7 @@ export default function BookManagement() {
       return nextBooks.length ? currentSelectedBookId : '';
     });
     return nextBooks;
-  }, [categoryFilter, page, statusFilter]);
+  }, [appliedCategoryFilter, appliedSearchQuery, appliedStatusFilter, page]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -292,14 +286,15 @@ export default function BookManagement() {
     };
 
     loadInitialData();
-  }, [loadBooks]);
+    // Initial load only; later search, filter, pagination, and refresh actions load explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (selectedBook) {
       const timer = window.setTimeout(() => {
         setUpdateForm(toForm(selectedBook));
         setDetailBook(selectedBook);
-        setStatusConfirmed(false);
         setStatusReason('');
       }, 0);
 
@@ -324,11 +319,6 @@ export default function BookManagement() {
     event.preventDefault();
     const keyword = searchQuery.trim();
 
-    if (!keyword) {
-      showToast('Vui lòng nhập từ khóa tìm kiếm.', 'error');
-      return;
-    }
-
     if (keyword.length > 200) {
       showToast('Từ khóa tìm kiếm không được vượt quá 200 ký tự.', 'error');
       return;
@@ -336,14 +326,45 @@ export default function BookManagement() {
 
     try {
       setLoading(true);
-      const params = new URLSearchParams({ q: keyword });
-      const result = await apiRequest(`/books?${params.toString()}`);
-      const items = result.items || [];
-      setSearchResults(items);
-      showToast(`Tìm thấy ${result.pagination?.total ?? items.length} sách đang hoạt động.`);
+      setAppliedSearchQuery(keyword);
+      setPage(1);
+      const items = await loadBooks({ q: keyword, pageNumber: 1 });
+      showToast(keyword
+        ? `Tìm thấy ${items.length} sách trên trang hiện tại.`
+        : 'Đã xóa từ khóa tìm kiếm và tải lại danh sách sách.');
     } catch (error) {
       showToast(error.message, 'error');
-      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApplyFilters = async () => {
+    try {
+      setLoading(true);
+      setAppliedStatusFilter(statusFilter);
+      setAppliedCategoryFilter(categoryFilter);
+      setPage(1);
+      await loadBooks({
+        q: appliedSearchQuery,
+        status: statusFilter,
+        categoryId: categoryFilter,
+        pageNumber: 1,
+      });
+      showToast('Đã áp dụng bộ lọc danh sách sách.');
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = async (nextPage) => {
+    try {
+      setLoading(true);
+      await loadBooks({ pageNumber: nextPage });
+    } catch (error) {
+      showToast(error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -386,7 +407,11 @@ export default function BookManagement() {
       setAddForm(DEFAULT_FORM);
       setStatusFilter('ACTIVE');
       setCategoryFilter('');
-      await loadBooks({ status: 'ACTIVE', categoryId: '', pageNumber: 1 });
+      setAppliedStatusFilter('ACTIVE');
+      setAppliedCategoryFilter('');
+      setSearchQuery('');
+      setAppliedSearchQuery('');
+      await loadBooks({ q: '', status: 'ACTIVE', categoryId: '', pageNumber: 1 });
       setSelectedBookId(String(result.book.id));
       setDetailBook(result.book);
       showToast('Đã thêm sách và tải lại danh sách theo trạng thái chuẩn.');
@@ -436,11 +461,6 @@ export default function BookManagement() {
     }
 
     const reason = statusReason.trim();
-    if (!statusConfirmed) {
-      showToast('Vui lòng xác nhận thay đổi trạng thái trước khi gửi.', 'error');
-      return;
-    }
-
     if (!reason || reason.length > 500) {
       showToast('Vui lòng nhập lý do từ 1 đến 500 ký tự.', 'error');
       return;
@@ -470,7 +490,6 @@ export default function BookManagement() {
       } else {
         setDetailBook(refreshedBook);
       }
-      setStatusConfirmed(false);
       setStatusReason('');
       showToast(selectedBook.status === 'INACTIVE'
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
@@ -495,7 +514,6 @@ export default function BookManagement() {
             <th>Nhà xuất bản</th>
             <th>Năm xuất bản</th>
             <th>Số trang</th>
-            <th>Điểm đánh giá</th>
             <th>Trạng thái</th>
             <th>Bản sao</th>
             <th></th>
@@ -512,7 +530,6 @@ export default function BookManagement() {
               <td>{book.publisher || '-'}</td>
               <td>{book.year || '-'}</td>
               <td>{book.pages || '-'}</td>
-              <td>{book.rating || 0}</td>
               <td>
                 {(() => {
                   const availability = getBookAvailability(book);
@@ -538,9 +555,9 @@ export default function BookManagement() {
     <div className="bm-pagination" aria-label="Phân trang danh sách sách">
       <span>Trang {page}/{totalPages} • {totalItems} sách</span>
       <div>
-        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>Trước</button>
+        <button type="button" className="bm-soft" onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={loading || page === 1}>Trước</button>
         <span className="bm-page-current">{page}</span>
-        <button type="button" className="bm-soft" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>Sau</button>
+        <button type="button" className="bm-soft" onClick={() => handlePageChange(Math.min(totalPages, page + 1))} disabled={loading || page >= totalPages}>Sau</button>
       </div>
     </div>
   );
@@ -573,7 +590,6 @@ export default function BookManagement() {
               <dt>Nhà xuất bản</dt><dd>{detailBook.publisher}</dd>
               <dt>Năm xuất bản</dt><dd>{detailBook.year || '-'}</dd>
               <dt>Số trang</dt><dd>{detailBook.pages || '-'}</dd>
-              <dt>Điểm đánh giá</dt><dd>{detailBook.rating}/5</dd>
               <dt>Bản sao</dt><dd>{detailBook.availableCopies || 0} có sẵn / {detailBook.totalCopies || 0} tổng cộng</dd>
             </dl>
             <p>{detailBook.description || 'Chưa có mô tả.'}</p>
@@ -610,23 +626,23 @@ export default function BookManagement() {
              <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={200} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." />
             <button className="bm-primary" type="submit"><Search size={17} />Tìm kiếm</button>
           </form>
-          {searchResults.length > 0 && renderBookTable(searchResults)}
+          {appliedSearchQuery && <p className="bm-applied-filter">Đang tìm: <strong>{appliedSearchQuery}</strong></p>}
         </section>
 
         <section className="bm-panel">
           <div className="bm-panel-head">
             <div><p>Danh mục quản lý</p><h2>Danh sách sách</h2></div>
             <div className="bm-filters">
-              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="">Tất cả trạng thái</option>
                 <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
                 <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
               </select>
-              <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPage(1); }}>
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
                 <option value="">Tất cả danh mục</option>
                 {metadata.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
-              <button className="bm-soft" onClick={handleRefreshList}>Áp dụng</button>
+              <button type="button" className="bm-soft" onClick={handleApplyFilters} disabled={loading}>Áp dụng</button>
             </div>
           </div>
            {renderBookTable(books, (page - 1) * 20)}
@@ -693,14 +709,6 @@ export default function BookManagement() {
                     aria-label="Lý do thay đổi trạng thái"
                   />
                 </label>
-                <label className="bm-confirm-line">
-                  <input
-                    type="checkbox"
-                    checked={statusConfirmed}
-                    onChange={(event) => setStatusConfirmed(event.target.checked)}
-                  />
-                  <span>Tôi xác nhận thay đổi trạng thái sách.</span>
-                </label>
                 <button className="bm-danger" onClick={handleStatusChange} disabled={saving}>
                   <Trash2 size={17} />
                   {selectedBook.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Ngừng hoạt động'}
@@ -754,6 +762,7 @@ export default function BookManagement() {
         input, select, textarea { border: 1px solid #cbd6e2; border-radius: 8px; min-height: 40px; padding: 0 11px; font: inherit; color: #172033; background: #fff; }
         textarea { padding-top: 10px; resize: vertical; }
         .bm-search-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 16px; }
+        .bm-applied-filter { margin: -4px 0 0; color: #765f49; font-size: 13px; }
         .bm-filters { display: flex; flex-wrap: wrap; gap: 8px; }
         .bm-table-wrap { overflow-x: auto; border: 1px solid var(--bm-border); border-radius: 12px; }
         .bm-table-wrap table { width: 100%; border-collapse: collapse; min-width: 1120px; background: #fff; }
@@ -782,8 +791,6 @@ export default function BookManagement() {
         .bm-danger-box h3 { margin: 0 0 6px; }
         .bm-danger-box p { margin: 0 0 12px; color: #991b1b; }
         .bm-danger-box input { width: 100%; max-width: 480px; border-color: #fca5a5; }
-        .bm-confirm-line { display: flex; align-items: center; gap: 10px; margin: 10px 0 2px; color: #7f1d1d; font-weight: 700; }
-        .bm-confirm-line input { width: 18px; min-height: 18px; padding: 0; accent-color: #dc2626; }
         .bm-empty { padding: 26px; text-align: center; color: #607087; }
         .bm-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 16px; color: #765f49; }
         .bm-pagination > div { display: flex; align-items: center; gap: 8px; }

@@ -286,7 +286,6 @@ Owner: Dung
 ## Deferred FE11 Work
 
 The approved Phase 2 FE11 finalization scope is complete through B7. Future enhancements that remain outside the approved release scope stay explicitly deferred; the historical prototype is not used as completion evidence.
-
 ## Admin Console Full Frontend Refactor Tasks
 
 - [x] **FE11-UXR01 - Add pure navigation, dashboard, permission, and audit presentation contracts.**
@@ -309,3 +308,10 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
   - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.
   - Evidence: implementation commit `157b59b`; frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and authenticated responsive screenshots pass. Staging workflow `29873466035` deployed `8627508` with backend/frontend/smoke success; renewed authenticated human approval remains pending.
+
+## 2026-07-22 corrective batch
+
+- [x] Remove edit-user-information actions from list and detail UI.
+- [x] Remove the Audit safe-details column while preserving safe server projection.
+- [x] Contain wide user/audit tables within the Admin content area.
+- [x] Keep Permissions absent from the approved Admin sidebar.

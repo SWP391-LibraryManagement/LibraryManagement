@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-22 - Require complete profile before application
+
+- Required non-empty full name, phone, date of birth, and address before creating a membership application; avatar remains optional.
+- Added server-side enforcement plus member-facing missing-field guidance and a link to `/profile`.
+
 ## 2026-07-21 - Connect approval to borrowing allowance
 
 - Kept borrowing available to active `MEMBER` accounts without FE04 approval at a 3-copy daily limit.
@@ -112,3 +117,6 @@
 - Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 - Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
 - Preserved Phase 1 scope controls and deferred future-work items explicitly.
+## 2026-07-22
+
+- Suppressed member-only navigation for staff actors and made rejection feedback neutral.

@@ -59,9 +59,11 @@ const applicationSelect = `
 async function findUser(userId) {
   const pool = await getPool();
   const result = await pool.request().input('UserId', sql.Int, userId).query(`
-    SELECT TOP 1 UserId, Email, Username, Phone, Status
-    FROM Users
-    WHERE UserId = @UserId
+    SELECT TOP 1 u.UserId, u.Email, u.Username, u.Phone, u.Status,
+      up.FullName, up.Address, up.DateOfBirth
+    FROM Users u
+    LEFT JOIN UserProfiles up ON u.UserId = up.UserId
+    WHERE u.UserId = @UserId
   `);
 
   return result.recordset[0] || null;

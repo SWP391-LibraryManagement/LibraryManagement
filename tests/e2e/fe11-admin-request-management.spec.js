@@ -133,15 +133,21 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   expect(searchBox).toBeTruthy();
   expect(fromBox).toBeTruthy();
   expect(fromBox.y).toBeGreaterThan(searchBox.y);
-  await page.getByText('Xem chi tiết (2)', { exact: true }).click();
-  await expect(page.getByText('Trạng thái', { exact: true })).toBeVisible();
-  await expect(page.getByText('Trường đã thay đổi', { exact: true })).toBeVisible();
+  await expect(page.locator('.admin-audit-table thead th')).toHaveText([
+    'Hành động',
+    'Người thực hiện',
+    'Đối tượng',
+    'IP',
+    'Thời gian',
+  ]);
+  await expect(page.getByText('Xem chi tiết (2)', { exact: true })).toHaveCount(0);
   const auditCellWidths = await page.locator('.admin-audit-table tbody tr').first().locator('td').evaluateAll(
     (cells) => cells.map((cell) => Math.round(cell.getBoundingClientRect().width)),
   );
   expect(auditCellWidths[0]).toBeGreaterThanOrEqual(120);
-  expect(auditCellWidths[4]).toBeGreaterThanOrEqual(90);
-  expect(auditCellWidths[5]).toBeGreaterThanOrEqual(120);
+  expect(auditCellWidths).toHaveLength(5);
+  expect(auditCellWidths[3]).toBeGreaterThanOrEqual(90);
+  expect(auditCellWidths[4]).toBeGreaterThanOrEqual(120);
   const auditRowBox = await page.locator('.admin-audit-table tbody tr').first().boundingBox();
   expect(auditRowBox).toBeTruthy();
   expect(auditRowBox.height).toBeLessThan(220);
@@ -160,7 +166,9 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(userHeading).toBeVisible();
   await expect(page.locator('.admin-user-table')).toBeHidden();
   await expect(page.locator('.admin-user-cards')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Phân quyền', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Vô hiệu hóa', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true })).toHaveCount(0);
   expect(await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   )).toBe(false);

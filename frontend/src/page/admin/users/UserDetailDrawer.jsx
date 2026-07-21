@@ -1,4 +1,4 @@
-import { Banknote, BookCopy, Calendar, ClipboardList, Edit2, Mail, Phone, PowerOff, Shield, X } from 'lucide-react';
+import { Banknote, BookCopy, Calendar, ClipboardList, Mail, Phone, PowerOff, Shield, X } from 'lucide-react';
 
 import { AdminActionButton } from '../components/AdminActionButton';
 import { RoleBadge, StatusBadge } from './UserBadges';
@@ -12,7 +12,7 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeactivate }) {
+export function UserDetailDrawer({ user, onClose, onManageRoles, onDeactivate }) {
   return (
     <aside className="admin-user-drawer" aria-label="Chi tiết người dùng">
       <button className="admin-user-drawer__close" type="button" onClick={onClose} aria-label="Đóng chi tiết">
@@ -45,7 +45,6 @@ export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeact
       </div>
 
       <div className="admin-user-drawer__actions">
-        <AdminActionButton icon={Edit2} label="Chỉnh sửa" tone="primary" onClick={() => onEdit(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => onManageRoles(user)} />
         <AdminActionButton
           icon={PowerOff}

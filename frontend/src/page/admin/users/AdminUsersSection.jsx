@@ -1,6 +1,5 @@
 import {
   Check,
-  Edit2,
   FilterX,
   Plus,
   PowerOff,
@@ -182,10 +181,6 @@ export function AdminUsersSection({ onToast }) {
     if (requireAdminSession()) setModal({ mode: 'create' });
   }
 
-  function openEditModal(user) {
-    if (requireAdminSession()) setModal({ mode: 'edit', user });
-  }
-
   async function openRoleModal(user) {
     if (!requireAdminSession()) return;
     try {
@@ -323,7 +318,6 @@ export function AdminUsersSection({ onToast }) {
     const canDeactivate = ['ACTIVE', 'LOCKED'].includes(user.status);
     return (
       <div className="admin-user-actions" onClick={(event) => event.stopPropagation()}>
-        <AdminActionButton icon={Edit2} label="Chỉnh sửa" onClick={() => openEditModal(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => openRoleModal(user)} />
         <AdminActionButton
           icon={PowerOff}
@@ -439,7 +433,7 @@ export function AdminUsersSection({ onToast }) {
       </section>
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
-      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openEditModal} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
+      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
       {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRoles} /> : null}
     </section>

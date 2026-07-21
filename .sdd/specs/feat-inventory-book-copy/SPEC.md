@@ -548,3 +548,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Deterministic pagination, location, reason, safe projection, and ownership policies are implemented.
 - [ ] Dat and FE05/FE07/FE08 owners confirm UX/state ownership and lock-order compatibility.
 - [ ] Final H3, merge, and post-merge `main` CI are recorded.
+## 2026-07-22 staff-console correction
+
+- Inventory keyword, barcode, location, and status controls submit only trimmed, applied values to the canonical server list endpoint.
+- Every inventory row exposes an explicit “Quản lý bản sao” action that opens the existing create/update/status/deactivate workflow; row click remains a convenience only.

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { ClipboardList, RefreshCw } from 'lucide-react';
 
 import { membershipApi } from '../api/libraryFeatureApi';
+import { fetchMyProfile } from '../api/profileApi';
 import AppLayout from '../component/layout/AppLayout';
 import MembershipApplicationForm from '../component/membership/MembershipApplicationForm';
 import MembershipApplicationsTable from '../component/membership/MembershipApplicationsTable';
@@ -61,6 +62,7 @@ export default function MembershipPage() {
   const roles = Array.isArray(authUser?.roles) ? authUser.roles.map((role) => String(role).toUpperCase()) : null;
   const canReview = roles?.some((role) => ['ADMIN', 'LIBRARIAN'].includes(role));
   const [myStatus, setMyStatus] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [applications, setApplications] = useState([]);
   const [statusFilter, setStatusFilter] = useState('PENDING');
   const [search, setSearch] = useState('');
@@ -86,8 +88,12 @@ export default function MembershipPage() {
         setApplications(list.items);
         setTotalPages(list.totalPages);
       } else {
-        const status = await membershipApi.getMyStatus();
+        const [status, currentProfile] = await Promise.all([
+          membershipApi.getMyStatus(),
+          fetchMyProfile(),
+        ]);
         setMyStatus(normalizeMyStatus(status));
+        setProfile(currentProfile);
       }
     } catch (error) {
       setLoadError(error.message);
@@ -149,7 +155,7 @@ export default function MembershipPage() {
     setSaving(true);
     try {
       await membershipApi.reject(selected.applicationId || selected.id, cleanReason);
-      showToast('Đã từ chối đơn đăng ký hội viên.', 'success');
+      showToast('Đã từ chối đơn đăng ký hội viên.', 'info');
       setSelected(null);
       await loadData();
     } catch (error) {
@@ -176,7 +182,7 @@ export default function MembershipPage() {
             <div className="split member-membership-grid">
               <MyMembershipStatus status={myStatus} />
               <MembershipApplicationForm
-                applicant={authUser}
+                profile={profile}
                 disabled={!['NONE', 'REJECTED'].includes(myStatus.membershipStatusView)}
                 saving={saving}
                 onSubmit={applyForMembership}

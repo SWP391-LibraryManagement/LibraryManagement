@@ -409,3 +409,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Export scope is approved or explicitly out of scope.
 - [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
 - [x] Every acceptance criterion can become a test.
+## 2026-07-22 staff-console correction
+
+- Search and filter controls on all three FE12 pages use the canonical report query contracts and render only the returned `metrics`, `rows`, and `totalRows`; demo/chart fallback data is forbidden.
+- Report pages use compact bottom spacing so the scrollable content does not end with an oversized blank region.

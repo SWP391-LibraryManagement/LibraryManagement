@@ -126,7 +126,7 @@ test('FE11 user validation preserves canonical field widths', () => {
   assert.ok(invalid.specialization);
 });
 
-test('FE11 desktop table and mobile cards expose the same visible actions', async () => {
+test('FE11 desktop table and mobile cards expose the approved non-edit actions', async () => {
   const [section, css] = await Promise.all([
     readAdminFile('users/AdminUsersSection.jsx'),
     readAdminFile('admin-console.css'),
@@ -135,20 +135,24 @@ test('FE11 desktop table and mobile cards expose the same visible actions', asyn
   assert.match(section, /className="admin-user-table"/);
   assert.match(section, /className="admin-user-cards"/);
   assert.equal(section.match(/users\.map\(/g)?.length, 2);
-  for (const label of ['Chỉnh sửa', 'Phân quyền', 'Vô hiệu hóa']) {
+  for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
     assert.match(section, new RegExp('label="' + label + '"'));
   }
+  assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
   assert.match(css, /\.admin-user-cards\s*\{\s*display: none;/s);
   assert.match(css, /@media \(max-width: 1440px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
+  assert.match(css, /\.admin-shell__main\s*\{[^}]*min-width: 0;/s);
+  assert.match(css, /\.admin-user-table\s*\{[^}]*overflow-x: auto;/s);
 });
 
-test('FE11 editor and drawer explain account setup and safe related summaries', async () => {
-  const [editor, roleModal, drawer] = await Promise.all([
+test('FE11 create flow and drawer keep safe summaries without edit actions', async () => {
+  const [editor, roleModal, drawer, section] = await Promise.all([
     readAdminFile('users/UserEditorModal.jsx'),
     readAdminFile('users/UserRoleModal.jsx'),
     readAdminFile('users/UserDetailDrawer.jsx'),
+    readAdminFile('users/AdminUsersSection.jsx'),
   ]);
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
@@ -160,6 +164,8 @@ test('FE11 editor and drawer explain account setup and safe related summaries', 
   for (const label of ['Đóng chi tiết', 'Chưa có tên', 'Lượt mượn đang hoạt động', 'Tiền phạt chưa thanh toán']) {
     assert.match(drawer, new RegExp(label));
   }
+  assert.doesNotMatch(drawer, /label="Chỉnh sửa"|onEdit/);
+  assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal|onEdit=\{openEditModal\}/);
 });
 
 test('FE11 permissions keep policy and statistics independent with explicit decisions', async () => {
@@ -178,13 +184,12 @@ test('FE11 permissions keep policy and statistics independent with explicit deci
   assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
 });
 
-test('FE11 audit keeps canonical filters and renders only safe nested DTO fields', async () => {
+test('FE11 audit keeps canonical filters and omits the safe-details column', async () => {
   const source = await readAdminFile('audit/AdminAuditSection.jsx');
 
   assert.match(source, /function buildAuditLogParams/);
   assert.match(source, /adminApi\.auditLogs/);
   assert.match(source, /formatAuditAction\(log\.action\)/);
-  assert.match(source, /formatAuditDetailKey\(key\)/);
   for (const label of ['Hành động', 'Mã người thực hiện', 'Từ ngày', 'Đến ngày']) {
     assert.match(source, new RegExp(label));
   }
@@ -193,12 +198,10 @@ test('FE11 audit keeps canonical filters and renders only safe nested DTO fields
   assert.match(source, /<datalist id="admin-audit-action-options">/);
   assert.match(source, /placeholder="Nhập hoặc chọn hành động"/);
   assert.doesNotMatch(source, /placeholder="AUTH_LOGIN_SUCCESS"/);
-  assert.match(source, /<details className="admin-audit-details-disclosure">/);
-  assert.match(source, /<summary>Xem chi tiết \(\{details\.length\}\)<\/summary>/);
   assert.match(source, /log\.actor\?\.fullName/);
   assert.match(source, /log\.actor\?\.email/);
   assert.match(source, /log\.target\?\.label/);
-  assert.match(source, /formatAuditDetailEntries\(log\.details\)/);
+  assert.doesNotMatch(source, /Chi tiết an toàn|admin-audit-column--details|admin-audit-details-disclosure|formatAuditDetailEntries|formatAuditDetailKey/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML|log\.metadata|JSON\.stringify\(log\.details/);
 });
 
@@ -239,7 +242,6 @@ test('FE11 Admin copy is Vietnamese while raw enum values remain unchanged', asy
     'Quản lý mượn trả',
     'Dữ liệu phân quyền',
     'Nhật ký hoạt động',
-    'Chỉnh sửa',
   ]) {
     assert.match(source, new RegExp(label));
   }
