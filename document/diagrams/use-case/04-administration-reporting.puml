@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor Librarian
+actor Admin
+actor "Email Service" as EmailService
+
+rectangle "Library Management System" {
+  package "Book and Inventory Management" {
+    usecase "Manage Books" as ManageBooks
+    usecase "Manage Book Copies" as ManageBookCopies
+  }
+
+  package "User and Role Management" {
+    usecase "Manage Users and Roles" as ManageUsersRoles
+    usecase "Create User Account" as CreateUserAccount
+    usecase "View Audit Logs" as ViewAuditLogs
+  }
+
+  package "Reporting and Notification Management" {
+    usecase "Generate Reports" as GenerateReports
+    usecase "Send Notifications" as SendNotifications
+  }
+}
+
+Librarian -- ManageBooks
+Librarian -- ManageBookCopies
+Librarian -- GenerateReports
+Librarian -- SendNotifications
+
+Admin -- ManageBooks
+Admin -- ManageBookCopies
+Admin -- ManageUsersRoles
+Admin -- CreateUserAccount
+Admin -- ViewAuditLogs
+Admin -- GenerateReports
+Admin -- SendNotifications
+
+SendNotifications -- EmailService
+CreateUserAccount ..> SendNotifications : <<include>>
+@enduml

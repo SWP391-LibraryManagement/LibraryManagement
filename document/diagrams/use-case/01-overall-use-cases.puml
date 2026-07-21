@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor Guest
+actor Member
+actor Librarian
+actor Admin
+actor "Email Service" as EmailService
+
+rectangle "Library Management System" {
+  package "Access and Membership" {
+    usecase "UC-01\nBrowse Books" as UC01
+    usecase "UC-02\nManage Account Access" as UC02
+    usecase "UC-03\nManage Profile" as UC03
+    usecase "UC-04\nApply for Membership" as UC04
+  }
+
+  package "Library Operations" {
+    usecase "UC-05\nManage Books" as UC05
+    usecase "UC-06\nManage Book Copies" as UC06
+    usecase "UC-07\nBorrow Books" as UC07
+    usecase "UC-08\nReserve Books" as UC08
+    usecase "UC-09\nManage Fines" as UC09
+    usecase "UC-10\nSend Notifications" as UC10
+  }
+
+  package "Administration and Reporting" {
+    usecase "UC-11\nManage Users and Roles" as UC11
+    usecase "UC-12\nGenerate Reports" as UC12
+  }
+}
+
+Guest -- UC01
+Guest -- UC02
+
+Member -- UC01
+Member -- UC02
+Member -- UC03
+Member -- UC04
+Member -- UC07
+Member -- UC08
+Member -- UC09
+
+UC02 -- Librarian
+UC03 -- Librarian
+UC04 -- Librarian
+UC05 -- Librarian
+UC06 -- Librarian
+UC07 -- Librarian
+UC08 -- Librarian
+UC09 -- Librarian
+UC10 -- Librarian
+UC12 -- Librarian
+
+UC02 -- Admin
+UC03 -- Admin
+UC04 -- Admin
+UC05 -- Admin
+UC06 -- Admin
+UC07 -- Admin
+UC08 -- Admin
+UC09 -- Admin
+UC10 -- Admin
+UC11 -- Admin
+UC12 -- Admin
+
+UC10 -- EmailService
+@enduml

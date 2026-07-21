@@ -1,0 +1,78 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor Member
+actor Librarian
+actor Admin
+actor "Email Service" as EmailService
+
+rectangle "Library Management System" {
+  package "Member Circulation" {
+    usecase "Create Borrow Request" as CreateBorrowRequest
+    usecase "View Borrowing History" as ViewBorrowingHistory
+    usecase "Renew Borrowing" as RenewBorrowing
+    usecase "Create Reservation" as CreateReservation
+    usecase "Cancel Reservation" as CancelReservation
+    usecase "View Own Reservations" as ViewOwnReservations
+    usecase "View Fines" as ViewFines
+  }
+
+  package "Staff Circulation" {
+    usecase "Approve Borrow Request" as ApproveBorrowRequest
+    usecase "Reject Borrow Request" as RejectBorrowRequest
+    usecase "Process Return" as ProcessReturn
+    usecase "Process Reservation Queue" as ProcessReservationQueue
+    usecase "Manage Fines" as ManageFines
+    usecase "Manage Book Copies" as ManageBookCopies
+    usecase "Send Notifications" as SendNotifications
+  }
+
+  package "Required Business Checks" {
+    usecase "Check Borrowing Eligibility" as CheckBorrowingEligibility
+    usecase "Check Copy Borrowability" as CheckCopyBorrowability
+    usecase "Check Reservation Eligibility" as CheckReservationEligibility
+    usecase "Check Copy Availability" as CheckCopyAvailability
+  }
+}
+
+Member -- CreateBorrowRequest
+Member -- ViewBorrowingHistory
+Member -- RenewBorrowing
+Member -- CreateReservation
+Member -- CancelReservation
+Member -- ViewOwnReservations
+Member -- ViewFines
+
+ApproveBorrowRequest -- Librarian
+RejectBorrowRequest -- Librarian
+ProcessReturn -- Librarian
+RenewBorrowing -- Librarian
+ViewBorrowingHistory -- Librarian
+ProcessReservationQueue -- Librarian
+ManageFines -- Librarian
+ManageBookCopies -- Librarian
+
+ApproveBorrowRequest -- Admin
+RejectBorrowRequest -- Admin
+ProcessReturn -- Admin
+RenewBorrowing -- Admin
+ViewBorrowingHistory -- Admin
+ProcessReservationQueue -- Admin
+ManageFines -- Admin
+ManageBookCopies -- Admin
+
+SendNotifications -- EmailService
+
+CreateBorrowRequest ..> CheckBorrowingEligibility : <<include>>
+CreateBorrowRequest ..> CheckCopyBorrowability : <<include>>
+ApproveBorrowRequest ..> CheckBorrowingEligibility : <<include>>
+ApproveBorrowRequest ..> CheckCopyBorrowability : <<include>>
+CreateReservation ..> CheckReservationEligibility : <<include>>
+ProcessReservationQueue ..> CheckCopyAvailability : <<include>>
+ProcessReturn ..> ManageBookCopies : <<include>>
+SendNotifications ..> ProcessReservationQueue : <<extend>>\n[eligible reservation found]
+ManageFines ..> ProcessReturn : <<extend>>\n[overdue, lost, or damaged]
+@enduml
