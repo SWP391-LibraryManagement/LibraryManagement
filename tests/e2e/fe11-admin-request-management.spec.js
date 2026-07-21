@@ -75,31 +75,30 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   const adminToken = await storedAccessToken(page);
   expect(adminToken).toBeTruthy();
   const adminHeaders = { Authorization: `Bearer ${adminToken}` };
-  const bookSummary = page.locator('.um-stat.dashboard-card').filter({ hasText: 'Tổng số sách' });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const userHeading = page.getByRole('heading', { name: 'Quản lý người dùng', exact: true });
+  await expect(userHeading).toBeVisible();
+  await expect(page.locator('.admin-user-table')).toBeVisible();
+  await expect(page.locator('.admin-user-cards')).toBeHidden();
+  expect(await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+  )).toBe(false);
+
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click();
+  const bookSummary = page.locator('.admin-dashboard__stat').filter({ hasText: 'Tổng số sách' });
   await expect(bookSummary.getByText('1', { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Mở menu quản trị', exact: true }).click();
   await page.getByRole('button', { name: 'Quản lý người dùng', exact: true }).click();
-  const userHeading = page.getByRole('heading', { name: 'Quản lý người dùng', exact: true });
-  const topbarActions = page.locator('.um-topbar .um-actions');
-  const userContent = page.locator('.um-content');
   await expect(userHeading).toBeVisible();
-  await expect(topbarActions).toBeVisible();
-  await expect(userContent).toBeVisible();
-  const [headingBox, actionsBox] = await Promise.all([
-    userHeading.boundingBox(),
-    topbarActions.boundingBox(),
-  ]);
-  expect(actionsBox.y).toBeGreaterThanOrEqual(headingBox.y + headingBox.height + 8);
-  const horizontalOverflow = await page.evaluate(
+  await expect(page.locator('.admin-user-table')).toBeHidden();
+  await expect(page.locator('.admin-user-cards')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true }).first()).toBeVisible();
+  expect(await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
-  );
-  expect(horizontalOverflow).toBe(false);
-  const internalTableScroll = await userContent.evaluate(
-    (element) => element.scrollWidth > element.clientWidth
-  );
-  expect(internalTableScroll).toBe(true);
-  await page.setViewportSize({ width: 1280, height: 720 });
+  )).toBe(false);
+  await page.setViewportSize({ width: 1366, height: 768 });
 
   const approved = await request.patch(
     `${BACKEND_URL}/api/borrow-requests/${completedRequestId}/approve`,
@@ -126,21 +125,21 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
     total: 22,
     totalPages: 2,
   });
-  await expect(page.locator('table.request-table tbody tr')).toHaveCount(20);
-  await expect(page.getByText('Trang 1/2 · 22 bản ghi', { exact: true })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Danh sách yêu cầu mượn' }).locator('tbody tr')).toHaveCount(20);
+  await expect(page.getByText('Trang 1/2 · 22 mục', { exact: true })).toBeVisible();
 
   const secondPageResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 2, limit: 20 })
   );
   await page.locator('[aria-label="Phân trang"]').getByRole('button', { name: '2', exact: true }).click();
   expect((await secondPageResponse).status()).toBe(200);
-  await expect(page.locator('table.request-table tbody tr')).toHaveCount(2);
+  await expect(page.getByRole('table', { name: 'Danh sách yêu cầu mượn' }).locator('tbody tr')).toHaveCount(2);
 
   await page.getByLabel('Lọc trạng thái').selectOption('PENDING');
   const pendingResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 1, limit: 20, status: 'PENDING' })
   );
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
   const pendingPage = await pendingResponse;
   expect(pendingPage.status()).toBe(200);
   expect((await pendingPage.json()).pagination.total).toBe(21);
@@ -170,7 +169,7 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   const completedResponse = page.waitForResponse(
     (response) => isRequestListResponse(response, { page: 1, limit: 20, status: 'COMPLETED' })
   );
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Áp dụng', exact: true }).click();
   const completedPage = await completedResponse;
   expect(completedPage.status()).toBe(200);
   expect((await completedPage.json()).pagination.total).toBe(1);
