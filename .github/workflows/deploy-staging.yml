@@ -1,7 +1,11 @@
 name: Deploy staging
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - main
   workflow_dispatch:
@@ -14,71 +18,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  quality-gate:
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install backend dependencies
-        run: npm ci
-        working-directory: backend
-
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-
-      - name: Enforce traceability
-        run: npm run trace:enforce
-
-      - name: Backend coverage gate
-        run: npm run test:coverage:ci
-        working-directory: backend
-
-      - name: System integration gate
-        run: npm run test:integration:system
-        working-directory: backend
-
-      - name: Frontend tests
-        run: npm test
-        working-directory: frontend
-
-      - name: Frontend lint
-        run: npm run lint
-        working-directory: frontend
-
-      - name: Frontend staging build
-        run: npm run build
-        working-directory: frontend
-        env:
-          VITE_API_BASE_URL: ${{ vars.STAGING_API_URL }}/api
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: System browser E2E
-        run: npm run test:e2e
-
-      - name: Deployment utility tests
-        run: npm run test:deployment
-
   deploy-backend:
-    needs: quality-gate
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: ${{ vars.STAGING_API_URL }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Prepare backend deployment package
         shell: pwsh
@@ -95,13 +44,15 @@ jobs:
           package: deploy/backend
 
   deploy-frontend:
-    needs: quality-gate
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: ${{ vars.STAGING_FRONTEND_URL }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:
@@ -136,6 +87,8 @@ jobs:
       url: ${{ vars.STAGING_FRONTEND_URL }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:

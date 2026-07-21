@@ -64,6 +64,9 @@ jobs:
       - name: System browser E2E
         run: npm run test:e2e
 
+      - name: Deployment utility tests
+        run: npm run test:deployment
+
       - name: Backend health import check
         run: node -e "const app = require('./src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid');"
         working-directory: backend
