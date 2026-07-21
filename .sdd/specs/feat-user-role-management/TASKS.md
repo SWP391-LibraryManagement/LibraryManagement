@@ -293,4 +293,8 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Evidence: the legacy entry is an exact one-line compatibility export; frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint/build, and browser E2E 4/4 pass.
 - [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**
   - Automated evidence: staging workflow `29871576856` deployed `903a1a2`; backend, frontend, smoke, health, and direct SPA route checks passed.
-  - Pending: explicit authenticated human staging visual approval. Automated responsive acceptance is recorded separately in `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`.
+  - Review result: authenticated human review on 2026-07-22 found three presentation corrections; acceptance remains open until FE11-UXR08 is deployed and reviewed.
+- [ ] **FE11-UXR08 - Correct authenticated Admin navigation, User Management responsiveness, and Audit density.**
+  - Maps to: BR-FE11-016, BR-FE11-017..018; FR-FE11-030/032/033; AC-FE11-016..018; Q-FE11-011.
+  - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
+  - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.

@@ -330,3 +330,11 @@ Decision: APPROVED BY HUMAN - 2026-07-22.
 This Shell-only refactor preserves `/admin/users`, all FE11/FE07/FE12 API and ownership contracts, server authorization, safe DTOs, and database state. It splits the Admin Console into a guarded shell, shared presentation primitives, and independent Dashboard, Library, Circulation, Requests, Users, Permissions, and Audit modules.
 
 Implementation order: governance -> pure presentation RED/GREEN -> shared shell -> Dashboard -> Users -> Requests -> Permissions -> Audit -> Library/Circulation -> legacy removal -> full validation and Azure Staging acceptance.
+
+## 19. Authenticated Admin UX Correction Slice
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+This bounded Hybrid correction updates the FE11 sidebar contract from eight to seven visible entries while preserving Manage Roles in User Management and leaving the permission API/policy unchanged. Shell work switches the user directory to its existing card view before its 1040px table overflows, keeps all canonical Audit filters, presents mapped actions accessibly, and moves safe detail metadata behind a per-row disclosure.
+
+Implementation order: spec/design reconciliation -> focused RED tests -> navigation correction -> responsive user breakpoint -> Audit filter/detail correction -> full frontend validation -> responsive browser acceptance -> Azure Staging review.

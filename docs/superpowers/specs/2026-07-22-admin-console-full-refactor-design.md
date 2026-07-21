@@ -12,7 +12,7 @@ Refactor the FE11 Admin Console frontend into a modular single-route application
 
 - The public entry URL remains `/admin/users`.
 - The default Admin section remains User Management.
-- Navigation continues to expose exactly the eight approved sections.
+- Navigation exposes the seven sections approved after authenticated human review; the separate Permissions item is removed while Manage Roles remains available from User Management.
 - Each section becomes an independent frontend module.
 - No backend endpoint, request payload, response DTO, role rule, or database schema changes.
 - The refactor may improve visible copy, responsive presentation, loading/error/empty states, and accessibility without changing what an Admin is authorized to do.
@@ -32,8 +32,9 @@ Live Azure Staging review on 2026-07-22 reproduced these presentation problems:
 - Permission matrix cells use the same green presentation for both allowed and denied values.
 - Permissions exposes internal source names such as `FE11` and `FE12`.
 - Audit rows expose raw action codes, and the filter bar compresses search, action, actor, two dates, and two buttons into one dense row.
+- Authenticated review found that the Audit safe-detail column expands every row even when the detail is secondary, and the User Management table still requires horizontal scrolling at common laptop/zoom widths.
 - Native date inputs have no persistent visible labels, so the browser placeholder becomes the only date guidance.
-- Hidden `membership` and `payments` render paths remain inside the Admin Console even though neither is part of the approved eight-section navigation.
+- Hidden `membership` and `payments` render paths remain inside the Admin Console even though neither is part of the approved navigation.
 
 The root causes are frontend structure and presentation rules, not backend data or authorization failures.
 
@@ -43,7 +44,7 @@ The root causes are frontend structure and presentation rules, not backend data 
 
 - Split the Admin Console into a shell, shared presentation primitives, and seven independently rendered Admin modules plus the Home navigation action.
 - Move Admin Console CSS from inline JSX into a dedicated stylesheet.
-- Preserve the current route and all approved sidebar entries in their current order.
+- Preserve the current route and the seven approved sidebar entries in their current order; remove only the Permissions sidebar entry and keep the underlying permission policy/API plus Manage Roles workflow unchanged.
 - Redesign Dashboard charts for decision-focused presentation, including top-five limits and true empty states.
 - Keep a desktop table for users and render a mobile user-card list below the responsive breakpoint.
 - Add visible labels to row actions while preserving the same edit, role, detail, and deactivate handlers.
@@ -100,7 +101,7 @@ Existing focused utilities remain in place when they already have a stable respo
 ### Ownership
 
 - `AdminConsolePage`: stored Admin access, unauthenticated/forbidden redirects, active section, logout confirmation, top-level refresh routing, and shared toast state.
-- `AdminShell`: responsive navigation, brand/session presentation, and the eight-entry sidebar contract.
+- `AdminShell`: responsive navigation, brand/session presentation, and the seven-entry sidebar contract.
 - Section modules: section-specific API calls, filters, pagination, selection, and rendering.
 - Shared components: presentation only; they do not call feature APIs or own business rules.
 - View-model/presentation utilities: pure transformations that can be unit tested without rendering React.
@@ -134,7 +135,7 @@ The Admin Console uses an operational-ledger pattern: quiet paper surfaces, clea
 
 ### Desktop
 
-- A 248px sticky sidebar contains the brand, eight approved entries, current account, and logout.
+- A 248px sticky sidebar contains the brand, seven approved entries, current account, and logout.
 - The main content uses a bounded readable width with fluid data panels.
 - Current-section state stays visible through background, text, icon color, and `aria-current` semantics.
 
@@ -174,6 +175,8 @@ The Admin Console uses an operational-ledger pattern: quiet paper surfaces, clea
 
 ### 7.4 Permissions
 
+- Remove the standalone Permissions entry from desktop and mobile sidebar navigation.
+- Keep the existing read-only permission component, API adapter, backend policy, and focused derivation tests unchanged; this correction does not alter role authorization or the Manage Roles workflow in User Management.
 - Replace `Ma trận FE11` with `Dữ liệu phân quyền`.
 - Replace `Thống kê FE12` with `Thống kê tài khoản theo vai trò`.
 - Explain that role totals may exceed unique accounts because an account can hold multiple roles.
@@ -184,10 +187,11 @@ The Admin Console uses an operational-ledger pattern: quiet paper surfaces, clea
 ### 7.5 Audit Logs
 
 - Keep the canonical `q`, `action`, `actorId`, `from`, `to`, page, and limit API values.
-- Map known raw action codes to Vietnamese presentation labels while retaining the raw code in a title or secondary technical line.
+- Present known action choices with Vietnamese labels while continuing to submit canonical raw action values; preserve free-text canonical input for actions not yet mapped.
 - Map known safe detail keys to Vietnamese labels while preserving unknown allowlisted keys as text.
 - Use persistent labels for action, actor ID, and both dates.
 - Split filter fields and actions into a responsive two-row layout instead of a single compressed row.
+- Keep safe details available through an explicit per-row disclosure so secondary metadata does not dominate the table.
 - Audit loading, error, empty, and filtered-empty states remain distinct.
 - Audit rows remain read-only and continue to render only the safe nested DTO.
 
@@ -228,7 +232,7 @@ This removal does not delete or modify:
 - FE09 fine records, collection, waiver, cancellation, or payment screens.
 - Any backend endpoint or database record.
 
-The approved eight-entry Admin navigation remains the authoritative scope.
+The approved seven-entry Admin navigation remains the authoritative scope; the permission policy and Manage Roles authorization remain unchanged.
 
 ## 11. Data And Security Boundaries
 
@@ -246,7 +250,7 @@ The approved eight-entry Admin navigation remains the authoritative scope.
 - Dashboard view model limits charts to five positive rows and returns an empty dataset for all-zero input.
 - Audit presentation maps known codes/details while preserving unknown safe values.
 - Permission presentation produces distinct allowed/denied states.
-- Navigation exports exactly the approved eight entries in order.
+- Navigation exports exactly the approved seven entries in order and excludes Permissions.
 
 ### Frontend Contract And Component Tests
 
@@ -260,9 +264,9 @@ The approved eight-entry Admin navigation remains the authoritative scope.
 
 ### Browser Acceptance
 
-- Desktop: 1366x768 and the normal large desktop viewport.
+- Desktop/laptop: 1280x720, 1366x768, 1440x900, and the normal large desktop viewport.
 - Mobile: 390x844.
-- Navigation, Dashboard, User Management, Requests, Permissions, and Audit are reviewed in both widths.
+- Navigation, Dashboard, User Management, Requests, and Audit are reviewed in desktop/laptop and mobile widths; Manage Roles is exercised from User Management.
 - Verify no horizontal page overflow, no unreadable chart labels, no hidden primary action, visible keyboard focus, and reduced-motion support.
 - Exercise create/edit/role modals without submitting destructive changes during visual review.
 
@@ -298,6 +302,7 @@ Each migration step must keep the application buildable and preserve the current
 | Authorization loads occur before redirect | Keep stored-access checks in `AdminConsolePage` and retain protected-load regression tests. |
 | Mobile card and desktop table diverge | Render both from the same normalized user objects and action handlers. |
 | Audit localization changes filter values | Separate raw canonical values from presentation labels. |
+| Removing Permissions from navigation removes role management | Retain the User Management role action and its existing tests; change only the shared navigation contract. |
 | Removing hidden code affects canonical features | Remove only Admin Console references; run FE04/FE09 frontend regressions. |
 | Large one-shot rewrite becomes unreviewable | Use an incremental migration sequence with green checks after every module. |
 | Existing approved navigation drifts | Export one navigation definition and retain the exact-order test. |
@@ -305,14 +310,15 @@ Each migration step must keep the application buildable and preserve the current
 ## 15. Acceptance Criteria
 
 - `/admin/users` remains the single Admin Console route and opens User Management by default.
-- The console contains exactly the eight approved navigation entries.
+- The console contains exactly the seven approved navigation entries and does not show Permissions.
 - No backend, API, database, security, or business-rule contract changes.
 - Dashboard never renders an all-zero line chart and shows no more than five plotted rows per chart.
-- At 1366px, core user information and labeled actions remain readable without character-by-character wrapping.
+- At 1280px and 1366px, User Management switches to the existing card presentation before the 1040px table would require horizontal scrolling; the wide table remains available when the content region can contain it.
 - At 390px, User Management uses cards and the page has no horizontal overflow.
 - User actions have visible Vietnamese labels.
 - Permissions clearly distinguishes allowed and denied values and exposes no FE11/FE12 implementation labels.
 - Audit displays Vietnamese action labels while preserving canonical raw values for filtering and technical inspection.
+- Audit keeps `q`, `action`, `actorId`, `from`, and `to`; its filters wrap cleanly and safe details open only on request.
 - Filter controls have persistent labels and stack cleanly on narrow layouts.
 - Loading, error, empty, filtered-empty, retry, and last-success states are distinct.
 - Hidden Admin Console membership/payment code is removed without changing FE04 or FE09 canonical behavior.
