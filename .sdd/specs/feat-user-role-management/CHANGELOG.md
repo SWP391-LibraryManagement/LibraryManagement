@@ -7,7 +7,8 @@
 - Preserved FE05, FE07, FE11, and FE12 ownership boundaries and removed only unreachable Admin membership/payment code; no API, schema, authorization, or business rule changed.
 - Cut the legacy entry to an exact one-line compatibility export and updated frontend/E2E contracts to follow the new module owners.
 - Fresh local validation passes frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint, build, and browser E2E 4/4.
-- `FE11-UXR01..FE11-UXR06` are complete. Azure Staging deployment and explicit authenticated human desktop/mobile approval remain under `FE11-UXR07`.
+- Azure Staging workflow `29871576856` deployed `903a1a2` successfully; backend, frontend, smoke, health, and direct `/admin/users` SPA checks passed.
+- `FE11-UXR01..FE11-UXR06` are complete. Explicit authenticated human desktop/mobile staging approval remains under `FE11-UXR07`.
 
 ## 2026-07-21 - Replace Admin CSV exports with DOCX
 

@@ -292,4 +292,5 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] **FE11-UXR06 - Cut over `/admin/users` and pass focused/full automated validation.**
   - Evidence: the legacy entry is an exact one-line compatibility export; frontend 191/191, backend 926/926, system 10/10, deployment 8/8, FE11 trace 95%, lint/build, and browser E2E 4/4 pass.
 - [ ] **FE11-UXR07 - Pass authenticated desktop/mobile Azure Staging acceptance and publish validation evidence.**
-  - Pending: Azure workflow/deployed SHA and explicit human staging visual approval. Automated responsive acceptance is recorded separately in `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`.
+  - Automated evidence: staging workflow `29871576856` deployed `903a1a2`; backend, frontend, smoke, health, and direct SPA route checks passed.
+  - Pending: explicit authenticated human staging visual approval. Automated responsive acceptance is recorded separately in `.sdd/reviews/admin-console-full-refactor-validation-2026-07-22.md`.

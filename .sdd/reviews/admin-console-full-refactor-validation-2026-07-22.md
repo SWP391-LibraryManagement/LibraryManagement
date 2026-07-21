@@ -86,13 +86,22 @@ styles, reduced-motion behavior, desktop table, and mobile card presentation.
 
 ## Azure Staging And Human Acceptance
 
-Pending:
+Automated staging deployment passed for
+`903a1a25656b9383fa687c11239aeea33070f48f`:
 
-- workflow run URL, conclusion, and deployed SHA;
-- backend health and staging smoke evidence;
+- workflow [29871576856](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29871576856)
+  concluded `success`;
+- `deploy-backend`, `deploy-frontend`, and `smoke-test` all concluded `success`;
+- `GET https://app-library-api-staging-nhat714.azurewebsites.net/health`
+  returned HTTP 200 with `{"status":"ok"}`;
+- `GET https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users`
+  returned HTTP 200 with the SPA root.
+
+Still pending:
+
 - authenticated staging walkthrough at 1366x768 and 390x844;
 - explicit human visual approval.
 
-The staging workflow may be deployed before human review, but `FE11-UXR07`
-must remain open until the reviewer explicitly accepts the authenticated
-desktop/mobile experience.
+`FE11-UXR07` remains open until the reviewer explicitly accepts the
+authenticated desktop/mobile experience. Workflow smoke and local authenticated
+Playwright evidence do not replace that human staging review.
