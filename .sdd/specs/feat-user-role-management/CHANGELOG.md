@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Authenticated Admin presentation corrections locally validated
+
+- Removed only the standalone Permissions destination from the Admin sidebar; role management remains available in User Management.
+- Changed User Management to responsive cards at 1440px and below so the page no longer requires horizontal dragging before the table adapts.
+- Retained all five canonical Audit filters, added readable Vietnamese action suggestions, and collapsed safe details per row in bounded readable columns.
+- Changed no API, schema, authentication, authorization, role policy, pagination, or audit-redaction behavior.
+- Fresh local validation passes frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and responsive visual checks at 1440/1366/1280/390.
+- `FE11-UXR08` remains open pending Azure Staging deployment and renewed authenticated human acceptance.
+
 ## 2026-07-22 - Admin Console modular refactor implemented and locally validated
 
 - Replaced the historical Admin monolith with a guarded, responsive shell and separate Dashboard, Users, Requests, Permissions, Audit, Library, and Circulation modules while keeping `/admin/users`.

@@ -298,3 +298,4 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Maps to: BR-FE11-016, BR-FE11-017..018; FR-FE11-030/032/033; AC-FE11-016..018; Q-FE11-011.
   - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
   - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.
+  - Local evidence: implementation commit `157b59b`; frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and authenticated responsive screenshots pass. Azure Staging deployment and renewed human approval remain pending.
