@@ -21,6 +21,7 @@
 - Updated FE11 requirements, tasks, and frontend regression contracts to match the approved correction.
 - Embedded the canonical FE05 book-management workspace inside Admin Library, so Admin actions no longer navigate to the Librarian route.
 - Verified Admin Library search/status filters are forwarded to the backend and added regression coverage for normalized query values.
+- Updated FE11 browser acceptance selectors to the shared application sidebar and removed obsolete Audit search/filter expectations.
 
 ## 2026-07-22 - Authenticated Admin presentation corrections locally validated
 

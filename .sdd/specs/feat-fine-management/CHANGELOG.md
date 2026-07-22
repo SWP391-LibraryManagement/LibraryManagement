@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-22 - Simplify Librarian book display
+
+- Changed the Librarian fine list column from `Sách / barcode` to `Sách` and removed the barcode subtitle from both the row and selected-fine card.
+- Preserved the canonical fine DTO and server search behavior; this is a presentation-only correction.
+
 ## 2026-07-21 - Connected Librarian fine workflow
 
 - Removed the redundant FE09 process notice from the Librarian workspace.

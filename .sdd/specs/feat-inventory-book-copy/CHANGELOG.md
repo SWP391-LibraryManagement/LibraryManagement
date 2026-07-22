@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-22 - Align inventory aggregate queries
+
+- Added publisher search to the shared inventory query and joined publisher metadata in both the pagination-total and status-count queries.
+- Added regression coverage preventing the list from succeeding while either aggregate query fails from a missing shared JOIN.
+- Retained the deployment prerequisite that existing databases apply `2026-07-19-fe06-bookcopy-rowversion.sql` before using the canonical inventory contract.
+- Added a deployment-compatibility resolver for databases that still expose the equivalent rowversion as `BookCopies.RowVersion`, preserving optimistic concurrency for reads and mutations while migration rollout catches up.
+- Replaced an opaque 500 with `INVENTORY_SCHEMA_MIGRATION_REQUIRED`/503 when neither supported rowversion column exists.
+
 ## 2026-07-21 - Inventory Search And Error-State Correction
 
 - Added parameterized cross-field inventory search and combined it with canonical copy filters.

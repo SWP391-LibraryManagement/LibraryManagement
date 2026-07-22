@@ -286,6 +286,7 @@ test('return UI omits the client UTC date and does not claim a fine handoff occu
   assert.match(source, /returnDetail\(returnTarget\.borrowDetailId,\s*\{\s*condition,?\s*\}\)/s);
   assert.doesNotMatch(source, /returnDate:\s*new Date\(\)\.toISOString\(\)/);
   assert.doesNotMatch(source, /đã được chuyển cho quản lý phí phạt/i);
+  assert.match(source, /setReturnTarget\(loan\)/);
 });
 
 test('shared modal exposes an accessible name and manages keyboard focus', async () => {

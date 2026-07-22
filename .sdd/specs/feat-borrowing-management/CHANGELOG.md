@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-22 - Activate the Process Returns row action
+
+- Connected each `Xử lý trả` button to the existing return-confirmation target instead of only highlighting its row.
+- Preserved the canonical return API, condition selection, fine integration, and row-selection behavior.
+
 ## 2026-07-22 - Correct rejected request status in member history
 
 - Exposed the owning borrow-request status in canonical detail history rows.
