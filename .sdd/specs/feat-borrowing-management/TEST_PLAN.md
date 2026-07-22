@@ -1,6 +1,6 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.5
+Version: 0.2.6
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-22
 
@@ -56,6 +56,8 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 - FE07 backend route/repository/contract verification passes 66/66, preserving the canonical `LIBRARIAN`/`ADMIN` guards and mutation contracts.
 - Frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass for the v0.7.3 correction.
 - Browser acceptance against the real backend: guest/member/staff access, approval, renewal, normal return, network failure, modal visibility, and desktop/mobile overflow checks.
+- System golden path asserts the explicit `Quá hạn 14 ngày` return-due label before processing the overdue return and FE09 fine handoff.
+- Full Chromium E2E regression passes 4/4, including the FE08 reservation flow, FE09 fine management, FE11 admin request management, and the system golden path.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
@@ -72,6 +74,7 @@ npm.cmd --prefix backend test
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
+npm.cmd run test:e2e
 npm.cmd run trace:enforce
 ```
 

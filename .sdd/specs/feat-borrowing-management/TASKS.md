@@ -248,7 +248,7 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Boundary: no API/schema/role/transaction change; Librarian/Admin retain the same canonical FE07 commands.
 - [~] **FE07-T043 - Verify and human-review v0.7.3 correction.**
   - Maps to: AC-FE07-024, AC-FE07-025, and the v0.7.3 plan gates.
-  - Evidence: focused frontend 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass.
+  - Evidence: focused frontend 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, Chromium E2E 4/4, frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass.
   - Remaining gate: human review of the complete v0.7.3 diff.
 - [x] **FE07-T044 - Remove redundant normal-return notice.**
   - Maps to: NFR-FE07-UX-005.

@@ -73,7 +73,9 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   expect(overdueResponse.ok()).toBeTruthy();
 
   await page.goto(`${FRONTEND_URL}/librarian/returns`);
-  await expect(page.locator('.panel').getByText('14 ngày', { exact: true })).toBeVisible();
+  await expect(
+    page.locator('.return-detail .return-dates').getByText('Quá hạn 14 ngày', { exact: true })
+  ).toBeVisible();
   await page.getByRole('button', { name: /Xác nhận trả/i }).click();
   await page.getByRole('button', { name: /^Ghi nhận trả sách$/i }).click();
   await expect(

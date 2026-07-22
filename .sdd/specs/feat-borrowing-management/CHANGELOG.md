@@ -9,6 +9,7 @@
 - Replaced the ambiguous `Quá hạn: Đúng hạn` presentation with explicit remaining/today/overdue labels derived from the `Asia/Ho_Chi_Minh` business date, and exposed the canonical renewal count so extended due dates are explainable.
 - Preserved FE07 role guards, canonical mutation endpoints, approval revalidation/transactions, rejection-reason validation, member history, and FE06/FE08/FE09/FE10 ownership boundaries.
 - Added focused frontend regressions; focused FE07 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, lint/build, traceability, and diff hygiene pass. Human review remains open.
+- Reconciled the system golden-path E2E assertion with the v0.7.3 explicit overdue label (`Quá hạn 14 ngày`) instead of the removed ambiguous `14 ngày` text; the full Chromium E2E suite passes 4/4.
 
 ## 2026-07-22 - Activate the Process Returns row action
 
