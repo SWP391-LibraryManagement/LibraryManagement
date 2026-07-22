@@ -14,7 +14,7 @@ test('navigation visibility follows stored roles', () => {
   assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
-    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations', 'profile'],
+    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations', 'my-fines', 'profile'],
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
@@ -31,6 +31,7 @@ test('active navigation is derived from the current URL', () => {
   assert.equal(getActiveNavigationKey('/home'), 'home');
   assert.equal(getActiveNavigationKey('/membership'), 'membership');
   assert.equal(getActiveNavigationKey('/borrowing/history'), 'borrowing-history');
+  assert.equal(getActiveNavigationKey('/fines/mine'), 'my-fines');
   assert.equal(getActiveNavigationKey('/librarian/inventory'), 'inventory-management');
   assert.equal(getActiveNavigationKey('/librarian/books'), 'book-management');
   assert.equal(getActiveNavigationKey('/librarian/fines'), 'fine-management');
@@ -127,10 +128,10 @@ test('librarian account menus expose a route back to the librarian workspace', a
   assert.match(homepage, /label: 'Khu vực thủ thư', action: \(\) => navigate\('\/home'\)/);
 });
 
-test('member dashboard summarizes personal activity', () => {
+test('member dashboard summarizes the canonical personal borrowing envelope', () => {
   assert.deepEqual(
     buildMemberSummary(
-      { borrowRequests: [{ status: 'APPROVED' }, { status: 'COMPLETED' }] },
+      { borrowings: [{ status: 'APPROVED' }, { status: 'COMPLETED' }] },
       { reservations: [{ status: 'WAITING' }, { status: 'CANCELLED' }] },
     ),
     { activeBorrows: 1, completedBorrows: 1, activeReservations: 1 },
@@ -178,6 +179,32 @@ test('homepage membership promotion is visible only to signed-out guests', async
 
   assert.match(source, /\{!isLoggedIn && <section id="section-cta"/);
   assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
+});
+
+test('homepage guest authentication controls route to their matching screens', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, />Đăng ký<\/button>/);
+  assert.doesNotMatch(source, /onClick=\{goToMembership\}/);
+  assert.match(source, /label: 'Đăng nhập', action: goToLogin/);
+  assert.match(source, /label: 'Đăng ký', action: goToRegister/);
+});
+
+test('homepage membership copy stays within approved library rules', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+
+  for (const unsupported of [
+    '99.000 VND/tháng',
+    'Mượn sách không giới hạn',
+    'Sách điện tử và sách nói',
+    'Thông báo sách mới',
+    'Danh sách đọc',
+    'Sự kiện riêng',
+  ]) assert.doesNotMatch(source, new RegExp(unsupported));
+  assert.doesNotMatch(source, /MembershipModal|showMembership/);
+  assert.match(source, /Tối đa 5 sách đang mượn/);
+  assert.match(source, /3 yêu cầu mỗi ngày/);
+  assert.match(source, /5 yêu cầu mỗi ngày sau khi được duyệt hội viên/);
 });
 
 test('public homepage exposes a usable mobile menu and responsive layout contract', async () => {

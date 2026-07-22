@@ -9,6 +9,8 @@ Updated: 2026-07-19
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
+Extension State: `FE04-ADM01..FE04-ADM05` were approved on 2026-07-22 and are not implemented.
+
 ---
 
 ## Task Rules
@@ -103,7 +105,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Evidence: FE04 trace is 12/12 and disposable SQL Server validation passes 10/10 FE04 SQL cases with cleanup. Final repository reruns, browser acceptance, cross-feature review, and human acceptance remain open.
 
 - [x] **FE04-T010 - Require a complete personal profile before application.**
-  - Maps to: BR-FE04-019, FR-FE04-013, AC-FE04-012, NFR-FE04-UX-003.
+  - Maps to: BR-FE04-019, FR-FE04-013, AC-FE04-012, NFR-FE04-UX-004.
   - Files: FE04 service/repository, member application UI, and focused backend/frontend tests.
   - GREEN: require non-empty `fullName`, `phone`, `dateOfBirth`, and `address` on the server; disable submission and link incomplete users to `/profile`; keep avatar optional and the request body empty.
   - Verify: focused FE04 backend/frontend tests, frontend lint, and diff hygiene pass.
@@ -123,6 +125,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE04-010, FR-FE04-011 | FE04-T002, FE04-T004, FE04-T005 |
 | FR-FE04-012 | FE04-T006 |
 | FR-FE04-013 | FE04-T010 |
+| FR-FE04-014 | FE04-ADM01..FE04-ADM05 |
 | AC-FE04-001, AC-FE04-002 | FE04-T004 |
 | AC-FE04-003 through AC-FE04-006 | FE04-T005, FE04-T006 |
 | AC-FE04-007, AC-FE04-008 | FE04-T003, FE04-T004, FE04-T007 |
@@ -130,6 +133,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | AC-FE04-010 | FE04-T006 |
 | AC-FE04-011 | FE04-T007 |
 | AC-FE04-012 | FE04-T010 |
+| AC-FE04-013 | FE04-ADM01..FE04-ADM05 |
 
 ## Completion Gate
 
@@ -142,3 +146,21 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 - [x] Use neutral feedback for a completed membership rejection.
 - [x] Hide member-only sidebar workflows from multi-role Librarian/Admin actors.
+
+## Admin Console Membership Review Integration Tasks
+
+- [ ] **FE04-ADM01 - Lock exact navigation and pure Admin membership presentation contracts.**
+  - Maps to: FR-FE04-014, AC-FE04-013; BR-FE11-016, AC-FE11-016.
+  - DoD: RED-GREEN proves the exact eight-entry sidebar, canonical FE04 list normalization, pending detection, and safe committed-decision/notification feedback.
+- [ ] **FE04-ADM02 - Build the server-owned Admin membership directory.**
+  - Depends on: FE04-ADM01.
+  - DoD: Admin Console renders FE04 `q`, `status`, `page`, `limit` results with loading/error/empty states, table/cards, and no Admin API alias.
+- [ ] **FE04-ADM03 - Add approval, rejection, conflict reload, and FE10 feedback.**
+  - Depends on: FE04-ADM02.
+  - DoD: only `PENDING` rows expose decisions; rejection is 1..500 characters; success/failure reloads server truth; `FAILED` delivery is a warning after a committed decision.
+- [ ] **FE04-ADM04 - Pass authenticated responsive browser acceptance.**
+  - Depends on: FE04-ADM03.
+  - DoD: real FE04 rejection, re-application, and approval pass in the Admin shell; table/cards and no-overflow evidence pass at 1600/1440/1366/1280/390; existing FE11 and `/membership` regressions stay green.
+- [ ] **FE04-ADM05 - Pass L1-L4, H2, Azure Staging, and human acceptance.**
+  - Depends on: FE04-ADM01..FE04-ADM04.
+  - DoD: focused/full tests, lint/build/trace/browser, reviewed commits, deployment run, HTTP checks, and explicit authenticated human desktop/mobile approval are recorded.

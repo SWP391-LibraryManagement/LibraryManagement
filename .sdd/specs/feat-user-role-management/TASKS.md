@@ -1,9 +1,13 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: APPROVED REVISION - PERSONAL DATA OWNERSHIP IMPLEMENTATION PENDING
+Implementation State: PARTIAL
 
-Date: 2026-07-20
+Date: 2026-07-22
+
+Current Extension: FE11-PDO01 is documentation-complete; FE11-PDO02..PDO04 were approved on 2026-07-22 and are not implemented.
+
+Concurrent Extension: FE11-UXR09 was approved on 2026-07-22 and is not implemented.
 
 Owner: Dung
 
@@ -230,6 +234,7 @@ Owner: Dung
   - Maps to: BR-FE11-004/010/014/027; FR-FE11-004/007/020/021/023; AC-FE11-004/008/023; TD-014/015/016.
   - DoD: actor/target locks, effective version, duplicate mapping, no-op behavior, safe audit allowlist, and rollback are proven.
   - Evidence: lifecycle repository/service/route tests prove locked outcomes, stale/no-op/effective updates, safe audit metadata, and rollback.
+  - Supersession: Q-FE11-027 invalidates the broad personal/email update portion of this historical evidence; only Librarian work-field concurrency/no-op behavior may be retained under FE11-PDO02..PDO04.
 
 - [x] **FE11-LIFE04 - Implement atomic deactivation and credential invalidation.**
   - Maps to: BR-FE11-003/006/010/015/027; FR-FE11-008/011/016..019/023; AC-FE11-007/009/012/023; TD-014/015/016.
@@ -308,6 +313,7 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - DoD: sidebar exposes seven entries without Permissions while Manage Roles remains in User Management; the user table changes to cards before horizontal scrolling; Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`, presents mapped action choices in Vietnamese, and discloses safe details per row without changing API/redaction behavior.
   - Evidence target: focused RED-GREEN source tests, full frontend test/lint/build, responsive browser screenshots at 1280/1366/1440/390, and renewed Azure Staging human review.
   - Evidence: implementation commit `157b59b`; frontend 192/192, lint, build, FE11 trace 95%, focused Chromium 1/1, and authenticated responsive screenshots pass. Staging workflow `29873466035` deployed `8627508` with backend/frontend/smoke success; renewed authenticated human approval remains pending.
+  - Supersession: FE11-UXR09 changes only the current final sidebar count from seven to eight by adding FE04 Membership Review; all UXR08 User Management, Audit, and Permissions-removal corrections remain required.
 
 ## 2026-07-22 corrective batch
 
@@ -315,6 +321,33 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] Remove the Audit safe-details column while preserving safe server projection.
 - [x] Contain wide user/audit tables within the Admin content area.
 - [x] Keep Permissions absent from the approved Admin sidebar.
+- [ ] **FE11-UXR09 - Integrate FE04 Membership Review into the Admin Console.**
+  - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016; FR-FE04-014, AC-FE04-013.
+  - Depends on: FE04-ADM01..FE04-ADM05.
+  - DoD: sidebar has exactly eight entries with Membership Review after All Users and no Permissions; the embedded Admin-native FE04 module passes source, responsive browser, Azure Staging, and explicit human review without changing FE04 API/business ownership.
+
+## Personal Data Ownership Correction Tasks
+
+- [x] **FE11-PDO01 - Reconcile the approved personal-data ownership contract.**
+  - Maps to: BR-FE11-014/015/026/027; FR-FE11-004/007/010/020/021/023; AC-FE11-004/008/011/023; Q-FE11-027.
+  - DoD: SPEC, CONTEXT, PLAN, TASKS, TEST_PLAN, and CHANGELOG agree that FE03 owns existing-user `fullName`/`phone`/`address`, FE02 owns any future verified email change, and FE11 owns only current-Librarian `department`/`specialization` updates.
+  - Evidence: documentation-only change dated 2026-07-22; no product behavior is claimed.
+
+- [ ] **FE11-PDO02 - Add RED backend ownership-boundary tests.**
+  - Files: `backend/tests/userManagementRoutes.test.js`, `backend/tests/userManagementService.test.js`, `backend/tests/userRepository.test.js`.
+  - Cases: each personal field, unchanged email, mixed allowed/forbidden payload, unknown field, non-Librarian target, allowed Librarian work update, stale state, no-op, rollback, and success-audit allowlist.
+  - DoD: tests demonstrate the current broad update path violates the revised contract before implementation changes are made.
+
+- [ ] **FE11-PDO03 - Enforce the backend work-field-only update contract.**
+  - Files: `backend/src/validators/userManagementValidators.js`, `backend/src/services/userManagementService.js`, `backend/src/repositories/userRepository.js`, `backend/src/docs/openapi.yaml`, `docs/api/api-contract.md`.
+  - DoD: `PUT /api/users/{userId}` accepts only effective-version plus current-Librarian work fields; forbidden/mixed requests return atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; no personal column or success audit changes.
+  - Validation: focused route/service/repository tests pass, followed by full backend tests, coverage, OpenAPI parse, and FE02/FE03 regression checks.
+
+- [ ] **FE11-PDO04 - Align the Admin UI and close the revised acceptance boundary.**
+  - Files: `frontend/src/page/admin/users/AdminUsersSection.jsx`, `frontend/src/page/admin/users/UserEditorModal.jsx`, `frontend/src/page/admin/users/userPresentation.js`, `frontend/src/api/userManagementApi.js`, `frontend/test/userManagementApi.test.js`, `frontend/test/userManagementFrontend.test.js`.
+  - DoD: personal fields are read-only for existing users; only a current Librarian exposes department/specialization editing; the update request contains no personal field; direct backend attempts remain rejected.
+  - Validation: focused RED-GREEN frontend tests, full frontend tests/lint/build, relevant browser E2E, `npm.cmd run trace:enforce`, `git diff --check`, and authenticated human Admin review pass before the revised FE11 scope is marked complete.
+
 - [x] Remove all Audit search/filter controls while preserving read-only pagination, authorization, and redaction.
 - [x] Rebuild the Admin shell from the shared Member/Librarian `app-shell`, header, sidebar, brand, and responsive navigation primitives.
 - [x] Keep book-management actions inside Admin Library by embedding the canonical FE05 workspace instead of redirecting to `/librarian/books`.

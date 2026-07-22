@@ -29,6 +29,23 @@ test('maps every FE08 reservation lifecycle state to its canonical UI state', as
   assert.equal(statusToUi('EXPIRED'), 'Expired');
 });
 
+test('member reservation actions are open only for ACTIVE and NOTIFIED records', async () => {
+  const { isOpenMemberReservationStatus } = await loadViewModels();
+
+  assert.equal(typeof isOpenMemberReservationStatus, 'function');
+  assert.equal(isOpenMemberReservationStatus('ACTIVE'), true);
+  assert.equal(isOpenMemberReservationStatus('NOTIFIED'), true);
+  assert.equal(isOpenMemberReservationStatus('FULFILLED'), false);
+  assert.equal(isOpenMemberReservationStatus('CANCELLED'), false);
+  assert.equal(isOpenMemberReservationStatus('EXPIRED'), false);
+});
+
+test('reservation mapping preserves the normalized backend lifecycle state', async () => {
+  const { mapReservation } = await loadViewModels();
+
+  assert.equal(mapReservation({ reservationId: 7, copyId: 9, status: 'fulfilled' }).rawStatus, 'FULFILLED');
+});
+
 test('keeps only active FE08 states in the librarian queue', async () => {
   const { isActiveReservationQueueStatus } = await loadReservationViewState();
 
@@ -198,6 +215,9 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.match(mine, /reservationApi\.listCandidates/);
   assert.match(mine, /candidate\.copyId/);
   assert.match(mine, /activeReservedCopyIds/);
+  assert.match(mine, /isOpenMemberReservationStatus/);
+  assert.match(mine, /item\.rawStatus/);
+  assert.doesNotMatch(mine, /!\['Cancelled', 'Expired'\]\.includes\(item\.status\)/);
   assert.doesNotMatch(mine, /visibleCandidates/);
   assert.match(mine, /candidate\.hasActiveReservation/);
   assert.match(mine, /hasActiveReservation: true/);

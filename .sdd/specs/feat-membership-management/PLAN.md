@@ -8,6 +8,8 @@ Updated: 2026-07-19
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
+Extension State: Admin Console Membership Review integration was approved on 2026-07-22 and is planned under `FE04-ADM01..FE04-ADM05`; implementation has not started.
+
 > **For implementation agents:** Execute `TASKS.md` in order. Every behavior task starts with a failing focused test, adds the smallest implementation that satisfies the approved spec, and ends with the listed verification gate.
 
 ---
@@ -159,3 +161,13 @@ Full backend/frontend suites remain the final merge gate, but they are not a sub
 - [x] Confirm FE10 requester ownership, source metadata, and idempotency key.
 - [x] Confirm frontend failure states never replace server truth with demo records.
 - [x] Approve `TASKS.md` ordering and mappings before implementation starts.
+
+## 11. Admin Console Membership Review Integration
+
+Decision: APPROVED BY HUMAN - 2026-07-22.
+
+Design: `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
+
+Implementation plan: `docs/superpowers/plans/2026-07-22-admin-membership-review-integration.md`.
+
+The extension is Hybrid Standard-depth: FE04 review rules, authorization, audit, and FE10 delivery remain Core; FE11 navigation and the responsive Admin module are Shell. Implementation order is pure/nav RED-GREEN, read-only directory, review mutations/feedback, responsive authenticated browser acceptance, then L1-L4/H2/Azure evidence. No backend production/API/schema change is permitted; the E2E harness may wire the existing in-memory FE04 service.

@@ -10,7 +10,7 @@ import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import { fmtDate, isOpenMemberReservationStatus, mapReservation } from '../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../utils/uiLabels';
 
 const CANDIDATE_PAGE_SIZE = 20;
@@ -35,7 +35,7 @@ export default function MyReservationsPage() {
   const [toast, showToast, clearToast] = useToast();
   const activeReservedCopyIds = new Set(
     reservations
-      .filter((item) => !['Cancelled', 'Expired', 'Completed'].includes(item.status))
+      .filter((item) => isOpenMemberReservationStatus(item.rawStatus))
       .map((item) => Number(item.copyId))
   );
 
@@ -87,7 +87,10 @@ export default function MyReservationsPage() {
   }, [loadCandidates, search]);
 
   async function reserve(candidate) {
-    if (reservations.some((item) => item.copyId === candidate.copyId && !['Cancelled', 'Expired'].includes(item.status))) {
+    if (reservations.some((item) => (
+      Number(item.copyId) === Number(candidate.copyId)
+      && isOpenMemberReservationStatus(item.rawStatus)
+    ))) {
       showToast(`Bạn đã có đặt chỗ đang hoạt động cho "${candidate.title}".`, 'info');
       return;
     }
@@ -190,13 +193,13 @@ export default function MyReservationsPage() {
               <td data-label="Vị trí hàng đợi">
                 {item.status === 'Ready to pick up'
                   ? <span className="row-flex" style={{ gap: 6, color: 'var(--st-green)' }}><CheckCircle2 size={15} /> Đến lượt bạn</span>
-                  : item.status === 'Expired' || item.status === 'Cancelled'
+                  : !isOpenMemberReservationStatus(item.rawStatus)
                     ? <span className="muted">-</span>
                     : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue}</span>}
               </td>
               <td data-label="Trạng thái"><Badge status={item.status}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
-                {!['Expired', 'Cancelled'].includes(item.status) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
+                {isOpenMemberReservationStatus(item.rawStatus) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
               </td>
             </tr>
           ))}

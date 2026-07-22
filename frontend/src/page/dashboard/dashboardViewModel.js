@@ -1,5 +1,5 @@
 export function buildMemberSummary(borrowing = {}, reservations = {}) {
-  const borrowRows = borrowing.borrowRequests || [];
+  const borrowRows = Array.isArray(borrowing.borrowings) ? borrowing.borrowings : [];
   const reservationRows = reservations.reservations || [];
   return {
     activeBorrows: borrowRows.filter((row) => ['APPROVED', 'BORROWED'].includes(row.status)).length,

@@ -7,6 +7,7 @@ export const APP_NAV_GROUPS = [
       { key: 'borrow-request', label: 'Mượn sách', path: '/borrowing/new' },
       { key: 'borrowing-history', label: 'Lịch sử mượn', path: '/borrowing/history' },
       { key: 'my-reservations', label: 'Đặt chỗ của tôi', path: '/reservations/mine' },
+      { key: 'my-fines', label: 'Tiền phạt của tôi', path: '/fines/mine' },
     ],
   },
   {

@@ -11,6 +11,7 @@ const ForgotPasswordPage = lazy(() => import('./page/ForgotPasswordPage'));
 const HomeRoutePage = lazy(() => import('./page/dashboard/HomeRoutePage'));
 const UserManagement = lazy(() => import('./page/UserManagement'));
 const FineManagement = lazy(() => import('./page/FineManagement'));
+const MemberFinesPage = lazy(() => import('./page/fine/MemberFinesPage'));
 const UserProfilePage = lazy(() => import('./page/UserProfilePage'));
 const InventoryPage = lazy(() => import('./page/InventoryPage'));
 const BookManagementPage = lazy(() => import('./page/BookManagementPage'));
@@ -68,6 +69,7 @@ function App() {
       {/* FE07 · Borrowing Management */}
       <Route path="/borrowing/new" element={<BorrowingRouteGuard audience="member"><BorrowRequestPage /></BorrowingRouteGuard>} />
       <Route path="/borrowing/history" element={<BorrowingRouteGuard audience="member"><BorrowingHistoryPage /></BorrowingRouteGuard>} />
+      <Route path="/fines/mine" element={<BorrowingRouteGuard audience="member"><MemberFinesPage /></BorrowingRouteGuard>} />
       <Route path="/librarian/borrow-requests" element={<BorrowingRouteGuard audience="staff"><BorrowRequestsAdminPage /></BorrowingRouteGuard>} />
       <Route path="/librarian/returns" element={<BorrowingRouteGuard audience="staff"><ProcessReturnsPage /></BorrowingRouteGuard>} />
       <Route path="/librarian/members" element={<BorrowingRouteGuard audience="staff"><MemberBorrowingDetailsPage /></BorrowingRouteGuard>} />

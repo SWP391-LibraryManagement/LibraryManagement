@@ -163,6 +163,10 @@ export function mapBorrowDetailsToMember(details = [], selectedMember = {}) {
   };
 }
 
+export function isOpenMemberReservationStatus(status) {
+  return ['ACTIVE', 'NOTIFIED'].includes(String(status || '').toUpperCase());
+}
+
 export function mapReservation(reservation) {
   return {
     id: `RS-${reservation.reservationId}`,
@@ -178,6 +182,7 @@ export function mapReservation(reservation) {
     email: reservation.member?.email || null,
     reservedDate: reservation.reservedAt || reservation.createdAt,
     queue: reservation.queuePosition || 1,
+    rawStatus: String(reservation.status || '').toUpperCase(),
     status: statusToUi(reservation.status, reservation),
     deadline: reservation.expiresAt,
   };

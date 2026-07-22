@@ -18,6 +18,19 @@ test('FE01 search uses the canonical public envelope and approved query', async 
   assert.match(source, /keyword\.length > 200/);
 });
 
+test('FE01 blank search reloads the default catalog without an error toast', async () => {
+  const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
+  const blankBranch = source.match(/if \(!keyword\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
+
+  assert.match(blankBranch, /await publicBrowseApi\.list\(\)/);
+  assert.match(blankBranch, /setBooks\(result\.data \|\| \[\]\)/);
+  assert.match(blankBranch, /setActiveSearch\(''\)/);
+  assert.match(blankBranch, /setActiveCategory\('Tất cả'\)/);
+  assert.match(blankBranch, /setShowAll\(true\)/);
+  assert.match(blankBranch, /scrollTo\('section-books'\)/);
+  assert.doesNotMatch(blankBranch, /Vui lòng nhập từ khóa tìm kiếm/);
+});
+
 test('FE01 API adapter owns canonical unauthenticated list and detail reads', async () => {
   const source = await readFile(new URL('../src/api/libraryFeatureApi.js', import.meta.url), 'utf8');
   assert.match(source, /export const publicBrowseApi =/);

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-22 - Admin Console membership review integration approved
+
+- Approved an embedded Admin-native FE04 review section after User Management while retaining the existing `/membership` Member/Librarian workspace.
+- Preserved the canonical FE04 API, pending-only state transitions, server authorization, atomic audit behavior, and non-blocking FE10 result delivery.
+- Added `FR-FE04-014`, `AC-FE04-013`, and responsive/notification presentation requirements; implementation and validation have not started.
+
 ## 2026-07-22 - Require complete profile before application
 
 - Required non-empty full name, phone, date of birth, and address before creating a membership application; avatar remains optional.

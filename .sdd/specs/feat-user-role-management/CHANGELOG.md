@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-22 - Personal data ownership boundary approved
+
+- Assigned authenticated self-service updates to `fullName`, `phone`, and `address` to FE03; FE11 Admin may view these fields but cannot edit them after account creation.
+- Kept existing-account email read-only in Phase 1; any future change requires an explicitly approved FE02 verification flow.
+- Restricted the canonical FE11 existing-user update contract to `department` and `specialization` for current Librarian targets only.
+- Superseded broad Admin personal/email update requirements and their historical acceptance evidence; added `FE11-PDO01..PDO04` for contract reconciliation, backend enforcement, Admin UI alignment, and fresh validation.
+- This entry records specification and planning changes only. The current product update path remains broader until `FE11-PDO02..PDO04` are implemented and verified.
+
+## 2026-07-22 - Admin Membership Review integration approved
+
+- Approved an eighth Admin sidebar entry, `Duyệt hội viên`, after User Management while keeping Permissions removed and Manage Roles available from User Management.
+- Assigned shell/navigation ownership to FE11 and retained list/review data and mutation ownership in FE04 without adding an Admin API alias.
+- Recorded the responsive embedded-module design; implementation and validation have not started.
+
 ## 2026-07-22 - Align Admin shell and simplify activity log
 
 - Reused the shared Member/Librarian application shell, account header, responsive sidebar, brand, and navigation styling for Admin Console.
