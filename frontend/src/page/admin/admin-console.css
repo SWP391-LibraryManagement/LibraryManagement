@@ -8,10 +8,7 @@
   --admin-danger: #b42318;
   --admin-muted: #6b6153;
   --admin-line: #e7ddca;
-  min-height: 100vh;
-  background: var(--admin-canvas);
   color: var(--admin-ink);
-  font-family: var(--sans);
 }
 
 .admin-console :where(button, input, select, textarea):focus-visible {
@@ -124,7 +121,6 @@
 
 .admin-shell__main {
   min-width: 0;
-  padding: 32px clamp(20px, 4vw, 52px) 48px;
 }
 
 .admin-shell__mobile-header,
@@ -1488,10 +1484,6 @@
   .admin-shell__mobile-logout {
     margin-top: auto;
     color: var(--admin-danger);
-  }
-
-  .admin-shell__main {
-    padding: 22px 16px 40px;
   }
 
   .admin-section-status,

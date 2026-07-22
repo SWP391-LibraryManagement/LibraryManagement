@@ -46,12 +46,14 @@ test('Admin Audit table stays contained with readable action, IP, and time colum
   assert.match(css, /\.admin-audit-ip,\s*\.admin-audit-time\s*\{[^}]*white-space: nowrap;/s);
 });
 
-test('Admin shell derives accessible desktop and mobile navigation from one contract', async () => {
+test('Admin shell reuses the shared app shell and responsive navigation contract', async () => {
   const shell = await readFile(new URL('components/AdminShell.jsx', root), 'utf8');
   assert.match(shell, /ADMIN_NAVIGATION/);
+  assert.match(shell, /className="admin-console app-shell"/);
+  assert.match(shell, /className=\{`app-sidebar/);
+  assert.match(shell, /<Header/);
+  assert.match(shell, /className="app-content admin-shell__main"/);
   assert.match(shell, /aria-current=/);
-  assert.match(shell, /aria-expanded=/);
-  assert.match(shell, /aria-controls=/);
   assert.match(shell, /event\.key === 'Escape'/);
   assert.doesNotMatch(shell, /api\//);
 });

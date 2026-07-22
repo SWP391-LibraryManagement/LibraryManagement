@@ -183,7 +183,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE11-014 | Admin-created accounts start `INACTIVE` and activate only after FE02 setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
 | Q-FE11-015 | FE11 issues setup tokens, FE10 delivers canonical `ACCOUNT_SETUP`, and FE02 consumes/activates. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 | Q-FE11-016 | Admin-only resend rotates the setup token/event/key and enforces a 60-second cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
-| Q-FE11-026 | Admin may view but cannot edit existing-user name, phone, address, or email; FE03 owns self-service personal updates, FE02 owns any future verified email change, and FE11 owns only current-Librarian department/specialization updates. | User approval 2026-07-22 | APPROVED |
+| Q-FE11-027 | Admin may view but cannot edit existing-user name, phone, address, or email; FE03 owns self-service personal updates, FE02 owns any future verified email change, and FE11 owns only current-Librarian department/specialization updates. | User approval 2026-07-22 | APPROVED |
 
 ---
 

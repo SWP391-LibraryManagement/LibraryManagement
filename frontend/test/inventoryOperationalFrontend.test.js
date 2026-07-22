@@ -22,8 +22,19 @@ test('FE06 inventory exposes an explicit copy-management action', async () => {
   const management = await readFrontend('../src/component/inventory/InventoryManagement.jsx');
 
   assert.match(management, /headers=\{\[[^\]]*'Thao tác'/s);
-  assert.match(management, /Quản lý bản sao/);
+  assert.match(management, /Thêm \/ sửa \/ trạng thái/);
   assert.match(management, /openBook\(copy\.book\)/);
+});
+
+test('inventory applies filters explicitly, reloads the applied query, and paginates through the API', async () => {
+  const management = await readFrontend('../src/component/inventory/InventoryManagement.jsx');
+
+  assert.match(management, /await loadInventory\(\{ pageNumber: 1, nextFilter \}\)/);
+  assert.match(management, /Tải lại kết quả đã lọc/);
+  assert.match(management, /loadInventory\(\{ pageNumber: 1, nextFilter: appliedFilter \}\)/);
+  assert.match(management, /changePage\(page - 1\)/);
+  assert.match(management, /changePage\(page \+ 1\)/);
+  assert.doesNotMatch(management, /reloadKey/);
 });
 
 // @spec AC-FE06-004, BR-FE06-013, FR-FE06-004

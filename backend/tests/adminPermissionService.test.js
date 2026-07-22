@@ -88,3 +88,15 @@ test('getPermissions returns fresh nested objects on every call', () => {
   });
   expect(second.permissions).toEqual(EXPECTED_PERMISSIONS);
 });
+
+test('listBooks forwards normalized search and status filters to the Admin library query', async () => {
+  adminRepository.listBooks.mockResolvedValue([{ id: 1, title: 'Clean Code' }]);
+
+  await expect(adminService.listBooks({ q: '  Clean  ', status: 'active' })).resolves.toEqual({
+    data: [{ id: 1, title: 'Clean Code' }],
+  });
+  expect(adminRepository.listBooks).toHaveBeenCalledWith({
+    q: 'Clean',
+    status: 'ACTIVE',
+  });
+});

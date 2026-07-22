@@ -234,7 +234,7 @@ Owner: Dung
   - Maps to: BR-FE11-004/010/014/027; FR-FE11-004/007/020/021/023; AC-FE11-004/008/023; TD-014/015/016.
   - DoD: actor/target locks, effective version, duplicate mapping, no-op behavior, safe audit allowlist, and rollback are proven.
   - Evidence: lifecycle repository/service/route tests prove locked outcomes, stale/no-op/effective updates, safe audit metadata, and rollback.
-  - Supersession: Q-FE11-026 invalidates the broad personal/email update portion of this historical evidence; only Librarian work-field concurrency/no-op behavior may be retained under FE11-PDO02..PDO04.
+  - Supersession: Q-FE11-027 invalidates the broad personal/email update portion of this historical evidence; only Librarian work-field concurrency/no-op behavior may be retained under FE11-PDO02..PDO04.
 
 - [x] **FE11-LIFE04 - Implement atomic deactivation and credential invalidation.**
   - Maps to: BR-FE11-003/006/010/015/027; FR-FE11-008/011/016..019/023; AC-FE11-007/009/012/023; TD-014/015/016.
@@ -321,7 +321,6 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] Remove the Audit safe-details column while preserving safe server projection.
 - [x] Contain wide user/audit tables within the Admin content area.
 - [x] Keep Permissions absent from the approved Admin sidebar.
-
 - [ ] **FE11-UXR09 - Integrate FE04 Membership Review into the Admin Console.**
   - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016; FR-FE04-014, AC-FE04-013.
   - Depends on: FE04-ADM01..FE04-ADM05.
@@ -330,7 +329,7 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 ## Personal Data Ownership Correction Tasks
 
 - [x] **FE11-PDO01 - Reconcile the approved personal-data ownership contract.**
-  - Maps to: BR-FE11-014/015/026/027; FR-FE11-004/007/010/020/021/023; AC-FE11-004/008/011/023; Q-FE11-026.
+  - Maps to: BR-FE11-014/015/026/027; FR-FE11-004/007/010/020/021/023; AC-FE11-004/008/011/023; Q-FE11-027.
   - DoD: SPEC, CONTEXT, PLAN, TASKS, TEST_PLAN, and CHANGELOG agree that FE03 owns existing-user `fullName`/`phone`/`address`, FE02 owns any future verified email change, and FE11 owns only current-Librarian `department`/`specialization` updates.
   - Evidence: documentation-only change dated 2026-07-22; no product behavior is claimed.
 
@@ -348,3 +347,8 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Files: `frontend/src/page/admin/users/AdminUsersSection.jsx`, `frontend/src/page/admin/users/UserEditorModal.jsx`, `frontend/src/page/admin/users/userPresentation.js`, `frontend/src/api/userManagementApi.js`, `frontend/test/userManagementApi.test.js`, `frontend/test/userManagementFrontend.test.js`.
   - DoD: personal fields are read-only for existing users; only a current Librarian exposes department/specialization editing; the update request contains no personal field; direct backend attempts remain rejected.
   - Validation: focused RED-GREEN frontend tests, full frontend tests/lint/build, relevant browser E2E, `npm.cmd run trace:enforce`, `git diff --check`, and authenticated human Admin review pass before the revised FE11 scope is marked complete.
+
+- [x] Remove all Audit search/filter controls while preserving read-only pagination, authorization, and redaction.
+- [x] Rebuild the Admin shell from the shared Member/Librarian `app-shell`, header, sidebar, brand, and responsive navigation primitives.
+- [x] Keep book-management actions inside Admin Library by embedding the canonical FE05 workspace instead of redirecting to `/librarian/books`.
+- [x] Verify Admin Library search/status filters reach the backend query and add frontend/backend regression coverage.

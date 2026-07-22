@@ -255,7 +255,8 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.doesNotMatch(navigation, /\{ id: 'membership'[^\n]+label: 'Quản lý hội viên'/);
   assert.match(css, /--admin-brass: #a87532/);
   assert.match(css, /--admin-canvas: #faf6ef/);
-  assert.match(css, /\.admin-shell__sidebar\s*\{[^]*?background: var\(--admin-paper\)/);
+  assert.match(page, /<AdminShell/);
+  assert.match(page, /onHome=\{\(\) => navigate\('\/home'\)\}/);
   assert.match(dashboard, /const loadDashboard = useCallback/);
   assert.match(dashboard, /setUpdatedAt\(new Date\(\)\)/);
   assert.doesNotMatch(source, /demoLibraryRows|demoBookMetadata|demoBorrowings|demoRequests/);
@@ -278,6 +279,8 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.doesNotMatch(dashboard, /className="um-bar-chart"/);
   assert.doesNotMatch(library, /Vô hiệu hóa sách/);
   assert.doesNotMatch(library, /adminApi\.(createBook|updateBook|deactivateBook)/);
+  assert.match(library, /<BookManagement \/>/);
+  assert.doesNotMatch(library, /navigate\('\/librarian\/books'\)/);
   assert.match(library, /adminApi\.deactivateResource\(resource, row\.id\)/);
   assert.match(library, /onClick=\{\(\) => deactivateMetadata\(row\)\}/);
   assert.match(library, /downloadDocx\(/);

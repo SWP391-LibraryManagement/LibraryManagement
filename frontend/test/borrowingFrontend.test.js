@@ -81,8 +81,8 @@ test('FE07 mutations always call the backend instead of simulating demo success'
   const returns = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
 
   assert.match(history, /await borrowingApi\.renewDetail\(renewRow\.borrowDetailId\)/);
-  assert.match(requests, /await borrowingApi\.approve\(approveTarget\.requestId/);
-  assert.match(requests, /await borrowingApi\.reject\(selected\.requestId/);
+  assert.match(requests, /await borrowingApi\.approve\(requestId/);
+  assert.match(requests, /await borrowingApi\.reject\(requestId/);
   assert.match(returns, /await borrowingApi\.returnDetail\(returnTarget\.borrowDetailId/);
   for (const source of [history, requests, returns]) {
     assert.doesNotMatch(source, /if \(!isDemo\)/);
@@ -242,7 +242,7 @@ test('approval UI does not invent audit notes or eligibility evidence', async ()
   assert.equal(Object.hasOwn(row, 'unpaidFines'), false);
   assert.equal(Object.hasOwn(row, 'membershipActive'), false);
   assert.doesNotMatch(source, /Approved from FE07 UI|req\.unpaidFines|disabled=\{!allOk\}/);
-  assert.match(source, /borrowingApi\.approve\(approveTarget\.requestId\)/);
+  assert.match(source, /borrowingApi\.approve\(requestId\)/);
 });
 
 test('librarian borrow request review filters and refreshes canonical API state', async () => {
@@ -345,8 +345,9 @@ test('FE07 staff pages use shared tables and pending confirmations', async () =>
   assert.match(requests, /DataTable/);
   assert.match(requests, /ConfirmAction/);
   assert.match(requests, /const \[actionPending, setActionPending\] = useState\(false\)/);
-  assert.match(requests, /await borrowingApi\.approve\(approveTarget\.requestId\)/);
-  assert.match(requests, /await borrowingApi\.reject\(selected\.requestId, rejectReason\.trim\(\)\)/);
+  assert.match(requests, /await borrowingApi\.approve\(requestId\)/);
+  assert.match(requests, /await borrowingApi\.reject\(requestId, rejectReason\.trim\(\)\)/);
+  assert.match(requests, /setRejectTarget\(row\)/);
 
   assert.match(returns, /DataTable/);
   assert.match(returns, /ConfirmAction/);

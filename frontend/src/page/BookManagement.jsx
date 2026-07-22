@@ -22,6 +22,7 @@ const DEFAULT_FORM = {
   pages: '',
   coverUrl: '',
   description: '',
+  status: 'ACTIVE',
 };
 
 async function apiRequest(path, options = {}) {
@@ -48,6 +49,7 @@ function toForm(book) {
     pages: book.pages ? String(book.pages) : '',
     coverUrl: book.cover || '',
     description: book.description || '',
+    status: book.status || 'ACTIVE',
   };
 }
 
@@ -123,6 +125,7 @@ function BookForm({
   submitLabel,
   onSubmit,
   disabled,
+  showStatus = false,
 }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
@@ -190,6 +193,17 @@ function BookForm({
         <FieldError message={errors.description} />
       </label>
 
+      {showStatus ? (
+        <label className="bm-wide">
+          <span>Trạng thái sách</span>
+          <select value={form.status} onChange={(event) => update('status', event.target.value)}>
+            <option value="ACTIVE">Còn sách</option>
+            <option value="INACTIVE">Không khả dụng</option>
+          </select>
+          <small>Trạng thái này điều khiển việc hiển thị sách trong danh mục; trạng thái từng bản sao vẫn được quản lý tại Quản lý kho.</small>
+        </label>
+      ) : null}
+
       <button className="bm-primary" type="submit" disabled={disabled}>
         <Save size={17} />
         {submitLabel}
@@ -214,7 +228,6 @@ export default function BookManagement() {
   const [updateForm, setUpdateForm] = useState(DEFAULT_FORM);
   const [addErrors, setAddErrors] = useState({});
   const [updateErrors, setUpdateErrors] = useState({});
-  const [statusReason, setStatusReason] = useState('');
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -295,7 +308,6 @@ export default function BookManagement() {
       const timer = window.setTimeout(() => {
         setUpdateForm(toForm(selectedBook));
         setDetailBook(selectedBook);
-        setStatusReason('');
       }, 0);
 
       return () => window.clearTimeout(timer);
@@ -439,11 +451,23 @@ export default function BookManagement() {
 
     try {
       setSaving(true);
-      const result = await apiRequest(`/books/${selectedBookId}`, {
+      let result = await apiRequest(`/books/${selectedBookId}`, {
         method: 'PUT',
         headers: { 'If-Match': selectedBook.version },
         body: JSON.stringify(makePayload(updateForm)),
       });
+      if (updateForm.status !== selectedBook.status) {
+        const activating = updateForm.status === 'ACTIVE';
+        result = await apiRequest(`/books/${selectedBookId}/${activating ? 'reactivate' : 'deactivate'}`, {
+          method: 'PATCH',
+          headers: { 'If-Match': result.book.version },
+          body: JSON.stringify({
+            reason: activating
+              ? 'Kích hoạt lại từ biểu mẫu cập nhật thông tin sách.'
+              : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
+          }),
+        });
+      }
       const nextBooks = await loadBooks();
       setDetailBook(nextBooks.find((book) => Number(book.id) === Number(selectedBookId)) || result.book);
       showToast('Đã cập nhật thông tin sách và tải lại trạng thái chuẩn.');
@@ -460,11 +484,9 @@ export default function BookManagement() {
       return;
     }
 
-    const reason = statusReason.trim();
-    if (!reason || reason.length > 500) {
-      showToast('Vui lòng nhập lý do từ 1 đến 500 ký tự.', 'error');
-      return;
-    }
+    const reason = selectedBook.status === 'INACTIVE'
+      ? 'Kích hoạt lại từ giao diện quản lý sách.'
+      : 'Ngừng hoạt động từ giao diện quản lý sách.';
 
     try {
       setSaving(true);
@@ -490,7 +512,6 @@ export default function BookManagement() {
       } else {
         setDetailBook(refreshedBook);
       }
-      setStatusReason('');
       showToast(selectedBook.status === 'INACTIVE'
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
         : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
@@ -680,6 +701,7 @@ export default function BookManagement() {
                 submitLabel="Lưu thay đổi"
                 onSubmit={handleUpdateBook}
                 disabled={saving}
+                showStatus
               />
             ) : (
               <div className="bm-empty">Chọn sách trước khi cập nhật.</div>
@@ -699,16 +721,6 @@ export default function BookManagement() {
                 <p>{selectedBook.status === 'INACTIVE'
                   ? 'Kích hoạt lại chỉ đổi trạng thái catalog; bản sao và lịch sử vẫn giữ nguyên.'
                   : 'Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.'}</p>
-                <label>
-                  <span>Lý do (bắt buộc, tối đa 500 ký tự)</span>
-                  <textarea
-                    value={statusReason}
-                    onChange={(event) => setStatusReason(event.target.value)}
-                    maxLength={500}
-                    rows={3}
-                    aria-label="Lý do thay đổi trạng thái"
-                  />
-                </label>
                 <button className="bm-danger" onClick={handleStatusChange} disabled={saving}>
                   <Trash2 size={17} />
                   {selectedBook.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Ngừng hoạt động'}

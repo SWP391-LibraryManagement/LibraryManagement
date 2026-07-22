@@ -117,3 +117,4 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 - [x] Verify inventory search/filter parameters remain server-backed.
 - [x] Add a visible per-row copy-management action and regression coverage.
+- [x] Sort by copy ID ascending and connect apply/reset/reload/pagination to the canonical filtered list.

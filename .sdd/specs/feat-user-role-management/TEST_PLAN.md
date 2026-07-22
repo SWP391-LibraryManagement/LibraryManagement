@@ -74,7 +74,7 @@ User administration, read-only Admin access to personal profile information, cur
 
 ## 3.3 Finalization Wave A Historical Targets
 
-These targets record the 2026-07-19 baseline. Broad personal/email update evidence is superseded by Q-FE11-026 and cannot close the current ownership correction.
+These targets record the 2026-07-19 baseline. Broad personal/email update evidence is superseded by Q-FE11-027 and cannot close the current ownership correction.
 
 - Idempotent static migration checks for the five approved columns, deterministic `UX_Users_Email`, baseline/model/binding synchronization, and optional live execution twice.
 - `UserManagementView.updatedAt` falls back to `CreatedAt` only when storage `UpdatedAt` is null; update/deactivation compare that same effective value.
@@ -149,7 +149,7 @@ These targets record the 2026-07-19 baseline. Broad personal/email update eviden
 - TD-023 B7 evidence: H2/H3 approved on 2026-07-19; PR #37 passed `foundation-checks` run `29654621448`, merged as `356130e4`, and exact post-merge `main` CI run `29655548150` passed.
 - Finalization Wave A H2 evidence: schema, account setup hardening, lifecycle repository, FE07 serialization, frontend access/payloads, and full regression are recorded in `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`; the subsequent disposable SQL Server pass is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Finalization Wave B H2 evidence: canonical Request Management and Admin Dashboard browser coverage are recorded in `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`; fresh results are 80/80 focused backend, 48/48 focused frontend, 10/10 system integration, and 2/2 isolated Playwright tests.
-- Personal-data ownership evidence does not exist yet. Historical FE11-LIFE03 results prove the broader contract that Q-FE11-026 now supersedes and must not be reused as passing evidence for FE11-PDO02..PDO04.
+- Personal-data ownership evidence does not exist yet. Historical FE11-LIFE03 results prove the broader contract that Q-FE11-027 now supersedes and must not be reused as passing evidence for FE11-PDO02..PDO04.
 
 ## 6. Gaps
 
@@ -160,7 +160,7 @@ These targets record the 2026-07-19 baseline. Broad personal/email update eviden
 - Admin role-action UI `FE11-UIR01..UIR05` is complete through B7; PR #30 and post-merge CI `29644292781` passed, and `TD-022` is resolved.
 - Fast-Track Batch 1 (`TD-024`, `TD-026`, `TD-027`) is complete through H2/H3, merge, and post-merge CI; `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` are closed.
 - Admin navigation/permissions `FE11-PERM01..FE11-PERM06` is complete through H2/H3, PR #37 merge, and post-merge CI; `TD-023` is resolved.
-- Finalization Wave A and Wave B evidence remains valid for unchanged behavior, but broad personal/email update evidence is explicitly superseded by Q-FE11-026.
+- Finalization Wave A and Wave B evidence remains valid for unchanged behavior, but broad personal/email update evidence is explicitly superseded by Q-FE11-027.
 - Both SQL and feature-specific FE11 browser execution portions of `TD-021` pass. Draft PR #40 CI run `29679154327` passes on integrated commit `422246b`; human integration acceptance remains before final closeout.
 
 ## 7. Transactional Role Slice

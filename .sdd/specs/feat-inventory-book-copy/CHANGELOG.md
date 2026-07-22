@@ -112,3 +112,4 @@
 ## 2026-07-22
 
 - Added an explicit per-row copy-management action and verified canonical server filters.
+- Changed deterministic inventory order to CopyId ascending and made all toolbar/pagination reloads preserve applied filters.

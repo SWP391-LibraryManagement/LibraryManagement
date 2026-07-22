@@ -237,3 +237,4 @@ This closeout remains historical evidence for the earlier approved baseline. It 
 ## 2026-07-22 corrective batch
 
 - [x] Stabilize Process Returns layout while preserving canonical return commands and selection behavior.
+- [x] Bind approve/reject dialogs to explicit request targets and add deployed BorrowRequests schema compatibility.
