@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-22 - Enrich staff borrow decisions and stabilize rejection input
+
+- Expanded Librarian/Admin approve and reject dialogs with the canonical request ID/date, member identity/contact, and every requested copy's title, author, ID, barcode, location, and current status.
+- Fixed shared modal focus management so a controlled textarea no longer loses focus after each typed character when an inline close callback changes identity.
+- Removed the redundant generic copy-availability banner from approval; each copy's canonical status remains visible and server-side approval revalidation is unchanged.
+- Removed the redundant normal/on-time return banner while preserving exceptional overdue, damaged, or lost fine-review warnings and the canonical return transaction.
+- Replaced the ambiguous `Quá hạn: Đúng hạn` presentation with explicit remaining/today/overdue labels derived from the `Asia/Ho_Chi_Minh` business date, and exposed the canonical renewal count so extended due dates are explainable.
+- Preserved FE07 role guards, canonical mutation endpoints, approval revalidation/transactions, rejection-reason validation, member history, and FE06/FE08/FE09/FE10 ownership boundaries.
+- Added focused frontend regressions; focused FE07 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, lint/build, traceability, and diff hygiene pass. Human review remains open.
+
 ## 2026-07-22 - Activate the Process Returns row action
 
 - Connected each `Xử lý trả` button to the existing return-confirmation target instead of only highlighting its row.

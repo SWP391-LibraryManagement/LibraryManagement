@@ -42,6 +42,42 @@ function RequestStatus({ row }) {
   return <Badge status={row.status}>{STATUS_LABELS[row.rawStatus] || row.status}</Badge>;
 }
 
+function RequestReviewSummary({ request }) {
+  // @spec FR-FE07-030 - show canonical request, member, and every requested copy before a staff decision.
+  return (
+    <section className="borrow-review-summary" aria-label={`Thông tin yêu cầu ${request.id}`}>
+      <div className="borrow-review-meta">
+        <div><span>Mã yêu cầu</span><strong>{request.id}</strong></div>
+        <div><span>Ngày gửi</span><strong>{fmtDate(request.requestDate)}</strong></div>
+        <div><span>Thành viên</span><strong>{request.member}</strong></div>
+        <div><span>Mã hội viên</span><strong>{request.memberId}</strong></div>
+        <div><span>Tài khoản</span><strong>{request.username}</strong></div>
+        <div><span>Liên hệ</span><strong>{request.email}<br />{request.phone}</strong></div>
+      </div>
+
+      <div className="borrow-review-copy-heading">
+        <h3>Danh sách bản sao</h3>
+        <span>{request.details.length} bản sao</span>
+      </div>
+      <div className="borrow-review-copy-list">
+        {request.details.map((detail) => (
+          <article className="borrow-review-copy" key={detail.copyId}>
+            <div>
+              <strong>{detail.book}</strong>
+              <span>{detail.author}</span>
+            </div>
+            <div>
+              <span>Bản sao #{detail.copyId} · {detail.barcode}</span>
+              <span><MapPin size={13} /> {detail.location}</span>
+            </div>
+            <Badge status={detail.status}>{getStatusLabel(detail.status)}</Badge>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function BorrowRequestsAdminPage() {
   const [requests, setRequests] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -327,19 +363,12 @@ export default function BorrowRequestsAdminPage() {
           eyebrow="Duyệt yêu cầu mượn"
           title={`Duyệt yêu cầu ${approveTarget.id}`}
           confirmLabel="Duyệt và cấp sách"
+          width={760}
           pending={actionPending}
           onCancel={() => setApproveTarget(null)}
           onConfirm={handleApprove}
         >
-          <div className="info-list">
-            <div className="info-row"><span className="muted">Thành viên:</span> <strong>{approveTarget.member}</strong></div>
-            <div className="info-row"><span className="muted">Số bản sao:</span> <strong>{approveTarget.details.length}</strong></div>
-          </div>
-          <div className={`alert-box ${approveTarget.copyAvailable ? 'info' : 'warn'}`}>
-            {approveTarget.copyAvailable
-              ? 'Các bản sao đang được ghi nhận là sẵn sàng. Hệ thống sẽ kiểm tra lại hội viên, giới hạn mượn, tiền phạt và tình trạng sách khi duyệt.'
-              : 'Có bản sao không còn ở trạng thái sẵn sàng. Khi duyệt, API sẽ kiểm tra lại và từ chối nếu không đủ điều kiện.'}
-          </div>
+          <RequestReviewSummary request={approveTarget} />
         </ConfirmAction>
       )}
 
@@ -349,15 +378,25 @@ export default function BorrowRequestsAdminPage() {
           title={`Từ chối ${rejectTarget.id}`}
           tone="danger"
           confirmLabel="Xác nhận từ chối"
+          width={760}
           pending={actionPending}
           confirmDisabled={!rejectReason.trim()}
           onCancel={() => { setRejectTarget(null); setRejectReason(''); }}
           onConfirm={handleReject}
         >
+          <RequestReviewSummary request={rejectTarget} />
           <div className="field">
-            <label htmlFor="reason">Lý do từ chối</label>
-            <textarea id="reason" className="textarea" maxLength={500} value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} placeholder="Nhập lý do từ chối yêu cầu..." />
-            <span className="muted">{rejectReason.length}/500 ký tự</span>
+            <label htmlFor="borrow-request-reject-reason">Lý do từ chối</label>
+            <textarea
+              id="borrow-request-reject-reason"
+              className="textarea"
+              maxLength={500}
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              aria-describedby="borrow-request-reject-help"
+              placeholder="Nhập lý do từ chối yêu cầu..."
+            />
+            <span id="borrow-request-reject-help" className="muted">Bắt buộc, từ 1 đến 500 ký tự · {rejectReason.length}/500</span>
           </div>
         </ConfirmAction>
       )}

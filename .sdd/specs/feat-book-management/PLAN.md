@@ -149,3 +149,12 @@ FE05 read contracts must be stable before FE06/FE07 consume parent-book status a
 - [x] Confirm the legacy availability mutation is removed without moving copy ownership into FE05.
 - [x] Confirm deactivate/reactivate change only `Books.Status` and preserve all workflow records.
 - [x] Approve `TASKS.md` ordering and mappings before implementation starts.
+
+## 11. V0.6.0 Managed Cover Upload
+
+1. Lock multipart create/update behavior with route, storage-safety, and frontend contract tests.
+2. Accept JSON compatibility requests or multipart requests containing serialized `metadata` and one optional `cover` file.
+3. Validate a 2 MB maximum, JPG/PNG/WebP extension/MIME/signature agreement, and server-generated storage paths.
+4. Compensate filesystem writes when create/update, optimistic concurrency, database, or audit processing fails.
+5. Replace both editable cover-URL fields with local file pickers, previews, filename/type/size guidance, and backend-origin asset resolution.
+6. Verify focused backend/frontend suites, OpenAPI parsing, lint/build, traceability, and diff hygiene before human review.

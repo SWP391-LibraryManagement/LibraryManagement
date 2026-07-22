@@ -1,12 +1,25 @@
 const defaultBookRepository = require('../repositories/bookRepository');
 const defaultAuditLogRepository = require('../repositories/auditLogRepository');
+const defaultBookCoverStorage = require('../utils/bookCoverStorage');
 const AppException = require('../CustomException/AppException');
+const path = require('path');
 
 const DEFAULT_COVER =
   'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=420&fit=crop&auto=format';
 const BOOK_STATUSES = new Set(['ACTIVE', 'INACTIVE']);
 const SORT_FIELDS = new Set(['title', 'publishYear', 'createdAt']);
 const SORT_ORDERS = new Set(['asc', 'desc']);
+const MAX_BOOK_COVER_BYTES = 2 * 1024 * 1024;
+const ALLOWED_BOOK_COVER_TYPES = {
+  'image/jpeg': new Set(['.jpg', '.jpeg']),
+  'image/png': new Set(['.png']),
+  'image/webp': new Set(['.webp']),
+};
+const BOOK_COVER_SIGNATURES = {
+  'image/jpeg': (buffer) => buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff,
+  'image/png': (buffer) => buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  'image/webp': (buffer) => buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP',
+};
 const PROTECTED_MUTATION_FIELDS = [
   'status',
   'copyStatus',
@@ -68,6 +81,24 @@ function normalizeCoverUrl(value) {
     throw badField('coverUrl', 'Cover URL phải là đường dẫn bắt đầu bằng / hoặc URL http(s).');
   }
   return coverUrl;
+}
+
+// @spec BR-FE05-019, FR-FE05-028
+function validateBookCoverUpload(file) {
+  if (!file) return;
+  const extension = path.extname(String(file.originalName || '')).toLowerCase();
+  const allowedExtensions = ALLOWED_BOOK_COVER_TYPES[file.mimeType];
+  const hasValidSignature = BOOK_COVER_SIGNATURES[file.mimeType]?.(file.buffer);
+
+  if (!file.buffer?.length || file.size !== file.buffer.length) {
+    throw badField('cover', 'Tệp ảnh bìa không hợp lệ.');
+  }
+  if (file.size > MAX_BOOK_COVER_BYTES) {
+    throw badField('cover', 'Ảnh bìa không được vượt quá 2 MB.');
+  }
+  if (!allowedExtensions?.has(extension) || !hasValidSignature) {
+    throw badField('cover', 'Ảnh bìa phải là tệp JPG, PNG hoặc WebP hợp lệ.');
+  }
 }
 
 function normalizeQueryText(filters, fieldName, maxLength) {
@@ -221,7 +252,17 @@ function rejectProtectedFields(body = {}, { allowCreateStatus = false } = {}) {
 function createBookService({
   bookRepository = defaultBookRepository,
   auditLogRepository = defaultAuditLogRepository,
+  bookCoverStorage = defaultBookCoverStorage,
 } = {}) {
+  async function cleanManagedCover(coverUrl) {
+    if (!bookCoverStorage || typeof bookCoverStorage.deleteBookCoverFile !== 'function') return;
+    try {
+      await bookCoverStorage.deleteBookCoverFile(coverUrl);
+    } catch {
+      console.error('[book cover cleanup failed]');
+    }
+  }
+
   async function validateReferences(payload) {
     const [categoryExists, authorExists, publisherExists] = await Promise.all([
       bookRepository.referenceExists('Categories', 'CategoryId', payload.categoryId),
@@ -326,29 +367,62 @@ function createBookService({
   }
 
   // @spec FR-FE05-005 FR-FE05-006 FR-FE05-011 FR-FE05-012 FR-FE05-013 FR-FE05-016 FR-FE05-018 FR-FE05-026
-  async function createBook(body = {}, actorUserId = null) {
+  async function createBook(body = {}, actorUserId = null, coverFile = null) {
     const payload = await normalizeBookPayload(body, { create: true });
-    const book = await bookRepository.createBook(payload, {
-      actorUserId,
-      auditLogRepository,
-      onBeforeCommit: ({ book: createdBook, transaction }) =>
-        writeAudit({ action: 'BOOK_CREATE', actorUserId, book: createdBook, transaction }),
-    });
-    return mapBook(book, { staff: true });
+    validateBookCoverUpload(coverFile);
+    let managedCoverUrl = null;
+
+    try {
+      if (coverFile) {
+        managedCoverUrl = await bookCoverStorage.saveBookCoverFile(coverFile);
+        payload.coverUrl = managedCoverUrl;
+      }
+      const book = await bookRepository.createBook(payload, {
+        actorUserId,
+        auditLogRepository,
+        onBeforeCommit: ({ book: createdBook, transaction }) =>
+          writeAudit({ action: 'BOOK_CREATE', actorUserId, book: createdBook, transaction }),
+      });
+      return mapBook(book, { staff: true });
+    } catch (error) {
+      if (managedCoverUrl) await cleanManagedCover(managedCoverUrl);
+      throw error;
+    }
   }
 
   // @spec FR-FE05-007 FR-FE05-011 FR-FE05-012 FR-FE05-013 FR-FE05-014 FR-FE05-016 FR-FE05-018 FR-FE05-021 FR-FE05-023 FR-FE05-026
-  async function updateBook(bookId, body = {}, actorUserId = null, ifMatch) {
+  async function updateBook(bookId, body = {}, actorUserId = null, ifMatch, coverFile = null) {
     const id = normalizePositiveInt(bookId, 'bookId', { required: true });
     const expectedVersion = normalizeIfMatch(ifMatch);
     const payload = await normalizeBookPayload(body, { existingBookId: id });
-    const result = await bookRepository.updateBook(id, payload, expectedVersion, {
-      actorUserId,
-      auditLogRepository,
-      onBeforeCommit: ({ book, transaction }) =>
-        writeAudit({ action: 'BOOK_UPDATE', actorUserId, book, transaction }),
-    });
-    return mapBook(assertMutationResult(result), { staff: true });
+    validateBookCoverUpload(coverFile);
+    const existingBook = coverFile ? await bookRepository.getBookById(id) : null;
+    if (coverFile && !existingBook) throw new AppException(404, 'BOOK_NOT_FOUND', 'KhÃ´ng tÃ¬m tháº¥y sÃ¡ch.');
+    let managedCoverUrl = null;
+
+    try {
+      if (coverFile) {
+        managedCoverUrl = await bookCoverStorage.saveBookCoverFile(coverFile);
+        payload.coverUrl = managedCoverUrl;
+      }
+      const result = await bookRepository.updateBook(id, payload, expectedVersion, {
+        actorUserId,
+        auditLogRepository,
+        onBeforeCommit: ({ book, transaction }) =>
+          writeAudit({ action: 'BOOK_UPDATE', actorUserId, book, transaction }),
+      });
+      const updatedBook = mapBook(assertMutationResult(result), { staff: true });
+      if (managedCoverUrl) {
+        const previousCoverUrl = existingBook.cover || existingBook.coverUrl;
+        if (previousCoverUrl && previousCoverUrl !== managedCoverUrl) {
+          await cleanManagedCover(previousCoverUrl);
+        }
+      }
+      return updatedBook;
+    } catch (error) {
+      if (managedCoverUrl) await cleanManagedCover(managedCoverUrl);
+      throw error;
+    }
   }
 
   async function changeStatus(bookId, targetStatus, body, actorUserId, ifMatch) {
@@ -402,5 +476,6 @@ const defaultBookService = createBookService();
 module.exports = {
   createBookService,
   defaultBookService,
+  validateBookCoverUpload,
   ...defaultBookService,
 };

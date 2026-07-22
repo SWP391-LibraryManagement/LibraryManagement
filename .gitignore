@@ -31,6 +31,7 @@ output/playwright/*
 backend/*.zip
 output/azure-mail-*/
 output/*.zip
+backend/uploads/book-covers/
 
 # IDE
 .vscode/

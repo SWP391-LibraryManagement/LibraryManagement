@@ -39,7 +39,13 @@ export function useToast() {
 /* -------- Modal -------- */
 export function Modal({ title, eyebrow, onClose, children, actions, width }) {
   const dialogRef = useRef(null);
+  // @spec FR-FE07-030 - controlled staff-decision input must keep focus across rerenders.
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
@@ -51,7 +57,7 @@ export function Modal({ title, eyebrow, onClose, children, actions, width }) {
     (getFocusable()[0] || dialog)?.focus();
 
     function onKey(e) {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') onCloseRef.current?.();
 
       if (e.key === 'Tab') {
         const focusable = getFocusable();
@@ -79,7 +85,7 @@ export function Modal({ title, eyebrow, onClose, children, actions, width }) {
         previouslyFocused.focus();
       }
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="lib-modal-backdrop" onMouseDown={onClose}>
@@ -119,6 +125,7 @@ export function ConfirmAction({
   tone = 'primary',
   pending = false,
   confirmDisabled = false,
+  width,
   onCancel,
   onConfirm,
 }) {
@@ -126,6 +133,7 @@ export function ConfirmAction({
     <Modal
       title={title}
       eyebrow={eyebrow}
+      width={width}
       onClose={pending ? undefined : onCancel}
       actions={(
         <>

@@ -1,7 +1,7 @@
 ﻿import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Search, BookOpen, ArrowRight, Menu, X, Calendar, User, Tag, ChevronLeft } from 'lucide-react';
-import { publicBrowseApi } from '../api/libraryFeatureApi';
+import { publicBrowseApi, resolveLibraryAssetUrl } from '../api/libraryFeatureApi';
 import { fetchHeaderProfile } from '../api/profileApi';
 import { getHomeBookAction } from '../utils/homeBookActions';
 import { getRoleLabel } from '../utils/uiLabels';
@@ -87,7 +87,7 @@ const BookInfoPanel = ({ book, action, detailLoading, onClose, onViewDetails, on
     <div style={{ padding: 24 }}>
       {/* Cover */}
       <div style={{ borderRadius: 10, overflow: 'hidden', height: 260, background: '#EDE0CE', marginBottom: 20 }}>
-        <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <img src={resolveLibraryAssetUrl(book.coverUrl) || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
 
       {/* Badge */}
@@ -197,7 +197,7 @@ const BookDetailsModal = ({ book, action, onClose, onBack, onAction }) => (
         {/* Left */}
         <div>
           <div style={{ borderRadius: 12, overflow: 'hidden', height: 300, background: '#EDE0CE', marginBottom: 16 }}>
-            <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={resolveLibraryAssetUrl(book.coverUrl) || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {book.availabilityStatus !== 'AVAILABLE' && (
@@ -836,7 +836,7 @@ const HomePage = () => {
                   onClick={() => { setSelectedBook(book); setShowDetails(false); }}
                 >
                   <div style={{ position: 'relative', height: 210, background: '#EDE0CE' }}>
-                    <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <img src={resolveLibraryAssetUrl(book.coverUrl) || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <div style={{
                       position: 'absolute', top: 8, right: 8, padding: '3px 8px', borderRadius: 4,
                       background: book.availabilityStatus === 'AVAILABLE' ? 'rgba(56,142,60,0.88)' : 'rgba(198,40,40,0.88)',
@@ -910,7 +910,7 @@ const HomePage = () => {
               onClick={() => { setSelectedBook(book); setShowDetails(false); }}
             >
               <div style={{ position: 'relative', height: 210, background: '#EDE0CE' }}>
-                <img src={book.coverUrl || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={resolveLibraryAssetUrl(book.coverUrl) || BOOK_COVER_FALLBACK} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 <div style={{
                   position: 'absolute', top: 8, right: 8,
                   padding: '3px 8px', borderRadius: 4,

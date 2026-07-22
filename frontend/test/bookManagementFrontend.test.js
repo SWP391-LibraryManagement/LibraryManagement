@@ -95,7 +95,32 @@ test('book update exposes catalog status without sending status through metadata
   assert.match(page, /<span>Trạng thái sách<\/span>/);
   assert.match(page, /<option value="ACTIVE">Còn sách<\/option>/);
   assert.match(page, /<option value="INACTIVE">Không khả dụng<\/option>/);
+  assert.doesNotMatch(page, /Trạng thái này điều khiển việc hiển thị sách trong danh mục/);
   assert.match(page, /updateForm\.status !== selectedBook\.status/);
   assert.match(page, /activating \? 'reactivate' : 'deactivate'/);
   assert.doesNotMatch(page, /function makePayload[\s\S]*?status:\s*form\.status[\s\S]*?\n\s*}/);
+});
+
+// @spec FR-FE05-029, AC-FE05-020
+test('status update reloads the list with the new status so the edited book stays visible', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
+  assert.match(page, /setAppliedStatusFilter\(updateForm\.status\)/);
+  assert.match(page, /loadBooks\(statusChanged[\s\S]*status: updateForm\.status[\s\S]*pageNumber: 1/);
+});
+
+// @spec BR-FE05-019, FR-FE05-027, AC-FE05-018, NFR-FE05-UX-003
+test('create and update select a local cover image instead of asking staff for a URL', async () => {
+  const { page, api } = await sources();
+
+  assert.doesNotMatch(page, />URL ảnh bìa</);
+  assert.match(page, /type="file"/);
+  assert.match(page, /accept="image\/jpeg,image\/png,image\/webp"/);
+  assert.match(page, /formData\.append\('metadata'/);
+  assert.match(page, /formData\.append\('cover', form\.coverFile\)/);
+  assert.ok((page.match(/'Content-Type': 'multipart\/form-data'/g) || []).length >= 2);
+  assert.match(page, /reader\.readAsDataURL\(form\.coverFile\)/);
+  assert.match(page, /2 \* 1024 \* 1024/);
+  assert.match(api, /export function resolveLibraryAssetUrl/);
 });

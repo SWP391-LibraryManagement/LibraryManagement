@@ -802,6 +802,18 @@ components:
         rating: { type: number, minimum: 0, maximum: 5, multipleOf: 0.1 }
         coverUrl: { type: string, maxLength: 255 }
         description: { type: string, maxLength: 2000 }
+    BookMultipartInput:
+      type: object
+      additionalProperties: false
+      required: [metadata]
+      properties:
+        metadata:
+          type: string
+          description: JSON-serialized BookInput object
+        cover:
+          type: string
+          format: binary
+          description: Optional JPG, PNG, or WebP image up to 2 MB
     BookStatusInput:
       type: object
       additionalProperties: false
@@ -826,6 +838,19 @@ paths:
       responses:
         '200': { description: Active public catalog page, content: { application/json: { schema: { $ref: '#/components/schemas/PublicBookListResponse' } } } }
         '400': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Book Management]
+      summary: Create a book with an optional managed cover upload (FR-FE05-006/027/028)
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/BookInput' } }
+          multipart/form-data: { schema: { $ref: '#/components/schemas/BookMultipartInput' } }
+      responses:
+        '201': { description: Created book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/admin/books:
     get:
       tags: [Book Management]
@@ -909,6 +934,7 @@ paths:
         required: true
         content:
           application/json: { schema: { $ref: '#/components/schemas/BookInput' } }
+          multipart/form-data: { schema: { $ref: '#/components/schemas/BookMultipartInput' } }
       responses:
         '200': { description: Updated book, content: { application/json: { schema: { $ref: '#/components/schemas/BookResponse' } } } }
         '400': { $ref: '#/components/responses/ValidationError' }

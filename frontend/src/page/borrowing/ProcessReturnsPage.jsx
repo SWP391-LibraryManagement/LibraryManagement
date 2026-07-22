@@ -7,20 +7,11 @@ import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable } from '../../component/shared/OperationalPatterns';
+import { getBorrowDueStatus } from '../../utils/borrowingDueStatus';
 import { fmtDate, mapBorrowRequestsToReturnRows } from '../../utils/libraryFeatureViewModels';
 
 const CONDITION_LABELS = { NORMAL: 'Tốt • không hư hỏng', DAMAGED: 'Hư hỏng', LOST: 'Mất sách' };
 const PAGE_SIZE = 8;
-
-function daysOverdue(due) {
-  if (!due) return 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const date = new Date(due);
-  date.setHours(0, 0, 0, 0);
-  const diff = Math.floor((today - date) / 86400000);
-  return diff > 0 ? diff : 0;
-}
 
 function normalizeSearchValue(value) {
   return String(value || '')
@@ -84,9 +75,10 @@ export default function ProcessReturnsPage() {
   const currentPage = Math.min(page, totalPages);
   const pagedLoans = filteredLoans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const selected = filteredLoans.find((loan) => loan.id === selectedId) || pagedLoans[0] || null;
-  const overdueDays = selected ? daysOverdue(selected.dueDate) : 0;
+  const selectedDueStatus = getBorrowDueStatus(selected?.dueDate);
+  const overdueDays = selectedDueStatus.state === 'OVERDUE' ? selectedDueStatus.days : 0;
   const needsFineReview = overdueDays > 0 || condition !== 'NORMAL';
-  const overdueCount = loans.filter((loan) => daysOverdue(loan.dueDate) > 0).length;
+  const overdueCount = loans.filter((loan) => getBorrowDueStatus(loan.dueDate).state === 'OVERDUE').length;
 
   function handleSearch(event) {
     event.preventDefault();
@@ -159,13 +151,14 @@ export default function ProcessReturnsPage() {
         <div className="return-list-card">
           <DataTable
             caption="Danh sách sách đang mượn cần xử lý trả"
-            headers={['Mã lượt', 'Thành viên', 'Sách / Bản sao', 'Ngày mượn', 'Hạn trả', 'Quá hạn', 'Thao tác']}
+            headers={['Mã lượt', 'Thành viên', 'Sách / Bản sao', 'Ngày mượn', 'Hạn trả', 'Tình trạng hạn trả', 'Thao tác']}
             loading={loading}
             isEmpty={filteredLoans.length === 0}
             emptyState={<EmptyState icon={PackageCheck} title={normalizedQuery ? 'Không tìm thấy giao dịch phù hợp' : 'Không có sách đang được mượn'} />}
           >
             {pagedLoans.map((loan) => {
-              const overdue = daysOverdue(loan.dueDate);
+              const dueStatus = getBorrowDueStatus(loan.dueDate);
+              const overdue = dueStatus.state === 'OVERDUE' ? dueStatus.days : 0;
               return (
                 <tr
                   key={loan.id}
@@ -187,7 +180,7 @@ export default function ProcessReturnsPage() {
                   <td data-label="Sách / Bản sao"><div className="stack-sm"><strong>{loan.book}</strong><span className="muted">{loan.barcode} • Bản sao #{loan.copyId}</span></div></td>
                   <td data-label="Ngày mượn">{fmtDate(loan.borrowDate)}</td>
                   <td data-label="Hạn trả">{fmtDate(loan.dueDate)}</td>
-                  <td data-label="Quá hạn">{overdue > 0 ? <Badge status="Overdue">{overdue} ngày</Badge> : <Badge status="Available">Đúng hạn</Badge>}</td>
+                  <td data-label="Tình trạng hạn trả"><Badge status={dueStatus.state === 'OVERDUE' ? 'Overdue' : dueStatus.state === 'DUE_TODAY' ? 'Pending' : 'Available'}>{dueStatus.label}</Badge></td>
                   <td data-label="Thao tác">
                     <button
                       type="button"
@@ -219,7 +212,7 @@ export default function ProcessReturnsPage() {
               <div className="return-detail-heading">
                 <div className="app-avatar">{String(selected.member).slice(0, 1)}</div>
                 <div><h3>{selected.member}</h3><span className="muted">Lượt #{selected.borrowDetailId} • Yêu cầu #{selected.requestId}</span></div>
-                {overdueDays > 0 ? <Badge status="Overdue">Quá hạn</Badge> : <Badge status="Available">Đúng hạn</Badge>}
+                <Badge status={selectedDueStatus.state === 'OVERDUE' ? 'Overdue' : selectedDueStatus.state === 'DUE_TODAY' ? 'Pending' : 'Available'}>{selectedDueStatus.label}</Badge>
               </div>
               <div className="info-list return-member-info">
                 <div className="info-row"><Hash size={16} /><span className="muted">Mã hội viên:</span> <strong>{selected.memberId}</strong></div>
@@ -234,10 +227,11 @@ export default function ProcessReturnsPage() {
               <div className="return-dates">
                 <span><CalendarDays size={16} /><small>Ngày mượn</small><strong>{fmtDate(selected.borrowDate)}</strong></span>
                 <span><CalendarDays size={16} /><small>Hạn trả</small><strong>{fmtDate(selected.dueDate)}</strong></span>
-                <span className={overdueDays > 0 ? 'is-overdue' : ''}><AlertTriangle size={16} /><small>Quá hạn</small><strong>{overdueDays > 0 ? `${overdueDays} ngày` : 'Đúng hạn'}</strong></span>
+                <span className={selectedDueStatus.state === 'OVERDUE' ? 'is-overdue' : ''}><AlertTriangle size={16} /><small>Tình trạng hạn trả</small><strong>{selectedDueStatus.label}</strong></span>
+                <span><RefreshCw size={16} /><small>Gia hạn</small><strong>{selected.renewalCount > 0 ? `Đã gia hạn ${selected.renewalCount} lần` : 'Chưa gia hạn'}</strong></span>
               </div>
               <div className="field return-condition"><label htmlFor="return-condition">Tình trạng sách khi trả</label><select id="return-condition" className="select" value={condition} onChange={(event) => setCondition(event.target.value)}><option value="NORMAL">Tốt • không hư hỏng</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Mất sách</option></select></div>
-              <div className={`alert-box ${needsFineReview ? 'warn' : 'info'}`}><span>{needsFineReview ? `Cần xem xét tiền phạt: ${overdueDays} ngày quá hạn, tình trạng ${CONDITION_LABELS[condition]}.` : 'Không có dấu hiệu quá hạn, hư hỏng hoặc mất sách.'}</span></div>
+              {needsFineReview && <div className="alert-box warn"><span>{`Cần xem xét tiền phạt: ${overdueDays} ngày quá hạn, tình trạng ${CONDITION_LABELS[condition]}.`}</span></div>}
               <button className="btn btn-primary return-submit" onClick={() => setReturnTarget(selected)}><CheckCircle2 size={18} /> Xác nhận trả sách</button>
             </>
           ) : <EmptyState icon={PackageCheck} title="Chọn một sách để xác nhận trả" />}
@@ -247,7 +241,7 @@ export default function ProcessReturnsPage() {
       {returnTarget && (
         <ConfirmAction eyebrow="Trả sách" title="Xác nhận trả sách" confirmLabel="Ghi nhận trả sách" pending={returning} onCancel={() => setReturnTarget(null)} onConfirm={confirmReturn}>
           <div className="info-list"><div className="info-row"><span className="muted">Thành viên:</span> <strong>{returnTarget.member}</strong></div><div className="info-row"><span className="muted">Sách:</span> <strong>{returnTarget.book}</strong></div><div className="info-row"><span className="muted">Bản sao:</span> <strong>#{returnTarget.copyId} • {returnTarget.barcode}</strong></div><div className="info-row"><span className="muted">Tình trạng:</span> <strong>{CONDITION_LABELS[condition]}</strong></div></div>
-          {(daysOverdue(returnTarget.dueDate) > 0 || condition !== 'NORMAL') && <div className="alert-box warn" style={{ marginTop: 16 }}>Giao dịch này sẽ trả về dữ liệu để phân hệ tiền phạt xem xét sau khi ghi nhận trả thành công.</div>}
+          {(getBorrowDueStatus(returnTarget.dueDate).state === 'OVERDUE' || condition !== 'NORMAL') && <div className="alert-box warn" style={{ marginTop: 16 }}>Giao dịch này sẽ trả về dữ liệu để phân hệ tiền phạt xem xét sau khi ghi nhận trả thành công.</div>}
         </ConfirmAction>
       )}
       <Toast toast={toast} onClose={clearToast} />

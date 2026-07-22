@@ -90,6 +90,11 @@ function createApp({
   app.use(createHttpsEnforcementMiddleware());
   app.use(express.json());
   app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
+  app.use('/uploads/book-covers', express.static(path.resolve(__dirname, '../uploads/book-covers'), {
+    setHeaders(response) {
+      response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  }));
 
   app.get('/', (req, res) => {
     res.json({

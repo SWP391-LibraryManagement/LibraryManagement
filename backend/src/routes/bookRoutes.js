@@ -2,6 +2,7 @@ const express = require('express');
 const bookController = require('../controllers/bookController');
 const { createAuthenticate } = require('../middleware/authMiddleware');
 const errors = require('../utils/safeErrors');
+const { bookCoverUpload } = require('../middleware/bookCoverUpload');
 const { query, validationResult } = require('express-validator');
 
 const publicQueryKeys = new Set(['q', 'categoryId', 'authorId', 'publisherId', 'page', 'limit']);
@@ -54,8 +55,8 @@ function createBookRoutes({ authService } = {}) {
   router.get('/', validatePublicQueryKeys, publicQueryValidators, bookController.getHomeBooks);
   router.get('/metadata', requireBookManager, bookController.getMetadata);
   router.get('/:bookId', optionalAuthenticate, bookController.getBookById);
-  router.post('/', requireBookManager, bookController.createBook);
-  router.put('/:bookId', requireBookManager, bookController.updateBook);
+  router.post('/', requireBookManager, bookCoverUpload, bookController.createBook);
+  router.put('/:bookId', requireBookManager, bookCoverUpload, bookController.updateBook);
   router.patch('/:bookId/deactivate', requireBookManager, bookController.deactivateBook);
   if (typeof bookController.reactivateBook === 'function') {
     router.patch('/:bookId/reactivate', requireBookManager, bookController.reactivateBook);

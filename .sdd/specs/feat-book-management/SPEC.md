@@ -1,12 +1,12 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.5.1
+# Version: 0.6.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-07-17
+# Last Updated: 2026-07-22
 
 # Feature ID: FE05
 
@@ -197,6 +197,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-016: Every update/deactivate/reactivate of an existing book requires the caller's last-seen SQL `rowversion` through `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE` with no mutation.
 - BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100. Public `/api/books` accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit` and always orders by `Title ASC, BookId ASC`; staff `/api/admin/books` additionally accepts sort fields `title`, `publishYear`, or `createdAt` and order `asc` or `desc`.
 - BR-FE05-018: Deactivation/reactivation requires a trimmed non-empty reason of at most 500 characters, stored in audit metadata.
+- BR-FE05-019: Librarian/Admin cover selection uses one optional managed image file named `cover`. The backend accepts only JPG/JPEG, PNG, or WebP whose extension, declared MIME type, and byte signature agree, with a maximum size of 2 MB; it generates the filename and stores the public path under `/uploads/book-covers/`.
+- BR-FE05-020: A failed create/update after a new cover file is stored must remove that uncommitted file. A successful replacement preserves the committed new path and removes the previous file only when the previous path is FE05-managed; external and unmanaged paths are never deleted.
 
 
 ---
@@ -232,6 +234,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-024: IF a public query contains an unapproved field, or any keyword, pagination, staff sort, or staff order value violates BR-FE05-017, the system shall return a validation error rather than silently applying a different policy. (Source: EC-FE05-011, EC-FE05-015)
 - FR-FE05-025: IF deactivation/reactivation reason is missing, blank after trimming, or longer than 500 characters, the system shall reject the command and preserve all state. (Source: BR-FE05-018, EC-FE05-016)
 - FR-FE05-026: IF `pages` is not an integer from 1 to 10,000, or `rating` is outside 0.0 to 5.0 or has more than one decimal place during create/update, the system shall reject the request with field-level validation and change no record. (Source: EC-FE05-017, Section 10.2)
+- FR-FE05-027: WHEN Librarian/Admin creates or updates a book with `multipart/form-data`, the system shall read the JSON book metadata from `metadata`, validate and store the optional `cover` image under a server-generated path, persist that path as `Books.CoverUrl`, and return it through staff/public book reads.
+- FR-FE05-028: IF the supplied cover is missing its required multipart metadata, exceeds 2 MB, has an unsupported or mismatched type/signature, or the associated book mutation fails, the system shall reject or compensate the operation without replacing the committed cover path or retaining an uncommitted managed file.
+- FR-FE05-029: WHEN the update form changes a book between `ACTIVE` and `INACTIVE`, the frontend shall reload the canonical management list using the new status and page 1 so the successfully updated book is not immediately hidden by the previous status filter.
 
 ---
 
@@ -254,6 +259,9 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-015: Given an unapproved public query field or invalid pagination/staff-sort/keyword input, when a list/search endpoint is called, then FE05 returns a validation error using the deterministic query policy.
 - AC-FE05-016: Given a missing/blank/overlength deactivation or reactivation reason, when staff submits the command, then FE05 rejects it and preserves book/copy/workflow state.
 - AC-FE05-017: Given invalid `pages` or `rating`, when staff creates or updates a book, then FE05 returns field-level validation and preserves the book, copy, workflow, and audit state.
+- AC-FE05-018: Given Librarian/Admin selects a valid local JPG/PNG/WebP cover in either book form, when the form is reviewed and submitted, then the UI previews the selected image, sends multipart metadata plus `cover`, and the returned managed cover renders in staff and public views.
+- AC-FE05-019: Given an invalid cover or a stale/database/audit failure after a replacement file is staged, when create/update finishes, then the committed book/cover remains unchanged and the uncommitted managed file is removed.
+- AC-FE05-020: Given the management list is filtered to the book's old status, when staff saves a valid status change, then the status command succeeds, the filter switches to the new status, and the canonical list reload keeps the updated book visible when it belongs to the returned page.
 
 ---
 
@@ -278,6 +286,8 @@ Use these stable IDs for tasks and tests.
 | EC-FE05-015 | Unapproved public query field or invalid page/limit/staff sort/order | Reject using BR-FE05-017; do not silently normalize. |
 | EC-FE05-016 | Missing/blank/overlength state-transition reason | Reject command and preserve all state. |
 | EC-FE05-017 | `pages` or `rating` violates Section 10.2 bounds/precision | Reject create/update with field-level validation and no mutation. |
+| EC-FE05-018 | Cover is larger than 2 MB, unsupported, extension/MIME/signature mismatched, duplicated, or malformed multipart | Reject before book mutation and expose a safe field-level error. |
+| EC-FE05-019 | Cover file is stored but create/update later fails or loses the `If-Match` race | Remove the new file and preserve the previously committed book/cover. |
 
 ---
 
@@ -309,7 +319,8 @@ Use these stable IDs for tasks and tests.
 | pages | integer | No | Integer from 1 to 10,000 when provided. |
 | rating | decimal | No | Value from 0.0 to 5.0 with at most one decimal place when provided. |
 | description | string | No | Must be sanitized before display. |
-| coverUrl | string | No | Must be a safe URL/path according to approved storage policy. |
+| coverUrl | string | No | Server-generated managed path such as `/uploads/book-covers/{uuid}.png` for UI uploads; safe legacy URL/path input remains accepted for API compatibility. |
+| cover | binary image | No | Multipart field; JPG/JPEG, PNG, or WebP; maximum 2 MB; server validates extension, MIME type, and byte signature. |
 | status | string | Yes | Values: `ACTIVE`, `INACTIVE`; controls catalog visibility and borrow eligibility. |
 | availabilityStatus | string | Derived/read-only | Values: `AVAILABLE`, `UNAVAILABLE`; computed from `Books.Status` and FE06-owned copy states according to BR-FE05-013. |
 | actionReason | string | Required for deactivate/reactivate | Trimmed, 1..500 characters; stored in audit metadata. |
@@ -336,8 +347,8 @@ Use these stable IDs for tasks and tests.
 | GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; public results are active/public-safe and ordered by `Title ASC, BookId ASC`; BR-FE05-017 applies. |
 | GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public callers receive public-safe `ACTIVE` detail or `404`; staff may receive management fields for both `ACTIVE` and `INACTIVE` books. |
 | GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; BR-FE05-017 applies. |
-| POST | `/api/books` | Librarian/Admin | `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl? }` | Created `ACTIVE` book + version | Validates required fields and unique ISBN. |
-| PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; `{ title, isbn?, categoryId, authorId, publisherId?, publishYear?, pages?, rating?, description?, coverUrl? }` | Updated book + new version | Metadata only; never changes book status or copies. |
+| POST | `/api/books` | Librarian/Admin | JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Created `ACTIVE` book + version | Validates required fields, unique ISBN, and managed cover policy. |
+| PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Updated book + new version | Metadata/cover only; never changes book status or copies; failed replacement is compensated. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
 | PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Reactivated book + new version | Sets `ACTIVE`; reason required; copy states remain unchanged. |
 
@@ -358,11 +369,13 @@ Use these stable IDs for tasks and tests.
 - NFR-FE05-SEC-003: `title`, `ISBN`, category/author/publisher IDs, publish year, pages, rating, description, cover URL, and query inputs must be validated server-side.
 - NFR-FE05-SEC-004: SQL injection must be prevented using parameterized queries or approved ORM patterns.
 - NFR-FE05-SEC-005: Description and cover URL must be sanitized or escaped before display.
+- NFR-FE05-SEC-006: Cover uploads must be authenticated and role-authorized before body buffering; client filenames must never determine server paths, and content validation must inspect both declared metadata and byte signatures.
 
 ### 12.2 Transaction Integrity
 
 - NFR-FE05-TXN-001: Create/update/deactivate/reactivate and the required audit log must succeed or roll back together.
 - NFR-FE05-TXN-002: Book deactivation changes only `Books.Status`; FE05 must leave FE06 copy lifecycle state unchanged and all availability reads must combine the latest committed book/copy states.
+- NFR-FE05-TXN-003: Filesystem writes are compensated around the atomic book/audit transaction: a failed mutation deletes the new managed cover, while a successful replacement deletes only the previous FE05-managed file.
 
 ### 12.3 Performance
 
@@ -377,6 +390,8 @@ Use these stable IDs for tasks and tests.
 
 - NFR-FE05-UX-001: Validation errors must clearly identify invalid book fields.
 - NFR-FE05-UX-002: Deactivation and reactivation must require confirmation in the UI before submission.
+- NFR-FE05-UX-003: The canonical create/update forms shall show a local image picker, accepted type/size guidance, filename, and preview instead of an editable cover-URL text field.
+- NFR-FE05-UX-004: A successful status change from the update form shall reconcile the visible status filter instead of making the selected record appear to vanish under its old filter.
 
 ---
 
@@ -464,6 +479,8 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | BR-FE05-016 | UC23, UC24 | Planned: `If-Match` stale book update test | Planned |
 | BR-FE05-017 | UC18, UC19, UC21 | Planned: deterministic query validation test | Planned |
 | BR-FE05-018 | UC23, UC24 | Planned: required state-transition reason test | Planned |
+| BR-FE05-019 | UC22, UC23 | multipart route validation and managed storage filename tests | Complete |
+| BR-FE05-020 | UC22, UC23 | stale replacement cleanup and managed-path deletion tests | Complete |
 | FR-FE05-001 | UC18 | FT18 | Not Started |
 | FR-FE05-002 | UC19 | FT20 | Not Started |
 | FR-FE05-003 | UC17, UC20 | FT19, FT21 | Not Started |
@@ -490,6 +507,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE05-024 | UC18, UC19, UC21 | Planned: invalid query policy rejection test | Planned |
 | FR-FE05-025 | UC23, UC24 | Planned: state-transition reason boundary test | Planned |
 | FR-FE05-026 | UC22, UC23 | Planned: pages/rating bounds and precision rejection test | Planned |
+| FR-FE05-027 | UC22, UC23 | bookRoutes.test.js multipart happy path; bookManagementFrontend.test.js local file picker | Complete |
+| FR-FE05-028 | UC22, UC23 | bookRoutes.test.js invalid-signature and stale cleanup; bookCoverStorage.test.js managed-path safety | Complete |
+| FR-FE05-029 | UC23 | bookManagementFrontend.test.js status-filter reconciliation | Complete |
 | AC-FE05-001 | UC18 | FT18 | Not Started |
 | AC-FE05-002 | UC19 | FT20 | Not Started |
 | AC-FE05-003 | UC17, UC20 | FT19, FT21 | Not Started |
@@ -507,6 +527,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE05-015 | UC18, UC19, UC21 | Planned: deterministic invalid-query response test | Planned |
 | AC-FE05-016 | UC23, UC24 | Planned: missing/blank/overlength reason rejection test | Planned |
 | AC-FE05-017 | UC22, UC23 | Planned: invalid pages/rating preserves all state | Planned |
+| AC-FE05-018 | UC22, UC23 | multipart route and frontend picker/preview tests | Complete |
+| AC-FE05-019 | UC22, UC23 | invalid cover and stale replacement cleanup tests | Complete |
+| AC-FE05-020 | UC23 | status update reloads the canonical new-status list | Complete |
 
 ---
 
@@ -536,3 +559,12 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Confirm derived availability and `ACTIVE` parent-book guard across FE01/FE06/FE07.
 - [x] Confirm dedicated deactivate/reactivate commands preserve all copy/workflow rows.
 - [x] Confirm `rowversion`/`If-Match`, query limits, and required transition reasons.
+
+### 17.2 Revision v0.6.0 Managed Book Cover Upload Gate
+
+- [x] Keep `Books.CoverUrl` as the persisted field; no image bytes or schema expansion enter SQL Server.
+- [x] Keep JSON create/update compatibility while making multipart upload the canonical Librarian/Admin UI path.
+- [x] Authenticate and authorize before buffering multipart content.
+- [x] Limit uploads to validated JPG/PNG/WebP files of at most 2 MB and use server-generated filenames.
+- [x] Compensate failed/stale mutations and never delete external/unmanaged cover paths.
+- [ ] Human-review the complete v0.6.0 diff and verification evidence before integration.

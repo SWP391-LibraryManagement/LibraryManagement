@@ -13,6 +13,12 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+export function resolveLibraryAssetUrl(value) {
+  if (!value || /^(?:https?:|blob:|data:)/i.test(value)) return value;
+  const apiOrigin = api.defaults.baseURL.replace(/\/api\/?$/, '');
+  return `${apiOrigin}${value.startsWith('/') ? value : `/${value}`}`;
+}
+
 function getAuthStorage() {
   if (localStorage.getItem('refreshToken')) return localStorage;
   if (sessionStorage.getItem('refreshToken')) return sessionStorage;

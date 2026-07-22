@@ -100,7 +100,6 @@ export function mapBorrowRequestsToAdminRows(borrowRequests = []) {
       copyId: detail.copyId || '-',
       barcode: detail.copy?.barcode || '-',
       branch: detail.copy?.location || '-',
-      copyAvailable: details.length > 0 && details.every((item) => item.copy?.status === 'AVAILABLE'),
       requestDate: request.requestDate || request.createdAt,
       borrowDate: detail.borrowDate || request.approvedAt || request.requestDate,
       dueDate: detail.dueDate,
@@ -137,6 +136,7 @@ export function mapBorrowRequestsToReturnRows(borrowRequests = []) {
       location: detail.copy?.location || '-',
       borrowDate: detail.borrowDate,
       dueDate: detail.dueDate,
+      renewalCount: Number(detail.renewalCount || 0),
       rawStatus: String(detail.status || '').toUpperCase(),
     })));
 }

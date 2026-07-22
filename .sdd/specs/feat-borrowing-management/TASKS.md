@@ -5,7 +5,7 @@ Implementation State: COMPLETE
 
 Owner: Nhat
 
-Updated: 2026-07-16
+Updated: 2026-07-22
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
@@ -239,3 +239,23 @@ This closeout remains historical evidence for the earlier approved baseline. It 
 - [x] Stabilize Process Returns layout while preserving canonical return commands and selection behavior.
 - [x] Make each `Xử lý trả` row action open the canonical return confirmation for that exact loan.
 - [x] Bind approve/reject dialogs to explicit request targets and add deployed BorrowRequests schema compatibility.
+- [x] **FE07-T042 - Enrich staff decisions and stabilize rejection input.**
+  - Maps to: BR-FE07-030, FR-FE07-030, AC-FE07-024, NFR-FE07-UX-004.
+  - Files: `frontend/src/page/borrowing/BorrowRequestsAdminPage.jsx`, `frontend/src/component/shared/Feedback.jsx`, `frontend/src/styles/app-shell.css`, `frontend/test/borrowingFrontend.test.js`.
+  - RED: require both decision dialogs to show the canonical request/member/all-copy context and require shared modal focus management to survive controlled-input rerenders.
+  - GREEN: reuse `RequestReviewSummary`, widen/responsively stack the dialog, give the rejection textarea accessible help, and keep the latest close callback in a ref.
+  - Follow-up: remove the redundant generic availability banner and its unused aggregate view-model field; individual canonical copy statuses remain visible and the server still revalidates on approval.
+  - Boundary: no API/schema/role/transaction change; Librarian/Admin retain the same canonical FE07 commands.
+- [~] **FE07-T043 - Verify and human-review v0.7.3 correction.**
+  - Maps to: AC-FE07-024, AC-FE07-025, and the v0.7.3 plan gates.
+  - Evidence: focused frontend 24/24, full frontend 201/201, FE07 backend 66/66, Admin/role integration 25/25, frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass.
+  - Remaining gate: human review of the complete v0.7.3 diff.
+- [x] **FE07-T044 - Remove redundant normal-return notice.**
+  - Maps to: NFR-FE07-UX-005.
+  - Remove the affirmative `Không có dấu hiệu...` banner for on-time `NORMAL` returns while retaining the fine-review warning for overdue, damaged, or lost outcomes.
+  - Preserve the canonical return command, condition selection, fine-candidate response, and FE09 ownership boundary.
+- [x] **FE07-T045 - Reconcile Process Returns due-state information.**
+  - Maps to: FR-FE07-031, AC-FE07-025, BR-FE07-011, NFR-FE07-TIME-001.
+  - Preserve `BorrowDate`, `DueDate`, and `RenewalCount` from the canonical detail response.
+  - Derive `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` from the `Asia/Ho_Chi_Minh` business date and replace the ambiguous `Quá hạn: Đúng hạn` presentation.
+  - Keep the return/fine-review mutation contract unchanged.

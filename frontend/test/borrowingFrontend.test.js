@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { getBorrowDueStatus } from '../src/utils/borrowingDueStatus.js';
+
 async function loadBorrowingAccess() {
   try {
     return await import('../src/utils/borrowingAccess.js');
@@ -99,6 +101,24 @@ test('shared FE07 dialogs use namespaced classes that cannot inherit Bootstrap m
   }
   assert.doesNotMatch(feedback, /className="modal(?:-|")/);
   assert.doesNotMatch(styles, /^\.modal(?:-|\s*\{)/m);
+});
+
+test('borrow request decisions show full context and rejection input keeps focus across renders', async () => {
+  const requests = await readFile(new URL('../src/page/borrowing/BorrowRequestsAdminPage.jsx', import.meta.url), 'utf8');
+  const feedback = await readFile(new URL('../src/component/shared/Feedback.jsx', import.meta.url), 'utf8');
+
+  assert.match(requests, /function RequestReviewSummary/);
+  assert.match(requests, /<RequestReviewSummary request=\{approveTarget\}/);
+  assert.match(requests, /<RequestReviewSummary request=\{rejectTarget\}/);
+  assert.match(requests, /Mã yêu cầu/);
+  assert.match(requests, /Ngày gửi/);
+  assert.match(requests, /Danh sách bản sao/);
+  assert.match(requests, /id="borrow-request-reject-reason"/);
+  assert.match(requests, /aria-describedby="borrow-request-reject-help"/);
+
+  assert.match(feedback, /const onCloseRef = useRef\(onClose\)/);
+  assert.match(feedback, /onCloseRef\.current = onClose/);
+  assert.match(feedback, /if \(e\.key === 'Escape'\) onCloseRef\.current\?\.\(\)/);
 });
 
 test('borrow request helper copy is readable Vietnamese', async () => {
@@ -238,10 +258,13 @@ test('approval UI does not invent audit notes or eligibility evidence', async ()
     details: [{ copyId: 1, status: 'REQUESTED', copy: { status: 'BORROWED' } }],
   }]);
 
-  assert.equal(row.copyAvailable, false);
+  assert.equal(Object.hasOwn(row, 'copyAvailable'), false);
   assert.equal(Object.hasOwn(row, 'unpaidFines'), false);
   assert.equal(Object.hasOwn(row, 'membershipActive'), false);
   assert.doesNotMatch(source, /Approved from FE07 UI|req\.unpaidFines|disabled=\{!allOk\}/);
+  assert.doesNotMatch(source, /Có bản sao không còn ở trạng thái sẵn sàng/);
+  assert.doesNotMatch(source, /Các bản sao đang được ghi nhận là sẵn sàng/);
+  assert.doesNotMatch(source, /approveTarget\.copyAvailable/);
   assert.match(source, /borrowingApi\.approve\(requestId\)/);
 });
 
@@ -286,7 +309,46 @@ test('return UI omits the client UTC date and does not claim a fine handoff occu
   assert.match(source, /returnDetail\(returnTarget\.borrowDetailId,\s*\{\s*condition,?\s*\}\)/s);
   assert.doesNotMatch(source, /returnDate:\s*new Date\(\)\.toISOString\(\)/);
   assert.doesNotMatch(source, /đã được chuyển cho quản lý phí phạt/i);
+  assert.doesNotMatch(source, /Không có dấu hiệu quá hạn, hư hỏng hoặc mất sách/);
+  assert.match(source, /needsFineReview && <div className="alert-box warn"/);
+  assert.match(source, /Tình trạng hạn trả/);
+  assert.match(source, /selected\.renewalCount > 0 \? `Đã gia hạn \$\{selected\.renewalCount\} lần` : 'Chưa gia hạn'/);
+  assert.doesNotMatch(source, /<small>Quá hạn<\/small><strong>\{overdueDays > 0 \? `\$\{overdueDays\} ngày` : 'Đúng hạn'\}/);
   assert.match(source, /setReturnTarget\(loan\)/);
+});
+
+test('return due status uses the Asia Ho Chi Minh business date and explains the state', () => {
+  assert.deepEqual(
+    getBorrowDueStatus('2026-07-23', new Date('2026-07-22T16:59:59.000Z')),
+    { state: 'UPCOMING', days: 1, label: 'Còn 1 ngày' },
+  );
+  assert.deepEqual(
+    getBorrowDueStatus('2026-07-23', new Date('2026-07-22T17:00:00.000Z')),
+    { state: 'DUE_TODAY', days: 0, label: 'Đến hạn hôm nay' },
+  );
+  assert.deepEqual(
+    getBorrowDueStatus('2026-07-21', new Date('2026-07-22T17:00:00.000Z')),
+    { state: 'OVERDUE', days: 2, label: 'Quá hạn 2 ngày' },
+  );
+});
+
+test('return rows preserve canonical renewal metadata from BorrowDetails', async () => {
+  const { mapBorrowRequestsToReturnRows } = await loadBorrowingViewModels();
+  const [row] = mapBorrowRequestsToReturnRows([{
+    requestId: 9,
+    details: [{
+      borrowDetailId: 7,
+      status: 'BORROWED',
+      renewalCount: 1,
+      borrowDate: '2026-07-21',
+      dueDate: '2026-08-18',
+      copy: { copyId: 14, title: '1984', barcode: 'BC14' },
+    }],
+  }]);
+
+  assert.equal(row.renewalCount, 1);
+  assert.equal(row.borrowDate, '2026-07-21');
+  assert.equal(row.dueDate, '2026-08-18');
 });
 
 test('shared modal exposes an accessible name and manages keyboard focus', async () => {

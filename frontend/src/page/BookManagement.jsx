@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { getBookErrorMessage } from '../api/apiErrorMessages';
-import { authorizedRequest } from '../api/libraryFeatureApi';
+import { authorizedRequest, resolveLibraryAssetUrl } from '../api/libraryFeatureApi';
 import { getStatusLabel } from '../utils/uiLabels';
 
 const DEFAULT_FORM = {
@@ -21,12 +21,15 @@ const DEFAULT_FORM = {
   publishYear: '',
   pages: '',
   coverUrl: '',
+  coverFile: null,
   description: '',
   status: 'ACTIVE',
 };
 
 async function apiRequest(path, options = {}) {
-  const body = options.body ? JSON.parse(options.body) : undefined;
+  const body = options.body instanceof FormData
+    ? options.body
+    : options.body ? JSON.parse(options.body) : undefined;
 
   return authorizedRequest({
     method: options.method || 'GET',
@@ -48,6 +51,7 @@ function toForm(book) {
     publishYear: book.year ? String(book.year) : '',
     pages: book.pages ? String(book.pages) : '',
     coverUrl: book.cover || '',
+    coverFile: null,
     description: book.description || '',
     status: book.status || 'ACTIVE',
   };
@@ -77,6 +81,12 @@ function validateBookForm(form, currentBooks = [], editingBookId = null) {
   if (form.coverUrl.trim() && !/^https?:\/\/[^\s]+$/i.test(form.coverUrl.trim()) && !form.coverUrl.trim().startsWith('/')) {
     errors.coverUrl = 'URL ảnh bìa phải bắt đầu bằng http(s) hoặc /.';
   }
+  if (form.coverFile && !['image/jpeg', 'image/png', 'image/webp'].includes(form.coverFile.type)) {
+    errors.coverFile = 'Ảnh bìa phải là tệp JPG, PNG hoặc WebP.';
+  }
+  if (form.coverFile?.size > 2 * 1024 * 1024) {
+    errors.coverFile = 'Ảnh bìa không được vượt quá 2 MB.';
+  }
   if (form.description.length > 2000) errors.description = 'Mô tả không được vượt quá 2000 ký tự.';
 
   return errors;
@@ -94,6 +104,13 @@ function makePayload(form) {
     coverUrl: form.coverUrl.trim(),
     description: form.description.trim(),
   };
+}
+
+function makeBookFormData(form) {
+  const formData = new FormData();
+  formData.append('metadata', JSON.stringify(makePayload(form)));
+  if (form.coverFile) formData.append('cover', form.coverFile);
+  return formData;
 }
 
 function getBookAvailability(book) {
@@ -117,6 +134,45 @@ function FieldError({ message }) {
   return message ? <span className="bm-field-error">{message}</span> : null;
 }
 
+function BookCoverField({ form, update, error, inputId }) {
+  const [filePreviewUrl, setFilePreviewUrl] = useState('');
+
+  useEffect(() => {
+    if (!form.coverFile) return undefined;
+    const reader = new FileReader();
+    reader.addEventListener('load', () => setFilePreviewUrl(String(reader.result || '')));
+    reader.readAsDataURL(form.coverFile);
+    return () => reader.abort();
+  }, [form.coverFile]);
+
+  const previewUrl = form.coverFile
+    ? filePreviewUrl
+    : resolveLibraryAssetUrl(form.coverUrl) || '';
+
+  return (
+    <div className="bm-wide bm-cover-field">
+      <label htmlFor={inputId}><span>Ảnh bìa</span></label>
+      <div className="bm-cover-picker">
+        {previewUrl
+          ? <img src={previewUrl} alt="Xem trước ảnh bìa" />
+          : <div className="bm-cover-placeholder">Chưa chọn ảnh</div>}
+        <div>
+          <input
+            key={`${inputId}-${form.coverFile?.name || 'empty'}-${form.coverUrl}`}
+            id={inputId}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => update('coverFile', event.target.files?.[0] || null)}
+          />
+          <small>Chọn ảnh JPG, PNG hoặc WebP, tối đa 2 MB.</small>
+          {form.coverFile ? <strong>{form.coverFile.name}</strong> : null}
+        </div>
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
 function BookForm({
   form,
   setForm,
@@ -126,6 +182,7 @@ function BookForm({
   onSubmit,
   disabled,
   showStatus = false,
+  coverInputId,
 }) {
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
 
@@ -181,11 +238,12 @@ function BookForm({
         <FieldError message={errors.pages} />
       </label>
 
-      <label className="bm-wide">
-        <span>URL ảnh bìa</span>
-        <input value={form.coverUrl} onChange={(event) => update('coverUrl', event.target.value)} maxLength={255} />
-        <FieldError message={errors.coverUrl} />
-      </label>
+      <BookCoverField
+        form={form}
+        update={update}
+        error={errors.coverFile || errors.coverUrl}
+        inputId={coverInputId}
+      />
 
       <label className="bm-wide">
         <span>Mô tả</span>
@@ -200,7 +258,6 @@ function BookForm({
             <option value="ACTIVE">Còn sách</option>
             <option value="INACTIVE">Không khả dụng</option>
           </select>
-          <small>Trạng thái này điều khiển việc hiển thị sách trong danh mục; trạng thái từng bản sao vẫn được quản lý tại Quản lý kho.</small>
         </label>
       ) : null}
 
@@ -414,7 +471,8 @@ export default function BookManagement() {
       setSaving(true);
       const result = await apiRequest('/books', {
         method: 'POST',
-        body: JSON.stringify(makePayload(addForm)),
+        headers: { 'Content-Type': 'multipart/form-data' },
+        body: makeBookFormData(addForm),
       });
       setAddForm(DEFAULT_FORM);
       setStatusFilter('ACTIVE');
@@ -451,12 +509,13 @@ export default function BookManagement() {
 
     try {
       setSaving(true);
+      const statusChanged = updateForm.status !== selectedBook.status;
       let result = await apiRequest(`/books/${selectedBookId}`, {
         method: 'PUT',
-        headers: { 'If-Match': selectedBook.version },
-        body: JSON.stringify(makePayload(updateForm)),
+        headers: { 'If-Match': selectedBook.version, 'Content-Type': 'multipart/form-data' },
+        body: makeBookFormData(updateForm),
       });
-      if (updateForm.status !== selectedBook.status) {
+      if (statusChanged) {
         const activating = updateForm.status === 'ACTIVE';
         result = await apiRequest(`/books/${selectedBookId}/${activating ? 'reactivate' : 'deactivate'}`, {
           method: 'PATCH',
@@ -468,7 +527,15 @@ export default function BookManagement() {
           }),
         });
       }
-      const nextBooks = await loadBooks();
+      // @spec FR-FE05-029 - keep the updated book visible by reconciling the active status filter.
+      if (statusChanged) {
+        setStatusFilter(updateForm.status);
+        setAppliedStatusFilter(updateForm.status);
+        setPage(1);
+      }
+      const nextBooks = await loadBooks(statusChanged
+        ? { status: updateForm.status, pageNumber: 1 }
+        : undefined);
       setDetailBook(nextBooks.find((book) => Number(book.id) === Number(selectedBookId)) || result.book);
       showToast('Đã cập nhật thông tin sách và tải lại trạng thái chuẩn.');
     } catch (error) {
@@ -597,7 +664,7 @@ export default function BookManagement() {
       </div>
       {detailBook ? (
         <div className="bm-detail-grid">
-          <img src={detailBook.cover} alt={detailBook.title} />
+          <img src={resolveLibraryAssetUrl(detailBook.cover)} alt={detailBook.title} />
           <div className="bm-detail-card">
             {(() => {
               const availability = getBookAvailability(detailBook);
@@ -685,6 +752,7 @@ export default function BookManagement() {
               submitLabel="Thêm sách"
               onSubmit={handleAddBook}
               disabled={saving}
+              coverInputId="add-book-cover"
             />
           </section>
 
@@ -702,6 +770,7 @@ export default function BookManagement() {
                 onSubmit={handleUpdateBook}
                 disabled={saving}
                 showStatus
+                coverInputId="update-book-cover"
               />
             ) : (
               <div className="bm-empty">Chọn sách trước khi cập nhật.</div>
@@ -791,6 +860,15 @@ export default function BookManagement() {
         .bm-form button { justify-self: start; }
         .bm-two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
         .bm-field-error { color: #dc2626; font-size: 12px; }
+        .bm-cover-field { display: grid; gap: 7px; }
+        .bm-cover-field > label > span { color: #42526a; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+        .bm-cover-picker { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: center; border: 1px dashed #c8aa82; border-radius: 12px; padding: 12px; background: #fffaf2; }
+        .bm-cover-picker img, .bm-cover-placeholder { width: 92px; aspect-ratio: 3 / 4; border-radius: 8px; object-fit: cover; background: #efe7dc; }
+        .bm-cover-placeholder { display: grid; place-items: center; padding: 8px; color: #765f49; text-align: center; font-size: 12px; }
+        .bm-cover-picker > div { display: grid; gap: 7px; min-width: 0; }
+        .bm-cover-picker input { min-height: auto; padding: 9px; max-width: 100%; }
+        .bm-cover-picker small { color: #765f49; }
+        .bm-cover-picker strong { overflow-wrap: anywhere; font-size: 13px; }
         .bm-detail-grid { display: grid; grid-template-columns: 240px 1fr; gap: 18px; align-items: start; }
         .bm-detail-grid img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; background: #e5e7eb; }
         .bm-detail-card { border: 1px solid #e4ebf3; border-radius: 8px; padding: 16px; }

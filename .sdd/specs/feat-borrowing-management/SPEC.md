@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.1
+# Version: 0.7.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -207,6 +207,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-027: Rejection requires a trimmed non-empty reason of at most 500 characters and stores it in the rejection audit metadata.
 - BR-FE07-028: Borrowing-history endpoints accept only `status?`, `fromDate?`, `toDate?`, `page?`, and `limit?`; defaults are `page=1`, `limit=20`, bounds are `page>=1`, `limit=1..100`, the date range is inclusive, and rows use stable `BorrowDate DESC (nulls last), BorrowDetailId DESC` ordering.
 - BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
+- BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
 
 ---
 
@@ -227,6 +228,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-013: When all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, the system shall update the request status to `COMPLETED`.
 - FR-FE07-028: When a member or authorized staff requests borrowing history, the system shall validate `status`, date-only `fromDate/toDate`, `page`, and `limit` before querying, apply the member scope, and return deterministic paginated results using the BR-FE07-028 ordering.
 - FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
+- FR-FE07-030: When Librarian/Admin opens an approval or rejection decision, the frontend shall show request/member/contact data and all requested copy titles, authors, identifiers, barcodes, locations, and current statuses already present in the canonical staff response without repeating those statuses in a generic availability banner; typing a rejection reason shall preserve focus and the complete controlled value across rerenders.
+- FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -276,6 +279,8 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-021: Given a pending request and missing/blank/overlength rejection reason, when staff rejects it, then FE07 rejects the command and leaves the request `PENDING`.
 - AC-FE07-022: Given a valid history request, when no pagination is supplied, then FE07 uses `page=1`, `limit=20`, inclusive date filters, and stable `BorrowDate DESC`/`BorrowDetailId DESC` ordering; invalid values are rejected before query execution.
 - AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
+- AC-FE07-024: Given a pending request with one or more copies, when Librarian/Admin opens approve or reject, then the dialog identifies the request/member and lists every copy with circulation-relevant fields without a redundant generic availability banner; when the actor types a multi-character rejection reason, the textarea retains focus/value and the canonical reject command receives the trimmed reason.
+- AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
 
 ---
 
@@ -533,6 +538,8 @@ stateDiagram-v2
 - NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, reservation queue priority, reservation state conflict, unpaid fine, overdue loan, or invalid state.
 - NFR-FE07-UX-002: The member borrow-request confirmation shall show only circulation-relevant book information and shall not display ratings.
 - NFR-FE07-UX-003: The member borrowing-history toolbar, table, and pagination shall remain visually separated without overlapping or breaking the card layout.
+- NFR-FE07-UX-004: FE07 decision dialogs shall preserve keyboard focus during controlled-input rerenders, provide an accessible label/help relationship for the rejection reason, and remain usable at desktop and narrow widths.
+- NFR-FE07-UX-005: The staff return workspace shall show fine-review warnings only for exceptional overdue, damaged, or lost outcomes; it shall not show a redundant affirmative banner when the selected return is on time and `NORMAL`.
 - NFR-FE07-TIME-001: Borrow, due, return, and overdue business dates use `Asia/Ho_Chi_Minh`; persisted timestamps may use UTC internally only if API/business-date conversion remains deterministic.
 
 ---
@@ -589,7 +596,7 @@ This feature does not include:
 | API contract | Approved in Section 11 for Phase 1 RESTful API planning. Endpoints stay in this SPEC.md unless a shared API contract document is reintroduced. |
 | FE08 dependency | Approved integration: `ACTIVE` queue priority blocks ordinary create/approve, the notified owner may request the held copy, and FE07 approval atomically fulfills the matching reservation. FE08 retains queue ownership. |
 | FE09 dependency | No FE07 conflict after decision: unpaid fines block borrowing/renewal; FE07 exposes return data and FE09 owns fine calculation/creation. |
-| Testability | AC-FE07-001 to AC-FE07-023 are concrete and observable. The history contract maps to focused validation, pagination, ordering, and rejected-request display tests before implementation conformance can be claimed. |
+| Testability | AC-FE07-001 to AC-FE07-025 are concrete and observable. The history, staff-decision, and return-due-state contracts map to focused validation, pagination, ordering, rejected-request display, decision-context, stable-input, business-time, and renewal-metadata tests before implementation conformance can be claimed. |
 
 ---
 
@@ -620,6 +627,8 @@ This feature does not include:
 | AC-FE07-021 | UC32 | Planned: required rejection reason boundary test | Planned |
 | AC-FE07-022 | UC30, UC34 | Planned: history filter/date/page/limit validation and stable-order case | Planned |
 | AC-FE07-023 | UC30 | borrowingRoutes.test.js > "member history exposes a rejected owning request without changing detail status"; borrowingFrontend.test.js > "member history displays rejected requests without relabeling pending details" | Complete |
+| AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "borrow request decisions show full context and rejection input keeps focus across renders" | Complete |
+| AC-FE07-025 | UC33 | borrowingFrontend.test.js > "return due status uses the Asia Ho Chi Minh business date and explains the state"; "return rows preserve canonical renewal metadata from BorrowDetails" | Complete |
 | BR-FE07-001 | UC29-UC35 | Planned: guest/protected borrowing authorization matrix | Planned |
 | BR-FE07-002 | UC29 | Planned: member request identity is token-bound test | Planned |
 | BR-FE07-003 | UC32-UC35 | Planned: staff cross-member processing authorization test | Planned |
@@ -649,6 +658,7 @@ This feature does not include:
 | BR-FE07-027 | UC32 | Planned: rejection reason stored in audit metadata test | Planned |
 | BR-FE07-028 | UC30, UC34 | Planned: deterministic history contract case | Planned |
 | BR-FE07-029 | UC30 | FE07-T041 | Complete |
+| BR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
 | FR-FE07-001 | UC29 | Planned: eligibility validation precedes request insert | Planned |
 | FR-FE07-002 | UC29 | Planned: PENDING request + REQUESTED details creation test | Planned |
 | FR-FE07-003 | UC29 | Planned: non-borrowable item rejects whole request test | Planned |
@@ -678,6 +688,8 @@ This feature does not include:
 | FR-FE07-027 | UC32 | Planned: rejection reason trim/length validation test | Planned |
 | FR-FE07-028 | UC30, UC34 | Planned: member/staff history scope, filters, pagination, and order case | Planned |
 | FR-FE07-029 | UC30 | FE07-T041 | Complete |
+| FR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
+| FR-FE07-031 | UC33 | FE07-T045 | Complete |
 
 ---
 
@@ -703,3 +715,11 @@ Phase 1 approval checklist (completed on 2026-06-10):
 
 - The Process Returns list and selected-loan detail use a stable single-column workspace so the seven-column transaction table cannot collide with the detail panel at desktop or narrow widths.
 - Approve and reject commands capture an explicit request target, validate its numeric ID, call the canonical FE07 endpoint, and reload server state. Existing databases must include the canonical BorrowRequests workflow timestamp columns through the 2026-07-22 compatibility migration.
+
+### 17.2 Revision v0.7.3 Staff Decision And Return UX Gate
+
+- [x] Confirm approval/rejection remains restricted to authenticated `LIBRARIAN`/`ADMIN` actors and uses the canonical FE07 endpoints.
+- [x] Confirm decision dialogs use only canonical staff-read fields and do not fabricate eligibility evidence.
+- [x] Confirm approval still revalidates eligibility, limit, copy, book, fine, overdue, and reservation state on the server.
+- [x] Confirm rejection still requires the canonical trimmed 1..500-character reason and changes no copy state.
+- [ ] Human-review the complete v0.7.3 implementation diff and focused verification evidence before integration.

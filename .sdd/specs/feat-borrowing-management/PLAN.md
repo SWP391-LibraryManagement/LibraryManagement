@@ -4,7 +4,7 @@ Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 Owner: Nhat
 
-Updated: 2026-07-16
+Updated: 2026-07-22
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
@@ -12,7 +12,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Scope
 
-Reconcile and harden the existing Phase 2 FE07 slice against approved `SPEC.md` v0.5.0.
+Preserve the completed Phase 2 FE07 reconciliation and apply the bounded staff-decision/return UX correction defined by approved `SPEC.md` v0.7.3.
 
 ## Revision Drift Note
 
@@ -167,3 +167,22 @@ Not included:
 - [x] Confirm all business dates are deterministic in `Asia/Ho_Chi_Minh`.
 - [x] Confirm rejection reason and approval metadata are persisted/audited exactly as approved.
 - [x] Approve FE07-T031 through FE07-T038 before implementation starts.
+
+## 7. V0.7.3 Staff Decision And Return UX Correction
+
+1. Add a RED frontend regression requiring complete canonical request/member/copy context in both staff decision dialogs and stable multi-character rejection input.
+2. Keep the shared modal mounted across controlled-input rerenders by reading the latest close callback through a ref instead of restarting focus management whenever an inline callback changes identity.
+3. Reuse one request-review summary for approve and reject so Librarian/Admin make both decisions against the same canonical fields.
+4. Keep staff operational notices exception-oriented: normal/on-time returns rely on the visible dates and condition instead of an extra affirmative banner; overdue/damaged/lost warnings remain visible.
+5. Reconcile return due-state presentation with canonical borrow/due/renewal fields and the `Asia/Ho_Chi_Minh` business date; distinguish upcoming, due-today, and overdue states explicitly.
+6. Preserve the existing FE07 API, role guards, server-side revalidation, atomic approval/rejection/return transactions, member-history reconciliation, FE06 copy ownership, FE08 reservation ownership, and FE09/FE10 boundaries.
+7. Run the focused frontend test, frontend lint/build, FE07 traceability, and diff hygiene before human review.
+
+### V0.7.3 Verification Gates
+
+| Gate | Command | Expected result |
+| --- | --- | --- |
+| FE07 frontend | `node --test frontend/test/borrowingFrontend.test.js` | Decision-context and stable rejection-input regression passes with the existing FE07 frontend contract suite. |
+| Frontend quality | `npm.cmd --prefix frontend run lint` and `npm.cmd --prefix frontend run build` | No lint error and production bundle builds. |
+| Traceability | `npm.cmd run trace:enforce` | FE07 remains at the repository threshold. |
+| Diff hygiene | `git diff --check` | No whitespace errors. |

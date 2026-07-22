@@ -1,8 +1,8 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.4
+Version: 0.2.5
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-22
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
 Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -23,6 +23,9 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 - Copy availability check (at create and re-check at approval).
 - Due date calculation: default 14 calendar days.
 - Approve/reject/return/renew state transitions; renewal boundary and conflict cases.
+- Staff decision UX: complete canonical request/member/all-copy context without a redundant aggregate availability banner, continuous controlled rejection input, accessible help, and responsive dialog layout.
+- Return UX: no redundant affirmative banner for an on-time `NORMAL` return; exceptional overdue/damaged/lost fine-review warnings remain visible.
+- Return due state: canonical borrow/due/renewal fields, `Asia/Ho_Chi_Minh` boundary behavior, and explicit upcoming/due-today/overdue labels.
 
 ## 3. API / Integration Test Targets
 
@@ -48,7 +51,10 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 - `backend/tests/reportRepository.test.js` (9 tests; includes derived `OVERDUE` SQL filtering).
 - `backend/tests/sql/borrowingConcurrency.sqltest.js` passes in the aggregate 61/61 disposable SQL Server run and covers member-scoped serialization, reservation priority/fulfillment, eligibility outcomes, and audit-failure rollback.
 - `backend/tests/integration.test.js`.
-- `frontend/test/borrowingFrontend.test.js`: 18/18 pass, including the canonical detail envelope and server-owned history status/pagination contract.
+- `frontend/test/borrowingFrontend.test.js`: 24/24 focused tests pass, including the canonical detail envelope, server-owned history status/pagination contract, Librarian/Admin decision context, stable rejection-input focus, business-time due-state, and renewal metadata contracts.
+- Full frontend regression passes 201/201; focused Admin Request Management and role/app-shell integration pass 25/25.
+- FE07 backend route/repository/contract verification passes 66/66, preserving the canonical `LIBRARIAN`/`ADMIN` guards and mutation contracts.
+- Frontend lint/build, FE07 traceability 31/31, and `git diff --check` pass for the v0.7.3 correction.
 - Browser acceptance against the real backend: guest/member/staff access, approval, renewal, normal return, network failure, modal visibility, and desktop/mobile overflow checks.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 

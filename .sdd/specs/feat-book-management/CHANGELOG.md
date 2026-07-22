@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-22 - Preserve visibility after status update
+
+- Reconciled the management status filter with the committed target status after update-form activation/deactivation.
+- Reset the canonical server-owned list to page 1 so the updated book no longer appears to vanish because the previous status filter is still active.
+
+## 2026-07-22 - Managed book cover upload
+
+- Replaced editable cover-URL controls in Librarian/Admin create and update forms with local JPG/PNG/WebP file selection, filename/type/size guidance, and image preview.
+- Added backward-compatible multipart create/update handling with `metadata` plus optional `cover`, a 2 MB limit, extension/MIME/signature validation, server-generated filenames, and `/uploads/book-covers` static delivery.
+- Added compensation so invalid, stale, database, or audit failures do not replace the committed cover or retain an uncommitted managed file; unmanaged/external paths are never deleted.
+- Kept `Books.CoverUrl`, existing JSON clients, SQL schema, `If-Match`, audit atomicity, public response shape, and FE06 ownership boundaries unchanged.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

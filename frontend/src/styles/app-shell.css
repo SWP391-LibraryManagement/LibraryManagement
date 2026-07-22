@@ -342,6 +342,24 @@
 .borrow-member-info { padding: 14px; border-radius: var(--lib-radius-sm); background: var(--lib-cream); }
 .request-copy-list { display: grid; gap: 10px; }
 .request-copy { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm); }
+.borrow-review-summary { display: grid; gap: 16px; }
+.borrow-review-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.borrow-review-meta > div { display: grid; gap: 3px; min-width: 0; padding: 11px 12px; border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm); background: var(--lib-cream); }
+.borrow-review-meta span, .borrow-review-copy span { color: var(--lib-ink-2); font-size: 12px; }
+.borrow-review-meta strong { overflow-wrap: anywhere; }
+.borrow-review-copy-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.borrow-review-copy-heading h3 { margin: 0; font-family: var(--lib-heading); font-size: 16px; }
+.borrow-review-copy-heading > span { color: var(--lib-ink-2); font-size: 13px; }
+.borrow-review-copy-list { display: grid; gap: 8px; }
+.borrow-review-copy { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm); }
+.borrow-review-copy > div { display: grid; gap: 3px; min-width: 0; }
+.borrow-review-copy span { display: inline-flex; align-items: center; gap: 4px; overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .borrow-review-meta { grid-template-columns: 1fr; }
+  .borrow-review-copy { grid-template-columns: 1fr; }
+  .borrow-review-copy .badge { justify-self: start; }
+}
 .request-copy .book-spine { width: 34px; height: 50px; background: linear-gradient(135deg, #a87532, #7b5528); }
 .request-copy .muted { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
 .borrow-request-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--lib-line); margin-top: 20px; padding-top: 16px; }
@@ -374,7 +392,7 @@
 .return-book-card { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px; align-items: center; margin-top: 14px; padding: 14px; border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm); }
 .return-book-card .book-spine { width: 38px; height: 54px; background: linear-gradient(135deg,#a87532,#7b5528); }
 .return-book-card .muted { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
-.return-dates { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 14px 0; }
+.return-dates { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 14px 0; }
 .return-dates > span { display: grid; grid-template-columns: auto 1fr; gap: 2px 7px; padding: 10px; border: 1px solid var(--lib-line); border-radius: var(--lib-radius-sm); background: #fffdf8; }
 .return-dates svg { grid-row: 1 / 3; color: var(--lib-accent-d); }
 .return-dates small { color: var(--lib-ink-2); }

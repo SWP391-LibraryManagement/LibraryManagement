@@ -10,9 +10,14 @@ function makeTestApp(initialState = {}) {
   jest.resetModules();
   const authDependencies = makeInMemoryAuthDependencies();
   const bookDependencies = makeInMemoryBookDependencies(authDependencies, initialState);
+  const bookCoverStorage = {
+    saveBookCoverFile: jest.fn(async () => '/uploads/book-covers/test-cover.png'),
+    deleteBookCoverFile: jest.fn(async (coverUrl) => /^\/uploads\/book-covers\//.test(coverUrl)),
+  };
 
   jest.doMock('../src/repositories/bookRepository', () => bookDependencies.bookRepository);
   jest.doMock('../src/repositories/auditLogRepository', () => bookDependencies.auditLogRepository);
+  jest.doMock('../src/utils/bookCoverStorage', () => bookCoverStorage);
   jest.doMock('../src/services/authService', () => {
     const actual = jest.requireActual('../src/services/authService');
     return {
@@ -25,7 +30,7 @@ function makeTestApp(initialState = {}) {
   const { defaultAuthService } = require('../src/services/authService');
   const app = createApp({ authService: defaultAuthService });
 
-  return { app, authDependencies, bookDependencies };
+  return { app, authDependencies, bookDependencies, bookCoverStorage };
 }
 
 async function createVerifiedUser({ app, authDependencies, email, role = 'MEMBER' }) {
@@ -108,6 +113,83 @@ const VALID_BOOK = {
 };
 
 describe('FE05 book management v0.5.1 RED contract', () => {
+  // @spec BR-FE05-019, FR-FE05-027, AC-FE05-018
+  test('librarian creates a book from multipart metadata and a validated cover image', async () => {
+    const { app, staff, bookCoverStorage } = await makeStaffSetup();
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+
+    const response = await request(app)
+      .post('/api/books')
+      .set('Authorization', authHeader(staff.accessToken))
+      .field('metadata', JSON.stringify({ ...VALID_BOOK, isbn: '9780000000199', coverUrl: '' }))
+      .attach('cover', png, { filename: 'cover.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(201);
+    expect(responseBook(response.body).cover).toBe('/uploads/book-covers/test-cover.png');
+    expect(bookCoverStorage.saveBookCoverFile).toHaveBeenCalledWith(expect.objectContaining({
+      originalName: 'cover.png',
+      mimeType: 'image/png',
+      buffer: expect.any(Buffer),
+    }));
+  });
+
+  // @spec BR-FE05-019, FR-FE05-028, AC-FE05-019
+  test('invalid cover content is rejected before storage or book mutation', async () => {
+    const { app, staff, bookDependencies, bookCoverStorage } = await makeStaffSetup();
+    const before = bookDependencies.snapshot();
+
+    const response = await request(app)
+      .post('/api/books')
+      .set('Authorization', authHeader(staff.accessToken))
+      .field('metadata', JSON.stringify({ ...VALID_BOOK, isbn: '9780000000205', coverUrl: '' }))
+      .attach('cover', Buffer.from('not a png'), { filename: 'cover.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('INVALID_BOOK_FIELD');
+    expect(bookCoverStorage.saveBookCoverFile).not.toHaveBeenCalled();
+    expectStateUnchanged(bookDependencies, before);
+  });
+
+  test('cover larger than 2 MB is rejected before storage or book mutation', async () => {
+    const { app, staff, bookDependencies, bookCoverStorage } = await makeStaffSetup();
+    const before = bookDependencies.snapshot();
+    const oversizedPng = Buffer.alloc(2 * 1024 * 1024 + 1);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(oversizedPng);
+
+    const response = await request(app)
+      .post('/api/books')
+      .set('Authorization', authHeader(staff.accessToken))
+      .field('metadata', JSON.stringify({ ...VALID_BOOK, isbn: '9780000000212', coverUrl: '' }))
+      .attach('cover', oversizedPng, { filename: 'large.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(400);
+    expect(bookCoverStorage.saveBookCoverFile).not.toHaveBeenCalled();
+    expectStateUnchanged(bookDependencies, before);
+  });
+
+  // @spec BR-FE05-020, FR-FE05-027, AC-FE05-018
+  test('successful multipart update commits the new cover before deleting the previous managed file', async () => {
+    const { app, staff, bookDependencies, bookCoverStorage } = await makeStaffSetup();
+    bookDependencies.state.books[0].cover = '/uploads/book-covers/old-cover.png';
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+
+    const response = await request(app)
+      .put('/api/books/1')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'book-v1')
+      .field('metadata', JSON.stringify({
+        ...VALID_BOOK,
+        title: 'Clean Code with New Cover',
+        isbn: '9780132350884',
+        coverUrl: '/uploads/book-covers/old-cover.png',
+      }))
+      .attach('cover', png, { filename: 'replacement.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(200);
+    expect(responseBook(response.body).cover).toBe('/uploads/book-covers/test-cover.png');
+    expect(bookCoverStorage.deleteBookCoverFile).toHaveBeenCalledWith('/uploads/book-covers/old-cover.png');
+  });
+
   // @spec AC-FE05-001, AC-FE05-002, BR-FE05-001, FR-FE05-001, FR-FE05-002
   test('guest and member searches return only matching ACTIVE books', async () => {
     const { app, authDependencies } = makeTestApp();
@@ -482,6 +564,26 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       expect(response.body.error.code).toBe('STALE_BOOK_STATE');
       expectStateUnchanged(bookDependencies, before);
     }
+  });
+
+  // @spec BR-FE05-020, FR-FE05-028, AC-FE05-019
+  test('stale multipart update removes the uncommitted cover and preserves the current book', async () => {
+    const { app, staff, bookDependencies, bookCoverStorage } = await makeStaffSetup();
+    const before = bookDependencies.snapshot();
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+
+    const response = await request(app)
+      .put('/api/books/1')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'stale-book-version')
+      .field('metadata', JSON.stringify({ ...VALID_BOOK, isbn: '9780132350884', coverUrl: '' }))
+      .attach('cover', png, { filename: 'replacement.png', contentType: 'image/png' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('STALE_BOOK_STATE');
+    expect(bookCoverStorage.saveBookCoverFile).toHaveBeenCalledTimes(1);
+    expect(bookCoverStorage.deleteBookCoverFile).toHaveBeenCalledWith('/uploads/book-covers/test-cover.png');
+    expectStateUnchanged(bookDependencies, before);
   });
 
   // @spec AC-FE05-008, AC-FE05-010, BR-FE05-008 through BR-FE05-010, BR-FE05-015, FR-FE05-008, FR-FE05-019

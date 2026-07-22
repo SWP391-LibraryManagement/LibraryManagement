@@ -61,7 +61,7 @@ function createBookController(bookService = defaultBookService) {
 
   async function createBook(req, res, next) {
     try {
-      const book = await bookService.createBook(req.body, req.user?.userId);
+      const book = await bookService.createBook(req.body, req.user?.userId, req.bookCoverFile);
       return res.status(201).json({ book });
     } catch (error) {
       return next(error);
@@ -74,7 +74,8 @@ function createBookController(bookService = defaultBookService) {
         req.params.bookId,
         req.body,
         req.user?.userId,
-        req.headers['if-match']
+        req.headers['if-match'],
+        req.bookCoverFile
       );
       return res.status(200).json({ book });
     } catch (error) {

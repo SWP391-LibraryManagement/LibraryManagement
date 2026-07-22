@@ -1,8 +1,8 @@
 ﻿# FE05 Test Plan - Book Management
 
-Version: 0.3.1
+Version: 0.4.1
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-22
 
 Source Spec: `.sdd/specs/feat-book-management/SPEC.md`
 Feature IDs: `BR-FE05-*`, `FR-FE05-*`, `AC-FE05-*`
@@ -21,6 +21,7 @@ Book catalog management for authorized staff, including create, update, metadata
 - Category/author/publisher metadata validation.
 - Deactivate rule versus hard delete.
 - Search/filter/sort rules for management view.
+- Managed cover validation: JPG/PNG/WebP extension, MIME, byte signature, 2 MB limit, generated name, and safe cleanup.
 
 ## 3. API / Integration Test Targets
 
@@ -32,6 +33,7 @@ Book catalog management for authorized staff, including create, update, metadata
 - `PATCH /books/:bookId/deactivate`: reason, matching `If-Match`, not found, conflict.
 - `PATCH /books/:bookId/reactivate`: reason, matching `If-Match`, invalid transition, conflict.
 - Role check: non-manager cannot create/update/deactivate.
+- Multipart create/update: serialized `metadata`, optional `cover`, stale/failure compensation, and JSON compatibility.
 
 ## 4. E2E / Manual Acceptance Flow
 
@@ -39,14 +41,16 @@ Book catalog management for authorized staff, including create, update, metadata
 - Librarian/admin edits a book.
 - Librarian/admin deactivates and reactivates a book with confirmation and reason.
 - Public browse reflects active catalog data only.
+- Staff selects and previews a local cover in create/update; the committed managed image renders in staff and public views.
+- Staff changes catalog status in the update form; the list switches to the new status and reloads instead of hiding the updated record under the old filter.
 
 ## 5. Current Evidence
 
-- Focused route/repository tests: `45/45` pass.
-- FE05 frontend contract tests: `6/6` pass.
+- Focused FE05 route/repository/cover-storage/OpenAPI tests: `57/57` pass.
+- FE05 frontend contract tests: `10/10` pass; full frontend regression passes `203/203`.
 - FE11 Admin Console boundary tests: read-only Library book view and no duplicate book mutation adapter pass.
 - FE05 SQL suite: `7/7` pass, including stale rowversion, atomic audit rollback, and status/copy/workflow preservation on disposable SQL Server.
-- Frontend lint/build, traceability enforcement, and `git diff --check` pass.
+- Frontend lint/build, FE05 traceability `29/29` (100%), and `git diff --check` pass for v0.6.1.
 
 ## 6. Gaps
 
