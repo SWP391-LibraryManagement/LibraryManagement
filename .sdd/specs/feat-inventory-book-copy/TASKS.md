@@ -118,3 +118,5 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [x] Verify inventory search/filter parameters remain server-backed.
 - [x] Add a visible per-row copy-management action and regression coverage.
 - [x] Sort by copy ID ascending and connect apply/reset/reload/pagination to the canonical filtered list.
+- [x] Join publisher metadata consistently in inventory rows, pagination totals, and status counts so publisher search cannot fail either aggregate query.
+- [x] Resolve canonical `BookCopies.Version` and legacy `BookCopies.RowVersion` safely for inventory reads and mutations; return an actionable 503 only when neither exists.

@@ -1,14 +1,17 @@
 const { sql, getPool } = require('../config/db');
 const AppException = require('../CustomException/AppException');
 
-const copySelect = `
+let resolvedCopyVersionColumn;
+
+function buildCopySelect(versionColumn) {
+  return `
   SELECT
     bc.CopyId,
     bc.BookId,
     bc.Barcode,
     bc.Status AS CopyStatus,
     bc.Location,
-    bc.Version AS CopyVersion,
+    bc.${versionColumn} AS CopyVersion,
     bc.CreatedAt AS CopyCreatedAt,
     bc.UpdatedAt AS CopyUpdatedAt,
     b.Title,
@@ -24,6 +27,7 @@ const copySelect = `
   LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
   LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
 `;
+}
 
 function encodeVersion(value) {
   if (Buffer.isBuffer(value)) return value.toString('base64');
@@ -72,6 +76,29 @@ async function requestFor(transaction) {
   return transaction ? new sql.Request(transaction) : (await getPool()).request();
 }
 
+async function getCopyVersionColumn(transaction) {
+  if (resolvedCopyVersionColumn) return resolvedCopyVersionColumn;
+
+  const result = await (await requestFor(transaction)).query(`
+    SELECT TOP 1 c.name AS ColumnName
+    FROM sys.columns c
+    WHERE c.object_id = OBJECT_ID(N'dbo.BookCopies')
+      AND c.name IN (N'Version', N'RowVersion')
+    ORDER BY CASE c.name WHEN N'Version' THEN 0 ELSE 1 END
+  `);
+  const columnName = result.recordset[0]?.ColumnName;
+  if (!['Version', 'RowVersion'].includes(columnName)) {
+    throw new AppException(
+      503,
+      'INVENTORY_SCHEMA_MIGRATION_REQUIRED',
+      'Inventory schema is missing its row-version column. Apply the FE06 BookCopies rowversion migration.'
+    );
+  }
+
+  resolvedCopyVersionColumn = `[${columnName}]`;
+  return resolvedCopyVersionColumn;
+}
+
 async function withTransaction(callback) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
@@ -107,6 +134,7 @@ async function findBookById(bookId, transaction) {
 }
 
 async function findCopyById(copyId, transaction) {
+  const copySelect = buildCopySelect(await getCopyVersionColumn(transaction));
   const request = await requestFor(transaction);
   const result = await request
     .input('CopyId', sql.Int, copyId)
@@ -115,6 +143,7 @@ async function findCopyById(copyId, transaction) {
 }
 
 async function findCopyByBarcode(barcode, transaction) {
+  const copySelect = buildCopySelect(await getCopyVersionColumn(transaction));
   const request = await requestFor(transaction);
   const result = await request
     .input('Barcode', sql.NVarChar(100), barcode)
@@ -131,6 +160,7 @@ function addFilterInputs(request, filters = {}) {
       OR b.ISBN LIKE @Search
       OR a.AuthorName LIKE @Search
       OR c.CategoryName LIKE @Search
+      OR p.PublisherName LIKE @Search
       OR bc.Barcode LIKE @Search
       OR bc.Location LIKE @Search
       OR CONVERT(NVARCHAR(20), bc.CopyId) LIKE @Search
@@ -160,6 +190,7 @@ async function listInventory(filters = {}) {
   const page = filters.page || 1;
   const limit = filters.limit || 20;
   const request = await requestFor();
+  const copySelect = buildCopySelect(await getCopyVersionColumn());
   const whereClause = addFilterInputs(request, filters);
   request.input('Offset', sql.Int, (page - 1) * limit).input('Limit', sql.Int, limit);
   const result = await request.query(`
@@ -172,6 +203,7 @@ async function listInventory(filters = {}) {
     INNER JOIN Books b ON bc.BookId = b.BookId
     LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
     LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
+    LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
     WHERE ${whereClause};
   `);
   return {
@@ -189,6 +221,7 @@ async function countInventoryByStatus(filters = {}) {
     INNER JOIN Books b ON bc.BookId = b.BookId
     LEFT JOIN Authors a ON b.AuthorId = a.AuthorId
     LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
+    LEFT JOIN Publishers p ON b.PublisherId = p.PublisherId
     WHERE ${whereClause}
     GROUP BY bc.Status
   `);
@@ -227,13 +260,14 @@ async function createCopy({ bookId, barcode, status, location }, transaction) {
 }
 
 async function lockCopyForMutation(copyId, expectedVersion, transaction) {
+  const versionColumn = await getCopyVersionColumn(transaction);
   const request = await requestFor(transaction);
   const result = await request
     .input('CopyId', sql.Int, copyId)
     .input('ExpectedVersion', sql.NVarChar(512), expectedVersion)
     .query(`
       SELECT TOP 1 bc.CopyId, bc.BookId, bc.Barcode, bc.Status AS CopyStatus,
-                   bc.Location, bc.Version AS RowVersion, b.Status AS BookStatus
+                   bc.Location, bc.${versionColumn} AS RowVersion, b.Status AS BookStatus
       FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
       INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
       WHERE bc.CopyId = @CopyId;

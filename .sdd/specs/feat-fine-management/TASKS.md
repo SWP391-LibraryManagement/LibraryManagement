@@ -109,6 +109,10 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - GREEN: remove the redundant process notice; carry one canonical fine from calculation/list selection into collection or paid reconciliation; reject payment steps without an `UNPAID` selection; retain mutation-returned state across list pagination/filter boundaries.
   - DoD: the four Librarian fine sections operate on the same server-owned fine lifecycle and preserve FE07/FE12 status integration.
 
+- [x] **FE09-T023 - Simplify the Librarian fine book presentation.**
+  - Keep barcode in the server-owned fine DTO and search contract, but show only the book title in the Librarian list and selected-fine book card.
+  - Verify the table heading, row markup, detail card, and search prompt do not present barcode as a visible book field.
+
 ## Validation Status
 
 - Historical TD-001/002/003 evidence remains in the changelog and does not close FE09-T013 through FE09-T020.

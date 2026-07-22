@@ -247,14 +247,14 @@ export default function FineManagement() {
             <div className="fine-panel-head"><div><p>Theo dõi phiếu phạt</p><h2>Danh sách phiếu phạt</h2></div><span className="muted">{lastUpdated && `Cập nhật lúc ${lastUpdated}`}</span></div>
             <form onSubmit={(event) => { event.preventDefault(); setQuery(queryInput.trim()); setPage(1); }}>
               <DataToolbar
-                primary={<div className="search-input"><Search size={18} /><input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Tìm mã phiếu, thành viên, sách, barcode..." aria-label="Tìm phiếu phạt" /></div>}
+                primary={<div className="search-input"><Search size={18} /><input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} placeholder="Tìm mã phiếu, thành viên hoặc sách..." aria-label="Tìm phiếu phạt" /></div>}
                 filters={<div className="row-flex"><Filter size={17} /><select className="select" aria-label="Lọc trạng thái" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>}
                 actions={<button type="submit" className="btn btn-primary"><Search size={16} /> Tìm kiếm</button>}
               />
             </form>
             <DataTable
               caption="Danh sách phiếu phạt"
-              headers={['Mã phiếu', 'Thành viên', 'Sách / barcode', 'Quá hạn', 'Số tiền', 'Trạng thái']}
+              headers={['Mã phiếu', 'Thành viên', 'Sách', 'Quá hạn', 'Số tiền', 'Trạng thái']}
               isEmpty={!pageRows.length}
               emptyState={<EmptyState icon={ReceiptText} title="Không có phiếu phạt phù hợp" />}
             >
@@ -262,7 +262,7 @@ export default function FineManagement() {
                 <tr key={fine.fineId} className={String(fine.fineId) === String(selectedFineId) ? 'selected' : ''} onClick={() => selectFine(fine)}>
                   <td data-label="Mã phiếu">#{fine.fineId}</td>
                   <td data-label="Thành viên"><strong>{fine.member?.fullName || fine.member?.username || `Người dùng #${fine.userId}`}</strong></td>
-                  <td data-label="Sách / barcode"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong><span className="field-hint">{fine.barcode || '—'}</span></td>
+                  <td data-label="Sách"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></td>
                   <td data-label="Quá hạn">{fine.overdueDays} ngày</td>
                   <td data-label="Số tiền">{formatCurrency(fine.amount)}</td>
                   <td data-label="Trạng thái"><Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge></td>
@@ -309,7 +309,7 @@ function FineDetail({ fine, compact = false, isAdmin = false, reason = '', setRe
   return (
     <aside className={`fine-panel fine-detail-panel ${compact ? 'compact' : ''}`}>
       <div className="fine-panel-head"><div><p>Phiếu đang chọn</p><h2>{fine ? `Phiếu phạt #${fine.fineId}` : 'Chưa chọn phiếu'}</h2></div>{fine && <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>}</div>
-      {fine ? <><div className="fine-detail-card"><div><span>Thành viên</span><strong>{fine.member?.fullName || fine.member?.username}</strong><small>{fine.member?.email}</small></div><div><span>Sách</span><strong>{fine.bookTitle || '—'}</strong><small>{fine.barcode || '—'}</small></div></div><dl className="fine-details"><div><dt>Chi tiết mượn</dt><dd>#{fine.borrowDetailId}</dd></div><div><dt>Quá hạn</dt><dd>{fine.overdueDays} ngày</dd></div><div><dt>Mức/ngày</dt><dd>{formatCurrency(fine.ratePerDay)}</dd></div><div><dt>Tổng tiền</dt><dd><strong>{formatCurrency(fine.amount)}</strong></dd></div><div><dt>Đã thu</dt><dd>{formatCurrency(fine.paidAmount)}</dd></div><div><dt>Ngày tính</dt><dd>{formatDate(fine.calculatedAt)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{formatDate(fine.paidAt)}</dd></div></dl>{!compact && fine.status === 'UNPAID' && onCollect && onMarkPaid && <div className="fine-payment-actions"><button type="button" className="btn btn-primary" disabled={loading} onClick={onCollect}><CreditCard size={15} /> Ghi nhận thu tiền</button><button type="button" className="btn btn-outline" disabled={loading} onClick={onMarkPaid}><Check size={15} /> Đánh dấu đã thanh toán</button></div>}{isAdmin && fine.status === 'UNPAID' && setReason && <div className="fine-admin-resolution"><label>Lý do miễn/hủy<textarea value={reason} maxLength="500" onChange={(event) => setReason(event.target.value)} /></label><div><button type="button" className="btn btn-outline" disabled={loading} onClick={() => onResolve('waive')}><ShieldCheck size={15} /> Miễn phạt</button><button type="button" className="btn btn-danger" disabled={loading} onClick={() => onResolve('cancel')}><XCircle size={15} /> Hủy phiếu</button></div></div>}</> : <EmptyState icon={ReceiptText} title="Chọn một phiếu để xem chi tiết" />}
+      {fine ? <><div className="fine-detail-card"><div><span>Thành viên</span><strong>{fine.member?.fullName || fine.member?.username}</strong><small>{fine.member?.email}</small></div><div><span>Sách</span><strong>{fine.bookTitle || '—'}</strong></div></div><dl className="fine-details"><div><dt>Chi tiết mượn</dt><dd>#{fine.borrowDetailId}</dd></div><div><dt>Quá hạn</dt><dd>{fine.overdueDays} ngày</dd></div><div><dt>Mức/ngày</dt><dd>{formatCurrency(fine.ratePerDay)}</dd></div><div><dt>Tổng tiền</dt><dd><strong>{formatCurrency(fine.amount)}</strong></dd></div><div><dt>Đã thu</dt><dd>{formatCurrency(fine.paidAmount)}</dd></div><div><dt>Ngày tính</dt><dd>{formatDate(fine.calculatedAt)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{formatDate(fine.paidAt)}</dd></div></dl>{!compact && fine.status === 'UNPAID' && onCollect && onMarkPaid && <div className="fine-payment-actions"><button type="button" className="btn btn-primary" disabled={loading} onClick={onCollect}><CreditCard size={15} /> Ghi nhận thu tiền</button><button type="button" className="btn btn-outline" disabled={loading} onClick={onMarkPaid}><Check size={15} /> Đánh dấu đã thanh toán</button></div>}{isAdmin && fine.status === 'UNPAID' && setReason && <div className="fine-admin-resolution"><label>Lý do miễn/hủy<textarea value={reason} maxLength="500" onChange={(event) => setReason(event.target.value)} /></label><div><button type="button" className="btn btn-outline" disabled={loading} onClick={() => onResolve('waive')}><ShieldCheck size={15} /> Miễn phạt</button><button type="button" className="btn btn-danger" disabled={loading} onClick={() => onResolve('cancel')}><XCircle size={15} /> Hủy phiếu</button></div></div>}</> : <EmptyState icon={ReceiptText} title="Chọn một phiếu để xem chi tiết" />}
     </aside>
   );
 }

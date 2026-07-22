@@ -192,7 +192,7 @@ export default function ProcessReturnsPage() {
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
-                      onClick={(event) => { event.stopPropagation(); setSelectedId(loan.id); setCondition('NORMAL'); }}
+                      onClick={(event) => { event.stopPropagation(); setSelectedId(loan.id); setCondition('NORMAL'); setReturnTarget(loan); }}
                     >
                       <ClipboardCheck size={14} /> Xử lý trả
                     </button>

@@ -100,8 +100,8 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
     });
   }
 
-  await expect(page.locator('.admin-shell__sidebar .admin-shell__nav-item')).toHaveCount(7);
-  await expect(page.locator('.admin-shell__sidebar').getByRole('button', { name: 'Phân quyền', exact: true })).toHaveCount(0);
+  await expect(page.locator('.app-sidebar .app-nav-item')).toHaveCount(7);
+  await expect(page.locator('.app-sidebar').getByRole('button', { name: 'Phân quyền', exact: true })).toHaveCount(0);
 
   await page.route('**/api/admin/audit-logs**', async (route) => {
     await route.fulfill({
@@ -125,14 +125,11 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.getByRole('button', { name: 'Nhật ký hoạt động', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nhật ký hoạt động', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Hành động')).toHaveAttribute('placeholder', 'Nhập hoặc chọn hành động');
-  await expect(page.getByLabel('Mã người thực hiện')).toBeVisible();
-  await expect(page.locator('#admin-audit-action-options option[value="AUTH_LOGIN_SUCCESS"]')).toHaveText('Đăng nhập thành công');
-  const searchBox = await page.getByLabel('Tìm nhật ký').boundingBox();
-  const fromBox = await page.getByLabel('Từ ngày').boundingBox();
-  expect(searchBox).toBeTruthy();
-  expect(fromBox).toBeTruthy();
-  expect(fromBox.y).toBeGreaterThan(searchBox.y);
+  await expect(page.getByLabel('Tìm nhật ký')).toHaveCount(0);
+  await expect(page.getByLabel('Hành động')).toHaveCount(0);
+  await expect(page.getByLabel('Mã người thực hiện')).toHaveCount(0);
+  await expect(page.getByLabel('Từ ngày')).toHaveCount(0);
+  await expect(page.getByLabel('Đến ngày')).toHaveCount(0);
   await expect(page.locator('.admin-audit-table thead th')).toHaveText([
     'Hành động',
     'Người thực hiện',
@@ -161,7 +158,7 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(bookSummary.getByText('1', { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Mở menu quản trị', exact: true }).click();
+  await page.getByRole('button', { name: 'Mở điều hướng', exact: true }).click();
   await page.getByRole('button', { name: 'Quản lý người dùng', exact: true }).click();
   await expect(userHeading).toBeVisible();
   await expect(page.locator('.admin-user-table')).toBeHidden();

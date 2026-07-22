@@ -74,3 +74,11 @@ test('FE09 remains server-backed outside the Admin Console', async () => {
   const adminPage = await readFile(new URL('../src/page/admin/AdminConsolePage.jsx', import.meta.url), 'utf8');
   assert.doesNotMatch(adminPage, /getFineRecords|saveFineRecords|activeSection === 'payments'/);
 });
+
+test('FE09 librarian fine list displays only the book title in the book column', async () => {
+  const source = await readFile(new URL('../src/page/FineManagement.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /headers=\{\['Mã phiếu', 'Thành viên', 'Sách', 'Quá hạn', 'Số tiền', 'Trạng thái'\]\}/);
+  assert.match(source, /<td data-label="Sách"><strong>\{fine\.bookTitle/);
+  assert.doesNotMatch(source, /Sách \/ barcode|fine\.barcode/);
+});
