@@ -1,8 +1,8 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.4
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-20
+Version: 0.3.5
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; CONFORMANCE GAPS TRACKED
+Last Updated: 2026-07-23
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
 Feature IDs: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -48,15 +48,18 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
-- Focused API evidence: `backend/tests/authRoutes.test.js` passes 32/32, including TD-018/TD-020 regressions, repeated reset-token event/idempotency rotation, and malformed Bearer-header rejection.
+- Focused API evidence: the latest FE02-T043 record reports 33/33 focused backend auth tests, including login validation hardening; earlier TD-018/TD-020 regressions cover repeated reset-token event/idempotency rotation and malformed Bearer-header rejection.
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
-- Current full backend evidence passes 917/917 with configured coverage; the historical FE02/FE10 focused slice passed 170/170 before the later Bearer-header regression was added.
+- The latest FE02-T043 record reports 924/924 full backend tests and 209/209 full frontend tests; the historical FE02/FE10 focused slice passed 170/170 before later auth regressions were added.
 - Traceability: FR `@spec` coverage **100%** (`npm run trace:enforce`).
 
 ## 6. Gaps
 
 - Configured Jest global coverage thresholds pass for statements, branches, functions, and lines.
 - Human acceptance, PR integration, and exact post-merge `main` CI passed for the injected FE10 delivery boundary; real SMTP delivery was later observed PASS in live run `c6e0c46421f0`.
+- Repository defaults still set `LOGIN_LOCKOUT_MINUTES=15`; BR-FE02-009 and NFR-FE02-SEC-006 require exactly 30 minutes.
+- Add an explicit AC-FE02-023 regression proving client role claims cannot override current server-side `UserRoles`.
+- Record or link the dedicated H3 integration closeout for FE02-T043.
 
 ## 7. Required Commands / Evidence Before Merge
 

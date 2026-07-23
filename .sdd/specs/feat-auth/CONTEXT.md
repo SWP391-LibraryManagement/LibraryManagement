@@ -1,12 +1,12 @@
 # CONTEXT.md - FE02 Authentication
 
-# Version: 0.2.1
+# Version: 0.2.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-23
 
 # Feature folder: `.sdd/specs/feat-auth/`
 
@@ -24,6 +24,23 @@ This feature must keep three things consistent:
 
 Because authentication is the foundation of all access control and security in the system, this feature is treated as a Full Spec feature.
 
+### 1.1 Security and Consistency Outcomes
+
+These are target outcomes, not evidence that the current implementation already satisfies them. Detailed business rules, functional requirements, acceptance criteria, and intentional Phase 1 limitations remain authoritative in `SPEC.md`.
+
+- Passwords are never stored or logged in plaintext. Stored passwords use bcrypt with cost factor at least 10, and production configuration must not reduce that approved cost.
+- Verification and password-reset OTPs are generated with a cryptographically secure random source, contain exactly six digits, expire after 15 minutes, and are stored only as hashes. Raw OTPs must not appear in public responses, persistence, application logs, or audit metadata.
+- Access tokens expire after 15 minutes. Refresh/session credentials expire after 7 days, are stored only as hashes, and remain linked to the access tokens issued from them.
+- Every protected request validates the access token, current user status, linked refresh/session credential, expiry, and required role before business processing.
+- Logout revokes the submitted current refresh/session credential immediately. Multiple concurrent sessions remain allowed in Phase 1; handling of other sessions after password change or reset must follow the explicit `SPEC.md` contract.
+- A known account is locked after 5 consecutive failed password attempts within a rolling 15-minute window and remains locked for exactly 30 minutes. IP-wide request limiting is not part of the current Phase 1 baseline unless separately approved.
+- Public login, verification resend, and forgot-password responses must avoid revealing whether an account exists or is inactive. Duplicate-registration behavior and its acknowledged enumeration risk follow the approved `SPEC.md`.
+- User state, credential state, and required audit state must not be left partially updated. Login/session creation, verification/token consumption, password reset/token consumption, and password change/audit must use the transaction boundaries defined by `SPEC.md`; `ACCOUNT_SETUP` completion is atomic.
+- Authentication audit records cover login attempts, successes and failures, lock/unlock events, logout, password-change attempts, password-reset requests and outcomes, verification, and account-setup completion. Audit failure handling must be explicit rather than silently claiming the event was recorded.
+- Authentication requests use HTTPS outside local development, validate input on the server, use parameterized SQL, and return safe errors without credentials, raw tokens, stack traces, or provider details.
+- FE02 owns verification/reset credential generation, hashing, expiry, revocation, and validation. FE10 owns rendering and delivery; delivery failure must not roll back the completed FE02 source transaction or expose the credential.
+- The frontend stores tokens only in the selected approved storage, attaches access tokens to protected requests, refreshes an expired access token at most once per failed request, clears invalid session state, and redirects the user to login consistently when recovery fails.
+
 ---
 
 ## 2. Real-World Workflow
@@ -36,7 +53,7 @@ The typical small/medium library authentication workflow:
 4. The system verifies credentials against the user database.
 5. If invalid, the system rejects the login and shows error message.
 6. If valid, the system creates a session/token and returns it to the client.
-7. The client stores the session/token (cookie or local storage).
+7. The client stores access and refresh tokens in `localStorage` or `sessionStorage` according to the selected login persistence; session cookies are out of scope for Phase 1.
 8. For subsequent requests, the client includes the session/token in the request header.
 9. The system validates the token and allows or denies access based on role.
 10. When the user logs out, the system invalidates the session/token.
@@ -73,28 +90,27 @@ FE02 does not include:
 
 ## 4. Current Data Model Notes
 
-The current SQL script currently includes:
+The current SQL script includes:
 
-- `Users(UserId, Username, Email, PasswordHash, Phone, Status, CreatedAt)`
+- `Users(UserId, Username, Email, PasswordHash, Phone, Status, EmailVerifiedAt, FailedLoginCount, LockedUntil, LastLoginAt, CreatedAt, UpdatedAt, DeactivatedAt)`
 - `Roles(RoleId, RoleName)`
-- `UserRoles(UserId, RoleId)`
-- `AuditLogs(LogId, UserId, Action, CreatedAt)`
-- `UserProfiles(ProfileId, UserId, FullName, Address, DateOfBirth, AvatarUrl)` for profile data owned by FE03.
+- `UserRoles(UserId, RoleId, CreatedAt)`
+- `AuthTokens(TokenId, UserId, TokenType, TokenHash, ExpiresAt, UsedAt, RevokedAt, CreatedAt, CreatedByIp)`
+- `AuditLogs(LogId, UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)`
+- `UserProfiles(ProfileId, UserId, FullName, Address, DateOfBirth, AvatarUrl, Department, Specialization, CreatedAt, UpdatedAt)` for profile data owned by FE03.
 
-Potential issues to review:
+Phase 1 decisions and alignment notes:
 
-- Password storage must use bcrypt or similar hashing, not plain text or simple MD5.
-- Session/token strategy must be defined: JWT, session cookies, or both?
-- Verification/reset/setup credentials have approved expiry: email-verification and password-reset OTPs 15 minutes; admin-created account setup token exactly 24 hours after issuance.
-- Login attempt rate limiting to prevent brute force attacks.
-- Email verification mechanism for registration and password reset.
-- Admin-created accounts from FE11 remain `INACTIVE` and unable to login until FE02 atomically completes password setup and activates them.
+- Passwords use bcrypt with cost factor at least 10; plaintext and simple hashes such as MD5 are forbidden.
+- Authentication uses JWT access tokens plus database-backed refresh credentials; session cookies are out of scope.
+- Email-verification and password-reset OTPs expire after 15 minutes; `ACCOUNT_SETUP` tokens expire after 24 hours.
+- A known account locks after 5 consecutive failed password attempts within a rolling 15-minute window and automatically unlocks after 30 minutes. IP-wide login limiting is not implemented in Phase 1.
+- Admin-created accounts from FE11 remain `INACTIVE` until FE02 atomically completes password setup and activation.
 - FE11 owns setup-token issuance/resend, FE10 owns setup-link delivery, and FE02 owns setup-token consumption/password activation.
-- User status field (active/inactive/locked) needed to block suspended accounts.
-- Password history is not currently supported by the SQL script and should remain out of scope unless the team extends the schema.
-- AuditLogs should capture login success/failure, logout, password reset attempts.
-
-These must be resolved before implementation.
+- Persisted user statuses are `ACTIVE`, `INACTIVE`, and `LOCKED`; FE11 deactivation is represented by `INACTIVE` plus `DeactivatedAt`.
+- Password history is not supported and remains out of scope unless the approved schema and specification are extended.
+- Authentication audit records cover login, logout, password change/reset, lockout, verification, and account-setup events without storing raw credentials.
+- The repository currently defaults `LOGIN_LOCKOUT_MINUTES` to 15 in configuration, which conflicts with the approved 30-minute lock duration and must be reconciled before implementation compliance is claimed.
 
 ---
 
@@ -145,9 +161,8 @@ These must be resolved before implementation.
 | Dependency | Why It Matters |
 | ---------- | -------------- |
 | FE03 User Profile | After authentication, users can manage their profile data. |
-| FE10 Notification Management | Sends account-verification and password-reset OTP emails through the requester bound to `FE02`; staff HTTP cannot submit these sensitive types. |
+| FE10 Notification Management | Renders and delivers FE02 verification/reset OTPs and FE11 account-setup links through requester-bound ownership; staff HTTP cannot submit the sensitive FE02 types. |
 | FE11 User & Role Management | Uses role information after authentication and owns admin-created account/setup-token issuance and resend. |
-| FE10 Notification Management | Delivers verification/reset OTPs for FE02 and delivers FE11-owned account-setup links through separate source/type ownership. |
 | Database (SQL Server) | Stores user credentials and session state. |
 | Email Provider Adapter | FE10 uses the configured provider adapter for verification/reset delivery; FE02 still uses direct email only for `CHANGE_PASSWORD_OTP`. |
 
@@ -161,7 +176,7 @@ These must be resolved before implementation.
 | Q-FE02-002 | Access token expires after 15 minutes; refresh token expires after 7 days. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-003 | Email verification is required. FE02 generates the OTP and FE10 delivers it through a configured provider adapter; tests inject a mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
 | Q-FE02-004 | Multiple concurrent sessions are allowed in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE02-005 | Failed login attempts are rate-limited with a simple measurable server-side rule. | Review packet 2026-06-10 | APPROVED |
+| Q-FE02-005 | Known accounts lock after 5 consecutive failed password attempts in a rolling 15-minute window; IP-wide login limiting is not implemented; unlock occurs automatically after 30 minutes. | Auth policy normalization 2026-07-17; code alignment 2026-07-19 | APPROVED |
 | Q-FE02-006 | Password reset token expires after 15 minutes. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-007 | Password change attempts and failed login attempts are logged. | Review packet 2026-06-10 | APPROVED |
 | Q-FE02-008 | Inactive users cannot log in; inactive-user auto-lock job is out of scope for Phase 1. | Review packet 2026-06-10 | APPROVED |
@@ -171,14 +186,14 @@ These must be resolved before implementation.
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Implementation and Maintenance Notes
 
-- Do not implement until `SPEC.md` is reviewed and approved.
-- `PLAN.md` and `TASKS.md` stay `NOT STARTED` until approval.
-- All passwords must be hashed with bcrypt (minimum cost factor 10).
-- All requests must use HTTPS; plain HTTP login is forbidden.
-- Every API endpoint must validate authentication token and validate input on the server.
-- Rate limiting must be implemented to prevent brute force attacks on login endpoint.
-- All authentication events (login success, failure, logout, password reset) must be logged to AuditLogs.
-- Use parameterized queries to prevent SQL injection.
-- Session/token validation must happen on every protected endpoint before processing the request.
+- The approved Phase 1 implementation baseline is complete; `SPEC.md`, `PLAN.md`, `TASKS.md`, tests, and review evidence determine current delivery status.
+- `SPEC.md` remains the FE02 source of truth. Future behavior changes require approved specification and task updates before implementation.
+- Passwords must use bcrypt with cost factor at least 10; production tuning must not reduce the approved cost.
+- Authentication endpoints must use HTTPS outside local development, and plain HTTP credential/token processing must be rejected or redirected before business processing.
+- Every protected endpoint must validate the access token, current user/session state, and required server-side role before processing.
+- Known-account lockout follows the approved 5-attempt, rolling 15-minute, 30-minute-lock rule; Phase 1 does not claim IP-wide limiting.
+- Authentication events must be recorded in `AuditLogs` without passwords, raw OTPs, raw tokens, or sensitive provider details.
+- All SQL access must use parameterized queries.
+- FE02 owns verification/reset credential lifecycle, FE10 owns requester-bound rendering/delivery, and direct FE02 delivery remains limited to `CHANGE_PASSWORD_OTP`.
