@@ -101,7 +101,8 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   }
 
   const adminNavigation = page.getByRole('navigation', { name: 'Điều hướng quản trị' });
-  await expect(adminNavigation.getByRole('button')).toHaveCount(7);
+  await expect(adminNavigation.getByRole('button')).toHaveCount(8);
+  await expect(adminNavigation.getByRole('button', { name: 'Duyệt hội viên', exact: true })).toBeVisible();
   await expect(adminNavigation.getByRole('button', { name: 'Phân quyền', exact: true })).toHaveCount(0);
 
   await page.route('**/api/admin/audit-logs**', async (route) => {
