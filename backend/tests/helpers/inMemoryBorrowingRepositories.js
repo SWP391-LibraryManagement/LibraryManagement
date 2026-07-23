@@ -12,6 +12,15 @@ function toExclusiveNextDay(value) {
   return date;
 }
 
+function isWithinUtcRange(value, start, end) {
+  if (!value || !start || !end) {
+    return false;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return timestamp >= new Date(start).getTime() && timestamp < new Date(end).getTime();
+}
+
 function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
   let nextRequestId = 1;
   let nextDetailId = 1;
@@ -227,6 +236,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         email: user.email,
         memberStatus: memberStatuses.get(Number(userId)) || null,
         approvedAt: memberApprovedAt.get(Number(userId)) || null,
+        hasMemberRole: (authState.rolesByUserId.get(Number(userId)) || []).includes('MEMBER'),
       });
     },
 
@@ -258,23 +268,29 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       ).length;
     },
 
-    async countRequestedCopiesOnDate(userId, businessDate) {
-      const target = String(businessDate).slice(0, 10);
+    async countRequestedCopiesOnDate(userId, businessDayStartUtc, businessDayEndUtc) {
       return borrowDetails.filter((detail) => {
         const request = borrowRequests.find((item) => item.requestId === detail.requestId);
         return detail.userId === Number(userId)
           && request?.status !== 'REJECTED'
-          && toDateOnly(request?.requestDate) === target;
+          && isWithinUtcRange(
+            request?.requestDate,
+            businessDayStartUtc,
+            businessDayEndUtc
+          );
       }).length;
     },
 
-    async countBorrowedCopiesOnDate(userId, businessDate) {
-      const target = String(businessDate).slice(0, 10);
-      return borrowDetails.filter((detail) => (
-        detail.userId === Number(userId)
-        && detail.borrowDate
-        && toDateOnly(detail.borrowDate) === target
-      )).length;
+    async countBorrowedCopiesOnDate(userId, businessDayStartUtc, businessDayEndUtc) {
+      return borrowDetails.filter((detail) => {
+        const request = borrowRequests.find((item) => item.requestId === detail.requestId);
+        return detail.userId === Number(userId)
+          && isWithinUtcRange(
+            request?.approvedAt,
+            businessDayStartUtc,
+            businessDayEndUtc
+          );
+      }).length;
     },
 
     async hasBlockingFine(userId) {
@@ -316,10 +332,73 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       );
     },
 
-    async createBorrowRequest({ userId, copyIds, auditLogRepository, auditEntry }) {
+    async createBorrowRequest({
+      userId,
+      copyIds,
+      requestDate,
+      businessDate,
+      businessDayStartUtc,
+      businessDayEndUtc,
+      auditLogRepository,
+      auditEntry,
+    }) {
+      const member = getUser(userId);
+      const roles = authState.rolesByUserId.get(Number(userId)) || [];
+      if (!member || !roles.includes('MEMBER')) {
+        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      }
+
+      if (member.status !== 'ACTIVE') {
+        return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+      }
+
+      if (await this.hasBlockingFine(userId)) {
+        return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
+      }
+
+      if (await this.hasOverdueActiveLoans(userId, businessDate)) {
+        return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
+      }
+
+      const activeCount = borrowDetails.filter(
+        (detail) => detail.userId === Number(userId) && detail.status === 'BORROWED'
+      ).length;
+      if (activeCount + copyIds.length > 5) {
+        return { outcome: 'BORROW_LIMIT_EXCEEDED' };
+      }
+
+      const dailyLimit = memberStatuses.get(Number(userId)) === 'APPROVED' ? 5 : 3;
+      const dailyCount = borrowDetails.filter((detail) => {
+        const request = borrowRequests.find((item) => item.requestId === detail.requestId);
+        return detail.userId === Number(userId)
+          && request?.status !== 'REJECTED'
+          && isWithinUtcRange(
+            request?.requestDate,
+            businessDayStartUtc,
+            businessDayEndUtc
+          );
+      }).length;
+      if (dailyCount + copyIds.length > dailyLimit) {
+        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED', dailyLimit };
+      }
+
+      for (const copyId of [...copyIds].map(Number).sort((left, right) => left - right)) {
+        const copy = getCopy(copyId);
+        if (!copy) {
+          return { outcome: 'COPY_NOT_FOUND' };
+        }
+        if (getBook(copy.bookId)?.status !== 'ACTIVE') {
+          return { outcome: 'BOOK_INACTIVE' };
+        }
+        const classification = classifyCopyBorrowability(copy, userId);
+        if (!['NORMAL_AVAILABLE', 'HELD_FOR_MEMBER'].includes(classification.outcome)) {
+          return { outcome: classification.outcome };
+        }
+      }
+
       const snapshot = snapshotMutationState();
 
-      const now = new Date();
+      const now = requestDate ? new Date(requestDate) : new Date();
       const borrowRequest = {
         requestId: nextRequestId,
         userId: Number(userId),
@@ -366,7 +445,10 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         }
       }
 
-      return mapRequest(borrowRequest);
+      return {
+        outcome: 'CREATED',
+        borrowRequest: mapRequest(borrowRequest),
+      };
     },
 
     async listBorrowRequests(filters = {}) {
@@ -455,8 +537,10 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       requestId,
       approvedBy,
       approvalDate,
+      borrowDate,
       dueDate,
-      dailyLimit = 5,
+      businessDayStartUtc,
+      businessDayEndUtc,
       auditLogRepository,
       auditEntry,
     }) {
@@ -475,15 +559,22 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'REQUEST_NOT_APPROVABLE' };
       }
 
+      const roles = authState.rolesByUserId.get(request.userId) || [];
+      if (!roles.includes('MEMBER')) {
+        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      }
+
       if (member.status !== 'ACTIVE') {
         return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
       }
+
+      const dailyLimit = memberStatuses.get(request.userId) === 'APPROVED' ? 5 : 3;
 
       if (await this.hasBlockingFine(request.userId)) {
         return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
       }
 
-      if (await this.hasOverdueActiveLoans(request.userId, approvalDate)) {
+      if (await this.hasOverdueActiveLoans(request.userId, borrowDate)) {
         return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
       }
 
@@ -529,15 +620,20 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'BORROW_LIMIT_EXCEEDED' };
       }
 
-      const approvalDay = toDateOnly(approvalDate);
-      const dailyCount = borrowDetails.filter((detail) => (
-        detail.userId === request.userId
-        && detail.borrowDate
-        && toDateOnly(detail.borrowDate) === approvalDay
-      )).length;
+      const dailyCount = borrowDetails.filter((detail) => {
+        const owningRequest = borrowRequests.find(
+          (item) => item.requestId === detail.requestId
+        );
+        return detail.userId === request.userId
+          && isWithinUtcRange(
+            owningRequest?.approvedAt,
+            businessDayStartUtc,
+            businessDayEndUtc
+          );
+      }).length;
 
       if (dailyCount + requestedDetails.length > dailyLimit) {
-        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED' };
+        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED', dailyLimit };
       }
 
       request.status = 'APPROVED';
@@ -548,8 +644,8 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
       for (const detail of requestedDetails) {
         detail.status = 'BORROWED';
-        detail.borrowDate = approvalDate;
-        detail.dueDate = dueDate;
+        detail.borrowDate = new Date(`${borrowDate}T00:00:00.000Z`);
+        detail.dueDate = new Date(dueDate);
         detail.updatedAt = new Date();
         getCopy(detail.copyId).status = 'BORROWED';
       }
@@ -636,10 +732,15 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return null;
       }
 
+      const copy = getCopy(detail.copyId);
+      if (!copy || copy.status !== 'BORROWED') {
+        return { outcome: 'BORROW_STATE_CONFLICT' };
+      }
+
       detail.status = detailStatus;
       detail.returnDate = returnDate;
       detail.updatedAt = new Date();
-      getCopy(detail.copyId).status = copyStatus;
+      copy.status = copyStatus;
 
       const requestDetails = borrowDetails.filter((item) => item.requestId === detail.requestId);
       const allTerminal = requestDetails.every((item) =>
@@ -664,17 +765,65 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       return mapDetail(detail);
     },
 
-    async renewBorrowDetail({ borrowDetailId, newDueDate, auditLogRepository, auditEntry }) {
+    async renewBorrowDetail({
+      borrowDetailId,
+      userId,
+      today,
+      newDueDate,
+      auditLogRepository,
+      auditEntry,
+    }) {
+      const member = getUser(userId);
+      const roles = authState.rolesByUserId.get(Number(userId)) || [];
+      if (!member || !roles.includes('MEMBER')) {
+        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      }
+
+      if (member.status !== 'ACTIVE') {
+        return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+      }
+
+      if (fines.some(
+        (fine) => fine.userId === Number(userId) && fine.status === 'UNPAID' && fine.amount > 0
+      )) {
+        return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
+      }
+
+      const todayTime = new Date(today).setHours(0, 0, 0, 0);
+      if (borrowDetails.some((item) => (
+        item.userId === Number(userId)
+        && item.status === 'BORROWED'
+        && item.dueDate
+        && new Date(item.dueDate).setHours(0, 0, 0, 0) < todayTime
+      ))) {
+        return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
+      }
+
       const snapshot = snapshotMutationState();
       const detail = borrowDetails.find(
         (item) =>
           item.borrowDetailId === Number(borrowDetailId) &&
-          item.status === 'BORROWED' &&
-          item.renewalCount < 1
+          item.userId === Number(userId)
       );
 
-      if (!detail) {
-        return null;
+      if (!detail || detail.status !== 'BORROWED') {
+        return { outcome: 'BORROW_DETAIL_NOT_BORROWED' };
+      }
+
+      if (detail.renewalCount >= 1) {
+        return { outcome: 'RENEWAL_LIMIT_REACHED' };
+      }
+
+      if (toDateOnly(detail.dueDate) < String(today).slice(0, 10)) {
+        return { outcome: 'BORROW_DETAIL_OVERDUE' };
+      }
+
+      if (reservations.some((reservation) => (
+        reservation.copyId === detail.copyId
+        && reservation.userId !== Number(userId)
+        && ['ACTIVE', 'NOTIFIED'].includes(reservation.status)
+      ))) {
+        return { outcome: 'RESERVATION_BLOCKS_RENEWAL' };
       }
 
       detail.dueDate = newDueDate;
@@ -690,7 +839,10 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         }
       }
 
-      return mapDetail(detail);
+      return {
+        outcome: 'RENEWED',
+        borrowDetail: mapDetail(detail),
+      };
     },
   };
 

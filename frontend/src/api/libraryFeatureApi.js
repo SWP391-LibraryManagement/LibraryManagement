@@ -184,9 +184,6 @@ export const reservationApi = {
   processQueue(copyId) {
     return authorizedReservationRequest({ method: 'post', url: '/reservations/process-queue', data: { copyId } }, 'Không thể xử lý hàng đợi đặt chỗ.');
   },
-  process(reservationId, data = {}) {
-    return authorizedReservationRequest({ method: 'patch', url: `/reservations/${reservationId}/process`, data }, 'Không thể xử lý đặt chỗ.');
-  },
   expireHolds() {
     return authorizedReservationRequest(
       { method: 'post', url: '/reservations/expire-holds' },

@@ -1,12 +1,12 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.1
+# Version: 0.5.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-23
 
 # Feature ID: FE08
 
@@ -19,6 +19,14 @@
 > historical planning/evidence snapshots, not the current delivery state.
 
 > Source of truth for FE08 Reservation Management. Revision v0.4.4 adds the approved member-safe reservation-candidate catalog while preserving the `CopyId` mutation contract and immutable terminal timestamp history. Candidate implementation is automated-validated; final human walkthrough/H3 review remains required before merge.
+>
+> Revision v0.5.2 makes create/cancel/hold/expire lifecycle audits atomic with
+> their state changes and removes cached-member claims from staff queue
+> confirmation because the server reselects the first currently eligible row.
+>
+> Revision v0.5.3 preserves safe post-commit notification-audit warnings when
+> expiration promotes one or more reservations without changing promoted
+> reservation DTOs.
 
 ---
 
@@ -86,7 +94,7 @@ The feature can only start when:
 2. Member chooses to reserve that copy.
 3. The system validates member eligibility and reservation limit.
 4. The system confirms the selected copy is unavailable and is not `AVAILABLE`, `DAMAGED`, `LOST`, or inactive.
-5. The system creates a `Reservations` record with status `ACTIVE`.
+5. The system creates a `Reservations` record with status `ACTIVE` and its lifecycle audit in one transaction.
 6. The system records reservation time for queue order.
 7. The system shows reservation status to the member.
 
@@ -95,8 +103,7 @@ The feature can only start when:
 1. Member opens their reservation list.
 2. Member selects an `ACTIVE` reservation or `NOTIFIED` hold.
 3. Member confirms cancellation.
-4. The system changes reservation status to `CANCELLED` and atomically releases the copy when the reservation was `NOTIFIED`.
-5. The system writes an audit log.
+4. The system changes reservation status to `CANCELLED`, atomically releases the copy when the reservation was `NOTIFIED`, and writes the lifecycle audit in the same transaction.
 
 ### MF-FE08-003: View Reservation List
 
@@ -108,9 +115,9 @@ The feature can only start when:
 
 1. A copy is `AVAILABLE` and a librarian/admin explicitly invokes queue processing for that `copyId`.
 2. The system identifies the earliest eligible active reservation.
-3. If an eligible reservation exists, the system atomically marks the reservation `NOTIFIED` and the copy `RESERVED`, sets `NotifiedAt` and `ExpiresAt`, and preserves queue order.
+3. If an eligible reservation exists, the system atomically marks the reservation `NOTIFIED` and the copy `RESERVED`, sets `NotifiedAt` and `ExpiresAt`, writes the lifecycle audit, and preserves queue order.
 4. The system requests one FE10 notification with `type = RESERVATION_AVAILABLE`, `templateKey = RESERVATION_READY`, and `sourceFeature = FE08` after the hold commits.
-5. If notification request fails, the hold remains committed and an audit failure is recorded; no automatic retry worker is part of Phase 1.
+5. If notification request fails, the hold remains committed and an audit failure is recorded; if that post-commit failure audit is itself unavailable, the staff response includes safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata. No automatic retry worker is part of Phase 1.
 
 ### MF-FE08-005: Trigger Book Available Notification
 
@@ -152,7 +159,7 @@ The feature can only start when:
 
 1. Member is notified that a book is available.
 2. Member does not borrow within the reservation hold period.
-3. The system marks reservation `EXPIRED` and moves to the next reservation if any.
+3. The system marks reservation `EXPIRED` and writes its lifecycle audit in one transaction, then moves to the next reservation if any.
 
 ---
 
@@ -170,7 +177,7 @@ The feature can only start when:
 - BR-FE08-010: Expired reservations must not be selected by queue processing.
 - BR-FE08-011: When a reserved copy is held for a member, it must not be available for normal borrowing by another member.
 - BR-FE08-012: Queue processing must request one FE10 notification with `type = RESERVATION_AVAILABLE`, `templateKey = RESERVATION_READY`, and `sourceFeature = FE08` after the hold commits.
-- BR-FE08-013: Reservation status changes must be traceable.
+- BR-FE08-013: Reservation create, cancel, hold, and expire state changes must write their lifecycle audit in the same database transaction so neither the mutation nor its audit can commit alone. Post-commit FE10 failure auditing does not roll back a committed hold and must surface a safe warning if that audit write is unavailable.
 - BR-FE08-014: An active reservation or held copy for another member must block FE07 loan renewal for the same copy/reservation target.
 - BR-FE08-015: Only FE07 approval for the same member and copy may transition a `NOTIFIED` reservation to `FULFILLED`.
 - BR-FE08-016: An `ACTIVE` queue entry grants reservation priority and blocks ordinary FE07 create/approve actions for that copy until queue processing or terminal resolution. If FE07 returns the copy first, `BookCopies.Status` may be `AVAILABLE` while the `ACTIVE` claim remains enforced; FE08 still owns later queue selection.
@@ -180,10 +187,10 @@ The feature can only start when:
 
 ## 7. Functional Requirements
 
-- FR-FE08-001: When an eligible member submits a reservation request, the system shall create an active reservation.
+- FR-FE08-001: When an eligible member submits a reservation request, the system shall create an active reservation and its lifecycle audit atomically.
 - FR-FE08-002: If the member already has an active reservation for the same target, the system shall reject the duplicate request.
 - FR-FE08-003: If the reservation target is available for immediate borrowing, the system shall reject reservation and recommend borrowing.
-- FR-FE08-004: When a member cancels their own `ACTIVE` or `NOTIFIED` reservation, the system shall mark it cancelled and release any held copy atomically.
+- FR-FE08-004: When a member cancels their own `ACTIVE` or `NOTIFIED` reservation, the system shall mark it cancelled, release any held copy, and persist the cancellation audit atomically.
 - FR-FE08-005: When a librarian/admin views reservations, the system shall return reservation records with member and book/copy information.
 - FR-FE08-006: When queue processing runs, the system shall select the earliest eligible active reservation.
 - FR-FE08-007: When a reservation is selected from queue, the system shall make the reserved item unavailable to other members according to policy.
@@ -205,7 +212,7 @@ The feature can only start when:
 - FR-FE08-018: WHERE a member becomes ineligible before queue processing reaches their `ACTIVE` reservation, the system shall skip it for that run, leave it `ACTIVE`, and leave the copy unchanged. (Source: AF-FE08-003, Q-FE08-006)
 - FR-FE08-019: IF a notified member does not borrow within the approved reservation hold period, the system shall mark the reservation `EXPIRED` and continue with the next eligible reservation in the queue. (Source: AF-FE08-004, Q-FE08-004)
 - FR-FE08-020: WHERE queue processing finds no eligible active reservation, the system shall return no selection, leave the copy status unchanged, and change no reservation state. (Source: EC-FE08-008, Q-FE08-007)
-- FR-FE08-021: IF the FE10 notification request fails after a hold commits, the system shall preserve `NOTIFIED`/`RESERVED` state and write a `RESERVATION_NOTIFY_FAILED` audit entry; Phase 1 does not run an automatic retry worker. (Source: EC-FE08-009, BR-FE08-012, Q-FE08-008)
+- FR-FE08-021: IF the FE10 notification request fails after a hold commits, the system shall preserve `NOTIFIED`/`RESERVED` state and write a `RESERVATION_NOTIFY_FAILED` audit entry; if that post-commit audit write fails, `process-queue` shall expose one top-level `notificationWarning`, while `expire-holds` shall expose an optional top-level `notificationWarnings[]` entry for each affected promotion. Every warning shall contain only `reservationId` and `copyId` when identifying an expiration promotion, plus safe `code` and `message`; promoted reservation DTOs remain unchanged, and warning metadata shall contain no member identity or provider detail. Phase 1 does not run an automatic retry worker. (Source: EC-FE08-009, BR-FE08-012, BR-FE08-013, Q-FE08-008)
 - FR-FE08-022: IF concurrent queue processing attempts to select the same reservation, the system shall allow only one selection to succeed and require the later attempt to re-read the current state. (Source: EC-FE08-010, NFR-FE08-TXN-001)
 - FR-FE08-023: WHERE a copy is held for a member from the reservation queue, the system shall prevent that held copy from being borrowed by any other member. (Source: BR-FE08-011, AC-FE08-008)
 - FR-FE08-024: WHERE an active reservation or a copy held for another member exists for a reservation target, the system shall block FE07 loan renewal for that copy/reservation target. (Source: BR-FE08-014)
@@ -250,7 +257,7 @@ The feature can only start when:
 | EC-FE08-006 | Member cancels someone else's reservation | Return forbidden error. |
 | EC-FE08-007 | Reservation is outside `ACTIVE`/`NOTIFIED` | Return `409 RESERVATION_NOT_ACTIVE` with current state; leave reservation and copy state unchanged. |
 | EC-FE08-008 | Queue has no eligible reservation | Return no selection; keep the copy and all reservations unchanged. |
-| EC-FE08-009 | Notification service unavailable | Keep the committed hold and write `RESERVATION_NOTIFY_FAILED`; no automatic retry worker runs in Phase 1. |
+| EC-FE08-009 | Notification service unavailable | Keep the committed hold and write `RESERVATION_NOTIFY_FAILED`; if that audit write is unavailable, return safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata; no automatic retry worker runs in Phase 1. |
 | EC-FE08-010 | Concurrent queue processing | Only one queue selection may succeed; later action must re-read current state. |
 
 ---
@@ -364,7 +371,7 @@ stateDiagram-v2
 | PATCH | `/api/reservations/{reservationId}/cancel` | Member | Optional reason | Cancelled reservation | Own reservation only. |
 | GET | `/api/reservations` | Librarian/Admin | Query: `bookId?, memberId?, status?, page?, limit?` | Reservation list | Defaults `page = 1`, `limit = 20`; order is `ReservedAt ASC, ReservationId ASC`. |
 | POST | `/api/reservations/process-queue` | Librarian/Admin | `{ copyId: number }` | Selected reservation or none | Manual Phase 1 action; `copyId` is required and `bookId` is not accepted. |
-| POST | `/api/reservations/expire-holds` | Librarian/Admin | No body | Expired count, expired reservations, and promoted reservations | Manually expires overdue `NOTIFIED` holds and advances eligible queues; traces FR-FE08-019. |
+| POST | `/api/reservations/expire-holds` | Librarian/Admin | No body | `{ expiredCount, expired, promoted, notificationWarnings? }` | Manually expires overdue `NOTIFIED` holds and advances eligible queues; each optional warning is exactly `{ reservationId, copyId, code, message }` and does not alter a promoted reservation DTO; traces FR-FE08-019/021. |
 
 ---
 
@@ -380,8 +387,8 @@ stateDiagram-v2
 
 ### 12.2 Transaction Integrity
 
-- NFR-FE08-TXN-001: Queue processing and FE07 fulfillment must update reservation/copy state atomically.
-- NFR-FE08-TXN-002: Cancellation and expiration must not leave the reserved copy in an inconsistent state.
+- NFR-FE08-TXN-001: Queue processing and FE07 fulfillment must update reservation/copy state atomically; queue lifecycle audit writes commit or roll back with the queue mutation.
+- NFR-FE08-TXN-002: Create, cancellation, and expiration must not leave reservation/copy state inconsistent with their required lifecycle audit.
 
 ### 12.3 Performance
 
@@ -391,12 +398,12 @@ stateDiagram-v2
 
 ### 12.4 Logging and Audit
 
-- NFR-FE08-LOG-001: Create, cancel, queue process, notify, fulfilled, and expired actions must be traceable.
+- NFR-FE08-LOG-001: Create, cancel, queue process, and expire lifecycle audits are transaction participants. Notify-failure audit is post-commit and its own failure is returned only as a safe warning.
 
 ### 12.5 Usability
 
 - NFR-FE08-UX-001: The system must show the canonical reservation status and hold-expiry state to members.
-- NFR-FE08-UX-002: Librarians must see queue order using `ReservedAt ASC, ReservationId ASC` and the derived `queuePosition`.
+- NFR-FE08-UX-002: Librarians must see queue order using `ReservedAt ASC, ReservationId ASC` and the derived `queuePosition`. The process-queue confirmation identifies the copy and explains that the server will reselect the first currently eligible member; it must not promise a cached member selection.
 
 ---
 

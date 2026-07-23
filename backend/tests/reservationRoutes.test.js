@@ -569,6 +569,7 @@ describe('FE08 reservation management', () => {
     const notificationRequest = requester.createNotificationRequest.mock.calls[0][0];
     expect(Object.keys(notificationRequest).sort()).toEqual([
       'channel',
+      'idempotencyKey',
       'recipientEmail',
       'sourceEntityId',
       'sourceEntityType',
@@ -591,6 +592,7 @@ describe('FE08 reservation management', () => {
       },
       sourceEntityType: 'RESERVATION',
       sourceEntityId: processResponse.body.selectedReservation.reservationId,
+      idempotencyKey: `FE08:RESERVATION_AVAILABLE:${processResponse.body.selectedReservation.reservationId}`,
     });
     expect(Object.keys(notificationRequest.templateData).sort()).toEqual([
       'bookId',
@@ -659,6 +661,109 @@ describe('FE08 reservation management', () => {
     expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'RESERVED'
     );
+  });
+
+  test('expire-holds serializes every safe warning when promotion notification failure auditing fails', async () => {
+    const createNotificationRequest = jest
+      .fn()
+      .mockResolvedValueOnce({ notificationId: 1, status: 'PENDING' })
+      .mockResolvedValueOnce({ notificationId: 2, status: 'PENDING' })
+      .mockRejectedValueOnce(new Error('provider one unavailable'))
+      .mockRejectedValueOnce(new Error('provider two unavailable'));
+    const { notificationService, requester } = makeNotificationServiceDouble(
+      createNotificationRequest
+    );
+    const auditLogRepository = {
+      create: jest.fn(async (entry) => {
+        if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
+          throw new Error('audit unavailable');
+        }
+      }),
+    };
+    const { app, authDependencies, reservationDependencies } = makeTestApp({
+      notificationService,
+      auditLogRepository,
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'expire.warning.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const queueMembers = [];
+
+    for (const copyId of [1, 3]) {
+      const firstEmail = `expire.warning.first.${copyId}@example.test`;
+      const secondEmail = `expire.warning.second.${copyId}@example.test`;
+      const first = await createVerifiedUser({
+        app,
+        authDependencies,
+        reservationDependencies,
+        email: firstEmail,
+      });
+      const second = await createVerifiedUser({
+        app,
+        authDependencies,
+        reservationDependencies,
+        email: secondEmail,
+      });
+      queueMembers.push({ copyId, first, second, secondEmail });
+
+      for (const member of [first, second]) {
+        await request(app)
+          .post('/api/reservations')
+          .set('Authorization', authHeader(member.accessToken))
+          .send({ copyId })
+          .expect(201);
+      }
+
+      reservationDependencies.state.copies.find(
+        (copy) => copy.copyId === copyId
+      ).status = 'AVAILABLE';
+      await request(app)
+        .post('/api/reservations/process-queue')
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({ copyId })
+        .expect(200);
+      reservationDependencies.state.reservations.find(
+        (item) => item.userId === first.userId && item.copyId === copyId
+      ).expiresAt = new Date(Date.now() - 60 * 1000);
+    }
+
+    const expireResponse = await request(app)
+      .post('/api/reservations/expire-holds')
+      .set('Authorization', authHeader(librarian.accessToken));
+
+    expect(expireResponse.status).toBe(200);
+    expect(expireResponse.body.promoted).toHaveLength(2);
+    expect(expireResponse.body.notificationWarnings).toEqual(
+      expireResponse.body.promoted.map((promoted) => ({
+        reservationId: promoted.reservationId,
+        copyId: promoted.copyId,
+        code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+        message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+      }))
+    );
+    for (const warning of expireResponse.body.notificationWarnings) {
+      expect(Object.keys(warning).sort()).toEqual([
+        'code',
+        'copyId',
+        'message',
+        'reservationId',
+      ]);
+    }
+    expect(requester.createNotificationRequest).toHaveBeenCalledTimes(4);
+    const serializedWarnings = JSON.stringify(expireResponse.body.notificationWarnings);
+    for (const forbidden of [
+      'provider one unavailable',
+      'provider two unavailable',
+      'audit unavailable',
+      ...queueMembers.map(({ secondEmail }) => secondEmail),
+    ]) {
+      expect(serializedWarnings).not.toContain(forbidden);
+    }
   });
 
   test('process-queue keeps the hold when the FE10 requester fails and records only a safe audit', async () => {
@@ -750,10 +855,103 @@ describe('FE08 reservation management', () => {
 
     expect(processResponse.status).toBe(200);
     expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
+    expect(processResponse.body.notificationWarning).toEqual({
+      code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+      message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+    });
     expect(requester.createNotificationRequest).toHaveBeenCalledTimes(1);
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' })
     );
+  });
+
+  test('rolls back create, cancel, hold, and expire state when lifecycle auditing fails', async () => {
+    for (const action of ['create', 'cancel', 'hold', 'expire']) {
+      const { authDependencies, reservationDependencies } = makeTestApp();
+      authDependencies.state.users.push({
+        userId: 900,
+        email: 'atomic.audit.member@example.test',
+        status: 'ACTIVE',
+      });
+      authDependencies.state.rolesByUserId.set(900, ['MEMBER']);
+      const copy = reservationDependencies.state.copies.find((item) => item.copyId === 1);
+      const repository = reservationDependencies.reservationRepository;
+      const failingAuditRepository = {
+        create: jest.fn(async () => {
+          throw new Error(`audit failed during ${action}`);
+        }),
+      };
+      const auditEntry = { userId: 900, action: `RESERVATION_${action.toUpperCase()}` };
+      let operation;
+
+      if (action === 'create') {
+        operation = () => repository.createReservation({
+          userId: 900,
+          copyId: 1,
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else if (action === 'cancel') {
+        copy.status = 'RESERVED';
+        reservationDependencies.state.reservations.push({
+          reservationId: 91,
+          userId: 900,
+          copyId: 1,
+          status: 'NOTIFIED',
+          reservedAt: new Date('2026-07-20T00:00:00.000Z'),
+          notifiedAt: new Date('2026-07-21T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-23T00:00:00.000Z'),
+          cancelledAt: null,
+        });
+        operation = () => repository.cancelReservation(91, {
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else if (action === 'hold') {
+        copy.status = 'AVAILABLE';
+        reservationDependencies.state.reservations.push({
+          reservationId: 92,
+          userId: 900,
+          copyId: 1,
+          status: 'ACTIVE',
+          reservedAt: new Date('2026-07-20T00:00:00.000Z'),
+          notifiedAt: null,
+          expiresAt: null,
+          cancelledAt: null,
+        });
+        operation = () => repository.holdReservation({
+          reservationId: 92,
+          userId: 900,
+          copyId: 1,
+          notifiedAt: new Date('2026-07-21T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-23T00:00:00.000Z'),
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else {
+        copy.status = 'RESERVED';
+        reservationDependencies.state.reservations.push({
+          reservationId: 93,
+          userId: 900,
+          copyId: 1,
+          status: 'NOTIFIED',
+          reservedAt: new Date('2026-07-18T00:00:00.000Z'),
+          notifiedAt: new Date('2026-07-19T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-20T00:00:00.000Z'),
+          cancelledAt: null,
+        });
+        operation = () => repository.expireOverdueHolds({
+          now: new Date('2026-07-21T00:00:00.000Z'),
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      }
+
+      const stateBefore = JSON.stringify(reservationDependencies.state);
+      await expect(operation()).rejects.toThrow(`audit failed during ${action}`);
+      expect(JSON.stringify(reservationDependencies.state)).toBe(stateBefore);
+      expect(failingAuditRepository.create).toHaveBeenCalled();
+    }
   });
 
   test('rejects reservation when member account is inactive (FR-FE08-012)', async () => {
@@ -888,6 +1086,57 @@ describe('FE08 reservation management', () => {
     expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'AVAILABLE'
     );
+  });
+
+  test('process-queue skips a role-revoked member and selects the next eligible reservation', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const revokedMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.revoked@example.test',
+    });
+    const eligibleMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.eligible@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.role.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    for (const member of [revokedMember, eligibleMember]) {
+      await request(app)
+        .post('/api/reservations')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyId: 1 })
+        .expect(201);
+    }
+
+    authDependencies.state.rolesByUserId.set(revokedMember.userId, ['GUEST']);
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.selectedReservation).toMatchObject({
+      userId: eligibleMember.userId,
+      status: 'NOTIFIED',
+    });
+    expect(
+      reservationDependencies.state.reservations.find(
+        (reservation) => reservation.userId === revokedMember.userId
+      ).status
+    ).toBe('ACTIVE');
   });
 
   test('process-queue selects nothing when no eligible reservation exists (FR-FE08-020)', async () => {
@@ -1072,6 +1321,53 @@ describe('FE08 reservation management', () => {
       .set('Authorization', authHeader(librarian.accessToken));
     expect(invalid.status).toBe(400);
     expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('reservation list derives ACTIVE FIFO positions after the head is notified', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const first = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    const second = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.reservations[0].status = 'NOTIFIED';
+    const response = await request(app)
+      .get('/api/reservations')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .expect(200);
+    const byId = new Map(
+      response.body.reservations.map((reservation) => [reservation.reservationId, reservation])
+    );
+
+    expect(byId.get(first.body.reservation.reservationId).queuePosition).toBeNull();
+    expect(byId.get(second.body.reservation.reservationId).queuePosition).toBe(1);
   });
 
   test('notified cancellation retains notification history', async () => {

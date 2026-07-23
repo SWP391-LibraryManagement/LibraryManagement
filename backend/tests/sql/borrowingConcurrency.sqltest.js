@@ -14,6 +14,11 @@ const { sql, getPool, resetPoolForTests } = require('../../src/config/db');
 const borrowingRepository = require('../../src/repositories/borrowingRepository');
 const reservationRepository = require('../../src/repositories/reservationRepository');
 const auditLogRepository = require('../../src/repositories/auditLogRepository');
+const {
+  formatBusinessDate,
+  businessDateUtcBounds,
+  addBusinessDays,
+} = require('../../src/utils/libraryBusinessTime');
 
 jest.setTimeout(30000);
 
@@ -50,6 +55,22 @@ async function insertMember(userId, approvedBy) {
     .query(`
       INSERT INTO Members (UserId, Status, ApprovedAt, ApprovedBy)
       VALUES (@UserId, 'APPROVED', GETDATE(), @ApprovedBy)
+    `);
+
+  await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      INSERT INTO UserRoles (UserId, RoleId)
+      SELECT @UserId, RoleId
+      FROM Roles
+      WHERE RoleName = 'MEMBER'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM UserRoles
+          WHERE UserId = @UserId
+            AND RoleId = Roles.RoleId
+        );
     `);
 }
 
@@ -256,16 +277,28 @@ async function cleanSeed(seed) {
   }
 
   for (const userId of seed.userIds) {
+    await pool.request().input('UserId', sql.Int, userId).query('DELETE FROM UserRoles WHERE UserId = @UserId');
+  }
+
+  for (const userId of seed.userIds) {
     await pool.request().input('UserId', sql.Int, userId).query('DELETE FROM Users WHERE UserId = @UserId');
   }
 }
 
 async function approve(requestId, actorUserId) {
+  const approvalDate = new Date('2026-07-13T00:00:00.000Z');
+  const borrowDate = formatBusinessDate(approvalDate);
+  const { start: businessDayStartUtc, end: businessDayEndUtc } =
+    businessDateUtcBounds(approvalDate);
+
   return borrowingRepository.approveBorrowRequest({
     requestId,
     approvedBy: actorUserId,
-    approvalDate: new Date('2026-07-13T00:00:00.000Z'),
-    dueDate: new Date('2026-07-27T00:00:00.000Z'),
+    approvalDate,
+    borrowDate,
+    dueDate: addBusinessDays(borrowDate, 14),
+    businessDayStartUtc,
+    businessDayEndUtc,
     auditLogRepository,
     auditEntry: {
       userId: actorUserId,
@@ -394,6 +427,7 @@ test('active reservation queue blocks ordinary SQL approval before queue hold su
     const queueOwnerUserId = await insertUser(seed, 'queue-owner');
     const actorUserId = await insertUser(seed, 'queue-actor');
     await insertMember(borrowerUserId, actorUserId);
+    await insertMember(queueOwnerUserId, actorUserId);
     const bookId = await findExistingBookId();
     const [copyId] = await insertCopies(seed, bookId, 1);
     const requestId = await insertBorrowRequest(seed, {
@@ -413,6 +447,7 @@ test('active reservation queue blocks ordinary SQL approval before queue hold su
     });
     const held = await reservationRepository.holdReservation({
       reservationId,
+      userId: queueOwnerUserId,
       copyId,
       notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
       expiresAt: new Date('2026-07-15T00:00:00.000Z'),
@@ -429,6 +464,58 @@ test('active reservation queue blocks ordinary SQL approval before queue hold su
       .input('CopyId', sql.Int, copyId)
       .query('SELECT Status FROM BookCopies WHERE CopyId = @CopyId');
     expect(copyRow.recordset[0].Status).toBe('RESERVED');
+  } finally {
+    await cleanSeed(seed);
+  }
+});
+
+test('concurrent reservation create and hold for one member/copy complete without deadlock', async () => {
+  const seed = createSeed();
+
+  try {
+    const memberUserId = await insertUser(seed, 'reservation-create-hold-member');
+    await insertMember(memberUserId, memberUserId);
+    const bookId = await findExistingBookId();
+    const [copyId] = await insertCopies(seed, bookId, 1);
+    const reservationId = await insertReservation(seed, {
+      userId: memberUserId,
+      copyId,
+      status: 'ACTIVE',
+      reservedAt: new Date('2026-07-12T00:00:00.000Z'),
+    });
+
+    const [createResult, holdResult] = await Promise.all([
+      reservationRepository.createReservation({
+        userId: memberUserId,
+        copyId,
+      }),
+      reservationRepository.holdReservation({
+        reservationId,
+        userId: memberUserId,
+        copyId,
+        notifiedAt: new Date('2026-07-13T00:00:00.000Z'),
+        expiresAt: new Date('2026-07-15T00:00:00.000Z'),
+      }),
+    ]);
+
+    expect(['COPY_AVAILABLE', 'DUPLICATE_ACTIVE_RESERVATION']).toContain(createResult.outcome);
+    expect(holdResult).toMatchObject({ reservationId, status: 'NOTIFIED' });
+
+    const state = await pool
+      .request()
+      .input('CopyId', sql.Int, copyId)
+      .input('ReservationId', sql.Int, reservationId)
+      .query(`
+        SELECT
+          (SELECT Status FROM BookCopies WHERE CopyId = @CopyId) AS CopyStatus,
+          (SELECT Status FROM Reservations WHERE ReservationId = @ReservationId)
+            AS ReservationStatus;
+      `);
+
+    expect(state.recordset[0]).toMatchObject({
+      CopyStatus: 'RESERVED',
+      ReservationStatus: 'NOTIFIED',
+    });
   } finally {
     await cleanSeed(seed);
   }
@@ -662,13 +749,20 @@ test('SQL reservation audit failure rolls back borrowing and fulfillment state',
         }
       }),
     };
+    const approvalDate = new Date('2026-07-13T00:00:00.000Z');
+    const borrowDate = formatBusinessDate(approvalDate);
+    const { start: businessDayStartUtc, end: businessDayEndUtc } =
+      businessDateUtcBounds(approvalDate);
 
     await expect(
       borrowingRepository.approveBorrowRequest({
         requestId,
         approvedBy: actorUserId,
-        approvalDate: new Date('2026-07-13T00:00:00.000Z'),
-        dueDate: new Date('2026-07-27T00:00:00.000Z'),
+        approvalDate,
+        borrowDate,
+        dueDate: addBusinessDays(borrowDate, 14),
+        businessDayStartUtc,
+        businessDayEndUtc,
         auditLogRepository: reservationAuditFailingRepository,
         auditEntry: {
           userId: actorUserId,
@@ -727,7 +821,7 @@ test('approval does not approve a pending request whose member row is missing', 
 
     const result = await approve(requestId, actorUserId);
 
-    expect(result).toEqual({ outcome: 'REQUEST_NOT_APPROVABLE' });
+    expect(result).toEqual({ outcome: 'MEMBER_ROLE_REQUIRED' });
     const requestRow = await pool
       .request()
       .input('RequestId', sql.Int, requestId)
@@ -889,6 +983,7 @@ test('concurrent SQL renewals update one borrowed detail only once', async () =>
   try {
     const borrowerUserId = await insertUser(seed, 'renew-borrower');
     const actorUserId = await insertUser(seed, 'renew-actor');
+    await insertMember(borrowerUserId, actorUserId);
     const bookId = await findExistingBookId();
     const [copyId] = await insertCopies(seed, bookId, 1);
     const requestId = await insertBorrowRequest(seed, {
@@ -909,16 +1004,22 @@ test('concurrent SQL renewals update one borrowed detail only once', async () =>
     const renewalResults = await Promise.all([
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
+        userId: borrowerUserId,
+        today: new Date(),
         newDueDate: expectedDueDate,
       }),
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
+        userId: borrowerUserId,
+        today: new Date(),
         newDueDate: expectedDueDate,
       }),
     ]);
 
-    expect(renewalResults.filter(Boolean)).toHaveLength(1);
-    expect(renewalResults.filter((result) => result === null)).toHaveLength(1);
+    expect(renewalResults.filter((result) => result.outcome === 'RENEWED')).toHaveLength(1);
+    expect(
+      renewalResults.filter((result) => result.outcome === 'RENEWAL_LIMIT_REACHED')
+    ).toHaveLength(1);
     const finalDetail = await borrowingRepository.findBorrowDetailById(borrowDetailId);
     expect(finalDetail.renewalCount).toBe(1);
     expect(new Date(finalDetail.dueDate).toISOString()).toBe(expectedDueDate.toISOString());
@@ -953,9 +1054,12 @@ test('concurrent SQL returns update one borrowed detail and write one audit', as
       returnDetail(borrowDetailId, actorUserId, returnDate),
     ]);
 
-    expect(returnResults.filter(Boolean)).toHaveLength(1);
-    expect(returnResults.filter((result) => result === null)).toHaveLength(1);
-    expect(returnResults.find(Boolean)).toMatchObject({ borrowDetailId, status: 'RETURNED' });
+    expect(returnResults.filter((result) => result?.borrowDetailId === borrowDetailId)).toHaveLength(1);
+    expect(returnResults.filter((result) => result?.outcome === 'BORROW_STATE_CONFLICT')).toHaveLength(1);
+    expect(returnResults.find((result) => result?.borrowDetailId === borrowDetailId)).toMatchObject({
+      borrowDetailId,
+      status: 'RETURNED',
+    });
 
     const detailRow = await pool
       .request()
@@ -991,6 +1095,59 @@ test('concurrent SQL returns update one borrowed detail and write one audit', as
   }
 });
 
+test('concurrent SQL returns for different details of one request complete without deadlock', async () => {
+  const seed = createSeed();
+
+  try {
+    const borrowerUserId = await insertUser(seed, 'return-request-borrower');
+    const actorUserId = await insertUser(seed, 'return-request-actor');
+    const bookId = await findExistingBookId();
+    const [firstCopyId, secondCopyId] = await insertCopies(seed, bookId, 2);
+    const requestId = await insertBorrowRequest(seed, {
+      userId: borrowerUserId,
+      createdBy: actorUserId,
+      status: 'APPROVED',
+    });
+    const firstDetailId = await insertBorrowDetail(seed, {
+      requestId,
+      copyId: firstCopyId,
+      status: 'BORROWED',
+    });
+    const secondDetailId = await insertBorrowDetail(seed, {
+      requestId,
+      copyId: secondCopyId,
+      status: 'BORROWED',
+    });
+    await setCopyStatus(firstCopyId, 'BORROWED');
+    await setCopyStatus(secondCopyId, 'BORROWED');
+    const returnDate = new Date();
+
+    const results = await Promise.all([
+      borrowingRepository.returnBorrowDetail({
+        borrowDetailId: firstDetailId,
+        detailStatus: 'RETURNED',
+        copyStatus: 'AVAILABLE',
+        returnDate,
+      }),
+      borrowingRepository.returnBorrowDetail({
+        borrowDetailId: secondDetailId,
+        detailStatus: 'RETURNED',
+        copyStatus: 'AVAILABLE',
+        returnDate,
+      }),
+    ]);
+
+    expect(results.map((result) => result.status)).toEqual(['RETURNED', 'RETURNED']);
+    const requestRow = await pool
+      .request()
+      .input('RequestId', sql.Int, requestId)
+      .query('SELECT Status FROM BorrowRequests WHERE RequestId = @RequestId');
+    expect(requestRow.recordset[0].Status).toBe('COMPLETED');
+  } finally {
+    await cleanSeed(seed);
+  }
+});
+
 // FR-FE07-022, NFR-FE07-TXN-001: a failure from the injected audit repository occurs inside
 // the real SQL transaction and leaves no request, detail, copy, or audit mutation behind.
 test('SQL create audit failure rolls back request, detail, copy, and audit rows', async () => {
@@ -998,6 +1155,7 @@ test('SQL create audit failure rolls back request, detail, copy, and audit rows'
 
   try {
     const borrowerUserId = await insertUser(seed, 'create-audit-borrower');
+    await insertMember(borrowerUserId, borrowerUserId);
     const bookId = await findExistingBookId();
     const [copyId] = await insertCopies(seed, bookId, 1);
     const failingAuditLogRepository = {
@@ -1005,11 +1163,19 @@ test('SQL create audit failure rolls back request, detail, copy, and audit rows'
         throw new Error('SQL create audit failure');
       }),
     };
+    const requestDate = new Date();
+    const businessDate = formatBusinessDate(requestDate);
+    const { start: businessDayStartUtc, end: businessDayEndUtc } =
+      businessDateUtcBounds(requestDate);
 
     await expect(
       borrowingRepository.createBorrowRequest({
         userId: borrowerUserId,
         copyIds: [copyId],
+        requestDate,
+        businessDate,
+        businessDayStartUtc,
+        businessDayEndUtc,
         auditLogRepository: failingAuditLogRepository,
         auditEntry: {
           userId: borrowerUserId,
@@ -1070,13 +1236,20 @@ test('SQL approval audit failure rolls back request, detail due date, copy, and 
         throw new Error('SQL approval audit failure');
       }),
     };
+    const approvalDate = new Date('2026-07-13T00:00:00.000Z');
+    const borrowDate = formatBusinessDate(approvalDate);
+    const { start: businessDayStartUtc, end: businessDayEndUtc } =
+      businessDateUtcBounds(approvalDate);
 
     await expect(
       borrowingRepository.approveBorrowRequest({
         requestId,
         approvedBy: actorUserId,
-        approvalDate: new Date('2026-07-13T00:00:00.000Z'),
-        dueDate: new Date('2026-07-27T00:00:00.000Z'),
+        approvalDate,
+        borrowDate,
+        dueDate: addBusinessDays(borrowDate, 14),
+        businessDayStartUtc,
+        businessDayEndUtc,
         auditLogRepository: failingAuditLogRepository,
         auditEntry: {
           userId: actorUserId,
@@ -1189,7 +1362,7 @@ test('SQL return audit failure rolls back request, detail return date, copy, and
 
 test.each([
   ['inactive account', 'MEMBER_ACCOUNT_INACTIVE'],
-  ['non-approved membership', 'MEMBERSHIP_NOT_APPROVED'],
+  ['removed member role', 'MEMBER_ROLE_REQUIRED'],
   ['unpaid positive fine', 'UNPAID_FINE_BLOCKS_BORROWING'],
   ['overdue active loan', 'OVERDUE_LOAN_BLOCKS_BORROWING'],
 ])('SQL approval revalidates %s inside the transaction', async (blocker, expectedOutcome) => {
@@ -1213,11 +1386,17 @@ test.each([
         .request()
         .input('UserId', sql.Int, borrowerUserId)
         .query("UPDATE Users SET Status = 'INACTIVE' WHERE UserId = @UserId");
-    } else if (blocker === 'non-approved membership') {
+    } else if (blocker === 'removed member role') {
       await pool
         .request()
         .input('UserId', sql.Int, borrowerUserId)
-        .query("UPDATE Members SET Status = 'REJECTED' WHERE UserId = @UserId");
+        .query(`
+          DELETE ur
+          FROM UserRoles ur
+          INNER JOIN Roles r ON r.RoleId = ur.RoleId
+          WHERE ur.UserId = @UserId
+            AND r.RoleName = 'MEMBER'
+        `);
     } else if (blocker === 'unpaid positive fine') {
       await insertUnpaidFine(borrowerUserId, requestedDetailId);
     } else {
@@ -1282,6 +1461,7 @@ test('SQL renewal audit failure rolls back due date, renewal count, and audit ro
   try {
     const borrowerUserId = await insertUser(seed, 'renew-audit-borrower');
     const actorUserId = await insertUser(seed, 'renew-audit-actor');
+    await insertMember(borrowerUserId, actorUserId);
     const bookId = await findExistingBookId();
     const [copyId] = await insertCopies(seed, bookId, 1);
     const requestId = await insertBorrowRequest(seed, { userId: borrowerUserId, createdBy: actorUserId, status: 'APPROVED' });
@@ -1293,6 +1473,8 @@ test('SQL renewal audit failure rolls back due date, renewal count, and audit ro
     await expect(
       borrowingRepository.renewBorrowDetail({
         borrowDetailId,
+        userId: borrowerUserId,
+        today: new Date(),
         newDueDate: new Date('2026-07-27T00:00:00.000Z'),
         auditLogRepository: failingAuditLogRepository,
         auditEntry: { userId: actorUserId, action: 'BORROW_DETAIL_RENEW', targetType: 'BORROW_DETAIL', targetId: borrowDetailId },

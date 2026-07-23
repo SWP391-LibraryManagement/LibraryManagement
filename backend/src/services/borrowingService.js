@@ -1,8 +1,10 @@
 const errors = require('../utils/safeErrors');
 const {
   formatBusinessDate,
+  businessDateUtcBounds,
   addBusinessDays,
   compareBusinessDates,
+  overdueDaysBetween,
 } = require('../utils/libraryBusinessTime');
 
 const MAX_ACTIVE_BORROWED_COPIES = 5;
@@ -32,20 +34,10 @@ function toPositiveInteger(value, fieldName) {
   return numberValue;
 }
 
-function toDateOnly(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
 function addDays(date, days) {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
   return nextDate;
-}
-
-function differenceInCalendarDays(leftDate, rightDate) {
-  const left = toDateOnly(new Date(leftDate));
-  const right = toDateOnly(new Date(rightDate));
-  return Math.max(0, Math.ceil((left.getTime() - right.getTime()) / 86400000));
 }
 
 function createBorrowingService({
@@ -99,6 +91,9 @@ function createBorrowingService({
         templateData,
         sourceEntityType: 'BORROWING',
         sourceEntityId,
+        idempotencyKey: `FE07:DUE_DATE_REMINDER:${templateData.purpose}:${
+          templateData.borrowDetailId || sourceEntityId
+        }`,
       });
     } catch {
       // A notification failure must not undo a completed borrowing state change.
@@ -117,12 +112,16 @@ function createBorrowingService({
     }
   }
 
-  // @spec FR-FE07-015 — reject borrow/renew when account inactive or membership not approved (BR-FE07-004, EC-FE07-002/003)
+  // @spec FR-FE07-015 — require the current MEMBER role and an active account (BR-FE07-004).
   async function ensureEligibleMember(userId) {
     const eligibility = await borrowingRepository.getMemberEligibility(userId);
 
     if (!eligibility) {
       throw errors.notFound('MEMBER_NOT_FOUND', 'Member account was not found.');
+    }
+
+    if (eligibility.hasMemberRole === false) {
+      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The account no longer has the member role.');
     }
 
     if (eligibility.userStatus !== 'ACTIVE') {
@@ -139,12 +138,12 @@ function createBorrowingService({
   }
 
   // @spec FR-FE07-016 — block borrow/renew when member has an unpaid fine (>0) or an overdue active loan (BR-FE07-006, AF-FE07-001)
-  async function ensureNoBorrowingBlockers(userId) {
+  async function ensureNoBorrowingBlockers(userId, referenceDate = clock()) {
     if (await borrowingRepository.hasBlockingFine(userId)) {
       throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
     }
 
-    if (await borrowingRepository.hasOverdueActiveLoans(userId, clock())) {
+    if (await borrowingRepository.hasOverdueActiveLoans(userId, referenceDate)) {
       throw errors.conflict('OVERDUE_LOAN_BLOCKS_BORROWING', 'Overdue borrowed item blocks borrowing.');
     }
   }
@@ -225,12 +224,18 @@ function createBorrowingService({
     }
   }
 
-  async function validateDailyBorrowLimit(userId, requestedCount, eligibility, mode = 'request') {
-    const businessDate = formatBusinessDate(clock());
+  async function validateDailyBorrowLimit(
+    userId,
+    requestedCount,
+    eligibility,
+    mode = 'request',
+    referenceDate = clock()
+  ) {
+    const { start, end } = businessDateUtcBounds(referenceDate);
     const dailyLimit = getDailyBorrowLimit(eligibility);
     const currentCount = mode === 'approval'
-      ? await borrowingRepository.countBorrowedCopiesOnDate?.(userId, businessDate) || 0
-      : await borrowingRepository.countRequestedCopiesOnDate?.(userId, businessDate) || 0;
+      ? await borrowingRepository.countBorrowedCopiesOnDate?.(userId, start, end) || 0
+      : await borrowingRepository.countRequestedCopiesOnDate?.(userId, start, end) || 0;
 
     if (currentCount + requestedCount > dailyLimit) {
       throw errors.conflict(
@@ -256,11 +261,17 @@ function createBorrowingService({
 
     const userId = actor.userId;
     const copyIds = normalizeCopyIds(input.copyIds);
+    const requestDate = clock();
+    const businessDate = formatBusinessDate(requestDate);
+    const {
+      start: businessDayStartUtc,
+      end: businessDayEndUtc,
+    } = businessDateUtcBounds(requestDate);
 
     const eligibility = await ensureEligibleMember(userId);
-    await ensureNoBorrowingBlockers(userId);
+    await ensureNoBorrowingBlockers(userId, requestDate);
     await validateBorrowLimit(userId, copyIds.length);
-    await validateDailyBorrowLimit(userId, copyIds.length, eligibility);
+    await validateDailyBorrowLimit(userId, copyIds.length, eligibility, 'request', requestDate);
     await validateCopiesBorrowable(copyIds, userId);
 
     const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_CREATE', {
@@ -268,15 +279,75 @@ function createBorrowingService({
       targetId: null,
       metadata: { copyIds },
     });
-    const borrowRequest = await borrowingRepository.createBorrowRequest({
+    const createResult = await borrowingRepository.createBorrowRequest({
       userId,
       copyIds,
+      requestDate,
+      businessDate,
+      businessDayStartUtc,
+      businessDayEndUtc,
       auditLogRepository,
       auditEntry,
     });
 
+    if (createResult?.outcome === 'MEMBER_ROLE_REQUIRED') {
+      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The account no longer has the member role.');
+    }
+
+    if (createResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
+      throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
+    }
+
+    if (createResult?.outcome === 'UNPAID_FINE_BLOCKS_BORROWING') {
+      throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
+    }
+
+    if (createResult?.outcome === 'OVERDUE_LOAN_BLOCKS_BORROWING') {
+      throw errors.conflict('OVERDUE_LOAN_BLOCKS_BORROWING', 'Overdue borrowed item blocks borrowing.');
+    }
+
+    if (createResult?.outcome === 'BORROW_LIMIT_EXCEEDED') {
+      throw errors.conflict(
+        'BORROW_LIMIT_EXCEEDED',
+        'A member cannot have more than 5 active borrowed copies.'
+      );
+    }
+
+    if (createResult?.outcome === 'BORROW_DAILY_LIMIT_EXCEEDED') {
+      throw errors.conflict(
+        'BORROW_DAILY_LIMIT_EXCEEDED',
+        `This account can borrow at most ${createResult.dailyLimit} copies per day.`
+      );
+    }
+
+    if (createResult?.outcome === 'COPY_NOT_FOUND') {
+      throw errors.notFound('COPY_NOT_FOUND', 'Requested copy was not found.');
+    }
+
+    if (createResult?.outcome === 'BOOK_INACTIVE') {
+      throw errors.conflict('BOOK_INACTIVE', 'The requested book is inactive and cannot be borrowed.');
+    }
+
+    if (createResult?.outcome === 'RESERVATION_QUEUE_PRIORITY') {
+      throw errors.conflict(
+        'RESERVATION_QUEUE_PRIORITY',
+        'Reservation queue priority must be processed before borrowing.'
+      );
+    }
+
+    if (createResult?.outcome === 'RESERVATION_STATE_CONFLICT') {
+      throw errors.conflict(
+        'RESERVATION_STATE_CONFLICT',
+        'Reserved copy state changed. Reload and try again.'
+      );
+    }
+
+    if (createResult?.outcome !== 'CREATED') {
+      throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
+    }
+
     return {
-      borrowRequest,
+      borrowRequest: createResult.borrowRequest,
     };
   }
 
@@ -386,20 +457,26 @@ function createBorrowingService({
     }
 
     const copyIds = borrowRequest.details.map((detail) => detail.copyId);
+    const approvalDate = clock();
+    const borrowDate = formatBusinessDate(approvalDate);
+    const dueDate = new Date(`${addBusinessDays(borrowDate, LOAN_DAYS)}T00:00:00.000Z`);
+    const {
+      start: businessDayStartUtc,
+      end: businessDayEndUtc,
+    } = businessDateUtcBounds(approvalDate);
 
     const eligibility = await ensureEligibleMember(borrowRequest.userId);
-    await ensureNoBorrowingBlockers(borrowRequest.userId);
+    await ensureNoBorrowingBlockers(borrowRequest.userId, approvalDate);
     await validateBorrowLimit(borrowRequest.userId, copyIds.length);
     const dailyLimit = await validateDailyBorrowLimit(
       borrowRequest.userId,
       copyIds.length,
       eligibility,
-      'approval'
+      'approval',
+      approvalDate
     );
     await validateCopiesBorrowable(copyIds, borrowRequest.userId);
 
-    const approvalDate = clock();
-    const dueDate = addDays(approvalDate, LOAN_DAYS);
     const auditEntry = buildAuditEntry(context, 'BORROW_REQUEST_APPROVE', {
       userId: actor.userId,
       targetId: requestId,
@@ -409,8 +486,10 @@ function createBorrowingService({
       requestId,
       approvedBy: actor.userId,
       approvalDate,
+      borrowDate,
       dueDate,
-      dailyLimit,
+      businessDayStartUtc,
+      businessDayEndUtc,
       auditLogRepository,
       auditEntry,
     });
@@ -424,10 +503,15 @@ function createBorrowingService({
     }
 
     if (approvalResult?.outcome === 'BORROW_DAILY_LIMIT_EXCEEDED') {
+      const lockedDailyLimit = approvalResult.dailyLimit || dailyLimit;
       throw errors.conflict(
         'BORROW_DAILY_LIMIT_EXCEEDED',
-        `This account can borrow at most ${dailyLimit} copies per day.`
+        `This account can borrow at most ${lockedDailyLimit} copies per day.`
       );
+    }
+
+    if (approvalResult?.outcome === 'MEMBER_ROLE_REQUIRED') {
+      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The request owner no longer has the member role.');
     }
 
     if (approvalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
@@ -571,7 +655,7 @@ function createBorrowingService({
     }
 
     const { detailStatus, copyStatus } = mapReturnConditionToStatuses(input.condition);
-    const overdueDays = differenceInCalendarDays(returnDate, new Date(borrowDetail.dueDate));
+    const overdueDays = overdueDaysBetween(borrowDetail.dueDate, returnDate);
     const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RETURN', {
       userId: actor.userId,
       targetType: 'BORROW_DETAIL',
@@ -596,6 +680,13 @@ function createBorrowingService({
 
     if (!returnedDetail) {
       throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be returned.');
+    }
+
+    if (returnedDetail.outcome === 'BORROW_STATE_CONFLICT') {
+      throw errors.conflict(
+        'BORROW_STATE_CONFLICT',
+        'Borrow detail and copy state are inconsistent. Reload and try again.'
+      );
     }
 
     return {
@@ -638,7 +729,7 @@ function createBorrowingService({
       throw errors.conflict('RENEWAL_LIMIT_REACHED', 'This borrowed item has already been renewed.');
     }
 
-    if (toDateOnly(new Date(borrowDetail.dueDate)) < toDateOnly(clock())) {
+    if (overdueDaysBetween(borrowDetail.dueDate, clock()) > 0) {
       throw errors.conflict('BORROW_DETAIL_OVERDUE', 'Overdue borrowed items cannot be renewed.');
     }
 
@@ -663,16 +754,51 @@ function createBorrowingService({
         notes: input.notes || null,
       },
     });
-    const renewedDetail = await borrowingRepository.renewBorrowDetail({
+    const renewalResult = await borrowingRepository.renewBorrowDetail({
       borrowDetailId,
+      userId: borrowDetail.userId,
+      today: formatBusinessDate(clock()),
       newDueDate,
       auditLogRepository,
       auditEntry,
     });
 
-    if (!renewedDetail) {
+    if (renewalResult?.outcome === 'MEMBER_ROLE_REQUIRED') {
+      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The account no longer has the member role.');
+    }
+
+    if (renewalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
+      throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
+    }
+
+    if (renewalResult?.outcome === 'BORROW_DETAIL_NOT_BORROWED') {
+      throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be renewed.');
+    }
+
+    if (renewalResult?.outcome === 'BORROW_DETAIL_OVERDUE') {
+      throw errors.conflict('BORROW_DETAIL_OVERDUE', 'Overdue borrowed items cannot be renewed.');
+    }
+
+    if (renewalResult?.outcome === 'UNPAID_FINE_BLOCKS_BORROWING') {
+      throw errors.conflict('UNPAID_FINE_BLOCKS_BORROWING', 'Unpaid fine blocks borrowing.');
+    }
+
+    if (renewalResult?.outcome === 'OVERDUE_LOAN_BLOCKS_BORROWING') {
+      throw errors.conflict('OVERDUE_LOAN_BLOCKS_BORROWING', 'Overdue borrowed item blocks borrowing.');
+    }
+
+    if (renewalResult?.outcome === 'RESERVATION_BLOCKS_RENEWAL') {
+      throw errors.conflict(
+        'RESERVATION_BLOCKS_RENEWAL',
+        'Another member has reservation priority for this copy.'
+      );
+    }
+
+    if (renewalResult?.outcome !== 'RENEWED') {
       throw errors.conflict('RENEWAL_LIMIT_REACHED', 'This borrowed item has already been renewed.');
     }
+
+    const renewedDetail = renewalResult.borrowDetail;
 
     await requestDueDateNotification({
       userId: borrowDetail.userId,

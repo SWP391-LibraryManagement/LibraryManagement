@@ -15,6 +15,49 @@ function normalizeStatus(value, allowedStatuses) {
   return allowedStatuses.has(normalized) ? normalized : 'UNKNOWN';
 }
 
+function escapeRegexLiteral(character) {
+  return character.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+}
+
+function sqlLikePatternToRegExp(pattern) {
+  let source = '^';
+
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index];
+    if (character === '%') {
+      source += '.*';
+    } else if (character === '_') {
+      source += '.';
+    } else if (character === '[') {
+      const negated = pattern[index + 1] === '^';
+      const contentStart = index + (negated ? 2 : 1);
+      const closingSearchStart =
+        pattern[contentStart] === ']' ? contentStart + 1 : contentStart;
+      const closingIndex = pattern.indexOf(']', closingSearchStart);
+      if (closingIndex > contentStart) {
+        const classBody = pattern
+          .slice(contentStart, closingIndex)
+          .replace(/\\/g, '\\\\')
+          .replace(/\]/g, '\\]')
+          .replace(/\^/g, '\\^');
+        source += `[${negated ? '^' : ''}${classBody}]`;
+        index = closingIndex;
+      } else {
+        source += '\\[';
+      }
+    } else {
+      source += escapeRegexLiteral(character);
+    }
+  }
+
+  return new RegExp(`${source}$`, 'iu');
+}
+
+function matchesSqlLike(value, query) {
+  const pattern = `%${String(query).trim()}%`;
+  return sqlLikePatternToRegExp(pattern).test(String(value ?? ''));
+}
+
 function toDateKey(value) {
   if (!value) return null;
   const date = new Date(value);
@@ -273,6 +316,18 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
 
         const roles = authState.rolesByUserId.get(user.userId) || [];
+        if (filters.q) {
+          const searchableValues = [
+            user.userId,
+            user.status,
+            memberStatus,
+            ...roles,
+          ];
+          if (!searchableValues.some((value) => matchesSqlLike(value, filters.q))) {
+            return [];
+          }
+        }
+
         const selectedRoles = filters.roleId
           ? roles.filter((role) => roleIdForName(role) === Number(filters.roleId))
           : roles;
@@ -302,14 +357,14 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
       }
 
-      const approvedMembers = users.filter((user) => user.memberStatus === 'APPROVED');
+      const historicallyApprovedMembers = users.filter((user) => user.memberApprovedAt);
       const membershipByStatus = users
         .filter((user) => user.memberStatus)
         .reduce((accumulator, user) => {
           accumulator[user.memberStatus] = (accumulator[user.memberStatus] || 0) + 1;
           return accumulator;
         }, {});
-      const newMembersByPeriod = approvedMembers.reduce((accumulator, user) => {
+      const newMembersByPeriod = historicallyApprovedMembers.reduce((accumulator, user) => {
           const approvedAt = user.memberApprovedAt;
           if (!approvedAt) {
             return accumulator;
@@ -335,11 +390,7 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
           createdAt: user.createdAt || null,
           approvedAt: user.memberApprovedAt || null,
         }))
-        .sort(
-          (left, right) =>
-            new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime() ||
-            right.userId - left.userId
-        );
+        .sort((left, right) => left.userId - right.userId);
 
       return buildReport(
         {

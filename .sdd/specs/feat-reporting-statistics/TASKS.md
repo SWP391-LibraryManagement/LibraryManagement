@@ -157,3 +157,8 @@ Detailed automated evidence is recorded in
 - [x] Reconfirm borrowing, inventory, and user report filters map to server query parameters.
 - [x] Reconfirm charts consume deterministic backend metrics with no fake fallback.
 - [x] Reduce report-only bottom whitespace and retain responsive layout tests.
+- [~] **FE12-N10 - Restore in-memory report parity and traceability.**
+  - Maps to: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
+  - RED: user `q` failed to match ID/status/membership/role and SQL wildcard patterns, inactive historical approvals disappeared from growth metrics, and fixture order leaked into detail rows.
+  - GREEN: the in-memory repository matches production parameterized SQL `LIKE` search including `%`, `_`, bracket ranges, and negated classes over approved fields, plus historical `ApprovedAt` and `UserId ASC` semantics; traceability remains `16/11/11`.
+  - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found the valid SQL `LIKE` closing-bracket parity edge plus bounded cross-feature evidence gaps. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.

@@ -201,3 +201,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - Automatic FE07 return-to-queue integration.
 - FE10 delivery worker.
 - Automatic expiration job.
+
+## 8. V0.5.3 Atomic Lifecycle Audit And Warning Propagation Remediation
+
+- [~] **FE08-T040 - Commit lifecycle state and audit together.**
+  - Maps to: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
+  - RED: repository tests require audit-before-commit for create/cancel/hold/expire; service/route tests require rollback, safe post-commit warning, and serialization of expiration-promotion warnings; frontend tests reject cached-member confirmation.
+  - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
+  - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.

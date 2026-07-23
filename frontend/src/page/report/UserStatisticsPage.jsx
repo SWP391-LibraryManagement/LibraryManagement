@@ -17,6 +17,7 @@ import { getRoleLabel, getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
+const REPORT_PAGE_SIZE = 20;
 
 export default function UserStatisticsPage() {
   const [from, setFrom] = useState('');
@@ -24,17 +25,23 @@ export default function UserStatisticsPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [membershipStatus, setMembershipStatus] = useState('');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [page, setPage] = useState(1);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
 
-  async function loadReport(event) {
-    event?.preventDefault();
+  async function loadReport(page, filters = activeFilters) {
     setLoading(true);
     setNotice('');
     try {
-      const data = await reportApi.users(buildUserReportParams({ q: query, fromDate: from, toDate: to, status, membershipStatus }));
+      const data = await reportApi.users(buildUserReportParams({
+        ...filters,
+        page,
+        limit: REPORT_PAGE_SIZE,
+      }));
       setReport(data);
+      setPage(data.page || page);
     } catch (error) {
       setReport(null);
       setNotice(error.message);
@@ -43,8 +50,16 @@ export default function UserStatisticsPage() {
     }
   }
 
+  function applyFilters(event) {
+    event.preventDefault();
+    const filters = { q: query, fromDate: from, toDate: to, status, membershipStatus };
+    setActiveFilters(filters);
+    setPage(1);
+    loadReport(1, filters);
+  }
+
   useEffect(() => {
-    const timer = window.setTimeout(() => { loadReport(); }, 0);
+    const timer = window.setTimeout(() => { loadReport(1, {}); }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -52,6 +67,8 @@ export default function UserStatisticsPage() {
   const metrics = report?.metrics || {};
   const rows = report?.rows || [];
   const totalRows = report?.totalRows || 0;
+  const pageLimit = report?.limit || REPORT_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageLimit));
   const statusData = objectToChart(metrics.usersByStatus);
   const growthData = objectToChart(
     metrics.newMembersByPeriod,
@@ -75,10 +92,10 @@ export default function UserStatisticsPage() {
       active="user-statistics"
       title="Thống kê người dùng"
       subtitle="Thống kê người dùng dạng aggregate, tránh lộ thông tin cá nhân không cần thiết."
-      actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(page, activeFilters)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
-      <form onSubmit={loadReport}><DataToolbar
+      <form onSubmit={applyFilters}><DataToolbar
         search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm mã người dùng, vai trò, trạng thái..." aria-label="Tìm trong thống kê người dùng" /></>}
         filters={(
           <div className="field report-date-filter">
@@ -172,6 +189,11 @@ export default function UserStatisticsPage() {
                 </tr>
               ))}
             </DataTable>
+            <div className="pagination report-pagination">
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page - 1, activeFilters)} disabled={loading || page <= 1}>Trang trước</button>
+              <span className="muted">Trang {page}/{totalPages}</span>
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page + 1, activeFilters)} disabled={loading || page >= totalPages}>Trang sau</button>
+            </div>
           </div>
         </>
       )}

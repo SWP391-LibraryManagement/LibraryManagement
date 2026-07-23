@@ -22,6 +22,20 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
   const reservations = [];
   const memberStatuses = new Map();
 
+  function snapshotMutationState() {
+    return {
+      reservations: clone(reservations),
+      copies: clone(copies),
+      nextReservationId,
+    };
+  }
+
+  function restoreMutationState(snapshot) {
+    reservations.splice(0, reservations.length, ...snapshot.reservations);
+    copies.splice(0, copies.length, ...snapshot.copies);
+    nextReservationId = snapshot.nextReservationId;
+  }
+
   function getUser(userId) {
     return authState.users.find((user) => user.userId === Number(userId)) || null;
   }
@@ -58,13 +72,25 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
     const user = getUser(reservation.userId);
     const copy = getCopy(reservation.copyId);
+    const queuePosition = reservation.status === 'ACTIVE'
+      ? reservations
+        .filter(
+          (item) => item.copyId === reservation.copyId && item.status === 'ACTIVE'
+        )
+        .sort(
+          (left, right) =>
+            new Date(left.reservedAt).getTime() - new Date(right.reservedAt).getTime()
+            || left.reservationId - right.reservationId
+        )
+        .findIndex((item) => item.reservationId === reservation.reservationId) + 1
+      : null;
 
     return clone({
       reservationId: reservation.reservationId,
       userId: reservation.userId,
       copyId: reservation.copyId,
       reservedAt: reservation.reservedAt,
-      queuePosition: reservation.queuePosition,
+      queuePosition,
       expiresAt: reservation.expiresAt,
       notifiedAt: reservation.notifiedAt,
       cancelledAt: reservation.cancelledAt,
@@ -93,6 +119,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         userId: user.userId,
         userStatus: user.status,
         email: user.email,
+        hasMemberRole: (authState.rolesByUserId.get(Number(userId)) || []).includes('MEMBER'),
         memberStatus: memberStatuses.get(Number(userId)) || null,
         approvedAt: memberStatuses.get(Number(userId)) === 'APPROVED' ? new Date() : null,
       });
@@ -168,17 +195,67 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       };
     },
 
-    async createReservation({ userId, copyId }) {
+    async createReservation({ userId, copyId, auditLogRepository, auditEntry }) {
+      const snapshot = snapshotMutationState();
+      const normalizedUserId = Number(userId);
+      const normalizedCopyId = Number(copyId);
+      const user = getUser(normalizedUserId);
+      const roles = authState.rolesByUserId.get(normalizedUserId) || [];
+
+      if (!user || !roles.includes('MEMBER')) {
+        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      }
+
+      if (user.status !== 'ACTIVE') {
+        return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+      }
+
+      const copy = getCopy(normalizedCopyId);
+      if (!copy) {
+        return { outcome: 'COPY_NOT_FOUND' };
+      }
+
+      const book = getBook(copy.bookId);
+      if (book?.status !== 'ACTIVE') {
+        return { outcome: 'BOOK_INACTIVE' };
+      }
+
+      if (copy.status === 'AVAILABLE') {
+        return { outcome: 'COPY_AVAILABLE' };
+      }
+
+      if (copy.status !== 'BORROWED' && copy.status !== 'RESERVED') {
+        return { outcome: 'RESERVATION_NOT_ALLOWED' };
+      }
+
+      const openReservations = reservations.filter(
+        (reservation) => reservation.status === 'ACTIVE' || reservation.status === 'NOTIFIED'
+      );
+      if (openReservations.some(
+        (reservation) =>
+          reservation.userId === normalizedUserId &&
+          reservation.copyId === normalizedCopyId
+      )) {
+        return { outcome: 'DUPLICATE_ACTIVE_RESERVATION' };
+      }
+
+      if (openReservations.filter(
+        (reservation) => reservation.userId === normalizedUserId
+      ).length >= 3) {
+        return { outcome: 'ACTIVE_RESERVATION_LIMIT' };
+      }
+
       const queuePosition =
-        reservations.filter(
+        openReservations.filter(
           (reservation) =>
-            reservation.copyId === Number(copyId) && reservation.status === 'ACTIVE'
+            reservation.copyId === normalizedCopyId
+            && reservation.status === 'ACTIVE'
         ).length + 1;
       const now = new Date();
       const reservation = {
         reservationId: nextReservationId,
-        userId: Number(userId),
-        copyId: Number(copyId),
+        userId: normalizedUserId,
+        copyId: normalizedCopyId,
         reservedAt: now,
         queuePosition,
         expiresAt: null,
@@ -191,7 +268,21 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
       nextReservationId += 1;
       reservations.push(reservation);
-      return mapReservation(reservation);
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create({
+            ...auditEntry,
+            targetId: auditEntry.targetId ?? reservation.reservationId,
+          });
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
+      return {
+        outcome: 'CREATED',
+        reservation: mapReservation(reservation),
+      };
     },
 
     async listReservations(filters = {}) {
@@ -232,7 +323,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       };
     },
 
-    async cancelReservation(reservationId) {
+    async cancelReservation(reservationId, { auditLogRepository, auditEntry } = {}) {
+      const snapshot = snapshotMutationState();
       const reservation = reservations.find(
         (item) =>
           item.reservationId === Number(reservationId) &&
@@ -256,11 +348,21 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         }
       }
 
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create(auditEntry);
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
+
       return mapReservation(reservation);
     },
 
-    async findNextActiveReservationForCopy(copyId) {
+    async findNextActiveReservationForCopy(copyId, excludedReservationIds = []) {
       const copy = getCopy(copyId);
+      const excluded = new Set(excludedReservationIds.map(Number));
 
       if (!copy || copy.status !== 'AVAILABLE') {
         return null;
@@ -269,11 +371,14 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       const nextReservation = reservations
         .filter((reservation) => {
           const user = getUser(reservation.userId);
+          const roles = authState.rolesByUserId.get(reservation.userId) || [];
 
           return (
             reservation.copyId === Number(copyId) &&
             reservation.status === 'ACTIVE' &&
-            user?.status === 'ACTIVE'
+            user?.status === 'ACTIVE' &&
+            roles.includes('MEMBER') &&
+            !excluded.has(reservation.reservationId)
           );
         })
         .sort(
@@ -285,11 +390,21 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       return mapReservation(nextReservation || null);
     },
 
-    async holdReservation({ reservationId, copyId, notifiedAt, expiresAt }) {
+    async holdReservation({
+      reservationId,
+      userId,
+      copyId,
+      notifiedAt,
+      expiresAt,
+      auditLogRepository,
+      auditEntry,
+    }) {
+      const snapshot = snapshotMutationState();
       const copy = getCopy(copyId);
       const reservation = reservations.find(
         (item) =>
           item.reservationId === Number(reservationId) &&
+          item.userId === Number(userId) &&
           item.copyId === Number(copyId) &&
           item.status === 'ACTIVE'
       );
@@ -298,18 +413,38 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         return null;
       }
 
+      const user = getUser(reservation.userId);
+      const roles = authState.rolesByUserId.get(reservation.userId) || [];
+      if (user?.status !== 'ACTIVE' || !roles.includes('MEMBER')) {
+        return {
+          outcome: 'MEMBER_INELIGIBLE',
+          reservationId: reservation.reservationId,
+          copyId: reservation.copyId,
+        };
+      }
+
       reservation.status = 'NOTIFIED';
       reservation.notifiedAt = notifiedAt;
       reservation.expiresAt = expiresAt;
-      reservation.queuePosition = 1;
+      reservation.queuePosition = null;
       reservation.updatedAt = new Date();
       copy.status = 'RESERVED';
       copy.updatedAt = new Date();
 
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create(auditEntry);
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
+
       return mapReservation(reservation);
     },
 
-    async expireOverdueHolds(now) {
+    async expireOverdueHolds({ now, auditLogRepository, auditEntry }) {
+      const snapshot = snapshotMutationState();
       const reference = new Date(now).getTime();
       const expired = [];
 
@@ -326,9 +461,28 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
             copy.status = 'AVAILABLE';
             copy.updatedAt = new Date();
           }
-          expired.push({ reservationId: reservation.reservationId, copyId: reservation.copyId });
+          const item = { reservationId: reservation.reservationId, copyId: reservation.copyId };
+          expired.push(item);
         }
       });
+
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          for (const item of expired) {
+            await auditLogRepository.create({
+              ...auditEntry,
+              targetId: item.reservationId,
+              metadata: {
+                ...(auditEntry.metadata || {}),
+                copyId: item.copyId,
+              },
+            });
+          }
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
 
       return expired;
     },

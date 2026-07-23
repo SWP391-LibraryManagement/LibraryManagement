@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.7
+# Version: 0.1.9
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-23
 
 # Feature ID: FE12
 
@@ -19,6 +19,10 @@
 > historical planning/evidence snapshots, not the current delivery state.
 
 > Source of truth for FE12 Reporting & Statistics. v0.1.5 preserves the approved report scope while making access, empty-filter, unknown-status, pagination, audit, and export behavior deterministic; human re-review is required.
+>
+> Revision v0.1.9 records the existing parameterized SQL `LIKE` behavior for
+> report search and requires in-memory test repositories to preserve that
+> behavior instead of treating wildcard characters as literals.
 
 ---
 
@@ -148,14 +152,14 @@ Use these stable IDs for tasks and tests.
 - BR-FE12-006: User statistics must use FE11/Users/Roles data as source of truth.
 - BR-FE12-007: Membership statistics, if shown, must use FE04 membership data as source of truth.
 - BR-FE12-008: Report filter syntax, enum membership, dates, and pagination must be validated before query execution; a well-formed positive filter ID that does not match a source record is valid and yields an empty report.
-- BR-FE12-009: Date range filters must use valid `YYYY-MM-DD` values with start <= end. For user statistics, the date range limits only `newMembersByPeriod` by `Members.ApprovedAt`; total/status/role counts remain global subject to non-date filters.
+- BR-FE12-009: Date range filters must use valid `YYYY-MM-DD` values with start <= end. For user statistics, the date range limits only `newMembersByPeriod` by non-null `Members.ApprovedAt`; a historical approval remains counted even if the current membership/account status later becomes inactive, while total/status/role counts remain global subject to non-date filters.
 - BR-FE12-010: Reports must use approved status definitions from source features; an unrecognized persisted source status must be grouped as `UNKNOWN` and remain included in reproducible totals.
 - BR-FE12-011: User statistics must not expose unnecessary personal data.
 - BR-FE12-012: Aggregate counts must be reproducible from source records.
 - BR-FE12-013: CSV, PDF, spreadsheet, and other report export are strictly out of scope for Phase 1; FE12 exposes no export endpoint or export control.
 - BR-FE12-014: Every successful Librarian/Admin report view must write one safe audit event identifying actor, report type, timestamp, and success without raw filter/query values or returned report rows.
 - BR-FE12-015: Detailed rows use `page=1`, `limit=20`, with `page>=1` and `limit=1..100`; stable ordering is borrowing `BorrowDate DESC, BorrowDetailId DESC`, inventory `Title ASC, BookId ASC, CopyId ASC`, and users `UserId ASC`.
-- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
+- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Production binds the effective `%${q}%` pattern as a parameterized SQL `LIKE` value and does not escape or reject `%`, `_`, bracket classes/ranges, or negated bracket classes; in-memory report repositories shall emulate those case-insensitive semantics. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
 
 ---
 
@@ -250,7 +254,7 @@ All three report endpoints return `{ metrics, rows, page, limit, totalRows }`. `
 | ------ | ---------------- | --------------------- |
 | Borrowing | `activeLoans` counts `BORROWED` details; `overdueLoans` counts `BORROWED` details whose due date is before the current `Asia/Ho_Chi_Minh` business date; `borrowCountByPeriod` groups qualifying actual-loan details by `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` returns at most 10 books ordered by borrow count descending, title ascending, then `BookId` ascending. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` is a derived display status for an overdue `BORROWED` detail. |
 | Inventory | `totalBooks` counts distinct books in the filtered book scope; `totalCopies` counts filtered copies; `copiesByStatus` groups filtered copies by approved FE06 status; `lowStockBooks` lists distinct books with 0..2 effective `AVAILABLE` copies, using full availability for each selected book even when a status/location filter narrows the rows. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
-| Users | `totalMembers` counts users with the `Member` role; `usersByStatus` groups users by approved FE02 status; `usersByRole` groups users by FE11 role; `membershipByStatus` groups canonical FE04 member status; `newMembersByPeriod` groups `Members.ApprovedAt` by `YYYY-MM-DD` within the requested range. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; no profile address, phone, password, token, or unnecessary personal fields. |
+| Users | `totalMembers` counts users with the `Member` role; `usersByStatus` groups users by approved FE02 status; `usersByRole` groups users by FE11 role; `membershipByStatus` groups canonical FE04 member status; `newMembersByPeriod` groups every non-null historical `Members.ApprovedAt` by `YYYY-MM-DD` within the requested range regardless of current membership/account status. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; no profile address, phone, password, token, or unnecessary personal fields. |
 
 Date filters for the borrowing report apply to `BorrowDate`; date filters for user statistics apply only to `newMembersByPeriod`; inventory reports have no date filter in Phase 1.
 
@@ -364,6 +368,7 @@ This feature does not include:
 | BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` no-export route/OpenAPI/frontend check | Automated evidence; human re-review pending |
 | BR-FE12-014 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` safe successful-view audit cases | Automated evidence; human re-review pending |
 | BR-FE12-015 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` pagination/order cases | Automated evidence; human re-review pending |
+| BR-FE12-016 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` combined `q`/filter and user-field parity cases | Automated evidence; H2 review pending |
 | FR-FE12-001 | UC58 | FT59 | Ready for review |
 | FR-FE12-002 | UC59 | FT60 | Ready for review |
 | FR-FE12-003 | UC60 | FT61 | Ready for review |
@@ -374,6 +379,7 @@ This feature does not include:
 | FR-FE12-008 | UC60 | FT61 | Ready for review |
 | FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
 | FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
+| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Automated evidence; H2 review pending |
 | AC-FE12-001 | UC58 | FT59 | Ready for review |
 | AC-FE12-002 | UC59 | FT60 | Ready for review |
 | AC-FE12-003 | UC60 | FT61 | Ready for review |
@@ -384,15 +390,16 @@ This feature does not include:
 | AC-FE12-008 | UC60 | FT61 | Ready for review |
 | AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
 | AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
+| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` user search/history/order parity; `frontend/test/reportFrontend.test.js` no-success-banner behavior | Automated evidence; H2 review pending |
 
 ### 16.1 Coverage Summary
 
 | Requirement Type | Total IDs | Mapped IDs | Coverage |
 | ---------------- | --------- | ---------- | -------- |
-| Business Rules (BR-FE12-*) | 15 | 15 | 100% |
-| Functional Requirements (FR-FE12-*) | 10 | 10 | 100% |
-| Acceptance Criteria (AC-FE12-*) | 10 | 10 | 100% |
-| **Total** | **35** | **35** | **100%** |
+| Business Rules (BR-FE12-*) | 16 | 16 | 100% |
+| Functional Requirements (FR-FE12-*) | 11 | 11 | 100% |
+| Acceptance Criteria (AC-FE12-*) | 11 | 11 | 100% |
+| **Total** | **38** | **38** | **100%** |
 
 > BR-FE12-013 is mapped to an out-of-scope contract check: the absence of export endpoints and controls is itself verified without implementing export behavior.
 

@@ -186,3 +186,17 @@ Not included:
 | Frontend quality | `npm.cmd --prefix frontend run lint` and `npm.cmd --prefix frontend run build` | No lint error and production bundle builds. |
 | Traceability | `npm.cmd run trace:enforce` | FE07 remains at the repository threshold. |
 | Diff hygiene | `git diff --check` | No whitespace errors. |
+
+## 8. V0.7.4 Business-Time And Return-State Remediation
+
+1. Add UTC-host regressions proving return overdue days and renewal eligibility
+   still use the `Asia/Ho_Chi_Minh` business date.
+2. Route return and renewal decisions through the shared business-time helper;
+   remove host-local calendar arithmetic.
+3. Align the in-memory repository with SQL by requiring the physical copy to be
+   `BORROWED` before return mutation and returning
+   `BORROW_STATE_CONFLICT` otherwise.
+4. Reconcile mutable SQL tests with role-based eligibility and explicit
+   concurrent return conflict outcomes.
+5. Run focused tests under `TZ=UTC`, then run mutable SQL only on a named
+   disposable local database before full verification and H2.

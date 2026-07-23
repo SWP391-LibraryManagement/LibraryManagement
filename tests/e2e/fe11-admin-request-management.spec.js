@@ -45,7 +45,8 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
     data: { memberEmail, librarianEmail, adminEmail, password },
   });
   expect(setupResponse.status()).toBe(201);
-  await expect(setupResponse.json()).resolves.toEqual(
+  const setupPayload = await setupResponse.json();
+  expect(setupPayload).toEqual(
     expect.objectContaining({ adminUserId: expect.any(Number) })
   );
 
@@ -61,15 +62,21 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   expect(completedSeed.status()).toBe(201);
   const completedRequestId = (await completedSeed.json()).borrowRequest.requestId;
 
-  const pendingRequestIds = [];
-  for (let index = 0; index < 21; index += 1) {
-    const response = await request.post(`${BACKEND_URL}/api/borrow-requests`, {
-      headers: memberHeaders,
-      data: { copyIds: [2] },
-    });
-    expect(response.status()).toBe(201);
-    pendingRequestIds.push((await response.json()).borrowRequest.requestId);
-  }
+  // This FE11 scenario needs pagination volume, not 21 invalid same-day FE07 commands.
+  // Seed test-only rows without weakening the public daily borrowing invariant.
+  const pendingSeed = await request.post(
+    `${BACKEND_URL}/__e2e__/seed-pending-borrow-requests`,
+    {
+      data: {
+        userId: setupPayload.memberUserId,
+        copyId: 2,
+        count: 21,
+      },
+    }
+  );
+  expect(pendingSeed.status()).toBe(201);
+  const { requestIds: pendingRequestIds } = await pendingSeed.json();
+  expect(pendingRequestIds).toHaveLength(21);
 
   await login(page, adminEmail, password, '/admin/users');
   const adminToken = await storedAccessToken(page);

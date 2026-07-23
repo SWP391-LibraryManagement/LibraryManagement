@@ -17,6 +17,7 @@ import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
+const REPORT_PAGE_SIZE = 20;
 
 export default function BorrowingReportPage() {
   const [from, setFrom] = useState('');
@@ -25,17 +26,23 @@ export default function BorrowingReportPage() {
   const [status, setStatus] = useState('');
   const [userId, setUserId] = useState('');
   const [bookId, setBookId] = useState('');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [page, setPage] = useState(1);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
 
-  async function loadReport(event) {
-    event?.preventDefault();
+  async function loadReport(page, filters = activeFilters) {
     setLoading(true);
     setNotice('');
     try {
-      const data = await reportApi.borrowing(buildBorrowingReportParams({ q: query, fromDate: from, toDate: to, status, userId, bookId }));
+      const data = await reportApi.borrowing(buildBorrowingReportParams({
+        ...filters,
+        page,
+        limit: REPORT_PAGE_SIZE,
+      }));
       setReport(data);
+      setPage(data.page || page);
     } catch (error) {
       setReport(null);
       setNotice(error.message);
@@ -44,8 +51,16 @@ export default function BorrowingReportPage() {
     }
   }
 
+  function applyFilters(event) {
+    event.preventDefault();
+    const filters = { q: query, fromDate: from, toDate: to, status, userId, bookId };
+    setActiveFilters(filters);
+    setPage(1);
+    loadReport(1, filters);
+  }
+
   useEffect(() => {
-    const timer = window.setTimeout(() => { loadReport(); }, 0);
+    const timer = window.setTimeout(() => { loadReport(1, {}); }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -53,6 +68,8 @@ export default function BorrowingReportPage() {
   const metrics = report?.metrics || {};
   const rows = report?.rows || [];
   const totalRows = report?.totalRows || 0;
+  const pageLimit = report?.limit || REPORT_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageLimit));
   const periodData = objectToChart(
     metrics.borrowCountByPeriod,
     (label) => label.length >= 7 ? label.slice(5) : label
@@ -70,11 +87,11 @@ export default function BorrowingReportPage() {
       active="borrowing-report"
       title="Báo cáo mượn/trả"
       subtitle="Báo cáo mượn/trả được lấy trực tiếp từ FE07, không chỉnh sửa dữ liệu nguồn."
-      actions={<button className="btn btn-outline" onClick={loadReport} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(page, activeFilters)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
 
-      <form onSubmit={loadReport}><DataToolbar
+      <form onSubmit={applyFilters}><DataToolbar
         search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, tài khoản..." aria-label="Tìm trong báo cáo mượn trả" /></>}
         filters={(
           <div className="field report-date-filter">
@@ -143,6 +160,11 @@ export default function BorrowingReportPage() {
                 </tr>
               ))}
             </DataTable>
+            <div className="pagination report-pagination">
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page - 1, activeFilters)} disabled={loading || page <= 1}>Trang trước</button>
+              <span className="muted">Trang {page}/{totalPages}</span>
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page + 1, activeFilters)} disabled={loading || page >= totalPages}>Trang sau</button>
+            </div>
           </div>
         </>
       )}

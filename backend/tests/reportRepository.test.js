@@ -10,8 +10,15 @@ jest.mock('../src/config/db', () => ({
 
 const { getPool } = require('../src/config/db');
 const reportRepository = require('../src/repositories/reportRepository');
+const fs = require('fs');
+const path = require('path');
 
-function useRecordset(recordset) {
+const repositorySource = fs.readFileSync(
+  path.join(__dirname, '..', 'src', 'repositories', 'reportRepository.js'),
+  'utf8'
+);
+
+function useQueryResult(queryResult) {
   const capture = { inputs: {}, query: '' };
 
   getPool.mockResolvedValue({
@@ -23,7 +30,7 @@ function useRecordset(recordset) {
         },
         async query(query) {
           capture.query = query;
-          return { recordset };
+          return queryResult;
         },
       };
     },
@@ -32,8 +39,53 @@ function useRecordset(recordset) {
   return capture;
 }
 
+function useRecordset(recordset) {
+  return useQueryResult({ recordset });
+}
+
+function useRecordsets(recordsets) {
+  return useQueryResult({ recordsets, recordset: recordsets[0] || [] });
+}
+
+function useUserReport({
+  totalMembers,
+  totalRows,
+  usersByStatus = [],
+  usersByRole = [],
+  membershipByStatus = [],
+  newMembersByPeriod = [],
+  pageRows = [],
+}) {
+  return useRecordsets([
+    [{ TotalMembers: totalMembers }],
+    [{ TotalRows: totalRows }],
+    usersByStatus,
+    usersByRole,
+    membershipByStatus,
+    newMembersByPeriod,
+    pageRows,
+  ]);
+}
+
 beforeEach(() => {
   getPool.mockReset();
+});
+
+test('all detailed report rows are paged by SQL with stable OFFSET/FETCH queries', () => {
+  expect(
+    repositorySource.match(/OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY/g)
+  ).toHaveLength(3);
+  expect(repositorySource).not.toContain('rows.slice(offset, offset + limit)');
+});
+
+test('report metrics are aggregated in SQL without returning full temp-table snapshots', () => {
+  expect(repositorySource).not.toMatch(
+    /SELECT \*\s+FROM #(Borrow|Inventory|User)ReportRows\s+(?:u\s+)?ORDER BY/g
+  );
+  expect(repositorySource).not.toContain('snapshot.allRows');
+  expect(repositorySource).toContain('GROUP BY CONVERT(DATE, BorrowDate)');
+  expect(repositorySource).toContain('COUNT(DISTINCT BookId) AS TotalBooks');
+  expect(repositorySource).toContain('COUNT(DISTINCT UserId) AS TotalMembers');
 });
 
 test('report searches are parameterized and user rows use increasing IDs', async () => {
@@ -53,34 +105,54 @@ test('report searches are parameterized and user rows use increasing IDs', async
   ]);
   const report = await reportRepository.getUserStatistics({ q: 'member' });
   expect(users.inputs.Search).toBe('%member%');
-  expect(users.query).toContain('ORDER BY u.UserId ASC');
+  expect(users.query).toContain('ORDER BY userRows.UserId ASC');
   expect(report.rows.map((row) => row.userId)).toEqual([2, 9]);
 });
 
+test('normalized UNKNOWN status groups are accumulated instead of overwritten', async () => {
+  useUserReport({
+    totalMembers: 0,
+    totalRows: 0,
+    usersByStatus: [
+      { UserStatus: 'SUSPENDED', UserCount: 2 },
+      { UserStatus: 'DELETED', UserCount: 3 },
+    ],
+  });
+
+  const report = await reportRepository.getUserStatistics();
+
+  expect(report.metrics.usersByStatus.UNKNOWN).toBe(5);
+});
+
 test('borrowing request status counts deduplicate joined detail rows', async () => {
-  useRecordset([
-    {
-      RequestId: 10,
-      RequestStatus: 'APPROVED',
-      RequestDate: new Date('2026-06-10T08:00:00.000Z'),
-      BorrowDetailId: 101,
-      DetailStatus: 'BORROWED',
-      BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
-      DueDate: null,
-      ReturnDate: null,
-      BookId: 1,
-      Title: 'Clean Code',
-    },
-    {
-      RequestId: 10,
-      RequestStatus: 'APPROVED',
-      RequestDate: new Date('2026-06-10T08:00:00.000Z'),
-      BorrowDetailId: 102,
-      DetailStatus: 'BORROWED',
-      BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
-      BookId: 2,
-      Title: 'Refactoring',
-    },
+  useRecordsets([
+    [{ ActiveLoans: 2, OverdueLoans: 0, TotalRows: 2 }],
+    [{ PeriodDate: new Date('2026-06-10T00:00:00.000Z'), BorrowCount: 2 }],
+    [],
+    [
+      {
+        RequestId: 10,
+        RequestStatus: 'APPROVED',
+        RequestDate: new Date('2026-06-10T08:00:00.000Z'),
+        BorrowDetailId: 101,
+        DetailStatus: 'BORROWED',
+        BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
+        DueDate: null,
+        ReturnDate: null,
+        BookId: 1,
+        Title: 'Clean Code',
+      },
+      {
+        RequestId: 10,
+        RequestStatus: 'APPROVED',
+        RequestDate: new Date('2026-06-10T08:00:00.000Z'),
+        BorrowDetailId: 102,
+        DetailStatus: 'BORROWED',
+        BorrowDate: new Date('2026-06-10T08:00:00.000Z'),
+        BookId: 2,
+        Title: 'Refactoring',
+      },
+    ],
   ]);
 
   const report = await reportRepository.getBorrowingReport();
@@ -183,13 +255,17 @@ test('requested-only details do not create borrowing activity metrics', async ()
 });
 
 test('borrowing activity metrics include all actual-loan statuses and exclude requested details', async () => {
-  useRecordset([
-    { RequestId: 10, RequestStatus: 'APPROVED', RequestDate: new Date('2026-06-10T08:00:00.000Z'), BorrowDetailId: 101, DetailStatus: 'BORROWED', BorrowDate: new Date('2026-06-10T08:00:00.000Z'), BookId: 1, Title: 'Book One' },
-    { RequestId: 10, RequestStatus: 'APPROVED', RequestDate: new Date('2026-06-10T08:00:00.000Z'), BorrowDetailId: 102, DetailStatus: 'RETURNED', BorrowDate: new Date('2026-06-10T08:00:00.000Z'), BookId: 1, Title: 'Book One' },
-    { RequestId: 20, RequestStatus: 'APPROVED', RequestDate: new Date('2026-06-11T08:00:00.000Z'), BorrowDetailId: 201, DetailStatus: 'LOST', BorrowDate: new Date('2026-06-11T08:00:00.000Z'), BookId: 2, Title: 'Book Two' },
-    { RequestId: 20, RequestStatus: 'APPROVED', RequestDate: new Date('2026-06-11T08:00:00.000Z'), BorrowDetailId: 202, DetailStatus: 'DAMAGED', BorrowDate: new Date('2026-06-11T08:00:00.000Z'), BookId: 2, Title: 'Book Two' },
-    { RequestId: 20, RequestStatus: 'APPROVED', RequestDate: new Date('2026-06-11T08:00:00.000Z'), BorrowDetailId: 203, DetailStatus: 'OVERDUE', BorrowDate: new Date('2026-06-11T08:00:00.000Z'), BookId: 2, Title: 'Book Two' },
-    { RequestId: 30, RequestStatus: 'PENDING', RequestDate: new Date('2026-06-11T08:00:00.000Z'), BorrowDetailId: 301, DetailStatus: 'REQUESTED', BorrowDate: new Date('2026-06-11T08:00:00.000Z'), BookId: 3, Title: 'Requested Only' },
+  useRecordsets([
+    [{ ActiveLoans: 1, OverdueLoans: 1, TotalRows: 6 }],
+    [
+      { PeriodDate: new Date('2026-06-10T00:00:00.000Z'), BorrowCount: 2 },
+      { PeriodDate: new Date('2026-06-11T00:00:00.000Z'), BorrowCount: 3 },
+    ],
+    [
+      { BookId: 2, Title: 'Book Two', BorrowCount: 3 },
+      { BookId: 1, Title: 'Book One', BorrowCount: 2 },
+    ],
+    [],
   ]);
 
   const report = await reportRepository.getBorrowingReport();
@@ -202,17 +278,27 @@ test('borrowing activity metrics include all actual-loan statuses and exclude re
 });
 
 test('new member periods use membership approval dates instead of account creation dates', async () => {
-  const capture = useRecordset([
-    {
-      UserId: 7,
-      UserStatus: 'ACTIVE',
-      CreatedAt: new Date('2026-01-05T09:00:00.000Z'),
-      RoleId: 3,
-      RoleName: 'MEMBER',
-      MemberStatus: 'APPROVED',
-      MemberApprovedAt: new Date('2026-06-10T14:30:00.000Z'),
-    },
-  ]);
+  const pageRows = [{
+    UserId: 7,
+    UserStatus: 'ACTIVE',
+    CreatedAt: new Date('2026-01-05T09:00:00.000Z'),
+    RoleId: 3,
+    RoleName: 'MEMBER',
+    MemberStatus: 'APPROVED',
+    MemberApprovedAt: new Date('2026-06-10T14:30:00.000Z'),
+  }];
+  const capture = useUserReport({
+    totalMembers: 1,
+    totalRows: 1,
+    usersByStatus: [{ UserStatus: 'ACTIVE', UserCount: 1 }],
+    usersByRole: [{ RoleName: 'MEMBER', UserCount: 1 }],
+    membershipByStatus: [{ MemberStatus: 'APPROVED', UserCount: 1 }],
+    newMembersByPeriod: [{
+      PeriodDate: new Date('2026-06-10T00:00:00.000Z'),
+      MemberCount: 1,
+    }],
+    pageRows,
+  });
 
   const report = await reportRepository.getUserStatistics();
 
@@ -220,8 +306,40 @@ test('new member periods use membership approval dates instead of account creati
   expect(report.metrics.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
 });
 
+test('historically approved members remain in growth metrics after membership becomes inactive', async () => {
+  useUserReport({
+    totalMembers: 1,
+    totalRows: 1,
+    usersByStatus: [{ UserStatus: 'INACTIVE', UserCount: 1 }],
+    usersByRole: [{ RoleName: 'MEMBER', UserCount: 1 }],
+    membershipByStatus: [{ MemberStatus: 'INACTIVE', UserCount: 1 }],
+    newMembersByPeriod: [{
+      PeriodDate: new Date('2026-06-10T00:00:00.000Z'),
+      MemberCount: 1,
+    }],
+    pageRows: [{
+      UserId: 7,
+      UserStatus: 'INACTIVE',
+      CreatedAt: new Date('2026-01-05T09:00:00.000Z'),
+      RoleId: 3,
+      RoleName: 'MEMBER',
+      MemberStatus: 'INACTIVE',
+      MemberApprovedAt: new Date('2026-06-10T14:30:00.000Z'),
+      IsInApprovalPeriod: 1,
+    }],
+  });
+
+  const report = await reportRepository.getUserStatistics({
+    fromDate: '2026-06-01',
+    toDate: '2026-06-30',
+  });
+
+  expect(report.metrics.membershipByStatus).toEqual({ INACTIVE: 1 });
+  expect(report.metrics.newMembersByPeriod).toEqual({ '2026-06-10': 1 });
+});
+
 test('user date filters limit approval-period metrics without changing user totals', async () => {
-  const capture = useRecordset([
+  const pageRows = [
     {
       UserId: 7,
       UserStatus: 'ACTIVE',
@@ -242,7 +360,22 @@ test('user date filters limit approval-period metrics without changing user tota
       MemberApprovedAt: new Date('2026-05-20T09:00:00.000Z'),
       IsInApprovalPeriod: 0,
     },
-  ]);
+  ];
+  const capture = useUserReport({
+    totalMembers: 2,
+    totalRows: 2,
+    usersByStatus: [
+      { UserStatus: 'ACTIVE', UserCount: 1 },
+      { UserStatus: 'INACTIVE', UserCount: 1 },
+    ],
+    usersByRole: [{ RoleName: 'MEMBER', UserCount: 2 }],
+    membershipByStatus: [{ MemberStatus: 'APPROVED', UserCount: 2 }],
+    newMembersByPeriod: [{
+      PeriodDate: new Date('2026-06-10T00:00:00.000Z'),
+      MemberCount: 1,
+    }],
+    pageRows,
+  });
 
   const report = await reportRepository.getUserStatistics({
     fromDate: '2026-06-01',
@@ -261,16 +394,19 @@ test('user date filters limit approval-period metrics without changing user tota
 });
 
 test('inventory categories count books and low-stock includes up to two available copies', async () => {
-  useRecordset([
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 11, CopyStatus: 'AVAILABLE' },
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 12, CopyStatus: 'BORROWED' },
-    { BookId: 2, Title: 'Book B', CategoryId: 1, CategoryName: 'Programming', CopyId: 21, CopyStatus: 'BORROWED' },
-    { BookId: 3, Title: 'Book C', CategoryId: 1, CategoryName: 'Programming', CopyId: 31, CopyStatus: 'AVAILABLE' },
-    { BookId: 3, Title: 'Book C', CategoryId: 1, CategoryName: 'Programming', CopyId: 32, CopyStatus: 'AVAILABLE' },
-    { BookId: 4, Title: 'Book D', CategoryId: 1, CategoryName: 'Programming', CopyId: 41, CopyStatus: 'AVAILABLE' },
-    { BookId: 4, Title: 'Book D', CategoryId: 1, CategoryName: 'Programming', CopyId: 42, CopyStatus: 'AVAILABLE' },
-    { BookId: 4, Title: 'Book D', CategoryId: 1, CategoryName: 'Programming', CopyId: 43, CopyStatus: 'AVAILABLE' },
-    { BookId: 5, Title: 'Book E', CategoryId: 1, CategoryName: 'Programming', CopyId: null, CopyStatus: null },
+  useRecordsets([
+    [{ TotalBooks: 5, TotalCopies: 8, TotalRows: 8 }],
+    [
+      { CopyStatus: 'AVAILABLE', CopyCount: 6 },
+      { CopyStatus: 'BORROWED', CopyCount: 2 },
+    ],
+    [
+      { BookId: 1, Title: 'Book A', EffectiveAvailability: 1 },
+      { BookId: 2, Title: 'Book B', EffectiveAvailability: 0 },
+      { BookId: 3, Title: 'Book C', EffectiveAvailability: 2 },
+      { BookId: 5, Title: 'Book E', EffectiveAvailability: 0 },
+    ],
+    [],
   ]);
 
   const report = await reportRepository.getInventoryReport();
@@ -288,12 +424,14 @@ test('inventory categories count books and low-stock includes up to two availabl
 });
 
 test('inventory copy filters do not hide full availability from low-stock calculations', async () => {
-  const capture = useRecordset([
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 11, CopyStatus: 'AVAILABLE', Location: 'A1' },
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 12, CopyStatus: 'AVAILABLE', Location: 'A2' },
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 13, CopyStatus: 'AVAILABLE', Location: 'A3' },
-    { BookId: 1, Title: 'Book A', CategoryId: 1, CategoryName: 'Programming', CopyId: 14, CopyStatus: 'BORROWED', Location: 'A4' },
-    { BookId: 2, Title: 'Book B', CategoryId: 1, CategoryName: 'Programming', CopyId: 21, CopyStatus: 'BORROWED', Location: 'B1' },
+  const capture = useRecordsets([
+    [{ TotalBooks: 2, TotalCopies: 2, TotalRows: 2 }],
+    [{ CopyStatus: 'BORROWED', CopyCount: 2 }],
+    [{ BookId: 2, Title: 'Book B', EffectiveAvailability: 0 }],
+    [
+      { BookId: 1, Title: 'Book A', CopyId: 14, CopyStatus: 'BORROWED', Location: 'A4', EffectiveAvailability: 3 },
+      { BookId: 2, Title: 'Book B', CopyId: 21, CopyStatus: 'BORROWED', Location: 'B1', EffectiveAvailability: 0 },
+    ],
   ]);
 
   const report = await reportRepository.getInventoryReport({ status: 'BORROWED' });

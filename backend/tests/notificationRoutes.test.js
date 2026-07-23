@@ -292,6 +292,42 @@ describe('FE10 notification management', () => {
     expect(emailProviderMessages).toHaveLength(0);
   });
 
+  test.each(['DUE_DATE_REMINDER', 'ACCOUNT_VERIFICATION'])(
+    'rejects retry for uncertain PROCESSING %s delivery without sending',
+    async (type) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } =
+        makeTestApp();
+      const librarian = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.processing.${type.toLowerCase()}@example.test`,
+        role: 'LIBRARIAN',
+      });
+      notificationDependencies.state.notifications.push({
+        notificationId: 740,
+        type,
+        templateKey: type,
+        recipientEmail: 'reader@example.test',
+        status: 'PROCESSING',
+        attemptCount: 0,
+      });
+
+      const response = await request(app)
+        .post('/api/notifications/740/retry')
+        .set('Authorization', authHeader(librarian.accessToken));
+
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        error: {
+          code: 'DELIVERY_STATE_UNCERTAIN',
+          message: 'Notification delivery may already have occurred and cannot be retried safely.',
+        },
+      });
+      expect(notificationDependencies.state.notifications[0].status).toBe('PROCESSING');
+      expect(emailProviderMessages).toHaveLength(0);
+    }
+  );
+
   test('protects and validates the retry route before the controller', async () => {
     const { app, authDependencies } = makeTestApp();
     const member = await createVerifiedUser({
@@ -330,6 +366,7 @@ describe('FE10 notification management', () => {
     expect(openapi).toContain('minimum: 1');
     expect(openapi).toContain('REISSUE_REQUIRED');
     expect(openapi).toContain('Create a new notification from the source event.');
+    expect(openapi).toContain('DELIVERY_STATE_UNCERTAIN');
   });
 
   test('creates notification request and returns duplicate by idempotency key', async () => {
@@ -499,6 +536,69 @@ describe('FE10 notification management', () => {
     expect(persistedOrAudited).not.toContain('https://provider.test/error');
     expect(persistedOrAudited).not.toContain('smtp auth token secret stack trace');
     expect(JSON.stringify(emailProviderMessages)).not.toContain('https://example.test/verify/pending-link');
+  });
+
+  test('claims one pending notification only once across concurrent worker runs', async () => {
+    const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
+    notificationDependencies.state.notifications.push({
+      notificationId: 998,
+      type: 'DUE_DATE_REMINDER',
+      templateKey: 'DUE_DATE_REMINDER',
+      recipientEmail: 'concurrent-worker@example.test',
+      title: 'Due date reminder',
+      body: 'Due date: 2026-07-30',
+      status: 'PENDING',
+      attemptCount: 0,
+    });
+    const actor = { userId: 1, roles: ['ADMIN'] };
+
+    const results = await Promise.all([
+      notificationService.processPendingNotifications({ limit: 20 }, actor),
+      notificationService.processPendingNotifications({ limit: 20 }, actor),
+    ]);
+
+    expect(emailProviderMessages).toHaveLength(1);
+    expect(notificationDependencies.state.attempts).toHaveLength(1);
+    expect(results.reduce((sum, result) => sum + result.processed, 0)).toBe(1);
+  });
+
+  test('does not reuse a rolled-back claim when persisting a successful delivery fails', async () => {
+    const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
+    notificationDependencies.state.notifications.push({
+      notificationId: 997,
+      type: 'DUE_DATE_REMINDER',
+      templateKey: 'DUE_DATE_REMINDER',
+      recipientEmail: 'claim-persistence@example.test',
+      title: 'Due date reminder',
+      body: 'Due date: 2026-07-30',
+      status: 'PENDING',
+      attemptCount: 0,
+    });
+    const markClaimFailed = jest.spyOn(
+      notificationDependencies.notificationRepository,
+      'markClaimFailed'
+    );
+    notificationDependencies.notificationRepository.markClaimSent = jest.fn(async () => {
+      throw new Error('Claim commit failed.');
+    });
+
+    await expect(
+      notificationService.processPendingNotifications(
+        { limit: 1 },
+        { userId: 1, roles: ['ADMIN'] }
+      )
+    ).rejects.toThrow('Claim commit failed.');
+
+    expect(emailProviderMessages).toHaveLength(1);
+    expect(markClaimFailed).not.toHaveBeenCalled();
+    expect(notificationDependencies.state.notifications[0].status).toBe('PROCESSING');
+
+    const replay = await notificationService.processPendingNotifications(
+      { limit: 1 },
+      { userId: 1, roles: ['ADMIN'] }
+    );
+    expect(replay).toMatchObject({ processed: 0, failed: 0 });
+    expect(emailProviderMessages).toHaveLength(1);
   });
 
   test('excludes null-type legacy auth templates while processing null-type non-sensitive rows', async () => {
@@ -835,7 +935,7 @@ describe('FE10 notification management', () => {
       .post('/api/notifications/requests')
       .set('Authorization', authHeader(admin.accessToken))
       .send({
-        type: 'GENERAL_SYSTEM',
+        type: 'DUE_DATE_REMINDER',
         recipientEmail: 'reader@example.test',
         templateKey: 'DOES_NOT_EXIST',
         templateData: {},
@@ -1010,6 +1110,23 @@ describe('FE10 notification management', () => {
       );
 
       expect(result).toEqual({ notificationId: expect.any(Number), status: 'SENT' });
+      expect(notificationDependencies.state.notifications).toHaveLength(1);
+      return;
+    }
+
+    if (type === 'GENERAL_SYSTEM') {
+      const requester = notificationService.createSourceNotificationRequester('FE04');
+      const result = await requester.createNotificationRequest({
+        type,
+        recipientEmail: 'reader@example.test',
+        templateKey,
+        templateData,
+        sourceEntityType: 'MEMBERSHIP_APPLICATION',
+        sourceEntityId: 201,
+        idempotencyKey: 'FE04:MEMBERSHIP_RESULT:201:APPROVED',
+      });
+
+      expect(result).toEqual({ notificationId: expect.any(Number), status: 'PENDING' });
       expect(notificationDependencies.state.notifications).toHaveLength(1);
       return;
     }
@@ -1477,7 +1594,7 @@ describe('FE10 notification management', () => {
       stack: undefined,
     });
     expect(markFailedCalled).toBe(false);
-    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PROCESSING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
     const safeBoundaries = JSON.stringify({
       error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
@@ -1486,6 +1603,19 @@ describe('FE10 notification management', () => {
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawOtp);
+
+    const replay = await requester.createNotificationRequest(
+      makeSensitiveRequestInput({
+        type: 'PASSWORD_RESET',
+        recipientEmail: 'reader@example.test',
+        templateData: { otp: rawOtp, expiresInMinutes: 15 },
+        sourceEntityId: 208,
+      })
+    );
+    expect(replay).toEqual({
+      notificationId: notificationDependencies.state.notifications[0].notificationId,
+      status: 'PROCESSING',
+    });
   });
 
   // FE10-H03: a provider failure remains distinct from a subsequent failed-state persistence error.
@@ -1525,7 +1655,7 @@ describe('FE10 notification management', () => {
       stack: undefined,
     });
     expect(markFailedCalled).toBe(true);
-    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PROCESSING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
     const safeBoundaries = JSON.stringify({
       error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
@@ -1645,6 +1775,9 @@ describe('FE10 notification management', () => {
       recipientEmail: 'reader@example.test',
       templateKey: 'DUE_DATE_REMINDER',
       templateData: { dueDate: '2026-07-20' },
+      sourceEntityType: 'BORROW_DETAIL',
+      sourceEntityId: 42,
+      idempotencyKey: 'FE07:DUE_DATE_REMINDER:42',
       ...overrides,
     };
   }
@@ -1661,6 +1794,136 @@ describe('FE10 notification management', () => {
     );
     expect(notificationDependencies.state.notifications).toHaveLength(0);
     expect(authDependencies.state.auditLogs).toHaveLength(0);
+  });
+
+  test('rejects membership-result requests from a non-FE04 source owner', async () => {
+    const { notificationService, notificationDependencies, authDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(
+      requester.createNotificationRequest({
+        type: 'GENERAL_SYSTEM',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'MEMBERSHIP_RESULT',
+        templateData: { membershipStatus: 'APPROVED' },
+        sourceEntityType: 'MEMBERSHIP_APPLICATION',
+        sourceEntityId: 44,
+        idempotencyKey: 'FE04:MEMBERSHIP_RESULT:44:APPROVED',
+      })
+    ).rejects.toMatchObject({
+      code: 'NOTIFICATION_SOURCE_OWNER_MISMATCH',
+      message: 'Notification type is not owned by this source.',
+    });
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+    expect(authDependencies.state.auditLogs).toHaveLength(0);
+  });
+
+  test('rejects direct HTTP membership-result requests even from staff', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'membership-result-http.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    const response = await request(app)
+      .post('/api/notifications/requests')
+      .set('Authorization', authHeader(admin.accessToken))
+      .send({
+        type: 'GENERAL_SYSTEM',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'MEMBERSHIP_RESULT',
+        templateData: { membershipStatus: 'APPROVED' },
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('NOTIFICATION_SOURCE_OWNER_MISMATCH');
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  test('requires an idempotency key for every in-process non-sensitive request', async () => {
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE08');
+
+    await expect(
+      requester.createNotificationRequest({
+        type: 'RESERVATION_AVAILABLE',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'RESERVATION_READY',
+        templateData: { copyId: 9 },
+        sourceEntityType: 'RESERVATION',
+        sourceEntityId: 51,
+      })
+    ).rejects.toMatchObject({
+      code: 'IDEMPOTENCY_KEY_REQUIRED',
+      message: 'Internal notification requests require an idempotency key.',
+    });
+
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  test.each([
+    ['missing source entity type', { sourceEntityType: undefined }, 'SOURCE_ENTITY_TYPE_REQUIRED'],
+    ['blank source entity type', { sourceEntityType: '   ' }, 'SOURCE_ENTITY_TYPE_REQUIRED'],
+    ['missing source entity ID', { sourceEntityId: undefined }, 'SOURCE_ENTITY_ID_REQUIRED'],
+  ])('rejects an internal request with %s', async (_label, overrides, expectedCode) => {
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(
+      requester.createNotificationRequest(makeInternalRequestInput(overrides))
+    ).rejects.toMatchObject({ code: expectedCode, statusCode: 400 });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
+  test('replays the existing record when a concurrent idempotent insert loses the unique-key race', async () => {
+    const existing = {
+      notificationId: 81,
+      status: 'PENDING',
+      idempotencyKey: 'FE07:DUE_DATE_REMINDER:81',
+    };
+    let lookupCount = 0;
+    const notificationRepository = {
+      findByIdempotencyKey: jest.fn(async () => {
+        lookupCount += 1;
+        return lookupCount === 1 ? null : existing;
+      }),
+      findTemplateByCode: jest.fn(async () => ({
+        templateId: 5,
+        status: 'ACTIVE',
+        subject: 'Due date reminder',
+        body: 'Due date: {{dueDate}}',
+      })),
+      createRequest: jest.fn(async () => {
+        const error = new Error('duplicate key');
+        error.number = 2601;
+        throw error;
+      }),
+    };
+    const service = createNotificationService({
+      notificationRepository,
+      userRepository: {},
+      auditLogRepository: { create: jest.fn(async () => {}) },
+      emailProvider: { send: jest.fn(async () => ({})) },
+    });
+
+    const result = await service
+      .createSourceNotificationRequester('FE07')
+      .createNotificationRequest({
+        type: 'DUE_DATE_REMINDER',
+        recipientEmail: 'reader@example.test',
+        templateKey: 'DUE_DATE_REMINDER',
+        templateData: { dueDate: '2026-07-30' },
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 81,
+        idempotencyKey: 'FE07:DUE_DATE_REMINDER:81',
+      });
+
+    expect(result).toEqual({ notificationId: 81, status: 'PENDING' });
+    expect(notificationRepository.createRequest).toHaveBeenCalledTimes(1);
+    expect(notificationRepository.findByIdempotencyKey).toHaveBeenCalledTimes(2);
   });
 
   // FE10-H05, NFR-FE10-SEC-006: payloads cannot replace a construction-bound source.
@@ -1737,6 +2000,8 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'FINE_NOTICE',
         templateData: { dueDate: '2026-07-20' },
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 42,
       },
       'CANONICAL_TEMPLATE_MISMATCH',
     ],
@@ -1747,6 +2012,8 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'DUE_DATE_REMINDER',
         templateData: { dueDate: '2026-07-20', nested: { reset_token: 'secret' } },
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 42,
       },
       'SENSITIVE_TEMPLATE_DATA',
     ],
@@ -1990,7 +2257,7 @@ describe('FE10 notification management', () => {
     expect(emailProviderMessages).toHaveLength(0);
   });
 
-  test('accepts optional null requester fields while sourceEntityId remains absent', async () => {
+  test('accepts optional channel and user fields while retaining required source metadata', async () => {
     const { notificationService, notificationDependencies } = makeTestApp();
     const requester = notificationService.createSourceNotificationRequester('FE07');
 
@@ -1998,8 +2265,6 @@ describe('FE10 notification management', () => {
       makeInternalRequestInput({
         channel: null,
         userId: null,
-        sourceEntityType: null,
-        idempotencyKey: null,
       })
     );
 
@@ -2007,9 +2272,9 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications[0]).toMatchObject({
       channel: 'EMAIL',
       userId: null,
-      sourceEntityType: null,
-      sourceEntityId: null,
-      idempotencyKey: null,
+      sourceEntityType: 'BORROW_DETAIL',
+      sourceEntityId: 42,
+      idempotencyKey: 'FE07:DUE_DATE_REMINDER:42',
     });
   });
 

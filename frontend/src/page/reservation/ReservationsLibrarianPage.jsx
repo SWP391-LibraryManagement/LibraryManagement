@@ -1,7 +1,7 @@
-/**
+ /**
  * FE08 - UC38 View Reservation List + UC39 Process Reservation Queue + UC40 Notify.
- * Dữ liệu thật: GET /api/reservations, PATCH /api/reservations/:id/process,
- * POST /api/reservations/process-queue, POST /api/reservations/expire-holds.
+ * Dữ liệu thật: GET /api/reservations, POST /api/reservations/process-queue,
+ * POST /api/reservations/expire-holds.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -27,6 +27,7 @@ import {
 } from '../../utils/reservationViewState';
 
 const PAGE_SIZE = 8;
+const RESERVATION_API_PAGE_SIZE = 100;
 const STATUSES = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
   { value: 'Waiting', label: 'Đang chờ' },
@@ -59,7 +60,7 @@ export default function ReservationsLibrarianPage() {
   const [bookFilter, setBookFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
-  const [queueBook, setQueueBook] = useState('');
+  const [queueCopyId, setQueueCopyId] = useState(null);
   const [notifyTarget, setNotifyTarget] = useState(null);
   const [notifying, setNotifying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -72,13 +73,25 @@ export default function ReservationsLibrarianPage() {
     setLoading(true);
     setLoadError('');
     try {
-      const data = await reservationApi.listAll();
-      const mapped = (data.reservations || []).map(mapReservation);
+      const allReservations = [];
+      let page = 1;
+      let totalApiPages = 1;
+
+      do {
+        const data = await reservationApi.listAll({ page, limit: RESERVATION_API_PAGE_SIZE });
+        allReservations.push(...(data.reservations || []));
+        totalApiPages = Number(data.pagination?.totalPages || 0);
+        page += 1;
+      } while (page <= totalApiPages);
+
+      const mapped = allReservations.map(mapReservation);
       setRows(mapped);
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
-      setQueueBook((current) => {
-        if (current && mapped.some((item) => item.title === current)) return current;
-        return mapped[0]?.title || '';
+      setQueueCopyId((current) => {
+        if (current && mapped.some((item) => (
+          item.copyId === current && isActiveReservationQueueStatus(item.status)
+        ))) return current;
+        return mapped.find((item) => isActiveReservationQueueStatus(item.status))?.copyId || null;
       });
     } catch (error) {
       setRows([]);
@@ -97,7 +110,16 @@ export default function ReservationsLibrarianPage() {
     () => ['ALL', ...new Set(rows.map((item) => item.title).filter(Boolean))],
     [rows],
   );
-  const queueBooks = books.filter((book) => book !== 'ALL');
+  const queueCopies = useMemo(
+    () => Array.from(
+      new Map(
+        rows
+          .filter((item) => isActiveReservationQueueStatus(item.status))
+          .map((item) => [item.copyId, item])
+      ).values()
+    ),
+    [rows],
+  );
   const filtered = useMemo(() => {
     const query = normalizeSearch(search);
     return rows.filter((item) => {
@@ -123,10 +145,10 @@ export default function ReservationsLibrarianPage() {
   const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const queue = useMemo(
     () => rows
-      .filter((item) => item.title === queueBook && isActiveReservationQueueStatus(item.status))
+      .filter((item) => item.copyId === queueCopyId && isActiveReservationQueueStatus(item.status))
       .sort((left, right) => getQueueSortValue(left) - getQueueSortValue(right)
         || left.reservationId - right.reservationId),
-    [rows, queueBook],
+    [rows, queueCopyId],
   );
 
   function submitSearch(event) {
@@ -139,9 +161,14 @@ export default function ReservationsLibrarianPage() {
     if (!notifyTarget || notifying) return;
     setNotifying(true);
     try {
-      await reservationApi.process(notifyTarget.reservationId, { copyId: notifyTarget.copyId });
+      const result = await reservationApi.processQueue(notifyTarget.copyId);
       await loadReservations();
-      showToast(`Đã giữ sách và tạo thông báo cho ${notifyTarget.member}.`, 'success');
+      if (!result.selectedReservation) {
+        showToast('Không có thành viên đủ điều kiện trong hàng chờ.', 'info');
+      } else {
+        const selected = mapReservation(result.selectedReservation);
+        showToast(`Đã giữ sách và tạo thông báo cho ${selected.member}.`, 'success');
+      }
       setNotifyTarget(null);
     } catch (error) {
       showToast(error.message, 'error');
@@ -246,7 +273,7 @@ export default function ReservationsLibrarianPage() {
                     <td data-label="Trạng thái"><Badge status={item.status}>{STATUS_LABELS[item.status] || item.status}</Badge></td>
                     <td data-label="Thao tác">
                       {item.status === 'Waiting' ? (
-                        <button type="button" className="btn btn-outline btn-sm" onClick={() => { setQueueBook(item.title); setView('queue'); }}>
+                         <button type="button" className="btn btn-outline btn-sm" onClick={() => { setQueueCopyId(item.copyId); setView('queue'); }}>
                           <PackageCheck size={14} /> Xem hàng đợi
                         </button>
                       ) : <span className="muted">—</span>}
@@ -273,12 +300,12 @@ export default function ReservationsLibrarianPage() {
             <div className="reservation-queue-header">
               <div>
                 <p className="reservation-eyebrow">HÀNG ĐỢI ƯU TIÊN</p>
-                <h2>Hàng đợi theo sách</h2>
+                <h2>Hàng đợi theo bản sao</h2>
                 <p>Hệ thống xử lý theo thời gian đặt tăng dần; không cho phép thay đổi thứ tự thủ công.</p>
               </div>
-              <select value={queueBook} onChange={(event) => setQueueBook(event.target.value)} aria-label="Chọn sách xem hàng đợi" disabled={!queueBooks.length}>
-                {!queueBooks.length && <option value="">Chưa có sách đặt chỗ</option>}
-                {queueBooks.map((book) => <option key={book} value={book}>{book}</option>)}
+              <select value={queueCopyId ?? ''} onChange={(event) => setQueueCopyId(Number(event.target.value))} aria-label="Chọn bản sao xem hàng đợi" disabled={!queueCopies.length}>
+                {!queueCopies.length && <option value="">Chưa có bản sao được đặt chỗ</option>}
+                {queueCopies.map((item) => <option key={item.copyId} value={item.copyId}>{item.title} • {item.barcode}</option>)}
               </select>
             </div>
             <div className="queue-list">
@@ -314,8 +341,8 @@ export default function ReservationsLibrarianPage() {
           onConfirm={confirmNotify}
         >
           <div className="reservation-confirm-copy">
-            <strong>{notifyTarget.member}</strong>
-            <span>{notifyTarget.title} • {notifyTarget.barcode}</span>
+            <strong>{notifyTarget.title} • {notifyTarget.barcode}</strong>
+            <span className="muted">Máy chủ sẽ kiểm tra lại thành viên đầu tiên đủ điều kiện trong hàng đợi hiện tại.</span>
             <span className="muted">Sau khi xác nhận, bản sao sẽ chuyển sang trạng thái giữ chỗ trong 2 ngày.</span>
           </div>
         </ConfirmAction>

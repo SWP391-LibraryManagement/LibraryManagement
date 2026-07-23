@@ -39,7 +39,6 @@ test('OpenAPI separates staff HTTP requests from the internal FE02 OTP contract'
     'DUE_DATE_REMINDER',
     'OVERDUE_NOTICE',
     'FINE_NOTICE',
-    'GENERAL_SYSTEM',
   ]);
   expect(httpSchema.properties.sourceFeature).toBeUndefined();
   expect(operation.description).toContain('Sensitive authentication notifications');

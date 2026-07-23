@@ -49,6 +49,69 @@ function latestBorrowState() {
   };
 }
 
+function seedPendingBorrowRequests({ userId, copyId, count }) {
+  const state = setup.dependencies.borrowingDependencies.state;
+  const normalizedUserId = Number(userId);
+  const normalizedCopyId = Number(copyId);
+  const normalizedCount = Number(count);
+  const userExists = setup.dependencies.authDependencies.state.users.some(
+    (user) => user.userId === normalizedUserId
+  );
+  const copyExists = state.copies.some((copy) => copy.copyId === normalizedCopyId);
+
+  if (
+    !userExists
+    || !copyExists
+    || !Number.isInteger(normalizedCount)
+    || normalizedCount < 1
+    || normalizedCount > 100
+  ) {
+    return null;
+  }
+
+  let nextRequestId =
+    Math.max(0, ...state.borrowRequests.map((request) => request.requestId)) + 1;
+  let nextDetailId =
+    Math.max(0, ...state.borrowDetails.map((detail) => detail.borrowDetailId)) + 1;
+  const requestIds = [];
+
+  for (let index = 0; index < normalizedCount; index += 1) {
+    const createdAt = new Date(Date.now() + index);
+    const requestId = nextRequestId;
+    state.borrowRequests.push({
+      requestId,
+      userId: normalizedUserId,
+      requestDate: createdAt,
+      status: 'PENDING',
+      createdBy: normalizedUserId,
+      approvedBy: null,
+      approvedAt: null,
+      rejectedAt: null,
+      processedAt: null,
+      createdAt,
+      updatedAt: null,
+    });
+    state.borrowDetails.push({
+      borrowDetailId: nextDetailId,
+      requestId,
+      userId: normalizedUserId,
+      copyId: normalizedCopyId,
+      borrowDate: null,
+      dueDate: null,
+      returnDate: null,
+      renewalCount: 0,
+      status: 'REQUESTED',
+      createdAt,
+      updatedAt: null,
+    });
+    requestIds.push(requestId);
+    nextRequestId += 1;
+    nextDetailId += 1;
+  }
+
+  return requestIds;
+}
+
 async function handleControl(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/__e2e__/setup') {
     const { memberEmail, librarianEmail, adminEmail, password } = await readJson(req);
@@ -81,6 +144,16 @@ async function handleControl(req, res, pathname) {
       librarianUserId: librarian.userId,
       ...(admin ? { adminUserId: admin.userId } : {}),
     });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/__e2e__/seed-pending-borrow-requests') {
+    const requestIds = seedPendingBorrowRequests(await readJson(req));
+    if (!requestIds) {
+      sendJson(res, 400, { error: 'Valid userId, copyId, and count from 1 to 100 are required.' });
+      return;
+    }
+    sendJson(res, 201, { requestIds });
     return;
   }
 

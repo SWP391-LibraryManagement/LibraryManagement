@@ -14,6 +14,7 @@ import { fmtDate, isOpenMemberReservationStatus, mapReservation } from '../../ut
 import { getStatusLabel } from '../../utils/uiLabels';
 
 const CANDIDATE_PAGE_SIZE = 20;
+const RESERVATION_API_PAGE_SIZE = 100;
 const EMPTY_CANDIDATE_PAGINATION = {
   page: 1,
   limit: CANDIDATE_PAGE_SIZE,
@@ -42,8 +43,18 @@ export default function MyReservationsPage() {
   async function loadReservations() {
     setLoading(true);
     try {
-      const data = await reservationApi.listMine();
-      setReservations((data.reservations || []).map(mapReservation));
+      const allReservations = [];
+      let page = 1;
+      let totalApiPages = 1;
+
+      do {
+        const data = await reservationApi.listMine({ page, limit: RESERVATION_API_PAGE_SIZE });
+        allReservations.push(...(data.reservations || []));
+        totalApiPages = Number(data.pagination?.totalPages || 0);
+        page += 1;
+      } while (page <= totalApiPages);
+
+      setReservations(allReservations.map(mapReservation));
       setNotice(null);
     } catch (error) {
       setReservations([]);

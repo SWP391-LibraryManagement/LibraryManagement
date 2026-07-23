@@ -107,16 +107,6 @@ const cancelReservationValidators = [
   handleValidationErrors,
 ];
 
-const processReservationValidators = [
-  ...reservationIdParamValidator,
-  body('copyId')
-    .optional({ nullable: true, checkFalsy: true })
-    .isInt({ min: 1 })
-    .withMessage('Copy ID must be a positive integer.')
-    .toInt(),
-  handleValidationErrors,
-];
-
 const processQueueValidators = [
   body('copyId')
     .exists()
@@ -137,6 +127,5 @@ module.exports = {
   listMyReservationsValidators,
   listReservationsValidators,
   cancelReservationValidators,
-  processReservationValidators,
   processQueueValidators,
 };
