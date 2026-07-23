@@ -663,11 +663,13 @@ describe('FE08 reservation management', () => {
     );
   });
 
-  test('expire-holds serializes safe warnings when promotion notification failure auditing fails', async () => {
+  test('expire-holds serializes every safe warning when promotion notification failure auditing fails', async () => {
     const createNotificationRequest = jest
       .fn()
       .mockResolvedValueOnce({ notificationId: 1, status: 'PENDING' })
-      .mockRejectedValueOnce(new Error('provider unavailable'));
+      .mockResolvedValueOnce({ notificationId: 2, status: 'PENDING' })
+      .mockRejectedValueOnce(new Error('provider one unavailable'))
+      .mockRejectedValueOnce(new Error('provider two unavailable'));
     const { notificationService, requester } = makeNotificationServiceDouble(
       createNotificationRequest
     );
@@ -682,18 +684,6 @@ describe('FE08 reservation management', () => {
       notificationService,
       auditLogRepository,
     });
-    const firstMember = await createVerifiedUser({
-      app,
-      authDependencies,
-      reservationDependencies,
-      email: 'expire.warning.first@example.test',
-    });
-    const secondMember = await createVerifiedUser({
-      app,
-      authDependencies,
-      reservationDependencies,
-      email: 'expire.warning.second@example.test',
-    });
     const librarian = await createVerifiedUser({
       app,
       authDependencies,
@@ -702,44 +692,78 @@ describe('FE08 reservation management', () => {
       role: 'LIBRARIAN',
       approveMember: false,
     });
+    const queueMembers = [];
 
-    for (const member of [firstMember, secondMember]) {
+    for (const copyId of [1, 3]) {
+      const firstEmail = `expire.warning.first.${copyId}@example.test`;
+      const secondEmail = `expire.warning.second.${copyId}@example.test`;
+      const first = await createVerifiedUser({
+        app,
+        authDependencies,
+        reservationDependencies,
+        email: firstEmail,
+      });
+      const second = await createVerifiedUser({
+        app,
+        authDependencies,
+        reservationDependencies,
+        email: secondEmail,
+      });
+      queueMembers.push({ copyId, first, second, secondEmail });
+
+      for (const member of [first, second]) {
+        await request(app)
+          .post('/api/reservations')
+          .set('Authorization', authHeader(member.accessToken))
+          .send({ copyId })
+          .expect(201);
+      }
+
+      reservationDependencies.state.copies.find(
+        (copy) => copy.copyId === copyId
+      ).status = 'AVAILABLE';
       await request(app)
-        .post('/api/reservations')
-        .set('Authorization', authHeader(member.accessToken))
-        .send({ copyId: 1 })
-        .expect(201);
+        .post('/api/reservations/process-queue')
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({ copyId })
+        .expect(200);
+      reservationDependencies.state.reservations.find(
+        (item) => item.userId === first.userId && item.copyId === copyId
+      ).expiresAt = new Date(Date.now() - 60 * 1000);
     }
-
-    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
-    await request(app)
-      .post('/api/reservations/process-queue')
-      .set('Authorization', authHeader(librarian.accessToken))
-      .send({ copyId: 1 })
-      .expect(200);
-
-    const firstReservation = reservationDependencies.state.reservations.find(
-      (item) => item.userId === firstMember.userId && item.copyId === 1
-    );
-    firstReservation.expiresAt = new Date(Date.now() - 60 * 1000);
 
     const expireResponse = await request(app)
       .post('/api/reservations/expire-holds')
       .set('Authorization', authHeader(librarian.accessToken));
 
     expect(expireResponse.status).toBe(200);
-    expect(expireResponse.body.promoted).toHaveLength(1);
-    expect(expireResponse.body.notificationWarnings).toEqual([{
-      reservationId: expireResponse.body.promoted[0].reservationId,
-      copyId: 1,
-      code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
-      message: 'The reservation hold was created, but notification failure auditing was unavailable.',
-    }]);
-    expect(requester.createNotificationRequest).toHaveBeenCalledTimes(2);
+    expect(expireResponse.body.promoted).toHaveLength(2);
+    expect(expireResponse.body.notificationWarnings).toEqual(
+      expireResponse.body.promoted.map((promoted) => ({
+        reservationId: promoted.reservationId,
+        copyId: promoted.copyId,
+        code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+        message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+      }))
+    );
+    for (const warning of expireResponse.body.notificationWarnings) {
+      expect(Object.keys(warning).sort()).toEqual([
+        'code',
+        'copyId',
+        'message',
+        'reservationId',
+      ]);
+    }
+    expect(requester.createNotificationRequest).toHaveBeenCalledTimes(4);
     const serializedWarnings = JSON.stringify(expireResponse.body.notificationWarnings);
-    expect(serializedWarnings).not.toContain('provider unavailable');
-    expect(serializedWarnings).not.toContain('audit unavailable');
-    expect(serializedWarnings).not.toContain('expire.warning.second@example.test');
+    for (const forbidden of [
+      'provider one unavailable',
+      'provider two unavailable',
+      'audit unavailable',
+      ...queueMembers.map(({ secondEmail }) => secondEmail),
+    ]) {
+      expect(serializedWarnings).not.toContain(forbidden);
+    }
   });
 
   test('process-queue keeps the hold when the FE10 requester fails and records only a safe audit', async () => {

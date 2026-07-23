@@ -189,3 +189,68 @@ the original business behavior and narrows the correction to those findings.
 - Run focused FE08/FE12 tests, deployment utility tests, traceability, full
   backend/frontend verification, security/diff checks, and the repository CI
   suite before repeated H3.
+
+## 8. Repeated H3 Remediation Addendum
+
+**Approved:** 2026-07-23
+
+The repeated H3 review passed the implemented FE08 response propagation, FE12
+baseline wildcard cases, Azure procedure, virtual merge, and security
+boundaries, but found four bounded completeness gaps. This addendum preserves
+all approved production behavior and limits the next uncommitted remediation
+to those findings.
+
+### 8.1 Complete SQL `LIKE` Bracket-Class Parity
+
+- Production SQL and its parameterized `%${q}%` binding remain unchanged.
+- The in-memory compiler must treat a right bracket immediately after `[` or
+  `[^` as a bracket-class member and continue to the later closing bracket.
+- The compiler must preserve the already approved `%`, `_`, ranges, negated
+  classes, ordinary literals, and invalid/unclosed-bracket fallback behavior.
+- RED-GREEN parity cases cover both a class that matches `]` (`[]]`) and a
+  negated class that excludes `]` (`[^]]`).
+- No dependency, new searchable field, database mutation, or production API
+  behavior is introduced.
+
+### 8.2 Prove Multiple FE08 Promotion Warnings
+
+- Add service and route regressions with at least two expired copies, two
+  promoted holds, and two independent notification-failure audit failures.
+- Assert that `notificationWarnings[]` contains every warning in promotion
+  order and that each item contains only `reservationId`, `copyId`, `code`, and
+  the safe message.
+- Assert serialized output contains no recipient identity, provider detail,
+  rendered notification content, or internal error text.
+- The existing implementation may remain unchanged when the new regressions
+  prove the loop already satisfies this contract.
+
+### 8.3 Complete The Singular Warning OpenAPI Contract
+
+- Document the `POST /api/reservations/process-queue` `200` response as an
+  object with required `selectedReservation` and optional
+  `notificationWarning`.
+- The singular warning contains only `code` and `message`;
+  `additionalProperties: false` prevents accidental contract expansion.
+- Preserve the separately documented `expire-holds.notificationWarnings[]`
+  shape with `reservationId` and `copyId`.
+
+### 8.4 Make Governance Evidence Current
+
+- Record that fresh H2 approved commit
+  `b931e005e50dc9c0ec9c177f2874f88a1df943b0`, PR #62 became ready and
+  mergeable, and CI run `30019439505` passed for that exact head.
+- Record that repeated H3 then returned this bounded second finding set.
+- Mark the completed H2, commit/push, and CI checklist items as complete while
+  leaving repeated H3, merge, post-merge CI, and staging verification open.
+- Update the four feature task records and execution plan so the historical
+  H2 evidence is accurate and this new uncommitted diff explicitly requires
+  another fresh H2, updated CI, and repeated H3.
+
+### 8.5 Verification And Gate
+
+- Run the focused FE08/FE12 tests first, then the repository-equivalent L1-L4
+  suite, dependency audits, traceability, OpenAPI parsing, security review,
+  latest-main virtual merge, and diff hygiene.
+- Keep every change from this addendum uncommitted until a fresh H2 review.
+- Do not merge PR #62, mutate Azure SQL, or redeploy staging before a repeated
+  H3 passes on the next reviewed head.

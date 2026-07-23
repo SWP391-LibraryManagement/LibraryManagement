@@ -1229,7 +1229,27 @@ paths:
               properties:
                 copyId: { type: integer }
       responses:
-        '200': { description: Next eligible reservation held (NOTIFIED) or none }
+        '200':
+          description: Next eligible reservation held (NOTIFIED), no eligible reservation, or a safe notification-audit warning
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [selectedReservation]
+                properties:
+                  selectedReservation:
+                    type: object
+                    nullable: true
+                  message: { type: string }
+                  notificationWarning:
+                    type: object
+                    additionalProperties: false
+                    required: [code, message]
+                    properties:
+                      code:
+                        type: string
+                        enum: [RESERVATION_NOTIFY_AUDIT_FAILED]
+                      message: { type: string }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/reservations/expire-holds:

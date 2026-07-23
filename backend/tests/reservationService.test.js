@@ -225,8 +225,33 @@ describe('FE08 reservation service coverage', () => {
     }));
   });
 
-  test('returns safe promotion warnings when expiration notification failure auditing fails', async () => {
-    const expired = [{ reservationId: 50, copyId: 7 }];
+  test('returns every safe promotion warning in expiration order', async () => {
+    const expired = [
+      { reservationId: 50, copyId: 7 },
+      { reservationId: 60, copyId: 8 },
+    ];
+    const nextByCopy = new Map([
+      [7, reservation({ reservationId: 51, userId: 101, copyId: 7 })],
+      [8, reservation({ reservationId: 61, userId: 102, copyId: 8 })],
+    ]);
+    const heldByCopy = new Map([
+      [7, reservation({
+        reservationId: 51,
+        userId: 101,
+        copyId: 7,
+        status: 'NOTIFIED',
+        notifiedAt: FIXED_NOW,
+        expiresAt: new Date('2026-07-25T00:00:00.000Z'),
+      })],
+      [8, reservation({
+        reservationId: 61,
+        userId: 102,
+        copyId: 8,
+        status: 'NOTIFIED',
+        notifiedAt: FIXED_NOW,
+        expiresAt: new Date('2026-07-25T00:00:00.000Z'),
+      })],
+    ]);
     const auditLogRepository = {
       create: jest.fn(async (entry) => {
         if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
@@ -237,28 +262,37 @@ describe('FE08 reservation service coverage', () => {
     const notificationRequest = jest.fn(async () => {
       throw new Error('notification unavailable');
     });
-    const nextReservation = reservation();
-    const { service, heldReservation } = makeService({
+    const { service } = makeService({
       auditLogRepository,
       notificationRequest,
       repository: {
         expireOverdueHolds: jest.fn(async () => expired),
-        findNextActiveReservationForCopy: jest.fn(async () => nextReservation),
+        findNextActiveReservationForCopy: jest.fn(async (copyId) => nextByCopy.get(copyId)),
+        holdReservation: jest.fn(async ({ copyId }) => heldByCopy.get(copyId)),
       },
     });
 
-    await expect(service.expireHolds(LIBRARIAN, {})).resolves.toEqual({
-      expiredCount: 1,
-      expired,
-      promoted: [heldReservation],
-      notificationWarnings: [{
-        reservationId: heldReservation.reservationId,
-        copyId: heldReservation.copyId,
+    const result = await service.expireHolds(LIBRARIAN, {});
+
+    expect(result.expiredCount).toBe(2);
+    expect(result.expired).toEqual(expired);
+    expect(result.promoted).toEqual([heldByCopy.get(7), heldByCopy.get(8)]);
+    expect(result.notificationWarnings).toEqual([
+      {
+        reservationId: 51,
+        copyId: 7,
         code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
         message: 'The reservation hold was created, but notification failure auditing was unavailable.',
-      }],
-    });
-    expect(Object.keys(heldReservation)).not.toContain('notificationWarning');
+      },
+      {
+        reservationId: 61,
+        copyId: 8,
+        code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+        message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+      },
+    ]);
+    expect(Object.keys(heldByCopy.get(7))).not.toContain('notificationWarning');
+    expect(Object.keys(heldByCopy.get(8))).not.toContain('notificationWarning');
   });
 
   test('passes required lifecycle audits into reservation mutation transactions', async () => {

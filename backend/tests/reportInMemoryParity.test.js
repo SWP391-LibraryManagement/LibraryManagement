@@ -9,7 +9,17 @@ const ROLE_IDS = {
 };
 const VALID_COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
 
-function makeReportRepository({ borrowDetails } = {}) {
+function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
+  const rolesByUserId = new Map([
+    [1, ['ADMIN']],
+    [2, ['LIBRARIAN']],
+    [3, ['MEMBER']],
+    [4, ['LIBRARIAN', 'MEMBER']],
+  ]);
+  for (const [userId, roles] of roleOverrides) {
+    rolesByUserId.set(userId, roles);
+  }
+
   const authState = {
     users: [
       { userId: 4, status: 'LOCKED' },
@@ -17,12 +27,7 @@ function makeReportRepository({ borrowDetails } = {}) {
       { userId: 3, status: 'ACTIVE' },
       { userId: 2, status: 'INACTIVE' },
     ],
-    rolesByUserId: new Map([
-      [1, ['ADMIN']],
-      [2, ['LIBRARIAN']],
-      [3, ['MEMBER']],
-      [4, ['LIBRARIAN', 'MEMBER']],
-    ]),
+    rolesByUserId,
   };
   const borrowingState = {
     categories: [
@@ -209,10 +214,19 @@ describe('in-memory FE12 report repository parity', () => {
     ['L_BRARIAN', [2, 4]],
     ['[1-2]', [1, 2]],
     ['[^A-Z0-9]', []],
+    ['[^]]', [1, 2, 3, 4]],
   ])('user q preserves SQL LIKE semantics for %s', async (q, expectedUserIds) => {
     const report = await makeReportRepository().getUserStatistics({ q });
 
     expect(report.rows.map((row) => row.userId)).toEqual(expectedUserIds);
+  });
+
+  test('user q treats a leading closing bracket as a SQL LIKE class member', async () => {
+    const report = await makeReportRepository({
+      roleOverrides: [[4, ['LIBRARIAN', 'MEMBER', ']']]],
+    }).getUserStatistics({ q: '[]]' });
+
+    expect(report.rows.map((row) => row.userId)).toEqual([4]);
   });
 
   test('user q keeps ordinary literal matching case-insensitive', async () => {

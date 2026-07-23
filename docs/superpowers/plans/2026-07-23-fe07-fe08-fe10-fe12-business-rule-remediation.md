@@ -1090,7 +1090,7 @@ Standards and Spec review. Fix every valid finding and rerun affected checks.
 Do not stage, commit, push, run mutable Azure SQL, redeploy, or merge before
 explicit H2 approval.
 
-- [ ] **Step 5: After H2, stage only the reviewed scope and push PR #62.**
+- [x] **Step 5: After H2, stage only the reviewed scope and push PR #62.**
 
 ```powershell
 git add -- `
@@ -1123,7 +1123,7 @@ Expected: only the reviewed files are staged; `output/` is absent from the
 index; the commit and push succeed on
 `codex/fe07-fe08-fe10-fe12-business-rules`.
 
-- [ ] **Step 6: Require current PR checks and stop for repeated H3.**
+- [x] **Step 6: Require current PR checks and stop for repeated H3.**
 
 ```powershell
 gh pr checks 62 --watch
@@ -1144,3 +1144,433 @@ deployment, then run the existing read-only staging smoke suite and the
 read-only schema/constraint query from Task 18. Do not replay the FE10 migration
 unless the read-only check proves the reviewed constraint is absent and a new
 operator review explicitly authorizes that separate correction.
+
+### Task 20: Close the repeated H3 completeness findings
+
+**Files:**
+- Modify: `backend/tests/reportInMemoryParity.test.js`
+- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Modify: `backend/tests/reservationService.test.js`
+- Modify: `backend/tests/reservationRoutes.test.js`
+- Modify: `backend/src/docs/openapi.yaml`
+- Modify: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Modify: `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`
+- Modify: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
+
+**Interfaces:**
+- Consumes: H2-reviewed head
+  `b931e005e50dc9c0ec9c177f2874f88a1df943b0`, CI run `30019439505`,
+  and the repeated H3 Standards/Spec reports.
+- Preserves: production FE12 parameterized SQL, approved report fields,
+  FE08 service response DTOs, roles/permissions, database schema, dependencies,
+  Azure staging state, and the user-owned `output/` directory.
+- Produces: closing-bracket SQL `LIKE` parity, multi-warning FE08 regression
+  proof, a complete singular warning OpenAPI contract, and current governance
+  evidence. All changes remain uncommitted until fresh H2.
+
+- [x] **Step 1: Add RED SQL `LIKE` closing-bracket parity cases.**
+
+Allow the test-local factory to override role values without changing the
+default fixture:
+
+```js
+function makeReportRepository({ borrowDetails, roleOverrides = [] } = {}) {
+  const rolesByUserId = new Map([
+    [1, ['ADMIN']],
+    [2, ['LIBRARIAN']],
+    [3, ['MEMBER']],
+    [4, ['LIBRARIAN', 'MEMBER']],
+  ]);
+  for (const [userId, roles] of roleOverrides) {
+    rolesByUserId.set(userId, roles);
+  }
+
+  const authState = {
+    users: [
+      { userId: 4, status: 'LOCKED' },
+      { userId: 1, status: 'ACTIVE' },
+      { userId: 3, status: 'ACTIVE' },
+      { userId: 2, status: 'INACTIVE' },
+    ],
+    rolesByUserId,
+  };
+}
+```
+
+Extend the wildcard matrix and add a positive right-bracket member case:
+
+```js
+test.each([
+  ['%MEMBER%', [3, 4]],
+  ['L_BRARIAN', [2, 4]],
+  ['[1-2]', [1, 2]],
+  ['[^A-Z0-9]', []],
+  ['[^]]', [1, 2, 3, 4]],
+])('user q preserves SQL LIKE semantics for %s', async (q, expectedUserIds) => {
+  const report = await makeReportRepository().getUserStatistics({ q });
+  expect(report.rows.map((row) => row.userId)).toEqual(expectedUserIds);
+});
+
+test('user q treats a leading closing bracket as a SQL LIKE class member', async () => {
+  const report = await makeReportRepository({
+    roleOverrides: [[4, ['LIBRARIAN', 'MEMBER', ']']]],
+  }).getUserStatistics({ q: '[]]' });
+
+  expect(report.rows.map((row) => row.userId)).toEqual([4]);
+});
+```
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js
+```
+
+Expected: exactly the new `[^]]` and `[]]` cases fail against the current
+first-`]` parser; the existing 18 cases remain green.
+
+- [x] **Step 2: Make the smallest bracket-class compiler correction.**
+
+In `sqlLikePatternToRegExp`, treat a right bracket in the first class-member
+position as content, find the later terminator, and escape that member for the
+JavaScript regular expression:
+
+```js
+const negated = pattern[index + 1] === '^';
+const contentStart = index + (negated ? 2 : 1);
+const closingSearchStart =
+  pattern[contentStart] === ']' ? contentStart + 1 : contentStart;
+const closingIndex = pattern.indexOf(']', closingSearchStart);
+
+if (closingIndex > contentStart) {
+  const classBody = pattern
+    .slice(contentStart, closingIndex)
+    .replace(/\\/g, '\\\\')
+    .replace(/\]/g, '\\]')
+    .replace(/\^/g, '\\^');
+  source += `[${negated ? '^' : ''}${classBody}]`;
+  index = closingIndex;
+} else {
+  source += '\\[';
+}
+```
+
+Keep `-` unescaped so SQL ranges remain ranges. Keep the existing literal
+fallback for empty or unclosed classes. Do not change
+`backend/src/repositories/reportRepository.js`.
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
+```
+
+Expected: 3 suites pass; the parity file has 20 passing tests and no failures.
+
+- [x] **Step 3: Prove every FE08 expiration-promotion warning is returned.**
+
+Replace the single-warning service regression with two expired copies and two
+distinct held reservations:
+
+```js
+test('returns every safe promotion warning in expiration order', async () => {
+  const expired = [
+    { reservationId: 50, copyId: 7 },
+    { reservationId: 60, copyId: 8 },
+  ];
+  const nextByCopy = new Map([
+    [7, reservation({ reservationId: 51, userId: 101, copyId: 7 })],
+    [8, reservation({ reservationId: 61, userId: 102, copyId: 8 })],
+  ]);
+  const heldByCopy = new Map([
+    [7, reservation({
+      reservationId: 51,
+      userId: 101,
+      copyId: 7,
+      status: 'NOTIFIED',
+      notifiedAt: FIXED_NOW,
+      expiresAt: new Date('2026-07-25T00:00:00.000Z'),
+    })],
+    [8, reservation({
+      reservationId: 61,
+      userId: 102,
+      copyId: 8,
+      status: 'NOTIFIED',
+      notifiedAt: FIXED_NOW,
+      expiresAt: new Date('2026-07-25T00:00:00.000Z'),
+    })],
+  ]);
+  const auditLogRepository = {
+    create: jest.fn(async (entry) => {
+      if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
+        throw new Error('audit unavailable');
+      }
+    }),
+  };
+  const notificationRequest = jest.fn(async () => {
+    throw new Error('provider unavailable');
+  });
+  const { service } = makeService({
+    auditLogRepository,
+    notificationRequest,
+    repository: {
+      expireOverdueHolds: jest.fn(async () => expired),
+      findNextActiveReservationForCopy: jest.fn(async (copyId) => nextByCopy.get(copyId)),
+      holdReservation: jest.fn(async ({ copyId }) => heldByCopy.get(copyId)),
+    },
+  });
+
+  const result = await service.expireHolds(LIBRARIAN, {});
+
+  expect(result.promoted).toEqual([heldByCopy.get(7), heldByCopy.get(8)]);
+  expect(result.notificationWarnings).toEqual([
+    {
+      reservationId: 51,
+      copyId: 7,
+      code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+      message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+    },
+    {
+      reservationId: 61,
+      copyId: 8,
+      code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+      message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+    },
+  ]);
+  expect(Object.keys(heldByCopy.get(7))).not.toContain('notificationWarning');
+  expect(Object.keys(heldByCopy.get(8))).not.toContain('notificationWarning');
+});
+```
+
+Extend the existing route regression using copies `1` and `3`:
+
+```js
+const createNotificationRequest = jest
+  .fn()
+  .mockResolvedValueOnce({ notificationId: 1, status: 'PENDING' })
+  .mockResolvedValueOnce({ notificationId: 2, status: 'PENDING' })
+  .mockRejectedValueOnce(new Error('provider one unavailable'))
+  .mockRejectedValueOnce(new Error('provider two unavailable'));
+
+const queueMembers = [];
+for (const copyId of [1, 3]) {
+  const firstEmail = `expire.warning.first.${copyId}@example.test`;
+  const secondEmail = `expire.warning.second.${copyId}@example.test`;
+  const first = await createVerifiedUser({
+    app,
+    authDependencies,
+    reservationDependencies,
+    email: firstEmail,
+  });
+  const second = await createVerifiedUser({
+    app,
+    authDependencies,
+    reservationDependencies,
+    email: secondEmail,
+  });
+  queueMembers.push({ copyId, first, second, secondEmail });
+
+  for (const member of [first, second]) {
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId })
+      .expect(201);
+  }
+  reservationDependencies.state.copies.find(
+    (copy) => copy.copyId === copyId
+  ).status = 'AVAILABLE';
+  await request(app)
+    .post('/api/reservations/process-queue')
+    .set('Authorization', authHeader(librarian.accessToken))
+    .send({ copyId })
+    .expect(200);
+  reservationDependencies.state.reservations.find(
+    (item) => item.userId === first.userId && item.copyId === copyId
+  ).expiresAt = new Date(Date.now() - 60 * 1000);
+}
+
+const expireResponse = await request(app)
+  .post('/api/reservations/expire-holds')
+  .set('Authorization', authHeader(librarian.accessToken));
+
+expect(expireResponse.status).toBe(200);
+expect(expireResponse.body.promoted).toHaveLength(2);
+expect(expireResponse.body.notificationWarnings).toEqual(
+  expireResponse.body.promoted.map((promoted) => ({
+    reservationId: promoted.reservationId,
+    copyId: promoted.copyId,
+    code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+    message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+  }))
+);
+expect(requester.createNotificationRequest).toHaveBeenCalledTimes(4);
+const serializedWarnings = JSON.stringify(expireResponse.body.notificationWarnings);
+for (const forbidden of [
+  'provider one unavailable',
+  'provider two unavailable',
+  'audit unavailable',
+  ...queueMembers.map(({ secondEmail }) => secondEmail),
+]) {
+  expect(serializedWarnings).not.toContain(forbidden);
+}
+```
+
+The approved finding is missing regression depth, not a known product failure.
+If these tests pass against the current service loop, do not change production
+service code merely to manufacture a RED state.
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js tests/reservationRepository.test.js
+```
+
+Expected: all focused FE08 tests pass; both service and serialized route output
+contain two ordered warnings and no forbidden details.
+
+- [x] **Step 4: Document the singular process-queue warning response.**
+
+Replace the `process-queue` `200` shorthand in
+`backend/src/docs/openapi.yaml` with:
+
+```yaml
+'200':
+  description: Next eligible reservation held (NOTIFIED), no eligible reservation, or a safe notification-audit warning
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [selectedReservation]
+        properties:
+          selectedReservation:
+            type: object
+            nullable: true
+          message: { type: string }
+          notificationWarning:
+            type: object
+            additionalProperties: false
+            required: [code, message]
+            properties:
+              code:
+                type: string
+                enum: [RESERVATION_NOTIFY_AUDIT_FAILED]
+              message: { type: string }
+```
+
+Keep `expire-holds.notificationWarnings[]` unchanged. Parse the complete
+OpenAPI document:
+
+```powershell
+python -c "import yaml; yaml.safe_load(open('backend/src/docs/openapi.yaml', encoding='utf-8')); print('OPENAPI_OK')"
+```
+
+Expected: `OPENAPI_OK`.
+
+- [x] **Step 5: Make the H2/H3 evidence truthful.**
+
+Update the validation record to:
+
+- use status `IN PROGRESS - REPEATED H3 FINDINGS UNDER REMEDIATION`;
+- add H2-approved head
+  `b931e005e50dc9c0ec9c177f2874f88a1df943b0`;
+- record PR #62 as Ready, `MERGEABLE` / `CLEAN`;
+- record CI run `30019439505` as successful for that exact head;
+- record that repeated H3 returned closing-bracket parity, multi-warning
+  regression, singular OpenAPI, and stale-evidence findings;
+- check the prior fresh-H2, commit/push, and updated-CI checklist entries;
+- leave the new remediation's fresh H2, updated CI, repeated H3, merge,
+  post-merge CI, deployment, and read-only staging verification unchecked.
+
+For `FE07-T046`, `FE08-T040`, `FE10-S10`, and `FE12-N10`, replace the stale
+current-gate sentence with this state:
+
+```text
+Fresh H2 approved commit b931e00 and PR CI run 30019439505 passed. The repeated
+H3 review returned the bounded round-two completeness findings; the new
+uncommitted remediation requires another fresh H2, updated PR CI, and repeated
+H3 before merge.
+```
+
+Mark Task 19 Steps 5 and 6 complete, retain Task 19 Step 7 open, and record this
+Task 20 as the only active remediation. Do not claim merge, post-merge CI, or
+Azure staging completion.
+
+- [x] **Step 6: Run focused and repository-equivalent verification.**
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js tests/reservationRepository.test.js tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
+npm.cmd --prefix frontend test -- --runInBand test/reservationFrontend.test.js
+npm.cmd run test:deployment
+npm.cmd run trace:enforce
+python -c "import yaml; yaml.safe_load(open('backend/src/docs/openapi.yaml', encoding='utf-8')); print('OPENAPI_OK')"
+git diff --check
+
+npm.cmd audit --audit-level=high
+npm.cmd --prefix backend audit --audit-level=high
+npm.cmd --prefix frontend audit --audit-level=high
+npm.cmd --prefix backend test
+npm.cmd --prefix backend run test:integration:system
+npm.cmd --prefix backend run test:coverage:ci
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+npm.cmd run test:e2e
+npm.cmd run test:deployment
+node -e "const app = require('./backend/src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid'); console.log('BACKEND_IMPORT_OK');"
+```
+
+Expected: every command exits `0`; audit count remains zero at the high
+threshold; coverage remains above repository thresholds; E2E passes in full.
+
+- [x] **Step 7: Review scope, security, and latest-main compatibility; stop for H2.**
+
+```powershell
+git fetch origin main
+git status --short
+git diff --stat b931e00
+git diff --name-only b931e00
+git diff --check b931e00
+git merge-tree --write-tree origin/main HEAD
+git diff b931e00 -- `
+  backend/tests/helpers/inMemoryReportRepositories.js `
+  backend/tests/reportInMemoryParity.test.js `
+  backend/tests/reservationService.test.js `
+  backend/tests/reservationRoutes.test.js `
+  backend/src/docs/openapi.yaml `
+  .sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md
+```
+
+Confirm:
+
+- production FE12 SQL remains parameterized and unchanged;
+- FE08 warnings contain no recipient, provider, rendered-content, stack, or
+  secret data;
+- no schema, permission, role, dependency, frontend, or Azure mutation exists;
+- only the approved Task 20 files changed;
+- `output/audit-librarian-2026-07-22/` remains untracked and untouched;
+- the virtual merge with latest `origin/main` is clean.
+
+Stop with the complete uncommitted diff and fresh evidence. Do not stage,
+commit, push, merge, run mutable Azure SQL, or deploy before explicit fresh H2.
+
+Round-two verification completed on 2026-07-23: focused backend 6 suites /
+107 tests, full backend 61 suites / 1,013 tests, system integration 10 tests,
+frontend 212 tests plus lint/build, Chromium E2E 4/4, deployment utilities 8/8,
+all three high-threshold audits at 0 vulnerabilities, traceability enforcement,
+OpenAPI parsing, backend import, and diff hygiene passed. The current committed
+head merged cleanly with `origin/main` as tree
+`e22a848b1f806a4988092581e78e3e76501805c6`; applying the complete round-two
+patch before the final governance-evidence update to that tree also succeeded as
+`9fecfa6dfd5e99dd7476c731163f3be2a7c38fa2`. This was the frozen pre-H2 state.
+Fresh H2 approved the round-two package on 2026-07-23 and authorized the
+reviewed commit/push; updated PR CI and repeated H3 remain mandatory before
+merge.

@@ -29,13 +29,16 @@ function sqlLikePatternToRegExp(pattern) {
     } else if (character === '_') {
       source += '.';
     } else if (character === '[') {
-      const closingIndex = pattern.indexOf(']', index + 1);
       const negated = pattern[index + 1] === '^';
       const contentStart = index + (negated ? 2 : 1);
+      const closingSearchStart =
+        pattern[contentStart] === ']' ? contentStart + 1 : contentStart;
+      const closingIndex = pattern.indexOf(']', closingSearchStart);
       if (closingIndex > contentStart) {
         const classBody = pattern
           .slice(contentStart, closingIndex)
           .replace(/\\/g, '\\\\')
+          .replace(/\]/g, '\\]')
           .replace(/\^/g, '\\^');
         source += `[${negated ? '^' : ''}${classBody}]`;
         index = closingIndex;
