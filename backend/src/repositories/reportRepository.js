@@ -69,7 +69,7 @@ function toCountMap(rows, keyName, countName, allowedStatuses) {
       ? normalizeStatus(row[keyName], allowedStatuses)
       : toDateKey(row[keyName]);
     if (key) {
-      counts[key] = Number(row[countName] || 0);
+      counts[key] = (counts[key] || 0) + Number(row[countName] || 0);
     }
   }
 

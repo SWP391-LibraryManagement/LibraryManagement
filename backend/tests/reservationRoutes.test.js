@@ -1127,6 +1127,53 @@ describe('FE08 reservation management', () => {
     expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
   });
 
+  test('reservation list derives ACTIVE FIFO positions after the head is notified', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'derived-position.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const first = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+    const second = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.reservations[0].status = 'NOTIFIED';
+    const response = await request(app)
+      .get('/api/reservations')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .expect(200);
+    const byId = new Map(
+      response.body.reservations.map((reservation) => [reservation.reservationId, reservation])
+    );
+
+    expect(byId.get(first.body.reservation.reservationId).queuePosition).toBeNull();
+    expect(byId.get(second.body.reservation.reservationId).queuePosition).toBe(1);
+  });
+
   test('notified cancellation retains notification history', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
     const member = await createVerifiedUser({

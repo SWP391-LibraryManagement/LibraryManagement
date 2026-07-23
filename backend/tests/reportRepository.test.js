@@ -109,6 +109,21 @@ test('report searches are parameterized and user rows use increasing IDs', async
   expect(report.rows.map((row) => row.userId)).toEqual([2, 9]);
 });
 
+test('normalized UNKNOWN status groups are accumulated instead of overwritten', async () => {
+  useUserReport({
+    totalMembers: 0,
+    totalRows: 0,
+    usersByStatus: [
+      { UserStatus: 'SUSPENDED', UserCount: 2 },
+      { UserStatus: 'DELETED', UserCount: 3 },
+    ],
+  });
+
+  const report = await reportRepository.getUserStatistics();
+
+  expect(report.metrics.usersByStatus.UNKNOWN).toBe(5);
+});
+
 test('borrowing request status counts deduplicate joined detail rows', async () => {
   useRecordsets([
     [{ ActiveLoans: 2, OverdueLoans: 0, TotalRows: 2 }],

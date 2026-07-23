@@ -58,13 +58,25 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
     const user = getUser(reservation.userId);
     const copy = getCopy(reservation.copyId);
+    const queuePosition = reservation.status === 'ACTIVE'
+      ? reservations
+        .filter(
+          (item) => item.copyId === reservation.copyId && item.status === 'ACTIVE'
+        )
+        .sort(
+          (left, right) =>
+            new Date(left.reservedAt).getTime() - new Date(right.reservedAt).getTime()
+            || left.reservationId - right.reservationId
+        )
+        .findIndex((item) => item.reservationId === reservation.reservationId) + 1
+      : null;
 
     return clone({
       reservationId: reservation.reservationId,
       userId: reservation.userId,
       copyId: reservation.copyId,
       reservedAt: reservation.reservedAt,
-      queuePosition: reservation.queuePosition,
+      queuePosition,
       expiresAt: reservation.expiresAt,
       notifiedAt: reservation.notifiedAt,
       cancelledAt: reservation.cancelledAt,
@@ -222,6 +234,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         openReservations.filter(
           (reservation) =>
             reservation.copyId === normalizedCopyId
+            && reservation.status === 'ACTIVE'
         ).length + 1;
       const now = new Date();
       const reservation = {
@@ -341,11 +354,12 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       return mapReservation(nextReservation || null);
     },
 
-    async holdReservation({ reservationId, copyId, notifiedAt, expiresAt }) {
+    async holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt }) {
       const copy = getCopy(copyId);
       const reservation = reservations.find(
         (item) =>
           item.reservationId === Number(reservationId) &&
+          item.userId === Number(userId) &&
           item.copyId === Number(copyId) &&
           item.status === 'ACTIVE'
       );
@@ -367,7 +381,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       reservation.status = 'NOTIFIED';
       reservation.notifiedAt = notifiedAt;
       reservation.expiresAt = expiresAt;
-      reservation.queuePosition = 1;
+      reservation.queuePosition = null;
       reservation.updatedAt = new Date();
       copy.status = 'RESERVED';
       copy.updatedAt = new Date();

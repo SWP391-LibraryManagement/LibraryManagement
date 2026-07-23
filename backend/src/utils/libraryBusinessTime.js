@@ -1,4 +1,7 @@
 const BUSINESS_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+// Vietnam has used UTC+07:00 year-round since 1975, so current library dates
+// have a deterministic UTC interval without daylight-saving transitions.
+const BUSINESS_UTC_OFFSET_MINUTES = 7 * 60;
 
 function businessDateParts(value) {
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
@@ -30,6 +33,17 @@ function formatBusinessDate(value) {
   return `${fields.year}-${fields.month}-${fields.day}`;
 }
 
+function businessDateUtcBounds(value) {
+  const { year, month, day } = businessDateParts(value);
+  const startEpoch =
+    Date.UTC(year, month - 1, day) - BUSINESS_UTC_OFFSET_MINUTES * 60 * 1000;
+
+  return {
+    start: new Date(startEpoch),
+    end: new Date(startEpoch + 86400000),
+  };
+}
+
 function addBusinessDays(dateOnly, days) {
   const date = new Date(`${dateOnly}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -44,6 +58,7 @@ module.exports = {
   BUSINESS_TIME_ZONE,
   overdueDaysBetween,
   formatBusinessDate,
+  businessDateUtcBounds,
   addBusinessDays,
   compareBusinessDates,
 };

@@ -46,12 +46,28 @@ test('queue hold revalidates current account and MEMBER role inside the transact
   const holdStart = repositorySource.indexOf('async function holdReservation');
   const holdEnd = repositorySource.indexOf('async function expireOverdueHolds', holdStart);
   const source = repositorySource.slice(holdStart, holdEnd);
+  const memberLockIndex = source.indexOf('sp_getapplock');
+  const memberRowsIndex = source.indexOf('FROM Users u WITH (UPDLOCK, HOLDLOCK)');
   const copyLockIndex = source.indexOf('FROM BookCopies WITH (UPDLOCK, HOLDLOCK)');
   const reservationLockIndex = source.indexOf('FROM Reservations r WITH (UPDLOCK, HOLDLOCK)');
 
-  expect(copyLockIndex).toBeGreaterThanOrEqual(0);
+  expect(source).toContain('FE08-RESERVATION-MEMBER-');
+  expect(memberLockIndex).toBeGreaterThanOrEqual(0);
+  expect(memberRowsIndex).toBeGreaterThan(memberLockIndex);
+  expect(copyLockIndex).toBeGreaterThan(memberRowsIndex);
   expect(reservationLockIndex).toBeGreaterThan(copyLockIndex);
   expect(source).toContain("eligibilityRole.RoleName = 'MEMBER'");
   expect(source).toContain("u.Status = 'ACTIVE'");
   expect(source).toContain("outcome: 'MEMBER_INELIGIBLE'");
+});
+
+test('reservation reads derive queue position from the current ACTIVE FIFO rows', () => {
+  const selectStart = repositorySource.indexOf('const reservationSelect');
+  const selectEnd = repositorySource.indexOf('function mapCopy', selectStart);
+  const source = repositorySource.slice(selectStart, selectEnd);
+
+  expect(source).not.toContain('r.QueuePosition,');
+  expect(source).toContain("queueReservation.Status = 'ACTIVE'");
+  expect(source).toContain('queueReservation.ReservedAt < r.ReservedAt');
+  expect(source).toContain('queueReservation.ReservationId <= r.ReservationId');
 });

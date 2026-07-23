@@ -161,9 +161,14 @@ export default function ReservationsLibrarianPage() {
     if (!notifyTarget || notifying) return;
     setNotifying(true);
     try {
-      await reservationApi.processQueue(notifyTarget.copyId);
+      const result = await reservationApi.processQueue(notifyTarget.copyId);
       await loadReservations();
-      showToast(`Đã giữ sách và tạo thông báo cho ${notifyTarget.member}.`, 'success');
+      if (!result.selectedReservation) {
+        showToast('Không có thành viên đủ điều kiện trong hàng chờ.', 'info');
+      } else {
+        const selected = mapReservation(result.selectedReservation);
+        showToast(`Đã giữ sách và tạo thông báo cho ${selected.member}.`, 'success');
+      }
       setNotifyTarget(null);
     } catch (error) {
       showToast(error.message, 'error');

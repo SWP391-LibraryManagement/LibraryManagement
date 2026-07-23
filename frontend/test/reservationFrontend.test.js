@@ -191,6 +191,16 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
   assert.match(source, /item\.copyId === queueCopyId/);
   assert.match(source, /reservationApi\.processQueue\(notifyTarget\.copyId\)/);
+  const confirmNotifyStart = source.indexOf('async function confirmNotify');
+  const confirmNotifyEnd = source.indexOf('async function expireHolds', confirmNotifyStart);
+  const confirmNotifySource = source.slice(confirmNotifyStart, confirmNotifyEnd);
+  assert.match(
+    confirmNotifySource,
+    /const result = await reservationApi\.processQueue\(notifyTarget\.copyId\)/,
+  );
+  assert.match(confirmNotifySource, /result\.selectedReservation/);
+  assert.match(confirmNotifySource, /mapReservation\(result\.selectedReservation\)/);
+  assert.doesNotMatch(confirmNotifySource, /notifyTarget\.member/);
   assert.doesNotMatch(source, /reservationApi\.process\(/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);

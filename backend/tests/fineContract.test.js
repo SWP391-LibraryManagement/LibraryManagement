@@ -50,3 +50,15 @@ test('library business time calculates overdue days at the Asia/Ho_Chi_Minh boun
   expect(overdueDaysBetween('2026-06-01', new Date('2026-06-01T16:30:00.000Z'))).toBe(0);
   expect(overdueDaysBetween('2026-06-01', new Date('2026-06-01T17:30:00.000Z'))).toBe(1);
 });
+
+// @spec FR-FE07-014A NFR-FE07-TIME-001
+test('library business date exposes the UTC interval for one Asia/Ho_Chi_Minh day', () => {
+  expect(fs.existsSync(businessTimePath)).toBe(true);
+  if (!fs.existsSync(businessTimePath)) return;
+
+  const { businessDateUtcBounds } = require(businessTimePath);
+  const bounds = businessDateUtcBounds('2026-06-10');
+
+  expect(bounds.start.toISOString()).toBe('2026-06-09T17:00:00.000Z');
+  expect(bounds.end.toISOString()).toBe('2026-06-10T17:00:00.000Z');
+});

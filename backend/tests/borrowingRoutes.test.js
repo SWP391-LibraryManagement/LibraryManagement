@@ -33,13 +33,14 @@ function makeTestApp({
   auditLogRepository,
   authDependencies = makeInMemoryAuthDependencies(),
   borrowingDependencies = makeInMemoryBorrowingDependencies(authDependencies.state),
+  clock = () => new Date('2026-06-10T00:00:00.000Z'),
 } = {}) {
   const authService = createAuthService(authDependencies);
   const borrowingService = createBorrowingService({
     borrowingRepository: borrowingDependencies.borrowingRepository,
     auditLogRepository: auditLogRepository || authDependencies.auditLogRepository,
     notificationService: notificationStub.service,
-    clock: () => new Date('2026-06-10T00:00:00.000Z'),
+    clock,
   });
   const app = createApp({ authService, borrowingService });
 
@@ -1507,6 +1508,70 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
   });
 
+  test('daily request limit follows the Vietnam business day across UTC midnight', async () => {
+    let currentTime = new Date('2026-06-09T17:30:00.000Z');
+    const setup = makeTestApp({ clock: () => currentTime });
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'daily-limit-vietnam-boundary@example.test',
+      approveMember: false,
+    });
+
+    await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4] })
+      .expect(201);
+
+    currentTime = new Date('2026-06-10T16:30:00.000Z');
+    const response = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [5] })
+      .expect(409);
+
+    expect(response.body.error.code).toBe('BORROW_DAILY_LIMIT_EXCEEDED');
+    expect(setup.borrowingDependencies.state.borrowRequests).toHaveLength(1);
+  });
+
+  test('approval persists Vietnam borrow date and due date near UTC midnight', async () => {
+    const setup = makeTestApp({
+      clock: () => new Date('2026-06-09T17:30:00.000Z'),
+    });
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-vietnam-date.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-vietnam-date.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
+    const response = await request(setup.app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+
+    expect(response.body.borrowRequest.details[0]).toMatchObject({
+      borrowDate: '2026-06-10',
+      dueDate: '2026-06-24',
+    });
+  });
+
   // AC-FE07-005, FR-FE07-018: a copy that is no longer AVAILABLE at approval time is rejected
   // and the request/details/copy data stay unchanged.
   test('approval is rejected when a copy is no longer available and leaves data unchanged', async () => {
@@ -2342,6 +2407,138 @@ describe('FE07 borrowing management', () => {
     expect(response.body.error.code).toBe('MEMBER_ROLE_REQUIRED');
     expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
     expect(setup.borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+  });
+
+  test('create rejects when MEMBER role is removed after service preflight', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'create-role-removed.member@example.test',
+    });
+    const originalGetMemberEligibility =
+      setup.borrowingDependencies.borrowingRepository.getMemberEligibility;
+    setup.borrowingDependencies.borrowingRepository.getMemberEligibility = async (userId) => {
+      const eligibility = await originalGetMemberEligibility.call(
+        setup.borrowingDependencies.borrowingRepository,
+        userId
+      );
+      setup.authDependencies.state.rolesByUserId.set(member.userId, []);
+      return { ...eligibility, hasMemberRole: true };
+    };
+
+    const response = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('MEMBER_ROLE_REQUIRED');
+    expect(setup.borrowingDependencies.state.borrowRequests).toHaveLength(0);
+    expect(setup.borrowingDependencies.state.borrowDetails).toHaveLength(0);
+  });
+
+  test('concurrent creates cannot exceed the locked daily borrowing tier', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'create-daily-race.member@example.test',
+    });
+    await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4, 5] })
+      .expect(201);
+
+    const repository = setup.borrowingDependencies.borrowingRepository;
+    const originalCountRequestedCopiesOnDate = repository.countRequestedCopiesOnDate;
+    let preflightCount = 0;
+    let releasePreflights;
+    const bothPreflightsRead = new Promise((resolve) => {
+      releasePreflights = resolve;
+    });
+    repository.countRequestedCopiesOnDate = async (...args) => {
+      const count = await originalCountRequestedCopiesOnDate.call(repository, ...args);
+      preflightCount += 1;
+      if (preflightCount === 2) {
+        releasePreflights();
+      }
+      await bothPreflightsRead;
+      return count;
+    };
+
+    const responses = await Promise.all([
+      request(setup.app)
+        .post('/api/borrow-requests')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyIds: [6] }),
+      request(setup.app)
+        .post('/api/borrow-requests')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyIds: [7] }),
+    ]);
+
+    expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);
+    expect(responses.find((response) => response.status === 409).body.error.code).toBe(
+      'BORROW_DAILY_LIMIT_EXCEEDED'
+    );
+    expect(setup.borrowingDependencies.state.borrowRequests).toHaveLength(2);
+    expect(setup.borrowingDependencies.state.borrowDetails).toHaveLength(5);
+  });
+
+  test('renewal rejects when MEMBER role is removed after service preflight', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'renew-role-removed.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'renew-role-removed.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(setup.app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    const dueDateBefore = setup.borrowingDependencies.state.borrowDetails[0].dueDate;
+    const originalGetMemberEligibility =
+      setup.borrowingDependencies.borrowingRepository.getMemberEligibility;
+    setup.borrowingDependencies.borrowingRepository.getMemberEligibility = async (userId) => {
+      const eligibility = await originalGetMemberEligibility.call(
+        setup.borrowingDependencies.borrowingRepository,
+        userId
+      );
+      setup.authDependencies.state.rolesByUserId.set(member.userId, []);
+      return { ...eligibility, hasMemberRole: true };
+    };
+
+    const response = await request(setup.app)
+      .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('MEMBER_ROLE_REQUIRED');
+    expect(setup.borrowingDependencies.state.borrowDetails[0]).toMatchObject({
+      dueDate: dueDateBefore,
+      renewalCount: 0,
+    });
   });
 
   test('approval derives the daily tier from locked membership state instead of a stale service read', async () => {

@@ -266,3 +266,242 @@ Confirm role/source ownership, safe errors, parameterized SQL, no secret/PII cha
 - [x] **Step 4: Stop at H2.**
 
 Present the complete local diff, exact L1-L4 evidence, SQL-test limitation if applicable, and residual decisions. Do not commit, push, deploy, or merge without the required human gate.
+
+---
+
+## Final Audit Remediation
+
+The post-H2 audit found concurrency and read-model gaps that the first test set did
+not exercise. The user approved this remediation pass with “triển khai đi”. Tasks
+6-9 supersede the earlier green conclusion; the batch is not complete until these
+tasks pass a fresh H2 review.
+
+### Task 6: Make FE07 create, return, and renewal decisions transactional
+
+**Files:**
+- Modify: `backend/tests/borrowingRepository.test.js`
+- Modify: `backend/tests/borrowingRoutes.test.js`
+- Modify: `backend/tests/fineContract.test.js`
+- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+- Modify: `backend/src/services/borrowingService.js`
+- Modify: `backend/src/repositories/borrowingRepository.js`
+- Modify: `backend/src/utils/libraryBusinessTime.js`
+
+**Interfaces:**
+- Consumes: `businessDateUtcBounds(referenceDate)`,
+  `createBorrowRequest({ userId, copyIds, requestDate, businessDate, businessDayStartUtc, businessDayEndUtc, auditLogRepository, auditEntry })`,
+  `approveBorrowRequest({ requestId, approvedBy, approvalDate, borrowDate, dueDate, businessDayStartUtc, businessDayEndUtc, auditLogRepository, auditEntry })`,
+  `returnBorrowDetail(...)`, and
+  `renewBorrowDetail({ borrowDetailId, userId, today, newDueDate, auditLogRepository, auditEntry })`.
+- Produces: exact UTC `[start, end)` bounds for one `Asia/Ho_Chi_Minh` business
+  date, persisted approval `BorrowDate`/`DueDate` values derived from that
+  business date, and repository results with explicit `outcome` values derived under locks;
+  successful create returns `{ outcome: 'CREATED', borrowRequest }`; successful
+  renewal returns `{ outcome: 'RENEWED', borrowDetail }`.
+
+- [x] **Step 1: Write failing transaction and stale-role tests.**
+
+Add source-order assertions proving create acquires the FE07 member application
+lock before `Users/UserRoles`, sorted `BookCopies`, borrowing counters, and
+`Reservations`; return acquires a request-scoped application lock before any copy
+lock; renewal acquires the FE07 member lock and rechecks the current `MEMBER`
+role, active account, unpaid fines, overdue loans, current detail, and reservation
+priority before its `UPDATE`. Add route tests that remove the member role after
+the service preflight and expect `403 MEMBER_ROLE_REQUIRED` from create and
+renewal without mutation. Add a boundary test proving the Vietnam business day
+maps to `17:00Z` through the next `17:00Z`, plus request/approval regressions
+that cross UTC midnight while remaining in one Vietnam business day.
+
+- [x] **Step 2: Run focused tests and verify RED.**
+
+```powershell
+npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRepository.test.js tests/borrowingRoutes.test.js
+```
+
+Expected: the new lock-order/source assertions and stale-role route assertions fail.
+
+- [x] **Step 3: Implement the atomic repository decisions.**
+
+For create, resolve only stable copy keys, acquire
+`FE07-BORROW-MEMBER-${userId}`, re-read the current user/role/tier under
+`UPDLOCK, HOLDLOCK`, lock sorted copies, and then check fines, overdue/active/daily
+borrowing rows and reservation rows before inserting the request/details/audit.
+Use application-supplied `requestDate` and the UTC `[businessDayStartUtc,
+businessDayEndUtc)` interval for authoritative request counts. For approval,
+count detail rows through `BorrowRequests.ApprovedAt` using the same UTC
+interval, while persisting `BorrowDate` as the Vietnam business date and
+`DueDate` as exactly 14 calendar days later.
+For return, acquire `FE07-RETURN-REQUEST-${requestId}` before the copy/detail
+locks so two different details of one request cannot hold one detail each and
+deadlock on the request-wide scan. For renewal, repeat all member, detail, fine,
+overdue, and reservation decisions inside the transaction and return one of:
+
+```js
+{ outcome: 'MEMBER_ROLE_REQUIRED' }
+{ outcome: 'MEMBER_ACCOUNT_INACTIVE' }
+{ outcome: 'BORROW_DETAIL_NOT_BORROWED' }
+{ outcome: 'RENEWAL_LIMIT_REACHED' }
+{ outcome: 'BORROW_DETAIL_OVERDUE' }
+{ outcome: 'UNPAID_FINE_BLOCKS_BORROWING' }
+{ outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' }
+{ outcome: 'RESERVATION_BLOCKS_RENEWAL' }
+{ outcome: 'RENEWED', borrowDetail }
+```
+
+Map those outcomes to the existing safe HTTP errors in the service. Keep the
+preflight reads only as fast feedback; the transaction is authoritative.
+
+- [x] **Step 4: Run focused tests and verify GREEN.**
+
+Repeat Step 2. Expected: all FE07 repository and route tests pass.
+
+---
+
+### Task 7: Align FE08 queue locking, derived positions, and staff feedback
+
+**Files:**
+- Modify: `backend/tests/reservationRepository.test.js`
+- Modify: `backend/tests/helpers/inMemoryReservationRepositories.js`
+- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+- Modify: `backend/src/repositories/reservationRepository.js`
+- Modify: `frontend/test/reservationFrontend.test.js`
+- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+
+**Interfaces:**
+- Consumes: `holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt })`
+  and `reservationApi.processQueue(copyId)`.
+- Produces: the shared FE08 order
+  `member application lock -> Users/UserRoles -> BookCopies -> Reservations`;
+  list/read results derive `queuePosition` from current `ACTIVE` rows ordered by
+  `(ReservedAt, ReservationId)`; the page names only the server-selected member.
+
+- [x] **Step 1: Write failing lock, position, and UI response tests.**
+
+Assert `holdReservation` acquires `FE08-RESERVATION-MEMBER-${userId}` and current
+member rows before its copy lock. Assert `reservationSelect` uses a correlated
+`COUNT(*)` over `Status = 'ACTIVE'` with the `(ReservedAt, ReservationId)`
+tie-breaker instead of selecting `r.QueuePosition`. Assert `confirmNotify` stores
+the `processQueue` response, branches on `selectedReservation`, and does not use
+`notifyTarget.member` in the success message.
+
+- [x] **Step 2: Run focused tests and verify RED.**
+
+```powershell
+npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRepository.test.js
+node --test frontend/test/reservationFrontend.test.js
+```
+
+Expected: hold still locks the copy first, queue position is persisted-state
+driven, and the page always reports the modal target as successful.
+
+- [x] **Step 3: Implement canonical locks and response-driven feedback.**
+
+Use the supplied `userId` to acquire the same member application lock used by
+reservation creation, lock/recheck `Users/UserRoles`, then lock the copy and
+reservation. Keep the legacy `QueuePosition` column write only for schema
+compatibility, but never expose it as business truth. In the page:
+
+```js
+const result = await reservationApi.processQueue(notifyTarget.copyId);
+await loadReservations();
+if (!result.selectedReservation) {
+  showToast('Không có thành viên đủ điều kiện trong hàng chờ.', 'info');
+} else {
+  const selected = mapReservation(result.selectedReservation);
+  showToast(`Đã giữ sách và tạo thông báo cho ${selected.member}.`, 'success');
+}
+```
+
+- [x] **Step 4: Run focused tests and verify GREEN.**
+
+Repeat Step 2. Expected: FE08 repository and frontend tests pass.
+
+---
+
+### Task 8: Accumulate FE12 normalized unknown groups
+
+**Files:**
+- Modify: `backend/tests/reportRepository.test.js`
+- Modify: `backend/src/repositories/reportRepository.js`
+
+**Interfaces:**
+- Consumes: grouped SQL rows passed to `toCountMap(...)`.
+- Produces: normalized keys whose counts are accumulated, including several raw
+  values that all normalize to `UNKNOWN`.
+
+- [x] **Step 1: Write the failing aggregation test.**
+
+Return two unsupported user statuses such as `SUSPENDED = 2` and `DELETED = 3`
+from the grouped result set and assert:
+
+```js
+expect(report.metrics.usersByStatus.UNKNOWN).toBe(5);
+```
+
+- [x] **Step 2: Run the focused test and verify RED.**
+
+```powershell
+npm.cmd --prefix backend test -- --runTestsByPath tests/reportRepository.test.js
+```
+
+Expected: `UNKNOWN` equals only the last raw group (`3`).
+
+- [x] **Step 3: Implement additive normalization.**
+
+Replace overwrite semantics with:
+
+```js
+counts[key] = (counts[key] || 0) + Number(row[countName] || 0);
+```
+
+- [x] **Step 4: Run the focused test and verify GREEN.**
+
+Repeat Step 2. Expected: all report repository tests pass.
+
+---
+
+### Task 9: Re-run gates, obtain fresh H2, and update the draft PR
+
+**Files:**
+- Review: every file changed by Tasks 6-8
+- Update checkboxes: this plan
+
+**Interfaces:**
+- Consumes: completed FE07/FE08/FE12 remediation.
+- Produces: current L1-L4 evidence, an H2-reviewed commit, and a pushed update to
+  the existing draft PR; merge/deploy remains blocked until H3.
+
+- [x] **Step 1: Run focused and full verification.**
+
+```powershell
+npm.cmd --prefix backend test
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
+npm.cmd run trace:enforce
+git diff --check
+```
+
+Run the mutable SQL concurrency suite only with an explicitly disposable SQL
+Server database and `FE07_SQL_TEST_ALLOW_MUTATION=true`; never point it at shared
+Azure staging.
+
+- [x] **Step 2: Perform security and diff review.**
+
+Confirm all new SQL remains parameterized, lock resources derive only from
+validated integer IDs, role/account checks occur server-side, error messages do
+not expose internals, no schema/dependency/secret/PII changes exist, and the
+untracked `output/audit-librarian-2026-07-22/` directory remains untouched.
+
+- [x] **Step 3: Obtain a fresh H2 review.**
+
+Run independent Standards and Spec reviews over the complete uncommitted diff and
+the new evidence. Fix any valid finding and rerun the affected checks. H2 must
+pass before staging or committing.
+
+- [ ] **Step 4: Commit and push the reviewed scope.**
+
+Stage only the plan, production files, and regression tests from Tasks 6-8,
+commit with a scoped `fix:` message, push the current branch, and verify the
+existing draft PR checks. Do not merge or deploy; H3 is still required.
