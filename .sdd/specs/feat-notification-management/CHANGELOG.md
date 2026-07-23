@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-23 - Make queued delivery ownership and claiming deterministic
+
+- Enforced canonical feature ownership for all queued notification types and required idempotency keys at every in-process source boundary.
+- Replayed the persisted notification after an idempotency unique-key race instead of surfacing an internal error.
+- Added exclusive pending-row claims and guarded sent/failed completion so concurrent workers deliver one queued notification once.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized shared frontend labels, accessibility names, and safe error feedback used around notification-related surfaces.

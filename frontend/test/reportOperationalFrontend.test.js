@@ -62,3 +62,15 @@ test('FE12 report pages consume the deterministic metrics and rows envelope', as
   assert.match(users, /metrics\.newMembersByPeriod/);
   assert.doesNotMatch(users, /membersByStatus/);
 });
+
+test('FE12 report pages send server pagination and expose previous/next navigation', async () => {
+  for (const path of reportPages) {
+    const source = await readFile(new URL(path, import.meta.url), 'utf8');
+
+    assert.match(source, /const \[page, setPage\] = useState\(1\)/);
+    assert.match(source, /page,\s*limit: REPORT_PAGE_SIZE/);
+    assert.match(source, /const totalPages = Math\.max\(1, Math\.ceil\(totalRows \/ pageLimit\)\)/);
+    assert.match(source, />Trang trước</);
+    assert.match(source, />Trang sau</);
+  }
+});

@@ -232,6 +232,105 @@ async function listPending(limit = 20) {
   return result.recordset.map(mapNotification);
 }
 
+async function claimNextPending() {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  await transaction.begin();
+
+  try {
+    const result = await new sql.Request(transaction).query(`
+      SELECT TOP 1 *
+      FROM Notifications WITH (UPDLOCK, READPAST, HOLDLOCK, ROWLOCK)
+      WHERE Status = 'PENDING'
+        AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))
+        AND (TemplateKey IS NULL OR TemplateKey NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))
+      ORDER BY CreatedAt ASC, NotificationId ASC
+    `);
+    const notification = mapNotification(result.recordset[0]);
+
+    if (!notification) {
+      await transaction.rollback();
+      return null;
+    }
+
+    return { notification, transaction };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+}
+
+async function markClaimSent({ claim, providerMessageId }) {
+  try {
+    const result = await new sql.Request(claim.transaction)
+      .input('NotificationId', sql.Int, claim.notification.notificationId)
+      .query(`
+        UPDATE Notifications
+        SET Status = 'SENT',
+            SentAt = GETDATE(),
+            AttemptCount = AttemptCount + 1,
+            LastErrorMessage = NULL
+        OUTPUT INSERTED.*
+        WHERE NotificationId = @NotificationId
+          AND Status = 'PENDING'
+      `);
+
+    if (!result.recordset.length) {
+      throw new Error('Claimed notification is no longer pending.');
+    }
+
+    await new sql.Request(claim.transaction)
+      .input('NotificationId', sql.Int, claim.notification.notificationId)
+      .input('ProviderMessageId', sql.NVarChar(255), providerMessageId || null)
+      .query(`
+        INSERT INTO NotificationAttempts (NotificationId, Status, ProviderMessageId)
+        VALUES (@NotificationId, 'SENT', @ProviderMessageId)
+      `);
+
+    await claim.transaction.commit();
+    return mapNotification(result.recordset[0]);
+  } catch (error) {
+    await claim.transaction.rollback();
+    throw error;
+  }
+}
+
+async function markClaimFailed({ claim, safeErrorMessage }) {
+  try {
+    const result = await new sql.Request(claim.transaction)
+      .input('NotificationId', sql.Int, claim.notification.notificationId)
+      .input('SafeErrorMessage', sql.NVarChar(500), safeErrorMessage)
+      .query(`
+        UPDATE Notifications
+        SET Status = 'FAILED',
+            AttemptCount = AttemptCount + 1,
+            LastErrorMessage = @SafeErrorMessage
+        OUTPUT INSERTED.*
+        WHERE NotificationId = @NotificationId
+          AND Status = 'PENDING'
+      `);
+
+    if (!result.recordset.length) {
+      throw new Error('Claimed notification is no longer pending.');
+    }
+
+    await new sql.Request(claim.transaction)
+      .input('NotificationId', sql.Int, claim.notification.notificationId)
+      .input('SafeErrorMessage', sql.NVarChar(500), safeErrorMessage)
+      .query(`
+        INSERT INTO NotificationAttempts (NotificationId, Status, SafeErrorMessage)
+        VALUES (@NotificationId, 'FAILED', @SafeErrorMessage)
+      `);
+
+    await claim.transaction.commit();
+    return mapNotification(result.recordset[0]);
+  } catch (error) {
+    await claim.transaction.rollback();
+    throw error;
+  }
+}
+
 async function markSent({ notificationId, providerMessageId }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
@@ -310,6 +409,9 @@ module.exports = {
   createRequest,
   createNotification,
   listPending,
+  claimNextPending,
+  markClaimSent,
+  markClaimFailed,
   markSent,
   markFailed,
 };

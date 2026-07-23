@@ -569,6 +569,7 @@ describe('FE08 reservation management', () => {
     const notificationRequest = requester.createNotificationRequest.mock.calls[0][0];
     expect(Object.keys(notificationRequest).sort()).toEqual([
       'channel',
+      'idempotencyKey',
       'recipientEmail',
       'sourceEntityId',
       'sourceEntityType',
@@ -591,6 +592,7 @@ describe('FE08 reservation management', () => {
       },
       sourceEntityType: 'RESERVATION',
       sourceEntityId: processResponse.body.selectedReservation.reservationId,
+      idempotencyKey: `FE08:RESERVATION_AVAILABLE:${processResponse.body.selectedReservation.reservationId}`,
     });
     expect(Object.keys(notificationRequest.templateData).sort()).toEqual([
       'bookId',
@@ -888,6 +890,57 @@ describe('FE08 reservation management', () => {
     expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'AVAILABLE'
     );
+  });
+
+  test('process-queue skips a role-revoked member and selects the next eligible reservation', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const revokedMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.revoked@example.test',
+    });
+    const eligibleMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.eligible@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.role.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    for (const member of [revokedMember, eligibleMember]) {
+      await request(app)
+        .post('/api/reservations')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyId: 1 })
+        .expect(201);
+    }
+
+    authDependencies.state.rolesByUserId.set(revokedMember.userId, ['GUEST']);
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.selectedReservation).toMatchObject({
+      userId: eligibleMember.userId,
+      status: 'NOTIFIED',
+    });
+    expect(
+      reservationDependencies.state.reservations.find(
+        (reservation) => reservation.userId === revokedMember.userId
+      ).status
+    ).toBe('ACTIVE');
   });
 
   test('process-queue selects nothing when no eligible reservation exists (FR-FE08-020)', async () => {

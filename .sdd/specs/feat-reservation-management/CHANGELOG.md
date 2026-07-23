@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-23 - Enforce atomic copy-level queues
+
+- Removed the non-canonical direct reservation-processing endpoint and retained only `POST /api/reservations/process-queue`.
+- Moved member, role, copy, duplicate, and three-open-reservation checks into one locked create transaction.
+- Rechecked the current `MEMBER` role during queue lookup and again inside the hold transaction so role-revoked entries remain `ACTIVE` and the next eligible reservation is selected.
+- Grouped staff queues by physical `copyId` and loaded every server page needed by the member and staff reservation views.
+
 ## 2026-07-21 - Align reservation eligibility with member role
 
 - Replaced the FE04 approval prerequisite with active-account plus `MEMBER` role authorization.

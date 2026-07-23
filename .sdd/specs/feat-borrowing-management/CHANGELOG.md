@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-23 - Reconcile approval and return transaction invariants
+
+- Revalidated the request owner's current `MEMBER` role and FE04-derived 3/5 daily tier inside the approval transaction.
+- Restored the canonical member lock -> copies -> request/details -> reservations order and made return lock copies, details, and reservation claims before mutation.
+- Added focused regressions for removed roles, stale tier reads, return lock order, and safe transaction outcomes.
+
 ## 2026-07-22 - Enrich staff borrow decisions and stabilize rejection input
 
 - Expanded Librarian/Admin approve and reject dialogs with the canonical request ID/date, member identity/contact, and every requested copy's title, author, ID, barcode, location, and current status.

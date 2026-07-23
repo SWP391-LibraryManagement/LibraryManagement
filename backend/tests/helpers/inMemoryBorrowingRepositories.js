@@ -456,7 +456,6 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       approvedBy,
       approvalDate,
       dueDate,
-      dailyLimit = 5,
       auditLogRepository,
       auditEntry,
     }) {
@@ -475,9 +474,16 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'REQUEST_NOT_APPROVABLE' };
       }
 
+      const roles = authState.rolesByUserId.get(request.userId) || [];
+      if (!roles.includes('MEMBER')) {
+        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      }
+
       if (member.status !== 'ACTIVE') {
         return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
       }
+
+      const dailyLimit = memberStatuses.get(request.userId) === 'APPROVED' ? 5 : 3;
 
       if (await this.hasBlockingFine(request.userId)) {
         return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
@@ -537,7 +543,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       )).length;
 
       if (dailyCount + requestedDetails.length > dailyLimit) {
-        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED' };
+        return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED', dailyLimit };
       }
 
       request.status = 'APPROVED';

@@ -17,6 +17,7 @@ import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t: 'Sắp hết' }, out: { s: 'overdue', t: 'Hết hàng' } };
+const REPORT_PAGE_SIZE = 20;
 
 export default function InventoryReportPage() {
   const [categoryId, setCategoryId] = useState('');
@@ -24,6 +25,8 @@ export default function InventoryReportPage() {
   const [status, setStatus] = useState('');
   const [location, setLocation] = useState('');
   const [bookId, setBookId] = useState('');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [page, setPage] = useState(1);
   const [categories, setCategories] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,12 +44,17 @@ export default function InventoryReportPage() {
     }
   }, []);
 
-  const loadReport = useCallback(async (filters = {}) => {
+  const loadReport = useCallback(async (filters = {}, page = 1) => {
     setLoading(true);
     setNotice('');
     try {
-      const data = await reportApi.inventory(buildInventoryReportParams(filters));
+      const data = await reportApi.inventory(buildInventoryReportParams({
+        ...filters,
+        page,
+        limit: REPORT_PAGE_SIZE,
+      }));
       setReport(data);
+      setPage(data.page || page);
     } catch (error) {
       setReport(null);
       setNotice(error.message);
@@ -58,14 +66,17 @@ export default function InventoryReportPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       loadCategories();
-      loadReport({});
+      loadReport({}, 1);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadCategories, loadReport]);
 
   function applyCategoryFilter(event) {
     event.preventDefault();
-    loadReport({ q: query, categoryId, status, location, bookId });
+    const filters = { q: query, categoryId, status, location, bookId };
+    setActiveFilters(filters);
+    setPage(1);
+    loadReport(filters, 1);
   }
 
   function clearCategoryFilter() {
@@ -74,12 +85,16 @@ export default function InventoryReportPage() {
     setStatus('');
     setLocation('');
     setBookId('');
-    loadReport({});
+    setActiveFilters({});
+    setPage(1);
+    loadReport({}, 1);
   }
 
   const metrics = report?.metrics || {};
   const rows = report?.rows || [];
   const totalRows = report?.totalRows || 0;
+  const pageLimit = report?.limit || REPORT_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageLimit));
   const statusCounts = metrics.copiesByStatus || {};
   const statusData = objectToChart(metrics.copiesByStatus);
   const availability = [
@@ -102,7 +117,7 @@ export default function InventoryReportPage() {
       active="inventory-report"
       title="Báo cáo tồn kho"
       subtitle="Tổng hợp tình trạng bản sao và các đầu sách có tồn kho thấp."
-      actions={<button className="btn btn-outline" onClick={() => loadReport({ q: query, categoryId, status, location, bookId })} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(activeFilters, page)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
       <form onSubmit={applyCategoryFilter}>
@@ -220,6 +235,11 @@ export default function InventoryReportPage() {
                 </tr>
               ))}
             </DataTable>
+            <div className="pagination report-pagination">
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(activeFilters, page - 1)} disabled={loading || page <= 1}>Trang trước</button>
+              <span className="muted">Trang {page}/{totalPages}</span>
+              <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(activeFilters, page + 1)} disabled={loading || page >= totalPages}>Trang sau</button>
+            </div>
           </div>
         </>
       )}

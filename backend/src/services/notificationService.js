@@ -27,6 +27,13 @@ const sensitiveTypeOwners = {
   PASSWORD_RESET: 'FE02',
   ACCOUNT_SETUP: 'FE11',
 };
+const queuedTypeOwners = {
+  RESERVATION_AVAILABLE: new Set(['FE08']),
+  DUE_DATE_REMINDER: new Set(['FE07']),
+  OVERDUE_NOTICE: new Set(['FE07', 'FE09']),
+  FINE_NOTICE: new Set(['FE09']),
+  GENERAL_SYSTEM: new Set(['FE04']),
+};
 const sensitiveNotificationTypes = new Set(Object.keys(sensitiveTypeOwners));
 const sensitiveQueueIdentifiers = new Set([
   'ACCOUNT_VERIFICATION',
@@ -120,6 +127,11 @@ function safeInternalError(code, message) {
   const error = errors.internal(code, message);
   error.stack = undefined;
   return error;
+}
+
+function isUniqueConstraintViolation(error) {
+  const errorNumber = Number(error?.number ?? error?.originalError?.info?.number);
+  return errorNumber === 2601 || errorNumber === 2627;
 }
 
 function normalizeSourceFeature(sourceFeature) {
@@ -501,6 +513,21 @@ function createNotificationService({
       );
     }
 
+    const queuedOwners = queuedTypeOwners[type];
+    const requiresBoundSource = type === 'GENERAL_SYSTEM';
+    if (
+      queuedOwners
+      && (
+        (requiresBoundSource && !isInternal)
+        || (isInternal && !queuedOwners.has(effectiveSourceFeature))
+      )
+    ) {
+      throw errors.forbidden(
+        'NOTIFICATION_SOURCE_OWNER_MISMATCH',
+        'Notification type is not owned by this source.'
+      );
+    }
+
     if (!supportedTypes.includes(type)) {
       throw errors.badRequest('UNSUPPORTED_NOTIFICATION_TYPE', 'Notification type is not supported.');
     }
@@ -559,6 +586,13 @@ function createNotificationService({
     const sourceEntityId = requestInput.sourceEntityId ?? null;
     const idempotencyKey = requestInput.idempotencyKey || null;
 
+    if (isInternal && !idempotencyKey) {
+      throw errors.badRequest(
+        'IDEMPOTENCY_KEY_REQUIRED',
+        'Internal notification requests require an idempotency key.'
+      );
+    }
+
     if (idempotencyKey) {
       const existing = await notificationRepository.findByIdempotencyKey(idempotencyKey);
 
@@ -584,21 +618,38 @@ function createNotificationService({
     const renderedTitle = renderTemplate(template.subject, rawTemplateData);
     const renderedBody = renderTemplate(template.body, rawTemplateData);
 
-    let notification = await notificationRepository.createRequest({
-      type,
-      channel,
-      userId: recipient.userId,
-      recipientEmail: recipient.recipientEmail,
-      templateId: template.templateId,
-      templateKey,
-      title: isSensitiveNotification ? null : renderedTitle,
-      body: isSensitiveNotification ? null : renderedBody,
-      sourceFeature: persistedSourceFeature,
-      sourceEntityType,
-      sourceEntityId,
-      idempotencyKey,
-      safePayload: templateData,
-    });
+    let notification;
+
+    try {
+      notification = await notificationRepository.createRequest({
+        type,
+        channel,
+        userId: recipient.userId,
+        recipientEmail: recipient.recipientEmail,
+        templateId: template.templateId,
+        templateKey,
+        title: isSensitiveNotification ? null : renderedTitle,
+        body: isSensitiveNotification ? null : renderedBody,
+        sourceFeature: persistedSourceFeature,
+        sourceEntityType,
+        sourceEntityId,
+        idempotencyKey,
+        safePayload: templateData,
+      });
+    } catch (error) {
+      if (idempotencyKey && isUniqueConstraintViolation(error)) {
+        const existing = await notificationRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existing) {
+          return {
+            duplicate: true,
+            notification: existing,
+          };
+        }
+      }
+
+      throw error;
+    }
 
     if (isSensitiveNotification) {
       let providerFailed = false;
@@ -769,39 +820,45 @@ function createNotificationService({
     requireInternalActor(actor);
 
     const limit = Number(input.limit || 20);
-    const pendingNotifications = (await notificationRepository.listPending(limit)).filter(
-      (notification) => !isSensitiveQueueNotification(notification)
-    );
     const result = {
       processed: 0,
       failed: 0,
       notifications: [],
     };
 
-    for (const notification of pendingNotifications) {
+    for (let index = 0; index < limit; index += 1) {
+      const claim = await notificationRepository.claimNextPending();
+      if (!claim) {
+        break;
+      }
+
+      const notification = claim.notification;
+      let providerResult;
+
       try {
-        const providerResult = await emailProvider.send({
+        providerResult = await emailProvider.send({
           to: notification.recipientEmail,
           subject: notification.title,
           body: notification.body,
         });
-
-        const updatedNotification = await notificationRepository.markSent({
-          notificationId: notification.notificationId,
-          providerMessageId: providerResult?.providerMessageId || null,
-        });
-
-        result.processed += 1;
-        result.notifications.push(updatedNotification);
       } catch (error) {
-        const updatedNotification = await notificationRepository.markFailed({
-          notificationId: notification.notificationId,
+        const updatedNotification = await notificationRepository.markClaimFailed({
+          claim,
           safeErrorMessage: safeFailureMessage(error),
         });
 
         result.failed += 1;
         result.notifications.push(updatedNotification);
+        continue;
       }
+
+      const updatedNotification = await notificationRepository.markClaimSent({
+        claim,
+        providerMessageId: providerResult?.providerMessageId || null,
+      });
+
+      result.processed += 1;
+      result.notifications.push(updatedNotification);
     }
 
     await writeAudit(context, 'NOTIFICATION_PROCESS_PENDING', {

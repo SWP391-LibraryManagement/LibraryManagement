@@ -1,22 +1,10 @@
 const { sql, getPool } = require('../config/db');
 
-const ACTUAL_LOAN_DETAIL_STATUSES = new Set(['BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
 const BORROW_DETAIL_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE']);
 const COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE']);
 const USER_STATUSES = new Set(['ACTIVE', 'INACTIVE', 'LOCKED']);
 const MEMBERSHIP_STATUSES = new Set(['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE']);
 const ROLE_STATUSES = new Set(['ADMIN', 'LIBRARIAN', 'MEMBER', 'GUEST']);
-
-function groupCount(items, keySelector) {
-  const result = {};
-
-  for (const item of items) {
-    const key = keySelector(item) || 'UNKNOWN';
-    result[key] = (result[key] || 0) + 1;
-  }
-
-  return result;
-}
 
 function toDateKey(value) {
   if (value == null) {
@@ -54,15 +42,38 @@ function pagination(filters = {}) {
 }
 
 // @spec FR-FE12-010
-function buildReport(metrics, rows, filters = {}) {
-  const { page, limit, offset } = pagination(filters);
+function buildReport(metrics, rows, filters = {}, totalRows = rows.length) {
+  const { page, limit } = pagination(filters);
   return {
     metrics,
-    rows: rows.slice(offset, offset + limit),
+    rows,
     page,
     limit,
-    totalRows: rows.length,
+    totalRows,
   };
+}
+
+function getResultset(result, index, pageIndex) {
+  if (Array.isArray(result.recordsets)) {
+    return result.recordsets[index] || [];
+  }
+
+  return index === pageIndex ? result.recordset || [] : [];
+}
+
+function toCountMap(rows, keyName, countName, allowedStatuses) {
+  const counts = {};
+
+  for (const row of rows) {
+    const key = allowedStatuses
+      ? normalizeStatus(row[keyName], allowedStatuses)
+      : toDateKey(row[keyName]);
+    if (key) {
+      counts[key] = Number(row[countName] || 0);
+    }
+  }
+
+  return counts;
 }
 
 function toExclusiveNextDay(value) {
@@ -71,27 +82,14 @@ function toExclusiveNextDay(value) {
   return date;
 }
 
-function isWithinDateRange(value, filters = {}) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return false;
-  }
-
-  if (filters.fromDate && date < new Date(filters.fromDate)) {
-    return false;
-  }
-
-  if (filters.toDate && date >= toExclusiveNextDay(filters.toDate)) {
-    return false;
-  }
-
-  return true;
-}
-
 async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
   const pool = await getPool();
   const request = pool.request();
   const where = ['1=1'];
+  const { offset, limit } = pagination(filters);
+  request.input('Offset', sql.Int, offset);
+  request.input('Limit', sql.Int, limit);
+  request.input('BusinessDate', sql.Date, new Date(`${businessDate}T00:00:00.000Z`));
 
   if (filters.q) {
     request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
@@ -109,7 +107,6 @@ async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
   }
 
   if (filters.status === 'OVERDUE') {
-    request.input('BusinessDate', sql.Date, new Date(`${businessDate}T00:00:00.000Z`));
     where.push("bd.Status = 'BORROWED'");
     where.push('bd.DueDate < @BusinessDate');
   } else if (filters.status) {
@@ -145,22 +142,68 @@ async function getBorrowRows(filters = {}, businessDate = toLibraryDateKey()) {
       b.Title,
       u.Username,
       u.Email
+    INTO #BorrowReportRows
     FROM BorrowRequests br
     LEFT JOIN BorrowDetails bd ON br.RequestId = bd.RequestId
     LEFT JOIN BookCopies bc ON bd.CopyId = bc.CopyId
     LEFT JOIN Books b ON bc.BookId = b.BookId
     LEFT JOIN Users u ON br.UserId = u.UserId
-    WHERE ${where.join(' AND ')}
-    ORDER BY bd.BorrowDate DESC, bd.BorrowDetailId DESC
+    WHERE ${where.join(' AND ')};
+
+    SELECT
+      SUM(CASE WHEN DetailStatus = 'BORROWED' THEN 1 ELSE 0 END) AS ActiveLoans,
+      SUM(CASE
+        WHEN DetailStatus = 'OVERDUE'
+          OR (DetailStatus = 'BORROWED' AND DueDate < @BusinessDate)
+        THEN 1 ELSE 0
+      END) AS OverdueLoans,
+      COUNT(*) AS TotalRows
+    FROM #BorrowReportRows
+    WHERE BorrowDetailId IS NOT NULL;
+
+    SELECT
+      CONVERT(DATE, BorrowDate) AS PeriodDate,
+      COUNT(*) AS BorrowCount
+    FROM #BorrowReportRows
+    WHERE BorrowDetailId IS NOT NULL
+      AND DetailStatus IN ('BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE')
+      AND BorrowDate IS NOT NULL
+    GROUP BY CONVERT(DATE, BorrowDate)
+    ORDER BY PeriodDate ASC;
+
+    SELECT TOP 10
+      BookId,
+      MAX(Title) AS Title,
+      COUNT(*) AS BorrowCount
+    FROM #BorrowReportRows
+    WHERE BorrowDetailId IS NOT NULL
+      AND DetailStatus IN ('BORROWED', 'RETURNED', 'LOST', 'DAMAGED', 'OVERDUE')
+      AND BookId IS NOT NULL
+    GROUP BY BookId
+    ORDER BY BorrowCount DESC, MAX(Title) ASC, BookId ASC;
+
+    SELECT *
+    FROM #BorrowReportRows
+    WHERE BorrowDetailId IS NOT NULL
+    ORDER BY BorrowDate DESC, BorrowDetailId DESC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
   `);
 
-  return result.recordset;
+  return {
+    summary: getResultset(result, 0, 3)[0] || {},
+    borrowPeriods: getResultset(result, 1, 3),
+    topBooks: getResultset(result, 2, 3),
+    pageRows: getResultset(result, 3, 3),
+  };
 }
 
 async function getInventoryRows(filters = {}) {
   const pool = await getPool();
   const request = pool.request();
   const where = ['1=1'];
+  const { offset, limit } = pagination(filters);
+  request.input('Offset', sql.Int, offset);
+  request.input('Limit', sql.Int, limit);
 
   if (filters.q) {
     request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
@@ -203,14 +246,48 @@ async function getInventoryRows(filters = {}) {
         WHERE availabilityCopy.BookId = b.BookId
           AND availabilityCopy.Status = 'AVAILABLE'
       ) AS EffectiveAvailability
+    INTO #InventoryReportRows
     FROM Books b
     LEFT JOIN Categories c ON b.CategoryId = c.CategoryId
     LEFT JOIN BookCopies bc ON b.BookId = bc.BookId
-    WHERE ${where.join(' AND ')}
-    ORDER BY b.Title ASC, b.BookId ASC, bc.CopyId ASC
+    WHERE ${where.join(' AND ')};
+
+    SELECT
+      COUNT(DISTINCT BookId) AS TotalBooks,
+      COUNT(CopyId) AS TotalCopies,
+      COUNT(CopyId) AS TotalRows
+    FROM #InventoryReportRows;
+
+    SELECT
+      CopyStatus,
+      COUNT(*) AS CopyCount
+    FROM #InventoryReportRows
+    WHERE CopyId IS NOT NULL
+    GROUP BY CopyStatus
+    ORDER BY CopyStatus ASC;
+
+    SELECT
+      BookId,
+      MAX(Title) AS Title,
+      MAX(EffectiveAvailability) AS EffectiveAvailability
+    FROM #InventoryReportRows
+    GROUP BY BookId
+    HAVING MAX(EffectiveAvailability) <= 2
+    ORDER BY MAX(Title) ASC, BookId ASC;
+
+    SELECT *
+    FROM #InventoryReportRows
+    WHERE CopyId IS NOT NULL
+    ORDER BY Title ASC, BookId ASC, CopyId ASC
+    OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
   `);
 
-  return result.recordset;
+  return {
+    summary: getResultset(result, 0, 3)[0] || {},
+    copiesByStatus: getResultset(result, 1, 3),
+    lowStockBooks: getResultset(result, 2, 3),
+    pageRows: getResultset(result, 3, 3),
+  };
 }
 
 async function getUserRows(filters = {}) {
@@ -218,6 +295,9 @@ async function getUserRows(filters = {}) {
   const request = pool.request();
   const where = ['1=1'];
   const approvalPeriodConditions = ['m.ApprovedAt IS NOT NULL'];
+  const { offset, limit } = pagination(filters);
+  request.input('Offset', sql.Int, offset);
+  request.input('Limit', sql.Int, limit);
 
   if (filters.q) {
     request.input('Search', sql.NVarChar(202), `%${filters.q}%`);
@@ -269,58 +349,82 @@ async function getUserRows(filters = {}) {
       m.Status AS MemberStatus,
       m.ApprovedAt AS MemberApprovedAt,
       CASE WHEN ${approvalPeriodConditions.join(' AND ')} THEN 1 ELSE 0 END AS IsInApprovalPeriod
+    INTO #UserReportRows
     FROM Users u
     LEFT JOIN UserRoles ur ON u.UserId = ur.UserId
     LEFT JOIN Roles r ON ur.RoleId = r.RoleId
     LEFT JOIN Members m ON u.UserId = m.UserId
-    WHERE ${where.join(' AND ')}
-    ORDER BY u.UserId ASC
+    WHERE ${where.join(' AND ')};
+
+    SELECT COUNT(DISTINCT UserId) AS TotalMembers
+    FROM #UserReportRows
+    WHERE RoleName = 'MEMBER';
+
+    SELECT COUNT(DISTINCT UserId) AS TotalRows
+    FROM #UserReportRows;
+
+    SELECT
+      UserStatus,
+      COUNT(DISTINCT UserId) AS UserCount
+    FROM #UserReportRows
+    GROUP BY UserStatus
+    ORDER BY UserStatus ASC;
+
+    SELECT
+      RoleName,
+      COUNT(DISTINCT UserId) AS UserCount
+    FROM #UserReportRows
+    WHERE RoleName IS NOT NULL
+    GROUP BY RoleName
+    ORDER BY RoleName ASC;
+
+    SELECT
+      MemberStatus,
+      COUNT(DISTINCT UserId) AS UserCount
+    FROM #UserReportRows
+    WHERE MemberStatus IS NOT NULL
+    GROUP BY MemberStatus
+    ORDER BY MemberStatus ASC;
+
+    SELECT
+      CONVERT(DATE, MemberApprovedAt) AS PeriodDate,
+      COUNT(DISTINCT UserId) AS MemberCount
+    FROM #UserReportRows
+    WHERE IsInApprovalPeriod = 1
+      AND MemberApprovedAt IS NOT NULL
+    GROUP BY CONVERT(DATE, MemberApprovedAt)
+    ORDER BY PeriodDate ASC;
+
+    ;WITH PagedUsers AS (
+      SELECT UserId
+      FROM #UserReportRows
+      GROUP BY UserId
+      ORDER BY UserId ASC
+      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+    )
+    SELECT userRows.*
+    FROM PagedUsers
+    INNER JOIN #UserReportRows userRows ON userRows.UserId = PagedUsers.UserId
+    ORDER BY userRows.UserId ASC, userRows.RoleId ASC;
   `);
 
-  return result.recordset;
+  return {
+    summary: {
+      totalMembers: Number(getResultset(result, 0, 6)[0]?.TotalMembers || 0),
+      totalRows: Number(getResultset(result, 1, 6)[0]?.TotalRows || 0),
+    },
+    usersByStatus: getResultset(result, 2, 6),
+    usersByRole: getResultset(result, 3, 6),
+    membershipByStatus: getResultset(result, 4, 6),
+    newMembersByPeriod: getResultset(result, 5, 6),
+    pageRows: getResultset(result, 6, 6),
+  };
 }
 
 async function getBorrowingReport(filters = {}) {
   const today = toLibraryDateKey();
-  const rows = await getBorrowRows(filters, today);
-  const detailRows = rows.filter((row) => row.BorrowDetailId);
-
-  const borrowCountByPeriod = {};
-  const topBorrowedBooks = {};
-
-  for (const row of detailRows) {
-    const detailStatus = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
-    if (!ACTUAL_LOAN_DETAIL_STATUSES.has(detailStatus)) {
-      continue;
-    }
-
-    const periodKey = toDateKey(row.BorrowDate);
-
-    if (periodKey) {
-      borrowCountByPeriod[periodKey] = (borrowCountByPeriod[periodKey] || 0) + 1;
-    }
-
-    if (row.BookId) {
-      topBorrowedBooks[row.BookId] = topBorrowedBooks[row.BookId] || {
-        bookId: row.BookId,
-        title: row.Title || null,
-        borrowCount: 0,
-      };
-      topBorrowedBooks[row.BookId].borrowCount += 1;
-    }
-  }
-
-  const activeLoans = detailRows.filter(
-    (row) => normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES) === 'BORROWED'
-  ).length;
-  const overdueLoans = detailRows.filter(
-    (row) => {
-      const status = normalizeStatus(row.DetailStatus, BORROW_DETAIL_STATUSES);
-      return status === 'OVERDUE' || (status === 'BORROWED' && row.DueDate && toDateKey(row.DueDate) < today);
-    }
-  ).length;
-
-  const detailedRows = [...detailRows]
+  const snapshot = await getBorrowRows(filters, today);
+  const detailedRows = [...snapshot.pageRows]
     .sort(
       (left, right) =>
         new Date(right.BorrowDate || 0).getTime() - new Date(left.BorrowDate || 0).getTime() ||
@@ -347,71 +451,28 @@ async function getBorrowingReport(filters = {}) {
 
   return buildReport(
     {
-      activeLoans,
-      overdueLoans,
-      borrowCountByPeriod,
-      topBorrowedBooks: Object.values(topBorrowedBooks)
-        .sort(
-          (left, right) =>
-            right.borrowCount - left.borrowCount ||
-            String(left.title || '').localeCompare(String(right.title || '')) ||
-            left.bookId - right.bookId
-        )
-        .slice(0, 10),
+      activeLoans: Number(snapshot.summary.ActiveLoans || 0),
+      overdueLoans: Number(snapshot.summary.OverdueLoans || 0),
+      borrowCountByPeriod: toCountMap(
+        snapshot.borrowPeriods,
+        'PeriodDate',
+        'BorrowCount'
+      ),
+      topBorrowedBooks: snapshot.topBooks.map((row) => ({
+        bookId: row.BookId,
+        title: row.Title || null,
+        borrowCount: Number(row.BorrowCount || 0),
+      })),
     },
     detailedRows,
-    filters
+    filters,
+    Number(snapshot.summary.TotalRows ?? snapshot.pageRows.length)
   );
 }
 
 async function getInventoryReport(filters = {}) {
-  const rows = await getInventoryRows(filters);
-  const hasCopyFilters = Boolean(filters.status || filters.location);
-  const matchesCopyFilters = (row) => Boolean(
-    row.CopyId
-    && (!filters.status || row.CopyStatus === filters.status)
-    && (!filters.location || row.Location === filters.location)
-  );
-  const matchedBookIds = hasCopyFilters
-    ? new Set(rows.filter(matchesCopyFilters).map((row) => row.BookId))
-    : new Set(rows.map((row) => row.BookId));
-  const scopedRows = rows.filter((row) => matchedBookIds.has(row.BookId));
-  const booksById = new Map();
-  const copies = scopedRows.filter(matchesCopyFilters);
-
-  for (const row of scopedRows) {
-    if (!booksById.has(row.BookId)) {
-      booksById.set(row.BookId, {
-        bookId: row.BookId,
-        title: row.Title || null,
-        categoryId: row.CategoryId,
-        categoryName: row.CategoryName || null,
-        effectiveAvailability: row.EffectiveAvailability == null
-          ? null
-          : Number(row.EffectiveAvailability),
-        copies: [],
-      });
-    }
-
-    if (row.CopyId) {
-      booksById.get(row.BookId).copies.push({
-        copyId: row.CopyId,
-        status: row.CopyStatus,
-        location: row.Location || null,
-      });
-    }
-  }
-
-  const books = Array.from(booksById.values());
-  const availabilityByBookId = new Map(
-    books.map((book) => [
-      book.bookId,
-      book.effectiveAvailability == null
-        ? book.copies.filter((copy) => normalizeStatus(copy.status, COPY_STATUSES) === 'AVAILABLE').length
-        : book.effectiveAvailability,
-    ])
-  );
-  const detailedRows = copies
+  const snapshot = await getInventoryRows(filters);
+  const detailedRows = snapshot.pageRows
     .map((row) => ({
       bookId: row.BookId,
       title: row.Title || null,
@@ -419,7 +480,7 @@ async function getInventoryReport(filters = {}) {
       barcode: row.Barcode || null,
       location: row.Location || null,
       status: normalizeStatus(row.CopyStatus, COPY_STATUSES),
-      effectiveAvailability: availabilityByBookId.get(row.BookId) || 0,
+      effectiveAvailability: Number(row.EffectiveAvailability || 0),
     }))
     .sort(
       (left, right) =>
@@ -430,72 +491,46 @@ async function getInventoryReport(filters = {}) {
 
   return buildReport(
     {
-      totalBooks: booksById.size,
-      totalCopies: copies.length,
-      copiesByStatus: groupCount(copies, (row) => normalizeStatus(row.CopyStatus, COPY_STATUSES)),
-      lowStockBooks: books
-        .map((book) => ({
-          bookId: book.bookId,
-          title: book.title,
-          effectiveAvailability: availabilityByBookId.get(book.bookId) || 0,
-        }))
-        .filter((book) => book.effectiveAvailability <= 2),
+      totalBooks: Number(snapshot.summary.TotalBooks || 0),
+      totalCopies: Number(snapshot.summary.TotalCopies || 0),
+      copiesByStatus: toCountMap(
+        snapshot.copiesByStatus,
+        'CopyStatus',
+        'CopyCount',
+        COPY_STATUSES
+      ),
+      lowStockBooks: snapshot.lowStockBooks.map((row) => ({
+        bookId: row.BookId,
+        title: row.Title || null,
+        effectiveAvailability: Number(row.EffectiveAvailability || 0),
+      })),
     },
     detailedRows,
-    filters
+    filters,
+    Number(snapshot.summary.TotalRows ?? snapshot.pageRows.length)
   );
 }
 
 async function getUserStatistics(filters = {}) {
-  const rows = await getUserRows(filters);
-  const usersById = new Map();
-
-  for (const row of rows) {
-    if (!usersById.has(row.UserId)) {
-      usersById.set(row.UserId, {
+  const snapshot = await getUserRows(filters);
+  const pagedUsersById = new Map();
+  for (const row of snapshot.pageRows) {
+    if (!pagedUsersById.has(row.UserId)) {
+      pagedUsersById.set(row.UserId, {
         userId: row.UserId,
         status: normalizeStatus(row.UserStatus, USER_STATUSES),
-        createdAt: row.CreatedAt,
-        memberApprovedAt: row.MemberApprovedAt,
-        isInApprovalPeriod: row.IsInApprovalPeriod == null
-          ? isWithinDateRange(row.MemberApprovedAt, filters)
-          : Boolean(row.IsInApprovalPeriod),
         roles: new Set(),
         memberStatus: normalizeStatus(row.MemberStatus, MEMBERSHIP_STATUSES),
+        createdAt: row.CreatedAt,
+        memberApprovedAt: row.MemberApprovedAt,
       });
     }
-
     if (row.RoleName) {
-      usersById.get(row.UserId).roles.add(normalizeStatus(row.RoleName, ROLE_STATUSES));
+      pagedUsersById.get(row.UserId).roles.add(normalizeStatus(row.RoleName, ROLE_STATUSES));
     }
   }
 
-  const users = Array.from(usersById.values());
-  const usersByStatus = groupCount(users, (user) => user.status);
-  const membershipByStatus = groupCount(
-    users.filter((user) => user.memberStatus),
-    (user) => user.memberStatus
-  );
-  const usersByRole = {};
-
-  for (const user of users) {
-    for (const role of user.roles) {
-      usersByRole[role] = (usersByRole[role] || 0) + 1;
-    }
-  }
-
-  const newMembersByPeriod = {};
-  for (const user of users.filter(
-    (item) => item.memberStatus === 'APPROVED' && item.isInApprovalPeriod
-  )) {
-    const periodKey = toDateKey(user.memberApprovedAt);
-
-    if (periodKey) {
-      newMembersByPeriod[periodKey] = (newMembersByPeriod[periodKey] || 0) + 1;
-    }
-  }
-
-  const detailedRows = users
+  const detailedRows = Array.from(pagedUsersById.values())
     .map((user) => ({
       userId: user.userId,
       status: user.status,
@@ -508,14 +543,34 @@ async function getUserStatistics(filters = {}) {
 
   return buildReport(
     {
-      totalMembers: users.filter((user) => user.roles.has('MEMBER')).length,
-      usersByStatus,
-      usersByRole,
-      membershipByStatus,
-      newMembersByPeriod,
+      totalMembers: snapshot.summary.totalMembers,
+      usersByStatus: toCountMap(
+        snapshot.usersByStatus,
+        'UserStatus',
+        'UserCount',
+        USER_STATUSES
+      ),
+      usersByRole: toCountMap(
+        snapshot.usersByRole,
+        'RoleName',
+        'UserCount',
+        ROLE_STATUSES
+      ),
+      membershipByStatus: toCountMap(
+        snapshot.membershipByStatus,
+        'MemberStatus',
+        'UserCount',
+        MEMBERSHIP_STATUSES
+      ),
+      newMembersByPeriod: toCountMap(
+        snapshot.newMembersByPeriod,
+        'PeriodDate',
+        'MemberCount'
+      ),
     },
     detailedRows,
-    filters
+    filters,
+    snapshot.summary.totalRows || snapshot.pageRows.length
   );
 }
 

@@ -1252,17 +1252,6 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
-  /api/reservations/{reservationId}/process:
-    patch:
-      tags: [Reservation]
-      summary: Librarian/Admin processes a specific reservation (FR-FE08-007)
-      parameters:
-        - { name: reservationId, in: path, required: true, schema: { type: integer } }
-      responses:
-        '200': { description: Reservation held (NOTIFIED) }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '409': { $ref: '#/components/responses/Conflict' }
   /api/notifications/requests:
     post:
       tags: [Notification]
@@ -1270,7 +1259,8 @@ paths:
       description: >
         Librarian/Admin HTTP boundary for non-sensitive notification types only.
         Sensitive authentication notifications must be requested internally through the FE02- or
-        FE11-bound requester. HTTP callers cannot provide sourceFeature.
+        FE11-bound requester. Membership results must be requested through the FE04-bound requester.
+        HTTP callers cannot provide sourceFeature.
       requestBody:
         required: true
         content:
@@ -1282,7 +1272,7 @@ paths:
               properties:
                 type:
                   type: string
-                  enum: [RESERVATION_AVAILABLE, DUE_DATE_REMINDER, OVERDUE_NOTICE, FINE_NOTICE, GENERAL_SYSTEM]
+                  enum: [RESERVATION_AVAILABLE, DUE_DATE_REMINDER, OVERDUE_NOTICE, FINE_NOTICE]
                 channel: { type: string, enum: [EMAIL] }
                 userId: { type: integer, minimum: 1 }
                 recipientEmail: { type: string, format: email }

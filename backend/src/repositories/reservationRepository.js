@@ -107,7 +107,14 @@ async function getMemberEligibility(userId) {
         u.Status AS UserStatus,
         u.Email,
         m.Status AS MemberStatus,
-        m.ApprovedAt
+        m.ApprovedAt,
+        CASE WHEN EXISTS (
+          SELECT 1
+          FROM UserRoles eligibilityUr
+          INNER JOIN Roles eligibilityRole ON eligibilityUr.RoleId = eligibilityRole.RoleId
+          WHERE eligibilityUr.UserId = u.UserId
+            AND eligibilityRole.RoleName = 'MEMBER'
+        ) THEN 1 ELSE 0 END AS HasMemberRole
       FROM Users u
       LEFT JOIN Members m ON u.UserId = m.UserId
       WHERE u.UserId = @UserId
@@ -125,6 +132,7 @@ async function getMemberEligibility(userId) {
     email: row.Email,
     memberStatus: row.MemberStatus,
     approvedAt: row.ApprovedAt,
+    hasMemberRole: Boolean(row.HasMemberRole),
   };
 }
 
@@ -252,23 +260,112 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20, userId 
   };
 }
 
+// @spec FR-FE08-011, FR-FE08-012, FR-FE08-013, FR-FE08-014, FR-FE08-015
 async function createReservation({ userId, copyId }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
+  let reservationId;
 
   await transaction.begin();
 
   try {
-    const queueResult = await new sql.Request(transaction)
-      .input('CopyId', sql.Int, copyId)
+    const memberLockResult = await new sql.Request(transaction)
+      .input('MemberLockResource', sql.NVarChar(255), `FE08-RESERVATION-MEMBER-${userId}`)
       .query(`
-        SELECT COUNT(*) AS QueueCount
-        FROM Reservations WITH (UPDLOCK, HOLDLOCK)
-        WHERE CopyId = @CopyId
-          AND Status = 'ACTIVE'
+        DECLARE @MemberLockResult INT;
+        EXEC @MemberLockResult = sp_getapplock
+          @Resource = @MemberLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        SELECT @MemberLockResult AS LockResult;
       `);
 
-    const queuePosition = (queueResult.recordset[0]?.QueueCount || 0) + 1;
+    if (Number(memberLockResult.recordset[0]?.LockResult) < 0) {
+      throw new Error('Unable to acquire the member reservation lock.');
+    }
+
+    const memberResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(`
+        SELECT
+          u.Status AS UserStatus,
+          MAX(CASE WHEN r.RoleName = 'MEMBER' THEN 1 ELSE 0 END) AS HasMemberRole
+        FROM Users u WITH (UPDLOCK, HOLDLOCK)
+        LEFT JOIN UserRoles ur WITH (UPDLOCK, HOLDLOCK) ON ur.UserId = u.UserId
+        LEFT JOIN Roles r WITH (HOLDLOCK) ON r.RoleId = ur.RoleId
+        WHERE u.UserId = @UserId
+        GROUP BY u.Status;
+      `);
+
+    const member = memberResult.recordset[0];
+    if (!member || Number(member.HasMemberRole) !== 1) {
+      await transaction.rollback();
+      return { outcome: 'MEMBER_ROLE_REQUIRED' };
+    }
+
+    if (member.UserStatus !== 'ACTIVE') {
+      await transaction.rollback();
+      return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+    }
+
+    const copyResult = await new sql.Request(transaction)
+      .input('CopyId', sql.Int, copyId)
+      .query(`
+        SELECT
+          bc.CopyId,
+          bc.Status AS CopyStatus,
+          b.Status AS BookStatus
+        FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN Books b WITH (HOLDLOCK) ON b.BookId = bc.BookId
+        WHERE bc.CopyId = @CopyId;
+      `);
+
+    const copy = copyResult.recordset[0];
+    if (!copy) {
+      await transaction.rollback();
+      return { outcome: 'COPY_NOT_FOUND' };
+    }
+
+    if (copy.BookStatus !== 'ACTIVE') {
+      await transaction.rollback();
+      return { outcome: 'BOOK_INACTIVE' };
+    }
+
+    if (copy.CopyStatus === 'AVAILABLE') {
+      await transaction.rollback();
+      return { outcome: 'COPY_AVAILABLE' };
+    }
+
+    if (!['BORROWED', 'RESERVED'].includes(copy.CopyStatus)) {
+      await transaction.rollback();
+      return { outcome: 'RESERVATION_NOT_ALLOWED' };
+    }
+
+    const openReservationsResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('CopyId', sql.Int, copyId)
+      .query(`
+        SELECT UserId, CopyId
+        FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+        WHERE (UserId = @UserId OR CopyId = @CopyId)
+          AND Status IN ('ACTIVE', 'NOTIFIED');
+      `);
+
+    const openReservations = openReservationsResult.recordset;
+    if (openReservations.some((item) => (
+      item.UserId === userId && item.CopyId === copyId
+    ))) {
+      await transaction.rollback();
+      return { outcome: 'DUPLICATE_ACTIVE_RESERVATION' };
+    }
+
+    if (openReservations.filter((item) => item.UserId === userId).length >= 3) {
+      await transaction.rollback();
+      return { outcome: 'ACTIVE_RESERVATION_LIMIT' };
+    }
+
+    const queuePosition = openReservations.filter((item) => item.CopyId === copyId).length + 1;
 
     const insertResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
@@ -280,12 +377,17 @@ async function createReservation({ userId, copyId }) {
         VALUES (@UserId, @CopyId, @QueuePosition, 'ACTIVE')
       `);
 
+    reservationId = insertResult.recordset[0].ReservationId;
     await transaction.commit();
-    return findReservationById(insertResult.recordset[0].ReservationId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return {
+    outcome: 'CREATED',
+    reservation: await findReservationById(reservationId),
+  };
 }
 
 async function listReservations({ userId, bookId, memberId, status, page = 1, limit = 20 } = {}) {
@@ -419,17 +521,34 @@ async function cancelReservation(reservationId) {
 
 // @spec FR-FE08-018 — the queue only returns the earliest ACTIVE reservation whose member is still
 // active and approved, so an ineligible member is skipped (not held) at processing time (AF-FE08-003).
-async function findNextActiveReservationForCopy(copyId) {
+async function findNextActiveReservationForCopy(copyId, excludedReservationIds = []) {
   const pool = await getPool();
-  const result = await pool
-    .request()
-    .input('CopyId', sql.Int, copyId)
-    .query(`
+  const request = pool.request().input('CopyId', sql.Int, copyId);
+  const exclusions = [...new Set(excludedReservationIds)]
+    .map(Number)
+    .filter((value) => Number.isInteger(value) && value > 0);
+  const exclusionParameters = exclusions.map((reservationId, index) => {
+    const parameterName = `ExcludedReservationId${index}`;
+    request.input(parameterName, sql.Int, reservationId);
+    return `@${parameterName}`;
+  });
+  const exclusionClause = exclusionParameters.length
+    ? `AND r.ReservationId NOT IN (${exclusionParameters.join(', ')})`
+    : '';
+  const result = await request.query(`
       ${reservationSelect}
       WHERE r.CopyId = @CopyId
         AND r.Status = 'ACTIVE'
         AND bc.Status = 'AVAILABLE'
         AND u.Status = 'ACTIVE'
+        AND EXISTS (
+          SELECT 1
+          FROM UserRoles queueUr
+          INNER JOIN Roles role ON queueUr.RoleId = role.RoleId
+          WHERE queueUr.UserId = r.UserId
+            AND role.RoleName = 'MEMBER'
+        )
+        ${exclusionClause}
       ORDER BY r.ReservedAt ASC, r.ReservationId ASC
     `);
 
@@ -457,6 +576,46 @@ async function holdReservation({ reservationId, copyId, notifiedAt, expiresAt })
     if (copyResult.recordset[0]?.Status !== 'AVAILABLE') {
       await transaction.rollback();
       return null;
+    }
+
+    const eligibilityResult = await new sql.Request(transaction)
+      .input('ReservationId', sql.Int, reservationId)
+      .input('CopyId', sql.Int, copyId)
+      .query(`
+        SELECT TOP 1
+          r.ReservationId,
+          r.UserId,
+          CASE WHEN
+            u.Status = 'ACTIVE'
+            AND EXISTS (
+              SELECT 1
+              FROM UserRoles eligibilityUr WITH (UPDLOCK, HOLDLOCK)
+              INNER JOIN Roles eligibilityRole WITH (HOLDLOCK)
+                ON eligibilityUr.RoleId = eligibilityRole.RoleId
+              WHERE eligibilityUr.UserId = r.UserId
+                AND eligibilityRole.RoleName = 'MEMBER'
+            )
+          THEN 1 ELSE 0 END AS IsEligible
+        FROM Reservations r WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN Users u WITH (UPDLOCK, HOLDLOCK) ON r.UserId = u.UserId
+        WHERE r.ReservationId = @ReservationId
+          AND r.CopyId = @CopyId
+          AND r.Status = 'ACTIVE'
+      `);
+    const eligibility = eligibilityResult.recordset[0];
+
+    if (!eligibility) {
+      await transaction.rollback();
+      return null;
+    }
+
+    if (!eligibility.IsEligible) {
+      await transaction.rollback();
+      return {
+        outcome: 'MEMBER_INELIGIBLE',
+        reservationId,
+        copyId,
+      };
     }
 
     const reservationResult = await new sql.Request(transaction)

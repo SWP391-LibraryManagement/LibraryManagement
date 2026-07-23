@@ -22,11 +22,17 @@ test('builds complete report filters and omits blank values', async () => {
   assert.deepEqual(buildBorrowingReportParams({ q: '1984', status: 'BORROWED', userId: '7', bookId: '' }), {
     q: '1984', status: 'BORROWED', userId: 7,
   });
+  assert.deepEqual(buildBorrowingReportParams({ page: '2', limit: '20' }), {
+    page: 2, limit: 20,
+  });
   assert.deepEqual(buildInventoryReportParams({ q: 'BC14', categoryId: '2', status: 'AVAILABLE' }), {
     q: 'BC14', categoryId: 2, status: 'AVAILABLE',
   });
   assert.deepEqual(buildUserReportParams({ q: '10', status: 'ACTIVE', membershipStatus: '' }), {
     q: '10', status: 'ACTIVE',
+  });
+  assert.deepEqual(buildUserReportParams({ page: '3', limit: '20' }), {
+    page: 3, limit: 20,
   });
 });
 

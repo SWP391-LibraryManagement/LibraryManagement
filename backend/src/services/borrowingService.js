@@ -99,6 +99,9 @@ function createBorrowingService({
         templateData,
         sourceEntityType: 'BORROWING',
         sourceEntityId,
+        idempotencyKey: `FE07:DUE_DATE_REMINDER:${templateData.purpose}:${
+          templateData.borrowDetailId || sourceEntityId
+        }`,
       });
     } catch {
       // A notification failure must not undo a completed borrowing state change.
@@ -410,7 +413,6 @@ function createBorrowingService({
       approvedBy: actor.userId,
       approvalDate,
       dueDate,
-      dailyLimit,
       auditLogRepository,
       auditEntry,
     });
@@ -424,10 +426,15 @@ function createBorrowingService({
     }
 
     if (approvalResult?.outcome === 'BORROW_DAILY_LIMIT_EXCEEDED') {
+      const lockedDailyLimit = approvalResult.dailyLimit || dailyLimit;
       throw errors.conflict(
         'BORROW_DAILY_LIMIT_EXCEEDED',
-        `This account can borrow at most ${dailyLimit} copies per day.`
+        `This account can borrow at most ${lockedDailyLimit} copies per day.`
       );
+    }
+
+    if (approvalResult?.outcome === 'MEMBER_ROLE_REQUIRED') {
+      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The request owner no longer has the member role.');
     }
 
     if (approvalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
@@ -596,6 +603,13 @@ function createBorrowingService({
 
     if (!returnedDetail) {
       throw errors.conflict('BORROW_DETAIL_NOT_BORROWED', 'Only borrowed items can be returned.');
+    }
+
+    if (returnedDetail.outcome === 'BORROW_STATE_CONFLICT') {
+      throw errors.conflict(
+        'BORROW_STATE_CONFLICT',
+        'Borrow detail and copy state are inconsistent. Reload and try again.'
+      );
     }
 
     return {

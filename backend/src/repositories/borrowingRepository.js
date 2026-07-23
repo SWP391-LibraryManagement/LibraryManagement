@@ -602,7 +602,6 @@ async function approveBorrowRequest({
   approvedBy,
   approvalDate,
   dueDate,
-  dailyLimit,
   auditLogRepository,
   auditEntry,
 }) {
@@ -613,22 +612,29 @@ async function approveBorrowRequest({
   let fulfilledReservationIds = [];
 
   try {
-    // Resolve the member without a row lock, then acquire one stable member-scoped
-    // transaction lock before locking copies, request/details, and reservations.
-    const memberKeyResult = await new sql.Request(transaction)
+    // Resolve only stable lock keys first. Every decision is repeated after the
+    // canonical member -> copies -> request/details -> reservations locks.
+    const lockKeyResult = await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
       .query(`
-        SELECT RequestId, UserId
-        FROM BorrowRequests
-        WHERE RequestId = @RequestId
+        SELECT br.RequestId, br.UserId, bd.CopyId
+        FROM BorrowRequests br
+        INNER JOIN BorrowDetails bd ON bd.RequestId = br.RequestId
+        WHERE br.RequestId = @RequestId
+          AND br.Status = 'PENDING'
+          AND bd.Status = 'REQUESTED'
       `);
 
-    if (!memberKeyResult.recordset.length) {
+    if (!lockKeyResult.recordset.length) {
       await transaction.rollback();
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
 
-    const memberUserId = memberKeyResult.recordset[0].UserId;
+    const memberUserId = lockKeyResult.recordset[0].UserId;
+    const requestedCopyIds = lockKeyResult.recordset
+      .map((detail) => detail.CopyId)
+      .sort((left, right) => left - right);
+
     await new sql.Request(transaction)
       .input('MemberLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${memberUserId}`)
       .query(`
@@ -641,6 +647,55 @@ async function approveBorrowRequest({
         IF @LockResult < 0 THROW 51001, 'Unable to acquire borrowing member lock.', 1;
       `);
 
+    const memberResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, memberUserId)
+      .query(`
+        SELECT
+          u.Status AS UserStatus,
+          m.MemberId,
+          m.Status AS MemberStatus,
+          MAX(CASE WHEN r.RoleName = 'MEMBER' THEN 1 ELSE 0 END) AS HasMemberRole
+        FROM Users u WITH (UPDLOCK, HOLDLOCK)
+        LEFT JOIN UserRoles ur WITH (UPDLOCK, HOLDLOCK) ON ur.UserId = u.UserId
+        LEFT JOIN Roles r WITH (HOLDLOCK) ON r.RoleId = ur.RoleId
+        LEFT JOIN Members m WITH (UPDLOCK, HOLDLOCK) ON m.UserId = u.UserId
+        WHERE u.UserId = @UserId
+        GROUP BY u.Status, m.MemberId, m.Status
+      `);
+
+    const member = memberResult.recordset[0];
+    if (!member || Number(member.HasMemberRole) !== 1) {
+      await transaction.rollback();
+      return { outcome: 'MEMBER_ROLE_REQUIRED' };
+    }
+
+    if (member.UserStatus !== 'ACTIVE') {
+      await transaction.rollback();
+      return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+    }
+
+    const dailyLimit = member.MemberStatus === 'APPROVED' ? 5 : 3;
+
+    const lockedCopies = new Map();
+
+    for (const copyId of requestedCopyIds) {
+      const copyResult = await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT bc.CopyId, bc.Status, b.Status AS BookStatus
+          FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
+          WHERE bc.CopyId = @CopyId
+        `);
+
+      if (!copyResult.recordset.length) {
+        await transaction.rollback();
+        return { outcome: 'COPY_NOT_AVAILABLE' };
+      }
+
+      lockedCopies.set(copyId, copyResult.recordset[0]);
+    }
+
     const requestResult = await new sql.Request(transaction)
       .input('RequestId', sql.Int, requestId)
       .query(`
@@ -650,29 +705,40 @@ async function approveBorrowRequest({
           AND Status = 'PENDING'
       `);
 
-    if (!requestResult.recordset.length) {
+    if (
+      !requestResult.recordset.length
+      || Number(requestResult.recordset[0].UserId) !== Number(memberUserId)
+    ) {
       await transaction.rollback();
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
 
-    const memberResult = await new sql.Request(transaction)
-      .input('UserId', sql.Int, memberUserId)
+    const requestedDetailsResult = await new sql.Request(transaction)
+      .input('RequestId', sql.Int, requestId)
       .query(`
-        SELECT u.Status AS UserStatus, m.MemberId, m.Status AS MemberStatus
-        FROM Users u WITH (UPDLOCK, HOLDLOCK)
-        LEFT JOIN Members m WITH (UPDLOCK, HOLDLOCK) ON m.UserId = u.UserId
-        WHERE u.UserId = @UserId
+        SELECT bd.CopyId
+        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+        WHERE bd.RequestId = @RequestId
+          AND bd.Status = 'REQUESTED'
       `);
 
-    const member = memberResult.recordset[0];
-    if (!member) {
+    const lockedRequestedCopyIds = requestedDetailsResult.recordset
+      .map((detail) => detail.CopyId)
+      .sort((left, right) => left - right);
+    if (
+      lockedRequestedCopyIds.length !== requestedCopyIds.length
+      || lockedRequestedCopyIds.some((copyId, index) => copyId !== requestedCopyIds[index])
+    ) {
       await transaction.rollback();
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
     }
 
-    if (member.UserStatus !== 'ACTIVE') {
-      await transaction.rollback();
-      return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
+    for (const copyId of requestedCopyIds) {
+      const copy = lockedCopies.get(copyId);
+      if (copy.BookStatus === 'INACTIVE') {
+        await transaction.rollback();
+        return { outcome: 'BOOK_INACTIVE' };
+      }
     }
 
     const fineResult = await new sql.Request(transaction)
@@ -707,109 +773,6 @@ async function approveBorrowRequest({
       return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
     }
 
-    const requestedDetailsResult = await new sql.Request(transaction)
-      .input('RequestId', sql.Int, requestId)
-      .query(`
-        SELECT bd.CopyId
-        FROM BorrowDetails bd
-        WHERE bd.RequestId = @RequestId
-          AND bd.Status = 'REQUESTED'
-      `);
-
-    if (!requestedDetailsResult.recordset.length) {
-      await transaction.rollback();
-      return { outcome: 'REQUEST_NOT_APPROVABLE' };
-    }
-
-    const requestedCopyIds = requestedDetailsResult.recordset
-      .map((detail) => detail.CopyId)
-      .sort((left, right) => left - right);
-
-    const lockedCopies = new Map();
-
-    for (const copyId of requestedCopyIds) {
-      const copyResult = await new sql.Request(transaction)
-        .input('CopyId', sql.Int, copyId)
-        .query(`
-          SELECT bc.CopyId, bc.Status, b.Status AS BookStatus
-          FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
-          INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
-          WHERE bc.CopyId = @CopyId
-        `);
-
-      if (!copyResult.recordset.length) {
-        await transaction.rollback();
-        return { outcome: 'COPY_NOT_AVAILABLE' };
-      }
-
-      lockedCopies.set(copyId, copyResult.recordset[0]);
-    }
-
-    await new sql.Request(transaction)
-      .input('RequestId', sql.Int, requestId)
-      .query(`
-        SELECT bd.CopyId
-        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
-        WHERE bd.RequestId = @RequestId
-          AND bd.Status = 'REQUESTED'
-      `);
-
-    const fulfilledReservations = [];
-
-    for (const copyId of requestedCopyIds) {
-      const reservationResult = await new sql.Request(transaction)
-        .input('CopyId', sql.Int, copyId)
-        .query(`
-          SELECT ReservationId, UserId, Status
-          FROM Reservations WITH (UPDLOCK, HOLDLOCK)
-          WHERE CopyId = @CopyId
-            AND Status IN ('ACTIVE', 'NOTIFIED')
-          ORDER BY CASE WHEN Status = 'NOTIFIED' THEN 0 ELSE 1 END,
-                   ReservedAt ASC,
-                   ReservationId ASC
-        `);
-      const copy = lockedCopies.get(copyId);
-      if (copy.BookStatus === 'INACTIVE') {
-        await transaction.rollback();
-        return { outcome: 'BOOK_INACTIVE' };
-      }
-      const activeReservation = reservationResult.recordset.find(
-        (reservation) => reservation.Status === 'ACTIVE'
-      );
-      const notifiedReservation = reservationResult.recordset.find(
-        (reservation) => reservation.Status === 'NOTIFIED'
-      );
-
-      if (copy.Status === 'AVAILABLE' && activeReservation) {
-        await transaction.rollback();
-        return { outcome: 'RESERVATION_QUEUE_PRIORITY' };
-      }
-
-      if (copy.Status === 'AVAILABLE' && !notifiedReservation) {
-        continue;
-      }
-
-      if (
-        copy.Status === 'RESERVED' &&
-        notifiedReservation &&
-        Number(notifiedReservation.UserId) === Number(memberUserId)
-      ) {
-        fulfilledReservations.push({
-          reservationId: notifiedReservation.ReservationId,
-          copyId,
-        });
-        continue;
-      }
-
-      if (copy.Status === 'RESERVED' && !notifiedReservation) {
-        await transaction.rollback();
-        return { outcome: 'RESERVATION_STATE_CONFLICT' };
-      }
-
-      await transaction.rollback();
-      return { outcome: 'COPY_NOT_AVAILABLE' };
-    }
-
     const activeCountResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, memberUserId)
       .query(`
@@ -841,7 +804,59 @@ async function approveBorrowRequest({
 
     if (Number(dailyCountResult.recordset[0]?.DailyCount || 0) + requestedCount > dailyLimit) {
       await transaction.rollback();
-      return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED' };
+      return { outcome: 'BORROW_DAILY_LIMIT_EXCEEDED', dailyLimit };
+    }
+
+    const fulfilledReservations = [];
+
+    for (const copyId of requestedCopyIds) {
+      const reservationResult = await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT ReservationId, UserId, Status
+          FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+          WHERE CopyId = @CopyId
+            AND Status IN ('ACTIVE', 'NOTIFIED')
+          ORDER BY CASE WHEN Status = 'NOTIFIED' THEN 0 ELSE 1 END,
+                   ReservedAt ASC,
+                   ReservationId ASC
+        `);
+      const copy = lockedCopies.get(copyId);
+      const activeReservation = reservationResult.recordset.find(
+        (reservation) => reservation.Status === 'ACTIVE'
+      );
+      const notifiedReservation = reservationResult.recordset.find(
+        (reservation) => reservation.Status === 'NOTIFIED'
+      );
+
+      if (copy.Status === 'AVAILABLE' && activeReservation) {
+        await transaction.rollback();
+        return { outcome: 'RESERVATION_QUEUE_PRIORITY' };
+      }
+
+      if (copy.Status === 'AVAILABLE' && !notifiedReservation) {
+        continue;
+      }
+
+      if (
+        copy.Status === 'RESERVED'
+        && notifiedReservation
+        && Number(notifiedReservation.UserId) === Number(memberUserId)
+      ) {
+        fulfilledReservations.push({
+          reservationId: notifiedReservation.ReservationId,
+          copyId,
+        });
+        continue;
+      }
+
+      if (copy.Status === 'RESERVED' && !notifiedReservation) {
+        await transaction.rollback();
+        return { outcome: 'RESERVATION_STATE_CONFLICT' };
+      }
+
+      await transaction.rollback();
+      return { outcome: 'COPY_NOT_AVAILABLE' };
     }
 
     await new sql.Request(transaction)
@@ -990,6 +1005,69 @@ async function returnBorrowDetail({
   await transaction.begin();
 
   try {
+    const lockKeyResult = await new sql.Request(transaction)
+      .input('BorrowDetailId', sql.Int, borrowDetailId)
+      .query(`
+        SELECT RequestId, CopyId
+        FROM BorrowDetails
+        WHERE BorrowDetailId = @BorrowDetailId;
+      `);
+
+    const lockKey = lockKeyResult.recordset[0];
+    if (!lockKey) {
+      await transaction.rollback();
+      return null;
+    }
+
+    const copyResult = await new sql.Request(transaction)
+      .input('CopyId', sql.Int, lockKey.CopyId)
+      .query(`
+        SELECT CopyId, Status
+        FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
+        WHERE CopyId = @CopyId;
+      `);
+
+    if (!copyResult.recordset.length || copyResult.recordset[0].Status !== 'BORROWED') {
+      await transaction.rollback();
+      return { outcome: 'BORROW_STATE_CONFLICT' };
+    }
+
+    const lockedDetailResult = await new sql.Request(transaction)
+      .input('BorrowDetailId', sql.Int, borrowDetailId)
+      .query(`
+        SELECT BorrowDetailId, RequestId, CopyId, Status
+        FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
+        WHERE BorrowDetailId = @BorrowDetailId;
+      `);
+
+    const lockedDetail = lockedDetailResult.recordset[0];
+    if (
+      !lockedDetail
+      || lockedDetail.Status !== 'BORROWED'
+      || Number(lockedDetail.RequestId) !== Number(lockKey.RequestId)
+      || Number(lockedDetail.CopyId) !== Number(lockKey.CopyId)
+    ) {
+      await transaction.rollback();
+      return null;
+    }
+
+    const requestDetailsResult = await new sql.Request(transaction)
+      .input('RequestId', sql.Int, lockedDetail.RequestId)
+      .query(`
+        SELECT BorrowDetailId, Status
+        FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
+        WHERE RequestId = @RequestId;
+      `);
+
+    await new sql.Request(transaction)
+      .input('CopyId', sql.Int, lockedDetail.CopyId)
+      .query(`
+        SELECT ReservationId
+        FROM Reservations WITH (UPDLOCK, HOLDLOCK)
+        WHERE CopyId = @CopyId
+          AND Status IN ('ACTIVE', 'NOTIFIED');
+      `);
+
     const detailResult = await new sql.Request(transaction)
       .input('BorrowDetailId', sql.Int, borrowDetailId)
       .input('DetailStatus', sql.NVarChar(20), detailStatus)
@@ -1011,7 +1089,7 @@ async function returnBorrowDetail({
       return null;
     }
 
-    await new sql.Request(transaction)
+    const copyUpdateResult = await new sql.Request(transaction)
       .input('CopyId', sql.Int, detail.CopyId)
       .input('CopyStatus', sql.NVarChar(20), copyStatus)
       .query(`
@@ -1019,18 +1097,19 @@ async function returnBorrowDetail({
         SET Status = @CopyStatus,
             UpdatedAt = GETDATE()
         WHERE CopyId = @CopyId
+          AND Status = 'BORROWED'
       `);
 
-    const remainingResult = await new sql.Request(transaction)
-      .input('RequestId', sql.Int, detail.RequestId)
-      .query(`
-        SELECT COUNT(*) AS RemainingCount
-        FROM BorrowDetails
-        WHERE RequestId = @RequestId
-          AND Status NOT IN ('RETURNED', 'LOST', 'DAMAGED')
-      `);
+    if (copyUpdateResult.rowsAffected && copyUpdateResult.rowsAffected[0] !== 1) {
+      await transaction.rollback();
+      return { outcome: 'BORROW_STATE_CONFLICT' };
+    }
 
-    if ((remainingResult.recordset[0]?.RemainingCount || 0) === 0) {
+    const remainingCount = requestDetailsResult.recordset.filter((item) => (
+      Number(item.BorrowDetailId) !== Number(borrowDetailId)
+      && !['RETURNED', 'LOST', 'DAMAGED'].includes(item.Status)
+    )).length;
+    if (remainingCount === 0) {
       await new sql.Request(transaction)
         .input('RequestId', sql.Int, detail.RequestId)
         .query(`

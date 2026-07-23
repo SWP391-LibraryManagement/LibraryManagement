@@ -7,7 +7,6 @@ const {
   listMyReservationsValidators,
   listReservationsValidators,
   cancelReservationValidators,
-  processReservationValidators,
   processQueueValidators,
 } = require('../validators/reservationValidators');
 
@@ -69,14 +68,6 @@ function createReservationRoutes({ authService, reservationService } = {}) {
     requireAnyRole('MEMBER'),
     cancelReservationValidators,
     controller.cancel
-  );
-
-  router.patch(
-    '/:reservationId/process',
-    authenticate,
-    requireAnyRole('LIBRARIAN', 'ADMIN'),
-    processReservationValidators,
-    controller.process
   );
 
   return router;

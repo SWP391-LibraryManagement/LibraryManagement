@@ -145,13 +145,14 @@ function getReservationApiMethod(reservationApiSource, method) {
 
 test('reservation API routes every method through the reservation resolver', async () => {
   const reservationApiSource = getReservationApiObject(await loadReservationApiSource());
-  const methods = ['create', 'listCandidates', 'listMine', 'cancel', 'listAll', 'processQueue', 'process', 'expireHolds'];
+  const methods = ['create', 'listCandidates', 'listMine', 'cancel', 'listAll', 'processQueue', 'expireHolds'];
 
   for (const method of methods) {
     const methodSource = getReservationApiMethod(reservationApiSource, method);
     assert.match(methodSource, /\bauthorizedReservationRequest\(/, method);
     assert.doesNotMatch(methodSource, /\bauthorizedRequest\(/, method);
   }
+  assert.doesNotMatch(reservationApiSource, /\r?\n {2}process\(/);
 });
 
 test('reservation candidate API uses the protected server catalog contract', async () => {
@@ -183,11 +184,14 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   const loadReservationsSource = source.slice(loadReservationsStart, loadReservationsEnd);
 
   assert.match(source, /async function loadReservations\(\)/);
-  assert.match(loadReservationsSource, /const data = await reservationApi\.listAll\(\)/);
+  assert.match(loadReservationsSource, /reservationApi\.listAll\(\{ page, limit: RESERVATION_API_PAGE_SIZE \}\)/);
   assert.match(loadReservationsSource, /setRows\(\[\]\)/);
   assert.doesNotMatch(source, /DEMO_ALL_RESERVATIONS/);
   assert.match(source, /runHoldExpirationWorkflow/);
   assert.match(source, /isActiveReservationQueueStatus\(item\.status\)/);
+  assert.match(source, /item\.copyId === queueCopyId/);
+  assert.match(source, /reservationApi\.processQueue\(notifyTarget\.copyId\)/);
+  assert.doesNotMatch(source, /reservationApi\.process\(/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);
   assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
@@ -227,7 +231,8 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.match(mine, /setReservations\(\[\]\)/);
   assert.match(mine, /await reservationApi\.cancel\(cancelTarget\.reservationId/);
   assert.doesNotMatch(staff, /DEMO_ALL_RESERVATIONS/);
-  assert.match(staff, /reservationApi\.listAll\(\)/);
+  assert.match(staff, /reservationApi\.listAll\(\{ page, limit: RESERVATION_API_PAGE_SIZE \}\)/);
+  assert.match(mine, /reservationApi\.listMine\(\{ page, limit: RESERVATION_API_PAGE_SIZE \}\)/);
   assert.match(mine, /pending=\{cancelling\}/);
   assert.match(staff, /pending=\{notifying\}/);
   assert.doesNotMatch(mine, /<table className="lib-table"/);

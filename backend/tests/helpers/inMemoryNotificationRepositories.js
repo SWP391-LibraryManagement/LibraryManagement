@@ -77,6 +77,7 @@ function makeInMemoryNotificationDependencies() {
   ];
   const notifications = [];
   const attempts = [];
+  const claimedNotificationIds = new Set();
 
   function mapNotification(notification) {
     return clone(notification || null);
@@ -174,6 +175,78 @@ function makeInMemoryNotificationDependencies() {
         )
         .slice(0, limit)
         .map(mapNotification);
+    },
+
+    async claimNextPending() {
+      const notification = notifications.find(
+        (item) =>
+          item.status === 'PENDING' &&
+          !claimedNotificationIds.has(item.notificationId) &&
+          !isSensitiveQueueNotification(item)
+      );
+
+      if (!notification) {
+        return null;
+      }
+
+      claimedNotificationIds.add(notification.notificationId);
+      return {
+        notification: mapNotification(notification),
+        notificationId: notification.notificationId,
+      };
+    },
+
+    async markClaimSent({ claim, providerMessageId }) {
+      const notification = notifications.find(
+        (item) =>
+          item.notificationId === Number(claim.notificationId) &&
+          item.status === 'PENDING' &&
+          claimedNotificationIds.has(item.notificationId)
+      );
+
+      if (!notification) {
+        return null;
+      }
+
+      notification.status = 'SENT';
+      notification.sentAt = new Date();
+      notification.attemptCount += 1;
+      notification.lastErrorMessage = null;
+      claimedNotificationIds.delete(notification.notificationId);
+      attempts.push({
+        notificationId: notification.notificationId,
+        status: 'SENT',
+        providerMessageId: providerMessageId || null,
+        attemptedAt: new Date(),
+      });
+
+      return mapNotification(notification);
+    },
+
+    async markClaimFailed({ claim, safeErrorMessage }) {
+      const notification = notifications.find(
+        (item) =>
+          item.notificationId === Number(claim.notificationId) &&
+          item.status === 'PENDING' &&
+          claimedNotificationIds.has(item.notificationId)
+      );
+
+      if (!notification) {
+        return null;
+      }
+
+      notification.status = 'FAILED';
+      notification.attemptCount += 1;
+      notification.lastErrorMessage = safeErrorMessage;
+      claimedNotificationIds.delete(notification.notificationId);
+      attempts.push({
+        notificationId: notification.notificationId,
+        status: 'FAILED',
+        safeErrorMessage,
+        attemptedAt: new Date(),
+      });
+
+      return mapNotification(notification);
     },
 
     async markSent({ notificationId, providerMessageId }) {

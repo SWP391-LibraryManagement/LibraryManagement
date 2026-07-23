@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-23 - Move detail pagination into SQL snapshots
+
+- Materialized each filtered report source once per request, calculated totals and grouped metrics in SQL, and returned stable detail pages with `OFFSET/FETCH`.
+- Returned only bounded aggregate resultsets plus the requested detail page instead of transferring the complete filtered snapshot to Node.
+- Counted historical non-null membership approval dates in growth metrics even when current membership or account state is inactive.
+
 ## 2026-07-21 - Report Search And Filter Completion
 
 - Added server-side `q` search to all three staff reports and exposed the approved filters in the Librarian/Admin UI.

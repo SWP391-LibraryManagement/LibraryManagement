@@ -517,6 +517,7 @@ describe('FE07 borrowing management', () => {
       },
       sourceEntityType: 'BORROWING',
       sourceEntityId: requestId,
+      idempotencyKey: `FE07:DUE_DATE_REMINDER:BORROW_APPROVED:${requestId}`,
     });
     expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
@@ -744,6 +745,7 @@ describe('FE07 borrowing management', () => {
       },
       sourceEntityType: 'BORROWING',
       sourceEntityId: requestId,
+      idempotencyKey: `FE07:DUE_DATE_REMINDER:BORROW_RENEWED:${firstDetail.borrowDetailId}`,
     });
     expect(notificationRequest).not.toHaveProperty('sourceFeature');
 
@@ -2261,6 +2263,7 @@ describe('FE07 borrowing management', () => {
   });
 
   test.each([
+    ['MEMBER_ROLE_REQUIRED', 403, 'MEMBER_ROLE_REQUIRED'],
     ['MEMBER_ACCOUNT_INACTIVE', 403, 'MEMBER_ACCOUNT_INACTIVE'],
     ['UNPAID_FINE_BLOCKS_BORROWING', 409, 'UNPAID_FINE_BLOCKS_BORROWING'],
     ['OVERDUE_LOAN_BLOCKS_BORROWING', 409, 'OVERDUE_LOAN_BLOCKS_BORROWING'],
@@ -2304,6 +2307,86 @@ describe('FE07 borrowing management', () => {
     expect(response.status).toBe(status);
     expect(response.body.error).toMatchObject({ code });
     expect(response.body.error.message).toBeTruthy();
+  });
+
+  test('approval rejects a request when the member role was removed after request creation', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-role-removed.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-role-removed.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
+    setup.authDependencies.state.rolesByUserId.set(member.userId, []);
+
+    const response = await request(setup.app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('MEMBER_ROLE_REQUIRED');
+    expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
+    expect(setup.borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+  });
+
+  test('approval derives the daily tier from locked membership state instead of a stale service read', async () => {
+    const setup = makeTestApp();
+    const member = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-stale-tier.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app: setup.app,
+      authDependencies: setup.authDependencies,
+      borrowingDependencies: setup.borrowingDependencies,
+      email: 'approval-stale-tier.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(setup.app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2, 4, 5] })
+      .expect(201);
+
+    setup.borrowingDependencies.setMemberStatus(member.userId, 'PENDING');
+    const originalGetEligibility =
+      setup.borrowingDependencies.borrowingRepository.getMemberEligibility.bind(
+        setup.borrowingDependencies.borrowingRepository
+      );
+    setup.borrowingDependencies.borrowingRepository.getMemberEligibility = jest.fn(async (userId) => ({
+      ...(await originalGetEligibility(userId)),
+      memberStatus: 'APPROVED',
+    }));
+
+    const response = await request(setup.app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({});
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('BORROW_DAILY_LIMIT_EXCEEDED');
+    expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
+    expect(setup.borrowingDependencies.state.copies.filter((copy) => (
+      [1, 2, 4, 5].includes(copy.copyId) && copy.status !== 'AVAILABLE'
+    ))).toEqual([]);
   });
 
   test('concurrent rejection returns conflict when the pending update loses the race', async () => {
