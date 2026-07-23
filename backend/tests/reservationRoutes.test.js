@@ -752,10 +752,103 @@ describe('FE08 reservation management', () => {
 
     expect(processResponse.status).toBe(200);
     expect(processResponse.body.selectedReservation.status).toBe('NOTIFIED');
+    expect(processResponse.body.notificationWarning).toEqual({
+      code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+      message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+    });
     expect(requester.createNotificationRequest).toHaveBeenCalledTimes(1);
     expect(auditLogRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'RESERVATION_NOTIFY_FAILED' })
     );
+  });
+
+  test('rolls back create, cancel, hold, and expire state when lifecycle auditing fails', async () => {
+    for (const action of ['create', 'cancel', 'hold', 'expire']) {
+      const { authDependencies, reservationDependencies } = makeTestApp();
+      authDependencies.state.users.push({
+        userId: 900,
+        email: 'atomic.audit.member@example.test',
+        status: 'ACTIVE',
+      });
+      authDependencies.state.rolesByUserId.set(900, ['MEMBER']);
+      const copy = reservationDependencies.state.copies.find((item) => item.copyId === 1);
+      const repository = reservationDependencies.reservationRepository;
+      const failingAuditRepository = {
+        create: jest.fn(async () => {
+          throw new Error(`audit failed during ${action}`);
+        }),
+      };
+      const auditEntry = { userId: 900, action: `RESERVATION_${action.toUpperCase()}` };
+      let operation;
+
+      if (action === 'create') {
+        operation = () => repository.createReservation({
+          userId: 900,
+          copyId: 1,
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else if (action === 'cancel') {
+        copy.status = 'RESERVED';
+        reservationDependencies.state.reservations.push({
+          reservationId: 91,
+          userId: 900,
+          copyId: 1,
+          status: 'NOTIFIED',
+          reservedAt: new Date('2026-07-20T00:00:00.000Z'),
+          notifiedAt: new Date('2026-07-21T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-23T00:00:00.000Z'),
+          cancelledAt: null,
+        });
+        operation = () => repository.cancelReservation(91, {
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else if (action === 'hold') {
+        copy.status = 'AVAILABLE';
+        reservationDependencies.state.reservations.push({
+          reservationId: 92,
+          userId: 900,
+          copyId: 1,
+          status: 'ACTIVE',
+          reservedAt: new Date('2026-07-20T00:00:00.000Z'),
+          notifiedAt: null,
+          expiresAt: null,
+          cancelledAt: null,
+        });
+        operation = () => repository.holdReservation({
+          reservationId: 92,
+          userId: 900,
+          copyId: 1,
+          notifiedAt: new Date('2026-07-21T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-23T00:00:00.000Z'),
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      } else {
+        copy.status = 'RESERVED';
+        reservationDependencies.state.reservations.push({
+          reservationId: 93,
+          userId: 900,
+          copyId: 1,
+          status: 'NOTIFIED',
+          reservedAt: new Date('2026-07-18T00:00:00.000Z'),
+          notifiedAt: new Date('2026-07-19T00:00:00.000Z'),
+          expiresAt: new Date('2026-07-20T00:00:00.000Z'),
+          cancelledAt: null,
+        });
+        operation = () => repository.expireOverdueHolds({
+          now: new Date('2026-07-21T00:00:00.000Z'),
+          auditLogRepository: failingAuditRepository,
+          auditEntry,
+        });
+      }
+
+      const stateBefore = JSON.stringify(reservationDependencies.state);
+      await expect(operation()).rejects.toThrow(`audit failed during ${action}`);
+      expect(JSON.stringify(reservationDependencies.state)).toBe(stateBefore);
+      expect(failingAuditRepository.create).toHaveBeenCalled();
+    }
   });
 
   test('rejects reservation when member account is inactive (FR-FE08-012)', async () => {

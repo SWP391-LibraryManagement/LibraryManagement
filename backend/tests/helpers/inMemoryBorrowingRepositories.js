@@ -732,10 +732,15 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return null;
       }
 
+      const copy = getCopy(detail.copyId);
+      if (!copy || copy.status !== 'BORROWED') {
+        return { outcome: 'BORROW_STATE_CONFLICT' };
+      }
+
       detail.status = detailStatus;
       detail.returnDate = returnDate;
       detail.updatedAt = new Date();
-      getCopy(detail.copyId).status = copyStatus;
+      copy.status = copyStatus;
 
       const requestDetails = borrowDetails.filter((item) => item.requestId === detail.requestId);
       const allTerminal = requestDetails.every((item) =>

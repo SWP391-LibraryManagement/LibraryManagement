@@ -4,6 +4,7 @@ const {
   businessDateUtcBounds,
   addBusinessDays,
   compareBusinessDates,
+  overdueDaysBetween,
 } = require('../utils/libraryBusinessTime');
 
 const MAX_ACTIVE_BORROWED_COPIES = 5;
@@ -33,20 +34,10 @@ function toPositiveInteger(value, fieldName) {
   return numberValue;
 }
 
-function toDateOnly(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
 function addDays(date, days) {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
   return nextDate;
-}
-
-function differenceInCalendarDays(leftDate, rightDate) {
-  const left = toDateOnly(new Date(leftDate));
-  const right = toDateOnly(new Date(rightDate));
-  return Math.max(0, Math.ceil((left.getTime() - right.getTime()) / 86400000));
 }
 
 function createBorrowingService({
@@ -664,7 +655,7 @@ function createBorrowingService({
     }
 
     const { detailStatus, copyStatus } = mapReturnConditionToStatuses(input.condition);
-    const overdueDays = differenceInCalendarDays(returnDate, new Date(borrowDetail.dueDate));
+    const overdueDays = overdueDaysBetween(borrowDetail.dueDate, returnDate);
     const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RETURN', {
       userId: actor.userId,
       targetType: 'BORROW_DETAIL',
@@ -738,7 +729,7 @@ function createBorrowingService({
       throw errors.conflict('RENEWAL_LIMIT_REACHED', 'This borrowed item has already been renewed.');
     }
 
-    if (toDateOnly(new Date(borrowDetail.dueDate)) < toDateOnly(clock())) {
+    if (overdueDaysBetween(borrowDetail.dueDate, clock()) > 0) {
       throw errors.conflict('BORROW_DETAIL_OVERDUE', 'Overdue borrowed items cannot be renewed.');
     }
 

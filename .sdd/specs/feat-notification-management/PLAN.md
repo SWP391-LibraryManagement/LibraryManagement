@@ -225,3 +225,24 @@ No frontend file, database table/index migration, new dependency, retry UI, inbo
 2. Permit only the FE04-bound requester to submit `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` with application source metadata and the approved idempotency key.
 3. Keep membership approval/rejection committed when FE10 returns `FAILED` or throws a safe requester error.
 4. Add focused contract and integration tests before claiming FE04-T006 or FE10-S09 complete.
+
+## 12. Durable Delivery Claim Remediation
+
+The user approved the `PROCESSING` design on 2026-07-23. The remediation keeps
+the provider call outside database transactions while making the delivery
+ownership durable before that call.
+
+1. Require every in-process source request to include a non-blank
+   `sourceEntityType`, a positive integer `sourceEntityId`, and an idempotency
+   key.
+2. Persist sensitive requests directly as `PROCESSING`; atomically claim queued
+   non-sensitive requests with `PENDING -> PROCESSING` and commit before
+   provider I/O.
+3. Open a new short transaction for `PROCESSING -> SENT` or
+   `PROCESSING -> FAILED` and the matching attempt row.
+4. Leave a row `PROCESSING` if terminal persistence fails after provider I/O.
+   Exclude that row from automatic processing and return
+   `409 DELIVERY_STATE_UNCERTAIN` for manual retry.
+5. Synchronize the model, canonical SQL, OpenAPI, ADR, and idempotent migration;
+   then run focused/full tests and two disposable migration executions before
+   H2 review.

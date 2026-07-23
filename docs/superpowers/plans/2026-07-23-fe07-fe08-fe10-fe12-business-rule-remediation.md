@@ -543,3 +543,95 @@ pass 4/4.
 Review the three-file follow-up diff independently for Standards and Spec,
 commit only after H2 passes, push the same Draft PR branch, and wait for the
 replacement `foundation-checks` run. Do not merge or deploy without H3.
+
+---
+
+## Final Verification Remediation
+
+The user approved the durable FE10 `PROCESSING` design on 2026-07-23. Tasks
+11-15 implement the findings recorded in
+`docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
+
+### Task 11: Make FE10 source binding and delivery transitions deterministic
+
+**Files:**
+- Modify: `.sdd/specs/feat-notification-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
+- Modify: `.sdd/rfcs/ADR-002-database-design.md`
+- Modify: `database/Librarymanagement.sql`
+- Create: `database/migrations/2026-07-23-fe10-processing-status.sql`
+- Modify: `backend/src/models/Notification.js`
+- Modify: `backend/src/services/notificationService.js`
+- Modify: `backend/src/repositories/notificationRepository.js`
+- Modify: `backend/tests/notificationRoutes.test.js`
+- Modify: `backend/tests/notificationRepository.test.js`
+
+- [x] Write RED tests for missing internal source references, sensitive
+  transition failure, duplicate replay while `PROCESSING`, and two-worker
+  claim/finalization failure.
+- [x] Add `PROCESSING` to the reviewed spec/schema lifecycle.
+- [x] Commit claims before provider I/O and guard terminal transitions from
+  `PROCESSING`.
+- [x] Keep uncertain rows `PROCESSING`, exclude them from automatic retry, and
+  return safe `DELIVERY_STATE_UNCERTAIN` for manual retry.
+- [x] Run focused FE10 tests and the idempotent migration twice on a disposable
+  database.
+
+### Task 12: Make FE08 lifecycle audits atomic and staff feedback truthful
+
+**Files:**
+- Modify: `.sdd/specs/feat-reservation-management/{SPEC,PLAN,TASKS,CHANGELOG}.md`
+- Modify: `backend/src/services/reservationService.js`
+- Modify: `backend/src/repositories/reservationRepository.js`
+- Modify: `backend/tests/reservationRoutes.test.js`
+- Modify: `backend/tests/reservationService.test.js`
+- Modify: `backend/tests/reservationRepository.test.js`
+- Modify: `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- Modify: `frontend/test/reservationFrontend.test.js`
+
+- [x] Write RED rollback tests for create/cancel/hold/expire audit failures and
+  a post-commit notification-audit warning test.
+- [x] Insert lifecycle audit entries inside their mutation transactions.
+- [x] Preserve a committed hold on notification failure while surfacing a safe
+  warning if its required failure audit cannot be persisted.
+- [x] Remove the cached member name from the pre-confirmation dialog.
+- [x] Run focused FE08 backend/frontend tests.
+
+### Task 13: Correct FE07 business time, doubles, and SQL expectations
+
+**Files:**
+- Modify: `.sdd/specs/feat-borrowing-management/{SPEC,TASKS,CHANGELOG}.md`
+- Modify: `backend/src/services/borrowingService.js`
+- Modify: `backend/tests/borrowingRoutes.test.js`
+- Modify: `backend/tests/helpers/inMemoryBorrowingRepositories.js`
+- Modify: `backend/tests/sql/borrowingConcurrency.sqltest.js`
+
+- [x] Write RED Vietnam-midnight and in-memory copy-conflict tests.
+- [x] Use the shared FE07 business-time helpers for return and renewal.
+- [x] Align the in-memory repository with production copy-state checks.
+- [x] Replace stale SQL expectations with role-based eligibility and explicit
+  conflict outcomes.
+- [x] Run focused FE07 unit and disposable SQL tests.
+
+### Task 14: Restore FE12 parity and traceability
+
+**Files:**
+- Modify: `.sdd/specs/feat-reporting-statistics/{SPEC,TASKS,CHANGELOG}.md`
+- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Modify: `backend/tests/reportInMemoryParity.test.js`
+
+- [x] Write RED parity tests for `q`, inactive historical approvals, and stable
+  user ordering.
+- [x] Match the production SQL report semantics in the in-memory repository.
+- [x] Add BR-FE12-016, FR-FE12-011, and AC-FE12-011 to traceability and update
+  totals to `16/11/11`.
+- [x] Run focused FE12 tests and traceability enforcement.
+
+### Task 15: Complete L1-L4 verification and H2
+
+- [x] Run all focused tests from Tasks 11-14.
+- [x] Run full backend/frontend tests, lint, build, E2E, deployment utility,
+  traceability, and diff hygiene.
+- [x] Run mutable SQL suites only on named disposable local databases and
+  remove them afterward.
+- [x] Perform final security, standards, and spec review over the complete diff.
+- [~] Stop for H2 review before commit, push, Azure deployment, or merge.

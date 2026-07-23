@@ -4,7 +4,10 @@
 
 - Enforced canonical feature ownership for all queued notification types and required idempotency keys at every in-process source boundary.
 - Replayed the persisted notification after an idempotency unique-key race instead of surfacing an internal error.
-- Added exclusive pending-row claims and guarded sent/failed completion so concurrent workers deliver one queued notification once.
+- Required every in-process request to provide a non-blank source entity type and positive source entity ID.
+- Added durable `PROCESSING`: queued claims and sensitive acceptance now commit before provider I/O, while guarded sent/failed completion uses a new short transaction.
+- Kept uncertain rows `PROCESSING` after terminal persistence failure, excluded them from automatic resend, and returned safe `DELIVERY_STATE_UNCERTAIN` for manual retry.
+- Synchronized the canonical schema, model, OpenAPI, ADR, and idempotent migration with the revised lifecycle.
 
 ## 2026-07-20 - Vietnamese UI localization and typography
 

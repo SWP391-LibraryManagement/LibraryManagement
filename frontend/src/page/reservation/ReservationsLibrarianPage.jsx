@@ -341,8 +341,8 @@ export default function ReservationsLibrarianPage() {
           onConfirm={confirmNotify}
         >
           <div className="reservation-confirm-copy">
-            <strong>{notifyTarget.member}</strong>
-            <span>{notifyTarget.title} • {notifyTarget.barcode}</span>
+            <strong>{notifyTarget.title} • {notifyTarget.barcode}</strong>
+            <span className="muted">Máy chủ sẽ kiểm tra lại thành viên đầu tiên đủ điều kiện trong hàng đợi hiện tại.</span>
             <span className="muted">Sau khi xác nhận, bản sao sẽ chuyển sang trạng thái giữ chỗ trong 2 ngày.</span>
           </div>
         </ConfirmAction>

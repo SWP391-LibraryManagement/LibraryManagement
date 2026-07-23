@@ -157,3 +157,8 @@ Detailed automated evidence is recorded in
 - [x] Reconfirm borrowing, inventory, and user report filters map to server query parameters.
 - [x] Reconfirm charts consume deterministic backend metrics with no fake fallback.
 - [x] Reduce report-only bottom whitespace and retain responsive layout tests.
+- [~] **FE12-N10 - Restore in-memory report parity and traceability.**
+  - Maps to: BR-FE12-009, BR-FE12-015/016, FR-FE12-003/011, AC-FE12-003/011.
+  - RED: user `q` failed to match ID/status/membership/role, inactive historical approvals disappeared from growth metrics, and fixture order leaked into detail rows.
+  - GREEN: the in-memory repository matches production SQL search, historical `ApprovedAt`, and `UserId ASC` semantics; traceability is updated to `16/11/11`.
+  - Verification: focused parity tests and full repository checks are green; H2 review remains pending.

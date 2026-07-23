@@ -5,6 +5,8 @@
 - Materialized each filtered report source once per request, calculated totals and grouped metrics in SQL, and returned stable detail pages with `OFFSET/FETCH`.
 - Returned only bounded aggregate resultsets plus the requested detail page instead of transferring the complete filtered snapshot to Node.
 - Counted historical non-null membership approval dates in growth metrics even when current membership or account state is inactive.
+- Aligned the in-memory report repository with SQL for user `q` matching across ID/role/account/membership status and stable `UserId ASC` detail ordering.
+- Added the missing BR-FE12-016, FR-FE12-011, and AC-FE12-011 traceability rows and corrected coverage totals to `16/11/11`.
 
 ## 2026-07-21 - Report Search And Filter Completion
 

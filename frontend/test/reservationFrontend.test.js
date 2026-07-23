@@ -201,6 +201,11 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.match(confirmNotifySource, /result\.selectedReservation/);
   assert.match(confirmNotifySource, /mapReservation\(result\.selectedReservation\)/);
   assert.doesNotMatch(confirmNotifySource, /notifyTarget\.member/);
+  const confirmDialogStart = source.indexOf('{notifyTarget && (');
+  const confirmDialogEnd = source.indexOf('<Toast', confirmDialogStart);
+  const confirmDialogSource = source.slice(confirmDialogStart, confirmDialogEnd);
+  assert.doesNotMatch(confirmDialogSource, /notifyTarget\.member/);
+  assert.match(confirmDialogSource, /máy chủ sẽ kiểm tra lại thành viên đầu tiên đủ điều kiện/i);
   assert.doesNotMatch(source, /reservationApi\.process\(/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);

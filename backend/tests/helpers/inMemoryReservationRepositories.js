@@ -22,6 +22,20 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
   const reservations = [];
   const memberStatuses = new Map();
 
+  function snapshotMutationState() {
+    return {
+      reservations: clone(reservations),
+      copies: clone(copies),
+      nextReservationId,
+    };
+  }
+
+  function restoreMutationState(snapshot) {
+    reservations.splice(0, reservations.length, ...snapshot.reservations);
+    copies.splice(0, copies.length, ...snapshot.copies);
+    nextReservationId = snapshot.nextReservationId;
+  }
+
   function getUser(userId) {
     return authState.users.find((user) => user.userId === Number(userId)) || null;
   }
@@ -181,7 +195,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       };
     },
 
-    async createReservation({ userId, copyId }) {
+    async createReservation({ userId, copyId, auditLogRepository, auditEntry }) {
+      const snapshot = snapshotMutationState();
       const normalizedUserId = Number(userId);
       const normalizedCopyId = Number(copyId);
       const user = getUser(normalizedUserId);
@@ -253,6 +268,17 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
       nextReservationId += 1;
       reservations.push(reservation);
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create({
+            ...auditEntry,
+            targetId: auditEntry.targetId ?? reservation.reservationId,
+          });
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
       return {
         outcome: 'CREATED',
         reservation: mapReservation(reservation),
@@ -297,7 +323,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       };
     },
 
-    async cancelReservation(reservationId) {
+    async cancelReservation(reservationId, { auditLogRepository, auditEntry } = {}) {
+      const snapshot = snapshotMutationState();
       const reservation = reservations.find(
         (item) =>
           item.reservationId === Number(reservationId) &&
@@ -318,6 +345,15 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         if (copy?.status === 'RESERVED') {
           copy.status = 'AVAILABLE';
           copy.updatedAt = new Date();
+        }
+      }
+
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create(auditEntry);
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
         }
       }
 
@@ -354,7 +390,16 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       return mapReservation(nextReservation || null);
     },
 
-    async holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt }) {
+    async holdReservation({
+      reservationId,
+      userId,
+      copyId,
+      notifiedAt,
+      expiresAt,
+      auditLogRepository,
+      auditEntry,
+    }) {
+      const snapshot = snapshotMutationState();
       const copy = getCopy(copyId);
       const reservation = reservations.find(
         (item) =>
@@ -386,10 +431,20 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       copy.status = 'RESERVED';
       copy.updatedAt = new Date();
 
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          await auditLogRepository.create(auditEntry);
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
+
       return mapReservation(reservation);
     },
 
-    async expireOverdueHolds(now) {
+    async expireOverdueHolds({ now, auditLogRepository, auditEntry }) {
+      const snapshot = snapshotMutationState();
       const reference = new Date(now).getTime();
       const expired = [];
 
@@ -406,9 +461,28 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
             copy.status = 'AVAILABLE';
             copy.updatedAt = new Date();
           }
-          expired.push({ reservationId: reservation.reservationId, copyId: reservation.copyId });
+          const item = { reservationId: reservation.reservationId, copyId: reservation.copyId };
+          expired.push(item);
         }
       });
+
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        try {
+          for (const item of expired) {
+            await auditLogRepository.create({
+              ...auditEntry,
+              targetId: item.reservationId,
+              metadata: {
+                ...(auditEntry.metadata || {}),
+                copyId: item.copyId,
+              },
+            });
+          }
+        } catch (error) {
+          restoreMutationState(snapshot);
+          throw error;
+        }
+      }
 
       return expired;
     },

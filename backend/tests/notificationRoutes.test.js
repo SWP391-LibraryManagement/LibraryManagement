@@ -292,6 +292,42 @@ describe('FE10 notification management', () => {
     expect(emailProviderMessages).toHaveLength(0);
   });
 
+  test.each(['DUE_DATE_REMINDER', 'ACCOUNT_VERIFICATION'])(
+    'rejects retry for uncertain PROCESSING %s delivery without sending',
+    async (type) => {
+      const { app, authDependencies, notificationDependencies, emailProviderMessages } =
+        makeTestApp();
+      const librarian = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `notif.processing.${type.toLowerCase()}@example.test`,
+        role: 'LIBRARIAN',
+      });
+      notificationDependencies.state.notifications.push({
+        notificationId: 740,
+        type,
+        templateKey: type,
+        recipientEmail: 'reader@example.test',
+        status: 'PROCESSING',
+        attemptCount: 0,
+      });
+
+      const response = await request(app)
+        .post('/api/notifications/740/retry')
+        .set('Authorization', authHeader(librarian.accessToken));
+
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        error: {
+          code: 'DELIVERY_STATE_UNCERTAIN',
+          message: 'Notification delivery may already have occurred and cannot be retried safely.',
+        },
+      });
+      expect(notificationDependencies.state.notifications[0].status).toBe('PROCESSING');
+      expect(emailProviderMessages).toHaveLength(0);
+    }
+  );
+
   test('protects and validates the retry route before the controller', async () => {
     const { app, authDependencies } = makeTestApp();
     const member = await createVerifiedUser({
@@ -330,6 +366,7 @@ describe('FE10 notification management', () => {
     expect(openapi).toContain('minimum: 1');
     expect(openapi).toContain('REISSUE_REQUIRED');
     expect(openapi).toContain('Create a new notification from the source event.');
+    expect(openapi).toContain('DELIVERY_STATE_UNCERTAIN');
   });
 
   test('creates notification request and returns duplicate by idempotency key', async () => {
@@ -554,6 +591,14 @@ describe('FE10 notification management', () => {
 
     expect(emailProviderMessages).toHaveLength(1);
     expect(markClaimFailed).not.toHaveBeenCalled();
+    expect(notificationDependencies.state.notifications[0].status).toBe('PROCESSING');
+
+    const replay = await notificationService.processPendingNotifications(
+      { limit: 1 },
+      { userId: 1, roles: ['ADMIN'] }
+    );
+    expect(replay).toMatchObject({ processed: 0, failed: 0 });
+    expect(emailProviderMessages).toHaveLength(1);
   });
 
   test('excludes null-type legacy auth templates while processing null-type non-sensitive rows', async () => {
@@ -1549,7 +1594,7 @@ describe('FE10 notification management', () => {
       stack: undefined,
     });
     expect(markFailedCalled).toBe(false);
-    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PROCESSING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
     const safeBoundaries = JSON.stringify({
       error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
@@ -1558,6 +1603,19 @@ describe('FE10 notification management', () => {
     });
     expect(safeBoundaries).not.toContain(repositoryError);
     expect(safeBoundaries).not.toContain(rawOtp);
+
+    const replay = await requester.createNotificationRequest(
+      makeSensitiveRequestInput({
+        type: 'PASSWORD_RESET',
+        recipientEmail: 'reader@example.test',
+        templateData: { otp: rawOtp, expiresInMinutes: 15 },
+        sourceEntityId: 208,
+      })
+    );
+    expect(replay).toEqual({
+      notificationId: notificationDependencies.state.notifications[0].notificationId,
+      status: 'PROCESSING',
+    });
   });
 
   // FE10-H03: a provider failure remains distinct from a subsequent failed-state persistence error.
@@ -1597,7 +1655,7 @@ describe('FE10 notification management', () => {
       stack: undefined,
     });
     expect(markFailedCalled).toBe(true);
-    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PENDING' });
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({ status: 'PROCESSING' });
     expect(notificationDependencies.state.attempts).toEqual([]);
     const safeBoundaries = JSON.stringify({
       error: { code: thrownError.code, message: thrownError.message, stack: thrownError.stack },
@@ -1806,6 +1864,20 @@ describe('FE10 notification management', () => {
     expect(notificationDependencies.state.notifications).toHaveLength(0);
   });
 
+  test.each([
+    ['missing source entity type', { sourceEntityType: undefined }, 'SOURCE_ENTITY_TYPE_REQUIRED'],
+    ['blank source entity type', { sourceEntityType: '   ' }, 'SOURCE_ENTITY_TYPE_REQUIRED'],
+    ['missing source entity ID', { sourceEntityId: undefined }, 'SOURCE_ENTITY_ID_REQUIRED'],
+  ])('rejects an internal request with %s', async (_label, overrides, expectedCode) => {
+    const { notificationService, notificationDependencies } = makeTestApp();
+    const requester = notificationService.createSourceNotificationRequester('FE07');
+
+    await expect(
+      requester.createNotificationRequest(makeInternalRequestInput(overrides))
+    ).rejects.toMatchObject({ code: expectedCode, statusCode: 400 });
+    expect(notificationDependencies.state.notifications).toHaveLength(0);
+  });
+
   test('replays the existing record when a concurrent idempotent insert loses the unique-key race', async () => {
     const existing = {
       notificationId: 81,
@@ -1928,6 +2000,8 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'FINE_NOTICE',
         templateData: { dueDate: '2026-07-20' },
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 42,
       },
       'CANONICAL_TEMPLATE_MISMATCH',
     ],
@@ -1938,6 +2012,8 @@ describe('FE10 notification management', () => {
         recipientEmail: 'reader@example.test',
         templateKey: 'DUE_DATE_REMINDER',
         templateData: { dueDate: '2026-07-20', nested: { reset_token: 'secret' } },
+        sourceEntityType: 'BORROW_DETAIL',
+        sourceEntityId: 42,
       },
       'SENSITIVE_TEMPLATE_DATA',
     ],

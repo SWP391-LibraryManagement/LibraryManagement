@@ -112,7 +112,7 @@ components:
       required: [notificationId, status]
       properties:
         notificationId: { type: integer }
-        status: { type: string, enum: [PENDING, SENT, DELIVERED, FAILED, SKIPPED, CANCELLED] }
+        status: { type: string, enum: [PENDING, PROCESSING, SENT, DELIVERED, FAILED, SKIPPED, CANCELLED] }
     SensitiveOtpNotificationRequest:
       type: object
       additionalProperties: false
@@ -1348,7 +1348,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409':
-          description: Only failed queued notifications can be retried. Sensitive records return REISSUE_REQUIRED with `Create a new notification from the source event.`
+          description: Only failed queued notifications can be retried. Sensitive FAILED records return REISSUE_REQUIRED with `Create a new notification from the source event.` PROCESSING records return DELIVERY_STATE_UNCERTAIN because delivery may already have occurred.
   /api/reports/borrowing:
     get:
       tags: [Reporting]

@@ -273,6 +273,19 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
 
         const roles = authState.rolesByUserId.get(user.userId) || [];
+        if (filters.q) {
+          const search = String(filters.q).trim().toLowerCase();
+          const searchableValues = [
+            user.userId,
+            user.status,
+            memberStatus,
+            ...roles,
+          ];
+          if (!searchableValues.some((value) => String(value ?? '').toLowerCase().includes(search))) {
+            return [];
+          }
+        }
+
         const selectedRoles = filters.roleId
           ? roles.filter((role) => roleIdForName(role) === Number(filters.roleId))
           : roles;
@@ -302,14 +315,14 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
         }
       }
 
-      const approvedMembers = users.filter((user) => user.memberStatus === 'APPROVED');
+      const historicallyApprovedMembers = users.filter((user) => user.memberApprovedAt);
       const membershipByStatus = users
         .filter((user) => user.memberStatus)
         .reduce((accumulator, user) => {
           accumulator[user.memberStatus] = (accumulator[user.memberStatus] || 0) + 1;
           return accumulator;
         }, {});
-      const newMembersByPeriod = approvedMembers.reduce((accumulator, user) => {
+      const newMembersByPeriod = historicallyApprovedMembers.reduce((accumulator, user) => {
           const approvedAt = user.memberApprovedAt;
           if (!approvedAt) {
             return accumulator;
@@ -335,11 +348,7 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
           createdAt: user.createdAt || null,
           approvedAt: user.memberApprovedAt || null,
         }))
-        .sort(
-          (left, right) =>
-            new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime() ||
-            right.userId - left.userId
-        );
+        .sort((left, right) => left.userId - right.userId);
 
       return buildReport(
         {

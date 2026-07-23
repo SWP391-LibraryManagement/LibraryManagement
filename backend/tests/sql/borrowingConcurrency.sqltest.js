@@ -821,7 +821,7 @@ test('approval does not approve a pending request whose member row is missing', 
 
     const result = await approve(requestId, actorUserId);
 
-    expect(result).toEqual({ outcome: 'REQUEST_NOT_APPROVABLE' });
+    expect(result).toEqual({ outcome: 'MEMBER_ROLE_REQUIRED' });
     const requestRow = await pool
       .request()
       .input('RequestId', sql.Int, requestId)
@@ -1054,9 +1054,12 @@ test('concurrent SQL returns update one borrowed detail and write one audit', as
       returnDetail(borrowDetailId, actorUserId, returnDate),
     ]);
 
-    expect(returnResults.filter(Boolean)).toHaveLength(1);
-    expect(returnResults.filter((result) => result === null)).toHaveLength(1);
-    expect(returnResults.find(Boolean)).toMatchObject({ borrowDetailId, status: 'RETURNED' });
+    expect(returnResults.filter((result) => result?.borrowDetailId === borrowDetailId)).toHaveLength(1);
+    expect(returnResults.filter((result) => result?.outcome === 'BORROW_STATE_CONFLICT')).toHaveLength(1);
+    expect(returnResults.find((result) => result?.borrowDetailId === borrowDetailId)).toMatchObject({
+      borrowDetailId,
+      status: 'RETURNED',
+    });
 
     const detailRow = await pool
       .request()
@@ -1359,7 +1362,7 @@ test('SQL return audit failure rolls back request, detail return date, copy, and
 
 test.each([
   ['inactive account', 'MEMBER_ACCOUNT_INACTIVE'],
-  ['non-approved membership', 'MEMBERSHIP_NOT_APPROVED'],
+  ['removed member role', 'MEMBER_ROLE_REQUIRED'],
   ['unpaid positive fine', 'UNPAID_FINE_BLOCKS_BORROWING'],
   ['overdue active loan', 'OVERDUE_LOAN_BLOCKS_BORROWING'],
 ])('SQL approval revalidates %s inside the transaction', async (blocker, expectedOutcome) => {
@@ -1383,11 +1386,17 @@ test.each([
         .request()
         .input('UserId', sql.Int, borrowerUserId)
         .query("UPDATE Users SET Status = 'INACTIVE' WHERE UserId = @UserId");
-    } else if (blocker === 'non-approved membership') {
+    } else if (blocker === 'removed member role') {
       await pool
         .request()
         .input('UserId', sql.Int, borrowerUserId)
-        .query("UPDATE Members SET Status = 'REJECTED' WHERE UserId = @UserId");
+        .query(`
+          DELETE ur
+          FROM UserRoles ur
+          INNER JOIN Roles r ON r.RoleId = ur.RoleId
+          WHERE ur.UserId = @UserId
+            AND r.RoleName = 'MEMBER'
+        `);
     } else if (blocker === 'unpaid positive fine') {
       await insertUnpaidFine(borrowerUserId, requestedDetailId);
     } else {

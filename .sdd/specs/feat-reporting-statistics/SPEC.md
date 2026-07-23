@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.7
+# Version: 0.1.8
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-23
 
 # Feature ID: FE12
 
@@ -364,6 +364,7 @@ This feature does not include:
 | BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` no-export route/OpenAPI/frontend check | Automated evidence; human re-review pending |
 | BR-FE12-014 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` safe successful-view audit cases | Automated evidence; human re-review pending |
 | BR-FE12-015 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` pagination/order cases | Automated evidence; human re-review pending |
+| BR-FE12-016 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` combined `q`/filter and user-field parity cases | Automated evidence; H2 review pending |
 | FR-FE12-001 | UC58 | FT59 | Ready for review |
 | FR-FE12-002 | UC59 | FT60 | Ready for review |
 | FR-FE12-003 | UC60 | FT61 | Ready for review |
@@ -374,6 +375,7 @@ This feature does not include:
 | FR-FE12-008 | UC60 | FT61 | Ready for review |
 | FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
 | FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
+| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Automated evidence; H2 review pending |
 | AC-FE12-001 | UC58 | FT59 | Ready for review |
 | AC-FE12-002 | UC59 | FT60 | Ready for review |
 | AC-FE12-003 | UC60 | FT61 | Ready for review |
@@ -384,15 +386,16 @@ This feature does not include:
 | AC-FE12-008 | UC60 | FT61 | Ready for review |
 | AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
 | AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
+| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` user search/history/order parity; `frontend/test/reportFrontend.test.js` no-success-banner behavior | Automated evidence; H2 review pending |
 
 ### 16.1 Coverage Summary
 
 | Requirement Type | Total IDs | Mapped IDs | Coverage |
 | ---------------- | --------- | ---------- | -------- |
-| Business Rules (BR-FE12-*) | 15 | 15 | 100% |
-| Functional Requirements (FR-FE12-*) | 10 | 10 | 100% |
-| Acceptance Criteria (AC-FE12-*) | 10 | 10 | 100% |
-| **Total** | **35** | **35** | **100%** |
+| Business Rules (BR-FE12-*) | 16 | 16 | 100% |
+| Functional Requirements (FR-FE12-*) | 11 | 11 | 100% |
+| Acceptance Criteria (AC-FE12-*) | 11 | 11 | 100% |
+| **Total** | **38** | **38** | **100%** |
 
 > BR-FE12-013 is mapped to an out-of-scope contract check: the absence of export endpoints and controls is itself verified without implementing export behavior.
 

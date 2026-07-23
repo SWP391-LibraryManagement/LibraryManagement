@@ -12,10 +12,10 @@ const VALID_COPY_STATUSES = new Set(['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAG
 function makeReportRepository({ borrowDetails } = {}) {
   const authState = {
     users: [
-      { userId: 1, status: 'ACTIVE' },
-      { userId: 2, status: 'INACTIVE' },
-      { userId: 3, status: 'ACTIVE' },
       { userId: 4, status: 'LOCKED' },
+      { userId: 1, status: 'ACTIVE' },
+      { userId: 3, status: 'ACTIVE' },
+      { userId: 2, status: 'INACTIVE' },
     ],
     rolesByUserId: new Map([
       [1, ['ADMIN']],
@@ -62,7 +62,10 @@ function makeReportRepository({ borrowDetails } = {}) {
       [3, 'REJECTED'],
       [4, 'INACTIVE'],
     ]),
-    memberApprovedAt: new Map([[1, new Date('2026-01-10T12:00:00.000Z')]]),
+    memberApprovedAt: new Map([
+      [1, new Date('2026-01-10T12:00:00.000Z')],
+      [4, new Date('2026-01-11T12:00:00.000Z')],
+    ]),
   };
 
   return makeInMemoryReportDependencies(authState, borrowingState).reportRepository;
@@ -191,5 +194,31 @@ describe('in-memory FE12 report repository parity', () => {
     expect(pendingReport.metrics.totalMembers).toBe(0);
     expect(pendingReport.metrics.usersByRole).toEqual({ LIBRARIAN: 1 });
     expect(pendingReport.metrics.membershipByStatus).toEqual({ PENDING: 1 });
+  });
+
+  test('user q search matches approved account fields before aggregation and pagination', async () => {
+    const report = await makeReportRepository().getUserStatistics({ q: 'inactive' });
+
+    expect(report.totalRows).toBe(2);
+    expect(report.rows.map((row) => row.userId)).toEqual([2, 4]);
+    expect(report.metrics.usersByStatus).toEqual({ INACTIVE: 1, LOCKED: 1 });
+  });
+
+  test('historical approvals remain in growth metrics after membership becomes inactive', async () => {
+    const report = await makeReportRepository().getUserStatistics({
+      fromDate: '2026-01-10',
+      toDate: '2026-01-11',
+    });
+
+    expect(report.metrics.newMembersByPeriod).toEqual({
+      '2026-01-10': 1,
+      '2026-01-11': 1,
+    });
+  });
+
+  test('user detail rows use stable ascending user ID order', async () => {
+    const report = await makeReportRepository().getUserStatistics();
+
+    expect(report.rows.map((row) => row.userId)).toEqual([1, 2, 3, 4]);
   });
 });

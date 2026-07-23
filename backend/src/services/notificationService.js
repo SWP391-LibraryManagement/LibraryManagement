@@ -310,6 +310,7 @@ function createNotificationService({
 
     if (
       Object.prototype.hasOwnProperty.call(input, 'sourceEntityId') &&
+      input.sourceEntityId !== undefined &&
       (!Number.isInteger(input.sourceEntityId) || input.sourceEntityId <= 0)
     ) {
       throw errors.badRequest(
@@ -377,11 +378,32 @@ function createNotificationService({
         !/^[a-zA-Z][a-zA-Z0-9_]*$/.test(sourceEntityType) ||
         isUnsafeSourceEntityType
       ) {
+        if (isInternal && !sourceEntityType) {
+          throw errors.badRequest(
+            'SOURCE_ENTITY_TYPE_REQUIRED',
+            'Internal notification requests require a source entity type.'
+          );
+        }
+
         throw errors.badRequest(
           'INVALID_SOURCE_ENTITY_TYPE',
           'Source entity type must be a safe identifier of at most 50 characters.'
         );
       }
+    }
+
+    if (isInternal && !sourceEntityType) {
+      throw errors.badRequest(
+        'SOURCE_ENTITY_TYPE_REQUIRED',
+        'Internal notification requests require a source entity type.'
+      );
+    }
+
+    if (isInternal && input.sourceEntityId === undefined) {
+      throw errors.badRequest(
+        'SOURCE_ENTITY_ID_REQUIRED',
+        'Internal notification requests require a source entity ID.'
+      );
     }
 
     if (!isInternal) {
@@ -635,6 +657,7 @@ function createNotificationService({
         sourceEntityId,
         idempotencyKey,
         safePayload: templateData,
+        status: isSensitiveNotification ? 'PROCESSING' : 'PENDING',
       });
     } catch (error) {
       if (idempotencyKey && isUniqueConstraintViolation(error)) {
@@ -745,6 +768,13 @@ function createNotificationService({
 
     if (!notification) {
       throw errors.notFound('NOTIFICATION_NOT_FOUND', 'Notification was not found.');
+    }
+
+    if (notification.status === 'PROCESSING') {
+      throw errors.conflict(
+        'DELIVERY_STATE_UNCERTAIN',
+        'Notification delivery may already have occurred and cannot be retried safely.'
+      );
     }
 
     if (isSensitiveQueueNotification(notification)) {

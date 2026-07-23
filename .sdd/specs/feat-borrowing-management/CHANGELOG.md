@@ -5,6 +5,9 @@
 - Revalidated the request owner's current `MEMBER` role and FE04-derived 3/5 daily tier inside the approval transaction.
 - Restored the canonical member lock -> copies -> request/details -> reservations order and made return lock copies, details, and reservation claims before mutation.
 - Added focused regressions for removed roles, stale tier reads, return lock order, and safe transaction outcomes.
+- Replaced host-local return/renewal calendar arithmetic with the shared `Asia/Ho_Chi_Minh` business-time helper, including a UTC-host midnight regression.
+- Required the in-memory return path to match SQL by rejecting a non-`BORROWED` physical copy with `BORROW_STATE_CONFLICT` before mutation.
+- Reconciled mutable SQL expectations with role-based eligibility and explicit concurrent return conflict outcomes.
 
 ## 2026-07-22 - Enrich staff borrow decisions and stabilize rejection input
 

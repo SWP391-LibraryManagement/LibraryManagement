@@ -6,6 +6,9 @@
 - Moved member, role, copy, duplicate, and three-open-reservation checks into one locked create transaction.
 - Rechecked the current `MEMBER` role during queue lookup and again inside the hold transaction so role-revoked entries remain `ACTIVE` and the next eligible reservation is selected.
 - Grouped staff queues by physical `copyId` and loaded every server page needed by the member and staff reservation views.
+- Moved create/cancel/hold/expire lifecycle audits into their owning transactions so mutation and audit commit or roll back together.
+- Preserved committed holds when FE10 notification fails and surfaced safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata when the post-commit failure audit is also unavailable.
+- Removed the cached member identity from process-queue confirmation because the server revalidates and reselects the first currently eligible queue entry at mutation time.
 
 ## 2026-07-21 - Align reservation eligibility with member role
 

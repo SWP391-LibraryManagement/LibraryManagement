@@ -77,7 +77,6 @@ function makeInMemoryNotificationDependencies() {
   ];
   const notifications = [];
   const attempts = [];
-  const claimedNotificationIds = new Set();
 
   function mapNotification(notification) {
     return clone(notification || null);
@@ -126,7 +125,7 @@ function makeInMemoryNotificationDependencies() {
         templateKey: input.templateKey,
         title: input.title,
         body: input.body,
-        status: 'PENDING',
+        status: input.status || 'PENDING',
         sourceFeature: input.sourceFeature || null,
         sourceEntityType: input.sourceEntityType || null,
         sourceEntityId: input.sourceEntityId || null,
@@ -181,7 +180,6 @@ function makeInMemoryNotificationDependencies() {
       const notification = notifications.find(
         (item) =>
           item.status === 'PENDING' &&
-          !claimedNotificationIds.has(item.notificationId) &&
           !isSensitiveQueueNotification(item)
       );
 
@@ -189,7 +187,7 @@ function makeInMemoryNotificationDependencies() {
         return null;
       }
 
-      claimedNotificationIds.add(notification.notificationId);
+      notification.status = 'PROCESSING';
       return {
         notification: mapNotification(notification),
         notificationId: notification.notificationId,
@@ -200,19 +198,17 @@ function makeInMemoryNotificationDependencies() {
       const notification = notifications.find(
         (item) =>
           item.notificationId === Number(claim.notificationId) &&
-          item.status === 'PENDING' &&
-          claimedNotificationIds.has(item.notificationId)
+          item.status === 'PROCESSING'
       );
 
       if (!notification) {
-        return null;
+        throw new Error('Claimed notification is no longer processing.');
       }
 
       notification.status = 'SENT';
       notification.sentAt = new Date();
       notification.attemptCount += 1;
       notification.lastErrorMessage = null;
-      claimedNotificationIds.delete(notification.notificationId);
       attempts.push({
         notificationId: notification.notificationId,
         status: 'SENT',
@@ -227,18 +223,16 @@ function makeInMemoryNotificationDependencies() {
       const notification = notifications.find(
         (item) =>
           item.notificationId === Number(claim.notificationId) &&
-          item.status === 'PENDING' &&
-          claimedNotificationIds.has(item.notificationId)
+          item.status === 'PROCESSING'
       );
 
       if (!notification) {
-        return null;
+        throw new Error('Claimed notification is no longer processing.');
       }
 
       notification.status = 'FAILED';
       notification.attemptCount += 1;
       notification.lastErrorMessage = safeErrorMessage;
-      claimedNotificationIds.delete(notification.notificationId);
       attempts.push({
         notificationId: notification.notificationId,
         status: 'FAILED',
@@ -251,8 +245,14 @@ function makeInMemoryNotificationDependencies() {
 
     async markSent({ notificationId, providerMessageId }) {
       const notification = notifications.find(
-        (item) => item.notificationId === Number(notificationId)
+        (item) =>
+          item.notificationId === Number(notificationId) &&
+          item.status === 'PROCESSING'
       );
+
+      if (!notification) {
+        throw new Error('Notification is no longer processing.');
+      }
 
       notification.status = 'SENT';
       notification.sentAt = new Date();
@@ -270,8 +270,14 @@ function makeInMemoryNotificationDependencies() {
 
     async markFailed({ notificationId, safeErrorMessage }) {
       const notification = notifications.find(
-        (item) => item.notificationId === Number(notificationId)
+        (item) =>
+          item.notificationId === Number(notificationId) &&
+          item.status === 'PROCESSING'
       );
+
+      if (!notification) {
+        throw new Error('Notification is no longer processing.');
+      }
 
       notification.status = 'FAILED';
       notification.attemptCount += 1;

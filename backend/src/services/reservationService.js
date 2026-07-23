@@ -47,12 +47,8 @@ function createReservationService({
 
   const notificationRequester = notificationService.createSourceNotificationRequester('FE08');
 
-  async function writeAudit(context, action, extra = {}) {
-    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
-      return;
-    }
-
-    await auditLogRepository.create({
+  function buildAuditEntry(context, action, extra = {}) {
+    return {
       userId: extra.userId ?? context?.userId ?? null,
       action,
       targetType: extra.targetType || 'RESERVATION',
@@ -60,7 +56,15 @@ function createReservationService({
       metadata: extra.metadata || null,
       ipAddress: context?.ip || null,
       userAgent: context?.userAgent || null,
-    });
+    };
+  }
+
+  async function writeAudit(context, action, extra = {}) {
+    if (!auditLogRepository || typeof auditLogRepository.create !== 'function') {
+      return;
+    }
+
+    await auditLogRepository.create(buildAuditEntry(context, action, extra));
   }
 
   async function createReservationReadyNotification(reservation) {
@@ -99,7 +103,15 @@ function createReservationService({
 
     const userId = actor.userId;
     const copyId = toPositiveInteger(input.copyId, 'Copy ID');
-    const result = await reservationRepository.createReservation({ userId, copyId });
+    const result = await reservationRepository.createReservation({
+      userId,
+      copyId,
+      auditLogRepository,
+      auditEntry: buildAuditEntry(context, 'RESERVATION_CREATE', {
+        userId,
+        metadata: { copyId },
+      }),
+    });
 
     if (result.outcome !== 'CREATED') {
       switch (result.outcome) {
@@ -125,12 +137,6 @@ function createReservationService({
     }
 
     const { reservation } = result;
-
-    await writeAudit(context, 'RESERVATION_CREATE', {
-      userId,
-      targetId: reservation.reservationId,
-      metadata: { copyId },
-    });
 
     return {
       reservation,
@@ -212,20 +218,21 @@ function createReservationService({
       );
     }
 
-    const cancelledReservation = await reservationRepository.cancelReservation(reservationId);
+    const cancelledReservation = await reservationRepository.cancelReservation(reservationId, {
+      auditLogRepository,
+      auditEntry: buildAuditEntry(context, 'RESERVATION_CANCEL', {
+        userId: actor.userId,
+        targetId: reservationId,
+        metadata: {
+          copyId: reservation.copyId,
+          reason: input.reason || null,
+        },
+      }),
+    });
 
     if (!cancelledReservation) {
       throw errors.conflict('RESERVATION_NOT_ACTIVE', 'Only active reservations can be cancelled.');
     }
-
-    await writeAudit(context, 'RESERVATION_CANCEL', {
-      userId: actor.userId,
-      targetId: reservationId,
-      metadata: {
-        copyId: reservation.copyId,
-        reason: input.reason || null,
-      },
-    });
 
     return {
       reservation: cancelledReservation,
@@ -268,6 +275,16 @@ function createReservationService({
       copyId: reservation.copyId,
       notifiedAt,
       expiresAt,
+      auditLogRepository,
+      auditEntry: buildAuditEntry(context, 'RESERVATION_PROCESS', {
+        userId: actor.userId,
+        targetId: reservation.reservationId,
+        metadata: {
+          copyId: reservation.copyId,
+          selectedUserId: reservation.userId,
+          expiresAt,
+        },
+      }),
     });
 
     if (processedReservation?.outcome === 'MEMBER_INELIGIBLE') {
@@ -280,6 +297,7 @@ function createReservationService({
 
     // @spec FR-FE08-021 — a notification failure must not undo the hold; keep the held
     // state and record the failure so it can be retried later (EC-FE08-009, BR-FE08-012).
+    let notificationWarning;
     try {
       await createReservationReadyNotification(processedReservation);
     } catch {
@@ -293,19 +311,22 @@ function createReservationService({
           },
         });
       } catch {
-        // Notification failure auditing is best-effort and must not undo the hold.
+        notificationWarning = {
+          code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+          message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+        };
+        console.error('[reservation notification audit unavailable]', {
+          reservationId: processedReservation.reservationId,
+        });
       }
     }
 
-    await writeAudit(context, 'RESERVATION_PROCESS', {
-      userId: actor.userId,
-      targetId: processedReservation.reservationId,
-      metadata: {
-        copyId: processedReservation.copyId,
-        selectedUserId: processedReservation.userId,
-        expiresAt,
-      },
-    });
+    if (notificationWarning) {
+      Object.defineProperty(processedReservation, 'notificationWarning', {
+        value: notificationWarning,
+        enumerable: false,
+      });
+    }
 
     return processedReservation;
   }
@@ -352,24 +373,28 @@ function createReservationService({
       };
     }
 
-    return {
+    const result = {
       selectedReservation: processedReservation,
     };
+    if (processedReservation.notificationWarning) {
+      result.notificationWarning = processedReservation.notificationWarning;
+    }
+    return result;
   }
 
   async function expireHolds(actor, context = {}) {
     requireStaff(actor);
 
-    const expired = await reservationRepository.expireOverdueHolds(clock());
+    const expired = await reservationRepository.expireOverdueHolds({
+      now: clock(),
+      auditLogRepository,
+      auditEntry: buildAuditEntry(context, 'RESERVATION_EXPIRE', {
+        userId: actor.userId,
+      }),
+    });
     const promoted = [];
 
     for (const item of expired) {
-      await writeAudit(context, 'RESERVATION_EXPIRE', {
-        userId: actor.userId,
-        targetId: item.reservationId,
-        metadata: { copyId: item.copyId },
-      });
-
       // @spec FR-FE08-019 — offer the freed copy to the next eligible reservation in the queue (AF-FE08-004).
       const held = await processNextEligibleReservation(item.copyId, actor, context);
       if (held) {

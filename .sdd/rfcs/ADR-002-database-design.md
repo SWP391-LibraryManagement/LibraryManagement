@@ -2,7 +2,7 @@
 
 Status: APPROVED - FE11 FINALIZATION MIGRATION ACTIVE; IMPLEMENTATION PENDING
 Date: 2026-06-10
-Last Updated: 2026-07-19
+Last Updated: 2026-07-23
 
 ## Context
 
@@ -55,6 +55,27 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Any schema change affecting behavior must update the related `SPEC.md` or ADR before implementation.
 - For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
 - Seed data must not include real personal data, passwords, tokens, or secrets.
+
+## FE10 Durable Delivery Claim Decision
+
+The approved FE10 lifecycle includes `PENDING`, `PROCESSING`, `SENT`, and
+`FAILED`. `DELIVERED`, `SKIPPED`, and `CANCELLED` remain compatibility values
+without Phase 1 transitions.
+
+- A queued worker changes one eligible row from `PENDING` to `PROCESSING` in a
+  locked transaction and commits before provider I/O.
+- A synchronous sensitive request is inserted as `PROCESSING` before provider
+  I/O, while rendered credentials remain memory-only.
+- `PROCESSING -> SENT` and `PROCESSING -> FAILED` each use a new short
+  transaction that also inserts the matching `NotificationAttempts` row.
+- If provider I/O completes but terminal persistence fails, the durable row
+  remains `PROCESSING`. It is not automatically reclaimed and cannot use the
+  manual retry endpoint because delivery may already have occurred.
+
+The canonical constraint is synchronized by the reviewable idempotent migration
+`database/migrations/2026-07-23-fe10-processing-status.sql`. Review requires
+static model/baseline/OpenAPI parity plus two successful executions on a named
+disposable local SQL Server database before Azure deployment.
 
 ## FE11 Finalization Migration Decision
 

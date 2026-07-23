@@ -130,8 +130,12 @@ describe('FE08 reservation service coverage', () => {
 
     const successful = makeService();
     await successful.service.cancelReservation(51, {}, MEMBER, {});
-    expect(successful.auditLogRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ metadata: { copyId: 7, reason: null } })
+    expect(successful.reservationRepository.cancelReservation).toHaveBeenCalledWith(
+      51,
+      expect.objectContaining({
+        auditLogRepository: successful.auditLogRepository,
+        auditEntry: expect.objectContaining({ metadata: { copyId: 7, reason: null } }),
+      })
     );
   });
 
@@ -187,8 +191,8 @@ describe('FE08 reservation service coverage', () => {
     });
   });
 
-  // FR-FE08-021: notification and its failure audit are best effort after a successful hold.
-  test('keeps a held reservation when notification and failure-audit requests fail', async () => {
+  // FR-FE08-021: notification failure never undoes the hold, but audit loss must be explicit.
+  test('keeps a held reservation and returns a safe warning when notification failure auditing fails', async () => {
     const auditLogRepository = {
       create: jest.fn(async (entry) => {
         if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
@@ -200,7 +204,7 @@ describe('FE08 reservation service coverage', () => {
       throw new Error('notification unavailable');
     });
     const nextReservation = reservation();
-    const { service, heldReservation } = makeService({
+    const { service, heldReservation, reservationRepository } = makeService({
       auditLogRepository,
       notificationRequest,
       repository: {
@@ -210,10 +214,54 @@ describe('FE08 reservation service coverage', () => {
 
     await expect(service.processQueue({ copyId: 7 }, LIBRARIAN, {})).resolves.toEqual({
       selectedReservation: heldReservation,
+      notificationWarning: {
+        code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+        message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+      },
     });
-    expect(auditLogRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'RESERVATION_PROCESS' })
+    expect(reservationRepository.holdReservation).toHaveBeenCalledWith(expect.objectContaining({
+      auditLogRepository,
+      auditEntry: expect.objectContaining({ action: 'RESERVATION_PROCESS' }),
+    }));
+  });
+
+  test('passes required lifecycle audits into reservation mutation transactions', async () => {
+    const nextReservation = reservation();
+    const { service, reservationRepository, auditLogRepository } = makeService({
+      repository: {
+        findNextActiveReservationForCopy: jest.fn(async () => nextReservation),
+        expireOverdueHolds: jest.fn(async () => []),
+      },
+    });
+
+    await service.createReservation({ copyId: 7 }, MEMBER, {});
+    await service.cancelReservation(51, { reason: 'Không còn nhu cầu' }, MEMBER, {});
+    await service.processQueue({ copyId: 7 }, LIBRARIAN, {});
+    await service.expireHolds(LIBRARIAN, {});
+
+    expect(reservationRepository.createReservation).toHaveBeenCalledWith(expect.objectContaining({
+      userId: MEMBER.userId,
+      copyId: 7,
+      auditLogRepository,
+      auditEntry: expect.objectContaining({ action: 'RESERVATION_CREATE' }),
+    }));
+    expect(reservationRepository.cancelReservation).toHaveBeenCalledWith(
+      51,
+      expect.objectContaining({
+        auditLogRepository,
+        auditEntry: expect.objectContaining({ action: 'RESERVATION_CANCEL' }),
+      })
     );
+    expect(reservationRepository.holdReservation).toHaveBeenCalledWith(expect.objectContaining({
+      reservationId: 51,
+      auditLogRepository,
+      auditEntry: expect.objectContaining({ action: 'RESERVATION_PROCESS' }),
+    }));
+    expect(reservationRepository.expireOverdueHolds).toHaveBeenCalledWith(expect.objectContaining({
+      now: FIXED_NOW,
+      auditLogRepository,
+      auditEntry: expect.objectContaining({ action: 'RESERVATION_EXPIRE' }),
+    }));
   });
 
   test('re-reads the queue when transaction-time eligibility rejects a stale selection', async () => {
@@ -269,10 +317,11 @@ describe('FE08 reservation service coverage', () => {
       statusCode: 409,
       code: 'BOOK_INACTIVE',
     });
-    expect(reservationRepository.createReservation).toHaveBeenCalledWith({
+    expect(reservationRepository.createReservation).toHaveBeenCalledWith(expect.objectContaining({
       userId: MEMBER.userId,
       copyId: 7,
-    });
+      auditEntry: expect.objectContaining({ action: 'RESERVATION_CREATE' }),
+    }));
   });
 
   // FR-FE08-019: expiration promotes only when a next eligible reservation exists.

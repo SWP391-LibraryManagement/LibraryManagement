@@ -71,3 +71,22 @@ test('reservation reads derive queue position from the current ACTIVE FIFO rows'
   expect(source).toContain('queueReservation.ReservedAt < r.ReservedAt');
   expect(source).toContain('queueReservation.ReservationId <= r.ReservationId');
 });
+
+test.each([
+  ['createReservation', 'listReservations'],
+  ['cancelReservation', 'findNextActiveReservationForCopy'],
+  ['holdReservation', 'expireOverdueHolds'],
+  ['expireOverdueHolds', 'module.exports'],
+])('%s writes its lifecycle audit before committing the mutation transaction', (functionName, nextName) => {
+  const start = repositorySource.indexOf(`async function ${functionName}`);
+  const end = repositorySource.indexOf(nextName === 'module.exports' ? nextName : `async function ${nextName}`, start);
+  const source = repositorySource.slice(start, end);
+  const auditIndex = source.indexOf('auditLogRepository.create');
+  const commitIndex = source.indexOf('transaction.commit');
+
+  expect(source).toContain('auditLogRepository');
+  expect(source).toContain('auditEntry');
+  expect(auditIndex).toBeGreaterThanOrEqual(0);
+  expect(commitIndex).toBeGreaterThan(auditIndex);
+  expect(source.slice(auditIndex, commitIndex)).toContain('transaction');
+});

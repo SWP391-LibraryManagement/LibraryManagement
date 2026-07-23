@@ -148,7 +148,7 @@ test('detailed rows normalize unknown statuses and use report-specific stable or
   expect(inventory.rows.find((row) => row.copyId === 3).status).toBe('UNKNOWN');
   expect(inventory.metrics.copiesByStatus).toEqual({ AVAILABLE: 1, BORROWED: 1, UNKNOWN: 1 });
 
-  expect(users.rows.map((row) => row.userId)).toEqual([2, 1]);
+  expect(users.rows.map((row) => row.userId)).toEqual([1, 2]);
   expect(users.rows.find((row) => row.userId === 1)).toEqual(
     expect.objectContaining({ status: 'UNKNOWN', roles: ['UNKNOWN'], membershipStatus: 'UNKNOWN' })
   );

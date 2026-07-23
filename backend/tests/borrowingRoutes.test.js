@@ -629,6 +629,100 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.fines).toHaveLength(0);
   });
 
+  test('return fine candidate uses the Vietnam business date across UTC midnight', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => new Date('2026-07-22T17:30:00.000Z'),
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-vietnam-midnight.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-vietnam-midnight.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    );
+    storedDetail.borrowDate = new Date('2026-07-01T00:00:00.000Z');
+    storedDetail.dueDate = new Date('2026-07-22T00:00:00.000Z');
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL' })
+      .expect(200);
+
+    expect(response.body.fineCandidate).toMatchObject({
+      borrowDetailId,
+      overdueDays: 1,
+      needsFineReview: true,
+    });
+  });
+
+  test('return rejects an inconsistent copy state without mutating the borrowed detail', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-copy-conflict.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-copy-conflict.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    );
+    const storedCopy = borrowingDependencies.state.copies.find(
+      (copy) => copy.copyId === storedDetail.copyId
+    );
+    storedCopy.status = 'AVAILABLE';
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-10' })
+      .expect(409);
+
+    expect(response.body.error.code).toBe('BORROW_STATE_CONFLICT');
+    expect(storedDetail).toMatchObject({ status: 'BORROWED', returnDate: null });
+    expect(storedCopy.status).toBe('AVAILABLE');
+  });
+
   test('HTTP borrow detail calendar dates use YYYY-MM-DD and retain null values', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const member = await createVerifiedUser({

@@ -276,7 +276,7 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20, userId 
 }
 
 // @spec FR-FE08-011, FR-FE08-012, FR-FE08-013, FR-FE08-014, FR-FE08-015
-async function createReservation({ userId, copyId }) {
+async function createReservation({ userId, copyId, auditLogRepository, auditEntry }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
   let reservationId;
@@ -397,6 +397,13 @@ async function createReservation({ userId, copyId }) {
       `);
 
     reservationId = insertResult.recordset[0].ReservationId;
+    if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+      await auditLogRepository.create({
+        ...auditEntry,
+        targetId: auditEntry.targetId ?? reservationId,
+        transaction,
+      });
+    }
     await transaction.commit();
   } catch (error) {
     await transaction.rollback();
@@ -455,7 +462,7 @@ async function listReservations({ userId, bookId, memberId, status, page = 1, li
 
 // @spec BR-FE08-003, BR-FE08-015, FR-FE08-028
 // Cancellation locks the copy before revalidating the reservation.
-async function cancelReservation(reservationId) {
+async function cancelReservation(reservationId, { auditLogRepository, auditEntry } = {}) {
   const pool = await getPool();
   const copyLookup = await pool
     .request()
@@ -530,12 +537,16 @@ async function cancelReservation(reservationId) {
         `);
     }
 
+    if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
     await transaction.commit();
-    return findReservationById(reservationId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return findReservationById(reservationId);
 }
 
 // @spec FR-FE08-018 — the queue only returns the earliest ACTIVE reservation whose member is still
@@ -578,7 +589,15 @@ async function findNextActiveReservationForCopy(copyId, excludedReservationIds =
 // updating the reservation to NOTIFIED only WHERE it is still ACTIVE; a concurrent second attempt
 // re-reads the state and gets null, so at most one selection succeeds
 // (EC-FE08-010, NFR-FE08-TXN-001, INV-FE08-004).
-async function holdReservation({ reservationId, userId, copyId, notifiedAt, expiresAt }) {
+async function holdReservation({
+  reservationId,
+  userId,
+  copyId,
+  notifiedAt,
+  expiresAt,
+  auditLogRepository,
+  auditEntry,
+}) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
@@ -694,17 +713,21 @@ async function holdReservation({ reservationId, userId, copyId, notifiedAt, expi
         WHERE CopyId = @CopyId
       `);
 
+    if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+      await auditLogRepository.create({ ...auditEntry, transaction });
+    }
     await transaction.commit();
-    return findReservationById(reservationId);
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
+
+  return findReservationById(reservationId);
 }
 
 // @spec FR-FE08-019, FR-FE08-028, BR-FE08-015
 // Expiration locks sorted copies before reservation rows.
-async function expireOverdueHolds(now) {
+async function expireOverdueHolds({ now, auditLogRepository, auditEntry }) {
   const pool = await getPool();
   const candidateResult = await pool
     .request()
@@ -796,6 +819,18 @@ async function expireOverdueHolds(now) {
           WHERE CopyId = @CopyId
             AND Status = 'RESERVED'
         `);
+
+      if (auditLogRepository && typeof auditLogRepository.create === 'function' && auditEntry) {
+        await auditLogRepository.create({
+          ...auditEntry,
+          targetId: item.reservationId,
+          metadata: {
+            ...(auditEntry.metadata || {}),
+            copyId: item.copyId,
+          },
+          transaction,
+        });
+      }
     }
 
     await transaction.commit();

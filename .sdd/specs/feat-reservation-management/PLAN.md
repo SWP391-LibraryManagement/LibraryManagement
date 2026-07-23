@@ -163,3 +163,16 @@ Not included:
 - [x] FE08-T035 through FE08-T039 implementation and evidence pass.
 - [x] Decision Gate A records the approved Option A contract.
 - [ ] Decision Gate B / H3 is updated against the final green PR head and CI after the human walkthrough.
+
+## 9. V0.5.2 Atomic Lifecycle Audit Remediation
+
+1. Pass each create/cancel/hold/expire lifecycle audit into the owning
+   repository transaction and roll back both state and audit on either failure.
+2. Keep FE10 notification delivery after the hold commit. Preserve the hold on
+   notification failure and write `RESERVATION_NOTIFY_FAILED` separately.
+3. If that post-commit failure audit is unavailable, return safe
+   `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata without undoing the hold.
+4. Remove cached member identity from the staff confirmation; identify the
+   physical copy and explain server-side eligibility re-selection.
+5. Verify repository transaction ordering, service/route behavior, frontend
+   confirmation content, and full regression before H2.
