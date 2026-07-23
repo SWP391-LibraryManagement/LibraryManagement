@@ -53,6 +53,7 @@ function createBookRoutes({ authService } = {}) {
   };
 
   router.get('/', validatePublicQueryKeys, publicQueryValidators, bookController.getHomeBooks);
+  // @spec FR-FE05-030
   router.get('/metadata', requireBookManager, bookController.getMetadata);
   router.get('/:bookId', optionalAuthenticate, bookController.getBookById);
   router.post('/', requireBookManager, bookCoverUpload, bookController.createBook);

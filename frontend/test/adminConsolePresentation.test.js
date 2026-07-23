@@ -5,17 +5,45 @@ import { ADMIN_NAVIGATION } from '../src/page/admin/adminNavigation.js';
 import { selectOperationalChartRows } from '../src/page/admin/dashboard/adminDashboardViewModel.js';
 import { getPermissionDecision } from '../src/page/admin/permissions/permissionPresentation.js';
 import {
+  getMembershipDecisionFeedback,
+  isPendingMembershipApplication,
+  normalizeAdminMembershipList,
+} from '../src/page/admin/membership/adminMembershipPresentation.js';
+import {
   formatAuditAction,
   formatAuditDetailKey,
   getAuditActionOptions,
 } from '../src/page/admin/audit/adminAuditPresentation.js';
 
-test('Admin navigation keeps the approved seven entries in order without Permissions', () => {
+test('Admin navigation keeps the approved eight entries in order without Permissions', () => {
   assert.deepEqual(ADMIN_NAVIGATION.map(({ id, label }) => [id, label]), [
     ['home', 'Trang chủ'], ['dashboard', 'Tổng quan'], ['library', 'Thư viện'],
     ['circulation', 'Quản lý mượn trả'], ['requests', 'Quản lý yêu cầu'],
-    ['users', 'Quản lý người dùng'], ['audit', 'Nhật ký hoạt động'],
+    ['users', 'Quản lý người dùng'], ['membership', 'Duyệt hội viên'],
+    ['audit', 'Nhật ký hoạt động'],
   ]);
+});
+
+test('Admin membership presentation keeps canonical paging and safe feedback', () => {
+  const result = normalizeAdminMembershipList({
+    applications: [{
+      applicationId: 41,
+      status: 'pending',
+      applicant: { email: 'an@example.test' },
+    }],
+    page: 2,
+    limit: 10,
+    total: 11,
+    totalPages: 2,
+  });
+
+  assert.equal(result.applications[0].status, 'PENDING');
+  assert.deepEqual(result.pagination, { page: 2, limit: 10, total: 11, totalPages: 2 });
+  assert.equal(isPendingMembershipApplication(result.applications[0]), true);
+  assert.deepEqual(getMembershipDecisionFeedback('approve', 'FAILED'), {
+    type: 'warning',
+    message: 'Đã duyệt đơn, nhưng thông báo kết quả chưa gửi được.',
+  });
 });
 
 test('Dashboard keeps only five positive chart rows', () => {

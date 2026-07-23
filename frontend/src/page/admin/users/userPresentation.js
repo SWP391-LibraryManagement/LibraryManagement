@@ -48,7 +48,7 @@ export function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleC
   return { assignments, revocations };
 }
 
-export function validateUserForm(form) {
+export function validateUserCreateForm(form) {
   const errors = {};
   const email = form.email.trim();
   const fullName = form.fullName.trim();
@@ -86,6 +86,28 @@ export function validateUserForm(form) {
   }
 
   return errors;
+}
+
+export function validateLibrarianWorkForm(form) {
+  const errors = {};
+  const department = String(form.department || '').trim();
+  const specialization = String(form.specialization || '').trim();
+
+  if (department.length > 100) {
+    errors.department = 'Phòng ban không được vượt quá 100 ký tự.';
+  }
+
+  if (specialization.length > 100) {
+    errors.specialization = 'Chuyên môn không được vượt quá 100 ký tự.';
+  }
+
+  return errors;
+}
+
+export function validateUserForm(form, { mode = 'create' } = {}) {
+  return mode === 'edit'
+    ? validateLibrarianWorkForm(form)
+    : validateUserCreateForm(form);
 }
 
 export function getPrimaryRole(user) {

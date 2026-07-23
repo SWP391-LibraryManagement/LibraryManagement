@@ -1,8 +1,8 @@
 ﻿# FE04 Test Plan - Membership Management
 
-Version: 0.2.1
+Version: 0.2.2
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-23
 
 Source Spec: `.sdd/specs/feat-membership-management/SPEC.md`
 Feature IDs: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
@@ -72,6 +72,8 @@ git diff --check
 ```
 
 ## 8. Admin Console Membership Review Integration Targets
+
+Local source/automated state (2026-07-23): implemented and covered by the full frontend 215/215 pass. The responsive authenticated browser, Azure Staging, and human gates below remain open.
 
 - Exact eight-entry Admin navigation with Membership Review after All Users and without Permissions.
 - Canonical FE04 list params `q`, `status`, `page`, `limit=10`; no `/api/admin/membership` alias.

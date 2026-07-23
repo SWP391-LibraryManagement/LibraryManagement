@@ -1,8 +1,8 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.3.1
+Version: 0.3.2
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-23
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
@@ -21,6 +21,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Empty search/default pagination and no-result handling.
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
 - Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
+- FE11 multi-role accounts use staff-first book actions and never enter Member-only borrow/reservation routes.
 
 ## 3. API / Integration Test Targets
 
@@ -43,9 +44,9 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 ## 5. Current Evidence
 
 - Dedicated FE01 backend route/repository tests pass 9/9.
-- FE01 frontend contract tests pass 4/4.
+- FE01 frontend contract tests pass 5/5, including staff-first multi-role action precedence.
 - The public availability SQL suite passes in the aggregate 61/61 disposable SQL Server run.
-- Traceability is 13/13 and `git diff --check` passes.
+- Full frontend regression passes 215/215; traceability is 14/14 and `git diff --check` passes.
 
 ## 6. Gaps
 

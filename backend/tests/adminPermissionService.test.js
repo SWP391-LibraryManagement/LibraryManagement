@@ -20,7 +20,7 @@ const adminService = require('../src/services/adminService');
 const EXPECTED_PERMISSIONS = [
   { permissionKey: 'USER_VIEW', label: 'View users', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
   { permissionKey: 'USER_CREATE', label: 'Create accounts', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
-  { permissionKey: 'USER_UPDATE', label: 'Update accounts', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
+  { permissionKey: 'USER_UPDATE', label: 'Update Librarian work fields', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
   { permissionKey: 'USER_DEACTIVATE', label: 'Deactivate accounts', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
   { permissionKey: 'ROLE_MANAGE', label: 'Manage roles', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },
   { permissionKey: 'AUDIT_VIEW', label: 'View audit logs', moduleKey: 'USER_ROLE', moduleLabel: 'User & Role', allowedRoles: ['ADMIN'] },

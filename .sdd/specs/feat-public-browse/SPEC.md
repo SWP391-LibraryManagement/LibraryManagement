@@ -1,12 +1,12 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.3.1
+# Version: 0.3.2
 
 # Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59
 
 # Owner: Dung
 
-# Last Updated: 2026-07-20
+# Last Updated: 2026-07-23
 
 # Feature ID: FE01
 
@@ -68,8 +68,8 @@ The system shall:
 | ----- | ----------- | --------------------------- |
 | Guest | Unauthenticated visitor | View home page, search books, view public book information and details. |
 | Member | Authenticated library user | May use the same public browse functions; member-only actions are handled by other features. |
-| Librarian | Library staff | No special write permission in FE01; catalog management belongs to FE05. |
-| Admin | System administrator | No special write permission in FE01; management belongs to FE05/FE11. |
+| Librarian | Library staff | May use the same public-safe reads; FE01 gives no write permission and catalog management belongs to FE05. |
+| Admin | System administrator | May use the same public-safe reads; FE01 gives no write permission and management belongs to FE05/FE11. |
 
 ---
 
@@ -174,6 +174,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-012: Public browse must hide `Books.Status = INACTIVE` even if one or more copies are marked `AVAILABLE`.
 - BR-FE01-013: Public browse defaults to `page=1`, `limit=20`, and stable ordering `Title ASC, BookId ASC`; `page` must be an integer at least 1 and `limit` must be an integer from 1 through 100.
 - BR-FE01-014: Missing optional catalog metadata must not remove an otherwise public-visible book; the response returns `null` and the UI uses a safe fallback label/image.
+- BR-FE01-015: FE11 accounts may hold multiple roles. Public-book actions use staff-first precedence (`ADMIN`/`LIBRARIAN` before `MEMBER`) so a staff account is never routed into a member-only borrow or reservation workflow.
 
 ---
 
@@ -192,6 +193,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-011: When search text is empty or omitted, the system shall return the default public browse page using `page=1`, `limit=20`, and `Title ASC, BookId ASC`.
 - FR-FE01-012: If a book ID is not a positive integer, the system shall return a validation error; if the positive ID is missing or hidden, the system shall return not found.
 - FR-FE01-013: When optional author, category, publisher, cover, or ISBN data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
+- FR-FE01-014: When an authenticated account has both a staff role and `MEMBER`, the public home page shall expose FE05/FE06 staff actions rather than FE07/FE08 member-only actions.
 
 ---
 
@@ -210,6 +212,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-011: Given invalid `page` or `limit`, when the guest searches, then the system returns a validation response and does not query with normalized values.
 - AC-FE01-012: Given a non-numeric or non-positive book ID, when details are requested, then a validation response is returned; a well-formed missing/hidden ID returns not found.
 - AC-FE01-013: Given a public-visible book with missing optional metadata, when it is listed or opened, then the book remains present and each missing field is returned as `null` for safe UI fallback.
+- AC-FE01-014: Given an account with `MEMBER` plus `LIBRARIAN` or `ADMIN`, when the account opens a public book action, then an available book routes to FE05 management and an unavailable book routes to FE06 inventory inspection.
 
 ---
 
@@ -228,6 +231,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-009 | Optional category/author/publisher/cover/ISBN metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
 | EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
+| EC-FE01-012 | Account has both Member and staff roles | Apply staff-first action precedence; do not route the account to a Member-only mutation screen. |
 
 ---
 
@@ -267,8 +271,8 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. |
-| GET | `/api/books/{bookId}` | Guest/Member | - | Public book detail | Implemented public detail endpoint; must return only public-safe fields. |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. Authentication does not widen this list response. |
+| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Public book detail for Guest/Member; authenticated management detail for Librarian/Admin | Public callers receive only the FE01 safe projection. Staff-only fields may be returned only after server-side FE11 role authorization for FE05 management; inactive records remain hidden from Guest/Member. |
 
 ---
 
@@ -321,6 +325,7 @@ This feature does not include:
 | FE06 Inventory / Book Copy Management | Internal | Provides the public availability status without exposing exact copy counts. |
 | FE02 Authentication | Internal | Provides login/register routes for member-only actions. |
 | FE04 Membership Management | Internal | Handles membership application after public discovery. |
+| FE11 User & Role Management | Internal | Supplies the current role set used for public-account actions; multi-role accounts follow staff-first precedence. |
 | SQL Server database | Technical | Stores public book catalog data. |
 
 ---
@@ -347,48 +352,20 @@ This feature does not include:
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE01-001 | UC01-UC04 | FT01-FT04 read-only contract | Not Started |
-| BR-FE01-002 | UC01 | FT01 | Not Started |
-| BR-FE01-003 | UC02-UC04 | FT02-FT04 public visibility | Not Started |
-| BR-FE01-004 | UC03, UC04 | FT03, FT04 safe fields | Not Started |
-| BR-FE01-005 | UC02 | FT02 pagination | Not Started |
-| BR-FE01-006 | UC02, UC04 | FT02, FT04 validation | Not Started |
-| BR-FE01-007 | UC04 | FT04 safe not-found behavior | Not Started |
-| BR-FE01-008 | UC01, UC02, UC04 | Planned availability-summary integration case | Not Started |
-| BR-FE01-009 | UC01-UC04 | Planned no-public-mutation contract case | Not Started |
-| BR-FE01-010 | UC03, UC04 | FT03, FT04 response redaction | Not Started |
-| BR-FE01-011 | UC01, UC02, UC04 | Planned latest-copy-state integration case | Not Started |
-| BR-FE01-012 | UC02, UC04 | FT02, FT04 hidden-book case | Not Started |
-| BR-FE01-013 | UC02 | Planned pagination-default/boundary case | Not Started |
-| BR-FE01-014 | UC02-UC04 | Planned missing-metadata fallback case | Not Started |
-| FR-FE01-001 | UC01 | FT01 | Not Started |
-| FR-FE01-002 | UC02 | FT02 | Not Started |
-| FR-FE01-003 | UC02 | FT02 no-results case | Not Started |
-| FR-FE01-004 | UC03 | FT03 | Not Started |
-| FR-FE01-005 | UC04 | FT04 | Not Started |
-| FR-FE01-006 | UC04 | FT04 missing/hidden case | Not Started |
-| FR-FE01-007 | UC02 | Planned invalid-pagination rejection case | Not Started |
-| FR-FE01-008 | UC01, UC02, UC04 | Planned FE06 availability-rule case | Not Started |
-| FR-FE01-009 | UC01, UC02, UC04 | Planned FE06/FE07/FE08 transition-reflection case | Not Started |
-| FR-FE01-010 | UC01, UC02, UC04 | Planned unavailable-summary redaction case | Not Started |
-| FR-FE01-011 | UC02 | Planned empty-search default-browse case | Not Started |
-| FR-FE01-012 | UC04 | Planned ID-validation versus not-found case | Not Started |
-| FR-FE01-013 | UC02-UC04 | Planned optional-metadata null case | Not Started |
-| AC-FE01-001 | UC01 | FT01 | Not Started |
-| AC-FE01-002 | UC02 | FT02 matching-search case | Not Started |
-| AC-FE01-003 | UC02 | FT02 no-results case | Not Started |
-| AC-FE01-004 | UC03 | FT03 | Not Started |
-| AC-FE01-005 | UC04 | FT04 | Not Started |
-| AC-FE01-006 | UC04 | FT04 malformed/missing ID cases | Not Started |
-| AC-FE01-007 | UC02, UC04 | FT02, FT04 hidden-book cases | Not Started |
-| AC-FE01-008 | UC03, UC04 | FT03, FT04 response redaction | Not Started |
-| AC-FE01-009 | UC01, UC02 | Planned committed-copy-transition case | Not Started |
-| AC-FE01-010 | UC02 | Planned empty-search default-browse case | Not Started |
-| AC-FE01-011 | UC02 | Planned invalid-pagination rejection case | Not Started |
-| AC-FE01-012 | UC04 | Planned ID-validation versus not-found case | Not Started |
-| AC-FE01-013 | UC02-UC04 | Planned missing-metadata null/fallback case | Not Started |
+| BR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| BR-FE01-008..012 | UC01-UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
+| BR-FE01-013..014 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` multi-role staff-precedence case | Complete |
+| FR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| FR-FE01-008..010 | UC01, UC02, UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
+| FR-FE01-011..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| FR-FE01-014 | UC01-UC04 | `homeBookActions.test.js` | Complete |
+| AC-FE01-001..008 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| AC-FE01-009 | UC01, UC02 | `publicBrowseAvailability.sqltest.js`; `bookAvailabilityRepository.test.js` | Complete |
+| AC-FE01-010..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
+| AC-FE01-014 | UC01-UC04 | `homeBookActions.test.js` mixed Member/staff role cases | Complete |
 
-Coverage: 14/14 BR, 13/13 FR, and 13/13 AC have explicit use-case and test intent mappings.
+Coverage: 15/15 BR, 14/14 FR, and 14/14 AC have current automated evidence mappings.
 
 ---
 

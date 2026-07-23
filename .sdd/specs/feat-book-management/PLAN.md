@@ -4,7 +4,7 @@ Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 Owner: Dung
 
-Updated: 2026-07-19
+Updated: 2026-07-23
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
@@ -14,11 +14,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract: deterministic public/staff queries, validated metadata, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.2 contract: deterministic public/staff queries, active reference-data reads, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-book-management/SPEC.md` v0.5.1.
+- `.sdd/specs/feat-book-management/SPEC.md` v0.6.2.
 - `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
@@ -45,6 +45,8 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 
 - Public search/detail and protected management list from `SPEC.md` section 11.
 - Create and metadata-only update with required field/reference/ISBN/year/pages/rating validation.
+- Protected active category/author/publisher choices for Librarian/Admin book forms.
+- Managed JPG/PNG/WebP cover upload with validation and failure compensation.
 - `ACTIVE`/`INACTIVE` deactivation and reactivation without changing copies or history.
 - SQL `rowversion`, `If-Match`, `409 STALE_BOOK_STATE`, and new version responses.
 - Atomic audit logging for every catalog mutation.
@@ -55,7 +57,7 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 
 - Physical copy creation or status transitions.
 - Multiple authors or many-to-many categories.
-- Cover binary storage, file upload, recommendations, reviews, or ratings workflow.
+- Cover bytes in SQL Server, arbitrary unmanaged file paths, recommendations, reviews, or ratings workflow.
 - Borrowing, reservation, fine, or reporting implementation.
 - Physical deletion of books.
 
@@ -79,6 +81,7 @@ Reconcile the existing FE05 catalog prototype with the approved v0.5.0 contract:
 | `GET` | `/api/books` | Public-safe active books; deterministic filters, pagination, sort, and derived availability. |
 | `GET` | `/api/books/{bookId}` | Public receives active detail or `404`; staff may receive `ACTIVE` or `INACTIVE` detail with management fields. |
 | `GET` | `/api/admin/books` | Librarian/Admin paginated management list including active/inactive records. |
+| `GET` | `/api/books/metadata` | Librarian/Admin active category/author/publisher choices; read-only for Librarians. |
 | `POST` | `/api/books` | Librarian/Admin creates an `ACTIVE` book and receives its version. |
 | `PUT` | `/api/books/{bookId}` | Librarian/Admin metadata-only update with `If-Match`; never changes status or copies. |
 | `PATCH` | `/api/books/{bookId}/deactivate` | Matching `If-Match` plus `{ reason }`; changes only `Books.Status` to `INACTIVE`. |

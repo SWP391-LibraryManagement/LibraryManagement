@@ -1,12 +1,12 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.3.2
+# Version: 0.3.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-22
+# Last Updated: 2026-07-23
 
 # Feature ID: FE04
 
@@ -394,7 +394,7 @@ This feature does not include:
 | FR-FE04-011 | UC14, UC15 | atomic application/member/audit review cases | Automated pass; human review pending |
 | FR-FE04-012 | UC14, UC15 | FE10 failure preserves decision | Automated pass; human review pending |
 | FR-FE04-013 | UC13 | profile completeness enforcement and member guidance | Automated pass; human review pending |
-| FR-FE04-014 | UC14, UC15 | Admin Console embedded FE04 source/browser contract | Approved design; implementation pending |
+| FR-FE04-014 | UC14, UC15 | Admin Console embedded FE04 source/browser contract | Complete (local source/automated); responsive browser/Azure/human pending |
 | AC-FE04-001 | UC13 | apply happy path | Automated pass; human review pending |
 | AC-FE04-002 | UC13 | duplicate pending rejection | Automated pass; human review pending |
 | AC-FE04-003 | UC14 | approval + notification | Automated pass; human review pending |
@@ -407,7 +407,7 @@ This feature does not include:
 | AC-FE04-010 | UC14, UC15 | failed notification preserves decision | Automated pass; human review pending |
 | AC-FE04-011 | UC29, UC36 | active + canonical approved eligibility | Automated pass; human review pending |
 | AC-FE04-012 | UC13 | incomplete profile rejection and `/profile` recovery path | Automated pass; human review pending |
-| AC-FE04-013 | UC14, UC15 | Admin Console navigation, review, conflict, notification, and responsive browser cases | Approved design; implementation pending |
+| AC-FE04-013 | UC14, UC15 | Admin Console navigation, review, conflict, notification, and responsive browser cases | Complete (local source/automated); responsive browser/Azure/human pending |
 
 ### 16.1 Coverage Summary
 

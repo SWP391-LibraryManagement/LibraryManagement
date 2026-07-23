@@ -28,6 +28,8 @@ tags:
     description: FE11 — Admin-only canonical read-only permission policy
   - name: Admin Requests
     description: FE11 — Admin-only canonical FE07 request list and detail views
+  - name: User Management
+    description: FE11 — Admin-only user lifecycle and Librarian work-field management
 components:
   securitySchemes:
     bearerAuth:
@@ -820,6 +822,39 @@ components:
       required: [reason]
       properties:
         reason: { type: string, minLength: 1, maxLength: 500 }
+    LibrarianWorkUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [expectedUpdatedAt]
+      anyOf:
+        - required: [department]
+        - required: [specialization]
+      properties:
+        expectedUpdatedAt:
+          type: string
+          format: date-time
+          description: Effective COALESCE(Users.UpdatedAt, Users.CreatedAt) version loaded by Admin.
+        department: { type: string, nullable: true, maxLength: 100 }
+        specialization: { type: string, nullable: true, maxLength: 100 }
+    UserManagementView:
+      type: object
+      additionalProperties: false
+      required: [userId, email, status, roles, createdAt, updatedAt]
+      properties:
+        userId: { type: integer, minimum: 1 }
+        username: { type: string, nullable: true }
+        email: { type: string, format: email }
+        fullName: { type: string, nullable: true }
+        phoneNumber: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        status: { type: string, enum: [ACTIVE, INACTIVE, LOCKED] }
+        roles:
+          type: array
+          items: { type: string, enum: [MEMBER, LIBRARIAN, ADMIN] }
+        department: { type: string, nullable: true, maxLength: 100 }
+        specialization: { type: string, nullable: true, maxLength: 100 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 security:
   - bearerAuth: []
 paths:
@@ -1576,6 +1611,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/FineMutationPayload' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/users/{userId}:
+    put:
+      tags: [User Management]
+      summary: Update current Librarian work fields only (FR-FE11-004/010/020/023/028)
+      description: >
+        Admin may update only department and specialization for a target that currently has the
+        LIBRARIAN role. fullName, phone, address, email, unknown fields, and mixed payloads return
+        403 PERSONAL_PROFILE_ADMIN_FORBIDDEN without changing fields, effective version, or audit.
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LibrarianWorkUpdateInput' }
+      responses:
+        '200':
+          description: Authoritative safe user-management DTO; no-op keeps updatedAt unchanged.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserManagementView' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

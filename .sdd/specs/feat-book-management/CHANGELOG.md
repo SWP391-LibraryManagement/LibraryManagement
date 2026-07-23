@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-23 - FE01/FE11 role and interface reconciliation
+
+- Added the implemented protected `/api/books/metadata` endpoint to the FE05 API contract and test strategy.
+- Clarified that Librarian/Admin share FE05 book mutations while category/author/publisher mutation remains Admin-only through the FE11 Admin Library integration.
+- Removed the stale PLAN contradiction that classified managed cover upload as out of scope and aligned PLAN to SPEC v0.6.2.
+
 ## 2026-07-22 - Preserve visibility after status update
 
 - Reconciled the management status filter with the committed target status after update-form activation/deactivation.

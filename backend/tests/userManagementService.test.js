@@ -541,7 +541,7 @@ describe('FE11 transactional managed-user update service', () => {
     const userLifecycleRepository = {
       updateManagedUser: jest.fn(async () => ({
         outcome,
-        changedFields: outcome === 'UPDATED' ? ['email', 'fullName'] : undefined,
+        changedFields: outcome === 'UPDATED' ? ['department', 'specialization'] : undefined,
       })),
     };
     const auditLogRepository = { create: jest.fn() };
@@ -566,9 +566,8 @@ describe('FE11 transactional managed-user update service', () => {
       7,
       {
         expectedUpdatedAt,
-        email: ' UPDATED@example.test ',
-        fullName: ' Updated Name ',
         department: ' Reference ',
+        specialization: ' Research Support ',
       },
       { adminUserId: 99, ip: '127.0.0.1', userAgent: 'jest' }
     )).resolves.toEqual(harness.updatedUser);
@@ -578,9 +577,8 @@ describe('FE11 transactional managed-user update service', () => {
       userId: 7,
       expectedUpdatedAt,
       changes: {
-        email: 'updated@example.test',
-        fullName: 'Updated Name',
         department: 'Reference',
+        specialization: 'Research Support',
       },
       ipAddress: '127.0.0.1',
       userAgent: 'jest',
@@ -595,7 +593,6 @@ describe('FE11 transactional managed-user update service', () => {
     ['ADMIN_REQUIRED', 403, 'ADMIN_REQUIRED'],
     ['USER_NOT_FOUND', 404, 'USER_NOT_FOUND'],
     ['STALE_USER_STATE', 409, 'STALE_USER_STATE'],
-    ['EMAIL_ALREADY_EXISTS', 409, 'EMAIL_ALREADY_EXISTS'],
     ['VALIDATION_ERROR', 400, 'VALIDATION_ERROR'],
   ])('maps update outcome %s safely', async (outcome, statusCode, code) => {
     const harness = makeUpdateHarness(outcome);
@@ -604,7 +601,7 @@ describe('FE11 transactional managed-user update service', () => {
       7,
       {
         expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
-        fullName: 'Updated Name',
+        department: 'Reference',
       },
       { adminUserId: 99 }
     )).rejects.toMatchObject({ statusCode, code });
@@ -612,6 +609,30 @@ describe('FE11 transactional managed-user update service', () => {
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
     expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
   });
+
+  test.each(['fullName', 'phone', 'address', 'email', 'unknownField'])(
+    'rejects forbidden existing-user field %s before repository access',
+    async (field) => {
+      const harness = makeUpdateHarness();
+
+      await expect(harness.service.updateUser(
+        7,
+        {
+          expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
+          department: 'Reference',
+          [field]: field === 'email' ? 'unchanged@example.test' : 'forbidden',
+        },
+        { adminUserId: 99 }
+      )).rejects.toMatchObject({
+        statusCode: 403,
+        code: 'PERSONAL_PROFILE_ADMIN_FORBIDDEN',
+      });
+
+      expect(harness.userLifecycleRepository.updateManagedUser).not.toHaveBeenCalled();
+      expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
+      expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('FE11 atomic managed-user deactivation service', () => {

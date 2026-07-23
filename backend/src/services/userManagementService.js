@@ -419,19 +419,24 @@ function createUserManagementService({
     };
   }
 
-  // @spec FR-FE11-010, FR-FE11-021, FR-FE11-028
+  // @spec FR-FE11-004, FR-FE11-010, FR-FE11-020, FR-FE11-023, FR-FE11-028
   async function updateUser(userId, input, context = {}) {
     const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
+    const allowedFields = new Set(['expectedUpdatedAt', 'department', 'specialization']);
+    const forbiddenField = Object.keys(input || {}).find((field) => !allowedFields.has(field));
+    if (forbiddenField) {
+      throw errors.forbidden(
+        'PERSONAL_PROFILE_ADMIN_FORBIDDEN',
+        'Admins may update only Librarian department and specialization fields.'
+      );
+    }
+
     const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
     if (!Number.isFinite(expectedUpdatedAt.getTime())) {
       throw errors.badRequest('VALIDATION_ERROR', 'Expected updated timestamp is invalid.');
     }
 
     const updates = {};
-    if (input.email !== undefined) updates.email = normalizeEmail(input.email);
-    if (input.fullName !== undefined) updates.fullName = cleanString(input.fullName);
-    if (input.phone !== undefined) updates.phone = cleanString(input.phone);
-    if (input.address !== undefined) updates.address = cleanString(input.address);
     if (input.department !== undefined) updates.department = cleanString(input.department);
     if (input.specialization !== undefined) {
       updates.specialization = cleanString(input.specialization);
@@ -440,13 +445,6 @@ function createUserManagementService({
     if (!Object.keys(updates).length) {
       throw errors.badRequest('VALIDATION_ERROR', 'At least one editable field is required.');
     }
-    if (updates.email !== undefined) validateEmail(updates.email);
-    if (updates.fullName !== undefined && !updates.fullName) {
-      throw errors.badRequest('FULL_NAME_REQUIRED', 'Full name is required.');
-    }
-    validatePhone(updates.phone);
-    validateLength(updates.fullName, 100, 'FULL_NAME_TOO_LONG', 'Full name');
-    validateLength(updates.address, 255, 'ADDRESS_TOO_LONG', 'Address');
     validateLength(updates.department, 100, 'DEPARTMENT_TOO_LONG', 'Department');
     validateLength(updates.specialization, 100, 'SPECIALIZATION_TOO_LONG', 'Specialization');
 
@@ -464,7 +462,6 @@ function createUserManagementService({
       ADMIN_REQUIRED: () => errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
       USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
       STALE_USER_STATE: () => errors.conflict('STALE_USER_STATE', 'User state is stale.'),
-      EMAIL_ALREADY_EXISTS: () => errors.conflict('EMAIL_ALREADY_EXISTS', 'Email already exists.'),
       VALIDATION_ERROR: () => errors.badRequest(
         'VALIDATION_ERROR',
         'Librarian fields are only allowed for Librarian accounts.'

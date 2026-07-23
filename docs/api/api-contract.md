@@ -477,10 +477,6 @@ Request:
 ```json
 {
   "expectedUpdatedAt": "2026-07-18T08:00:00.000Z",
-  "fullName": "Updated Name",
-  "phone": "0900000010",
-  "address": "Updated Address",
-  "email": "updated@example.test",
   "department": "Reference",
   "specialization": "Research Support"
 }
@@ -488,7 +484,9 @@ Request:
 
 Response `200`:
 
-The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`; duplicate normalized email returns `409 EMAIL_ALREADY_EXISTS`.
+The target must currently have the `LIBRARIAN` role. Both work fields are optional nullable strings with a maximum length of 100, but at least one must be supplied. The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`.
+
+`fullName`, `phone`, and `address` are owned by FE03 self-service. Existing-account email is read-only until a verified FE02 change flow is approved. If this FE11 endpoint receives any of those personal fields, an unknown field, or a payload mixing one with an allowed work field, it returns `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` atomically; no field, effective version, or success audit changes.
 
 ### PATCH `/api/users/{userId}/status`
 
@@ -562,7 +560,7 @@ Allowed role values are `ADMIN`, `LIBRARIAN`, and `MEMBER`; arrays are determini
 | --- | --- | --- | --- |
 | User & Role | `USER_VIEW` | View users | ADMIN |
 | User & Role | `USER_CREATE` | Create accounts | ADMIN |
-| User & Role | `USER_UPDATE` | Update accounts | ADMIN |
+| User & Role | `USER_UPDATE` | Update Librarian work fields | ADMIN |
 | User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
 | User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
 | User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |

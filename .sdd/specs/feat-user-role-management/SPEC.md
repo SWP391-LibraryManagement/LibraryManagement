@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.0
+# Version: 0.6.1
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
 # Owner: Dung
 
-# Last Updated: 2026-07-22
+# Last Updated: 2026-07-23
 
 # Feature ID: FE11
 
@@ -627,19 +627,19 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-001 | Admin accesses user list -> safe paginated list uses defaults/bounds, stable order, status/role filters, and trimmed search | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
 | AC-FE11-002 | Admin accesses user detail -> safe UserManagementView and approved summaries are returned with sensitive fields excluded | FR-FE11-002 | BR-FE11-001, BR-FE11-018, BR-FE11-026 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
 | AC-FE11-003 | Valid user data -> inactive user/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | Existing FE11-S01..S07 source/delivery evidence plus pending FE11-LIFE02 actor/route hardening | PARTIAL |
-| AC-FE11-004 | Admin submits an existing-user personal field -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; UI remains read-only | FR-FE11-004, FR-FE11-007 | BR-FE11-014 | FE11-PDO01..PDO04 personal ownership UI/API/service/repository cases | APPROVED; IMPLEMENTATION PENDING |
+| AC-FE11-004 | Admin submits an existing-user personal field -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; UI remains read-only | FR-FE11-004, FR-FE11-007 | BR-FE11-014 | FE11-PDO01..PDO04 personal ownership UI/API/service/repository cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
 | AC-FE11-005 | Duplicate email submitted when creating user -> system rejects with error message | FR-FE11-005 | BR-FE11-004 | FE11-LIFE02 account-setup transaction/service/route cases | Not Started |
 | AC-FE11-006 | Admin creates user -> no password/token/link is shown; account stays inactive until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-007 | ACTIVE/LOCKED user deactivated by admin -> status changes to INACTIVE; pending activation is rejected | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | FE11-LIFE04 atomic deactivation cases | Not Started |
-| AC-FE11-008 | Admin attempts any existing-user email change -> system rejects it regardless of uniqueness | FR-FE11-020 | BR-FE11-014 | FT53 reallocated; FE11-PDO01..PDO04 | APPROVED; IMPLEMENTATION PENDING |
+| AC-FE11-008 | Admin attempts any existing-user email change -> system rejects it regardless of uniqueness | FR-FE11-020 | BR-FE11-014 | FT53 reallocated; FE11-PDO01..PDO04 | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
 | AC-FE11-009 | User with active session deactivated by admin -> session invalidated | FR-FE11-008 | BR-FE11-006 | FE11-LIFE04 refresh-credential rollback cases | Not Started |
 | AC-FE11-010 | Valid librarian data -> inactive librarian/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Existing FE11-S01..S07 source/delivery evidence plus pending FE11-LIFE02 fields/actor hardening | PARTIAL |
-| AC-FE11-011 | Admin updates only Librarian `department`/`specialization` -> effective changes save and advance UpdatedAt; personal/unknown fields are rejected | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | FE11-LIFE02/LIFE03 plus FE11-PDO02/PDO03 boundary cases | PARTIAL; BOUNDARY CORRECTION PENDING |
+| AC-FE11-011 | Admin updates only Librarian `department`/`specialization` -> effective changes save and advance UpdatedAt; personal/unknown fields are rejected | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | FE11-LIFE02/LIFE03 plus FE11-PDO02/PDO03 boundary cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
 | AC-FE11-012 | Active librarian account deactivated by admin -> status changes to INACTIVE and sessions are invalidated | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | FE11-LIFE04 Librarian deactivation cases | Not Started |
 | AC-FE11-013 | User without Admin role receives Admin role assignment -> UserRoles updated | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
 | AC-FE11-014 | User with Admin role has role revoked (not last admin) -> UserRoles updated | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
 | AC-FE11-015 | Last remaining admin attempts to revoke Admin role -> system rejects action | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
-| AC-FE11-016 | Admin console shows the exact eight approved sections with Membership Review after All Users, hides removed workflows, and keeps catalog management inside Admin | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch; approved Admin Membership integration design | PARTIAL; SHELL/LIBRARY COMPLETE, MEMBERSHIP PENDING |
+| AC-FE11-016 | Admin console shows the exact eight approved sections with Membership Review after All Users, hides removed workflows, and keeps catalog management inside Admin | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
 | AC-FE11-017 | Permissions view displays role counts and read-only permission matrix from FE11 data | FR-FE11-032 | BR-FE11-017 | Planned permissions-view integration case | Not Started |
 | AC-FE11-018 | Audit-log view is a read-only paginated list without search/filter controls and redacts sensitive fields | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |
 | AC-FE11-019 | Pending requests expose only approved actions; completed requests remain view-only | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | READY FOR REVIEW |
@@ -657,7 +657,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-017 | Acting admin ID does not exist -> not-found error, no action | BR-FE11-001 | EC-FE11-001 | Existing role evidence plus FE11-LIFE02..LIFE04 create/resend/work-update/deactivation cases | PARTIAL |
 | FR-FE11-018 | Admin attempts to deactivate own account -> rejected | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | FE11-LIFE04 self-deactivation case | Not Started |
 | FR-FE11-019 | Deactivate user with active borrowings -> blocked, reports count | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | FE11-LIFE04 borrowing guard case | Not Started |
-| FR-FE11-020 | Admin attempts any existing-account email change -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` | BR-FE11-014 | AF-FE11-004 | FE11-PDO02/PDO03 API/service/repository cases | APPROVED; IMPLEMENTATION PENDING |
+| FR-FE11-020 | Admin attempts any existing-account email change -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` | BR-FE11-014 | AF-FE11-004 | FE11-PDO02/PDO03 API/service/repository cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
 | FR-FE11-021 | Malformed / injection / oversized account-creation email -> sanitized and rejected | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | FE11-LIFE01/LIFE02 boundary and width cases | Not Started |
 | FR-FE11-022 | DB error during user creation -> rollback, no partial record | BR-FE11-010 | EC-FE11-008 | FE11-S01..S07 account-creation rollback coverage | COMPLETE (B7) |
 | FR-FE11-023 | Stale work-update/deactivation expectedUpdatedAt -> 409 STALE_USER_STATE with no partial update | BR-FE11-027 | EC-FE11-007 | FE11-LIFE03/LIFE04 effective-version cases | Not Started |
@@ -667,7 +667,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-027 | Revocation would leave user with no role -> rejected | BR-FE11-007 | EC-FE11-013 | FE11-R01..R05 deterministic role outcome coverage | COMPLETE (B7) |
 | FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FE11-LIFE02/LIFE03 Librarian validation cases | Not Started |
 | FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | FE11-S01..S07 invalid, expired, used, revoked, and ineligible setup-token coverage | COMPLETE (B7) |
-| FR-FE11-030 | Approved eight-entry Admin shell is displayed, removed items are hidden, Membership Review follows All Users, and Admin Library actions stay in Admin | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch; approved Admin Membership integration design | PARTIAL; SHELL/LIBRARY COMPLETE, MEMBERSHIP PENDING |
+| FR-FE11-030 | Approved eight-entry Admin shell is displayed, removed items are hidden, Membership Review follows All Users, and Admin Library actions stay in Admin | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
 | FR-FE11-031 | Admin dashboard displays read-only operational summaries | BR-FE11-020 | Q-FE11-012 | FE11-ACC01 evidence-only service/route/browser cases; Wave B validation | READY FOR REVIEW |
 | FR-FE11-032 | Permissions role summary and matrix are displayed | BR-FE11-017 | MF-FE11-011 | Planned permissions-view integration case | Not Started |
 | FR-FE11-033 | Audit logs are a paginated read-only list without UI search/filter controls and are redacted | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |

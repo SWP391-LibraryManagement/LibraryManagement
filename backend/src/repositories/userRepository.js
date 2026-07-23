@@ -486,73 +486,6 @@ async function createAdminManagedUser({ username, email, passwordHash, phone, fu
   }
 }
 
-async function updateManagedUser(userId, updates) {
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-
-  await transaction.begin();
-
-  try {
-    if (updates.email !== undefined || updates.phone !== undefined) {
-      const existing = await findById(userId);
-      await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .input('Email', sql.NVarChar(255), updates.email === undefined ? existing.email : updates.email)
-        .input('Phone', sql.NVarChar(20), updates.phone === undefined ? existing.phone : updates.phone)
-        .query(`
-          UPDATE Users
-          SET Email = @Email,
-              Phone = @Phone,
-              UpdatedAt = GETDATE()
-          WHERE UserId = @UserId
-        `);
-    } else {
-      await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .query(`
-          UPDATE Users
-          SET UpdatedAt = GETDATE()
-          WHERE UserId = @UserId
-        `);
-    }
-
-    if (updates.fullName !== undefined || updates.address !== undefined) {
-      const existingProfile = await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .query('SELECT TOP 1 * FROM UserProfiles WHERE UserId = @UserId');
-
-      const currentProfile = existingProfile.recordset[0] || {};
-      await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .input(
-          'FullName',
-          sql.NVarChar(100),
-          updates.fullName === undefined ? currentProfile.FullName || null : updates.fullName
-        )
-        .input(
-          'Address',
-          sql.NVarChar(255),
-          updates.address === undefined ? currentProfile.Address || null : updates.address
-        )
-        .query(`
-          MERGE UserProfiles AS target
-          USING (SELECT @UserId AS UserId) AS source
-          ON target.UserId = source.UserId
-          WHEN MATCHED THEN
-            UPDATE SET FullName = @FullName, Address = @Address, UpdatedAt = GETDATE()
-          WHEN NOT MATCHED THEN
-            INSERT (UserId, FullName, Address)
-            VALUES (@UserId, @FullName, @Address);
-        `);
-    }
-
-    await transaction.commit();
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
-}
-
 async function updateManagedUserStatus(userId, status) {
   const pool = await getPool();
   await pool
@@ -705,7 +638,6 @@ module.exports = {
   getSafeUserById,
   createRegisteredUser,
   createAdminManagedUser,
-  updateManagedUser,
   updateManagedUserStatus,
   listRoles,
   countActiveBorrowingsByUserId,

@@ -1,13 +1,13 @@
 # TASKS.md - FE11 User & Role Management
 
-Status: APPROVED REVISION - PERSONAL DATA OWNERSHIP IMPLEMENTATION PENDING
+Status: IMPLEMENTED - LOCAL AUTOMATED VALIDATION COMPLETE
 Implementation State: PARTIAL
 
-Date: 2026-07-22
+Date: 2026-07-23
 
-Current Extension: FE11-PDO01 is documentation-complete; FE11-PDO02..PDO04 were approved on 2026-07-22 and are not implemented.
+Current Extension: FE11-PDO01..PDO03 and the FE11-PDO04 product/source-test scope are implemented; authenticated browser and human acceptance remain open.
 
-Concurrent Extension: FE11-UXR09 was approved on 2026-07-22 and is not implemented.
+Concurrent Extension: FE11-UXR09 product/source-test scope is implemented through canonical FE04 APIs; responsive browser, Azure Staging, and human acceptance remain open.
 
 Owner: Dung
 
@@ -286,7 +286,7 @@ Owner: Dung
 - [x] **FE11-UIN01 - Remove Permissions from the Admin sidebar.**
   - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016.
   - Files: `frontend/src/page/UserManagement.jsx`, affected frontend tests, `SPEC.md`, `CHANGELOG.md`.
-  - DoD: the sidebar exposes exactly seven approved entries without `Permissions`; permission APIs and authorization behavior remain unchanged.
+  - Historical DoD: the sidebar exposed seven entries without `Permissions`; FE11-UXR09 supersedes only the current count to eight by adding FE04 Membership Review, while permission APIs and authorization behavior remain unchanged.
 
 ## Deferred FE11 Work
 
@@ -325,6 +325,7 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Maps to: BR-FE11-016, FR-FE11-030, AC-FE11-016; FR-FE04-014, AC-FE04-013.
   - Depends on: FE04-ADM01..FE04-ADM05.
   - DoD: sidebar has exactly eight entries with Membership Review after All Users and no Permissions; the embedded Admin-native FE04 module passes source, responsive browser, Azure Staging, and explicit human review without changing FE04 API/business ownership.
+  - Evidence: product composition and source contracts pass in the 2026-07-23 frontend 215/215 suite; responsive browser, Azure Staging, and explicit human review remain pending.
 
 ## Personal Data Ownership Correction Tasks
 
@@ -333,20 +334,23 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - DoD: SPEC, CONTEXT, PLAN, TASKS, TEST_PLAN, and CHANGELOG agree that FE03 owns existing-user `fullName`/`phone`/`address`, FE02 owns any future verified email change, and FE11 owns only current-Librarian `department`/`specialization` updates.
   - Evidence: documentation-only change dated 2026-07-22; no product behavior is claimed.
 
-- [ ] **FE11-PDO02 - Add RED backend ownership-boundary tests.**
+- [x] **FE11-PDO02 - Add RED backend ownership-boundary tests.**
   - Files: `backend/tests/userManagementRoutes.test.js`, `backend/tests/userManagementService.test.js`, `backend/tests/userRepository.test.js`.
   - Cases: each personal field, unchanged email, mixed allowed/forbidden payload, unknown field, non-Librarian target, allowed Librarian work update, stale state, no-op, rollback, and success-audit allowlist.
   - DoD: tests demonstrate the current broad update path violates the revised contract before implementation changes are made.
+  - Evidence: route/service/repository ownership-boundary coverage is retained in the 2026-07-23 full backend 952/952 pass.
 
-- [ ] **FE11-PDO03 - Enforce the backend work-field-only update contract.**
+- [x] **FE11-PDO03 - Enforce the backend work-field-only update contract.**
   - Files: `backend/src/validators/userManagementValidators.js`, `backend/src/services/userManagementService.js`, `backend/src/repositories/userRepository.js`, `backend/src/docs/openapi.yaml`, `docs/api/api-contract.md`.
   - DoD: `PUT /api/users/{userId}` accepts only effective-version plus current-Librarian work fields; forbidden/mixed requests return atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; no personal column or success audit changes.
   - Validation: focused route/service/repository tests pass, followed by full backend tests, coverage, OpenAPI parse, and FE02/FE03 regression checks.
+  - Evidence: validator/service/repository/OpenAPI/API contract changes pass focused FE11/FE02/FE03 suites and the 2026-07-23 full backend 952/952 suite.
 
 - [ ] **FE11-PDO04 - Align the Admin UI and close the revised acceptance boundary.**
   - Files: `frontend/src/page/admin/users/AdminUsersSection.jsx`, `frontend/src/page/admin/users/UserEditorModal.jsx`, `frontend/src/page/admin/users/userPresentation.js`, `frontend/src/api/userManagementApi.js`, `frontend/test/userManagementApi.test.js`, `frontend/test/userManagementFrontend.test.js`.
   - DoD: personal fields are read-only for existing users; only a current Librarian exposes department/specialization editing; the update request contains no personal field; direct backend attempts remain rejected.
   - Validation: focused RED-GREEN frontend tests, full frontend tests/lint/build, relevant browser E2E, `npm.cmd run trace:enforce`, `git diff --check`, and authenticated human Admin review pass before the revised FE11 scope is marked complete.
+  - Evidence: product/source tests, full frontend 215/215, lint, production build, 100% FE11 traceability, and diff hygiene pass on 2026-07-23; authenticated browser E2E and human review remain to close this task.
 
 - [x] Remove all Audit search/filter controls while preserving read-only pagination, authorization, and redaction.
 - [x] Rebuild the Admin shell from the shared Member/Librarian `app-shell`, header, sidebar, brand, and responsive navigation primitives.

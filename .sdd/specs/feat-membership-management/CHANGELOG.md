@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-23 - Admin Console membership review implemented locally
+
+- Embedded FE04 review in the FE11 Admin Console while retaining FE04 ownership of list filters, pagination, approve/reject mutations, authorization, audit, notification, and the existing `/membership` workspace.
+- Added pending-only decisions, required 1..500-character rejection reason, authoritative reload after decisions/conflicts, and non-blocking feedback for committed decisions whose FE10 delivery failed.
+- Added responsive table/card source contracts and recorded the full frontend 215/215, lint, and production build passes; authenticated responsive browser, Azure Staging, and human acceptance remain open.
+
 ## 2026-07-22 - Admin Console membership review integration approved
 
 - Approved an embedded Admin-native FE04 review section after User Management while retaining the existing `/membership` Member/Librarian workspace.

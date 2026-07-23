@@ -20,7 +20,7 @@ test('FE11 legacy admin entry delegates exactly to the modular console', async (
   assert.equal(source.trim(), "export { default } from './admin/AdminConsolePage';");
 });
 
-test('FE11 modular console guards access and exposes seven approved navigation entries', async () => {
+test('FE11 modular console guards access and exposes eight approved navigation entries', async () => {
   const [page, access, navigation] = await Promise.all([
     readAdminFile('AdminConsolePage.jsx'),
     readAdminFile('adminAccess.js'),
@@ -30,7 +30,7 @@ test('FE11 modular console guards access and exposes seven approved navigation e
   assert.match(page, /const \[activeSection, setActiveSection\] = useState\('users'\)/);
   assert.match(page, /<Navigate to="\/login" replace \/>/);
   assert.match(page, /<Navigate to="\/home" replace \/>/);
-  for (const section of ['dashboard', 'library', 'circulation', 'requests', 'users', 'permissions', 'audit']) {
+  for (const section of ['dashboard', 'library', 'circulation', 'requests', 'users', 'membership', 'permissions', 'audit']) {
     assert.match(page, new RegExp("activeSection === '" + section + "'"));
   }
   assert.match(access, /roles\.includes\('ADMIN'\)/);
@@ -45,6 +45,7 @@ test('FE11 modular console guards access and exposes seven approved navigation e
     ['circulation', 'Quản lý mượn trả'],
     ['requests', 'Quản lý yêu cầu'],
     ['users', 'Quản lý người dùng'],
+    ['membership', 'Duyệt hội viên'],
     ['audit', 'Nhật ký hoạt động'],
   ]);
   assert.doesNotMatch(navigation, /id: 'permissions'/);
@@ -124,9 +125,20 @@ test('FE11 user validation preserves canonical field widths', () => {
   });
   assert.ok(invalid.department);
   assert.ok(invalid.specialization);
+
+  const editOnly = validateUserForm({
+    type: 'librarian',
+    email: 'not-used-in-edit',
+    fullName: '',
+    phone: 'not-used-in-edit',
+    address: 'x'.repeat(300),
+    department: 'Reference',
+    specialization: 'Research Support',
+  }, { mode: 'edit' });
+  assert.deepEqual(editOnly, {});
 });
 
-test('FE11 desktop table and mobile cards expose the approved non-edit actions', async () => {
+test('FE11 desktop table and mobile cards expose work edits only for current Librarians', async () => {
   const [section, css] = await Promise.all([
     readAdminFile('users/AdminUsersSection.jsx'),
     readAdminFile('admin-console.css'),
@@ -138,6 +150,8 @@ test('FE11 desktop table and mobile cards expose the approved non-edit actions',
   for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
     assert.match(section, new RegExp('label="' + label + '"'));
   }
+  assert.match(section, /user\.roles\?\.includes\('LIBRARIAN'\)[^]*?label="Cập nhật công việc"/);
+  assert.match(section, /openLibrarianWorkEditor/);
   assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
@@ -147,7 +161,7 @@ test('FE11 desktop table and mobile cards expose the approved non-edit actions',
   assert.match(css, /\.admin-user-table\s*\{[^}]*overflow-x: auto;/s);
 });
 
-test('FE11 create flow and drawer keep safe summaries without edit actions', async () => {
+test('FE11 create flow and drawer keep personal fields read-only while allowing Librarian work edits', async () => {
   const [editor, roleModal, drawer, section] = await Promise.all([
     readAdminFile('users/UserEditorModal.jsx'),
     readAdminFile('users/UserRoleModal.jsx'),
@@ -156,7 +170,8 @@ test('FE11 create flow and drawer keep safe summaries without edit actions', asy
   ]);
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
-  assert.match(editor, /Tài khoản hiện tại giữ nguyên trạng thái đăng nhập/);
+  assert.match(editor, /readOnly=\{isEdit\}/);
+  assert.match(editor, /isCurrentLibrarian/);
   assert.match(roleModal, /Mỗi người dùng phải giữ ít nhất một vai trò/);
   assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
   assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
@@ -164,7 +179,9 @@ test('FE11 create flow and drawer keep safe summaries without edit actions', asy
   for (const label of ['Đóng chi tiết', 'Chưa có tên', 'Lượt mượn đang hoạt động', 'Tiền phạt chưa thanh toán']) {
     assert.match(drawer, new RegExp(label));
   }
-  assert.doesNotMatch(drawer, /label="Chỉnh sửa"|onEdit/);
+  assert.match(drawer, /user\.roles\?\.includes\('LIBRARIAN'\)[^]*?onEditWork/);
+  assert.match(section, /onEditWork=\{openLibrarianWorkEditor\}/);
+  assert.doesNotMatch(drawer, /label="Chỉnh sửa"/);
   assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal|onEdit=\{openEditModal\}/);
 });
 
@@ -220,8 +237,9 @@ test('FE11 library and circulation preserve canonical ownership boundaries', asy
   assert.match(page, /onOpenRequests=\{\(\) => setActiveSection\('requests'\)\}/);
 
   const adminSource = library + '\n' + circulation + '\n' + page;
-  assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords|MembershipApplicationsTable|MembershipReviewModal/);
-  assert.doesNotMatch(adminSource, /activeSection === ['"](?:membership|payments)['"]/);
+  assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords/);
+  assert.match(adminSource, /activeSection === ['"]membership['"]/);
+  assert.doesNotMatch(adminSource, /activeSection === ['"]payments['"]/);
 });
 
 test('FE11 Admin copy is Vietnamese while raw enum values remain unchanged', async () => {

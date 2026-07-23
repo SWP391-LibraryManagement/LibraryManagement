@@ -1,8 +1,8 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.5.0
-Status: APPROVED REVISION - PERSONAL DATA OWNERSHIP TESTS PENDING
-Last Updated: 2026-07-22
+Version: 0.5.1
+Status: LOCAL AUTOMATED VALIDATION COMPLETE - BROWSER/HUMAN ACCEPTANCE PENDING
+Last Updated: 2026-07-23
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
@@ -58,7 +58,7 @@ User administration, read-only Admin access to personal profile information, cur
 
 ## 3.2.1 FE11-UXR08 Authenticated UX Correction Targets
 
-- Exact seven-entry Admin Console sidebar without Permissions; User Management still exposes its Manage Roles actions.
+- Historical UXR08 baseline: exact seven-entry Admin Console sidebar without Permissions; UXR09 below supersedes the current count to eight while User Management retains Manage Roles.
 - User Management uses cards before the fixed 1040px table would force horizontal scrolling at 1280px and 1366px.
 - Audit retains canonical `q`, `action`, `actorId`, `from`, and `to`; mapped action choices show Vietnamese labels while submitting raw values.
 - Safe Audit details remain allowlisted and read-only behind a per-row disclosure; API, authorization, pagination, and redaction stay unchanged.

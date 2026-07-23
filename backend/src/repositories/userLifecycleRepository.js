@@ -1,17 +1,6 @@
 const { sql, getPool } = require('../config/db');
 
-const EDITABLE_FIELDS = [
-  'email',
-  'fullName',
-  'phone',
-  'address',
-  'department',
-  'specialization',
-];
-
-function sqlErrorNumber(error) {
-  return error?.number ?? error?.originalError?.info?.number;
-}
+const EDITABLE_FIELDS = ['department', 'specialization'];
 
 function sameDate(left, right) {
   const leftTime = new Date(left).getTime();
@@ -55,13 +44,9 @@ async function lockManagedUser(transaction, userId, expectedUpdatedAt) {
     .query(`
       SELECT
         u.UserId,
-        u.Email,
-        u.Phone,
         u.Status,
         u.DeactivatedAt,
         COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
-        up.FullName,
-        up.Address,
         up.Department,
         up.Specialization
       FROM Users u WITH (UPDLOCK, HOLDLOCK)
@@ -85,10 +70,6 @@ async function lockUserRoles(transaction, userId) {
 
 function currentValues(row) {
   return {
-    email: row.Email,
-    fullName: row.FullName ?? null,
-    phone: row.Phone ?? null,
-    address: row.Address ?? null,
     department: row.Department ?? null,
     specialization: row.Specialization ?? null,
   };
@@ -148,36 +129,17 @@ async function updateManagedUser({
       return { outcome: 'NO_CHANGE' };
     }
 
-    const duplicateEmail = await new sql.Request(transaction)
-      .input('UserId', sql.Int, userId)
-      .input('Email', sql.NVarChar(255), next.email)
-      .query(`
-        SELECT TOP 1 UserId
-        FROM Users WITH (UPDLOCK, HOLDLOCK)
-        WHERE LOWER(Email) = LOWER(@Email)
-          AND UserId <> @UserId
-      `);
-    if (duplicateEmail.recordset[0]) {
-      return rollbackWith(transaction, 'EMAIL_ALREADY_EXISTS');
-    }
-
     await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
-      .input('Email', sql.NVarChar(255), next.email)
-      .input('Phone', sql.NVarChar(20), next.phone)
       .input('Now', sql.DateTime, now)
       .query(`
         UPDATE Users
-        SET Email = @Email,
-            Phone = @Phone,
-            UpdatedAt = @Now
+        SET UpdatedAt = @Now
         WHERE UserId = @UserId
       `);
 
     await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
-      .input('FullName', sql.NVarChar(100), next.fullName)
-      .input('Address', sql.NVarChar(255), next.address)
       .input('Department', sql.NVarChar(100), next.department)
       .input('Specialization', sql.NVarChar(100), next.specialization)
       .input('Now', sql.DateTime, now)
@@ -187,14 +149,12 @@ async function updateManagedUser({
         ON target.UserId = source.UserId
         WHEN MATCHED THEN
           UPDATE SET
-            FullName = @FullName,
-            Address = @Address,
             Department = @Department,
             Specialization = @Specialization,
             UpdatedAt = @Now
         WHEN NOT MATCHED THEN
-          INSERT (UserId, FullName, Address, Department, Specialization, CreatedAt)
-          VALUES (@UserId, @FullName, @Address, @Department, @Specialization, @Now);
+          INSERT (UserId, Department, Specialization, CreatedAt)
+          VALUES (@UserId, @Department, @Specialization, @Now);
       `);
 
     await new sql.Request(transaction)
@@ -216,9 +176,6 @@ async function updateManagedUser({
     return { outcome: 'UPDATED', changedFields };
   } catch (error) {
     await transaction.rollback();
-    if ([2601, 2627].includes(sqlErrorNumber(error))) {
-      return { outcome: 'EMAIL_ALREADY_EXISTS' };
-    }
     throw error;
   }
 }

@@ -107,3 +107,21 @@ test('Admin requests preserve server pagination, FE07 actions and labeled date f
   assert.match(page, /activeSection === 'requests'/);
   assert.match(page, /<AdminRequestsSection/);
 });
+
+test('Admin membership section consumes canonical FE04 inside the Admin shell', async () => {
+  const section = await readFile(new URL('membership/AdminMembershipSection.jsx', root), 'utf8');
+  const modal = await readFile(new URL('membership/AdminMembershipReviewModal.jsx', root), 'utf8');
+  const page = await readFile(new URL('AdminConsolePage.jsx', root), 'utf8');
+
+  assert.match(section, /membershipApi\.listApplications\(/);
+  assert.match(section, /membershipApi\.approve\(/);
+  assert.match(section, /membershipApi\.reject\(/);
+  assert.match(section, /page:\s*membershipPage/);
+  assert.match(section, /limit:\s*ADMIN_MEMBERSHIP_PAGE_SIZE/);
+  assert.match(section, /admin-membership-table/);
+  assert.match(section, /admin-membership-cards/);
+  assert.doesNotMatch(section, /adminApi\.|\/api\/admin\/membership/);
+  assert.match(modal, /maxLength=\{500\}/);
+  assert.match(page, /activeSection === 'membership'/);
+  assert.match(page, /<AdminMembershipSection onToast=\{setToast\}/);
+});

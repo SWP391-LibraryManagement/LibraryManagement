@@ -113,6 +113,56 @@ const VALID_BOOK = {
 };
 
 describe('FE05 book management v0.5.1 RED contract', () => {
+  // @spec BR-FE05-021, FR-FE05-030, AC-FE05-021, NFR-FE05-SEC-001
+  test('active book metadata choices are available only to Librarian and Admin', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'books.metadata.member@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'books.metadata.librarian@example.test',
+      role: 'LIBRARIAN',
+    });
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'books.metadata.admin@example.test',
+      role: 'ADMIN',
+    });
+
+    await request(app).get('/api/books/metadata').expect(401);
+    await request(app)
+      .get('/api/books/metadata')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(403);
+
+    for (const staff of [librarian, admin]) {
+      const response = await request(app)
+        .get('/api/books/metadata')
+        .set('Authorization', authHeader(staff.accessToken))
+        .expect(200);
+
+      expect(response.body.data).toEqual({
+        categories: [
+          { id: 1, name: 'Programming' },
+          { id: 2, name: 'History' },
+        ],
+        authors: [
+          { id: 1, name: 'Robert C. Martin' },
+          { id: 2, name: 'Yuval Noah Harari' },
+        ],
+        publishers: [
+          { id: 1, name: 'Prentice Hall' },
+          { id: 2, name: 'Harper' },
+        ],
+      });
+    }
+  });
+
   // @spec BR-FE05-019, FR-FE05-027, AC-FE05-018
   test('librarian creates a book from multipart metadata and a validated cover image', async () => {
     const { app, staff, bookCoverStorage } = await makeStaffSetup();

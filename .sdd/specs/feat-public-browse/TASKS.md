@@ -120,3 +120,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 - [ ] FE05 owner confirms shared public catalog response compatibility.
 - [ ] FE06 owner confirms availability aggregation and no copy mutation.
 - [ ] Nhat confirms final public-safe DTO, guest UX states, and read-only boundary.
+
+## 2026-07-23 role-integration correction
+
+- [x] Align FE01 actor/API wording for Guest, Member, Librarian, and Admin reads.
+- [x] Apply staff-first public-book action precedence for FE11 multi-role accounts.
+- [x] Add frontend regression coverage for `MEMBER + LIBRARIAN` and `MEMBER + ADMIN`.

@@ -1,5 +1,6 @@
 const { body, matchedData, param, query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
+const errors = require('../utils/safeErrors');
 
 const LIST_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED'];
 const LIST_ROLES = ['MEMBER', 'LIBRARIAN', 'ADMIN'];
@@ -34,6 +35,26 @@ function assignValidatedUserUpdate(req, res, next) {
 
 function assignValidatedUserStatus(req, res, next) {
   req.validatedUserStatus = matchedData(req, { locations: ['body'] });
+  return next();
+}
+
+const MANAGED_USER_UPDATE_FIELDS = new Set([
+  'expectedUpdatedAt',
+  'department',
+  'specialization',
+]);
+
+function rejectForbiddenManagedUserFields(req, _res, next) {
+  const submittedFields = Object.keys(req.body || {});
+  const forbiddenField = submittedFields.find((field) => !MANAGED_USER_UPDATE_FIELDS.has(field));
+
+  if (forbiddenField) {
+    return next(errors.forbidden(
+      'PERSONAL_PROFILE_ADMIN_FORBIDDEN',
+      'Admins may update only Librarian department and specialization fields.'
+    ));
+  }
+
   return next();
 }
 
@@ -147,6 +168,7 @@ const createUserValidators = [
 
 const updateUserValidators = [
   positiveIdParam('userId', 'User ID'),
+  rejectForbiddenManagedUserFields,
   body('expectedUpdatedAt')
     .exists({ values: 'null' })
     .withMessage('Expected updated timestamp is required.')
@@ -154,29 +176,6 @@ const updateUserValidators = [
     .isISO8601({ strict: true, strictSeparator: true })
     .withMessage('Expected updated timestamp must be ISO 8601.')
     .toDate(),
-  body('email')
-    .optional()
-    .customSanitizer(lowercaseTrimmed)
-    .isLength({ min: 3, max: 255 })
-    .withMessage('Email must be at most 255 characters.')
-    .bail()
-    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
-    .withMessage('Email must be valid.'),
-  body('fullName')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Full name must be between 1 and 100 characters.'),
-  body('phone')
-    .optional()
-    .customSanitizer(blankToNull)
-    .custom((value) => value === null || (value.length <= 20 && /^[0-9+\-\s()]+$/.test(value)))
-    .withMessage('Phone number is invalid.'),
-  body('address')
-    .optional()
-    .customSanitizer(blankToNull)
-    .custom((value) => value === null || value.length <= 255)
-    .withMessage('Address must be at most 255 characters.'),
   body('department')
     .optional()
     .customSanitizer(blankToNull)
@@ -188,14 +187,7 @@ const updateUserValidators = [
     .custom((value) => value === null || value.length <= 100)
     .withMessage('Specialization must be at most 100 characters.'),
   body('_error').custom((_, { req }) => {
-    const editableFields = [
-      'email',
-      'fullName',
-      'phone',
-      'address',
-      'department',
-      'specialization',
-    ];
+    const editableFields = ['department', 'specialization'];
     if (editableFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field))) {
       return true;
     }

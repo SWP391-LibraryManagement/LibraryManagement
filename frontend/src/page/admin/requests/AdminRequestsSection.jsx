@@ -43,6 +43,7 @@ function RequestStatusBadge({ status }) {
 }
 
 function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, onClose, onApprove, onReject }) {
+  // @spec FR-FE11-035
   const pending = request.status === 'PENDING';
   return (
     <div className="admin-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>

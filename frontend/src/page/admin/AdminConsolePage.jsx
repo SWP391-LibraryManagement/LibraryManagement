@@ -8,11 +8,13 @@ import { AdminCirculationSection } from './circulation/AdminCirculationSection';
 import { AdminShell } from './components/AdminShell';
 import { AdminDashboardSection } from './dashboard/AdminDashboardSection';
 import { AdminLibrarySection } from './library/AdminLibrarySection';
+import { AdminMembershipSection } from './membership/AdminMembershipSection';
 import { AdminPermissionsSection } from './permissions/AdminPermissionsSection';
 import { AdminRequestsSection } from './requests/AdminRequestsSection';
 import { AdminUsersSection } from './users/AdminUsersSection';
 
 export default function AdminConsolePage() {
+  // @spec FR-FE11-030
   const navigate = useNavigate();
   const access = readStoredAdminAccess();
   const [activeSection, setActiveSection] = useState('users');
@@ -35,6 +37,8 @@ export default function AdminConsolePage() {
     >
       {activeSection === 'users' ? (
         <AdminUsersSection onToast={setToast} />
+      ) : activeSection === 'membership' ? (
+        <AdminMembershipSection onToast={setToast} />
       ) : activeSection === 'dashboard' ? (
         <AdminDashboardSection />
       ) : activeSection === 'requests' ? (

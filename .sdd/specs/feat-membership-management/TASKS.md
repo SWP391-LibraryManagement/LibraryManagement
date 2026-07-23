@@ -5,11 +5,11 @@ Implementation State: COMPLETE
 
 Owner: Dat
 
-Updated: 2026-07-19
+Updated: 2026-07-23
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
-Extension State: `FE04-ADM01..FE04-ADM05` were approved on 2026-07-22 and are not implemented.
+Extension State: `FE04-ADM01..ADM03` are implemented with local automated evidence; `FE04-ADM04..ADM05` remain open for responsive browser, Azure Staging, and human acceptance.
 
 ---
 
@@ -149,13 +149,13 @@ Extension State: `FE04-ADM01..FE04-ADM05` were approved on 2026-07-22 and are no
 
 ## Admin Console Membership Review Integration Tasks
 
-- [ ] **FE04-ADM01 - Lock exact navigation and pure Admin membership presentation contracts.**
+- [x] **FE04-ADM01 - Lock exact navigation and pure Admin membership presentation contracts.**
   - Maps to: FR-FE04-014, AC-FE04-013; BR-FE11-016, AC-FE11-016.
   - DoD: RED-GREEN proves the exact eight-entry sidebar, canonical FE04 list normalization, pending detection, and safe committed-decision/notification feedback.
-- [ ] **FE04-ADM02 - Build the server-owned Admin membership directory.**
+- [x] **FE04-ADM02 - Build the server-owned Admin membership directory.**
   - Depends on: FE04-ADM01.
   - DoD: Admin Console renders FE04 `q`, `status`, `page`, `limit` results with loading/error/empty states, table/cards, and no Admin API alias.
-- [ ] **FE04-ADM03 - Add approval, rejection, conflict reload, and FE10 feedback.**
+- [x] **FE04-ADM03 - Add approval, rejection, conflict reload, and FE10 feedback.**
   - Depends on: FE04-ADM02.
   - DoD: only `PENDING` rows expose decisions; rejection is 1..500 characters; success/failure reloads server truth; `FAILED` delivery is a warning after a committed decision.
 - [ ] **FE04-ADM04 - Pass authenticated responsive browser acceptance.**

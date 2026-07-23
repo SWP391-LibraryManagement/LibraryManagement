@@ -28,3 +28,22 @@ test('homepage prevents guests and staff from using member-only actions', () => 
     { label: 'Mở quản lý sách', path: '/librarian/books?bookId=4', kind: 'manage' },
   );
 });
+
+test('homepage keeps staff precedence for FE11 multi-role accounts', () => {
+  assert.deepEqual(
+    getHomeBookAction({
+      book: { bookId: 9, availabilityStatus: 'AVAILABLE' },
+      isLoggedIn: true,
+      roles: ['MEMBER', 'LIBRARIAN'],
+    }),
+    { label: 'Mở quản lý sách', path: '/librarian/books?bookId=9', kind: 'manage' },
+  );
+  assert.deepEqual(
+    getHomeBookAction({
+      book: { bookId: 9, availabilityStatus: 'UNAVAILABLE' },
+      isLoggedIn: true,
+      roles: ['MEMBER', 'ADMIN'],
+    }),
+    { label: 'Kiểm tra bản sao', path: '/librarian/inventory?bookId=9', kind: 'manage' },
+  );
+});

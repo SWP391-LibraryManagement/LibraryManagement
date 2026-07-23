@@ -94,18 +94,23 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | BR-FE05-008 through BR-FE05-013 | FE05-T004, FE05-T006 |
 | BR-FE05-014 through BR-FE05-018 | FE05-T002, FE05-T003, FE05-T005, FE05-T006 |
 | BR-FE05-019, BR-FE05-020 | FE05-T009 |
+| BR-FE05-021 | FE05-T012 |
 | FR-FE05-001 through FR-FE05-004 | FE05-T003, FE05-T004 |
 | FR-FE05-005 through FR-FE05-010 | FE05-T004, FE05-T005, FE05-T006 |
 | FR-FE05-011 through FR-FE05-017 | FE05-T003, FE05-T005 |
 | FR-FE05-018 through FR-FE05-021 | FE05-T004, FE05-T005, FE05-T006 |
 | FR-FE05-022 through FR-FE05-026 | FE05-T002, FE05-T003, FE05-T005, FE05-T006 |
 | FR-FE05-027, FR-FE05-028 | FE05-T009 |
+| FR-FE05-029 | FE05-T011 |
+| FR-FE05-030 | FE05-T012 |
 | AC-FE05-001 through AC-FE05-004 | FE05-T004 |
 | AC-FE05-005 through AC-FE05-007 | FE05-T005 |
 | AC-FE05-008 through AC-FE05-010 | FE05-T005, FE05-T006 |
 | AC-FE05-011, AC-FE05-012 | FE05-T004, FE05-T006 |
 | AC-FE05-013 through AC-FE05-017 | FE05-T002, FE05-T003, FE05-T006, FE05-T007 |
 | AC-FE05-018, AC-FE05-019 | FE05-T009 |
+| AC-FE05-020 | FE05-T011 |
+| AC-FE05-021 | FE05-T012 |
 
 ## Completion Gate
 
@@ -128,9 +133,17 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Boundary: no SQL schema change; `Books.CoverUrl`, rowversion/`If-Match`, book/audit atomicity, public-safe reads, and FE06 copy ownership remain unchanged.
 - [~] **FE05-T010 - Verify and human-review v0.6.1.**
   - Focused automated evidence must cover backend route/storage, frontend contracts, lint/build, OpenAPI, traceability, and diff hygiene.
-  - Evidence: focused FE05 backend 57/57, focused FE05 frontend 10/10, full frontend 203/203, frontend lint/build, FE05 traceability 29/29 (100%), and `git diff --check` pass.
+  - Evidence: focused FE05 backend 58/58, focused FE05 frontend 10/10, full frontend 215/215, frontend lint/build, FE05 traceability 30/30 (100%), and `git diff --check` pass.
   - Remaining gate: human review of the complete v0.6.1 implementation diff.
 - [x] **FE05-T011 - Keep a status-updated book visible.**
   - Maps to: FR-FE05-029, AC-FE05-020, NFR-FE05-UX-004.
   - After the dedicated activate/deactivate command succeeds, switch the management status filter to the committed target status, reset to page 1, and reload canonical server data.
   - Preserve metadata PUT, dedicated status commands, `If-Match`, and server-owned list filtering/pagination.
+
+## 2026-07-23 cross-feature contract correction
+
+- [x] **FE05-T012 - Lock the protected active-reference read boundary.**
+  - Maps to: BR-FE05-021, FR-FE05-030, AC-FE05-021.
+  - Add the implemented `/api/books/metadata` boundary to SPEC/PLAN/TEST_PLAN and cover Guest/Member denial plus Librarian/Admin active-only results.
+- [x] Clarify Librarian/Admin FE05 parity and the Admin-only FE11 reference-data mutation boundary.
+- [x] Reconcile the managed-cover scope and current SPEC version in PLAN.

@@ -124,5 +124,5 @@ The response envelope must follow the approved shared API convention used by the
 - [x] Nhat approved the FE01 public query fields, pagination, visibility, availability, and safe-field contract on 2026-07-17.
 - [ ] FE05 owner confirms the shared public response envelope and shared-file ownership before code changes.
 - [ ] FE06 owner confirms availability aggregation and latest-commit behavior before code changes.
-- [x] FE01 focused backend 9/9, frontend 4/4, disposable SQL availability, traceability 13/13, and diff checks pass.
+- [x] FE01 focused backend 9/9, frontend 5/5, disposable SQL availability, traceability 14/14, full frontend 215/215, and diff checks pass.
 - [ ] Dung and Nhat review the final public-safe DTO and no-mutation boundary before merge.

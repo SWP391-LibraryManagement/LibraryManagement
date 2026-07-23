@@ -1,12 +1,12 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.1
+# Version: 0.6.2
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-07-22
+# Last Updated: 2026-07-23
 
 # Feature ID: FE05
 
@@ -62,8 +62,8 @@ The system shall:
 |---------|-------------|-----------------------------|
 | Guest | Unauthenticated visitor | Search books and view book details. |
 | Member | Registered library user | Search books and view book details. |
-| Librarian | Library staff | View book list, add books, update books, deactivate books. |
-| Admin | System administrator | Has librarian permissions and can manage all books. |
+| Librarian | Library staff | View active metadata choices and the staff book list; add/update books; upload managed covers; deactivate/reactivate books. |
+| Admin | System administrator | Has Librarian FE05 permissions, may use the canonical FE05 workspace inside FE11 Admin Console, and may manage category/author/publisher reference records through the Admin-only integration boundary. |
 
 ---
 
@@ -199,6 +199,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-018: Deactivation/reactivation requires a trimmed non-empty reason of at most 500 characters, stored in audit metadata.
 - BR-FE05-019: Librarian/Admin cover selection uses one optional managed image file named `cover`. The backend accepts only JPG/JPEG, PNG, or WebP whose extension, declared MIME type, and byte signature agree, with a maximum size of 2 MB; it generates the filename and stores the public path under `/uploads/book-covers/`.
 - BR-FE05-020: A failed create/update after a new cover file is stored must remove that uncommitted file. A successful replacement preserves the committed new path and removes the previous file only when the previous path is FE05-managed; external and unmanaged paths are never deleted.
+- BR-FE05-021: Librarian/Admin book forms may read only `ACTIVE` category, author, and publisher choices from FE05. Mutation of those reference records is restricted to Admin through the FE11 Admin Library integration.
 
 
 ---
@@ -237,6 +238,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-027: WHEN Librarian/Admin creates or updates a book with `multipart/form-data`, the system shall read the JSON book metadata from `metadata`, validate and store the optional `cover` image under a server-generated path, persist that path as `Books.CoverUrl`, and return it through staff/public book reads.
 - FR-FE05-028: IF the supplied cover is missing its required multipart metadata, exceeds 2 MB, has an unsupported or mismatched type/signature, or the associated book mutation fails, the system shall reject or compensate the operation without replacing the committed cover path or retaining an uncommitted managed file.
 - FR-FE05-029: WHEN the update form changes a book between `ACTIVE` and `INACTIVE`, the frontend shall reload the canonical management list using the new status and page 1 so the successfully updated book is not immediately hidden by the previous status filter.
+- FR-FE05-030: WHEN an authenticated Librarian/Admin requests `/api/books/metadata`, the system shall return only active category/author/publisher choices; Guest/Member requests shall be rejected and no reference record shall be mutated.
 
 ---
 
@@ -262,6 +264,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-018: Given Librarian/Admin selects a valid local JPG/PNG/WebP cover in either book form, when the form is reviewed and submitted, then the UI previews the selected image, sends multipart metadata plus `cover`, and the returned managed cover renders in staff and public views.
 - AC-FE05-019: Given an invalid cover or a stale/database/audit failure after a replacement file is staged, when create/update finishes, then the committed book/cover remains unchanged and the uncommitted managed file is removed.
 - AC-FE05-020: Given the management list is filtered to the book's old status, when staff saves a valid status change, then the status command succeeds, the filter switches to the new status, and the canonical list reload keeps the updated book visible when it belongs to the returned page.
+- AC-FE05-021: Given active and inactive reference records exist, when Librarian/Admin loads a book form, then only active choices are returned; Guest/Member cannot access the endpoint.
 
 ---
 
@@ -347,6 +350,7 @@ Use these stable IDs for tasks and tests.
 | GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; public results are active/public-safe and ordered by `Title ASC, BookId ASC`; BR-FE05-017 applies. |
 | GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public callers receive public-safe `ACTIVE` detail or `404`; staff may receive management fields for both `ACTIVE` and `INACTIVE` books. |
 | GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; BR-FE05-017 applies. |
+| GET | `/api/books/metadata` | Librarian/Admin | - | `{ categories, authors, publishers }` active reference choices | Protected read used by the canonical FE05 forms. It does not grant Librarians FE11 Admin-only reference-data mutation permission. |
 | POST | `/api/books` | Librarian/Admin | JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Created `ACTIVE` book + version | Validates required fields, unique ISBN, and managed cover policy. |
 | PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Updated book + new version | Metadata/cover only; never changes book status or copies; failed replacement is compensated. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
@@ -357,6 +361,7 @@ Use these stable IDs for tasks and tests.
 - `frontend/src/page/BookManagement.jsx` is the canonical FE05 mutation surface for book create, metadata update, deactivate, and reactivate actions.
 - `frontend/src/page/UserManagement.jsx` may read the Admin Library book list for console context, but its book rows are read-only and expose no duplicate FE05 mutation controls.
 - FE11 `adminApi` contains no book mutation aliases; all existing-book mutations use the FE05 API contract above with `If-Match` and reason where required.
+- FE11 Admin Library may create/update/deactivate category, author, and publisher reference records through its Admin-only `/api/admin/library/*` boundary. Librarians receive only the active `/api/books/metadata` choices needed for FE05 book mutations.
 
 ---
 
@@ -438,6 +443,7 @@ This feature does not include:
 | Q-FE05-009 | Staff/public views display simple derived availability (`Còn sách` / `Không khả dụng`). FE05 never updates `BookCopies.Status`; FE06/FE07/FE08 own copy transitions. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
 | Q-FE05-010 | Existing-book mutations use SQL `rowversion` exposed as an opaque version and require `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE`. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
 | Q-FE05-011 | Query policy is deterministic: public browse uses the exact FE01 allowlist and fixed `Title ASC, BookId ASC`; staff list additionally accepts sort in title/publishYear/createdAt and order asc/desc. | Nhat approval after cross-feature audit 2026-07-15; user envelope approval 2026-07-19 | APPROVED |
+| Q-FE05-012 | Librarian/Admin may read active reference choices from `/api/books/metadata`; only Admin may mutate category/author/publisher reference data through the FE11 Admin Library integration. Book mutations remain owned by FE05 for both roles. | Cross-feature role reconciliation 2026-07-23 | APPROVED |
 
 ---
 
@@ -461,75 +467,22 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE05-001 | UC17, UC18, UC19, UC20 | FT18, FT19, FT20, FT21 | Not Started |
-| BR-FE05-002 | UC22 | FT23 | Not Started |
-| BR-FE05-003 | UC23 | FT24 | Not Started |
-| BR-FE05-004 | UC24 | FT25 | Not Started |
-| BR-FE05-005 | UC22, UC23 | Planned: optional ISBN uniqueness create/update test | Planned |
-| BR-FE05-006 | UC22, UC23 | Planned: trimmed required title validation test | Planned |
-| BR-FE05-007 | UC22, UC23 | Planned: exactly-one-category reference test | Planned |
-| BR-FE05-008 | UC24, UC29, UC32 | Planned: inactive book cannot enter FE07 create/approval | Planned |
-| BR-FE05-009 | UC17, UC18, UC19, UC20, UC24 | Planned: inactive public search/detail returns hidden/404 | Planned |
-| BR-FE05-010 | UC22, UC23, UC24 | FT23, FT24, FT25 | Not Started |
-| BR-FE05-011 | UC17, UC20, UC21 | Planned: visibility and availability remain distinct | Planned |
-| BR-FE05-012 | UC21, UC23, UC25-UC39 | Planned: FE05 copy-state mutation boundary test | Planned |
-| BR-FE05-013 | UC17-UC21 | Planned: derived `AVAILABLE`/`UNAVAILABLE` aggregation test | Planned |
-| BR-FE05-014 | UC22-UC24 | Planned: ACTIVE/INACTIVE state-transition test | Planned |
-| BR-FE05-015 | UC23, UC24 | Planned: state transition preserves copy/workflow rows | Planned |
-| BR-FE05-016 | UC23, UC24 | Planned: `If-Match` stale book update test | Planned |
-| BR-FE05-017 | UC18, UC19, UC21 | Planned: deterministic query validation test | Planned |
-| BR-FE05-018 | UC23, UC24 | Planned: required state-transition reason test | Planned |
-| BR-FE05-019 | UC22, UC23 | multipart route validation and managed storage filename tests | Complete |
-| BR-FE05-020 | UC22, UC23 | stale replacement cleanup and managed-path deletion tests | Complete |
-| FR-FE05-001 | UC18 | FT18 | Not Started |
-| FR-FE05-002 | UC19 | FT20 | Not Started |
-| FR-FE05-003 | UC17, UC20 | FT19, FT21 | Not Started |
-| FR-FE05-004 | UC21 | FT22 | Not Started |
-| FR-FE05-005 | UC22, UC23 | Planned: ISBN pre-write validation test | Planned |
-| FR-FE05-006 | UC22 | FT23 | Not Started |
-| FR-FE05-007 | UC23 | FT24 | Not Started |
-| FR-FE05-008 | UC24 | FT25 | Not Started |
-| FR-FE05-009 | UC18, UC19, UC21 | Planned: page/limit result contract test | Planned |
-| FR-FE05-010 | UC18, UC19, UC21 | Planned: category/author/status filter test | Planned |
-| FR-FE05-011 | UC22, UC23 | Planned: duplicate ISBN leaves state unchanged | Planned |
-| FR-FE05-012 | UC22, UC23 | Planned: missing title validation test | Planned |
-| FR-FE05-013 | UC22, UC23 | Planned: missing reference validation test | Planned |
-| FR-FE05-014 | UC17, UC20, UC23, UC24 | Planned: unknown/hidden book not-found test | Planned |
-| FR-FE05-015 | UC22, UC23, UC24 | Planned: non-staff write forbidden test | Planned |
-| FR-FE05-016 | UC22, UC23 | Planned: publish-year boundary test | Planned |
-| FR-FE05-017 | UC18, UC19 | Planned: overlength keyword rejected test | Planned |
-| FR-FE05-018 | UC23 | Planned: book change + audit rollback test | Planned |
-| FR-FE05-019 | UC24, UC29, UC32 | Planned: inactive parent blocked by FE07 test | Planned |
-| FR-FE05-020 | UC17-UC21 | Planned: derived availability read test | Planned |
-| FR-FE05-021 | UC23 | Planned: FE05 copy mutation rejected test | Planned |
-| FR-FE05-022 | UC23, UC24 | Planned: reactivation preserves copies and audits | Planned |
-| FR-FE05-023 | UC23, UC24 | Planned: stale/missing `If-Match` rejection test | Planned |
-| FR-FE05-024 | UC18, UC19, UC21 | Planned: invalid query policy rejection test | Planned |
-| FR-FE05-025 | UC23, UC24 | Planned: state-transition reason boundary test | Planned |
-| FR-FE05-026 | UC22, UC23 | Planned: pages/rating bounds and precision rejection test | Planned |
-| FR-FE05-027 | UC22, UC23 | bookRoutes.test.js multipart happy path; bookManagementFrontend.test.js local file picker | Complete |
-| FR-FE05-028 | UC22, UC23 | bookRoutes.test.js invalid-signature and stale cleanup; bookCoverStorage.test.js managed-path safety | Complete |
-| FR-FE05-029 | UC23 | bookManagementFrontend.test.js status-filter reconciliation | Complete |
-| AC-FE05-001 | UC18 | FT18 | Not Started |
-| AC-FE05-002 | UC19 | FT20 | Not Started |
-| AC-FE05-003 | UC17, UC20 | FT19, FT21 | Not Started |
-| AC-FE05-004 | UC21 | FT22 | Not Started |
-| AC-FE05-005 | UC22 | FT23 | Not Started |
-| AC-FE05-006 | UC22, UC23 | Planned: duplicate ISBN acceptance test | Planned |
-| AC-FE05-007 | UC23 | FT24 | Not Started |
-| AC-FE05-008 | UC24 | FT25 | Not Started |
-| AC-FE05-009 | UC22-UC24 | Planned: protected management authorization test | Planned |
-| AC-FE05-010 | UC22-UC24 | Planned: required audit atomicity test | Planned |
-| AC-FE05-011 | UC17-UC21 | Planned: at-least-one AVAILABLE copy summary test | Planned |
-| AC-FE05-012 | UC23 | Planned: copy-state mutation boundary acceptance test | Planned |
-| AC-FE05-013 | UC23, UC24 | Planned: reactivation acceptance test | Planned |
-| AC-FE05-014 | UC23, UC24 | Planned: stale version preserves state test | Planned |
-| AC-FE05-015 | UC18, UC19, UC21 | Planned: deterministic invalid-query response test | Planned |
-| AC-FE05-016 | UC23, UC24 | Planned: missing/blank/overlength reason rejection test | Planned |
-| AC-FE05-017 | UC22, UC23 | Planned: invalid pages/rating preserves all state | Planned |
-| AC-FE05-018 | UC22, UC23 | multipart route and frontend picker/preview tests | Complete |
-| AC-FE05-019 | UC22, UC23 | invalid cover and stale replacement cleanup tests | Complete |
-| AC-FE05-020 | UC23 | status update reloads the canonical new-status list | Complete |
+| BR-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
+| BR-FE05-011..018 | UC17-UC24, UC25-UC39 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
+| BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
+| BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
+| FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
+| FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
+| FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
+| FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` status-filter reconciliation | Complete |
+| FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` Guest/Member denial and Librarian/Admin active choices | Complete |
+| AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Complete |
+| AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Complete |
+| AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
+| AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Complete |
+| AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
+
+Coverage: 21/21 BR, 30/30 FR, and 21/21 AC have current automated evidence mappings.
 
 ---
 

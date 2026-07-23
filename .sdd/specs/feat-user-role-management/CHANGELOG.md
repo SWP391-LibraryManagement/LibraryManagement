@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-23 - Personal ownership and Admin membership integration implemented locally
+
+- Enforced the approved existing-user ownership boundary: FE11 Admin updates only current-Librarian `department` and `specialization`; personal, email, unknown, and mixed payloads are rejected atomically.
+- Narrowed `USER_UPDATE` presentation copy to Librarian work fields and aligned the OpenAPI/API/frontend contracts.
+- Added the eighth `Duyệt hội viên` Admin Console entry and embedded the canonical FE04 list/approve/reject workflow without an Admin API alias.
+- Recorded full local regression evidence: backend 952/952, frontend 215/215, frontend lint, and production build pass; responsive browser, Azure Staging, and human acceptance remain open.
+
 ## 2026-07-22 - Personal data ownership boundary approved
 
 - Assigned authenticated self-service updates to `fullName`, `phone`, and `address` to FE03; FE11 Admin may view these fields but cannot edit them after account creation.

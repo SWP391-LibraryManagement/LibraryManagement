@@ -5,6 +5,7 @@ import { validateUserForm } from './userPresentation';
 
 export function UserEditorModal({ mode, user, onClose, onSubmit }) {
   const isEdit = mode === 'edit';
+  const isCurrentLibrarian = user?.roles?.includes('LIBRARIAN') === true;
   const expectedUpdatedAt = user?.updatedAt || '';
   const [form, setForm] = useState({
     type: user?.roles?.includes('LIBRARIAN') ? 'librarian' : 'member',
@@ -25,7 +26,7 @@ export function UserEditorModal({ mode, user, onClose, onSubmit }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const nextErrors = validateUserForm(form);
+    const nextErrors = validateUserForm(form, { mode });
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -73,29 +74,29 @@ export function UserEditorModal({ mode, user, onClose, onSubmit }) {
 
           <label className="admin-field">
             <span>Họ và tên</span>
-            <input value={form.fullName} maxLength={100} onChange={(event) => update('fullName', event.target.value)} />
+            <input value={form.fullName} maxLength={100} readOnly={isEdit} aria-readonly={isEdit} onChange={isEdit ? undefined : (event) => update('fullName', event.target.value)} />
             {errors.fullName ? <small className="admin-field-error">{errors.fullName}</small> : null}
           </label>
 
           <label className="admin-field">
             <span>Email</span>
-            <input type="email" value={form.email} maxLength={255} onChange={(event) => update('email', event.target.value)} />
+            <input type="email" value={form.email} maxLength={255} readOnly={isEdit} aria-readonly={isEdit} onChange={isEdit ? undefined : (event) => update('email', event.target.value)} />
             {errors.email ? <small className="admin-field-error">{errors.email}</small> : null}
           </label>
 
           <label className="admin-field">
             <span>Số điện thoại</span>
-            <input value={form.phone} maxLength={20} onChange={(event) => update('phone', event.target.value)} />
+            <input value={form.phone} maxLength={20} readOnly={isEdit} aria-readonly={isEdit} onChange={isEdit ? undefined : (event) => update('phone', event.target.value)} />
             {errors.phone ? <small className="admin-field-error">{errors.phone}</small> : null}
           </label>
 
           <label className="admin-field admin-field--wide">
             <span>Địa chỉ</span>
-            <textarea value={form.address} maxLength={255} onChange={(event) => update('address', event.target.value)} />
+            <textarea value={form.address} maxLength={255} readOnly={isEdit} aria-readonly={isEdit} onChange={isEdit ? undefined : (event) => update('address', event.target.value)} />
             {errors.address ? <small className="admin-field-error">{errors.address}</small> : null}
           </label>
 
-          {form.type === 'librarian' ? (
+          {(!isEdit && form.type === 'librarian') || (isEdit && isCurrentLibrarian) ? (
             <>
               <label className="admin-field">
                 <span>Phòng ban</span>
@@ -112,7 +113,7 @@ export function UserEditorModal({ mode, user, onClose, onSubmit }) {
 
           <p className="admin-form-note admin-field--wide">
             {isEdit
-              ? 'Tài khoản hiện tại giữ nguyên trạng thái đăng nhập.'
+              ? 'Thông tin cá nhân do người dùng tự quản lý. Quản trị viên chỉ cập nhật phòng ban và chuyên môn của Thủ thư.'
               : 'Tài khoản mới ở trạng thái chưa kích hoạt. Người dùng phải hoàn tất thiết lập mật khẩu qua email trước khi đăng nhập.'}
           </p>
         </div>

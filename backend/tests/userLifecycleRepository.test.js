@@ -56,10 +56,6 @@ const FIXED_VERSION = new Date('2026-07-19T08:00:00.000Z');
 const ACTIVE_ADMIN = [{ UserId: 99, Status: 'ACTIVE', IsAdmin: 1 }];
 const CURRENT_LIBRARIAN = {
   UserId: 7,
-  Email: 'librarian@example.test',
-  FullName: 'Current Name',
-  Phone: null,
-  Address: null,
   Department: 'Reference',
   Specialization: 'Research Support',
   Status: 'ACTIVE',
@@ -72,10 +68,6 @@ const STALE_TARGET = {
 };
 const CURRENT_ROLES = [{ RoleName: 'LIBRARIAN' }];
 const CURRENT_CHANGES = {
-  email: 'librarian@example.test',
-  fullName: 'Current Name',
-  phone: null,
-  address: null,
   department: 'Reference',
   specialization: 'Research Support',
 };
@@ -103,7 +95,7 @@ function makeLifecycleHarness(results) {
         adminUserId: 99,
         userId: 7,
         expectedUpdatedAt: FIXED_VERSION,
-        changes: { fullName: 'Current Name' },
+        changes: { department: 'Reference' },
         ipAddress: '127.0.0.1',
         userAgent: 'jest',
         now: FIXED_NOW,
@@ -171,40 +163,19 @@ test('rejects Librarian-only fields for a non-Librarian target', async () => {
   expect(harness.transaction.rollbackCount).toBe(1);
 });
 
-test('returns EMAIL_ALREADY_EXISTS before update and audit', async () => {
-  const harness = makeLifecycleHarness([
-    ACTIVE_ADMIN,
-    [CURRENT_LIBRARIAN],
-    CURRENT_ROLES,
-    [{ UserId: 8 }],
-  ]);
-
-  await expect(harness.invokeUpdate({ changes: { email: 'duplicate@example.test' } })).resolves.toEqual({
-    outcome: 'EMAIL_ALREADY_EXISTS',
-  });
-
-  expect(harness.calls[3].query).toContain('UPDLOCK');
-  expect(harness.calls[3].query).toContain('LOWER(Email) = LOWER(@Email)');
-  expect(harness.calls.some(({ query }) => /UPDATE Users|INSERT INTO AuditLogs/.test(query))).toBe(false);
-  expect(harness.transaction.rollbackCount).toBe(1);
-});
-
 test('effective update writes one sorted audit and commits', async () => {
   const harness = makeLifecycleHarness([
     ACTIVE_ADMIN,
     [CURRENT_LIBRARIAN],
     CURRENT_ROLES,
     [],
-    [],
-    [],
-    [],
   ]);
 
   await expect(harness.invokeUpdate({
-    changes: { specialization: 'Cataloguing', fullName: 'Updated Name' },
+    changes: { specialization: 'Cataloguing', department: 'Circulation' },
   })).resolves.toEqual({
     outcome: 'UPDATED',
-    changedFields: ['fullName', 'specialization'],
+    changedFields: ['department', 'specialization'],
   });
 
   const userUpdate = harness.calls.find(({ query }) => query.includes('UPDATE Users'));
@@ -214,32 +185,32 @@ test('effective update writes one sorted audit and commits', async () => {
   });
   const profileUpdate = harness.calls.find(({ query }) => query.includes('MERGE UserProfiles'));
   expect(profileUpdate.inputs).toMatchObject({
-    FullName: 'Updated Name',
+    Department: 'Circulation',
     Specialization: 'Cataloguing',
   });
+  expect(profileUpdate.inputs).not.toHaveProperty('FullName');
+  expect(profileUpdate.inputs).not.toHaveProperty('Address');
+  expect(userUpdate.inputs).not.toHaveProperty('Email');
+  expect(userUpdate.inputs).not.toHaveProperty('Phone');
   const auditCalls = harness.calls.filter(({ query }) => query.includes('INSERT INTO AuditLogs'));
   expect(auditCalls).toHaveLength(1);
   expect(JSON.parse(auditCalls[0].inputs.Metadata)).toEqual({
-    changedFields: ['fullName', 'specialization'],
+    changedFields: ['department', 'specialization'],
   });
   expect(harness.transaction.commitCount).toBe(1);
   expect(harness.transaction.rollbackCount).toBe(0);
 });
 
-test('uses parameterized locked reads for actor, target, roles, and duplicate email', async () => {
+test('uses parameterized locked reads for actor, target, and roles', async () => {
   const harness = makeLifecycleHarness([
     ACTIVE_ADMIN,
     [CURRENT_LIBRARIAN],
     CURRENT_ROLES,
-    [],
-    [],
-    [],
-    [],
   ]);
 
-  await harness.invokeUpdate({ changes: { email: 'updated@example.test' } });
+  await harness.invokeUpdate({ changes: { department: 'Circulation' } });
 
-  for (const call of harness.calls.slice(0, 4)) {
+  for (const call of harness.calls.slice(0, 3)) {
     expect(call.query).toContain('UPDLOCK');
     expect(call.query).toContain('HOLDLOCK');
   }
@@ -248,7 +219,6 @@ test('uses parameterized locked reads for actor, target, roles, and duplicate em
     UserId: 7,
     ExpectedUpdatedAt: FIXED_VERSION,
   });
-  expect(harness.calls[3].inputs.Email).toBe('updated@example.test');
 });
 
 test('rolls back an effective update when audit persistence fails', async () => {
@@ -257,32 +227,13 @@ test('rolls back an effective update when audit persistence fails', async () => 
     ACTIVE_ADMIN,
     [CURRENT_LIBRARIAN],
     CURRENT_ROLES,
-    [],
-    [],
-    [],
     auditError,
   ]);
 
-  await expect(harness.invokeUpdate({ changes: { fullName: 'Updated Name' } })).rejects.toBe(auditError);
+  await expect(harness.invokeUpdate({ changes: { department: 'Circulation' } })).rejects.toBe(auditError);
 
   expect(harness.calls.some(({ query }) => query.includes('UPDATE Users'))).toBe(true);
   expect(harness.transaction.commitCount).toBe(0);
-  expect(harness.transaction.rollbackCount).toBe(1);
-});
-
-test('maps SQL duplicate-key errors to EMAIL_ALREADY_EXISTS after rollback', async () => {
-  const duplicateError = Object.assign(new Error('duplicate key'), { number: 2601 });
-  const harness = makeLifecycleHarness([
-    ACTIVE_ADMIN,
-    [CURRENT_LIBRARIAN],
-    CURRENT_ROLES,
-    [],
-    duplicateError,
-  ]);
-
-  await expect(harness.invokeUpdate({ changes: { email: 'updated@example.test' } })).resolves.toEqual({
-    outcome: 'EMAIL_ALREADY_EXISTS',
-  });
   expect(harness.transaction.rollbackCount).toBe(1);
 });
 

@@ -123,6 +123,7 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     LAST_ADMIN_ROLE: 'Không thể gỡ vai trò quản trị viên cuối cùng.',
     LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
+    PERSONAL_PROFILE_ADMIN_FORBIDDEN: 'Quản trị viên chỉ được cập nhật phòng ban và chuyên môn của Thủ thư.',
   };
 
   if (messages[code]) return messages[code];

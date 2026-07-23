@@ -1,6 +1,6 @@
 ﻿# FE05 Test Plan - Book Management
 
-Version: 0.4.1
+Version: 0.4.2
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-22
 
@@ -26,6 +26,7 @@ Book catalog management for authorized staff, including create, update, metadata
 ## 3. API / Integration Test Targets
 
 - `GET /books/metadata`: authorized manager happy path.
+- `GET /books/metadata`: Guest/Member forbidden; Librarian/Admin receive only active reference choices.
 - `GET /admin/books`: manager list with deterministic filters, pagination, sort, and order.
 - `POST /books`: create happy path.
 - `POST /books`: missing fields, duplicate ISBN/identifier, invalid metadata.
@@ -46,11 +47,11 @@ Book catalog management for authorized staff, including create, update, metadata
 
 ## 5. Current Evidence
 
-- Focused FE05 route/repository/cover-storage/OpenAPI tests: `57/57` pass.
-- FE05 frontend contract tests: `10/10` pass; full frontend regression passes `203/203`.
+- Focused FE05 route/repository/cover-storage/OpenAPI tests: `58/58` pass, including role-guarded active-only metadata choices.
+- FE05 frontend contract tests: `10/10` pass; full frontend regression passes `215/215`.
 - FE11 Admin Console boundary tests: read-only Library book view and no duplicate book mutation adapter pass.
 - FE05 SQL suite: `7/7` pass, including stale rowversion, atomic audit rollback, and status/copy/workflow preservation on disposable SQL Server.
-- Frontend lint/build, FE05 traceability `29/29` (100%), and `git diff --check` pass for v0.6.1.
+- Frontend lint/build, FE05 traceability `30/30` (100%), and `git diff --check` pass for v0.6.2.
 
 ## 6. Gaps
 
