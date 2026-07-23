@@ -157,8 +157,9 @@ Before executing:
    order:
 
    Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
-   `Books.RowVersion` or the metadata `Status` columns are absent. Deploying backend/frontend code
-   does not apply these SQL migrations automatically.
+   `Books.RowVersion` or the metadata `Status` columns are absent. FE10 delivery requests cannot
+   enter the durable `PROCESSING` state until the notification status constraint is upgraded.
+   Deploying backend/frontend code does not apply these SQL migrations automatically.
 
 ```text
 database/migrations/2026-07-19-fe04-membership-concurrency.sql
@@ -168,6 +169,7 @@ database/migrations/2026-07-19-fe10-otp-templates.sql
 database/migrations/2026-07-19-fe11-finalization.sql
 database/migrations/2026-07-22-library-metadata-compatibility.sql
 database/migrations/2026-07-22-borrow-request-workflow-columns.sql
+database/migrations/2026-07-23-fe10-processing-status.sql
 ```
 
 5. Execute the migration sequence a second time to prove idempotence before accepting the staging
