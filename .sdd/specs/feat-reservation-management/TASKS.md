@@ -202,10 +202,10 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - FE10 delivery worker.
 - Automatic expiration job.
 
-## 8. V0.5.2 Atomic Lifecycle Audit Remediation
+## 8. V0.5.3 Atomic Lifecycle Audit And Warning Propagation Remediation
 
 - [~] **FE08-T040 - Commit lifecycle state and audit together.**
   - Maps to: BR-FE08-013, FR-FE08-001, FR-FE08-004, FR-FE08-021, NFR-FE08-TXN-001/002, NFR-FE08-LOG-001, NFR-FE08-UX-002.
-  - RED: repository tests require audit-before-commit for create/cancel/hold/expire; service/route tests require rollback and safe post-commit warning; frontend tests reject cached-member confirmation.
-  - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns `RESERVATION_NOTIFY_AUDIT_FAILED`; staff confirmation contains only copy context plus server re-selection explanation.
-  - Verification: focused and full repository verification are green; H2 review remains pending.
+  - RED: repository tests require audit-before-commit for create/cancel/hold/expire; service/route tests require rollback, safe post-commit warning, and serialization of expiration-promotion warnings; frontend tests reject cached-member confirmation.
+  - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
+  - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. The first H3 review found the expiration-warning propagation gap; this bounded remediation requires fresh H2, updated PR CI, and repeated H3 before merge.

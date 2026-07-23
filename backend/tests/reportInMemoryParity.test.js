@@ -204,6 +204,23 @@ describe('in-memory FE12 report repository parity', () => {
     expect(report.metrics.usersByStatus).toEqual({ INACTIVE: 1, LOCKED: 1 });
   });
 
+  test.each([
+    ['%MEMBER%', [3, 4]],
+    ['L_BRARIAN', [2, 4]],
+    ['[1-2]', [1, 2]],
+    ['[^A-Z0-9]', []],
+  ])('user q preserves SQL LIKE semantics for %s', async (q, expectedUserIds) => {
+    const report = await makeReportRepository().getUserStatistics({ q });
+
+    expect(report.rows.map((row) => row.userId)).toEqual(expectedUserIds);
+  });
+
+  test('user q keeps ordinary literal matching case-insensitive', async () => {
+    const report = await makeReportRepository().getUserStatistics({ q: 'lIbRaRiAn' });
+
+    expect(report.rows.map((row) => row.userId)).toEqual([2, 4]);
+  });
+
   test('historical approvals remain in growth metrics after membership becomes inactive', async () => {
     const report = await makeReportRepository().getUserStatistics({
       fromDate: '2026-01-10',

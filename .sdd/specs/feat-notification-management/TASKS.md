@@ -275,10 +275,10 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S10 Persist Delivery Ownership Before Provider I/O
 
-- [~] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; H2 REVIEW PENDING
+- [~] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; H3 REMEDIATION IN PROGRESS
 - Approved design: `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`.
 - Maps to: BR-FE10-005, BR-FE10-006, BR-FE10-008, BR-FE10-013; FR-FE10-001, FR-FE10-002, FR-FE10-006 to FR-FE10-008, FR-FE10-010; AC-FE10-006, AC-FE10-008 to AC-FE10-010.
 - Files: FE10 spec/ADR/OpenAPI, notification service/repository/model, canonical SQL, `2026-07-23-fe10-processing-status.sql`, in-memory dependencies, and focused tests.
 - RED evidence: missing internal source references, terminal-transition persistence failures, duplicate replay while uncertain, and claim/finalization concurrency failed against the previous `PENDING`-through-provider implementation.
 - GREEN contract: sensitive acceptance and queued claim persist `PROCESSING` before provider I/O; guarded terminal transitions use new short transactions; uncertain rows are not reclaimed or retried; manual retry returns safe `DELIVERY_STATE_UNCERTAIN`.
-- Verification evidence: focused FE10 tests, the migration twice on a named disposable local SQL database, full repository checks, security/diff review, and cleanup are green; H2 remains before commit/push/Azure deployment.
+- Verification evidence: focused FE10 tests, the migration twice on a named disposable local SQL database, full repository checks, security/diff review, and cleanup are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed; the reviewed migration was applied once to staging. The first H3 review returned bounded cross-feature/evidence findings; fresh H2, updated PR CI, and repeated H3 remain required before merge.

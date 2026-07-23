@@ -225,6 +225,42 @@ describe('FE08 reservation service coverage', () => {
     }));
   });
 
+  test('returns safe promotion warnings when expiration notification failure auditing fails', async () => {
+    const expired = [{ reservationId: 50, copyId: 7 }];
+    const auditLogRepository = {
+      create: jest.fn(async (entry) => {
+        if (entry.action === 'RESERVATION_NOTIFY_FAILED') {
+          throw new Error('audit unavailable');
+        }
+      }),
+    };
+    const notificationRequest = jest.fn(async () => {
+      throw new Error('notification unavailable');
+    });
+    const nextReservation = reservation();
+    const { service, heldReservation } = makeService({
+      auditLogRepository,
+      notificationRequest,
+      repository: {
+        expireOverdueHolds: jest.fn(async () => expired),
+        findNextActiveReservationForCopy: jest.fn(async () => nextReservation),
+      },
+    });
+
+    await expect(service.expireHolds(LIBRARIAN, {})).resolves.toEqual({
+      expiredCount: 1,
+      expired,
+      promoted: [heldReservation],
+      notificationWarnings: [{
+        reservationId: heldReservation.reservationId,
+        copyId: heldReservation.copyId,
+        code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+        message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+      }],
+    });
+    expect(Object.keys(heldReservation)).not.toContain('notificationWarning');
+  });
+
   test('passes required lifecycle audits into reservation mutation transactions', async () => {
     const nextReservation = reservation();
     const { service, reservationRepository, auditLogRepository } = makeService({

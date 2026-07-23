@@ -264,4 +264,4 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Maps to: BR-FE07-011, BR-FE07-014, BR-FE07-018, FR-FE07-007/020/021, AC-FE07-006/008/010, NFR-FE07-TIME-001.
   - RED: under `TZ=UTC`, a Vietnam-date return crosses the expected overdue day; a detail whose physical copy is not `BORROWED` must return `BORROW_STATE_CONFLICT`.
   - GREEN: return/renewal use `libraryBusinessTime`; in-memory and SQL doubles share the physical-copy invariant; SQL expectations use current `MEMBER` role eligibility and explicit conflict outcomes.
-  - Verification: focused FE07 tests are green under `TZ=UTC`; disposable SQL and full regression are green; H2 review remains pending.
+  - Verification: focused FE07 tests are green under `TZ=UTC`; disposable SQL and full regression are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. The first H3 review returned the bounded FE08/FE12/evidence addendum; fresh H2, updated PR CI, and repeated H3 remain required before merge.

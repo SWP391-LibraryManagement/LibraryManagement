@@ -1,6 +1,6 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.8
+# Version: 0.1.9
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -19,6 +19,10 @@
 > historical planning/evidence snapshots, not the current delivery state.
 
 > Source of truth for FE12 Reporting & Statistics. v0.1.5 preserves the approved report scope while making access, empty-filter, unknown-status, pagination, audit, and export behavior deterministic; human re-review is required.
+>
+> Revision v0.1.9 records the existing parameterized SQL `LIKE` behavior for
+> report search and requires in-memory test repositories to preserve that
+> behavior instead of treating wildcard characters as literals.
 
 ---
 
@@ -155,7 +159,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE12-013: CSV, PDF, spreadsheet, and other report export are strictly out of scope for Phase 1; FE12 exposes no export endpoint or export control.
 - BR-FE12-014: Every successful Librarian/Admin report view must write one safe audit event identifying actor, report type, timestamp, and success without raw filter/query values or returned report rows.
 - BR-FE12-015: Detailed rows use `page=1`, `limit=20`, with `page>=1` and `limit=1..100`; stable ordering is borrowing `BorrowDate DESC, BorrowDetailId DESC`, inventory `Title ASC, BookId ASC, CopyId ASC`, and users `UserId ASC`.
-- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
+- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Production binds the effective `%${q}%` pattern as a parameterized SQL `LIKE` value and does not escape or reject `%`, `_`, bracket classes/ranges, or negated bracket classes; in-memory report repositories shall emulate those case-insensitive semantics. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
 
 ---
 

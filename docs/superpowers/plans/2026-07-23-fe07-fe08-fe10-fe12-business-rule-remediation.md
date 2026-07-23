@@ -500,7 +500,7 @@ Run independent Standards and Spec reviews over the complete uncommitted diff an
 the new evidence. Fix any valid finding and rerun the affected checks. H2 must
 pass before staging or committing.
 
-- [ ] **Step 4: Commit and push the reviewed scope.**
+- [x] **Step 4: Commit and push the reviewed scope.**
 
 Stage only the plan, production files, and regression tests from Tasks 6-8,
 commit with a scoped `fix:` message, push the current branch, and verify the
@@ -538,7 +538,7 @@ Keep all production routes and the FE07 daily invariant unchanged.
 The focused FE11 scenario must pass 1/1 and the complete Chromium suite must
 pass 4/4.
 
-- [ ] **Step 4: Obtain fresh H2, commit, push, and recheck CI.**
+- [x] **Step 4: Obtain fresh H2, commit, push, and recheck CI.**
 
 Review the three-file follow-up diff independently for Standards and Spec,
 commit only after H2 passes, push the same Draft PR branch, and wait for the
@@ -634,4 +634,513 @@ The user approved the durable FE10 `PROCESSING` design on 2026-07-23. Tasks
 - [x] Run mutable SQL suites only on named disposable local databases and
   remove them afterward.
 - [x] Perform final security, standards, and spec review over the complete diff.
-- [~] Stop for H2 review before commit, push, Azure deployment, or merge.
+- [x] H2 and the H2 addendum approved the reviewed commits; PR #62 CI passed,
+  Azure staging received the reviewed FE10 migration and product deployment, and
+  the first H3 review returned the bounded findings covered below.
+
+---
+
+## H3 Remediation
+
+The user approved the H3 remediation addendum in
+`docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md`
+on 2026-07-23. Tasks 16-19 correct only the first H3 findings. Generated
+implementation and evidence changes remain uncommitted until a fresh H2 review.
+
+### Task 16: Preserve FE08 expiration-promotion warnings
+
+**Files:**
+- Modify: `.sdd/specs/feat-reservation-management/SPEC.md`
+- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reservation-management/CHANGELOG.md`
+- Modify: `backend/src/docs/openapi.yaml`
+- Modify: `backend/src/services/reservationService.js`
+- Modify: `backend/tests/reservationService.test.js`
+- Modify: `backend/tests/reservationRoutes.test.js`
+
+**Interfaces:**
+- Consumes: the non-enumerable internal
+  `processedReservation.notificationWarning` produced by `holdReservation`.
+- Preserves: `processQueue` response
+  `{ selectedReservation, notificationWarning? }`.
+- Produces: `expireHolds` response
+  `{ expiredCount, expired, promoted, notificationWarnings? }`.
+- Each `notificationWarnings` item is exactly
+  `{ reservationId, copyId, code, message }`; `promoted` DTOs do not change.
+
+- [x] **Step 1: Add a failing service regression for the lost warning.**
+
+Extend the existing `FR-FE08-019`/`FR-FE08-021` expiration coverage in
+`backend/tests/reservationService.test.js`. Arrange one expired hold, one next
+eligible reservation, a failed FE10 requester, and a failed
+`RESERVATION_NOTIFY_FAILED` audit write. Assert the committed promotion remains
+present and the warning is returned separately:
+
+```js
+await expect(service.expireHolds(LIBRARIAN, {})).resolves.toEqual({
+  expiredCount: 1,
+  expired,
+  promoted: [heldReservation],
+  notificationWarnings: [{
+    reservationId: heldReservation.reservationId,
+    copyId: heldReservation.copyId,
+    code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+    message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+  }],
+});
+expect(Object.keys(heldReservation)).not.toContain('notificationWarning');
+```
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js
+```
+
+Expected: the new assertion fails because `expireHolds` currently returns only
+`expiredCount`, `expired`, and `promoted`.
+
+- [x] **Step 2: Add a failing route serialization regression.**
+
+In `backend/tests/reservationRoutes.test.js`, create two reservations for one
+copy. Let the first queue notification succeed, then make the second requester
+call fail when expiration promotes the next member. Make only the matching
+failure-audit write fail. Assert:
+
+```js
+expect(expireResponse.status).toBe(200);
+expect(expireResponse.body.promoted).toHaveLength(1);
+expect(expireResponse.body.notificationWarnings).toEqual([{
+  reservationId: expireResponse.body.promoted[0].reservationId,
+  copyId: 1,
+  code: 'RESERVATION_NOTIFY_AUDIT_FAILED',
+  message: 'The reservation hold was created, but notification failure auditing was unavailable.',
+}]);
+expect(JSON.stringify(expireResponse.body)).not.toContain('provider unavailable');
+expect(JSON.stringify(expireResponse.body)).not.toContain('audit unavailable');
+expect(JSON.stringify(expireResponse.body)).not.toContain('hold.second@example.test');
+```
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationRoutes.test.js
+```
+
+Expected: the route body has no `notificationWarnings` field before the service
+fix.
+
+- [x] **Step 3: Collect safe warnings without changing promoted DTOs.**
+
+In `expireHolds`, accumulate warning metadata while the internal non-enumerable
+property is still accessible:
+
+```js
+const promoted = [];
+const notificationWarnings = [];
+
+for (const item of expired) {
+  const held = await processNextEligibleReservation(item.copyId, actor, context);
+  if (held) {
+    promoted.push(held);
+    if (held.notificationWarning) {
+      notificationWarnings.push({
+        reservationId: held.reservationId,
+        copyId: held.copyId,
+        code: held.notificationWarning.code,
+        message: held.notificationWarning.message,
+      });
+    }
+  }
+}
+
+const result = { expiredCount: expired.length, expired, promoted };
+if (notificationWarnings.length > 0) {
+  result.notificationWarnings = notificationWarnings;
+}
+return result;
+```
+
+Do not make `notificationWarning` enumerable and do not add recipient, member,
+provider, rendered-content, or stack data.
+
+- [x] **Step 4: Update the approved FE08 contract and traceability.**
+
+Update `FR-FE08-021`, the expire-holds API table row, the implementation plan,
+task `FE08-T040`, and the changelog to distinguish the singular
+`processQueue.notificationWarning` from the optional
+`expireHolds.notificationWarnings[]`. In `backend/src/docs/openapi.yaml`,
+document the `200` response with required `expiredCount`, `expired`, and
+`promoted`, plus optional warning items that have:
+
+```yaml
+type: object
+additionalProperties: false
+required: [reservationId, copyId, code, message]
+properties:
+  reservationId: { type: integer }
+  copyId: { type: integer }
+  code:
+    type: string
+    enum: [RESERVATION_NOTIFY_AUDIT_FAILED]
+  message: { type: string }
+```
+
+- [x] **Step 5: Run the complete focused FE08 slice.**
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js tests/reservationRepository.test.js
+npm.cmd --prefix frontend test -- --runInBand test/reservationFrontend.test.js
+```
+
+Expected: all focused FE08 service, route, repository, and frontend tests pass.
+
+### Task 17: Match FE12 in-memory search to SQL `LIKE`
+
+**Files:**
+- Modify: `.sdd/specs/feat-reporting-statistics/SPEC.md`
+- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Modify: `.sdd/specs/feat-reporting-statistics/CHANGELOG.md`
+- Modify: `backend/tests/helpers/inMemoryReportRepositories.js`
+- Modify: `backend/tests/reportInMemoryParity.test.js`
+
+**Interfaces:**
+- Preserves: production `reportRepository` parameter binding
+  `Search = %${filters.q}%` and all public FE12 request/response DTOs.
+- Produces: test-only matching parity for `%`, `_`, `[x-y]`, `[^x-y]`, and
+  ordinary literal characters over user ID, account status, membership status,
+  and role name only.
+
+- [x] **Step 1: Add RED wildcard parity cases.**
+
+Extend `backend/tests/reportInMemoryParity.test.js` with cases that differ from
+literal `String.includes`:
+
+```js
+test.each([
+  ['%MEMBER%', [3, 4]],
+  ['L_BRARIAN', [2, 4]],
+  ['[1-2]', [1, 2]],
+  ['[^A-Z0-9]', []],
+])('user q preserves SQL LIKE semantics for %s', async (q, expectedUserIds) => {
+  const report = await makeReportRepository().getUserStatistics({ q });
+  expect(report.rows.map((row) => row.userId)).toEqual(expectedUserIds);
+});
+```
+
+Retain the existing `inactive` case and add a mixed-case literal assertion so
+case-insensitive ordinary search remains covered.
+
+Run:
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js
+```
+
+Expected: `%MEMBER%`, `L_BRARIAN`, and `[1-2]` fail against the current literal
+`includes` implementation.
+
+- [x] **Step 2: Add a small SQL-LIKE-to-RegExp compiler in the test helper.**
+
+Add private helpers near the existing normalization functions in
+`backend/tests/helpers/inMemoryReportRepositories.js`:
+
+```js
+function escapeRegexLiteral(character) {
+  return character.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+}
+
+function sqlLikePatternToRegExp(pattern) {
+  let source = '^';
+
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index];
+    if (character === '%') {
+      source += '.*';
+    } else if (character === '_') {
+      source += '.';
+    } else if (character === '[') {
+      const closingIndex = pattern.indexOf(']', index + 1);
+      const negated = pattern[index + 1] === '^';
+      const contentStart = index + (negated ? 2 : 1);
+      if (closingIndex > contentStart) {
+        const classBody = pattern
+          .slice(contentStart, closingIndex)
+          .replace(/\\/g, '\\\\')
+          .replace(/\^/g, '\\^');
+        source += `[${negated ? '^' : ''}${classBody}]`;
+        index = closingIndex;
+      } else {
+        source += '\\[';
+      }
+    } else {
+      source += escapeRegexLiteral(character);
+    }
+  }
+
+  return new RegExp(`${source}$`, 'iu');
+}
+
+function matchesSqlLike(value, query) {
+  const pattern = `%${String(query).trim()}%`;
+  return sqlLikePatternToRegExp(pattern).test(String(value ?? ''));
+}
+```
+
+Keep `-` unescaped inside a valid bracket class so ranges work. Treat an
+unclosed/empty `[` as a literal. Do not change production SQL or introduce a
+dependency.
+
+- [x] **Step 3: Replace only the user-report literal comparison.**
+
+Use the helper on the existing approved value list:
+
+```js
+if (filters.q) {
+  const searchableValues = [
+    user.userId,
+    user.status,
+    memberStatus,
+    ...roles,
+  ];
+  if (!searchableValues.some((value) => matchesSqlLike(value, filters.q))) {
+    return [];
+  }
+}
+```
+
+Do not add username, email, or other fields to the FE12 user-report search.
+
+- [x] **Step 4: Record the exact parity rule in FE12 documentation.**
+
+Amend `BR-FE12-016` and task `FE12-N10` to state that production keeps
+parameterized SQL `LIKE` semantics and the in-memory repository emulates the
+same wildcard behavior for approved fields. Add a changelog bullet describing
+the test-parity correction without claiming a production API change.
+
+- [x] **Step 5: Run focused FE12 and repository contract tests.**
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
+```
+
+Expected: all FE12 parity, route, and SQL-source contract tests pass.
+
+### Task 18: Correct Azure and governance evidence
+
+**Files:**
+- Modify: `docs/deployment/azure-staging-guide.md`
+- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Modify: `.sdd/specs/feat-notification-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- Modify: `docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md`
+- Create: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+
+**Interfaces:**
+- Preserves: the already reviewed Azure migration and deployment.
+- Produces: an operator-safe local-idempotence/staging-once procedure, read-only
+  constraint proof, and truthful H2/H3 state.
+
+- [x] **Step 1: Move idempotence proof off shared staging.**
+
+Replace the current instruction to execute the migration sequence twice on
+staging with this boundary:
+
+1. Run each candidate migration twice on a named disposable local SQL Server
+   database and remove that database after proof.
+2. Review the exact SQL and target database.
+3. Execute the approved sequence once on `LibraryManagementStaging`.
+4. Run read-only target/schema/constraint queries.
+5. Remove the exact temporary firewall rule immediately.
+
+Do not instruct operators to use staging for mutable idempotence tests.
+
+- [x] **Step 2: Add a read-only FE10 constraint check.**
+
+Extend the guide's existing verification query:
+
+```sql
+CASE WHEN EXISTS (
+  SELECT 1
+  FROM sys.check_constraints
+  WHERE parent_object_id = OBJECT_ID(N'dbo.Notifications')
+    AND name = N'CK_Notifications_Status'
+    AND definition LIKE N'%PROCESSING%'
+) THEN 1 ELSE 0 END AS NotificationProcessingAllowed
+```
+
+Expected: `DatabaseName = LibraryManagementStaging`, `TableCount = 20`, each
+listed row-version/reconciliation column length is `8`, and
+`NotificationProcessingAllowed = 1`.
+
+- [x] **Step 3: Correct stale task-gate statements.**
+
+For `FE07-T046`, `FE08-T040`, `FE10-S10`, and `FE12-N10`, record:
+
+- initial H2 and the H2 addendum passed;
+- implementation commit `97aca62` and PR CI run `30014066260` passed;
+- the first H3 review found the bounded addendum items;
+- this remediation requires fresh H2, updated PR CI, and repeated H3;
+- no feature may claim merge/post-merge completion yet.
+
+Do not rewrite historical Phase 2 completion records.
+
+- [x] **Step 4: Create the remediation validation record.**
+
+Record the exact branch/PR/SHA evidence, RED and GREEN commands/results, changed
+contract boundaries, current Azure evidence, latest `origin/main`, security and
+diff review, and remaining H2/H3 gates. State that:
+
+- the FE10 migration had already been proven twice locally and applied once to
+  staging;
+- staging product SHA `9b02c7e` was deployed by run `30012925318`;
+- this remediation does not require replaying the migration;
+- post-merge staging acceptance is read-only schema plus application smoke.
+
+Use no credentials, connection strings, member data, or firewall IP values.
+
+- [x] **Step 5: Verify deployment documentation and diff hygiene.**
+
+```powershell
+npm.cmd run test:deployment
+rg -n "second time|twice|H2 review remains pending|H2 remains before" docs/deployment/azure-staging-guide.md .sdd/specs/feat-borrowing-management/TASKS.md .sdd/specs/feat-reservation-management/TASKS.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-reporting-statistics/TASKS.md
+git diff --check
+```
+
+Expected: deployment utility tests pass; any remaining `twice` reference points
+only to a named disposable local database; stale current-batch H2-pending
+phrases are absent; diff check is clean.
+
+### Task 19: Re-verify, obtain H2, and prepare repeated H3
+
+**Files:**
+- Modify: `.sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md`
+- Inspect only: all files changed relative to `97aca62`
+
+**Interfaces:**
+- Consumes: Tasks 16-18 and the latest `origin/main`.
+- Produces: a fresh H2-reviewed commit and updated PR #62 with passing current
+  merge-ref checks. Merge and post-merge deployment remain blocked on repeated
+  H3.
+
+- [x] **Step 1: Run focused checks and traceability.**
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reservationService.test.js tests/reservationRoutes.test.js tests/reservationRepository.test.js
+npm.cmd --prefix backend test -- --runInBand --runTestsByPath tests/reportInMemoryParity.test.js tests/reportRoutes.test.js tests/reportRepository.test.js
+npm.cmd --prefix frontend test -- --runInBand test/reservationFrontend.test.js
+npm.cmd run test:deployment
+npm.cmd run trace:enforce
+git diff --check
+```
+
+Expected: every command exits `0`.
+
+- [x] **Step 2: Run the repository-equivalent L1-L4 suite.**
+
+```powershell
+$env:TZ = 'UTC'
+npm.cmd audit --audit-level=high
+npm.cmd --prefix backend audit --audit-level=high
+npm.cmd --prefix frontend audit --audit-level=high
+npm.cmd --prefix backend test
+npm.cmd --prefix backend run test:integration:system
+npm.cmd --prefix backend run test:coverage:ci
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run build
+npm.cmd run test:e2e
+npm.cmd run test:deployment
+node -e "const app = require('./backend/src/index'); if (!app || typeof app.listen !== 'function') throw new Error('Express app export is invalid');"
+```
+
+Expected: all audits and automated checks exit `0`; backend coverage remains at
+or above the repository threshold; Chromium E2E passes in full.
+
+- [x] **Step 3: Review security, scope, and latest-main compatibility.**
+
+```powershell
+git fetch origin main
+git status --short
+git diff --stat 97aca62
+git diff --check 97aca62
+git diff --name-only 97aca62
+git merge-tree --write-tree origin/main 97aca62
+git diff -- backend/src/services/reservationService.js backend/tests/helpers/inMemoryReportRepositories.js backend/src/docs/openapi.yaml docs/deployment/azure-staging-guide.md
+```
+
+Confirm the virtual merge is clean, all SQL remains parameterized, warnings are
+PII/provider-safe, no permission/schema/dependency expansion exists, and the
+user-owned `output/audit-librarian-2026-07-22/` directory remains untracked and
+untouched. Re-check any `backend/src/docs/openapi.yaml` hunk against the latest
+FE11 change on `origin/main`.
+
+- [x] **Step 4: Stop for fresh H2 before staging or commit.**
+
+Present the complete uncommitted diff and the validation record for independent
+Standards and Spec review. Fix every valid finding and rerun affected checks.
+Do not stage, commit, push, run mutable Azure SQL, redeploy, or merge before
+explicit H2 approval.
+
+- [ ] **Step 5: After H2, stage only the reviewed scope and push PR #62.**
+
+```powershell
+git add -- `
+  .sdd/specs/feat-borrowing-management/TASKS.md `
+  .sdd/specs/feat-reservation-management/SPEC.md `
+  .sdd/specs/feat-reservation-management/PLAN.md `
+  .sdd/specs/feat-reservation-management/TASKS.md `
+  .sdd/specs/feat-reservation-management/CHANGELOG.md `
+  .sdd/specs/feat-notification-management/TASKS.md `
+  .sdd/specs/feat-reporting-statistics/SPEC.md `
+  .sdd/specs/feat-reporting-statistics/TASKS.md `
+  .sdd/specs/feat-reporting-statistics/CHANGELOG.md `
+  .sdd/reviews/fe07-fe08-fe10-fe12-h3-remediation-validation-2026-07-23.md `
+  backend/src/docs/openapi.yaml `
+  backend/src/services/reservationService.js `
+  backend/tests/reservationService.test.js `
+  backend/tests/reservationRoutes.test.js `
+  backend/tests/helpers/inMemoryReportRepositories.js `
+  backend/tests/reportInMemoryParity.test.js `
+  docs/deployment/azure-staging-guide.md `
+  docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md `
+  docs/superpowers/plans/2026-07-23-fe07-fe08-fe10-fe12-business-rule-remediation.md
+git diff --cached --check
+git status --short
+git commit -m "fix: close FE08 and FE12 H3 findings"
+git push origin HEAD
+```
+
+Expected: only the reviewed files are staged; `output/` is absent from the
+index; the commit and push succeed on
+`codex/fe07-fe08-fe10-fe12-business-rules`.
+
+- [ ] **Step 6: Require current PR checks and stop for repeated H3.**
+
+```powershell
+gh pr checks 62 --watch
+gh pr ready 62
+gh pr view 62 --json headRefOid,baseRefOid,isDraft,mergeable,mergeStateStatus,statusCheckRollup,url
+```
+
+Expected: required checks pass for the new head and current `main` merge ref,
+the PR is ready, and GitHub reports it mergeable. Repeat Standards and Spec H3
+over the exact PR diff. Stop for explicit H3 approval; do not merge on an old
+CI result or if `main` moves incompatibly.
+
+- [ ] **Step 7: Merge and verify Azure staging only after repeated H3 approval.**
+
+After explicit H3 approval, merge PR #62 using the repository's normal merge
+method, wait for the exact post-merge `main` CI and automatic Azure staging
+deployment, then run the existing read-only staging smoke suite and the
+read-only schema/constraint query from Task 18. Do not replay the FE10 migration
+unless the read-only check proves the reviewed constraint is absent and a new
+operator review explicitly authorizes that separate correction.

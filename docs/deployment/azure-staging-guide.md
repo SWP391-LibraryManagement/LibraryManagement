@@ -151,10 +151,15 @@ local `CREATE DATABASE` and `USE` batches while retaining application tables and
 Before executing:
 
 1. Review the generated SQL.
-2. Confirm the connected database is `LibraryManagementStaging`.
-3. Execute using Azure Query Editor, SSMS, or `sqlcmd`.
-4. For an existing pre-reconciliation database, execute these approved idempotent migrations in
-   order:
+2. Before touching staging, execute every candidate migration twice on a specifically named,
+   disposable local SQL Server database, retain the result as idempotence evidence, and remove that
+   database.
+3. If operator access is required, add one exact temporary firewall rule for the operator's current
+   IP. Do not widen the range.
+4. Confirm the connected database is `LibraryManagementStaging`.
+5. Execute through Azure Query Editor, SSMS, or `sqlcmd`: use the generated schema once for an empty
+   database, or execute the following approved migrations once and in order for an existing
+   pre-reconciliation database:
 
    Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
    `Books.RowVersion` or the metadata `Status` columns are absent. FE10 delivery requests cannot
@@ -172,8 +177,6 @@ database/migrations/2026-07-22-borrow-request-workflow-columns.sql
 database/migrations/2026-07-23-fe10-processing-status.sql
 ```
 
-5. Execute the migration sequence a second time to prove idempotence before accepting the staging
-   schema.
 6. Verify the target, table count, and reconciliation columns:
 
 ```sql
@@ -182,11 +185,22 @@ SELECT
   (SELECT COUNT(*) FROM sys.tables) AS TableCount,
   COL_LENGTH(N'dbo.Books', N'RowVersion') AS BooksRowVersionBytes,
   COL_LENGTH(N'dbo.BookCopies', N'Version') AS BookCopiesVersionBytes,
-  COL_LENGTH(N'dbo.Users', N'DeactivatedAt') AS UsersDeactivatedAtBytes;
+  COL_LENGTH(N'dbo.Users', N'DeactivatedAt') AS UsersDeactivatedAtBytes,
+  CASE WHEN EXISTS (
+    SELECT 1
+    FROM sys.check_constraints
+    WHERE parent_object_id = OBJECT_ID(N'dbo.Notifications')
+      AND name = N'CK_Notifications_Status'
+      AND definition LIKE N'%PROCESSING%'
+  ) THEN 1 ELSE 0 END AS NotificationProcessingAllowed;
 ```
 
 Expected database: `LibraryManagementStaging`, table count `20`, and each listed reconciliation
-column length `8`. CI must not execute this schema automatically.
+column length `8`; `NotificationProcessingAllowed` must be `1`. CI must not execute this schema
+automatically.
+
+7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
+   read-only checks. Staging must not be used to prove migration idempotence.
 
 ## Configure App Service Runtime Settings
 

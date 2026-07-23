@@ -393,16 +393,29 @@ function createReservationService({
       }),
     });
     const promoted = [];
+    const notificationWarnings = [];
 
     for (const item of expired) {
       // @spec FR-FE08-019 — offer the freed copy to the next eligible reservation in the queue (AF-FE08-004).
       const held = await processNextEligibleReservation(item.copyId, actor, context);
       if (held) {
         promoted.push(held);
+        if (held.notificationWarning) {
+          notificationWarnings.push({
+            reservationId: held.reservationId,
+            copyId: held.copyId,
+            code: held.notificationWarning.code,
+            message: held.notificationWarning.message,
+          });
+        }
       }
     }
 
-    return { expiredCount: expired.length, expired, promoted };
+    const result = { expiredCount: expired.length, expired, promoted };
+    if (notificationWarnings.length > 0) {
+      result.notificationWarnings = notificationWarnings;
+    }
+    return result;
   }
 
   return {

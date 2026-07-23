@@ -15,6 +15,46 @@ function normalizeStatus(value, allowedStatuses) {
   return allowedStatuses.has(normalized) ? normalized : 'UNKNOWN';
 }
 
+function escapeRegexLiteral(character) {
+  return character.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+}
+
+function sqlLikePatternToRegExp(pattern) {
+  let source = '^';
+
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index];
+    if (character === '%') {
+      source += '.*';
+    } else if (character === '_') {
+      source += '.';
+    } else if (character === '[') {
+      const closingIndex = pattern.indexOf(']', index + 1);
+      const negated = pattern[index + 1] === '^';
+      const contentStart = index + (negated ? 2 : 1);
+      if (closingIndex > contentStart) {
+        const classBody = pattern
+          .slice(contentStart, closingIndex)
+          .replace(/\\/g, '\\\\')
+          .replace(/\^/g, '\\^');
+        source += `[${negated ? '^' : ''}${classBody}]`;
+        index = closingIndex;
+      } else {
+        source += '\\[';
+      }
+    } else {
+      source += escapeRegexLiteral(character);
+    }
+  }
+
+  return new RegExp(`${source}$`, 'iu');
+}
+
+function matchesSqlLike(value, query) {
+  const pattern = `%${String(query).trim()}%`;
+  return sqlLikePatternToRegExp(pattern).test(String(value ?? ''));
+}
+
 function toDateKey(value) {
   if (!value) return null;
   const date = new Date(value);
@@ -274,14 +314,13 @@ function makeInMemoryReportDependencies(authState, borrowingState) {
 
         const roles = authState.rolesByUserId.get(user.userId) || [];
         if (filters.q) {
-          const search = String(filters.q).trim().toLowerCase();
           const searchableValues = [
             user.userId,
             user.status,
             memberStatus,
             ...roles,
           ];
-          if (!searchableValues.some((value) => String(value ?? '').toLowerCase().includes(search))) {
+          if (!searchableValues.some((value) => matchesSqlLike(value, filters.q))) {
             return [];
           }
         }

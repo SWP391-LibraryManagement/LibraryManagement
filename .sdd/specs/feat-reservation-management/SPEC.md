@@ -1,6 +1,6 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.2
+# Version: 0.5.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -23,6 +23,10 @@
 > Revision v0.5.2 makes create/cancel/hold/expire lifecycle audits atomic with
 > their state changes and removes cached-member claims from staff queue
 > confirmation because the server reselects the first currently eligible row.
+>
+> Revision v0.5.3 preserves safe post-commit notification-audit warnings when
+> expiration promotes one or more reservations without changing promoted
+> reservation DTOs.
 
 ---
 
@@ -208,7 +212,7 @@ The feature can only start when:
 - FR-FE08-018: WHERE a member becomes ineligible before queue processing reaches their `ACTIVE` reservation, the system shall skip it for that run, leave it `ACTIVE`, and leave the copy unchanged. (Source: AF-FE08-003, Q-FE08-006)
 - FR-FE08-019: IF a notified member does not borrow within the approved reservation hold period, the system shall mark the reservation `EXPIRED` and continue with the next eligible reservation in the queue. (Source: AF-FE08-004, Q-FE08-004)
 - FR-FE08-020: WHERE queue processing finds no eligible active reservation, the system shall return no selection, leave the copy status unchanged, and change no reservation state. (Source: EC-FE08-008, Q-FE08-007)
-- FR-FE08-021: IF the FE10 notification request fails after a hold commits, the system shall preserve `NOTIFIED`/`RESERVED` state and write a `RESERVATION_NOTIFY_FAILED` audit entry; if that post-commit audit write fails, the response shall expose safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata without member identity or provider detail. Phase 1 does not run an automatic retry worker. (Source: EC-FE08-009, BR-FE08-012, BR-FE08-013, Q-FE08-008)
+- FR-FE08-021: IF the FE10 notification request fails after a hold commits, the system shall preserve `NOTIFIED`/`RESERVED` state and write a `RESERVATION_NOTIFY_FAILED` audit entry; if that post-commit audit write fails, `process-queue` shall expose one top-level `notificationWarning`, while `expire-holds` shall expose an optional top-level `notificationWarnings[]` entry for each affected promotion. Every warning shall contain only `reservationId` and `copyId` when identifying an expiration promotion, plus safe `code` and `message`; promoted reservation DTOs remain unchanged, and warning metadata shall contain no member identity or provider detail. Phase 1 does not run an automatic retry worker. (Source: EC-FE08-009, BR-FE08-012, BR-FE08-013, Q-FE08-008)
 - FR-FE08-022: IF concurrent queue processing attempts to select the same reservation, the system shall allow only one selection to succeed and require the later attempt to re-read the current state. (Source: EC-FE08-010, NFR-FE08-TXN-001)
 - FR-FE08-023: WHERE a copy is held for a member from the reservation queue, the system shall prevent that held copy from being borrowed by any other member. (Source: BR-FE08-011, AC-FE08-008)
 - FR-FE08-024: WHERE an active reservation or a copy held for another member exists for a reservation target, the system shall block FE07 loan renewal for that copy/reservation target. (Source: BR-FE08-014)
@@ -367,7 +371,7 @@ stateDiagram-v2
 | PATCH | `/api/reservations/{reservationId}/cancel` | Member | Optional reason | Cancelled reservation | Own reservation only. |
 | GET | `/api/reservations` | Librarian/Admin | Query: `bookId?, memberId?, status?, page?, limit?` | Reservation list | Defaults `page = 1`, `limit = 20`; order is `ReservedAt ASC, ReservationId ASC`. |
 | POST | `/api/reservations/process-queue` | Librarian/Admin | `{ copyId: number }` | Selected reservation or none | Manual Phase 1 action; `copyId` is required and `bookId` is not accepted. |
-| POST | `/api/reservations/expire-holds` | Librarian/Admin | No body | Expired count, expired reservations, and promoted reservations | Manually expires overdue `NOTIFIED` holds and advances eligible queues; traces FR-FE08-019. |
+| POST | `/api/reservations/expire-holds` | Librarian/Admin | No body | `{ expiredCount, expired, promoted, notificationWarnings? }` | Manually expires overdue `NOTIFIED` holds and advances eligible queues; each optional warning is exactly `{ reservationId, copyId, code, message }` and does not alter a promoted reservation DTO; traces FR-FE08-019/021. |
 
 ---
 

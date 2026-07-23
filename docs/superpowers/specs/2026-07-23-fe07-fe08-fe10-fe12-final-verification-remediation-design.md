@@ -124,3 +124,68 @@ The implementation follows RED-GREEN tests and then runs:
 
 Azure staging is read-only for smoke verification and is never used for mutable
 SQL tests.
+
+## 7. H3 Remediation Addendum
+
+**Approved:** 2026-07-23
+
+The first H3 integration review found one response-propagation defect, one
+test-parity gap, and stale deployment/governance evidence. This addendum keeps
+the original business behavior and narrows the correction to those findings.
+
+### 7.1 FE08 Expiration-Promotion Warning Contract
+
+- `processQueue` keeps its existing singular top-level `notificationWarning`
+  response.
+- `expireHolds` keeps the existing `expiredCount`, `expired`, and `promoted`
+  response fields and adds top-level `notificationWarnings` only when at least
+  one promoted hold cannot persist its required notification-failure audit.
+- Each `notificationWarnings` entry contains only `reservationId`, `copyId`,
+  `code`, and safe `message`. It must not contain member identity, recipient
+  data, provider detail, rendered notification content, or an error stack.
+- The promoted reservation DTO remains canonical and does not gain an
+  enumerable warning field. Multiple promotions may therefore report multiple
+  warnings without changing the existing `promoted` item shape.
+
+### 7.2 FE12 SQL `LIKE` Test-Parity Contract
+
+- Production SQL keeps its current parameterized `LIKE` behavior; this
+  remediation does not escape or reject wildcard input.
+- The in-memory user-report repository matches the current case-insensitive SQL
+  behavior for `%`, `_`, bracket classes/ranges, negated bracket classes, and
+  literal characters in the effective `%${q}%` pattern.
+- Parity applies to the approved searchable values only: user ID, account
+  status, membership status, and role names.
+- Regression tests cover wildcard input and retain the existing literal,
+  mixed-case, filtering, historical approval, and deterministic-order cases.
+
+### 7.3 Azure Migration Verification Boundary
+
+- Every mutable migration, including
+  `2026-07-23-fe10-processing-status.sql`, must first run twice on a named
+  disposable local SQL Server database to prove idempotence.
+- The reviewed migration runs once on the intended Azure staging database.
+- Staging acceptance then uses read-only schema/constraint queries and the
+  existing read-only application smoke suite. Staging is not used to prove
+  migration idempotence.
+- Temporary operator firewall access must be exact, short-lived, and removed
+  immediately after the reviewed migration.
+
+### 7.4 Governance State
+
+- The completed implementation and documentation commits have passed H2 and
+  the H2 addendum; task records must no longer say that those reviews are
+  pending.
+- This H3 remediation returns the branch to implementation. Its RED-GREEN diff
+  requires a fresh H2 review, commit, push, and CI run before H3 can be repeated.
+- Merge remains prohibited until the repeated H3 review passes against the
+  latest `main`.
+
+### 7.5 Verification
+
+- Add a service/route regression proving `expire-holds` serializes every safe
+  promotion warning.
+- Add in-memory report parity cases for SQL wildcard behavior.
+- Run focused FE08/FE12 tests, deployment utility tests, traceability, full
+  backend/frontend verification, security/diff checks, and the repository CI
+  suite before repeated H3.

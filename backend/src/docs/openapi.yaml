@@ -1235,9 +1235,36 @@ paths:
   /api/reservations/expire-holds:
     post:
       tags: [Reservation]
-      summary: Expire overdue holds and promote the next member (FR-FE08-019)
+      summary: Expire overdue holds, promote next members, and surface safe warnings (FR-FE08-019/021)
       responses:
-        '200': { description: Expired count + promoted reservations }
+        '200':
+          description: Expired count, expired/promoted reservations, and optional safe promotion warnings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [expiredCount, expired, promoted]
+                properties:
+                  expiredCount: { type: integer, minimum: 0 }
+                  expired:
+                    type: array
+                    items: { type: object }
+                  promoted:
+                    type: array
+                    items: { type: object }
+                  notificationWarnings:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [reservationId, copyId, code, message]
+                      properties:
+                        reservationId: { type: integer, minimum: 1 }
+                        copyId: { type: integer, minimum: 1 }
+                        code:
+                          type: string
+                          enum: [RESERVATION_NOTIFY_AUDIT_FAILED]
+                        message: { type: string }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/reservations/{reservationId}/cancel:

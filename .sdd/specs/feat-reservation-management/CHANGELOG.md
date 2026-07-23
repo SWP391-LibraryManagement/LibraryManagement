@@ -8,6 +8,7 @@
 - Grouped staff queues by physical `copyId` and loaded every server page needed by the member and staff reservation views.
 - Moved create/cancel/hold/expire lifecycle audits into their owning transactions so mutation and audit commit or roll back together.
 - Preserved committed holds when FE10 notification fails and surfaced safe `RESERVATION_NOTIFY_AUDIT_FAILED` warning metadata when the post-commit failure audit is also unavailable.
+- Preserved those warnings across `expire-holds` promotion by returning optional safe top-level `notificationWarnings[]` entries without changing promoted reservation DTOs.
 - Removed the cached member identity from process-queue confirmation because the server revalidates and reselects the first currently eligible queue entry at mutation time.
 
 ## 2026-07-21 - Align reservation eligibility with member role
