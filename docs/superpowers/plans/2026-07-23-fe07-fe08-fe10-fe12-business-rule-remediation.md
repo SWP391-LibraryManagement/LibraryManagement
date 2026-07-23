@@ -505,3 +505,41 @@ pass before staging or committing.
 Stage only the plan, production files, and regression tests from Tasks 6-8,
 commit with a scoped `fix:` message, push the current branch, and verify the
 existing draft PR checks. Do not merge or deploy; H3 is still required.
+
+---
+
+### Task 10: Keep the FE11 pagination E2E fixture compatible with FE07 limits
+
+**Files:**
+- Modify: `tests/e2e/fe11-admin-request-management.spec.js`
+- Modify: `tests/e2e/support/systemTestServer.js`
+
+**Interfaces:**
+- Consumes: test-only
+  `POST /__e2e__/seed-pending-borrow-requests { userId, copyId, count }`.
+- Produces: bounded in-memory PENDING request/detail rows for FE11 pagination
+  coverage without sending 21 invalid same-day requests through the public FE07
+  command.
+
+- [x] **Step 1: Reproduce the CI failure locally.**
+
+Run the FE11 browser scenario and confirm its repeated public
+`POST /api/borrow-requests` setup now correctly receives
+`409 BORROW_DAILY_LIMIT_EXCEEDED`.
+
+- [x] **Step 2: Move pagination volume into test-only setup.**
+
+Add a bounded E2E control endpoint that validates an existing user and copy,
+then seeds only the request/detail fields consumed by the FE11 admin read model.
+Keep all production routes and the FE07 daily invariant unchanged.
+
+- [x] **Step 3: Verify the focused and full browser suites.**
+
+The focused FE11 scenario must pass 1/1 and the complete Chromium suite must
+pass 4/4.
+
+- [ ] **Step 4: Obtain fresh H2, commit, push, and recheck CI.**
+
+Review the three-file follow-up diff independently for Standards and Spec,
+commit only after H2 passes, push the same Draft PR branch, and wait for the
+replacement `foundation-checks` run. Do not merge or deploy without H3.
