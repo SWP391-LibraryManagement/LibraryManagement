@@ -1,6 +1,6 @@
 # PLAN.md - FE04 Membership Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
 
 Owner: Dat
 
@@ -28,9 +28,11 @@ Reconcile the existing FE04 prototype with the approved canonical membership con
 - `database/Librarymanagement.sql`.
 - `.sdd/constraints/safety.md`.
 
-## 3. Existing Baseline And Drift
+## 3. Existing Baseline And Drift (Historical Snapshot)
 
 The repository already contains FE04 routes, controller, service, repository, validators, route tests, in-memory repositories, and frontend screens. These files are prototype evidence, not completion evidence for v0.2.0.
+
+The drift table below records the pre-reconciliation baseline. It is retained for auditability and is superseded by the implementation and Phase 2 exit evidence recorded in `TASKS.md`, `TEST_PLAN.md`, and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
 
 | Approved contract | Current drift to reconcile |
 | --- | --- |
@@ -45,12 +47,16 @@ The repository already contains FE04 routes, controller, service, repository, va
 ### 3.1 2026-07-19 Implementation Checkpoint
 
 - Canonical apply/status/re-application, atomic review/audit callbacks, FE04-bound post-commit
-  delivery, protected staff list, truthful frontend state, and all FE04 FR source tags are GREEN.
+  delivery, protected staff list, and truthful frontend state are GREEN for the completed core
+  scope; the Admin extension remains outside that evidence.
 - The filtered pending-only unique index is present in baseline/model/ADR and the idempotent
   migration; static SQL contract tests pass.
-- Mutable SQL concurrency/rollback execution remains pending because no approved
-  `DB_SERVER`/`DB_NAME` plus `FE04_SQL_TEST_ALLOW_MUTATION=true` environment is available.
-- Human acceptance and FE07/FE08 integration confirmation remain mandatory before B7.
+- Mutable SQL concurrency/rollback execution, human acceptance, and FE07/FE08
+  integration confirmation were historical pre-exit gates; the recorded Phase 2
+  exit evidence supersedes this checkpoint.
+- The approved Admin Console extension remains separate from the completed core
+  scope: `FR-FE04-014` is still implementation-pending, so current source
+  traceability is `13/14 FR` until `FE04-ADM01..FE04-ADM05` close.
 
 ## 4. Scope
 

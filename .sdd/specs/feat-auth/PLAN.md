@@ -1,23 +1,23 @@
 ﻿# PLAN.md - FE02 Authentication
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Date: 2026-07-15
+Status: RECONCILIATION IN PROGRESS - CONTEXT ALIGNED; HUMAN REVIEW PENDING
+Date: 2026-07-23
 Owner: Dat
 
 ## 1. Purpose
 
-Implement FE02 Authentication according to the approved `SPEC.md`, ADR-003 Authentication Approach, the revised SQL Server schema, and the Phase 1 API contract.
+Implement and reconcile FE02 Authentication according to the approved `CONTEXT.md`, `SPEC.md`, ADR-003 Authentication Approach, the revised SQL Server schema, and the Phase 1 API contract.
 
 FE02 is a Core feature. Implementation must be small, testable, and reviewed before merge.
 
 ## 2. Source Documents
 
+- `.sdd/specs/feat-auth/CONTEXT.md`
 - `.sdd/specs/feat-auth/SPEC.md`
 - `.sdd/rfcs/ADR-003-authentication-approach.md`
 - `.sdd/rfcs/ADR-004-auth-otp-notification-boundary.md`
 - `.sdd/rfcs/ADR-005-admin-created-account-setup-boundary.md`
 - `.sdd/rfcs/ADR-002-database-design.md`
-- `docs/api/api-contract.md`
 - `database/Librarymanagement.sql`
 - `.sdd/constraints/safety.md`
 
@@ -31,7 +31,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 - Login with JWT access token and refresh token.
 - Refresh access token.
 - Logout and revoke refresh token.
-- Change password.
+- Change password through the direct current-password path or FE02-owned OTP-confirmation path.
 - Forgot password.
 - Reset password.
 - Current user/session endpoint.
@@ -65,7 +65,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Roles | Flat roles from `Roles`/`UserRoles`. |
 | Verification/reset email delivery | FE02 creates/validates OTPs and calls the FE10 requester bound to `FE02`; FE10 exclusively renders, sends, and records status/attempts. |
 | Change-password OTP delivery | Remains a direct FE02 email flow until a separate FE10 notification type/use case is approved. |
-| Rate limiting | Simple server-side failed-login counter using `Users.FailedLoginCount` and `Users.LockedUntil`. |
+| Account lockout | Known-account failed-login counter using `Users.FailedLoginCount` and `Users.LockedUntil`; no IP-wide limiting is claimed. |
 
 ## 5. Database Dependencies
 
@@ -79,7 +79,7 @@ Required tables/fields exist in `database/Librarymanagement.sql` and passed loca
 
 ## 6. API Endpoints
 
-Implement the FE02 endpoints from `docs/api/api-contract.md`:
+Implement the canonical FE02 endpoints from `SPEC.md` Section 11:
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
@@ -90,6 +90,8 @@ Implement the FE02 endpoints from `docs/api/api-contract.md`:
 | POST | `/api/auth/refresh-token` | Exchange a valid refresh token for a new access token without requiring a valid access token. |
 | POST | `/api/auth/logout` | Revoke refresh token. |
 | POST | `/api/auth/change-password` | Change password for authenticated user. |
+| POST | `/api/auth/change-password/request-otp` | Verify current password and issue a purpose-bound `CHANGE_PASSWORD_OTP` directly through FE02. |
+| POST | `/api/auth/change-password/confirm` | Confirm the authenticated user's valid change-password OTP and update the password. |
 | POST | `/api/auth/forgot-password` | Request reset OTP without email enumeration. |
 | POST | `/api/auth/reset-password` | Reset password with valid OTP/email or legacy token. |
 | GET | `/api/auth/me` | Return safe current user context. |
@@ -124,9 +126,9 @@ Do not add new implementation under legacy placeholder paths such as `backend/sr
 Expected frontend integration files:
 
 ```text
-frontend/src/api/httpClient.js
 frontend/src/api/authApi.js
-frontend/src/hooks/useAuth.js
+frontend/src/api/profileApi.js
+frontend/src/component/userProfile/ProfileActions.jsx
 ```
 
 Existing login/register/forgot-password pages may be connected after backend endpoints are implemented. UI behavior must not be trusted as security enforcement.
@@ -151,7 +153,13 @@ The approved Authentication/OTP UX hardening is implemented through `docs/superp
 - Logout invalidates refresh token.
 - Forgot/reset password success.
 - Expired/used reset token fails.
+- Direct and OTP-confirmed change-password success/failure, including expired, used, and wrong-user OTP rejection.
 - Protected `/api/auth/me` requires valid token.
+- Protected authorization uses current server-side `UserRoles`, not client role claims.
+- Protected requests reject a current user whose persisted status is no longer `ACTIVE`, even when the access token and linked session have not expired.
+- FE02 protected frontend requests retry once after 401 and clear invalid session state when refresh recovery fails.
+- State-changing authentication flows prove the required user/token/audit transaction boundary and explicit audit-failure behavior.
+- Exact 30-minute account-lock duration and approved performance targets are measured.
 
 ## 10. Risks And Mitigations
 
@@ -172,8 +180,8 @@ Before FE02 is considered complete:
 - Backend tests pass.
 - Frontend build passes if frontend integration is included.
 - No raw passwords/tokens/secrets are committed.
-- API responses match `docs/api/api-contract.md`.
-- `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-018 remains satisfied.
+- API responses match the canonical FE02 contract in `SPEC.md` Section 11.
+- `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-025 remains satisfied, with every documented conformance gap explicitly closed or approved for deferral.
 - Reviewer signoff completed for security-sensitive auth code.
 
 ## 12. Authentication/OTP UX B7 Status
@@ -209,3 +217,15 @@ ADR-004 and Nhat's 2026-07-15 approval authorize the following ordered implement
 2. Introduce canonical `EMAIL_VERIFICATION_TTL_MINUTES=15` with temporary legacy-hour fallback.
 3. Keep FE02 credential ownership and FE10 rendering/delivery ownership unchanged.
 4. Validate focused and full backend tests, traceability, secret/leakage checks, and Azure staging email evidence before integration.
+
+## 16. Context Consistency Reconciliation
+
+The approved implementation baseline remains recorded, but reconciliation is
+open until the following `CONTEXT.md`-derived gaps are closed:
+
+1. Add a regression proving current server-side `UserRoles` override client role claims.
+2. Add dedicated integration coverage for `change-password/request-otp` and `change-password/confirm`.
+3. Record evidence for the valid-login and token-validation performance targets.
+4. Reject protected requests for a persisted user that is no longer `ACTIVE`.
+5. Close or explicitly approve the remaining authentication transaction/audit atomicity gaps.
+6. Link the FE02-T043 H3 closeout and complete human review of SPEC v0.6.11.

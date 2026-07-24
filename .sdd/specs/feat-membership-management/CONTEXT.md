@@ -14,7 +14,7 @@
 
 ## 1. Feature Purpose
 
-Membership Management exists to control when a registered user becomes an approved library member who can use member-only services such as borrowing and reservation.
+Membership Management exists to record membership applications and review decisions. FE04 approval is not the access gate for borrowing or reservation; those workflows independently require an active account with the `MEMBER` role.
 
 This feature must keep four things clear:
 
@@ -38,7 +38,7 @@ The typical membership workflow:
 5. The system atomically updates application history, the canonical `Members` projection, reviewer metadata, and audit data.
 6. After commit, FE04 requests a non-blocking FE10 membership-result notification.
 7. The member can view canonical membership status and current/latest application information.
-8. FE07 and FE08 require `Users.Status = ACTIVE` and `Members.Status = APPROVED`.
+8. FE07 and FE08 independently require `Users.Status = ACTIVE` and the `MEMBER` role; FE04 approval is not a prerequisite. `Members.Status = APPROVED` may affect the approved-member daily allowance consumed by FE07.
 
 ---
 
@@ -108,7 +108,7 @@ Implementation must preserve these approved decisions when reconciling the curre
 ## 7. Key Risks
 
 - Duplicate pending applications may create inconsistent approval decisions.
-- Borrowing/reservation features may read membership status differently if status rules are unclear.
+- FE07/FE08 must consume the active-account and role contract directly; FE04 status is canonical for membership reporting and approved-member allowance decisions.
 - Rejection without reason may confuse applicants and librarians.
 - Approval/rejection actions may be performed by unauthorized users if RBAC is missing.
 - Data model may not support future membership expiry or re-application unless decisions are recorded.
@@ -121,8 +121,8 @@ Implementation must preserve these approved decisions when reconciling the curre
 | ---------- | -------------- |
 | FE02 Authentication | User must have an account before applying. |
 | FE03 User Profile | Profile data may help review membership applications. |
-| FE07 Borrowing Management | Requires approved membership before borrowing. |
-| FE08 Reservation Management | Requires approved membership before reservation if policy says so. |
+| FE07 Borrowing Management | Uses an active account with the `MEMBER` role; `APPROVED` membership may increase the daily allowance. |
+| FE08 Reservation Management | Uses an active account with the `MEMBER` role; FE04 approval does not gate reservation. |
 | FE11 User & Role Management | Provides librarian/admin roles for approval and rejection. |
 | SQL Server database | Stores users and membership applications. |
 

@@ -1,8 +1,8 @@
 # CONTEXT.md - FE02 Authentication
 
-# Version: 0.2.3
+# Version: 0.2.5
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: APPROVED BASELINE 2026-07-17 - RECONCILIATION OPEN
 
 # Owner: Dat
 
@@ -110,7 +110,7 @@ Phase 1 decisions and alignment notes:
 - Persisted user statuses are `ACTIVE`, `INACTIVE`, and `LOCKED`; FE11 deactivation is represented by `INACTIVE` plus `DeactivatedAt`.
 - Password history is not supported and remains out of scope unless the approved schema and specification are extended.
 - Authentication audit records cover login, logout, password change/reset, lockout, verification, and account-setup events without storing raw credentials.
-- The repository currently defaults `LOGIN_LOCKOUT_MINUTES` to 15 in configuration, which conflicts with the approved 30-minute lock duration and must be reconciled before implementation compliance is claimed.
+- The repository and deployment example default `LOGIN_LOCKOUT_MINUTES` to 30, matching the approved lock duration; focused configuration and login regressions verify the exact window.
 
 ---
 
@@ -144,7 +144,7 @@ Phase 1 decisions and alignment notes:
 ## 7. Key Risks
 
 - Weak password hashing allows attackers to crack credentials offline.
-- Missing rate limiting on login allows brute force attacks.
+- Missing or incorrect known-account lockout handling allows repeated credential attacks; Phase 1 does not claim IP-wide limiting.
 - Session tokens not validated on each request allows unauthorized access.
 - Session/token expiration not enforced allows account hijacking.
 - Password reset token not validated or expired allows unauthorized password changes.
@@ -168,7 +168,11 @@ Phase 1 decisions and alignment notes:
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Key Resolved Questions Summary
+
+This section summarizes the decisions needed to interpret this context. The
+complete decision registry, including later cross-feature decisions, remains in
+`SPEC.md` Section 15.
 
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
@@ -189,6 +193,7 @@ Phase 1 decisions and alignment notes:
 ## 10. Implementation and Maintenance Notes
 
 - The approved Phase 1 implementation baseline is complete; `SPEC.md`, `PLAN.md`, `TASKS.md`, tests, and review evidence determine current delivery status.
+- Documentation and implementation reconciliation remains open while the conformance gaps recorded in `SPEC.md`, `PLAN.md`, `TASKS.md`, and `TEST_PLAN.md` are unresolved.
 - `SPEC.md` remains the FE02 source of truth. Future behavior changes require approved specification and task updates before implementation.
 - Passwords must use bcrypt with cost factor at least 10; production tuning must not reduce the approved cost.
 - Authentication endpoints must use HTTPS outside local development, and plain HTTP credential/token processing must be rejected or redirected before business processing.

@@ -1,5 +1,27 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-23 - Close CG007 profile session recovery
+
+- Added one-refresh recovery, selected-storage token persistence, full auth cleanup, and login redirect to `profileApi` protected requests.
+- Added a frontend regression for the approved `NFR-FE02-UX-009` behavior.
+- Closed CG-FE02-007 and FE02-T051; CG-FE02-001 remains governed by the approved 30-minute contract pending clarification of the new 15-minute request.
+
+## 2026-07-23 - Close CG001 exact lockout duration
+
+- Changed the backend runtime default and deployment example for `LOGIN_LOCKOUT_MINUTES` from 15 to 30.
+- Added configuration and login regressions proving the default and exact `lockedUntil` duration.
+- Closed CG-FE02-001 and FE02-T047; no other reconciliation gap was changed.
+
+## 2026-07-23 - Reconcile FE02 artifacts against approved context
+
+- Aligned SPEC v0.6.9 with both implemented change-password paths: direct current-password update and FE02-owned `CHANGE_PASSWORD_OTP` request/confirm.
+- Corrected the password-policy wording to the approved 8-character, uppercase, number, and special-character rule.
+- Added the missing change-password OTP endpoints to PLAN, corrected known-account lockout terminology, and replaced the nonexistent frontend hook path with current integration files.
+- Changed PLAN/TASKS/TEST_PLAN from unconditional completion wording to baseline-complete/reconciliation-open wording.
+- Added explicit tasks for OTP regression coverage, current-role authorization, exact 30-minute lockout configuration, performance evidence, and final human/H3 closeout.
+- Added MEDIUM+ conformance tasks for current persisted account-state enforcement, FE02 frontend refresh recovery, and authentication transaction/audit atomicity.
+- No production code behavior changed.
+
 ## 2026-07-22 - Harden login validation and localized error feedback
 
 - Added field-level Vietnamese validation for blank, whitespace-only, and overlength login values while keeping backend validation authoritative.
