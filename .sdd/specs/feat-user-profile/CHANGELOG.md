@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-24 - Convergence hardening
+
+- Rejected non-string profile field values before persistence.
+- Prevented no-op date submissions from producing false changed-field audit metadata.
+- Restored readable Vietnamese FE03 API feedback and surfaced field-level/avatar validation errors.
+- Added focused regressions; backend 53/53, frontend 5/5, lint, build, and traceability pass.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

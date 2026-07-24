@@ -1,13 +1,13 @@
 # TASKS.md - FE03 User Profile
 
-# Version: 0.2.1
+# Version: 0.2.2
 
 # Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Implementation State: COMPLETE
 
 # Owner: Dat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-24
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact
 post-merge `main` CI are recorded in
@@ -206,3 +206,11 @@ Evidence: `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`.
 - Do not add new dependencies unless the existing backend tools cannot satisfy the task.
 - Do not change database schema in FE03 unless a separate spec/RFC update is approved.
 - Keep frontend work limited to the approved avatar upload UI and PUT allowlist reconciliation in T-FE03-014/T-FE03-016.
+
+## Phase 1: Convergence
+
+- [x] T017 Reject non-string `fullName`, `address`, and `phone` values before profile mutation per BR-FE03-007 and NFR-FE03-SEC-004 (partial)
+- [x] T018 Normalize comparable profile values so audit metadata contains only fields that actually changed per BR-FE03-017 and FR-FE03-010 (partial)
+- [x] T019 Surface readable field-level profile/avatar API errors in the frontend per NFR-FE03-UX-001 and NFR-FE03-UX-003 (partial)
+
+Evidence: FE03 backend focused tests pass 53/53; full backend tests pass 1025/1025; frontend focused tests pass 5/5; full frontend tests pass 218/218; frontend lint/build and traceability pass on 2026-07-24.
