@@ -782,7 +782,7 @@ describe('FE02 auth vertical slice', () => {
   });
 
   test('locked account is rejected after too many failed attempts', async () => {
-    const { app, dependencies } = makeTestApp();
+    const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
     await registerAndVerify(app, 'locked@example.test');
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -790,6 +790,9 @@ describe('FE02 auth vertical slice', () => {
     }
 
     expect(dependencies.state.users[0].status).toBe('LOCKED');
+    expect(dependencies.state.users[0].lockedUntil).toEqual(
+      new Date(FIXED_NOW.getTime() + 30 * 60 * 1000)
+    );
 
     const lockedResponse = await login(app, 'locked@example.test', 'Password1!');
     expect(lockedResponse.status).toBe(429);

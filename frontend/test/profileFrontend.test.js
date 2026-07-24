@@ -17,6 +17,20 @@ test('FE03 profile PUT excludes the read-only avatarUrl field', async () => {
   assert.doesNotMatch(source, /function denormalizeAvatarUrl/);
 });
 
+test('FE02 profile requests use one-refresh recovery and clear auth state on failure', async () => {
+  const source = await readFile(profileApiPath, 'utf8');
+
+  assert.match(source, /async function authorizedRequest\(config, fallbackMessage\)/);
+  assert.match(source, /error\.response\?\.status === 401 && !config\._retried/);
+  assert.match(source, /_retried: true/);
+  assert.match(source, /storage\.setItem\('accessToken', accessToken\)/);
+  assert.match(source, /function clearStoredAuth\(\)/);
+  assert.match(source, /window\.location\.assign\('\/login'\)/);
+  assert.match(source, /export async function fetchMyProfile\(\)[\s\S]*?authorizedRequest/);
+  assert.match(source, /export async function requestChangePasswordOtp[\s\S]*?authorizedRequest/);
+  assert.match(source, /export async function confirmChangePassword[\s\S]*?authorizedRequest/);
+});
+
 test('FE03 edit dialog changes avatars only through the upload control', async () => {
   const source = await readFile(profilePagePath, 'utf8');
 

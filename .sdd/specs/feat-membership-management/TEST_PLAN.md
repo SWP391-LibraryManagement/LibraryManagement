@@ -1,8 +1,8 @@
 ﻿# FE04 Test Plan - Membership Management
 
-Version: 0.2.2
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-23
+Version: 0.2.1
+Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
+Last Updated: 2026-07-19
 
 Source Spec: `.sdd/specs/feat-membership-management/SPEC.md`
 Feature IDs: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`

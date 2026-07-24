@@ -468,6 +468,8 @@ This feature does not include:
 
 ## 16. Traceability Matrix
 
+The status notes in this matrix are the historical verification snapshot retained for auditability; current completion is governed by the Phase 2 exit evidence referenced at the top of this document.
+
 | Requirement ID | Related Use Case | Related Test Case | Status |
 | -------------- | ---------------- | ----------------- | ------ |
 | BR-FE06-001 | UC25, UC26, UC27, UC28 | `inventoryRoutes.test.js` RBAC cases | Automated pass; owner/H3 pending |

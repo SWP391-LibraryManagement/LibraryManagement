@@ -21,6 +21,10 @@
 > Source of truth for FE04 Membership Management. Revision v0.2.2 aligns the approved workflow with the current code baseline without expanding implementation scope.
 
 > Approved 2026-07-22 presentation overlay: authenticated Admins receive an embedded FE04 review section inside the Admin Console. The existing `/membership` Member/Librarian workspace, FE04 API, state machine, schema, authorization, audit, and notification contracts remain unchanged. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
+>
+> Core Phase 2 is complete. The approved Admin Console overlay is a separate
+> extension: `FR-FE04-014` and `AC-FE04-013` remain implementation-pending, so
+> current source traceability is `13/14 FR` until `FE04-ADM01..FE04-ADM05` close.
 
 ---
 
@@ -381,6 +385,7 @@ This feature does not include:
 | BR-FE04-016 | UC13 | rejected applicant re-application history test | Automated pass; human review pending |
 | BR-FE04-017 | UC16 | Phase 1 no-expiry state cases | Automated pass; human review pending |
 | BR-FE04-018 | UC14, UC15 | non-blocking `MEMBERSHIP_RESULT` requester tests | Automated pass; human review pending |
+| BR-FE04-019 | UC13 | profile completeness validation and no-write-on-rejection cases | Automated pass; human review pending |
 | FR-FE04-001 | UC13 | apply happy path | Automated pass; human review pending |
 | FR-FE04-002 | UC13 | duplicate pending conflict | Automated pass; human review pending |
 | FR-FE04-003 | UC13 | approved member block | Automated pass; human review pending |
@@ -413,10 +418,10 @@ This feature does not include:
 
 | Requirement Type | Total IDs | Mapped IDs | Coverage |
 | ---------------- | --------- | ---------- | -------- |
-| Business Rules (BR-FE04) | 18 | 18 | 100% |
+| Business Rules (BR-FE04) | 19 | 19 | 100% |
 | Functional Requirements (FR-FE04) | 14 | 14 | 100% |
 | Acceptance Criteria (AC-FE04) | 13 | 13 | 100% |
-| **Total** | **45** | **45** | **100%** |
+| **Total** | **46** | **46** | **100%** |
 
 ---
 

@@ -57,7 +57,7 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 
 ## 6. Gaps
 
-- Human UI acceptance for profile/avatar must be recorded before claiming done; agent browser evidence is already present.
+- Human UI acceptance for profile/avatar remains a release-evidence item; implementation and automated/agent-browser evidence are complete.
 - `backend/tests/sql/profileConcurrency.sqltest.js` passes 6/6 on disposable SQL Server, proving one-row first-view serialization plus profile/avatar audit rollback. Aggregate SQL evidence and cleanup are recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 
 ## 7. Required Commands / Evidence Before Merge

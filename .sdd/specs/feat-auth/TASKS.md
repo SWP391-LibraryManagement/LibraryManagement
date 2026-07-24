@@ -1,8 +1,9 @@
-﻿# TASKS.md - FE02 Authentication
+# TASKS.md - FE02 Authentication
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
-Date: 2026-07-15
+Status: RECONCILIATION IN PROGRESS - CONTEXT GAPS TRACKED
+Implementation State: PARTIAL
+Baseline Note: Approved implementation baseline complete; reconciliation tasks FE02-T045 through FE02-T052 remain open.
+Date: 2026-07-23
 Owner: Dat
 
 ## Task Rules
@@ -172,3 +173,52 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Files: `frontend/src/utils/authUx.js`, `frontend/src/component/login/LoginForm.jsx`, `frontend/src/component/login/AuthCard.jsx`, `frontend/src/page/LoginPage.jsx`, `frontend/src/api/authApi.js`, `backend/src/validators/authValidators.js`, focused frontend/backend tests, and FE02 records.
   - DoD: blank/whitespace and overlength login values receive field-level Vietnamese feedback; pending submissions cannot duplicate; unknown/inactive accounts remain generic; locked accounts receive approved recovery guidance; network feedback is environment-neutral; identifiers up to 255 characters pass server validation; focused and full validation gates pass.
   - Evidence: TDD RED reproduced missing helpers/wiring, the 100-character backend rejection, native browser validation bypassing Vietnamese field feedback, and an unreachable overlength branch at the HTML boundary. GREEN validation passes 209/209 full frontend tests, 33/33 focused backend auth tests, 924/924 full backend tests, frontend lint/build, and `trace:enforce`; headless Chromium confirms blank and 256-character submissions render the approved field-level Vietnamese messages and invalid-credential feedback remains generic and clears on edit.
+
+## Context Consistency Reconciliation
+
+- [x] **FE02-T044 - Align FE02 documentation with the approved context.**
+  - Maps to: `CONTEXT.md`; MF-FE02-006; FR-FE02-010; AC-FE02-012, AC-FE02-013.
+  - Files: FE02 context/spec/plan/tasks/test/changelog documents.
+  - DoD: direct and OTP-confirmed change-password paths, artifact status, endpoint inventory, password policy, known-account lockout terminology, and open evidence gaps are consistent.
+
+- [ ] **FE02-T045 - Add dedicated change-password OTP integration regressions.**
+  - Maps to: FR-FE02-010; AC-FE02-012, AC-FE02-013; CG-FE02-004.
+  - Dependencies: FE02-T044.
+  - DoD: backend tests cover request/confirm success plus incorrect current password and invalid, expired, used, and wrong-user OTP rejection without password mutation.
+
+- [ ] **FE02-T046 - Prove server-side current-role authorization.**
+  - Maps to: FR-FE02-014; AC-FE02-023; CG-FE02-002.
+  - Dependencies: FE02-T044.
+  - DoD: an explicit regression proves client role claims cannot override current `UserRoles`.
+
+- [x] **FE02-T047 - Align and verify the exact account-lock duration.**
+  - Maps to: BR-FE02-008, BR-FE02-009; FR-FE02-006; AC-FE02-008; CG-FE02-001.
+  - Dependencies: FE02-T044.
+  - DoD: repository/deployment defaults use 30 minutes and focused tests prove the exact duration after five qualifying failures in the rolling 15-minute window.
+  - Evidence: `backend/.env.example` and `backend/src/config/env.js` default to 30 minutes; `envConfig.test.js` and `authRoutes.test.js` verify the default and exact `lockedUntil` duration.
+
+- [ ] **FE02-T048 - Record performance evidence or an approved exception.**
+  - Maps to: NFR-FE02-PERF-001, NFR-FE02-PERF-004; CG-FE02-005.
+  - Dependencies: FE02-T044.
+  - DoD: repeatable measurements demonstrate valid login under 1 second and token validation under 50 ms at p95, or a reviewer-approved exception updates the contract.
+
+- [ ] **FE02-T050 - Enforce current account state on protected requests.**
+  - Maps to: FR-FE02-008, FR-FE02-009; AC-FE02-009, AC-FE02-010; CG-FE02-006.
+  - Dependencies: FE02-T044.
+  - DoD: authentication rejects a token holder whose persisted user is no longer `ACTIVE`, while retaining linked-session and current-role checks; focused regressions cover deactivation/lock after token issuance.
+
+- [x] **FE02-T051 - Align FE02 frontend session recovery.**
+  - Maps to: NFR-FE02-UX-009; CG-FE02-007.
+  - Dependencies: FE02-T044.
+  - DoD: FE02 protected profile/change-password requests use the selected storage, retry at most once after 401, save the replacement access token, and clear auth state plus redirect to login when recovery fails.
+  - Evidence: `frontend/src/api/profileApi.js` now applies the shared one-refresh flow to profile and change-password requests; `frontend/test/profileFrontend.test.js` covers retry, token persistence, cleanup, and redirect behavior.
+
+- [ ] **FE02-T052 - Close authentication transaction and audit atomicity gaps.**
+  - Maps to: NFR-FE02-TXN-001 to NFR-FE02-TXN-004; CG-FE02-008.
+  - Dependencies: FE02-T044.
+  - DoD: registration credential creation, login/session creation, password change/OTP consumption, password reset/token consumption, and required audit state commit or roll back according to the approved contract, with focused failure regressions or an explicitly approved bounded exception.
+
+- [ ] **FE02-T049 - Complete reconciliation review and closeout.**
+  - Maps to: Definition of Done; CG-FE02-003; SPEC.md v0.6.11.
+  - Dependencies: FE02-T045 to FE02-T048, FE02-T050 to FE02-T052.
+  - DoD: automated gates pass, the FE02-T043 H3 closeout is linked, all conformance gaps are closed or explicitly deferred, and human review approves the reconciled artifacts.

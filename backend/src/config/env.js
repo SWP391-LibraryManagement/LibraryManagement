@@ -76,7 +76,7 @@ module.exports = {
   passwordResetTtlMinutes: numberFromEnv('PASSWORD_RESET_TTL_MINUTES', 15),
   changePasswordOtpTtlMinutes: numberFromEnv('CHANGE_PASSWORD_OTP_TTL_MINUTES', 10),
   maxFailedLoginAttempts: numberFromEnv('MAX_FAILED_LOGIN_ATTEMPTS', 5),
-  lockoutMinutes: numberFromEnv('LOGIN_LOCKOUT_MINUTES', 15),
+  lockoutMinutes: numberFromEnv('LOGIN_LOCKOUT_MINUTES', 30),
   smtpHost: process.env.SMTP_HOST || '',
   smtpPort: numberFromEnv('SMTP_PORT', 587),
   smtpSecure: booleanFromEnv('SMTP_SECURE', false),

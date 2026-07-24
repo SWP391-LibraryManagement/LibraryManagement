@@ -22,8 +22,16 @@ function normalizeProfile(profile) {
   };
 }
 
+function getAuthStorage() {
+  if (localStorage.getItem('refreshToken')) return localStorage;
+  if (sessionStorage.getItem('refreshToken')) return sessionStorage;
+  if (localStorage.getItem('accessToken')) return localStorage;
+  if (sessionStorage.getItem('accessToken')) return sessionStorage;
+  return null;
+}
+
 function getStoredAccessToken() {
-  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+  return getAuthStorage()?.getItem('accessToken') || null;
 }
 
 function authHeaders() {
@@ -31,16 +39,73 @@ function authHeaders() {
   return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 }
 
-function getErrorMessage(error, fallback = 'Không thể tải hồ sơ cá nhân.') {
+function clearStoredAuth() {
+  for (const storage of [localStorage, sessionStorage]) {
+    storage.removeItem('accessToken');
+    storage.removeItem('refreshToken');
+    storage.removeItem('authUser');
+  }
+}
+
+async function refreshStoredAccessToken() {
+  const storage = getAuthStorage();
+  const refreshToken = storage?.getItem('refreshToken');
+  if (!storage || !refreshToken) return null;
+
+  const response = await api.post('/auth/refresh-token', { refreshToken });
+  const accessToken = response.data?.accessToken;
+  if (!accessToken) return null;
+
+  storage.setItem('accessToken', accessToken);
+  return accessToken;
+}
+
+function redirectToLogin() {
+  if (typeof window !== 'undefined') window.location.assign('/login');
+}
+
+function getErrorMessage(error, fallback = 'KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ cÃ¡ nhÃ¢n.') {
   if (!error.response) {
-    return 'Không kết nối được backend. Hãy kiểm tra server API đang chạy ở http://localhost:3000.';
+    return 'KhÃ´ng káº¿t ná»‘i Ä‘Æ°á»£c backend. HÃ£y kiá»ƒm tra server API Ä‘ang cháº¡y á»Ÿ http://localhost:3000.';
   }
 
   if (error.response.status === 401) {
-    return 'Vui lòng đăng nhập để xem hồ sơ.';
+    return 'Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ xem há»“ sÆ¡.';
   }
 
   return fallback;
+}
+
+async function authorizedRequest(config, fallbackMessage) {
+  try {
+    const response = await api.request({
+      ...config,
+      headers: { ...config.headers, ...authHeaders() },
+    });
+    return response.data;
+  } catch (error) {
+    const shouldRefresh = error.response?.status === 401 && !config._retried;
+    if (!shouldRefresh) {
+      throw new Error(getErrorMessage(error, fallbackMessage), { cause: error });
+    }
+
+    try {
+      const accessToken = await refreshStoredAccessToken();
+      if (!accessToken) throw error;
+
+      const response = await api.request({
+        ...config,
+        _retried: true,
+        headers: { ...config.headers, Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (refreshError) {
+      clearStoredAuth();
+      redirectToLogin();
+      const source = refreshError.response ? refreshError : error;
+      throw new Error(getErrorMessage(source, fallbackMessage), { cause: refreshError });
+    }
+  }
 }
 
 // @spec BR-FE03-016 FR-FE03-006
@@ -54,14 +119,7 @@ function buildProfileUpdatePayload(profile) {
 }
 
 export async function fetchMyProfile() {
-  try {
-    const response = await api.get('/profile/me', {
-      headers: authHeaders(),
-    });
-    return normalizeProfile(response.data);
-  } catch (error) {
-    throw new Error(getErrorMessage(error), { cause: error });
-  }
+  return normalizeProfile(await authorizedRequest({ method: 'get', url: '/profile/me' }, 'KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ cÃ¡ nhÃ¢n.'));
 }
 
 export async function fetchHeaderProfile() {
@@ -74,61 +132,36 @@ export async function fetchHeaderProfile() {
 }
 
 export async function updateMyProfile(profile) {
-  try {
-    const response = await api.put('/profile/me', buildProfileUpdatePayload(profile), {
-      headers: authHeaders(),
-    });
-    return normalizeProfile(response.data);
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể cập nhật hồ sơ cá nhân.'), { cause: error });
-  }
+  return normalizeProfile(await authorizedRequest({
+    method: 'put',
+    url: '/profile/me',
+    data: buildProfileUpdatePayload(profile),
+  }, 'KhÃ´ng thá»ƒ cáº­p nháº­t há»“ sÆ¡ cÃ¡ nhÃ¢n.'));
 }
 
 export async function uploadMyAvatar(file) {
-  try {
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    const response = await api.post('/profile/me/avatar', formData, {
-      headers: {
-        ...authHeaders(),
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return normalizeProfile(response.data);
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể tải ảnh đại diện lên.'), { cause: error });
-  }
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return normalizeProfile(await authorizedRequest({
+    method: 'post',
+    url: '/profile/me/avatar',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }, 'KhÃ´ng thá»ƒ táº£i áº£nh Ä‘áº¡i diá»‡n lÃªn.'));
 }
 
 export async function requestChangePasswordOtp({ currentPassword, newPassword, confirmNewPassword }) {
-  try {
-    const response = await api.post(
-      '/auth/change-password/request-otp',
-      { currentPassword, newPassword, confirmNewPassword },
-      { headers: authHeaders() }
-    );
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      getErrorMessage(error, 'Không thể gửi mã OTP. Vui lòng thử lại.'),
-      { cause: error }
-    );
-  }
+  return authorizedRequest({
+    method: 'post',
+    url: '/auth/change-password/request-otp',
+    data: { currentPassword, newPassword, confirmNewPassword },
+  }, 'KhÃ´ng thá»ƒ gá»­i mÃ£ OTP. Vui lÃ²ng thá»­ láº¡i.');
 }
 
 export async function confirmChangePassword({ otp, newPassword }) {
-  try {
-    const response = await api.post(
-      '/auth/change-password/confirm',
-      { otp, newPassword },
-      { headers: authHeaders() }
-    );
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      getErrorMessage(error, 'Không thể đổi mật khẩu. Vui lòng kiểm tra mã OTP.'),
-      { cause: error }
-    );
-  }
+  return authorizedRequest({
+    method: 'post',
+    url: '/auth/change-password/confirm',
+    data: { otp, newPassword },
+  }, 'KhÃ´ng thá»ƒ Ä‘á»•i máº­t kháº©u. Vui lÃ²ng kiá»ƒm tra mÃ£ OTP.');
 }

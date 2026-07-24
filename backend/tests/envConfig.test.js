@@ -1,6 +1,7 @@
 describe('authentication expiry environment configuration', () => {
   const originalMinutes = process.env.EMAIL_VERIFICATION_TTL_MINUTES;
   const originalHours = process.env.EMAIL_VERIFICATION_TTL_HOURS;
+  const originalLockoutMinutes = process.env.LOGIN_LOCKOUT_MINUTES;
 
   afterEach(() => {
     if (originalMinutes === undefined) {
@@ -13,6 +14,12 @@ describe('authentication expiry environment configuration', () => {
       delete process.env.EMAIL_VERIFICATION_TTL_HOURS;
     } else {
       process.env.EMAIL_VERIFICATION_TTL_HOURS = originalHours;
+    }
+
+    if (originalLockoutMinutes === undefined) {
+      delete process.env.LOGIN_LOCKOUT_MINUTES;
+    } else {
+      process.env.LOGIN_LOCKOUT_MINUTES = originalLockoutMinutes;
     }
 
     jest.resetModules();
@@ -42,5 +49,13 @@ describe('authentication expiry environment configuration', () => {
     expect(() => require('../src/config/env')).toThrow(
       'Invalid positive integer environment value for EMAIL_VERIFICATION_TTL_MINUTES'
     );
+  });
+
+  test('defaults account lockout duration to 30 minutes', () => {
+    delete process.env.LOGIN_LOCKOUT_MINUTES;
+
+    const env = require('../src/config/env');
+
+    expect(env.lockoutMinutes).toBe(30);
   });
 });

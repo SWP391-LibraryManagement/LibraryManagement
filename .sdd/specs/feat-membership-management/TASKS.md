@@ -1,6 +1,6 @@
 # TASKS.md - FE04 Membership Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
 Implementation State: COMPLETE
 
 Owner: Dat
