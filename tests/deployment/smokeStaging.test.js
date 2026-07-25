@@ -105,6 +105,26 @@ test('retries a transient timeout while staging warms up', async () => {
   }
 });
 
+test('reports the timed-out staging check after retries are exhausted', async () => {
+  const alwaysTimeout = async () => {
+    const error = new Error('This operation was aborted');
+    error.name = 'AbortError';
+    throw error;
+  };
+
+  await assert.rejects(
+    runStagingSmoke({
+      frontendUrl: 'https://frontend.example.test',
+      apiUrl: 'https://api.example.test',
+      fetchImpl: alwaysTimeout,
+      timeoutMs: 25,
+      requestAttempts: 2,
+      retryDelayMs: 0,
+    }),
+    /Frontend request timed out after 2 attempts \(25 ms per attempt\): \/\./
+  );
+});
+
 test('fails when the API allows an untrusted origin', async () => {
   const fixture = await startFixture({ permissiveCors: true });
   try {

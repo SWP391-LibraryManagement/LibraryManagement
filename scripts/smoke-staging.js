@@ -1,4 +1,4 @@
-const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_TIMEOUT_MS = 30000;
 const DEFAULT_REQUEST_ATTEMPTS = 3;
 const DEFAULT_RETRY_DELAY_MS = 5000;
 const UNTRUSTED_ORIGIN = 'https://untrusted.example.test';
@@ -12,7 +12,7 @@ function normalizeUrl(value, name) {
   return parsed.origin;
 }
 
-async function request(fetchImpl, url, options, timeoutMs, attempts, retryDelayMs) {
+async function request(fetchImpl, checkName, url, options, timeoutMs, attempts, retryDelayMs) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -20,7 +20,15 @@ async function request(fetchImpl, url, options, timeoutMs, attempts, retryDelayM
       return await fetchImpl(url, { ...options, signal: controller.signal });
     } catch (error) {
       const transient = error?.name === 'AbortError' || error instanceof TypeError;
-      if (!transient || attempt === attempts) throw error;
+      if (!transient) throw error;
+      if (attempt === attempts) {
+        const outcome = error?.name === 'AbortError' ? 'timed out' : 'failed';
+        throw new Error(
+          `${checkName} request ${outcome} after ${attempts} attempts `
+          + `(${timeoutMs} ms per attempt): ${new URL(url).pathname}.`,
+          { cause: error }
+        );
+      }
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     } finally {
       clearTimeout(timer);
@@ -42,6 +50,7 @@ async function runStagingSmoke({
 
   const frontendResponse = await request(
     fetchImpl,
+    'Frontend',
     `${frontend}/`,
     {},
     timeoutMs,
@@ -56,6 +65,7 @@ async function runStagingSmoke({
 
   const healthResponse = await request(
     fetchImpl,
+    'API health',
     `${api}/health`,
     {},
     timeoutMs,
@@ -70,6 +80,7 @@ async function runStagingSmoke({
 
   const catalogResponse = await request(
     fetchImpl,
+    'SQL-backed catalog',
     `${api}/api/books?page=1&limit=1`,
     {},
     timeoutMs,
@@ -89,6 +100,7 @@ async function runStagingSmoke({
 
   const allowedResponse = await request(
     fetchImpl,
+    'Allowed CORS',
     `${api}/health`,
     { headers: { Origin: frontend } },
     timeoutMs,
@@ -102,6 +114,7 @@ async function runStagingSmoke({
 
   const untrustedResponse = await request(
     fetchImpl,
+    'Blocked CORS',
     `${api}/health`,
     { headers: { Origin: UNTRUSTED_ORIGIN } },
     timeoutMs,
@@ -115,6 +128,7 @@ async function runStagingSmoke({
 
   const protectedResponse = await request(
     fetchImpl,
+    'Protected route',
     `${api}/api/auth/me`,
     {},
     timeoutMs,
