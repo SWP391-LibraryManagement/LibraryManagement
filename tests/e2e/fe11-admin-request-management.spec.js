@@ -173,9 +173,9 @@ test('[E2E-FE11-ACC01] Admin Request Management preserves pagination, detail, ex
   await expect(userHeading).toBeVisible();
   await expect(page.locator('.admin-user-table')).toBeHidden();
   await expect(page.locator('.admin-user-cards')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Phân quyền', exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Vô hiệu hóa', exact: true }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true })).toHaveCount(0);
   expect(await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
   )).toBe(false);
