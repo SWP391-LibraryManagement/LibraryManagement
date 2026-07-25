@@ -357,3 +357,11 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
 - [x] Keep book-management actions inside Admin Library by embedding the canonical FE05 workspace instead of redirecting to `/librarian/books`.
 - [x] Verify Admin Library search/status filters reach the backend query and add frontend/backend regression coverage.
 - [x] Align FE11 browser acceptance with the shared sidebar selectors and the read-only, filter-free Activity Log presentation.
+
+- [x] **FE11-PDO05 - Replace Librarian work fields with shared managed-profile editing.**
+  - Maps to: Q-FE11-028; BR-FE11-014/015/027; FR-FE11-004/007/010/020/023/028.
+  - DoD: Admin edits `fullName`, `phone`, and `address` for every managed role;
+    email remains read-only; department/specialization and the obsolete notice are
+    absent from the UI; FE03 and FE11 share canonical persistence and concurrency.
+  - Validation: focused frontend/backend contracts passed on 2026-07-25; full
+    regression and browser/human acceptance are recorded separately.

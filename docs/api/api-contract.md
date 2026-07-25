@@ -373,7 +373,7 @@ Response `200`:
 }
 ```
 
-The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response. `updatedAt` is always the effective `COALESCE(Users.UpdatedAt, Users.CreatedAt)` value. `department` and `specialization` are included only for a current `LIBRARIAN` role.
+The approved list envelope contains exactly `data` and `pagination`. Global Admin counters are read independently from FE12 `GET /api/reports/users` (`totals.users`, `usersByStatus`, and `usersByRole`) and are not derived from this paginated response. `updatedAt` is the latest effective version across `Users` and `UserProfiles`, so FE03 self-service and FE11 Admin updates participate in the same optimistic-concurrency boundary.
 
 ### GET `/api/users/{userId}`
 
@@ -400,7 +400,7 @@ Response `200`:
 }
 ```
 
-Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. `updatedAt` is the effective `COALESCE(Users.UpdatedAt, Users.CreatedAt)` value. Current Librarian targets may include nullable `department` and `specialization`; non-Librarian targets omit them. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
+Notes: `relatedSummary` is detail-only and each value defaults to numeric zero. `updatedAt` is the latest effective version across `Users` and `UserProfiles`. The response must never return password hashes, raw or hashed auth tokens, refresh/session identifiers, setup/reset links, provider payloads, or secret audit metadata.
 
 ### POST `/api/users`
 
@@ -413,9 +413,7 @@ Request:
   "fullName": "New Librarian",
   "type": "librarian",
   "phone": "0900000009",
-  "address": "Hanoi",
-  "department": "Circulation",
-  "specialization": "Borrowing"
+  "address": "Hanoi"
 }
 ```
 
@@ -435,7 +433,7 @@ Response `201`:
 Notes:
 
 - User, profile, role, hashed setup token, and audit commit atomically before FE10 delivery.
-- Authentication/Admin authorization and validated normalized input precede the repository call; `email` is maximum 255, `fullName` is maximum 100, and Librarian fields are maximum 100.
+- Authentication/Admin authorization and validated normalized input precede the repository call; `email` is maximum 255 and `fullName` is maximum 100.
 - The source transaction revalidates the active acting Admin and performs authoritative normalized email/username uniqueness checks before inserts.
 - Duplicate normalized email returns `409 EMAIL_ALREADY_EXISTS`, persists no partial source state, and requests no FE10 delivery.
 - Delivery failure returns `setupDeliveryStatus: "FAILED"`; the account remains `INACTIVE` and no provider detail or setup credential is returned.
@@ -477,16 +475,17 @@ Request:
 ```json
 {
   "expectedUpdatedAt": "2026-07-18T08:00:00.000Z",
-  "department": "Reference",
-  "specialization": "Research Support"
+  "fullName": "Nguyễn Văn An",
+  "phone": "0900000000",
+  "address": "Hà Nội"
 }
 ```
 
 Response `200`:
 
-The target must currently have the `LIBRARIAN` role. Both work fields are optional nullable strings with a maximum length of 100, but at least one must be supplied. The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`.
+The target may have the `MEMBER`, `LIBRARIAN`, or `ADMIN` role. Admin may update `fullName` (required when supplied, maximum 100), nullable `phone` (maximum 20, phone-character validation), and nullable `address` (maximum 255); at least one editable field must be supplied. The response is the authoritative updated `UserManagementView`. A no-op returns the current DTO with unchanged effective `updatedAt` and no success audit. A stale request returns `409 STALE_USER_STATE`.
 
-`fullName`, `phone`, and `address` are owned by FE03 self-service. Existing-account email is read-only until a verified FE02 change flow is approved. If this FE11 endpoint receives any of those personal fields, an unknown field, or a payload mixing one with an allowed work field, it returns `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` atomically; no field, effective version, or success audit changes.
+FE03 self-service and this FE11 Admin endpoint write the same profile fields and share the latest effective concurrency version. Existing-account email remains read-only until a verified FE02 change flow is approved. If this endpoint receives `email`, `department`, `specialization`, an unknown field, or a payload mixing one with an allowed field, it returns `403 MANAGED_USER_UPDATE_FORBIDDEN` atomically; no field, effective version, or success audit changes.
 
 ### PATCH `/api/users/{userId}/status`
 
@@ -560,7 +559,7 @@ Allowed role values are `ADMIN`, `LIBRARIAN`, and `MEMBER`; arrays are determini
 | --- | --- | --- | --- |
 | User & Role | `USER_VIEW` | View users | ADMIN |
 | User & Role | `USER_CREATE` | Create accounts | ADMIN |
-| User & Role | `USER_UPDATE` | Update Librarian work fields | ADMIN |
+| User & Role | `USER_UPDATE` | Update managed user profile fields | ADMIN |
 | User & Role | `USER_DEACTIVATE` | Deactivate accounts | ADMIN |
 | User & Role | `ROLE_MANAGE` | Manage roles | ADMIN |
 | User & Role | `AUDIT_VIEW` | View audit logs | ADMIN |

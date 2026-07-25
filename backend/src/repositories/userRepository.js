@@ -66,11 +66,6 @@ function mapManagedUser(row) {
     roles,
   };
 
-  if (roles.includes('LIBRARIAN')) {
-    result.department = row.Department ?? null;
-    result.specialization = row.Specialization ?? null;
-  }
-
   return result;
 }
 
@@ -139,11 +134,13 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
+        CASE
+          WHEN COALESCE(up.UpdatedAt, up.CreatedAt) > COALESCE(u.UpdatedAt, u.CreatedAt)
+            THEN COALESCE(up.UpdatedAt, up.CreatedAt)
+          ELSE COALESCE(u.UpdatedAt, u.CreatedAt)
+        END AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
-        up.Department,
-        up.Specialization,
         roleList.Roles,
         COUNT(*) OVER() AS TotalCount
       FROM Users u
@@ -170,8 +167,8 @@ async function listManagedUsers({ page = 1, limit = 20, status, role, search } =
         u.UpdatedAt,
         up.FullName,
         up.Address,
-        up.Department,
-        up.Specialization,
+        up.CreatedAt,
+        up.UpdatedAt,
         roleList.Roles
     )
     SELECT *
@@ -208,11 +205,13 @@ async function getManagedUserById(userId) {
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
+        CASE
+          WHEN COALESCE(up.UpdatedAt, up.CreatedAt) > COALESCE(u.UpdatedAt, u.CreatedAt)
+            THEN COALESCE(up.UpdatedAt, up.CreatedAt)
+          ELSE COALESCE(u.UpdatedAt, u.CreatedAt)
+        END AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
-        up.Department,
-        up.Specialization,
         roleList.Roles
       FROM Users u
       LEFT JOIN UserProfiles up ON u.UserId = up.UserId
@@ -238,8 +237,8 @@ async function getManagedUserById(userId) {
         u.UpdatedAt,
         up.FullName,
         up.Address,
-        up.Department,
-        up.Specialization,
+        up.CreatedAt,
+        up.UpdatedAt,
         roleList.Roles
     `);
 
@@ -261,11 +260,13 @@ async function getManagedUserDetailById(userId) {
         u.Status,
         u.LastLoginAt,
         u.CreatedAt,
-        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
+        CASE
+          WHEN COALESCE(up.UpdatedAt, up.CreatedAt) > COALESCE(u.UpdatedAt, u.CreatedAt)
+            THEN COALESCE(up.UpdatedAt, up.CreatedAt)
+          ELSE COALESCE(u.UpdatedAt, u.CreatedAt)
+        END AS EffectiveUpdatedAt,
         up.FullName,
         up.Address,
-        up.Department,
-        up.Specialization,
         roleList.Roles,
         COALESCE((
           SELECT COUNT(*)

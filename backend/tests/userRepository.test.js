@@ -178,7 +178,7 @@ test('getManagedUserDetailById maps missing aggregates to zero and missing users
   await expect(userRepository.getManagedUserDetailById(999)).resolves.toBeNull();
 });
 
-test('getManagedUserById returns the effective version and Librarian-only fields', async () => {
+test('getManagedUserById returns the latest Users/UserProfiles effective version without work fields', async () => {
   const createdAt = new Date('2026-07-01T00:00:00.000Z');
   const capture = useRecordset([{
     UserId: 7,
@@ -197,36 +197,12 @@ test('getManagedUserById returns the effective version and Librarian-only fields
     Specialization: 'Research Support',
   }]);
 
-  await expect(userRepository.getManagedUserById(7)).resolves.toMatchObject({
+  const result = await userRepository.getManagedUserById(7);
+  expect(result).toMatchObject({
     updatedAt: createdAt,
     roles: ['LIBRARIAN'],
-    department: 'Reference',
-    specialization: 'Research Support',
   });
-  expect(capture.query).toContain('COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt');
-  expect(capture.query).toContain('up.Department');
-  expect(capture.query).toContain('up.Specialization');
-});
-
-test('managed user DTO omits Librarian fields for non-Librarian roles', async () => {
-  useRecordset([{
-    UserId: 8,
-    Username: 'member.user',
-    Email: 'member@example.test',
-    Phone: null,
-    Status: 'ACTIVE',
-    FullName: 'Member User',
-    Address: null,
-    LastLoginAt: null,
-    CreatedAt: new Date('2026-07-01T00:00:00.000Z'),
-    EffectiveUpdatedAt: new Date('2026-07-02T00:00:00.000Z'),
-    Roles: 'MEMBER',
-    Department: 'Must not leak',
-    Specialization: 'Must not leak',
-  }]);
-
-  const result = await userRepository.getManagedUserById(8);
-
+  expect(capture.query).toContain('WHEN COALESCE(up.UpdatedAt, up.CreatedAt) > COALESCE(u.UpdatedAt, u.CreatedAt)');
   expect(result).not.toHaveProperty('department');
   expect(result).not.toHaveProperty('specialization');
 });

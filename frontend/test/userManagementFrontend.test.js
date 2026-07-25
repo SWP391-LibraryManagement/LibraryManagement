@@ -60,8 +60,9 @@ test('FE11 user module keeps detail, lifecycle and independent loading contracts
   assert.match(section, /isManagedUserNotFound\(error\)[^]*?await loadUsers\(pagination\.page\)/);
   assert.match(section, /deactivateManagedUser\(user\.userId, user\.updatedAt\)/);
   assert.match(section, /expectedUpdatedAt: modal\.user\.updatedAt/);
-  assert.match(section, /department: form\.department\.trim\(\) \|\| null/);
-  assert.match(section, /specialization: form\.specialization\.trim\(\) \|\| null/);
+  assert.match(section, /fullName: form\.fullName\.trim\(\)/);
+  assert.match(section, /phone: form\.phone\.trim\(\) \|\| null/);
+  assert.match(section, /address: form\.address\.trim\(\) \|\| null/);
   assert.match(section, /createLatestRequestGuard/);
   assert.match(section, /beginLatestRequest\('users'\)/);
   assert.match(section, /beginLatestRequest\('user-statistics'\)/);
@@ -109,36 +110,30 @@ test('FE11 user validation preserves canonical field widths', () => {
     fullName: 'x'.repeat(100),
     phone: '',
     address: '',
-    department: 'x'.repeat(100),
-    specialization: 'x'.repeat(100),
   });
   assert.deepEqual(valid, {});
 
   const invalid = validateUserForm({
     type: 'librarian',
     email: 'librarian@example.test',
-    fullName: 'Librarian',
-    phone: '',
-    address: '',
-    department: 'x'.repeat(101),
-    specialization: 'x'.repeat(101),
+    fullName: '',
+    phone: 'invalid phone',
+    address: 'x'.repeat(256),
   });
-  assert.ok(invalid.department);
-  assert.ok(invalid.specialization);
+  assert.ok(invalid.fullName);
+  assert.ok(invalid.phone);
+  assert.ok(invalid.address);
 
   const editOnly = validateUserForm({
-    type: 'librarian',
     email: 'not-used-in-edit',
-    fullName: '',
-    phone: 'not-used-in-edit',
-    address: 'x'.repeat(300),
-    department: 'Reference',
-    specialization: 'Research Support',
+    fullName: 'Người dùng hợp lệ',
+    phone: '0900000000',
+    address: 'Hà Nội',
   }, { mode: 'edit' });
   assert.deepEqual(editOnly, {});
 });
 
-test('FE11 desktop table and mobile cards expose work edits only for current Librarians', async () => {
+test('FE11 desktop table and mobile cards expose profile editing for every managed role', async () => {
   const [section, css] = await Promise.all([
     readAdminFile('users/AdminUsersSection.jsx'),
     readAdminFile('admin-console.css'),
@@ -150,9 +145,9 @@ test('FE11 desktop table and mobile cards expose work edits only for current Lib
   for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
     assert.match(section, new RegExp('label="' + label + '"'));
   }
-  assert.match(section, /user\.roles\?\.includes\('LIBRARIAN'\)[^]*?label="Cập nhật công việc"/);
-  assert.match(section, /openLibrarianWorkEditor/);
-  assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal/);
+  assert.match(section, /label="Chỉnh sửa" onClick=\{\(\) => openUserEditor\(user\)\}/);
+  assert.doesNotMatch(section, /openLibrarianWorkEditor|department|specialization/);
+  assert.doesNotMatch(section, /openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
   assert.match(css, /\.admin-user-cards\s*\{\s*display: none;/s);
@@ -161,7 +156,7 @@ test('FE11 desktop table and mobile cards expose work edits only for current Lib
   assert.match(css, /\.admin-user-table\s*\{[^}]*overflow-x: auto;/s);
 });
 
-test('FE11 create flow and drawer keep personal fields read-only while allowing Librarian work edits', async () => {
+test('FE11 create and edit flows share profile fields while email remains read-only on edit', async () => {
   const [editor, roleModal, drawer, section] = await Promise.all([
     readAdminFile('users/UserEditorModal.jsx'),
     readAdminFile('users/UserRoleModal.jsx'),
@@ -170,8 +165,8 @@ test('FE11 create flow and drawer keep personal fields read-only while allowing 
   ]);
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
-  assert.match(editor, /readOnly=\{isEdit\}/);
-  assert.match(editor, /isCurrentLibrarian/);
+  assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
+  assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
   assert.match(roleModal, /Mỗi người dùng phải giữ ít nhất một vai trò/);
   assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
   assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
@@ -179,10 +174,9 @@ test('FE11 create flow and drawer keep personal fields read-only while allowing 
   for (const label of ['Đóng chi tiết', 'Chưa có tên', 'Lượt mượn đang hoạt động', 'Tiền phạt chưa thanh toán']) {
     assert.match(drawer, new RegExp(label));
   }
-  assert.match(drawer, /user\.roles\?\.includes\('LIBRARIAN'\)[^]*?onEditWork/);
-  assert.match(section, /onEditWork=\{openLibrarianWorkEditor\}/);
-  assert.doesNotMatch(drawer, /label="Chỉnh sửa"/);
-  assert.doesNotMatch(section, /label="Chỉnh sửa"|openEditModal|onEdit=\{openEditModal\}/);
+  assert.match(drawer, /label="Chỉnh sửa"[^]*?onEdit\(user\)/);
+  assert.match(section, /onEdit=\{openUserEditor\}/);
+  assert.doesNotMatch(section, /openEditModal|onEdit=\{openEditModal\}/);
 });
 
 test('FE11 permissions keep policy and statistics independent with explicit decisions', async () => {

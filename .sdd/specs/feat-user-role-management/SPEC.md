@@ -12,10 +12,9 @@
 
 # Feature folder: `.sdd/specs/feat-user-role-management/`
 
-> Delivery status: the 2026-07-20 Phase 1 baseline is historically complete,
-> but the approved 2026-07-22 personal-data ownership revision is not yet
-> implemented. `TASKS.md` is authoritative for current `FE11-PDO01..PDO04`
-> state; earlier completion evidence remains valid only for unchanged behavior.
+> Delivery status: local automated implementation is current through the
+> 2026-07-25 managed-profile editing revision. Browser/human acceptance remains
+> pending where recorded in `TASKS.md`.
 
 > Source of truth for FE11 User & Role Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE11 is critical to system access control and administration.
 >
@@ -26,6 +25,15 @@
 > Approved 2026-07-22 navigation overlay: the Admin sidebar adds FE04 Membership Review after All Users. FE11 owns only the shell/navigation entry; FE04 retains list/review API and business ownership. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 >
 > Approved 2026-07-22 personal-data ownership revision: FE03 owns self-service changes to `fullName`, `phone`, and `address`; verified email change belongs to FE02 and remains outside Phase 1 until an explicit flow is approved. FE11 Admin may view those fields but may update only Librarian work fields (`department`, `specialization`). The previous broad Admin-update implementation is no longer acceptance evidence and must be restricted under `FE11-PDO01..PDO04` before this revision is complete.
+>
+> Approved 2026-07-25 superseding revision (`Q-FE11-028`): FE11 Admin may update
+> `fullName`, `phone`, and `address` for any managed Member, Librarian, or Admin
+> account. FE03 retains self-service access to the same persisted profile fields,
+> and both flows share the latest `Users`/`UserProfiles` optimistic-concurrency
+> version. Existing-account email remains read-only under FE02 verification
+> ownership. `department` and `specialization` are removed from the FE11 Admin UI
+> and existing-user update contract. This paragraph supersedes every conflicting
+> 2026-07-22 ownership/work-field statement retained below as historical evidence.
 
 ---
 
@@ -50,7 +58,7 @@ The system shall:
 - Allow admins to create new member accounts.
 - Allow admins to create new librarian accounts.
 - Keep personal profile changes (`fullName`, `phone`, `address`) in FE03 self-service and keep verified email change under FE02 ownership.
-- Allow admins to update only Librarian work information (`department`, `specialization`).
+- Allow admins to update a managed user's `fullName`, `phone`, and `address` without changing email or role ownership.
 - Allow admins to deactivate user accounts.
 - Allow admins to deactivate librarian accounts.
 - Allow admins to manage user role assignments (assign/revoke roles).
@@ -70,7 +78,7 @@ The system shall:
 
 | Actor | Description | Permission / Responsibility |
 | ----- | ----------- | --------------------------- |
-| Admin | System administrator | Can view, create, and deactivate users; manage account setup and role assignments; and update only Librarian work fields (`department`, `specialization`). Cannot edit another user's personal profile fields or email. |
+| Admin | System administrator | Can view, create, deactivate, and update the approved `fullName`, `phone`, and `address` fields for managed users; can manage account setup and role assignments; cannot change an existing email without a verified FE02 flow. |
 | Librarian | Library staff (non-admin) | Cannot manage users. Can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
 | Member | Library user (non-staff) | Cannot manage users. Can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
 | Guest | Unauthenticated visitor | Cannot access user management. |
@@ -121,13 +129,13 @@ The feature can only start when:
 9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
 10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
 
-### MF-FE11-004: Enforce Personal Profile Ownership
+### MF-FE11-004: Maintain Managed Profile Information
 
 1. Admin opens user detail for operational review.
-2. The Admin UI displays `fullName`, `phone`, `address`, and `email` as read-only and exposes no personal-information edit action.
-3. An authenticated user updates their own allowed `fullName`, `phone`, and `address` through FE03 `/api/profile/me`.
-4. FE11 rejects any Admin request that attempts to change `fullName`, `phone`, `address`, or `email` on an existing account with `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`.
-5. The rejection changes no user/profile field, does not advance `UpdatedAt`, and writes no success audit.
+2. The Admin UI allows `fullName`, `phone`, and `address` editing for every managed role while keeping `email` read-only.
+3. An authenticated user may update the same profile fields through FE03 `/api/profile/me`.
+4. Both flows persist to the canonical `Users`/`UserProfiles` records and participate in one effective optimistic-concurrency version.
+5. FE11 rejects email, department, specialization, mixed, or unknown-field updates atomically with `403 MANAGED_USER_UPDATE_FORBIDDEN`.
 6. Email remains read-only in Phase 1; any future email change must use an explicitly approved FE02 verification flow.
 
 ### MF-FE11-005: Deactivate User Account
@@ -156,12 +164,12 @@ The feature can only start when:
 9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
 10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
 
-### MF-FE11-007: Update Librarian Account
+### MF-FE11-007: Update Managed User Profile
 
-1. Admin opens an existing librarian account.
-2. Admin edits only `department` and/or `specialization` and submits the loaded effective `expectedUpdatedAt`.
-3. The system rejects `fullName`, `phone`, `address`, `email`, or any unknown field and validates the 100-character Librarian work-field limits.
-4. The system compares `COALESCE(Users.UpdatedAt, Users.CreatedAt)` and rejects stale state without mutation.
+1. Admin opens an existing Member, Librarian, or Admin account.
+2. Admin edits `fullName`, `phone`, and/or `address` and submits the loaded effective `expectedUpdatedAt`.
+3. The system keeps email read-only and rejects `email`, `department`, `specialization`, or any unknown field.
+4. The system compares the latest effective `Users`/`UserProfiles` version and rejects stale state without mutation.
 5. The system saves only effective changes; a no-op keeps the effective version and writes no success audit.
 6. The system advances storage `UpdatedAt` and writes one safe audit for an effective change.
 7. The system shows the authoritative safe DTO.
@@ -273,8 +281,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-011: A member user cannot create or manage other users.
 - BR-FE11-012: A librarian user cannot create or manage users.
 - BR-FE11-013: Admin never enters, sees, or creates passwords directly. Password setup generates a one-time token link sent via email, and the user sets their own password through FE02.
-- BR-FE11-014: After account creation, `fullName`, `phone`, and `address` are user-owned through FE03 self-service. Existing-account email change belongs to a verified FE02 flow and remains outside Phase 1. FE11 Admin must not mutate any of these personal fields.
-- BR-FE11-015: Librarian accounts are user accounts with the Librarian role and must follow the same security, audit, and deactivation rules as other user accounts. FE11 Admin may update only their trimmed nullable `department` and `specialization` work fields.
+- BR-FE11-014: After account creation, both the account owner through FE03 and Admin through FE11 may update `fullName`, `phone`, and `address` in the same canonical profile. Existing-account email change belongs to a verified FE02 flow and remains outside Phase 1.
+- BR-FE11-015: Member, Librarian, and Admin accounts follow the same managed-profile validation, concurrency, audit, and deactivation rules. `department` and `specialization` are not part of the FE11 Admin editing experience.
 - BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only the eight approved sections, including FE04 Membership Review after All Users, and must not include `Permissions`, `Confirm Payment`, or `Confirm Borrow`. Manage Roles remains available from All Users.
 - BR-FE11-017: Permissions UI is a read-only role summary/matrix unless a separate role-editing action is explicitly performed under Manage Roles.
 - BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
@@ -286,7 +294,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-024: User, profile, initial role, setup token, and FE11 audit creation must commit or roll back together after the transaction locks and revalidates the active acting Admin and performs authoritative normalized email/username uniqueness checks; FE10 provider delivery occurs only after this source transaction and remains non-blocking.
 - BR-FE11-025: Admin resend is allowed only after the source transaction locks and revalidates the active acting Admin and confirms an `INACTIVE` admin-created account with incomplete setup token history; each resend revokes prior active setup tokens and creates a new token/event/key after a 60-second cooldown.
 - BR-FE11-026: User list/detail/Librarian-work-update responses must use the approved `UserManagementView` DTO and must never expose password hashes, raw or hashed auth credentials, session identifiers, setup/reset links, or secret audit metadata.
-- BR-FE11-027: Every Librarian work-field update and deactivation must use optimistic concurrency with the loaded non-null `updatedAt` effective version `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. If submitted work-field values produce no effective field change, the system returns the current safe DTO with HTTP `200`, does not advance storage `UpdatedAt`, and writes no success audit.
+- BR-FE11-027: Every managed-profile update and deactivation must use the loaded non-null `updatedAt`, defined as the latest effective timestamp across `Users` and `UserProfiles`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. A no-op returns the current safe DTO without advancing the version or writing a success audit.
 
 ---
 
@@ -295,13 +303,13 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-001: When admin opens user list, the system shall display the paginated `UserManagementView` list using `page = 1`/`limit = 20` defaults, `limit = 1..100` bounds, stable order `CreatedAt DESC, UserId DESC`, and the approved status/role/search filters.
 - FR-FE11-002: When admin views user details, the system shall return the safe `UserManagementView` DTO with the required three-field `relatedSummary` and deterministic zero defaults, excluding every credential, token, session, link, and secret audit field listed in Section 10.3.
 - FR-FE11-003: When Admin creates a new user account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile, approved role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
-- FR-FE11-004: IF Admin submits an existing-user update containing `fullName`, `phone`, `address`, or `email`, the system shall reject the request with HTTP `403` and code `PERSONAL_PROFILE_ADMIN_FORBIDDEN`, persist no submitted field or version change, and write no success audit.
+- FR-FE11-004: When Admin submits a valid existing-user update containing `fullName`, `phone`, and/or `address`, the system shall persist effective changes atomically and return the authoritative safe DTO. Email, department, specialization, and unknown fields shall be rejected atomically with HTTP `403 MANAGED_USER_UPDATE_FORBIDDEN`.
 - FR-FE11-005: When admin submits a create user form with duplicate normalized email, including a concurrent conflict enforced by deterministic index `UX_Users_Email`, the system shall return `409 EMAIL_ALREADY_EXISTS`, persist no partial account/setup/audit state, and request no FE10 delivery.
 - FR-FE11-006: The system shall never require admin to enter a password when creating users; password setup must happen through a one-time FE02 token flow.
-- FR-FE11-007: The Admin UI shall display personal fields as read-only and shall not expose an existing-user personal-information edit control. An authenticated user may update their own `fullName`, `phone`, and `address` only through FE03; email remains read-only until a verified FE02 change flow is separately approved.
+- FR-FE11-007: The Admin UI shall expose one Edit action for every managed role, allow `fullName`, `phone`, and `address`, keep email read-only, and omit department/specialization. FE03 self-service shall continue to read and write the same canonical profile fields.
 - FR-FE11-008: When admin deactivates an `ACTIVE` or `LOCKED` user account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
 - FR-FE11-009: When Admin creates a new librarian account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile with trimmed nullable `department`/`specialization`, Librarian role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
-- FR-FE11-010: When Admin updates a current Librarian account, the system shall accept only trimmed nullable `department` and `specialization` limited to 100 characters, reject personal or unknown fields, advance storage `UpdatedAt` only for an effective work-field change, and audit only the successful effective change.
+- FR-FE11-010: When Admin updates a managed account, the system shall accept trimmed `fullName` (1..100), nullable validated `phone` (maximum 20), and nullable `address` (maximum 255), advance storage timestamps only for effective changes, and audit only a successful effective change.
 - FR-FE11-011: When admin deactivates an `ACTIVE` or `LOCKED` librarian account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
 - FR-FE11-012: When admin assigns a role to a user, the system shall create an entry in UserRoles table.
 - FR-FE11-013: When admin revokes a role from a user, the system shall remove the entry from UserRoles table.
@@ -325,15 +333,15 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - FR-FE11-017: IF the acting Admin user is missing during create, setup resend, Librarian work-field update, deactivation, or role mutation, the system shall return `404 ADMIN_NOT_FOUND` and shall not perform a source mutation or success audit; an inactive or non-Admin actor returns `403 ADMIN_REQUIRED`. (Source: EC-FE11-001)
 - FR-FE11-018: IF admin attempts to deactivate their own account, the system shall reject the action. (Source: Q-FE11-001, EC-FE11-006)
 - FR-FE11-019: IF admin attempts to deactivate a user who has active borrowings, the system shall block the deactivation and report the number of active borrowed items. (Source: AF-FE11-002, Q-FE11-002, MF-FE11-005 step 3)
-- FR-FE11-020: IF Admin attempts to change an existing user's email, regardless of uniqueness, the system shall reject the request with HTTP `403` and code `PERSONAL_PROFILE_ADMIN_FORBIDDEN`; any future email-change capability must use an explicitly approved FE02 verification flow. (Source: AF-FE11-004, BR-FE11-014)
+- FR-FE11-020: IF Admin attempts to change an existing user's email, regardless of uniqueness, the system shall reject the request with HTTP `403` and code `MANAGED_USER_UPDATE_FORBIDDEN`; any future email-change capability must use an explicitly approved FE02 verification flow. (Source: AF-FE11-004, BR-FE11-014)
 - FR-FE11-021: IF an email submitted during FE11 account creation is malformed, contains an SQL injection payload, or exceeds 255 characters, the system shall sanitize the input, reject the request, and return a validation error. (Source: EC-FE11-003, EC-FE11-004)
 - FR-FE11-022: IF a database error occurs during user creation, the system shall roll back the transaction and return an error without creating a partial user record. (Source: EC-FE11-008, NFR-FE11-TXN-001)
-- FR-FE11-023: WHERE a Librarian work-field update or deactivation `expectedUpdatedAt` does not equal `COALESCE(Users.UpdatedAt, Users.CreatedAt)`, the system shall reject the mutation with HTTP `409` and code `STALE_USER_STATE`, preserving the existing record and writing no success audit. (Source: EC-FE11-007, BR-FE11-027)
+- FR-FE11-023: WHERE a managed-profile update or deactivation `expectedUpdatedAt` does not equal the latest effective `Users`/`UserProfiles` version, the system shall reject the mutation with HTTP `409` and code `STALE_USER_STATE`, preserving the existing record and writing no success audit. (Source: EC-FE11-007, BR-FE11-027)
 - FR-FE11-024: IF admin assigns a role that does not exist, the system shall return a not-found error and shall not modify the UserRoles mapping. (Source: EC-FE11-010)
 - FR-FE11-025: IF admin assigns a role the user already holds, the system shall reject the request with the message "User already has this role." (Source: EC-FE11-011)
 - FR-FE11-026: IF admin attempts to revoke a role the user does not hold, the system shall return a not-found error. (Source: EC-FE11-012)
 - FR-FE11-027: IF revoking a role would leave the user with no role at all, the system shall reject the action because every user must retain at least one role. (Source: EC-FE11-013, BR-FE11-007)
-- FR-FE11-028: IF admin submits a librarian-specific field (department, specialization) that is too long or invalid, the system shall reject the update and return a validation error. (Source: EC-FE11-015, BR-FE11-015)
+- FR-FE11-028: IF Admin submits an invalid managed-profile field, the system shall reject the update with a validation error; forbidden email, department, specialization, and unknown fields use `MANAGED_USER_UPDATE_FORBIDDEN`.
 - FR-FE11-029: IF a user attempts to complete password setup with a token that is expired or already used, the system shall reject the request and shall not activate password-based login. (Source: data field `passwordSetupToken` / `passwordSetupTokenExpiresAt` in section 10.2, BR-FE11-013)
 
 ---
@@ -584,6 +592,7 @@ This feature does not include:
 | Q-FE11-024 | FE11 create and setup resend revalidate the active acting Admin inside each source transaction; create duplicate email is transaction-authoritative and safe. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
 | Q-FE11-025 | Admin request reads use `page`, `limit`, `q`, `status`, `from`, `to`, exact `{ data, pagination }`, and a dedicated safe detail endpoint; FE07 remains the only mutation owner. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
 | Q-FE11-027 | Admin may view but must not edit an existing user's `fullName`, `phone`, `address`, or `email`. FE03 owns self-service personal-profile changes; existing-account email change requires a future verified FE02 flow; FE11 may update only `department` and `specialization` for current Librarians. | User approval 2026-07-22 | APPROVED |
+| Q-FE11-028 | Supersedes Q-FE11-027 for managed-profile editing: Admin may update `fullName`, `phone`, and `address` for every managed role; FE03 uses the same persisted fields; email stays read-only under FE02 verification ownership; department/specialization are removed from the FE11 Admin UI and update contract. | User approval 2026-07-25 | APPROVED |
 
 ---
 
@@ -615,6 +624,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE11-024 | Create/resend revalidate the active acting Admin transactionally and map duplicate email safely. | APPROVED |
 | Q-FE11-025 | Admin request list/detail reads use the canonical finalization contract while FE07 owns mutations. | APPROVED |
 | Q-FE11-027 | Personal fields are read-only in FE11; FE03 owns self-service profile changes, FE02 owns any future verified email change, and FE11 Admin owns only Librarian work fields. | APPROVED |
+| Q-FE11-028 | Admin and FE03 share canonical `fullName`/`phone`/`address` persistence; email remains FE02-verified/read-only; FE11 removes department/specialization editing. Supersedes Q-FE11-027. | APPROVED |
 
 ---
 

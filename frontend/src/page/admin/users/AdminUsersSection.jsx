@@ -210,15 +210,10 @@ export function AdminUsersSection({ onToast }) {
     }
   }
 
-  async function openLibrarianWorkEditor(user) {
-    if (!requireAdminSession() || !user?.roles?.includes('LIBRARIAN')) return;
+  async function openUserEditor(user) {
+    if (!requireAdminSession() || !user?.userId) return;
     try {
       const detail = await fetchManagedUser(user.userId);
-      if (!detail.roles?.includes('LIBRARIAN')) {
-        notify('error', 'Chỉ có thể cập nhật thông tin công việc của tài khoản Thủ thư.');
-        await loadUsers(pagination.page);
-        return;
-      }
       setSelectedUser(null);
       setModal({ mode: 'edit', user: detail });
     } catch (error) {
@@ -233,10 +228,11 @@ export function AdminUsersSection({ onToast }) {
       if (modal?.mode === 'edit') {
         await updateManagedUser(modal.user.userId, {
           expectedUpdatedAt: modal.user.updatedAt,
-          department: form.department.trim() || null,
-          specialization: form.specialization.trim() || null,
+          fullName: form.fullName.trim(),
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
         });
-        notify('success', 'Đã cập nhật thông tin công việc của Thủ thư.');
+        notify('success', 'Đã cập nhật thông tin người dùng.');
       } else {
         await createManagedUser({
           type: form.type,
@@ -244,10 +240,6 @@ export function AdminUsersSection({ onToast }) {
           email: form.email.trim(),
           phone: form.phone.trim() || null,
           address: form.address.trim() || null,
-          ...(form.type === 'librarian' ? {
-            department: form.department.trim() || null,
-            specialization: form.specialization.trim() || null,
-          } : {}),
         });
         notify('success', 'Đã tạo tài khoản chưa kích hoạt và gửi email thiết lập mật khẩu.');
       }
@@ -330,9 +322,7 @@ export function AdminUsersSection({ onToast }) {
     const canDeactivate = ['ACTIVE', 'LOCKED'].includes(user.status);
     return (
       <div className="admin-user-actions" onClick={(event) => event.stopPropagation()}>
-        {user.roles?.includes('LIBRARIAN') ? (
-          <AdminActionButton icon={Pencil} label="Cập nhật công việc" onClick={() => openLibrarianWorkEditor(user)} />
-        ) : null}
+        <AdminActionButton icon={Pencil} label="Chỉnh sửa" onClick={() => openUserEditor(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => openRoleModal(user)} />
         <AdminActionButton
           icon={PowerOff}
@@ -448,7 +438,7 @@ export function AdminUsersSection({ onToast }) {
       </section>
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
-      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEditWork={openLibrarianWorkEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
+      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
       {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRoles} /> : null}
     </section>

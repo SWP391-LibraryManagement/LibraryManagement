@@ -54,23 +54,22 @@ const { sql, getPool } = require('../src/config/db');
 const FIXED_NOW = new Date('2026-07-19T08:30:00.000Z');
 const FIXED_VERSION = new Date('2026-07-19T08:00:00.000Z');
 const ACTIVE_ADMIN = [{ UserId: 99, Status: 'ACTIVE', IsAdmin: 1 }];
-const CURRENT_LIBRARIAN = {
+const CURRENT_USER = {
   UserId: 7,
-  Department: 'Reference',
-  Specialization: 'Research Support',
+  FullName: 'Current User',
+  Phone: '0900000000',
+  Address: 'Hà Nội',
   Status: 'ACTIVE',
   DeactivatedAt: null,
   EffectiveUpdatedAt: FIXED_VERSION,
 };
 const STALE_TARGET = {
-  ...CURRENT_LIBRARIAN,
+  ...CURRENT_USER,
   EffectiveUpdatedAt: new Date('2026-07-19T08:05:00.000Z'),
 };
+const CURRENT_LIBRARIAN = CURRENT_USER;
 const CURRENT_ROLES = [{ RoleName: 'LIBRARIAN' }];
-const CURRENT_CHANGES = {
-  department: 'Reference',
-  specialization: 'Research Support',
-};
+const CURRENT_CHANGES = { fullName: 'Current User', phone: '0900000000', address: 'Hà Nội' };
 
 function loadRepository() {
   return require('../src/repositories/userLifecycleRepository');
@@ -95,7 +94,7 @@ function makeLifecycleHarness(results) {
         adminUserId: 99,
         userId: 7,
         expectedUpdatedAt: FIXED_VERSION,
-        changes: { department: 'Reference' },
+        changes: { fullName: 'Updated User' },
         ipAddress: '127.0.0.1',
         userAgent: 'jest',
         now: FIXED_NOW,
@@ -140,7 +139,7 @@ test.each([
 });
 
 test('no-op writes no field update or audit', async () => {
-  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [CURRENT_LIBRARIAN], CURRENT_ROLES]);
+  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [CURRENT_USER]]);
 
   await expect(harness.invokeUpdate({ changes: CURRENT_CHANGES })).resolves.toEqual({
     outcome: 'NO_CHANGE',
@@ -151,11 +150,10 @@ test('no-op writes no field update or audit', async () => {
   expect(harness.transaction.rollbackCount).toBe(0);
 });
 
-test('rejects Librarian-only fields for a non-Librarian target', async () => {
-  const member = { ...CURRENT_LIBRARIAN, Department: null, Specialization: null };
-  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [member], [{ RoleName: 'MEMBER' }]]);
+test('rejects an explicit blank full name', async () => {
+  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [CURRENT_USER]]);
 
-  await expect(harness.invokeUpdate({ changes: { department: 'Reference' } })).resolves.toEqual({
+  await expect(harness.invokeUpdate({ changes: { fullName: null } })).resolves.toEqual({
     outcome: 'VALIDATION_ERROR',
   });
 
@@ -166,51 +164,47 @@ test('rejects Librarian-only fields for a non-Librarian target', async () => {
 test('effective update writes one sorted audit and commits', async () => {
   const harness = makeLifecycleHarness([
     ACTIVE_ADMIN,
-    [CURRENT_LIBRARIAN],
-    CURRENT_ROLES,
+    [CURRENT_USER],
     [],
   ]);
 
   await expect(harness.invokeUpdate({
-    changes: { specialization: 'Cataloguing', department: 'Circulation' },
+    changes: { phone: '0911111111', fullName: 'Updated User', address: 'Đà Nẵng' },
   })).resolves.toEqual({
     outcome: 'UPDATED',
-    changedFields: ['department', 'specialization'],
+    changedFields: ['address', 'fullName', 'phone'],
   });
 
   const userUpdate = harness.calls.find(({ query }) => query.includes('UPDATE Users'));
   expect(userUpdate.inputs).toMatchObject({
     UserId: 7,
+    Phone: '0911111111',
     Now: FIXED_NOW,
   });
   const profileUpdate = harness.calls.find(({ query }) => query.includes('MERGE UserProfiles'));
   expect(profileUpdate.inputs).toMatchObject({
-    Department: 'Circulation',
-    Specialization: 'Cataloguing',
+    FullName: 'Updated User',
+    Address: 'Đà Nẵng',
   });
-  expect(profileUpdate.inputs).not.toHaveProperty('FullName');
-  expect(profileUpdate.inputs).not.toHaveProperty('Address');
   expect(userUpdate.inputs).not.toHaveProperty('Email');
-  expect(userUpdate.inputs).not.toHaveProperty('Phone');
   const auditCalls = harness.calls.filter(({ query }) => query.includes('INSERT INTO AuditLogs'));
   expect(auditCalls).toHaveLength(1);
   expect(JSON.parse(auditCalls[0].inputs.Metadata)).toEqual({
-    changedFields: ['department', 'specialization'],
+    changedFields: ['address', 'fullName', 'phone'],
   });
   expect(harness.transaction.commitCount).toBe(1);
   expect(harness.transaction.rollbackCount).toBe(0);
 });
 
-test('uses parameterized locked reads for actor, target, and roles', async () => {
+test('uses parameterized locked reads for actor and target', async () => {
   const harness = makeLifecycleHarness([
     ACTIVE_ADMIN,
-    [CURRENT_LIBRARIAN],
-    CURRENT_ROLES,
+    [CURRENT_USER],
   ]);
 
-  await harness.invokeUpdate({ changes: { department: 'Circulation' } });
+  await harness.invokeUpdate({ changes: { fullName: 'Updated User' } });
 
-  for (const call of harness.calls.slice(0, 3)) {
+  for (const call of harness.calls.slice(0, 2)) {
     expect(call.query).toContain('UPDLOCK');
     expect(call.query).toContain('HOLDLOCK');
   }
@@ -225,12 +219,11 @@ test('rolls back an effective update when audit persistence fails', async () => 
   const auditError = new Error('audit insert failed');
   const harness = makeLifecycleHarness([
     ACTIVE_ADMIN,
-    [CURRENT_LIBRARIAN],
-    CURRENT_ROLES,
+    [CURRENT_USER],
     auditError,
   ]);
 
-  await expect(harness.invokeUpdate({ changes: { department: 'Circulation' } })).rejects.toBe(auditError);
+  await expect(harness.invokeUpdate({ changes: { fullName: 'Updated User' } })).rejects.toBe(auditError);
 
   expect(harness.calls.some(({ query }) => query.includes('UPDATE Users'))).toBe(true);
   expect(harness.transaction.commitCount).toBe(0);

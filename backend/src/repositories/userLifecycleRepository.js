@@ -1,6 +1,6 @@
 const { sql, getPool } = require('../config/db');
 
-const EDITABLE_FIELDS = ['department', 'specialization'];
+const EDITABLE_FIELDS = ['fullName', 'phone', 'address'];
 
 function sameDate(left, right) {
   const leftTime = new Date(left).getTime();
@@ -44,11 +44,16 @@ async function lockManagedUser(transaction, userId, expectedUpdatedAt) {
     .query(`
       SELECT
         u.UserId,
+        u.Phone,
         u.Status,
         u.DeactivatedAt,
-        COALESCE(u.UpdatedAt, u.CreatedAt) AS EffectiveUpdatedAt,
-        up.Department,
-        up.Specialization
+        CASE
+          WHEN COALESCE(up.UpdatedAt, up.CreatedAt) > COALESCE(u.UpdatedAt, u.CreatedAt)
+            THEN COALESCE(up.UpdatedAt, up.CreatedAt)
+          ELSE COALESCE(u.UpdatedAt, u.CreatedAt)
+        END AS EffectiveUpdatedAt,
+        up.FullName,
+        up.Address
       FROM Users u WITH (UPDLOCK, HOLDLOCK)
       LEFT JOIN UserProfiles up WITH (UPDLOCK, HOLDLOCK) ON up.UserId = u.UserId
       WHERE u.UserId = @UserId
@@ -70,8 +75,9 @@ async function lockUserRoles(transaction, userId) {
 
 function currentValues(row) {
   return {
-    department: row.Department ?? null,
-    specialization: row.Specialization ?? null,
+    fullName: row.FullName ?? null,
+    phone: row.Phone ?? null,
+    address: row.Address ?? null,
   };
 }
 
@@ -117,13 +123,10 @@ async function updateManagedUser({
       return rollbackWith(transaction, 'STALE_USER_STATE');
     }
 
-    const roles = await lockUserRoles(transaction, userId);
-    if (!roles.includes('LIBRARIAN')
-      && (changes.department !== undefined || changes.specialization !== undefined)) {
+    const { next, changedFields } = effectiveChanges(target, changes);
+    if (changes.fullName !== undefined && !next.fullName) {
       return rollbackWith(transaction, 'VALIDATION_ERROR');
     }
-
-    const { next, changedFields } = effectiveChanges(target, changes);
     if (!changedFields.length) {
       await transaction.commit();
       return { outcome: 'NO_CHANGE' };
@@ -131,17 +134,19 @@ async function updateManagedUser({
 
     await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
+      .input('Phone', sql.NVarChar(20), next.phone)
       .input('Now', sql.DateTime, now)
       .query(`
         UPDATE Users
-        SET UpdatedAt = @Now
+        SET Phone = @Phone,
+            UpdatedAt = @Now
         WHERE UserId = @UserId
       `);
 
     await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
-      .input('Department', sql.NVarChar(100), next.department)
-      .input('Specialization', sql.NVarChar(100), next.specialization)
+      .input('FullName', sql.NVarChar(100), next.fullName)
+      .input('Address', sql.NVarChar(255), next.address)
       .input('Now', sql.DateTime, now)
       .query(`
         MERGE UserProfiles AS target
@@ -149,12 +154,12 @@ async function updateManagedUser({
         ON target.UserId = source.UserId
         WHEN MATCHED THEN
           UPDATE SET
-            Department = @Department,
-            Specialization = @Specialization,
+            FullName = @FullName,
+            Address = @Address,
             UpdatedAt = @Now
         WHEN NOT MATCHED THEN
-          INSERT (UserId, Department, Specialization, CreatedAt)
-          VALUES (@UserId, @Department, @Specialization, @Now);
+          INSERT (UserId, FullName, Address, CreatedAt)
+          VALUES (@UserId, @FullName, @Address, @Now);
       `);
 
     await new sql.Request(transaction)

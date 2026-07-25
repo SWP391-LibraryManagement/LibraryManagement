@@ -40,8 +40,9 @@ function assignValidatedUserStatus(req, res, next) {
 
 const MANAGED_USER_UPDATE_FIELDS = new Set([
   'expectedUpdatedAt',
-  'department',
-  'specialization',
+  'fullName',
+  'phone',
+  'address',
 ]);
 
 function rejectForbiddenManagedUserFields(req, _res, next) {
@@ -50,8 +51,8 @@ function rejectForbiddenManagedUserFields(req, _res, next) {
 
   if (forbiddenField) {
     return next(errors.forbidden(
-      'PERSONAL_PROFILE_ADMIN_FORBIDDEN',
-      'Admins may update only Librarian department and specialization fields.'
+      'MANAGED_USER_UPDATE_FORBIDDEN',
+      'Admins may update only full name, phone number, and address.'
     ));
   }
 
@@ -176,18 +177,23 @@ const updateUserValidators = [
     .isISO8601({ strict: true, strictSeparator: true })
     .withMessage('Expected updated timestamp must be ISO 8601.')
     .toDate(),
-  body('department')
+  body('fullName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Full name must be between 1 and 100 characters.'),
+  body('phone')
     .optional()
     .customSanitizer(blankToNull)
-    .custom((value) => value === null || value.length <= 100)
-    .withMessage('Department must be at most 100 characters.'),
-  body('specialization')
+    .custom((value) => value === null || (value.length <= 20 && /^[0-9+\-\s()]+$/.test(value)))
+    .withMessage('Phone number is invalid.'),
+  body('address')
     .optional()
     .customSanitizer(blankToNull)
-    .custom((value) => value === null || value.length <= 100)
-    .withMessage('Specialization must be at most 100 characters.'),
+    .custom((value) => value === null || value.length <= 255)
+    .withMessage('Address must be at most 255 characters.'),
   body('_error').custom((_, { req }) => {
-    const editableFields = ['department', 'specialization'];
+    const editableFields = ['fullName', 'phone', 'address'];
     if (editableFields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field))) {
       return true;
     }

@@ -409,7 +409,7 @@ describe('FE11 user management routes', () => {
   });
 
   test('PUT /api/users/:userId passes normalized optimistic update data', async () => {
-    const updatedUser = { userId: 7, roles: ['LIBRARIAN'], department: 'Reference' };
+    const updatedUser = { userId: 7, roles: ['MEMBER'], fullName: 'Updated User' };
     const userManagementService = { updateUser: jest.fn(async () => updatedUser) };
     const app = makeApp({ userManagementService });
 
@@ -418,8 +418,9 @@ describe('FE11 user management routes', () => {
       .set('Authorization', 'Bearer token')
       .send({
         expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
-        department: ' Reference ',
-        specialization: ' Research Support ',
+        fullName: ' Updated User ',
+        phone: ' 0900000000 ',
+        address: ' Hà Nội ',
       });
 
     expect(response.status).toBe(200);
@@ -428,20 +429,22 @@ describe('FE11 user management routes', () => {
       7,
       {
         expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
-        department: 'Reference',
-        specialization: 'Research Support',
+        fullName: 'Updated User',
+        phone: '0900000000',
+        address: 'Hà Nội',
       },
       expect.objectContaining({ adminUserId: 99 })
     );
   });
 
   test.each([
-    ['0', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', department: 'Reference' }, 'userId'],
-    ['7', { department: 'Reference' }, 'expectedUpdatedAt'],
-    ['7', { expectedUpdatedAt: 'not-a-date', department: 'Reference' }, 'expectedUpdatedAt'],
+    ['0', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: 'User' }, 'userId'],
+    ['7', { fullName: 'User' }, 'expectedUpdatedAt'],
+    ['7', { expectedUpdatedAt: 'not-a-date', fullName: 'User' }, 'expectedUpdatedAt'],
     ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z' }, '_error'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', department: 'x'.repeat(101) }, 'department'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', specialization: 'x'.repeat(101) }, 'specialization'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: '' }, 'fullName'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', phone: 'invalid phone' }, 'phone'],
+    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', address: 'x'.repeat(256) }, 'address'],
   ])('PUT /api/users/%s rejects invalid update payload', async (userId, payload, field) => {
     const userManagementService = { updateUser: jest.fn() };
     const app = makeApp({ userManagementService });
@@ -459,7 +462,7 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.updateUser).not.toHaveBeenCalled();
   });
 
-  test.each(['fullName', 'phone', 'address', 'email', 'unknownField'])(
+  test.each(['email', 'department', 'specialization', 'unknownField'])(
     'PUT /api/users/:userId rejects forbidden existing-user field %s atomically',
     async (field) => {
       const userManagementService = { updateUser: jest.fn() };
@@ -470,12 +473,12 @@ describe('FE11 user management routes', () => {
         .set('Authorization', 'Bearer token')
         .send({
           expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
-          department: 'Reference',
+          fullName: 'Updated User',
           [field]: field === 'email' ? 'unchanged@example.test' : 'forbidden',
         });
 
       expect(response.status).toBe(403);
-      expect(response.body.error.code).toBe('PERSONAL_PROFILE_ADMIN_FORBIDDEN');
+      expect(response.body.error.code).toBe('MANAGED_USER_UPDATE_FORBIDDEN');
       expect(userManagementService.updateUser).not.toHaveBeenCalled();
     }
   );

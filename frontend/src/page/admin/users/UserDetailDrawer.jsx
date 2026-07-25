@@ -12,7 +12,7 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-export function UserDetailDrawer({ user, onClose, onEditWork, onManageRoles, onDeactivate }) {
+export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeactivate }) {
   return (
     <aside className="admin-user-drawer" aria-label="Chi tiết người dùng">
       <button className="admin-user-drawer__close" type="button" onClick={onClose} aria-label="Đóng chi tiết">
@@ -32,9 +32,6 @@ export function UserDetailDrawer({ user, onClose, onEditWork, onManageRoles, onD
         <p><Shield aria-hidden="true" /><span>{user.username || '-'}</span></p>
         <p><Phone aria-hidden="true" /><span>{user.phoneNumber || '-'}</span></p>
         <p><span>{user.address || '-'}</span></p>
-        {user.roles?.includes('LIBRARIAN') ? (
-          <><p><span>{user.department || '-'}</span></p><p><span>{user.specialization || '-'}</span></p></>
-        ) : null}
         <p><Calendar aria-hidden="true" /><span>Ngày tạo {formatAdminDate(user.createdAt)}</span></p>
       </div>
 
@@ -45,9 +42,7 @@ export function UserDetailDrawer({ user, onClose, onEditWork, onManageRoles, onD
       </div>
 
       <div className="admin-user-drawer__actions">
-        {user.roles?.includes('LIBRARIAN') ? (
-          <AdminActionButton icon={Pencil} label="Cập nhật công việc" onClick={() => onEditWork(user)} />
-        ) : null}
+        <AdminActionButton icon={Pencil} label="Chỉnh sửa" onClick={() => onEdit(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => onManageRoles(user)} />
         <AdminActionButton
           icon={PowerOff}

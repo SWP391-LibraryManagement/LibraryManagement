@@ -54,8 +54,6 @@ export function validateUserCreateForm(form) {
   const fullName = form.fullName.trim();
   const phone = form.phone.trim();
   const address = form.address.trim();
-  const department = String(form.department || '').trim();
-  const specialization = String(form.specialization || '').trim();
 
   if (!fullName) {
     errors.fullName = 'Họ và tên là bắt buộc.';
@@ -77,28 +75,27 @@ export function validateUserCreateForm(form) {
     errors.address = 'Địa chỉ không được vượt quá 255 ký tự.';
   }
 
-  if (form.type === 'librarian' && department.length > 100) {
-    errors.department = 'Phòng ban không được vượt quá 100 ký tự.';
-  }
-
-  if (form.type === 'librarian' && specialization.length > 100) {
-    errors.specialization = 'Chuyên môn không được vượt quá 100 ký tự.';
-  }
-
   return errors;
 }
 
-export function validateLibrarianWorkForm(form) {
+export function validateManagedUserEditForm(form) {
   const errors = {};
-  const department = String(form.department || '').trim();
-  const specialization = String(form.specialization || '').trim();
+  const fullName = String(form.fullName || '').trim();
+  const phone = String(form.phone || '').trim();
+  const address = String(form.address || '').trim();
 
-  if (department.length > 100) {
-    errors.department = 'Phòng ban không được vượt quá 100 ký tự.';
+  if (!fullName) {
+    errors.fullName = 'Họ và tên là bắt buộc.';
+  } else if (fullName.length > 100) {
+    errors.fullName = 'Họ và tên không được vượt quá 100 ký tự.';
   }
 
-  if (specialization.length > 100) {
-    errors.specialization = 'Chuyên môn không được vượt quá 100 ký tự.';
+  if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
+    errors.phone = 'Số điện thoại không hợp lệ.';
+  }
+
+  if (address.length > 255) {
+    errors.address = 'Địa chỉ không được vượt quá 255 ký tự.';
   }
 
   return errors;
@@ -106,7 +103,7 @@ export function validateLibrarianWorkForm(form) {
 
 export function validateUserForm(form, { mode = 'create' } = {}) {
   return mode === 'edit'
-    ? validateLibrarianWorkForm(form)
+    ? validateManagedUserEditForm(form)
     : validateUserCreateForm(form);
 }
 

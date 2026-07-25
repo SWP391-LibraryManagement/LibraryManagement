@@ -412,3 +412,21 @@ Both work fields are optional nullable strings with maximum length 100. The targ
 - Only current Librarian department/specialization changes can advance `UpdatedAt` or write an update-success audit.
 - FE03 self-service profile behavior and FE02 account setup/authentication regressions remain green.
 - `FE11-PDO02..PDO04` are complete with fresh automated evidence; historical FE11-LIFE03 evidence alone is not accepted.
+
+## 2026-07-25 Managed Profile Editing Revision
+
+This revision supersedes the work-field-only correction above for current
+behavior while retaining it as historical evidence.
+
+- Expose one Edit action for every managed Member, Librarian, and Admin account.
+- Edit `fullName`, `phone`, and `address`; keep email read-only.
+- Remove department/specialization and the obsolete ownership notice from the Admin UI.
+- Persist through the canonical `Users` and `UserProfiles` records used by FE03.
+- Use the latest timestamp across `Users` and `UserProfiles` as the shared
+  optimistic-concurrency version so a self-service edit makes a stale Admin form fail.
+- Reject email, department, specialization, mixed, and unknown fields atomically
+  with `MANAGED_USER_UPDATE_FORBIDDEN`.
+- Preserve no-op, rollback, authoritative readback, and `USER_UPDATE` audit behavior.
+
+Validation order: focused frontend/backend contracts, full backend tests and
+coverage, full frontend tests/lint/build, OpenAPI parsing, traceability, and diff hygiene.

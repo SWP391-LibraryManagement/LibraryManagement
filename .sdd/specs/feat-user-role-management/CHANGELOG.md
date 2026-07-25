@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-25 - Shared managed-profile editing approved and implemented
+
+- Superseded the Librarian-only department/specialization editor with one Admin
+  editor for `fullName`, `phone`, and `address` across Member, Librarian, and Admin roles.
+- Kept existing-account email read-only under FE02 verification ownership.
+- Removed department/specialization and the obsolete personal-ownership notice
+  from the Admin UI.
+- Connected FE11 and FE03 through the same `Users`/`UserProfiles` persistence and
+  latest effective optimistic-concurrency version.
+- Updated the API allowlist, transactional audit path, OpenAPI/shared contract,
+  focused tests, and Q-FE11-028 documentation.
+
 ## 2026-07-23 - Personal ownership and Admin membership integration implemented locally
 
 - Enforced the approved existing-user ownership boundary: FE11 Admin updates only current-Librarian `department` and `specialization`; personal, email, unknown, and mixed payloads are rejected atomically.

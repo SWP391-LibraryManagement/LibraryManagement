@@ -136,20 +136,21 @@ test('FE11 deactivation sends the loaded effective version and maps pending acti
   assert.match(source, /ACCOUNT_PENDING_ACTIVATION:/);
 });
 
-test('FE11 work-field update uses the narrowed personal-ownership contract', async () => {
+test('FE11 managed-profile update shares canonical profile fields and keeps email read-only', async () => {
   const [apiSource, section, editor] = await Promise.all([
     readFile(apiPath, 'utf8'),
     readFile(new URL('../src/page/admin/users/AdminUsersSection.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(apiSource, /PERSONAL_PROFILE_ADMIN_FORBIDDEN:/);
+  assert.match(apiSource, /MANAGED_USER_UPDATE_FORBIDDEN:/);
   const updateCall = section.match(/await updateManagedUser\(modal\.user\.userId,[^]*?\n {8}\}\);/)?.[0] || '';
   assert.match(updateCall, /expectedUpdatedAt:\s*modal\.user\.updatedAt/);
-  assert.match(updateCall, /department:\s*form\.department\.trim\(\) \|\| null/);
-  assert.match(updateCall, /specialization:\s*form\.specialization\.trim\(\) \|\| null/);
-  assert.doesNotMatch(updateCall, /fullName|email|phone|address/);
-  assert.match(editor, /readOnly=\{isEdit\}/);
+  assert.match(updateCall, /fullName:\s*form\.fullName\.trim\(\)/);
+  assert.match(updateCall, /phone:\s*form\.phone\.trim\(\) \|\| null/);
+  assert.match(updateCall, /address:\s*form\.address\.trim\(\) \|\| null/);
+  assert.doesNotMatch(updateCall, /email|department|specialization/);
+  assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
 });
 
 test('FE11 user-management errors keep safe Vietnamese fallbacks and wrapped causes', async () => {

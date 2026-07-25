@@ -14,7 +14,7 @@
 
 ## 1. Feature Purpose
 
-User & Role Management exists to allow administrators to create and view accounts, manage account lifecycle and roles, and maintain Librarian work fields without taking ownership of users' personal profile data.
+User & Role Management exists to allow administrators to create and view accounts, manage account lifecycle and roles, and maintain the approved managed-profile fields while FE03 continues to provide self-service access to the same canonical profile data.
 
 This feature must keep three things consistent:
 
@@ -39,7 +39,7 @@ The typical small/medium library administration workflow:
 7. Later, a librarian needs more privileges; admin changes their role from Librarian to Librarian+Admin.
 8. The user updates their own name, phone, or address through FE03; Admin sees the result as read-only.
 9. When a user leaves, the admin deactivates the account (does not delete).
-10. The admin can create and deactivate librarian accounts and update only their department/specialization work fields.
+10. The admin can create and deactivate accounts and update `fullName`, `phone`, and `address` for any managed role while email remains read-only.
 11. The admin can view audit logs of all user management actions.
 
 ---
@@ -53,8 +53,8 @@ FE11 includes:
 - View detailed user information.
 - Create member accounts.
 - Create librarian accounts.
-- Display existing-user personal information as read-only to Admin.
-- Update only `department` and `specialization` for a current Librarian account.
+- Allow Admin to update existing-user `fullName`, `phone`, and `address` for Member, Librarian, and Admin targets.
+- Keep existing-account email read-only and remove department/specialization from the Admin editing experience.
 - Deactivate user accounts.
 - Update Librarian work information only.
 - Deactivate librarian accounts.
@@ -184,6 +184,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Q-FE11-015 | FE11 issues setup tokens, FE10 delivers canonical `ACCOUNT_SETUP`, and FE02 consumes/activates. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 | Q-FE11-016 | Admin-only resend rotates the setup token/event/key and enforces a 60-second cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
 | Q-FE11-027 | Admin may view but cannot edit existing-user name, phone, address, or email; FE03 owns self-service personal updates, FE02 owns any future verified email change, and FE11 owns only current-Librarian department/specialization updates. | User approval 2026-07-22 | APPROVED |
+| Q-FE11-028 | Supersedes Q-FE11-027: Admin may update `fullName`, `phone`, and `address` for every managed role using the same canonical data as FE03; email remains read-only under FE02 verification ownership; department/specialization leave the FE11 Admin UI/update contract. | User approval 2026-07-25 | APPROVED |
 
 ---
 
@@ -195,5 +196,5 @@ These are not blockers for drafting, but they must be resolved before implementa
 - Enforce email uniqueness with case-insensitive constraint.
 - Every API endpoint must validate role (Admin only) and input on the server.
 - Log successful FE11-owned actions (create, effective Librarian work-field update, deactivate, role change) with admin ID and timestamp; forbidden personal-field attempts must not produce a success audit.
-- Enforce a strict backend allowlist for `PUT /api/users/{userId}`: `expectedUpdatedAt`, `department`, and `specialization` only, for a current Librarian target.
+- Enforce a strict backend allowlist for `PUT /api/users/{userId}`: `expectedUpdatedAt`, `fullName`, `phone`, and `address`; reject email, department, specialization, and unknown fields atomically.
 - Implement strong password hashing (bcrypt) for user passwords.

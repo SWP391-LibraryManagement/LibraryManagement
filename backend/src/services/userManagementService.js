@@ -422,12 +422,12 @@ function createUserManagementService({
   // @spec FR-FE11-004, FR-FE11-010, FR-FE11-020, FR-FE11-023, FR-FE11-028
   async function updateUser(userId, input, context = {}) {
     const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
-    const allowedFields = new Set(['expectedUpdatedAt', 'department', 'specialization']);
+    const allowedFields = new Set(['expectedUpdatedAt', 'fullName', 'phone', 'address']);
     const forbiddenField = Object.keys(input || {}).find((field) => !allowedFields.has(field));
     if (forbiddenField) {
       throw errors.forbidden(
-        'PERSONAL_PROFILE_ADMIN_FORBIDDEN',
-        'Admins may update only Librarian department and specialization fields.'
+        'MANAGED_USER_UPDATE_FORBIDDEN',
+        'Admins may update only full name, phone number, and address.'
       );
     }
 
@@ -437,16 +437,19 @@ function createUserManagementService({
     }
 
     const updates = {};
-    if (input.department !== undefined) updates.department = cleanString(input.department);
-    if (input.specialization !== undefined) {
-      updates.specialization = cleanString(input.specialization);
-    }
+    if (input.fullName !== undefined) updates.fullName = cleanString(input.fullName);
+    if (input.phone !== undefined) updates.phone = cleanString(input.phone);
+    if (input.address !== undefined) updates.address = cleanString(input.address);
 
     if (!Object.keys(updates).length) {
       throw errors.badRequest('VALIDATION_ERROR', 'At least one editable field is required.');
     }
-    validateLength(updates.department, 100, 'DEPARTMENT_TOO_LONG', 'Department');
-    validateLength(updates.specialization, 100, 'SPECIALIZATION_TOO_LONG', 'Specialization');
+    if (updates.fullName === null) {
+      throw errors.badRequest('FULL_NAME_REQUIRED', 'Full name is required.');
+    }
+    validateLength(updates.fullName, 100, 'FULL_NAME_TOO_LONG', 'Full name');
+    validatePhone(updates.phone);
+    validateLength(updates.address, 255, 'ADDRESS_TOO_LONG', 'Address');
 
     const result = await userLifecycleRepository.updateManagedUser({
       adminUserId: context.adminUserId,
@@ -462,10 +465,7 @@ function createUserManagementService({
       ADMIN_REQUIRED: () => errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
       USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
       STALE_USER_STATE: () => errors.conflict('STALE_USER_STATE', 'User state is stale.'),
-      VALIDATION_ERROR: () => errors.badRequest(
-        'VALIDATION_ERROR',
-        'Librarian fields are only allowed for Librarian accounts.'
-      ),
+      VALIDATION_ERROR: () => errors.badRequest('VALIDATION_ERROR', 'Managed user data is invalid.'),
     };
 
     if (!['UPDATED', 'NO_CHANGE'].includes(result.outcome)) {
