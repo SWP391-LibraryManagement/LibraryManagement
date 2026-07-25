@@ -42,7 +42,7 @@ jobs:
         working-directory: frontend
 
       - name: Frontend dependency audit
-        run: npm audit --audit-level=high
+        run: npm run audit:high
         working-directory: frontend
 
       - name: Backend tests
