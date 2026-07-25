@@ -1,21 +1,22 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.3.2
+# Version: 0.3.7
 
-# Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59
+# Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59; HOMEPAGE POLISH IMPLEMENTED LOCALLY, HUMAN ACCEPTANCE PENDING
 
 # Owner: Dung
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-26
 
 # Feature ID: FE01
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
-> Current delivery status (2026-07-21): `COMPLETE` for the approved Phase 1/2
-> baseline and the bounded responsive HomePage addendum. PR #59 merged the
-> addendum after green CI and responsive evidence review; current-main human
-> visual acceptance remains a separate release decision.
+> Current delivery status (2026-07-26): `COMPLETE` for the approved Phase 1/2
+> baseline and the bounded responsive HomePage addendum merged through PR #59.
+> FE01-T009 through FE01-T012 Homepage polish is implemented locally with green
+> automated evidence; human visual, navigation, and role-visibility acceptance
+> remains a separate release decision.
 > `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > are authoritative for current implementation state. Older `Not Started`,
 > `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
@@ -40,7 +41,7 @@ Public / Browse
 
 Guests need a simple way to discover books before creating an account or applying for membership. A public catalog reduces manual questions for librarians and helps potential members understand what the library offers.
 
-Public browsing must be safe and read-only. It may display book metadata and public availability information, but it must not expose protected user, borrowing, reservation, fine, or staff-only inventory details.
+Public browsing must be safe and read-only. It may use high-level availability internally to choose the correct owning workflow, but the HomePage presentation for Guest and Member does not render availability labels or protected inventory details.
 
 ### 1.3 Goal / Outcome
 
@@ -50,7 +51,7 @@ The system shall:
 - Allow guests to search the public book catalog.
 - Allow guests to view public book information.
 - Allow guests to view public book details.
-- Display the latest public availability after copy state changes through the owning FE06/FE07/FE08 workflow.
+- Use the latest public availability after copy state changes for correct action routing while limiting visible HomePage status labels to Librarian/Admin.
 - Display only public-safe data.
 - Keep all public browse behavior read-only.
 
@@ -70,6 +71,19 @@ The system shall:
 | Member | Authenticated library user | May use the same public browse functions; member-only actions are handled by other features. |
 | Librarian | Library staff | May use the same public-safe reads; FE01 gives no write permission and catalog management belongs to FE05. |
 | Admin | System administrator | May use the same public-safe reads; FE01 gives no write permission and management belongs to FE05/FE11. |
+
+### 2.1 Homepage Role Connection Matrix
+
+All actors share `Khám phá sách`, `Về thư viện`, and `Hỗ trợ`. The service group changes by audience, and staff-first precedence applies when an account has multiple roles.
+
+| Audience | Service group | Connected destinations |
+| -------- | ------------- | ---------------------- |
+| Guest | `Hội viên` | `/login`, `/register`, and the public membership-benefit section. |
+| Member | `Thư viện của tôi` | `/membership`, `/borrowing/new`, `/borrowing/history`, and `/reservations/mine`. |
+| Librarian | `Nghiệp vụ` | `/membership`, `/librarian/borrow-requests`, `/librarian/returns`, and `/librarian/inventory` through the role continuation panel. |
+| Admin | `Nghiệp vụ` | `/admin/users`, `/membership`, `/reports/users`, and `/reports/inventory` through the role continuation panel. |
+
+The public library experience is available at `/home` for Guest and Admin through the role-aware home route, and directly at `/homepage` for every actor. Member/Librarian `/home` remains their role dashboard. FE01 links only to existing owning screens and does not duplicate their protected operations.
 
 ---
 
@@ -108,7 +122,7 @@ The feature can only start when:
 1. Guest selects a book from search or browse results.
 2. The system validates the book ID.
 3. The system loads public book information.
-4. The system shows title, author, category, publisher, publish year, cover, and the approved safe availability summary.
+4. The system shows title, author, category, publisher, publish year, and cover; Guest/Member HomePage presentation omits the availability label.
 
 ### MF-FE01-004: View Book Details
 
@@ -121,10 +135,18 @@ The feature can only start when:
 ### MF-FE01-005: Reflect Current Availability On Home/Search
 
 1. An owning workflow changes a physical copy state through FE06, FE07, or FE08.
-2. Guest/member opens `/home`, search, or book detail.
+2. Guest opens `/home`, or any actor opens the public library view at `/homepage`, search, or book detail.
 3. The system reads the latest committed active catalog records and FE06-owned copy states.
-4. The UI displays `Còn sách` when at least one copy is `AVAILABLE`, otherwise `Không khả dụng`.
+4. Librarian/Admin HomePage presentation displays `Còn sách` when at least one copy is `AVAILABLE`, otherwise `Không khả dụng`; Guest/Member presentation renders neither label.
 5. FE01 and FE05 do not modify copy status while producing this summary.
+
+### MF-FE01-006: Continue To A Role-Owned Workflow
+
+1. The actor opens a Homepage navigation group, role continuation action, or book action.
+2. The system derives the audience using staff-first precedence: `ADMIN`, then `LIBRARIAN`, then `MEMBER`; an unauthenticated actor is Guest.
+3. The system shows the audience label and destinations defined in the Homepage Role Connection Matrix.
+4. A public-section action scrolls or filters within Homepage; a protected action navigates to the registered owning route.
+5. The owning feature and its route guard enforce authorization. FE01 does not simulate completion or perform the protected mutation.
 
 ---
 
@@ -175,6 +197,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-013: Public browse defaults to `page=1`, `limit=20`, and stable ordering `Title ASC, BookId ASC`; `page` must be an integer at least 1 and `limit` must be an integer from 1 through 100.
 - BR-FE01-014: Missing optional catalog metadata must not remove an otherwise public-visible book; the response returns `null` and the UI uses a safe fallback label/image.
 - BR-FE01-015: FE11 accounts may hold multiple roles. Public-book actions use staff-first precedence (`ADMIN`/`LIBRARIAN` before `MEMBER`) so a staff account is never routed into a member-only borrow or reservation workflow.
+- BR-FE01-016: HomePage must not render `Còn sách`, `Không khả dụng`, or equivalent availability-revealing action labels to Guest or Member; Librarian/Admin may see the high-level status, and internal status may still select the correct owning route.
 
 ---
 
@@ -187,13 +210,17 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-005: When a guest views book details, the system shall return public-safe detailed book fields.
 - FR-FE01-006: If a requested book does not exist or is not public-visible, then the system shall return a not-found response.
 - FR-FE01-007: When search page or limit values are invalid, the system shall reject them with a validation response and shall not silently normalize them.
-- FR-FE01-008: The system shall display availability using approved inventory status rules rather than hardcoded values.
-- FR-FE01-009: When an owning FE06/FE07/FE08 workflow changes copy state, public home/search/detail views shall show the updated availability by reading the latest committed active book and copy state.
-- FR-FE01-010: If a book has no available copies, public browse shall display `Không khả dụng` without exposing copy barcodes, locations, or borrower data.
+- FR-FE01-008: The system shall derive availability using approved inventory status rules rather than hardcoded values whenever it selects an owning route or presents the status to Librarian/Admin.
+- FR-FE01-009: When an owning FE06/FE07/FE08 workflow changes copy state, HomePage shall use the latest committed state for staff presentation and correct Member workflow routing.
+- FR-FE01-010: If a book has no available copies, Librarian/Admin HomePage may display `Không khả dụng`; Guest/Member HomePage shall omit the status without exposing copy barcodes, locations, or borrower data.
 - FR-FE01-011: When search text is empty or omitted, the system shall return the default public browse page using `page=1`, `limit=20`, and `Title ASC, BookId ASC`.
 - FR-FE01-012: If a book ID is not a positive integer, the system shall return a validation error; if the positive ID is missing or hidden, the system shall return not found.
 - FR-FE01-013: When optional author, category, publisher, cover, or ISBN data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
 - FR-FE01-014: When an authenticated account has both a staff role and `MEMBER`, the public home page shall expose FE05/FE06 staff actions rather than FE07/FE08 member-only actions.
+- FR-FE01-015: The public footer shall present compact responsive contact information, keep phone/email readable without avoidable desktop wrapping, and open readable, dismissible information for Privacy, Terms, and browser storage controls without navigating to an empty link.
+- FR-FE01-016: The public home navigation shall expose `Khám phá sách`, a role-aware service group (`Hội viên`, `Thư viện của tôi`, or `Nghiệp vụ`), `Về thư viện`, and `Hỗ trợ`; destinations shall follow the Homepage Role Connection Matrix, use staff-first precedence, exist in the application router, and defer protected authorization to the owning feature.
+- FR-FE01-017: The home page shall provide additional catalog-topic, library-journey, and role-aware continuation sections whose actions reuse current public filters and owning feature routes.
+- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; staff-first Librarian/Admin accounts retain the high-level status display.
 
 ---
 
@@ -203,16 +230,20 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-002: Given public-visible books exist, when the guest searches by keyword, then matching books are returned.
 - AC-FE01-003: Given no books match the keyword, when the guest searches, then an empty result message is shown.
 - AC-FE01-004: Given a valid public book, when the guest views book information, then summary metadata is shown.
-- AC-FE01-005: Given a valid public book, when the guest views book details, then detailed metadata and safe availability information are shown.
+- AC-FE01-005: Given a valid public book, when the guest views book details from HomePage, then detailed public metadata is shown without an availability label.
 - AC-FE01-006: Given an invalid book ID, when the guest opens details, then a not-found response is returned.
 - AC-FE01-007: Given a deactivated/hidden book, when the guest searches or opens details, then the book is not exposed publicly.
 - AC-FE01-008: Given a public request, when the system responds, then no protected user, borrowing, reservation, fine, or audit data is included.
-- AC-FE01-009: Given an owning workflow commits a copy transition that leaves at least one copy `AVAILABLE`, when a guest opens `/home` or searches the active book, then public availability shows `Còn sách` without FE01/FE05 writing copy state.
+- AC-FE01-009: Given an owning workflow commits a copy transition, when Librarian/Admin opens HomePage then the latest high-level status is shown; Guest/Member sees no status label while Member routing still follows the latest state.
 - AC-FE01-010: Given an empty search, when a guest submits it, then the first default browse page is returned with `page=1`, `limit=20`, and `Title ASC, BookId ASC`.
 - AC-FE01-011: Given invalid `page` or `limit`, when the guest searches, then the system returns a validation response and does not query with normalized values.
 - AC-FE01-012: Given a non-numeric or non-positive book ID, when details are requested, then a validation response is returned; a well-formed missing/hidden ID returns not found.
 - AC-FE01-013: Given a public-visible book with missing optional metadata, when it is listed or opened, then the book remains present and each missing field is returned as `null` for safe UI fallback.
 - AC-FE01-014: Given an account with `MEMBER` plus `LIBRARIAN` or `ADMIN`, when the account opens a public book action, then an available book routes to FE05 management and an unavailable book routes to FE06 inventory inspection.
+- AC-FE01-015: Given a user on the public home page, when the footer is displayed, then phone, email, and address remain readable at the supported width; selecting Privacy, Terms, or Cookie opens matching information in an accessible dialog that can be closed by its controls, backdrop, or Escape key.
+- AC-FE01-016: Given a Guest, Member, Librarian, or Admin on the public home page, when the user opens a navigation group, then the group name and destinations match the Homepage Role Connection Matrix and selecting one scrolls, opens contact information, or reaches a registered route guarded by the corresponding owning feature.
+- AC-FE01-017: Given a Guest, Member, Librarian, or Admin viewing the extended home page, when the user selects a topic or role continuation action, then the catalog is filtered or the user is routed to an existing screen valid for that audience without simulated data or success.
+- AC-FE01-018: Given the same book is viewed on HomePage by Guest, Member, Librarian, and Admin, then Guest/Member sees no availability badge or revealing action label while Librarian/Admin sees the approved high-level status.
 
 ---
 
@@ -227,7 +258,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-005 | Book does not exist | Return not found. |
 | EC-FE01-006 | Book is hidden/deactivated | Do not expose the book publicly. |
 | EC-FE01-007 | Book has no cover image | Show default/no-cover state. |
-| EC-FE01-008 | Book has no available copies | Show `Không khả dụng`. |
+| EC-FE01-008 | Book has no available copies | Hide the HomePage status from Guest/Member; show `Không khả dụng` only to Librarian/Admin. |
 | EC-FE01-009 | Optional category/author/publisher/cover/ISBN metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
 | EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
@@ -298,7 +329,10 @@ Use these stable IDs for tasks and tests.
 ### 12.4 Usability
 
 - NFR-FE01-UX-001: Empty search and no-result states must be understandable to guests.
-- NFR-FE01-UX-002: Public book detail pages must clearly show `Không khả dụng` when no copy is borrow-available.
+- NFR-FE01-UX-002: HomePage book presentation must hide availability from Guest/Member and clearly distinguish the high-level state when shown to Librarian/Admin.
+- NFR-FE01-UX-003: Footer contact details must remain compact on desktop, keep the email on one line at supported desktop widths, and reflow without horizontal overflow at tablet and mobile widths.
+- NFR-FE01-UX-004: Public navigation groups must use audience-appropriate labels, provide visible hover/focus feedback, a usable mobile accordion, Escape dismissal, and reduced-motion behavior.
+- NFR-FE01-UX-005: Extended home sections must remain responsive, provide on-view and interaction feedback, and become immediately visible when reduced motion is requested.
 
 ---
 
@@ -335,7 +369,7 @@ This feature does not include:
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | Guests see simple availability only: Available/Unavailable, not exact copy count. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-002 | HomePage availability labels are staff-only: Guest/Member do not see `Còn sách`, `Không khả dụng`, or revealing action labels; Librarian/Admin may see the high-level state. The canonical FE01 response retains `availabilityStatus` for current action routing and no exact copy count is exposed. | User correction 2026-07-25 (supersedes review packet 2026-06-10 presentation decision) | APPROVED |
 | Q-FE01-003 | Phase 1 public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; `q` matches title or author name case-insensitively. | Review packet 2026-06-10; filter normalization 2026-07-17 | APPROVED |
 | Q-FE01-004 | A non-null ISBN is visible to guests; a missing ISBN is returned as `null`. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
@@ -356,16 +390,25 @@ This feature does not include:
 | BR-FE01-008..012 | UC01-UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
 | BR-FE01-013..014 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` multi-role staff-precedence case | Complete |
+| BR-FE01-016 | UC01-UC04 | `publicBrowseFrontend.test.js` availability-visibility boundary | Complete |
 | FR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | FR-FE01-008..010 | UC01, UC02, UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
 | FR-FE01-011..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | FR-FE01-014 | UC01-UC04 | `homeBookActions.test.js` | Complete |
+| FR-FE01-015 | UC01 | `publicBrowseFrontend.test.js` footer policy controls | Complete |
+| FR-FE01-016 | UC01 | `publicBrowseFrontend.test.js` role-aware navigation destinations and router registration | Complete |
+| FR-FE01-017 | UC01 | `publicBrowseFrontend.test.js` extended home sections | Complete |
+| FR-FE01-018 | UC01-UC04 | `publicBrowseFrontend.test.js` Guest/Member versus staff presentation | Complete |
 | AC-FE01-001..008 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | AC-FE01-009 | UC01, UC02 | `publicBrowseAvailability.sqltest.js`; `bookAvailabilityRepository.test.js` | Complete |
 | AC-FE01-010..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | AC-FE01-014 | UC01-UC04 | `homeBookActions.test.js` mixed Member/staff role cases | Complete |
+| AC-FE01-015 | UC01 | `publicBrowseFrontend.test.js` accessible policy dialog case | Complete |
+| AC-FE01-016 | UC01 | `publicBrowseFrontend.test.js` Guest/Member/Librarian/Admin navigation and registered-route case | Complete |
+| AC-FE01-017 | UC01 | `publicBrowseFrontend.test.js` topic and role continuation actions | Complete |
+| AC-FE01-018 | UC01-UC04 | `publicBrowseFrontend.test.js` role visibility cases | Complete |
 
-Coverage: 15/15 BR, 14/14 FR, and 14/14 AC have current automated evidence mappings.
+Coverage: 16/16 BR, 18/18 FR, and 18/18 AC have current automated evidence mappings.
 
 ---
 

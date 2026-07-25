@@ -1,8 +1,8 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.3.2
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-23
+Version: 0.3.7
+Status: COMPLETE - BASELINE EVIDENCE RECORDED; LOCAL HOMEPAGE POLISH VALIDATED
+Last Updated: 2026-07-26
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
@@ -22,6 +22,11 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
 - Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
 - FE11 multi-role accounts use staff-first book actions and never enter Member-only borrow/reservation routes.
+- Guest/Member HomePage presentations omit availability badges, unavailable notices, and revealing action labels.
+- Librarian/Admin HomePage presentations retain the approved high-level status.
+- Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.
+- Every Homepage destination is registered by `App.jsx`; protected routes retain their owning guards.
+- Footer contacts, policy dialogs, responsive sections, and reduced-motion behavior remain usable.
 
 ## 3. API / Integration Test Targets
 
@@ -37,26 +42,34 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 
 - Guest opens the home/catalog view.
 - Guest searches with empty, valid, invalid, and no-result criteria.
-- Guest opens an active book detail and sees safe availability.
+- Guest opens an active book detail and sees public-safe metadata without an availability label.
 - Guest opens a missing or inactive detail and sees a safe not-found state.
-- Guest sees `Không khả dụng` and safe null/no-cover fallbacks.
+- Guest and Member see safe null/no-cover fallbacks without availability disclosure.
+- Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.
+- Guest opens `/home`; authenticated actors open the public library at `/homepage`.
+- Each actor sees the correct `Khám phá sách`, role-aware service, `Về thư viện`, and `Hỗ trợ` navigation groups.
+- Footer phone, email, and address remain readable; Privacy, Terms, and Cookie dialogs open and dismiss correctly.
 
 ## 5. Current Evidence
 
 - Dedicated FE01 backend route/repository tests pass 9/9.
-- FE01 frontend contract tests pass 5/5, including staff-first multi-role action precedence.
+- FE01 public browse frontend tests pass 14/14.
+- Combined focused frontend tests pass 39/39 across public browse, App Shell, and HomePage book actions.
 - The public availability SQL suite passes in the aggregate 61/61 disposable SQL Server run.
-- Full frontend regression passes 215/215; traceability is 14/14 and `git diff --check` passes.
+- FE01 traceability is 18/18; frontend lint, production build, and `git diff --check` pass.
 
 ## 6. Gaps
 
-- Final FE05/FE06 ownership confirmation and human integration review remain required before FE01-T008 can close.
+- Historical FE05/FE06 ownership confirmation remains recorded as an open baseline governance item.
+- Human visual, navigation, and role-visibility acceptance of the current local Homepage polish remains required before release.
 
 ## 7. Required Commands / Evidence Before Merge
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js
-node --test frontend/test/publicBrowseFrontend.test.js
+node --test frontend/test/publicBrowseFrontend.test.js frontend/test/appShellFrontend.test.js frontend/test/homeBookActions.test.js
+npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 git diff --check
 ```

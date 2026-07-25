@@ -180,7 +180,8 @@ test('homepage membership promotion is visible only to signed-out guests', async
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 
   assert.match(source, /\{!isLoggedIn && <section id="section-cta"/);
-  assert.match(source, /!isLoggedIn \|\| item\.id !== 'section-cta'/);
+  assert.match(source, /type: isLoggedIn \? 'path' : 'scroll'/);
+  assert.match(source, /value: isLoggedIn \? '\/membership' : 'section-cta'/);
 });
 
 test('homepage guest authentication controls route to their matching screens', async () => {
@@ -188,8 +189,8 @@ test('homepage guest authentication controls route to their matching screens', a
 
   assert.match(source, />Đăng ký<\/button>/);
   assert.doesNotMatch(source, /onClick=\{goToMembership\}/);
-  assert.match(source, /label: 'Đăng nhập', action: goToLogin/);
-  assert.match(source, /label: 'Đăng ký', action: goToRegister/);
+  assert.match(source, /onClick=\{goToLogin\}/);
+  assert.match(source, /onClick=\{goToRegister\}/);
 });
 
 test('homepage membership copy stays within approved library rules', async () => {
@@ -220,7 +221,7 @@ test('public homepage exposes a usable mobile menu and responsive layout contrac
   assert.match(source, /className="home-benefit-grid"/);
   assert.match(source, /setMenuOpen\(false\); navigate\('\/membership'\).*Đăng kí hội viên/s);
   assert.match(source, /\.home-nav-links, \.home-nav-account, \.home-nav-desktop-action \{ display: none !important; \}/);
-  assert.match(source, /\.home-footer-grid \{ grid-template-columns: 1fr !important; \}/);
+  assert.match(source, /\.home-footer-grid \{[^}]*grid-template-columns: 1fr !important;/);
   assert.match(source, /\.home-cta-grid, \.home-benefit-grid \{ grid-template-columns: 1fr !important; \}/);
 });
 

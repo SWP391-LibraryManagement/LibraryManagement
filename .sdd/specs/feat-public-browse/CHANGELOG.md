@@ -1,5 +1,29 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-26 - Homepage specification synchronization
+
+- Synchronized `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, and `TEST_PLAN.md` with the current HomePage contract.
+- Removed superseded statements that required Guest/Member to see `Còn sách` or `Không khả dụng`; retained server availability for internal Member routing and approved Librarian/Admin presentation.
+- Clarified that Guest uses `/home`, while authenticated actors use `/homepage` to open the public library experience.
+- Recorded the current navigation groups: `Khám phá sách`, audience-aware `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện`, and `Hỗ trợ`.
+- Added the authoritative Homepage Role Connection Matrix and automated coverage proving every Guest/Member/Librarian/Admin destination is registered by the application router.
+- Recorded the lighter footer palette and desktop single-line email presentation without changing contact destinations or policy behavior.
+- Refreshed local evidence to public-browse frontend 14/14, combined focused frontend 39/39, and FE01 traceability 18/18.
+
+## 2026-07-25 - Homepage footer contact presentation
+
+- Replaced the legacy Library, Account, and Support link columns with the library phone, email, and physical address requested for the public footer.
+- Added clickable phone/email actions and responsive contact cards without changing FE01 APIs, authentication routes, or business rules.
+- Reworked phone, email, and address into borderless editorial contact groups with subtle separators, plus tablet and mobile fallbacks.
+- Replaced the empty Privacy, Terms, and Cookie anchors with accessible information dialogs that close by button, backdrop, or Escape key.
+- Added an on-view footer reveal, staggered contact entrance, ambient gold glow, icon/link hover feedback, and reduced-motion fallback.
+- Centered the footer contact heading over the Email column and removed its decorative trailing line.
+- Replaced the four placeholder-like top navigation buttons with animated desktop dropdowns and mobile accordions connected to existing Guest, Member, Librarian, and Admin destinations.
+- Extended the home page with four connected topic filters, a three-step library journey, and a role-aware continuation panel for Guest, Member, Librarian, and Admin.
+- Added responsive layouts, on-view reveals, hover/focus feedback, and reduced-motion handling for the new home sections.
+- Unified the complete home-page visual hierarchy with distinct Hero, catalog, topic, journey, role, membership, and footer bands; added gradient dividers, richer hover/focus states, and motion-safe entrance effects.
+- Changed HomePage availability presentation to staff-only: Guest/Member no longer see availability badges or revealing action labels, while Librarian/Admin retain the high-level status and Member workflow routing still uses latest availability internally.
+
 ## 2026-07-23 - Cross-role public-book actions
 
 - Clarified that all roles may consume the public catalog while FE01 remains read-only.

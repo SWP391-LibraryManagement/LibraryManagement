@@ -1,12 +1,12 @@
 # CONTEXT.md - FE01 Public / Browse
 
-# Version: 0.1.0
+# Version: 0.1.1
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: APPROVED - BASELINE 2026-07-17; HOMEPAGE ROLE INTEGRATION ALIGNED 2026-07-26
 
 # Owner: Dung
 
-# Last Updated: 2026-06-10
+# Last Updated: 2026-07-26
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
@@ -36,8 +36,9 @@ The typical public browsing workflow:
 3. The guest searches or browses books.
 4. The system returns matching public book information.
 5. The guest opens a book result.
-6. The system displays safe book details and high-level availability information.
-7. If the guest wants member-only actions, the system routes them to authentication or membership flows.
+6. The system displays safe book details without exposing availability labels to Guest/Member.
+7. The system may use the latest availability internally to choose the correct owning Member workflow; Librarian/Admin may see the approved high-level status.
+8. If the guest wants member-only actions, the system routes them to authentication or membership flows.
 
 ---
 
@@ -49,7 +50,9 @@ FE01 includes:
 - Search public book catalog.
 - View public book information.
 - View public book details.
-- Read-only display of categories, authors, publishers, covers, and high-level availability.
+- Read-only display of categories, authors, publishers, and covers.
+- Role-aware HomePage presentation: Guest/Member do not see availability labels; Librarian/Admin may see the high-level state.
+- Responsive navigation, connected public sections, footer contact details, and readable policy information.
 
 FE01 does not include:
 
@@ -75,7 +78,7 @@ The current SQL script already includes:
 Potential issues to review:
 
 - The SQL script does not yet define a book active/inactive status field, while public search normally should hide inactive books.
-- Availability may need to be calculated from `BookCopies.Status = AVAILABLE`.
+- Availability is calculated from `BookCopies.Status = AVAILABLE`; it remains in the canonical response for workflow routing and approved staff presentation.
 - Public responses must not expose internal inventory fields such as exact barcode policy if the team decides barcode is staff-only.
 - Search behavior needs approved matching rules: title only, author/category/publisher, ISBN, or all.
 - Pagination defaults to `page=1`, `limit=20`, with `page>=1`, `limit=1..100`; invalid values are rejected. Empty search returns the default first page ordered by `Title ASC, BookId ASC`.
@@ -110,7 +113,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 - FE01 may duplicate FE05 book management scope if write actions are accidentally added.
 - Public search may expose inactive or internal-only books if filtering rules are unclear.
-- Search results may mislead guests if availability is not calculated consistently with FE06.
+- Member workflow routing or staff presentation may become stale if availability is not calculated consistently with FE06.
 - Public endpoints may expose protected data if response DTOs are not controlled.
 - Empty, invalid, or very broad searches may degrade performance without pagination.
 
@@ -121,9 +124,13 @@ These are not blockers for drafting, but they must be resolved before implementa
 | Dependency | Why It Matters |
 | ---------- | -------------- |
 | FE05 Book Management | Owns official book metadata and active/deactivated catalog state. |
-| FE06 Inventory / Book Copy Management | Provides availability counts/status for public display. |
+| FE06 Inventory / Book Copy Management | Provides the derived availability status for internal routing and approved Librarian/Admin HomePage presentation; exact counts remain private. |
 | FE02 Authentication | Provides login/register routing for member-only actions. |
 | FE04 Membership Management | Owns membership application flow after public discovery. |
+| FE07 Borrowing Management | Owns Member borrow/history and Librarian/Admin request/return destinations opened from Homepage. |
+| FE08 Reservation Management | Owns Member reservations and staff reservation management; FE01 only routes to an existing screen. |
+| FE11 User & Role Management | Supplies role precedence and Admin user-management destinations. |
+| FE12 Reporting & Statistics | Owns Librarian/Admin report destinations exposed by role-aware Homepage actions. |
 | SQL Server database | Stores books, categories, authors, publishers, and copies. |
 
 ---
@@ -133,7 +140,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | Guests see simple availability only: Available/Unavailable, not exact copy count. | Review packet 2026-06-10 | APPROVED |
+| Q-FE01-002 | HomePage availability labels are staff-only. Guest/Member do not see availability badges or revealing action labels; Librarian/Admin may see the high-level state. The canonical response retains availability for workflow routing without exact copy counts. | User correction 2026-07-25, superseding the 2026-06-10 presentation decision | APPROVED |
 | Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-004 | A non-null ISBN is visible to guests; a missing ISBN is returned as `null`. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
@@ -143,8 +150,8 @@ These are not blockers for drafting, but they must be resolved before implementa
 
 ## 10. Notes For Implementation Later
 
-- The baseline `SPEC.md`, `PLAN.md`, and `TASKS.md` are approved; implementation follow-up remains pending.
-- Prototype behavior is not completion evidence; follow the ordered tasks and record fresh validation.
+- The FE01 baseline, responsive addendum, and local Homepage polish tasks are implemented with automated evidence; current-main human visual/navigation acceptance remains a release-level review.
+- Prototype behavior is not completion evidence; use the focused tests, traceability gate, and recorded human review for final acceptance.
 - Keep public browse endpoints read-only.
 - Return only public-safe book fields.
 - Search and detail behavior must stay consistent with FE05 and FE06.

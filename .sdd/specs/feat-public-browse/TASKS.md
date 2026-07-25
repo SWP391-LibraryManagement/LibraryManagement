@@ -1,13 +1,13 @@
 # TASKS.md - FE01 Public / Browse
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP H3-APPROVED AND MERGED IN PR #59
+Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP MERGED IN PR #59; LOCAL HOMEPAGE POLISH VALIDATED
 Implementation State: COMPLETE
 
 Owner: Dung
 
-Updated: 2026-07-20
+Updated: 2026-07-26
 
-Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the responsive HomePage follow-up after H3 review, and exact post-merge `main` CI is recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Current-main human visual acceptance remains a release-level review.
+Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the responsive HomePage follow-up after H3 review. FE01-T009 through FE01-T013 are complete locally with automated evidence; human visual, navigation, and role-visibility acceptance remains a release-level review.
 
 ---
 
@@ -58,18 +58,18 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
   - Maps to: FR-FE01-001 through FR-FE01-005, FR-FE01-008 through FR-FE01-013; AC-FE01-001 through AC-FE01-005, AC-FE01-009/010/013; NFR-FE01-UX-001/002.
   - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE01-T004 and the approved public response envelope.
-  - RED: assert the page calls only `/books` and `/books/{bookId}`, sends approved query names, does not request `/books/categories`, renders server availability, and does not report fake local borrow success.
+  - RED: assert the page calls only `/books` and `/books/{bookId}`, sends approved query names, does not request `/books/categories`, uses server availability only for approved staff presentation/internal routing, and does not report fake local borrow success.
   - GREEN: add a small public browse API wrapper, load paginated public data, pass q/ID/page/limit parameters, load public detail through the canonical endpoint, and preserve guest access without an access token.
   - Verify: frontend tests inspect request URLs/parameters, list/detail loading, refresh after query changes, and safe handling of API errors.
   - DoD: HomePage no longer treats local mock arrays, local fake borrow completion, or legacy category fetches as FE01 data sources.
 
-- [x] **FE01-T006 - Complete public browse loading, empty, unavailable, and null-metadata states.**
+- [x] **FE01-T006 - Complete public browse loading, empty, role-safe availability, and null-metadata states.**
   - Maps to: BR-FE01-002, BR-FE01-004, BR-FE01-008, BR-FE01-014; FR-FE01-001, FR-FE01-003 through FR-FE01-005, FR-FE01-010/013; AC-FE01-001, AC-FE01-003 through AC-FE01-005, AC-FE01-009/013; NFR-FE01-UX-001/002.
   - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE01-T005.
   - RED: assert loading, no-results, unavailable, missing-cover, missing-author/category/publisher, and not-found detail states before implementation.
-  - GREEN: show `Còn sách` only for `AVAILABLE`, show `Không khả dụng` otherwise, preserve books with null optional fields, render the safe no-cover fallback, show understandable empty/error states, and route member-only actions to their owning authentication/membership/borrowing flows without implementing those flows in FE01.
-  - Verify: focused frontend tests cover a public guest, empty search, no matches, unavailable book, null metadata, missing detail, and safe generic error.
+  - GREEN: preserve books with null optional fields, render the safe no-cover fallback, show understandable empty/error states, hide availability labels from Guest/Member, show the approved high-level state only to Librarian/Admin, and route member actions to their owning borrowing/reservation flows without implementing those flows in FE01.
+  - Verify: focused frontend tests cover a public guest, Member/staff role presentation, empty search, no matches, unavailable routing, null metadata, missing detail, and safe generic error.
   - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions; the responsive HomePage follow-up keeps the existing login/register, membership, and account routes reachable on mobile. Local implementation, H2 review, and PR #59 H3 integration review are complete.
 
 - [x] **FE01-T007 - Close API documentation, test plan, and traceability.**
@@ -87,6 +87,41 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
   - Verify: run `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js`, run the SQL test when SQL configuration is available, run `node --test frontend/test/publicBrowseFrontend.test.js`, run `npm.cmd run trace:enforce`, and run `git diff --check`.
   - DoD: focused evidence passes and PR #59 satisfies the repository H3 integration gate. Current-main human visual and owner sign-off is tracked in the release checklist.
 
+- [x] **FE01-T009 - Polish footer contacts and activate policy information controls.**
+  - Maps to: FR-FE01-015, AC-FE01-015, NFR-FE01-UX-003.
+  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: show phone, single-line desktop email, and address as three compact borderless desktop contact groups with two-column/tablet and one-column/mobile fallbacks; replace empty `#` links with accessible Privacy, Terms, and browser-storage dialogs.
+  - Verify: run `node --test frontend/test/publicBrowseFrontend.test.js`, `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, and `git diff --check`.
+  - DoD: footer controls have visible content, dialogs close from their button, backdrop, or Escape key, and the layout does not require horizontal scrolling.
+
+- [x] **FE01-T010 - Connect public navigation groups to role-owned destinations.**
+  - Maps to: FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
+  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: add animated desktop dropdowns and mobile accordions for `Khám phá sách`, the role-aware `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ` group, `Về thư viện`, and `Hỗ trợ`; route Guest/Member/Librarian/Admin actions to existing owning screens with staff-first precedence.
+  - Verify: run the focused frontend tests, assert every Homepage path is registered by `App.jsx`, run frontend lint/build, traceability enforcement, and `git diff --check`.
+  - DoD: no navigation item is an empty placeholder, contact actions are direct, dropdowns close with Escape, and every role destination reuses an existing route protected by its owning feature.
+
+- [x] **FE01-T011 - Extend the home page with useful connected content.**
+  - Maps to: FR-FE01-017, AC-FE01-017, NFR-FE01-UX-005.
+  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: add public catalog-topic filters, a truthful library journey, and a Guest/Member/Librarian/Admin continuation panel backed by existing routes; add on-view, hover/focus, mobile, and reduced-motion presentation.
+  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
+  - DoD: the longer home page adds no fake counts or workflows, every action filters current data or reaches an owning feature, and all new sections remain usable on narrow screens.
+
+- [x] **FE01-T012 - Restrict HomePage availability presentation by role.**
+  - Maps to: BR-FE01-016, FR-FE01-008/009/010/018, AC-FE01-005/009/018, NFR-FE01-UX-002.
+  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: hide availability badges, unavailable notices, and revealing action labels from Guest/Member across HomePage list/search/panel/modal; preserve Librarian/Admin high-level status and internal latest-state routing.
+  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
+  - DoD: no Guest/Member HomePage presentation reveals availability while staff precedence and Member borrow/reservation routing remain unchanged.
+
+- [x] **FE01-T013 - Synchronize the Homepage specification set and current evidence.**
+  - Maps to: FR-FE01-015 through FR-FE01-018, AC-FE01-015 through AC-FE01-018, NFR-FE01-UX-002 through NFR-FE01-UX-005.
+  - Files: `.sdd/specs/feat-public-browse/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, and `CHANGELOG.md`.
+  - GREEN: remove the superseded Guest/Member availability wording, document `/home` versus `/homepage`, add the Homepage Role Connection Matrix, record the current role-aware navigation/footer behavior, and replace stale test/traceability totals with fresh evidence.
+  - Verify: run focused frontend tests, traceability enforcement, documentation consistency searches, and `git diff --check`.
+  - DoD: active FE01 documents describe one consistent Homepage contract and distinguish merged baseline evidence, local polish evidence, and pending human acceptance.
+
 ## Requirement-To-Task Coverage
 
 | Requirement IDs | Planned tasks |
@@ -101,6 +136,10 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 | NFR-FE01-PERF-001/002 | FE01-T001, FE01-T003 |
 | NFR-FE01-LOG-001/002 | FE01-T002, FE01-T004, FE01-T007 |
 | NFR-FE01-UX-001/002 | FE01-T005, FE01-T006 |
+| FR-FE01-015, AC-FE01-015, NFR-FE01-UX-003 | FE01-T009, FE01-T013 |
+| FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004 | FE01-T010, FE01-T013 |
+| FR-FE01-017, AC-FE01-017, NFR-FE01-UX-005 | FE01-T011, FE01-T013 |
+| BR-FE01-016, FR-FE01-018, AC-FE01-018 | FE01-T012, FE01-T013 |
 
 ### Explicit Cross-Boundary Mappings
 
@@ -116,6 +155,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 ## Completion Gate
 
 - [x] FE01-T001 through FE01-T008 are complete through the PR #59 H3 merge gate; current-main human visual/owner sign-off remains release-level evidence.
+- [x] FE01-T009 local implementation and automated validation are complete; human visual acceptance remains pending.
+- [x] FE01-T010 local implementation and automated validation are complete; human navigation acceptance remains pending.
+- [x] FE01-T011 local implementation and automated validation are complete; human visual acceptance remains pending.
+- [x] FE01-T012 local implementation and automated validation are complete; human role-visibility acceptance remains pending.
+- [x] FE01-T013 documentation synchronization and fresh automated evidence are complete.
 - [x] Focused backend, SQL, frontend, traceability, and diff checks pass.
 - [ ] FE05 owner confirms shared public catalog response compatibility.
 - [ ] FE06 owner confirms availability aggregation and no copy mutation.
