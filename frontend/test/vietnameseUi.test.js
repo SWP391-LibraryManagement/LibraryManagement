@@ -72,7 +72,7 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
 
   assert.match(navigation, /label: 'Thư viện'/);
   assert.match(navigation, /label: 'Home'/);
-  assert.match(layout, /isMember \? 'Home' : 'Thư viện'/);
+  assert.match(layout, /libraryHomeLabel/);
   assert.match(feedback, /aria-label="Đóng"/);
   assert.match(recovery, /Chào mừng trở lại/);
   assert.match(recovery, /Đặt lại mật khẩu để tiếp tục sử dụng tài nguyên thư viện/);

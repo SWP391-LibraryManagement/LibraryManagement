@@ -64,10 +64,11 @@ export default function AppLayout({ title, subtitle, actions, children, showSide
   const [navigationPath, setNavigationPath] = useState(null);
   const menuTriggerRef = useRef(null);
   const roles = getCurrentRoles();
-  const isMember = roles.includes('MEMBER') && !roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role));
   const activeKey = getActiveNavigationKey(location.pathname);
   const navigationOpen = navigationOpenState && navigationPath === location.pathname;
-  const visibleNavigationKeys = new Set(getVisibleNavigation(roles).map((item) => item.key));
+  const visibleNavigation = getVisibleNavigation(roles);
+  const visibleNavigationKeys = new Set(visibleNavigation.map((item) => item.key));
+  const libraryHomeLabel = visibleNavigation.find((item) => item.key === 'library-home')?.label || 'Thư viện';
   const visibleGroups = APP_NAV_GROUPS
     .map((group) => ({
       ...group,
@@ -129,11 +130,11 @@ export default function AppLayout({ title, subtitle, actions, children, showSide
               type="button"
               className={`app-nav-item${libraryHomeIsActive ? ' active' : ''}`}
               onClick={() => navigateFromShell('/homepage')}
-              aria-label={isMember ? 'Home' : 'Thư viện'}
+              aria-label={libraryHomeLabel}
               aria-current={libraryHomeIsActive ? 'page' : undefined}
             >
               <LibraryHomeIcon size={18} />
-              <span>{isMember ? 'Home' : 'Thư viện'}</span>
+              <span>{libraryHomeLabel}</span>
             </button>
           )}
 
