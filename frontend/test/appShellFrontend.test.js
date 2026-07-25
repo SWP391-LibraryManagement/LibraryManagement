@@ -18,12 +18,13 @@ test('navigation visibility follows stored roles', () => {
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
-    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'membership-review', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics', 'profile'],
+    ['library-home', 'home', 'borrow-requests-admin', 'process-returns', 'reservations-librarian', 'member-details', 'membership-review', 'book-management', 'inventory-management', 'fine-management', 'borrowing-report', 'inventory-report', 'user-statistics'],
   );
   assert.deepEqual(
     getVisibleNavigation(['MEMBER', 'LIBRARIAN']).map((item) => item.key),
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
   );
+  assert.ok(getVisibleNavigation(['ADMIN']).some((item) => item.key === 'profile'));
 });
 
 test('active navigation is derived from the current URL', () => {

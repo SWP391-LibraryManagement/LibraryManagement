@@ -37,7 +37,12 @@ export const APP_NAV_GROUPS = [
     label: 'Tài khoản',
     roles: ['MEMBER', 'LIBRARIAN', 'ADMIN'],
     items: [
-      { key: 'profile', label: 'Thông tin cá nhân', path: '/profile' },
+      {
+        key: 'profile',
+        label: 'Thông tin cá nhân',
+        path: '/profile',
+        excludedRoles: ['LIBRARIAN'],
+      },
     ],
   },
 ];
@@ -50,7 +55,8 @@ export function getVisibleNavigation(roles = []) {
   const items = APP_NAV_GROUPS
     .filter((group) => group.label !== 'Thành viên' || !isStaff)
     .filter((group) => group.roles.some((role) => roles.includes(role)))
-    .flatMap((group) => group.items);
+    .flatMap((group) => group.items)
+    .filter((item) => !item.excludedRoles?.some((role) => roles.includes(role)));
   const canOpenLibraryHome = roles.some((role) => ['MEMBER', 'LIBRARIAN', 'ADMIN'].includes(role));
   const libraryHomeItem = roles.includes('MEMBER') && !roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role))
     ? { ...LIBRARY_HOME_ITEM, label: 'Home' }
