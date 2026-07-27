@@ -1,95 +1,95 @@
-# Vietnamese UI Localization Validation - 2026-07-20
+# Xác thực bản địa hóa UI tiếng Việt - 2026-07-20
 
-## Decision
+## Quyết định
 
-This is a Hybrid SDD + ADD validation at Standard depth. The localization
-design is a reversible Shell change around an accepted FE01-FE12 Core. Raw
-status values, API contracts, permissions, authentication semantics, business
-rules, and user-owned catalog/profile data remain unchanged.
+Đây là hoạt động xác thực Hybrid SDD + ADD ở mức độ sâu Tiêu chuẩn. Thiết kế
+bản địa hóa là thay đổi Shell có thể hoàn nguyên bao quanh Core FE01-FE12 đã được chấp nhận. Giá trị
+trạng thái thô, hợp đồng API, quyền, ngữ nghĩa xác thực, quy tắc nghiệp vụ
+và dữ liệu danh mục/hồ sơ thuộc sở hữu người dùng vẫn không thay đổi.
 
-PR #58 is merged as `cce59d0`. PR #59 later merged the H3-reviewed reconciliation
-as `eed2688`; current-main CI/deployment evidence is recorded separately below.
-Human desktop/mobile visual acceptance was confirmed by the project reviewer in
-the Codex session on 2026-07-21 using the retained UI audit screenshots.
+PR #58 đã được merge thành `cce59d0`. Sau đó PR #59 merge phần đối soát đã qua rà soát H3
+thành `eed2688`; bằng chứng CI/triển khai trên main hiện tại được ghi riêng bên dưới.
+Chấp nhận trực quan trên máy tính/di động bởi con người đã được người rà soát dự án xác nhận trong
+phiên Codex ngày 2026-07-21 bằng các ảnh chụp màn hình kiểm toán UI được giữ lại.
 
-## L1 - Automated Checks
+## L1 - Kiểm tra tự động
 
-Application-baseline CI run `29712597463` passed:
+Lần chạy CI theo đường cơ sở ứng dụng `29712597463` đã đạt:
 
-- Traceability: 12/12 features, 243/243 FR tags.
-- Backend: 53/53 suites, 917/917 tests; statements 92.68%, branches 81.66%, functions 96.59%, lines 92.61%.
-- Frontend: 171/171 tests, lint, and production build.
-- Browser acceptance: 4/4 Playwright suites.
-- Backend import and deployment foundation checks.
+- Truy vết: 12/12 tính năng, 243/243 thẻ FR.
+- Backend: 53/53 bộ, 917/917 kiểm thử; câu lệnh 92.68%, nhánh 81.66%, hàm 96.59%, dòng 92.61%.
+- Frontend: 171/171 kiểm thử, lint và bản dựng production.
+- Chấp nhận trên trình duyệt: 4/4 bộ Playwright.
+- Kiểm tra nhập backend và nền tảng triển khai.
 
-Application-baseline staging workflow `29712612188` passed quality gate, backend and
-frontend deployment, and the six-check smoke: `frontend`, `health`,
-`sql-catalog`, `allowed-cors`, `blocked-cors`, and `protected-route`.
+Quy trình staging theo đường cơ sở ứng dụng `29712612188` đã đạt cổng chất lượng, triển khai backend
+và frontend cùng sáu kiểm tra smoke: `frontend`, `health`,
+`sql-catalog`, `allowed-cors`, `blocked-cors` và `protected-route`.
 
-The later reconciliation adds bounded localization regressions, repairs the
-remaining presentation-only labels, and adds a responsive HomePage navigation,
-footer, and CTA layout contract without changing raw values or workflow
-behavior. Fresh local validation passes 173/173 frontend tests; the 171/171
-result above remains the exact historical result of CI run `29712597463`.
+Phần đối soát sau đó bổ sung kiểm thử hồi quy bản địa hóa có giới hạn, sửa các
+nhãn chỉ dùng để trình bày còn lại và bổ sung hợp đồng bố cục đáp ứng cho điều hướng HomePage,
+chân trang và CTA mà không thay đổi giá trị thô hay hành vi quy trình.
+Xác thực cục bộ mới đạt 173/173 kiểm thử frontend; kết quả 171/171
+bên trên vẫn là kết quả lịch sử chính xác của lần chạy CI `29712597463`.
 
-The focused responsive browser review passed 1/1 at 1440px and 390px and
-produced screenshots under `output/playwright/h3-visual/`. The visual harness
-also observed an `INTERNAL_ERROR` from `GET /api/books`, so book-card/detail
-content was not accepted as visual evidence in that run.
+Rà soát trình duyệt đáp ứng tập trung đã đạt 1/1 ở 1440px và 390px, đồng thời
+tạo ảnh chụp màn hình trong `output/playwright/h3-visual/`. Bộ kiểm thử trực quan
+cũng ghi nhận một `INTERNAL_ERROR` từ `GET /api/books`, nên nội dung thẻ sách/chi tiết
+không được chấp nhận làm bằng chứng trực quan trong lần chạy đó.
 
-Current-main follow-up: `origin/main@a8729f9` passed CI `29824756487` (923 backend
-tests, 178 frontend tests, lint, build, deployment checks, and 4/4 browser E2E)
-and staging deployment `29824944954` (frontend/backend deployment and smoke).
-These automated results are complemented by the human desktop/mobile acceptance
-recorded below.
+Theo dõi main hiện tại: `origin/main@a8729f9` đã đạt CI `29824756487` (923 kiểm thử
+backend, 178 kiểm thử frontend, lint, bản dựng, kiểm tra triển khai và 4/4 E2E trình duyệt)
+cùng lần triển khai staging `29824944954` (triển khai frontend/backend và smoke).
+Các kết quả tự động này được bổ sung bằng chấp nhận máy tính/di động bởi con người
+được ghi bên dưới.
 
-Local H2-candidate follow-up on 2026-07-21 identified two narrow `390px`
-presentation regressions that document-level overflow checks did not detect: the
-FE08 candidate badge extended beyond its card, and the FE11 Admin action row had
-no separation from the page heading. Test-first containment/spacing assertions
-failed on the original layout, then passed after mobile-only CSS remediation.
-Fresh evidence is 178/178 frontend tests, lint, production build, 4/4 Playwright
-flows, and screenshots
-`output/playwright/release-member-reservations-mobile-fixed.png` and
-`output/playwright/release-admin-users-mobile-fixed.png`. APIs, workflow behavior,
-desktop layout, and the Admin table's internal horizontal scrolling are unchanged.
+Lần theo dõi ứng viên H2 cục bộ ngày 2026-07-21 xác định hai lỗi hồi quy hẹp ở `390px`
+về trình bày mà kiểm tra tràn cấp tài liệu không phát hiện:
+huy hiệu ứng viên FE08 vượt ra ngoài thẻ và hàng hành động Quản trị viên FE11
+không có khoảng cách với tiêu đề trang. Các khẳng định giới hạn/khoảng cách theo hướng kiểm thử trước
+đã thất bại trên bố cục ban đầu, rồi đạt sau khi khắc phục CSS chỉ dành cho di động.
+Bằng chứng mới là 178/178 kiểm thử frontend, lint, bản dựng production, 4/4 luồng Playwright
+và các ảnh chụp màn hình
+`output/playwright/release-member-reservations-mobile-fixed.png` và
+`output/playwright/release-admin-users-mobile-fixed.png`. API, hành vi quy trình,
+bố cục máy tính và cuộn ngang bên trong bảng Quản trị viên không thay đổi.
 
-## L2 - Spec And Traceability
+## L2 - Đặc tả và truy vết
 
-- The design scope is implemented in `frontend/src/i18n/vi.js`,
-  `frontend/src/utils/uiLabels.js`, localized page/component surfaces, and
-  Vietnamese API fallback resolvers.
-- `frontend/test/vietnameseUi.test.js` verifies copy, role/status display
-  mappings, raw-value preservation, metadata/font wiring, safe API fallbacks,
-  and the audited English-copy absence guard.
-- All twelve feature changelogs record the cross-feature presentation change.
+- Phạm vi thiết kế được triển khai trong `frontend/src/i18n/vi.js`,
+  `frontend/src/utils/uiLabels.js`, các bề mặt trang/thành phần đã bản địa hóa và
+  bộ phân giải dự phòng API tiếng Việt.
+- `frontend/test/vietnameseUi.test.js` xác minh nội dung, ánh xạ hiển thị
+  vai trò/trạng thái, việc giữ nguyên giá trị thô, kết nối siêu dữ liệu/phông chữ, phương án dự phòng API an toàn
+  và chốt bảo vệ đã kiểm toán về việc không còn nội dung tiếng Anh.
+- Nhật ký thay đổi của cả mười hai tính năng ghi nhận thay đổi trình bày liên tính năng.
 
-## L3 - Constitution And Safety
+## L3 - Hiến chương và an toàn
 
-- No database schema, API payload, role permission, authentication business
-  rule, or library workflow contract changed in the localization batch.
-- Technical values such as `Email`, `OTP`, `Barcode`, raw enum/status codes,
-  book titles, author names, email addresses, and barcode values remain
-  unmodified at the logic/data boundary.
-- Unknown backend failures use safe Vietnamese fallbacks rather than exposing
-  raw technical messages.
+- Không có lược đồ cơ sở dữ liệu, payload API, quyền vai trò, quy tắc nghiệp vụ
+  xác thực hay hợp đồng quy trình thư viện nào thay đổi trong lô bản địa hóa.
+- Các giá trị kỹ thuật như `Email`, `OTP`, `Barcode`, mã enum/trạng thái thô,
+  tựa sách, tên tác giả, địa chỉ email và giá trị mã vạch vẫn
+  không bị chỉnh sửa tại ranh giới logic/dữ liệu.
+- Lỗi backend không xác định sử dụng thông báo dự phòng tiếng Việt an toàn thay vì làm lộ
+  thông báo kỹ thuật thô.
 
-## L4 - Acceptance Verification
+## L4 - Xác minh chấp nhận
 
-| Acceptance item | Status | Evidence |
+| Hạng mục chấp nhận | Trạng thái | Bằng chứng |
 | --- | --- | --- |
-| Vietnamese generated copy and labels | PASS | Fresh local 173/173 frontend tests and `vietnameseUi.test.js` audit guard; remote CI `29712597463` passed the earlier 171-test baseline |
-| Raw values and user-owned content preserved | PASS | Source assertions and existing workflow tests |
-| Vietnamese metadata and typography wiring | PASS | Source tests and production build |
-| Current deployed frontend/backend remain healthy | PASS | Staging workflow `29712612188` six-check smoke |
-| Responsive desktop/mobile layout capture | PASS — H2-APPROVED LOCAL CANDIDATE | Focused Playwright review 1/1 at 1440px and 390px; later FE08/FE11 bounding-box regressions pass on the remediated candidate; fixed screenshots are retained under `output/playwright/` |
-| Dedicated localized desktop/mobile visual acceptance | PASS — H2-APPROVED LOCAL CANDIDATE | Project reviewer confirmed the original 12-screen review on 2026-07-21; the corrective review additionally inspected FE08 reservations and FE11 Admin users at 390px after the two minimal fixes |
+| Nội dung và nhãn tiếng Việt được tạo | PASS | 173/173 kiểm thử frontend cục bộ mới cùng chốt bảo vệ kiểm toán `vietnameseUi.test.js`; CI từ xa `29712597463` đã đạt đường cơ sở 171 kiểm thử trước đó |
+| Giá trị thô và nội dung thuộc sở hữu người dùng được giữ nguyên | PASS | Khẳng định mã nguồn và kiểm thử quy trình hiện có |
+| Kết nối siêu dữ liệu và kiểu chữ tiếng Việt | PASS | Kiểm thử mã nguồn và bản dựng production |
+| Frontend/backend đang triển khai vẫn hoạt động tốt | PASS | Sáu kiểm tra smoke của quy trình staging `29712612188` |
+| Ghi nhận bố cục đáp ứng trên máy tính/di động | PASS — ỨNG VIÊN CỤC BỘ ĐÃ ĐƯỢC H2 PHÊ DUYỆT | Rà soát Playwright tập trung đạt 1/1 ở 1440px và 390px; lỗi hồi quy hộp giới hạn FE08/FE11 sau đó đã đạt trên ứng viên được khắc phục; ảnh chụp đã sửa được giữ trong `output/playwright/` |
+| Chấp nhận trực quan bản địa hóa chuyên biệt trên máy tính/di động | PASS — ỨNG VIÊN CỤC BỘ ĐÃ ĐƯỢC H2 PHÊ DUYỆT | Người rà soát dự án xác nhận lần rà soát 12 màn hình ban đầu ngày 2026-07-21; lần rà soát sửa lỗi còn kiểm tra đặt chỗ FE08 và người dùng Quản trị viên FE11 ở 390px sau hai bản sửa tối thiểu |
 
-## Residual Boundaries
+## Các ranh giới còn lại
 
-- GitHub PR metadata does not contain a dedicated review record for PR #58;
-  any future reconciliation/release PR must record its own H2/H3 evidence before
-  a new release tag is created. This does not retroactively review PR #58.
-- Human visual acceptance is recorded; the demonstration video/link remains unpublished.
-- Shared disposable SQL CI, durable avatar storage, and a production SLA remain
-  outside the approved student-release scope.
+- Siêu dữ liệu PR GitHub không chứa bản ghi rà soát riêng cho PR #58;
+  mọi PR đối soát/phát hành trong tương lai phải ghi bằng chứng H2/H3 của chính nó trước khi
+  tạo thẻ phát hành mới. Điều này không hồi tố rà soát PR #58.
+- Chấp nhận trực quan bởi con người đã được ghi nhận; video/liên kết trình diễn vẫn chưa công bố.
+- CI SQL dùng chung dùng một lần, lưu trữ ảnh đại diện bền vững và SLA production vẫn
+  nằm ngoài phạm vi bản phát hành sinh viên đã phê duyệt.
