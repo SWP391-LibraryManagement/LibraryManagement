@@ -1,120 +1,120 @@
-# FE11 Finalization Wave A Validation - 2026-07-19
+# Xác thực Đợt A hoàn thiện FE11 - 2026-07-19
 
-Status: H2 READY - UNCOMMITTED
+Trạng thái: SẴN SÀNG H2 - CHƯA COMMIT
 
-Scope: `FE11-FIN01`, `FE11-LIFE01..FE11-LIFE05`; `FE11-LIFE06` remains open until H3, merge, and exact post-merge `main` CI.
+Phạm vi: `FE11-FIN01`, `FE11-LIFE01..FE11-LIFE05`; `FE11-LIFE06` vẫn mở đến khi H3, merge và CI `main` chính xác sau merge.
 
-Decision: Hybrid SDD + ADD, Full depth. Schema, authorization, optimistic concurrency, credential invalidation, audit atomicity, and FE07 serialization are Core; the Admin form and route presentation are Shell.
+Quyết định: Hybrid SDD + ADD, độ sâu Đầy đủ. Lược đồ, phân quyền, tương tranh lạc quan, vô hiệu hóa thông tin xác thực, tính nguyên tử kiểm toán và tuần tự hóa FE07 là Core; biểu mẫu Quản trị viên và phần trình bày tuyến là Shell.
 
-## Governance Prerequisite
+## Điều kiện tiên quyết về quản trị
 
-- The Finalization Batch design and plan were approved before product work.
-- Governance PR #39 passed `foundation-checks` run `29658802446`, merged as `62ac2d1a990af52d5f70f2a1da3e188639bd685a`, and exact post-merge `main` CI run `29658912068` passed.
-- Wave A started from `origin/main@62ac2d1` in the isolated branch `feat/fe11-finalization-wave-a`.
+- Thiết kế và kế hoạch Lô Hoàn thiện đã được phê duyệt trước công việc sản phẩm.
+- PR quản trị #39 đã đạt lần chạy `foundation-checks` `29658802446`, được merge thành `62ac2d1a990af52d5f70f2a1da3e188639bd685a` và lần chạy CI `main` chính xác sau merge `29658912068` đã đạt.
+- Đợt A bắt đầu từ `origin/main@62ac2d1` trong nhánh cô lập `feat/fe11-finalization-wave-a`.
 
-## RED-GREEN History
+## Lịch sử RED-GREEN
 
-### Planned Wave A RED
+### RED Đợt A đã lập kế hoạch
 
-- Schema RED exposed the absent idempotent migration and stale 100-character email persistence widths.
-- Account setup and safe-read RED exposed missing Librarian persistence/projection, missing effective `updatedAt`, missing create validation, and missing transaction-local acting-Admin checks.
-- Lifecycle RED exposed the missing transactional repository for optimistic/no-op updates, atomic deactivation, refresh revocation, audit rollback, and member-first FE07 serialization.
-- Frontend RED exposed the development Admin bypass, absent effective-version payloads, missing Librarian fields, and ACTIVE-only deactivation controls.
+- RED lược đồ làm lộ việc thiếu di chuyển lũy đẳng và độ rộng lưu trữ email 100 ký tự lỗi thời.
+- RED thiết lập tài khoản và đọc an toàn làm lộ việc thiếu lưu trữ/chiếu Thủ thư, thiếu `updatedAt` hiệu lực, thiếu xác thực khi tạo và thiếu kiểm tra Quản trị viên thực hiện trong giao dịch.
+- RED vòng đời làm lộ việc thiếu kho lưu trữ có giao dịch cho cập nhật lạc quan/không thao tác, vô hiệu hóa nguyên tử, thu hồi token làm mới, hoàn tác kiểm toán và tuần tự hóa FE07 ưu tiên thành viên.
+- RED frontend làm lộ lối tắt Quản trị viên khi phát triển, thiếu payload phiên bản hiệu lực, thiếu trường Thủ thư và điều khiển vô hiệu hóa chỉ dành cho ACTIVE.
 
-### Review-Driven RED
+### RED được thúc đẩy bởi rà soát
 
-During final production-diff review, two additional regressions were added before their fixes:
+Trong lần rà soát phần khác biệt production cuối cùng, hai kiểm thử hồi quy bổ sung được thêm trước khi sửa:
 
-| Command | Observed RED |
+| Lệnh | RED quan sát được |
 | --- | --- |
-| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js` in `backend/` | 2 suites failed; 2 tests failed and 74 passed. The migration checked byte width without fully enforcing SQL type/nullability, and service duplicate preflight disclosed `EMAIL_ALREADY_EXISTS` before the transaction-authoritative `ADMIN_REQUIRED` actor outcome. |
-| `npm.cmd test -- --runTestsByPath tests/accountSetupRepository.test.js tests/authRoutes.test.js` in `backend/` | 2 suites failed; 2 tests failed and 28 passed. Setup completion accepted an `INACTIVE` account with non-null `DeactivatedAt`, allowing legacy unused setup state to reactivate a Phase 1 terminal deactivation. |
+| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js` trong `backend/` | 2 bộ thất bại; 2 kiểm thử thất bại và 74 đạt. Di chuyển kiểm tra độ rộng byte mà chưa thực thi đầy đủ kiểu SQL/khả năng rỗng, còn bước kiểm tra trước trùng lặp của dịch vụ làm lộ `EMAIL_ALREADY_EXISTS` trước kết quả tác nhân `ADMIN_REQUIRED` có thẩm quyền từ giao dịch. |
+| `npm.cmd test -- --runTestsByPath tests/accountSetupRepository.test.js tests/authRoutes.test.js` trong `backend/` | 2 bộ thất bại; 2 kiểm thử thất bại và 28 đạt. Hoàn tất thiết lập chấp nhận tài khoản `INACTIVE` có `DeactivatedAt` khác null, cho phép trạng thái thiết lập cũ chưa dùng kích hoạt lại một lần vô hiệu hóa cuối Giai đoạn 1. |
 
-The minimal fixes made the source transaction authoritative for create actor/duplicate decisions, made the migration repair `nvarchar` type plus nullability rather than byte width alone, and required setup completion to accept only pending-activation accounts where `DeactivatedAt` is null.
+Các bản sửa tối thiểu khiến giao dịch nguồn có thẩm quyền đối với quyết định tác nhân/trùng lặp khi tạo, khiến di chuyển sửa kiểu `nvarchar` cùng khả năng rỗng thay vì chỉ độ rộng byte và yêu cầu hoàn tất thiết lập chỉ chấp nhận tài khoản đang chờ kích hoạt có `DeactivatedAt` là null.
 
-### Focused GREEN
+### GREEN tập trung
 
-| Command | Result |
+| Lệnh | Kết quả |
 | --- | --- |
-| `npm.cmd test -- --runTestsByPath tests/userManagementService.test.js` in `backend/` | 1 suite, 73/73 tests PASS |
-| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js` in `backend/` | 1 suite, 3/3 tests PASS |
-| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js tests/accountSetupRepository.test.js tests/userLifecycleRepository.test.js` in `backend/` | 5 suites, 181/181 tests PASS |
-| `npm.cmd test -- --runTestsByPath tests/accountSetupRepository.test.js tests/authRoutes.test.js` in `backend/` | 2 suites, 30/30 tests PASS after the deactivated-account setup guard |
-| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js tests/accountSetupRepository.test.js tests/userLifecycleRepository.test.js tests/authRoutes.test.js` in `backend/` | 6 suites, 201/201 tests PASS |
+| `npm.cmd test -- --runTestsByPath tests/userManagementService.test.js` trong `backend/` | 1 bộ, 73/73 kiểm thử PASS |
+| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js` trong `backend/` | 1 bộ, 3/3 kiểm thử PASS |
+| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js tests/accountSetupRepository.test.js tests/userLifecycleRepository.test.js` trong `backend/` | 5 bộ, 181/181 kiểm thử PASS |
+| `npm.cmd test -- --runTestsByPath tests/accountSetupRepository.test.js tests/authRoutes.test.js` trong `backend/` | 2 bộ, 30/30 kiểm thử PASS sau chốt bảo vệ thiết lập tài khoản đã vô hiệu hóa |
+| `npm.cmd test -- --runTestsByPath tests/fe11SchemaMigration.test.js tests/userManagementService.test.js tests/userManagementRoutes.test.js tests/accountSetupRepository.test.js tests/userLifecycleRepository.test.js tests/authRoutes.test.js` trong `backend/` | 6 bộ, 201/201 kiểm thử PASS |
 
-## L1 - Automated Evidence
+## L1 - Bằng chứng tự động
 
-| Command | Result |
+| Lệnh | Kết quả |
 | --- | --- |
-| `npm.cmd --prefix backend test` | 41 suites, 701/701 tests PASS |
-| `npm.cmd --prefix backend run test:coverage:ci` | 41 suites, 701/701 tests PASS; 92.51% statements, 82.46% branches, 97.1% functions, 92.44% lines |
-| `npm.cmd --prefix frontend test` | 124/124 tests PASS |
-| `npm.cmd --prefix frontend run lint` | PASS with zero reported errors or warnings |
-| `npm.cmd --prefix frontend run build` | PASS; existing non-blocking large-chunk warning remains |
-| `npm.cmd run trace:enforce` | PASS; FE11 has 25/38 FR IDs tagged and whole-feature completion remains open |
+| `npm.cmd --prefix backend test` | 41 bộ, 701/701 kiểm thử PASS |
+| `npm.cmd --prefix backend run test:coverage:ci` | 41 bộ, 701/701 kiểm thử PASS; câu lệnh 92.51%, nhánh 82.46%, hàm 97.1%, dòng 92.44% |
+| `npm.cmd --prefix frontend test` | 124/124 kiểm thử PASS |
+| `npm.cmd --prefix frontend run lint` | PASS với không có lỗi hay cảnh báo được báo cáo |
+| `npm.cmd --prefix frontend run build` | PASS; cảnh báo hiện có và không gây chặn về phân đoạn lớn vẫn còn |
+| `npm.cmd run trace:enforce` | PASS; FE11 có 25/38 ID FR được gắn thẻ và việc hoàn tất toàn tính năng vẫn mở |
 | `node -e "require('./backend/node_modules/yamljs').load('backend/src/docs/openapi.yaml'); console.log('openapi ok')"` | PASS - `openapi ok` |
 | `node -e "require('./backend/src/app'); console.log('backend import ok')"` | PASS - `backend import ok` |
-| Isolated equivalent of `npm.cmd run test:e2e` using the unchanged golden-path spec contract with frontend `4183` and backend `3100` | Chromium system golden path 1/1 PASS; temporary config/spec removed after execution |
+| Bản tương đương cô lập của `npm.cmd run test:e2e` dùng hợp đồng đặc tả luồng chuẩn không đổi với frontend `4183` và backend `3100` | Luồng chuẩn hệ thống Chromium 1/1 PASS; cấu hình/đặc tả tạm thời đã bị xóa sau khi thực thi |
 | `node --check backend/tests/sql/borrowingConcurrency.sqltest.js` | PASS |
-| Product drift, Admin mutation alias, migration sensitive-content, and dependency scope scans | PASS |
+| Quét sai lệch sản phẩm, bí danh chỉnh sửa Quản trị viên, nội dung nhạy cảm trong di chuyển và phạm vi phần phụ thuộc | PASS |
 | `git diff --check` | PASS |
 
-## L2 - Specification Compliance
+## L2 - Tuân thủ đặc tả
 
-| Task / contract | Production boundary | Test evidence |
+| Tác vụ / hợp đồng | Ranh giới production | Bằng chứng kiểm thử |
 | --- | --- | --- |
-| `FE11-FIN01` | Approved Full-depth design/plan and merged governance activation | PR #39 and exact post-merge CI evidence above |
-| `FE11-LIFE01` | Idempotent migration, deterministic `UX_Users_Email`, canonical baseline/model/binding widths | `fe11SchemaMigration.test.js`; migration static checks; OpenAPI parse |
-| `FE11-LIFE02` | Librarian create/read/update fields; active-Admin create/resend revalidation; safe duplicate outcomes | account-setup repository, user repository, service, and route suites |
-| `FE11-LIFE03` | Locked actor/target/roles, effective version, no-op, duplicate email, sorted audit allowlist, rollback | `userLifecycleRepository.test.js`, service/route mapping tests |
-| `FE11-LIFE04` | Pending/deactivated distinction, ACTIVE/LOCKED deactivation, active-borrowing guard, REFRESH revocation, atomic audit, FE07 lock order | lifecycle repository tests, borrowing repository regression, SQL race test source |
-| `FE11-LIFE05` | Stored authenticated Admin state in all Vite modes; effective-version payloads; authoritative reload; Librarian form fields | frontend API/page contract tests, full frontend tests, lint, build, browser regression |
+| `FE11-FIN01` | Thiết kế/kế hoạch độ sâu Đầy đủ đã phê duyệt và kích hoạt quản trị đã merge | PR #39 và bằng chứng CI chính xác sau merge bên trên |
+| `FE11-LIFE01` | Di chuyển lũy đẳng, `UX_Users_Email` xác định, độ rộng đường cơ sở/mô hình/liên kết chuẩn | `fe11SchemaMigration.test.js`; kiểm tra tĩnh di chuyển; phân tích OpenAPI |
+| `FE11-LIFE02` | Trường tạo/đọc/cập nhật Thủ thư; xác thực lại tạo/gửi lại của Quản trị viên hoạt động; kết quả trùng lặp an toàn | các bộ kiểm thử kho thiết lập tài khoản, kho người dùng, dịch vụ và tuyến |
+| `FE11-LIFE03` | Tác nhân/mục tiêu/vai trò đã khóa, phiên bản hiệu lực, không thao tác, email trùng, danh sách kiểm toán cho phép đã sắp xếp, hoàn tác | `userLifecycleRepository.test.js`, kiểm thử ánh xạ dịch vụ/tuyến |
+| `FE11-LIFE04` | Phân biệt đang chờ/đã vô hiệu hóa, vô hiệu hóa ACTIVE/LOCKED, chốt mượn đang hoạt động, thu hồi REFRESH, kiểm toán nguyên tử, thứ tự khóa FE07 | kiểm thử kho vòng đời, hồi quy kho mượn, mã nguồn kiểm thử tranh chấp SQL |
+| `FE11-LIFE05` | Trạng thái Quản trị viên có xác thực đã lưu trong mọi chế độ Vite; payload phiên bản hiệu lực; tải lại có thẩm quyền; trường biểu mẫu Thủ thư | kiểm thử hợp đồng API/trang frontend, toàn bộ kiểm thử frontend, lint, bản dựng, hồi quy trình duyệt |
 
-Contract details verified:
+Chi tiết hợp đồng đã xác minh:
 
-- `Users.Email` and `Notifications.RecipientEmail` are `NVARCHAR(255)`.
-- `UserProfiles.Department` and `UserProfiles.Specialization` are nullable `NVARCHAR(100)`.
-- `fullName`, `department`, and `specialization` use 100-character boundaries.
-- Managed-user `updatedAt` is `COALESCE(Users.UpdatedAt, Users.CreatedAt)` and is reused for mutations.
-- Create/resend lock and revalidate the active acting Admin inside their source transactions.
-- Setup completion rejects `INACTIVE` accounts with non-null `DeactivatedAt`; only pending-activation accounts can transition to `ACTIVE`.
-- `INACTIVE` plus null `DeactivatedAt` returns `409 ACCOUNT_PENDING_ACTIVATION`.
-- Deactivation revokes only active `REFRESH` credentials and audits in the same transaction.
-- FE07 remains the sole approve/reject mutation owner; Wave A changes only the minimum lock order needed for serialization.
+- `Users.Email` và `Notifications.RecipientEmail` là `NVARCHAR(255)`.
+- `UserProfiles.Department` và `UserProfiles.Specialization` là `NVARCHAR(100)` có thể rỗng.
+- `fullName`, `department` và `specialization` dùng ranh giới 100 ký tự.
+- `updatedAt` của người dùng được quản lý là `COALESCE(Users.UpdatedAt, Users.CreatedAt)` và được tái sử dụng khi chỉnh sửa.
+- Tạo/gửi lại khóa và xác thực lại Quản trị viên thực hiện đang hoạt động bên trong giao dịch nguồn tương ứng.
+- Hoàn tất thiết lập từ chối tài khoản `INACTIVE` có `DeactivatedAt` khác null; chỉ tài khoản đang chờ kích hoạt có thể chuyển sang `ACTIVE`.
+- `INACTIVE` cộng với `DeactivatedAt` null trả về `409 ACCOUNT_PENDING_ACTIVATION`.
+- Vô hiệu hóa chỉ thu hồi thông tin xác thực `REFRESH` đang hoạt động và kiểm toán trong cùng giao dịch.
+- FE07 vẫn là chủ sở hữu chỉnh sửa phê duyệt/từ chối duy nhất; Đợt A chỉ đổi thứ tự khóa tối thiểu cần cho tuần tự hóa.
 
-## L3 - Constitution And Safety
+## L3 - Hiến chương và an toàn
 
-- Authentication and Admin authorization execute before detailed create/update/deactivation validation.
-- Create, resend, update, and deactivation revalidate the active acting Admin under `UPDLOCK, HOLDLOCK` before source mutation.
-- All changed database access uses typed `mssql` parameters; request values are not concatenated into SQL.
-- The create source transaction is authoritative for actor and duplicate outcomes, preventing stale/non-Admin callers from learning duplicate-email state through a service preflight.
-- Update audit metadata contains only sorted `changedFields`; deactivation audit metadata contains only previous/new status.
-- Deactivation status, `DeactivatedAt`, `UpdatedAt`, active REFRESH revocation, and audit commit or roll back together.
-- Setup consumption checks `Status = INACTIVE` and `DeactivatedAt IS NULL` under the same locked transaction, preventing reactivation of a deactivated account.
-- Managed-user responses remain explicit allowlists; Librarian fields are omitted for non-Librarian targets.
-- No raw setup token/link, password, credential, secret, seed user, real PII, new dependency, session table, role CRUD, permission editing, or FE12 production change is introduced.
+- Xác thực và phân quyền Quản trị viên thực thi trước xác thực chi tiết khi tạo/cập nhật/vô hiệu hóa.
+- Tạo, gửi lại, cập nhật và vô hiệu hóa xác thực lại Quản trị viên thực hiện đang hoạt động dưới `UPDLOCK, HOLDLOCK` trước khi chỉnh sửa nguồn.
+- Mọi truy cập cơ sở dữ liệu thay đổi đều dùng tham số `mssql` có kiểu; giá trị yêu cầu không được nối vào SQL.
+- Giao dịch nguồn khi tạo có thẩm quyền đối với kết quả tác nhân và trùng lặp, ngăn bên gọi lỗi thời/không phải Quản trị viên biết trạng thái email trùng qua bước kiểm tra trước của dịch vụ.
+- Siêu dữ liệu kiểm toán cập nhật chỉ chứa `changedFields` đã sắp xếp; siêu dữ liệu kiểm toán vô hiệu hóa chỉ chứa trạng thái trước/mới.
+- Trạng thái vô hiệu hóa, `DeactivatedAt`, `UpdatedAt`, thu hồi REFRESH đang hoạt động và kiểm toán cùng commit hoặc hoàn tác.
+- Việc sử dụng thiết lập kiểm tra `Status = INACTIVE` và `DeactivatedAt IS NULL` trong cùng giao dịch đã khóa, ngăn kích hoạt lại tài khoản đã vô hiệu hóa.
+- Phản hồi người dùng được quản lý vẫn là danh sách cho phép rõ ràng; trường Thủ thư bị bỏ qua với mục tiêu không phải Thủ thư.
+- Không đưa vào token/liên kết thiết lập thô, mật khẩu, thông tin xác thực, bí mật, người dùng khởi tạo, PII thật, phần phụ thuộc mới, bảng phiên, CRUD vai trò, chỉnh sửa quyền hay thay đổi production FE12.
 
-## L4 - Acceptance Evidence
+## L4 - Bằng chứng chấp nhận
 
-- Automated route/service/repository tests cover create, resend, update, no-op, stale state, duplicate email, Librarian-only fields, pending activation, self-target, active borrowings, ACTIVE/LOCKED deactivation, refresh revocation, audit, and rollback outcomes.
-- FE02 route and SQL-repository tests cover rejection of a deactivated account even when an unused `ACCOUNT_SETUP` token exists.
-- Frontend tests cover login/home redirects, removal of implicit development Admin access, effective-version payloads, Librarian form fields, ACTIVE/LOCKED controls, and safe pending-activation messaging.
-- The existing Chromium system golden path is the browser regression boundary for Wave A and passes 1/1 through the isolated `4183` frontend equivalent.
-- Live SQL race code accepts only: approval wins and deactivation is blocked, or deactivation wins and approval observes an inactive member. The impossible final state is an INACTIVE user with a newly APPROVED request.
+- Kiểm thử tuyến/dịch vụ/kho tự động bao phủ kết quả tạo, gửi lại, cập nhật, không thao tác, trạng thái lỗi thời, email trùng, trường chỉ dành cho Thủ thư, chờ kích hoạt, tự nhắm mục tiêu, khoản mượn đang hoạt động, vô hiệu hóa ACTIVE/LOCKED, thu hồi token làm mới, kiểm toán và hoàn tác.
+- Kiểm thử tuyến FE02 và kho SQL bao phủ việc từ chối tài khoản đã vô hiệu hóa ngay cả khi tồn tại token `ACCOUNT_SETUP` chưa dùng.
+- Kiểm thử frontend bao phủ chuyển hướng đăng nhập/trang chủ, xóa truy cập Quản trị viên phát triển ngầm, payload phiên bản hiệu lực, trường biểu mẫu Thủ thư, điều khiển ACTIVE/LOCKED và thông báo chờ kích hoạt an toàn.
+- Luồng chuẩn hệ thống Chromium hiện có là ranh giới hồi quy trình duyệt cho Đợt A và đạt 1/1 qua bản frontend tương đương cô lập `4183`.
+- Mã tranh chấp SQL trực tiếp chỉ chấp nhận: phê duyệt thắng và vô hiệu hóa bị chặn, hoặc vô hiệu hóa thắng và phê duyệt quan sát thành viên không hoạt động. Trạng thái cuối bất khả thi là người dùng INACTIVE có yêu cầu mới APPROVED.
 
-## Subsequent Live SQL Evidence
+## Bằng chứng SQL trực tiếp sau đó
 
-- The environment-only SQL residual was resolved later on 2026-07-19 using a disposable local SQL Server database and login.
-- The canonical baseline plus all five reconciliation migrations passed two executions; all 8/8 SQL suites and 61/61 tests passed, including FE03 profile transactions, FE05 rowversion mutation, and FE07 approval/lifecycle serialization.
-- Database/login cleanup returned `DB_CLEAN` and `LOGIN_CLEAN`; details are in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Static migration/idempotence checks, emitted SQL lock-order tests, repository transaction tests, and JavaScript syntax checks remain part of the mandatory gate.
-- The standard Playwright frontend port `4173` is occupied by pre-existing PID `13432`; it was not terminated or reused. The same golden-path contract passed 1/1 on isolated port `4183`, and all temporary runner files were removed.
-- The local E2E server may log known `/api/profile/me` SQL-configuration errors when SQL environment variables are absent; this is recorded separately from the Chromium golden-path result.
-- The frontend production build may retain the existing non-blocking large-chunk warning.
+- Phần SQL còn lại chỉ do môi trường đã được xử lý sau đó vào 2026-07-19 bằng cơ sở dữ liệu và thông tin đăng nhập SQL Server cục bộ dùng một lần.
+- Đường cơ sở chuẩn cùng cả năm lần di chuyển đối soát đã đạt hai lần thực thi; cả 8/8 bộ SQL và 61/61 kiểm thử đều đạt, gồm giao dịch hồ sơ FE03, chỉnh sửa rowversion FE05 và tuần tự hóa phê duyệt/vòng đời FE07.
+- Dọn dẹp cơ sở dữ liệu/đăng nhập trả về `DB_CLEAN` và `LOGIN_CLEAN`; chi tiết nằm trong `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Kiểm tra tĩnh di chuyển/tính lũy đẳng, kiểm thử thứ tự khóa SQL được phát, kiểm thử giao dịch kho lưu trữ và kiểm tra cú pháp JavaScript vẫn là một phần của cổng bắt buộc.
+- Cổng frontend Playwright tiêu chuẩn `4173` bị PID `13432` có sẵn chiếm; tiến trình không bị dừng hay tái sử dụng. Cùng hợp đồng luồng chuẩn đã đạt 1/1 trên cổng cô lập `4183` và mọi tệp trình chạy tạm thời đã bị xóa.
+- Máy chủ E2E cục bộ có thể ghi lỗi cấu hình SQL `/api/profile/me` đã biết khi thiếu biến môi trường SQL; nội dung này được ghi riêng với kết quả luồng chuẩn Chromium.
+- Bản dựng production frontend có thể giữ cảnh báo hiện có và không gây chặn về phân đoạn lớn.
 
-## H2 Boundary
+## Ranh giới H2
 
-- All implementation and evidence changes remain uncommitted.
-- `FE11-FIN01` and `FE11-LIFE01..FE11-LIFE05` may be marked complete from the evidence in this record.
-- `FE11-LIFE06` remains unchecked until the unchanged H2-reviewed diff is committed, PR checks pass, H3 approves integration, the PR merges, and the exact post-merge `main` CI run succeeds.
-- Wave B Request Management (`FE11-REQ01..FE11-ACC01`) and whole-feature FE11 B7 closeout are outside this diff.
+- Mọi thay đổi triển khai và bằng chứng vẫn chưa được commit.
+- `FE11-FIN01` và `FE11-LIFE01..FE11-LIFE05` có thể được đánh dấu hoàn tất từ bằng chứng trong bản ghi này.
+- `FE11-LIFE06` vẫn chưa được đánh dấu đến khi phần khác biệt không đổi đã được H2 rà soát được commit, kiểm tra PR đạt, H3 phê duyệt tích hợp, PR được merge và lần chạy CI `main` chính xác sau merge thành công.
+- Quản lý Yêu cầu Đợt B (`FE11-REQ01..FE11-ACC01`) và hoàn tất B7 toàn tính năng FE11 nằm ngoài phần khác biệt này.
