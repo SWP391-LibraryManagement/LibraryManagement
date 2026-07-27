@@ -20,7 +20,7 @@
 > is completed or explicitly approved for deferral. FE02-T048 performance
 > evidence is recorded in the feature tasks and test plan.
 
-> Source of truth for FE02 Authentication. Version 0.6.9 aligns the change-password paths, protected-request checks, frontend session recovery, transaction boundaries, and existing FE02 planning artifacts with `CONTEXT.md` without changing approved business behavior. The login-hardening commit is already integrated into `main`; a dedicated H3 closeout for FE02-T043 was not found and remains a governance-evidence gap. This spec is intentionally detailed because FE02 is the foundation of all access control and security in the system.
+> Source of truth for FE02 Authentication. Version 0.6.16 aligns the change-password paths, protected-request checks, frontend session recovery, transaction boundaries, and existing FE02 planning artifacts with `CONTEXT.md` without changing approved business behavior. The login-hardening commit is already integrated into `main`; a dedicated H3 closeout for FE02-T043 was not found and remains a governance-evidence gap. This spec is intentionally detailed because FE02 is the foundation of all access control and security in the system.
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
