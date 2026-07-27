@@ -266,19 +266,19 @@ và bằng chứng SLA production. Trang trình duyệt FE09 cũ không phải b
 ### 6.1 Prompt Tạo Kiểm Thử (Mẫu #07)
 
 ```text
-Write tests for [function/module/API endpoint].
+Viết kiểm thử cho [function/module/API endpoint].
 
-Context:
-- Feature: [FE## feature name]
-- Source spec: .sdd/specs/feat-{name}/SPEC.md (use §8 Acceptance Criteria + §16 Traceability)
-- Module under test: [package/file]
-- Test type: [unit / integration / e2e]
-- Coverage target: 80% minimum
+Ngữ cảnh:
+- Tính năng: [FE## feature name]
+- Đặc tả nguồn: .sdd/specs/feat-{name}/SPEC.md (dùng §8 Tiêu chí chấp nhận + §16 Truy vết)
+- Mô-đun cần kiểm thử: [package/file]
+- Loại kiểm thử: [unit / integration / e2e]
+- Mục tiêu độ bao phủ: tối thiểu 80%
 
-Include: 1) happy path; 2) error cases from the spec; 3) edge cases (null/undefined/empty);
-4) boundary values; 5) security cases where relevant (auth/role bypass, injection, data exposure).
+Bao gồm: 1) luồng thành công; 2) các trường hợp lỗi trong đặc tả; 3) trường hợp biên (null/undefined/empty);
+4) giá trị biên; 5) trường hợp bảo mật khi có liên quan (vượt qua auth/role, chèn mã, lộ dữ liệu).
 
-Do not invent business rules not in SPEC.md. Map each important test to a BR/FR/AC where practical.
+Không tự đặt ra quy tắc nghiệp vụ không có trong SPEC.md. Ánh xạ mỗi kiểm thử quan trọng tới BR/FR/AC khi phù hợp.
 ```
 
 ### 6.2 Kiểm Tra Tuân Thủ Đặc Tả (Trước Khi Chấp Nhận Kiểm Thử Được Tạo)
