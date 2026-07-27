@@ -1,573 +1,573 @@
-# SPEC.md - FE10 Notification Management
+# SPEC.md - Quản lý thông báo FE10
 
-# Version: 0.4.5
+# Phiên bản: 0.4.5
 
-# Status: APPROVED - STAGING EMAIL DELIVERY REMEDIATION 2026-07-27
+# Trạng thái: APPROVED - KHẮC PHỤC VIỆC GỬI EMAIL TRÊN MÔI TRƯỜNG TIỀN SẢN XUẤT 2026-07-27
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature ID: FE10
+# ID tính năng: FE10
 
-# Feature folder: `.sdd/specs/feat-notification-management/`
+# Thư mục tính năng: `.sdd/specs/feat-notification-management/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái bàn giao hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> là nguồn chuẩn cho trạng thái triển khai hiện tại. Các nhãn cũ `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ rà soát được giữ lại bên dưới chỉ là
+> ảnh chụp nhanh kế hoạch/bằng chứng lịch sử, không phải trạng thái bàn giao hiện tại.
 
-> Source of truth for FE10 Notification Management. The OTP, account-setup, and membership-result boundary revision is approved as the 2026-07-17 baseline.
+> Nguồn chuẩn cho Quản lý thông báo FE10. Bản sửa đổi ranh giới OTP, thiết lập tài khoản và kết quả thành viên được phê duyệt làm mốc cơ sở 2026-07-17.
 >
-> Initial Phase 1 decisions were approved on 2026-06-10. G1-G7 were approved on 2026-07-13. G8-G10 and ADR-004 were approved by Nhat on 2026-07-15 and supersede the deferred OTP/link contract.
+> Các quyết định ban đầu của Giai đoạn 1 đã được phê duyệt ngày 2026-06-10. G1-G7 được phê duyệt ngày 2026-07-13. G8-G10 và ADR-004 được Nhat phê duyệt ngày 2026-07-15 và thay thế hợp đồng OTP/liên kết từng bị trì hoãn.
 >
-> ADR-005 adds canonical FE11 account-setup delivery. Nhat approved the combined FE10 baseline on 2026-07-17; the approved implementation, human acceptance, PR integration, and exact post-merge `main` CI are complete for the Phase 1 scope.
+> ADR-005 bổ sung quy trình gửi thông báo thiết lập tài khoản FE11 chuẩn. Nhat đã phê duyệt mốc cơ sở FE10 hợp nhất ngày 2026-07-17; phần triển khai đã phê duyệt, nghiệm thu của con người, tích hợp PR và CI chính xác trên `main` sau khi hợp nhất đều đã hoàn tất cho phạm vi Giai đoạn 1.
 >
-> The 2026-07-23 delivery-safety remediation adds the approved durable
-> `PROCESSING` state so claim ownership commits before provider I/O and an
-> uncertain delivery is never sent automatically a second time.
+> Biện pháp khắc phục an toàn gửi ngày 2026-07-23 bổ sung trạng thái bền vững
+> `PROCESSING` đã được phê duyệt, để quyền sở hữu xử lý được cam kết trước I/O của nhà cung cấp và một
+> lần gửi có kết quả không chắc chắn sẽ không bao giờ tự động được gửi lần thứ hai.
 >
-> Revision v0.4.4 separates trusted template-definition validation from runtime
-> value escaping: unsafe stored markup is rejected before rendering,
-> persistence, or delivery; runtime values remain escaped/sanitized.
-> Nhat approved this written revision on 2026-07-27. Approval authorizes
-> PLAN/TASKS preparation only; implementation remains unclaimed until
-> RED-GREEN evidence and acceptance gates are completed.
+> Bản sửa đổi v0.4.4 tách việc kiểm tra an toàn định nghĩa mẫu đáng tin cậy khỏi thao tác
+> thoát giá trị khi chạy: mã đánh dấu không an toàn đã lưu bị từ chối trước khi kết xuất,
+> lưu bền hoặc gửi; các giá trị khi chạy vẫn được thoát/làm sạch.
+> Nhat đã phê duyệt bản sửa đổi bằng văn bản này ngày 2026-07-27. Phê duyệt chỉ cho phép
+> chuẩn bị PLAN/TASKS; chưa được tuyên bố đã triển khai cho đến khi
+> hoàn tất bằng chứng RED-GREEN và các cổng nghiệm thu.
 >
-> Revision v0.4.5 restores three previously approved delivery obligations:
-> existing databases receive the canonical `ACCOUNT_SETUP` template through an
-> idempotent migration; successful sensitive sends retain only the provider
-> message ID in attempt history; and an opt-in SYSTEM worker processes queued
-> non-sensitive `PENDING` records while the backend is awake. The protected
-> manual endpoint and manual-only retry policy remain unchanged. On the staging
-> F1 plan this schedule is explicitly best-effort because Always On is disabled.
-> The user approved the design and written contract on 2026-07-27.
+> Bản sửa đổi v0.4.5 khôi phục ba nghĩa vụ gửi đã được phê duyệt trước đó:
+> cơ sở dữ liệu hiện có nhận mẫu `ACCOUNT_SETUP` chuẩn thông qua một
+> bản di trú có tính lũy đẳng; lần gửi nhạy cảm thành công chỉ giữ lại
+> ID thông điệp của nhà cung cấp trong lịch sử lần thử; và một tiến trình SYSTEM tùy chọn xử lý các bản ghi
+> `PENDING` không nhạy cảm đã xếp hàng khi phần phụ trợ còn hoạt động. Điểm cuối thủ công
+> được bảo vệ và chính sách chỉ thử lại thủ công vẫn không đổi. Trên gói
+> F1 của môi trường tiền sản xuất, lịch này được xác định rõ là chỉ thực hiện trong khả năng tốt nhất vì Always On bị tắt.
+> Người dùng đã phê duyệt thiết kế và hợp đồng bằng văn bản ngày 2026-07-27.
 
 ---
 
-## 1. Feature Overview
+## 1. Tổng quan về tính năng
 
-### 1.1 Feature Name
+### 1.1 Tên tính năng
 
-Notification Management
+Quản lý thông báo
 
-### 1.2 Business Context
+### 1.2 Bối cảnh nghiệp vụ
 
-The Library Management System must notify users about the approved account-verification, password-reset, account-setup, reservation-ready, due-date, overdue, fine, and membership-result events. Without reliable notifications, members may miss important deadlines, librarians may receive more manual questions, and account recovery flows may be blocked.
+Hệ thống quản lý thư viện phải thông báo cho người dùng về các sự kiện đã được phê duyệt: xác minh tài khoản, đặt lại mật khẩu, thiết lập tài khoản, đặt chỗ đã sẵn sàng, sắp đến hạn trả, quá hạn, tiền phạt và kết quả tư cách thành viên. Nếu không có thông báo đáng tin cậy, Thành viên có thể bỏ lỡ thời hạn quan trọng, Thủ thư có thể phải giải đáp nhiều câu hỏi thủ công hơn và các luồng khôi phục tài khoản có thể bị chặn.
 
-Notification Management provides a central place to create, send, store, and track these messages while keeping business decisions in the source features that create notification requests.
+Quản lý thông báo cung cấp một nơi tập trung để tạo, gửi, lưu trữ và theo dõi các thông điệp này, đồng thời giữ các quyết định nghiệp vụ trong những tính năng nguồn tạo yêu cầu thông báo.
 
-### 1.3 Goal / Outcome
+### 1.3 Mục tiêu / Kết quả
 
-The system shall:
+Hệ thống sẽ:
 
-- Accept notification requests from approved internal features.
-- Send sensitive authentication OTP email synchronously through the configured provider adapter, with injected mocks in tests, without persisting rendered sensitive content.
-- Queue non-sensitive email notifications for worker processing.
-- Track Phase 1 delivery with `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; compatibility values `DELIVERED`, `SKIPPED`, and `CANCELLED` have no Phase 1 transition.
-- Keep non-sensitive content and all delivery attempts traceable without persisting, logging, auditing, or returning secrets or rendered sensitive authentication content.
-- Support the eight canonical Phase 1 type/template pairs for verification, password reset, account setup, reservation readiness, due-date reminders, overdue notices, fine notices, and membership results.
+- Chấp nhận yêu cầu thông báo từ các tính năng nội bộ đã được phê duyệt.
+- Gửi đồng bộ email OTP xác thực nhạy cảm qua bộ điều hợp nhà cung cấp đã cấu hình, dùng đối tượng mô phỏng được chèn trong kiểm thử và không lưu bền nội dung nhạy cảm đã kết xuất.
+- Xếp hàng các thông báo email không nhạy cảm để tiến trình xử lý.
+- Theo dõi việc gửi trong Giai đoạn 1 bằng `PENDING`, `PROCESSING`, `SENT` và `FAILED`; các giá trị tương thích `DELIVERED`, `SKIPPED` và `CANCELLED` không có chuyển đổi nào trong Giai đoạn 1.
+- Giữ nội dung không nhạy cảm và mọi lần thử gửi ở trạng thái có thể truy vết mà không lưu bền, ghi nhật ký, ghi kiểm toán hoặc trả về bí mật hay nội dung xác thực nhạy cảm đã kết xuất.
+- Hỗ trợ tám cặp loại/mẫu chuẩn của Giai đoạn 1 cho xác minh, đặt lại mật khẩu, thiết lập tài khoản, đặt chỗ sẵn sàng, nhắc hạn trả, thông báo quá hạn, thông báo tiền phạt và kết quả tư cách thành viên.
 
-### 1.4 Scope Level
+### 1.4 Mức đặc tả
 
-- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
-- [x] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+- [ ] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [x] Đặc tả tiêu chuẩn - chức năng thông thường có quy tắc nghiệp vụ và kiểm tra hợp lệ
+- [ ] Đặc tả rút gọn - giao diện đơn giản, tài liệu hoặc chức năng ít rủi ro
 
 ---
 
-## 2. Actors and Permissions
+## 2. Tác nhân và quyền
 
-| Actor | Description | Permission / Responsibility |
+| Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | Receive email notifications related to reservations, due dates, overdue items, and fines. |
-| Librarian | Library staff | May receive operational notifications if source features request them. |
-| Admin | System administrator | May receive account or operational notifications if source features request them. |
-| Source Feature | Internal system feature | Creates requests through a requester bound to `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, or `SYSTEM`. FE02 owns verification/reset; FE11 owns account setup. |
-| Internal Source Requester | In-process FE10 boundary | Binds an allowlisted source at construction, rejects source override, applies source/type ownership policy, and is not a login role. |
-| Notification Worker | System component | Sends queued non-sensitive notifications and records attempts. |
-| Email Provider | Configured adapter or injected mock | Delivers email messages in deployed environments and deterministic tests. |
-| Guest | Unauthenticated visitor | No notification management permission, but may receive account verification/reset emails. |
+| Thành viên | Người dùng thư viện đã đăng ký | Nhận thông báo qua email liên quan đến đặt chỗ, ngày đến hạn, các khoản quá hạn và tiền phạt. |
+| Thủ thư | Nhân viên thư viện | Có thể nhận thông báo vận hành nếu tính năng nguồn yêu cầu. |
+| Quản trị viên | Quản trị viên hệ thống | Có thể nhận thông báo về tài khoản hoặc vận hành nếu tính năng nguồn yêu cầu. |
+| Tính năng nguồn | Tính năng hệ thống nội bộ | Tạo yêu cầu qua trình yêu cầu được ràng buộc với `FE02`, `FE07`, `FE08`, `FE09`, `FE11` hoặc `SYSTEM`. FE02 sở hữu xác minh/đặt lại; FE11 sở hữu thiết lập tài khoản. |
+| Trình yêu cầu nguồn nội bộ | Ranh giới FE10 trong tiến trình | Ràng buộc một nguồn thuộc danh sách cho phép khi khởi tạo, từ chối ghi đè nguồn, áp dụng chính sách quyền sở hữu nguồn/loại và không phải vai trò đăng nhập. |
+| Tiến trình xử lý thông báo | Thành phần hệ thống | Gửi các thông báo không nhạy cảm đã xếp hàng và ghi lại các lần thử. |
+| Nhà cung cấp email | Bộ điều hợp đã cấu hình hoặc nhà cung cấp mô phỏng được chèn | Gửi email trong môi trường triển khai và các kiểm thử có tính xác định. |
+| Khách | Khách truy cập chưa xác thực | Không có quyền quản lý thông báo nhưng có thể nhận email xác minh/đặt lại tài khoản. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE10-001: The source feature has determined that a notification is required and submits a request through an approved FE10 boundary.
-- PRE-FE10-002: The recipient user exists, or the source feature provides a safe guest email for account-related flows.
-- PRE-FE10-003: The notification type and template key form an approved canonical pair.
-- PRE-FE10-004: The requested Phase 1 channel is `EMAIL`; in-app delivery remains future work.
-- PRE-FE10-005: Configured email-provider settings are available outside source code, or an injected mock provider is supplied for tests.
-- PRE-FE10-006: Protected notification HTTP APIs are called by authenticated `LIBRARIAN` or `ADMIN` users for non-sensitive notification types, or an internal caller uses a construction-bound source requester. Verification/reset require FE02 ownership; account setup requires FE11 ownership.
-
----
-
-## 4. Main Flows
-
-### MF-FE10-001: Send Account Verification Notification
-
-1. FE02 creates a six-digit verification OTP, stores only its hash in `AuthTokens`, and receives the persisted `tokenId`.
-2. FE02 requests `ACCOUNT_VERIFICATION` delivery through the requester bound to `FE02` with recipient email, canonical template `ACCOUNT_VERIFICATION`, `otp`, `expiresInMinutes`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId`, and an idempotency key derived from the token ID.
-3. FE10 validates the recipient, email channel, canonical type/template pair, source ownership, integer source reference, idempotency key, and required OTP template data.
-4. FE10 confirms that it is not responsible for generating or validating the OTP.
-5. FE10 persists safe source metadata in `PROCESSING` before provider I/O, but never the OTP or rendered sensitive title/body.
-6. FE10 renders and sends the message synchronously through the configured provider adapter using raw data only in memory, then records `SENT` or `FAILED` and the attempt.
-7. FE10 returns `{ notificationId, status }`, where status is `SENT` or `FAILED`.
-
-### MF-FE10-002: Send Password Reset Notification
-
-1. FE02 creates a six-digit password-reset OTP, stores only its hash in `AuthTokens`, and receives the persisted `tokenId`.
-2. FE02 requests `PASSWORD_RESET` delivery through the requester bound to `FE02` with recipient email, canonical template `PASSWORD_RESET`, `otp`, `expiresInMinutes`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId`, and an idempotency key derived from the token ID.
-3. FE10 validates the recipient, email channel, canonical type/template pair, source ownership, integer source reference, idempotency key, and required OTP template data.
-4. FE10 confirms that FE02 owns OTP generation and validation.
-5. FE10 persists safe source metadata in `PROCESSING` before provider I/O, but never the OTP or rendered sensitive title/body.
-6. FE10 renders and sends the message synchronously through the configured provider adapter using raw data only in memory, then records `SENT` or `FAILED` and the attempt.
-7. FE10 returns `{ notificationId, status }`, where status is `SENT` or `FAILED`.
-
-### MF-FE10-003: Send Book Reservation Notification
-
-1. FE08 Reservation Management requests reservation notification delivery when a reservation status changes or a reserved book becomes available.
-2. FE10 validates the recipient, email channel, canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` pair, and reservation template data.
-3. FE10 confirms that FE08 owns reservation queue and availability decisions.
-4. FE10 recursively rejects secret-like queued keys and creates a non-sensitive `PENDING` notification with rendered content.
-5. The notification worker atomically claims the record as `PROCESSING`, commits that claim, and only then calls the configured provider adapter.
-6. FE10 records `SENT` or `FAILED` plus the delivery attempt without changing FE08 state.
-
-### MF-FE10-004: Send Due Date Or Fine Notification
-
-1. FE07 Borrowing Management or FE09 Fine Management requests due date, overdue, or fine notification delivery.
-2. FE10 validates the recipient, email channel, canonical type/template pair, and due date/fine template data.
-3. FE10 confirms that FE07 owns due date/borrowing decisions and FE09 owns fine calculation.
-4. FE10 recursively rejects secret-like queued keys and creates a non-sensitive `PENDING` notification with rendered content.
-5. The notification worker atomically claims the record as `PROCESSING`, commits that claim, and only then calls the configured provider adapter.
-6. FE10 records `SENT` or `FAILED` plus the delivery attempt without changing source state. FE09 caller integration remains deferred until an actual caller exists.
-
-### MF-FE10-005: Send Admin-Created Account Setup Notification
-
-1. FE11 creates a cryptographically secure `ACCOUNT_SETUP` token, stores only its hash in `AuthTokens`, and receives the persisted token ID.
-2. FE11 requests `ACCOUNT_SETUP` delivery through the requester bound to `FE11` with recipient email, canonical template `ACCOUNT_SETUP`, `setupLink`, `expiresInHours`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId`, and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
-3. FE10 validates FE11 ownership, the canonical pair, required variables, integer source ID, and idempotency.
-4. FE10 persists only safe source metadata in `PROCESSING` before provider I/O while the setup link remains request/provider-memory-only.
-5. FE10 renders and sends synchronously through the configured provider adapter, then records `SENT` or `FAILED`, the generic failure summary when applicable, and attempt data.
-6. FE10 returns `{ notificationId, status }` without returning the setup token, link, rendered title/body, or provider detail.
-
-### MF-FE10-006: Queue Membership Result Notification
-
-1. FE04 commits an approval or rejection decision and requests `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` through the requester bound to `FE04`.
-2. FE10 validates FE04 ownership, recipient, integer application source reference, canonical pair, required non-sensitive template data, and idempotency key.
-3. FE10 creates exactly one `PENDING` notification for a new idempotency key and returns `{ notificationId, status }`.
-4. The worker later commits `PROCESSING` before provider I/O, then records `SENT` or `FAILED` and a safe delivery attempt; delivery failure never changes the committed FE04 decision.
+- PRE-FE10-001: Tính năng nguồn đã xác định rằng cần phải có thông báo và gửi yêu cầu thông qua ranh giới FE10 đã được phê duyệt.
+- PRE-FE10-002: Người dùng nhận thông báo tồn tại hoặc tính năng nguồn cung cấp email an toàn của Khách cho các luồng liên quan đến tài khoản.
+- PRE-FE10-003: Loại thông báo và khóa mẫu tạo thành một cặp chuẩn được phê duyệt.
+- PRE-FE10-004: Kênh bắt buộc trong Giai đoạn 1 là `EMAIL`; gửi trong ứng dụng vẫn là công việc tương lai.
+- PRE-FE10-005: Thiết lập nhà cung cấp email đã cấu hình nằm ngoài mã nguồn hoặc kiểm thử được cung cấp một nhà cung cấp mô phỏng được chèn.
+- PRE-FE10-006: Các API HTTP thông báo được bảo vệ do người dùng `LIBRARIAN` hoặc `ADMIN` đã xác thực gọi cho loại thông báo không nhạy cảm, hoặc người gọi nội bộ dùng trình yêu cầu nguồn được ràng buộc khi khởi tạo. Xác minh/đặt lại yêu cầu quyền sở hữu FE02; thiết lập tài khoản yêu cầu quyền sở hữu FE11.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE10-001: Missing Or Invalid Recipient
+### MF-FE10-001: Gửi thông báo xác minh tài khoản
 
-1. Source feature submits a notification request without valid recipient data.
-2. FE10 returns a safe 4xx validation error.
-3. FE10 creates no notification record or delivery attempt.
+1. FE02 tạo OTP xác minh gồm sáu chữ số, chỉ lưu hàm băm của OTP trong `AuthTokens` và nhận `tokenId` đã được lưu bền.
+2. FE02 yêu cầu gửi `ACCOUNT_VERIFICATION` qua trình yêu cầu được ràng buộc với `FE02`, kèm email người nhận, mẫu chuẩn `ACCOUNT_VERIFICATION`, `otp`, `expiresInMinutes`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId` và khóa lũy đẳng suy ra từ ID mã thông báo.
+3. FE10 kiểm tra người nhận, kênh email, cặp loại/mẫu chuẩn, quyền sở hữu nguồn, tham chiếu nguồn dạng số nguyên, khóa lũy đẳng và dữ liệu mẫu OTP bắt buộc.
+4. FE10 xác nhận rằng hệ thống không chịu trách nhiệm tạo hoặc xác thực OTP.
+5. FE10 lưu bền siêu dữ liệu nguồn an toàn ở trạng thái `PROCESSING` trước I/O của nhà cung cấp, nhưng tuyệt đối không lưu OTP hay tiêu đề/nội dung nhạy cảm đã kết xuất.
+6. FE10 kết xuất và gửi đồng bộ thông điệp qua bộ điều hợp nhà cung cấp đã cấu hình, chỉ dùng dữ liệu thô trong bộ nhớ, sau đó ghi `SENT` hoặc `FAILED` cùng lần thử.
+7. FE10 trả về `{ notificationId, status }`, trong đó trạng thái là `SENT` hoặc `FAILED`.
 
-### AF-FE10-002: Duplicate Source Event
+### MF-FE10-002: Gửi thông báo đặt lại mật khẩu
 
-1. Source feature sends the same idempotency key more than once.
-2. FE10 returns `200 { notificationId, status }` for the existing record, regardless of its status, instead of creating or sending a duplicate.
+1. FE02 tạo OTP đặt lại mật khẩu gồm sáu chữ số, chỉ lưu hàm băm của OTP trong `AuthTokens` và nhận `tokenId` đã được lưu bền.
+2. FE02 yêu cầu gửi `PASSWORD_RESET` qua trình yêu cầu được ràng buộc với `FE02`, kèm email người nhận, mẫu chuẩn `PASSWORD_RESET`, `otp`, `expiresInMinutes`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId` và khóa lũy đẳng suy ra từ ID mã thông báo.
+3. FE10 kiểm tra người nhận, kênh email, cặp loại/mẫu chuẩn, quyền sở hữu nguồn, tham chiếu nguồn dạng số nguyên, khóa lũy đẳng và dữ liệu mẫu OTP bắt buộc.
+4. FE10 xác nhận rằng FE02 sở hữu việc tạo và xác thực OTP.
+5. FE10 lưu bền siêu dữ liệu nguồn an toàn ở trạng thái `PROCESSING` trước I/O của nhà cung cấp, nhưng tuyệt đối không lưu OTP hay tiêu đề/nội dung nhạy cảm đã kết xuất.
+6. FE10 kết xuất và gửi đồng bộ thông điệp qua bộ điều hợp nhà cung cấp đã cấu hình, chỉ dùng dữ liệu thô trong bộ nhớ, sau đó ghi `SENT` hoặc `FAILED` cùng lần thử.
+7. FE10 trả về `{ notificationId, status }`, trong đó trạng thái là `SENT` hoặc `FAILED`.
 
-### AF-FE10-003: Template Missing, Inactive, Or Unsafe
+### MF-FE10-003: Gửi thông báo đặt sách
 
-1. Source feature requests a template key that does not exist, is inactive, or whose stored title/body contains unsafe executable markup.
-2. FE10 returns a safe 4xx validation/template error before rendering or creating a notification record.
-3. FE10 does not persist invalid request content; persisted `FAILED` is reserved for accepted requests whose provider delivery fails.
-4. A type/template mismatch is always rejected before delivery or queued persistence; it is never converted by a caller flag or alias.
-5. FE10 does not sanitize an unsafe stored template definition into an accepted template. Runtime values inserted into an otherwise safe definition remain escaped or sanitized.
+1. FE08 Quản lý đặt chỗ yêu cầu gửi thông báo đặt chỗ khi trạng thái đặt chỗ thay đổi hoặc một cuốn sách đã đặt trước trở nên sẵn có.
+2. FE10 kiểm tra người nhận, kênh email, cặp `RESERVATION_AVAILABLE -> RESERVATION_READY` chuẩn và dữ liệu mẫu đặt trước.
+3. FE10 xác nhận rằng FE08 sở hữu hàng đợi đặt chỗ và quyết định về tình trạng sẵn có.
+4. FE10 từ chối đệ quy các khóa giống bí mật trong dữ liệu xếp hàng và tạo thông báo `PENDING` không nhạy cảm có nội dung đã kết xuất.
+5. Tiến trình xử lý thông báo nhận bản ghi một cách nguyên tử dưới trạng thái `PROCESSING`, cam kết quyền nhận xử lý đó rồi mới gọi bộ điều hợp nhà cung cấp đã cấu hình.
+6. FE10 ghi `SENT` hoặc `FAILED` cùng lần thử gửi mà không thay đổi trạng thái FE08.
 
-### AF-FE10-004: Email Provider Unavailable
+### MF-FE10-004: Gửi thông báo ngày đến hạn hoặc tiền phạt
 
-1. FE10 or the notification worker attempts to send an email.
-2. The provider is unavailable or returns an error.
-3. FE10 records `FAILED`, an attempt, and a safe failure reason when the terminal transition commits; no secret or provider detail is persisted or returned.
-4. A failed non-sensitive queued notification may be retried manually on the same record. A failed sensitive authentication notification must be reissued by its source and returns `409 REISSUE_REQUIRED` from the retry endpoint.
-5. The original business transaction in the source feature remains completed.
-6. If provider I/O completed but the terminal transition cannot be persisted, the record remains `PROCESSING`; automatic processing and manual retry must not send it again, and manual retry returns `409 DELIVERY_STATE_UNCERTAIN`.
+1. FE07 Quản lý mượn sách hoặc FE09 Quản lý tiền phạt yêu cầu gửi thông báo sắp đến hạn, quá hạn hoặc tiền phạt.
+2. FE10 kiểm tra người nhận, kênh email, cặp loại/mẫu chuẩn và dữ liệu mẫu hạn trả/tiền phạt.
+3. FE10 xác nhận FE07 sở hữu các quyết định về hạn trả/mượn sách và FE09 sở hữu việc tính tiền phạt.
+4. FE10 từ chối đệ quy các khóa giống bí mật trong dữ liệu xếp hàng và tạo thông báo `PENDING` không nhạy cảm có nội dung đã kết xuất.
+5. Tiến trình xử lý thông báo nhận bản ghi một cách nguyên tử dưới trạng thái `PROCESSING`, cam kết quyền nhận xử lý đó rồi mới gọi bộ điều hợp nhà cung cấp đã cấu hình.
+6. FE10 ghi `SENT` hoặc `FAILED` cùng lần thử gửi mà không thay đổi trạng thái nguồn. Việc tích hợp người gọi FE09 vẫn được trì hoãn cho đến khi thực sự có người gọi.
 
-### AF-FE10-005: Optional Notification Disabled
+### MF-FE10-005: Gửi thông báo thiết lập tài khoản do quản trị viên tạo
 
-1. Optional notification preferences and notification suppression are out of scope for Phase 1.
-2. FE10 does not evaluate `UserNotificationPreferences` and does not create a `SKIPPED` record in Phase 1.
+1. FE11 tạo mã thông báo `ACCOUNT_SETUP` an toàn về mặt mật mã, chỉ lưu hàm băm của mã thông báo trong `AuthTokens` và nhận ID mã thông báo đã được lưu bền.
+2. FE11 yêu cầu gửi `ACCOUNT_SETUP` qua trình yêu cầu được ràng buộc với `FE11`, kèm email người nhận, mẫu chuẩn `ACCOUNT_SETUP`, `setupLink`, `expiresInHours`, `sourceEntityType: AuthToken`, `sourceEntityId: tokenId` và khóa lũy đẳng `FE11:ACCOUNT_SETUP:<tokenId>`.
+3. FE10 kiểm tra quyền sở hữu FE11, cặp chuẩn, biến bắt buộc, ID nguồn dạng số nguyên và tính lũy đẳng.
+4. FE10 chỉ lưu bền siêu dữ liệu nguồn an toàn ở trạng thái `PROCESSING` trước I/O của nhà cung cấp, còn liên kết thiết lập chỉ tồn tại trong bộ nhớ của yêu cầu/nhà cung cấp.
+5. FE10 kết xuất và gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình, sau đó ghi `SENT` hoặc `FAILED`, bản tóm tắt lỗi chung khi áp dụng và dữ liệu lần thử.
+6. FE10 trả về `{ notificationId, status }` mà không trả về mã thông báo thiết lập, liên kết, tiêu đề/nội dung đã kết xuất hoặc chi tiết nhà cung cấp.
 
-### AF-FE10-006: Sensitive Authentication Type Submitted Through The Wrong Boundary
+### MF-FE10-006: Xếp hàng thông báo kết quả tư cách thành viên
 
-1. A staff HTTP caller submits `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`; a non-FE02 requester submits a FE02-owned type; or a non-FE11 requester submits `ACCOUNT_SETUP`.
-2. FE10 returns `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` with message `Sensitive authentication notifications must be requested internally.` before template rendering, persistence, or provider delivery.
-3. No notification record or delivery attempt is created.
-
----
-
-## 6. Business Rules
-
-Use these stable IDs for tasks and tests.
-
-- BR-FE10-001: FE10 must not decide source business events; source features decide when a notification is needed.
-- BR-FE10-002: FE10 must validate recipient, `EMAIL` channel, integer source reference, required template data, and the server-enforced canonical type/template pair before creating or sending a notification. The canonical pairs are `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE`, and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`.
-- BR-FE10-003: FE10 must not generate or validate authentication OTPs or legacy verification/reset tokens.
-- BR-FE10-004: FE10 must not persist, log, audit, or return raw tokens, OTP values, passwords, verification/reset/setup links, rendered sensitive authentication title/body, provider credentials/details, or internal stack traces. Queued non-sensitive `templateData` and stored `safePayload` must recursively traverse objects/arrays and normalize keys by lowercasing and removing `_`, `-`, and whitespace. A queued request is rejected when a normalized key contains `token`, `otp`, `password`, `verificationlink`, `resetlink`, or `setuplink`; the same keys are redacted from `safePayload`.
-- BR-FE10-005: Every in-process source request shall include construction-bound `sourceFeature`, `sourceEntityType`, integer `sourceEntityId`, and an idempotency key; callers cannot override bound metadata. HTTP requests use the separate protected contract and cannot provide `sourceFeature`.
-- BR-FE10-006: One idempotency key maps to one notification record across all statuses. A duplicate request must replay the existing record summary and must not create or send a duplicate.
-- BR-FE10-007: FE10 must support the eight approved Phase 1 type/template pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; no undocumented alias or pair is supported.
-- BR-FE10-008: Failed notification delivery must be recorded with safe failure reason and attempt count. Only failed non-sensitive queued notifications may be manually retried on the same record; failed sensitive authentication delivery requires a new source event. A `PROCESSING` record has uncertain provider outcome and must not be reclaimed or retried automatically or manually.
-- BR-FE10-009: Email provider credentials must be stored outside source code.
-- BR-FE10-010: Notification templates must define required variables, enforce the canonical pair, and must not render missing required data silently. Phase 1 definitions are plain text plus `{{variable}}` tokens. Before rendering any request, FE10 must reject a stored title/body containing raw HTML tag syntax (including `<script>`), inline event-handler attributes, or `javascript:` URLs instead of sanitizing that definition into an accepted template. Runtime template values inserted into an otherwise safe definition remain escaped or sanitized. `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` each require `otp` and `expiresInMinutes`; `ACCOUNT_SETUP` requires `setupLink` and `expiresInHours`.
-- BR-FE10-011: Notification HTTP endpoints must remain protected from public/member callers and allow only `LIBRARIAN`/`ADMIN` for non-sensitive types. HTTP callers cannot provide `sourceFeature` and must receive safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` for `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`. In-process source requests use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; only FE02 may submit verification/reset, only FE04 may submit `MEMBERSHIP_RESULT`, and only FE11 may submit account setup; `SYSTEM` is not a login role.
-- BR-FE10-012: Notification delivery failure must not automatically roll back the source business transaction.
-- BR-FE10-013: Notification status changes and source-request audits must be traceable with safe metadata. Source audits use `userId: null` plus bound source metadata; retry preserves the same notification ID, idempotency key, and attempt history. Claiming must atomically commit `PENDING -> PROCESSING` before provider I/O, and terminal transitions must be guarded from `PROCESSING`.
-- A successful provider result persists only its normalized
-  `providerMessageId` in `NotificationAttempts`; no full provider response,
-  rendered sensitive content, token, OTP, setup link, or recipient content is
-  copied into audit, logs, HTTP, or notification content.
-- Automatic SYSTEM processing is construction-bound and writes aggregate audit
-  metadata with `UserId = NULL`; it never fabricates an Admin or Librarian.
+1. FE04 cam kết quyết định phê duyệt hoặc từ chối rồi yêu cầu `GENERAL_SYSTEM -> MEMBERSHIP_RESULT` qua trình yêu cầu được ràng buộc với `FE04`.
+2. FE10 kiểm tra quyền sở hữu FE04, người nhận, tham chiếu nguồn của hồ sơ đăng ký dạng số nguyên, cặp chuẩn, dữ liệu mẫu không nhạy cảm bắt buộc và khóa lũy đẳng.
+3. FE10 tạo đúng một thông báo `PENDING` cho khóa lũy đẳng mới và trả về `{ notificationId, status }`.
+4. Sau đó, tiến trình xử lý cam kết `PROCESSING` trước I/O của nhà cung cấp rồi ghi `SENT` hoặc `FAILED` cùng lần thử gửi an toàn; lỗi gửi không bao giờ thay đổi quyết định FE04 đã cam kết.
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng thay thế
 
-- FR-FE10-001: When the requester bound to `FE02` submits canonical account-verification OTP data with `otp`, `expiresInMinutes`, and an `AuthToken` source reference, FE10 shall persist only safe source metadata as `PROCESSING` before provider I/O, synchronously render/send through the configured provider adapter, record a redacted `SENT` or `FAILED` summary and attempt when the terminal transition commits, and return `{ notificationId, status }` without generating, validating, persisting, logging, auditing, or returning the OTP.
-- FR-FE10-002: When the requester bound to `FE02` submits canonical password-reset OTP data with `otp`, `expiresInMinutes`, and an `AuthToken` source reference, FE10 shall persist only safe source metadata as `PROCESSING` before provider I/O, synchronously render/send through the configured provider adapter, record a redacted `SENT` or `FAILED` summary and attempt when the terminal transition commits, and return `{ notificationId, status }` without exposing raw or rendered sensitive content.
-- FR-FE10-003: When FE04 requests canonical membership-result delivery or FE08 requests canonical reservation-ready delivery with valid non-sensitive data, FE10 shall create one queued `PENDING` notification without deciding the source feature's business outcome; the worker later processes it.
-- FR-FE10-004: When FE07 or a future FE09 caller requests canonical due date, overdue, or fine delivery with valid non-sensitive data, FE10 shall create a queued `PENDING` notification without calculating fines or changing borrowing state. FE09 caller integration remains deferred.
-- FR-FE10-005: When required fields, integer source reference, canonical mapping, recipient, source/type ownership, HTTP source override, queued-payload safety checks, or stored template-definition safety checks fail, FE10 shall reject the request safely before rendering, persistence, or delivery.
-- FR-FE10-006: Before calling the configured provider, FE10 shall commit the accepted request or worker claim as `PROCESSING`. When the provider accepts the send, FE10 shall guard `PROCESSING -> SENT`, set `sentAt` to the server timestamp, and record the successful attempt; Phase 1 never transitions the record to `DELIVERED`.
-- FR-FE10-007: When delivery fails, FE10 shall guard `PROCESSING -> FAILED` and record attempt details plus a safe reason without rolling back source flow. Manual retry changes only a failed non-sensitive queued record from `FAILED` to `PENDING`; sensitive retry returns safe `409 REISSUE_REQUIRED`; retry of `PROCESSING` returns safe `409 DELIVERY_STATE_UNCERTAIN`.
-- FR-FE10-008: When a duplicate source event is submitted with the same idempotency key, FE10 shall return `200 { notificationId, status }` for the existing record across any status and shall not create or send a duplicate.
-- FR-FE10-009: FE10 shall recognize all eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. A missing/inactive template, unsafe stored template definition, missing required sensitive variable, mismatched pair, unauthorized sensitive source, HTTP source override, or recursively detected secret-like queued key shall return a safe 4xx before rendering or persistence without leaking the submitted value.
-- FR-FE10-010: When the requester bound to `FE11` submits canonical account-setup data with `setupLink`, `expiresInHours`, and an `AuthToken` source reference, FE10 shall persist safe source metadata as `PROCESSING` before provider I/O, synchronously render/send, record safe terminal status/attempt metadata when the transition commits, and return `{ notificationId, status }` without exposing raw or rendered setup content.
+### AF-FE10-001: Người nhận bị thiếu hoặc không hợp lệ
+
+1. Tính năng nguồn gửi yêu cầu thông báo mà không có dữ liệu người nhận hợp lệ.
+2. FE10 trả về lỗi kiểm tra hợp lệ 4xx an toàn.
+3. FE10 không tạo bản ghi thông báo hoặc lần thử gửi.
+
+### AF-FE10-002: Sự kiện nguồn trùng lặp
+
+1. Tính năng nguồn gửi cùng một khóa lũy đẳng nhiều lần.
+2. FE10 trả về `200 { notificationId, status }` cho bản ghi hiện có, bất kể trạng thái, thay vì tạo hoặc gửi bản trùng.
+
+### AF-FE10-003: Thiếu mẫu, không hoạt động hoặc không an toàn
+
+1. Tính năng nguồn yêu cầu một khóa mẫu không tồn tại, không hoạt động hoặc có tiêu đề/nội dung đã lưu chứa mã đánh dấu có thể thực thi không an toàn.
+2. FE10 trả về lỗi kiểm tra hợp lệ/mẫu 4xx an toàn trước khi kết xuất hoặc tạo bản ghi thông báo.
+3. FE10 không lưu bền nội dung yêu cầu không hợp lệ; trạng thái `FAILED` đã lưu chỉ dành cho yêu cầu được chấp nhận nhưng nhà cung cấp gửi thất bại.
+4. Cặp loại/mẫu không khớp luôn bị từ chối trước khi gửi hoặc lưu bền vào hàng đợi; cờ hay bí danh do người gọi cung cấp không bao giờ được dùng để chuyển đổi cặp đó.
+5. FE10 không làm sạch một định nghĩa mẫu đã lưu không an toàn để biến nó thành mẫu được chấp nhận. Các giá trị khi chạy được chèn vào một định nghĩa vốn an toàn vẫn được thoát hoặc làm sạch.
+
+### AF-FE10-004: Nhà cung cấp email không khả dụng
+
+1. FE10 hoặc tiến trình xử lý thông báo cố gửi email.
+2. Nhà cung cấp không khả dụng hoặc trả về lỗi.
+3. FE10 ghi `FAILED`, một lần thử và lý do lỗi an toàn khi chuyển đổi sang trạng thái cuối được cam kết; không lưu bền hay trả về bí mật hoặc chi tiết nhà cung cấp.
+4. Thông báo không nhạy cảm đã xếp hàng nhưng gửi thất bại có thể được thử lại thủ công trên cùng bản ghi. Thông báo xác thực nhạy cảm gửi thất bại phải do nguồn phát hành lại và điểm cuối thử lại trả về `409 REISSUE_REQUIRED`.
+5. Giao dịch nghiệp vụ ban đầu trong tính năng nguồn vẫn hoàn tất.
+6. Nếu I/O của nhà cung cấp hoàn tất nhưng không thể lưu bền chuyển đổi sang trạng thái cuối, bản ghi vẫn ở `PROCESSING`; cả xử lý tự động và thử lại thủ công đều không được gửi lại, đồng thời thử lại thủ công trả về `409 DELIVERY_STATE_UNCERTAIN`.
+
+### AF-FE10-005: Đã tắt thông báo tùy chọn
+
+1. Tùy chọn nhận thông báo và cơ chế ngăn gửi thông báo nằm ngoài phạm vi Giai đoạn 1.
+2. FE10 không đánh giá `UserNotificationPreferences` và không tạo bản ghi `SKIPPED` trong Giai đoạn 1.
+
+### AF-FE10-006: Loại xác thực nhạy cảm được gửi sai ranh giới
+
+1. Người gọi HTTP của nhân viên gửi `ACCOUNT_VERIFICATION`, `PASSWORD_RESET` hoặc `ACCOUNT_SETUP`; người yêu cầu không phải FE02 gửi loại thuộc sở hữu của FE02; hoặc người yêu cầu không phải FE11 gửi `ACCOUNT_SETUP`.
+2. FE10 trả về `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` kèm thông báo `Sensitive authentication notifications must be requested internally.` trước khi kết xuất mẫu, lưu bền hoặc gửi qua nhà cung cấp.
+3. Không tạo bản ghi thông báo hoặc lần thử gửi nào.
 
 ---
 
-## 8. Acceptance Criteria
+## 6. Quy tắc nghiệp vụ
 
-- AC-FE10-001: Given the requester bound to `FE02` submits canonical account-verification OTP data, when FE10 sends synchronously, then it returns `{ notificationId, status }` with `SENT` or `FAILED`, persists safe `AuthToken` source metadata, and persists no OTP or rendered sensitive content.
-- AC-FE10-002: Given the requester bound to `FE02` submits canonical password-reset OTP data, when FE10 sends synchronously, then it returns `{ notificationId, status }` with `SENT` or `FAILED`, persists safe `AuthToken` source metadata, and persists no OTP or rendered sensitive content.
-- AC-FE10-003: Given FE04 submits canonical membership-result data or FE08 submits canonical reservation-ready data, when FE10 accepts it, then exactly one non-sensitive `PENDING` notification is queued without FE10 deciding or changing the source business outcome.
-- AC-FE10-004: Given FE07 submits canonical due-date data, when FE10 accepts it, then one non-sensitive `PENDING` reminder is queued without FE10 changing borrowing state.
-- AC-FE10-005: Given a future FE09 caller submits canonical overdue/fine data, when FE10 accepts it, then one non-sensitive `PENDING` notification is queued without FE10 calculating fines; current FE09 caller integration remains deferred.
-- AC-FE10-006: Given each of the eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, when FE10 validates a complete request from an authorized boundary and a safe stored template definition, then mapping validation succeeds and runtime values are escaped/sanitized. Given a missing recipient/variable, string source ID, mismatched pair, unknown/inactive template, unsafe stored template definition, HTTP source override, unauthorized sensitive source, or queued nested secret key, validation returns a safe 4xx before rendering, persistence, attempt creation, or delivery.
-- AC-FE10-007: Given FE02 provides an OTP through its bound requester, when FE10 sends it, then the OTP and rendered sensitive title/body do not appear in persistence, logs, audits, or HTTP responses.
-- AC-FE10-008: Given an idempotency key already exists in any status, when FE10 receives the duplicate request, then it returns `200 { notificationId, status }` for that record and performs no duplicate send.
-- AC-FE10-009: Given provider delivery failure, when FE10 records it, then the source flow remains completed; a failed non-sensitive queued record may retry on the same history, while sensitive retry returns safe `409 REISSUE_REQUIRED`. Given provider I/O finishes but terminal persistence fails, the row remains `PROCESSING`, duplicate replay performs no send, and retry returns safe `409 DELIVERY_STATE_UNCERTAIN`.
-- AC-FE10-010: Given the requester bound to `FE11` submits canonical account-setup data, when FE10 sends synchronously, then it returns safe `SENT`/`FAILED` summary, persists safe `AuthToken` metadata, and persists or returns no setup token/link/rendered content.
+Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
+
+- BR-FE10-001: FE10 không được quyết định sự kiện nghiệp vụ nguồn; tính năng nguồn quyết định khi nào cần thông báo.
+- BR-FE10-002: FE10 phải kiểm tra người nhận, kênh `EMAIL`, tham chiếu nguồn dạng số nguyên, dữ liệu mẫu bắt buộc và cặp loại/mẫu chuẩn do máy chủ thực thi trước khi tạo hoặc gửi thông báo. Các cặp chuẩn là `ACCOUNT_VERIFICATION -> ACCOUNT_VERIFICATION`, `PASSWORD_RESET -> PASSWORD_RESET`, `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `RESERVATION_AVAILABLE -> RESERVATION_READY`, `DUE_DATE_REMINDER -> DUE_DATE_REMINDER`, `OVERDUE_NOTICE -> OVERDUE_NOTICE`, `FINE_NOTICE -> FINE_NOTICE` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`.
+- BR-FE10-003: FE10 không được tạo hoặc xác thực OTP dùng cho xác thực hay mã thông báo xác minh/đặt lại kiểu cũ.
+- BR-FE10-004: FE10 không được lưu bền, ghi nhật ký, ghi kiểm toán hoặc trả về mã thông báo thô, giá trị OTP, mật khẩu, liên kết xác minh/đặt lại/thiết lập, tiêu đề/nội dung xác thực nhạy cảm đã kết xuất, thông tin xác thực/chi tiết của nhà cung cấp hoặc dấu vết ngăn xếp nội bộ. `templateData` không nhạy cảm đã xếp hàng và `safePayload` đã lưu phải duyệt đệ quy qua đối tượng/mảng, đồng thời chuẩn hóa khóa bằng cách chuyển thành chữ thường và bỏ `_`, `-` cùng khoảng trắng. Yêu cầu xếp hàng bị từ chối khi khóa đã chuẩn hóa chứa `token`, `otp`, `password`, `verificationlink`, `resetlink` hoặc `setuplink`; các khóa tương tự bị che khỏi `safePayload`.
+- BR-FE10-005: Mọi yêu cầu nguồn trong tiến trình phải chứa `sourceFeature`, `sourceEntityType`, `sourceEntityId` dạng số nguyên và một khóa lũy đẳng; người gọi không thể ghi đè siêu dữ liệu đã ràng buộc. Yêu cầu HTTP dùng hợp đồng được bảo vệ riêng và không thể cung cấp `sourceFeature`.
+- BR-FE10-006: Một khóa lũy đẳng ánh xạ tới một bản ghi thông báo xuyên suốt mọi trạng thái. Yêu cầu trùng phải phát lại bản tóm tắt bản ghi hiện có và không được tạo hoặc gửi bản trùng.
+- BR-FE10-007: FE10 phải hỗ trợ tám cặp loại/mẫu Giai đoạn 1 đã phê duyệt, gồm `ACCOUNT_SETUP -> ACCOUNT_SETUP` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; không hỗ trợ bí danh hay cặp không được lập tài liệu.
+- BR-FE10-008: Lần gửi thông báo thất bại phải được ghi cùng lý do lỗi an toàn và số lần thử. Chỉ thông báo không nhạy cảm đã xếp hàng nhưng gửi thất bại mới được thử lại thủ công trên cùng bản ghi; việc gửi thông báo xác thực nhạy cảm thất bại yêu cầu sự kiện nguồn mới. Bản ghi `PROCESSING` có kết quả nhà cung cấp không chắc chắn và không được tự động hay thủ công nhận lại hoặc thử lại.
+- BR-FE10-009: Thông tin xác thực của nhà cung cấp email phải được lưu trữ bên ngoài mã nguồn.
+- BR-FE10-010: Mẫu thông báo phải khai báo biến bắt buộc, thực thi cặp chuẩn và không được âm thầm kết xuất khi thiếu dữ liệu bắt buộc. Định nghĩa Giai đoạn 1 là văn bản thuần cộng các mã `{{variable}}`. Trước khi kết xuất bất kỳ yêu cầu nào, FE10 phải từ chối tiêu đề/nội dung đã lưu có cú pháp thẻ HTML thô (bao gồm `<script>`), thuộc tính xử lý sự kiện nội tuyến hoặc URL `javascript:`, thay vì làm sạch định nghĩa đó thành một mẫu được chấp nhận. Các giá trị mẫu khi chạy được chèn vào một định nghĩa vốn an toàn vẫn được thoát hoặc làm sạch. Cả `ACCOUNT_VERIFICATION` và `PASSWORD_RESET` đều yêu cầu `otp` cùng `expiresInMinutes`; `ACCOUNT_SETUP` yêu cầu `setupLink` và `expiresInHours`.
+- BR-FE10-011: Các điểm cuối HTTP thông báo phải được bảo vệ khỏi người gọi công khai/Thành viên và chỉ cho phép `LIBRARIAN`/`ADMIN` đối với loại không nhạy cảm. Người gọi HTTP không thể cung cấp `sourceFeature` và phải nhận lỗi an toàn `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` cho `ACCOUNT_VERIFICATION`, `PASSWORD_RESET` hoặc `ACCOUNT_SETUP`. Yêu cầu nguồn trong tiến trình dùng `createSourceNotificationRequester(sourceFeature)` với danh sách cho phép `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; chỉ FE02 được gửi xác minh/đặt lại, chỉ FE04 được gửi `MEMBERSHIP_RESULT` và chỉ FE11 được gửi thiết lập tài khoản; `SYSTEM` không phải vai trò đăng nhập.
+- BR-FE10-012: Lỗi gửi thông báo không được tự động hoàn tác giao dịch nghiệp vụ nguồn.
+- BR-FE10-013: Thay đổi trạng thái thông báo và bản ghi kiểm toán yêu cầu nguồn phải có khả năng truy vết bằng siêu dữ liệu an toàn. Bản ghi kiểm toán nguồn dùng `userId: null` cùng siêu dữ liệu nguồn đã ràng buộc; thao tác thử lại giữ nguyên ID thông báo, khóa lũy đẳng và lịch sử lần thử. Việc nhận xử lý phải cam kết nguyên tử `PENDING -> PROCESSING` trước I/O của nhà cung cấp, còn chuyển đổi sang trạng thái cuối phải được bảo vệ từ `PROCESSING`.
+- Kết quả thành công của nhà cung cấp chỉ lưu bền giá trị đã chuẩn hóa
+  `providerMessageId` trong `NotificationAttempts`; không sao chép toàn bộ phản hồi của nhà cung cấp,
+  nội dung nhạy cảm đã kết xuất, mã thông báo, OTP, liên kết thiết lập hoặc nội dung của người nhận
+  vào bản ghi kiểm toán, nhật ký, HTTP hay nội dung thông báo.
+- Xử lý SYSTEM tự động được ràng buộc khi khởi tạo và ghi siêu dữ liệu kiểm toán tổng hợp
+  với `UserId = NULL`; nó không bao giờ giả mạo một Quản trị viên hoặc Thủ thư.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 7. Yêu cầu chức năng
 
-| ID | Edge Case / Error | Expected System Behavior |
+- FR-FE10-001: Khi trình yêu cầu được ràng buộc với `FE02` gửi dữ liệu OTP xác minh tài khoản chuẩn gồm `otp`, `expiresInMinutes` và tham chiếu nguồn `AuthToken`, FE10 phải chỉ lưu bền siêu dữ liệu nguồn an toàn dưới trạng thái `PROCESSING` trước I/O của nhà cung cấp, kết xuất/gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình, ghi bản tóm tắt `SENT` hoặc `FAILED` đã che dữ liệu cùng lần thử khi chuyển đổi trạng thái cuối được cam kết, rồi trả về `{ notificationId, status }` mà không tạo, xác thực, lưu bền, ghi nhật ký, ghi kiểm toán hoặc trả về OTP.
+- FR-FE10-002: Khi trình yêu cầu được ràng buộc với `FE02` gửi dữ liệu OTP đặt lại mật khẩu chuẩn gồm `otp`, `expiresInMinutes` và tham chiếu nguồn `AuthToken`, FE10 phải chỉ lưu bền siêu dữ liệu nguồn an toàn dưới trạng thái `PROCESSING` trước I/O của nhà cung cấp, kết xuất/gửi đồng bộ qua bộ điều hợp nhà cung cấp đã cấu hình, ghi bản tóm tắt `SENT` hoặc `FAILED` đã che dữ liệu cùng lần thử khi chuyển đổi trạng thái cuối được cam kết, rồi trả về `{ notificationId, status }` mà không làm lộ nội dung nhạy cảm thô hay đã kết xuất.
+- FR-FE10-003: Khi FE04 yêu cầu gửi kết quả tư cách thành viên chuẩn hoặc FE08 yêu cầu gửi thông báo đặt chỗ sẵn sàng chuẩn bằng dữ liệu không nhạy cảm hợp lệ, FE10 phải tạo một thông báo `PENDING` đã xếp hàng mà không quyết định kết quả nghiệp vụ của tính năng nguồn; tiến trình xử lý sẽ xử lý thông báo sau.
+- FR-FE10-004: Khi FE07 hoặc người gọi FE09 trong tương lai yêu cầu gửi thông báo chuẩn về hạn trả, quá hạn hoặc tiền phạt bằng dữ liệu không nhạy cảm hợp lệ, FE10 phải tạo một thông báo `PENDING` đã xếp hàng mà không tính tiền phạt hay thay đổi trạng thái mượn. Việc tích hợp người gọi FE09 vẫn được trì hoãn.
+- FR-FE10-005: Khi kiểm tra trường bắt buộc, tham chiếu nguồn dạng số nguyên, ánh xạ chuẩn, người nhận, quyền sở hữu nguồn/loại, ghi đè nguồn qua HTTP, độ an toàn của dữ liệu xếp hàng hoặc độ an toàn của định nghĩa mẫu đã lưu không đạt, FE10 phải từ chối yêu cầu an toàn trước khi kết xuất, lưu bền hoặc gửi.
+- FR-FE10-006: Trước khi gọi nhà cung cấp đã cấu hình, FE10 phải cam kết yêu cầu đã chấp nhận hoặc quyền nhận xử lý của tiến trình dưới trạng thái `PROCESSING`. Khi nhà cung cấp chấp nhận gửi, FE10 phải bảo vệ chuyển đổi `PROCESSING -> SENT`, đặt `sentAt` bằng dấu thời gian máy chủ và ghi lần thử thành công; Giai đoạn 1 không bao giờ chuyển bản ghi sang `DELIVERED`.
+- FR-FE10-007: Khi gửi thất bại, FE10 phải bảo vệ chuyển đổi `PROCESSING -> FAILED` và ghi chi tiết lần thử cùng lý do an toàn mà không hoàn tác luồng nguồn. Thử lại thủ công chỉ chuyển một bản ghi không nhạy cảm đã xếp hàng nhưng thất bại từ `FAILED` sang `PENDING`; thử lại thông báo nhạy cảm trả về lỗi an toàn `409 REISSUE_REQUIRED`; thử lại bản ghi `PROCESSING` trả về lỗi an toàn `409 DELIVERY_STATE_UNCERTAIN`.
+- FR-FE10-008: Khi sự kiện nguồn trùng được gửi với cùng khóa lũy đẳng, FE10 phải trả về `200 { notificationId, status }` cho bản ghi hiện có ở bất kỳ trạng thái nào và không được tạo hoặc gửi bản trùng.
+- FR-FE10-009: FE10 phải nhận biết đủ tám cặp chuẩn, gồm `ACCOUNT_SETUP -> ACCOUNT_SETUP` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. Mẫu bị thiếu/không hoạt động, định nghĩa mẫu đã lưu không an toàn, biến nhạy cảm bắt buộc bị thiếu, cặp không khớp, nguồn nhạy cảm không được cấp quyền, ghi đè nguồn qua HTTP hoặc khóa giống bí mật trong dữ liệu xếp hàng được phát hiện đệ quy phải trả về lỗi 4xx an toàn trước khi kết xuất hoặc lưu bền mà không làm lộ giá trị đã gửi.
+- FR-FE10-010: Khi trình yêu cầu được ràng buộc với `FE11` gửi dữ liệu thiết lập tài khoản chuẩn gồm `setupLink`, `expiresInHours` và tham chiếu nguồn `AuthToken`, FE10 phải lưu bền siêu dữ liệu nguồn an toàn dưới trạng thái `PROCESSING` trước I/O của nhà cung cấp, kết xuất/gửi đồng bộ, ghi trạng thái cuối và siêu dữ liệu lần thử an toàn khi chuyển đổi được cam kết, rồi trả về `{ notificationId, status }` mà không làm lộ nội dung thiết lập thô hay đã kết xuất.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE10-001: Với việc trình yêu cầu được ràng buộc với `FE02` gửi dữ liệu OTP xác minh tài khoản chuẩn, khi FE10 gửi đồng bộ thì hệ thống trả về `{ notificationId, status }` với `SENT` hoặc `FAILED`, lưu bền siêu dữ liệu nguồn `AuthToken` an toàn và không lưu bền OTP hay nội dung nhạy cảm đã kết xuất.
+- AC-FE10-002: Với việc trình yêu cầu được ràng buộc với `FE02` gửi dữ liệu OTP đặt lại mật khẩu chuẩn, khi FE10 gửi đồng bộ thì hệ thống trả về `{ notificationId, status }` với `SENT` hoặc `FAILED`, lưu bền siêu dữ liệu nguồn `AuthToken` an toàn và không lưu bền OTP hay nội dung nhạy cảm đã kết xuất.
+- AC-FE10-003: Với việc FE04 gửi dữ liệu kết quả tư cách thành viên chuẩn hoặc FE08 gửi dữ liệu đặt chỗ sẵn sàng chuẩn, khi FE10 chấp nhận thì đúng một thông báo `PENDING` không nhạy cảm được xếp hàng mà FE10 không quyết định hay thay đổi kết quả nghiệp vụ nguồn.
+- AC-FE10-004: Với việc FE07 gửi dữ liệu hạn trả chuẩn, khi FE10 chấp nhận thì một lời nhắc `PENDING` không nhạy cảm được xếp hàng mà FE10 không thay đổi trạng thái mượn.
+- AC-FE10-005: Với việc người gọi FE09 trong tương lai gửi dữ liệu quá hạn/tiền phạt chuẩn, khi FE10 chấp nhận thì một thông báo `PENDING` không nhạy cảm được xếp hàng mà FE10 không tính tiền phạt; việc tích hợp người gọi FE09 hiện tại vẫn được trì hoãn.
+- AC-FE10-006: Với từng cặp trong tám cặp chuẩn, gồm `ACCOUNT_SETUP -> ACCOUNT_SETUP` và `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, khi FE10 kiểm tra một yêu cầu đầy đủ từ ranh giới được cấp quyền cùng định nghĩa mẫu đã lưu an toàn, thì kiểm tra ánh xạ đạt và các giá trị khi chạy được thoát/làm sạch. Với người nhận/biến bị thiếu, ID nguồn dạng chuỗi, cặp không khớp, mẫu không rõ/không hoạt động, định nghĩa mẫu đã lưu không an toàn, ghi đè nguồn qua HTTP, nguồn nhạy cảm không được cấp quyền hoặc khóa bí mật lồng nhau trong dữ liệu xếp hàng, việc kiểm tra trả về lỗi 4xx an toàn trước khi kết xuất, lưu bền, tạo lần thử hoặc gửi.
+- AC-FE10-007: Với việc FE02 cung cấp OTP qua trình yêu cầu đã ràng buộc, khi FE10 gửi thì OTP cùng tiêu đề/nội dung nhạy cảm đã kết xuất không xuất hiện trong dữ liệu lưu bền, nhật ký, bản ghi kiểm toán hay phản hồi HTTP.
+- AC-FE10-008: Với một khóa lũy đẳng đã tồn tại ở bất kỳ trạng thái nào, khi FE10 nhận yêu cầu trùng thì hệ thống trả về `200 { notificationId, status }` cho bản ghi đó và không gửi trùng.
+- AC-FE10-009: Với lỗi gửi từ nhà cung cấp, khi FE10 ghi nhận lỗi thì luồng nguồn vẫn hoàn tất; bản ghi không nhạy cảm đã xếp hàng nhưng thất bại có thể thử lại trên cùng lịch sử, còn thử lại thông báo nhạy cảm trả về lỗi an toàn `409 REISSUE_REQUIRED`. Với trường hợp I/O của nhà cung cấp hoàn tất nhưng lưu bền trạng thái cuối thất bại, hàng vẫn ở `PROCESSING`, thao tác phát lại trùng không gửi và thử lại trả về lỗi an toàn `409 DELIVERY_STATE_UNCERTAIN`.
+- AC-FE10-010: Với việc trình yêu cầu được ràng buộc với `FE11` gửi dữ liệu thiết lập tài khoản chuẩn, khi FE10 gửi đồng bộ thì hệ thống trả về bản tóm tắt `SENT`/`FAILED` an toàn, lưu bền siêu dữ liệu `AuthToken` an toàn và không lưu bền hay trả về mã thông báo/liên kết/nội dung thiết lập đã kết xuất.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống dự kiến |
 | -- | ----------------- | ------------------------ |
-| EC-FE10-001 | Recipient user does not exist | Return safe `404`; create no notification or attempt. |
-| EC-FE10-002 | Recipient has no email for email channel | Return safe `400`; create no notification or attempt. |
-| EC-FE10-003 | Invalid email format | Return safe `400` before sending; create no notification or attempt. |
-| EC-FE10-004 | Unsupported type or mismatched/non-canonical template key, including `EMAIL_VERIFY` or `DUE_OR_FINE_NOTICE` | Return safe `400`; caller flags cannot bypass the canonical map; create no notification or attempt. |
-| EC-FE10-005 | Unsupported channel | Return safe `400`; create no notification or attempt. |
-| EC-FE10-006 | Missing, unknown, or inactive template key | Return safe `400`; create no notification or attempt. |
-| EC-FE10-007 | Missing required template variable | Return safe `400`; create no notification or attempt. |
-| EC-FE10-008 | Duplicate idempotency key in any status | Return `200 { notificationId, status }` for the existing record without duplicate send. |
-| EC-FE10-009 | Email provider timeout | Record `FAILED` plus an attempt and safe reason; sensitive content remains provider-memory-only. |
-| EC-FE10-010 | Stored template title/body contains raw HTML tag syntax (including `<script>`), an inline event-handler attribute, or a `javascript:` URL | Reject the template definition before rendering, notification/attempt persistence, or provider delivery with a safe validation error; do not silently sanitize and accept the definition. Runtime values in a safe plain-text-plus-variables template remain escaped/sanitized. |
-| EC-FE10-011 | Source transaction completed but delivery failed or requester throws | Keep source transaction completed; record/catch FE10 failure safely. Only failed non-sensitive queued records may retry to `PENDING`. |
-| EC-FE10-012 | Provider returns sensitive details, caller overrides bound source, or sensitive retry is requested | Store only a sanitized summary; reject source override; sensitive retry returns `409 REISSUE_REQUIRED`. |
-| EC-FE10-013 | Staff HTTP or a requester without ownership submits a sensitive authentication notification | Return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`; FE02 exclusively owns verification/reset and FE11 exclusively owns account setup. |
-| EC-FE10-014 | FE02 resend issues a new OTP token | Use the new `AuthTokens.TokenId` in a new idempotency key; do not replay the previous OTP notification. |
-| EC-FE10-015 | HTTP caller supplies `sourceFeature` | Return `400 SOURCE_FEATURE_HTTP_FORBIDDEN` with message `Notification source cannot be supplied through HTTP.`; create no notification or attempt. |
-| EC-FE10-016 | FE11 resend creates a new setup token | Use the new `AuthTokens.TokenId` and `FE11:ACCOUNT_SETUP:<tokenId>` key; never replay the prior setup link. |
-| EC-FE10-017 | Provider outcome exists but terminal status/attempt persistence fails | Keep the committed row `PROCESSING`; do not auto-reclaim or resend it; duplicate replay returns the same summary and manual retry returns `409 DELIVERY_STATE_UNCERTAIN`. |
+| EC-FE10-001 | Người dùng nhận thông báo không tồn tại | Trả về lỗi an toàn `404`; không tạo thông báo hay lần thử. |
+| EC-FE10-002 | Người nhận không có email cho kênh email | Trả về lỗi an toàn `400`; không tạo thông báo hay lần thử. |
+| EC-FE10-003 | Định dạng email không hợp lệ | Trả về lỗi an toàn `400` trước khi gửi; không tạo thông báo hay lần thử. |
+| EC-FE10-004 | Loại không được hỗ trợ hoặc khóa mẫu không khớp/không chuẩn, gồm `EMAIL_VERIFY` hoặc `DUE_OR_FINE_NOTICE` | Trả về lỗi an toàn `400`; cờ của người gọi không thể bỏ qua ánh xạ chuẩn; không tạo thông báo hay lần thử. |
+| EC-FE10-005 | Kênh không được hỗ trợ | Trả về lỗi an toàn `400`; không tạo thông báo hay lần thử. |
+| EC-FE10-006 | Khóa mẫu bị thiếu, không rõ hoặc không hoạt động | Trả về lỗi an toàn `400`; không tạo thông báo hay lần thử. |
+| EC-FE10-007 | Thiếu biến mẫu bắt buộc | Trả về lỗi an toàn `400`; không tạo thông báo hay lần thử. |
+| EC-FE10-008 | Khóa lũy đẳng bị trùng ở bất kỳ trạng thái nào | Trả về `200 { notificationId, status }` cho bản ghi hiện có mà không gửi trùng. |
+| EC-FE10-009 | Nhà cung cấp email hết thời gian chờ | Ghi `FAILED` cùng một lần thử và lý do an toàn; nội dung nhạy cảm vẫn chỉ tồn tại trong bộ nhớ của nhà cung cấp. |
+| EC-FE10-010 | Tiêu đề/nội dung mẫu đã lưu chứa cú pháp thẻ HTML thô (gồm `<script>`), thuộc tính xử lý sự kiện nội tuyến hoặc URL `javascript:` | Từ chối định nghĩa mẫu bằng lỗi kiểm tra hợp lệ an toàn trước khi kết xuất, lưu bền thông báo/lần thử hoặc gửi qua nhà cung cấp; không được âm thầm làm sạch rồi chấp nhận định nghĩa. Các giá trị khi chạy trong mẫu văn bản thuần cộng biến vốn an toàn vẫn được thoát/làm sạch. |
+| EC-FE10-011 | Giao dịch nguồn hoàn tất nhưng gửi thất bại hoặc trình yêu cầu ném lỗi | Giữ giao dịch nguồn ở trạng thái hoàn tất; ghi nhận/xử lý an toàn lỗi FE10. Chỉ bản ghi không nhạy cảm đã xếp hàng nhưng thất bại mới được thử lại về `PENDING`. |
+| EC-FE10-012 | Nhà cung cấp trả về các chi tiết nhạy cảm, người gọi ghi đè nguồn bị ràng buộc hoặc yêu cầu thử lại nhạy cảm | Chỉ lưu trữ một bản tóm tắt đã được làm sạch; từ chối ghi đè nguồn; thử lại nhạy cảm sẽ trả về `409 REISSUE_REQUIRED`. |
+| EC-FE10-013 | Nhân viên qua HTTP hoặc trình yêu cầu không có quyền sở hữu gửi thông báo xác thực nhạy cảm | Trả về lỗi an toàn `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`; FE02 sở hữu riêng việc xác minh/đặt lại và FE11 sở hữu riêng việc thiết lập tài khoản. |
+| EC-FE10-014 | Lần gửi lại của FE02 phát hành mã thông báo OTP mới | Dùng `AuthTokens.TokenId` mới trong khóa lũy đẳng mới; không phát lại thông báo OTP trước đó. |
+| EC-FE10-015 | Người gọi HTTP cung cấp `sourceFeature` | Trả về `400 SOURCE_FEATURE_HTTP_FORBIDDEN` với thông báo `Notification source cannot be supplied through HTTP.`; không tạo thông báo hay lần thử. |
+| EC-FE10-016 | Gửi lại FE11 tạo mã thông báo thiết lập mới | Sử dụng khóa `AuthTokens.TokenId` và `FE11:ACCOUNT_SETUP:<tokenId>` mới; không bao giờ phát lại liên kết thiết lập trước đó. |
+| EC-FE10-017 | Có kết quả từ nhà cung cấp nhưng lưu bền trạng thái cuối/lần thử thất bại | Giữ hàng đã cam kết ở `PROCESSING`; không tự động nhận lại hoặc gửi lại; phát lại trùng trả về cùng bản tóm tắt và thử lại thủ công trả về `409 DELIVERY_STATE_UNCERTAIN`. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể có liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Stores recipient identity and email address. |
-| NotificationTemplates | Stores approved email templates and required variables. A stored title/body must pass template-definition safety validation before every render. |
-| Notifications | Stores source references, status, safe payload, non-sensitive rendered content, and redacted sensitive summaries. |
-| NotificationAttempts | Stores delivery attempts and safe failure details. |
-| UserNotificationPreferences | Reserved for future optional/in-app preference work; not used by the hardening slice. |
+| Users | Lưu danh tính và địa chỉ email của người nhận. |
+| NotificationTemplates | Lưu các mẫu email đã phê duyệt và biến bắt buộc. Tiêu đề/nội dung đã lưu phải đạt kiểm tra an toàn định nghĩa mẫu trước mỗi lần kết xuất. |
+| Notifications | Lưu tham chiếu nguồn, trạng thái, dữ liệu an toàn, nội dung không nhạy cảm đã kết xuất và bản tóm tắt nhạy cảm đã che dữ liệu. |
+| NotificationAttempts | Lưu các lần thử gửi và chi tiết lỗi an toàn. |
+| UserNotificationPreferences | Dành cho công việc tùy chọn/ưu tiên trong ứng dụng ở tương lai; không được dùng trong hạng mục tăng cường an toàn này. |
 
-### 10.2 Data Fields
+### 10.2 Trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Kiểm tra hợp lệ / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| notificationId | integer | Yes | Primary key. |
-| userId | integer | No | Required for in-app and member-specific notifications. |
-| recipientEmail | string | Conditional | Required for email delivery and persisted as `Notifications.RecipientEmail NVARCHAR(255) NOT NULL` to match FE02/FE11 email width. |
-| type | enum | Yes | Values: `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `RESERVATION_AVAILABLE`, `DUE_DATE_REMINDER`, `OVERDUE_NOTICE`, `FINE_NOTICE`, `GENERAL_SYSTEM`. |
-| channel | enum | Yes | Phase 1 hardening accepts `EMAIL`; `IN_APP` remains future work. |
-| templateKey | string | Yes | Must be active and match the canonical type/template map. |
-| title | string | No | Rendered title for non-sensitive queued notifications only; sensitive auth title is not persisted. |
-| body | string | No | Rendered body for non-sensitive queued notifications only; sensitive auth body is not persisted. Must not contain unsafe script. |
-| safePayload | object | No | Recursively redacted safe metadata only; normalized secret-like keys are removed/redacted using the same rule as queued request validation. Sensitive authentication records contain no OTP and may retain only a redaction marker. |
-| status | enum | Yes | Phase 1 lifecycle uses `PENDING`, `PROCESSING`, `SENT`, and `FAILED`. Sensitive create persists `PROCESSING` before provider I/O; non-sensitive create starts `PENDING` and worker claim commits `PROCESSING`; terminal transitions are guarded from `PROCESSING`; retry permits only non-sensitive `FAILED -> PENDING`. `DELIVERED`, `SKIPPED`, and `CANCELLED` are retained only as database compatibility values and have no Phase 1 transition. |
-| sourceFeature | string | Required for in-process requests | Bound internal values: `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP callers cannot provide this field. Verification/reset use FE02; membership result uses FE04; account setup uses FE11. |
-| sourceEntityType | string | Required for in-process requests | Example: `AuthToken`, `Reservation`, `Fine`, `BorrowDetail`. Sensitive authentication requests require `AuthToken`. |
-| sourceEntityId | integer | Required for in-process requests | Positive Phase 1 reference to source record; missing values and strings are rejected. Sensitive authentication requests use the persisted `AuthTokens.TokenId`. |
-| idempotencyKey | string | No | Maps one source event to one notification record across all statuses. FE02 derives sensitive keys from type plus `AuthTokens.TokenId`, never from the OTP. Retry reuses the same key. |
-| createdAt | datetime | Yes | Notification creation timestamp. |
-| sentAt | datetime | No | Server timestamp set when the Phase 1 email provider accepts the send and the guarded terminal transition commits; null while `PENDING`/`PROCESSING` and after a failed attempt. |
-| attemptNo | integer | No | Delivery attempt count. |
-| errorMessage | string | No | Sanitized failure reason only; no provider detail or submitted sensitive value. |
+| notificationId | integer | Có | Khóa chính. |
+| userId | integer | Không | Bắt buộc với thông báo trong ứng dụng và dành riêng cho Thành viên. |
+| recipientEmail | string | Có điều kiện | Bắt buộc để gửi email và được lưu bền dưới dạng `Notifications.RecipientEmail NVARCHAR(255) NOT NULL` nhằm khớp độ rộng email FE02/FE11. |
+| type | enum | Có | Các giá trị: `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `RESERVATION_AVAILABLE`, `DUE_DATE_REMINDER`, `OVERDUE_NOTICE`, `FINE_NOTICE`, `GENERAL_SYSTEM`. |
+| channel | enum | Có | Hạng mục tăng cường an toàn Giai đoạn 1 chấp nhận `EMAIL`; `IN_APP` vẫn là công việc tương lai. |
+| templateKey | string | Có | Phải hoạt động và khớp ánh xạ loại/mẫu chuẩn. |
+| title | string | Không | Chỉ là tiêu đề đã kết xuất của thông báo không nhạy cảm đã xếp hàng; tiêu đề xác thực nhạy cảm không được lưu bền. |
+| body | string | Không | Chỉ là nội dung đã kết xuất của thông báo không nhạy cảm đã xếp hàng; nội dung xác thực nhạy cảm không được lưu bền. Không được chứa mã lệnh không an toàn. |
+| safePayload | object | Không | Chỉ chứa siêu dữ liệu an toàn đã che dữ liệu đệ quy; các khóa đã chuẩn hóa giống bí mật bị loại bỏ/che theo cùng quy tắc kiểm tra yêu cầu xếp hàng. Bản ghi xác thực nhạy cảm không chứa OTP và chỉ có thể giữ một dấu hiệu đã che dữ liệu. |
+| status | enum | Có | Vòng đời Giai đoạn 1 dùng `PENDING`, `PROCESSING`, `SENT` và `FAILED`. Việc tạo thông báo nhạy cảm lưu bền `PROCESSING` trước I/O của nhà cung cấp; thông báo không nhạy cảm bắt đầu ở `PENDING` và quyền nhận xử lý của tiến trình cam kết `PROCESSING`; chuyển đổi trạng thái cuối được bảo vệ từ `PROCESSING`; thử lại chỉ cho phép thông báo không nhạy cảm chuyển `FAILED -> PENDING`. `DELIVERED`, `SKIPPED` và `CANCELLED` chỉ được giữ làm giá trị tương thích cơ sở dữ liệu và không có chuyển đổi nào trong Giai đoạn 1. |
+| sourceFeature | string | Bắt buộc với yêu cầu trong tiến trình | Các giá trị nội bộ đã ràng buộc: `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; người gọi HTTP không thể cung cấp trường này. Xác minh/đặt lại dùng FE02; kết quả tư cách thành viên dùng FE04; thiết lập tài khoản dùng FE11. |
+| sourceEntityType | string | Bắt buộc với yêu cầu trong tiến trình | Ví dụ: `AuthToken`, `Reservation`, `Fine`, `BorrowDetail`. Yêu cầu xác thực nhạy cảm bắt buộc dùng `AuthToken`. |
+| sourceEntityId | integer | Bắt buộc với yêu cầu trong tiến trình | Tham chiếu dương của Giai đoạn 1 tới bản ghi nguồn; giá trị bị thiếu và chuỗi đều bị từ chối. Yêu cầu xác thực nhạy cảm dùng `AuthTokens.TokenId` đã lưu bền. |
+| idempotencyKey | string | Không | Ánh xạ một sự kiện nguồn tới một bản ghi thông báo xuyên suốt mọi trạng thái. FE02 suy ra khóa nhạy cảm từ loại cộng `AuthTokens.TokenId`, tuyệt đối không từ OTP. Thử lại dùng lại cùng khóa. |
+| createdAt | datetime | Có | Dấu thời gian tạo thông báo. |
+| sentAt | datetime | Không | Dấu thời gian máy chủ được đặt khi nhà cung cấp email Giai đoạn 1 chấp nhận lần gửi và chuyển đổi trạng thái cuối có bảo vệ được cam kết; là null khi ở `PENDING`/`PROCESSING` và sau lần thử thất bại. |
+| attemptNo | integer | Không | Số thứ tự lần thử gửi. |
+| errorMessage | string | Không | Chỉ chứa lý do lỗi đã làm sạch; không chứa chi tiết nhà cung cấp hay giá trị nhạy cảm đã gửi. |
 
-### 10.3 Canonical Type And Template Map
+### 10.3 Ánh xạ loại và mẫu chuẩn
 
-| Notification type | Required template key | Delivery mode |
+| Loại thông báo | Khóa mẫu bắt buộc | Chế độ gửi |
 | --- | --- | --- |
-| `ACCOUNT_VERIFICATION` | `ACCOUNT_VERIFICATION` with `{{otp}}` and `{{expiresInMinutes}}` | Synchronous sensitive, FE02 requester only |
-| `PASSWORD_RESET` | `PASSWORD_RESET` with `{{otp}}` and `{{expiresInMinutes}}` | Synchronous sensitive, FE02 requester only |
-| `ACCOUNT_SETUP` | `ACCOUNT_SETUP` with `{{setupLink}}` and `{{expiresInHours}}` | Synchronous sensitive, FE11 requester only |
-| `RESERVATION_AVAILABLE` | `RESERVATION_READY` | Queued non-sensitive |
-| `DUE_DATE_REMINDER` | `DUE_DATE_REMINDER` | Queued non-sensitive |
-| `OVERDUE_NOTICE` | `OVERDUE_NOTICE` | Queued non-sensitive |
-| `FINE_NOTICE` | `FINE_NOTICE` | Queued non-sensitive |
-| `GENERAL_SYSTEM` | `MEMBERSHIP_RESULT` | Queued non-sensitive |
+| `ACCOUNT_VERIFICATION` | `ACCOUNT_VERIFICATION` với `{{otp}}` và `{{expiresInMinutes}}` | Nhạy cảm đồng bộ, chỉ người yêu cầu FE02 |
+| `PASSWORD_RESET` | `PASSWORD_RESET` với `{{otp}}` và `{{expiresInMinutes}}` | Nhạy cảm đồng bộ, chỉ người yêu cầu FE02 |
+| `ACCOUNT_SETUP` | `ACCOUNT_SETUP` với `{{setupLink}}` và `{{expiresInHours}}` | Nhạy cảm đồng bộ, chỉ người yêu cầu FE11 |
+| `RESERVATION_AVAILABLE` | `RESERVATION_READY` | Xếp hàng không nhạy cảm |
+| `DUE_DATE_REMINDER` | `DUE_DATE_REMINDER` | Xếp hàng không nhạy cảm |
+| `OVERDUE_NOTICE` | `OVERDUE_NOTICE` | Xếp hàng không nhạy cảm |
+| `FINE_NOTICE` | `FINE_NOTICE` | Xếp hàng không nhạy cảm |
+| `GENERAL_SYSTEM` | `MEMBERSHIP_RESULT` | Xếp hàng không nhạy cảm |
 
-Every other pair is rejected. `EMAIL_VERIFY` and `DUE_OR_FINE_NOTICE` are not aliases.
+Mọi cặp khác đều bị từ chối. `EMAIL_VERIFY` và `DUE_OR_FINE_NOTICE` không phải là bí danh.
 
-### 10.4 Phase 1 Status Lifecycle
+### 10.4 Vòng đời trạng thái Giai đoạn 1
 
-- Non-sensitive notification: `PENDING -> PROCESSING -> SENT` or `PENDING -> PROCESSING -> FAILED`.
-- Failed non-sensitive notification: `FAILED -> PENDING` only through the protected manual retry endpoint, then the normal claim lifecycle applies.
-- Sensitive authentication/setup notification: `[*] -> PROCESSING -> SENT` or `[*] -> PROCESSING -> FAILED`; retry always requires a new source event and new idempotency key.
-- A row left `PROCESSING` after provider I/O has uncertain delivery state. It is excluded from worker claims and every retry path so FE10 cannot duplicate delivery.
-- `DELIVERED`, `SKIPPED`, and `CANCELLED` are not created or transitioned by Phase 1 flows. Their future use requires a reviewed SPEC revision.
+- Thông báo không nhạy cảm: `PENDING -> PROCESSING -> SENT` hoặc `PENDING -> PROCESSING -> FAILED`.
+- Thông báo không nhạy cảm gửi thất bại: `FAILED -> PENDING` chỉ qua điểm cuối thử lại thủ công được bảo vệ, sau đó áp dụng vòng đời nhận xử lý thông thường.
+- Thông báo xác thực/thiết lập nhạy cảm: `[*] -> PROCESSING -> SENT` hoặc `[*] -> PROCESSING -> FAILED`; thử lại luôn yêu cầu sự kiện nguồn mới và khóa lũy đẳng mới.
+- Một hàng còn ở `PROCESSING` sau I/O của nhà cung cấp có trạng thái gửi không chắc chắn. Hàng đó bị loại khỏi các lượt nhận xử lý của tiến trình và mọi đường thử lại để FE10 không thể gửi trùng.
+- `DELIVERED`, `SKIPPED` và `CANCELLED` không được luồng Giai đoạn 1 tạo hay chuyển tới. Việc dùng chúng trong tương lai yêu cầu một bản sửa đổi SPEC đã được rà soát.
 
 ---
 
-## 11. API / Interface Contract
+## 11. API / Hợp đồng giao diện
 
-> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
+> Các điểm cuối và cấu trúc yêu cầu/phản hồi dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho tính năng này.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Điểm cuối | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/notifications/requests` | `LIBRARIAN`, `ADMIN` | `{ type, channel, userId?, recipientEmail?, templateKey, templateData, sourceEntityType?, sourceEntityId?, idempotencyKey? }` | New request: `201 { notificationId, status }`; idempotent replay: `200 { notificationId, status }`; sensitive type: safe `403` | Role-protected non-sensitive HTTP boundary. `sourceFeature` is not accepted. All sensitive auth types return `SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. Never returns full content or `safePayload`. |
-| POST | `/api/notifications/process-pending` | `LIBRARIAN`, `ADMIN` | `{ limit?: number }` | `200 { processed, failed }` | Processes only non-sensitive `PENDING` records; not public. |
-| POST | `/api/notifications/{id}/retry` | `LIBRARIAN`, `ADMIN` | None | Success: `200 { notificationId, status }`; conflict: safe `409` | Only failed non-sensitive queued records return to `PENDING`. Sensitive auth returns `409 { code: "REISSUE_REQUIRED", message: "Create a new notification from the source event." }`. |
-| In-process | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Same notification request without caller-controlled `sourceFeature` | Same minimal summary semantics | Construction-bound ownership: FE02 verification/reset, FE04 membership result, FE11 account setup. Source audit uses `userId: null`. |
+| POST | `/api/notifications/requests` | `LIBRARIAN`, `ADMIN` | `{ type, channel, userId?, recipientEmail?, templateKey, templateData, sourceEntityType?, sourceEntityId?, idempotencyKey? }` | Yêu cầu mới: `201 { notificationId, status }`; phát lại lũy đẳng: `200 { notificationId, status }`; loại nhạy cảm: lỗi an toàn `403` | Ranh giới HTTP cho thông báo không nhạy cảm được bảo vệ bằng vai trò. Không chấp nhận `sourceFeature`. Mọi loại xác thực nhạy cảm đều trả về `SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. Tuyệt đối không trả về toàn bộ nội dung hoặc `safePayload`. |
+| POST | `/api/notifications/process-pending` | `LIBRARIAN`, `ADMIN` | `{ limit?: number }` | `200 { processed, failed }` | Chỉ xử lý các bản ghi `PENDING` không nhạy cảm; không công khai. |
+| POST | `/api/notifications/{id}/retry` | `LIBRARIAN`, `ADMIN` | Không có | Thành công: `200 { notificationId, status }`; xung đột: an toàn `409` | Chỉ các bản ghi xếp hàng không nhạy cảm bị lỗi mới quay trở lại `PENDING`. Xác thực nhạy cảm trả về `409 { code: "REISSUE_REQUIRED", message: "Create a new notification from the source event." }`. |
+| Trong tiến trình | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Cùng yêu cầu thông báo nhưng không có `sourceFeature` do người gọi kiểm soát | Cùng ngữ nghĩa bản tóm tắt tối thiểu | Quyền sở hữu được ràng buộc khi khởi tạo: FE02 xác minh/đặt lại, FE04 kết quả tư cách thành viên, FE11 thiết lập tài khoản. Bản ghi kiểm toán nguồn dùng `userId: null`. |
 
-Validation and template errors use safe 4xx bodies. Invalid retry states use safe `409` bodies. No response includes rendered content, raw input secrets, provider details, or internal stack traces.
+Lỗi kiểm tra hợp lệ và lỗi mẫu dùng nội dung phản hồi 4xx an toàn. Trạng thái thử lại không hợp lệ dùng nội dung phản hồi `409` an toàn. Không phản hồi nào chứa nội dung đã kết xuất, bí mật đầu vào thô, chi tiết nhà cung cấp hoặc dấu vết ngăn xếp nội bộ.
 
-The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_INTERNAL_ONLY", message: "Sensitive authentication notifications must be requested internally." } }`. HTTP `sourceFeature` override is `400 { error: { code: "SOURCE_FEATURE_HTTP_FORBIDDEN", message: "Notification source cannot be supplied through HTTP." } }`.
-
----
-
-## 12. Non-functional Requirements
-
-### 12.1 Security
-
-- NFR-FE10-SEC-001: All notification APIs must validate input on the server.
-- NFR-FE10-SEC-002: Protected APIs must enforce role-based access on the server.
-- NFR-FE10-SEC-003: Email provider credentials must not be hardcoded or committed.
-- NFR-FE10-SEC-004: FE10 must not persist, log, audit, or return raw tokens, OTPs, passwords, reset/verification/setup links, rendered sensitive authentication content, provider credentials/details, or internal stack traces.
-- NFR-FE10-SEC-005: Template-definition validation and runtime-value rendering are separate security gates. FE10 must reject raw HTML tag syntax, inline event-handler attributes, and `javascript:` URLs in a stored template title/body before rendering, persistence, or delivery; it must escape or sanitize runtime values inserted into an otherwise safe plain-text-plus-variables definition.
-- NFR-FE10-SEC-006: HTTP notification endpoints must require `LIBRARIAN`/`ADMIN`, reject caller-controlled `sourceFeature`, and reject sensitive authentication types with safe `403`; in-process requests must use the fixed bound-source allowlist, reject source override, enforce FE02 ownership for verification/reset, and enforce FE11 ownership for account setup.
-
-### 12.2 Reliability
-
-- NFR-FE10-REL-001: Failed sends must record attempt number, timestamp, and safe failure reason.
-- NFR-FE10-REL-002: Source business transactions must not be rolled back only because notification delivery failed.
-- NFR-FE10-REL-003: Duplicate source events must replay one record across all statuses. Manual non-sensitive retry must preserve notification ID, idempotency key, and attempt history. Provider I/O must occur only after a durable `PROCESSING` claim, and uncertain `PROCESSING` rows must never be automatically reclaimed.
-
-### 12.3 Performance
-
-- NFR-FE10-PERF-001: Creating a queued non-sensitive notification must return within 500 ms at p95 in the project's documented local/dev performance environment. Synchronous sensitive authentication delivery is exempt from this queue-only target and is bounded by configured-provider latency.
-- NFR-FE10-PERF-002: Notification lookup must apply status, type, source-feature, and created-date filters in the database query before materializing rows; application-layer full-history filtering is not permitted.
-
-### 12.4 Logging and Audit
-
-- NFR-FE10-LOG-001: Every failed delivery attempt must be logged in `NotificationAttempts`.
-- NFR-FE10-LOG-002: Logs and audits must store safe summaries, not secrets, rendered sensitive authentication content, or raw provider responses. Internal source audits use `userId: null` plus bound source metadata.
-
-### 12.5 Usability
-
-- NFR-FE10-UX-001: Notification messages must be clear, concise, and action-oriented.
-- NFR-FE10-UX-002: Failure messages shown to users must be understandable and not expose technical internals.
+Lỗi ranh giới nhạy cảm là `403 { error: { code: "SENSITIVE_NOTIFICATION_INTERNAL_ONLY", message: "Sensitive authentication notifications must be requested internally." } }`. Lỗi ghi đè `sourceFeature` qua HTTP là `400 { error: { code: "SOURCE_FEATURE_HTTP_FORBIDDEN", message: "Notification source cannot be supplied through HTTP." } }`.
 
 ---
 
-## 13. Out of Scope
+## 12. Yêu cầu phi chức năng
 
-This feature does not include:
+### 12.1 Bảo mật
 
-- SMS notifications.
-- Mobile push notifications.
-- Marketing campaigns or newsletters.
-- Online payment notifications.
-- Token generation or validation for authentication.
-- Fine calculation.
-- Reservation queue decisions.
-- Borrowing/return approval decisions.
-- User notification inbox/list UI.
-- Marking in-app notifications as read.
-- Admin/librarian notification log screens.
-- Manual retry management screens.
-- Template editor UI.
-- Building a full email design editor.
-- Storing real email provider credentials in the repository.
-- Plaintext or encrypted queued sensitive authentication content.
-- Compatibility-only FE02 `CHANGE_PASSWORD_OTP` delivery; it is outside the canonical Phase 1 FE10 contract until a separate notification type/use case, expiry, response, and retry contract is approved.
-- A new FE09 notification caller or integration.
-- Expiry metadata, retry UI, or unrelated frontend/backend refactors.
+- NFR-FE10-SEC-001: Mọi API thông báo phải kiểm tra đầu vào ở máy chủ.
+- NFR-FE10-SEC-002: API được bảo vệ phải thực thi quyền truy cập dựa trên vai trò trên máy chủ.
+- NFR-FE10-SEC-003: Thông tin xác thực của nhà cung cấp email không được ghi cứng hoặc đưa vào kho mã.
+- NFR-FE10-SEC-004: FE10 không được lưu bền, ghi nhật ký, ghi kiểm toán hoặc trả về mã thông báo thô, OTP, mật khẩu, liên kết đặt lại/xác minh/thiết lập, nội dung xác thực nhạy cảm đã kết xuất, thông tin xác thực/chi tiết của nhà cung cấp hoặc dấu vết ngăn xếp nội bộ.
+- NFR-FE10-SEC-005: Kiểm tra an toàn định nghĩa mẫu và kết xuất giá trị khi chạy là hai cổng bảo mật riêng. FE10 phải từ chối cú pháp thẻ HTML thô, thuộc tính xử lý sự kiện nội tuyến và URL `javascript:` trong tiêu đề/nội dung mẫu đã lưu trước khi kết xuất, lưu bền hoặc gửi; hệ thống phải thoát hoặc làm sạch các giá trị khi chạy được chèn vào một định nghĩa văn bản thuần cộng biến vốn an toàn.
+- NFR-FE10-SEC-006: Các điểm cuối thông báo HTTP phải yêu cầu `LIBRARIAN`/`ADMIN`, từ chối `sourceFeature` do người gọi kiểm soát và từ chối loại xác thực nhạy cảm bằng lỗi an toàn `403`; yêu cầu trong tiến trình phải dùng danh sách nguồn cho phép đã ràng buộc cố định, từ chối ghi đè nguồn, thực thi quyền sở hữu FE02 đối với xác minh/đặt lại và quyền sở hữu FE11 đối với thiết lập tài khoản.
+
+### 12.2 Độ tin cậy
+
+- NFR-FE10-REL-001: Lần gửi thất bại phải ghi số thứ tự lần thử, dấu thời gian và lý do lỗi an toàn.
+- NFR-FE10-REL-002: Không được hoàn tác giao dịch nghiệp vụ nguồn chỉ vì gửi thông báo thất bại.
+- NFR-FE10-REL-003: Sự kiện nguồn trùng phải phát lại một bản ghi xuyên suốt mọi trạng thái. Thử lại thủ công thông báo không nhạy cảm phải giữ nguyên ID thông báo, khóa lũy đẳng và lịch sử lần thử. I/O của nhà cung cấp chỉ được thực hiện sau khi quyền nhận xử lý `PROCESSING` đã được lưu bền, và hàng `PROCESSING` có kết quả không chắc chắn tuyệt đối không được tự động nhận lại.
+
+### 12.3 Hiệu năng
+
+- NFR-FE10-PERF-001: Việc tạo thông báo không nhạy cảm đã xếp hàng phải phản hồi trong vòng 500 ms tại p95 ở môi trường hiệu năng cục bộ/phát triển được dự án lập tài liệu. Việc gửi xác thực nhạy cảm đồng bộ không chịu mục tiêu chỉ dành cho hàng đợi này và bị giới hạn bởi độ trễ của nhà cung cấp đã cấu hình.
+- NFR-FE10-PERF-002: Tra cứu thông báo phải áp dụng bộ lọc trạng thái, loại, tính năng nguồn và ngày tạo ngay trong truy vấn cơ sở dữ liệu trước khi hiện thực hóa các hàng; không cho phép lọc toàn bộ lịch sử ở tầng ứng dụng.
+
+### 12.4 Ghi nhật ký và kiểm toán
+
+- NFR-FE10-LOG-001: Mọi lần thử gửi thất bại phải được ghi vào `NotificationAttempts`.
+- NFR-FE10-LOG-002: Nhật ký và bản ghi kiểm toán phải lưu bản tóm tắt an toàn, không lưu bí mật, nội dung xác thực nhạy cảm đã kết xuất hay phản hồi thô của nhà cung cấp. Bản ghi kiểm toán nguồn nội bộ dùng `userId: null` cùng siêu dữ liệu nguồn đã ràng buộc.
+
+### 12.5 Khả năng sử dụng
+
+- NFR-FE10-UX-001: Thông điệp thông báo phải rõ ràng, ngắn gọn và hướng tới hành động.
+- NFR-FE10-UX-002: Thông báo lỗi hiển thị cho người dùng phải dễ hiểu và không làm lộ chi tiết kỹ thuật nội bộ.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Thông báo qua SMS.
+- Thông báo đẩy di động.
+- Các chiến dịch tiếp thị hoặc bản tin.
+- Thông báo thanh toán trực tuyến.
+- Tạo hoặc xác thực mã thông báo dùng cho xác thực.
+- Tính tiền phạt.
+- Quyết định xếp hàng đặt chỗ.
+- Quyết định phê duyệt mượn/trả sách.
+- Giao diện hộp thư/danh sách thông báo của người dùng.
+- Đánh dấu thông báo trong ứng dụng là đã đọc.
+- Màn hình nhật ký thông báo dành cho Quản trị viên/Thủ thư.
+- Màn hình quản lý thử lại thủ công.
+- Giao diện chỉnh sửa mẫu.
+- Xây dựng trình soạn thảo thiết kế email đầy đủ.
+- Lưu trữ thông tin xác thực của nhà cung cấp email thực trong kho lưu trữ.
+- Nội dung xác thực nhạy cảm được xếp hàng đợi bằng văn bản gốc hoặc được mã hóa.
+- Việc gửi `CHANGE_PASSWORD_OTP` FE02 chỉ để tương thích; nội dung này nằm ngoài hợp đồng FE10 Giai đoạn 1 chuẩn cho đến khi một loại thông báo/trường hợp sử dụng, thời hạn hết hiệu lực, phản hồi và hợp đồng thử lại riêng được phê duyệt.
+- Trình gọi hoặc tích hợp thông báo FE09 mới.
+- Siêu dữ liệu hết hiệu lực, giao diện thử lại hoặc các đợt tái cấu trúc giao diện/phần phụ trợ không liên quan.
+
+---
+
+## 14. Phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE02 Authentication | Internal | Owns OTP/token generation and validation, then requests account-verification and password-reset OTP delivery through the requester bound to `FE02`. Legacy token acceptance and compatibility-only `CHANGE_PASSWORD_OTP` remain FE02-owned. |
-| FE07 Borrowing Management | Internal | May request due date reminders and borrow/return status notifications. |
-| FE08 Reservation Management | Internal | Requests reservation available notifications. |
-| FE04 Membership Management | Internal | Owns `MEMBERSHIP_RESULT` source events and uses the FE04-bound requester after review commit. |
-| FE09 Fine Management | Internal | Approved/allowlisted for overdue and fine notifications, but no current caller integration is implemented in this slice. |
-| FE11 User & Role Management | Internal | Owns admin-created setup-token issuance/resend and requests canonical `ACCOUNT_SETUP` through the requester bound to `FE11`. |
-| SQL Server database | Technical | Stores notification records, templates, attempts, and preferences. |
-| Configured email provider adapter or injected mock provider | Technical | Sends email notifications; deployed environments use configured provider settings while tests inject a deterministic mock. |
-| Scheduler/worker | Technical | Uses the `SYSTEM` internal source boundary and processes only non-sensitive `PENDING` notifications. |
+| Xác thực FE02 | Nội bộ | Sở hữu việc tạo và xác thực OTP/mã thông báo, sau đó yêu cầu gửi OTP xác minh tài khoản và đặt lại mật khẩu qua trình yêu cầu được ràng buộc với `FE02`. Việc chấp nhận mã thông báo kiểu cũ và `CHANGE_PASSWORD_OTP` chỉ để tương thích vẫn thuộc FE02. |
+| Quản lý mượn sách FE07 | Nội bộ | Có thể yêu cầu lời nhắc hạn trả và thông báo trạng thái mượn/trả. |
+| Quản lý đặt chỗ FE08 | Nội bộ | Yêu cầu thông báo đặt chỗ đã sẵn sàng. |
+| Quản lý tư cách thành viên FE04 | Nội bộ | Sở hữu sự kiện nguồn `MEMBERSHIP_RESULT` và dùng trình yêu cầu được ràng buộc với FE04 sau khi cam kết quyết định rà soát. |
+| Quản lý tiền phạt FE09 | Nội bộ | Được phê duyệt/đưa vào danh sách cho phép đối với thông báo quá hạn và tiền phạt, nhưng hạng mục này chưa triển khai tích hợp người gọi hiện tại. |
+| Quản lý người dùng và vai trò FE11 | Nội bộ | Sở hữu việc phát hành/gửi lại mã thông báo thiết lập do Quản trị viên tạo và yêu cầu `ACCOUNT_SETUP` chuẩn qua trình yêu cầu được ràng buộc với `FE11`. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | Lưu bản ghi thông báo, mẫu, lần thử và tùy chọn. |
+| Bộ điều hợp nhà cung cấp email đã cấu hình hoặc nhà cung cấp mô phỏng được chèn | Kỹ thuật | Gửi thông báo email; môi trường triển khai dùng thiết lập nhà cung cấp đã cấu hình, còn kiểm thử chèn một đối tượng mô phỏng có tính xác định. |
+| Bộ lập lịch/tiến trình xử lý | Kỹ thuật | Dùng ranh giới nguồn nội bộ `SYSTEM` và chỉ xử lý thông báo `PENDING` không nhạy cảm. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-003 | Required templates: verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, membership result. | Review packet 2026-06-10; G1/G7 approval 2026-07-13; ADR-005 2026-07-15 | APPROVED |
-| Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-005 | Retry manually only for failed non-sensitive queued records on the same record/history; sensitive auth requires source reissue and returns `REISSUE_REQUIRED`. | G5/G6 approval 2026-07-13 | APPROVED |
-| Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
-| Q-FE10-007 | System/Scheduler may trigger through a requester bound to `SYSTEM`; internal sources are allowlisted and are not login roles. | G3 approval 2026-07-13 | APPROVED |
-| Q-FE10-008 | `ACCOUNT_SETUP` is FE11-owned sensitive delivery; only the FE11-bound requester may submit it and FE10 persists no setup token/link/rendered content. | ADR-005; Nhat approval 2026-07-15 | APPROVED |
-| Q-FE10-009 | `MEMBERSHIP_RESULT` is FE04-owned; FE04 submits it through the FE04-bound requester after the membership decision commits. | FE04 cross-feature audit 2026-07-17 | APPROVED |
-| Q-FE10-010 | Phase 1 notification statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; claim/sensitive acceptance commits `PROCESSING` before provider I/O, and compatibility statuses have no Phase 1 transitions. | Notification lifecycle normalization 2026-07-17; delivery-safety remediation approved 2026-07-23 | APPROVED |
-| Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
-| Q-FE10-012 | Does FE10 sanitize an unsafe stored template definition or reject it? | Nhat, 2026-07-27 | APPROVED: reject the stored definition before rendering/persistence/delivery; continue escaping or sanitizing runtime values. |
-| Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
+| Q-FE10-001 | Kênh bắt buộc của Giai đoạn 1 là email qua bộ điều hợp nhà cung cấp đã cấu hình; kiểm thử dùng nhà cung cấp mô phỏng được chèn. | Gói rà soát 2026-06-10; phê duyệt ADR-004 2026-07-15 | APPROVED |
+| Q-FE10-002 | Thông báo trong ứng dụng là công việc tùy chọn/tương lai của Giai đoạn 1. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-003 | Các mẫu bắt buộc: xác minh, đặt lại mật khẩu, thiết lập tài khoản, nhắc hạn trả, thông báo quá hạn, thông báo tiền phạt, đặt chỗ sẵn sàng, kết quả tư cách thành viên. | Gói rà soát 2026-06-10; phê duyệt G1/G7 2026-07-13; ADR-005 2026-07-15 | APPROVED |
+| Q-FE10-004 | Lưu các lần thử gửi thông báo và trạng thái. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-005 | Chỉ thử lại thủ công bản ghi không nhạy cảm đã xếp hàng nhưng thất bại trên cùng bản ghi/lịch sử; xác thực nhạy cảm yêu cầu nguồn phát hành lại và trả về `REISSUE_REQUIRED`. | Phê duyệt G5/G6 2026-07-13 | APPROVED |
+| Q-FE10-006 | Lỗi thông báo không được chặn luồng nghiệp vụ nguồn. | Gói rà soát 2026-06-10 | APPROVED |
+| Q-FE10-007 | Hệ thống/Bộ lập lịch có thể kích hoạt qua trình yêu cầu được ràng buộc với `SYSTEM`; nguồn nội bộ thuộc danh sách cho phép và không phải vai trò đăng nhập. | Phê duyệt G3 2026-07-13 | APPROVED |
+| Q-FE10-008 | `ACCOUNT_SETUP` là thao tác gửi nhạy cảm thuộc FE11; chỉ trình yêu cầu được ràng buộc với FE11 mới được gửi và FE10 không lưu bền mã thông báo/liên kết/nội dung đã kết xuất của quá trình thiết lập. | ADR-005; Nhat phê duyệt 2026-07-15 | APPROVED |
+| Q-FE10-009 | `MEMBERSHIP_RESULT` thuộc FE04; FE04 gửi qua trình yêu cầu được ràng buộc với FE04 sau khi quyết định tư cách thành viên được cam kết. | Kiểm toán liên tính năng FE04 2026-07-17 | APPROVED |
+| Q-FE10-010 | Các trạng thái thông báo Giai đoạn 1 là `PENDING`, `PROCESSING`, `SENT` và `FAILED`; quyền nhận xử lý/chấp nhận thông báo nhạy cảm cam kết `PROCESSING` trước I/O của nhà cung cấp, còn các trạng thái tương thích không có chuyển đổi trong Giai đoạn 1. | Chuẩn hóa vòng đời thông báo 2026-07-17; biện pháp khắc phục an toàn gửi được phê duyệt 2026-07-23 | APPROVED |
+| Q-FE10-011 | FE04 sử dụng `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 sử dụng `RESERVATION_AVAILABLE -> RESERVATION_READY`; người gọi phải gửi cả hai trường chuẩn. | Chuẩn hóa hợp đồng nguồn 2026-07-17 | APPROVED |
+| Q-FE10-012 | FE10 làm sạch hay từ chối một định nghĩa mẫu đã lưu không an toàn? | Nhat, 2026-07-27 | APPROVED: từ chối định nghĩa đã lưu trước khi kết xuất/lưu bền/gửi; tiếp tục thoát hoặc làm sạch giá trị khi chạy. |
+| Q-FE10-013 | Môi trường tiền sản xuất dùng một tiến trình SYSTEM trong tiến trình có cơ chế bật tùy chọn, khoảng lặp mặc định 60 giây và kích thước lô 20. Tiến trình chạy một lần sau khi khởi động, ngăn các lượt chạy cục bộ chồng lấp, chỉ xử lý hàng `PENDING` không nhạy cảm và dừng cùng máy chủ HTTP. Điểm cuối nhân viên hiện có vẫn được bảo vệ và việc thử lại `FAILED` vẫn chỉ thủ công. Trạng thái ngủ của F1 tạm dừng tiến trình. | Phê duyệt của người dùng và thiết kế bằng văn bản 2026-07-27 | APPROVED |
 
 ---
 
-## 15.1 Approved Design Decisions
+## 15.1 Quyết định thiết kế được phê duyệt
 
-The initial decisions were approved in the Phase 1 review packet on 2026-06-10. G1-G7 were approved by Nhat on 2026-07-13 and supersede any older ambiguous wording.
+Các quyết định ban đầu được phê duyệt trong gói rà soát Giai đoạn 1 ngày 2026-06-10. G1-G7 được Nhat phê duyệt ngày 2026-07-13 và thay thế mọi cách diễn đạt cũ còn mơ hồ.
 
-| Decision | Approved Answer | Status |
+| Quyết định | Câu trả lời được phê duyệt | Trạng thái |
 | -------- | --------------- | ------ |
-| Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | APPROVED |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | APPROVED |
-| Q-FE10-003 | Required templates include verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, and membership result. | APPROVED |
-| Q-FE10-004 | Store notification send attempts and status. | APPROVED |
-| Q-FE10-005 | Retry only failed non-sensitive queued records; sensitive auth requires source reissue. | APPROVED |
-| Q-FE10-006 | Notification failure must not block source business flow. | APPROVED |
-| Q-FE10-007 | System/Scheduler uses the bound internal requester and is not a login role. | APPROVED |
-| Q-FE10-008 | Account setup is synchronous sensitive delivery owned by the FE11-bound requester. | APPROVED |
-| Q-FE10-013 | The opt-in SYSTEM worker runs at startup and every 60 seconds by default, with batch size 20, local overlap prevention, lifecycle stop, unchanged staff HTTP authorization, manual-only failed retry, and an explicit F1 best-effort limitation. | APPROVED 2026-07-27 |
-| G1 | Sensitive auth sends synchronously without persisted rendered content; non-sensitive delivery remains queued with recursive normalized secret-key protection and matching `safePayload` redaction. | APPROVED 2026-07-13 |
-| G2 | Create/replay/process/retry return only the approved minimal DTOs. | APPROVED 2026-07-13 |
-| G3 | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP remains `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; extended by ADR-005 2026-07-15 and FE04 audit 2026-07-17 |
-| G4 | `sourceEntityId` is integer-only in Phase 1. | APPROVED 2026-07-13 |
-| G5 | Manual retry is protected and applies only to failed non-sensitive queued records; sensitive retry returns `REISSUE_REQUIRED`. | APPROVED 2026-07-13 |
-| G6 | One record exists per idempotency key across all statuses; retry reuses the same history. | APPROVED 2026-07-13 |
-| G7 | Canonical auth keys are `ACCOUNT_VERIFICATION` and `PASSWORD_RESET`; no `EMAIL_VERIFY` alias. Its original FE02 deferral is superseded by G8-G10. | APPROVED 2026-07-13; superseded in part 2026-07-15 |
-| G8 | FE02 creates and validates six-digit OTPs; FE10 renders and delivers `otp` plus `expiresInMinutes` through the requester bound to `FE02`, with no OTP persistence or exposure. | APPROVED 2026-07-15 |
-| G9 | Staff HTTP and non-FE02 source requesters cannot submit `ACCOUNT_VERIFICATION` or `PASSWORD_RESET`; HTTP cannot provide `sourceFeature`; violations return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. | APPROVED 2026-07-15 |
-| G10 | Sensitive idempotency and source traceability use `AuthTokens.TokenId`; FE02 removes duplicate verification/reset notification writes and direct sends, while failure remains non-blocking and resend creates a new source event. | APPROVED 2026-07-15 |
-| G11 | FE11 owns `ACCOUNT_SETUP` source events; FE10 validates `setupLink`/`expiresInHours`, sends synchronously, stores only safe metadata/status/attempts, and requires new token/event/key for resend. | APPROVED 2026-07-15; ADR-005 |
-| G12 | FE04 owns `MEMBERSHIP_RESULT` source events; FE10 accepts them only from the FE04-bound requester and keeps delivery failure non-blocking. | APPROVED 2026-07-17 |
-| Q-FE10-010 | Phase 1 statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; `PROCESSING` is durable before provider I/O and is never automatically reclaimed. | APPROVED; revised 2026-07-23 |
-| Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
-| Q-FE10-012 | Unsafe stored template definitions are rejected before rendering/persistence/delivery; runtime values remain escaped/sanitized. | APPROVED 2026-07-27 |
+| Q-FE10-001 | Kênh bắt buộc của Giai đoạn 1 là email qua bộ điều hợp nhà cung cấp đã cấu hình; kiểm thử dùng nhà cung cấp mô phỏng được chèn. | APPROVED |
+| Q-FE10-002 | Thông báo trong ứng dụng là công việc tùy chọn/tương lai của Giai đoạn 1. | APPROVED |
+| Q-FE10-003 | Các mẫu bắt buộc gồm xác minh, đặt lại mật khẩu, thiết lập tài khoản, nhắc hạn trả, thông báo quá hạn, thông báo tiền phạt, đặt chỗ sẵn sàng và kết quả tư cách thành viên. | APPROVED |
+| Q-FE10-004 | Lưu các lần thử gửi thông báo và trạng thái. | APPROVED |
+| Q-FE10-005 | Chỉ thử lại bản ghi không nhạy cảm đã xếp hàng nhưng thất bại; xác thực nhạy cảm yêu cầu nguồn phát hành lại. | APPROVED |
+| Q-FE10-006 | Lỗi thông báo không được chặn luồng nghiệp vụ nguồn. | APPROVED |
+| Q-FE10-007 | Hệ thống/Bộ lập lịch dùng trình yêu cầu nội bộ đã ràng buộc và không phải vai trò đăng nhập. | APPROVED |
+| Q-FE10-008 | Thiết lập tài khoản là thao tác gửi nhạy cảm đồng bộ thuộc quyền sở hữu của trình yêu cầu được ràng buộc với FE11. | APPROVED |
+| Q-FE10-013 | Tiến trình SYSTEM bật tùy chọn chạy lúc khởi động và mặc định cứ 60 giây một lần, với kích thước lô 20, ngăn chạy cục bộ chồng lấp, dừng theo vòng đời, giữ nguyên phân quyền HTTP của nhân viên, chỉ thử lại lỗi thủ công và có giới hạn thực hiện trong khả năng tốt nhất rõ ràng trên F1. | APPROVED 2026-07-27 |
+| G1 | Thông báo xác thực nhạy cảm được gửi đồng bộ mà không lưu bền nội dung đã kết xuất; thông báo không nhạy cảm vẫn được xếp hàng với cơ chế đệ quy bảo vệ khóa bí mật đã chuẩn hóa và che dữ liệu `safePayload` tương ứng. | APPROVED 2026-07-13 |
+| G2 | Các thao tác tạo/phát lại/xử lý/thử lại chỉ trả về DTO tối thiểu đã phê duyệt. | APPROVED 2026-07-13 |
+| G3 | `createSourceNotificationRequester(sourceFeature)` ràng buộc một nguồn trong `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP vẫn dùng `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; được mở rộng bởi ADR-005 2026-07-15 và kiểm toán FE04 2026-07-17 |
+| G4 | `sourceEntityId` chỉ có số nguyên trong Giai đoạn 1. | APPROVED 2026-07-13 |
+| G5 | Thử lại thủ công được bảo vệ và chỉ áp dụng cho bản ghi không nhạy cảm đã xếp hàng nhưng thất bại; thử lại thông báo nhạy cảm trả về `REISSUE_REQUIRED`. | APPROVED 2026-07-13 |
+| G6 | Mỗi khóa lũy đẳng có một bản ghi xuyên suốt mọi trạng thái; thao tác thử lại dùng lại cùng lịch sử. | APPROVED 2026-07-13 |
+| G7 | Các khóa xác thực chuẩn là `ACCOUNT_VERIFICATION` và `PASSWORD_RESET`; không có bí danh `EMAIL_VERIFY`. Việc trì hoãn FE02 ban đầu của quyết định này được G8-G10 thay thế. | APPROVED 2026-07-13; được thay thế một phần 2026-07-15 |
+| G8 | FE02 tạo và xác thực OTP gồm sáu chữ số; FE10 kết xuất và gửi `otp` cùng `expiresInMinutes` qua trình yêu cầu được ràng buộc với `FE02` mà không lưu bền hay làm lộ OTP. | APPROVED 2026-07-15 |
+| G9 | Nhân viên qua HTTP và trình yêu cầu nguồn không phải FE02 không thể gửi `ACCOUNT_VERIFICATION` hoặc `PASSWORD_RESET`; HTTP không thể cung cấp `sourceFeature`; vi phạm trả về lỗi an toàn `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`. | APPROVED 2026-07-15 |
+| G10 | Tính lũy đẳng và khả năng truy vết nguồn cho thông báo nhạy cảm dùng `AuthTokens.TokenId`; FE02 loại bỏ việc ghi thông báo xác minh/đặt lại trùng và gửi trực tiếp, đồng thời lỗi vẫn không chặn luồng và gửi lại sẽ tạo sự kiện nguồn mới. | APPROVED 2026-07-15 |
+| G11 | FE11 sở hữu sự kiện nguồn `ACCOUNT_SETUP`; FE10 kiểm tra `setupLink`/`expiresInHours`, gửi đồng bộ, chỉ lưu siêu dữ liệu/trạng thái/lần thử an toàn và yêu cầu mã thông báo/sự kiện/khóa mới để gửi lại. | APPROVED 2026-07-15; ADR-005 |
+| G12 | FE04 sở hữu sự kiện nguồn `MEMBERSHIP_RESULT`; FE10 chỉ chấp nhận từ trình yêu cầu được ràng buộc với FE04 và giữ lỗi gửi ở trạng thái không chặn luồng. | APPROVED 2026-07-17 |
+| Q-FE10-010 | Các trạng thái Giai đoạn 1 là `PENDING`, `PROCESSING`, `SENT` và `FAILED`; `PROCESSING` được lưu bền trước I/O của nhà cung cấp và không bao giờ được tự động nhận lại. | APPROVED; sửa đổi 2026-07-23 |
+| Q-FE10-011 | FE04 sử dụng `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 sử dụng `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
+| Q-FE10-012 | Định nghĩa mẫu đã lưu không an toàn bị từ chối trước khi kết xuất/lưu bền/gửi; giá trị khi chạy vẫn được thoát/làm sạch. | APPROVED 2026-07-27 |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| AC ID | Acceptance Criterion | Related FR | Related BR | Assignment Test | Hardening Task | Status |
+| ID AC | Tiêu chí chấp nhận | FR liên quan | BR liên quan | Kiểm thử bài tập | Nhiệm vụ tăng cường | Trạng thái |
 | ----- | -------------------- | ---------- | ---------- | --------------- | -------------- | ------ |
-| AC-FE10-001 | FE02-bound account-verification OTP sends synchronously with safe source metadata and no persisted sensitive content | FR-FE10-001 | BR-FE10-001 to BR-FE10-004, BR-FE10-005, BR-FE10-007 to BR-FE10-011 | FT46 | FE10-S01 to FE10-S04 | Approved for implementation |
-| AC-FE10-002 | FE02-bound password-reset OTP sends synchronously with safe source metadata and no persisted sensitive content | FR-FE10-002 | BR-FE10-003 to BR-FE10-005, BR-FE10-007 to BR-FE10-011 | FT47 | FE10-S01 to FE10-S04 | Approved for implementation |
-| AC-FE10-003 | FE04 membership-result and FE08 reservation-ready notifications are queued without FE10 changing source outcomes | FR-FE10-003 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-011, BR-FE10-012 | FT48 plus planned FE04 requester case | FE10-H02, FE10-H05, FE10-H07, G12 | Approved for implementation |
-| AC-FE10-004 | FE07 due-date notification is queued without changing borrowing state | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H02, FE10-H05, FE10-H06 | Approved for implementation |
-| AC-FE10-005 | FE09 overdue/fine contract is approved without FE10 calculating fines; caller integration is deferred | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H01, FE10-H02, FE10-H05 | Approved; integration deferred |
-| AC-FE10-006 | All eight canonical pairs and safe definitions validate; invalid recipient, variable, source ID, mapping, unsafe/missing/inactive template, source ownership, HTTP source override, or recursively detected queued secret returns safe 4xx before rendering/persistence/delivery | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 to FT49 plus `notificationRoutes.test.js` unsafe stored-definition matrix | FE10-H02, FE10-H04, FE10-S02, FE10-S06, FE10-S11 | Automated evidence complete; integrated H2 approved; PR CI passed; documentation-only H3 remediation pending fresh H2 |
-| AC-FE10-007 | Authentication OTPs and rendered sensitive content never cross persistence/log/audit/HTTP boundaries | FR-FE10-001, FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-008, BR-FE10-013 | FT46, FT47 | FE10-H03, FE10-H04, FE10-S03 | Approved for implementation |
-| AC-FE10-008 | Duplicate key replays the same record across all statuses with minimal `200` DTO | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 to FT49 | FE10-H08 | Approved for implementation |
-| AC-FE10-009 | Failure is safe/non-blocking; FE02 reissues a new OTP/token event, non-sensitive `FAILED` retry reuses history, and uncertain `PROCESSING` is never resent | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | `backend/tests/notificationRoutes.test.js` provider/transition/retry cases | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Automated evidence; H2 review pending |
-| AC-FE10-010 | FE11-bound account setup sends synchronously with safe source metadata and no persisted setup credential/content | FR-FE10-010 | BR-FE10-002, BR-FE10-004 to BR-FE10-008, BR-FE10-010 to BR-FE10-013 | FT52, FT55 | FE10-S06 to FE10-S08 | Approved for implementation |
+| AC-FE10-001 | OTP xác minh tài khoản từ trình yêu cầu ràng buộc với FE02 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu bền nội dung nhạy cảm | FR-FE10-001 | BR-FE10-001 đến BR-FE10-004, BR-FE10-005, BR-FE10-007 đến BR-FE10-011 | FT46 | FE10-S01 đến FE10-S04 | Đã phê duyệt để triển khai |
+| AC-FE10-002 | OTP đặt lại mật khẩu từ trình yêu cầu ràng buộc với FE02 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu bền nội dung nhạy cảm | FR-FE10-002 | BR-FE10-003 đến BR-FE10-005, BR-FE10-007 đến BR-FE10-011 | FT47 | FE10-S01 đến FE10-S04 | Đã phê duyệt để triển khai |
+| AC-FE10-003 | Thông báo kết quả tư cách thành viên FE04 và đặt chỗ sẵn sàng FE08 được xếp hàng mà FE10 không thay đổi kết quả nguồn | FR-FE10-003 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-011, BR-FE10-012 | FT48 cùng trường hợp trình yêu cầu FE04 đã lên kế hoạch | FE10-H02, FE10-H05, FE10-H07, G12 | Đã phê duyệt để triển khai |
+| AC-FE10-004 | Thông báo hạn trả FE07 được xếp hàng mà không thay đổi trạng thái mượn | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H02, FE10-H05, FE10-H06 | Đã phê duyệt để triển khai |
+| AC-FE10-005 | Hợp đồng quá hạn/tiền phạt FE09 được phê duyệt mà FE10 không tính tiền phạt; tích hợp người gọi được trì hoãn | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H01, FE10-H02, FE10-H05 | Đã phê duyệt; tích hợp được trì hoãn |
+| AC-FE10-006 | Cả tám cặp chuẩn và định nghĩa an toàn đều đạt kiểm tra; người nhận, biến, ID nguồn hoặc ánh xạ không hợp lệ, mẫu không an toàn/bị thiếu/không hoạt động, quyền sở hữu nguồn, ghi đè nguồn HTTP hoặc bí mật trong dữ liệu xếp hàng được phát hiện đệ quy đều trả về lỗi 4xx an toàn trước khi kết xuất/lưu bền/gửi | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 đến FT49 cùng ma trận định nghĩa lưu trữ không an toàn trong `notificationRoutes.test.js` | FE10-H02, FE10-H04, FE10-S02, FE10-S06, FE10-S11 | Bằng chứng tự động hoàn tất; H2 tích hợp đã được phê duyệt; CI của PR đã đạt; khắc phục H3 chỉ liên quan tài liệu đang chờ H2 mới |
+| AC-FE10-007 | OTP xác thực và nội dung nhạy cảm đã kết xuất không bao giờ vượt qua ranh giới lưu bền/nhật ký/kiểm toán/HTTP | FR-FE10-001, FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-008, BR-FE10-013 | FT46, FT47 | FE10-H03, FE10-H04, FE10-S03 | Đã phê duyệt để triển khai |
+| AC-FE10-008 | Khóa trùng phát lại cùng một bản ghi xuyên suốt mọi trạng thái bằng DTO `200` tối thiểu | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 đến FT49 | FE10-H08 | Đã phê duyệt để triển khai |
+| AC-FE10-009 | Lỗi được xử lý an toàn/không chặn; FE02 phát hành lại sự kiện OTP/mã thông báo mới, thao tác thử lại `FAILED` không nhạy cảm dùng lại lịch sử, còn `PROCESSING` không chắc chắn tuyệt đối không được gửi lại | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | Các trường hợp nhà cung cấp/chuyển đổi/thử lại trong `backend/tests/notificationRoutes.test.js` | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Có bằng chứng tự động; đang chờ rà soát H2 |
+| AC-FE10-010 | Thiết lập tài khoản từ trình yêu cầu ràng buộc với FE11 được gửi đồng bộ bằng siêu dữ liệu nguồn an toàn và không lưu bền thông tin xác thực/nội dung thiết lập | FR-FE10-010 | BR-FE10-002, BR-FE10-004 đến BR-FE10-008, BR-FE10-010 đến BR-FE10-013 | FT52, FT55 | FE10-S06 đến FE10-S08 | Đã phê duyệt để triển khai |
 
-### Coverage Summary
+### Tóm tắt độ bao phủ
 
-- Total AC: 10 (AC-FE10-001 to AC-FE10-010) - all mapped.
-- Total FR: 10 (FR-FE10-001 to FR-FE10-010) - all mapped.
-- Total BR: 13 (BR-FE10-001 to BR-FE10-013) - all mapped.
-- Assignment tests remain FT46 to FT49. Hardening implementation is traced to FE10-H02 through FE10-H08 and validated by FE10-H09.
+- Tổng AC: 10 (AC-FE10-001 đến AC-FE10-010) - tất cả đều được ánh xạ.
+- Tổng FR: 10 (FR-FE10-001 đến FR-FE10-010) - tất cả đều được ánh xạ.
+- Tổng BR: 13 (BR-FE10-001 đến BR-FE10-013) - tất cả đều được ánh xạ.
+- Các kiểm thử bài tập vẫn là FT46 đến FT49. Phần triển khai tăng cường được truy vết tới FE10-H02 đến FE10-H08 và được FE10-H09 xác nhận.
 
-### Supplemental BR/FR Traceability
+### Truy vết BR/FR bổ sung
 
-| Requirement ID | Test Intent | Status |
+| ID yêu cầu | Ý định thử nghiệm | Trạng thái |
 | -------------- | ----------- | ------ |
-| BR-FE10-009 | Provider credential source/configuration scan | Planned |
-| FR-FE10-003 | FE04 membership-result and FE08 reservation-ready requests create one pending record without changing source outcomes | Planned FE04 requester and reservation queue cases |
-| FR-FE10-006 | Provider acceptance sets `SENT`, `sentAt`, and a successful attempt | Planned |
-| BR-FE10-011 / Q-FE10-009 | FE04-bound membership-result ownership and protected HTTP boundary | Planned |
-| BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` rejects three unsafe stored-definition classes with zero render/persistence/provider calls while preserving runtime-value sanitization | Complete |
+| BR-FE10-009 | Quét nguồn/cấu hình thông tin xác thực của nhà cung cấp | Đã lên kế hoạch |
+| FR-FE10-003 | Yêu cầu kết quả tư cách thành viên FE04 và đặt chỗ sẵn sàng FE08 tạo một bản ghi đang chờ mà không thay đổi kết quả nguồn | Đã lên kế hoạch các trường hợp trình yêu cầu FE04 và hàng đợi đặt chỗ |
+| FR-FE10-006 | Việc nhà cung cấp chấp nhận đặt `SENT`, `sentAt` và một lần thử thành công | Đã lên kế hoạch |
+| BR-FE10-011 / Q-FE10-009 | Quyền sở hữu kết quả thành viên được ràng buộc bởi FE04 và ranh giới HTTP được bảo vệ | Đã lên kế hoạch |
+| BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` từ chối ba lớp định nghĩa đã lưu không an toàn mà không gọi kết xuất/lưu bền/nhà cung cấp, đồng thời vẫn làm sạch giá trị khi chạy | Hoàn thành |
 
 
-### External Assignment Traceability (Excel UC IDs)
+### Truy vết bài tập bên ngoài (ID UC trong Excel)
 
-| Assignment UC ID | Excel Use Case | Related Main Flow / Requirement | Related Test |
+| ID UC bài tập | Trường hợp sử dụng trong Excel | Luồng chính / Yêu cầu liên quan | Kiểm thử liên quan |
 | ---------------- | -------------- | ------------------------------- | ------------ |
-| UC45 | Send Account Verification Notification | MF-FE10-001; FR-FE10-001 | FT46 |
-| UC46 | Send Password Reset Notification | MF-FE10-002; FR-FE10-002 | FT47 |
-| UC47 | Send Book Reservation Notification | MF-FE10-003; FR-FE10-003 | FT48 |
-| UC48 | Send Due Date Or Fine Notification | MF-FE10-004; FR-FE10-004 | FT49 |
+| UC45 | Gửi thông báo xác minh tài khoản | MF-FE10-001; FR-FE10-001 | FT46 |
+| UC46 | Gửi thông báo đặt lại mật khẩu | MF-FE10-002; FR-FE10-002 | FT47 |
+| UC47 | Gửi thông báo đặt sách | MF-FE10-003; FR-FE10-003 | FT48 |
+| UC48 | Gửi thông báo hạn trả hoặc tiền phạt | MF-FE10-004; FR-FE10-004 | FT49 |
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra rà soát
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành ngày 2026-06-10):
 
-- [x] Feature ID and folder match Master Feature List.
-- [x] Scope stays inside FE10 Notification Management.
-- [x] Team approves proposed decisions in Section 15.1.
-- [x] Channel strategy is confirmed: email, in-app, or both.
-- [x] Configured provider adapter and injected test-mock strategy is confirmed.
-- [x] Notification schema is reviewed with database owner.
-- [x] FE02, FE07, FE08, FE09, and FE11 dependencies are checked for conflicts.
-- [x] API contract is approved in this SPEC.md or copied to a dedicated API contract file if the team reintroduces one.
-- [x] No secrets, provider credentials, raw tokens/OTPs, or rendered sensitive authentication content are stored/logged.
-- [x] Every acceptance criterion can become a test.
+- [x] ID tính năng và thư mục khớp với Danh sách tính năng chính.
+- [x] Phạm vi nằm trong Quản lý thông báo FE10.
+- [x] Nhóm phê duyệt các quyết định được đề xuất trong Phần 15.1.
+- [x] Chiến lược kênh được xác nhận: email, trong ứng dụng hoặc cả hai.
+- [x] Chiến lược dùng bộ điều hợp nhà cung cấp đã cấu hình và đối tượng mô phỏng được chèn trong kiểm thử đã được xác nhận.
+- [x] Lược đồ thông báo được rà soát với chủ sở hữu cơ sở dữ liệu.
+- [x] Các phụ thuộc FE02, FE07, FE08, FE09 và FE11 đã được kiểm tra xung đột.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép vào tệp hợp đồng API chuyên dụng nếu nhóm giới thiệu lại một tệp.
+- [x] Không lưu/ghi nhật ký bí mật, thông tin xác thực của nhà cung cấp, mã thông báo/OTP thô hoặc nội dung xác thực nhạy cảm đã kết xuất.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một kiểm thử.
 
-Hardening contract checklist (approved by Nhat on 2026-07-13):
+Danh sách kiểm tra hợp đồng tăng cường (được Nhat phê duyệt ngày 2026-07-13):
 
-- [x] Canonical type/template pairs are exact and caller flags cannot bypass them.
-- [x] Sensitive auth delivery is synchronous and rendered sensitive content remains provider-memory-only.
-- [x] Queued non-sensitive data uses recursive object/array inspection, normalized secret-key rejection, and matching `safePayload` redaction.
-- [x] Create/replay/process/retry use only minimal DTOs.
-- [x] `sourceEntityId` is integer-only.
-- [x] Bound source requester allowlist and HTTP `LIBRARIAN`/`ADMIN` boundary are explicit.
-- [x] Idempotency applies across all statuses.
-- [x] Manual retry preserves non-sensitive history and sensitive retry returns `REISSUE_REQUIRED`.
-- [x] FE02 verification/reset OTP requester integration is approved through ADR-004; `CHANGE_PASSWORD_OTP` and FE09 caller integration remain explicitly deferred.
-- [x] Staff HTTP is denied all sensitive authentication types; non-owning requesters are denied FE02 verification/reset and FE11 account setup.
-- [x] G1-G7 trace to the revised BR/FR/AC/API/NFR contract and FE10-H01 to FE10-H09.
+- [x] Các cặp loại/mẫu chuẩn là chính xác và cờ của người gọi không thể bỏ qua chúng.
+- [x] Thông báo xác thực nhạy cảm được gửi đồng bộ và nội dung nhạy cảm đã kết xuất chỉ tồn tại trong bộ nhớ của nhà cung cấp.
+- [x] Dữ liệu không nhạy cảm đã xếp hàng dùng kiểm tra đệ quy đối tượng/mảng, từ chối khóa bí mật đã chuẩn hóa và che dữ liệu `safePayload` tương ứng.
+- [x] Các thao tác tạo/phát lại/xử lý/thử lại chỉ dùng DTO tối thiểu.
+- [x] `sourceEntityId` chỉ có số nguyên.
+- [x] Danh sách cho phép của trình yêu cầu nguồn đã ràng buộc và ranh giới HTTP `LIBRARIAN`/`ADMIN` được nêu rõ.
+- [x] Tính lũy đẳng áp dụng xuyên suốt mọi trạng thái.
+- [x] Thử lại thủ công sẽ giữ lại lịch sử không nhạy cảm và thử lại nhạy cảm sẽ trả về `REISSUE_REQUIRED`.
+- [x] Tích hợp trình yêu cầu OTP xác minh/đặt lại FE02 được phê duyệt qua ADR-004; `CHANGE_PASSWORD_OTP` và việc tích hợp người gọi FE09 vẫn được trì hoãn rõ ràng.
+- [x] Nhân viên qua HTTP bị từ chối với mọi loại xác thực nhạy cảm; trình yêu cầu không sở hữu bị từ chối với xác minh/đặt lại FE02 và thiết lập tài khoản FE11.
+- [x] G1-G7 truy vết tới hợp đồng BR/FR/AC/API/NFR đã sửa đổi và FE10-H01 đến FE10-H09.
 
-### Revision v0.4.4 Template-Safety Gate
+### Cổng an toàn mẫu của bản sửa đổi v0.4.4
 
-- [x] Separate stored template-definition rejection from runtime-value escaping.
-- [x] Preserve canonical pair, secret-like key, safe-payload, minimal DTO, and source-ownership rules.
-- [x] Require safe rejection before rendering, notification/attempt persistence, or provider delivery.
-- [x] Nhat human-reviewed and approved the written v0.4.4 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
+- [x] Tách việc từ chối định nghĩa mẫu đã lưu khỏi thao tác thoát giá trị khi chạy.
+- [x] Bảo toàn cặp chuẩn, khóa giống bí mật, tải trọng an toàn, DTO tối thiểu và các quy tắc sở hữu nguồn.
+- [x] Yêu cầu từ chối an toàn trước khi kết xuất, lưu bền thông báo/lần thử hoặc gửi qua nhà cung cấp.
+- [x] Nhat đã trực tiếp rà soát và phê duyệt SPEC v0.4.4 bằng văn bản ngày 2026-07-27; PLAN/TASKS có thể tiếp tục, còn việc triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
