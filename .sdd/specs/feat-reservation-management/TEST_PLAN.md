@@ -1,10 +1,10 @@
 # FE08 Test Plan - Reservation Management
 
-Version: 0.5.5
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Version: 0.5.6
+Status: COMPLETE - LATEST-MAIN EVIDENCE RECORDED; H2 ADDENDUM PENDING
 Last Updated: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.8
+Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.9
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -25,6 +25,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 - Contract validation: `CopyId` is the only reservation target; `bookId` is rejected from `process-queue` and invalid values are rejected before repository access.
 - Queue selection: exact copy scope, `ReservedAt ASC, ReservationId ASC` ordering, cancelled/expired exclusion, and at most one `NOTIFIED` hold per copy.
 - Ineligible queue entry: skip for the current run, preserve `ACTIVE`, and leave the copy unchanged.
+- Current same-book loan: FE07 `BORROWED` state removes all same-`BookId` candidates, direct create returns `BOOK_ALREADY_BORROWED`, terminal loan history does not block, and a stale queue entry is skipped without mutation.
 - Empty queue: return no selection and leave copy and reservation state unchanged.
 - Hold creation: set `RESERVED`, `NotifiedAt`, `ExpiresAt`, and queue metadata atomically; record the notification request and audit event.
 - Terminal timestamp history: fulfillment, expiration, and notified cancellation preserve original `NotifiedAt`/`ExpiresAt`; never-notified terminal rows keep them null; only cancelled rows set `CancelledAt`.
@@ -36,14 +37,14 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 
 ## 3. API / Integration Test Targets
 
-- `POST /api/reservations`: successful creation, inactive account, unapproved membership, missing copy, available copy, duplicate, and active-limit rejection.
+- `POST /api/reservations`: successful creation, inactive account, unapproved membership, missing copy, available copy, duplicate, active-limit rejection, and `409 BOOK_ALREADY_BORROWED` for a current same-book loan.
 - `GET /api/reservations/me`: member isolation, default `page = 1` and `limit = 20`, and invalid page/limit rejection without normalization.
 - `GET /api/reservations`: staff-only access, member denial, filters, stable `ReservedAt ASC, ReservationId ASC` order, defaults, and invalid page/limit rejection.
 - `POST /api/reservations/process-queue`: staff-only access, required `copyId`, `bookId` rejection, selected reservation, empty queue, ineligible skip, notification failure, and concurrent selection.
 - `POST /api/reservations/expire-holds`: overdue hold expiration, next eligible promotion, and unchanged state when no hold is overdue.
 - `PATCH /api/reservations/:reservationId/cancel`: owner-only success, foreign-owner denial, terminal-state conflict, and atomic release of a held copy.
 - FE07 integration: matching-owner fulfillment, other-member borrow denial, active-queue priority, renewal denial, and no reservation-owner disclosure.
-- Candidate catalog: member-only `GET /api/reservations/candidates`, active-book `BORROWED`/`RESERVED` filtering, seven-field redaction including member-scoped `hasActiveReservation`, server search/pagination, deterministic order, active counts, disabled duplicate action, and authoritative `POST /api/reservations { copyId }` mutation.
+- Candidate catalog: member-only `GET /api/reservations/candidates`, active-book `BORROWED`/`RESERVED` filtering, current same-`BookId` loan exclusion, seven-field redaction including member-scoped `hasActiveReservation`, server search/pagination, deterministic order, active counts, disabled duplicate action, and authoritative `POST /api/reservations { copyId }` mutation.
 
 ## 4. E2E / Manual Acceptance Flows
 
@@ -58,6 +59,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
   canonical `NotifiedAt`/`ExpiresAt` pickup window -> exact held
   `bookId`/`copyId` opens FE07 -> Member creates a pending request ->
   Librarian/Admin approval fulfills the reservation.
+- Member currently borrows one physical copy -> all candidates for that `BookId` are absent -> direct create for another copy returns `409 BOOK_ALREADY_BORROWED` -> Librarian/Admin processing skips a stale pre-existing queue row and leaves it `ACTIVE`.
 
 ## 5. Current Evidence
 
@@ -70,6 +72,13 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 
 ## 6. Gaps
 
+- Fresh `FE08-T045` same-book repository/service/route evidence passes
+  `63/63`; frontend error mapping passes `7/7`. `FE08-T046` requester and
+  SIT-003/SIT-004 pass `1/1` and `2/2`; the integrated cross-feature gate
+  passes `284/284`, full backend passes `1,051/1,051`, frontend passes
+  `231/231`, and Chromium acceptance passes `2/2` against `e99daf5`.
+- The candidate SQL command passes `2/2` source-contract tests and skips `2`
+  mutable SQL cases because no approved disposable database is configured.
 - FE08-T028 through FE08-T034 pass the focused backend/shared-boundary gate at 77/77 and frontend at 9/9; traceability is 29/29.
 - FE08-T035 through FE08-T039 pass: candidate backend contract 23/23, candidate SQL 2/2, current full frontend 149/149 with lint/build, focused browser 1/1, and full Playwright 4/4 on isolated ports.
 - The FE07/FE08 reservation priority, held-owner fulfillment, race, and rollback paths pass in the disposable SQL Server borrowing suite recorded in the full-reconciliation Live SQL review.

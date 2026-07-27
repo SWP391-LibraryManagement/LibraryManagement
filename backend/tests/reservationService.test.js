@@ -160,6 +160,7 @@ describe('FE08 reservation service coverage', () => {
     ['COPY_AVAILABLE', 'COPY_AVAILABLE', 409],
     ['RESERVATION_NOT_ALLOWED', 'RESERVATION_NOT_ALLOWED', 409],
     ['DUPLICATE_ACTIVE_RESERVATION', 'DUPLICATE_ACTIVE_RESERVATION', 409],
+    ['BOOK_ALREADY_BORROWED', 'BOOK_ALREADY_BORROWED', 409],
     ['ACTIVE_RESERVATION_LIMIT', 'ACTIVE_RESERVATION_LIMIT', 409],
   ])('maps atomic create outcome %s to the safe service error', async (outcome, code, statusCode) => {
     const { service } = makeService({

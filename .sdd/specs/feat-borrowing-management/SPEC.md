@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.7
+# Version: 0.7.8
 
 # Status: APPROVED - RULE ALIGNMENT 2026-07-27
 
@@ -40,6 +40,10 @@
 >
 > Revision v0.7.7 integrates the upstream exact FE08 held-copy handoff while
 > preserving the single-role, authoritative-return, and business-date rules.
+>
+> Revision v0.7.8 integrates FE07's upstream current-loan signal for FE08
+> same-book reservation exclusion while preserving the v0.7.7 handoff and all
+> rule-alignment contracts.
 
 ---
 
@@ -230,6 +234,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
 - BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
 - BR-FE07-031: Member-self-service borrow candidate, create-request, and own-history endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot place or borrow books for themselves.
+- BR-FE07-032: A current `BorrowDetails.Status = BORROWED` detail is FE08's authoritative signal that the same Member cannot reserve any other copy with the same `BookId`; terminal detail states do not block a later reservation.
 
 ---
 
@@ -689,6 +694,7 @@ This feature does not include:
 | BR-FE07-028 | UC30, UC34 | Planned: deterministic history contract case | Planned |
 | BR-FE07-029 | UC30 | FE07-T041 | Complete |
 | BR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
+| BR-FE07-032 | UC29, UC36, UC39 | FE08-T045 same-book reservation exclusion tests | Automated pass; human review pending |
 | FR-FE07-001 | UC29 | Planned: eligibility validation precedes request insert | Planned |
 | FR-FE07-002 | UC29 | Planned: PENDING request + REQUESTED details creation test | Planned |
 | FR-FE07-003 | UC29 | Planned: non-borrowable item rejects whole request test | Planned |

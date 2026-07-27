@@ -6,7 +6,7 @@ const repositorySource = fs.readFileSync(
   'utf8'
 );
 
-test('reservation create revalidates role, copy, duplicate, and open limit in one transaction', () => {
+test('reservation create revalidates role, copy, current same-book loan, duplicate, and open limit in one transaction', () => {
   const createStart = repositorySource.indexOf('async function createReservation');
   const createEnd = repositorySource.indexOf('async function listReservations', createStart);
   const source = repositorySource.slice(createStart, createEnd);
@@ -14,6 +14,9 @@ test('reservation create revalidates role, copy, duplicate, and open limit in on
   expect(source).toContain('sp_getapplock');
   expect(source).toContain("r.RoleName = 'MEMBER'");
   expect(source).toContain("Status IN ('ACTIVE', 'NOTIFIED')");
+  expect(source).toContain("currentLoan.Status = 'BORROWED'");
+  expect(source).toContain('currentCopy.BookId = @BookId');
+  expect(source).toContain('BOOK_ALREADY_BORROWED');
   expect(source).toContain('DUPLICATE_ACTIVE_RESERVATION');
   expect(source).toContain('ACTIVE_RESERVATION_LIMIT');
   expect(source).toContain('INSERT INTO Reservations');
@@ -23,10 +26,12 @@ test('reservation create follows member lock then BookCopies then Reservations',
   const createStart = repositorySource.indexOf('async function createReservation');
   const createEnd = repositorySource.indexOf('async function listReservations', createStart);
   const source = repositorySource.slice(createStart, createEnd);
+  const circulationLockIndex = source.indexOf('FE07-BORROW-MEMBER-');
   const memberLockIndex = source.indexOf('sp_getapplock');
   const copyLockIndex = source.indexOf('FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)');
   const reservationLockIndex = source.indexOf('FROM Reservations WITH (UPDLOCK, HOLDLOCK)');
 
+  expect(circulationLockIndex).toBeGreaterThanOrEqual(0);
   expect(memberLockIndex).toBeGreaterThanOrEqual(0);
   expect(copyLockIndex).toBeGreaterThan(memberLockIndex);
   expect(reservationLockIndex).toBeGreaterThan(copyLockIndex);
@@ -40,6 +45,8 @@ test('queue lookup requires the current MEMBER role as well as an active account
   expect(source).toContain("role.RoleName = 'MEMBER'");
   expect(source).toContain('FROM UserRoles');
   expect(source).toContain('INNER JOIN Roles');
+  expect(source).toContain("currentLoan.Status = 'BORROWED'");
+  expect(source).toContain('currentCopy.BookId = bc.BookId');
 });
 
 test('queue hold revalidates current account and MEMBER role inside the transaction', () => {
@@ -52,6 +59,7 @@ test('queue hold revalidates current account and MEMBER role inside the transact
   const reservationLockIndex = source.indexOf('FROM Reservations r WITH (UPDLOCK, HOLDLOCK)');
 
   expect(source).toContain('FE08-RESERVATION-MEMBER-');
+  expect(source).toContain('FE07-BORROW-MEMBER-');
   expect(memberLockIndex).toBeGreaterThanOrEqual(0);
   expect(memberRowsIndex).toBeGreaterThan(memberLockIndex);
   expect(copyLockIndex).toBeGreaterThan(memberRowsIndex);
@@ -59,6 +67,8 @@ test('queue hold revalidates current account and MEMBER role inside the transact
   expect(source).toContain("eligibilityRole.RoleName = 'MEMBER'");
   expect(source).toContain("u.Status = 'ACTIVE'");
   expect(source).toContain("outcome: 'MEMBER_INELIGIBLE'");
+  expect(source).toContain("currentLoan.Status = 'BORROWED'");
+  expect(source).toContain('currentCopy.BookId = @BookId');
 });
 
 test('reservation reads derive queue position from the current ACTIVE FIFO rows', () => {

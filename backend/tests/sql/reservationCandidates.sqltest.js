@@ -13,7 +13,7 @@ const repositorySource = readFileSync(
   'utf8'
 );
 
-// @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+// @spec FR-FE08-029, FR-FE08-034, AC-FE08-015, AC-FE08-021, NFR-FE08-SEC-004, NFR-FE08-PERF-003
 test('candidate repository source locks the safe projection and eligible status boundary', () => {
   expect(repositorySource).toMatch(/bc\.Status IN \('BORROWED', 'RESERVED'\)/i);
   expect(repositorySource).toMatch(/b\.Status = 'ACTIVE'/i);
@@ -21,6 +21,9 @@ test('candidate repository source locks the safe projection and eligible status 
   expect(repositorySource).toMatch(/ORDER BY b\.Title ASC, b\.BookId ASC, bc\.CopyId ASC/i);
   expect(repositorySource).toMatch(/OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY/i);
   expect(repositorySource).toMatch(/AuthorName/);
+  expect(repositorySource).toMatch(
+    /currentRequest\.UserId = @UserId[\s\S]*currentLoan\.Status = 'BORROWED'[\s\S]*currentCopy\.BookId = bc\.BookId/i
+  );
   expect(repositorySource).not.toMatch(/SELECT[\s\S]{0,500}bc\.Barcode[\s\S]{0,500}listReservationCandidates/);
 });
 

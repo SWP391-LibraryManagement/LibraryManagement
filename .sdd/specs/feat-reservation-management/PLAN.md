@@ -1,15 +1,17 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: IN PROGRESS - SINGLE-ROLE INTEGRATION REGRESSION
+Status: IN PROGRESS - LATEST-MAIN INTEGRATION VALIDATION
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
-`FE08-T041` through `FE08-T044`; the rule-alignment regression boundary is
-`FE08-T045`. Nhat authorized integration on 2026-07-27. No additional FE08
-product behavior is introduced by the rule-alignment slice.
+`FE08-T041` through `FE08-T045`; the rule-alignment regression boundary is
+`FE08-T046`. Nhat authorized integration on 2026-07-27. The upstream same-book
+rule is preserved without introducing another FE08 product change in the
+rule-alignment slice. Fresh integrated evidence is recorded; the H2 addendum
+remains pending.
 
 ---
 
@@ -205,11 +207,25 @@ Not included:
 5. Keep the Chromium FE08 acceptance assertion on the current
    `Đang đặt chỗ` label.
 
-## 12. 2026-07-27 Regression-Only Boundary
+## 12. V0.5.8 Current Same-Book Loan Exclusion
+
+1. Treat FE07 `BorrowDetails.Status = BORROWED` joined through the physical
+   copy's `BookId` as the authoritative current-loan signal.
+2. Exclude every same-book copy from the requesting Member's FE08 candidate
+   catalog.
+3. Revalidate inside the create transaction and return
+   `409 BOOK_ALREADY_BORROWED` so direct API calls cannot bypass the catalog.
+4. Revalidate queue eligibility when Librarian/Admin processes a returned
+   copy; keep a stale reservation `ACTIVE` and the copy unchanged while
+   continuing to the next eligible Member.
+5. Share the FE07 member circulation lock before FE08 mutation locks so borrow
+   approval and reservation creation/holding cannot race for the same Member.
+
+## 13. 2026-07-27 Regression-Only Boundary
 
 1. Do not add FE08 production code, schema, API, lifecycle, or queue-policy
    changes in the rule-alignment slice.
-2. Preserve `FE08-T041` through `FE08-T044` from `main` and use `FE08-T045`
+2. Preserve `FE08-T041` through `FE08-T045` from `main` and use `FE08-T046`
    for this batch's regression-only verification.
 3. Re-run the focused reservation requester test proving FE08 constructs the
    canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.

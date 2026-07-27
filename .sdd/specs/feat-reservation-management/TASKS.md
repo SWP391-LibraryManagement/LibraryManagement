@@ -1,6 +1,6 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: IN PROGRESS - SINGLE-ROLE INTEGRATION REGRESSION
+Status: IN PROGRESS - LATEST-MAIN INTEGRATION VALIDATION
 Implementation State: PARTIAL
 
 Owner: Nhat
@@ -8,10 +8,11 @@ Owner: Nhat
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
-`FE08-T041` through `FE08-T044`; the rule-alignment regression-only task is
-`FE08-T045`. Nhat authorized integration on 2026-07-27. No additional FE08
-product behavior is introduced by the rule-alignment slice, and the merged
-result remains uncommitted pending fresh validation and H2 addendum.
+`FE08-T041` through `FE08-T045`; the rule-alignment regression-only task is
+`FE08-T046`. Nhat authorized integration on 2026-07-27. The upstream same-book
+rule is preserved without introducing another FE08 product change in this
+slice. Fresh validation is recorded, and the merged result remains uncommitted
+pending an H2 addendum.
 
 ---
 
@@ -246,16 +247,26 @@ result remains uncommitted pending fresh validation and H2 addendum.
   - Maps to: FR-FE08-033, AC-FE08-020; FR-FE07-024/033, AC-FE07-016/027.
   - Render `NotifiedAt` through `ExpiresAt` for the canonical `NOTIFIED` record and explain that the hold expires after the deadline.
   - Link the exact held `bookId`/`copyId` to the Member FE07 request page; retain Librarian/Admin approval and FE07 fulfillment ownership.
-  - Keep the FE08 Chromium expectation on the current `Đang đặt chỗ` label.
+  - Update the FE08 Chromium expectation from the superseded `Đã đặt chỗ` label to `Đang đặt chỗ`.
+
+- [x] **FE08-T045 - Prevent reservation while the Member currently borrows the same book.**
+  - Maps to: BR-FE08-019, FR-FE08-034, AC-FE08-021; BR-FE07-032.
+  - Exclude same-`BookId` candidates, reject direct create with `BOOK_ALREADY_BORROWED`, and revalidate stale queue entries during Librarian/Admin processing.
+  - Coordinate FE07 borrow approval and FE08 create/hold through the Member circulation lock.
+  - Verify repository source, service mapping, route behavior, queue behavior, and Vietnamese error mapping.
+  - Source: upstream-approved and implemented on `main` at `e99daf5`; this is
+    not a new RED claim from the rule-alignment branch.
 
 ## 10. 2026-07-27 FE07/FE10 integration regression boundary
 
-- [x] **FE08-T045 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
+- [x] **FE08-T046 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
   - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
   - Scope: regression evidence only; no additional FE08 production or contract change from the rule-alignment slice.
-  - Final evidence against the open `e20fdc3` merge: requester and
-    SIT-003/SIT-004 remain covered by the 7-suite 281/281 gate; full backend
-    passed 1,047/1,047; Chromium acceptance passed 2/2 with the integrated
-    v0.5.8 lifecycle-label and held-copy contract.
+  - Historical evidence against the prior `e20fdc3` merge remains baseline
+    only.
+  - Fresh evidence against the open `e99daf5` merge: requester `1/1`,
+    SIT-003/SIT-004 `2/2`, 7-suite cross-feature gate `284/284`, full backend
+    and coverage `1,051/1,051`, frontend `231/231`, and Chromium acceptance
+    `2/2`.
   - Integration gate: fresh H2 addendum remains required before committing the open merge.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

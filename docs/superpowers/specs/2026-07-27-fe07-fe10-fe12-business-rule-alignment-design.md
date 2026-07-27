@@ -1,6 +1,6 @@
 # FE07/FE10/FE12 Business-Rule Alignment Design
 
-**Status:** APPROVED - SINGLE-ROLE INTEGRATION ADDENDUM 2026-07-27
+**Status:** APPROVED - LATEST-MAIN RECONCILIATION ADDENDUM 2026-07-27
 
 **Design approved in discussion:** 2026-07-27
 
@@ -27,9 +27,10 @@ This batch corrects five bounded Core contracts:
 5. FE12 rejects every query key outside the exact endpoint allowlist before the
    report service or repository runs.
 
-FE08 has no new product rule in this batch. It remains an integration regression
-boundary because FE07 reads reservation claims and FE10 receives FE08
-notification requests.
+FE08 has no new branch-authored product rule in this batch. The integrated
+result preserves the upstream same-book current-loan rule from `main`, and FE08
+remains an integration regression boundary because FE07 reads reservation
+claims and FE10 receives FE08 notification requests.
 
 No database schema, public route, role, notification type, report field, or
 frontend workflow is added.
@@ -45,6 +46,7 @@ frontend workflow is added.
 | S-005 | `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md` | Approved 2026-07-23 | Existing transaction, timezone, notification, and report parity boundaries | Approved prior design | Nhat | Does not resolve the five new gaps |
 | S-006 | User confirmation in the active task | 2026-07-27 | Every account has exactly one role; multiple roles per account are not supported | Highest for the reconciliation addendum | Nhat | Resolves the `main`/branch role-model conflict |
 | S-007 | Latest upstream FE07/FE08 SPEC/PLAN/TASKS and implementation | `origin/main` at `e20fdc3` | FE08 selected-book/current-history/pickup handoffs, FE07 exact-copy preselection, task IDs `FE07-T048` and `FE08-T042..T044`, and lifecycle labels | Approved merged baseline | Team | Overlaps branch-local task IDs and the intermediate stale E2E label |
+| S-008 | Latest upstream FE07/FE08 SPEC/PLAN/TASKS and implementation | `origin/main` at `e99daf5` | FE07 current-loan signal, FE08 same-book candidate/create/queue exclusion, shared Member circulation lock, and upstream `FE08-T045` | Approved merged baseline | Team | Overlaps the branch-local regression task ID |
 
 ## 3. Evidence And Conflict Classification
 
@@ -55,7 +57,8 @@ frontend workflow is added.
 | E-003 | `observed-behavior` | Renewal date extension differs by host timezone because host-local `Date.setDate()` is used. | Use shared business-date helpers exclusively. |
 | E-004 | `unresolved-conflict` resolved by S-001 | FE10 EC-FE10-010 requires rejection, while NFR-FE10-SEC-005 permits sanitizing an unsafe stored definition. | Reject the stored definition; escape/sanitize runtime values. |
 | E-005 | `observed-behavior` | FE12 accepts an unknown query key, returns `200`, and forwards it to the report layer. | Return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report execution. |
-| E-006 | `integration-conflict` resolved by S-006/S-007 | Latest `main` owns `FE07-T048` and `FE08-T042..T044`, and uses `Đang đặt chỗ`/`Đến lượt bạn`; the branch used overlapping task IDs and its intermediate E2E expected `Đã đặt chỗ`. | Preserve upstream held-copy behavior, renumber rule-alignment tasks to `FE07-T049..T052` and `FE08-T045`, retain single-role wording, and add no duplicate FE08 production change. |
+| E-006 | `integration-conflict` resolved by S-006/S-007 | Prior `main` owns `FE07-T048` and `FE08-T042..T044`, and uses `Đang đặt chỗ`/`Đến lượt bạn`; the branch used overlapping task IDs and its intermediate E2E expected `Đã đặt chỗ`. | Preserve upstream held-copy behavior, renumber rule-alignment tasks to `FE07-T049..T052` and `FE08-T046`, retain single-role wording, and add no duplicate FE08 production change. |
+| E-007 | `integration-conflict` resolved by S-008 | Latest `main` assigns `FE08-T045` to the approved same-book current-loan rule, while the branch previously used that ID for regression-only verification. | Keep upstream `FE08-T045`, move the branch regression boundary to `FE08-T046`, integrate the upstream code unchanged, and treat its existing tests as upstream evidence rather than a new branch RED claim. |
 
 Implementation is evidence of current behavior, not the source of the approved
 business policy.
@@ -158,21 +161,21 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 | 3 | SL-003 | Host-independent renewal date result | Shared business-time utility | Incorrect due/overdue outcome | Codex / Integration Lead | Nhat | G3 passed | AT-003 timezone matrix |
 | 4 | SL-004 | Fail-closed stored template validation | Existing FE10 rendering boundary | Stored executable content | Codex / Integration Lead | Nhat | G3 passed | AT-004 security regression |
 | 5 | SL-005 | Exact report query boundaries | Existing report validators/routes | Silent API expansion and unvalidated input | Codex / Integration Lead | Nhat | G3 passed | AT-005 endpoint matrix |
-| 6 | SL-006 | Unchanged FE08 handoffs | SL-001 to SL-005 implementation | Cross-feature regression | Codex / Integration Lead | Nhat | G5 passed for prior slices | AT-006 regression evidence |
+| 6 | SL-006 | Preserved FE08 handoffs and upstream same-book rule | SL-001 to SL-005 implementation plus S-008 | Cross-feature regression | Codex / Integration Lead | Nhat | G6 passed | AT-006 plus FE08-T045 regression evidence |
 
 ## 10. Quality Gates
 
-The latest-main reconciliation has passed G0-G6. Nhat confirmed the
-single-role decision and authorized SPEC/PLAN/TASKS reconciliation on
-2026-07-27. The complete uncommitted merge and refreshed evidence now wait for
-the latest H2 addendum.
+Nhat confirmed the single-role decision and authorized SPEC/PLAN/TASKS
+reconciliation on 2026-07-27. The open merge now includes `origin/main` at
+`e99daf5`; fresh automated, compliance, safety, and runtime evidence now
+completes G4-G6, while G7 waits for the next H2 addendum.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-006 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted merge and evidence |
+| SL-001 to SL-006 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted `e99daf5` merge and evidence |
 
-Historical green results remain baseline evidence only. G4-G6 were repeated
-against the merge with `origin/main` at `e20fdc3`; G7 remains pending.
+Historical green results against `origin/main` at `e20fdc3` remain baseline
+evidence only. G4-G6 were repeated against `e99daf5`; G7 remains pending.
 
 ## 11. Security And Safety Boundary
 
@@ -192,9 +195,11 @@ Authorized by Nhat's single-role confirmation:
 
 - Reconcile SPEC, PLAN/TASKS, task IDs, tests, and the merged implementation.
 - Remove the superseded multi-role renewal scenario.
+- Preserve upstream `FE08-T045` and its same-book rule while moving this
+  branch's regression-only boundary to `FE08-T046`.
 - Run focused, full, traceability, and local runtime validation.
 
-Blocked until fresh evidence and H2 addendum:
+Blocked until H2 addendum:
 
 - Committing the pending merge.
 - Pushing the reconciled branch or updating the draft PR head.

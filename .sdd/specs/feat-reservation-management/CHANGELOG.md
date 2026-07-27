@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Integrate same-book exclusion with rule alignment (v0.5.9)
+
+- Integrated the upstream same-book current-loan exclusion with the existing
+  pickup-window, exact FE07 handoff, and single-role compatibility contracts.
+- Kept upstream `FE08-T045` authoritative and renumbered this branch's
+  regression-only handoff verification to `FE08-T046`.
+- Fresh integrated evidence is recorded; an H2 addendum remains required before
+  the open merge may be committed or pushed.
+
 ## 2026-07-27 - Reconcile pickup handoff with rule alignment (v0.5.8)
 
 - Preserved upstream FE08 pickup-window and exact FE07 `bookId`/`copyId`
@@ -7,7 +16,14 @@
 - Preserved the one-account/one-role contract and invalid legacy-array
   defensive boundary.
 - Kept upstream `FE08-T044` authoritative and renumbered this slice's
-  regression-only task to `FE08-T045`.
+  regression-only task to `FE08-T046`.
+
+## 2026-07-27 - Block same-book reservations during an active loan
+
+- Connected FE08 eligibility to FE07's canonical `BorrowDetails.Status = BORROWED` state at the `BookId` level.
+- Removed same-book candidates for the current Member and added the stable `409 BOOK_ALREADY_BORROWED` API conflict for direct requests.
+- Revalidated Librarian/Admin queue processing so a stale reservation is skipped without changing its `ACTIVE` state or the available copy.
+- Shared the FE07 Member circulation lock with FE08 create/hold mutations and added backend plus frontend error-message regressions.
 
 ## 2026-07-27 - Connect notified pickup window to FE07
 

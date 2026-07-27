@@ -878,7 +878,7 @@ three validator arrays. Do not stage or commit.
 
 ### Task 6: FE08 Regression-Only Handoff Verification
 
-**Task ID:** `FE08-T045`
+**Task ID:** `FE08-T046`
 
 **Files:**
 - No FE08 production file changes.
@@ -918,7 +918,7 @@ a product-rule change.
 
 ### Task 7: Cross-Feature Validation And Real Runtime Evidence
 
-**Task IDs:** `FE07-T051`, `FE08-T045`, `FE10-S11`, `FE12-N11`
+**Task IDs:** `FE07-T051`, `FE08-T046`, `FE10-S11`, `FE12-N11`
 
 **Files:**
 - Modify: `tests/e2e/system-golden-path.spec.js`
@@ -1010,7 +1010,7 @@ L2 Spec:
 - BD-003/AT-003 -> FE07-T050 -> two-timezone RED/GREEN -> shared helpers
 - BD-004/AT-004 -> FE10-S11 -> zero-side-effect security regression
 - BD-005/AT-005 -> FE12-N11 -> all three endpoints and zero repository calls
-- BD-006/AT-006 -> FE08-T045 -> requester plus SIT-003/SIT-004
+- BD-006/AT-006 -> FE08-T046 -> requester plus SIT-003/SIT-004
 
 L3 Constitution/Safety:
 - server-side authorization remains role-order independent
@@ -1079,9 +1079,9 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 - [x] **Step 1: Reconcile the written contracts**
 
-Preserve `FE07-T047`, `FE07-T048`, and `FE08-T041` through `FE08-T044` from
+Preserve `FE07-T047`, `FE07-T048`, and `FE08-T041` through `FE08-T045` from
 `main`. Record this cleanup as `FE07-T052` and renumber the regression-only
-FE08 task to `FE08-T045`.
+FE08 task to `FE08-T046`.
 Classify original BD-001 as superseded and record the approved single-role
 decision as BD-007.
 
@@ -1137,9 +1137,9 @@ approves the H2 addendum.
 
 ---
 
-### Task 9: Reconcile Latest Main Without Expanding FE08
+### Task 9: Reconcile Prior Main Without Expanding FE08
 
-**Task ID:** `FE08-T045`
+**Task ID:** `FE08-T046`
 
 - [x] **Step 1: Merge `origin/main` through `e20fdc3` without committing**
 
@@ -1148,7 +1148,7 @@ Keep PR #63 on its existing branch and preserve the open merge for H2 review.
 - [x] **Step 2: Resolve the FE08 documentation conflicts**
 
 Preserve upstream `FE07-T047/T048` and `FE08-T041` through `FE08-T044`;
-renumber this slice's tasks to `FE07-T049..T052` and `FE08-T045`, retain the
+renumber this slice's tasks to `FE07-T049..T052` and `FE08-T046`, retain the
 one-account/one-role wording, and accept the upstream held-copy handoff without
 adding another FE08 behavior.
 
@@ -1173,11 +1173,50 @@ uncommitted and unpushed.
 
 ---
 
+### Task 10: Integrate The Upstream Same-Book Reservation Rule
+
+**Task IDs:** upstream `FE08-T045`; branch regression `FE08-T046`
+
+- [x] **Step 1: Merge `origin/main` through `e99daf5` without committing**
+
+Keep the existing PR branch and preserve the open merge for a new H2 addendum.
+
+- [x] **Step 2: Reconcile the written contracts and task IDs**
+
+Integrate FE07 v0.7.8 and FE08 v0.5.9. Keep upstream `FE08-T045` for the
+same-book current-loan rule and move the branch regression-only handoff task to
+`FE08-T046`. Preserve the one-account/one-role and exact held-copy contracts.
+
+- [x] **Step 3: Review the upstream production implementation**
+
+Confirm candidate exclusion, transactional direct-create rejection,
+stale-queue skipping, shared Member circulation locking, stable
+`BOOK_ALREADY_BORROWED` mapping, parameterized SQL, and no unrelated behavior
+change. This upstream-approved implementation is not a new RED claim from this
+branch.
+
+- [x] **Step 4: Repeat focused and full evidence**
+
+Run the same-book repository/service/route/frontend tests, the branch
+single-role and rule-alignment suites, cross-feature integration, timezone
+matrix, full backend/coverage, full frontend/lint/build, traceability, diff
+hygiene, and both Chromium acceptance scenarios.
+
+- [x] **Step 5: Prepare the new H2 addendum**
+
+Record exact fresh counts against `e99daf5`, changed-file parity with
+`origin/main`, runtime evidence, skipped mutable SQL/staging limits, and the
+complete uncommitted diff. Do not commit or push before Nhat explicitly
+approves the addendum.
+
+---
+
 ## Plan Approval Gate
 
-- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T045,
+- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T046,
   FE10-S11, and FE12-N11.
 - [x] Only after approval, begin Task 1 with RED tests.
 - [x] Do not infer plan approval from the earlier SPEC approval.
 - [x] Nhat confirms one account has exactly one role and authorizes Task 8
   reconciliation on 2026-07-27.
+- [x] Nhat authorizes Task 10 integration of upstream `e99daf5` on 2026-07-27.

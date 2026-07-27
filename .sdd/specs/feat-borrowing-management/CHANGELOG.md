@@ -1,5 +1,16 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Integrate same-book reservation eligibility (v0.7.8)
+
+- Integrated the upstream FE07 current-loan signal used by FE08 while
+  preserving the exact held-copy handoff, one-account/one-role contract,
+  transaction-locked return evidence, and timezone-independent renewal.
+- Kept upstream `FE08-T045` authoritative for same-book reservation exclusion
+  and retained `FE07-T049` through `FE07-T052` for this branch's rule-alignment
+  work.
+- Fresh integrated evidence is recorded; an H2 addendum remains required before
+  the open merge may be committed or pushed.
+
 ## 2026-07-27 - Reconcile held-copy handoff with rule alignment (v0.7.7)
 
 - Preserved upstream FE08-to-FE07 exact `bookId`/`copyId` handoff and normal
@@ -8,6 +19,12 @@
   and timezone-independent renewal behavior.
 - Kept upstream `FE07-T048` authoritative and renumbered the rule-alignment
   tasks to `FE07-T049` through `FE07-T052`.
+
+## 2026-07-27 - Expose current loans as FE08 reservation eligibility
+
+- Defined current `BorrowDetails.Status = BORROWED` plus the copy's `BookId` as the authoritative cross-feature signal for FE08 same-book reservation exclusion.
+- Kept returned/lost/damaged details and terminal reservation history outside this blocker.
+- Connected FE07 Member circulation locking to FE08 reservation create/hold revalidation.
 
 ## 2026-07-27 - Accept the exact FE08 held-copy handoff
 

@@ -5,8 +5,8 @@ Date: 2026-07-27
 ## 1. Review State
 
 - Branch: `codex/fe07-fe10-fe12-rule-alignment`
-- Pre-H2 branch head: `89d0bf23418045788d2823c5654d093d2edebf40`
-- Integrated `origin/main`: `e20fdc3691073430e620b6d9ac1b886ace1c3794`
+- Branch head before the open merge: `4dedddbf7ecb4321317cf62bc2ed7b7aa8f94aa3`
+- Integrated `origin/main`: `e99daf5ea98c57de1fa65e50a1d0bdff682562a9`
 - Approved delivery order: SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN -> L1-L4/runtime evidence
 - Approved account model: every persisted account has exactly one mutually
   exclusive role under `DEC-GEN-005`; Member and staff renewal use separate
@@ -68,7 +68,8 @@ frontend workflow, or architecture changed in this branch.
 | AT-003 / FE07-T050 | Run the business-date test once with `TZ=UTC` and once with `TZ=America/New_York`. | UTC passed; New York returned `2026-03-21` instead of `2026-03-22`. |
 | AT-004 / FE10-S11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"` | All three unsafe stored definitions resolved as `{ notificationId: 1, status: "SENT" }` instead of rejecting. |
 | AT-005 / FE12-N11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"` | Borrowing, inventory, and users endpoints each returned `200` instead of safe `400`. |
-| Latest-main FE08 integration / FE08-T045 | First Chromium run against the intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contains the same E2E correction plus the approved held-copy handoff, so the final reconciliation keeps that upstream behavior and changes no FE08 production file relative to `main`. |
+| Prior-main FE08 integration / FE08-T046 | First Chromium run against the historical intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contained the correction and held-copy handoff, so the branch retained that behavior without a duplicate FE08 production change. |
+| Latest-main FE08 same-book rule / FE08-T045 | No new branch RED claim. | `e99daf5` already contains the approved SPEC, implementation, and tests. This integration preserves that upstream change exactly and reruns its focused, cross-feature, and runtime gates. |
 
 ## 4. GREEN And L1 Evidence
 
@@ -84,20 +85,23 @@ frontend workflow, or architecture changed in this branch.
 | FE12 full | 14/14 passed. |
 | FE08 requester | 1/1 passed. |
 | FE08 SIT-003/SIT-004 | 2/2 passed using equivalent Windows-safe pattern `SIT-00[34]`. The original pipe pattern was interpreted by the Windows command shell before Jest and did not run the suite. |
-| Cross-feature L1 | Fresh final run against the open `e20fdc3` merge: 7 suites, 281/281 tests passed after single-role reconciliation and held-copy integration. |
+| FE08 same-book repository/service/route | 3 suites, 63/63 passed, covering candidate exclusion, direct-create conflict, terminal-loan allowance, stale-queue skip, source lock/order checks, and service error mapping. |
+| FE08 frontend error mapping | 7/7 passed, including `BOOK_ALREADY_BORROWED`. |
+| FE08 candidate SQL command | 2/2 source-contract tests passed; 2 mutable SQL cases skipped because no approved disposable database was configured. |
+| Cross-feature L1 | Fresh final run against the open `e99daf5` merge: 7 suites, 284/284 tests passed after single-role, held-copy, and same-book integration. |
 
 ## 5. Full Automated Evidence
 
 | Command | Observed result |
 | --- | --- |
-| `npm.cmd --prefix backend test` | Fresh final integrated run: 61 suites, 1,047/1,047 tests passed. |
-| `npm.cmd --prefix backend run test:coverage:ci` | Fresh final integrated run: 61 suites, 1,047/1,047 tests passed. Statements 92.07%, branches 81.44%, functions 97.38%, lines 91.99%. |
+| `npm.cmd --prefix backend test` | Fresh final integrated run: 61 suites, 1,051/1,051 tests passed. |
+| `npm.cmd --prefix backend run test:coverage:ci` | Fresh final integrated run: 61 suites, 1,051/1,051 tests passed. Statements 92.08%, branches 81.46%, functions 97.38%, lines 92.00%. |
 | `npm.cmd --prefix frontend test` | Fresh final integrated run: 231/231 tests passed. |
 | `npm.cmd --prefix frontend run lint` | Passed with exit code 0. |
 | `npm.cmd --prefix frontend run build` | Vite production build passed. |
 | `npm.cmd run test:traceability-state` | 3/3 passed. |
 | `npm.cmd run trace:enforce` | Passed; all active features remain above 70%, with FE07/FE10/FE12 at 100% and FE08 at 97%. |
-| `git diff --check`, `git diff --cached --check`, `git diff HEAD --check`, `git diff origin/main --check` | Passed. Only normal LF-to-CRLF working-copy warnings were reported. |
+| `git diff --check`, `git diff --cached --check`, `git diff HEAD --check`, `git diff origin/main --check` | Passed with exit code 0. Only normal LF-to-CRLF working-copy warnings were reported. Conflict-marker scan found 0 markers; the branch diff contains exactly 36 files against `origin/main`; upstream FE08 production/test files have 0 diff lines against `origin/main`. |
 
 Generated `backend/coverage`, `frontend/dist`, Playwright report/output, and test
 result directories remain ignored and are not part of the H2 diff.
@@ -110,6 +114,8 @@ result directories remain ignored and are not part of the H2 diff.
 - `FE07_SQL_TEST_ALLOW_MUTATION` was unset.
 - The mutable FE07 SQL suite was not run, and this review makes no real-SQL
   mutation claim.
+- The FE08 candidate SQL command ran `2/2` source-contract tests and skipped
+  `2` mutable database cases under the same environment boundary.
 
 ### Local HTTP/browser runtime
 
@@ -119,11 +125,12 @@ Command:
 
 Observed:
 
-- The first FE08 run failed only on the stale `Đã đặt chỗ` locator after the
+- The historical first FE08 run against the prior merge failed only on the
+  stale `Đã đặt chỗ` locator after the
   successful create response; the runtime snapshot showed the upstream
   `Đang đặt chỗ` label required by FE08 v0.5.6.
-- The focused FE08 rerun passed 1/1 after the SPEC/E2E-only reconciliation.
-- The final combined Chromium run passed 2/2 against the local HTTP servers.
+- The final combined Chromium run against the open `e99daf5` integration
+  passed 2/2 against the local HTTP servers.
 - `E2E-SYS-001` passed login -> borrow -> approve -> return -> fine -> report.
 - The same golden path observed
   `/api/reports/borrowing?bogus=runtime-secret-value` return
@@ -140,10 +147,11 @@ Observed:
 | BD-003 / AT-003 | FE07-T050 | UTC/New York RED/GREEN matrix | Renewal extension and authoritative comparisons use `libraryBusinessTime` |
 | BD-004 / AT-004 | FE10-S11 | Three unsafe-definition cases plus runtime-value preservation | Stored definitions fail closed before recipient lookup, render, persistence, or provider I/O |
 | BD-005 / AT-005 | FE12-N11 | Three endpoint allowlist cases plus local HTTP acceptance | Exact-key middleware is first in each endpoint validator array |
-| BD-006 / AT-006 | FE08-T045 | Requester, SIT-003, SIT-004, and browser acceptance | No additional FE08 production or contract change from the rule-alignment slice |
+| BD-006 / AT-006 | FE08-T046 | Requester 1/1, SIT-003/SIT-004 2/2, and browser acceptance 2/2 | No additional FE08 production or contract change from the rule-alignment slice |
+| BR-FE08-019 / FR-FE08-034 / AC-FE08-021 | FE08-T045 | Repository/service/route 63/63, frontend error mapping 7/7, cross-feature 284/284 | Upstream `e99daf5` candidate exclusion, transactional `BOOK_ALREADY_BORROWED`, stale-queue skip, and shared FE07 Member circulation lock preserved exactly |
 
 L2 result: PASS. No behavior outside the approved rule-alignment scope and the
-already-merged upstream FE08 v0.5.6 contracts was identified.
+upstream FE08 v0.5.9 integrated contracts was identified.
 
 ## 8. L3 Constitution And Safety Review
 
@@ -152,6 +160,9 @@ already-merged upstream FE08 v0.5.6 contracts was identified.
   use separate accounts.
 - Existing stale/legacy role-array fixtures are defense-in-depth checks for
   invalid data; they are not supported multi-role business actors.
+- FE08 candidate/create routes remain Member-only; same-book SQL uses typed
+  parameters, direct creation revalidates inside the transaction, and queue
+  holding revalidates after acquiring the shared FE07 Member circulation lock.
 - Server authorization does not let a Member renew another member's loan, and
   staff scope does not bypass loan-owner blockers.
 - Return audit remains inside the SQL/in-memory transaction and uses the same
@@ -179,8 +190,9 @@ L3 result: PASS.
 
 ## 10. H2 Gate
 
-The branch previously received H2 for integration through `359fb25`, but that
-approval does not cover the new merge with `origin/main` at `e20fdc3`. The
+The branch previously received H2 and was pushed through
+`4dedddbf7ecb4321317cf62bc2ed7b7aa8f94aa3`, but that approval does not cover
+the new merge with `origin/main` at `e99daf5`. The
 latest integrated diff and refreshed L1-L4/runtime evidence remain uncommitted
 pending Nhat's explicit H2 addendum. Only that approval may authorize
 concluding this merge, pushing the branch, and updating draft PR #63. H3
