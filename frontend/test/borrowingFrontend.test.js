@@ -378,6 +378,30 @@ test('shared modal exposes an accessible name and manages keyboard focus', async
   assert.match(source, /\.focus\(\)/);
 });
 
+// @spec NFR-FE07-A11Y-001 — history tablist tuân thủ WAI-ARIA tab pattern + arrow-key navigation.
+test('FE07 history tablist exposes roving tabIndex and arrow-key navigation per ARIA tab pattern', async () => {
+  const source = await readFile(new URL('../src/page/borrowing/BorrowingHistoryPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /role="tablist" aria-label="Lọc theo trạng thái"/);
+  assert.match(source, /role="tab"/);
+  assert.match(source, /id=\{`history-tab-\$\{item\.key\}`\}/);
+  assert.match(source, /aria-selected=\{tab === item\.key\}/);
+  assert.match(source, /aria-controls="history-tabpanel"/);
+  // Roving tabindex: chỉ tab active ở tab order, các tab khác -1
+  assert.match(source, /tabIndex=\{tab === item\.key \? 0 : -1\}/);
+  assert.match(source, /onKeyDown=\{\(event\) => handleHistoryTabKeyDown\(event, tab,/);
+  // Handler phủ hết các phím arrow + Home/End + preventDefault + focus
+  assert.match(source, /function handleHistoryTabKeyDown\(event, currentTab, onTabChange\)/);
+  assert.match(source, /event\.key === 'ArrowRight' \|\| event\.key === 'ArrowDown'/);
+  assert.match(source, /event\.key === 'ArrowLeft' \|\| event\.key === 'ArrowUp'/);
+  assert.match(source, /event\.key === 'Home'/);
+  assert.match(source, /event\.key === 'End'/);
+  assert.match(source, /event\.preventDefault\(\)/);
+  assert.match(source, /document\.getElementById\(`history-tab-\$\{nextKey\}`\)\?\.focus\(\)/);
+  // @spec tag gắn với handler để traceability
+  assert.match(source, /@spec NFR-FE07-A11Y-001/);
+});
+
 test('borrowing pagination wraps instead of hiding later pages on mobile', async () => {
   const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
 

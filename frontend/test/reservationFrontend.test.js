@@ -321,3 +321,50 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /<table className="lib-table"/);
   assert.doesNotMatch(staff, /<table className="lib-table"/);
 });
+
+// @spec NFR-FE08-A11Y-001 — librarian tablist tuân thủ WAI-ARIA tab pattern + arrow-key navigation.
+// Đồng thời verify `<span class="reservation-updated">` không còn nằm trong role="tablist" (vi phạm ARIA).
+test('FE08 librarian tablist exposes roving tabIndex + arrow-key nav and keeps the updated span outside role=tablist', async () => {
+  const staff = await readFile(new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url), 'utf8');
+
+  // Cấu trúc: `.reservation-tabs-bar` (wrapper) bọc `.reservation-tabs` (role=tablist) + `.reservation-updated`
+  assert.match(staff, /<div className="reservation-tabs-bar">/);
+  assert.match(staff, /<div className="reservation-tabs" role="tablist" aria-label="Chế độ xem đặt chỗ">/);
+  // Span `reservation-updated` phải là sibling của tablist (không nằm trong role=tablist)
+  // Verify bằng cách: trong block `.reservation-tabs-bar`, thẻ đóng của `.reservation-tabs` phải xuất hiện trước `<span className="reservation-updated`
+  const barBlock = staff.match(/<div className="reservation-tabs-bar">[\s\S]*?<span className="reservation-updated/);
+  assert.ok(barBlock, 'reservation-updated phải nằm sau .reservation-tabs trong khối .reservation-tabs-bar');
+  assert.match(barBlock[0], /<\/div>\s*<span className="reservation-updated/);
+
+  // Tabs có đủ ARIA attributes
+  assert.match(staff, /role="tab"/);
+  assert.match(staff, /id="reservation-tab-list"/);
+  assert.match(staff, /id="reservation-tab-queue"/);
+  assert.match(staff, /aria-selected=\{view === 'list'\}/);
+  assert.match(staff, /aria-selected=\{view === 'queue'\}/);
+  assert.match(staff, /aria-controls="reservation-tabpanel"/);
+  // Roving tabindex
+  assert.match(staff, /tabIndex=\{view === 'list' \? 0 : -1\}/);
+  assert.match(staff, /tabIndex=\{view === 'queue' \? 0 : -1\}/);
+  assert.match(staff, /onKeyDown=\{handleTabKeyDown\}/);
+
+  // Handler phủ arrow keys + Home/End + preventDefault + focus
+  assert.match(staff, /function handleTabKeyDown\(event\)/);
+  assert.match(staff, /event\.key === 'ArrowRight' \|\| event\.key === 'ArrowDown'/);
+  assert.match(staff, /event\.key === 'ArrowLeft' \|\| event\.key === 'ArrowUp'/);
+  assert.match(staff, /event\.key === 'Home'/);
+  assert.match(staff, /event\.key === 'End'/);
+  assert.match(staff, /event\.preventDefault\(\)/);
+  assert.match(staff, /document\.getElementById\(`reservation-tab-\$\{nextKey\}`\)\?\.focus\(\)/);
+  assert.match(staff, /@spec NFR-FE08-A11Y-001/);
+});
+
+// @spec AT-007 — queue card không sáng tạo ordinal khi item.queue null; list view dùng formatReservationQueuePosition.
+test('FE08 librarian queue card uses server queue position and renders em-dash for null instead of inventing an ordinal', async () => {
+  const staff = await readFile(new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url), 'utf8');
+
+  // Queue card pos dùng `item.queue` (server position), fallback `—` cho null — không phải `index + 1`
+  assert.match(staff, /<span className="queue-pos">\{item\.queue \?\? '—'\}<\/span>/);
+  assert.doesNotMatch(staff, /<span className="queue-pos">\{index \+ 1\}<\/span>/);
+  assert.doesNotMatch(staff, /<span className="queue-pos">\{item\.queue \?\? index \+ 1\}<\/span>/);
+});
