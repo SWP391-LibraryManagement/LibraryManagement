@@ -14,7 +14,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Maintain the reconciled FE05 catalog against the approved v0.6.9 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.9 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, unfiltered post-mutation list reconciliation, canonical catalog-status rendering, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 
@@ -72,7 +72,7 @@ Maintain the reconciled FE05 catalog against the approved v0.6.9 contract: deter
 | Deployment compatibility | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, approved `database/migrations/*.sql` files | Package and apply only reviewed compatibility migrations before listen, verify their postconditions, and keep readiness read-only. |
 | Models/docs | `backend/src/models/Book.js`, `backend/src/docs/openapi.yaml` | Rowversion metadata and approved API request/response/error schemas. |
 | Backend tests | create `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`, create `backend/tests/sql/bookConcurrency.sqltest.js`, create `backend/tests/helpers/inMemoryBookRepositories.js` | Public/staff behavior, validation, ownership, rollback, and stale-write evidence. |
-| Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Approved endpoint shapes, version propagation, confirmation reasons, and read-only availability. |
+| Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Approved endpoint shapes, version propagation, confirmation reasons, unfiltered canonical reload after a one-book status mutation, canonical status-column rendering, and read-only availability in the detail projection. |
 | Frontend tests | `frontend/test/bookManagementFrontend.test.js` | Remove prototype expectations and lock the v0.5.0 UI/API contract. |
 
 ## 6. Approved Interfaces

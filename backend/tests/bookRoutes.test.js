@@ -663,6 +663,8 @@ describe('FE05 book management v0.5.1 RED contract', () => {
 
     expect(response.status).toBe(200);
     expect(responseBook(response.body)).toMatchObject({ id: 1, status: 'INACTIVE' });
+    expect(bookDependencies.state.books.filter((book) => book.id !== 1))
+      .toEqual(before.books.filter((book) => book.id !== 1));
     expect(bookDependencies.state.copies).toEqual(before.copies);
     expect(bookDependencies.state.borrowDetails).toEqual(before.borrowDetails);
     expect(bookDependencies.state.reservations).toEqual(before.reservations);
@@ -691,6 +693,8 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       status: 'ACTIVE',
       availabilityStatus: 'AVAILABLE',
     });
+    expect(bookDependencies.state.books.filter((book) => book.id !== 3))
+      .toEqual(before.books.filter((book) => book.id !== 3));
     expect(bookDependencies.state.copies).toEqual(before.copies);
     expect(bookDependencies.state.borrowDetails).toEqual(before.borrowDetails);
     expect(bookDependencies.state.reservations).toEqual(before.reservations);

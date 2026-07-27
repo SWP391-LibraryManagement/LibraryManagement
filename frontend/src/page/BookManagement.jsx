@@ -259,8 +259,8 @@ function BookForm({
         <label className="bm-wide">
           <span>Trạng thái sách</span>
           <select value={form.status} onChange={(event) => update('status', event.target.value)}>
-            <option value="ACTIVE">Còn sách</option>
-            <option value="INACTIVE">Không khả dụng</option>
+            <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
+            <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
           </select>
         </label>
       ) : null}
@@ -533,7 +533,6 @@ export default function BookManagement() {
           bookTitle: result.book.title || selectedBook.title,
           activating,
           version: result.book.version,
-          targetStatus: updateForm.status,
         });
         setDetailBook(result.book);
         return;
@@ -550,7 +549,7 @@ export default function BookManagement() {
 
   async function confirmStatusFromUpdate() {
     if (!pendingStatusFromUpdate) return;
-    const { bookId, activating, version, targetStatus } = pendingStatusFromUpdate;
+    const { bookId, activating, version } = pendingStatusFromUpdate;
     try {
       setSaving(true);
       const result = await apiRequest(`/books/${bookId}/${activating ? 'reactivate' : 'deactivate'}`, {
@@ -562,11 +561,11 @@ export default function BookManagement() {
             : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
         }),
       });
-      // @spec FR-FE05-029 - keep the updated book visible by reconciling the active status filter.
-      setStatusFilter(targetStatus);
-      setAppliedStatusFilter(targetStatus);
+      // @spec FR-FE05-029 - show the canonical mixed-status list after one-book mutation.
+      setStatusFilter('');
+      setAppliedStatusFilter('');
       setPage(1);
-      const nextBooks = await loadBooks({ status: targetStatus, pageNumber: 1 });
+      const nextBooks = await loadBooks({ status: '', pageNumber: 1 });
       setDetailBook(nextBooks.find((book) => Number(book.id) === Number(bookId)) || result.book);
       showToast(activating
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
@@ -605,7 +604,11 @@ export default function BookManagement() {
           body,
         });
       }
-      const nextBooks = await loadBooks();
+      // @spec FR-FE05-029 - show the canonical mixed-status list after one-book mutation.
+      setStatusFilter('');
+      setAppliedStatusFilter('');
+      setPage(1);
+      const nextBooks = await loadBooks({ status: '', pageNumber: 1 });
       const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(selectedBook.id));
       if (!refreshedBook) {
         setSelectedBookId('');
@@ -637,7 +640,7 @@ export default function BookManagement() {
             <th>Nhà xuất bản</th>
             <th>Năm xuất bản</th>
             <th>Số trang</th>
-            <th>Trạng thái</th>
+            <th>Trạng thái catalog</th>
             <th>Bản sao</th>
             <th></th>
           </tr>
@@ -654,10 +657,10 @@ export default function BookManagement() {
               <td>{book.year || '-'}</td>
               <td>{book.pages || '-'}</td>
               <td>
-                {(() => {
-                  const availability = getBookAvailability(book);
-                  return <span className={`bm-status ${availability.key}`}>{availability.label}</span>;
-                })()}
+                {/* @spec FR-FE05-032 - this column reflects the mutable catalog status. */}
+                <span className={`bm-status ${book.status === 'ACTIVE' ? 'active' : 'inactive'}`}>
+                  {getStatusLabel(book.status)}
+                </span>
               </td>
               <td>{book.availableCopies || 0}/{book.totalCopies || 0}</td>
               <td>
@@ -902,6 +905,7 @@ export default function BookManagement() {
         .bm-table-wrap tr.selected td { background: var(--bm-soft-bg); }
         .bm-status { display: inline-flex; min-width: 78px; justify-content: center; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 800; }
         .bm-status.active { background: #dcfce7; color: #166534; }
+        .bm-status.inactive { background: #fee2e2; color: #991b1b; }
         .bm-status.available { background: #dcfce7; color: #166534; }
         .bm-status.borrowed { background: #fee2e2; color: #991b1b; }
         .bm-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

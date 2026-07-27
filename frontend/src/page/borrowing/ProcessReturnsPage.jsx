@@ -1,9 +1,9 @@
 /** FE07 - UC33 - Process Returns (Librarian). */
 
 import { useEffect, useState } from 'react';
-import { PackageCheck, AlertTriangle, CheckCircle2, Search, RefreshCw, X, UserRound, Mail, Phone, Hash, MapPin, CalendarDays, Barcode, ClipboardCheck } from 'lucide-react';
+import { PackageCheck, AlertTriangle, CheckCircle2, Search, RefreshCw, X, UserRound, Mail, Phone, Hash, MapPin, CalendarDays, Barcode, ClipboardCheck, ReceiptText } from 'lucide-react';
 
-import { borrowingApi } from '../../api/libraryFeatureApi';
+import { borrowingApi, fineApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, Pagination } from '../../component/shared/OperationalPatterns';
@@ -27,6 +27,7 @@ export default function ProcessReturnsPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
   const [returning, setReturning] = useState(false);
+  const [creatingFineId, setCreatingFineId] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [condition, setCondition] = useState('NORMAL');
@@ -97,6 +98,32 @@ export default function ProcessReturnsPage() {
     setPage(normalizedPage);
     setSelectedId(filteredLoans[(normalizedPage - 1) * PAGE_SIZE]?.id || null);
     setCondition('NORMAL');
+  }
+
+  // @spec FR-FE07-039, FR-FE09-020
+  async function createOverdueFine(loan) {
+    if (!loan || creatingFineId !== null || getBorrowDueStatus(loan.dueDate).state !== 'OVERDUE') return;
+    setCreatingFineId(loan.borrowDetailId);
+    try {
+      const result = await fineApi.calculate(loan.borrowDetailId);
+      const fine = result?.fine;
+      if (!fine) {
+        showToast('Dữ liệu máy chủ xác nhận lượt mượn này chưa phát sinh tiền phạt.', 'info');
+      } else if (fine.status === 'UNPAID') {
+        showToast(
+          result.created
+            ? `Đã tạo phiếu phạt #${fine.fineId} cho "${loan.book}".`
+            : `Đã cập nhật phiếu phạt #${fine.fineId} theo số ngày quá hạn hiện tại.`,
+          'success',
+        );
+      } else {
+        showToast(`Phiếu phạt #${fine.fineId} đã tồn tại và đang ở trạng thái ${fine.status}.`, 'info');
+      }
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setCreatingFineId(null);
+    }
   }
 
   async function confirmReturn() {
@@ -231,7 +258,14 @@ export default function ProcessReturnsPage() {
               </div>
               <div className="field return-condition"><label htmlFor="return-condition">Tình trạng sách khi trả</label><select id="return-condition" className="select" value={condition} onChange={(event) => setCondition(event.target.value)}><option value="NORMAL">Tốt • không hư hỏng</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Mất sách</option></select></div>
               {needsFineReview && <div className="alert-box warn"><span>{`Cần xem xét tiền phạt: ${overdueDays} ngày quá hạn, tình trạng ${CONDITION_LABELS[condition]}.`}</span></div>}
-              <button className="btn btn-primary return-submit" onClick={() => setReturnTarget(selected)}><CheckCircle2 size={18} /> Xác nhận trả sách</button>
+              <div className="return-actions">
+                {selectedDueStatus.state === 'OVERDUE' && (
+                  <button className="btn btn-outline return-submit" disabled={creatingFineId !== null} onClick={() => createOverdueFine(selected)}>
+                    <ReceiptText size={18} /> {creatingFineId === selected.borrowDetailId ? 'Đang tạo phiếu...' : 'Tạo phiếu phạt'}
+                  </button>
+                )}
+                <button className="btn btn-primary return-submit" disabled={returning || creatingFineId !== null} onClick={() => setReturnTarget(selected)}><CheckCircle2 size={18} /> Xác nhận trả sách</button>
+              </div>
             </>
           ) : <EmptyState icon={PackageCheck} title="Chọn một sách để xác nhận trả" />}
         </aside>

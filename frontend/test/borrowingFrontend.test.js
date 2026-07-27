@@ -321,6 +321,18 @@ test('return UI omits the client UTC date and does not claim a fine handoff occu
   assert.match(source, /setReturnTarget\(loan\)/);
 });
 
+test('overdue return selection can create a server-calculated FE09 fine', async () => {
+  const source = await readFile(new URL('../src/page/borrowing/ProcessReturnsPage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /import \{ borrowingApi, fineApi \} from '\.\.\/\.\.\/api\/libraryFeatureApi';/);
+  assert.match(source, /@spec FR-FE07-039, FR-FE09-020/);
+  assert.match(source, /getBorrowDueStatus\(loan\.dueDate\)\.state !== 'OVERDUE'/);
+  assert.match(source, /await fineApi\.calculate\(loan\.borrowDetailId\)/);
+  assert.match(source, /selectedDueStatus\.state === 'OVERDUE'/);
+  assert.match(source, /Tạo phiếu phạt/);
+  assert.doesNotMatch(source, /fineApi\.calculate\([^)]*,/);
+});
+
 test('return due status uses the Asia Ho Chi Minh business date and explains the state', () => {
   assert.deepEqual(
     getBorrowDueStatus('2026-07-23', new Date('2026-07-22T16:59:59.000Z')),

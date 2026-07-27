@@ -158,3 +158,4 @@ Agent-side implementation and L4 evidence are recorded in `.sdd/reviews/fe09-fin
 4. Preserve Librarian/Admin calculation and full offline collection; preserve Admin-only waive/cancel.
 5. Verify Guest/Member/Librarian/Admin access, borrowing-context projection, frontend read-only behavior, OpenAPI, and traceability.
 6. Keep `borrowDetailId` in the canonical API/database relationship while hiding that internal identifier from the Member fine table.
+7. Allow the FE07 staff return workspace to invoke the existing FE09 calculation endpoint for a selected overdue `borrowDetailId`; do not add client-controlled dates or amounts.

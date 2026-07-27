@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-28 - Connect overdue returns to fine creation (v0.8.3)
+
+- Added a Librarian/Admin `Tạo phiếu phạt` action for the selected active loan
+  only when its due date is overdue.
+- Passed only the canonical `borrowDetailId` to FE09 and kept dates, amount,
+  duplicate prevention, and fine state server-owned.
+- Preserved FE07 ownership of return processing and FE09 ownership of fine
+  persistence.
+
 ## 2026-07-28 - Fit Admin circulation data without horizontal dragging (v0.8.2)
 
 - Removed the separate request-ID and barcode columns from the Admin circulation
