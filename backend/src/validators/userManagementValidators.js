@@ -223,7 +223,7 @@ const updateUserStatusValidators = [
   assignValidatedUserStatus,
 ];
 
-const assignRoleValidators = [
+const replaceRoleValidators = [
   positiveIdParam('userId', 'User ID'),
   body('roleId')
     .exists({ values: 'null' })
@@ -235,12 +235,6 @@ const assignRoleValidators = [
   handleValidationErrors,
 ];
 
-const revokeRoleValidators = [
-  positiveIdParam('userId', 'User ID'),
-  positiveIdParam('roleId', 'Role ID'),
-  handleValidationErrors,
-];
-
 module.exports = {
   listUsersValidators,
   getUserValidators,
@@ -248,6 +242,5 @@ module.exports = {
   createUserValidators,
   updateUserValidators,
   updateUserStatusValidators,
-  assignRoleValidators,
-  revokeRoleValidators,
+  replaceRoleValidators,
 };

@@ -175,4 +175,4 @@ Detailed automated evidence is recorded in
   - Evidence: all three RED cases returned `200`; focused GREEN passed 3/3, full FE12 passed 14/14, and the local golden path observed safe HTTP `400`.
   - Files: `backend/tests/reportRoutes.test.js`, `backend/src/validators/reportValidators.js`.
   - Preservation: existing approved value validators, read-only report behavior, audit privacy, SQL parameterization, empty-ID semantics, pagination, and ordering remain unchanged.
-  - Gate: H2 was approved by Nhat on 2026-07-27; merge remains blocked pending H3.
+  - Gate: the pre-integration H2 does not cover the merged `main` result; H2 addendum remains required before committing the open merge, and H3 remains required before merging to `main`.

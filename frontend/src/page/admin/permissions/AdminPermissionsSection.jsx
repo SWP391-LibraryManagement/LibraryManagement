@@ -125,7 +125,7 @@ export function AdminPermissionsSection() {
       />
 
       <p className="admin-permissions__explanation">
-        Một tài khoản có thể có nhiều vai trò. Quyền hiệu lực là tập hợp các quyền được cho phép bởi mọi vai trò đang gán; dữ liệu dưới đây chỉ dùng để quan sát, không chỉnh sửa tại màn hình này.
+        Mỗi tài khoản có đúng một vai trò. Quyền hiệu lực được xác định trực tiếp từ vai trò đó; dữ liệu dưới đây chỉ dùng để quan sát, không chỉnh sửa tại màn hình này.
       </p>
 
       <section className="admin-permission-sources" aria-label="Trạng thái nguồn dữ liệu">

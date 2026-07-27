@@ -852,6 +852,8 @@ components:
         status: { type: string, enum: [ACTIVE, INACTIVE, LOCKED] }
         roles:
           type: array
+          minItems: 1
+          maxItems: 1
           items: { type: string, enum: [MEMBER, LIBRARIAN, ADMIN] }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -1680,3 +1682,29 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/users/{userId}/role:
+    put:
+      tags: [User Management]
+      summary: Atomically replace the account's single role (FR-FE11-012..014)
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [roleId]
+              properties:
+                roleId: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Authoritative user DTO with exactly one role; current-role selection is a no-op.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserManagementView' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }

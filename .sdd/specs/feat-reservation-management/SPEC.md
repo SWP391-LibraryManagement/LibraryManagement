@@ -1,12 +1,12 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.3
+# Version: 0.5.4
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE08
 
@@ -65,7 +65,7 @@ The system shall:
 
 | Actor | Description | Permission / Responsibility |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | View safe reservation candidates, create reservation, cancel own reservation, view own reservation status. |
+| Member | Registered non-staff library user | View safe reservation candidates, create reservation, cancel own reservation, view own reservation status. An account that also has `LIBRARIAN` or `ADMIN` acts as staff and cannot use these member-self-service actions. |
 | Librarian | Library staff | View reservation list, process reservation queue, release/expire reservations when allowed. |
 | Admin | System administrator | Has librarian permissions and can view reservation reports/audit. |
 | Guest | Unauthenticated visitor | No reservation permissions. |
@@ -79,7 +79,7 @@ The feature can only start when:
 
 - PRE-FE08-001: The actor is authenticated; Member may create/cancel/view own reservations, and Librarian/Admin may view/process reservations.
 - PRE-FE08-002: A member creating a reservation has `Users.Status = ACTIVE`.
-- PRE-FE08-003: A member creating a reservation has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 approval is not required.
+- PRE-FE08-003: A member creating a reservation has `MEMBER`, has neither `LIBRARIAN` nor `ADMIN`, and `Users.Status = ACTIVE`; FE04 approval is not required.
 - PRE-FE08-004: The requested physical copy exists and its parent book exists.
 - PRE-FE08-005: Phase 1 policy is fixed: target `CopyId`, maximum 3 open reservations (`ACTIVE` or `NOTIFIED`), a 2-calendar-day notified hold, manual queue processing, and queue order by `ReservedAt ASC, ReservationId ASC`.
 - PRE-FE08-006: Candidate catalog access requires an authenticated `MEMBER`; FE01 public browse and FE06 staff inventory contracts are not widened.
@@ -182,6 +182,7 @@ The feature can only start when:
 - BR-FE08-015: Only FE07 approval for the same member and copy may transition a `NOTIFIED` reservation to `FULFILLED`.
 - BR-FE08-016: An `ACTIVE` queue entry grants reservation priority and blocks ordinary FE07 create/approve actions for that copy until queue processing or terminal resolution. If FE07 returns the copy first, `BookCopies.Status` may be `AVAILABLE` while the `ACTIVE` claim remains enforced; FE08 still owns later queue selection.
 - BR-FE08-017: Once a reservation reaches `NOTIFIED`, its `NotifiedAt` and `ExpiresAt` are immutable historical facts and must remain populated after transition to `FULFILLED`, `EXPIRED`, or `CANCELLED`; they are null only for reservations that never reached `NOTIFIED`. `CancelledAt` is populated only for `CANCELLED`.
+- BR-FE08-018: Reservation candidate, create, own-list, and owner-cancel endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot reserve books for themselves.
 
 ---
 
@@ -221,6 +222,7 @@ The feature can only start when:
 - FR-FE08-027: IF a supplied reservation-list `page` or `limit` violates the Phase 1 pagination bounds, the system shall reject the request without normalizing the value or querying reservations.
 - FR-FE08-028: WHEN a `NOTIFIED` reservation becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, the system shall preserve its original `NotifiedAt` and `ExpiresAt`; cancellation shall additionally set `CancelledAt`, while non-cancelled states keep `CancelledAt = null`.
 - FR-FE08-029: WHEN an authenticated member requests `GET /api/reservations/candidates`, the system shall return a paginated, server-owned catalog of active-book physical copies whose status is `BORROWED` or `RESERVED`, expose only the approved safe projection, and leave `POST /api/reservations { copyId }` authoritative for all mutation-time checks.
+- FR-FE08-030: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject reservation candidate, create, own-list, and owner-cancel access with `403 ROLE_REQUIRED`; staff queue/list/process routes remain available according to their existing role guards. This is not a supported multi-role account model.
 
 ---
 
@@ -242,6 +244,7 @@ The feature can only start when:
 - AC-FE08-014: Given a reservation that reached `NOTIFIED`, when it later becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, then its original `NotifiedAt` and `ExpiresAt` remain unchanged; only `CANCELLED` has a non-null `CancelledAt`.
 - AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount`, and the member-scoped boolean `hasActiveReservation`; barcode, location, owner, email, timestamps, and version are absent.
 - AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
+- AC-FE08-017: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member reservation candidates, create, own-list, or cancel, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without mutating reservation state; persisted accounts still have exactly one role.
 
 ---
 

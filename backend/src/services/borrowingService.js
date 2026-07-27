@@ -719,15 +719,11 @@ function createBorrowingService({
       throw errors.notFound('BORROW_DETAIL_NOT_FOUND', 'Borrow detail was not found.');
     }
 
-    const isStaff = hasAnyRole(actor, ['LIBRARIAN', 'ADMIN']);
-    const isMember = hasAnyRole(actor, ['MEMBER']);
-
-    // @spec BR-FE07-003, FR-FE07-009
-    if (!isStaff && isMember && borrowDetail.userId !== actor.userId) {
+    if (hasAnyRole(actor, ['MEMBER']) && borrowDetail.userId !== actor.userId) {
       throw errors.forbidden('BORROW_DETAIL_OWNER_REQUIRED', 'Members can renew only their own borrowed items.');
     }
 
-    if (!isStaff && !isMember) {
+    if (!hasAnyRole(actor, ['MEMBER', 'LIBRARIAN', 'ADMIN'])) {
       throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
     }
 

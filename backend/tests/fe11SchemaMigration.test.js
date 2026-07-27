@@ -83,3 +83,19 @@ test('baseline, models, and SQL bindings use canonical FE11 widths', () => {
   expect(notificationRepository).not.toMatch(/RecipientEmail'[\s\S]{0,80}NVarChar\(100\)/);
   expect(notificationRepository).toMatch(/RecipientEmail'[\s\S]{0,80}NVarChar\(255\)/);
 });
+
+test('single-role baseline and migration enforce one UserRoles row per account safely', () => {
+  const baseline = read('database/Librarymanagement.sql');
+  const migration = read('database/migrations/2026-07-27-fe11-single-role-per-account.sql');
+
+  expect(baseline).toMatch(/CREATE UNIQUE INDEX UX_UserRoles_UserId ON UserRoles\(UserId\)/);
+  expect(migration).toMatch(/SET XACT_ABORT ON/i);
+  expect(migration).toMatch(/BEGIN TRANSACTION/i);
+  expect(migration).toMatch(/GROUP BY UserId[\s\S]*HAVING COUNT\(\*\) > 1/i);
+  expect(migration).toMatch(/THROW 51001/i);
+  expect(migration).toMatch(/sys\.indexes[\s\S]*UX_UserRoles_UserId/i);
+  expect(migration).toMatch(/CREATE UNIQUE INDEX UX_UserRoles_UserId ON dbo\.UserRoles\(UserId\)/i);
+  expect(migration).toMatch(/COMMIT TRANSACTION/i);
+  expect(migration).toMatch(/ROLLBACK TRANSACTION/i);
+  expect(migration).not.toMatch(/DELETE FROM UserRoles|INSERT INTO UserRoles/i);
+});

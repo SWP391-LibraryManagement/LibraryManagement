@@ -58,7 +58,7 @@ FE11 includes:
 - Deactivate user accounts.
 - Update Librarian work information only.
 - Deactivate librarian accounts.
-- Manage user role assignments (assign/revoke roles).
+- Replace each user's single account role atomically.
 - Initiate password setup emails for newly created users without exposing passwords or tokens to admins.
 - Resend an incomplete admin-created account setup email through an Admin-only action.
 
@@ -95,7 +95,7 @@ Potential issues to review:
 - `Users` table needs `FailedLoginCount` and `LockedUntil` fields for account lockout management.
 - Admin-created users must use the FE02 password setup flow. If SQL keeps `PasswordHash NOT NULL`, FE11 stores an unusable bcrypt hash of a discarded random value; fixed literal placeholders are forbidden.
 - FE11 stores only the hash of a 24-hour `ACCOUNT_SETUP` token in `AuthTokens` and uses its token ID for FE10 source traceability/idempotency.
-- `UserRoles` table allows multiple roles per user; system must ensure at least one role per user.
+- `UserRoles` stores exactly one role per account and `UX_UserRoles_UserId` enforces that cardinality. Role changes replace the current mapping atomically; the compatibility `roles` array contains exactly one item.
 - `AuditLogs` must capture what changed and by whom; simple action text is insufficient.
 - Need to prevent removal of Admin role if only one admin remains.
 - Email uniqueness constraint should be case-insensitive.
@@ -147,7 +147,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 - Privilege escalation if admin role cannot be revoked from the last admin.
 - Data integrity loss if all admins are accidentally deactivated without recovery path.
 - Email uniqueness not enforced allows duplicate accounts with same email.
-- Concurrent role assignment/revocation can create inconsistent state.
+- Concurrent role replacement can create inconsistent state unless the mapping, final-Admin check, and audit are serialized in one transaction.
 - Deactivation without invalidating active sessions allows deactivated user to continue accessing system.
 - Audit logs can be incomplete if user management actions are not fully logged.
 - Password setup without proper validation allows unauthorized account takeover.

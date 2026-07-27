@@ -1237,6 +1237,14 @@ describe('FE08 reservation management', () => {
       role: 'LIBRARIAN',
       approveMember: false,
     });
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'role.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
 
     const unauthenticatedResponse = await request(app)
       .post('/api/reservations')
@@ -1258,6 +1266,30 @@ describe('FE08 reservation management', () => {
 
     expect(staffCreateResponse.status).toBe(403);
     expect(staffCreateResponse.body.error.code).toBe('ROLE_REQUIRED');
+
+    for (const staff of [librarian, admin]) {
+      const staffRole = authDependencies.state.rolesByUserId.get(staff.userId)[0];
+      authDependencies.state.rolesByUserId.set(staff.userId, ['MEMBER', staffRole]);
+
+      for (const [method, path, body] of [
+        ['post', '/api/reservations', { copyId: 1 }],
+        ['get', '/api/reservations/candidates'],
+        ['get', '/api/reservations/me'],
+        ['patch', '/api/reservations/1/cancel'],
+      ]) {
+        const response = await request(app)[method](path)
+          .set('Authorization', authHeader(staff.accessToken))
+          .send(body);
+
+        expect(response.status).toBe(403);
+        expect(response.body.error.code).toBe('ROLE_REQUIRED');
+      }
+
+      await request(app)
+        .get('/api/reservations')
+        .set('Authorization', authHeader(staff.accessToken))
+        .expect(200);
+    }
   });
 
   test('process-queue accepts only copyId and rejects bookId without mutating state', async () => {

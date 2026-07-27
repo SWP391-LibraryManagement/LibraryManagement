@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   ListChecks,
   BadgeCheck,
-  ChevronDown,
   Code2,
   Database,
   BrainCircuit,
@@ -45,71 +44,6 @@ const CATEGORY_ICONS = {
   Database: 'CSDL',
   AI: 'AI',
   Novel: 'Tiểu thuyết',
-};
-
-const getHomeNavigationItems = ({ isLoggedIn, primaryRole }) => {
-  const serviceItems = !isLoggedIn
-    ? [
-      { label: 'Đăng nhập', type: 'path', value: '/login' },
-      { label: 'Tạo tài khoản', type: 'path', value: '/register' },
-      { label: 'Quyền lợi hội viên', type: 'scroll', value: 'section-cta' },
-    ]
-    : primaryRole === 'ADMIN'
-      ? [
-        { label: 'Duyệt hội viên', type: 'path', value: '/membership' },
-        { label: 'Quản lý người dùng', type: 'path', value: '/admin/users' },
-        { label: 'Báo cáo người dùng', type: 'path', value: '/reports/users' },
-      ]
-      : primaryRole === 'LIBRARIAN'
-        ? [
-          { label: 'Duyệt hội viên', type: 'path', value: '/membership' },
-          { label: 'Yêu cầu mượn sách', type: 'path', value: '/librarian/borrow-requests' },
-          { label: 'Xử lý trả sách', type: 'path', value: '/librarian/returns' },
-        ]
-        : [
-          { label: 'Trạng thái hội viên', type: 'path', value: '/membership' },
-          { label: 'Đăng ký mượn sách', type: 'path', value: '/borrowing/new' },
-          { label: 'Lịch sử mượn sách', type: 'path', value: '/borrowing/history' },
-          { label: 'Sách đã đặt trước', type: 'path', value: '/reservations/mine' },
-        ];
-  const serviceLabel = !isLoggedIn
-    ? 'Hội viên'
-    : ['ADMIN', 'LIBRARIAN'].includes(primaryRole)
-      ? 'Nghiệp vụ'
-      : 'Thư viện của tôi';
-
-  return [
-    {
-      label: 'Khám phá sách',
-      items: [
-        { label: 'Sách nổi bật', type: 'scroll', value: 'section-books' },
-        { label: 'Tất cả đầu sách', type: 'category', value: 'Tất cả' },
-        { label: 'Sách lập trình', type: 'category', value: 'Programming' },
-        { label: 'Trí tuệ nhân tạo', type: 'category', value: 'AI' },
-      ],
-    },
-    { label: serviceLabel, items: serviceItems },
-    {
-      label: 'Về thư viện',
-      items: [
-        { label: 'Về thư viện', type: 'scroll', value: 'section-about' },
-        {
-          label: 'Quyền lợi hội viên',
-          type: isLoggedIn ? 'path' : 'scroll',
-          value: isLoggedIn ? '/membership' : 'section-cta',
-        },
-        { label: 'Điều khoản sử dụng', type: 'policy', value: 'terms' },
-      ],
-    },
-    {
-      label: 'Hỗ trợ',
-      items: [
-        { label: 'Gọi thư viện', type: 'external', value: 'tel:0348335508' },
-        { label: 'Gửi email', type: 'external', value: 'mailto:dt9848630@gmail.com' },
-        { label: 'Xem địa chỉ', type: 'scroll', value: 'footer-contact' },
-      ],
-    },
-  ];
 };
 
 const FOOTER_POLICIES = {
@@ -432,7 +366,6 @@ const HomePage = () => {
   const navigate = useNavigate();
   const footerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [openNavMenu, setOpenNavMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
@@ -491,15 +424,6 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    if (!openNavMenu) return undefined;
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setOpenNavMenu(null);
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [openNavMenu]);
-
-  useEffect(() => {
     const sections = document.querySelectorAll('[data-home-reveal]');
     if (!('IntersectionObserver' in window)) {
       sections.forEach((section) => section.classList.add('is-visible'));
@@ -530,7 +454,6 @@ const HomePage = () => {
 
   // @spec FR-FE01-016
   const handleHomeNavigation = (item) => {
-    setOpenNavMenu(null);
     setMenuOpen(false);
 
     if (item.type === 'path') {
@@ -649,7 +572,6 @@ const HomePage = () => {
 
   const displayCategories = categories.length > 0 ? categories : fallbackCategories;
   const filterTabs = ['Tất cả', ...displayCategories.filter((category) => category.name !== 'Tất cả').map((category) => category.name)];
-  const navigationItems = getHomeNavigationItems({ isLoggedIn, primaryRole });
   const roleHomePanel = !isLoggedIn
     ? {
       eyebrow: 'Dành cho khách',
@@ -804,6 +726,7 @@ const HomePage = () => {
         />
       )}
 
+      {/* @spec BR-FE01-017, FR-FE01-016 */}
       {/* -- NAV -- */}
       <nav className="home-nav" style={{
         position: 'sticky', top: 0, zIndex: 200,
@@ -816,47 +739,6 @@ const HomePage = () => {
           <span style={{ fontFamily: 'var(--heading)', fontWeight: 700, fontSize: 21, color: '#4E342E' }}>
             Quản Lý Thư Viện
           </span>
-        </div>
-
-        <div className="home-nav-links" style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          {navigationItems.map((group) => (
-            <div
-              key={group.label}
-              className="home-nav-group"
-              onMouseEnter={() => setOpenNavMenu(group.label)}
-              onMouseLeave={() => setOpenNavMenu(null)}
-              onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget)) setOpenNavMenu(null);
-              }}
-            >
-              <button
-                type="button"
-                className="home-nav-trigger"
-                aria-haspopup="menu"
-                aria-expanded={openNavMenu === group.label}
-                onClick={() => setOpenNavMenu((current) => current === group.label ? null : group.label)}
-              >
-                {group.label}
-                <ChevronDown size={14} aria-hidden="true" />
-              </button>
-              {openNavMenu === group.label && (
-                <div className="home-nav-dropdown" role="menu">
-                  <span className="home-nav-dropdown-title">{group.label}</span>
-                  {group.items.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => handleHomeNavigation(item)}
-                    >
-                      <span>{item.label}</span>
-                      <ArrowRight size={14} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -957,29 +839,6 @@ const HomePage = () => {
             flexDirection: 'column', gap: 6, boxShadow: '0 12px 24px rgba(44,26,14,0.1)',
           }}
         >
-          {navigationItems.map((group) => (
-            <div className="home-mobile-nav-group" key={group.label}>
-              <button
-                type="button"
-                className="home-mobile-nav-trigger"
-                aria-expanded={openNavMenu === group.label}
-                onClick={() => setOpenNavMenu((current) => current === group.label ? null : group.label)}
-              >
-                {group.label}
-                <ChevronDown size={16} aria-hidden="true" />
-              </button>
-              {openNavMenu === group.label && (
-                <div className="home-mobile-nav-items">
-                  {group.items.map((item) => (
-                    <button key={item.label} type="button" onClick={() => handleHomeNavigation(item)}>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          <div style={{ height: 1, background: 'rgba(78,52,46,0.1)', margin: '6px 0' }} />
           {isLoggedIn ? (
             <>
               <button type="button" onClick={() => { setMenuOpen(false); navigate('/profile'); }} style={{ padding: '11px 12px', border: 0, borderRadius: 8, background: '#F5EFE6', color: '#4E342E', cursor: 'pointer', textAlign: 'left', fontSize: 14, fontWeight: 700, fontFamily: 'var(--sans)' }}>
@@ -1570,10 +1429,6 @@ const HomePage = () => {
           from { opacity: 0; transform: translateY(18px) scale(0.985); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        @keyframes homeNavDropdownIn {
-          from { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
-          to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-        }
         @keyframes homeHeroCopyIn {
           from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1587,140 +1442,6 @@ const HomePage = () => {
           to { transform: scale(1.075); }
         }
         .home-mobile-menu { display: none; }
-        .home-nav-group {
-          position: relative;
-          height: 64px;
-          display: flex;
-          align-items: center;
-        }
-        .home-nav-trigger {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          height: 100%;
-          padding: 0;
-          border: 0;
-          background: transparent;
-          color: #5A3E36;
-          cursor: pointer;
-          font-family: var(--sans);
-          font-size: 14px;
-          font-weight: 600;
-          transition: color 0.2s ease;
-        }
-        .home-nav-trigger::after {
-          content: '';
-          position: absolute;
-          right: 0;
-          bottom: 10px;
-          left: 0;
-          height: 2px;
-          border-radius: 2px;
-          background: #C78A3B;
-          transform: scaleX(0);
-          transition: transform 0.22s ease;
-        }
-        .home-nav-trigger svg { transition: transform 0.22s ease; }
-        .home-nav-trigger:hover,
-        .home-nav-trigger[aria-expanded='true'] { color: #B97826; }
-        .home-nav-trigger:hover::after,
-        .home-nav-trigger[aria-expanded='true']::after { transform: scaleX(1); }
-        .home-nav-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-        .home-nav-dropdown {
-          position: absolute;
-          z-index: 280;
-          top: 55px;
-          left: 50%;
-          width: 238px;
-          padding: 9px;
-          border: 1px solid rgba(78, 52, 46, 0.12);
-          border-radius: 14px;
-          background: rgba(255, 253, 248, 0.98);
-          box-shadow: 0 18px 48px rgba(44, 26, 14, 0.16);
-          backdrop-filter: blur(12px);
-          animation: homeNavDropdownIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .home-nav-dropdown-title {
-          display: block;
-          padding: 7px 10px 9px;
-          color: #B97826;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-        .home-nav-dropdown > button {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 10px;
-          border: 0;
-          border-radius: 8px;
-          background: transparent;
-          color: #4E342E;
-          cursor: pointer;
-          font-family: var(--sans);
-          font-size: 13px;
-          font-weight: 600;
-          text-align: left;
-          transition: padding-left 0.2s ease, background 0.2s ease, color 0.2s ease;
-        }
-        .home-nav-dropdown > button svg {
-          flex: 0 0 auto;
-          opacity: 0;
-          transform: translateX(-5px);
-          transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-        .home-nav-dropdown > button:hover,
-        .home-nav-dropdown > button:focus-visible {
-          padding-left: 14px;
-          background: #F3E8D7;
-          color: #9A631F;
-        }
-        .home-nav-dropdown > button:hover svg,
-        .home-nav-dropdown > button:focus-visible svg {
-          opacity: 1;
-          transform: translateX(0);
-        }
-        .home-mobile-nav-group { border-bottom: 1px solid rgba(78, 52, 46, 0.08); }
-        .home-mobile-nav-trigger {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 11px 12px;
-          border: 0;
-          background: transparent;
-          color: #4E342E;
-          cursor: pointer;
-          font-family: var(--sans);
-          font-size: 14px;
-          font-weight: 700;
-        }
-        .home-mobile-nav-trigger svg { transition: transform 0.2s ease; }
-        .home-mobile-nav-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-        .home-mobile-nav-items {
-          display: grid;
-          gap: 4px;
-          padding: 0 8px 10px 20px;
-          animation: footerModalFade 0.18s ease-out;
-        }
-        .home-mobile-nav-items button {
-          padding: 9px 10px;
-          border: 0;
-          border-radius: 7px;
-          background: transparent;
-          color: #7A5C44;
-          cursor: pointer;
-          font-family: var(--sans);
-          font-size: 13px;
-          font-weight: 600;
-          text-align: left;
-        }
-        .home-mobile-nav-items button:hover { background: #F3E8D7; color: #9A631F; }
         .home-hero {
           position: relative;
           overflow: hidden;
@@ -2862,7 +2583,7 @@ const HomePage = () => {
         }
         @media (max-width: 900px) {
           .home-nav { padding: 0 24px !important; }
-          .home-nav-links, .home-nav-account, .home-nav-desktop-action { display: none !important; }
+          .home-nav-account, .home-nav-desktop-action { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
           .home-mobile-menu { display: flex; }
         }
@@ -2987,10 +2708,6 @@ const HomePage = () => {
           .home-role-actions button,
           .home-footer-brand-mark svg,
           .home-footer-policy-links button::after,
-          .home-nav-dropdown,
-          .home-nav-trigger::after,
-          .home-nav-trigger svg,
-          .home-mobile-nav-items,
           .home-policy-backdrop,
           .home-policy-dialog {
             animation: none !important;

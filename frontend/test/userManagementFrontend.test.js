@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
-  buildRoleMutationPlan,
+  buildRoleReplacement,
   normalizeEditableRoleCatalog,
   validateUserForm,
 } from '../src/page/admin/users/userPresentation.js';
@@ -80,27 +80,26 @@ test('FE11 role catalog and mutation plan use canonical numeric IDs', () => {
   ]);
   assert.deepEqual(catalog.map((role) => role.roleId), [1, 2, 3]);
   assert.deepEqual(
-    buildRoleMutationPlan(['MEMBER'], ['ADMIN', 'MEMBER'], catalog),
-    { assignments: [{ roleName: 'ADMIN', roleId: 1 }], revocations: [] },
+    buildRoleReplacement(['MEMBER'], 'ADMIN', catalog),
+    { roleName: 'ADMIN', roleId: 1 },
   );
+  assert.equal(buildRoleReplacement(['MEMBER'], 'MEMBER', catalog), null);
   assert.throws(
     () => normalizeEditableRoleCatalog([{ roleId: 1, roleName: 'ADMIN' }]),
     /Không thể tải danh mục vai trò/,
   );
 });
 
-test('FE11 role saves assign before revoking and recover authoritative detail', async () => {
+test('FE11 role save uses one atomic replacement and recovers authoritative detail', async () => {
   const section = await readAdminFile('users/AdminUsersSection.jsx');
-  const saveRoles = section.match(/async function saveRoles\(nextRoles\)[^]*?\r?\n {2}}\r?\n\r?\n {2}function resetFilters/)?.[0] || '';
+  const saveRole = section.match(/async function saveRole\(nextRole\)[^]*?\r?\n {2}}\r?\n\r?\n {2}function resetFilters/)?.[0] || '';
 
-  assert.match(saveRoles, /for \(const \{ roleId \} of assignments\)/);
-  assert.match(saveRoles, /assignManagedUserRole\(roleUser\.userId, roleId\)/);
-  assert.match(saveRoles, /for \(const \{ roleId \} of revocations\)/);
-  assert.match(saveRoles, /revokeManagedUserRole\(roleUser\.userId, roleId\)/);
-  assert.ok(saveRoles.indexOf('of assignments') < saveRoles.indexOf('of revocations'));
-  assert.match(saveRoles, /const refreshedUser = await fetchManagedUser\(roleUser\.userId\)/);
-  assert.match(saveRoles, /setRoleUser\(refreshedUser\)/);
-  assert.match(saveRoles, /setRoleSyncBlocked\(true\)/);
+  assert.match(saveRole, /buildRoleReplacement\(roleUser\.roles \|\| \[\], nextRole, roles\)/);
+  assert.match(saveRole, /replaceManagedUserRole\(roleUser\.userId, replacement\.roleId\)/);
+  assert.doesNotMatch(saveRole, /for \(/);
+  assert.match(saveRole, /const refreshedUser = await fetchManagedUser\(roleUser\.userId\)/);
+  assert.match(saveRole, /setRoleUser\(refreshedUser\)/);
+  assert.match(saveRole, /setRoleSyncBlocked\(true\)/);
 });
 
 test('FE11 user validation preserves canonical field widths', () => {
@@ -167,7 +166,8 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
   assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
   assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
-  assert.match(roleModal, /Mỗi người dùng phải giữ ít nhất một vai trò/);
+  assert.match(roleModal, /type="radio"/);
+  assert.match(roleModal, /Mỗi tài khoản phải có đúng một vai trò/);
   assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
   assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
   assert.match(drawer, /relatedSummary\?\.openReservationCount/);
@@ -190,7 +190,7 @@ test('FE11 permissions keep policy and statistics independent with explicit deci
   assert.match(source, /getPermissionDecision/);
   assert.match(source, /Dữ liệu phân quyền/);
   assert.match(source, /Thống kê tài khoản theo vai trò/);
-  assert.match(source, /Một tài khoản có thể có nhiều vai trò/);
+  assert.match(source, /Mỗi tài khoản có đúng một vai trò/);
   assert.match(source, /permission-decision \$\{decision\.tone\}/);
   assert.doesNotMatch(source, /const permissionRows =|const permissionModules =/);
 });

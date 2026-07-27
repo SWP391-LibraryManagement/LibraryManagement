@@ -123,6 +123,7 @@ These decisions close the shared Phase 0 business questions so that feature spec
 | DEC-GEN-002 | The default loan duration is 14 calendar days from the borrow approval date. | FE07 Borrowing, FE10 Notification, FE12 Reporting |
 | DEC-GEN-003 | Overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date. | FE07 Borrowing, FE09 Fine, FE10 Notification, FE12 Reporting |
 | DEC-GEN-004 | Final user roles for Phase 1 are Guest, Member, Librarian, and Admin. System/Scheduler is an internal actor, not a login role. | FE02 Authentication, FE10 Notification, FE11 User & Role |
+| DEC-GEN-005 | Every persisted account has exactly one mutually exclusive login role. Role changes replace the current role atomically; the compatibility `roles` array therefore contains exactly one item. | FE01 Public/Browse, FE02 Authentication, FE07 Borrowing, FE08 Reservation, FE11 User & Role |
 
 ---
 
@@ -136,7 +137,7 @@ relate to each other, see the system ERD in
 | ------ | ------- | ----------------- |
 | `Users` | Login account information and status | FE02, FE11 |
 | `Roles` | System permission roles | FE11 |
-| `UserRoles` | Maps users to roles (many-to-many) | FE02, FE11 |
+| `UserRoles` | Stores exactly one role mapping per user; `UX_UserRoles_UserId` enforces account cardinality | FE02, FE11 |
 | `UserProfiles` | Personal profile details | FE03 |
 | `Members` | Library reader record | FE04 |
 | `MembershipApplications` | Membership apply/approval records | FE04 |

@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.5
+# Version: 0.7.6
 
 # Status: APPROVED - RULE ALIGNMENT 2026-07-27
 
@@ -24,12 +24,19 @@
 > `Asia/Ho_Chi_Minh` business-date helper and treats a non-`BORROWED` physical
 > copy as an explicit return-state conflict.
 >
-> Revision v0.7.5 makes staff authorization role-order independent for
-> multi-role renewal actors, requires return responses/audits to use the
+> Revision v0.7.5 originally modeled staff authorization for multi-role
+> renewal actors, requires return responses/audits to use the
 > transaction-locked due date, and forbids host-local renewal date arithmetic.
 > Nhat approved this written revision on 2026-07-27. Approval authorizes
 > PLAN/TASKS preparation only; implementation remains unclaimed until
-> RED-GREEN evidence and acceptance gates are completed.
+> RED-GREEN evidence and acceptance gates are completed. Its multi-role premise
+> is historical and superseded by v0.7.6.
+>
+> Revision v0.7.6 reconciles v0.7.5 with project-wide `DEC-GEN-005`: every
+> account has exactly one role. Multi-role accounts are not a supported actor
+> model. Member self-service is available only to `MEMBER`; Librarian/Admin
+> retain staff renewal scope without bypassing loan-owner eligibility. Nhat
+> confirmed this decision and authorized reconciliation on 2026-07-27.
 
 ---
 
@@ -69,7 +76,7 @@ The system shall:
 
 | Actor     | Description                  | Permission / Responsibility |
 | --------- | ---------------------------- | --------------------------- |
-| Member    | Registered library user      | Create own borrow request, view own borrowing history, and renew only an own borrowed detail when the actor has no Librarian/Admin role. |
+| Member    | Registered non-staff library user | Create an own borrow request, view own borrowing history, and renew only an own borrowed detail. |
 | Librarian | Library staff                | View member borrowing information, approve/reject borrow requests, process borrow handover/returns, and renew an eligible borrowed detail for any member. |
 | Admin     | System administrator         | Has librarian permissions, including cross-member renewal, and can view all borrowing records. |
 | Guest     | Unauthenticated visitor      | No borrowing permissions. |
@@ -82,7 +89,7 @@ The system shall:
 The feature can only start when:
 
 - PRE-FE07-001: The user account exists and has an active status.
-- PRE-FE07-002: The borrowing member/loan owner has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 membership approval is not required. An authenticated Librarian/Admin may process an allowed action on that member's behalf.
+- PRE-FE07-002: The borrowing member/loan owner has the single role `MEMBER` and `Users.Status = ACTIVE`; FE04 membership approval is not required. An authenticated Librarian/Admin account with its own single staff role may process an allowed staff action on that member's behalf.
 - PRE-FE07-003: The requested book copy exists in `BookCopies`.
 - PRE-FE07-004: Protected actions are performed by an authenticated actor with the correct role.
 - PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5; daily limit is 5 copies for canonical `Members.Status = APPROVED` and 3 copies otherwise; default loan duration is 14 calendar days; renewal limit is 1 renewal per borrowed copy.
@@ -137,7 +144,7 @@ The feature can only start when:
 
 ### MF-FE07-005: Renew Borrowed Books
 
-1. Member opens an own active borrowed item, or Librarian/Admin opens any member's active borrowed item. For a multi-role actor, Librarian/Admin authorization takes precedence over the member ownership restriction.
+1. A single-role Member opens an own active borrowed item, or a single-role Librarian/Admin opens any member's active borrowed item.
 2. Actor selects a borrowed copy to renew.
 3. The system checks the loan owner's renewal eligibility against the current `Asia/Ho_Chi_Minh` business date: not overdue, no unpaid fine, renewal count is 0, and no active reservation conflict from FE08.
 4. The system extends due date by 14 calendar days from the current due date using the shared business-date helper.
@@ -190,7 +197,7 @@ Use these stable IDs for tasks and tests.
 
 - BR-FE07-001: A guest cannot create, approve, process, or view protected borrowing records.
 - BR-FE07-002: A member can create borrow requests only for their own account.
-- BR-FE07-003: A `LIBRARIAN` or `ADMIN` can view and process borrowing actions, including renewal, for any member. If an authenticated actor also has `MEMBER`, staff permission takes precedence for cross-member processing; the owner-only restriction applies only when the actor has neither staff role. Staff authorization does not bypass eligibility rules evaluated against the loan owner.
+- BR-FE07-003: Every account has exactly one role under `DEC-GEN-005`. A `LIBRARIAN` or `ADMIN` can view and process borrowing actions, including renewal, for any member. A `MEMBER` is restricted to their own detail, and staff authorization does not bypass eligibility rules evaluated against the loan owner.
 - BR-FE07-004: A member must have the `MEMBER` role and `Users.Status = ACTIVE` before borrowing or renewal; FE04 membership application status does not block FE07.
 - BR-FE07-005A: FE04 approval determines the daily borrowing tier without blocking borrowing: canonical `Members.Status = APPROVED` permits 5 copies per `Asia/Ho_Chi_Minh` business day; `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` permits 3 copies per business day.
 - BR-FE07-005: At create and approval, `activeBorrowedCount + requestedDetailCount` must be less than or equal to 5. `activeBorrowedCount` counts only the member's current `BorrowDetails.Status = BORROWED`; approval acquires the member-scoped lock and relevant rows in the order defined by NFR-FE07-TXN-003 before calculating the count, so concurrent approvals cannot exceed 5.
@@ -219,6 +226,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-028: Borrowing-history endpoints accept only `status?`, `fromDate?`, `toDate?`, `page?`, and `limit?`; defaults are `page=1`, `limit=20`, bounds are `page>=1`, `limit=1..100`, the date range is inclusive, and rows use stable `BorrowDate DESC (nulls last), BorrowDetailId DESC` ordering.
 - BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
 - BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
+- BR-FE07-031: Member-self-service borrow candidate, create-request, and own-history endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot place or borrow books for themselves.
 
 ---
 
@@ -232,7 +240,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-006: When a librarian rejects a borrow request, the system shall require and store the rejection reason in audit metadata while keeping copy statuses unchanged.
 - FR-FE07-007: When a librarian processes a return, the system shall lock and require the physical copy to be `BORROWED`, lock the detail and relevant reservation claims, then atomically update return date, detail status, copy status, and audit state; a normal return sets the copy `AVAILABLE` while preserving any `ACTIVE` FE08 queue claim. The transaction result shall return the locked due date and committed return values needed by response and audit construction.
 - FR-FE07-008: If the return is overdue, damaged, or lost, the system shall expose enough data for FE09 to calculate or create the related fine, and `fineCandidate` plus return audit metadata shall be derived only from values returned by the authoritative locked transaction.
-- FR-FE07-009: When renewal is requested, the system shall grant cross-member scope to an actor with `LIBRARIAN` or `ADMIN` regardless of an additional `MEMBER` role, otherwise require detail ownership, evaluate every blocker against the loan owner, allow at most 1 renewal, and extend the due date by 14 calendar days through the shared `Asia/Ho_Chi_Minh` business-date helper only when all rules pass.
+- FR-FE07-009: When renewal is requested, the system shall grant cross-member scope to a single-role `LIBRARIAN` or `ADMIN` account. A single-role `MEMBER` account must own the detail. The system shall evaluate every blocker against the loan owner, allow at most 1 renewal, and extend the due date by 14 calendar days through the shared `Asia/Ho_Chi_Minh` business-date helper only when all rules pass.
 - FR-FE07-010: When a member views borrowing history, the system shall return only that member's records.
 - FR-FE07-011: When a librarian/admin views member borrowing information, the system shall allow searching by member identity.
 - FR-FE07-012: While a borrow detail is `BORROWED`, the related copy shall not be available for another borrow approval.
@@ -241,6 +249,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
 - FR-FE07-030: When Librarian/Admin opens an approval or rejection decision, the frontend shall show request/member/contact data and all requested copy titles, authors, identifiers, barcodes, locations, and current statuses already present in the canonical staff response without repeating those statuses in a generic availability banner; typing a rejection reason shall preserve focus and the complete controlled value across rerenders.
 - FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
+- FR-FE07-032: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject member-self-service candidate, create-request, and own-history access with `403 ROLE_REQUIRED`; staff operational FE07 routes remain available according to their existing role guards. This is not a supported multi-role account model.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -275,7 +284,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-006: Given a detail and physical copy both remain `BORROWED`, when the librarian processes a normal return, then the system stores the `Asia/Ho_Chi_Minh` business return date and marks the copy `AVAILABLE`; if an `ACTIVE` FE08 queue exists, the queue claim remains and ordinary borrowing stays blocked until FE08 resolves it. If copy state is inconsistent, the return is rejected unchanged with `BORROW_STATE_CONFLICT`.
 - AC-FE07-007: Given a borrowed copy returned damaged, when the librarian processes the return, then the system marks the copy `DAMAGED` and does not make it available.
 - AC-FE07-008: Given an overdue borrowed copy whose due date changes before the return transaction acquires its lock, when return commits, then `fineCandidate.overdueDays`, response data, and audit metadata are calculated from the due date locked by that transaction and the committed `Asia/Ho_Chi_Minh` return date.
-- AC-FE07-009: Given an eligible borrowed copy with no previous renewal, when its owner or a Librarian/Admin (including an actor who also has `MEMBER`) renews it, then the due date is extended by 14 calendar days using the shared `Asia/Ho_Chi_Minh` helper and renewal count becomes 1. A member-only actor still cannot renew another member's detail.
+- AC-FE07-009: Given an eligible borrowed copy with no previous renewal, when its single-role owner account or a single-role Librarian/Admin account renews it, then the due date is extended by 14 calendar days using the shared `Asia/Ho_Chi_Minh` helper and renewal count becomes 1. A Member account cannot renew another member's detail.
 - AC-FE07-010: Given a borrowed copy that is overdue under the shared `Asia/Ho_Chi_Minh` business date, already renewed, blocked by unpaid fine, or reserved by another member, when renewal is requested under any host timezone, then the due date remains unchanged and the system returns a reason.
 - AC-FE07-011: Given a logged-in member, when viewing borrowing history, then only that member's borrowing records are returned.
 - AC-FE07-012: Given a librarian/admin, when viewing member borrowing information, then the system can return records for the selected member.
@@ -292,6 +301,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
 - AC-FE07-024: Given a pending request with one or more copies, when Librarian/Admin opens approve or reject, then the dialog identifies the request/member and lists every copy with circulation-relevant fields without a redundant generic availability banner; when the actor types a multi-character rejection reason, the textarea retains focus/value and the canonical reject command receives the trimmed reason.
 - AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
+- AC-FE07-026: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member borrow candidates, request creation, or own history, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without creating or exposing member-self-service state; persisted accounts still have exactly one role.
 
 ---
 
@@ -316,7 +326,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 | EC-FE07-015 | Missing/blank/overlength rejection reason | Reject command; request remains `PENDING`. |
 | EC-FE07-016 | History request has invalid status/date/page/limit | Reject with a validation response before querying; do not silently normalize. |
 | EC-FE07-017 | Due date changes after return preflight but before the return transaction locks the detail | Use the transaction-locked due date for mutation, `fineCandidate`, and audit metadata; never mix preflight and committed values. |
-| EC-FE07-018 | Actor has both `MEMBER` and `LIBRARIAN`/`ADMIN` and renews another member's detail | Apply staff cross-member permission, then evaluate every renewal blocker against the loan owner. |
+| EC-FE07-018 | Account data contains more than one role despite `DEC-GEN-005` | Treat the account as invalid legacy data to be repaired by FE11; multi-role accounts are not part of the supported FE07 actor model. |
 | EC-FE07-019 | Renewal runs under a host timezone other than `Asia/Ho_Chi_Minh` | Produce the same eligibility decision and due date as every other host by using the shared business-date helper. |
 
 ---
@@ -518,7 +528,7 @@ stateDiagram-v2
 | PATCH | `/api/borrow-requests/{requestId}/approve` | Librarian/Admin | Optional notes | Approved request | Transactional update. |
 | PATCH | `/api/borrow-requests/{requestId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected request | Reason required, trimmed, max 500; stored in audit metadata. |
 | PATCH | `/api/borrow-details/{borrowDetailId}/return` | Librarian/Admin | `{ condition: "NORMAL"|"DAMAGED"|"LOST", returnDate?: date, notes?: string }` | Updated borrow detail plus `fineCandidate` | Defaults to current `Asia/Ho_Chi_Minh` business date; future/pre-borrow dates are rejected; a normal return preserves any `ACTIVE` FE08 queue claim and its borrowing priority. Response and audit derive from transaction-locked due/return values. |
-| PATCH | `/api/borrow-details/{borrowDetailId}/renew` | Member/Librarian/Admin | Optional notes | Updated due date | Staff roles permit cross-member renewal even on a multi-role account; member-only actors require ownership. All owner eligibility and business-date rules still apply. |
+| PATCH | `/api/borrow-details/{borrowDetailId}/renew` | Member/Librarian/Admin | Optional notes | Updated due date | Every account has one role. Librarian/Admin permit cross-member renewal; Member requires ownership. All loan-owner eligibility and business-date rules still apply. |
 
 ---
 
@@ -599,7 +609,7 @@ This feature does not include:
 | Q-FE07-007 | Should request status become `COMPLETED` automatically when all details are returned/lost/damaged? | Team | Resolved: yes, mark `BorrowRequests.Status = COMPLETED` when all details are terminal. |
 | Q-FE07-008 | Should damaged/lost returns immediately create a fine record, or only expose data for FE09? | Team/Teacher | Resolved: FE07 records damaged/lost return data only; FE09 owns fine creation. |
 | Q-FE07-009 | What is the borrowing-history query contract? | Spec normalization 2026-07-17 | Resolved: `status?, fromDate?, toDate?, page?, limit?`; page 1/limit 20, max 100, inclusive business dates, stable BorrowDate/BorrowDetailId order, and validation before query. |
-| Q-FE07-010 | How do ownership and staff permission interact for a multi-role renewal actor? | Nhat, 2026-07-27 | Resolved: `LIBRARIAN`/`ADMIN` cross-member permission takes precedence; only actors without a staff role are restricted to their own detail, while all business blockers are evaluated against the loan owner. |
+| Q-FE07-010 | Are multi-role accounts supported, and which role owns renewal scope? | Nhat, 2026-07-27 | Resolved: no. Every account has exactly one role under DEC-GEN-005. Member accounts renew only their own details; Librarian/Admin accounts may renew any member's detail, and all business blockers are evaluated against the loan owner. |
 
 ---
 
@@ -611,7 +621,7 @@ This feature does not include:
 | API contract | Approved in Section 11 for Phase 1 RESTful API planning. Endpoints stay in this SPEC.md unless a shared API contract document is reintroduced. |
 | FE08 dependency | Approved integration: `ACTIVE` queue priority blocks ordinary create/approve, the notified owner may request the held copy, and FE07 approval atomically fulfills the matching reservation. FE08 retains queue ownership. |
 | FE09 dependency | No FE07 conflict after decision: unpaid fines block borrowing/renewal; FE07 exposes return data and FE09 owns fine calculation/creation. |
-| Testability | AC-FE07-001 to AC-FE07-025 are concrete and observable. The history, staff-decision, and return-due-state contracts map to focused validation, pagination, ordering, rejected-request display, decision-context, stable-input, business-time, and renewal-metadata tests before implementation conformance can be claimed. |
+| Testability | AC-FE07-001 to AC-FE07-026 are concrete and observable. The history, staff-decision, return-due-state, single-role renewal, and invalid legacy role-array defense contracts map to focused validation, pagination, ordering, rejected-request display, decision-context, stable-input, business-time, renewal-metadata, and role-boundary tests before implementation conformance can be claimed. |
 
 ---
 
@@ -626,9 +636,9 @@ This feature does not include:
 | AC-FE07-005 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
 | AC-FE07-006 | UC33 | borrowingRoutes.test.js > "normal return marks the copy AVAILABLE, stores the return date, and preserves reservation priority" | Ready for review |
 | AC-FE07-007 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
-| AC-FE07-008 | UC33 | Planned regression: return `fineCandidate` and audit use the transaction-locked due date after a concurrent renewal | Planned |
-| AC-FE07-009 | UC31 | Planned regressions: multi-role staff renews another member's detail; member-only actor remains owner-scoped; due date uses shared helper | Planned |
-| AC-FE07-010 | UC31 | Planned timezone matrix plus existing renewal-blocker preservation cases | Planned |
+| AC-FE07-008 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository"; borrowingRepository.test.js > transactional return source contract | Complete |
+| AC-FE07-009 | UC31 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Complete |
+| AC-FE07-010 | UC31 | UTC and America/New_York timezone matrix plus existing renewal-blocker preservation cases | Complete |
 | AC-FE07-011 | UC30 | borrowingRoutes.test.js > "member history excludes another member request" | Ready for review |
 | AC-FE07-012 | UC34 | borrowingRoutes.test.js > "librarian retrieves only the matching selected-member borrowing with status and date filters"; "librarian filters selected-member borrowings by derived OVERDUE status" | Ready for review |
 | AC-FE07-013 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
@@ -646,7 +656,7 @@ This feature does not include:
 | AC-FE07-025 | UC33 | borrowingFrontend.test.js > "return due status uses the Asia Ho Chi Minh business date and explains the state"; "return rows preserve canonical renewal metadata from BorrowDetails" | Complete |
 | BR-FE07-001 | UC29-UC35 | Planned: guest/protected borrowing authorization matrix | Planned |
 | BR-FE07-002 | UC29 | Planned: member request identity is token-bound test | Planned |
-| BR-FE07-003 | UC31-UC35 | Planned: role-order-independent multi-role staff cross-member renewal plus member-only denial | Planned |
+| BR-FE07-003 | UC31-UC35 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Complete |
 | BR-FE07-004 | UC29, UC32 | FT30, FT33 | Ready for review |
 | BR-FE07-005 | UC29, UC32 | Planned: formula + member-scoped approval lock test | Planned |
 | BR-FE07-006 | UC29, UC31, UC32 | Planned: overdue/unpaid-fine blocker test | Planned |
@@ -657,9 +667,9 @@ This feature does not include:
 | BR-FE07-011 | UC33 | FT34 | Ready for review |
 | BR-FE07-012 | UC33 | Planned: normal return sets copy AVAILABLE atomically while preserving an ACTIVE reservation claim | Planned |
 | BR-FE07-013 | UC33 | Planned: damaged/lost copy remains unavailable test | Planned |
-| BR-FE07-014 | UC33 | Planned: locked-due-date fine-candidate consistency test | Planned |
-| BR-FE07-015 | UC31 | Planned: shared business-date renewal extension under multiple host timezones | Planned |
-| BR-FE07-016 | UC29, UC31-UC33, UC35 | Planned: return audit matches authoritative transaction values plus required action audit coverage | Planned |
+| BR-FE07-014 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository" | Complete |
+| BR-FE07-015 | UC31 | UTC and America/New_York renewal timezone matrix | Complete |
+| BR-FE07-016 | UC29, UC31-UC33, UC35 | locked return-audit regression plus existing required action-audit coverage | Complete |
 | BR-FE07-017 | UC30 | Planned: member history is read-only/owner-only test | Planned |
 | BR-FE07-018 | UC31 | FT32 | Ready for review |
 | BR-FE07-019 | UC29 | FT30 | Ready for review |
@@ -680,9 +690,9 @@ This feature does not include:
 | FR-FE07-004 | UC32 | Planned: approval revalidation test | Planned |
 | FR-FE07-005 | UC32, UC35 | Planned: complete approval metadata/state transaction test | Planned |
 | FR-FE07-006 | UC32 | Planned: rejection reason audit + unchanged copies test | Planned |
-| FR-FE07-007 | UC33 | Planned: return transaction returns authoritative locked values for mutation/response/audit | Planned |
-| FR-FE07-008 | UC33 | Planned: FE09 fine-candidate and audit use the same locked due/return snapshot | Planned |
-| FR-FE07-009 | UC31 | Planned: staff precedence, member owner scope, owner blockers, and helper-based +14-day renewal | Planned |
+| FR-FE07-007 | UC33 | locked return route regression and repository transaction-source contract | Complete |
+| FR-FE07-008 | UC33 | locked return route regression proves one due/return snapshot for fine candidate and audit | Complete |
+| FR-FE07-009 | UC31 | single-role staff/member boundary, owner blockers, and two-timezone +14-day renewal matrix | Complete |
 | FR-FE07-010 | UC30 | FT31 | Ready for review |
 | FR-FE07-011 | UC34 | FT35 | Ready for review |
 | FR-FE07-012 | UC32, UC35 | Planned: BORROWED copy blocks another approval test | Planned |
@@ -741,7 +751,15 @@ Phase 1 approval checklist (completed on 2026-06-10):
 
 ### 17.3 Revision v0.7.5 Business-Rule Alignment Gate
 
-- [x] Lock staff-role precedence for multi-role cross-member renewal without bypassing loan-owner eligibility.
+- [x] Historical v0.7.5 multi-role precedence decision recorded; superseded by the v0.7.6 single-role contract below.
 - [x] Lock return response and audit calculations to the authoritative transaction result.
 - [x] Lock renewal comparison and extension to shared `Asia/Ho_Chi_Minh` helpers.
 - [x] Nhat human-reviewed and approved the written v0.7.5 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
+
+### 17.4 Revision v0.7.6 Main-Integration Gate
+
+- [x] Adopt project-wide `DEC-GEN-005`: every persisted account has exactly one role.
+- [x] Reject multi-role accounts as an unsupported actor model; FE11 repairs legacy mappings to one role.
+- [x] Keep member-self-service exclusive to Member accounts while preserving Librarian/Admin operational renewal.
+- [x] Preserve loan-owner eligibility, fine, overdue, reservation, and renewal-limit checks.
+- [x] Nhat authorized the reconciliation implementation on 2026-07-27; the integrated diff remains subject to H2 addendum before commit.

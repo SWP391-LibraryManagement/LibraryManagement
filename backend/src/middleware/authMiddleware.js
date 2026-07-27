@@ -39,8 +39,24 @@ function requireAnyRole(...allowedRoles) {
   };
 }
 
+// @spec FR-FE07-032
+// @spec FR-FE08-030
+function requireMemberOnly(req, res, next) {
+  const roles = Array.isArray(req.user?.roles)
+    ? req.user.roles.map((role) => String(role).toUpperCase())
+    : [];
+  const isStaff = roles.includes('LIBRARIAN') || roles.includes('ADMIN');
+
+  if (!roles.includes('MEMBER') || isStaff) {
+    return next(errors.forbidden('ROLE_REQUIRED', 'Only non-staff members can perform this action.'));
+  }
+
+  return next();
+}
+
 module.exports = {
   authenticate,
   createAuthenticate,
   requireAnyRole,
+  requireMemberOnly,
 };

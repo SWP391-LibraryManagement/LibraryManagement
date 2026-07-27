@@ -29,23 +29,19 @@ export function normalizeEditableRoleCatalog(roleCatalog = []) {
   return normalized;
 }
 
-export function buildRoleMutationPlan(currentRoleNames, selectedRoleNames, roleCatalog) {
+export function buildRoleReplacement(currentRoleNames, selectedRoleName, roleCatalog) {
   const editableCatalog = normalizeEditableRoleCatalog(roleCatalog);
-  const currentRoles = new Set(currentRoleNames || []);
-  const selectedRoles = new Set(selectedRoleNames || []);
-  const assignments = [];
-  const revocations = [];
+  const normalizedSelectedRole = String(selectedRoleName || '').trim().toUpperCase();
+  const selectedRole = editableCatalog.find(({ roleName }) => roleName === normalizedSelectedRole);
 
-  for (const { roleId, roleName } of editableCatalog) {
-    if (selectedRoles.has(roleName) && !currentRoles.has(roleName)) {
-      assignments.push({ roleName, roleId });
-    }
-    if (currentRoles.has(roleName) && !selectedRoles.has(roleName)) {
-      revocations.push({ roleName, roleId });
-    }
+  if (!selectedRole) {
+    throw new Error('Mỗi tài khoản phải có đúng một vai trò hợp lệ.');
   }
 
-  return { assignments, revocations };
+  const currentRoles = (currentRoleNames || []).map((roleName) => String(roleName).toUpperCase());
+  return currentRoles.length === 1 && currentRoles[0] === selectedRole.roleName
+    ? null
+    : selectedRole;
 }
 
 export function validateUserCreateForm(form) {

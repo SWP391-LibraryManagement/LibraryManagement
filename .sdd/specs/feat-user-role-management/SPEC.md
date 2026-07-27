@@ -1,12 +1,12 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.1
+# Version: 0.6.2
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
 # Owner: Dung
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE11
 
@@ -61,8 +61,8 @@ The system shall:
 - Allow admins to update a managed user's `fullName`, `phone`, and `address` without changing email or role ownership.
 - Allow admins to deactivate user accounts.
 - Allow admins to deactivate librarian accounts.
-- Allow admins to manage user role assignments (assign/revoke roles).
-- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs; keep role assignment/revocation inside All Users rather than exposing a separate Permissions sidebar item.
+- Allow admins to replace a user's single role atomically.
+- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs; keep atomic role replacement inside All Users rather than exposing a separate Permissions sidebar item.
 - Provide read-only permission/reporting views that summarize users, roles, access rules, and audit activity without duplicating FE12 reporting scope.
 - Keep every user management action traceable for audit.
 
@@ -80,7 +80,7 @@ The system shall:
 | ----- | ----------- | --------------------------- |
 | Admin | System administrator | Can view, create, deactivate, and update the approved `fullName`, `phone`, and `address` fields for managed users; can manage account setup and role assignments; cannot change an existing email without a verified FE02 flow. |
 | Librarian | Library staff (non-admin) | Cannot manage users. Can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
-| Member | Library user (non-staff) | Cannot manage users. Can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
+| Member | Library user (non-staff) | Cannot manage users. Can use member-self-service borrowing/reservation only when the account has neither `LIBRARIAN` nor `ADMIN`; can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
 | Guest | Unauthenticated visitor | Cannot access user management. |
 | Audit Logger | System component | Records all user management actions (create, update, deactivate, role assignment). |
 
@@ -188,12 +188,11 @@ The feature can only start when:
 
 1. Admin opens user detail page.
 2. Admin views current roles assigned to the user.
-3. Admin can add additional role to the user (assign role).
-4. Admin can remove role from the user (revoke role).
-5. The system locks the affected role mappings, counts active Admin role holders in the same transaction, and rejects any action that would leave zero Admin role holders.
-6. The system updates the UserRoles mapping.
-7. The system writes an audit log entry with role change details.
-8. The system shows success message.
+3. Admin selects exactly one replacement role.
+4. The system locks the affected role mapping, counts active Admin role holders in the same transaction, and rejects a replacement that would leave zero active Admin role holders.
+5. The system atomically deletes the current mapping, inserts the selected mapping, and writes one audit log entry with the previous and new role.
+6. Selecting the current role is an idempotent no-op with no success audit.
+7. The system returns the authoritative safe user DTO whose `roles` array contains exactly one item.
 
 ### MF-FE11-014: Resend Password Setup Email
 
@@ -210,7 +209,7 @@ The feature can only start when:
 2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user, and fine sources.
 3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs.
 4. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
-5. The system keeps role assignment and revocation available from All Users and does not show a separate Permissions sidebar entry.
+5. The system keeps single-role replacement available from All Users and does not show a separate Permissions sidebar entry.
 6. The admin console uses the same shared application shell, header, responsive sidebar, typography, and cream/brown visual system as Member and Librarian pages.
 7. Admin Library opens catalog management inside the Admin console and does not redirect the Admin to a Librarian route; the embedded workspace continues to use the canonical FE05 APIs and authorization rules.
 
@@ -274,9 +273,9 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-004: Each user must have a unique email address in the system.
 - BR-FE11-005: When an Admin creates a user, the account must start with `INACTIVE` status and remain unable to authenticate until FE02 completes password setup and atomically activates it.
 - BR-FE11-006: When a user account is deactivated, status change, `deactivatedAt`, invalidation of all active refresh/session credentials, and the audit log must commit atomically.
-- BR-FE11-007: Every user must have at least one role assigned (Member, Librarian, or Admin).
-- BR-FE11-008: A user can have multiple roles assigned simultaneously (e.g., Librarian and Admin).
-- BR-FE11-009: The system must never allow removal of all Admin roles. The remaining-Admin count and role mutation must be checked under a transaction lock so concurrent role changes cannot bypass this rule.
+- BR-FE11-007: Every persisted account must have exactly one role assigned: Member, Librarian, or Admin.
+- BR-FE11-008: Account roles are mutually exclusive. A role change replaces the current mapping atomically and must never create a second mapping or leave the account without a role.
+- BR-FE11-009: The system must never allow replacement of the last active Admin role. The remaining-Admin count and role replacement must be checked under a transaction lock so concurrent changes cannot bypass this rule.
 - BR-FE11-010: Every FE11-owned user management action (create, Librarian work-field update, deactivate, role change) must be auditable.
 - BR-FE11-011: A member user cannot create or manage other users.
 - BR-FE11-012: A librarian user cannot create or manage users.
@@ -295,6 +294,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-025: Admin resend is allowed only after the source transaction locks and revalidates the active acting Admin and confirms an `INACTIVE` admin-created account with incomplete setup token history; each resend revokes prior active setup tokens and creates a new token/event/key after a 60-second cooldown.
 - BR-FE11-026: User list/detail/Librarian-work-update responses must use the approved `UserManagementView` DTO and must never expose password hashes, raw or hashed auth credentials, session identifiers, setup/reset links, or secret audit metadata.
 - BR-FE11-027: Every managed-profile update and deactivation must use the loaded non-null `updatedAt`, defined as the latest effective timestamp across `Users` and `UserProfiles`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. A no-op returns the current safe DTO without advancing the version or writing a success audit.
+- BR-FE11-028: The account's single role determines its audience across FE01, FE07, FE08, and shared navigation. Only `MEMBER` receives member self-service borrowing/reservation access; `LIBRARIAN` and `ADMIN` use their staff-owned routes.
 
 ---
 
@@ -311,9 +311,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-009: When Admin creates a new librarian account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile with trimmed nullable `department`/`specialization`, Librarian role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
 - FR-FE11-010: When Admin updates a managed account, the system shall accept trimmed `fullName` (1..100), nullable validated `phone` (maximum 20), and nullable `address` (maximum 255), advance storage timestamps only for effective changes, and audit only a successful effective change.
 - FR-FE11-011: When admin deactivates an `ACTIVE` or `LOCKED` librarian account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
-- FR-FE11-012: When admin assigns a role to a user, the system shall create an entry in UserRoles table.
-- FR-FE11-013: When admin revokes a role from a user, the system shall remove the entry from UserRoles table.
-- FR-FE11-014: When admin assigns or revokes a role, the system shall lock the affected role mappings, evaluate the remaining Admin count in the same transaction, and reject any mutation that would leave zero Admin role holders.
+- FR-FE11-012: When Admin changes a user's role, the system shall replace all current UserRoles mappings with exactly one selected valid role in the same transaction as the audit entry.
+- FR-FE11-013: The role-management API shall expose one atomic replacement operation and shall not expose standalone assign/revoke operations that can create invalid intermediate cardinality.
+- FR-FE11-014: When Admin replaces a role, the system shall lock the affected mapping, evaluate the remaining active Admin count in the same transaction, and reject any mutation that would leave zero active Admin role holders.
 - FR-FE11-030: When admin opens the console, the system shall display the eight approved sidebar sections with Membership Review after All Users, hide removed Permissions / Confirm Payment / Confirm Borrow navigation items, use the shared Member/Librarian application shell, and keep Admin Library actions inside the Admin console without redirecting to Librarian routes.
 - FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
 - FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
@@ -337,10 +337,10 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - FR-FE11-021: IF an email submitted during FE11 account creation is malformed, contains an SQL injection payload, or exceeds 255 characters, the system shall sanitize the input, reject the request, and return a validation error. (Source: EC-FE11-003, EC-FE11-004)
 - FR-FE11-022: IF a database error occurs during user creation, the system shall roll back the transaction and return an error without creating a partial user record. (Source: EC-FE11-008, NFR-FE11-TXN-001)
 - FR-FE11-023: WHERE a managed-profile update or deactivation `expectedUpdatedAt` does not equal the latest effective `Users`/`UserProfiles` version, the system shall reject the mutation with HTTP `409` and code `STALE_USER_STATE`, preserving the existing record and writing no success audit. (Source: EC-FE11-007, BR-FE11-027)
-- FR-FE11-024: IF admin assigns a role that does not exist, the system shall return a not-found error and shall not modify the UserRoles mapping. (Source: EC-FE11-010)
-- FR-FE11-025: IF admin assigns a role the user already holds, the system shall reject the request with the message "User already has this role." (Source: EC-FE11-011)
-- FR-FE11-026: IF admin attempts to revoke a role the user does not hold, the system shall return a not-found error. (Source: EC-FE11-012)
-- FR-FE11-027: IF revoking a role would leave the user with no role at all, the system shall reject the action because every user must retain at least one role. (Source: EC-FE11-013, BR-FE11-007)
+- FR-FE11-024: IF Admin selects a role that does not exist or is not one of `MEMBER`, `LIBRARIAN`, `ADMIN`, the system shall return a not-found error and shall not modify the UserRoles mapping. (Source: EC-FE11-010)
+- FR-FE11-025: IF Admin selects the user's current sole role, the system shall return the authoritative safe DTO as an idempotent no-op and write no role-change audit. (Source: EC-FE11-011)
+- FR-FE11-026: IF legacy data contains zero or multiple current mappings, an explicit valid replacement shall normalize it to exactly one mapping in the transaction, subject to last-active-Admin protection. (Source: EC-FE11-012)
+- FR-FE11-027: The database shall enforce at most one UserRoles row per UserId through `UX_UserRoles_UserId`; account creation and role replacement shall guarantee at least one mapping. (Source: EC-FE11-013, BR-FE11-007)
 - FR-FE11-028: IF Admin submits an invalid managed-profile field, the system shall reject the update with a validation error; forbidden email, department, specialization, and unknown fields use `MANAGED_USER_UPDATE_FORBIDDEN`.
 - FR-FE11-029: IF a user attempts to complete password setup with a token that is expired or already used, the system shall reject the request and shall not activate password-based login. (Source: data field `passwordSetupToken` / `passwordSetupTokenExpiresAt` in section 10.2, BR-FE11-013)
 
@@ -360,9 +360,9 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-010: Given valid librarian data, when Admin creates a new librarian account, then an inactive user, Librarian role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-011: Given an existing current Librarian account, when Admin submits only valid `department` and/or `specialization` with matching effective `expectedUpdatedAt`, then effective work-field changes are saved and storage `UpdatedAt` advances; personal or unknown fields are rejected.
 - AC-FE11-012: Given an `ACTIVE` or `LOCKED` librarian account and matching effective `expectedUpdatedAt`, when admin deactivates it, then status changes to `INACTIVE` and active sessions are invalidated.
-- AC-FE11-013: Given user without Admin role, when admin assigns Admin role, then UserRoles table is updated.
-- AC-FE11-014: Given user with Admin role, when admin revokes Admin role (not last admin), then UserRoles table is updated.
-- AC-FE11-015: Given last admin user, when admin attempts to revoke Admin role, then system rejects action.
+- AC-FE11-013: Given a Member account, when Admin replaces its role with Librarian, then exactly one Librarian mapping remains and one replacement audit is committed.
+- AC-FE11-014: Given an Admin account that is not the last active Admin, when Admin replaces its role with Member, then exactly one Member mapping remains.
+- AC-FE11-015: Given the last active Admin account, when Admin attempts to replace its Admin role, then the system rejects the action without mapping or audit mutation.
 - AC-FE11-016: Given admin opens the console, then the eight approved sections are visible in order with Membership Review after All Users, removed workflows are hidden, and catalog management opens inside Admin Library without a Librarian-route redirect.
 - AC-FE11-017: Given admin opens Permissions, then role counts and permission matrix are displayed using FE11 role data.
 - AC-FE11-018: Given admin opens Audit Logs, then log rows can be reviewed without exposing sensitive credential/token fields.
@@ -390,7 +390,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | EC-FE11-010 | Role does not exist when assigning | Return not found error. |
 | EC-FE11-011 | User already has the role being assigned | Reject with message: "User already has this role." |
 | EC-FE11-012 | Attempting to revoke non-existent role | Return not found error. |
-| EC-FE11-013 | User has no role after revocation | Reject; user must have at least one role. |
+| EC-FE11-013 | Mutation would create zero or multiple roles | Reject or roll back; successful state must contain exactly one mapping. |
 | EC-FE11-014 | Admin submits any existing-user personal field, including the unchanged current email | Reject the complete request with `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; do not silently ignore the forbidden field or process other submitted fields. |
 | EC-FE11-015 | Librarian-specific field is too long or invalid | Reject the update and return a validation error. |
 | EC-FE11-016 | Removed admin sidebar item is requested directly | Return `404 Not Found`; do not expose or redirect to a removed workflow. |
@@ -411,7 +411,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 | ------ | ----------------------- |
 | Users | Stores user account data: email, password hash, name, phone, address, status, timestamps. |
 | Roles | Defines available roles: Member, Librarian, Admin. |
-| UserRoles | Maps users to roles; supports multiple roles per user. |
+| UserRoles | Stores exactly one role mapping per user; `UX_UserRoles_UserId` enforces uniqueness by UserId. |
 | AuthTokens / session records | Required server-side mechanism for invalidating active refresh/session credentials during deactivation and role-sensitive account changes. |
 | AuditLogs | Records all user management actions. |
 
@@ -468,11 +468,10 @@ The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, t
 | POST | `/api/users` | Admin | `{ email: string, username?: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | `201 { userId, email, status: "INACTIVE", roles, setupDeliveryStatus, message }` | Boundary-validates input; source transaction revalidates active Admin and uniqueness, then requests FE10 delivery only after commit; never returns password/token/link. |
 | PUT | `/api/users/{userId}` | Admin | `{ expectedUpdatedAt: datetime, department?: string, specialization?: string }` | Updated `UserManagementView`; stale state: `409 { code: "STALE_USER_STATE" }` | Current Librarian targets only. `fullName`, `phone`, `address`, `email`, or unknown fields cause atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; a stale allowed request causes `409 STALE_USER_STATE`. |
 | PATCH | `/api/users/{userId}/status` | Admin | `{ status: "INACTIVE", expectedUpdatedAt: datetime }` | Updated `UserManagementView` | Only `ACTIVE`/`LOCKED` transition. Pending activation returns `409 ACCOUNT_PENDING_ACTIVATION`; already-deactivated state is idempotent. |
-| POST | `/api/users/{userId}/roles` | Admin | `{ roleId: number }` | User with updated roles | Assign role to user. |
-| DELETE | `/api/users/{userId}/roles/{roleId}` | Admin | - | User with updated roles | Revoke role from user. |
+| PUT | `/api/users/{userId}/role` | Admin | `{ roleId: number }` | Authoritative user with exactly one role | Atomically replace the current role; current-role selection is a no-op. |
 | POST | `/api/users/{userId}/resend-setup` | Admin | `{}` | `200 { userId, status: "INACTIVE", setupDeliveryStatus, message }` | Source transaction revalidates the active Admin before target history; eligible incomplete account only; revokes prior active token and enforces 60-second cooldown. |
 | GET | `/api/admin/dashboard` | Admin | - | Dashboard summary/cards/chart data | Read-only aggregation; detailed reports belong to FE12. |
-| GET | `/api/admin/permissions` | Admin | - | Role summary and permission matrix | Read-only matrix unless using role assignment endpoints. |
+| GET | `/api/admin/permissions` | Admin | - | Role summary and permission matrix | Read-only matrix; role replacement is performed from All Users. |
 | GET | `/api/admin/audit-logs` | Admin | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Audit log list | Redacts sensitive fields. |
 | GET | `/api/admin/requests` | Admin | Query: `page?, limit?, q?, status?, from?, to?` | Exactly `{ data, pagination }` | Reads FE07 request data for Admin review UI using the canonical contract below. |
 | GET | `/api/admin/requests/{requestId}` | Admin | - | Request detail | Completed requests are view-only. |
@@ -508,7 +507,7 @@ The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, t
 - NFR-FE11-TXN-003: Role assignment must be atomic: UserRoles update and audit log must succeed together or roll back.
 - NFR-FE11-TXN-004: FE10 setup delivery runs after the FE11 source transaction; provider/requester failure must not roll back the account or token and must return only safe delivery status.
 - NFR-FE11-TXN-005: Setup resend acting-Admin revalidation, token revocation, new token creation, and audit logging must commit or roll back together.
-- NFR-FE11-TXN-006: Role assignment/revocation must lock the affected `UserRoles` rows and the Admin-role count before mutation; concurrent operations must serialize so at least one Admin always remains.
+- NFR-FE11-TXN-006: Role replacement must lock the affected `UserRoles` row and active Admin-role count before mutation; concurrent operations must serialize so each account has exactly one role and at least one active Admin always remains.
 
 ### 12.3 Performance
 
@@ -518,13 +517,13 @@ The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, t
 
 ### 12.4 Logging and Audit
 
-- NFR-FE11-LOG-001: Create, effective Librarian work-field update, deactivate, and role assignment actions must write audit log entries; rejected personal-field attempts must not write a success audit.
+- NFR-FE11-LOG-001: Create, effective managed-profile update, deactivate, and effective role replacement actions must write audit log entries; rejected and no-op role changes must not write a success audit.
 - NFR-FE11-LOG-002: Audit log must include: action type, admin ID, target user ID, timestamp, and details of changes.
 
 ### 12.5 Usability
 
 - NFR-FE11-UX-001: Validation errors must be clear and explain what went wrong (e.g., "Email already exists", "Password too weak").
-- NFR-FE11-UX-002: Confirmation dialogs must appear before destructive actions (deactivate, revoke role).
+- NFR-FE11-UX-002: Confirmation dialogs must appear before destructive actions (deactivate or replacing an Admin role).
 - NFR-FE11-UX-003: User list must display these columns: email, name, status, roles, last login, and created date.
 - NFR-FE11-UX-004: The Admin sidebar account email shall stay on one line with ellipsis and a full-value tooltip, and Admin data exports shall use valid `.docx` files rather than CSV downloads. Exported tables shall use landscape pages, fixed proportional column widths, compact readable text, localized statuses, and short Vietnamese dates.
 
@@ -585,7 +584,7 @@ This feature does not include:
 | Q-FE11-017 | FE11 responses use the explicit `UserManagementView` allowlist; unspecified or credential-bearing fields are excluded. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE11-018 | Librarian work-field updates and deactivation use `UpdatedAt` optimistic concurrency; stale requests return `409 STALE_USER_STATE`. | Spec normalization 2026-07-17; personal-data ownership revision 2026-07-22 | APPROVED |
 | Q-FE11-019 | Deactivation uses `INACTIVE` plus `deactivatedAt`, invalidates credentials atomically, and has no Phase 1 reactivation flow. | Cross-feature lifecycle normalization 2026-07-17 | APPROVED |
-| Q-FE11-020 | Admin-role assignment/revocation serializes the affected role mappings and Admin count so at least one Admin remains. | Role concurrency normalization 2026-07-17 | APPROVED |
+| Q-FE11-020 | Admin role replacement serializes the affected mapping and active Admin count so each account keeps exactly one role and at least one active Admin remains. | Single-role normalization 2026-07-27 | APPROVED |
 | Q-FE11-021 | Managed-user optimistic concurrency exposes and compares non-null `COALESCE(Users.UpdatedAt, Users.CreatedAt)` without a backfill migration. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
 | Q-FE11-022 | `fullName` remains maximum 100 and becomes FE03 user-owned after creation; nullable `department` and `specialization` are maximum 100 and are the only existing-user profile fields FE11 Admin may change for current Librarian targets. | FE11 Finalization Batch approval 2026-07-19; personal-data ownership revision 2026-07-22 | APPROVED |
 | Q-FE11-023 | `INACTIVE` with null `deactivatedAt` is pending activation and deactivation returns `409 ACCOUNT_PENDING_ACTIVATION`; only non-null `deactivatedAt` is idempotently deactivated. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
@@ -617,7 +616,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | Q-FE11-017 | FE11 exposes only the allowlisted `UserManagementView` DTO. | APPROVED |
 | Q-FE11-018 | Stale Librarian work-field updates and deactivation requests are rejected by `UpdatedAt` optimistic concurrency with `409 STALE_USER_STATE`. | APPROVED |
 | Q-FE11-019 | Deactivation uses `INACTIVE` plus `deactivatedAt`, invalidates credentials atomically, and has no Phase 1 reactivation flow. | APPROVED |
-| Q-FE11-020 | Admin-role assignment/revocation serializes the affected role mappings and Admin count so at least one Admin remains. | APPROVED |
+| Q-FE11-020 | Admin role replacement serializes the affected mapping and active Admin count so each account keeps exactly one role and at least one active Admin remains. | APPROVED |
 | Q-FE11-021 | Managed-user concurrency uses non-null `COALESCE(UpdatedAt, CreatedAt)`. | APPROVED |
 | Q-FE11-022 | `fullName` is FE03 user-owned after creation; FE11 owns only the 100-character `department` and `specialization` Librarian work fields. | APPROVED |
 | Q-FE11-023 | Pending activation is not an idempotent deactivation state. | APPROVED |
@@ -646,9 +645,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-010 | Valid librarian data -> inactive librarian/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Existing FE11-S01..S07 source/delivery evidence plus pending FE11-LIFE02 fields/actor hardening | PARTIAL |
 | AC-FE11-011 | Admin updates only Librarian `department`/`specialization` -> effective changes save and advance UpdatedAt; personal/unknown fields are rejected | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | FE11-LIFE02/LIFE03 plus FE11-PDO02/PDO03 boundary cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
 | AC-FE11-012 | Active librarian account deactivated by admin -> status changes to INACTIVE and sessions are invalidated | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | FE11-LIFE04 Librarian deactivation cases | Not Started |
-| AC-FE11-013 | User without Admin role receives Admin role assignment -> UserRoles updated | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
-| AC-FE11-014 | User with Admin role has role revoked (not last admin) -> UserRoles updated | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
-| AC-FE11-015 | Last remaining admin attempts to revoke Admin role -> system rejects action | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FE11-R01..R05; FE11-UIR01..UIR05; bounded validation records | COMPLETE (B7) |
+| AC-FE11-013 | Member role is replaced by Librarian -> exactly one mapping and audit commit | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
+| AC-FE11-014 | Non-final Admin is replaced by Member -> exactly one mapping remains | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
+| AC-FE11-015 | Last active Admin role replacement -> rejected without mutation | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
 | AC-FE11-016 | Admin console shows the exact eight approved sections with Membership Review after All Users, hides removed workflows, and keeps catalog management inside Admin | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
 | AC-FE11-017 | Permissions view displays role counts and read-only permission matrix from FE11 data | FR-FE11-032 | BR-FE11-017 | Planned permissions-view integration case | Not Started |
 | AC-FE11-018 | Audit-log view is a read-only paginated list without search/filter controls and redacts sensitive fields | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |
@@ -721,7 +720,7 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Password complexity requirements are approved.
 - [x] Admin deactivation policy is clarified.
 - [x] Email case-sensitivity for uniqueness is decided.
-- [x] Role hierarchy and multiple role support are confirmed.
+- [x] Flat mutually exclusive roles and exactly-one-role account cardinality are confirmed.
 - [x] User data retention policy after deactivation is defined.
 - [x] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed by the merged FE11 finalization migration and Phase 2 exit evidence.
 - [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.

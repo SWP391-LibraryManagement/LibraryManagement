@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Reconcile single-role main with rule alignment (v0.7.6)
+
+- Adopted project-wide `DEC-GEN-005`: every persisted account has exactly one
+  role.
+- Confirmed multi-role accounts are not supported; each account has exactly one
+  role.
+- Kept Member owner-only renewal and Librarian/Admin cross-member renewal as
+  separate single-role actor paths while preserving every loan-owner
+  eligibility check.
+- Renumbered the rule-alignment renewal task to `FE07-T051` because `main`
+  already assigned `FE07-T047` to single-role member-self-service access.
+- Marked the former multi-role renewal scenario as superseded and removed its
+  branch-local test/authorization delta during integration.
+
 ## 2026-07-27 - Specify renewal authorization and authoritative return data (v0.7.5)
 
 - Made `LIBRARIAN`/`ADMIN` cross-member renewal permission take precedence for
@@ -13,6 +27,14 @@
   three-copy daily tier and is not itself a borrowing rejection.
 - Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
   preparation only; no code or tests are claimed by this entry.
+
+## 2026-07-27 - Enforce non-staff member self-service
+
+- Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use member borrowing self-service.
+- `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` can no longer open or call member borrow candidates, create-request, or own-history flows.
+- Preserved Librarian/Admin approval, rejection, return, selected-member history, and staff renewal operations.
+- Connected frontend direct-route redirects with the same backend authorization boundary.
+- Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.
 
 ## 2026-07-23 - Reconcile approval and return transaction invariants
 

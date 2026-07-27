@@ -56,6 +56,12 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
 - Seed data must not include real personal data, passwords, tokens, or secrets.
 
+## FE11 Single-Role Account Decision
+
+Each persisted account has exactly one `UserRoles` row. `MEMBER`, `LIBRARIAN`, and `ADMIN` are mutually exclusive login roles; role changes delete the current mapping and insert the selected mapping in one locked transaction with the audit entry. The compatibility `roles` response field remains an array but has exactly one item.
+
+The baseline schema uses deterministic unique index `UX_UserRoles_UserId`. Existing environments use the reviewable, idempotent migration `database/migrations/2026-07-27-fe11-single-role-per-account.sql`. The migration fails safely if any user already has more than one mapping; an Admin must resolve those accounts explicitly before retrying, so deployment never guesses which privilege to retain.
+
 ## FE10 Durable Delivery Claim Decision
 
 The approved FE10 lifecycle includes `PENDING`, `PROCESSING`, `SENT`, and

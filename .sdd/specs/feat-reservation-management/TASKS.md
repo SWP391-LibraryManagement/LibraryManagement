@@ -1,15 +1,17 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: READY FOR REVIEW - FE07/FE10 REGRESSION BOUNDARY
+Status: IN PROGRESS - SINGLE-ROLE INTEGRATION REGRESSION
 Implementation State: PARTIAL
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. FE08-T041 regression
-verification passed locally on 2026-07-27; no FE08 product behavior changed.
-Nhat approved the batch H2 on 2026-07-27; H3 remains required before merge.
+Workflow State: The Phase 2 baseline remains complete. `main` owns the
+single-role access task `FE08-T041`; the rule-alignment regression-only task is
+renumbered `FE08-T042`. Nhat authorized integration on 2026-07-27. No new FE08
+product behavior is introduced, and the merged result remains uncommitted
+pending fresh validation and H2 addendum.
 
 ---
 
@@ -212,11 +214,19 @@ Nhat approved the batch H2 on 2026-07-27; H3 remains required before merge.
   - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
   - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
 
-## 9. 2026-07-27 FE07/FE10 regression boundary
+## 9. 2026-07-27 single-role member reservation baseline
 
-- [x] **FE08-T041 - Verify unchanged FE07 and FE10 handoffs.**
+- [x] **FE08-T041 - Enforce single-role access to member reservation flows.**
+  - Maps to: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
+  - Replace member-any-role guards on candidate/create/own-list/cancel routes with the shared non-staff-member guard.
+  - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff list/queue operations.
+  - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
+
+## 10. 2026-07-27 FE07/FE10 integration regression boundary
+
+- [x] **FE08-T042 - Verify unchanged FE07 and FE10 handoffs.**
   - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
   - Scope: regression evidence only; no FE08 production or contract change.
-  - Evidence: focused FE08 canonical requester test, `SIT-003` queue/notification flow, `SIT-004` FE07 renewal-priority flow, and the FE08 browser candidate acceptance remain green.
-  - Observed: requester 1/1, SIT-003/SIT-004 2/2, and FE08 browser acceptance passed.
+  - Integrated evidence: requester 1/1, SIT-003/SIT-004 2/2, cross-feature focused gate 281/281, and FE08 Chromium candidate acceptance passed after `main` integration.
+  - Integration gate: H2 addendum remains required before committing the open merge.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

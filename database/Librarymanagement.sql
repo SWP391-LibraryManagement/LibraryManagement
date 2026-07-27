@@ -42,6 +42,8 @@ CREATE TABLE UserRoles (
     FOREIGN KEY (RoleId) REFERENCES Roles(RoleId)
 );
 
+CREATE UNIQUE INDEX UX_UserRoles_UserId ON UserRoles(UserId);
+
 CREATE TABLE UserProfiles (
     ProfileId INT IDENTITY PRIMARY KEY,
     UserId INT UNIQUE NOT NULL,

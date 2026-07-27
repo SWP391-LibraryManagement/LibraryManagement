@@ -1,6 +1,6 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.3.7
+# Version: 0.3.8
 
 # Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59; HOMEPAGE POLISH IMPLEMENTED LOCALLY, HUMAN ACCEPTANCE PENDING
 
@@ -72,16 +72,16 @@ The system shall:
 | Librarian | Library staff | May use the same public-safe reads; FE01 gives no write permission and catalog management belongs to FE05. |
 | Admin | System administrator | May use the same public-safe reads; FE01 gives no write permission and management belongs to FE05/FE11. |
 
-### 2.1 Homepage Role Connection Matrix
+### 2.1 Homepage Role Continuation Matrix
 
-All actors share `Khám phá sách`, `Về thư viện`, and `Hỗ trợ`. The service group changes by audience, and staff-first precedence applies when an account has multiple roles.
+The header contains library branding and account actions only. It does not render the former `Khám phá sách`, `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện`, or `Hỗ trợ` navigation groups. Role-owned destinations remain available through the page's role continuation panel and other owning controls, derived from the account's single FE11 role.
 
-| Audience | Service group | Connected destinations |
-| -------- | ------------- | ---------------------- |
-| Guest | `Hội viên` | `/login`, `/register`, and the public membership-benefit section. |
-| Member | `Thư viện của tôi` | `/membership`, `/borrowing/new`, `/borrowing/history`, and `/reservations/mine`. |
-| Librarian | `Nghiệp vụ` | `/membership`, `/librarian/borrow-requests`, `/librarian/returns`, and `/librarian/inventory` through the role continuation panel. |
-| Admin | `Nghiệp vụ` | `/admin/users`, `/membership`, `/reports/users`, and `/reports/inventory` through the role continuation panel. |
+| Audience | Connected destinations |
+| -------- | ---------------------- |
+| Guest | `/login`, `/register`, and the public catalog section. |
+| Member | `/membership`, `/borrowing/new`, `/borrowing/history`, and `/reservations/mine`. |
+| Librarian | `/membership`, `/librarian/borrow-requests`, `/librarian/returns`, and `/librarian/inventory`. |
+| Admin | `/admin/users`, `/membership`, `/reports/users`, and `/reports/inventory`. |
 
 The public library experience is available at `/home` for Guest and Admin through the role-aware home route, and directly at `/homepage` for every actor. Member/Librarian `/home` remains their role dashboard. FE01 links only to existing owning screens and does not duplicate their protected operations.
 
@@ -142,9 +142,9 @@ The feature can only start when:
 
 ### MF-FE01-006: Continue To A Role-Owned Workflow
 
-1. The actor opens a Homepage navigation group, role continuation action, or book action.
-2. The system derives the audience using staff-first precedence: `ADMIN`, then `LIBRARIAN`, then `MEMBER`; an unauthenticated actor is Guest.
-3. The system shows the audience label and destinations defined in the Homepage Role Connection Matrix.
+1. The actor opens a role continuation action or book action.
+2. The system derives the audience from the account's single `ADMIN`, `LIBRARIAN`, or `MEMBER` role; an unauthenticated actor is Guest.
+3. The system shows the audience label and destinations defined in the Homepage Role Continuation Matrix.
 4. A public-section action scrolls or filters within Homepage; a protected action navigates to the registered owning route.
 5. The owning feature and its route guard enforce authorization. FE01 does not simulate completion or perform the protected mutation.
 
@@ -196,8 +196,9 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-012: Public browse must hide `Books.Status = INACTIVE` even if one or more copies are marked `AVAILABLE`.
 - BR-FE01-013: Public browse defaults to `page=1`, `limit=20`, and stable ordering `Title ASC, BookId ASC`; `page` must be an integer at least 1 and `limit` must be an integer from 1 through 100.
 - BR-FE01-014: Missing optional catalog metadata must not remove an otherwise public-visible book; the response returns `null` and the UI uses a safe fallback label/image.
-- BR-FE01-015: FE11 accounts may hold multiple roles. Public-book actions use staff-first precedence (`ADMIN`/`LIBRARIAN` before `MEMBER`) so a staff account is never routed into a member-only borrow or reservation workflow.
+- BR-FE01-015: FE11 accounts hold exactly one role. Public-book actions route `MEMBER` to member-owned borrowing/reservation workflows and route `ADMIN`/`LIBRARIAN` to staff-owned management workflows.
 - BR-FE01-016: HomePage must not render `Còn sách`, `Không khả dụng`, or equivalent availability-revealing action labels to Guest or Member; Librarian/Admin may see the high-level status, and internal status may still select the correct owning route.
+- BR-FE01-017: The HomePage header must not render the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups on desktop or mobile.
 
 ---
 
@@ -218,9 +219,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-013: When optional author, category, publisher, cover, or ISBN data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
 - FR-FE01-014: When an authenticated account has both a staff role and `MEMBER`, the public home page shall expose FE05/FE06 staff actions rather than FE07/FE08 member-only actions.
 - FR-FE01-015: The public footer shall present compact responsive contact information, keep phone/email readable without avoidable desktop wrapping, and open readable, dismissible information for Privacy, Terms, and browser storage controls without navigating to an empty link.
-- FR-FE01-016: The public home navigation shall expose `Khám phá sách`, a role-aware service group (`Hội viên`, `Thư viện của tôi`, or `Nghiệp vụ`), `Về thư viện`, and `Hỗ trợ`; destinations shall follow the Homepage Role Connection Matrix, use staff-first precedence, exist in the application router, and defer protected authorization to the owning feature.
+- FR-FE01-016: The public home header shall show library branding and account actions without the former `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups; role continuation actions shall remain connected to registered owning routes through the account's single role.
 - FR-FE01-017: The home page shall provide additional catalog-topic, library-journey, and role-aware continuation sections whose actions reuse current public filters and owning feature routes.
-- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; staff-first Librarian/Admin accounts retain the high-level status display.
+- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; Librarian/Admin accounts retain the high-level status display.
 
 ---
 
@@ -241,7 +242,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-013: Given a public-visible book with missing optional metadata, when it is listed or opened, then the book remains present and each missing field is returned as `null` for safe UI fallback.
 - AC-FE01-014: Given an account with `MEMBER` plus `LIBRARIAN` or `ADMIN`, when the account opens a public book action, then an available book routes to FE05 management and an unavailable book routes to FE06 inventory inspection.
 - AC-FE01-015: Given a user on the public home page, when the footer is displayed, then phone, email, and address remain readable at the supported width; selecting Privacy, Terms, or Cookie opens matching information in an accessible dialog that can be closed by its controls, backdrop, or Escape key.
-- AC-FE01-016: Given a Guest, Member, Librarian, or Admin on the public home page, when the user opens a navigation group, then the group name and destinations match the Homepage Role Connection Matrix and selecting one scrolls, opens contact information, or reaches a registered route guarded by the corresponding owning feature.
+- AC-FE01-016: Given a Guest, Member, Librarian, or Admin on the public home page, when the header is displayed, then none of the four removed navigation groups is rendered on desktop or mobile, while branding, account actions, and role continuation destinations remain available.
 - AC-FE01-017: Given a Guest, Member, Librarian, or Admin viewing the extended home page, when the user selects a topic or role continuation action, then the catalog is filtered or the user is routed to an existing screen valid for that audience without simulated data or success.
 - AC-FE01-018: Given the same book is viewed on HomePage by Guest, Member, Librarian, and Admin, then Guest/Member sees no availability badge or revealing action label while Librarian/Admin sees the approved high-level status.
 
@@ -262,7 +263,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-009 | Optional category/author/publisher/cover/ISBN metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
 | EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
-| EC-FE01-012 | Account has both Member and staff roles | Apply staff-first action precedence; do not route the account to a Member-only mutation screen. |
+| EC-FE01-012 | Account role is Admin or Librarian | Do not route the account to a Member-only mutation screen. |
 
 ---
 
@@ -331,7 +332,7 @@ Use these stable IDs for tasks and tests.
 - NFR-FE01-UX-001: Empty search and no-result states must be understandable to guests.
 - NFR-FE01-UX-002: HomePage book presentation must hide availability from Guest/Member and clearly distinguish the high-level state when shown to Librarian/Admin.
 - NFR-FE01-UX-003: Footer contact details must remain compact on desktop, keep the email on one line at supported desktop widths, and reflow without horizontal overflow at tablet and mobile widths.
-- NFR-FE01-UX-004: Public navigation groups must use audience-appropriate labels, provide visible hover/focus feedback, a usable mobile accordion, Escape dismissal, and reduced-motion behavior.
+- NFR-FE01-UX-004: The simplified public header must remain responsive and keep account actions usable without rendering empty navigation space or the removed mobile accordions.
 - NFR-FE01-UX-005: Extended home sections must remain responsive, provide on-view and interaction feedback, and become immediately visible when reduced motion is requested.
 
 ---
@@ -359,7 +360,7 @@ This feature does not include:
 | FE06 Inventory / Book Copy Management | Internal | Provides the public availability status without exposing exact copy counts. |
 | FE02 Authentication | Internal | Provides login/register routes for member-only actions. |
 | FE04 Membership Management | Internal | Handles membership application after public discovery. |
-| FE11 User & Role Management | Internal | Supplies the current role set used for public-account actions; multi-role accounts follow staff-first precedence. |
+| FE11 User & Role Management | Internal | Supplies the account's current single role used for public-account actions. |
 | SQL Server database | Technical | Stores public book catalog data. |
 
 ---
@@ -389,14 +390,15 @@ This feature does not include:
 | BR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | BR-FE01-008..012 | UC01-UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
 | BR-FE01-013..014 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
-| BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` multi-role staff-precedence case | Complete |
+| BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` single-role Member/staff cases plus defensive legacy case | Complete |
 | BR-FE01-016 | UC01-UC04 | `publicBrowseFrontend.test.js` availability-visibility boundary | Complete |
+| BR-FE01-017 | UC01 | `publicBrowseFrontend.test.js` removed desktop/mobile header groups | Complete |
 | FR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | FR-FE01-008..010 | UC01, UC02, UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
 | FR-FE01-011..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | FR-FE01-014 | UC01-UC04 | `homeBookActions.test.js` | Complete |
 | FR-FE01-015 | UC01 | `publicBrowseFrontend.test.js` footer policy controls | Complete |
-| FR-FE01-016 | UC01 | `publicBrowseFrontend.test.js` role-aware navigation destinations and router registration | Complete |
+| FR-FE01-016 | UC01 | `publicBrowseFrontend.test.js` simplified header and retained role continuation destinations | Complete |
 | FR-FE01-017 | UC01 | `publicBrowseFrontend.test.js` extended home sections | Complete |
 | FR-FE01-018 | UC01-UC04 | `publicBrowseFrontend.test.js` Guest/Member versus staff presentation | Complete |
 | AC-FE01-001..008 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
@@ -404,11 +406,11 @@ This feature does not include:
 | AC-FE01-010..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | AC-FE01-014 | UC01-UC04 | `homeBookActions.test.js` mixed Member/staff role cases | Complete |
 | AC-FE01-015 | UC01 | `publicBrowseFrontend.test.js` accessible policy dialog case | Complete |
-| AC-FE01-016 | UC01 | `publicBrowseFrontend.test.js` Guest/Member/Librarian/Admin navigation and registered-route case | Complete |
+| AC-FE01-016 | UC01 | `publicBrowseFrontend.test.js` removed header groups and retained account/role actions | Complete |
 | AC-FE01-017 | UC01 | `publicBrowseFrontend.test.js` topic and role continuation actions | Complete |
 | AC-FE01-018 | UC01-UC04 | `publicBrowseFrontend.test.js` role visibility cases | Complete |
 
-Coverage: 16/16 BR, 18/18 FR, and 18/18 AC have current automated evidence mappings.
+Coverage: 17/17 BR, 18/18 FR, and 18/18 AC have current automated evidence mappings.
 
 ---
 

@@ -1,6 +1,10 @@
 const express = require('express');
 const { createBorrowingController } = require('../controllers/borrowingController');
-const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
+const {
+  createAuthenticate,
+  requireAnyRole,
+  requireMemberOnly,
+} = require('../middleware/authMiddleware');
 const {
   listBorrowCandidatesValidators,
   createBorrowRequestValidators,
@@ -21,7 +25,7 @@ function createBorrowingRoutes({ authService, borrowingService } = {}) {
   router.get(
     '/borrow-requests/candidates',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     listBorrowCandidatesValidators,
     controller.listCandidates
   );
@@ -29,7 +33,7 @@ function createBorrowingRoutes({ authService, borrowingService } = {}) {
   router.post(
     '/borrow-requests',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     createBorrowRequestValidators,
     controller.createRequest
   );
@@ -37,7 +41,7 @@ function createBorrowingRoutes({ authService, borrowingService } = {}) {
   router.get(
     '/borrow-requests/me',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     memberHistoryValidators,
     controller.listMine
   );

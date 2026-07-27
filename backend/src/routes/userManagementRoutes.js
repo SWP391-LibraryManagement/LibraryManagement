@@ -10,8 +10,7 @@ const {
   updateUserValidators,
   updateUserStatusValidators,
   resendSetupValidators,
-  assignRoleValidators,
-  revokeRoleValidators,
+  replaceRoleValidators,
 } = require('../validators/userManagementValidators');
 
 function createUserManagementRoutes({ authService, userManagementService } = {}) {
@@ -41,13 +40,7 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
     updateUserStatusValidators,
     controller.updateStatus
   );
-  router.post('/:userId/roles', ...requireAdmin, assignRoleValidators, controller.assignRole);
-  router.delete(
-    '/:userId/roles/:roleId',
-    ...requireAdmin,
-    revokeRoleValidators,
-    controller.revokeRole
-  );
+  router.put('/:userId/role', ...requireAdmin, replaceRoleValidators, controller.replaceRole);
 
   return router;
 }

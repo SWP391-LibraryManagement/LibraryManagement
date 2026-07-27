@@ -94,7 +94,7 @@ The current SQL script includes:
 
 - `Users(UserId, Username, Email, PasswordHash, Phone, Status, EmailVerifiedAt, FailedLoginCount, LockedUntil, LastLoginAt, CreatedAt, UpdatedAt, DeactivatedAt)`
 - `Roles(RoleId, RoleName)`
-- `UserRoles(UserId, RoleId, CreatedAt)`
+- `UserRoles(UserId, RoleId, CreatedAt)` with `UX_UserRoles_UserId`, so every persisted account has exactly one role mapping
 - `AuthTokens(TokenId, UserId, TokenType, TokenHash, ExpiresAt, UsedAt, RevokedAt, CreatedAt, CreatedByIp)`
 - `AuditLogs(LogId, UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)`
 - `UserProfiles(ProfileId, UserId, FullName, Address, DateOfBirth, AvatarUrl, Department, Specialization, CreatedAt, UpdatedAt)` for profile data owned by FE03.

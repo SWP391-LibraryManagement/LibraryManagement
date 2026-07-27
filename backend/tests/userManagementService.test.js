@@ -722,17 +722,17 @@ describe('FE11 atomic managed-user deactivation service', () => {
 });
 
 describe('FE11 transactional role service', () => {
-  function makeRoleHarness(outcome = 'ASSIGNED') {
+  function makeRoleHarness(outcome = 'REPLACED') {
     const updatedUser = {
       userId: 7,
       email: 'staff@example.test',
-      roles: outcome === 'REVOKED' ? ['MEMBER'] : ['LIBRARIAN', 'MEMBER'],
+      roles: ['LIBRARIAN'],
     };
     const userRepository = {
       getManagedUserById: jest.fn(async () => updatedUser),
     };
     const userRoleRepository = {
-      mutateUserRole: jest.fn(async () => ({
+      replaceUserRole: jest.fn(async () => ({
         outcome,
         role: { roleId: 3, roleName: 'LIBRARIAN' },
       })),
@@ -758,19 +758,18 @@ describe('FE11 transactional role service', () => {
     };
   }
 
-  test('assigns through the transactional repository and returns safe readback', async () => {
-    const harness = makeRoleHarness('ASSIGNED');
+  test('replaces through the transactional repository and returns safe readback', async () => {
+    const harness = makeRoleHarness('REPLACED');
 
     await expect(
-      harness.service.assignRole(7, { roleId: 3 }, {
+      harness.service.replaceRole(7, { roleId: 3 }, {
         adminUserId: 99,
         ip: '127.0.0.1',
         userAgent: 'jest',
       })
     ).resolves.toEqual(harness.updatedUser);
 
-    expect(harness.userRoleRepository.mutateUserRole).toHaveBeenCalledWith({
-      operation: 'ASSIGN',
+    expect(harness.userRoleRepository.replaceUserRole).toHaveBeenCalledWith({
       adminUserId: 99,
       userId: 7,
       roleId: 3,
@@ -781,19 +780,18 @@ describe('FE11 transactional role service', () => {
     expect(harness.auditLogRepository.create).not.toHaveBeenCalled();
   });
 
-  test('revokes through the transactional repository and returns safe readback', async () => {
-    const harness = makeRoleHarness('REVOKED');
+  test('returns safe readback for an unchanged role without a second audit', async () => {
+    const harness = makeRoleHarness('UNCHANGED');
 
     await expect(
-      harness.service.revokeRole(7, 3, {
+      harness.service.replaceRole(7, { roleId: 3 }, {
         adminUserId: 99,
         ip: '127.0.0.2',
         userAgent: 'jest-revoke',
       })
     ).resolves.toEqual(harness.updatedUser);
 
-    expect(harness.userRoleRepository.mutateUserRole).toHaveBeenCalledWith({
-      operation: 'REVOKE',
+    expect(harness.userRoleRepository.replaceUserRole).toHaveBeenCalledWith({
       adminUserId: 99,
       userId: 7,
       roleId: 3,
@@ -809,15 +807,12 @@ describe('FE11 transactional role service', () => {
     ['ADMIN_REQUIRED', 403, 'ADMIN_REQUIRED', 'Admin access is required.'],
     ['USER_NOT_FOUND', 404, 'USER_NOT_FOUND', 'User was not found.'],
     ['ROLE_NOT_FOUND', 404, 'ROLE_NOT_FOUND', 'Role was not found.'],
-    ['USER_ALREADY_HAS_ROLE', 409, 'USER_ALREADY_HAS_ROLE', 'User already has this role.'],
-    ['USER_ROLE_NOT_FOUND', 404, 'USER_ROLE_NOT_FOUND', 'User does not have this role.'],
-    ['LAST_USER_ROLE', 400, 'LAST_USER_ROLE', 'Every user must keep at least one role.'],
-    ['LAST_ADMIN_ROLE', 400, 'LAST_ADMIN_ROLE', 'Cannot remove the last Admin role.'],
+    ['LAST_ADMIN_ROLE', 400, 'LAST_ADMIN_ROLE', 'Cannot replace the last active Admin role.'],
   ])('maps %s to a safe service error', async (outcome, statusCode, code, message) => {
     const harness = makeRoleHarness(outcome);
 
     await expect(
-      harness.service.assignRole(7, { roleId: 3 }, { adminUserId: 99 })
+      harness.service.replaceRole(7, { roleId: 3 }, { adminUserId: 99 })
     ).rejects.toMatchObject({ statusCode, code, message });
 
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
@@ -827,25 +822,19 @@ describe('FE11 transactional role service', () => {
   test.each([
     [
       'invalid target',
-      (service) => service.assignRole(0, { roleId: 3 }, { adminUserId: 99 }),
+      (service) => service.replaceRole(0, { roleId: 3 }, { adminUserId: 99 }),
       400,
       'INVALID_USER_ID',
     ],
     [
-      'invalid assignment role',
-      (service) => service.assignRole(7, { roleId: 0 }, { adminUserId: 99 }),
-      400,
-      'INVALID_ROLE_ID',
-    ],
-    [
-      'invalid revocation role',
-      (service) => service.revokeRole(7, 'not-a-role', { adminUserId: 99 }),
+      'invalid replacement role',
+      (service) => service.replaceRole(7, { roleId: 0 }, { adminUserId: 99 }),
       400,
       'INVALID_ROLE_ID',
     ],
     [
       'missing acting Admin',
-      (service) => service.assignRole(7, { roleId: 3 }, {}),
+      (service) => service.replaceRole(7, { roleId: 3 }, {}),
       404,
       'ADMIN_NOT_FOUND',
     ],
@@ -854,7 +843,7 @@ describe('FE11 transactional role service', () => {
 
     await expect(invokeRole(harness.service)).rejects.toMatchObject({ statusCode, code });
 
-    expect(harness.userRoleRepository.mutateUserRole).not.toHaveBeenCalled();
+    expect(harness.userRoleRepository.replaceUserRole).not.toHaveBeenCalled();
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();
   });
 
@@ -862,7 +851,7 @@ describe('FE11 transactional role service', () => {
     const harness = makeRoleHarness('UNEXPECTED_OUTCOME');
 
     await expect(
-      harness.service.assignRole(7, { roleId: 3 }, { adminUserId: 99 })
+      harness.service.replaceRole(7, { roleId: 3 }, { adminUserId: 99 })
     ).rejects.toMatchObject({
       statusCode: 500,
       code: 'INTERNAL_ERROR',
@@ -875,10 +864,10 @@ describe('FE11 transactional role service', () => {
   test('preserves unexpected repository failures without a readback', async () => {
     const harness = makeRoleHarness();
     const repositoryError = new Error('role transaction failed');
-    harness.userRoleRepository.mutateUserRole.mockRejectedValueOnce(repositoryError);
+    harness.userRoleRepository.replaceUserRole.mockRejectedValueOnce(repositoryError);
 
     await expect(
-      harness.service.assignRole(7, { roleId: 3 }, { adminUserId: 99 })
+      harness.service.replaceRole(7, { roleId: 3 }, { adminUserId: 99 })
     ).rejects.toBe(repositoryError);
 
     expect(harness.userRepository.getManagedUserById).not.toHaveBeenCalled();

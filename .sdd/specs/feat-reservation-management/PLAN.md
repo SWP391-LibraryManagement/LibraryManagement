@@ -1,14 +1,14 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: READY FOR REVIEW - FE07/FE10 REGRESSION BOUNDARY
+Status: IN PROGRESS - SINGLE-ROLE INTEGRATION REGRESSION
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. FE08 has no new product
-rule in the 2026-07-27 batch; its review-ready task verifies the unchanged FE07
-reservation-priority and FE10 requester handoffs after the Core fixes.
+Workflow State: The Phase 2 baseline remains complete. `main` owns single-role
+task `FE08-T041`; the rule-alignment regression boundary is `FE08-T042`. Nhat
+authorized integration on 2026-07-27. No new FE08 product behavior is planned.
 
 ---
 
@@ -61,7 +61,7 @@ Not included:
 ### 3.2 Create Reservation
 
 - Validate `copyId`.
-- Confirm the actor is an active user with the `MEMBER` role; FE04 approval is not required.
+- Confirm member-self-service actor is active, has `MEMBER`, and has neither `LIBRARIAN` nor `ADMIN`; FE04 approval is not required.
 - Reject available, damaged, lost, or inactive copies.
 - Reject duplicate active reservations for the same copy.
 - Reject when the member already has 3 active reservations.
@@ -84,7 +84,7 @@ Not included:
 ### 3.5 Tests
 
 - Add route-level tests using in-memory repositories.
-- Cover create, duplicate, available-copy rejection, active limit, owner-only cancellation, staff list, queue order, notification request, and role guards.
+- Cover create, duplicate, available-copy rejection, active limit, owner-only cancellation, staff list, queue order, notification request, and single-role guards.
 - Run backend Jest suite before handoff.
 
 ### 3.6 Frontend Correctness
@@ -186,9 +186,11 @@ Not included:
 ## 10. 2026-07-27 Regression-Only Boundary
 
 1. Do not change FE08 production code, schema, API, lifecycle, or queue policy.
-2. Re-run the focused reservation requester test proving FE08 constructs the
+2. Preserve `FE08-T041` from `main` for the single-role member-reservation
+   boundary and use `FE08-T042` for this batch's regression-only verification.
+3. Re-run the focused reservation requester test proving FE08 constructs the
    canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.
-3. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
+4. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
    proving FE08 priority still blocks FE07 renewal without mutation.
-4. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
+5. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
    do not broaden this batch silently.

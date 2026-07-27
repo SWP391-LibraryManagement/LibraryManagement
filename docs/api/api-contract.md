@@ -511,7 +511,7 @@ Rules:
 - Users with active borrowings cannot be deactivated.
 - Deactivation atomically sets `deactivatedAt`, revokes active `REFRESH` credentials, writes the audit, and does not permanently delete data.
 
-### POST `/api/users/{userId}/roles`
+### PUT `/api/users/{userId}/role`
 
 Request:
 
@@ -521,28 +521,15 @@ Request:
 }
 ```
 
-Response `200`:
-
-```json
-{
-  "message": "Role assigned"
-}
-```
-
-### DELETE `/api/users/{userId}/roles/{roleId}`
-
-Response `200`:
-
-```json
-{
-  "message": "Role revoked"
-}
-```
+Response `200`: the authoritative safe user-management DTO. Its compatibility `roles` array contains exactly one role.
 
 Rules:
 
 - Roles are flat in Phase 1.
-- Last remaining Admin role must not be revoked.
+- Every persisted account has exactly one mutually exclusive role.
+- Replacement deletes the current mapping, inserts the selected mapping, and writes the audit in one transaction.
+- Selecting the current sole role is an idempotent no-op with no role-change audit.
+- The last active Admin role must not be replaced.
 
 ### GET `/api/admin/permissions`
 

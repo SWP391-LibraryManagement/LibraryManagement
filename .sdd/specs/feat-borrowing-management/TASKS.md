@@ -1,17 +1,17 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: READY FOR REVIEW - V0.7.5 RULE ALIGNMENT
+Status: IN PROGRESS - V0.7.6 MAIN INTEGRATION
 Implementation State: PARTIAL
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. Nhat approved the
-FE07-T047 through FE07-T050 PLAN/TASKS on 2026-07-27. Local implementation,
-automated checks, and runtime acceptance are complete. Nhat approved H2 on
-2026-07-27, authorizing commit, push, and draft PR publication; H3 remains
-required before merge.
+Workflow State: The Phase 2 baseline remains complete. The v0.7.5 batch passed
+local verification and H2, then `main` introduced the approved single-role
+account contract using `FE07-T047`. Nhat authorized v0.7.6 reconciliation on
+2026-07-27. The integrated result remains uncommitted pending fresh validation
+and an H2 addendum; H3 remains required before merge.
 
 ---
 
@@ -270,14 +270,22 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - GREEN: return/renewal use `libraryBusinessTime`; in-memory and SQL doubles share the physical-copy invariant; SQL expectations use current `MEMBER` role eligibility and explicit conflict outcomes.
   - Verification: focused FE07 tests are green under `TZ=UTC`; disposable SQL and full regression are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned the bounded round-two completeness findings. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
 
-## 2026-07-27 v0.7.5 rule-alignment batch
+## 2026-07-27 single-role member-self-service baseline
 
-- [x] **FE07-T047 - Enforce multi-role staff renewal authorization.**
-  - Maps to: BD-001, BR-FE07-003, FR-FE07-009, AC-FE07-009.
-  - RED: a `MEMBER + LIBRARIAN` actor renewing another member's eligible detail receives `403 BORROW_DETAIL_OWNER_REQUIRED`.
-  - GREEN: check `LIBRARIAN`/`ADMIN` scope before applying member ownership; preserve member-only denial and all loan-owner eligibility checks.
+- [x] **FE07-T047 - Enforce single-role access to member borrowing flows.**
+  - Maps to: BR-FE07-031, FR-FE07-032, AC-FE07-026; BR-FE11-028.
+  - Replace member-any-role guards on candidate/create/own-history routes with the shared non-staff-member guard.
+  - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff operational routes.
+  - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
+
+## 2026-07-27 v0.7.6 rule-alignment integration batch
+
+- [x] **FE07-T051 - Retire the superseded multi-role renewal scenario.**
+  - Maps to: DEC-GEN-005, BD-007, BR-FE07-003/031, FR-FE07-009/032, AC-FE07-009/026.
+  - Decision: every account has exactly one role; the former multi-role renewal scenario is not a supported business case.
+  - Reconciliation: preserve Member owner-only renewal and Librarian/Admin cross-member renewal using separate single-role actors; remove the branch-local multi-role test and its unnecessary authorization delta.
   - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`.
-  - Evidence: RED returned `403` for the multi-role staff request; focused GREEN and the full FE07 route/repository suites passed.
+  - Evidence: single-role/FE11 invariant selection passed 3/3 before cleanup and 3/3 after cleanup; full FE07 route/repository verification passed 79/79.
 - [x] **FE07-T048 - Return the authoritative transaction snapshot.**
   - Maps to: BD-002, BR-FE07-014/016, FR-FE07-007/008, AC-FE07-008.
   - RED: a due-date change between preflight and the repository lock produces stale response/audit overdue data.
@@ -291,7 +299,8 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`.
   - Evidence: RED produced `2026-03-21` in New York instead of `2026-03-22`; both UTC and New York matrices now pass.
 - [x] **FE07-T050 - Complete FE07 verification and evidence.**
-  - Maps to: AT-001, AT-002, AT-003 and the v0.7.5 plan gates.
+  - Maps to: AT-001, AT-002, AT-003 and the v0.7.6 plan gates.
   - Evidence: focused route/repository tests, UTC/New York timezone matrix, optional named-disposable SQL test, full backend regression, traceability, diff hygiene, L2/L3 review, and local runtime acceptance.
-  - Observed: 61 backend suites/1,027 tests, coverage above 80%, both browser scenarios, traceability, and diff hygiene passed; optional SQL was not run.
-  - Gate: H2 was approved by Nhat on 2026-07-27; merge remains blocked pending H3.
+  - Integrated evidence: 7 focused suites/281 tests, FE07 route/repository 79/79, both timezone matrices 3/3, backend coverage run 61 suites/1,017 tests above all 80% thresholds, frontend 227/227 plus lint/build, traceability, diff hygiene, and Chromium 2/2 passed.
+  - SQL boundary: optional mutable SQL was not run because `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` were unset; no real-SQL mutation claim is made.
+  - Integration gate: H2 addendum remains required before committing the open merge.

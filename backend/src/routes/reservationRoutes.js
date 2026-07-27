@@ -1,6 +1,10 @@
 const express = require('express');
 const { createReservationController } = require('../controllers/reservationController');
-const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
+const {
+  createAuthenticate,
+  requireAnyRole,
+  requireMemberOnly,
+} = require('../middleware/authMiddleware');
 const {
   createReservationValidators,
   listReservationCandidatesValidators,
@@ -18,7 +22,7 @@ function createReservationRoutes({ authService, reservationService } = {}) {
   router.post(
     '/',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     createReservationValidators,
     controller.create
   );
@@ -26,7 +30,7 @@ function createReservationRoutes({ authService, reservationService } = {}) {
   router.get(
     '/candidates',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     listReservationCandidatesValidators,
     controller.listCandidates
   );
@@ -34,7 +38,7 @@ function createReservationRoutes({ authService, reservationService } = {}) {
   router.get(
     '/me',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     listMyReservationsValidators,
     controller.listMine
   );
@@ -65,7 +69,7 @@ function createReservationRoutes({ authService, reservationService } = {}) {
   router.patch(
     '/:reservationId/cancel',
     authenticate,
-    requireAnyRole('MEMBER'),
+    requireMemberOnly,
     cancelReservationValidators,
     controller.cancel
   );

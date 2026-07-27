@@ -125,14 +125,8 @@ function throwRoleMutationError(outcome) {
       errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
     USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
     ROLE_NOT_FOUND: () => errors.notFound('ROLE_NOT_FOUND', 'Role was not found.'),
-    USER_ALREADY_HAS_ROLE: () =>
-      errors.conflict('USER_ALREADY_HAS_ROLE', 'User already has this role.'),
-    USER_ROLE_NOT_FOUND: () =>
-      errors.notFound('USER_ROLE_NOT_FOUND', 'User does not have this role.'),
-    LAST_USER_ROLE: () =>
-      errors.badRequest('LAST_USER_ROLE', 'Every user must keep at least one role.'),
     LAST_ADMIN_ROLE: () =>
-      errors.badRequest('LAST_ADMIN_ROLE', 'Cannot remove the last Admin role.'),
+      errors.badRequest('LAST_ADMIN_ROLE', 'Cannot replace the last active Admin role.'),
   };
   const createError = mappings[outcome];
 
@@ -528,9 +522,8 @@ function createUserManagementService({
     return userRepository.getManagedUserById(parsedUserId);
   }
 
-  // @spec FR-FE11-012, FR-FE11-013, FR-FE11-014, FR-FE11-017
-  // @spec FR-FE11-024, FR-FE11-025, FR-FE11-026, FR-FE11-027
-  async function mutateRole(operation, userId, roleIdInput, context = {}) {
+  // @spec FR-FE11-012, FR-FE11-014, FR-FE11-017, FR-FE11-024
+  async function replaceRole(userId, input, context = {}) {
     const parsedAdminUserId = parsePositiveId(
       context.adminUserId,
       'ADMIN_NOT_FOUND',
@@ -543,21 +536,18 @@ function createUserManagementService({
       'User id is invalid.'
     );
     const parsedRoleId = parsePositiveId(
-      roleIdInput,
+      input?.roleId,
       'INVALID_ROLE_ID',
       'Role id is invalid.'
     );
-    const result = await userRoleRepository.mutateUserRole({
-      operation,
+    const result = await userRoleRepository.replaceUserRole({
       adminUserId: parsedAdminUserId,
       userId: parsedUserId,
       roleId: parsedRoleId,
       ipAddress: context.ip || null,
       userAgent: context.userAgent || null,
     });
-    const successOutcome = operation === 'ASSIGN' ? 'ASSIGNED' : 'REVOKED';
-
-    if (result.outcome !== successOutcome) {
+    if (!['REPLACED', 'UNCHANGED'].includes(result.outcome)) {
       throwRoleMutationError(result.outcome);
     }
 
@@ -569,14 +559,6 @@ function createUserManagementService({
     return updatedUser;
   }
 
-  async function assignRole(userId, input, context = {}) {
-    return mutateRole('ASSIGN', userId, input?.roleId, context);
-  }
-
-  async function revokeRole(userId, roleIdParam, context = {}) {
-    return mutateRole('REVOKE', userId, roleIdParam, context);
-  }
-
   return {
     listUsers,
     getUser,
@@ -585,8 +567,7 @@ function createUserManagementService({
     resendSetup,
     updateUser,
     updateStatus,
-    assignRole,
-    revokeRole,
+    replaceRole,
   };
 }
 

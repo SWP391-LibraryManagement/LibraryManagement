@@ -41,9 +41,13 @@ test('FE07 route access redirects guests and wrong roles', async () => {
   assert.equal(getBorrowingRouteRedirect({ authenticated: false, roles: [] }, 'member'), '/login');
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER'] }, 'member'), null);
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }, 'member'), '/home');
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER', 'LIBRARIAN'] }, 'member'), '/home');
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER', 'ADMIN'] }, 'member'), '/home');
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER'] }, 'staff'), '/home');
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['LIBRARIAN'] }, 'staff'), null);
   assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['ADMIN'] }, 'staff'), null);
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER', 'LIBRARIAN'] }, 'staff'), null);
+  assert.equal(getBorrowingRouteRedirect({ authenticated: true, roles: ['MEMBER', 'ADMIN'] }, 'staff'), null);
 });
 
 test('all FE07 routes use the borrowing route guard', async () => {

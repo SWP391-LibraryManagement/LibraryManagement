@@ -929,7 +929,7 @@ describe('FE07 borrowing management', () => {
     expect(reservationConflictResponse.body.error.code).toBe('RESERVATION_BLOCKS_RENEWAL');
   });
 
-  test('multi-role librarian renews another member loan while member-only remains owner-scoped', async () => {
+  test('single-role librarian renews another member loan while member remains owner-scoped', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp({
       clock: () => new Date('2026-03-07T12:00:00.000Z'),
     });
@@ -949,16 +949,10 @@ describe('FE07 borrowing management', () => {
       app,
       authDependencies,
       borrowingDependencies,
-      email: 'renew-multi-role@example.test',
+      email: 'renew-single-role-librarian@example.test',
       role: 'LIBRARIAN',
       approveMember: false,
     });
-
-    authDependencies.state.rolesByUserId.set(staff.userId, ['MEMBER', 'LIBRARIAN']);
-    const multiRoleLogin = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'renew-multi-role@example.test', password: 'Password1!' })
-      .expect(200);
 
     const created = await request(app)
       .post('/api/borrow-requests')
@@ -974,7 +968,7 @@ describe('FE07 borrowing management', () => {
 
     const staffResponse = await request(app)
       .patch(`/api/borrow-details/${staffTarget.borrowDetailId}/renew`)
-      .set('Authorization', authHeader(multiRoleLogin.body.accessToken))
+      .set('Authorization', authHeader(staff.accessToken))
       .send({});
     expect(staffResponse.status).toBe(200);
     expect(staffResponse.body.borrowDetail.renewalCount).toBe(1);
@@ -1179,6 +1173,14 @@ describe('FE07 borrowing management', () => {
       role: 'LIBRARIAN',
       approveMember: false,
     });
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'borrow.role.admin@example.test',
+      role: 'ADMIN',
+      approveMember: false,
+    });
 
     await request(app).post('/api/borrow-requests').send({ copyIds: [1] }).expect(401);
 
@@ -1196,6 +1198,29 @@ describe('FE07 borrowing management', () => {
 
     expect(staffCreateResponse.status).toBe(403);
     expect(staffCreateResponse.body.error.code).toBe('ROLE_REQUIRED');
+
+    for (const staff of [librarian, admin]) {
+      const staffRole = authDependencies.state.rolesByUserId.get(staff.userId)[0];
+      authDependencies.state.rolesByUserId.set(staff.userId, ['MEMBER', staffRole]);
+
+      for (const [method, path, body] of [
+        ['get', '/api/borrow-requests/candidates'],
+        ['post', '/api/borrow-requests', { copyIds: [1] }],
+        ['get', '/api/borrow-requests/me'],
+      ]) {
+        const response = await request(app)[method](path)
+          .set('Authorization', authHeader(staff.accessToken))
+          .send(body);
+
+        expect(response.status).toBe(403);
+        expect(response.body.error.code).toBe('ROLE_REQUIRED');
+      }
+
+      await request(app)
+        .get('/api/borrow-requests')
+        .set('Authorization', authHeader(staff.accessToken))
+        .expect(200);
+    }
   });
 
   // AC-FE07-012, FR-FE07-011: every selected-member and supported filter predicate is required.

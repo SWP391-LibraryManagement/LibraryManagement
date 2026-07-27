@@ -377,7 +377,7 @@ This feature does not include:
 | BR-FE12-005 | UC59 | FT60 | Ready for review |
 | BR-FE12-006 | UC60 | FT61 | Ready for review |
 | BR-FE12-007 | UC60 | FT61 | Ready for review |
-| BR-FE12-008 | UC58, UC59, UC60 | Planned route boundary matrix: exact allowlists pass and unknown keys never reach service/repository | Written revision ready for review |
+| BR-FE12-008 | UC58, UC59, UC60 | `reportRoutes.test.js` exact-key matrix plus Chromium HTTP boundary check | Complete |
 | BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-011 | UC60 | FT61 | Ready for review |
@@ -390,7 +390,7 @@ This feature does not include:
 | FR-FE12-002 | UC59 | FT60 | Ready for review |
 | FR-FE12-003 | UC60 | FT61 | Ready for review |
 | FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-005 | UC58, UC59, UC60 | Planned route boundary matrix for `UNSUPPORTED_REPORT_QUERY_PARAMETER` plus existing value validation | Written revision ready for review |
+| FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` verifies safe `UNSUPPORTED_REPORT_QUERY_PARAMETER`, zero repository calls, and existing value validation | Complete |
 | FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-008 | UC60 | FT61 | Ready for review |
@@ -401,7 +401,7 @@ This feature does not include:
 | AC-FE12-002 | UC59 | FT60 | Ready for review |
 | AC-FE12-003 | UC60 | FT61 | Ready for review |
 | AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| AC-FE12-005 | UC58, UC59, UC60 | Planned regression: `?bogus=1` returns safe 400 on all endpoints with zero service/repository calls | Written revision ready for review |
+| AC-FE12-005 | UC58, UC59, UC60 | Three-endpoint route matrix plus real HTTP `?bogus=runtime-secret-value` check | Complete |
 | AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-008 | UC60 | FT61 | Ready for review |

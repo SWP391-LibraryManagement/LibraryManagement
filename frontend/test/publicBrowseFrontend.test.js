@@ -125,20 +125,16 @@ test('FE01 footer reveals on view and provides motion-safe interaction feedback'
   assert.match(source, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
-test('FE01 navigation exposes animated role-aware destinations and direct contact actions', async () => {
+test('FE01 header omits removed navigation groups while connected page actions remain available', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const getHomeNavigationItems = \(\{ isLoggedIn, primaryRole \}\)/);
-  assert.match(source, /label: 'Khám phá sách'/);
-  assert.match(source, /const serviceLabel = !isLoggedIn[\s\S]*?'Hội viên'[\s\S]*?'Nghiệp vụ'[\s\S]*?'Thư viện của tôi'/);
-  assert.match(source, /label: 'Về thư viện'[\s\S]*?label: 'Hỗ trợ'/);
+  assert.doesNotMatch(source, /const getHomeNavigationItems/);
+  assert.doesNotMatch(source, /className="home-nav-links"/);
+  assert.doesNotMatch(source, /className="home-mobile-nav-group"/);
   assert.match(source, /primaryRole === 'ADMIN'[\s\S]*?Quản lý người dùng[\s\S]*?\/admin\/users/);
   assert.match(source, /primaryRole === 'LIBRARIAN'[\s\S]*?Yêu cầu mượn sách[\s\S]*?\/librarian\/borrow-requests/);
-  assert.match(source, /Trạng thái hội viên[\s\S]*?\/membership[\s\S]*?Đăng ký mượn sách[\s\S]*?\/borrowing\/new/);
-  assert.match(source, /Gọi thư viện[\s\S]*?tel:0348335508/);
-  assert.match(source, /className="home-nav-dropdown" role="menu"/);
-  assert.match(source, /@keyframes homeNavDropdownIn/);
-  assert.match(source, /if \(event\.key === 'Escape'\) setOpenNavMenu\(null\)/);
+  assert.match(source, /Đăng ký mượn sách[\s\S]*?\/borrowing\/new/);
+  assert.match(source, /Trạng thái hội viên[\s\S]*?\/membership/);
   assert.match(source, /id="section-about"/);
   assert.match(source, /id="footer-contact"/);
   assert.match(source, /\.home-footer-contact-heading span \{[\s\S]*?grid-column: 2;[\s\S]*?text-align: center/);

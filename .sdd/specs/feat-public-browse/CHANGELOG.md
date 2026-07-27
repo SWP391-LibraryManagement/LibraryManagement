@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Homepage header simplification
+
+- Removed the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from the desktop header and mobile header menu at the request of the product owner.
+- Preserved library branding, login/account controls, and the role-aware continuation actions elsewhere on HomePage.
+- Removed the unused dropdown/accordion state, markup, icon, animation, and styling, and updated focused regression coverage.
+
 ## 2026-07-26 - Homepage specification synchronization
 
 - Synchronized `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, and `TEST_PLAN.md` with the current HomePage contract.
@@ -27,7 +33,7 @@
 ## 2026-07-23 - Cross-role public-book actions
 
 - Clarified that all roles may consume the public catalog while FE01 remains read-only.
-- Added staff-first action precedence for FE11 multi-role accounts so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
+- Connected Homepage actions to FE11's exactly-one-role account model so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
 - Added focused frontend regression coverage for mixed Member/staff roles.
 
 ## 2026-07-20 - Vietnamese UI localization and typography

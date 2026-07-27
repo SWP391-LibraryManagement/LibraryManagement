@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Enforce exactly one role per account
+
+- Replaced separate role assignment/revocation with atomic `PUT /api/users/{userId}/role`.
+- Added `UX_UserRoles_UserId` to the baseline and a fail-safe idempotent migration for existing databases.
+- Changed the Admin role modal from multi-select checkboxes to one radio selection.
+- Connected FE01, FE02, FE07, FE08, FE11, shared navigation, and permission copy to the single-role invariant.
+- Preserved last-active-Admin protection and the compatibility `roles` array with exactly one item.
+- Automated validation is required; human review remains pending.
+
+## 2026-07-27 - Define staff-first multi-role audience (superseded)
+
+- Defined `ADMIN -> LIBRARIAN -> non-staff MEMBER` as the effective audience precedence for cross-feature navigation and authorization.
+- Clarified that adding `MEMBER` to a staff account does not grant FE07 borrowing or FE08 reservation self-service.
+- Kept staff operational permissions owned by FE07/FE08 and aligned direct frontend routes with backend guards.
+- Validation: mixed-role backend/frontend coverage, full backend 1018/1018, full frontend 227/227, frontend lint/build, and traceability pass.
+
 ## 2026-07-25 - Shared managed-profile editing approved and implemented
 
 - Superseded the Librarian-only department/specialization editor with one Admin

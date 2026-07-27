@@ -1,16 +1,13 @@
 const { sql, getPool } = require('../config/db');
 
-const OPERATIONS = new Set(['ASSIGN', 'REVOKE']);
-
 async function rollbackWith(transaction, outcome) {
   await transaction.rollback();
   return { outcome };
 }
 
-// @spec BR-FE11-007, BR-FE11-009, BR-FE11-010, FR-FE11-012, FR-FE11-013, FR-FE11-014
-// @spec FR-FE11-017, FR-FE11-024, FR-FE11-025, FR-FE11-026, FR-FE11-027
-async function mutateUserRole({
-  operation,
+// @spec BR-FE11-007, BR-FE11-009, BR-FE11-010, FR-FE11-012, FR-FE11-014
+// @spec FR-FE11-017, FR-FE11-024
+async function replaceUserRole({
   adminUserId,
   userId,
   roleId,
@@ -18,10 +15,6 @@ async function mutateUserRole({
   userAgent,
   now = new Date(),
 }) {
-  if (!OPERATIONS.has(operation)) {
-    throw new TypeError('Role mutation operation must be ASSIGN or REVOKE.');
-  }
-
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
   await transaction.begin();
@@ -45,9 +38,7 @@ async function mutateUserRole({
       `);
 
     const actor = actorResult.recordset[0];
-    if (!actor) {
-      return rollbackWith(transaction, 'ADMIN_NOT_FOUND');
-    }
+    if (!actor) return rollbackWith(transaction, 'ADMIN_NOT_FOUND');
     if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
       return rollbackWith(transaction, 'ADMIN_REQUIRED');
     }
@@ -55,14 +46,12 @@ async function mutateUserRole({
     const targetResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
       .query(`
-        SELECT UserId
+        SELECT UserId, Status
         FROM Users WITH (UPDLOCK, HOLDLOCK)
         WHERE UserId = @UserId
       `);
-
-    if (!targetResult.recordset[0]) {
-      return rollbackWith(transaction, 'USER_NOT_FOUND');
-    }
+    const target = targetResult.recordset[0];
+    if (!target) return rollbackWith(transaction, 'USER_NOT_FOUND');
 
     const roleResult = await new sql.Request(transaction)
       .input('RoleId', sql.Int, roleId)
@@ -70,43 +59,40 @@ async function mutateUserRole({
         SELECT RoleId, RoleName
         FROM Roles WITH (UPDLOCK, HOLDLOCK)
         WHERE RoleId = @RoleId
+          AND UPPER(RoleName) IN ('ADMIN', 'LIBRARIAN', 'MEMBER')
       `);
     const roleRow = roleResult.recordset[0];
-
-    if (!roleRow) {
-      return rollbackWith(transaction, 'ROLE_NOT_FOUND');
-    }
+    if (!roleRow) return rollbackWith(transaction, 'ROLE_NOT_FOUND');
 
     const role = {
       roleId: roleRow.RoleId,
-      roleName: roleRow.RoleName,
+      roleName: String(roleRow.RoleName).toUpperCase(),
     };
     const mappingResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
       .query(`
-        SELECT ur.RoleId, r.RoleName
+        SELECT ur.RoleId, UPPER(r.RoleName) AS RoleName
         FROM UserRoles ur WITH (UPDLOCK, HOLDLOCK)
         INNER JOIN Roles r WITH (UPDLOCK, HOLDLOCK) ON r.RoleId = ur.RoleId
         WHERE ur.UserId = @UserId
       `);
-    const targetRoles = mappingResult.recordset;
-    const existingMapping = targetRoles.some((item) => item.RoleId === roleId);
+    const currentRoles = mappingResult.recordset.map((item) => ({
+      roleId: item.RoleId,
+      roleName: item.RoleName,
+    }));
 
-    if (operation === 'ASSIGN' && existingMapping) {
-      return rollbackWith(transaction, 'USER_ALREADY_HAS_ROLE');
+    if (currentRoles.length === 1 && currentRoles[0].roleId === roleId) {
+      await transaction.commit();
+      return { outcome: 'UNCHANGED', role };
     }
 
-    if (operation === 'REVOKE' && !existingMapping) {
-      return rollbackWith(transaction, 'USER_ROLE_NOT_FOUND');
-    }
+    const removesAdmin = currentRoles.some(({ roleName }) => roleName === 'ADMIN')
+      && role.roleName !== 'ADMIN'
+      && target.Status === 'ACTIVE';
 
-    if (operation === 'REVOKE' && targetRoles.length <= 1) {
-      return rollbackWith(transaction, 'LAST_USER_ROLE');
-    }
-
-    if (operation === 'REVOKE' && String(role.roleName).toUpperCase() === 'ADMIN') {
+    if (removesAdmin) {
       const adminsResult = await new sql.Request(transaction).query(`
-        SELECT ur.UserId
+        SELECT DISTINCT ur.UserId
         FROM UserRoles ur WITH (UPDLOCK, HOLDLOCK)
         INNER JOIN Roles r WITH (UPDLOCK, HOLDLOCK) ON r.RoleId = ur.RoleId
         INNER JOIN Users u WITH (UPDLOCK, HOLDLOCK) ON u.UserId = ur.UserId
@@ -119,35 +105,24 @@ async function mutateUserRole({
       }
     }
 
-    if (operation === 'ASSIGN') {
-      await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .input('RoleId', sql.Int, roleId)
-        .input('Now', sql.DateTime, now)
-        .query(`
-          INSERT INTO UserRoles (UserId, RoleId, CreatedAt)
-          VALUES (@UserId, @RoleId, @Now)
-        `);
-    } else {
-      await new sql.Request(transaction)
-        .input('UserId', sql.Int, userId)
-        .input('RoleId', sql.Int, roleId)
-        .query(`
-          DELETE FROM UserRoles
-          WHERE UserId = @UserId AND RoleId = @RoleId
-        `);
-    }
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query('DELETE FROM UserRoles WHERE UserId = @UserId');
 
-    const action = operation === 'ASSIGN' ? 'USER_ROLE_ASSIGN' : 'USER_ROLE_REVOKE';
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('RoleId', sql.Int, roleId)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        INSERT INTO UserRoles (UserId, RoleId, CreatedAt)
+        VALUES (@UserId, @RoleId, @Now)
+      `);
+
     await new sql.Request(transaction)
       .input('AdminUserId', sql.Int, adminUserId)
-      .input('Action', sql.NVarChar(255), action)
+      .input('Action', sql.NVarChar(255), 'USER_ROLE_REPLACE')
       .input('TargetId', sql.Int, userId)
-      .input(
-        'Metadata',
-        sql.NVarChar(sql.MAX),
-        JSON.stringify({ roleId: role.roleId, roleName: role.roleName })
-      )
+      .input('Metadata', sql.NVarChar(sql.MAX), JSON.stringify({ previousRoles: currentRoles, role }))
       .input('IpAddress', sql.NVarChar(50), ipAddress || null)
       .input('UserAgent', sql.NVarChar(255), userAgent || null)
       .input('Now', sql.DateTime, now)
@@ -160,10 +135,7 @@ async function mutateUserRole({
       `);
 
     await transaction.commit();
-    return {
-      outcome: operation === 'ASSIGN' ? 'ASSIGNED' : 'REVOKED',
-      role,
-    };
+    return { outcome: 'REPLACED', role };
   } catch (error) {
     await transaction.rollback();
     throw error;
@@ -171,5 +143,5 @@ async function mutateUserRole({
 }
 
 module.exports = {
-  mutateUserRole,
+  replaceUserRole,
 };

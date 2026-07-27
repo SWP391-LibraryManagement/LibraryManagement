@@ -4,13 +4,13 @@
 > implement this plan task-by-task. Delegation is not authorized unless Nhat
 > explicitly requests it. Use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Align five approved FE07, FE10, and FE12 Core contracts while proving
+**Goal:** Align four active FE07, FE10, and FE12 Core contracts while proving
 the unchanged FE08 handoffs and preserving every existing public route, schema,
 role, and frontend workflow.
 
 **Architecture:** Keep the current Express route-controller-service-repository
-layers. FE07 authorization and business-date calculations remain in the
-service, while its return repository exposes a transaction-locked internal
+layers. FE07 uses the project-wide single-role authorization model and keeps
+business-date calculations in the service, while its return repository exposes a transaction-locked internal
 snapshot used by both audit and response construction. FE10 adds a separate
 stored-definition gate before rendering. FE12 adds exact endpoint-key
 middleware before existing value validators.
@@ -20,7 +20,7 @@ Server through `mssql`, React/Vite, and Playwright.
 
 ## Global Constraints
 
-- Source of truth: approved FE07 v0.7.5, FE10 v0.4.4, and FE12 v0.2.0 SPECs
+- Source of truth: approved FE07 v0.7.6, FE10 v0.4.4, and FE12 v0.2.0 SPECs
   plus the approved design
   `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`.
 - Delivery order is SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN ->
@@ -32,7 +32,8 @@ Server through `mssql`, React/Vite, and Playwright.
 - Every production change carries the applicable existing `@spec` IDs.
 - Keep all generated implementation changes uncommitted until the complete
   local diff and L1-L4 evidence receive H2 from Nhat.
-- Do not push, open a PR, or merge during implementation or H2 preparation.
+- Do not commit the pending merge, push the reconciled head, update the draft
+  PR, or merge during implementation or H2-addendum preparation.
 - Run mutable SQL only when the configured `DB_NAME` is explicitly confirmed
   as a disposable local database and `FE07_SQL_TEST_ALLOW_MUTATION=true`.
 - Staging checks are read-only. Never use real PII, credentials, tokens, OTPs,
@@ -46,7 +47,7 @@ Server through `mssql`, React/Vite, and Playwright.
 
 | Responsibility | Files |
 | --- | --- |
-| FE07 role precedence and business-date policy | `backend/src/services/borrowingService.js` |
+| FE07 single-role renewal and business-date policy | `backend/src/services/borrowingService.js` |
 | FE07 authoritative return transaction | `backend/src/repositories/borrowingRepository.js` |
 | FE07 in-memory transaction parity | `backend/tests/helpers/inMemoryBorrowingRepositories.js` |
 | FE07 route and repository regressions | `backend/tests/borrowingRoutes.test.js`, `backend/tests/borrowingRepository.test.js` |
@@ -61,9 +62,13 @@ Server through `mssql`, React/Vite, and Playwright.
 
 ---
 
-### Task 1: FE07 Multi-Role Staff Renewal Authorization
+### Task 1: Historical FE07 Multi-Role Renewal Attempt (Superseded)
 
-**Task ID:** `FE07-T047`
+**Task ID:** `FE07-T051` (superseded multi-role scenario; reconciled in Task 8)
+
+This section records the original RED/GREEN evidence only. Nhat's later
+single-role confirmation supersedes its actor premise. Do not retain the
+multi-role test or its authorization delta in the integrated result.
 
 **Files:**
 - Modify: `backend/tests/borrowingRoutes.test.js`
@@ -873,7 +878,7 @@ three validator arrays. Do not stage or commit.
 
 ### Task 6: FE08 Regression-Only Handoff Verification
 
-**Task ID:** `FE08-T041`
+**Task ID:** `FE08-T042`
 
 **Files:**
 - No FE08 production file changes.
@@ -913,7 +918,7 @@ a product-rule change.
 
 ### Task 7: Cross-Feature Validation And Real Runtime Evidence
 
-**Task IDs:** `FE07-T050`, `FE08-T041`, `FE10-S11`, `FE12-N11`
+**Task IDs:** `FE07-T050`, `FE08-T042`, `FE10-S11`, `FE12-N11`
 
 **Files:**
 - Modify: `tests/e2e/system-golden-path.spec.js`
@@ -937,9 +942,9 @@ Expected: all six suites pass.
 
 ```powershell
 $env:TZ='UTC'
-npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js --testNamePattern "business due date identically|due date locked|multi-role librarian renews"
+npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js --testNamePattern "business due date identically|due date locked|single-role librarian renews"
 $env:TZ='America/New_York'
-npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js --testNamePattern "business due date identically|due date locked|multi-role librarian renews"
+npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js --testNamePattern "business due date identically|due date locked|single-role librarian renews"
 Remove-Item Env:TZ -ErrorAction SilentlyContinue
 ```
 
@@ -1000,12 +1005,12 @@ Check:
 
 ```text
 L2 Spec:
-- BD-001/AT-001 -> FE07-T047 -> route RED/GREEN -> service @spec
+- BD-007/AT-001 -> FE07-T051 -> single-role reconciliation -> existing role guards
 - BD-002/AT-002 -> FE07-T048 -> route/repository RED/GREEN -> locked evidence
 - BD-003/AT-003 -> FE07-T049 -> two-timezone RED/GREEN -> shared helpers
 - BD-004/AT-004 -> FE10-S11 -> zero-side-effect security regression
 - BD-005/AT-005 -> FE12-N11 -> all three endpoints and zero repository calls
-- BD-006/AT-006 -> FE08-T041 -> requester plus SIT-003/SIT-004
+- BD-006/AT-006 -> FE08-T042 -> requester plus SIT-003/SIT-004
 
 L3 Constitution/Safety:
 - server-side authorization remains role-order independent
@@ -1051,9 +1056,91 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 ---
 
+### Task 8: Reconcile The Single-Role Main Contract
+
+**Task ID:** `FE07-T051`
+
+**Files:**
+- Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
+- Modify: `.sdd/specs/feat-borrowing-management/PLAN.md`
+- Modify: `.sdd/specs/feat-borrowing-management/TASKS.md`
+- Modify: `.sdd/specs/feat-reservation-management/PLAN.md`
+- Modify: `.sdd/specs/feat-reservation-management/TASKS.md`
+- Modify: `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
+- Modify: `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
+- Modify: `backend/tests/borrowingRoutes.test.js`
+- Modify: `backend/src/services/borrowingService.js`
+
+**Interfaces:**
+- Consumes: `DEC-GEN-005`, `requireMemberOnly`, and the existing
+  `renewBorrowDetail()` actor contract.
+- Produces: one supported account role per actor; Member owner-only renewal;
+  Librarian/Admin cross-member renewal; no multi-role business case.
+
+- [x] **Step 1: Reconcile the written contracts**
+
+Preserve `FE07-T047` and `FE08-T041` from `main`. Record this cleanup as
+`FE07-T051` and renumber the regression-only FE08 task to `FE08-T042`.
+Classify original BD-001 as superseded and record the approved single-role
+decision as BD-007.
+
+- [x] **Step 2: Replace the obsolete route test**
+
+Change the branch-local multi-role renewal test so it uses a normal
+single-role `LIBRARIAN` for cross-member renewal and a separate single-role
+`MEMBER` for the owner denial. Do not mutate `rolesByUserId` to contain two
+roles and do not log in a multi-role account.
+
+- [x] **Step 3: Verify the single-role baseline before cleanup**
+
+Run:
+
+```powershell
+npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/userRoleRepository.test.js --testNamePattern "single-role librarian renews|exactly one role|repairs legacy multiple mappings"
+```
+
+Expected: the single-role role boundary and database repair/invariant cases
+pass. This is a green reconciliation baseline, not a new RED behavior claim.
+
+- [x] **Step 4: Remove the superseded authorization delta**
+
+Restore the simple one-role renewal authorization shape:
+
+```js
+if (hasAnyRole(actor, ['MEMBER']) && borrowDetail.userId !== actor.userId) {
+  throw errors.forbidden(
+    'BORROW_DETAIL_OWNER_REQUIRED',
+    'Members can renew only their own borrowed items.'
+  );
+}
+
+if (!hasAnyRole(actor, ['MEMBER', 'LIBRARIAN', 'ADMIN'])) {
+  throw errors.forbidden('ROLE_REQUIRED', 'Your role cannot perform this action.');
+}
+```
+
+Do not alter loan-owner eligibility, fines, overdue, reservation, renewal
+count, business-date, notification, or audit behavior.
+
+- [x] **Step 5: Verify after cleanup**
+
+Repeat Step 3, then run the focused FE07 route/repository suites. Expected:
+all selected tests pass with no multi-role account setup remaining in the
+rule-alignment test.
+
+- [x] **Step 6: Continue the full Task 7 verification**
+
+Run the full backend/frontend/traceability/runtime gates against the merged
+result and update the validation record. Keep the merge uncommitted until Nhat
+approves the H2 addendum.
+
+---
+
 ## Plan Approval Gate
 
-- [x] Nhat approves this consolidated plan and FE07-T047..T050, FE08-T041,
+- [x] Nhat approves the original consolidated plan and FE07-T048..T051, FE08-T042,
   FE10-S11, and FE12-N11.
 - [x] Only after approval, begin Task 1 with RED tests.
 - [x] Do not infer plan approval from the earlier SPEC approval.
+- [x] Nhat confirms one account has exactly one role and authorizes Task 8
+  reconciliation on 2026-07-27.

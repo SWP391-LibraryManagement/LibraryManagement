@@ -1,14 +1,15 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: READY FOR REVIEW - V0.7.5 RULE ALIGNMENT
+Status: IN PROGRESS - V0.7.6 MAIN INTEGRATION
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. The approved v0.7.5
-rule-alignment SPEC is now mapped to a review-ready plan; RED tests and
-implementation remain blocked until this PLAN/TASKS revision is approved.
+Workflow State: The Phase 2 baseline remains complete. Nhat confirmed the
+single-role account rule and authorized v0.7.6 reconciliation on 2026-07-27.
+The integrated implementation and evidence remain uncommitted until fresh
+validation and an H2 addendum.
 
 ---
 
@@ -53,7 +54,7 @@ Not included:
 | Notified owner may borrow the held copy | FE07 accepts the normal request and revalidates reservation ownership during approval. |
 | FE07 approval fulfills the hold | Request, details, copy, matching reservation, and audits commit atomically. |
 | FE07 does not create fines | Return response exposes `fineCandidate`; no `Fines` insert is performed. |
-| Canonical eligibility is active MEMBER identity | Create, approval, and renewal require the `MEMBER` role and `Users.Status = ACTIVE`; FE04 does not gate FE07. |
+| Canonical eligibility is active non-staff MEMBER identity | Member-self-service create/candidate/history requires `MEMBER` without `LIBRARIAN`/`ADMIN`; approval still revalidates the request owner's active `MEMBER` identity, and FE04 does not gate FE07. |
 | Parent book must remain active | Create and approval reject inactive parent books with `BOOK_INACTIVE`. |
 | Approval uses a member-scoped five-copy lock | Lock order is `member -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; count occurs after locks. |
 | Approval metadata is transaction history | Store `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is borrow date +14 calendar days. |
@@ -74,7 +75,7 @@ Not included:
 ### 3.2 Borrow Request
 
 - Validate `copyIds` and reject duplicates.
-- Check active account and `MEMBER` role authorization.
+- Check active account and non-staff `MEMBER` authorization at member-self-service routes.
 - Apply the reservation-aware borrowability contract to every copy.
 - Reject users blocked by overdue active loans or unpaid fines.
 - Create `PENDING` request and `REQUESTED` details.
@@ -94,7 +95,7 @@ Not included:
 ### 3.5 Tests
 
 - Add route tests with in-memory repositories.
-- Cover create, duplicate copy, unavailable copy, approve, history, return, fine candidate, completion, renewal, reservation conflict, and role guards.
+- Cover create, duplicate copy, unavailable copy, approve, history, return, fine candidate, completion, renewal, reservation conflict, and single-role guards.
 - Add focused frontend Node tests for borrowing API error messages and generic fallback behavior.
 
 ### 3.6 Frontend Error Handling
@@ -208,11 +209,12 @@ Not included:
 The detailed executable plan is
 `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
 
-1. Add a RED route regression proving a `MEMBER + LIBRARIAN` actor can renew
-   another member's eligible detail while a member-only actor remains
-   owner-scoped.
-2. Make staff-role authorization take precedence only for renewal ownership;
-   all eligibility checks continue to use the loan owner.
+1. Reconcile the branch with `DEC-GEN-005` and `main` task `FE07-T047`: every
+   account has exactly one role and the former multi-role renewal scenario is
+   superseded.
+2. Preserve Member owner-only renewal and Librarian/Admin cross-member renewal
+   as separate single-role paths; remove the branch-local multi-role test and
+   unnecessary authorization delta while retaining all loan-owner checks.
 3. Add a RED return regression that changes the due date between service
    preflight and the repository lock, then require response and audit metadata
    to use the locked transaction snapshot.
@@ -226,4 +228,16 @@ The detailed executable plan is
    `DB_NAME` is a named disposable local database and
    `FE07_SQL_TEST_ALLOW_MUTATION=true`.
 7. Keep the implementation diff uncommitted until L1-L4 evidence is complete
-   and Nhat grants H2.
+   and Nhat grants the H2 addendum.
+
+## 10. V0.7.6 Main-Integration Addendum
+
+1. Preserve `FE07-T047` from `main` for single-role member-self-service access.
+2. Use `FE07-T051` only to record retirement of the superseded multi-role
+   renewal scenario; do not reuse or overwrite `FE07-T047`.
+3. Keep the authoritative return snapshot and shared business-date changes from
+   v0.7.5 because they are independent of account cardinality.
+4. Run the FE07 role/renewal, return snapshot, and timezone regressions against
+   the merged `main` implementation before full verification.
+5. Do not commit the merge until the reconciled SPEC, PLAN/TASKS, code, tests,
+   and evidence receive H2 addendum approval.

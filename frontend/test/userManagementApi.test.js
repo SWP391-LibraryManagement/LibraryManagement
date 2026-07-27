@@ -98,20 +98,16 @@ test('FE11 detail request uses the authorized request flow', async () => {
   );
 });
 
-test('FE11 role mutations send numeric role IDs through the canonical contract', async () => {
+test('FE11 role replacement sends one numeric role ID through the canonical contract', async () => {
   const source = await readFile(apiPath, 'utf8');
 
   assert.match(
     source,
-    /export async function assignManagedUserRole\(userId, roleId\)[\s\S]*?url: `\/users\/\$\{userId\}\/roles`[\s\S]*?data: \{ roleId \}/,
-  );
-  assert.match(
-    source,
-    /export async function revokeManagedUserRole\(userId, roleId\)[\s\S]*?url: `\/users\/\$\{userId\}\/roles\/\$\{roleId\}`/,
+    /export async function replaceManagedUserRole\(userId, roleId\)[\s\S]*?method: 'put'[\s\S]*?url: `\/users\/\$\{userId\}\/role`[\s\S]*?data: \{ roleId \}/,
   );
   assert.doesNotMatch(
     source,
-    /export async function (?:assign|revoke)ManagedUserRole\(userId, roleName\)/,
+    /export async function (?:assign|revoke)ManagedUserRole/,
   );
   assert.doesNotMatch(source, /data: \{ roleName \}/);
 });
@@ -166,8 +162,7 @@ test('FE11 user-management errors keep safe Vietnamese fallbacks and wrapped cau
     'Không thể tạo người dùng.',
     'Không thể cập nhật người dùng.',
     'Không thể vô hiệu hóa người dùng.',
-    'Không thể gán vai trò.',
-    'Không thể gỡ vai trò.',
+    'Không thể thay đổi vai trò.',
   ]) {
     assert.match(source, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }

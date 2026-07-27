@@ -120,8 +120,7 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
     ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
     CANNOT_DEACTIVATE_SELF: 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.',
-    LAST_ADMIN_ROLE: 'Không thể gỡ vai trò quản trị viên cuối cùng.',
-    LAST_USER_ROLE: 'Mỗi người dùng phải có ít nhất một vai trò.',
+    LAST_ADMIN_ROLE: 'Không thể thay vai trò của quản trị viên đang hoạt động cuối cùng.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
     MANAGED_USER_UPDATE_FORBIDDEN: 'Quản trị viên chỉ được cập nhật họ tên, số điện thoại và địa chỉ.',
   };
@@ -207,27 +206,15 @@ export async function deactivateManagedUser(userId, expectedUpdatedAt) {
   }
 }
 
-export async function assignManagedUserRole(userId, roleId) {
+export async function replaceManagedUserRole(userId, roleId) {
   try {
     const response = await authorizedRequest({
-      method: 'post',
-      url: `/users/${userId}/roles`,
+      method: 'put',
+      url: `/users/${userId}/role`,
       data: { roleId },
     });
     return response.data;
   } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể gán vai trò.'), { cause: error });
-  }
-}
-
-export async function revokeManagedUserRole(userId, roleId) {
-  try {
-    const response = await authorizedRequest({
-      method: 'delete',
-      url: `/users/${userId}/roles/${roleId}`,
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể gỡ vai trò.'), { cause: error });
+    throw new Error(getErrorMessage(error, 'Không thể thay đổi vai trò.'), { cause: error });
   }
 }

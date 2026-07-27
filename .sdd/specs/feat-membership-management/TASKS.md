@@ -145,7 +145,7 @@ Extension State: `FE04-ADM01..ADM03` are implemented with local automated eviden
 ## 2026-07-22 corrective batch
 
 - [x] Use neutral feedback for a completed membership rejection.
-- [x] Hide member-only sidebar workflows from multi-role Librarian/Admin actors.
+- [x] Hide member-only sidebar workflows from single-role Librarian/Admin actors.
 
 ## Admin Console Membership Review Integration Tasks
 
