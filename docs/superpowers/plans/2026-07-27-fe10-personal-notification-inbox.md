@@ -8,11 +8,14 @@
 
 **Tech Stack:** SQL Server/Azure SQL, Node.js 22, Express 5, `mssql`, Jest/Supertest, React 19, React Router 7, Axios, Node test runner, Playwright, Azure App Service, Azure Static Web Apps.
 
+**Plan/H1 approved:** 2026-07-28 by the user in the active task.
+
 ## Global Constraints
 
 - The approved source contract is `.sdd/specs/feat-notification-management/SPEC.md` v0.5.0 and the approved design is `docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md`.
 - Work only in `codex/docs-fe10-notification-inbox-spec` until the reviewed implementation branch/worktree is chosen. Preserve unrelated root-worktree changes.
-- Start product implementation only after this plan receives human approval.
+- Start product implementation only after this H1-approved governance
+  activation reaches `main`, as required by the repository Fast-Track rules.
 - Use RED -> GREEN -> focused verification for every task. Do not weaken a failing assertion merely to obtain GREEN.
 - Every repository read or mutation must include the authenticated `UserId` and the exact inbox-eligibility predicate before returning data.
 - Never expose or include `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `EMAIL_VERIFY`, userless rows, recipient email, `SafePayload`, idempotency data, provider data, delivery errors, attempts, or source metadata in inbox responses.

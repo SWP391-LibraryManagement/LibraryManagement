@@ -1,18 +1,19 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
+Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
 
 Owner: Nhat
 
-Updated: 2026-07-27
+Updated: 2026-07-28
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
-design and consolidated written SPEC on 2026-07-27. The new implementation
-plan and FE10-I01..I08 task decomposition are prepared for human review;
-product implementation remains `NOT_STARTED`.
+design and consolidated written SPEC on 2026-07-27. The user approved the new
+implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
+Product implementation remains `NOT_STARTED` until the governance activation
+PR reaches `main` as required by Fast-Track Hybrid.
 
 ---
 

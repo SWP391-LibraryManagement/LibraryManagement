@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - H1 plan approval and governance activation
+
+- Recorded the user's approval of the detailed FE10-I01..I08 implementation
+  plan as H1.
+- Kept product implementation `NOT_STARTED` until this governance activation
+  reaches `main`, matching the repository Fast-Track gate.
+
 ## 2026-07-27 - Approved personal notification inbox expansion (v0.5.0)
 
 - Recorded the user's approval of the consolidated written design and SPEC.
@@ -18,8 +25,8 @@
   behavior to the proposed contract.
 - Kept sensitive authentication/setup records, global staff logs, delete/
   archive, WebSocket/push, retry UI, and caller-supplied URLs out of scope.
-- User approved the interactive design decisions on 2026-07-27. Written design
-  and SPEC review remain required before PLAN/TASKS or implementation.
+- User approved the interactive design decisions and consolidated written
+  design/SPEC on 2026-07-27; the detailed plan was approved on 2026-07-28.
 - Marked the active v0.5.0 implementation state `NOT_STARTED` while retaining
   the completed v0.4.5 task history, so traceability remains report-only until
   the written contract is approved and new tasks are activated.

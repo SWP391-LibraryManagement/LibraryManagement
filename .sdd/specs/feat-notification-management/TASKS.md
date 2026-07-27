@@ -1,19 +1,19 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
+Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
 Implementation State: NOT_STARTED
 
 Prior v0.4.5 Implementation State: COMPLETE
 
 Owner: Nhat
 
-Updated: 2026-07-27
+Updated: 2026-07-28
 
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
-written SPEC on 2026-07-27. FE10-I01..I08 now decompose the implementation;
-product implementation remains `NOT_STARTED` until the detailed plan receives
-human review.
+written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
+Product implementation remains `NOT_STARTED` until the governance activation
+PR reaches `main`.
 
 ---
 

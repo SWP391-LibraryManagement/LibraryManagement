@@ -2,11 +2,11 @@
 
 # Version: 0.5.0
 
-# Status: V0.5.0 WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
+# Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-27
+# Last Updated: 2026-07-28
 
 # Feature ID: FE10
 
@@ -47,8 +47,9 @@
 > Revision v0.5.0 adds the personal notification inbox contract. The user
 > approved the section-by-section design and the consolidated written SPEC on
 > 2026-07-27. That approval authorizes PLAN/TASKS preparation only; product
-> implementation remains `NOT_STARTED` until the implementation plan is
-> reviewed and the repository's implementation gates are opened.
+> implementation remains `NOT_STARTED` until the governance activation reaches
+> `main` and opens the repository's product-work gate. The user approved the
+> implementation plan as H1 on 2026-07-28.
 >
 > Revision v0.5.0 proposes the user-approved personal notification inbox
 > expansion documented in
