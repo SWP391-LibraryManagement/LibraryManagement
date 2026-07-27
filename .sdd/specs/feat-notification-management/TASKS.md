@@ -317,25 +317,33 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S13 Restore The Existing-Database Account Setup Template
 
-- [ ] Status: NOT STARTED
+- [x] Status: H2/CI/STAGING REPEATABILITY PASS
 - Depends on: FE10-S12.
 - Files: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
   `backend/tests/notificationRepository.test.js`.
 - DoD: migration is transactional, idempotent, additive, canonical, and passes
   two executions with exactly one active `ACCOUNT_SETUP` row.
+- Evidence: the migration uses `XACT_ABORT`, one transaction, canonical
+  update-or-insert behavior, rollback/rethrow, and no delete. The static
+  migration contract test is green; two staging executions remain gated by H2.
+- Staging: both executions passed and the final template aggregate was
+  `1|1|1|1|1`; the exact-IP temporary firewall rule was removed.
 
 ### FE10-S14 Preserve Sensitive Provider Message IDs
 
-- [ ] Status: NOT STARTED
+- [~] Status: H2/CI/STAGING EVIDENCE PASS; H3 PENDING
 - Depends on: FE10-S12.
 - Files: `backend/src/services/notificationService.js`,
   `backend/tests/notificationRoutes.test.js`.
 - DoD: FE02 and FE11 sensitive success attempts store only the adapter message
   ID while persistence, audit, logs, and responses remain credential-free.
+- Evidence: FE02 verification/reset and FE11 setup success assertions preserve
+  the mock provider message ID while existing sensitive-content isolation
+  assertions remain green.
 
 ### FE10-S15 Add The Best-Effort SYSTEM Worker
 
-- [ ] Status: NOT STARTED
+- [~] Status: H2 ADDENDUM/CI/REDEPLOY PASS; H3 PENDING
 - Depends on: FE10-S12.
 - Files: notification service/worker/runtime/config/index, `.env.example`, and
   focused service/worker/runtime/config tests.
@@ -343,13 +351,43 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   has no timer; safe failures recover; stop clears scheduling; only
   non-sensitive `PENDING` rows are processed; manual HTTP authorization is
   unchanged.
+- Evidence: worker/config/runtime tests cover disabled mode, startup and
+  interval work, overlap prevention, safe recovery, shutdown, and import
+  behavior. SYSTEM audits actual work but does not create empty-poll audit
+  rows; existing protected HTTP tests remain green.
+- Staging addendum: the first deployed worker pass exposed SQL Server error 650
+  because `READPAST` was combined with serializable `HOLDLOCK`. The worker was
+  rolled back to disabled. The candidate replaces `HOLDLOCK` with
+  `READCOMMITTEDLOCK`; an Azure SQL rollback probe and local tests pass.
+- Corrected staging: exact-head CI `30274110435` and deploy `30274367534`
+  passed. With the worker re-enabled, the queue reached 0 pending/processing,
+  15 sent, and 0 failed; all 15 attempts retained a provider message ID.
 
 ### FE10-S16 Pass Local H2 And Staging Validation
 
-- [ ] Status: NOT STARTED
+- [~] Status: STAGING VALIDATION PASS; H3 PENDING
 - Depends on: FE10-S13..S15.
 - Files: FE10 TASKS/CHANGELOG and
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
 - DoD: focused and full test gates pass; migration passes twice; diff/security
   review passes; H2 approves commits; staging template/worker settings/deploy
   and safe queue/provider-attempt evidence are recorded without secrets or PII.
+- Evidence: focused 165/165, backend 1079/1079, frontend 232/232, deployment
+  9/9, system integration 10/10, lint/build/trace, diff hygiene, and scoped
+  secret/log review pass on the uncommitted H2 candidate.
+- H2: user approved the complete candidate on 2026-07-27. Product commits are
+  `7920d4b`, `2134d44`, and `ccb590c`; CI and staging evidence remain required.
+- Initial publication: PR #65 head `8f39baa` passed CI run `30272237192`;
+  deploy run `30272792025` passed backend, frontend, and smoke. The migration
+  passed twice and the template aggregate was `1|1|1|1|1`.
+- Staging worker verification found 15 non-sensitive rows still pending and
+  fixed-code worker failures. Error 650 was reproduced without mutation and the
+  worker setting was returned to `false`; this initial failed checkpoint is
+  superseded by the corrected validation below.
+- H2 addendum: user approved the Azure-compatible claim correction on
+  2026-07-27; product commit is `a98f459`.
+- Corrected validation: CI `30274110435` and deploy `30274367534` passed for
+  head `9240525`; API/frontend were 200, anonymous manual processing was 401,
+  queue aggregate was `0|0|15|0`, attempt/provider aggregate was `15|15`,
+  sensitive/unsafe aggregate was `21|0`, SYSTEM/no-op audit aggregate was
+  `1|0`, and task-created firewall rules remaining were zero.

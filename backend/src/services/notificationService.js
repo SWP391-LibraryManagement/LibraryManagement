@@ -697,9 +697,10 @@ function createNotificationService({
 
     if (isSensitiveNotification) {
       let providerFailed = false;
+      let providerResult = null;
 
       try {
-        await emailProvider.send({
+        providerResult = await emailProvider.send({
           to: recipient.recipientEmail,
           subject: renderedTitle,
           body: renderedBody,
@@ -723,7 +724,7 @@ function createNotificationService({
         try {
           notification = await notificationRepository.markSent({
             notificationId: notification.notificationId,
-            providerMessageId: null,
+            providerMessageId: providerResult?.providerMessageId || null,
           });
         } catch (error) {
           throw safeInternalError(
@@ -867,9 +868,10 @@ function createNotificationService({
     return 'Notification delivery failed.';
   }
 
-  async function processPendingNotifications(input, actor, context = {}) {
-    requireInternalActor(actor);
-
+  async function processPendingNotificationBatch(
+    input = {},
+    { auditUserId = null, context = {}, auditEmpty = true } = {}
+  ) {
     const limit = Number(input.limit || 20);
     const result = {
       processed: 0,
@@ -912,17 +914,40 @@ function createNotificationService({
       result.notifications.push(updatedNotification);
     }
 
-    await writeAudit(context, 'NOTIFICATION_PROCESS_PENDING', {
-      userId: actor.userId,
-      metadata: { processed: result.processed, failed: result.failed },
-    });
+    if (auditEmpty || result.processed > 0 || result.failed > 0) {
+      await writeAudit(context, 'NOTIFICATION_PROCESS_PENDING', {
+        userId: auditUserId,
+        metadata: { processed: result.processed, failed: result.failed },
+      });
+    }
 
     return result;
+  }
+
+  async function processPendingNotifications(input, actor, context = {}) {
+    requireInternalActor(actor);
+    return processPendingNotificationBatch(input, {
+      auditUserId: actor.userId,
+      context,
+    });
+  }
+
+  function createSystemNotificationProcessor() {
+    return Object.freeze({
+      async processPendingNotifications(input = {}) {
+        return processPendingNotificationBatch(input, {
+          auditUserId: null,
+          context: {},
+          auditEmpty: false,
+        });
+      },
+    });
   }
 
   return {
     createNotificationRequest,
     createSourceNotificationRequester,
+    createSystemNotificationProcessor,
     processPendingNotifications,
     retryNotification,
   };
