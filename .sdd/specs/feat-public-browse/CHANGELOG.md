@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Membership benefit card alignment
+
+- Removed the permanent vertical stagger from even membership cards so both columns share the same row baselines.
+- Preserved equal-width responsive columns, card hover feedback, and the mobile single-column layout.
+- Added focused frontend regression coverage for the non-staggered grid contract.
+
 ## 2026-07-27 - Public ISBN boundary
 
 - Removed ISBN from Guest/Member HomePage search copy, book cards, detail UI, public API DTO, and OpenAPI schema.

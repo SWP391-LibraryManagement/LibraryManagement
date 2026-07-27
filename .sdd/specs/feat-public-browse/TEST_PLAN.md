@@ -29,6 +29,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.
 - Every Homepage destination is registered by `App.jsx`; protected routes retain their owning guards.
 - Footer contacts, policy dialogs, responsive sections, and reduced-motion behavior remain usable.
+- The four membership benefit cards use an equal-width, row-aligned 2x2 desktop grid and a non-staggered single column on mobile.
 
 ## 3. API / Integration Test Targets
 

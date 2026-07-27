@@ -112,6 +112,8 @@ test('FE01 membership benefits use distinct icons and responsive editorial cards
   assert.match(source, /<article key=\{title\} className="home-benefit-card">/);
   assert.match(source, /\.home-benefit-card::before \{[\s\S]*?linear-gradient/);
   assert.match(source, /\.home-benefit-card:hover \{[\s\S]*?translateY\(-4px\)/);
+  assert.match(source, /\.home-benefit-grid \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*?gap: 16px/);
+  assert.doesNotMatch(source, /\.home-cta-section \.home-benefit-card:nth-child\(even\)/);
   assert.match(source, /@media \(max-width: 768px\)[\s\S]*?\.home-cta-grid, \.home-benefit-grid \{ grid-template-columns: 1fr !important; \}/);
 });
 

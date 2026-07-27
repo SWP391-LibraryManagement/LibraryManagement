@@ -332,7 +332,7 @@ Use these stable IDs for tasks and tests.
 - NFR-FE01-UX-002: HomePage book presentation must hide availability from Guest/Member and clearly distinguish the high-level state when shown to Librarian/Admin.
 - NFR-FE01-UX-003: Footer contact details must remain compact on desktop, keep the email on one line at supported desktop widths, and reflow without horizontal overflow at tablet and mobile widths.
 - NFR-FE01-UX-004: The simplified public header must remain responsive and keep account actions usable without rendering empty navigation space or the removed mobile accordions.
-- NFR-FE01-UX-005: Extended home sections must remain responsive, provide on-view and interaction feedback, and become immediately visible when reduced motion is requested.
+- NFR-FE01-UX-005: Extended home sections must remain responsive, provide on-view and interaction feedback, and become immediately visible when reduced motion is requested. The four membership benefit cards must form an aligned grid: cards in the same row share the same top edge and columns use equal widths without a permanent stagger offset.
 
 ---
 

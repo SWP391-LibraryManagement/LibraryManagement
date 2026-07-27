@@ -2166,16 +2166,10 @@ const HomePage = () => {
           backdrop-filter: blur(10px);
           transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .home-cta-section .home-benefit-card:nth-child(even) {
-          transform: translateY(18px);
-        }
         .home-cta-section .home-benefit-card:hover {
           transform: translateY(-7px) rotateX(1.5deg);
           border-color: rgba(168, 97, 29, 0.38);
           box-shadow: 0 23px 46px rgba(92, 52, 26, 0.15);
-        }
-        .home-cta-section .home-benefit-card:nth-child(even):hover {
-          transform: translateY(11px) rotateX(1.5deg);
         }
         .home-cta-section .home-benefit-icon {
           border-radius: 14px;
@@ -2667,10 +2661,6 @@ const HomePage = () => {
           .home-cta-actions {
             align-items: flex-start;
             flex-direction: column;
-          }
-          .home-cta-section .home-benefit-card:nth-child(even),
-          .home-cta-section .home-benefit-card:nth-child(even):hover {
-            transform: none;
           }
           .home-journey-step {
             grid-template-columns: 52px 1fr;
