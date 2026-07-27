@@ -27,6 +27,22 @@ function isValidDateRange(from, to) {
   return from <= to;
 }
 
+// @spec NFR-FE07-A11Y-001 — arrow-key navigation giữa các tab theo ARIA tab pattern.
+function handleHistoryTabKeyDown(event, currentTab, onTabChange) {
+  const keys = TABS.map((item) => item.key);
+  const currentIndex = keys.indexOf(currentTab);
+  let nextIndex = null;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % keys.length;
+  else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + keys.length) % keys.length;
+  else if (event.key === 'Home') nextIndex = 0;
+  else if (event.key === 'End') nextIndex = keys.length - 1;
+  if (nextIndex === null) return;
+  event.preventDefault();
+  const nextKey = keys[nextIndex];
+  onTabChange(nextKey);
+  document.getElementById(`history-tab-${nextKey}`)?.focus();
+}
+
 export default function BorrowingHistoryPage() {
   const [rows, setRows] = useState([]);
   const [tab, setTab] = useState('all');
@@ -131,8 +147,10 @@ export default function BorrowingHistoryPage() {
                 id={`history-tab-${item.key}`}
                 aria-selected={tab === item.key}
                 aria-controls="history-tabpanel"
+                tabIndex={tab === item.key ? 0 : -1}
                 className={`tab${tab === item.key ? ' active' : ''}`}
                 onClick={() => { setTab(item.key); setPage(1); }}
+                onKeyDown={(event) => handleHistoryTabKeyDown(event, tab, (nextKey) => { setTab(nextKey); setPage(1); })}
               >
                 {item.label}
               </button>
@@ -214,7 +232,7 @@ export default function BorrowingHistoryPage() {
 
 function RenewConfirmation({ row, pending, onClose, onConfirm }) {
   const eligible = canRenew(row);
-  // @spec NFR-FE07-TIME-001, EC-FE07-019 - dùng business date +7 tránh lệch host local.
+  // @spec NFR-FE07-TIME-001, EC-FE07-019 - dùng business date +LOAN_DAYS (14) tránh lệch host local.
   const newDue = row.dueDate ? addBusinessDays(row.dueDate, 14) : null;
 
   return (

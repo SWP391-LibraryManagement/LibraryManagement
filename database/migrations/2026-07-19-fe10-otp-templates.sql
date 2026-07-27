@@ -10,8 +10,18 @@ BEGIN TRY
     )
     BEGIN
         UPDATE NotificationTemplates
-        SET Subject = N'Verify your library account',
-            Body = N'Verification code: {{otp}}. Expires in {{expiresInMinutes}} minutes.',
+        SET Subject = N'Mã xác thực tài khoản - Hệ thống Thư viện',
+            Body = N'Xin chào,
+
+Mã xác thực tài khoản của bạn:
+
+{{otp}}
+
+Mã có hiệu lực trong {{expiresInMinutes}} phút.
+Không chia sẻ mã này với bất kỳ ai.
+Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.
+
+Hệ thống Quản lý Thư viện',
             Status = 'ACTIVE',
             UpdatedAt = GETDATE()
         WHERE TemplateCode = 'ACCOUNT_VERIFICATION';
@@ -21,8 +31,18 @@ BEGIN TRY
         INSERT INTO NotificationTemplates (TemplateCode, Subject, Body, Status)
         VALUES (
             'ACCOUNT_VERIFICATION',
-            N'Verify your library account',
-            N'Verification code: {{otp}}. Expires in {{expiresInMinutes}} minutes.',
+            N'Mã xác thực tài khoản - Hệ thống Thư viện',
+            N'Xin chào,
+
+Mã xác thực tài khoản của bạn:
+
+{{otp}}
+
+Mã có hiệu lực trong {{expiresInMinutes}} phút.
+Không chia sẻ mã này với bất kỳ ai.
+Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.
+
+Hệ thống Quản lý Thư viện',
             'ACTIVE'
         );
     END;

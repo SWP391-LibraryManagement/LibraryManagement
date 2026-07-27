@@ -1,12 +1,12 @@
 # SPEC.md - Quản lý sách FE05
 
-# Phiên bản: 0.6.7
+# Phiên bản: 0.6.10
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-28
 
 # ID tính năng: FE05
 
@@ -238,9 +238,10 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - FR-FE05-026: NẾU `pages` không phải là số nguyên từ 1 đến 10,000, hoặc `rating` nằm ngoài 0.0 đến 5.0 hoặc có nhiều hơn một chữ số thập phân khi tạo/cập nhật, hệ thống sẽ từ chối yêu cầu với xác thực cấp trường và không thay đổi bản ghi. (Nguồn: EC-FE05-017, Phần 10.2)
 - FR-FE05-027: KHI Thủ thư/Quản trị viên tạo hoặc cập nhật sách bằng `multipart/form-data`, hệ thống sẽ đọc siêu dữ liệu sách JSON từ `metadata`, xác thực và lưu ảnh `cover` tùy chọn theo đường dẫn do máy chủ tạo, lưu đường dẫn đó dưới dạng `Books.CoverUrl` và trả về qua các lần đọc sách dành cho nhân viên/công khai.
 - FR-FE05-028: NẾU bìa được cung cấp thiếu siêu dữ liệu nhiều phần bắt buộc, vượt quá 2 MB, có loại/chữ ký không được hỗ trợ hoặc không khớp, hoặc thao tác thay đổi sách liên quan thất bại, hệ thống phải từ chối hoặc bù trừ thao tác mà không thay đường dẫn bìa đã commit hay giữ lại tệp được quản lý chưa commit.
-- FR-FE05-029: KHI biểu mẫu cập nhật thay đổi một cuốn sách giữa `ACTIVE` và `INACTIVE`, giao diện người dùng sẽ tải lại danh sách quản lý chuẩn bằng trạng thái mới và trang 1 để cuốn sách được cập nhật thành công không bị bộ lọc trạng thái trước đó ẩn ngay lập tức.
+- FR-FE05-029: KHI một trong hai điểm vào thay đổi trạng thái của nhân viên chuyển một cuốn sách giữa `ACTIVE` và `INACTIVE`, frontend phải giữ nguyên ngữ cảnh tìm kiếm, thể loại, trạng thái và trang hiện đang áp dụng, đồng thời tải lại danh sách chuẩn đó từ máy chủ. Frontend không được thay đổi bộ lọc danh sách như một tác dụng phụ của việc sửa một `bookId`; vì vậy sách đã thay đổi có thể không còn trong danh sách hiển thị khi trạng thái mới không khớp với bộ lọc hiện tại.
 - FR-FE05-030: KHI Thủ thư/Quản trị viên đã xác thực yêu cầu `/api/books/metadata`, hệ thống sẽ chỉ trả về các lựa chọn danh mục/tác giả/nhà xuất bản đang hoạt động; yêu cầu của Khách/Thành viên sẽ bị từ chối và không bản ghi tham chiếu nào bị thay đổi.
 - FR-FE05-031: KHI bắt đầu khởi động backend, hệ thống sẽ áp dụng migration tương thích siêu dữ liệu đã được review trước khi lắng nghe và xác minh các cột siêu dữ liệu chuẩn; NẾU migration hoặc bước xác minh thất bại, backend sẽ không lắng nghe. KHI kiểm tra mức sẵn sàng qua `/health/ready`, hệ thống sẽ thực hiện xác minh chỉ đọc và trả về HTTP `503` với kết quả `not_ready` an toàn nếu sau này xảy ra sai lệch lược đồ hoặc lỗi cơ sở dữ liệu.
+- FR-FE05-032: KHI Thủ thư/Quản trị viên xem danh sách quản lý, cột `Trạng thái catalog` phải hiển thị `Books.Status` chuẩn thay vì tình trạng sẵn có của bản sao được FE06 suy ra độc lập, để kết quả của lệnh kích hoạt/vô hiệu hóa hiển thị trên sách đã cập nhật.
 
 ---
 
@@ -265,9 +266,10 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - AC-FE05-017: Với `pages` hoặc `rating` không hợp lệ, khi nhân viên tạo hoặc cập nhật sách thì FE05 trả về xác thực cấp trường và giữ nguyên trạng thái sách, bản sao, quy trình làm việc và kiểm tra.
 - AC-FE05-018: Cho trước Thủ thư/Quản trị viên chọn một bìa JPG/PNG/WebP cục bộ hợp lệ trong biểu mẫu tạo hoặc cập nhật sách, khi xem lại và gửi biểu mẫu thì UI xem trước ảnh đã chọn, gửi siêu dữ liệu nhiều phần cùng `cover`, và bìa được quản lý trả về hiển thị trong giao diện nhân viên lẫn công khai.
 - AC-FE05-019: Cho trước bìa không hợp lệ hoặc lỗi phiên bản cũ/cơ sở dữ liệu/audit sau khi tệp thay thế được tạm lưu, khi thao tác tạo/cập nhật kết thúc thì sách/bìa đã commit vẫn không đổi và tệp được quản lý chưa commit bị xóa.
-- AC-FE05-020: Cho trước danh sách quản lý đang lọc theo trạng thái cũ của sách, khi nhân viên lưu thay đổi trạng thái hợp lệ thì lệnh thành công, bộ lọc chuyển sang trạng thái mới và danh sách chuẩn được tải lại để hiển thị sách nếu sách thuộc trang trả về.
+- AC-FE05-020: Cho trước nhân viên thay đổi trạng thái của một cuốn sách qua một trong hai điểm vào được hỗ trợ, khi lệnh thành công thì chỉ `bookId` được chỉ định bị thay đổi, ngữ cảnh tìm kiếm/thể loại/trạng thái/trang hiện đang áp dụng vẫn giữ nguyên và cùng danh sách chuẩn đó được tải lại từ máy chủ.
 - AC-FE05-021: Với các bản ghi tham chiếu đang hoạt động và không hoạt động, khi Thủ thư/Quản trị viên tải biểu mẫu sách thì chỉ các lựa chọn đang hoạt động được trả về; Khách/Thành viên không thể truy cập endpoint.
 - AC-FE05-022: Cho trước cơ sở dữ liệu đã triển khai cũ thiếu cột siêu dữ liệu chuẩn, khi backend khởi động thì áp dụng migration đã review và đóng gói trước khi lắng nghe; sau khi xác minh hậu điều kiện thành công, endpoint sẵn sàng trả HTTP `200` và cả ba danh sách siêu dữ liệu Quản trị viên tải dữ liệu ổn định. Nếu đối soát thất bại, backend không lắng nghe và bước xác minh triển khai thất bại.
+- AC-FE05-023: Cho trước danh sách quản lý được tải lại sau khi một cuốn sách thay đổi trạng thái, khi các hàng hiển thị thì mỗi ô trạng thái nhìn thấy phản ánh `Books.Status` của hàng đó; các hàng không bị ảnh hưởng giữ nguyên trạng thái do máy chủ sở hữu và frontend không gán lại nhãn cho chúng theo kết quả của cuốn sách được chọn.
 
 ---
 
@@ -393,7 +395,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ### 12.4 Mức sẵn sàng triển khai
 
-- NFR-FE05-DEP-001: Gói backend staging phải chứa migration chuẩn đã được review `database/migrations/2026-07-22-library-metadata-compatibility.sql`. Cổng khởi động ứng dụng chỉ áp dụng migration phạm vi hẹp này trước khi lắng nghe và xác minh hậu điều kiện. CI không kết nối cơ sở dữ liệu hoặc thay đổi lược đồ; quy trình staging vẫn chỉ kích hoạt thủ công; kiểm tra sống và sẵn sàng vẫn tách biệt; kiểm thử khói staging không được kết thúc thành công nếu khởi động hoặc bước kiểm tra sẵn sàng chỉ đọc thất bại.
+- NFR-FE05-DEP-001: Gói backend staging phải bao gồm migration siêu dữ liệu catalog lũy đẳng đã được rà soát và có thể bao gồm các migration tương thích do tính năng sở hữu đã được phê duyệt riêng. Cổng khởi động ứng dụng chỉ áp dụng các migration đã đóng gói đó trước khi lắng nghe và xác minh hậu điều kiện của chúng. CI không kết nối cơ sở dữ liệu hoặc thay đổi lược đồ. Sau khi lần chạy CI chính xác trên `main` thành công, staging tự động triển khai commit đó; CI thất bại sẽ không triển khai, vẫn có thể chạy lại thủ công, kiểm tra sống vẫn tách biệt với kiểm tra sẵn sàng và kiểm thử khói staging phải đóng an toàn khi quá trình khởi động hoặc bước kiểm tra sẵn sàng chỉ đọc không thành công.
 
 ### 12.5 Ghi log và audit
 
@@ -486,14 +488,16 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 | FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` đối chiếu bộ lọc trạng thái | Hoàn thành |
 | FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` từ chối Khách/Thành viên và trả các lựa chọn đang hoạt động cho Thủ thư/Quản trị viên | Hoàn thành |
 | FR-FE05-031 | Sẵn sàng triển khai | `app.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
+| FR-FE05-032 | UC21, UC23, UC24 | Hợp đồng cột trạng thái chuẩn trong `bookManagementFrontend.test.js` | Kiểm thử tự động đạt; đang chờ con người rà soát |
 | AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
 | AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
 | AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
 | AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Hoàn thành |
 | AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` ranh giới vai trò tham chiếu tích cực | Hoàn thành |
 | AC-FE05-022 | Sẵn sàng triển khai | `libraryMetadataMigration.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
+| AC-FE05-023 | UC21, UC23, UC24 | Các xác nhận hàng không bị ảnh hưởng trong `bookManagementFrontend.test.js`; `bookRoutes.test.js` | Kiểm thử tự động đạt; đang chờ con người rà soát |
 
-Độ bao phủ: 22/22 BR, 31/31 FR và 22/22 AC hiện có ánh xạ bằng chứng tự động.
+Độ bao phủ: 22/22 BR, 32/32 FR và 23/23 AC hiện có ánh xạ bằng chứng tự động.
 
 ---
 

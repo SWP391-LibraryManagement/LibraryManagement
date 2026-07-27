@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { membershipApi } from '../../../api/libraryFeatureApi';
 import { createLatestRequestGuard } from '../../../utils/latestRequestGuard';
+import { fmtDate } from '../../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../../utils/uiLabels';
 import { AdminActionButton } from '../components/AdminActionButton';
 import { AdminEmptyState } from '../components/AdminEmptyState';
@@ -24,11 +25,6 @@ const EMPTY_PAGE = {
   total: 0,
   totalPages: 1,
 };
-
-function formatDate(value) {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('vi-VN');
-}
 
 function readErrorCode(error) {
   return error?.cause?.response?.data?.code || error?.code || '';
@@ -140,7 +136,7 @@ export function AdminMembershipSection({ onToast }) {
   return (
     <section className="admin-membership">
       <AdminPageHeader
-        eyebrow="FE04 · Hội viên"
+        eyebrow="Hội viên"
         title="Duyệt hội viên"
         refreshing={loading}
         onRefresh={() => loadApplications({ announce: true })}
@@ -170,7 +166,7 @@ export function AdminMembershipSection({ onToast }) {
               value={draftFilters.status}
               onChange={(event) => setDraftFilters((current) => ({ ...current, status: event.target.value }))}
             >
-              <option value="PENDING">Đang chờ</option>
+              <option value="PENDING">Chờ xử lý</option>
               <option value="APPROVED">Đã duyệt</option>
               <option value="REJECTED">Đã từ chối</option>
               <option value="ALL">Tất cả</option>
@@ -201,7 +197,7 @@ export function AdminMembershipSection({ onToast }) {
                     <td>#{application.applicationId}</td>
                     <td><strong>{application.applicant.fullName || '-'}</strong><small>{application.applicant.username || ''}</small></td>
                     <td>{application.applicant.email || application.applicant.phone || '-'}</td>
-                    <td>{formatDate(application.appliedAt)}</td>
+                    <td>{fmtDate(application.appliedAt)}</td>
                     <td><span className={`admin-badge admin-badge--status-${application.status.toLowerCase()}`}>{getStatusLabel(application.status)}</span></td>
                     <td>
                       <AdminActionButton
@@ -224,7 +220,7 @@ export function AdminMembershipSection({ onToast }) {
                 <header><strong>Đơn #{application.applicationId}</strong><span>{getStatusLabel(application.status)}</span></header>
                 <h2>{application.applicant.fullName || 'Chưa cập nhật tên'}</h2>
                 <p>{application.applicant.email || '-'}</p>
-                <p>Nộp ngày {formatDate(application.appliedAt)}</p>
+                <p>Nộp ngày {fmtDate(application.appliedAt)}</p>
                 <AdminActionButton
                   icon={Eye}
                   label={isPendingMembershipApplication(application) ? 'Xét duyệt' : 'Chi tiết'}

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { registerAccount, resendVerification, verifyEmail } from '../api/authApi';
 import BackgroundPanel from '../component/register/BackgroundPanel';
@@ -8,7 +7,6 @@ import { RESEND_COOLDOWN_SECONDS, maskEmail } from '../utils/authUx';
 import '../styles/login.css';
 
 export default function RegisterPage() {
-  const navigate = useNavigate();
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -39,11 +37,11 @@ export default function RegisterPage() {
       return true;
     } catch (error) {
       const code = error?.cause?.response?.data?.error?.code;
-      if (code === 'EMAIL_ALREADY_REGISTERED') {
-        navigate('/verify-email', { state: { email: formData.email.trim() } });
-        return false;
-      }
-      setFeedback({ severity: 'error', message: error.message });
+      const duplicateMessages = {
+        EMAIL_ALREADY_REGISTERED: 'Email đã tồn tại trong hệ thống.',
+        USERNAME_ALREADY_REGISTERED: 'Tên đăng nhập đã tồn tại trong hệ thống.',
+      };
+      setFeedback({ severity: 'error', message: duplicateMessages[code] || error.message });
       return false;
     } finally {
       setIsSubmitting(false);

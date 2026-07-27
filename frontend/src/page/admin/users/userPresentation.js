@@ -63,8 +63,11 @@ export function validateUserCreateForm(form) {
     errors.email = 'Vui lòng nhập email hợp lệ.';
   }
 
-  if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
-    errors.phone = 'Số điện thoại không hợp lệ.';
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 15 || !/^[0-9+\-\s()]+$/.test(phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ (7-15 chữ số).';
+    }
   }
 
   if (address.length > 255) {
@@ -72,35 +75,6 @@ export function validateUserCreateForm(form) {
   }
 
   return errors;
-}
-
-export function validateManagedUserEditForm(form) {
-  const errors = {};
-  const fullName = String(form.fullName || '').trim();
-  const phone = String(form.phone || '').trim();
-  const address = String(form.address || '').trim();
-
-  if (!fullName) {
-    errors.fullName = 'Họ và tên là bắt buộc.';
-  } else if (fullName.length > 100) {
-    errors.fullName = 'Họ và tên không được vượt quá 100 ký tự.';
-  }
-
-  if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
-    errors.phone = 'Số điện thoại không hợp lệ.';
-  }
-
-  if (address.length > 255) {
-    errors.address = 'Địa chỉ không được vượt quá 255 ký tự.';
-  }
-
-  return errors;
-}
-
-export function validateUserForm(form, { mode = 'create' } = {}) {
-  return mode === 'edit'
-    ? validateManagedUserEditForm(form)
-    : validateUserCreateForm(form);
 }
 
 export function getPrimaryRole(user) {

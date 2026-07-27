@@ -121,13 +121,14 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     PENDING_BORROW_REQUESTS_EXIST: 'Không thể vô hiệu hóa người dùng khi còn yêu cầu mượn đang chờ xử lý.',
     MEMBER_BORROWING_WORKFLOW_EXISTS: 'Không thể đổi role MEMBER khi người dùng còn yêu cầu chờ xử lý hoặc sách đang mượn.',
     ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
+    ACCOUNT_SETUP_NOT_ELIGIBLE: 'Tài khoản không hợp lệ để gửi lại email thiết lập (đã kích hoạt, đã hoàn tất thiết lập, hoặc không phải tài khoản do quản trị viên tạo).',
+    ACCOUNT_SETUP_RESEND_COOLDOWN: 'Vui lòng đợi 60 giây sau lần gửi gần nhất trước khi gửi lại email thiết lập.',
     CANNOT_DEACTIVATE_SELF: 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.',
     LAST_ADMIN_ROLE: 'Không thể thay vai trò của quản trị viên đang hoạt động cuối cùng.',
     ROLE_NOT_FOUND: 'Vai trò được chọn không tồn tại hoặc không được phép sử dụng.',
     INVALID_ROLE_ID: 'Vai trò được chọn không hợp lệ.',
     INVALID_USER_ID: 'Tài khoản người dùng không hợp lệ.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
-    MANAGED_USER_UPDATE_FORBIDDEN: 'Quản trị viên chỉ được cập nhật họ tên, số điện thoại và địa chỉ.',
   };
 
   if (messages[code]) return messages[code];
@@ -185,19 +186,6 @@ export async function createManagedUser(payload) {
   }
 }
 
-export async function updateManagedUser(userId, payload) {
-  try {
-    const response = await authorizedRequest({
-      method: 'put',
-      url: `/users/${userId}`,
-      data: payload,
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể cập nhật người dùng.'), { cause: error });
-  }
-}
-
 export async function deactivateManagedUser(userId, expectedUpdatedAt) {
   try {
     const response = await authorizedRequest({
@@ -230,5 +218,24 @@ export async function replaceManagedUserRole(userId, roleId) {
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Không thể thay đổi vai trò.'), { cause: error });
+  }
+}
+
+// @spec MF-FE11-014, FR-FE11-036..038, AC-FE11-021/022, ADR-005
+export async function resendSetupEmail(userId) {
+  const normalizedUserId = Number(userId);
+  if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+    throw new Error('Tài khoản người dùng không hợp lệ.');
+  }
+
+  try {
+    const response = await authorizedRequest({
+      method: 'post',
+      url: `/users/${normalizedUserId}/resend-setup`,
+      data: {},
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Không thể gửi lại email thiết lập.'), { cause: error });
   }
 }

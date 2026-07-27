@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-28 - Profile Save Avatar Submission Fix
+
+- Uploaded a valid selected avatar through the existing multipart endpoint when the user submits the profile edit form.
+- Updated the browser regression to verify the save action emits `POST /api/profile/me/avatar` and renders the returned avatar.
+
+## 2026-07-28 - Cross-Origin Avatar Rendering Fix
+
+- Allowed managed `/uploads/avatars/` files to render in the separately hosted frontend after upload.
+- Added a static-file regression that verifies the required `Cross-Origin-Resource-Policy: cross-origin` response header.
+
 ## 2026-07-24 - Avatar Browser Verification
 
 - Added `tests/e2e/fe03-profile-avatar.spec.js` covering valid PNG upload, unsupported file type rejection, and oversized file rejection from the profile screen.

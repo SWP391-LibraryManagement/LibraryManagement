@@ -1,10 +1,10 @@
 ﻿# Master Test Plan - Library Management System
 
-Version: 0.2.0
+Version: 0.2.1
 
 Status: DRAFT - pending team review
 
-Last Updated: 2026-06-22
+Last Updated: 2026-07-28
 
 > Canonical policy note: the authoritative test policy for this project now lives in `D:\SWP391\library-management-system\.sdd\test-plan.md`. This document remains an extended testing reference and should not contradict the canonical `.sdd/test-plan.md`.
 ---
@@ -377,7 +377,7 @@ Current backend automated test files:
 | FE07 Borrowing Management | `borrowingRoutes.test.js`, `integration.test.js` | Borrowing UI manual check | Backend covered; UI evidence needed |
 | FE08 Reservation Management | `reservationRoutes.test.js`, `integration.test.js` | Reservation UI manual check | Backend covered; UI evidence needed |
 | FE09 Fine Management | `fineRoutes.test.js`, `integration.test.js` | Fine flow manual check | Backend covered; UI evidence needed |
-| FE10 Notification Management | `notificationRoutes.test.js`, `integration.test.js` | Inbox UI out of Phase 1 scope unless spec changes | Backend covered |
+| FE10 Notification Management | Existing `notificationRoutes.test.js`, `integration.test.js`; planned FE10-I01 migration/repository/API/frontend tests | Planned v0.5.0 personal-inbox E2E for MEMBER/LIBRARIAN/ADMIN plus cross-user negative evidence | Historical delivery backend covered; inbox implementation `NOT_STARTED` until governance activation reaches `main` |
 | FE11 User & Role Management | `userManagementRoutes.test.js` | User/role UI manual check if implemented | Backend covered |
 | FE12 Reporting & Statistics | `reportRoutes.test.js`, `integration.test.js` | Reporting UI manual check | Backend covered; UI evidence needed |
 

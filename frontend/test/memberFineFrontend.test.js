@@ -27,7 +27,8 @@ test('Member fines page is server-backed, paginated, retryable, and read-only', 
   assert.match(page, /result\.totalPages/);
   assert.match(page, /fine\.bookTitle/);
   assert.match(page, /fine\.reason/);
-  assert.match(page, /fine\.borrowDetailId/);
+  assert.doesNotMatch(page, /Mã mượn|fine\.borrowDetailId|Chi tiết mượn/);
+  assert.match(page, /headers=\{\['Sách', 'Hạn trả', 'Ngày trả', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái'\]\}/);
   assert.match(page, /fine\.dueDate/);
   assert.match(page, /fine\.returnDate/);
   assert.match(page, /fine\.paidAt/);

@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-28 - Create fines from selected overdue returns (v0.4.5)
+
+- Connected the Librarian/Admin return workspace to the canonical FE09
+  calculation endpoint for a selected overdue `borrowDetailId`.
+- Kept stored dates, 5,000 VND/day calculation, duplicate handling, terminal
+  state, and audit behavior authoritative on the server.
+
+## 2026-07-28 - Hide internal borrowing ID from Member fines (v0.4.4)
+
+- Removed the `Mã mượn` column and identifier-based title fallback from the
+  Member fine table.
+- Preserved `borrowDetailId` in the canonical API/database relationship for
+  duplicate prevention, calculation, staff reconciliation, and audit.
+
 ## 2026-07-27 - Connect Member fines to borrowing and role ownership
 
 - Restricted `/api/fines/me` to the single `MEMBER` role; Librarian/Admin continue through the staff fine workspace.

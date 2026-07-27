@@ -14,11 +14,17 @@ import {
 
 import { fineApi } from '../api/libraryFeatureApi';
 import AppLayout from '../component/layout/AppLayout';
-import { Badge, DataNotice, EmptyState, Toast, useToast } from '../component/shared/Feedback';
+import { Badge, ConfirmAction, DataNotice, EmptyState, Toast, useToast } from '../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../component/shared/OperationalPatterns';
 import { FINE_LIST_PAGE_SIZE, buildFineListParams } from '../utils/fineListQuery';
 import { getStatusLabel } from '../utils/uiLabels';
 import '../styles/fine-management.css';
+
+const FINE_RATE_PER_DAY = 5000;
+
+const FINE_REASON_LABELS = {
+  OVERDUE: 'Quá hạn trả sách',
+};
 
 const STATUS_OPTIONS = [
   ['ALL', 'Tất cả phiếu phạt'],
@@ -76,8 +82,12 @@ export default function FineManagement() {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [collectionNote, setCollectionNote] = useState('');
   const [resolutionReason, setResolutionReason] = useState('');
+  const [pendingResolution, setPendingResolution] = useState(null);
   const [toast, showToast, clearToast] = useToast();
-  const isAdmin = getRoles().includes('ADMIN');
+  const roles = getRoles();
+  const isStaff = roles.some((role) => ['LIBRARIAN', 'ADMIN'].includes(role));
+  const isAdmin = roles.includes('ADMIN');
+  const visibleSections = isStaff ? SECTIONS : SECTIONS.filter((section) => section.key === 'list');
 
   const loadFines = useCallback(async ({
     pageNumber = page,
@@ -107,7 +117,8 @@ export default function FineManagement() {
 
       setFines(next);
       setPagination(nextPagination);
-      setSelectedFineId((current) => next.some((fine) => String(fine.fineId) === String(current)) ? current : String(next[0]?.fineId || ''));
+      // @spec FR-FE09-018 — preserve selected fine across pages, including when outside the current page.
+      setSelectedFineId((current) => current || String(next[0]?.fineId || ''));
       setLastUpdated(new Date().toLocaleTimeString('vi-VN'));
     } catch (error) {
       setFines([]);
@@ -215,7 +226,26 @@ export default function FineManagement() {
     const action = type === 'waive'
       ? () => fineApi.waive(selectedFine.fineId, reason)
       : () => fineApi.cancel(selectedFine.fineId, reason);
-    if (await runMutation(action, type === 'waive' ? 'Đã miễn phiếu phạt.' : 'Đã hủy phiếu phạt.')) setResolutionReason('');
+    if (await runMutation(action, type === 'waive' ? 'Đã miễn phiếu phạt.' : 'Đã hủy phiếu phạt.')) {
+      setResolutionReason('');
+      setPendingResolution(null);
+    }
+  }
+
+  function requestResolution(type) {
+    if (!selectedFine || selectedFine.status !== 'UNPAID') return;
+    const reason = resolutionReason.trim();
+    if (!reason || reason.length > 500) {
+      setNotice('Lý do phải có từ 1 đến 500 ký tự.');
+      return;
+    }
+    setNotice('');
+    setPendingResolution({ type });
+  }
+
+  async function confirmResolution() {
+    if (!pendingResolution) return;
+    await handleResolve(pendingResolution.type);
   }
 
   return (
@@ -228,7 +258,7 @@ export default function FineManagement() {
       {notice && <DataNotice type="error" title="Không thể xử lý">{notice}</DataNotice>}
 
       <div className="tabs fine-workflow-tabs" aria-label="Quy trình quản lý tiền phạt">
-        {SECTIONS.map((item, index) => {
+        {visibleSections.map((item, index) => {
           const Icon = item.icon;
           return <button type="button" key={item.key} className={`tab${activeSection === item.key ? ' active' : ''}`} onClick={() => changeSection(item.key)}><span>{index + 1}</span><Icon size={15} /> {item.label}</button>;
         })}
@@ -238,7 +268,7 @@ export default function FineManagement() {
         <div className="fine-stat danger"><div><WalletCards size={20} /></div><span>Chưa thu trên trang</span><strong>{formatCurrency(unpaidFines.reduce((sum, fine) => sum + fine.amount, 0))}</strong></div>
         <div className="fine-stat warning"><div><ReceiptText size={20} /></div><span>Chưa thanh toán trên trang</span><strong>{unpaidFines.length}</strong></div>
         <div className="fine-stat success"><div><Check size={20} /></div><span>Đã thanh toán trên trang</span><strong>{paidFines.length}</strong></div>
-        <div className="fine-stat neutral"><div><Calculator size={20} /></div><span>Mức phạt</span><strong>5.000 đ/ngày</strong></div>
+        <div className="fine-stat neutral"><div><Calculator size={20} /></div><span>Mức phạt</span><strong>{formatCurrency(FINE_RATE_PER_DAY)}/ngày</strong></div>
       </section>
 
       {activeSection === 'list' && (
@@ -255,11 +285,21 @@ export default function FineManagement() {
             <DataTable
               caption="Danh sách phiếu phạt"
               headers={['Mã phiếu', 'Thành viên', 'Sách', 'Quá hạn', 'Số tiền', 'Trạng thái']}
+              loading={loading}
+              loadingRows={4}
               isEmpty={!pageRows.length}
               emptyState={<EmptyState icon={ReceiptText} title="Không có phiếu phạt phù hợp" />}
             >
               {pageRows.map((fine) => (
-                <tr key={fine.fineId} className={String(fine.fineId) === String(selectedFineId) ? 'selected' : ''} onClick={() => selectFine(fine)}>
+                <tr
+                  key={fine.fineId}
+                  className={String(fine.fineId) === String(selectedFineId) ? 'selected' : ''}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Chọn phiếu phạt #${fine.fineId}`}
+                  onClick={() => selectFine(fine)}
+                  onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectFine(fine); } }}
+                >
                   <td data-label="Mã phiếu">#{fine.fineId}</td>
                   <td data-label="Thành viên"><strong>{fine.member?.fullName || fine.member?.username || `Người dùng #${fine.userId}`}</strong></td>
                   <td data-label="Sách"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></td>
@@ -271,7 +311,7 @@ export default function FineManagement() {
             </DataTable>
             <div className="pagination" aria-label="Phân trang phiếu phạt"><span>Trang {safePage}/{totalPages} • {pagination.total} phiếu</span><div className="page-controls"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage === 1}>Trước</button><span className="active">{safePage}</span><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={safePage === totalPages}>Sau</button></div></div>
           </div>
-          <FineDetail fine={selectedFine} isAdmin={isAdmin} reason={resolutionReason} setReason={setResolutionReason} onResolve={handleResolve} onCollect={() => changeSection('collect')} onMarkPaid={() => changeSection('paid')} loading={loading} />
+          <FineDetail fine={selectedFine} isAdmin={isAdmin} reason={resolutionReason} setReason={setResolutionReason} onResolve={requestResolution} onCollect={() => changeSection('collect')} onMarkPaid={() => changeSection('paid')} loading={loading} />
         </section>
       )}
 
@@ -283,7 +323,7 @@ export default function FineManagement() {
             <label>Mã chi tiết mượn<input type="number" min="1" value={borrowDetailId} onChange={(event) => setBorrowDetailId(event.target.value)} placeholder="Ví dụ: 5" /></label>
             <button type="submit" disabled={loading}><Calculator size={17} /> Tính từ dữ liệu mượn trả</button>
           </form>
-          <div className="fine-panel fine-guide-panel"><h2>Nguyên tắc tính</h2><ol><li>Chỉ Librarian/Admin được thực hiện.</li><li>Mức phạt là 5.000 đ cho mỗi ngày quá hạn.</li><li>Không tạo phiếu nếu sách không quá hạn.</li><li>Không tạo trùng phiếu đang chưa thanh toán.</li></ol></div>
+          <div className="fine-panel fine-guide-panel"><h2>Nguyên tắc tính</h2><ol><li>Chỉ Librarian/Admin được thực hiện.</li><li>Mức phạt là {formatCurrency(FINE_RATE_PER_DAY)} cho mỗi ngày quá hạn.</li><li>Không tạo phiếu nếu sách không quá hạn.</li><li>Không tạo trùng phiếu đang chưa thanh toán.</li></ol></div>
         </section>
       )}
 
@@ -301,6 +341,20 @@ export default function FineManagement() {
       )}
 
       <Toast toast={toast} onClose={clearToast} />
+      {pendingResolution && selectedFine && (
+        <ConfirmAction
+          title={pendingResolution.type === 'waive' ? 'Miễn phiếu phạt' : 'Hủy phiếu phạt'}
+          eyebrow="Hành động cuối — không hoàn tác"
+          tone={pendingResolution.type === 'waive' ? 'primary' : 'danger'}
+          pending={loading}
+          cancelLabel="Hủy bỏ"
+          confirmLabel={pendingResolution.type === 'waive' ? 'Xác nhận miễn phạt' : 'Xác nhận hủy phiếu'}
+          onCancel={() => setPendingResolution(null)}
+          onConfirm={confirmResolution}
+        >
+          Bạn sắp {pendingResolution.type === 'waive' ? 'miễn' : 'hủy'} phiếu phạt <strong>#{selectedFine.fineId}</strong> trị giá <strong>{formatCurrency(selectedFine.amount)}</strong> của <strong>{selectedFine.member?.fullName || selectedFine.member?.username || `Người dùng #${selectedFine.userId}`}</strong>. Hành động này không thể hoàn tác. Lý do đã ghi: <em>“{resolutionReason.trim()}”</em>.
+        </ConfirmAction>
+      )}
     </AppLayout>
   );
 }
@@ -309,7 +363,7 @@ function FineDetail({ fine, compact = false, isAdmin = false, reason = '', setRe
   return (
     <aside className={`fine-panel fine-detail-panel ${compact ? 'compact' : ''}`}>
       <div className="fine-panel-head"><div><p>Phiếu đang chọn</p><h2>{fine ? `Phiếu phạt #${fine.fineId}` : 'Chưa chọn phiếu'}</h2></div>{fine && <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>}</div>
-      {fine ? <><div className="fine-detail-card"><div><span>Thành viên</span><strong>{fine.member?.fullName || fine.member?.username}</strong><small>{fine.member?.email}</small></div><div><span>Sách</span><strong>{fine.bookTitle || '—'}</strong></div></div><dl className="fine-details"><div><dt>Chi tiết mượn</dt><dd>#{fine.borrowDetailId}</dd></div><div><dt>Quá hạn</dt><dd>{fine.overdueDays} ngày</dd></div><div><dt>Mức/ngày</dt><dd>{formatCurrency(fine.ratePerDay)}</dd></div><div><dt>Tổng tiền</dt><dd><strong>{formatCurrency(fine.amount)}</strong></dd></div><div><dt>Đã thu</dt><dd>{formatCurrency(fine.paidAmount)}</dd></div><div><dt>Ngày tính</dt><dd>{formatDate(fine.calculatedAt)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{formatDate(fine.paidAt)}</dd></div></dl>{!compact && fine.status === 'UNPAID' && onCollect && onMarkPaid && <div className="fine-payment-actions"><button type="button" className="btn btn-primary" disabled={loading} onClick={onCollect}><CreditCard size={15} /> Ghi nhận thu tiền</button><button type="button" className="btn btn-outline" disabled={loading} onClick={onMarkPaid}><Check size={15} /> Đánh dấu đã thanh toán</button></div>}{isAdmin && fine.status === 'UNPAID' && setReason && <div className="fine-admin-resolution"><label>Lý do miễn/hủy<textarea value={reason} maxLength="500" onChange={(event) => setReason(event.target.value)} /></label><div><button type="button" className="btn btn-outline" disabled={loading} onClick={() => onResolve('waive')}><ShieldCheck size={15} /> Miễn phạt</button><button type="button" className="btn btn-danger" disabled={loading} onClick={() => onResolve('cancel')}><XCircle size={15} /> Hủy phiếu</button></div></div>}</> : <EmptyState icon={ReceiptText} title="Chọn một phiếu để xem chi tiết" />}
+      {fine ? <><div className="fine-detail-card"><div><span>Thành viên</span><strong>{fine.member?.fullName || fine.member?.username || `Người dùng #${fine.userId}`}</strong><small>{fine.member?.email || ''}</small></div><div><span>Sách</span><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></div></div><dl className="fine-details"><div><dt>Chi tiết mượn</dt><dd>#{fine.borrowDetailId}</dd></div><div><dt>Lý do</dt><dd>{FINE_REASON_LABELS[fine.reason] || fine.reason || '—'}</dd></div><div><dt>Quá hạn</dt><dd>{fine.overdueDays} ngày</dd></div><div><dt>Mức/ngày</dt><dd>{formatCurrency(fine.ratePerDay || FINE_RATE_PER_DAY)}</dd></div><div><dt>Tổng tiền</dt><dd><strong>{formatCurrency(fine.amount)}</strong></dd></div><div><dt>Đã thu</dt><dd>{formatCurrency(fine.paidAmount)}</dd></div><div><dt>Ngày tính</dt><dd>{formatDate(fine.calculatedAt)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{formatDate(fine.paidAt)}</dd></div></dl>{!compact && fine.status === 'UNPAID' && onCollect && onMarkPaid && <div className="fine-payment-actions"><button type="button" className="btn btn-primary" disabled={loading} onClick={onCollect}><CreditCard size={15} /> Ghi nhận thu tiền</button><button type="button" className="btn btn-outline" disabled={loading} onClick={onMarkPaid}><Check size={15} /> Đánh dấu đã thanh toán</button></div>}{isAdmin && fine.status === 'UNPAID' && setReason && <div className="fine-admin-resolution"><label>Lý do miễn/hủy<textarea value={reason} maxLength="500" onChange={(event) => setReason(event.target.value)} placeholder="Ghi lý do miễn hoặc hủy phiếu (bắt buộc, tối đa 500 ký tự)" /></label><div><button type="button" className="btn btn-outline" disabled={loading} onClick={() => onResolve('waive')}><ShieldCheck size={15} /> Miễn phạt</button><button type="button" className="btn btn-danger" disabled={loading} onClick={() => onResolve('cancel')}><XCircle size={15} /> Hủy phiếu</button></div></div>}</> : <EmptyState icon={ReceiptText} title="Chọn một phiếu để xem chi tiết" />}
     </aside>
   );
 }

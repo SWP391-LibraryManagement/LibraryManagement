@@ -111,6 +111,8 @@ export default function InventoryManagement() {
       <DataTable
         caption="Danh sách bản sao trong kho"
         headers={['ID', 'Đầu sách', 'Barcode', 'Vị trí', 'Trạng thái', 'Thao tác']}
+        loading={loading}
+        loadingRows={4}
         isEmpty={!items.length}
         emptyState={<EmptyState icon={Inventory2Icon} title="Chưa có bản sao phù hợp" />}
       >

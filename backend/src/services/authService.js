@@ -125,7 +125,7 @@ function createAuthService({
   /** Gửi email qua emailService, bỏ qua lỗi để không làm gián đoạn luồng chính */
   async function sendEmail(emailFnName, params, label) {
     if (!emailService || typeof emailService[emailFnName] !== 'function') {
-      return;
+      return { sent: false, reason: 'EMAIL_SERVICE_UNAVAILABLE' };
     }
 
     try {
@@ -136,8 +136,10 @@ function createAuthService({
       } else if (result && result.sent === true) {
         console.info(`[auth email] ${label} email sent to ${maskEmail(params.to)} (${result.providerMessageId || 'no id'}).`);
       }
+      return result;
     } catch (emailError) {
-      console.error(`[auth email] Failed to send ${label} email:`, emailError.message);
+      console.error(`[auth email] Failed to send ${label} email.`);
+      return { sent: false, reason: 'PROVIDER_ERROR' };
     }
   }
 
@@ -349,7 +351,7 @@ function createAuthService({
       throw errors.badRequest('PASSWORD_MISMATCH', 'Password confirmation must match password.');
     }
 
-    // @spec FR-FE02-015 — reject registration with an already-registered email; no new user is created (AF-FE02-001, EC-FE02-003, BR-FE02-001)
+    // @spec FR-FE02-015 — reject a registered username/email before creating verification state
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
       throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
@@ -381,8 +383,11 @@ function createAuthService({
     } catch (error) {
       const number = error?.number ?? error?.originalError?.info?.number;
       const message = String(error?.message || error?.originalError?.message || '');
-      if ([2601, 2627].includes(number) && /UX_Users_Email/i.test(message)) {
-        throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
+      if ([2601, 2627].includes(number)) {
+        if (/UX_Users_Email/i.test(message)) {
+          throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
+        }
+        throw errors.conflict('USERNAME_ALREADY_REGISTERED', 'Username is already in use.');
       }
       throw error;
     }
@@ -498,7 +503,11 @@ function createAuthService({
         targetId: user.userId,
         metadata: { identifier, reason: 'ACCOUNT_LOCKED' },
       });
-      throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
+      throw errors.tooManyRequests(
+        'ACCOUNT_LOCKED',
+        'Account is locked due to too many failed attempts. Please reset your password or contact support.',
+        { retryAfterSeconds: Math.ceil((lockExpiry - clock().getTime()) / 1000) }
+      );
     }
 
     // AF-FE02-003: tự động mở khóa khi cửa sổ khóa do đăng nhập sai đã hết hạn
@@ -571,6 +580,11 @@ function createAuthService({
           targetId: user.userId,
           metadata: { identifier, reason: 'FAILED_ATTEMPT_THRESHOLD' },
         });
+        throw errors.tooManyRequests(
+          'ACCOUNT_LOCKED',
+          'Account is locked due to too many failed attempts. Please reset your password or contact support.',
+          { retryAfterSeconds: Math.ceil((failure.lockedUntil.getTime() - clock().getTime()) / 1000) }
+        );
       }
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
@@ -672,11 +686,15 @@ function createAuthService({
 
     const { otp } = await createOtpToken(user.userId, 'CHANGE_PASSWORD_OTP', env.changePasswordOtpTtlMinutes, context.ip);
 
-    await sendEmail('sendChangePasswordOtpEmail', {
+    const delivery = await sendEmail('sendChangePasswordOtpEmail', {
       to: user.email,
       otp,
       expiresInMinutes: env.changePasswordOtpTtlMinutes,
     }, 'change-password OTP');
+
+    if (!delivery?.sent) {
+      throw errors.internal('EMAIL_DELIVERY_FAILED');
+    }
 
     await writeAudit(context, 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED', { userId: user.userId, targetId: user.userId });
 

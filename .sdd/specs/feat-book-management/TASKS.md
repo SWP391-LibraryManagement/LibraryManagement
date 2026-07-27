@@ -174,3 +174,25 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
     specifically named disposable local SQL Server database before deployment.
   - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke
     behavior, and existing Admin/Librarian role boundaries.
+
+## 2026-07-28 CI/CD activation
+
+- [x] **FE05-T016 - Deploy staging automatically after successful main CI.**
+  - Maps to: NFR-FE05-DEP-001.
+  - Trigger `Deploy staging` only after the exact `main` CI run succeeds, while retaining manual reruns.
+  - Check out the CI-tested commit, retain the packaged startup migration and fail-closed smoke test, and prevent failed CI runs from deploying.
+  - Evidence: the workflow policy and staging smoke regressions pass locally; the pushed workflow run provides live deployment evidence.
+
+- [x] **FE05-T017 - Permit separately approved feature compatibility migrations in the startup gate.**
+  - Maps to: NFR-FE05-DEP-001.
+  - Keep FE05 catalog readiness read-only while allowing the startup gate to package, apply, and verify the FE02-owned `CHANGE_PASSWORD_OTP` constraint migration before listen.
+  - Evidence: deployment policy and focused startup/schema regressions verify both reviewed migrations remain packaged and fail closed.
+
+## 2026-07-28 single-book status-list correction
+
+- [~] **FE05-T018 - Preserve list context and correctly render statuses after a one-book status command.**
+  - Maps to: BR-FE05-011, FR-FE05-029, FR-FE05-032, AC-FE05-020, AC-FE05-023.
+  - Preserve read-only availability in the detail projection and mutate only the selected canonical `bookId`.
+  - Preserve the applied search/category/status/page context and reload that canonical list after both the update form and standalone status command.
+  - Render the management-list status column from canonical `Books.Status`, not `availabilityStatus`.
+  - Verify focused frontend tests, full frontend tests, lint/build, traceability, and diff hygiene before human review.

@@ -1,7 +1,7 @@
 ﻿# PLAN.md - FE02 Authentication
 
 Status: RECONCILIATION IN PROGRESS - CONTEXT ALIGNED; HUMAN REVIEW PENDING
-Date: 2026-07-27
+Date: 2026-07-28
 Owner: Dat
 
 ## 1. Purpose
@@ -73,7 +73,7 @@ Required tables/fields exist in `database/Librarymanagement.sql` and passed loca
 
 - `Users`: `PasswordHash`, `Status`, `EmailVerifiedAt`, `FailedLoginCount`, `LockedUntil`, `LastLoginAt`.
 - `Roles`, `UserRoles`.
-- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`.
+- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`; staging startup verifies that `CK_AuthTokens_TokenType` permits `CHANGE_PASSWORD_OTP` and applies the reviewed compatibility migration when stale.
 - `LoginFailureAttempts`: timestamped known-account failures for the rolling 15-minute window.
 - `AuditLogs`.
 - `NotificationTemplates`, `Notifications`, `NotificationAttempts` are FE10-owned delivery records; FE02 references its persisted `AuthTokens.TokenId` but does not write notification records directly.
@@ -231,3 +231,11 @@ duplicate registration, and current-state login writes are closed.
 Reconciliation remains open until the FE02-T043 H3 closeout is linked and
 human review of SPEC v0.6.16 is complete. The valid-login and token-validation
 performance targets have repeatable local evidence under FE02-T048.
+
+## 17. Registration Identity Availability Follow-up
+
+1. Reuse `POST /api/auth/register`; do not add a separate availability endpoint.
+2. Check normalized username and email before password hashing, account creation, verification-token creation, or OTP delivery.
+3. Preserve database uniqueness as the concurrency authority and map either username or email races to the matching safe `409` conflict.
+4. Keep duplicate feedback on the registration form and proceed to OTP only after successful registration.
+5. Add focused backend and frontend regressions, then run FE02 traceability and frontend lint/build.

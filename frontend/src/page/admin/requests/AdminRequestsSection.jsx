@@ -274,7 +274,7 @@ export function AdminRequestsSection({ onToast, initialStatus = 'ALL' }) {
   return (
     <section className="admin-requests">
       <AdminPageHeader
-        eyebrow="FE11 đọc · FE07 xử lý"
+        eyebrow="Đọc yêu cầu · Xử lý mượn"
         title="Quản lý yêu cầu"
         refreshing={requestsLoading}
         onRefresh={() => loadRequests({ announce: true })}

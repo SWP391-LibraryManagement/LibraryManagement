@@ -43,16 +43,22 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('FE03 accepts a valid avatar upload from the profile screen', async ({ page }) => {
+test('FE03 uploads a selected avatar when saving the profile form', async ({ page }) => {
   await openProfileEditor(page);
   await page.locator('input[type="file"]').setInputFiles({
     name: 'avatar.png',
     mimeType: 'image/png',
     buffer: png,
   });
-  await page.locator('.ep-btn-upload').click();
+  const avatarRequestPromise = page.waitForRequest(
+    (request) => request.url().endsWith('/api/profile/me/avatar') && request.method() === 'POST',
+    { timeout: 3000 }
+  );
+  await page.locator('.ep-btn-save').click();
+  const avatarRequest = await avatarRequestPromise;
 
-  await expect(page.locator('.ep-dialog')).toBeVisible();
+  expect(avatarRequest.headers()['content-type']).toContain('multipart/form-data');
+  await expect(page.locator('.ep-dialog')).toBeHidden();
   await expect(page.locator('.ph-avatar img')).toHaveAttribute('src', /\/uploads\/avatars\/7-generated\.png$/);
 });
 

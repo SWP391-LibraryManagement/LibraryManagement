@@ -10,8 +10,8 @@ import {
 import { buildMemberSummary, buildStaffSummary } from '../src/page/dashboard/dashboardViewModel.js';
 
 test('navigation visibility follows stored roles', () => {
-  assert.equal(getVisibleNavigation(['MEMBER'])[0].label, 'Home');
-  assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Home');
+  assert.equal(getVisibleNavigation(['MEMBER'])[0].label, 'Trang chủ');
+  assert.equal(getVisibleNavigation(['LIBRARIAN'])[0].label, 'Trang chủ');
   assert.equal(getVisibleNavigation(['ADMIN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
@@ -107,7 +107,7 @@ test('account menus hide member-only actions from admin and librarian roles', as
 
   assert.match(header, /storedRoles\.includes\('MEMBER'\)/);
   assert.match(header, /\['ADMIN', 'LIBRARIAN'\]\.includes\(role\)/);
-  assert.match(homepage, /showMemberAccountActions = roleLabel === 'Thành viên'/);
+  assert.match(homepage, /showMemberAccountActions = primaryRole === 'MEMBER'/);
   assert.match(homepage, /\.\.\.\(showMemberAccountActions \? \[/);
 });
 
@@ -119,7 +119,7 @@ test('admin account menus expose a route back to the admin console', async () =>
   assert.match(popup, /\{onAdminConsole && <MenuItem/);
   assert.match(popup, /Trang quản trị/);
   assert.match(header, /storedRoles\.includes\('ADMIN'\) \? \(\) => navigate\('\/admin\/users'\)/);
-  assert.match(homepage, /showAdminConsoleAction = roleLabel === 'Quản trị viên'/);
+  assert.match(homepage, /showAdminConsoleAction = primaryRole === 'ADMIN'/);
   assert.match(homepage, /label: 'Trang quản trị', action: \(\) => navigate\('\/admin\/users'\)/);
 });
 
@@ -131,7 +131,7 @@ test('librarian account menus expose a route back to the librarian workspace', a
   assert.match(popup, /\{onLibrarianConsole && <MenuItem/);
   assert.match(popup, /Khu vực thủ thư/);
   assert.match(header, /storedRoles\.includes\('LIBRARIAN'\).*navigate\('\/home'\)/);
-  assert.match(homepage, /showLibrarianConsoleAction = roleLabel === 'Thủ thư'/);
+  assert.match(homepage, /showLibrarianConsoleAction = primaryRole === 'LIBRARIAN'/);
   assert.match(homepage, /label: 'Khu vực thủ thư', action: \(\) => navigate\('\/home'\)/);
 });
 

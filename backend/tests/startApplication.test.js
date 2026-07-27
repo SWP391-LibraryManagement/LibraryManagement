@@ -5,7 +5,10 @@ describe('backend application startup', () => {
     const calls = [];
     const schemaReadinessService = {
       ensureCatalogMetadataSchema: jest.fn(async () => {
-        calls.push('schema');
+        calls.push('catalog-schema');
+      }),
+      ensureChangePasswordOtpTokenType: jest.fn(async () => {
+        calls.push('auth-token-schema');
       }),
     };
     const runtime = {
@@ -22,14 +25,15 @@ describe('backend application startup', () => {
       logger,
     })).resolves.toBe('server');
 
-    expect(calls).toEqual(['schema', 'listen']);
-    expect(logger.info).toHaveBeenCalledWith('Catalog metadata schema is ready.');
+    expect(calls).toEqual(['catalog-schema', 'auth-token-schema', 'listen']);
+    expect(logger.info).toHaveBeenCalledWith('Deployment schema is ready.');
   });
 
   test('does not listen when schema reconciliation fails', async () => {
     const failure = new Error('ALTER permission denied');
     const schemaReadinessService = {
       ensureCatalogMetadataSchema: jest.fn().mockRejectedValue(failure),
+      ensureChangePasswordOtpTokenType: jest.fn(),
     };
     const runtime = { start: jest.fn() };
 
@@ -40,5 +44,6 @@ describe('backend application startup', () => {
     })).rejects.toBe(failure);
 
     expect(runtime.start).not.toHaveBeenCalled();
+    expect(schemaReadinessService.ensureChangePasswordOtpTokenType).not.toHaveBeenCalled();
   });
 });

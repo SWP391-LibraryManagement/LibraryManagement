@@ -91,7 +91,11 @@ function createApp({
   // Reject or redirect auth transport before parsing credentials or dispatching auth routes.
   app.use(createHttpsEnforcementMiddleware());
   app.use(express.json());
-  app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars')));
+  app.use('/uploads/avatars', express.static(path.resolve(__dirname, '../uploads/avatars'), {
+    setHeaders(response) {
+      response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  }));
   app.use('/uploads/book-covers', express.static(path.resolve(__dirname, '../uploads/book-covers'), {
     setHeaders(response) {
       response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');

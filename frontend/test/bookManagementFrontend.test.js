@@ -93,8 +93,8 @@ test('book update exposes catalog status without sending status through metadata
   const { page } = await sources();
 
   assert.match(page, /<span>Trạng thái sách<\/span>/);
-  assert.match(page, /<option value="ACTIVE">Còn sách<\/option>/);
-  assert.match(page, /<option value="INACTIVE">Không khả dụng<\/option>/);
+  assert.match(page, /<option value="ACTIVE">\{getStatusLabel\('ACTIVE'\)\}<\/option>/);
+  assert.match(page, /<option value="INACTIVE">\{getStatusLabel\('INACTIVE'\)\}<\/option>/);
   assert.doesNotMatch(page, /Trạng thái này điều khiển việc hiển thị sách trong danh mục/);
   assert.match(page, /updateForm\.status !== selectedBook\.status/);
   assert.match(page, /activating \? 'reactivate' : 'deactivate'/);
@@ -102,12 +102,26 @@ test('book update exposes catalog status without sending status through metadata
 });
 
 // @spec FR-FE05-029, AC-FE05-020
-test('status update reloads the list with the new status so the edited book stays visible', async () => {
+test('single-book status update preserves the current canonical list context', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.match(page, /setAppliedStatusFilter\(updateForm\.status\)/);
-  assert.match(page, /loadBooks\(statusChanged[\s\S]*status: updateForm\.status[\s\S]*pageNumber: 1/);
+  assert.ok((page.match(/status: appliedStatusFilter/g) || []).length >= 2);
+  assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
+  assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
+  assert.ok((page.match(/pageNumber: page/g) || []).length >= 2);
+  assert.doesNotMatch(page, /setAppliedStatusFilter\(''\)/);
+  assert.doesNotMatch(page, /loadBooks\(\{ status: '', pageNumber: 1 \}\)/);
+  assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
+});
+
+// @spec BR-FE05-011, FR-FE05-032, AC-FE05-023
+test('staff list status column renders canonical Books.Status', async () => {
+  const { page } = await sources();
+
+  assert.match(page, /Trạng thái catalog/);
+  assert.match(page, /getStatusLabel\(book\.status\)/);
+  assert.match(page, /book\.status === 'ACTIVE' \? 'active' : 'inactive'/);
 });
 
 // @spec BR-FE05-019, FR-FE05-027, AC-FE05-018, NFR-FE05-UX-003

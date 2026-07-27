@@ -19,7 +19,6 @@ function makeApp({ roles = ['ADMIN'], userManagementService } = {}) {
       getUser: jest.fn(),
       createUser: jest.fn(),
       resendSetup: jest.fn(),
-      updateUser: jest.fn(),
       updateStatus: jest.fn(),
       replaceRole: jest.fn(),
     },
@@ -407,93 +406,16 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.resendSetup).not.toHaveBeenCalled();
   });
 
-  test('PUT /api/users/:userId passes normalized optimistic update data', async () => {
-    const updatedUser = { userId: 7, roles: ['MEMBER'], fullName: 'Updated User' };
-    const userManagementService = { updateUser: jest.fn(async () => updatedUser) };
+  test('PUT /api/users/:userId is not exposed for managed-user profile editing', async () => {
+    const userManagementService = {};
     const app = makeApp({ userManagementService });
 
     const response = await request(app)
       .put('/api/users/7')
       .set('Authorization', 'Bearer token')
-      .send({
-        expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
-        fullName: ' Updated User ',
-        phone: ' 0900000000 ',
-        address: ' Hà Nội ',
-      });
+      .send({ fullName: 'Updated User' });
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(updatedUser);
-    expect(userManagementService.updateUser).toHaveBeenCalledWith(
-      7,
-      {
-        expectedUpdatedAt: new Date('2026-07-19T08:00:00.000Z'),
-        fullName: 'Updated User',
-        phone: '0900000000',
-        address: 'Hà Nội',
-      },
-      expect.objectContaining({ adminUserId: 99 })
-    );
-  });
-
-  test.each([
-    ['0', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: 'User' }, 'userId'],
-    ['7', { fullName: 'User' }, 'expectedUpdatedAt'],
-    ['7', { expectedUpdatedAt: 'not-a-date', fullName: 'User' }, 'expectedUpdatedAt'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z' }, '_error'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', fullName: '' }, 'fullName'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', phone: 'invalid phone' }, 'phone'],
-    ['7', { expectedUpdatedAt: '2026-07-19T08:00:00.000Z', address: 'x'.repeat(256) }, 'address'],
-  ])('PUT /api/users/%s rejects invalid update payload', async (userId, payload, field) => {
-    const userManagementService = { updateUser: jest.fn() };
-    const app = makeApp({ userManagementService });
-
-    const response = await request(app)
-      .put(`/api/users/${userId}`)
-      .set('Authorization', 'Bearer token')
-      .send(payload);
-
-    expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe('VALIDATION_ERROR');
-    expect(response.body.error.details).toEqual(
-      expect.arrayContaining([expect.objectContaining({ field })])
-    );
-    expect(userManagementService.updateUser).not.toHaveBeenCalled();
-  });
-
-  test.each(['email', 'department', 'specialization', 'unknownField'])(
-    'PUT /api/users/:userId rejects forbidden existing-user field %s atomically',
-    async (field) => {
-      const userManagementService = { updateUser: jest.fn() };
-      const app = makeApp({ userManagementService });
-
-      const response = await request(app)
-        .put('/api/users/7')
-        .set('Authorization', 'Bearer token')
-        .send({
-          expectedUpdatedAt: '2026-07-19T08:00:00.000Z',
-          fullName: 'Updated User',
-          [field]: field === 'email' ? 'unchanged@example.test' : 'forbidden',
-        });
-
-      expect(response.status).toBe(403);
-      expect(response.body.error.code).toBe('MANAGED_USER_UPDATE_FORBIDDEN');
-      expect(userManagementService.updateUser).not.toHaveBeenCalled();
-    }
-  );
-
-  test('PUT /api/users/:userId authorizes before validating the body', async () => {
-    const userManagementService = { updateUser: jest.fn() };
-    const app = makeApp({ roles: ['MEMBER'], userManagementService });
-
-    const response = await request(app)
-      .put('/api/users/0')
-      .set('Authorization', 'Bearer token')
-      .send({ expectedUpdatedAt: 'not-a-date' });
-
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe('ADMIN_REQUIRED');
-    expect(userManagementService.updateUser).not.toHaveBeenCalled();
+    expect(response.status).toBe(404);
   });
 
   test('PATCH /api/users/:userId/status passes normalized optimistic deactivation data', async () => {

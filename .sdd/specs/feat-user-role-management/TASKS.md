@@ -3,9 +3,9 @@
 Status: IMPLEMENTED - LOCAL AUTOMATED VALIDATION COMPLETE
 Implementation State: PARTIAL
 
-Date: 2026-07-23
+Date: 2026-07-28
 
-Current Extension: FE11-PDO01..PDO03 and the FE11-PDO04 product/source-test scope are implemented; authenticated browser and human acceptance remain open.
+Current Extension: FE11-AGB01 implements Q-FE11-029 by limiting existing-user Admin mutations to role replacement and eligible deactivation; authenticated browser and human acceptance remain open.
 
 Concurrent Extension: FE11-UXR09 product/source-test scope is implemented through canonical FE04 APIs; responsive browser, Azure Staging, and human acceptance remain open.
 
@@ -418,3 +418,17 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
     returns today; backend 1,064/1,064 and frontend 232/232 pass,
     with lint/build, traceability, and diff hygiene green.
   - Remaining: authenticated deployed-browser and human review.
+
+## 2026-07-28 Admin Account-Governance Boundary Tasks
+
+- [~] **FE11-AGB01 - Remove Admin existing-user profile editing.**
+  - Maps to: Q-FE11-029; MF-FE11-004/MF-FE11-007; BR-FE11-014/015;
+    FR-FE11-004/007/020/028; AC-FE11-004/008/011.
+  - Remove `Chỉnh sửa` from user rows/cards/detail and keep `Phân quyền` plus
+    eligible `Vô hiệu hóa`.
+  - Retire the FE11 existing-user profile PUT path through every backend/client
+    layer and remove it from OpenAPI.
+  - Preserve account creation, setup resend, role replacement, and deactivation
+    as separate approved workflows.
+  - Automated implementation/tests: in progress in the current workspace.
+  - Remaining: focused/full validation plus authenticated browser/human review.

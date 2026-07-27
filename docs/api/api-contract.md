@@ -94,7 +94,7 @@ Notes:
 
 - Creates inactive/unverified user according to FE02.
 - Sends or records mock verification email through FE10 integration when available.
-- Duplicate email requests, including concurrent unique-index races, return `409 EMAIL_ALREADY_REGISTERED` with no additional user or verification-token state.
+- Duplicate username/email requests, including concurrent unique-index races, return `409 USERNAME_ALREADY_REGISTERED` or `409 EMAIL_ALREADY_REGISTERED` with no additional user, verification-token, or OTP-delivery state.
 
 ### POST `/api/auth/verify-email`
 

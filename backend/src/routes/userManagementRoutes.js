@@ -7,7 +7,6 @@ const {
   listUsersValidators,
   getUserValidators,
   createUserValidators,
-  updateUserValidators,
   updateUserStatusValidators,
   resendSetupValidators,
   replaceRoleValidators,
@@ -33,7 +32,6 @@ function createUserManagementRoutes({ authService, userManagementService } = {})
     resendSetupValidators,
     controller.resendSetup
   );
-  router.put('/:userId', ...requireAdmin, updateUserValidators, controller.updateUser);
   router.patch(
     '/:userId/status',
     ...requireAdmin,

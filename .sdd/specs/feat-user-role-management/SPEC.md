@@ -1,12 +1,12 @@
 # SPEC.md - FE11 Quản lý vai trò và người dùng
 
-# Phiên bản: 0.6.12
+# Phiên bản: 0.6.13
 
-# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI KẾT NỐI BẢNG ĐIỀU KHIỂN QUẢN TRỊ - ĐANG CHỜ RÀ SOÁT CỦA CON NGƯỜI
+# Trạng thái: ĐÃ TRIỂN KHAI RANH GIỚI QUẢN TRỊ TÀI KHOẢN QUẢN TRỊ - ĐANG CHỜ CON NGƯỜI RÀ SOÁT
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-28
 
 # ID tính năng: FE11
 
@@ -15,6 +15,15 @@
 > Trạng thái bàn giao: phần triển khai tự động cục bộ hiện đã cập nhật đến
 > bản sửa đổi chỉnh sửa hồ sơ được quản lý ngày 2026-07-25. Nghiệm thu trên trình duyệt/của con người vẫn
 > đang chờ tại những vị trí được ghi trong `TASKS.md`.
+
+> Bản sửa đổi thay thế được phê duyệt ngày 2026-07-28 (`Q-FE11-029`): đối với
+> tài khoản hiện có, Quản trị viên có thể xem chi tiết an toàn nhưng chỉ được
+> thay đổi vai trò duy nhất của tài khoản hoặc vô hiệu hóa tài khoản. UI Quản trị
+> viên không cung cấp thao tác Chỉnh sửa hồ sơ và FE11 không cung cấp tuyến thay
+> đổi hồ sơ `PUT /api/users/{userId}`. Người dùng đã xác thực tự sửa các trường
+> hồ sơ được phê duyệt qua FE03; email đã xác minh vẫn thuộc FE02. Quyết định này
+> thay thế Q-FE11-028 và mọi tuyên bố cập nhật hồ sơ được quản lý/trường công việc
+> xung đột được giữ lại làm bằng chứng lịch sử.
 
 > Nguồn chuẩn cho Quản lý người dùng và vai trò FE11. Đặc tả này được phê duyệt để lập kế hoạch Giai đoạn 2. Tài liệu được viết chi tiết có chủ đích vì FE11 rất quan trọng đối với quản trị và kiểm soát quyền truy cập hệ thống.
 >
@@ -26,7 +35,7 @@
 >
 > Bản sửa đổi quyền sở hữu dữ liệu cá nhân ngày 2026-07-22 đã được phê duyệt: FE03 sở hữu thay đổi tự phục vụ đối với `fullName`, `phone` và `address`; thay đổi email đã xác minh thuộc FE02 và vẫn nằm ngoài Giai đoạn 1 cho đến khi một luồng rõ ràng được phê duyệt. Quản trị viên FE11 có thể xem các trường đó nhưng chỉ được cập nhật trường công việc của Thủ thư (`department`, `specialization`). Phần triển khai cập nhật rộng của Quản trị viên trước đây không còn là bằng chứng nghiệm thu và phải được giới hạn theo `FE11-PDO01..PDO04` trước khi bản sửa đổi này hoàn tất.
 >
-> Bản sửa đổi thay thế ngày 2026-07-25 đã được phê duyệt (`Q-FE11-028`): Quản trị viên FE11 có thể cập nhật
+> Bản sửa đổi lịch sử ngày 2026-07-25 (`Q-FE11-028`, được Q-FE11-029 thay thế): Quản trị viên FE11 có thể cập nhật
 > `fullName`, `phone` và `address` cho mọi tài khoản Thành viên, Thủ thư hoặc Quản trị viên
 > được quản lý. FE03 giữ quyền tự phục vụ đối với cùng các trường hồ sơ được lưu bền,
 > và cả hai luồng dùng chung phiên bản đồng thời lạc quan hiệu lực mới nhất của `Users`/`UserProfiles`.
@@ -63,7 +72,7 @@ Hệ thống sẽ:
 - Cho phép Quản trị viên tạo tài khoản Thành viên mới.
 - Cho phép Quản trị viên tạo tài khoản Thủ thư mới.
 - Giữ các thay đổi hồ sơ cá nhân (`fullName`, `phone`, `address`) trong chế độ tự phục vụ FE03 và giữ thay đổi email đã xác minh thuộc quyền sở hữu của FE02.
-- Cho phép Quản trị viên cập nhật `fullName`, `phone` và `address` của người dùng được quản lý mà không thay đổi quyền sở hữu email hay vai trò.
+- Giữ thông tin hồ sơ của người dùng hiện có ở chế độ chỉ đọc đối với Quản trị viên; việc sửa hồ sơ thuộc về chủ tài khoản thông qua FE03.
 - Cho phép Quản trị viên vô hiệu hóa tài khoản người dùng.
 - Cho phép Quản trị viên vô hiệu hóa tài khoản Thủ thư.
 - Cho phép Quản trị viên thay thế nguyên tử vai trò duy nhất của người dùng.
@@ -83,7 +92,7 @@ Hệ thống sẽ:
 
 | Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Quản trị viên | Quản trị viên hệ thống | Có thể xem, tạo, hủy kích hoạt và cập nhật các trường `fullName`, `phone` và `address` đã được phê duyệt cho người dùng được quản lý; có thể quản lý việc thiết lập tài khoản và phân công vai trò; không thể thay đổi email hiện có nếu không có luồng FE02 được xác minh. |
+| Quản trị viên | Quản trị viên hệ thống | Có thể xem chi tiết tài khoản an toàn, tạo tài khoản, thay thế vai trò duy nhất, gửi lại email thiết lập đủ điều kiện và vô hiệu hóa tài khoản; không thể sửa các trường hồ sơ/định danh tài khoản của người dùng hiện có. |
 | Thủ thư | Nhân viên thư viện (không phải quản trị viên) | Không thể quản lý người dùng. Có thể xem và cập nhật các trường hồ sơ FE03 được phép của riêng mình; thay đổi email yêu cầu luồng xác minh FE02 được phê duyệt riêng. |
 | Thành viên | Người dùng thư viện (không phải nhân viên) | Không thể quản lý người dùng. Chỉ có thể tự phục vụ việc mượn/đặt chỗ khi tài khoản không có `LIBRARIAN` hay `ADMIN`; có thể xem và cập nhật các trường hồ sơ FE03 được phép của riêng mình; thay đổi email yêu cầu luồng xác minh FE02 được phê duyệt riêng. |
 | Khách | Khách truy cập không được xác thực | Không thể truy cập quản lý người dùng. |
@@ -137,15 +146,15 @@ Tính năng này chỉ có thể bắt đầu khi:
 ### MF-FE11-004: Duy trì thông tin hồ sơ được quản lý
 
 1. Quản trị viên mở chi tiết người dùng để rà soát vận hành.
-2. Giao diện Quản trị viên cho phép chỉnh sửa `fullName`, `phone` và `address` cho mọi vai trò được quản lý, đồng thời giữ `email` ở chế độ chỉ đọc.
-3. Người dùng được xác thực có thể cập nhật các trường hồ sơ tương tự thông qua FE03 `/api/profile/me`.
-4. Cả hai luồng đều lưu bền vào bản ghi `Users`/`UserProfiles` chuẩn và cùng tham gia một phiên bản đồng thời lạc quan hiệu lực.
-5. FE11 từ chối các bản cập nhật email, bộ phận, chuyên môn, hỗn hợp hoặc trường không xác định một cách nguyên tử với `403 MANAGED_USER_UPDATE_FORBIDDEN`.
-6. Email vẫn ở chế độ chỉ đọc trong Giai đoạn 1; mọi thay đổi email trong tương lai đều phải sử dụng quy trình xác minh FE02 được phê duyệt rõ ràng.
+2. FE11 hiển thị các giá trị tài khoản/hồ sơ an toàn trong danh sách cho phép ở chế độ chỉ đọc.
+3. Các thay đổi duy nhất đối với tài khoản hiện có mà tính năng này cung cấp cho Quản trị viên là thay thế vai trò nguyên tử và vô hiệu hóa.
+4. Người dùng đã xác thực tự sửa các trường hồ sơ được phê duyệt qua FE03 `/api/profile/me`.
+5. FE11 không cung cấp `PUT /api/users/{userId}`; yêu cầu trực tiếp tới đường dẫn đó trả về `404`.
+6. Thay đổi email vẫn nằm ngoài Giai đoạn 1 và yêu cầu luồng xác minh FE02 được phê duyệt rõ ràng.
 
 ### MF-FE11-005: Vô hiệu hóa tài khoản người dùng
 
-1. Quản trị viên mở thao tác vai trò từ hàng người dùng, chi tiết người dùng hoặc hộp thoại chỉnh sửa người dùng được quản lý.
+1. Quản trị viên mở thao tác vô hiệu hóa từ hàng người dùng hoặc chi tiết người dùng.
 2. Quản trị viên nhấp nút "Vô hiệu hóa tài khoản" và gửi phiên bản hiệu lực `expectedUpdatedAt` đã tải.
 3. Hệ thống từ chối tài khoản `INACTIVE` đang chờ kích hoạt bằng `409 ACCOUNT_PENDING_ACTIVATION`; chỉ tài khoản đã vô hiệu hóa có `deactivatedAt` khác null mới là thao tác không thay đổi có tính lũy đẳng.
 4. Hệ thống kiểm tra lượt mượn đang hoạt động và chặn vô hiệu hóa khi còn lượt mượn đang hoạt động.
@@ -169,15 +178,14 @@ Tính năng này chỉ có thể bắt đầu khi:
 9. Nếu gửi thất bại, tài khoản vẫn ở `INACTIVE` và phản hồi chỉ báo cáo trạng thái gửi an toàn; Quản trị viên có thể dùng luồng gửi lại đã phê duyệt.
 10. Hệ thống hiển thị ID người dùng mới, vai trò đã gán, trạng thái tài khoản và trạng thái gửi thiết lập an toàn.
 
-### MF-FE11-007: Cập nhật hồ sơ người dùng được quản lý
+### MF-FE11-007: Thực Thi Ranh Giới Hồ Sơ Chỉ Đọc Của Người Dùng Hiện Có
 
 1. Quản trị viên mở tài khoản Thành viên, Thủ thư hoặc Quản trị viên hiện có.
-2. Quản trị viên chỉnh sửa `fullName`, `phone` và/hoặc `address` rồi gửi phiên bản hiệu lực `expectedUpdatedAt` đã tải.
-3. Hệ thống giữ email ở chế độ chỉ đọc và từ chối `email`, `department`, `specialization` hoặc bất kỳ trường không xác định nào.
-4. Hệ thống so sánh phiên bản hiệu lực mới nhất của `Users`/`UserProfiles` và từ chối trạng thái cũ mà không thay đổi dữ liệu.
-5. Hệ thống chỉ lưu thay đổi có hiệu lực; thao tác không thay đổi giữ nguyên phiên bản hiệu lực và không ghi bản kiểm toán thành công.
-6. Hệ thống tăng `UpdatedAt` trong kho dữ liệu và ghi một bản kiểm toán an toàn cho thay đổi có hiệu lực.
-7. Hệ thống hiển thị DTO an toàn có tính chuẩn.
+2. Hệ thống hiển thị các giá trị hồ sơ/tài khoản an toàn để tham chiếu vận hành.
+3. Hệ thống không cung cấp thao tác Chỉnh sửa hồ sơ hoặc trường công việc.
+4. Thay thế vai trò mở lệnh vai trò nguyên tử riêng.
+5. Vô hiệu hóa đủ điều kiện mở lệnh vòng đời riêng.
+6. Yêu cầu trực tiếp `PUT /api/users/{userId}` trả về `404` và không thực hiện ghi.
 
 ### MF-FE11-008: Vô hiệu hóa tài khoản thủ thư
 
@@ -268,8 +276,8 @@ Tính năng này chỉ có thể bắt đầu khi:
 ### AF-FE11-004: Quản trị viên cố gắng thay đổi thông tin cá nhân
 
 1. Quản trị viên gửi bản cập nhật của người dùng hiện tại có chứa `fullName`, `phone`, `address` hoặc `email`.
-2. Hệ thống nhận ra rằng trường đã gửi thuộc về FE03 tự phục vụ hoặc luồng email được xác minh FE02 trong tương lai.
-3. Hệ thống trả về `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` và không lưu trường đã gửi, thay đổi phiên bản hay bản kiểm toán thành công.
+2. Hệ thống nhận biết FE11 không có tuyến cập nhật hồ sơ người dùng hiện có.
+3. Hệ thống trả về `404` và không lưu bền trường đã gửi, thay đổi phiên bản hoặc bản kiểm toán thành công.
 
 ## 6. Quy tắc nghiệp vụ
 
@@ -284,12 +292,12 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - BR-FE11-007: Mỗi tài khoản được lưu bền phải được gán đúng một vai trò: Thành viên, Thủ thư hoặc Quản trị viên.
 - BR-FE11-008: Các vai trò tài khoản loại trừ lẫn nhau. Thay đổi vai trò phải thay thế ánh xạ hiện tại và thu hồi nguyên tử thông tin xác thực làm mới/phiên đang hoạt động của tài khoản đích; tuyệt đối không được tạo ánh xạ thứ hai hoặc để tài khoản không có vai trò. Người dùng phải xác thực lại trước khi dùng vai trò thay thế.
 - BR-FE11-009: Hệ thống tuyệt đối không được cho phép thay thế vai trò của Quản trị viên đang hoạt động cuối cùng. Việc đếm Quản trị viên còn lại và thay thế vai trò phải được kiểm tra dưới khóa giao dịch để thay đổi đồng thời không thể vượt qua quy tắc này.
-- BR-FE11-010: Mọi hành động quản lý người dùng thuộc FE11 (tạo, cập nhật trường công việc của Thủ thư, vô hiệu hóa, thay đổi vai trò) phải có khả năng kiểm toán.
+- BR-FE11-010: Mọi hành động quản lý người dùng thuộc FE11 (tạo, gửi lại thiết lập, vô hiệu hóa, thay đổi vai trò) phải có khả năng kiểm toán.
 - BR-FE11-011: Người dùng thành viên không thể tạo hoặc quản lý người dùng khác.
 - BR-FE11-012: Người dùng thủ thư không thể tạo hoặc quản lý người dùng.
 - BR-FE11-013: Quản trị viên không bao giờ trực tiếp nhập, xem hoặc tạo mật khẩu. Thiết lập mật khẩu sẽ tạo liên kết mã thông báo một lần được gửi qua email và người dùng đặt mật khẩu của riêng họ thông qua FE02.
-- BR-FE11-014: Sau khi tạo tài khoản, cả chủ sở hữu tài khoản thông qua FE03 và Quản trị viên thông qua FE11 đều có thể cập nhật `fullName`, `phone` và `address` trong cùng một hồ sơ chuẩn. Thay đổi email tài khoản hiện tại thuộc về luồng FE02 đã được xác minh và vẫn nằm ngoài Giai đoạn 1.
-- BR-FE11-015: Tài khoản Thành viên, Thủ thư và Quản trị viên tuân theo cùng quy tắc kiểm tra hợp lệ, đồng thời, kiểm toán và vô hiệu hóa hồ sơ được quản lý. `department` và `specialization` không thuộc trải nghiệm chỉnh sửa của Quản trị viên FE11.
+- BR-FE11-014: Sau khi tạo tài khoản, các trường hồ sơ/định danh tài khoản của người dùng hiện có chỉ đọc trong FE11. Chủ tài khoản dùng FE03 cho các thay đổi hồ sơ tự phục vụ đã phê duyệt; thay đổi email của tài khoản hiện có thuộc về luồng FE02 đã xác minh và vẫn nằm ngoài Giai đoạn 1.
+- BR-FE11-015: Các mục tiêu Thành viên, Thủ thư và Quản trị viên cung cấp cùng hai thao tác vòng đời cho Quản trị viên: thay thế vai trò duy nhất và vô hiệu hóa khi đủ điều kiện. Không vai trò mục tiêu nào cung cấp thao tác Chỉnh sửa hồ sơ cho Quản trị viên.
 - BR-FE11-016: Thanh bên Quản trị là bề mặt truy cập do FE11 kiểm soát; chỉ được hiển thị tám mục đã phê duyệt, gồm Rà soát tư cách thành viên FE04 sau Tất cả người dùng, và không được chứa `Permissions`, `Confirm Payment` hay `Confirm Borrow`. Quản lý vai trò vẫn khả dụng từ Tất cả người dùng.
 - BR-FE11-017: Giao diện Quyền là bản tóm tắt/ma trận vai trò chỉ đọc, trừ khi một thao tác sửa vai trò riêng được thực hiện rõ ràng trong Quản lý vai trò.
 - BR-FE11-018: Nhật ký kiểm toán chỉ đọc đối với Quản trị viên và không được làm lộ hàm băm mật khẩu, mã thông báo hay dữ liệu cá nhân không cần thiết.
@@ -300,8 +308,8 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - BR-FE11-023: Mã thông báo và liên kết thiết lập thô chỉ được tồn tại trong bộ nhớ tiến trình của yêu cầu đang hoạt động và tuyệt đối không xuất hiện trong dữ liệu lưu bền, nhật ký, bản ghi kiểm toán, phản hồi Quản trị viên hoặc trường HTTP chỉ dành cho kiểm thử.
 - BR-FE11-024: Việc tạo người dùng, hồ sơ, vai trò ban đầu, mã thông báo thiết lập và bản ghi kiểm toán FE11 phải cùng được cam kết hoặc hoàn tác sau khi giao dịch khóa, kiểm tra lại Quản trị viên thực hiện đang hoạt động và kiểm tra chuẩn tính duy nhất của email/tên người dùng đã chuẩn hóa; việc gửi qua nhà cung cấp FE10 chỉ diễn ra sau giao dịch nguồn này và vẫn không chặn luồng.
 - BR-FE11-025: Chỉ cho phép Quản trị viên gửi lại sau khi giao dịch nguồn khóa, kiểm tra lại Quản trị viên thực hiện đang hoạt động và xác nhận một tài khoản `INACTIVE` do Quản trị viên tạo có lịch sử mã thông báo thiết lập chưa hoàn tất; mỗi lần gửi lại thu hồi mã thông báo thiết lập đang hoạt động trước đó và tạo mã thông báo/sự kiện/khóa mới sau khoảng chờ 60 giây.
-- BR-FE11-026: Phản hồi danh sách/chi tiết/cập nhật trường công việc Thủ thư phải dùng DTO `UserManagementView` đã phê duyệt và tuyệt đối không làm lộ hàm băm mật khẩu, thông tin xác thực thô hay đã băm, mã định danh phiên, liên kết thiết lập/đặt lại hoặc siêu dữ liệu kiểm toán bí mật.
-- BR-FE11-027: Mọi cập nhật và vô hiệu hóa hồ sơ được quản lý phải dùng `updatedAt` khác null đã tải, được định nghĩa là dấu thời gian hiệu lực mới nhất giữa `Users` và `UserProfiles`; thao tác thay đổi dùng trạng thái cũ trả về HTTP `409` với mã `STALE_USER_STATE`, không thay đổi trường hay ghi bản kiểm toán thành công. Thao tác không thay đổi trả về DTO an toàn hiện tại mà không tăng phiên bản hay ghi bản kiểm toán thành công.
+- BR-FE11-026: Phản hồi danh sách/chi tiết người dùng phải dùng DTO `UserManagementView` đã phê duyệt và không bao giờ làm lộ hàm băm mật khẩu, thông tin xác thực thô hoặc đã băm, mã định danh phiên, liên kết thiết lập/đặt lại hoặc siêu dữ liệu kiểm toán bí mật.
+- BR-FE11-027: Việc vô hiệu hóa phải dùng `updatedAt` khác null đã tải, được định nghĩa là dấu thời gian hiệu lực mới nhất giữa `Users` và `UserProfiles`; thao tác dùng trạng thái cũ trả về HTTP `409` với mã `STALE_USER_STATE` và không lưu thay đổi vòng đời hoặc bản kiểm toán thành công.
 - BR-FE11-028: Vai trò duy nhất của tài khoản xác định nhóm người dùng của tài khoản trên FE01, FE07, FE08, FE09 và điều hướng chung. Chỉ `MEMBER` có quyền tự phục vụ của Thành viên về mượn/đặt chỗ/xem tiền phạt của mình; `LIBRARIAN` và `ADMIN` dùng các tuyến dành cho nhân viên.
 - BR-FE11-029: Quản lý yêu cầu Quản trị viên FE11 là bề mặt kết hợp/đọc trên FE07. Nó phải hiển thị trạng thái bản sao vật lý hiện tại trong DTO chi tiết an toàn, chỉ dùng lệnh phê duyệt/từ chối FE07 và tải lại trạng thái yêu cầu chuẩn sau cả thành công lẫn xung đột; không được tạo vòng đời yêu cầu Quản trị viên riêng.
 - BR-FE11-030: FE11 không được vô hiệu hóa tài khoản hay thay thế vai trò `MEMBER` khi FE07 báo còn yêu cầu mượn đang chờ hoặc chi tiết mượn đang hoạt động. Thao tác vòng đời và thao tác tạo/phê duyệt FE07 dùng cùng khóa giao dịch theo Thành viên.
@@ -316,13 +324,13 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - FR-FE11-001: Khi Quản trị viên mở danh sách người dùng, hệ thống phải hiển thị danh sách `UserManagementView` được phân trang với giá trị mặc định `page = 1`/`limit = 20`, giới hạn `limit = 1..100`, thứ tự ổn định `CreatedAt DESC, UserId DESC` và các bộ lọc trạng thái/vai trò/tìm kiếm đã phê duyệt.
 - FR-FE11-002: Khi Quản trị viên xem chi tiết người dùng, hệ thống phải trả về DTO `UserManagementView` an toàn với `relatedSummary` bắt buộc gồm ba trường và giá trị mặc định bằng không có tính xác định, đồng thời loại trừ mọi trường thông tin xác thực, mã thông báo, phiên, liên kết và kiểm toán bí mật được liệt kê trong Mục 10.3.
 - FR-FE11-003: Khi Quản trị viên tạo tài khoản người dùng mới bằng dữ liệu hợp lệ, hệ thống phải kiểm tra lại Quản trị viên thực hiện đang hoạt động và tính duy nhất đã chuẩn hóa trong giao dịch nguồn; tạo nguyên tử người dùng `INACTIVE`, hồ sơ, vai trò đã phê duyệt, mã thông báo thiết lập đã băm và mục kiểm toán; sau đó yêu cầu một lần gửi thiết lập FE10 và trả về trạng thái gửi an toàn.
-- FR-FE11-004: Khi Quản trị viên gửi bản cập nhật hợp lệ cho người dùng hiện có, chứa `fullName`, `phone` và/hoặc `address`, hệ thống phải lưu bền nguyên tử các thay đổi có hiệu lực và trả về DTO an toàn có tính chuẩn. Email, bộ phận, chuyên môn và trường không rõ phải bị từ chối nguyên tử bằng HTTP `403 MANAGED_USER_UPDATE_FORBIDDEN`.
+- FR-FE11-004: Hệ thống không được cung cấp lệnh cho Quản trị viên sửa các trường hồ sơ/định danh tài khoản của người dùng hiện có. `PUT /api/users/{userId}` không thuộc hợp đồng FE11 và phải trả về `404`.
 - FR-FE11-005: Khi Quản trị viên gửi biểu mẫu tạo người dùng có email đã chuẩn hóa bị trùng, gồm cả xung đột đồng thời được chỉ mục tất định `UX_Users_Email` thực thi, hệ thống phải trả về `409 EMAIL_ALREADY_EXISTS`, không lưu bền trạng thái tài khoản/thiết lập/kiểm toán một phần và không yêu cầu FE10 gửi.
 - FR-FE11-006: Hệ thống không bao giờ yêu cầu quản trị viên nhập mật khẩu khi tạo người dùng; thiết lập mật khẩu phải diễn ra thông qua luồng mã thông báo FE02 một lần.
-- FR-FE11-007: Giao diện Quản trị viên phải hiển thị một thao tác Chỉnh sửa cho mọi vai trò được quản lý, cho phép `fullName`, `phone` và `address`, giữ email ở chế độ chỉ đọc và không hiển thị department/specialization. Chức năng tự phục vụ FE03 phải tiếp tục đọc và ghi cùng các trường hồ sơ chuẩn.
+- FR-FE11-007: Với mỗi người dùng hiện có, UI Quản trị viên phải cung cấp thao tác thay thế vai trò và vô hiệu hóa đủ điều kiện, đồng thời không cung cấp thao tác Chỉnh sửa hồ sơ. FE03 tự phục vụ tiếp tục sở hữu các chỉnh sửa hồ sơ cá nhân đã phê duyệt.
 - FR-FE11-008: Khi Quản trị viên vô hiệu hóa tài khoản người dùng `ACTIVE` hoặc `LOCKED` có phiên bản hiệu lực `expectedUpdatedAt` khớp, hệ thống phải nguyên tử đặt trạng thái thành `INACTIVE`, đặt `deactivatedAt`, vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động và ghi bản kiểm toán; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
 - FR-FE11-009: Khi Quản trị viên tạo tài khoản Thủ thư mới bằng dữ liệu hợp lệ, hệ thống phải kiểm tra lại Quản trị viên thực hiện đang hoạt động và tính duy nhất đã chuẩn hóa trong giao dịch nguồn; tạo nguyên tử người dùng `INACTIVE`, hồ sơ có `department`/`specialization` đã loại khoảng trắng đầu/cuối và có thể null, vai trò Thủ thư, mã thông báo thiết lập đã băm cùng mục kiểm toán; sau đó yêu cầu một lần gửi thiết lập FE10 và trả về trạng thái gửi an toàn.
-- FR-FE11-010: Khi Quản trị viên cập nhật tài khoản được quản lý, hệ thống phải chấp nhận `fullName` đã loại khoảng trắng đầu/cuối (1..100), `phone` đã kiểm tra hợp lệ có thể null (tối đa 20) và `address` có thể null (tối đa 255), chỉ tăng dấu thời gian lưu trữ khi có thay đổi hiệu lực và chỉ ghi kiểm toán cho thay đổi hiệu lực thành công.
+- FR-FE11-010: Bề mặt Quản trị viên FE11 phải hiển thị dữ liệu hồ sơ/công việc hiện có của Thủ thư ở chế độ chỉ đọc và không cung cấp lệnh cập nhật riêng cho Thủ thư.
 - FR-FE11-011: Khi Quản trị viên vô hiệu hóa tài khoản Thủ thư `ACTIVE` hoặc `LOCKED` có phiên bản hiệu lực `expectedUpdatedAt` khớp, hệ thống phải nguyên tử đặt trạng thái thành `INACTIVE`, đặt `deactivatedAt`, vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động và ghi bản kiểm toán; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
 - FR-FE11-012: Khi Quản trị viên thay đổi vai trò người dùng, hệ thống phải thay mọi ánh xạ UserRoles hiện tại bằng đúng một vai trò hợp lệ đã chọn, thu hồi thông tin xác thực làm mới/phiên đang hoạt động của tài khoản đích và ghi mục kiểm toán trong một giao dịch.
 - FR-FE11-013: API quản lý vai trò phải cung cấp một thao tác thay thế nguyên tử và không được cung cấp thao tác gán/thu hồi độc lập có thể tạo số lượng ánh xạ trung gian không hợp lệ.
@@ -347,19 +355,19 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 Các yêu cầu EARS về hành vi không mong muốn này nâng các nhánh lỗi/bất thường hiện có (Luồng thay thế, Quy tắc nghiệp vụ, Trường hợp biên, Câu hỏi đã giải quyết) thành yêu cầu chức năng có thể truy vết.
 
 - FR-FE11-015: NẾU người dùng không phải quản trị viên (Thành viên, Thủ thư hoặc Khách) cố gắng truy cập bất kỳ tính năng quản lý người dùng nào, hệ thống sẽ từ chối yêu cầu kèm theo lỗi ủy quyền. (Nguồn: BR-FE11-001, BR-FE11-011, BR-FE11-012)
-- FR-FE11-016: NẾU Quản trị viên yêu cầu chi tiết, cập nhật trường công việc Thủ thư, vô hiệu hóa hoặc thay đổi vai trò cho ID người dùng không tồn tại, hệ thống phải trả về lỗi không tìm thấy. (Nguồn: EC-FE11-002)
-- FR-FE11-017: NẾU thiếu người dùng Quản trị viên thực hiện khi tạo, gửi lại thiết lập, cập nhật trường công việc Thủ thư, vô hiệu hóa hoặc thay đổi vai trò, hệ thống phải trả về `404 ADMIN_NOT_FOUND` và không được thay đổi nguồn hay ghi bản kiểm toán thành công; tác nhân không hoạt động hoặc không phải Quản trị viên nhận `403 ADMIN_REQUIRED`. (Nguồn: EC-FE11-001)
+- FR-FE11-016: NẾU Quản trị viên yêu cầu chi tiết, vô hiệu hóa hoặc thay đổi vai trò cho ID người dùng không tồn tại, hệ thống phải trả về lỗi không tìm thấy. (Nguồn: EC-FE11-002)
+- FR-FE11-017: NẾU thiếu người dùng Quản trị viên thực hiện trong khi tạo, gửi lại thiết lập, vô hiệu hóa hoặc thay đổi vai trò, hệ thống phải trả về `404 ADMIN_NOT_FOUND` và không được thay đổi nguồn hay ghi bản kiểm toán thành công; tác nhân không hoạt động hoặc không phải Quản trị viên nhận `403 ADMIN_REQUIRED`. (Nguồn: EC-FE11-001)
 - FR-FE11-018: NẾU quản trị viên cố gắng vô hiệu hóa tài khoản của chính họ, hệ thống sẽ từ chối hành động đó. (Nguồn: Q-FE11-001, EC-FE11-006)
 - FR-FE11-019: NẾU quản trị viên cố gắng vô hiệu hóa người dùng đang có khoản vay đang hoạt động, hệ thống sẽ chặn việc hủy kích hoạt và báo cáo số lượng mục đã mượn đang hoạt động. (Nguồn: AF-FE11-002, Q-FE11-002, MF-FE11-005 bước 3)
-- FR-FE11-020: NẾU Quản trị viên cố gắng thay đổi email của người dùng hiện tại, bất kể tính duy nhất, hệ thống sẽ từ chối yêu cầu bằng HTTP `403` và mã `MANAGED_USER_UPDATE_FORBIDDEN`; mọi khả năng thay đổi email trong tương lai đều phải sử dụng quy trình xác minh FE02 được phê duyệt rõ ràng. (Nguồn: AF-FE11-004, BR-FE11-014)
+- FR-FE11-020: NẾU Quản trị viên cố gọi đường dẫn cập nhật hồ sơ người dùng hiện có đã ngừng sử dụng, hệ thống phải trả về `404` mà không thay đổi dữ liệu; mọi khả năng thay đổi email trong tương lai phải dùng luồng xác minh FE02 được phê duyệt rõ ràng. (Nguồn: BR-FE11-014, Q-FE11-029)
 - FR-FE11-021: NẾU email gửi khi tạo tài khoản FE11 sai định dạng, chứa dữ liệu tấn công chèn SQL hoặc dài hơn 255 ký tự, hệ thống phải làm sạch đầu vào, từ chối yêu cầu và trả về lỗi kiểm tra hợp lệ. (Nguồn: EC-FE11-003, EC-FE11-004)
 - FR-FE11-022: NẾU lỗi cơ sở dữ liệu xảy ra khi tạo người dùng, hệ thống phải hoàn tác giao dịch và trả về lỗi mà không tạo bản ghi người dùng một phần. (Nguồn: EC-FE11-008, NFR-FE11-TXN-001)
-- FR-FE11-023: KHI `expectedUpdatedAt` của cập nhật hoặc vô hiệu hóa hồ sơ được quản lý không bằng phiên bản hiệu lực mới nhất của `Users`/`UserProfiles`, hệ thống phải từ chối thay đổi bằng HTTP `409` và mã `STALE_USER_STATE`, giữ nguyên bản ghi hiện có và không ghi bản kiểm toán thành công. (Nguồn: EC-FE11-007, BR-FE11-027)
+- FR-FE11-023: KHI `expectedUpdatedAt` của thao tác vô hiệu hóa không bằng phiên bản hiệu lực mới nhất của `Users`/`UserProfiles`, hệ thống phải từ chối thay đổi bằng HTTP `409` với mã `STALE_USER_STATE`, giữ nguyên bản ghi hiện có và không ghi bản kiểm toán thành công. (Nguồn: EC-FE11-007, BR-FE11-027)
 - FR-FE11-024: NẾU Quản trị viên chọn một vai trò không tồn tại hoặc không phải là một trong `MEMBER`, `LIBRARIAN`, `ADMIN`, hệ thống sẽ trả về lỗi không tìm thấy và sẽ không sửa đổi ánh xạ UserRoles. (Nguồn: EC-FE11-010)
 - FR-FE11-025: NẾU Quản trị viên chọn vai trò duy nhất hiện tại của người dùng, hệ thống phải trả về DTO an toàn có tính chuẩn như một thao tác không thay đổi có tính lũy đẳng và không ghi bản kiểm toán thay đổi vai trò. (Nguồn: EC-FE11-011)
 - FR-FE11-026: NẾU dữ liệu kiểu cũ không có hoặc có nhiều ánh xạ hiện tại, một thao tác thay thế hợp lệ rõ ràng phải chuẩn hóa dữ liệu thành đúng một ánh xạ trong giao dịch, có áp dụng bảo vệ Quản trị viên đang hoạt động cuối cùng. (Nguồn: EC-FE11-012)
 - FR-FE11-027: Cơ sở dữ liệu phải thực thi tối đa một hàng UserRoles cho mỗi UserId qua `UX_UserRoles_UserId`; tạo tài khoản và thay thế vai trò phải bảo đảm có ít nhất một ánh xạ. (Nguồn: EC-FE11-013, BR-FE11-007)
-- FR-FE11-028: NẾU Quản trị viên gửi trường hồ sơ được quản lý không hợp lệ, hệ thống phải từ chối cập nhật bằng lỗi kiểm tra hợp lệ; các trường email, bộ phận, chuyên môn và trường không rõ bị cấm dùng `MANAGED_USER_UPDATE_FORBIDDEN`.
+- FR-FE11-028: NẾU Quản trị viên bỏ qua UI và yêu cầu `PUT /api/users/{userId}` với bất kỳ payload hồ sơ nào, đường dẫn đã ngừng sử dụng phải trả về `404` và không được ghi vào repository hồ sơ hoặc ghi bản kiểm toán thành công.
 - FR-FE11-029: NẾU người dùng cố gắng hoàn tất thiết lập mật khẩu bằng mã thông báo đã hết hạn hoặc đã được sử dụng, hệ thống sẽ từ chối yêu cầu và sẽ không kích hoạt đăng nhập dựa trên mật khẩu. (Nguồn: trường dữ liệu `passwordSetupToken`/`passwordSetupTokenExpiresAt` trong phần 10.2, BR-FE11-013)
 
 ---
@@ -369,16 +377,16 @@ Các yêu cầu EARS về hành vi không mong muốn này nâng các nhánh l�
 - AC-FE11-001: Với quyền truy cập Quản trị viên, khi xem danh sách người dùng thì hệ thống hiển thị danh sách phân trang an toàn với giá trị mặc định/giới hạn, thứ tự ổn định, bộ lọc trạng thái/vai trò, tìm kiếm email/tên/ID người dùng đã loại khoảng trắng đầu/cuối và các giá trị email, tên người dùng dễ đọc, không chồng lấp.
 - AC-FE11-002: Với quyền truy cập Quản trị viên, khi xem trang chi tiết người dùng thì DTO `UserManagementView` an toàn và các tóm tắt liên quan đã phê duyệt được hiển thị mà không chứa thông tin xác thực, dữ liệu mã thông báo/phiên, liên kết thiết lập/đặt lại hay siêu dữ liệu kiểm toán bí mật.
 - AC-FE11-003: Với dữ liệu người dùng hợp lệ, khi Quản trị viên tạo tài khoản người dùng mới thì người dùng không hoạt động, vai trò đã phê duyệt, mã thông báo thiết lập đã băm và mục kiểm toán được cam kết cùng nhau, đồng thời một lần gửi thiết lập FE10 được yêu cầu.
-- AC-FE11-004: Với tài khoản hiện có, khi Quản trị viên gửi `fullName`, `phone`, `address` hoặc `email` thì hệ thống trả về `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`, giữ nguyên mọi trường cùng `UpdatedAt` và không ghi bản kiểm toán thành công; giao diện Quản trị viên hiển thị các trường đó ở chế độ chỉ đọc.
+- AC-FE11-004: Cho trước tài khoản hiện có, khi Quản trị viên xem các thao tác trong danh sách/chi tiết thì chỉ có thay thế vai trò và vô hiệu hóa đủ điều kiện; không hiển thị thao tác Chỉnh sửa và yêu cầu trực tiếp `PUT /api/users/{userId}` trả về `404` mà không thay đổi dữ liệu.
 - AC-FE11-005: Với email đã chuẩn hóa bị trùng, khi Quản trị viên tạo người dùng mới thì hệ thống trả về `409 EMAIL_ALREADY_EXISTS`, không lưu bền trạng thái nguồn một phần và không yêu cầu gửi thiết lập.
 - AC-FE11-006: Với việc Quản trị viên tạo Thành viên hoặc Thủ thư mới, không trường mật khẩu/mã thông báo/liên kết nào được yêu cầu hay hiển thị, tài khoản vẫn ở `INACTIVE` và không thể đăng nhập cho đến khi hoàn tất thiết lập FE02.
 - AC-FE11-007: Với người dùng `ACTIVE` hoặc `LOCKED` và phiên bản hiệu lực `expectedUpdatedAt` khớp, khi Quản trị viên vô hiệu hóa tài khoản thì trạng thái chuyển thành `INACTIVE`; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
-- AC-FE11-008: Với bất kỳ tài khoản hiện có nào, khi Quản trị viên cố gắng thay đổi email thì hệ thống sẽ từ chối yêu cầu bất kể email được gửi có phải là duy nhất hay không.
+- AC-FE11-008: Cho trước bất kỳ tài khoản hiện có nào, khi Quản trị viên cố thay đổi email qua đường dẫn cập nhật hồ sơ đã ngừng sử dụng thì hệ thống trả về `404` và giữ nguyên email.
 - AC-FE11-009: Với người dùng có phiên đang hoạt động, khi Quản trị viên vô hiệu hóa tài khoản thì phiên bị vô hiệu.
 - AC-FE11-010: Với dữ liệu Thủ thư hợp lệ, khi Quản trị viên tạo tài khoản Thủ thư mới thì người dùng không hoạt động, vai trò Thủ thư, mã thông báo thiết lập đã băm và mục kiểm toán được cam kết cùng nhau, đồng thời một lần gửi thiết lập FE10 được yêu cầu.
-- AC-FE11-011: Với tài khoản Thủ thư hiện tại, khi Quản trị viên chỉ gửi `department` và/hoặc `specialization` hợp lệ cùng phiên bản hiệu lực `expectedUpdatedAt` khớp, các thay đổi trường công việc có hiệu lực được lưu và `UpdatedAt` trong kho dữ liệu tăng; trường cá nhân hoặc trường không rõ bị từ chối.
+- AC-FE11-011: Cho trước tài khoản Thủ thư hiện có, khi Quản trị viên xem các thao tác thì áp dụng cùng ranh giới chỉ thay thế vai trò/vô hiệu hóa và không cung cấp trình chỉnh sửa hồ sơ/trường công việc riêng cho Thủ thư.
 - AC-FE11-012: Với tài khoản Thủ thư `ACTIVE` hoặc `LOCKED` và phiên bản hiệu lực `expectedUpdatedAt` khớp, khi Quản trị viên vô hiệu hóa thì trạng thái chuyển thành `INACTIVE` và các phiên đang hoạt động bị vô hiệu.
-- AC-FE11-013: Với tài khoản Thành viên có phiên đang hoạt động, khi Quản trị viên mở quản lý vai trò trực tiếp hoặc qua hộp thoại chỉnh sửa người dùng được quản lý và thay vai trò bằng Thủ thư, đúng một ánh xạ Thủ thư còn lại, thông tin xác thực làm mới/phiên đang hoạt động bị thu hồi, một bản kiểm toán thay thế được cam kết và yêu cầu được bảo vệ tiếp theo đòi hỏi xác thực theo vai trò mới.
+- AC-FE11-013: Cho trước tài khoản Thành viên có phiên hoạt động, khi Quản trị viên mở quản lý vai trò và thay thế vai trò bằng Thủ thư thì chỉ còn đúng một ánh xạ Thủ thư, thông tin xác thực refresh/session đang hoạt động bị thu hồi, một bản kiểm toán thay thế được commit và yêu cầu được bảo vệ tiếp theo yêu cầu xác thực theo vai trò mới.
 - AC-FE11-014: Với tài khoản Quản trị viên không phải là Quản trị viên hoạt động cuối cùng, khi Quản trị viên thay thế vai trò của mình bằng Thành viên thì vẫn còn lại chính xác một ánh xạ Thành viên.
 - AC-FE11-015: Với tài khoản Quản trị viên đang hoạt động cuối cùng, khi Quản trị viên cố thay vai trò Quản trị viên thì hệ thống từ chối mà không thay đổi ánh xạ hay bản kiểm toán.
 - AC-FE11-016: Với việc Quản trị viên mở bảng điều khiển, tám mục đã phê duyệt hiển thị đúng thứ tự với Rà soát tư cách thành viên sau Tất cả người dùng, các quy trình đã loại bị ẩn và quản lý danh mục mở trong Thư viện Quản trị mà không chuyển hướng sang tuyến Thủ thư.
@@ -388,7 +396,7 @@ Các yêu cầu EARS về hành vi không mong muốn này nâng các nhánh l�
 - AC-FE11-020: Với lỗi gửi thiết lập xảy ra sau khi cam kết tạo tài khoản, tài khoản vẫn ở `INACTIVE`, không thông tin xác thực nào bị lộ và phản hồi báo cáo trạng thái an toàn `FAILED`.
 - AC-FE11-021: Với tài khoản chưa hoàn tất thiết lập đủ điều kiện và đã qua khoảng chờ, khi Quản trị viên gửi lại thiết lập thì mã thông báo đang hoạt động trước đó bị thu hồi và sự kiện FE10 mới dùng ID mã thông báo/khóa lũy đẳng mới.
 - AC-FE11-022: Với tài khoản đang hoạt động, bị khóa, không hoạt động do tự đăng ký, đã hoàn tất thiết lập hoặc chưa qua khoảng chờ, khi Quản trị viên yêu cầu gửi lại thiết lập thì hệ thống từ chối mà không tạo thông tin xác thực.
-- AC-FE11-023: Với việc Quản trị viên gửi cập nhật trường công việc Thủ thư hoặc yêu cầu vô hiệu hóa bằng `expectedUpdatedAt` hiệu lực cũ, khi bản ghi người dùng hiện tại đã thay đổi thì hệ thống trả về `409 STALE_USER_STATE` và không lưu trường đã gửi, thay đổi vòng đời, thu hồi thông tin xác thực hay bản kiểm toán thành công.
+- AC-FE11-023: Cho trước Quản trị viên gửi thao tác vô hiệu hóa bằng `expectedUpdatedAt` hiệu lực cũ, khi bản ghi người dùng hiện tại đã thay đổi thì hệ thống trả về `409 STALE_USER_STATE` và không lưu thay đổi vòng đời, thu hồi thông tin xác thực hoặc bản kiểm toán thành công.
 - AC-FE11-024: Với việc Quản trị viên mở yêu cầu đang chờ, mỗi mã vạch được yêu cầu được ghép với trạng thái bản sao vật lý hiện tại; sau xung đột phê duyệt, trạng thái đã làm mới vẫn đúng sự thật và thao tác từ chối kèm lý do hợp lệ vẫn khả dụng.
 - AC-FE11-025: Khi Quản trị viên mở Bảng điều khiển, năm thẻ tóm tắt và ba biểu đồ đã phê duyệt vẫn hiển thị; số Thành viên đang hoạt động khớp `Users -> UserRoles -> Roles`; số tác giả khớp tác giả danh mục đang hoạt động; danh sách mượn nhiều nhất loại trừ chi tiết `REQUESTED` chưa phê duyệt; biểu đồ trả trong ngày dùng ngày FE07 của ngày nghiệp vụ hiện tại tại Việt Nam; và chọn thẻ mở mô-đun tương ứng với bộ lọc áp dụng.
 - AC-FE11-026: Với các tài khoản mang vai trò Quản trị viên, Thủ thư và Thành viên, khi từng tài khoản yêu cầu quản lý siêu dữ liệu Quản trị viên thì chỉ Quản trị viên tới được dịch vụ siêu dữ liệu; Thủ thư chỉ giữ quyền đọc lựa chọn đang hoạt động riêng của FE05.
@@ -399,21 +407,21 @@ Các yêu cầu EARS về hành vi không mong muốn này nâng các nhánh l�
 
 | ID | Trường hợp biên / Lỗi | Hành vi hệ thống dự kiến |
 | -- | ----------------- | ------------------------ |
-| EC-FE11-001 | Quản trị viên thực hiện thao tác không tồn tại, không hoạt động hoặc không còn giữ vai trò Quản trị viên | Xác thực lại bên trong các giao dịch tạo/gửi lại/cập nhật công việc Thủ thư/vô hiệu hóa/vai trò; trả về `404 ADMIN_NOT_FOUND` hoặc `403 ADMIN_REQUIRED` trước khi thay đổi dữ liệu. |
+| EC-FE11-001 | Quản trị viên thực hiện không tồn tại, không hoạt động hoặc không còn vai trò Quản trị viên | Xác thực lại trong các giao dịch tạo/gửi lại/vô hiệu hóa/vai trò; trả về `404 ADMIN_NOT_FOUND` hoặc `403 ADMIN_REQUIRED` trước khi thay đổi dữ liệu. |
 | EC-FE11-002 | ID người dùng mục tiêu không tồn tại | Trả về lỗi không tìm thấy. |
 | EC-FE11-003 | Email chứa payload SQL injection | Làm sạch đầu vào và xác thực định dạng email; từ chối nếu không hợp lệ. |
 | EC-FE11-004 | Địa chỉ email có ký tự đặc biệt | Xác thực nghiêm ngặt định dạng email theo tiêu chuẩn RFC. |
 | EC-FE11-005 | Giá trị thiết lập mật khẩu dài hơn 255 ký tự | FE02 từ chối yêu cầu thiết lập do lỗi xác thực trường; FE11 không bao giờ nhận hoặc lưu trữ mật khẩu. |
 | EC-FE11-006 | Cố gắng tự vô hiệu hóa (quản trị viên) | Từ chối hành động. |
-| EC-FE11-007 | Cùng một người dùng bị cập nhật trường công việc Thủ thư/vô hiệu hóa đồng thời | So sánh `expectedUpdatedAt` với `COALESCE(UpdatedAt, CreatedAt)`; nếu không khớp, từ chối bằng `409 STALE_USER_STATE`, không lưu thay đổi trường/vòng đời/thông tin xác thực và không ghi nhật ký kiểm toán thành công. |
+| EC-FE11-007 | Vô hiệu hóa đồng thời cùng một người dùng | So sánh `expectedUpdatedAt` với `COALESCE(UpdatedAt, CreatedAt)`; từ chối giá trị không khớp bằng `409 STALE_USER_STATE`, không lưu thay đổi vòng đời/thông tin xác thực và không ghi bản kiểm toán thành công. |
 | EC-FE11-008 | Cập nhật cơ sở dữ liệu thất bại trong quá trình tạo người dùng | Rollback giao dịch; trả lỗi cho người dùng. |
 | EC-FE11-009 | Vô hiệu hóa phiên của người dùng bị vô hiệu hóa thất bại | Rollback trạng thái, `deactivatedAt` và thay đổi nhật ký kiểm toán; trả về lỗi an toàn và giữ tài khoản hoạt động. |
 | EC-FE11-010 | Vai trò không tồn tại khi gán | Trả về lỗi không tìm thấy. |
 | EC-FE11-011 | Người dùng đã có vai trò đang được gán | Từ chối bằng thông báo: "Người dùng đã có vai trò này." |
 | EC-FE11-012 | Cố gắng thu hồi vai trò không tồn tại | Trả về lỗi không tìm thấy. |
 | EC-FE11-013 | Thay đổi sẽ tạo ra không có hoặc có nhiều vai trò | Từ chối hoặc rollback; trạng thái thành công phải chứa chính xác một ánh xạ. |
-| EC-FE11-014 | Quản trị viên gửi bất kỳ trường cá nhân nào của người dùng hiện tại, kể cả email hiện tại không đổi | Từ chối toàn bộ yêu cầu bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; không âm thầm bỏ qua trường bị cấm hoặc xử lý các trường khác đã gửi. |
-| EC-FE11-015 | Trường dành riêng cho thủ thư quá dài hoặc không hợp lệ | Từ chối cập nhật và trả về lỗi xác thực. |
+| EC-FE11-014 | Quản trị viên gửi bất kỳ trường hồ sơ nào của người dùng hiện có, kể cả email hiện tại không đổi | Trả về `404` vì FE11 không cung cấp tuyến cập nhật hồ sơ người dùng hiện có; không lưu bền dữ liệu. |
+| EC-FE11-015 | Quản trị viên cố chỉnh sửa trường công việc riêng của Thủ thư | Không cung cấp trình chỉnh sửa hoặc tuyến cập nhật; trả về `404` cho đường dẫn hồ sơ đã ngừng sử dụng. |
 | EC-FE11-016 | Mục đã bị xóa khỏi thanh bên quản trị được yêu cầu trực tiếp | Trả về `404 Not Found`; không hiển thị hoặc chuyển hướng tới quy trình đã bị xóa. |
 | EC-FE11-017 | Cố thực hiện hành động trên yêu cầu đã hoàn tất từ giao diện yêu cầu của quản trị viên | Từ chối hành động và giữ nguyên yêu cầu. |
 | EC-FE11-018 | Chi tiết nhật ký kiểm toán chứa các trường token/password nhạy cảm | Che các trường đó trước khi phản hồi/hiển thị. |
@@ -487,7 +495,6 @@ DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực th�
 | GET | `/api/users` | Quản trị viên | Query: `page=1, limit=20, status?, role?, search?` | `UserManagementView[]` có phân trang | `page >= 1`, `limit = 1..100`, `search` được trim và dài 1..200 ký tự khi cung cấp; giá trị không hợp lệ bị từ chối. Sắp xếp theo `CreatedAt DESC, UserId DESC`; chỉ trả về DTO an toàn. |
 | GET | `/api/users/{userId}` | Quản trị viên | - | `UserManagementView` có `relatedSummary` bắt buộc | Chỉ gồm ba trường tổng hợp đã được phê duyệt, với giá trị mặc định bằng không mang tính xác định. |
 | POST | `/api/users` | Quản trị viên | `{ email: string, username?: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | `201 { userId, email, status: "INACTIVE", roles, setupDeliveryStatus, message }` | Xác thực đầu vào tại biên; giao dịch nguồn xác thực lại Quản trị viên đang hoạt động và tính duy nhất, rồi chỉ yêu cầu FE10 phân phối sau khi commit; không bao giờ trả về mật khẩu/token/liên kết. |
-| PUT | `/api/users/{userId}` | Quản trị viên | `{ expectedUpdatedAt: datetime, department?: string, specialization?: string }` | `UserManagementView` đã cập nhật; trạng thái cũ: `409 { code: "STALE_USER_STATE" }` | Chỉ áp dụng cho mục tiêu đang là Thủ thư. `fullName`, `phone`, `address`, `email` hoặc trường không xác định làm toàn bộ yêu cầu bị từ chối bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; yêu cầu hợp lệ nhưng dùng trạng thái cũ gây ra `409 STALE_USER_STATE`. |
 | PATCH | `/api/users/{userId}/status` | Quản trị viên | `{ status: "INACTIVE", expectedUpdatedAt: datetime }` | `UserManagementView` đã cập nhật | Chỉ cho phép chuyển từ `ACTIVE`/`LOCKED`. Tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION`; trạng thái đã vô hiệu hóa có tính idempotent. |
 | PUT | `/api/users/{userId}/role` | Quản trị viên | `{ roleId: number }` | Người dùng chuẩn xác với chính xác một vai trò | Thay thế nguyên tử vai trò hiện tại; chọn lại vai trò hiện tại là thao tác không làm thay đổi dữ liệu. |
 | POST | `/api/users/{userId}/resend-setup` | Quản trị viên | `{}` | `200 { userId, status: "INACTIVE", setupDeliveryStatus, message }` | Giao dịch nguồn xác thực lại Quản trị viên đang hoạt động trước khi đọc lịch sử mục tiêu; chỉ tài khoản chưa hoàn tất đủ điều kiện; thu hồi token đang hoạt động trước đó và thực thi thời gian chờ 60 giây. |
@@ -520,7 +527,7 @@ DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực th�
 - NFR-FE11-SEC-001: Tất cả endpoint quản lý người dùng phải yêu cầu xác thực và vai trò Quản trị viên.
 - NFR-FE11-SEC-002: Kiểm soát truy cập dựa trên vai trò phải được thực thi trên máy chủ.
 - NFR-FE11-SEC-003: Hoàn tất thiết lập mật khẩu phải dùng quy tắc băm bcrypt của FE02 (cost >= 10).
-- NFR-FE11-SEC-004: Mọi đầu vào thuộc quyền sở hữu FE11 phải được đưa vào danh sách cho phép, xác thực và làm sạch trên máy chủ: các trường tạo tài khoản (`email`, `fullName`, `phone`/`address` tùy chọn), các trường công việc Thủ thư (`department`, `specialization`), giá trị đồng thời vòng đời và ID vai trò. Các trường cá nhân của người dùng hiện có phải bị từ chối, không được làm sạch rồi áp dụng.
+- NFR-FE11-SEC-004: Mọi dữ liệu đầu vào thuộc quyền sở hữu FE11 phải được đưa vào danh sách cho phép, kiểm tra hợp lệ và làm sạch trên máy chủ: các trường tạo tài khoản, giá trị đồng thời vòng đời, mã định danh gửi lại thiết lập và ID vai trò. FE11 không được cung cấp tuyến cập nhật hồ sơ người dùng hiện có.
 - NFR-FE11-SEC-005: Phải ngăn SQL injection bằng truy vấn tham số hóa.
 - NFR-FE11-SEC-006: Quản trị viên không được xem mã băm mật khẩu hoặc chi tiết nhạy cảm không cần thiết của quản trị viên khác.
 - NFR-FE11-SEC-007: Phải so sánh trường email không phân biệt hoa thường khi kiểm tra tính duy nhất.
@@ -542,7 +549,7 @@ DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực th�
 
 ### 12.4 Ghi nhật ký và kiểm toán
 
-- NFR-FE11-LOG-001: Các hành động tạo, cập nhật hồ sơ được quản lý có hiệu lực, vô hiệu hóa và thay thế vai trò có hiệu lực phải ghi nhật ký kiểm toán; thay đổi vai trò bị từ chối hoặc không làm thay đổi dữ liệu không được ghi nhật ký kiểm toán thành công.
+- NFR-FE11-LOG-001: Các thao tác tạo, gửi lại thiết lập, vô hiệu hóa và thay thế vai trò có hiệu lực phải ghi mục nhật ký kiểm toán; thay đổi vai trò bị từ chối hoặc không làm thay đổi dữ liệu không được ghi bản kiểm toán thành công.
 - NFR-FE11-LOG-002: Nhật ký kiểm toán phải gồm: loại hành động, ID quản trị viên, ID người dùng mục tiêu, dấu thời gian và chi tiết thay đổi.
 
 ### 12.5 Khả năng sử dụng
@@ -607,7 +614,7 @@ Tính năng này không bao gồm:
 | Q-FE11-015 | FE11 phát hành `ACCOUNT_SETUP`; FE10 chỉ phân phối qua requester gắn với `FE11`; FE02 tiêu thụ token và kích hoạt tài khoản. | Xác nhận của Nhat 2026-07-15; ADR-005 | APPROVED |
 | Q-FE11-016 | Thao tác gửi lại chỉ dành cho Quản trị viên sẽ thu hồi thông tin xác thực thiết lập trước, tạo token/event/key mới và thực thi thời gian chờ máy chủ 60 giây. | Xác nhận của Nhat 2026-07-15; ADR-005 | APPROVED |
 | Q-FE11-017 | Phản hồi FE11 sử dụng danh sách cho phép `UserManagementView` rõ ràng; các trường không được chỉ định hoặc mang thông tin xác thực sẽ bị loại trừ. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
-| Q-FE11-018 | Cập nhật trường công việc Thủ thư và vô hiệu hóa dùng đồng thời lạc quan `UpdatedAt`; yêu cầu dùng trạng thái cũ trả về `409 STALE_USER_STATE`. | Chuẩn hóa đặc tả 2026-07-17; sửa đổi quyền sở hữu dữ liệu cá nhân 2026-07-22 | APPROVED |
+| Q-FE11-018 | Quyết định lịch sử về đồng thời trường công việc; phần cập nhật được Q-FE11-029 thay thế trong khi vô hiệu hóa vẫn dùng `UpdatedAt`. | Chuẩn hóa đặc tả 2026-07-17; được thay thế một phần ngày 2026-07-28 | PARTIALLY SUPERSEDED |
 | Q-FE11-019 | Vô hiệu hóa dùng `INACTIVE` cùng `deactivatedAt`, vô hiệu hóa thông tin xác thực một cách nguyên tử và không có luồng kích hoạt lại trong Giai đoạn 1. | Chuẩn hóa vòng đời liên tính năng 2026-07-17 | APPROVED |
 | Q-FE11-020 | Thay thế vai trò Quản trị viên tuần tự hóa ánh xạ bị ảnh hưởng và số Quản trị viên đang hoạt động, để mỗi tài khoản giữ chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động. | Chuẩn hóa một vai trò 2026-07-27 | APPROVED |
 | Q-FE11-021 | Đồng thời lạc quan của người dùng được quản lý hiển thị và so sánh `COALESCE(Users.UpdatedAt, Users.CreatedAt)` không null mà không cần migration điền bù. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
@@ -616,7 +623,8 @@ Tính năng này không bao gồm:
 | Q-FE11-024 | Tạo tài khoản và gửi lại thiết lập trong FE11 đều xác thực lại Quản trị viên thực hiện đang hoạt động bên trong từng giao dịch nguồn; kiểm tra email trùng khi tạo có thẩm quyền ở giao dịch và an toàn. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
 | Q-FE11-025 | Các thao tác đọc yêu cầu của Quản trị viên dùng chính xác `page`, `limit`, `q`, `status`, `from`, `to`, `{ data, pagination }` và một endpoint chi tiết an toàn chuyên biệt; FE07 vẫn là chủ sở hữu duy nhất của thao tác thay đổi. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
 | Q-FE11-027 | Quản trị viên có thể xem nhưng không được sửa `fullName`, `phone`, `address` hoặc `email` của người dùng hiện có. FE03 sở hữu thay đổi hồ sơ cá nhân tự phục vụ; đổi email tài khoản hiện có cần luồng FE02 đã xác minh trong tương lai; FE11 chỉ có thể cập nhật `department` và `specialization` cho Thủ thư hiện tại. | Phê duyệt của người dùng 2026-07-22 | APPROVED |
-| Q-FE11-028 | Thay thế Q-FE11-027 đối với chỉnh sửa hồ sơ được quản lý: Quản trị viên có thể cập nhật `fullName`, `phone` và `address` cho mọi vai trò được quản lý; FE03 dùng cùng các trường lưu trữ; email vẫn chỉ đọc dưới quyền sở hữu xác minh của FE02; department/specialization bị loại khỏi UI và hợp đồng cập nhật của Quản trị viên FE11. | Phê duyệt của người dùng 2026-07-25 | APPROVED |
+| Q-FE11-028 | Quyết định lịch sử về chỉnh sửa hồ sơ được quản lý; được Q-FE11-029 thay thế. | Người dùng phê duyệt ngày 2026-07-25 | SUPERSEDED |
+| Q-FE11-029 | Với tài khoản hiện có, Quản trị viên có thể xem dữ liệu an toàn nhưng chỉ được thay đổi vai trò duy nhất hoặc vô hiệu hóa tài khoản. FE11 không cung cấp thao tác Chỉnh sửa hồ sơ hoặc tuyến hồ sơ `PUT /api/users/{userId}`; việc tự sửa thuộc FE03 và email đã xác minh vẫn thuộc FE02. | Người dùng phê duyệt ngày 2026-07-28 | APPROVED |
 
 ---
 
@@ -639,7 +647,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | Q-FE11-015 | FE11 phát hành token thiết lập, FE10 phân phối `ACCOUNT_SETUP` và FE02 tiêu thụ/kích hoạt. | APPROVED |
 | Q-FE11-016 | Gửi lại thiết lập chỉ dành cho Quản trị viên, xoay token/event/key và dùng thời gian chờ 60 giây. | APPROVED |
 | Q-FE11-017 | FE11 chỉ cung cấp DTO `UserManagementView` trong danh sách cho phép. | APPROVED |
-| Q-FE11-018 | Yêu cầu cập nhật trường công việc Thủ thư hoặc vô hiệu hóa dùng trạng thái cũ bị cơ chế đồng thời lạc quan `UpdatedAt` từ chối bằng `409 STALE_USER_STATE`. | APPROVED |
+| Q-FE11-018 | Phần cập nhật trường công việc lịch sử đã được thay thế; vô hiệu hóa vẫn dùng đồng thời lạc quan `UpdatedAt` với `409 STALE_USER_STATE`. | PARTIALLY SUPERSEDED |
 | Q-FE11-019 | Vô hiệu hóa dùng `INACTIVE` cùng `deactivatedAt`, vô hiệu hóa thông tin xác thực một cách nguyên tử và không có luồng kích hoạt lại trong Giai đoạn 1. | APPROVED |
 | Q-FE11-020 | Thay thế vai trò Quản trị viên tuần tự hóa ánh xạ bị ảnh hưởng và số Quản trị viên đang hoạt động, để mỗi tài khoản giữ chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động. | APPROVED |
 | Q-FE11-021 | Cơ chế đồng thời của người dùng được quản lý dùng `COALESCE(UpdatedAt, CreatedAt)` không null. | APPROVED |
@@ -648,7 +656,8 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | Q-FE11-024 | Tạo/gửi lại xác thực lại Quản trị viên đang hoạt động trong giao dịch và ánh xạ email trùng một cách an toàn. | APPROVED |
 | Q-FE11-025 | Thao tác đọc danh sách/chi tiết yêu cầu của Quản trị viên dùng hợp đồng hoàn thiện chuẩn, còn FE07 sở hữu các thao tác thay đổi. | APPROVED |
 | Q-FE11-027 | Các trường cá nhân chỉ đọc trong FE11; FE03 sở hữu thay đổi hồ sơ tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai và Quản trị viên FE11 chỉ sở hữu các trường công việc Thủ thư. | APPROVED |
-| Q-FE11-028 | Quản trị viên và FE03 cùng dùng cơ chế lưu trữ chuẩn cho `fullName`/`phone`/`address`; email vẫn do FE02 xác minh/chỉ đọc; FE11 loại bỏ chỉnh sửa department/specialization. Thay thế Q-FE11-027. | APPROVED |
+| Q-FE11-028 | Quyết định lịch sử về chỉnh sửa hồ sơ được quản lý; được Q-FE11-029 thay thế. | SUPERSEDED |
+| Q-FE11-029 | Thao tác của Quản trị viên đối với người dùng hiện có chỉ gồm thay thế vai trò duy nhất và vô hiệu hóa đủ điều kiện; UI và API FE11 không có chức năng chỉnh sửa hồ sơ. | APPROVED |
 
 ---
 
@@ -661,14 +670,14 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | AC-FE11-001 | Quản trị viên truy cập danh sách người dùng -> danh sách phân trang an toàn dùng giá trị mặc định/giới hạn, thứ tự ổn định, bộ lọc trạng thái/vai trò và nội dung tìm kiếm đã trim | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
 | AC-FE11-002 | Quản trị viên truy cập chi tiết người dùng -> trả về UserManagementView an toàn và các bản tóm tắt đã phê duyệt, loại trừ trường nhạy cảm | FR-FE11-002 | BR-FE11-001, BR-FE11-018, BR-FE11-026 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
 | AC-FE11-003 | Dữ liệu người dùng hợp lệ -> commit người dùng không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố tác nhân/tuyến FE11-LIFE02 đang chờ | PARTIAL |
-| AC-FE11-004 | Quản trị viên gửi trường cá nhân của người dùng hiện có -> từ chối nguyên tử bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; UI vẫn chỉ đọc | FR-FE11-004, FR-FE11-007 | BR-FE11-014 | Các trường hợp quyền sở hữu dữ liệu cá nhân UI/API/service/repository FE11-PDO01..PDO04 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-004 | Thao tác với người dùng hiện có chỉ cung cấp thay thế vai trò/vô hiệu hóa; không có Chỉnh sửa và PUT hồ sơ đã ngừng sử dụng trả về 404 | FR-FE11-004, FR-FE11-007 | BR-FE11-014, BR-FE11-015 | `frontend/test/userManagementFrontend.test.js`; `frontend/test/adminConsoleStructure.test.js`; `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
 | AC-FE11-005 | Gửi email trùng khi tạo người dùng -> hệ thống từ chối kèm thông báo lỗi | FR-FE11-005 | BR-FE11-004 | Các trường hợp giao dịch/service/tuyến thiết lập tài khoản FE11-LIFE02 | Chưa bắt đầu |
 | AC-FE11-006 | Quản trị viên tạo người dùng -> không hiển thị mật khẩu/token/liên kết; tài khoản vẫn không hoạt động đến khi hoàn tất thiết lập FE02 | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-007 | Người dùng ACTIVE/LOCKED bị quản trị viên vô hiệu hóa -> trạng thái thay đổi thành INACTIVE; đang chờ kích hoạt bị từ chối | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | Trường hợp vô hiệu hóa nguyên tử FE11-LIFE04 | Chưa bắt đầu |
-| AC-FE11-008 | Quản trị viên cố thay đổi email của người dùng hiện có -> hệ thống từ chối bất kể tính duy nhất | FR-FE11-020 | BR-FE11-014 | FT53 được phân bổ lại; FE11-PDO01..PDO04 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-008 | Quản trị viên cố thay đổi email người dùng hiện có qua tuyến hồ sơ đã ngừng sử dụng -> 404 và không thay đổi dữ liệu | FR-FE11-020 | BR-FE11-014 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
 | AC-FE11-009 | Người dùng có phiên hoạt động bị quản trị viên vô hiệu hóa -> phiên bị vô hiệu | FR-FE11-008 | BR-FE11-006 | Các trường hợp rollback thông tin xác thực refresh FE11-LIFE04 | Chưa bắt đầu |
 | AC-FE11-010 | Dữ liệu thủ thư hợp lệ -> commit thủ thư không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố trường/tác nhân FE11-LIFE02 đang chờ | PARTIAL |
-| AC-FE11-011 | Quản trị viên chỉ cập nhật `department`/`specialization` của Thủ thư -> lưu thay đổi có hiệu lực và tăng UpdatedAt; từ chối trường cá nhân/không xác định | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | Các trường hợp biên FE11-LIFE02/LIFE03 cùng FE11-PDO02/PDO03 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-011 | Mục tiêu Thủ thư cung cấp cùng các thao tác chỉ gồm vai trò/vô hiệu hóa và không có trình chỉnh sửa trường công việc | FR-FE11-004, FR-FE11-007 | BR-FE11-014, BR-FE11-015 | `frontend/test/userManagementFrontend.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
 | AC-FE11-012 | Tài khoản thủ thư đang hoạt động bị quản trị viên vô hiệu hóa -> trạng thái đổi thành INACTIVE và các phiên bị vô hiệu | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | Các trường hợp vô hiệu hóa Thủ thư FE11-LIFE04 | Chưa bắt đầu |
 | AC-FE11-013 | Vai trò Thành viên được thay bằng Thủ thư -> commit chính xác một ánh xạ và nhật ký kiểm toán | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
 | AC-FE11-014 | Quản trị viên không phải người cuối cùng được thay bằng Thành viên -> vẫn còn chính xác một ánh xạ | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
@@ -680,7 +689,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | AC-FE11-020 | Lỗi phân phối thiết lập khiến tài khoản đã cam kết không hoạt động và không hiển thị thông tin xác thực | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-021 | Quản trị viên đủ điều kiện gửi lại sẽ xoay token/event/key thiết lập sau thời gian chờ | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Bằng chứng xoay/phân phối FE11-S01..S07 hiện có cùng phần xác thực lại actor FE11-LIFE02 đang chờ | PARTIAL |
 | AC-FE11-022 | Gửi lại không đủ điều kiện/bị giới hạn thời gian chờ sẽ bị từ chối mà không tạo thông tin xác thực | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-023 | expectedUpdatedAt cũ khi cập nhật trường công việc Thủ thư/vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/nhật ký kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE03/LIFE04 | Chưa bắt đầu |
+| AC-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/bản kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE04 | Chưa bắt đầu |
 | AC-FE11-025 | Dashboard giữ nguyên năm thẻ/ba biểu đồ, dùng đúng chủ sở hữu chuẩn và các thẻ mở mô-đun đã lọc tương ứng | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
 | AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/bookRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); CON NGƯỜI ĐANG ĐÁNH GIÁ |
 
@@ -693,15 +702,15 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | FR-FE11-017 | ID Quản trị viên thực hiện không tồn tại -> lỗi không tìm thấy, không hành động | BR-FE11-001 | EC-FE11-001 | Bằng chứng vai trò hiện có cùng các trường hợp tạo/gửi lại/cập nhật công việc/vô hiệu hóa FE11-LIFE02..LIFE04 | PARTIAL |
 | FR-FE11-018 | Quản trị viên cố vô hiệu hóa tài khoản của mình -> bị từ chối | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | Trường hợp tự vô hiệu hóa FE11-LIFE04 | Chưa bắt đầu |
 | FR-FE11-019 | Vô hiệu hóa người dùng có lượt mượn đang hoạt động -> bị chặn, báo cáo số lượng | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | Trường hợp bảo vệ lượt mượn FE11-LIFE04 | Chưa bắt đầu |
-| FR-FE11-020 | Quản trị viên cố thay đổi email của tài khoản hiện có -> từ chối nguyên tử bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` | BR-FE11-014 | AF-FE11-004 | Các trường hợp API/service/repository FE11-PDO02/PDO03 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| FR-FE11-020 | Quản trị viên gọi tuyến hồ sơ tài khoản hiện có đã ngừng sử dụng -> 404 và không thay đổi dữ liệu | BR-FE11-014 | Q-FE11-029 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
 | FR-FE11-021 | Email tạo tài khoản sai định dạng/chứa payload injection/quá dài -> được làm sạch và bị từ chối | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | Các trường hợp biên và độ dài FE11-LIFE01/LIFE02 | Chưa bắt đầu |
 | FR-FE11-022 | Lỗi DB khi tạo người dùng -> rollback, không có bản ghi một phần | BR-FE11-010 | EC-FE11-008 | Phạm vi rollback khi tạo tài khoản FE11-S01..S07 | COMPLETE (B7) |
-| FR-FE11-023 | expectedUpdatedAt cũ khi cập nhật công việc/vô hiệu hóa -> 409 STALE_USER_STATE, không cập nhật một phần | BR-FE11-027 | EC-FE11-007 | Các trường hợp phiên bản có hiệu lực FE11-LIFE03/LIFE04 | Chưa bắt đầu |
+| FR-FE11-023 | expectedUpdatedAt cũ khi vô hiệu hóa -> 409 STALE_USER_STATE, không cập nhật một phần | BR-FE11-027 | EC-FE11-007 | Các trường hợp phiên bản có hiệu lực FE11-LIFE04 | Chưa bắt đầu |
 | FR-FE11-024 | Gán vai trò không tồn tại -> lỗi không tìm thấy, ánh xạ không đổi | BR-FE11-007 | EC-FE11-010 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
 | FR-FE11-025 | Gán vai trò người dùng đã giữ -> bị từ chối | BR-FE11-008 | EC-FE11-011 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
 | FR-FE11-026 | Thu hồi vai trò người dùng không giữ -> lỗi không tìm thấy | BR-FE11-007 | EC-FE11-012 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
 | FR-FE11-027 | Thu hồi sẽ khiến người dùng không còn vai trò -> bị từ chối | BR-FE11-007 | EC-FE11-013 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
-| FR-FE11-028 | Trường dành riêng cho Thủ thư quá dài/không hợp lệ -> bị từ chối với lỗi xác thực | BR-FE11-015 | EC-FE11-015 | Các trường hợp xác thực Thủ thư FE11-LIFE02/LIFE03 | Chưa bắt đầu |
+| FR-FE11-028 | Bất kỳ payload hồ sơ nào được gửi tới đường dẫn PUT FE11 đã ngừng sử dụng -> 404 và không ghi repository | BR-FE11-014, BR-FE11-015 | EC-FE11-014, Q-FE11-029 | `backend/tests/userManagementRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ) |
 | FR-FE11-029 | Token thiết lập mật khẩu đã hết hạn/đã dùng -> bị từ chối, đăng nhập không được kích hoạt | BR-FE11-013 | phần trường token 10.2 | FE11-S01..S07 bao phủ token thiết lập không hợp lệ, hết hạn, đã dùng, đã thu hồi và không đủ điều kiện | COMPLETE (B7) |
 | FR-FE11-030 | Hiển thị khung Quản trị viên gồm tám mục đã phê duyệt, ẩn mục đã xóa, Đánh giá tư cách thành viên đứng sau Tất cả người dùng và các hành động Thư viện của Quản trị viên vẫn ở khu vực Quản trị viên | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (MÃ NGUỒN/TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT THÍCH ỨNG/AZURE/CON NGƯỜI ĐANG CHỜ |
 | FR-FE11-031 | Dashboard Quản trị viên hiển thị bản tóm tắt vai trò/quy trình chuẩn và mở các mô-đun đã lọc của đúng chủ sở hữu | BR-FE11-020, BR-FE11-032 | Q-FE11-012, MF-FE11-010 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
@@ -729,7 +738,7 @@ Các quyết định sau đã được phê duyệt trong gói đánh giá Giai 
 | UC52 | Cập nhật thông tin người dùng | Được phân bổ lại: FE03 sở hữu thay đổi cá nhân tự phục vụ của người dùng; FE11 thực thi ranh giới chỉ đọc của Quản trị viên qua MF-FE11-004, FR-FE11-004, FR-FE11-007, FR-FE11-020 | FT53 được phân bổ lại; FE11-PDO01..PDO04 |
 | UC53 | Vô hiệu hóa tài khoản người dùng | MF-FE11-005; FR-FE11-008 | FT54 |
 | UC54 | Tạo tài khoản thủ thư | MF-FE11-006; FR-FE11-009 | FT55 |
-| UC55 | Cập nhật thông tin công việc Thủ thư | MF-FE11-007; FR-FE11-010 (chỉ `department`, `specialization`) | FT56; FE11-PDO02/PDO03 |
+| UC55 | Cập nhật thông tin công việc Thủ thư | Được Q-FE11-029 phân bổ lại/đưa ra ngoài phạm vi tài khoản hiện có của FE11; không có trình chỉnh sửa hoặc tuyến hồ sơ/trường công việc cho Quản trị viên | FT56 được phân bổ lại cho kiểm thử hồi quy ranh giới |
 | UC56 | Vô hiệu hóa tài khoản thủ thư | MF-FE11-008; FR-FE11-011 | FT57 |
 | UC57 | Quản lý vai trò | MF-FE11-009; FR-FE11-012 đến FR-FE11-014 | FT58 |
 
@@ -752,13 +761,13 @@ Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 - [x] Lược đồ cơ sở dữ liệu cho Users, Roles, UserRoles và `Users.DeactivatedAt` có thể null được xác nhận bằng migration hoàn thiện FE11 đã merge và bằng chứng thoát Giai đoạn 2.
 - [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép sang tệp hợp đồng API dùng chung chuyên biệt nếu nhóm tạo lại tệp đó.
 - [x] Các phần phụ thuộc FE02, FE03 được kiểm tra xung đột.
-- [x] Quyền sở hữu dữ liệu cá nhân đã được phê duyệt: FE03 sở hữu `fullName`/`phone`/`address` tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai và Quản trị viên FE11 chỉ sở hữu cập nhật `department`/`specialization` của Thủ thư hiện tại.
+- [x] Quyền sở hữu dữ liệu cá nhân đã được phê duyệt: FE03 sở hữu `fullName`/`phone`/`address` tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai và thay đổi tài khoản hiện có của Quản trị viên FE11 chỉ gồm thay thế vai trò và vô hiệu hóa đủ điều kiện.
 - [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 - [x] Các yêu cầu bảo mật (chi phí bcrypt, ngăn chặn tiêm SQL) đã được xem xét.
 ## Hiệu chỉnh giao diện quản trị 2026-07-22
 
 - Giao diện Quản trị viên tái sử dụng `app-shell`, header trên cùng, thanh bên thích ứng, cách thể hiện thương hiệu và thành phần điều hướng dùng chung với trang Thành viên và Thủ thư.
 - Nhật ký kiểm toán hiển thị trực tiếp danh sách hoạt động chỉ đọc có phân trang; UI Quản trị viên không hiển thị điều khiển tìm kiếm hoặc lọc.
-- Quản lý người dùng của Quản trị viên trong nguyên mẫu này tập trung vào xem/tạo/vai trò/vô hiệu hóa; nút sửa thông tin người dùng bị ẩn ở cả dòng và ngăn chi tiết, trong khi hợp đồng cập nhật backend được bảo vệ vẫn tồn tại để tương thích.
+- Quản lý người dùng của Quản trị viên tập trung vào xem/tạo/vai trò/vô hiệu hóa; nút sửa thông tin người dùng không xuất hiện trong hàng/chi tiết và không còn tuyến tương thích cập nhật hồ sơ ở backend.
 - Bảng Nhật ký kiểm toán chỉ hiển thị Hành động, Tác nhân, Mục tiêu, IP và Thời gian. Phép chiếu chi tiết an toàn vẫn là ranh giới bảo mật backend nhưng không được hiển thị thành cột bổ sung.
 - Bảng Quản trị viên rộng được cuộn trong vùng nội dung riêng và không được buộc toàn bộ giao diện cuộn ngang.

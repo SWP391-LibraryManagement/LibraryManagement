@@ -1,5 +1,30 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-28 - Specify registration identity availability checks
+
+- Require both username and email availability before creating verification state or requesting OTP delivery.
+- Keep duplicate feedback on the registration form and retain database uniqueness as the concurrent-registration authority.
+- Reuse the existing registration endpoint; no separate availability endpoint is introduced.
+- Focused backend passes 62/62, frontend passes 242/242, and frontend lint/build plus traceability pass.
+
+## 2026-07-28 - Disable login submission during timed account lock
+
+- Return `ACCOUNT_LOCKED` with `retryAfterSeconds` on the fifth failed password attempt and subsequent attempts during the timed lock.
+- Disable the frontend login button for the server-provided duration and automatically enable it when the lock expires.
+- Added focused backend and frontend regressions; FE02 route/repository tests pass 60/60, frontend tests pass 235/235, and frontend lint/build pass.
+
+## 2026-07-28 - Reconcile staging change-password OTP token constraint
+
+- Added fail-closed startup readiness for deployed `CK_AuthTokens_TokenType` compatibility with `CHANGE_PASSWORD_OTP`.
+- Packaged and applied the reviewed idempotent constraint migration only when the deployed schema is stale.
+- Aligned SPEC v0.6.17, PLAN, TASKS, TEST_PLAN v0.3.15, deployment guidance, and focused regressions.
+
+## 2026-07-28 - Fail safely when change-password OTP delivery fails
+
+- Stopped `/change-password/request-otp` from claiming success when SMTP is unavailable or the email provider fails.
+- Return the safe `EMAIL_DELIVERY_FAILED` response and write the request audit only after the direct FE02 email adapter confirms delivery.
+- Added a focused regression; auth routes pass 50/50, profile frontend passes 6/6, and FE02 traceability passes 27/27.
+
 ## 2026-07-27 - Align deployed verification OTP guidance
 
 - Corrected the registration verification screen from the stale 24-hour label to the canonical

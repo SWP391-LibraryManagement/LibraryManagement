@@ -5,7 +5,7 @@
  * Right: Login form with glassmorphism effect
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackgroundPanel from '../component/login/BackgroundPanel';
 import AuthCard from '../component/login/AuthCard';
@@ -20,8 +20,15 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lockDurationMs, setLockDurationMs] = useState(0);
   const backgroundImageUrl =
     '/images/login/loginimage.jpg';
+
+  useEffect(() => {
+    if (!lockDurationMs) return undefined;
+    const timeout = window.setTimeout(() => setLockDurationMs(0), lockDurationMs);
+    return () => window.clearTimeout(timeout);
+  }, [lockDurationMs]);
 
   const handleLogin = async (email, password, rememberMe) => {
     setIsSubmitting(true);
@@ -48,6 +55,10 @@ export default function LoginPage() {
       if (loginError?.code === 'EMAIL_VERIFICATION_REQUIRED') {
         navigate('/verify-email', { state: { email: loginError.details?.email || email.trim() } });
         return;
+      }
+      const retryAfterSeconds = Number(loginError?.details?.retryAfterSeconds);
+      if (loginError?.code === 'ACCOUNT_LOCKED' && retryAfterSeconds > 0) {
+        setLockDurationMs(retryAfterSeconds * 1000);
       }
       setFeedback({ severity: 'error', message: error.message });
     } finally {
@@ -83,9 +94,12 @@ export default function LoginPage() {
           onForgotPassword={handleForgotPassword}
           onRegister={handleRegister}
           onBackHome={handleBackHome}
-          onInputChange={() => setFeedback(null)}
+          onInputChange={() => {
+            if (!lockDurationMs) setFeedback(null);
+          }}
           feedback={feedback}
           isSubmitting={isSubmitting}
+          isLocked={lockDurationMs > 0}
         />
       </div>
     </div>

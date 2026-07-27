@@ -15,7 +15,8 @@ export default function AuthCard(props) {
     onBackHome,
     onInputChange,
     feedback,
-    isSubmitting
+    isSubmitting,
+    isLocked
   } = props;
 
   return (
@@ -54,6 +55,7 @@ export default function AuthCard(props) {
           onInputChange={onInputChange}
           feedback={feedback}
           isSubmitting={isSubmitting}
+          isLocked={isLocked}
         />
       </Card>
     </div>

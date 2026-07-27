@@ -62,19 +62,6 @@ function createUserManagementController(userManagementService = defaultUserManag
       }
     },
 
-    updateUser: async (req, res, next) => {
-      try {
-        const result = await userManagementService.updateUser(
-          req.params.userId,
-          req.validatedUserUpdate || req.body,
-          requestContext(req)
-        );
-        return res.status(200).json(result);
-      } catch (error) {
-        return next(error);
-      }
-    },
-
     updateStatus: async (req, res, next) => {
       try {
         const result = await userManagementService.updateStatus(

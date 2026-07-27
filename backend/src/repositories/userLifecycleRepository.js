@@ -1,15 +1,9 @@
 const { sql, getPool } = require('../config/db');
 
-const EDITABLE_FIELDS = ['fullName', 'phone', 'address'];
-
 function sameDate(left, right) {
   const leftTime = new Date(left).getTime();
   const rightTime = new Date(right).getTime();
   return Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime === rightTime;
-}
-
-function normalizeNullable(value) {
-  return value === undefined ? undefined : value ?? null;
 }
 
 async function rollbackWith(transaction, outcome, details = {}) {
@@ -71,118 +65,6 @@ async function lockUserRoles(transaction, userId) {
       WHERE ur.UserId = @UserId
     `);
   return result.recordset.map((row) => String(row.RoleName).toUpperCase());
-}
-
-function currentValues(row) {
-  return {
-    fullName: row.FullName ?? null,
-    phone: row.Phone ?? null,
-    address: row.Address ?? null,
-  };
-}
-
-function effectiveChanges(row, changes) {
-  const current = currentValues(row);
-  const next = { ...current };
-  const changedFields = [];
-
-  for (const field of EDITABLE_FIELDS) {
-    if (changes[field] === undefined) continue;
-    next[field] = normalizeNullable(changes[field]);
-    if (next[field] !== current[field]) changedFields.push(field);
-  }
-
-  changedFields.sort();
-  return { next, changedFields };
-}
-
-// @spec BR-FE11-027, FR-FE11-004, FR-FE11-007, FR-FE11-020, FR-FE11-023
-async function updateManagedUser({
-  adminUserId,
-  userId,
-  expectedUpdatedAt,
-  changes,
-  ipAddress,
-  userAgent,
-  now = new Date(),
-}) {
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-  await transaction.begin();
-
-  try {
-    const actor = await lockActingAdmin(transaction, adminUserId);
-    if (!actor) return rollbackWith(transaction, 'ADMIN_NOT_FOUND');
-    if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
-      return rollbackWith(transaction, 'ADMIN_REQUIRED');
-    }
-
-    const target = await lockManagedUser(transaction, userId, expectedUpdatedAt);
-    if (!target) return rollbackWith(transaction, 'USER_NOT_FOUND');
-    if (!sameDate(target.EffectiveUpdatedAt, expectedUpdatedAt)) {
-      return rollbackWith(transaction, 'STALE_USER_STATE');
-    }
-
-    const { next, changedFields } = effectiveChanges(target, changes);
-    if (changes.fullName !== undefined && !next.fullName) {
-      return rollbackWith(transaction, 'VALIDATION_ERROR');
-    }
-    if (!changedFields.length) {
-      await transaction.commit();
-      return { outcome: 'NO_CHANGE' };
-    }
-
-    await new sql.Request(transaction)
-      .input('UserId', sql.Int, userId)
-      .input('Phone', sql.NVarChar(20), next.phone)
-      .input('Now', sql.DateTime, now)
-      .query(`
-        UPDATE Users
-        SET Phone = @Phone,
-            UpdatedAt = @Now
-        WHERE UserId = @UserId
-      `);
-
-    await new sql.Request(transaction)
-      .input('UserId', sql.Int, userId)
-      .input('FullName', sql.NVarChar(100), next.fullName)
-      .input('Address', sql.NVarChar(255), next.address)
-      .input('Now', sql.DateTime, now)
-      .query(`
-        MERGE UserProfiles AS target
-        USING (SELECT @UserId AS UserId) AS source
-        ON target.UserId = source.UserId
-        WHEN MATCHED THEN
-          UPDATE SET
-            FullName = @FullName,
-            Address = @Address,
-            UpdatedAt = @Now
-        WHEN NOT MATCHED THEN
-          INSERT (UserId, FullName, Address, CreatedAt)
-          VALUES (@UserId, @FullName, @Address, @Now);
-      `);
-
-    await new sql.Request(transaction)
-      .input('AdminUserId', sql.Int, adminUserId)
-      .input('TargetId', sql.Int, userId)
-      .input('Metadata', sql.NVarChar(sql.MAX), JSON.stringify({ changedFields }))
-      .input('IpAddress', sql.NVarChar(50), ipAddress || null)
-      .input('UserAgent', sql.NVarChar(255), userAgent || null)
-      .input('Now', sql.DateTime, now)
-      .query(`
-        INSERT INTO AuditLogs
-          (UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)
-        VALUES
-          (@AdminUserId, 'USER_UPDATE', 'USER', @TargetId, @Metadata,
-           @IpAddress, @UserAgent, @Now)
-      `);
-
-    await transaction.commit();
-    return { outcome: 'UPDATED', changedFields };
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
 }
 
 // @spec BR-FE11-003, BR-FE11-006, BR-FE11-027, BR-FE11-030, FR-FE11-008, FR-FE11-011, FR-FE11-041
@@ -336,6 +218,5 @@ async function deactivateManagedUser({
 }
 
 module.exports = {
-  updateManagedUser,
   deactivateManagedUser,
 };

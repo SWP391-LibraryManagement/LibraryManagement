@@ -221,3 +221,15 @@ Evidence: FE03 backend focused tests pass 53/53; full backend tests pass 1025/10
 - [x] T021 Remove the FE04 membership-status badge and unused membership prop from the FE03 profile header per SPEC §10/§14 FE04 boundary (contradicts)
 
 Evidence: FE03 backend focused tests pass 55/55; frontend profile tests pass 6/6 and full frontend tests pass 219/219; frontend lint/build and traceability pass on 2026-07-24. The FE03 Playwright browser check passes 3/3 for valid, unsupported-type, and oversized avatar flows. The full backend run passes 1025/1027; only the unrelated pre-existing `dbConfig.test.js` mock-resolution cases fail by attempting DNS resolution for `sql.example.test`.
+
+## Phase 3: Convergence
+
+- [x] T022 Allow the frontend origin to render managed avatar files after upload per MF-FE03-003 and T-FE03-014 (partial)
+
+Evidence: static avatar regression and focused FE03 backend tests pass 47/47; full frontend tests pass 233/233; frontend lint/build and FE03 traceability pass on 2026-07-28. The full backend run retains only the unrelated pre-existing `dbConfig.test.js` DNS/mock-resolution failures for `sql.example.test`.
+
+## Phase 4: Convergence
+
+- [x] T023 Upload a selected avatar when the user submits the profile edit form per MF-FE03-003 and T-FE03-014 (partial)
+
+Evidence: FE03 profile-save avatar E2E passes 3/3; focused frontend tests pass 6/6; frontend lint/build and FE03 traceability pass on 2026-07-28. The full frontend run retains 10 unrelated expectation failures introduced by the current merged UI baseline.

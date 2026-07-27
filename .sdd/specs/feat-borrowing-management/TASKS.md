@@ -353,3 +353,9 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Remove the separate request-ID and barcode columns from the Admin circulation directory and DOCX directory projection without deleting either canonical API/database field.
   - Keep the borrow-detail ID as the visible operational identifier, align every remaining header with its row value, and wrap long member/book content inside fixed-layout cells.
   - Verify the focused Admin frontend tests, lint/build, and diff hygiene; human review remains required.
+
+- [~] **FE07-T056 - Connect overdue return selection to FE09 fine creation.**
+  - Maps to: FR-FE07-039, AC-FE07-032; FR-FE09-020, AC-FE09-018.
+  - Show `Tạo phiếu phạt` only for the selected active loan whose canonical due date is overdue in `Asia/Ho_Chi_Minh`.
+  - Call FE09 calculation with only `borrowDetailId`; retain server-owned dates, amount, duplicate prevention, roles, and terminal-state behavior.
+  - Verify focused FE07/FE09 frontend tests, full frontend tests, lint/build, traceability, and diff hygiene; human review remains required.

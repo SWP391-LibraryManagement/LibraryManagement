@@ -1,5 +1,30 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-28 - Preserve filters after a one-book status update
+
+- Stopped status commands from clearing the current filter and unexpectedly revealing previously hidden inactive books.
+- Reloaded the same canonical search/category/status/page context after mutating the selected `bookId`.
+- Kept each visible row bound to its own server-owned `Books.Status`.
+
+## 2026-07-28 - Allow approved feature compatibility migrations at startup
+
+- Preserved FE05 catalog readiness while allowing the startup gate to apply the separately approved FE02 auth-token constraint migration.
+- Updated the deployment contract to require packaged migrations and verified postconditions before listen.
+- Aligned SPEC v0.6.9, PLAN, TASKS, deployment guidance, and workflow policy coverage.
+
+## 2026-07-28 - Preserve the mixed-status list after one-book updates
+
+- Preserved the original read-only availability presentation in book details.
+- Stopped both status-change entry points from switching the whole list to the selected book's target-status filter.
+- Reloaded the canonical all-status first page after success so unaffected books remain visible with their server-owned state.
+- Corrected the list's status column to render canonical `Books.Status`; copy availability remains a separate read-only concern.
+
+## 2026-07-28 - Enable CI-gated continuous staging deployment
+
+- Triggered `Deploy staging` automatically only after a successful `main` CI run and checked out the exact tested commit.
+- Retained manual reruns, the packaged startup migration, environment approval support, and fail-closed staging smoke.
+- Aligned SPEC v0.6.8, PLAN, TASKS, deployment guidance, and workflow policy regression.
+
 ## 2026-07-27 - Run compile-safe metadata compatibility migration at backend startup
 
 - Packaged the reviewed transactional metadata migration with the backend deployment.

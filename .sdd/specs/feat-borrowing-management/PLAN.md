@@ -33,6 +33,7 @@ Included:
 - Borrowing actions write audit logs and create safe FE10 notification requests where useful.
 - Frontend borrowing screens expose actionable loading, empty, permission, eligibility, invalid-state, and API error feedback.
 - Admin circulation keeps request/copy identifiers in canonical data while showing nine operational columns that fit the supported desktop layout without horizontal scrolling.
+- Librarian/Admin can send one selected overdue `borrowDetailId` from the return workspace to FE09's server-authoritative calculation without supplying dates, overdue days, or amount.
 
 Not included:
 
@@ -56,7 +57,7 @@ Not included:
 | Active reservation queue blocks ordinary borrowing | Create and approval return `RESERVATION_QUEUE_PRIORITY` until staff resolves the queue. |
 | Notified owner may borrow the held copy | FE07 accepts the normal request and revalidates reservation ownership during approval. |
 | FE07 approval fulfills the hold | Request, details, copy, matching reservation, and audits commit atomically. |
-| FE07 does not create fines | Return response exposes `fineCandidate`; no `Fines` insert is performed. |
+| FE07 does not create fines | Return response exposes `fineCandidate`; no FE07 service/repository inserts `Fines`. The staff return UI may invoke FE09's canonical calculation endpoint for the selected overdue `borrowDetailId`. |
 | Canonical eligibility is active non-staff MEMBER identity | Member-self-service create/candidate/history requires `MEMBER` without `LIBRARIAN`/`ADMIN`; approval still revalidates the request owner's active `MEMBER` identity, and FE04 does not gate FE07. |
 | Parent book must remain active | Create and approval reject inactive parent books with `BOOK_INACTIVE`. |
 | Approval uses a member-scoped five-copy lock | Lock order is `member -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; count occurs after locks. |

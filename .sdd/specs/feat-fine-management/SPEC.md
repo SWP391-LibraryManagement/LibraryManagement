@@ -1,12 +1,12 @@
 # SPEC.md - FE09 Quản lý tiền phạt
 
-# Phiên bản: 0.4.3
+# Phiên bản: 0.4.5
 
-# Trạng thái: APPROVED - MỐC CƠ SỞ 2026-07-17 - CỔNG THOÁT GIAI ĐOẠN 2 COMPLETE
+# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG CHỜ CON NGƯỜI RÀ SOÁT 2026-07-28
 
 # Chủ sở hữu: Dung
 
-# Cập nhật lần cuối: 2026-07-21
+# Cập nhật lần cuối: 2026-07-28
 
 # ID tính năng: FE09
 
@@ -213,7 +213,8 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - FR-FE09-016: NẾU trang, giới hạn, trạng thái hoặc ID người dùng được cung cấp cho danh sách tiền phạt không hợp lệ, hệ thống phải từ chối yêu cầu mà không chuẩn hóa giá trị hoặc truy vấn tiền phạt.
 - FR-FE09-017: Khi tính tiền phạt, hệ thống phải suy ra số ngày quá hạn từ ngày nghiệp vụ `Asia/Ho_Chi_Minh` và hạn trả/ngày trả đã lưu.
 - FR-FE09-018: Không gian làm việc tiền phạt của Thủ thư/Quản trị viên phải giữ khoản tiền phạt đã chọn xuyên suốt các bước liệt kê, tính toán, thu tiền và đối chiếu đã thanh toán. Khoản tiền phạt quá hạn mới được tính phải trở thành khoản `UNPAID` được chọn để thu, còn các bước thanh toán phải từ chối truy cập nếu chưa chọn khoản tiền phạt `UNPAID`, kể cả khi khoản đã chọn nằm ngoài trang máy chủ đang hiển thị.
-- FR-FE09-019: KHI Thành viên chỉ có một vai trò xem “Tiền phạt của tôi”, hệ thống phải chỉ trả về các khoản tiền phạt của Thành viên đó cùng sách liên quan, `borrowDetailId`, hạn trả, ngày trả, số tiền, lý do, trạng thái và dấu thời gian thanh toán; giao diện phải giải thích rằng khoản tiền phạt `UNPAID` có số tiền dương sẽ chặn việc mượn/gia hạn FE07, liên kết tới lịch sử mượn để đối chiếu và giữ ở chế độ chỉ đọc.
+- FR-FE09-019: KHI Thành viên chỉ có một vai trò xem “Tiền phạt của tôi”, hệ thống phải chỉ trả về các khoản phạt của Thành viên đó cùng sách liên quan, `borrowDetailId`, hạn trả, ngày trả, số tiền, lý do, trạng thái và dấu thời gian thanh toán; frontend phải giải thích rằng khoản phạt `UNPAID` có số tiền dương sẽ chặn việc mượn/gia hạn FE07, liên kết tới lịch sử mượn để đối chiếu, duy trì chế độ chỉ đọc và không hiển thị `borrowDetailId` nội bộ trong bảng của Thành viên.
+- FR-FE09-020: KHI Thủ thư/Quản trị viên yêu cầu tạo khoản phạt từ một khoản mượn quá hạn được chọn trong không gian trả sách FE07, FE09 chỉ được chấp nhận `borrowDetailId` chuẩn, suy ra ngày tháng/số ngày quá hạn/số tiền ở máy chủ, tạo hoặc tính lại khoản phạt quá hạn `UNPAID` chuẩn mà không trùng lặp và trả về khoản phạt kết thúc hiện có mà không thay đổi.
 
 ---
 
@@ -235,7 +236,8 @@ Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
 - AC-FE09-014: Với khoản tiền phạt chưa thanh toán và lý do hợp lệ của Quản trị viên, khi Quản trị viên hủy tiền phạt, trạng thái phải chuyển thành `CANCELLED`, khoản tiền phạt phải tiếp tục hiển thị và bản ghi kiểm toán phải được ghi nguyên tử.
 - AC-FE09-015: Với phép tính tiền phạt tại ranh giới múi giờ, khi đánh giá ngày nghiệp vụ của máy chủ, số ngày quá hạn phải dùng `Asia/Ho_Chi_Minh` một cách nhất quán.
 - AC-FE09-016: Với Thủ thư/Quản trị viên tính hoặc chọn một khoản tiền phạt chưa thanh toán, khi chuyển sang thu tiền hoặc đối chiếu đã thanh toán, cùng ID tiền phạt, Thành viên, bối cảnh mượn và số tiền phải tiếp tục được chọn; sau khi thành công, hệ thống phải hiển thị khoản phạt chuẩn `PAID` được trả về và FE07/FE12 phải sử dụng trạng thái đã giải quyết.
-- AC-FE09-017: Với các tác nhân Khách, Thủ thư, Quản trị viên và Thành viên, khi truy cập `/api/fines/me`, Khách phải nhận `401`, Thủ thư/Quản trị viên phải nhận `403 ROLE_REQUIRED`, và chỉ Thành viên được nhận bản ghi tiền phạt liên kết với lượt mượn của chính mình; Thành viên không được thấy hành động tính, thu tiền, đánh dấu đã thanh toán, miễn hoặc hủy.
+- AC-FE09-017: Cho trước các tác nhân Khách, Thủ thư, Quản trị viên và Thành viên, khi họ truy cập `/api/fines/me` thì Khách nhận `401`, Thủ thư/Quản trị viên nhận `403 ROLE_REQUIRED`, và chỉ Thành viên nhận các bản ghi khoản phạt liên kết với lượt mượn của chính mình; Thành viên không thấy thao tác tính, thu, đánh dấu đã thanh toán, miễn, hủy hoặc trường `Mã mượn`.
+- AC-FE09-018: Cho trước Thủ thư/Quản trị viên chọn một khoản mượn đang hoạt động và quá hạn trong FE07, khi chọn `Tạo phiếu phạt` thì FE09 tính toán từ dữ liệu mượn đã lưu bằng `borrowDetailId` được chọn, tạo hoặc tính lại nhiều nhất một khoản phạt quá hạn đang hoạt động và frontend thông báo trạng thái được trả về mà không gửi số tiền.
 
 ---
 
@@ -525,6 +527,7 @@ Tính năng này không bao gồm:
 | AC-FE09-015 | UC42 | Ngày nghiệp vụ tại Thành phố Hồ Chí Minh có tính xác định | Sẵn sàng rà soát |
 | AC-FE09-016 | UC41-UC44 | Tính/chọn -> thu tiền/đã thanh toán vẫn giữ một bản ghi tiền phạt chuẩn duy nhất | Sẵn sàng rà soát |
 | AC-FE09-017 | UC41-UC44 | Khách/nhân viên bị từ chối danh sách của chính mình và trang tiền phạt Thành viên chỉ cho phép đọc | Đã đạt kiểm tra tự động; đang chờ rà soát của con người |
+| FR-FE09-020; AC-FE09-018 | UC42 | Hợp đồng frontend từ lựa chọn quá hạn FE07 tới phép tính máy chủ FE09 | Kiểm thử tự động đạt; đang chờ con người rà soát |
 
 ---
 

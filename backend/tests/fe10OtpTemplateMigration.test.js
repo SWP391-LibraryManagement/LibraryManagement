@@ -24,6 +24,7 @@ test('FE10 OTP template migration is idempotent and removes the superseded link 
   expect(source).toMatch(/WHERE\s+TemplateCode\s*=\s*'PASSWORD_RESET'/i);
   expect(source).toMatch(/\{\{otp\}\}/);
   expect(source).toMatch(/\{\{expiresInMinutes\}\}/);
+  expect(source).toMatch(/Không chia sẻ mã này với bất kỳ ai\./);
   expect(source).not.toMatch(/verificationLink|resetLink/i);
 });
 

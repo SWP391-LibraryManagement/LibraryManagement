@@ -1,12 +1,12 @@
 # SPEC.md - Xác thực FE02
 
-# Phiên bản: 0.6.16
+# Phiên bản: 0.6.19
 
 # Trạng thái: BASELINE ĐÃ PHÊ DUYỆT 2026-07-17 - ĐỐI SOÁT HỢP ĐỒNG ĐANG CHỜ RÀ SOÁT THỦ CÔNG
 
 # Chủ sở hữu: Dat
 
-# Cập nhật lần cuối: 2026-07-27
+# Cập nhật lần cuối: 2026-07-28
 
 # ID tính năng: FE02
 
@@ -93,8 +93,8 @@ Tính năng này chỉ có thể bắt đầu khi:
 ### MF-FE02-001: Đăng ký người dùng
 
 1. Khách truy cập biểu mẫu đăng ký.
-2. Khách nhập email, mật khẩu, xác nhận mật khẩu và tùy chọn họ tên/số điện thoại.
-3. Hệ thống xác thực thông tin đầu vào và kiểm tra email trùng lặp.
+2. Khách nhập tên người dùng, email, mật khẩu, xác nhận mật khẩu và tùy chọn họ tên/số điện thoại.
+3. Hệ thống xác thực dữ liệu đầu vào và kiểm tra cả tên người dùng lẫn email chưa được đăng ký trước khi tạo bất kỳ tài khoản hoặc trạng thái OTP xác minh nào.
 4. Hệ thống băm mật khẩu bằng bcrypt.
 5. Hệ thống tạo bản ghi người dùng với trạng thái `INACTIVE`.
 6. Hệ thống gán vai trò `Member` thông qua `UserRoles`; tự đăng ký không thể tạo tài khoản `Librarian` hoặc `Admin`.
@@ -129,7 +129,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 2. Hệ thống xác minh mật khẩu và phát hiện mật khẩu không khớp.
 3. Hệ thống tăng bộ đếm đăng nhập không thành công cho người dùng.
 4. Nếu tài khoản đạt 5 lần nhập sai mật khẩu liên tiếp trong cửa sổ trượt 15 phút, hệ thống đặt trạng thái thành `LOCKED` và đặt `lockedUntil` ở thời điểm 30 phút sau sự kiện khóa.
-5. Hệ thống trả về thông báo lỗi chung (không tiết lộ sự tồn tại của người dùng).
+5. Trước khi đạt ngưỡng, hệ thống trả về thông báo chung về thông tin xác thực không hợp lệ. Ở lần thử đạt ngưỡng, hệ thống trả về `ACCOUNT_LOCKED` cùng thời gian khóa còn lại để máy khách đăng nhập vô hiệu hóa thao tác gửi cho đến khi hết thời gian khóa.
 6. Hệ thống ghi log audit: đăng nhập thất bại và lý do.
 
 ### MF-FE02-005: Người dùng đăng xuất
@@ -192,11 +192,11 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 ## 5. Luồng thay thế
 
-### AF-FE02-001: Email người dùng đã được đăng ký
+### AF-FE02-001: Tên Người Dùng Hoặc Email Đã Được Đăng Ký
 
-1. Khách gửi biểu mẫu đăng ký với email đã được sử dụng.
-2. Hệ thống phát hiện email trùng lặp.
-3. Hệ thống trả về lỗi: "Email đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng quên mật khẩu."
+1. Khách gửi biểu mẫu đăng ký với tên người dùng hoặc email đang được sử dụng.
+2. Hệ thống phát hiện giá trị trùng lặp trước khi gửi OTP xác minh, kể cả khi một đăng ký đồng thời giành quyền ghi sau bước kiểm tra ban đầu.
+3. Hệ thống trả về xung đột theo trường cụ thể và giữ người dùng ở biểu mẫu đăng ký.
 
 ### AF-FE02-002: Thông tin xác thực email đã hết hạn
 
@@ -242,7 +242,7 @@ Tính năng này chỉ có thể bắt đầu khi:
 
 Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
-- BR-FE02-001: Khách phải cung cấp email, mật khẩu và xác nhận hợp lệ để đăng ký.
+- BR-FE02-001: Khách phải cung cấp email hợp lệ và duy nhất, mật khẩu cùng phần xác nhận để đăng ký; tên người dùng được cung cấp hoặc do hệ thống suy ra cũng phải là duy nhất.
 - BR-FE02-002: Khách không thể truy cập các chức năng dành cho Thành viên/Thủ thư/Quản trị viên nếu chưa đăng nhập.
 - BR-FE02-003: Chỉ có thể tạo người dùng trong quy trình đăng ký; người dùng khác không thể được tạo bởi các tác nhân khác trong tính năng này.
 - BR-FE02-004: Tài khoản người dùng đã đăng ký phải được xác minh qua email trước khi được kích hoạt.
@@ -275,12 +275,12 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 ## 7. Yêu cầu chức năng
 
-- FR-FE02-001: Khi khách gửi dữ liệu đăng ký hợp lệ, hệ thống sẽ tạo một người dùng mới có trạng thái `INACTIVE`.
+- FR-FE02-001: Khi Khách gửi dữ liệu đăng ký hợp lệ với tên người dùng và email chưa được sử dụng, hệ thống phải tạo người dùng mới có trạng thái `INACTIVE`.
 - FR-FE02-002: Khi người dùng được đăng ký, FE02 phải tạo OTP xác minh gồm sáu chữ số có thời hạn 15 phút, chỉ lưu giá trị băm của OTP và gửi một yêu cầu thông báo `ACCOUNT_VERIFICATION` gắn với FE02, chứa ID mã thông báo cùng dữ liệu mẫu bắt buộc; mã thông báo xác minh legacy vẫn được chấp nhận để bảo đảm tương thích.
 - FR-FE02-003: Khi người dùng gửi OTP kèm email xác minh hợp lệ hoặc mã thông báo xác minh legacy hợp lệ cho tài khoản tự đăng ký đủ điều kiện đang chờ xử lý, hệ thống phải kích hoạt tài khoản theo cách nguyên tử, vô hiệu hóa OTP/mã thông báo và ghi audit xác minh; tài khoản đã bị vô hiệu hóa vẫn ở trạng thái không hoạt động và thông tin xác thực không bị sử dụng.
 - FR-FE02-004: Khi người dùng gửi biểu mẫu đăng nhập với thông tin xác thực hợp lệ và trạng thái tài khoản đã lưu vẫn là `ACTIVE` tại thời điểm giao dịch đăng nhập được xác nhận, hệ thống phải tạo phiên/mã thông báo và trả về cho máy khách.
 - FR-FE02-005: Khi người dùng gửi biểu mẫu đăng nhập bằng email hoặc mật khẩu không hợp lệ, hệ thống sẽ từ chối yêu cầu và không tiết lộ liệu email có tồn tại hay không.
-- FR-FE02-006: Khi một tài khoản đã biết và hiện có trạng thái `ACTIVE` đạt 5 lần nhập sai mật khẩu liên tiếp trong cửa sổ trượt 15 phút, hệ thống phải đặt `LOCKED` theo cách nguyên tử, đặt `lockedUntil` ở thời điểm 30 phút sau sự kiện khóa và từ chối các lần đăng nhập tiếp theo cho đến khi hết khóa; thao tác ghi nhận đăng nhập thất bại không được ghi đè một thay đổi đồng thời đưa tài khoản sang trạng thái kết thúc.
+- FR-FE02-006: Khi một tài khoản đã biết và hiện có trạng thái `ACTIVE` đạt 5 lần nhập sai mật khẩu liên tiếp trong cửa sổ trượt 15 phút, hệ thống phải đặt `LOCKED` theo cách nguyên tử, đặt `lockedUntil` ở thời điểm 30 phút sau sự kiện khóa, trả về `ACCOUNT_LOCKED` cùng `retryAfterSeconds` và từ chối các lần đăng nhập tiếp theo cho đến khi mở khóa; máy khách đăng nhập phải vô hiệu hóa thao tác gửi trong khoảng thời gian do máy chủ cung cấp, và thao tác ghi nhận đăng nhập thất bại không được ghi đè thay đổi đồng thời đưa tài khoản sang trạng thái kết thúc.
 - FR-FE02-007: Khi người dùng yêu cầu đăng xuất, hệ thống phải vô hiệu hóa phiên/mã thông báo ngay lập tức.
 - FR-FE02-008: Khi người dùng thực hiện một yêu cầu được bảo vệ, hệ thống sẽ xác thực mã thông báo truy cập, trạng thái người dùng `ACTIVE` hiện tại, thông tin xác thực refresh/session đang hoạt động được liên kết, thời hạn sử dụng và các vai trò phía máy chủ hiện tại trước khi cho phép yêu cầu.
 - FR-FE02-009: Khi mã thông báo truy cập hoặc thông tin xác thực phiên/làm mới liên kết bị thiếu, không hợp lệ, hết hạn, bị thu hồi, thuộc về người dùng khác hoặc người dùng hiện tại không còn là `ACTIVE`, hệ thống trả về 401 Unauthorized trước khi xử lý thao tác được bảo vệ.
@@ -295,7 +295,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 
 Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tình trạng bất thường đã được mô tả trong Phần 5 (Luồng thay thế), 6 (Quy tắc kinh doanh) và 9 (Trường hợp biên). Mỗi cái được thể hiện bằng EARS Cú pháp không mong muốn (`IF ...` / `WHERE ...`) và truy ngược về nguồn AF/EC/BR.
 
-- FR-FE02-015: NẾU Khách gửi dữ liệu đăng ký bằng email đã được đăng ký, kể cả khi một thao tác chèn đồng thời thành công sau bước kiểm tra trùng lặp ban đầu, hệ thống phải từ chối đăng ký và trả về thông báo "Email đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng quên mật khẩu." mà không tạo bản ghi người dùng mới. (Nguồn: AF-FE02-001, EC-FE02-003, BR-FE02-001)
+- FR-FE02-015: NẾU Khách gửi dữ liệu đăng ký với tên người dùng hoặc email đã được đăng ký, kể cả khi một thao tác chèn đồng thời giành quyền ghi sau bước kiểm tra trùng lặp ban đầu, hệ thống phải từ chối đăng ký bằng `USERNAME_ALREADY_REGISTERED` hoặc `EMAIL_ALREADY_REGISTERED`, giữ máy khách ở biểu mẫu đăng ký với phản hồi theo trường cụ thể và không tạo người dùng, mã thông báo xác minh hay yêu cầu gửi OTP. (Nguồn: AF-FE02-001, EC-FE02-003, BR-FE02-001)
 - FR-FE02-016: NẾU người dùng gửi OTP/mã thông báo xác minh email đã hết hạn, sai định dạng hoặc không khớp với bất kỳ bản ghi người dùng nào, hệ thống phải từ chối kích hoạt, giữ tài khoản ở trạng thái `INACTIVE` và cung cấp hành động gửi lại email xác minh mới. (Nguồn: AF-FE02-002, BR-FE02-004)
 - FR-FE02-017: NẾU người dùng cố gắng đăng nhập vào tài khoản có trạng thái là `LOCKED`, hệ thống sẽ từ chối đăng nhập và trả về thông báo khóa tài khoản hướng dẫn người dùng đặt lại mật khẩu của họ hoặc đợi cho đến khi `lockedUntil` trôi qua. (Nguồn: AF-FE02-003, BR-FE02-009)
 - FR-FE02-018: NẾU người dùng gửi thông tin xác thực đặt lại mật khẩu hoặc thiết lập tài khoản đã được sử dụng, hết hạn hoặc không khớp với người dùng đủ điều kiện, hệ thống sẽ từ chối yêu cầu và trả lại thông báo mã không hợp lệ an toàn mà không thay đổi bất kỳ mật khẩu nào. (Nguồn: AF-FE02-005, BR-FE02-014)
@@ -312,14 +312,14 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 
 ## 8. Tiêu chí chấp nhận
 
-- AC-FE02-001: Cho trước dữ liệu đăng ký hợp lệ và email duy nhất, khi Khách đăng ký, hệ thống tạo người dùng không hoạt động, lưu giá trị băm OTP xác minh với thời hạn chính xác 15 phút, gửi một yêu cầu thông báo gắn với FE02 và FE10 đồng bộ thử gửi qua nhà cung cấp, đồng thời ghi nhận `SENT` hoặc `FAILED`; nếu nhà cung cấp chấp nhận thành công thì một email OTP xác minh được gửi đi.
+- AC-FE02-001: Cho trước dữ liệu đăng ký hợp lệ cùng tên người dùng và email chưa được sử dụng, khi Khách đăng ký thì hệ thống tạo người dùng không hoạt động, lưu giá trị băm OTP xác minh và yêu cầu gửi; nếu một trong hai giá trị đã tồn tại, hệ thống trả về phản hồi theo trường cụ thể trước khi gửi OTP và giữ biểu mẫu đăng ký hoạt động.
 - AC-FE02-002: Với thông tin xác thực hợp lệ của tài khoản tự đăng ký đang chờ xử lý và đủ điều kiện, khi người dùng gửi thông tin xác thực đó, hệ thống phải xác nhận nguyên tử việc kích hoạt, sử dụng thông tin xác thực và ghi audit xác minh; sau đó người dùng có thể đăng nhập. Cả OTP và mã thông báo xác minh legacy đều phải từ chối tài khoản đã bị vô hiệu hóa mà không sử dụng thông tin xác thực.
 - AC-FE02-003: Cho trước OTP/mã thông báo xác minh đã hết hạn, khi người dùng gửi thông tin xác thực đó thì hệ thống từ chối và cung cấp hành động gửi lại.
 - AC-FE02-004: Với email, mật khẩu hợp lệ và tài khoản đang hoạt động, khi người dùng đăng nhập, hệ thống trả về phiên/mã thông báo hợp lệ.
 - AC-FE02-005: Email không hợp lệ, khi người dùng đăng nhập hệ thống báo lỗi không hiển thị email tồn tại.
 - AC-FE02-006: Email hợp lệ nhưng mật khẩu không hợp lệ, khi người dùng đăng nhập, hệ thống trả về lỗi và tăng bộ đếm lần thử không thành công.
 - AC-FE02-007: Với tài khoản không hoạt động và không đủ điều kiện để tự khôi phục đăng ký, khi người dùng đăng nhập, hệ thống sẽ từ chối đăng nhập mà không hiển thị trạng thái xác minh.
-- AC-FE02-008: Với tài khoản bị khóa, khi người dùng đăng nhập thì hệ thống từ chối đăng nhập với thông báo khóa tài khoản.
+- AC-FE02-008: Cho trước lần nhập sai mật khẩu thứ năm hoặc tài khoản có khóa theo thời gian chưa hết hạn, khi người dùng đăng nhập thì hệ thống trả về thông báo khóa tài khoản cùng thời gian khóa còn lại, và nút đăng nhập vẫn bị vô hiệu hóa cho đến khi khoảng thời gian đó kết thúc.
 - AC-FE02-009: Cho trước một mã thông báo truy cập hợp lệ, được liên kết với thông tin xác thực refresh/session đang hoạt động của người dùng hiện có trạng thái `ACTIVE`, khi người dùng gửi yêu cầu được bảo vệ thì hệ thống tải các vai trò hiện tại ở phía máy chủ và cho phép yêu cầu.
 - AC-FE02-010: Với mã thông báo truy cập không hợp lệ/hết hạn, thông tin xác thực phiên/làm mới liên kết không hợp lệ, hết hạn, bị thu hồi hoặc sai người dùng, hoặc người dùng hiện tại không có trạng thái `ACTIVE`, khi có yêu cầu được bảo vệ, hệ thống trả về 401 Unauthorized trước khi xử lý nghiệp vụ.
 - AC-FE02-011: Với người dùng đã được xác thực, khi người dùng đăng xuất, session/token sẽ bị vô hiệu.
@@ -347,7 +347,7 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 | -- | ----------------- | ------------------------ |
 | EC-FE02-001 | Đăng ký với payload SQL injection trong email | Làm sạch đầu vào và từ chối vì định dạng email không hợp lệ. |
 | EC-FE02-002 | Đăng ký bằng mật khẩu dài hơn 255 ký tự | Từ chối với lỗi xác thực trường và không tạo tài khoản. |
-| EC-FE02-003 | Cố đăng ký trùng cùng một email, kể cả các yêu cầu đồng thời vượt qua bước kiểm tra trùng lặp ban đầu | Từ chối bằng `409 EMAIL_ALREADY_REGISTERED` và thông báo đã phê duyệt; không lưu thêm trạng thái người dùng/mã thông báo/gửi thông báo. |
+| EC-FE02-003 | Cố đăng ký trùng cùng tên người dùng hoặc email, kể cả các yêu cầu đồng thời chạy đua sau bước kiểm tra trùng lặp ban đầu | Từ chối bằng `409 USERNAME_ALREADY_REGISTERED` hoặc `409 EMAIL_ALREADY_REGISTERED` tương ứng; giữ biểu mẫu đăng ký hoạt động và không tạo thêm trạng thái người dùng/mã thông báo/gửi thông báo. |
 | EC-FE02-004 | Đăng ký người dùng bằng email chứa dấu cách hoặc ký tự đặc biệt | Xác thực định dạng email một cách nghiêm ngặt. |
 | EC-FE02-005 | Thử đăng nhập bằng cách tiêm SQL vào trường tên người dùng | Sử dụng các truy vấn được tham số hóa; từ chối vì không hợp lệ. |
 | EC-FE02-006 | Người dùng khóa tài khoản của chính mình do vượt quá số lần đăng nhập thất bại | Cung cấp đặt lại mật khẩu hoặc đợi đến `lockedUntil`; Giai đoạn 1 không có hành động mở khóa quản trị viên. |
@@ -385,7 +385,7 @@ Các yêu cầu sau đây chính thức hóa các nhánh xử lý lỗi và tìn
 | ----- | ---- | -------- | ------------------ |
 | userId | số nguyên | Có | Khóa chính. |
 | email | chuỗi | Có | Định dạng email duy nhất, hợp lệ, tối đa 255 ký tự. |
-| username | chuỗi | Không | Trường đăng nhập thay thế tùy chọn. |
+| username | chuỗi | Không | Trường đăng nhập thay thế duy nhất, dài 3..50 ký tự khi được cung cấp; nếu không, giá trị được suy ra từ email. |
 | passwordHash | chuỗi | Có | băm bcrypt, không bao giờ là văn bản gốc. Trước khi thiết lập, FE11 lưu trữ hàm băm bcrypt không thể sử dụng được của giá trị ngẫu nhiên do máy chủ tạo ra bị loại bỏ; giữ chỗ theo nghĩa đen cố định bị cấm. |
 | fullName | chuỗi | Không | Tên hiển thị của người dùng. |
 | phoneNumber | chuỗi | Không | Số điện thoại của người dùng. |
@@ -468,7 +468,7 @@ stateDiagram-v2
 
 | Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/auth/register` | Khách | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Gửi xác minh sáu chữ số OTP. |
+| POST | `/api/auth/register` | Khách | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Kiểm tra tính duy nhất của tên người dùng được cung cấp/suy ra và email trước khi tạo hoặc gửi OTP xác minh sáu chữ số; giá trị trùng lặp trả về xung đột `409` tương ứng. |
 | POST | `/api/auth/verify-email` | Khách | `{ email: string, otp: string }` hoặc `{ token: string }` | `{ message: "Account verified. You can now login." }` | Luồng OTP chính cộng với khả năng tương thích mã thông báo cũ. |
 | POST | `/api/auth/resend-verification` | Khách | `{ email: string }` | `{ message: "Verification email sent" }` | Chỉ gửi lại cho tài khoản tự đăng ký đủ điều kiện đang chờ xử lý; các trạng thái khác vẫn nhận cùng một phản hồi công khai. |
 | POST | `/api/auth/login` | Khách | `{ email: string, password: string }` | Thành công: `{ userId: number, email: string, roles: string[], accessToken: string, refreshToken: string, expiresIn: 900 }`; đang chờ xác minh: `403 { error: { code: "EMAIL_VERIFICATION_REQUIRED", message: string, details: { email: string } } }` | Trường `email` cũ chấp nhận địa chỉ email hoặc tên người dùng. Phản hồi khôi phục 403 chỉ được trả về sau khi xác minh mật khẩu chính xác cho tài khoản tự đăng ký đủ điều kiện và không bao giờ tạo phiên. |
@@ -518,7 +518,11 @@ stateDiagram-v2
 - NFR-FE02-PERF-003: Băm mật khẩu phải giữ lại chi phí bcrypt >= 10; điều chỉnh hiệu suất không được giảm chi phí băm được phê duyệt.
 - NFR-FE02-PERF-004: Xác thực session/token phía máy chủ, ngoại trừ trình xử lý nghiệp vụ hạ nguồn, phải hoàn thành trong vòng chưa đầy 50 mili giây ở tốc độ p95 trong môi trường hiệu suất local/staging được ghi lại của dự án.
 
-### 12.4 Ghi log và audit
+### 12.4 Mức Sẵn Sàng Triển Khai
+
+- NFR-FE02-DEP-001: Trước khi phục vụ lưu lượng staging, quá trình khởi động phải xác minh `CK_AuthTokens_TokenType` cho phép `CHANGE_PASSWORD_OTP`; khi ràng buộc đã triển khai bị lỗi thời, hệ thống áp dụng migration tương thích lũy đẳng đã được rà soát và từ chối khởi động nếu hậu điều kiện vẫn chưa được đáp ứng.
+
+### 12.5 Ghi Log Và Audit
 
 - NFR-FE02-LOG-001: Mọi lần đăng nhập (thành công và thất bại) phải được ghi lại bằng dấu thời gian, email/username, địa chỉ IP và lý do.
 - NFR-FE02-LOG-002: Mỗi lần đăng xuất phải được ghi lại.
@@ -527,7 +531,7 @@ stateDiagram-v2
 - NFR-FE02-LOG-005: Sự kiện khóa tài khoản phải được ghi lại.
 - NFR-FE02-LOG-006: Việc xác thực mã thông báo không thành công trên các điểm cuối được bảo vệ phải được ghi lại (chỉ ở chế độ gỡ lỗi, không phải chế độ sản xuất).
 
-### 12.5 Khả năng sử dụng
+### 12.6 Khả Năng Sử Dụng
 
 - NFR-FE02-UX-001: Thông báo lỗi phải rõ ràng nhưng không tiết lộ chi tiết nhạy cảm (ví dụ: "Email hoặc mật khẩu không hợp lệ", không phải "Không tìm thấy email").
 - NFR-FE02-UX-002: Các biểu mẫu đăng ký, thiết lập tài khoản, thay đổi mật khẩu và đặt lại mật khẩu phải cung cấp hướng dẫn yêu cầu mật khẩu đã được phê duyệt khi người dùng tạo mật khẩu mới. Đăng nhập không được từ chối mật khẩu hiện có dựa trên các quy tắc phức tạp tại thời điểm tạo.
@@ -631,7 +635,7 @@ Các quyết định sau đây đã được phê duyệt trong gói đánh giá
 
 | ID AC | Tiêu chí chấp nhận | FR liên quan | BR liên quan | Trường hợp thử nghiệm | Trạng thái |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE02-001 | Khách đăng ký với dữ liệu hợp lệ và email duy nhất -> hệ thống tạo người dùng INACTIVE, lưu giá trị băm OTP có thời hạn 15 phút, gửi một yêu cầu gắn với FE02 và FE10 thử gửi qua nhà cung cấp với kết quả `SENT`/`FAILED`; khi nhà cung cấp chấp nhận thành công, một email OTP xác minh được gửi đi | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | FT05 | Được chấp nhận; bằng chứng tự động được ghi lại |
+| AC-FE02-001 | Tên người dùng/email chưa được sử dụng -> tạo người dùng INACTIVE và yêu cầu gửi OTP; tên người dùng/email trùng lặp -> xung đột theo trường cụ thể trước khi tạo trạng thái người dùng/mã thông báo/gửi mới và biểu mẫu đăng ký vẫn hoạt động | FR-FE02-001, FR-FE02-002, FR-FE02-015, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-002 | OTP/email xác minh hoặc mã thông báo legacy hợp lệ cho tài khoản đủ điều kiện -> thao tác kích hoạt, sử dụng mã thông báo và ghi audit được xác nhận cùng nhau; tài khoản đã bị vô hiệu hóa vẫn không hoạt động | FR-FE02-003 | BR-FE02-004 | Hồi quy xác minh đủ điều kiện và bị vô hiệu hóa `backend/tests/authRoutes.test.js` | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-003 | Xác minh đã hết hạn OTP/token đã gửi -> hệ thống từ chối, đề nghị gửi lại | FR-FE02-003, FR-FE02-016 | BR-FE02-004 | FT05 | Được chấp nhận; bằng chứng tự động được ghi lại |
 | AC-FE02-004 | Tài khoản email/password/active hợp lệ khi đăng nhập -> hệ thống trả về session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Được chấp nhận; bằng chứng tự động được ghi lại |

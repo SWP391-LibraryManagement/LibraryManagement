@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Quản lý mượn
 
-# Phiên bản: 0.8.2
+# Phiên bản: 0.8.3
 
 # Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI RÀ SOÁT 2026-07-28
 
@@ -283,6 +283,7 @@ Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
 - FR-FE07-036: KHI Thành viên liệt kê ứng viên hoặc tạo yêu cầu, FE07 sẽ ẩn/từ chối mọi bản sao có `BookId` đã có quy trình đang hoạt động cho Thành viên đó; giao dịch tạo có thẩm quyền trả về `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW` mà không ghi một phần. Payload chứa hai bản sao của cùng một `BookId` trả về `400 DUPLICATE_BOOK_IN_REQUEST`.
 - FR-FE07-037: NẾU một yêu cầu đang chờ xử lý cũ sẽ cung cấp cho chủ sở hữu của nó bản sao `BORROWED` thứ hai của cùng một `BookId`, phê duyệt sẽ trả về `409 BOOK_ALREADY_BORROWED_BY_MEMBER`, giữ nguyên yêu cầu đang chờ xử lý và vẫn cho phép nhân viên từ chối với lý do chính đáng.
 - FR-FE07-038: KHI Quản trị viên xem danh sách lưu hành, bảng sẽ hiển thị các trường thao tác `borrowDetailId`, Thành viên, tên sách, ngày mượn, ngày đến hạn, ngày trả, số lần gia hạn, trạng thái và thao tác khả dụng trong các cột khớp, không yêu cầu cuộn ngang trên bố cục desktop được hỗ trợ. `requestId` và mã vạch bản sao vẫn là dữ liệu nội bộ/chi tiết chuẩn nhưng không phải cột riêng trong danh sách.
+- FR-FE07-039: KHI Thủ thư/Quản trị viên chọn một khoản mượn đang hoạt động có trạng thái hạn trả là `OVERDUE`, không gian làm việc trả sách phải hiển thị thao tác `Tạo phiếu phạt` chỉ truyền `borrowDetailId` chuẩn sang phép tính FE09; FE09 tiếp tục là nguồn có thẩm quyền đối với ngày tháng đã lưu, số ngày quá hạn, số tiền, xử lý trùng lặp và trạng thái khoản phạt.
 
 ### 7.1 Yêu cầu hành vi không mong muốn (Lỗi / Điều kiện bất thường)
 
@@ -340,6 +341,7 @@ Các yêu cầu EARS này bao gồm lỗi và các điều kiện bất thườn
 - AC-FE07-029: Với yêu cầu cũ đang chờ có bản sao vật lý không còn đủ điều kiện phê duyệt, khi Quản trị viên/Thủ thư cố phê duyệt, FE07 sẽ giữ yêu cầu ở trạng thái chờ, trả về xung đột có hướng xử lý, tải lại trạng thái bản sao/yêu cầu chuẩn và vẫn cho phép từ chối bằng lý do hợp lệ.
 - AC-FE07-030: Với Thành viên đã có yêu cầu đang chờ hoặc khoản mượn đang hoạt động cho một đầu sách, khi Thành viên tải ứng viên hoặc gửi bản sao khác của đầu sách đó, đầu sách sẽ bị ẩn và thao tác tạo trả về `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW`; sau khi yêu cầu bị từ chối hoặc bản sao được trả về trạng thái cuối, có thể tiếp tục tạo yêu cầu mới.
 - AC-FE07-031: Với các hàng lưu hành chuẩn của Quản trị viên, khi danh sách trên màn hình hiển thị, mỗi hàng sẽ căn với chín tiêu đề đã phê duyệt, các giá trị Thành viên/sách dài được ngắt dòng trong ô tương ứng và cả cột `Mã yêu cầu` lẫn `Barcode` đều không gây tràn ngang.
+- AC-FE07-032: Cho trước Thủ thư/Quản trị viên chọn một khoản mượn đang hoạt động và quá hạn, khi tác nhân chọn `Tạo phiếu phạt` thì frontend gọi phép tính FE09 chuẩn bằng `borrowDetailId` của khoản mượn đó, thông báo kết quả từ máy chủ và không bao giờ gửi số tiền phạt do máy khách kiểm soát; thao tác này không xuất hiện với khoản mượn chưa quá hạn.
 
 ---
 
@@ -761,6 +763,7 @@ Tính năng này không bao gồm:
 | BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | Hồi quy quyền sở hữu bản sao của yêu cầu đang chờ ở tuyến/repository | Kiểm thử tự động đạt; đang chờ con người review |
 | FR-FE07-035; AC-FE07-029 | UC32, UC35 | Kiểm thử hiển thị trạng thái bản sao và tải lại chuẩn cho Quản trị viên/Thủ thư | Kiểm thử tự động đạt; đang chờ con người review |
 | FR-FE07-038; AC-FE07-031 | UC34 | Cột lưu thông của quản trị viên và bài kiểm tra hợp đồng giao diện người dùng phù hợp với máy tính để bàn | Thẻ tự động; đang chờ đánh giá của con người |
+| FR-FE07-039; AC-FE07-032 | UC33, UC42 | Kiểm thử hợp đồng frontend từ không gian trả sách quá hạn tới phép tính FE09 | Kiểm thử tự động đạt; đang chờ con người rà soát |
 
 ---
 

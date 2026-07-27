@@ -11,12 +11,11 @@ import AppLayout from '../../component/layout/AppLayout';
 import { LineChart, DonutChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { objectToChart } from '../../utils/libraryFeatureViewModels';
+import { fmtDate, objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildUserReportParams } from '../../utils/reportFilters';
 import { getRoleLabel, getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
-const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 const REPORT_PAGE_SIZE = 20;
 const ACCOUNT_STATUS_OPTIONS = [
   { value: '', label: 'Tất cả tài khoản' },
@@ -26,10 +25,10 @@ const ACCOUNT_STATUS_OPTIONS = [
 ];
 const MEMBERSHIP_STATUS_OPTIONS = [
   { value: '', label: 'Tất cả hội viên' },
-  { value: 'PENDING', label: 'Chờ duyệt' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Từ chối' },
-  { value: 'INACTIVE', label: 'Ngừng hoạt động' },
+  { value: 'PENDING', label: getStatusLabel('PENDING') },
+  { value: 'APPROVED', label: getStatusLabel('APPROVED') },
+  { value: 'REJECTED', label: getStatusLabel('REJECTED') },
+  { value: 'INACTIVE', label: getStatusLabel('INACTIVE') },
 ];
 // @spec BR-FE12-008 — allowlist approve `roleId` cho user report.
 const ROLE_OPTIONS = [
@@ -264,11 +263,11 @@ export default function UserStatisticsPage() {
                 </tr>
               ))}
             </DataTable>
-            <div className="pagination report-pagination">
+            <nav className="pagination report-pagination" aria-label="Phân trang thống kê người dùng">
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page - 1, activeFilters)} disabled={loading || page <= 1}>Trang trước</button>
-              <span className="muted">Trang {page}/{totalPages}</span>
+              <span className="muted" aria-current="page">Trang {page}/{totalPages}</span>
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page + 1, activeFilters)} disabled={loading || page >= totalPages}>Trang sau</button>
-            </div>
+            </nav>
           </div>
         </>
       )}

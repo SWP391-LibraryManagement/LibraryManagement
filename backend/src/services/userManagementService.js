@@ -422,64 +422,6 @@ function createUserManagementService({
     };
   }
 
-  // @spec FR-FE11-004, FR-FE11-010, FR-FE11-020, FR-FE11-023, FR-FE11-028
-  async function updateUser(userId, input, context = {}) {
-    const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
-    const allowedFields = new Set(['expectedUpdatedAt', 'fullName', 'phone', 'address']);
-    const forbiddenField = Object.keys(input || {}).find((field) => !allowedFields.has(field));
-    if (forbiddenField) {
-      throw errors.forbidden(
-        'MANAGED_USER_UPDATE_FORBIDDEN',
-        'Admins may update only full name, phone number, and address.'
-      );
-    }
-
-    const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
-    if (!Number.isFinite(expectedUpdatedAt.getTime())) {
-      throw errors.badRequest('VALIDATION_ERROR', 'Expected updated timestamp is invalid.');
-    }
-
-    const updates = {};
-    if (input.fullName !== undefined) updates.fullName = cleanString(input.fullName);
-    if (input.phone !== undefined) updates.phone = cleanString(input.phone);
-    if (input.address !== undefined) updates.address = cleanString(input.address);
-
-    if (!Object.keys(updates).length) {
-      throw errors.badRequest('VALIDATION_ERROR', 'At least one editable field is required.');
-    }
-    if (updates.fullName === null) {
-      throw errors.badRequest('FULL_NAME_REQUIRED', 'Full name is required.');
-    }
-    validateLength(updates.fullName, 100, 'FULL_NAME_TOO_LONG', 'Full name');
-    validatePhone(updates.phone);
-    validateLength(updates.address, 255, 'ADDRESS_TOO_LONG', 'Address');
-
-    const result = await userLifecycleRepository.updateManagedUser({
-      adminUserId: context.adminUserId,
-      userId: parsedUserId,
-      expectedUpdatedAt,
-      changes: updates,
-      ipAddress: context.ip || null,
-      userAgent: context.userAgent || null,
-      now: clock(),
-    });
-    const outcomeErrors = {
-      ADMIN_NOT_FOUND: () => errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.'),
-      ADMIN_REQUIRED: () => errors.forbidden('ADMIN_REQUIRED', 'Admin access is required.'),
-      USER_NOT_FOUND: () => errors.notFound('USER_NOT_FOUND', 'User was not found.'),
-      STALE_USER_STATE: () => errors.conflict('STALE_USER_STATE', 'User state is stale.'),
-      VALIDATION_ERROR: () => errors.badRequest('VALIDATION_ERROR', 'Managed user data is invalid.'),
-    };
-
-    if (!['UPDATED', 'NO_CHANGE'].includes(result.outcome)) {
-      const createError = outcomeErrors[result.outcome];
-      if (!createError) throw errors.internal();
-      throw createError();
-    }
-
-    return userRepository.getManagedUserById(parsedUserId);
-  }
-
   // @spec FR-FE11-018, FR-FE11-019
   async function updateStatus(userId, input, context = {}) {
     const parsedUserId = parsePositiveId(userId, 'INVALID_USER_ID', 'User id is invalid.');
@@ -579,7 +521,6 @@ function createUserManagementService({
     listRoles,
     createUser,
     resendSetup,
-    updateUser,
     updateStatus,
     replaceRole,
   };

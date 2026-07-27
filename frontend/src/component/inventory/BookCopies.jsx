@@ -96,7 +96,7 @@ export default function BookCopies({ book, copies, onClose, onChanged = async ()
 
   return (
     <>
-      <Modal title={book.title} eyebrow="FE06 • Bản sao vật lý" onClose={onClose} width={960}>
+      <Modal title={book.title} eyebrow="Bản sao vật lý" onClose={onClose} width={960}>
         <DataTable
           caption="Danh sách bản sao"
           headers={['ID', 'Barcode', 'Vị trí', 'Trạng thái', 'Lý do', { label: 'Thao tác', align: 'right' }]}

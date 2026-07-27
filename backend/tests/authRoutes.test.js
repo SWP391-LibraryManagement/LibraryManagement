@@ -422,6 +422,41 @@ describe('FE02 auth vertical slice', () => {
     }).toEqual(stateBeforeDuplicate);
   });
 
+  test('duplicate username is rejected before creating a user, token, or notification', async () => {
+    const { app, dependencies } = makeTestApp();
+    const firstResponse = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'duplicate-user',
+        email: 'first-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+    expect(firstResponse.status).toBe(201);
+    const stateBeforeDuplicate = {
+      users: dependencies.state.users.length,
+      tokens: dependencies.state.tokens.length,
+      notificationRequests: dependencies.state.notificationRequests.length,
+    };
+
+    const duplicateResponse = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'duplicate-user',
+        email: 'second-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(duplicateResponse.status).toBe(409);
+    expect(duplicateResponse.body.error.code).toBe('USERNAME_ALREADY_REGISTERED');
+    expect({
+      users: dependencies.state.users.length,
+      tokens: dependencies.state.tokens.length,
+      notificationRequests: dependencies.state.notificationRequests.length,
+    }).toEqual(stateBeforeDuplicate);
+  });
+
   test('concurrent duplicate registration maps the SQL email conflict to 409', async () => {
     const { app, dependencies } = makeTestApp();
     const conflict = Object.assign(new Error("Violation of UNIQUE INDEX 'UX_Users_Email'."), {
@@ -444,6 +479,29 @@ describe('FE02 auth vertical slice', () => {
     });
     expect(dependencies.state.users).toHaveLength(0);
     expect(dependencies.state.tokens).toHaveLength(0);
+  });
+
+  test('concurrent duplicate registration maps the SQL username conflict to 409', async () => {
+    const { app, dependencies } = makeTestApp();
+    const conflict = Object.assign(new Error("Violation of UNIQUE KEY constraint 'UQ__Users__Username'."), {
+      number: 2627,
+    });
+    jest.spyOn(dependencies.userRepository, 'createRegisteredUser').mockRejectedValueOnce(conflict);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'concurrent-user',
+        email: 'concurrent-username@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('USERNAME_ALREADY_REGISTERED');
+    expect(dependencies.state.users).toHaveLength(0);
+    expect(dependencies.state.tokens).toHaveLength(0);
+    expect(dependencies.state.notificationRequests).toHaveLength(0);
   });
 
   // @spec FR-FE02-019 AC-FE02-001
@@ -722,6 +780,31 @@ describe('FE02 auth vertical slice', () => {
 
     const newPasswordLogin = await login(app, 'change@example.test', 'NewPassword1!');
     expect(newPasswordLogin.status).toBe(200);
+  });
+
+  test('change-password OTP does not claim delivery when SMTP is unavailable', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'otp-delivery@example.test');
+    const loginResponse = await login(app, 'otp-delivery@example.test');
+    dependencies.emailService.sendChangePasswordOtpEmail = jest.fn(async () => ({
+      sent: false,
+      reason: 'SMTP_NOT_CONFIGURED',
+    }));
+
+    const response = await request(app)
+      .post('/api/auth/change-password/request-otp')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({
+        currentPassword: 'Password1!',
+        newPassword: 'NewPassword1!',
+        confirmNewPassword: 'NewPassword1!',
+      });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.code).toBe('EMAIL_DELIVERY_FAILED');
+    expect(dependencies.state.auditLogs).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED' }),
+    ]));
   });
 
   test('change-password OTP rejects invalid ownership/state and changes the password once', async () => {
@@ -1071,9 +1154,11 @@ describe('FE02 auth vertical slice', () => {
     const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
     await registerAndVerify(app, 'locked@example.test');
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await login(app, 'locked@example.test', 'WrongPassword1!');
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await login(app, 'locked@example.test', 'WrongPassword1!');
+      expect(response.status).toBe(401);
     }
+    const thresholdResponse = await login(app, 'locked@example.test', 'WrongPassword1!');
 
     expect(dependencies.state.users[0].status).toBe('LOCKED');
     expect(dependencies.state.users[0].lockedUntil).toEqual(
@@ -1085,10 +1170,16 @@ describe('FE02 auth vertical slice', () => {
         metadata: { identifier: 'locked@example.test', reason: 'FAILED_ATTEMPT_THRESHOLD' },
       }),
     ]));
+    expect(thresholdResponse.status).toBe(429);
+    expect(thresholdResponse.body.error).toMatchObject({
+      code: 'ACCOUNT_LOCKED',
+      details: { retryAfterSeconds: 30 * 60 },
+    });
 
     const lockedResponse = await login(app, 'locked@example.test', 'Password1!');
     expect(lockedResponse.status).toBe(429);
     expect(lockedResponse.body.error.code).toBe('ACCOUNT_LOCKED');
+    expect(lockedResponse.body.error.details.retryAfterSeconds).toBe(30 * 60);
   });
 
   test('only failures in the rolling 15-minute window count toward account lock', async () => {

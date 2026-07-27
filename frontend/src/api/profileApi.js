@@ -173,7 +173,7 @@ export async function requestChangePasswordOtp({ currentPassword, newPassword, c
     method: 'post',
     url: '/auth/change-password/request-otp',
     data: { currentPassword, newPassword, confirmNewPassword },
-  }, 'KhÃ´ng thá»ƒ gá»­i mÃ£ OTP. Vui lÃ²ng thá»­ láº¡i.');
+  }, 'Không thể gửi mã OTP. Vui lòng thử lại.');
 }
 
 export async function confirmChangePassword({ otp, newPassword }) {
@@ -181,5 +181,5 @@ export async function confirmChangePassword({ otp, newPassword }) {
     method: 'post',
     url: '/auth/change-password/confirm',
     data: { otp, newPassword },
-  }, 'KhÃ´ng thá»ƒ Ä‘á»•i máº­t kháº©u. Vui lÃ²ng kiá»ƒm tra mÃ£ OTP.');
+  }, 'Không thể đổi mật khẩu. Vui lòng kiểm tra mã OTP.');
 }
