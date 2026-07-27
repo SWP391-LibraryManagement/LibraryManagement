@@ -8,6 +8,10 @@ const workflow = fs.readFileSync(
   path.join(root, '.github/workflows/deploy-staging.yml'),
   'utf8'
 );
+const repairWorkflow = fs.readFileSync(
+  path.join(root, '.github/workflows/repair-staging-metadata.yml'),
+  'utf8'
+);
 const operatorScript = fs.readFileSync(
   path.join(root, 'scripts/invoke-appservice-library-metadata-migration.ps1'),
   'utf8'
@@ -39,4 +43,12 @@ test('runs the bounded command in the deployed Linux App Service directory witho
   assert.match(operatorScript, /dir = '\/home\/site\/wwwroot'/);
   assert.match(operatorScript, /\/api\/command/);
   assert.doesNotMatch(operatorScript, /Write-(Host|Output).*credential/i);
+});
+
+test('provides a discoverable manual-only repair workflow that verifies staging afterward', () => {
+  assert.match(repairWorkflow, /^name: Repair staging metadata schema/m);
+  assert.match(repairWorkflow, /on:\s+workflow_dispatch:/);
+  assert.doesNotMatch(repairWorkflow, /\b(workflow_run|push|schedule):/);
+  assert.match(repairWorkflow, /run: \.\/scripts\/invoke-appservice-library-metadata-migration\.ps1/);
+  assert.match(repairWorkflow, /run: npm run smoke:staging/);
 });

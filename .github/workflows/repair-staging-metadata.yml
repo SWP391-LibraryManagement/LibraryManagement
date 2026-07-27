@@ -1,0 +1,36 @@
+name: Repair staging metadata schema
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: library-staging
+  cancel-in-progress: false
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_API_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Apply reviewed library metadata migration
+        shell: pwsh
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: ./scripts/invoke-appservice-library-metadata-migration.ps1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Verify staging endpoints
+        run: npm run smoke:staging
+        env:
+          STAGING_FRONTEND_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          STAGING_API_URL: ${{ vars.STAGING_API_URL }}

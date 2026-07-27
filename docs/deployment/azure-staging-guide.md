@@ -218,17 +218,18 @@ must fail rather than accepting a deployment whose metadata tabs cannot load.
 If the deploy workflow reports `API schema readiness check failed with HTTP 503`, do not remove or
 skip the readiness check. The preferred repair path is:
 
-1. Open GitHub Actions -> `Deploy staging` -> `Run workflow`.
-2. Enable `Apply the reviewed FE05 metadata compatibility migration before smoke tests`.
-3. Run the workflow and confirm the migration step and subsequent smoke test both pass.
+1. Open GitHub Actions -> `Repair staging metadata schema`.
+2. Select `Run workflow`; do not use `Re-run jobs` on the failed deployment.
+3. Confirm `Apply reviewed library metadata migration` and the subsequent smoke test both pass.
 
-That option is `false` by default and is available only for a manual `workflow_dispatch`. It deploys
-the bounded migration runner and the one reviewed SQL file, then invokes
+The repair workflow has only a manual `workflow_dispatch` trigger. It invokes
 `npm run migrate:library-metadata` inside the Linux App Service through its Kudu command endpoint.
 The command therefore uses the App Service database settings and network path; the publish-profile
 secret is kept in the workflow environment and is not printed.
 
-Normal post-CI staging deployments never apply SQL. As a fallback, an authorized operator may
+The regular `Deploy staging` workflow also retains its default-off
+`apply_library_metadata_migration` manual input. Normal post-CI staging deployments never apply SQL.
+As a fallback, an authorized operator may
 connect through Azure Query Editor, SSMS, or an operator machine whose exact temporary IP is
 allowlisted, apply the metadata compatibility migration, remove the temporary firewall rule, and
 rerun the staging workflow. Do not expose Azure SQL to GitHub-hosted runner IP ranges or widen the

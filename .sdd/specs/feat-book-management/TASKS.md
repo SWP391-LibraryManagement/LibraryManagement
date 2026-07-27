@@ -163,4 +163,5 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
   - Package only the bounded migration runner and the reviewed metadata SQL with the backend.
   - Permit execution only from a default-off `workflow_dispatch` boolean; automatic post-CI deploys remain read-only with respect to schema.
+  - Provide a clearly named manual-only repair workflow so operators do not mistake `Re-run jobs` for a migration-enabled run.
   - Invoke the command inside the Linux App Service so it uses the target runtime settings/network path, then require the existing readiness and smoke checks to pass.

@@ -95,8 +95,8 @@ async function runStagingSmoke({
   ) {
     throw new Error(
       `API schema readiness check failed with HTTP ${readinessResponse.status}. `
-      + 'Run the Deploy staging workflow manually with '
-      + 'apply_library_metadata_migration enabled, or apply '
+      + 'Run the Repair staging metadata schema workflow manually, or run '
+      + 'Deploy staging with apply_library_metadata_migration enabled. Alternatively, apply '
       + 'database/migrations/2026-07-22-library-metadata-compatibility.sql '
       + 'as an authorized database operator, then rerun the smoke check.'
     );
