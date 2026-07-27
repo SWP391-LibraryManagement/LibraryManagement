@@ -6,7 +6,7 @@
 
 # Tình trạng triển khai: COMPLETE - ĐÃ GHI NHẬN BẰNG CHỨNG HOÀN TẤT GIAI ĐOẠN 2
 
-# Chủ sở hữu: Đạt
+# Chủ sở hữu: Dat
 
 # Cập nhật lần cuối: 2026-07-21
 
@@ -554,7 +554,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] SQL `rowversion`/`If-Match`, audit nguyên tử, vô hiệu hóa mềm và hợp đồng tồn kho do máy chủ hỗ trợ đều được triển khai.
 - [x] Việc kiểm tra lại khoản mượn/đặt chỗ đã khóa và sách gốc ACTIVE có phạm vi bao phủ bằng tuyến, SQL tĩnh và hồi quy SQL trực tiếp.
 - [x] Các chính sách xác định về phân trang, vị trí, lý do, phép chiếu an toàn và quyền sở hữu đã được triển khai.
-- [ ] Chủ sở hữu Đạt và FE05/FE07/FE08 xác nhận quyền sở hữu UX/trạng thái và tính tương thích thứ tự khóa.
+- [ ] Chủ sở hữu Dat và FE05/FE07/FE08 xác nhận quyền sở hữu UX/trạng thái và tính tương thích thứ tự khóa.
 - [ ] H3 cuối cùng, merge và CI `main` sau merge được ghi nhận.
 ## Chỉnh sửa bảng điều khiển nhân viên 2026-07-22
 

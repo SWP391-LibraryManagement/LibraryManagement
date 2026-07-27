@@ -4,7 +4,7 @@
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Chủ sở hữu: Đạt
+# Chủ sở hữu: Dat
 
 # Cập nhật lần cuối: 2026-07-25
 
@@ -25,8 +25,8 @@
 > Phần cốt lõi của Giai đoạn 2 đã hoàn tất. Lớp bổ sung cho Bảng điều khiển quản trị đã được phê duyệt và triển khai
 > cục bộ cho `FR-FE04-014` và `AC-FE04-013`, có kiểm thử nguồn tập trung và
 > một kịch bản trình duyệt đã xác thực. Việc kết thúc sạch tiến trình trình duyệt, Azure
-> Staging, H2 và nghiệm thu thủ công vẫn là các cổng phát hành, không phải hành vi sản phẩm FE04
-> còn thiếu. Mức truy vết nguồn hiện tại là `14/14 FR`.
+> Staging, H2 và nghiệm thu thủ công vẫn là các cổng phát hành, không phải hành vi sản phẩm
+> FE04 còn thiếu. Mức truy vết nguồn hiện tại là `14/14 FR`.
 
 ---
 
@@ -361,7 +361,7 @@ Tính năng này không bao gồm:
 | Q-FE04-004 | Việc phê duyệt tư cách thành viên chỉ thay đổi trạng thái đơn đăng ký/thành viên, không thay đổi vai trò người dùng. | Gói review 2026-06-10 | APPROVED |
 | Q-FE04-005 | Thủ thư và Quản trị viên có thể phê duyệt/từ chối đơn đăng ký thành viên. | Gói review 2026-06-10 | APPROVED |
 | Q-FE04-006 | Sau khi phê duyệt/từ chối commit, nếu requester đã được cấu hình thì hệ thống yêu cầu thông báo FE10 chuẩn; lỗi nhà cung cấp/yêu cầu không chặn và không hoàn tác quyết định. | Gói review 2026-06-10; căn chỉnh mã 2026-07-19 | APPROVED |
-| Q-FE04-007 | `Members.Status` là nguồn đủ điều kiện chuẩn; `MembershipApplications` giữ lại lịch sử đánh giá bất biến. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE04-007 | `Members.Status` là nguồn đủ điều kiện chuẩn; `MembershipApplications` giữ lại lịch sử đánh giá bất biến. | Nhat phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
 
 ---
 

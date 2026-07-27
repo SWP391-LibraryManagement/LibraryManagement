@@ -4,7 +4,7 @@
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Chủ sở hữu: Dũng
+# Chủ sở hữu: Dung
 
 # Cập nhật lần cuối: 2026-07-27
 
@@ -447,10 +447,10 @@ Tính năng này không bao gồm:
 | Q-FE05-005 | Một cuốn sách thuộc một thể loại trong Giai đoạn 1; danh mục nhiều-nhiều là công việc trong tương lai. | Gói review 2026-06-10 | APPROVED |
 | Q-FE05-006 | Ảnh bìa được lưu dưới dạng văn bản URL/đường dẫn, không phải nội dung nhị phân trong cơ sở dữ liệu. | Gói review 2026-06-10 | APPROVED |
 | Q-FE05-007 | Việc hủy kích hoạt sẽ ẩn sách khỏi danh mục công khai ngay cả khi các bản sao được mượn hoặc đặt trước; hồ sơ lịch sử và bản sao vẫn không thay đổi. | Chỉnh sửa của người dùng 2026-06-21 | APPROVED |
-| Q-FE05-008 | Nhân viên có thể chuyển trạng thái sách bằng lệnh vô hiệu hóa/kích hoạt lại chuyên dụng; PUT siêu dữ liệu không thay đổi trạng thái và trình duyệt công khai ẩn sách `INACTIVE`. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
-| Q-FE05-009 | Các khung nhìn dành cho nhân viên/công khai hiển thị tính khả dụng dẫn xuất đơn giản (`Còn sách` / `Không khả dụng`). FE05 không bao giờ cập nhật `BookCopies.Status`; FE06/FE07/FE08 sở hữu các chuyển đổi bản sao tương ứng. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
-| Q-FE05-010 | Thay đổi sách hiện có dùng SQL `rowversion` được cung cấp dưới dạng phiên bản không trong suốt và yêu cầu `If-Match`; phiên bản cũ/bị thiếu trả về `409 STALE_BOOK_STATE`. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
-| Q-FE05-011 | Chính sách truy vấn mang tính quyết định: trình duyệt công khai sử dụng danh sách cho phép FE01 chính xác và `Title ASC, BookId ASC` cố định; danh sách nhân viên cũng chấp nhận sắp xếp trong title/publishYear/createdAt và đặt hàng asc/desc. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15; phê duyệt phong bì người dùng 2026-07-19 | APPROVED |
+| Q-FE05-008 | Nhân viên có thể chuyển trạng thái sách bằng lệnh vô hiệu hóa/kích hoạt lại chuyên dụng; PUT siêu dữ liệu không thay đổi trạng thái và trình duyệt công khai ẩn sách `INACTIVE`. | Nhat phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-009 | Các khung nhìn dành cho nhân viên/công khai hiển thị tính khả dụng dẫn xuất đơn giản (`Còn sách` / `Không khả dụng`). FE05 không bao giờ cập nhật `BookCopies.Status`; FE06/FE07/FE08 sở hữu các chuyển đổi bản sao tương ứng. | Nhat phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-010 | Thay đổi sách hiện có dùng SQL `rowversion` được cung cấp dưới dạng phiên bản không trong suốt và yêu cầu `If-Match`; phiên bản cũ/bị thiếu trả về `409 STALE_BOOK_STATE`. | Nhat phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-011 | Chính sách truy vấn mang tính quyết định: trình duyệt công khai sử dụng danh sách cho phép FE01 chính xác và `Title ASC, BookId ASC` cố định; danh sách nhân viên cũng chấp nhận sắp xếp trong title/publishYear/createdAt và đặt hàng asc/desc. | Nhat phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15; phê duyệt phong bì người dùng 2026-07-19 | APPROVED |
 | Q-FE05-012 | Thủ thư/Quản trị viên có thể đọc các lựa chọn tham chiếu đang hoạt động từ `/api/books/metadata`; chỉ Quản trị viên mới có thể thay đổi dữ liệu tham chiếu danh mục/tác giả/nhà xuất bản qua tích hợp Thư viện quản trị FE11. Các thao tác thay đổi sách vẫn do FE05 sở hữu cho cả hai vai trò. | Đối chiếu vai trò đa tính năng 2026-07-23 | APPROVED |
 
 ---

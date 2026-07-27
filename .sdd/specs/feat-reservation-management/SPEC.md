@@ -28,16 +28,16 @@
 > khi việc xử lý hết hạn đẩy một hoặc nhiều đặt chỗ lên lượt kế tiếp, mà không thay đổi
 > DTO của các đặt chỗ được đẩy lên.
 >
-> Bản sửa đổi v0.5.7 giữ nguyên các hợp đồng hiển thị sách đã chọn và phân tách
-> hiện tại/lịch sử của v0.5.6, đồng thời làm rõ rằng các mảng vai trò Thành viên/nhân viên
+> Bản sửa đổi v0.5.7 giữ nguyên các hợp đồng hiển thị sách đã chọn và phân tách của v0.5.6
+> giữa hiện tại/lịch sử, đồng thời làm rõ rằng các mảng vai trò Thành viên/nhân viên
 > cũ không hợp lệ chỉ là dữ liệu tương thích, không phải tài khoản lưu trữ được hỗ trợ.
 >
 > Bản sửa đổi v0.5.8 tích hợp khoảng thời gian nhận sách đã được thông báo từ phiên bản trước và
 > luồng bàn giao chính xác bản sao đang được giữ sang FE07, đồng thời giữ nguyên quy tắc tương thích một vai trò.
 >
-> Bản sửa đổi v0.5.9 tích hợp quy tắc loại trừ khi đang mượn một bản khác của cùng cuốn
-> sách từ phiên bản v0.5.8 trước đó với khoảng thời gian nhận sách, luồng bàn giao chính xác
-> sang FE07 và hợp đồng tương thích một vai trò.
+> Bản sửa đổi v0.5.9 tích hợp quy tắc loại trừ v0.5.8 khi đang mượn một bản khác của cùng cuốn
+> sách với khoảng thời gian nhận sách, luồng bàn giao chính xác sang FE07 và hợp đồng tương thích
+> một vai trò.
 >
 > Bản sửa đổi v0.5.10 đối soát hợp đồng vị trí hàng đợi v0.5.9 được phát triển song song
 > từ `main@8d0059b`, giữ `FE08-T046` cho hành vi đã tích hợp trước đó, chuyển nhiệm vụ chỉ kiểm
@@ -476,9 +476,9 @@ Tính năng này không bao gồm:
 | Q-FE08-003 | Mỗi Thành viên có tối đa 3 đặt chỗ đang mở, tính cả `ACTIVE` và `NOTIFIED`, không tính các trạng thái cuối. | Gói rà soát 2026-06-10; chuẩn hóa hàng đợi 2026-07-17 | APPROVED |
 | Q-FE08-004 | Đặt chỗ đã thông báo có hiệu lực trong 2 ngày theo lịch. | Gói rà soát 2026-06-10 | APPROVED |
 | Q-FE08-005 | Thủ thư xử lý hàng đợi thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | Gói rà soát 2026-06-10 | APPROVED |
-| Q-FE08-006 | Đặt chỗ đang hoạt động nhưng không đủ điều kiện bị bỏ qua trong lần chạy hiện tại, vẫn giữ `ACTIVE` và chỉ được thử lại trong một lần chạy thủ công sau. | Review chuẩn hóa của Nhật 2026-07-17 | APPROVED |
-| Q-FE08-007 | Khi không có đặt chỗ đủ điều kiện, quá trình xử lý hàng đợi không trả về lựa chọn và giữ nguyên trạng thái bản sao/đặt chỗ. | Review chuẩn hóa của Nhật 2026-07-17 | APPROVED |
-| Q-FE08-008 | Yêu cầu FE10 thất bại vẫn giữ lượt giữ đã xác nhận và ghi nhật ký kiểm toán lỗi; Giai đoạn 1 không có tiến trình thử lại tự động. | Rà soát chuẩn hóa của Nhật 2026-07-17 | APPROVED |
+| Q-FE08-006 | Đặt chỗ đang hoạt động nhưng không đủ điều kiện bị bỏ qua trong lần chạy hiện tại, vẫn giữ `ACTIVE` và chỉ được thử lại trong một lần chạy thủ công sau. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
+| Q-FE08-007 | Khi không có đặt chỗ đủ điều kiện, quá trình xử lý hàng đợi không trả về lựa chọn và giữ nguyên trạng thái bản sao/đặt chỗ. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
+| Q-FE08-008 | Yêu cầu FE10 thất bại vẫn giữ lượt giữ đã xác nhận và ghi nhật ký kiểm toán lỗi; Giai đoạn 1 không có tiến trình thử lại tự động. | Đánh giá chuẩn hóa của Nhat 2026-07-17 | APPROVED |
 | Q-FE08-009 | `NotifiedAt` và `ExpiresAt` là lịch sử bất biến sau khi thông báo và được giữ sau khi hoàn tất, hết hạn hoặc hủy; `CancelledAt` chỉ thuộc các bản ghi đã hủy. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 | Q-FE08-010 | `queuePosition` được tính từ thứ tự hàng đợi chuẩn và `POST /api/reservations/process-queue` là điểm cuối xử lý hàng đợi duy nhất trong Giai đoạn 1. | Chuẩn hóa hợp đồng hàng đợi 2026-07-17 | APPROVED |
 | Q-FE08-011 | Việc chọn ứng viên dùng `GET /api/reservations/candidates` được bảo vệ và chỉ dành cho Thành viên; điểm cuối trả về một bản ghi an toàn cho mỗi bản sao vật lý đủ điều kiện cùng `hasActiveReservation` trong phạm vi Thành viên, vẫn hiển thị các bản sao đã được đặt chỗ nhưng vô hiệu hóa thao tác trùng lặp, giữ nguyên ranh giới FE01/FE06 và giữ hợp đồng `POST /api/reservations { copyId }`. | Người dùng phê duyệt `APPROVE TD-028 - Option A` và `APPROVE FE08 DESIGN`, 2026-07-19; làm rõ giao diện Thành viên 2026-07-21 | APPROVED |

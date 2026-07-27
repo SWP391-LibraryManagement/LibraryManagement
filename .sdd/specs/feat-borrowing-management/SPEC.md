@@ -4,7 +4,7 @@
 
 # Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI REVIEW 2026-07-28
 
-# Chủ sở hữu: Nhật
+# Chủ sở hữu: Nhat
 
 # Cập nhật lần cuối: 2026-07-28
 
@@ -27,7 +27,7 @@
 > Bản sửa đổi v0.7.5 ban đầu mô hình hóa quyền nhân viên đối với tác nhân gia hạn có nhiều vai trò,
 > yêu cầu phản hồi/audit khi trả sách phải dùng ngày đến hạn đã khóa trong giao dịch,
 > đồng thời cấm phép tính ngày gia hạn theo múi giờ cục bộ của máy chủ.
-> Nhật đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Việc phê duyệt chỉ cho phép
+> Nhat đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Việc phê duyệt chỉ cho phép
 > chuẩn bị PLAN/TASKS; triển khai vẫn chưa được xác nhận cho đến khi hoàn tất bằng chứng
 > RED-GREEN và cổng chấp nhận. Tiền đề đa vai trò của bản sửa đổi này chỉ mang tính lịch sử
 > và đã được v0.7.6 thay thế.
@@ -35,7 +35,7 @@
 > Bản sửa đổi v0.7.6 dung hòa v0.7.5 với `DEC-GEN-005` trên toàn dự án: mọi
 > tài khoản có chính xác một vai trò. Tài khoản đa vai trò không phải mô hình tác nhân được hỗ trợ.
 > Tự phục vụ của Thành viên chỉ dành cho `MEMBER`; Thủ thư/Quản trị viên vẫn có phạm vi gia hạn
-> cho nhân viên nhưng không được bỏ qua điều kiện của chủ sở hữu khoản mượn. Nhật đã xác nhận
+> cho nhân viên nhưng không được bỏ qua điều kiện của chủ sở hữu khoản mượn. Nhat đã xác nhận
 > quyết định này và cho phép đối chiếu vào 2026-07-27.
 >
 > Bản sửa đổi v0.7.7 tích hợp thao tác bàn giao bản sao chuẩn ở phía FE08, đồng thời
@@ -45,13 +45,13 @@
 > loại trừ đặt chỗ cùng một cuốn sách, đồng thời giữ nguyên thao tác bàn giao của v0.7.7 và mọi
 > hợp đồng đối chiếu quy tắc.
 >
-> Bản sửa đổi v0.7.9 đối chiếu nhánh v0.7.8 song song với bộ chặn tiền phạt `UNPAID`
-> chuẩn của FE09 và ngữ cảnh tiền phạt chỉ đọc của Thành viên từ
+> Bản sửa đổi v0.7.9 đối chiếu nhánh v0.7.8 song song với quy tắc chặn chuẩn của FE09 cho
+> giá trị dương `UNPAID` và ngữ cảnh tiền phạt chỉ đọc của Thành viên từ
 > `main@8d0059b`; quyền sở hữu bộ sưu tập nhân viên và tất cả các bất biến FE07 trước đó là
 > không thay đổi.
 >
-> Bản sửa đổi v0.8.0 khép khoảng trống quyền sở hữu bản sao đang chờ: một BorrowRequest
-> `PENDING` độc quyền giữ quyền sở hữu từng bản sao được yêu cầu mà không thay đổi
+> Bản sửa đổi v0.8.0 khép khoảng trống quyền sở hữu bản sao đang chờ: một `PENDING`
+> BorrowRequest độc quyền giữ quyền sở hữu từng bản sao được yêu cầu mà không thay đổi
 > `BookCopies.Status`. Danh sách ứng viên của Thành viên và thao tác tạo đều loại trừ bản sao đã được yêu cầu;
 > các thay đổi thủ công của FE06 tôn trọng quyền sở hữu này; quyết định của Quản trị viên/Thủ thư
 > tải lại trạng thái chuẩn và thao tác từ chối giải phóng quyền sở hữu một cách nguyên tử.
@@ -647,7 +647,7 @@ Tính năng này không bao gồm:
 | Q-FE07-007 | Trạng thái yêu cầu có tự động trở thành `COMPLETED` khi mọi chi tiết đã trả/thất lạc/hư hỏng không? | Đội | Đã giải quyết: có, đặt `BorrowRequests.Status = COMPLETED` khi mọi chi tiết đều ở trạng thái cuối. |
 | Q-FE07-008 | Lượt trả hư hỏng/thất lạc có tạo ngay bản ghi phạt hay chỉ cung cấp dữ liệu cho FE09? | Team/Teacher | Đã giải quyết: FE07 chỉ ghi dữ liệu trả hư hỏng/thất lạc; FE09 sở hữu việc tạo tiền phạt. |
 | Q-FE07-009 | Hợp đồng truy vấn lịch sử mượn là gì? | Chuẩn hóa đặc tả 2026-07-17 | Đã giải quyết: `status?, fromDate?, toDate?, page?, limit?`; trang 1/giới hạn 20, tối đa 100, phạm vi ngày làm việc bao gồm hai đầu, thứ tự BorrowDate/BorrowDetailId ổn định và xác thực trước truy vấn. |
-| Q-FE07-010 | Tài khoản đa vai trò có được hỗ trợ không và vai trò nào có phạm vi gia hạn? | Nhật, 2026-07-27 | Đã giải quyết: không. Mỗi tài khoản có chính xác một vai trò theo DEC-GEN-005. Tài khoản Thành viên chỉ gia hạn chi tiết của chính mình; tài khoản Thủ thư/Quản trị viên có thể gia hạn chi tiết của bất kỳ Thành viên nào, và mọi bộ chặn nghiệp vụ đều được đánh giá theo chủ sở hữu khoản mượn. |
+| Q-FE07-010 | Tài khoản đa vai trò có được hỗ trợ không và vai trò nào có phạm vi gia hạn? | Nhat, 2026-07-27 | Đã giải quyết: không. Mỗi tài khoản có chính xác một vai trò theo DEC-GEN-005. Tài khoản Thành viên chỉ gia hạn chi tiết của chính mình; tài khoản Thủ thư/Quản trị viên có thể gia hạn chi tiết của bất kỳ Thành viên nào, và mọi bộ chặn nghiệp vụ đều được đánh giá theo chủ sở hữu khoản mượn. |
 
 ---
 
@@ -800,7 +800,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Quyết định ưu tiên đa vai trò v0.7.5 lịch sử được ghi lại; được thay thế bằng hợp đồng vai trò đơn v0.7.6 bên dưới.
 - [x] Khóa phản hồi trả về và tính toán kiểm tra đối với kết quả giao dịch có thẩm quyền.
 - [x] Khóa so sánh gia hạn và mở rộng cho những người trợ giúp `Asia/Ho_Chi_Minh` được chia sẻ.
-- [x] Con người Nhật đã xem xét và phê duyệt v0.7.5 SPEC bằng văn bản trên 2026-07-27; PLAN/TASKS có thể tiếp tục, trong khi việc triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
+- [x] Nhat đã trực tiếp xem xét và phê duyệt SPEC v0.7.5 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, trong khi việc triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
 
 ### 17.4 Bản sửa đổi v0.7.6 Cổng tích hợp chính
 
@@ -808,4 +808,4 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Từ chối các tài khoản đa vai trò dưới dạng mô hình tác nhân không được hỗ trợ; FE11 sửa chữa các ánh xạ cũ thành một vai trò.
 - [x] Duy trì tính năng tự phục vụ dành riêng cho thành viên đối với tài khoản Thành viên trong khi vẫn duy trì việc gia hạn hoạt động Librarian/Admin.
 - [x] Duy trì tính đủ điều kiện của chủ sở hữu khoản vay, tiền phạt, quá hạn, bảo lưu và kiểm tra giới hạn gia hạn.
-- [x] Nhật ủy quyền thực hiện đối chiếu trên 2026-07-27; khác biệt tích hợp vẫn tuân theo phụ lục H2 trước khi cam kết.
+- [x] Nhat ủy quyền thực hiện đối chiếu vào 2026-07-27; khác biệt tích hợp vẫn tuân theo phụ lục H2 trước khi commit.

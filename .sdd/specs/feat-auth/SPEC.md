@@ -4,7 +4,7 @@
 
 # Trạng thái: BASELINE ĐÃ PHÊ DUYỆT 2026-07-17 - ĐỐI SOÁT HỢP ĐỒNG ĐANG CHỜ RÀ SOÁT THỦ CÔNG
 
-# Chủ sở hữu: Đạt
+# Chủ sở hữu: Dat
 
 # Cập nhật lần cuối: 2026-07-27
 
@@ -24,7 +24,7 @@
 >
 > Các quyết định trong đặc tả này đã được xem xét và phê duyệt trên 2026-06-10. Xem `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
-> Nhật đã phê duyệt bản sửa đổi OTP của FE02/FE10 và baseline thiết lập tài khoản FE02/FE10/FE11 vào 2026-07-17. Phần triển khai FE02/FE10 đã được hợp nhất qua PR #42-#44 và chịu sự điều chỉnh của ADR-004; tài liệu này ghi lại hợp đồng ràng buộc với bên yêu cầu đã được hợp nhất.
+> Nhat đã phê duyệt bản sửa đổi OTP của FE02/FE10 và baseline thiết lập tài khoản FE02/FE10/FE11 vào 2026-07-17. Phần triển khai FE02/FE10 đã được hợp nhất qua PR #42-#44 và chịu sự điều chỉnh của ADR-004; tài liệu này ghi lại hợp đồng ràng buộc với bên yêu cầu đã được hợp nhất.
 
 ---
 
@@ -587,14 +587,14 @@ Tính năng này không bao gồm:
 | Q-FE02-008 | Người dùng không hoạt động không thể đăng nhập; công việc tự động khóa người dùng không hoạt động nằm ngoài phạm vi của Giai đoạn 1. | Gói review 2026-06-10 | APPROVED |
 | Q-FE02-009 | Sử dụng mã thông báo truy cập JWT cộng với mã thông báo làm mới. | Gói review 2026-06-10 | APPROVED |
 | Q-FE02-010 | Đặt lại mật khẩu yêu cầu quyền sở hữu email được xác minh thông qua đặt lại sáu chữ số OTP; Mã thông báo đặt lại mật khẩu cũ vẫn được chấp nhận để tương thích. | Gói review 2026-06-10; OTP căn chỉnh 2026-07-14 | APPROVED |
-| Q-FE02-011 | Giao diện người dùng tương tác sử dụng OTP email gồm sáu chữ số để xác minh và đặt lại, giữ payload mã thông báo legacy để tương thích và áp dụng thời gian chờ gửi lại 60 giây ở máy khách. | Xác nhận Nhật 2026-07-14 | APPROVED |
-| Q-FE02-012 | FE02 tạo/xác thực OTP xác minh và đặt lại, đồng thời gửi yêu cầu chuẩn qua requester FE10 gắn với FE02. FE10 kết xuất/gửi các OTP đó; lỗi không chặn giao dịch nguồn và thao tác gửi lại tạo sự kiện mã thông báo mới. | ADR-004; Nhật phê duyệt 2026-07-15; căn chỉnh mã 2026-07-19 | APPROVED |
-| Q-FE02-013 | FE11 phát hành `ACCOUNT_SETUP`; FE10 chỉ gửi mã thông báo đó cho FE11; FE02 sử dụng mã thông báo theo cách nguyên tử và chuyển tài khoản từ `INACTIVE` sang `ACTIVE`. | ADR-005; Nhật phê duyệt 2026-07-15 | APPROVED |
+| Q-FE02-011 | Giao diện người dùng tương tác sử dụng OTP email gồm sáu chữ số để xác minh và đặt lại, giữ payload mã thông báo legacy để tương thích và áp dụng thời gian chờ gửi lại 60 giây ở máy khách. | Xác nhận của Nhat 2026-07-14 | APPROVED |
+| Q-FE02-012 | FE02 tạo/xác thực OTP xác minh và đặt lại, đồng thời gửi yêu cầu chuẩn qua requester FE10 gắn với FE02. FE10 kết xuất/gửi các OTP đó; lỗi không chặn giao dịch nguồn và thao tác gửi lại tạo sự kiện mã thông báo mới. | ADR-004; Nhat phê duyệt 2026-07-15; căn chỉnh mã 2026-07-19 | APPROVED |
+| Q-FE02-013 | FE11 phát hành `ACCOUNT_SETUP`; FE10 chỉ gửi mã thông báo đó cho FE11; FE02 sử dụng mã thông báo theo cách nguyên tử và chuyển tài khoản từ `INACTIVE` sang `ACTIVE`. | ADR-005; Nhat phê duyệt 2026-07-15 | APPROVED |
 | Q-FE02-014 | FE02 tự đăng ký luôn tạo tài khoản Thành viên; FE11 là tính năng Giai đoạn 1 duy nhất tạo tài khoản Thủ thư hoặc Quản trị viên. | Chuẩn hóa tính năng chéo 2026-07-17 | APPROVED |
 | Q-FE02-015 | Mỗi mã thông báo FE11 `ACCOUNT_SETUP` sẽ hết hạn đúng 24 giờ sau khi phát hành. | Chuẩn hóa nhiều tính năng 2026-07-17 | APPROVED |
 | Q-FE02-016 | `/api/auth/refresh-token` xác thực ứng dụng khách bằng mã thông báo làm mới đã gửi, không yêu cầu mã thông báo truy cập hợp lệ, trả về mã thông báo truy cập mới và trả về mã thông báo làm mới đã gửi không thay đổi. | Chuẩn hóa hợp đồng xác thực 2026-07-17; căn chỉnh mã 2026-07-19 | APPROVED |
 | Q-FE02-017 | Các giá trị trạng thái người dùng liên tục là `ACTIVE`, `INACTIVE` và `LOCKED`; Việc hủy kích hoạt FE11 sử dụng `INACTIVE` cộng với `deactivatedAt` và Giai đoạn 1 không có quy trình kích hoạt lại. | Chuẩn hóa vòng đời đa tính năng 2026-07-17 | APPROVED |
-| Q-FE02-018 | OTP xác minh email tự đăng ký hết hạn đúng 15 phút sau khi phát hành; gửi lại thay thế OTP hoạt động trước đó bằng thông tin xác thực 15 phút mới. | Xác nhận Nhật 2026-07-21 | APPROVED |
+| Q-FE02-018 | OTP xác minh email tự đăng ký hết hạn đúng 15 phút sau khi phát hành; gửi lại thay thế OTP hoạt động trước đó bằng thông tin xác thực 15 phút mới. | Xác nhận của Nhat 2026-07-21 | APPROVED |
 
 ---
 

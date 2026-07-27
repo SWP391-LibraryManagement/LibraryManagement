@@ -4,7 +4,7 @@
 
 # Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Chủ sở hữu: Đạt
+# Chủ sở hữu: Dat
 
 # Cập nhật lần cuối: 2026-07-27
 
