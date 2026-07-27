@@ -14,8 +14,11 @@
 authorization, and migration; bounded ADD may later implement the approved UI
 shell.
 
-**Implementation baseline:** `origin/main` at
-`2b4f91477fbf7083165f0c1a8a8430d0708979fc`
+**Design baseline:** `origin/main` at
+`2b4f91477fbf7083165f0c1a8a8430d0708979fc`. The governance activation branch
+was last rebased onto non-overlapping `origin/main` drift at
+`7bf76b5cbe46119272e8564ae659f66afe25810b`; product implementation must start
+from the then-current `main` after this activation merges.
 
 ## 1. Outcome And Scope
 
@@ -262,8 +265,11 @@ for application rollback.
 Before implementation planning, update and human-review:
 
 - `.sdd/specs/feat-notification-management/SPEC.md`;
+- `.sdd/specs/feat-notification-management/CONTEXT.md`;
 - `.sdd/specs/feat-notification-management/CHANGELOG.md`;
 - FE10 `PLAN.md` and `TASKS.md` only after written SPEC approval;
+- current agent/test-planning memory in `.agents/CLAUDE.md` and
+  `docs/testing/master-test-plan.md`;
 - schema, migration, OpenAPI/API contract, architecture map, user manual, and
   traceability artifacts during implementation.
 

@@ -51,14 +51,15 @@
 > `main` and opens the repository's product-work gate. The user approved the
 > implementation plan as H1 on 2026-07-28.
 >
-> Revision v0.5.0 proposes the user-approved personal notification inbox
+> Revision v0.5.0 defines the user-approved personal notification inbox
 > expansion documented in
 > `docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md`.
 > Every authenticated account may list and mark read only its own non-sensitive
 > notifications. Email delivery state remains independent, sensitive
 > authentication/setup records remain excluded, and navigation is derived from
-> a server allowlist. The design is approved; this written SPEC requires a fresh
-> human review before PLAN/TASKS or implementation may proceed.
+> a server allowlist. The design, written SPEC, and implementation plan/H1 are
+> approved. Product implementation remains blocked only until this governance
+> activation reaches `main`.
 
 ---
 
@@ -691,12 +692,12 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | AC-FE10-008 | Duplicate key replays the same record across all statuses with minimal `200` DTO | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 to FT49 | FE10-H08 | Approved for implementation |
 | AC-FE10-009 | Failure is safe/non-blocking; FE02 reissues a new OTP/token event, non-sensitive `FAILED` retry reuses history, and uncertain `PROCESSING` is never resent | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | `backend/tests/notificationRoutes.test.js` provider/transition/retry cases | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Automated evidence; H2 review pending |
 | AC-FE10-010 | FE11-bound account setup sends synchronously with safe source metadata and no persisted setup credential/content | FR-FE10-010 | BR-FE10-002, BR-FE10-004 to BR-FE10-008, BR-FE10-010 to BR-FE10-013 | FT52, FT55 | FE10-S06 to FE10-S08 | Approved for implementation |
-| AC-FE10-011 | Authenticated personal list returns only owned eligible non-sensitive safe DTOs with SQL filters, newest-first ordering, and pagination | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
-| AC-FE10-012 | Unread count includes only the authenticated user's eligible unread records | FR-FE10-012 | BR-FE10-014 to BR-FE10-016, BR-FE10-020 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
-| AC-FE10-013 | Mark-one is own-record-only, sensitive-safe, idempotent, and independent of email delivery | FR-FE10-013 | BR-FE10-014 to BR-FE10-016 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
-| AC-FE10-014 | Mark-all changes only current-user eligible unread rows with one timestamp and replay returns zero | FR-FE10-014 | BR-FE10-014 to BR-FE10-016 | FE10-I02, FE10-I03, FE10-I06 | Planned; implementation not started | Approved v0.5.0 |
-| AC-FE10-015 | Eligible items receive only the canonical backend allowlisted relative action path | FR-FE10-015 | BR-FE10-017 | FE10-I02, FE10-I03, FE10-I05 | Planned; implementation not started | Approved v0.5.0 |
-| AC-FE10-016 | Bell, preview, inbox filters/pagination, read actions, safe states, and non-blocking navigation match the API contract | FR-FE10-016 | BR-FE10-014 to BR-FE10-018 | FE10-I04 to FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-011 | Authenticated personal list returns only owned eligible non-sensitive safe DTOs with SQL filters, newest-first ordering, and pagination | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | Planned migration, repository, route, integration, and browser tests | FE10-I01 to FE10-I03, FE10-I06 to FE10-I08 | Approved contract; implementation not started |
+| AC-FE10-012 | Unread count includes only the authenticated user's eligible unread records | FR-FE10-012 | BR-FE10-014 to BR-FE10-016, BR-FE10-020 | Planned repository, route, frontend, integration, and browser tests | FE10-I01 to FE10-I04, FE10-I07, FE10-I08 | Approved contract; implementation not started |
+| AC-FE10-013 | Mark-one is own-record-only, sensitive-safe, idempotent, and independent of email delivery | FR-FE10-013 | BR-FE10-014 to BR-FE10-016 | Planned repository, route, frontend, integration, and browser tests | FE10-I01 to FE10-I04, FE10-I06 to FE10-I08 | Approved contract; implementation not started |
+| AC-FE10-014 | Mark-all changes only current-user eligible unread rows with one timestamp and replay returns zero | FR-FE10-014 | BR-FE10-014 to BR-FE10-016 | Planned migration, repository, route, frontend, and browser tests | FE10-I01 to FE10-I03, FE10-I06 to FE10-I08 | Approved contract; implementation not started |
+| AC-FE10-015 | Eligible items receive only the canonical backend allowlisted relative action path | FR-FE10-015 | BR-FE10-017 | Planned projection, route, frontend, integration, and browser tests | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 | Approved contract; implementation not started |
+| AC-FE10-016 | Bell, preview, inbox filters/pagination, read actions, safe states, and non-blocking navigation match the API contract | FR-FE10-016 | BR-FE10-014 to BR-FE10-018 | Planned frontend contract, shell, page, and browser tests | FE10-I04 to FE10-I08 | Approved contract; implementation not started |
 
 ### Coverage Summary
 
@@ -714,7 +715,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | FR-FE10-006 | Provider acceptance sets `SENT`, `sentAt`, and a successful attempt | Planned |
 | BR-FE10-011 / Q-FE10-009 | FE04-bound membership-result ownership and protected HTTP boundary | Planned |
 | BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` rejects three unsafe stored-definition classes with zero render/persistence/provider calls while preserving runtime-value sanitization | Complete |
-| BR-FE10-014 to BR-FE10-020 / FR-FE10-011 to FR-FE10-016 | Personal inbox ownership, sensitivity exclusion, safe projection, read state, action allowlist, migration/backfill, and UI acceptance | Planned only after written v0.5.0 review |
+| BR-FE10-014 to BR-FE10-020 / FR-FE10-011 to FR-FE10-016 | Personal inbox ownership, sensitivity exclusion, safe projection, read state, action allowlist, migration/backfill, and UI acceptance | Approved and planned; implementation starts only after governance activation reaches `main` |
 
 
 ### External Assignment Traceability (Excel UC IDs)
@@ -778,7 +779,9 @@ Hardening contract checklist (approved by Nhat on 2026-07-13):
   preview, mark-one, and mark-all at the query boundary.
 - [x] Safe DTO fields, `401`/`400`/indistinguishable `404`, idempotent mutations,
   polling, error fallback, migration, rollout, and test obligations are explicit.
-- [ ] Human has reviewed and approved the written v0.5.0 SPEC and design file.
-- [ ] PLAN.md and TASKS.md have been revised from this approved written contract.
-- [ ] No inbox product-code, schema, public API, or deployment completion is
+- [x] Human reviewed and approved the written v0.5.0 SPEC and design file on
+  2026-07-27.
+- [x] PLAN.md and TASKS.md were revised from the approved written contract and
+  the implementation plan/H1 was approved on 2026-07-28.
+- [x] No inbox product-code, schema, public API, or deployment completion is
   claimed by this documentation revision.

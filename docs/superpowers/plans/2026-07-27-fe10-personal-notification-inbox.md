@@ -580,12 +580,15 @@ git commit -m "test(fe10): verify inbox fan-in and role flows"
 - Modify: `docs/architecture/system-architecture.md`
 - Modify: `docs/architecture/feature-integration-map.md`
 - Modify: `docs/user-manual.md`
+- Modify: `docs/testing/master-test-plan.md`
 - Modify: `docs/deployment/azure-staging-guide.md`
 - Modify: `.github/workflows/deploy-staging.yml`
 - Modify: `tests/deployment/stagingWorkflowPolicy.test.js`
 - Modify: `.sdd/specs/feat-notification-management/PLAN.md`
 - Modify: `.sdd/specs/feat-notification-management/TASKS.md`
+- Modify: `.sdd/specs/feat-notification-management/CONTEXT.md`
 - Modify: `.sdd/specs/feat-notification-management/CHANGELOG.md`
+- Modify: `.agents/CLAUDE.md`
 - Create after verification: `.sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md`
 - Create after staging/H3: `.sdd/reviews/fe10-notification-inbox-staging-h3-closeout-2026-07-27.md`
 
@@ -622,7 +625,7 @@ Document the exact staging order:
 
 Never put server names, passwords, tokens, publish profiles, or connection strings in the repository or evidence file.
 
-- [ ] **Step 4: Update architecture, integration map, and user manual**
+- [ ] **Step 4: Update architecture, integration map, user guidance, and active project memory**
 
 Document:
 
@@ -631,6 +634,9 @@ Document:
 - four API operations and actor boundary;
 - bell, preview, filters, pagination, mark-all, safe navigation, and error behavior;
 - rollback keeps `ReadAt` and disables/removes only frontend/API use.
+- FE10 `CONTEXT.md`, `.agents/CLAUDE.md`, and the master test plan distinguish
+  the completed historical delivery baseline from the implemented v0.5.0 inbox
+  and no longer describe the inbox as deferred or out of scope.
 
 - [ ] **Step 5: Run the disposable SQL migration twice**
 
@@ -669,6 +675,7 @@ Expected: every command exits 0; traceability covers FR-FE10-001..016; no genera
 rg -n "recipientEmail|safePayload|idempotencyKey|providerMessageId|lastErrorMessage|sourceFeature|sourceEntity" frontend/src backend/src/controllers/notificationController.js backend/src/docs/openapi.yaml
 rg -n "ACCOUNT_VERIFICATION|PASSWORD_RESET|ACCOUNT_SETUP|EMAIL_VERIFY" backend/src/utils/notificationInbox.js backend/src/repositories/notificationRepository.js backend/tests/notificationRoutes.test.js
 rg -n -i "delete notification|archive notification|global notification log|written review pending|draft v0\.5" .sdd/specs/feat-notification-management docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md
+rg -n -i "inbox UI.*deferred|User notification inbox/list UI|Inbox UI out of Phase 1 scope unless spec changes" .sdd/specs/feat-notification-management/CONTEXT.md .agents/CLAUDE.md docs/testing/master-test-plan.md
 ```
 
 Expected: forbidden DTO fields are absent from frontend/inbox response code; sensitive identifiers appear only in explicit exclusion tests/predicates; no stale v0.5 approval contradiction remains.
@@ -680,7 +687,7 @@ Update FE10 PLAN/TASKS/CHANGELOG and create the H2 validation record with exact 
 Commit only after H2 approval:
 
 ```powershell
-git add docs/architecture/system-architecture.md docs/architecture/feature-integration-map.md docs/user-manual.md docs/deployment/azure-staging-guide.md .github/workflows/deploy-staging.yml tests/deployment/stagingWorkflowPolicy.test.js .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CHANGELOG.md .sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md
+git add docs/architecture/system-architecture.md docs/architecture/feature-integration-map.md docs/user-manual.md docs/testing/master-test-plan.md docs/deployment/azure-staging-guide.md .github/workflows/deploy-staging.yml tests/deployment/stagingWorkflowPolicy.test.js .sdd/specs/feat-notification-management/PLAN.md .sdd/specs/feat-notification-management/TASKS.md .sdd/specs/feat-notification-management/CONTEXT.md .sdd/specs/feat-notification-management/CHANGELOG.md .agents/CLAUDE.md .sdd/reviews/fe10-notification-inbox-h2-validation-2026-07-27.md
 git commit -m "docs(fe10): close personal inbox h2 validation"
 ```
 

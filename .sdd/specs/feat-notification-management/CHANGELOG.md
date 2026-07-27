@@ -6,6 +6,10 @@
   plan as H1.
 - Kept product implementation `NOT_STARTED` until this governance activation
   reaches `main`, matching the repository Fast-Track gate.
+- Pre-H3 review removed stale draft-era approval text, restored the v0.5.0
+  acceptance-matrix test/task columns, synchronized active feature/agent/test
+  context, and recorded the latest non-overlapping `main` rebase baseline. This
+  remediation changes no approved behavior or product implementation state.
 
 ## 2026-07-27 - Approved personal notification inbox expansion (v0.5.0)
 
