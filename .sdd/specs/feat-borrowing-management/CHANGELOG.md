@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Accept the exact FE08 held-copy handoff
+
+- FE07 now reads both `bookId` and `copyId` from a Member's `NOTIFIED` FE08 reservation action.
+- The request screen preselects that exact copy only when the protected reservation-aware candidate catalog returns it for the current Member.
+- Preserved normal pending-request creation, Librarian/Admin approval, backend revalidation, and atomic FE08 fulfillment.
+
 ## 2026-07-27 - Enforce non-staff member self-service
 
 - Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use member borrowing self-service.

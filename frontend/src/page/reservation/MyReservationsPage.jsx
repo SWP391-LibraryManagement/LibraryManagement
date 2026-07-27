@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Bookmark, BookOpen, Search, X, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { publicBrowseApi, reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -51,6 +51,9 @@ export default function MyReservationsPage() {
   // @spec FR-FE08-032
   const { current: currentReservations, history: reservationHistory } =
     splitMemberReservations(reservations);
+  const readyReservations = currentReservations.filter(
+    (item) => item.rawStatus === 'NOTIFIED'
+  );
 
   async function loadReservations() {
     setLoading(true);
@@ -180,6 +183,13 @@ export default function MyReservationsPage() {
       actions={<button className="btn btn-outline" onClick={() => Promise.all([loadReservations(), loadCandidates(search, candidatePagination.page)])} disabled={loading || candidateLoading}><RefreshCw size={16} /> Tải lại</button>}
     >
       {notice && <DataNotice type={notice.type} title={notice.title}>{notice.message}</DataNotice>}
+      {/* @spec FR-FE08-033 */}
+      {readyReservations.map((item) => (
+        <DataNotice key={`pickup-${item.reservationId}`} type="success" title={`Sách "${item.title}" đã sẵn sàng nhận`}>
+          Vui lòng đến quầy thư viện từ ngày {fmtDate(item.pickupStart)} đến hết ngày {fmtDate(item.deadline)}.
+          Trước khi nhận sách, hãy tạo yêu cầu mượn để thủ thư hoặc quản trị viên duyệt. Quá thời hạn này, lượt giữ chỗ có thể hết hiệu lực.
+        </DataNotice>
+      ))}
 
       <div className="lib-card member-reservation-catalog">
         <h3 className="lib-card-title">Đặt một cuốn sách</h3>
@@ -247,7 +257,14 @@ export default function MyReservationsPage() {
               </td>
               <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
-                {isOpenMemberReservationStatus(item.rawStatus) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
+                <div className="row-flex" style={{ justifyContent: 'flex-end', gap: 8 }}>
+                  {item.rawStatus === 'NOTIFIED' && item.bookId && (
+                    <Link className="btn btn-primary btn-sm" to={`/borrowing/new?bookId=${item.bookId}&copyId=${item.copyId}`}>
+                      <BookOpen size={14} /> Tạo yêu cầu mượn
+                    </Link>
+                  )}
+                  {isOpenMemberReservationStatus(item.rawStatus) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
+                </div>
               </td>
             </tr>
           ))}

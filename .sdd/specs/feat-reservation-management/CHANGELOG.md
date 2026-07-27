@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Connect notified pickup window to FE07
+
+- Added a Member-facing pickup notice derived from canonical `NotifiedAt` and `ExpiresAt` instead of introducing a separate manual note date.
+- Added `Tạo yêu cầu mượn` for `NOTIFIED` rows and handed the exact held `bookId`/`copyId` to FE07.
+- Preserved FE08 Librarian/Admin queue ownership, FE07 pending-request approval and atomic reservation fulfillment, and FE10's existing reservation-ready request.
+- Updated the Chromium candidate acceptance assertion to the current `Đang đặt chỗ` label.
+
 ## 2026-07-27 - Clarify current Member reservations versus history
 
 - Separated canonical `ACTIVE`/`NOTIFIED` reservations from terminal reservation history so an older cancelled row cannot be mistaken for a newly created reservation.

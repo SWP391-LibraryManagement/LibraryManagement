@@ -392,7 +392,10 @@ test('FE07 member pages use shared operational patterns without changing API cal
   assert.match(request, /borrowingApi\.createRequest\(\[Number\(copyId\)\]\)/);
   assert.match(request, /borrowingApi\.listCandidates\(\)/);
   assert.match(request, /searchParams\.get\('bookId'\)/);
+  assert.match(request, /searchParams\.get\('copyId'\)/);
   assert.match(request, /Number\(book\.bookId\) === requestedBookId/);
+  assert.match(request, /Number\(copy\.copyId\) === requestedCopyId/);
+  assert.match(request, /@spec FR-FE07-033/);
   assert.doesNotMatch(request, /DEMO_BORROW_CATALOG/);
 
   assert.match(history, /DataToolbar/);

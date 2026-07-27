@@ -189,3 +189,11 @@ Not included:
 3. Derive visible Vietnamese labels and supported badge tones from the raw FE08 lifecycle status.
 4. Reflect the matching current reservation in the candidate action as `Đang đặt chỗ` or `Đến lượt bạn`.
 5. Reload canonical member reservations and candidates after create/cancel without changing the Librarian/Admin queue contract or FE07 fulfillment ownership.
+
+## 11. V0.5.7 Notified Pickup Window And FE07 Handoff
+
+1. Use FE08's canonical `NotifiedAt` and `ExpiresAt` values as the Member pickup window; do not add a second manually entered date.
+2. Show a clear ready-for-pickup notice only for `NOTIFIED` reservations.
+3. Pass the exact held `bookId` and `copyId` to FE07 so the Member creates the normal pending borrow request for that physical copy.
+4. Keep Librarian/Admin queue processing in FE08 and borrow approval/atomic reservation fulfillment in FE07.
+5. Reconcile the Chromium FE08 acceptance assertion with the current `Đang đặt chỗ` label.

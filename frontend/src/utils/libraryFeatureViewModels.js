@@ -189,6 +189,7 @@ export function mapReservation(reservation) {
     id: `RS-${reservation.reservationId}`,
     reservationId: reservation.reservationId,
     copyId: reservation.copyId,
+    bookId: reservation.copy?.bookId || null,
     title: reservation.copy?.title || `Bản sao #${reservation.copyId}`,
     author: reservation.copy?.author || '-',
     barcode: reservation.copy?.barcode || '-',
@@ -201,6 +202,7 @@ export function mapReservation(reservation) {
     queue: reservation.queuePosition || 1,
     rawStatus: String(reservation.status || '').toUpperCase(),
     status: statusToUi(reservation.status, reservation),
+    pickupStart: reservation.notifiedAt,
     deadline: reservation.expiresAt,
   };
 }

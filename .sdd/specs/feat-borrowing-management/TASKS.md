@@ -198,6 +198,7 @@ Checked tasks below describe the implementation completed against the earlier ap
 | NFR-FE07-UX-001 | FE07-T037 |
 | BR-FE07-028; FR-FE07-028; AC-FE07-022 | FE07-T039, FE07-T040 |
 | BR-FE07-029; FR-FE07-029; AC-FE07-023 | FE07-T041 |
+| FR-FE07-033; AC-FE07-027 | FE07-T048 |
 
 ### 5.2 V0.5.1 History Contract Tasks
 
@@ -271,3 +272,8 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Replace member-any-role guards on candidate/create/own-history routes with the shared non-staff-member guard.
   - Redirect mixed Member/staff accounts away from frontend member routes while preserving staff operational routes.
   - Verify mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` backend/frontend cases.
+
+- [x] **FE07-T048 - Preselect the exact requester-owned FE08 held copy.**
+  - Maps to: FR-FE07-024/033, AC-FE07-016/027; FR-FE08-033, AC-FE08-020.
+  - Read FE08's `bookId`/`copyId` handoff and select the exact copy only from the canonical Member borrow-candidate response.
+  - Preserve normal pending-request creation, server revalidation, Librarian/Admin approval, and atomic reservation fulfillment.

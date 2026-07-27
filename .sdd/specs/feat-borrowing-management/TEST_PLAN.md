@@ -1,8 +1,8 @@
 # FE07 Test Plan - Borrowing Management
 
-Version: 0.2.6
+Version: 0.2.7
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-22
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-borrowing-management/SPEC.md`
 Feature IDs: `BR-FE07-*`, `FR-FE07-*`, `AC-FE07-*`
@@ -43,6 +43,7 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 
 - Member requests borrow → librarian approves → member sees history → librarian records return.
 - Mixed Member/staff actor is redirected away from member routes and remains able to use only the matching staff operational routes.
+- FE08 marks the hold `NOTIFIED` -> Member follows the exact `bookId`/`copyId` handoff -> FE07 preselects the held copy -> Member submits a pending request -> Librarian/Admin approves and fulfills the reservation.
 - Overdue/renewal behavior verified with deterministic dates.
 
 ## 5. Current Evidence

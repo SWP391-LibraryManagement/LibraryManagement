@@ -1,10 +1,10 @@
 # FE08 Test Plan - Reservation Management
 
-Version: 0.5.3
+Version: 0.5.4
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.6
+Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.7
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -53,6 +53,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 - Member searches the candidate catalog -> the server returns safe rows, including books already reserved by that member; the member creates a real reservation by numeric `copyId`, duplicate actions become disabled, and the canonical reservation list reloads.
 - Member selects an unavailable book on FE01 -> `/reservations/mine?bookId=...` resolves the public title -> the protected FE08 candidate catalog is initialized to matching physical copies -> Member chooses a real `copyId`.
 - Member has cancelled history plus a new active/notified reservation for the same copy -> current state appears in the active section with a visible label and matching candidate action -> cancelled state remains in the history section only.
+- Librarian/Admin processes a returned copy's queue -> Member sees the canonical `NotifiedAt`/`ExpiresAt` pickup window -> exact held `bookId`/`copyId` opens FE07 -> Member creates a pending request -> Librarian/Admin approval fulfills the reservation.
 - Mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` actors are redirected away from member reservation screens and receive `403 ROLE_REQUIRED` from candidate/create/own-list/cancel endpoints; staff queue operations remain available.
 
 ## 5. Current Evidence

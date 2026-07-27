@@ -15,6 +15,7 @@ import { DataToolbar } from '../../component/shared/OperationalPatterns';
 export default function BorrowRequestPage() {
   const [searchParams] = useSearchParams();
   const requestedBookId = Number(searchParams.get('bookId'));
+  const requestedCopyId = Number(searchParams.get('copyId'));
   const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -25,6 +26,7 @@ export default function BorrowRequestPage() {
   const [noticeType, setNoticeType] = useState('info');
   const [toast, showToast, clearToast] = useToast();
 
+  // @spec FR-FE07-033
   useEffect(() => {
     let active = true;
     borrowingApi.listCandidates()
@@ -34,12 +36,18 @@ export default function BorrowRequestPage() {
         const requestedBook = Number.isInteger(requestedBookId) && requestedBookId > 0
           ? nextBooks.find((book) => Number(book.bookId) === requestedBookId)
           : null;
+        const requestedCopy = requestedBook && Number.isInteger(requestedCopyId) && requestedCopyId > 0
+          ? requestedBook.copies.find((copy) => Number(copy.copyId) === requestedCopyId)
+          : null;
         const nextSelected = requestedBook || nextBooks[0] || null;
         setBooks(nextBooks);
         setSelected(nextSelected);
-        setCopyId(nextSelected?.copies[0]?.copyId || '');
+        setCopyId(requestedCopy?.copyId || nextSelected?.copies[0]?.copyId || '');
         if (requestedBookId > 0 && !requestedBook) {
           setNotice('Sách bạn chọn hiện không còn bản sao có thể mượn. Vui lòng chọn sách khác.');
+          setNoticeType('error');
+        } else if (requestedCopyId > 0 && !requestedCopy) {
+          setNotice('Bản sách được giữ cho bạn không còn đủ điều kiện tạo yêu cầu mượn. Vui lòng tải lại phần đặt chỗ.');
           setNoticeType('error');
         }
       })
@@ -53,7 +61,7 @@ export default function BorrowRequestPage() {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [requestedBookId]);
+  }, [requestedBookId, requestedCopyId]);
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

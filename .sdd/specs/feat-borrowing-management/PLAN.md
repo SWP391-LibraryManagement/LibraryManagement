@@ -200,3 +200,10 @@ Not included:
    concurrent return conflict outcomes.
 5. Run focused tests under `TZ=UTC`, then run mutable SQL only on a named
    disposable local database before full verification and H2.
+
+## 9. V0.7.6 FE08 Held-Copy Handoff
+
+1. Accept `bookId` plus `copyId` as frontend-only selection hints from FE08.
+2. Select the exact copy only when it exists in FE07's protected, reservation-aware candidate response for the current Member.
+3. Keep `POST /api/borrow-requests` and its server-side eligibility/reservation checks authoritative.
+4. Preserve the normal `PENDING` request followed by Librarian/Admin approval and atomic FE08 fulfillment.

@@ -194,11 +194,13 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE08-030 | FE08-T041 |
 | FR-FE08-031 | FE08-T042 |
 | FR-FE08-032 | FE08-T043 |
+| FR-FE08-033 | FE08-T044 |
 | AC-FE08-015 | FE08-T035, FE08-T036, FE08-T037, FE08-T038 |
 | AC-FE08-016 | FE08-T035, FE08-T037, FE08-T038 |
 | AC-FE08-017 | FE08-T041 |
 | AC-FE08-018 | FE08-T042 |
 | AC-FE08-019 | FE08-T043 |
+| AC-FE08-020 | FE08-T044 |
 | NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
 | NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
@@ -233,3 +235,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Keep canonical own-list records, group `ACTIVE`/`NOTIFIED` separately from terminal history, and render every raw lifecycle state with a visible supported badge.
   - Connect the candidate action to the matching current reservation so a held copy says `Đến lượt bạn` instead of looking cancelled or stale.
   - Preserve Librarian/Admin queue ordering and FE07 state-transition ownership.
+
+- [x] **FE08-T044 - Show the pickup window and connect the held copy to FE07.**
+  - Maps to: FR-FE08-033, AC-FE08-020; FR-FE07-024/033, AC-FE07-016/027.
+  - Render `NotifiedAt` through `ExpiresAt` for the canonical `NOTIFIED` record and explain that the hold expires after the deadline.
+  - Link the exact held `bookId`/`copyId` to the Member FE07 request page; retain Librarian/Admin approval and FE07 fulfillment ownership.
+  - Update the FE08 Chromium expectation from the superseded `Đã đặt chỗ` label to `Đang đặt chỗ`.
