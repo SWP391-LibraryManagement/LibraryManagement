@@ -267,6 +267,34 @@
 .kpi-trend { font-size: 12px; font-weight: 600; }
 .kpi-trend.up { color: var(--st-green); }
 .kpi-trend.down { color: var(--st-red); }
+.kpi-hint { color: var(--lib-ink-2); font-size: 12px; }
+
+/* ---- Filter chips -------------------------------------------------------- */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--lib-cream-2); color: var(--lib-ink);
+  border: 1px solid var(--lib-line); font-size: 12px;
+}
+
+/* ---- Pagination ellipsis -------------------------------------------------- */
+.page-ellipsis { display: inline-flex; align-items: center; padding: 0 6px; color: var(--lib-ink-2); }
+
+/* ---- Spin animation ------------------------------------------------------ */
+.spin { animation: lib-spin 1s linear infinite; }
+@keyframes lib-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+/* ---- Toast close button -------------------------------------------------- */
+.toast-close { margin-left: auto; flex-shrink: 0; }
+
+/* ---- Member history date filter ----------------------------------------- */
+.member-history-date-filter {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 12px 0;
+}
+.member-history-date-filter .input { width: 160px; }
+.member-history-date-filter .field-hint { color: var(--st-red); font-size: 12px; }
 
 /* ---- Forms --------------------------------------------------------------- */
 .form-grid { display: grid; gap: 16px; }

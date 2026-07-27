@@ -57,4 +57,13 @@ export const VI_COPY = Object.freeze({
     UNPAID: 'Chưa thanh toán',
     WAIVED: 'Đã miễn',
   }),
+  notifications: Object.freeze({
+    statuses: Object.freeze({
+      PENDING: 'Đang xếp hàng gửi',
+      PROCESSING: 'Đang gửi',
+      SENT: 'Đã gửi',
+      FAILED: 'Gửi thất bại',
+      SKIPPED: 'Đã bỏ qua',
+    }),
+  }),
 });

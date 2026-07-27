@@ -78,7 +78,7 @@ test('reservation queue position is copy-scoped and never invented when absent',
   );
   assert.match(memberPage, /Vị trí của bản sách/);
   assert.match(memberPage, /formatReservationQueuePosition\(item\.queue, 'cuốn này'\)/);
-  assert.match(staffPage, /formatReservationQueuePosition\(item\.queue, 'bản này'\)/);
+  assert.match(staffPage, /formatReservationQueuePosition\(item\.queue, 'cuốn sách này'\)/);
   assert.doesNotMatch(memberPage, /#\{(?:item|next|cancelTarget)\.queue\}/);
   assert.doesNotMatch(staffPage, /#\{item\.queue\}/);
 });
@@ -264,7 +264,8 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /reservationApi\.process\(/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);
-  assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
+  assert.match(source, /onSuccess: \(result\) => \{/);
+  assert.match(source, /showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
   assert.match(source, /disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /onClick=\{loadReservations\} disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /POST \/api\/reservations\/expire-holds/);

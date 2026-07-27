@@ -6,11 +6,11 @@ import { PackageCheck, AlertTriangle, CheckCircle2, Search, RefreshCw, X, UserRo
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
-import { DataTable } from '../../component/shared/OperationalPatterns';
+import { DataTable, Pagination } from '../../component/shared/OperationalPatterns';
 import { getBorrowDueStatus } from '../../utils/borrowingDueStatus';
 import { fmtDate, mapBorrowRequestsToReturnRows } from '../../utils/libraryFeatureViewModels';
 
-const CONDITION_LABELS = { NORMAL: 'Tốt • không hư hỏng', DAMAGED: 'Hư hỏng', LOST: 'Mất sách' };
+const CONDITION_LABELS = { NORMAL: 'Tốt • không hư hỏng', DAMAGED: 'Hư hỏng', LOST: 'Thất lạc' };
 const PAGE_SIZE = 8;
 
 function normalizeSearchValue(value) {
@@ -153,7 +153,7 @@ export default function ProcessReturnsPage() {
             caption="Danh sách sách đang mượn cần xử lý trả"
             headers={['Mã lượt', 'Thành viên', 'Sách / Bản sao', 'Ngày mượn', 'Hạn trả', 'Tình trạng hạn trả', 'Thao tác']}
             loading={loading}
-            isEmpty={filteredLoans.length === 0}
+            isEmpty={!notice && filteredLoans.length === 0}
             emptyState={<EmptyState icon={PackageCheck} title={normalizedQuery ? 'Không tìm thấy giao dịch phù hợp' : 'Không có sách đang được mượn'} />}
           >
             {pagedLoans.map((loan) => {
@@ -195,14 +195,13 @@ export default function ProcessReturnsPage() {
             })}
           </DataTable>
           {!loading && filteredLoans.length > 0 && (
-            <nav className="pagination return-pagination" aria-label="Phân trang sách đang mượn">
-              <span className="muted">Trang {currentPage}/{totalPages} • {filteredLoans.length} giao dịch</span>
-              <div className="page-controls">
-                <button type="button" className="page-btn" disabled={currentPage === 1} onClick={() => changePage(currentPage - 1)}>Trước</button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => <button type="button" className={`page-btn ${pageNumber === currentPage ? 'active' : ''}`} key={pageNumber} aria-current={pageNumber === currentPage ? 'page' : undefined} onClick={() => changePage(pageNumber)}>{pageNumber}</button>)}
-                <button type="button" className="page-btn" disabled={currentPage === totalPages} onClick={() => changePage(currentPage + 1)}>Sau</button>
-              </div>
-            </nav>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={changePage}
+              summary={`Trang ${currentPage}/${totalPages} • ${filteredLoans.length} giao dịch`}
+              ariaLabel="Phân trang sách đang mượn"
+            />
           )}
         </div>
 

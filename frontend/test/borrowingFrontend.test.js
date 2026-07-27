@@ -244,7 +244,7 @@ test('member history uses canonical server filtering and pagination', async () =
   assert.match(source, /active:\s*'BORROWED'/);
   assert.match(source, /overdue:\s*'OVERDUE'/);
   assert.match(source, /returned:\s*'RETURNED'/);
-  assert.match(source, /borrowingApi\.listMine\(\{ status, page, limit: PAGE_SIZE \}\)/);
+  assert.match(source, /borrowingApi\.listMine\(\{\s*status,\s*fromDate:\s*activeDateFilter\.fromDate,\s*toDate:\s*activeDateFilter\.toDate,\s*page,\s*limit:\s*PAGE_SIZE,\s*\}\)/);
   assert.match(source, /data\.borrowings \|\| \[\]/);
   assert.match(source, /setPagination\(data\.pagination/);
   assert.match(source, /pagination\.totalPages/);
@@ -302,7 +302,7 @@ test('librarian borrow request review filters and refreshes canonical API state'
   assert.match(source, /Number\(left\.requestId\) - Number\(right\.requestId\)/);
   assert.match(source, /const PAGE_SIZE = 8/);
   assert.match(source, /pagedRequests\.map/);
-  assert.match(source, /aria-label="Phân trang yêu cầu mượn"/);
+  assert.match(source, /ariaLabel="Phân trang yêu cầu mượn"/);
   assert.match(source, /title="Yêu cầu mượn sách"/);
   assert.doesNotMatch(source, /YÃªu|yÃªu|mÆ°á»£n|Tráº¡ng/);
 });

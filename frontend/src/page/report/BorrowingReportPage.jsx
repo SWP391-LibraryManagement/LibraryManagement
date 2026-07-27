@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { BookOpen, BookMarked, AlertTriangle, Calendar, RefreshCw, Search } from 'lucide-react';
+import { BookOpen, BookMarked, AlertTriangle, Calendar, RefreshCw, Search, RotateCcw } from 'lucide-react';
 
 import { reportApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -18,6 +18,26 @@ import { getStatusLabel } from '../../utils/uiLabels';
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 const REPORT_PAGE_SIZE = 20;
+const STATUS_OPTIONS = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'BORROWED', label: 'Đang mượn' },
+  { value: 'OVERDUE', label: 'Quá hạn' },
+  { value: 'RETURNED', label: 'Đã trả' },
+  { value: 'REQUESTED', label: 'Chờ xử lý' },
+  { value: 'LOST', label: 'Thất lạc' },
+  { value: 'DAMAGED', label: 'Hư hỏng' },
+];
+
+function describeActiveFilterChips(filters) {
+  const chips = [];
+  if (filters.q) chips.push({ key: 'q', label: `Từ khóa: ${filters.q}` });
+  if (filters.fromDate) chips.push({ key: 'fromDate', label: `Từ: ${filters.fromDate}` });
+  if (filters.toDate) chips.push({ key: 'toDate', label: `Đến: ${filters.toDate}` });
+  if (filters.status) chips.push({ key: 'status', label: `Trạng thái: ${STATUS_OPTIONS.find((o) => o.value === filters.status)?.label || filters.status}` });
+  if (filters.userId) chips.push({ key: 'userId', label: `Người dùng #${filters.userId}` });
+  if (filters.bookId) chips.push({ key: 'bookId', label: `Sách #${filters.bookId}` });
+  return chips;
+}
 
 export default function BorrowingReportPage() {
   const [from, setFrom] = useState('');
@@ -31,6 +51,7 @@ export default function BorrowingReportPage() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
+  const [dateRangeError, setDateRangeError] = useState('');
 
   async function loadReport(page, filters = activeFilters) {
     setLoading(true);
@@ -53,10 +74,28 @@ export default function BorrowingReportPage() {
 
   function applyFilters(event) {
     event.preventDefault();
+    if (from && to && from > to) {
+      setDateRangeError('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.');
+      return;
+    }
+    setDateRangeError('');
     const filters = { q: query, fromDate: from, toDate: to, status, userId, bookId };
     setActiveFilters(filters);
     setPage(1);
     loadReport(1, filters);
+  }
+
+  function clearFilters() {
+    setFrom('');
+    setTo('');
+    setQuery('');
+    setStatus('');
+    setUserId('');
+    setBookId('');
+    setDateRangeError('');
+    setActiveFilters({});
+    setPage(1);
+    loadReport(1, {});
   }
 
   useEffect(() => {
@@ -76,10 +115,12 @@ export default function BorrowingReportPage() {
   );
   const topBooks = metrics.topBorrowedBooks || [];
   const kpis = [
-    { label: 'Tổng bản ghi', value: totalRows, icon: BookOpen, hint: 'BorrowDetails' },
-    { label: 'Đang mượn', value: metrics.activeLoans, icon: BookMarked, hint: 'BORROWED' },
-    { label: 'Quá hạn', value: metrics.overdueLoans, icon: AlertTriangle, hint: 'OVERDUE' },
+    { label: 'Tổng bản ghi', value: totalRows, icon: BookOpen, hint: 'Tổng chi tiết mượn' },
+    { label: 'Đang mượn', value: metrics.activeLoans, icon: BookMarked, hint: 'Đang mượn sách' },
+    { label: 'Quá hạn', value: metrics.overdueLoans, icon: AlertTriangle, hint: 'Quá hạn trả' },
   ];
+  const filterChips = describeActiveFilterChips(activeFilters);
+  const hasActiveFilters = filterChips.length > 0;
 
   return (
     <AppLayout
@@ -87,29 +128,48 @@ export default function BorrowingReportPage() {
       active="borrowing-report"
       title="Báo cáo mượn/trả"
       subtitle="Báo cáo mượn/trả được lấy trực tiếp từ FE07, không chỉnh sửa dữ liệu nguồn."
-      actions={<button className="btn btn-outline" onClick={() => loadReport(page, activeFilters)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(page, activeFilters)} disabled={loading}><RefreshCw size={16} className={loading ? 'spin' : ''} /> Tải lại</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
+      {loading && !notice && <DataNotice type="info" title="Đang làm mới báo cáo">Vui lòng chờ trong giây lát.</DataNotice>}
 
       <form onSubmit={applyFilters}><DataToolbar
         search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, tài khoản..." aria-label="Tìm trong báo cáo mượn trả" /></>}
         filters={(
           <div className="field report-date-filter">
             <Calendar size={16} className="muted" />
-            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
-            <span className="muted">-</span>
-            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
-            <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái mượn"><option value="">Tất cả trạng thái</option><option value="BORROWED">Đang mượn</option><option value="OVERDUE">Quá hạn</option><option value="RETURNED">Đã trả</option><option value="REQUESTED">Chờ xử lý</option></select>
+            <label htmlFor="borrowing-from-date" className="sr-only">Từ ngày</label>
+            <input id="borrowing-from-date" type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="Từ ngày" />
+            <span className="muted" aria-hidden="true">-</span>
+            <label htmlFor="borrowing-to-date" className="sr-only">Đến ngày</label>
+            <input id="borrowing-to-date" type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label="Đến ngày" />
+            <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái mượn">
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
             <input type="number" min="1" className="input" value={userId} onChange={(event) => setUserId(event.target.value)} placeholder="Mã người dùng" aria-label="Mã người dùng" />
             <input type="number" min="1" className="input" value={bookId} onChange={(event) => setBookId(event.target.value)} placeholder="Mã sách" aria-label="Mã sách" />
             <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>Áp dụng</button>
+            {hasActiveFilters && (
+              <button type="button" className="icon-btn" onClick={clearFilters} aria-label="Xóa bộ lọc báo cáo" title="Xóa bộ lọc" disabled={loading}>
+                <RotateCcw size={17} />
+              </button>
+            )}
+            {dateRangeError && <span className="field-hint" role="alert">{dateRangeError}</span>}
           </div>
         )}
       /></form>
 
-      {loading ? <LoadingBlock rows={4} /> : !report ? (
+      {hasActiveFilters && (
+        <div className="filter-chips" aria-label="Bộ lọc đang áp dụng">
+          {filterChips.map((chip) => (
+            <span key={chip.key} className="filter-chip">{chip.label}</span>
+          ))}
+        </div>
+      )}
+
+      {loading && !report ? <LoadingBlock rows={4} /> : !report || notice ? (
         <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
-          Hãy kiểm tra phiên đăng nhập hoặc kết nối backend rồi thử tải lại.
+          Hãy kiểm tra phiên đăng nhập, kết nối backend hoặc bộ lọc rồi thử tải lại.
         </EmptyState>
       ) : (
         <>
@@ -118,7 +178,7 @@ export default function BorrowingReportPage() {
               <div className="kpi-card" key={label}>
                 <div className="kpi-top"><span className="kpi-label">{label}</span><span className="kpi-icon"><Icon size={18} /></span></div>
                 <span className="kpi-value">{fmtNumber(value)}</span>
-                <span className="kpi-trend up">{hint}</span>
+                <span className="kpi-hint">{hint}</span>
               </div>
             ))}
           </div>
@@ -132,11 +192,11 @@ export default function BorrowingReportPage() {
           <div className="split">
             <div className="lib-card">
               <h3 className="lib-card-title">Lượt mượn theo kỳ</h3>
-              {periodData.length ? <LineChart data={periodData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu theo kỳ" />}
+              {periodData.length ? <LineChart data={periodData} format={fmtNumber} ariaLabel="Biểu đồ đường lượt mượn theo kỳ" /> : <EmptyState title="Chưa có dữ liệu theo kỳ" />}
             </div>
             <div className="lib-card">
               <h3 className="lib-card-title">Top sách mượn nhiều</h3>
-              {topBooks.length ? <BarChart data={topBooks.map((book) => ({ label: (book.title || `Sách ${book.bookId}`).split(' ')[0], value: book.borrowCount || 0 }))} height={200} /> : <EmptyState title="Chưa có sách trong báo cáo" />}
+              {topBooks.length ? <BarChart data={topBooks.map((book) => ({ label: (book.title || `Sách ${book.bookId}`).split(' ')[0], value: book.borrowCount || 0 }))} height={200} ariaLabel="Biểu đồ cột top sách mượn nhiều" /> : <EmptyState title="Chưa có sách trong báo cáo" />}
             </div>
           </div>
 

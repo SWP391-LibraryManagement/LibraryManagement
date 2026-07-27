@@ -184,6 +184,18 @@ export function memberReservationBadgeStatus(status) {
   return 'default';
 }
 
+// @spec NFR-FE08-UX-001 — badge class thống nhất cho cả member và librarian page.
+// Trả về status đã chuẩn hóa (chấp nhận cả display 'Ready to pick up' từ statusToUi).
+export function librarianReservationBadgeStatus(displayStatus, rawStatus) {
+  const normalized = String(displayStatus || '').toLowerCase();
+  if (normalized === 'ready to pick up') return 'ready';
+  if (normalized === 'waiting') return 'waiting';
+  if (normalized === 'completed') return 'completed';
+  if (normalized === 'cancelled') return 'cancelled';
+  if (normalized === 'expired') return 'expired';
+  return memberReservationBadgeStatus(rawStatus);
+}
+
 // @spec FR-FE08-035, AC-FE08-022
 export function formatReservationQueuePosition(queuePosition, scopeLabel = '') {
   if (queuePosition == null) return 'Chưa xác định';
