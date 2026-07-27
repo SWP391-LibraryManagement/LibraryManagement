@@ -248,7 +248,10 @@ export default function UserProfile() {
     setEditErrorMessage("");
 
     try {
-      const updatedProfile = await updateMyProfile(editForm);
+      let updatedProfile = await updateMyProfile(editForm);
+      if (avatarFile) {
+        updatedProfile = await uploadMyAvatar(avatarFile);
+      }
       setProfile(updatedProfile);
       setEditForm(null);
     } catch (error) {

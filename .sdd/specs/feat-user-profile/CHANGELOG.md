@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-28 - Profile Save Avatar Submission Fix
+
+- Uploaded a valid selected avatar through the existing multipart endpoint when the user submits the profile edit form.
+- Updated the browser regression to verify the save action emits `POST /api/profile/me/avatar` and renders the returned avatar.
+
 ## 2026-07-28 - Cross-Origin Avatar Rendering Fix
 
 - Allowed managed `/uploads/avatars/` files to render in the separately hosted frontend after upload.
