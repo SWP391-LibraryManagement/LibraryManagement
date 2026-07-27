@@ -168,4 +168,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
   - Package the reviewed metadata compatibility SQL with the backend and apply it transactionally before the HTTP listener starts.
   - Verify the postcondition, refuse to listen on failure, keep `/health/ready` read-only, and retain the manual-only staging workflow.
-  - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke behavior, and existing Admin/Librarian role boundaries.
+  - Defer `Status` validation to a dynamic SQL batch so SQL Server compiles it only after the missing
+    metadata columns have been added in the same transaction.
+  - Lock the compile-order correction with a regression test and execute the candidate twice on a
+    specifically named disposable local SQL Server database before deployment.
+  - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke
+    behavior, and existing Admin/Librarian role boundaries.
