@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-28 - Fail safely when change-password OTP delivery fails
+
+- Stopped `/change-password/request-otp` from claiming success when SMTP is unavailable or the email provider fails.
+- Return the safe `EMAIL_DELIVERY_FAILED` response and write the request audit only after the direct FE02 email adapter confirms delivery.
+- Added a focused regression; auth routes pass 50/50, profile frontend passes 6/6, and FE02 traceability passes 27/27.
+
 ## 2026-07-27 - Align deployed verification OTP guidance
 
 - Corrected the registration verification screen from the stale 24-hour label to the canonical

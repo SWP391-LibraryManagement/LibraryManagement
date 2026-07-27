@@ -125,7 +125,7 @@ function createAuthService({
   /** Gửi email qua emailService, bỏ qua lỗi để không làm gián đoạn luồng chính */
   async function sendEmail(emailFnName, params, label) {
     if (!emailService || typeof emailService[emailFnName] !== 'function') {
-      return;
+      return { sent: false, reason: 'EMAIL_SERVICE_UNAVAILABLE' };
     }
 
     try {
@@ -136,8 +136,10 @@ function createAuthService({
       } else if (result && result.sent === true) {
         console.info(`[auth email] ${label} email sent to ${maskEmail(params.to)} (${result.providerMessageId || 'no id'}).`);
       }
+      return result;
     } catch (emailError) {
-      console.error(`[auth email] Failed to send ${label} email:`, emailError.message);
+      console.error(`[auth email] Failed to send ${label} email.`);
+      return { sent: false, reason: 'PROVIDER_ERROR' };
     }
   }
 
@@ -672,11 +674,15 @@ function createAuthService({
 
     const { otp } = await createOtpToken(user.userId, 'CHANGE_PASSWORD_OTP', env.changePasswordOtpTtlMinutes, context.ip);
 
-    await sendEmail('sendChangePasswordOtpEmail', {
+    const delivery = await sendEmail('sendChangePasswordOtpEmail', {
       to: user.email,
       otp,
       expiresInMinutes: env.changePasswordOtpTtlMinutes,
     }, 'change-password OTP');
+
+    if (!delivery?.sent) {
+      throw errors.internal('EMAIL_DELIVERY_FAILED');
+    }
 
     await writeAudit(context, 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED', { userId: user.userId, targetId: user.userId });
 

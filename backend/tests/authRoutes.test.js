@@ -724,6 +724,31 @@ describe('FE02 auth vertical slice', () => {
     expect(newPasswordLogin.status).toBe(200);
   });
 
+  test('change-password OTP does not claim delivery when SMTP is unavailable', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'otp-delivery@example.test');
+    const loginResponse = await login(app, 'otp-delivery@example.test');
+    dependencies.emailService.sendChangePasswordOtpEmail = jest.fn(async () => ({
+      sent: false,
+      reason: 'SMTP_NOT_CONFIGURED',
+    }));
+
+    const response = await request(app)
+      .post('/api/auth/change-password/request-otp')
+      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .send({
+        currentPassword: 'Password1!',
+        newPassword: 'NewPassword1!',
+        confirmNewPassword: 'NewPassword1!',
+      });
+
+    expect(response.status).toBe(500);
+    expect(response.body.error.code).toBe('EMAIL_DELIVERY_FAILED');
+    expect(dependencies.state.auditLogs).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: 'AUTH_CHANGE_PASSWORD_OTP_REQUESTED' }),
+    ]));
+  });
+
   test('change-password OTP rejects invalid ownership/state and changes the password once', async () => {
     const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
     await registerAndVerify(app, 'otp-change@example.test');

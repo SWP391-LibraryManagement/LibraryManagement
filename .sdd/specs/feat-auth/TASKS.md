@@ -295,3 +295,10 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Maps to: FR-FE02-004, FR-FE02-006, FR-FE02-008, FR-FE02-009; INV-FE02-004, INV-FE02-007; NFR-FE02-TXN-002 (`contradicts`).
   - DoD: failed-login, expired-lock auto-unlock, and successful-login/session writes apply only to the current eligible persisted state; concurrent deactivation cannot become `LOCKED` or receive a refresh session, and a newer lock cannot be cleared by a stale unlock; repository and route regressions pass.
   - Evidence: repository writes now guard the current status under the existing transaction boundaries; route regressions cover deactivation during failed/successful login and stale auto-unlock, and focused FE02 tests pass 66/66.
+
+## Phase 6: Convergence
+
+- [x] **FE02-T064 - Fail safely when change-password OTP email is not delivered.**
+  - Maps to: MF-FE02-006, FR-FE02-010, API `/change-password/request-otp` (`partial`).
+  - DoD: the request endpoint returns success only when the direct FE02 email adapter confirms delivery; missing SMTP or provider failure returns a safe error without claiming the OTP was sent or logging provider details; focused regression passes.
+  - Evidence: the direct change-password OTP path now requires `sent: true`, maps unavailable SMTP/provider failure to safe `EMAIL_DELIVERY_FAILED`, and records the request audit only after confirmed delivery; focused auth routes pass 50/50, profile frontend passes 6/6, and FE02 traceability passes 27/27.
