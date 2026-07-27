@@ -60,6 +60,7 @@
   - 2. Database Design
     - a. Database Schema
     - b. Table Description
+    - c. Column Specifications
 - II. Code Designs
   - 1. Authentication
     - a. Class Diagram
@@ -208,6 +209,7 @@ The approved project database is SQL Server. Table names below follow the curren
 erDiagram
   Users ||--o{ UserRoles : has
   Roles ||--o{ UserRoles : assigned
+  Users ||--o{ LoginFailureAttempts : records
   Users ||--o| UserProfiles : owns
   Users ||--o| Members : becomes
   Users ||--o{ MembershipApplications : submits
@@ -235,24 +237,316 @@ erDiagram
 | --- | --- | --- |
 | 01 | Roles | Stores role names used by authorization (`ADMIN`, `LIBRARIAN`, `MEMBER`, and compatibility `GUEST`). Guest remains an unauthenticated actor for public flows, not a normal login workspace. |
 | 02 | Users | Stores login accounts, email, password hash, account status, security timestamps, and deactivation timestamp. |
-| 03 | UserRoles | Maps users to one or more roles. |
-| 04 | UserProfiles | Stores profile details for a user, including full name, address, date of birth, avatar URL, and FE11 librarian-only department/specialization fields. |
-| 05 | Members | Stores the approved member projection used for borrowing and reservation eligibility. |
-| 06 | MembershipApplications | Stores membership application history, review status, reviewer, and review note. |
-| 07 | AuthTokens | Stores hashed authentication tokens for refresh, email verification, password reset, account setup, and OTP flows. |
-| 08 | Categories | Stores book categories used by catalog and inventory features. |
-| 09 | Authors | Stores book author records. |
-| 10 | Publishers | Stores book publisher records. |
-| 11 | Books | Stores catalog metadata including title, ISBN, category, author, publisher, status, audit ownership, and `RowVersion` for `If-Match` concurrency. |
-| 12 | BookCopies | Stores physical copy records, barcode, location, availability status, and `Version` rowversion for copy mutation concurrency. |
-| 13 | BorrowRequests | Stores borrowing request headers, requester, processing status, and approval metadata. |
-| 14 | BorrowDetails | Stores individual borrowed copy lines, due dates, return dates, renewal count, and item status. |
-| 15 | Reservations | Stores reservation queue records for users and book copies. |
-| 16 | Fines | Stores overdue fine calculation, payment, waiver/cancel status, and collection metadata. |
-| 17 | NotificationTemplates | Stores reusable notification subject/body templates. |
-| 18 | Notifications | Stores queued and sent notification records, recipient email, status, source feature, and safe payload. |
-| 19 | NotificationAttempts | Stores delivery attempt history for each notification. |
-| 20 | AuditLogs | Stores administrative/user action audit records with target metadata and request context. |
+| 03 | LoginFailureAttempts | Stores timestamped failed-login attempts for known accounts in the rolling 15-minute lockout window. |
+| 04 | UserRoles | Stores exactly one role mapping per persisted account; `UX_UserRoles_UserId` enforces at most one row per user. |
+| 05 | UserProfiles | Stores profile details for a user, including full name, address, date of birth, avatar URL, and FE11 librarian-only department/specialization fields. |
+| 06 | Members | Stores the approved member projection used for borrowing and reservation eligibility. |
+| 07 | MembershipApplications | Stores membership application history, review status, reviewer, and review note. |
+| 08 | AuthTokens | Stores hashed authentication tokens for refresh, email verification, password reset, account setup, and OTP flows. |
+| 09 | Categories | Stores book categories used by catalog and inventory features. |
+| 10 | Authors | Stores book author records. |
+| 11 | Publishers | Stores book publisher records. |
+| 12 | Books | Stores catalog metadata including title, ISBN, category, author, publisher, status, audit ownership, and `RowVersion` for `If-Match` concurrency. |
+| 13 | BookCopies | Stores physical copy records, barcode, location, availability status, and `Version` rowversion for copy mutation concurrency. |
+| 14 | BorrowRequests | Stores borrowing request headers, requester, processing status, and approval metadata. |
+| 15 | BorrowDetails | Stores individual borrowed copy lines, due dates, return dates, renewal count, and item status. |
+| 16 | Reservations | Stores reservation queue records for users and book copies. |
+| 17 | Fines | Stores overdue fine calculation, payment, waiver/cancel status, and collection metadata. |
+| 18 | NotificationTemplates | Stores reusable notification subject/body templates. |
+| 19 | Notifications | Stores queued and sent notification records, recipient email, status, source feature, and safe payload. |
+| 20 | NotificationAttempts | Stores delivery attempt history for each notification. |
+| 21 | AuditLogs | Stores administrative/user action audit records with target metadata and request context. |
+
+### c. Column Specifications
+
+Legend: `PK` = primary key, `FK` = foreign key, `UQ` = unique, `NN` = `NOT NULL`, and `NULL` = optional. Defaults and allowed values are copied from the canonical SQL Server schema.
+
+#### Roles
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| RoleId | INT | PK, IDENTITY | Database-generated role identifier. |
+| RoleName | NVARCHAR(50) | NN, UQ; `ADMIN`, `LIBRARIAN`, `MEMBER`, `GUEST` | Authorization role name. |
+
+#### Users
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| UserId | INT | PK, IDENTITY | Account identifier. |
+| Username | NVARCHAR(50) | NN, UQ | Unique login name. |
+| Email | NVARCHAR(255) | NN, UQ (`UX_Users_Email`) | Unique account email. |
+| PasswordHash | NVARCHAR(255) | NN | Password hash; plaintext passwords are never stored. |
+| Phone | NVARCHAR(20) | NULL | Contact phone number. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE`; `ACTIVE`, `INACTIVE`, `LOCKED` | Account lifecycle status. |
+| EmailVerifiedAt | DATETIME | NULL | Time at which email ownership was verified. |
+| FailedLoginCount | INT | NN, default `0` | Current failed-login counter retained with lock state. |
+| LockedUntil | DATETIME | NULL | Automatic account-unlock time. |
+| LastLoginAt | DATETIME | NULL | Most recent successful login time. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+| DeactivatedAt | DATETIME | NULL | Account deactivation time. |
+
+#### LoginFailureAttempts
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| AttemptId | BIGINT | PK, IDENTITY | Failed-attempt identifier. |
+| UserId | INT | NN, FK → `Users.UserId`; indexed with `AttemptedAt` | Known account that failed authentication. |
+| AttemptedAt | DATETIME | NN, default `GETDATE()`; indexed with `UserId` | Failure time used by the rolling lockout window. |
+
+#### UserRoles
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| UserId | INT | PK, FK → `Users.UserId`, UQ (`UX_UserRoles_UserId`) | Account receiving the role. |
+| RoleId | INT | PK, FK → `Roles.RoleId` | Assigned role. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Assignment creation time. |
+
+#### UserProfiles
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| ProfileId | INT | PK, IDENTITY | Profile identifier. |
+| UserId | INT | NN, UQ, FK → `Users.UserId` | Owning account; enforces one profile per user. |
+| FullName | NVARCHAR(100) | NULL | User's display/full name. |
+| Address | NVARCHAR(255) | NULL | Contact address. |
+| DateOfBirth | DATE | NULL | Date of birth. |
+| AvatarUrl | NVARCHAR(255) | NULL | Stored avatar resource URL. |
+| Department | NVARCHAR(100) | NULL | Librarian department. |
+| Specialization | NVARCHAR(100) | NULL | Librarian specialization. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### Members
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| MemberId | INT | PK, IDENTITY | Member identifier. |
+| UserId | INT | NN, UQ, FK → `Users.UserId` | Account represented by this member record. |
+| Status | NVARCHAR(20) | NN, default `PENDING`; `PENDING`, `APPROVED`, `REJECTED`, `INACTIVE` | Membership eligibility status. |
+| ApprovedAt | DATETIME | NULL | Approval time. |
+| ApprovedBy | INT | NULL, FK → `Users.UserId` | Staff account that approved membership. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### MembershipApplications
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| ApplicationId | INT | PK, IDENTITY | Application identifier. |
+| UserId | INT | NN, FK → `Users.UserId`; one pending row per user | Applicant account. |
+| Status | NVARCHAR(20) | NN, default `PENDING`; `PENDING`, `APPROVED`, `REJECTED` | Review status. |
+| AppliedAt | DATETIME | NN, default `GETDATE()` | Submission time. |
+| ApprovedAt | DATETIME | NULL | Approval time when approved. |
+| ReviewedBy | INT | NULL, FK → `Users.UserId` | Reviewing staff account. |
+| ReviewNote | NVARCHAR(500) | NULL | Review reason or note. |
+
+#### AuthTokens
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| TokenId | INT | PK, IDENTITY | Token record identifier. |
+| UserId | INT | NN, FK → `Users.UserId`; indexed with `TokenType` | Owning account. |
+| TokenType | NVARCHAR(30) | NN; `REFRESH`, `PASSWORD_RESET`, `EMAIL_VERIFY`, `ACCOUNT_SETUP`, `CHANGE_PASSWORD_OTP` | Token purpose. |
+| TokenHash | NVARCHAR(255) | NN, indexed | Hash of the secret token/OTP. |
+| ExpiresAt | DATETIME | NN | Expiration time. |
+| UsedAt | DATETIME | NULL | One-time token consumption time. |
+| RevokedAt | DATETIME | NULL | Revocation time. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| CreatedByIp | NVARCHAR(50) | NULL | Request IP captured at creation. |
+
+#### Categories
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| CategoryId | INT | PK, IDENTITY | Category identifier. |
+| CategoryName | NVARCHAR(100) | NN, UQ | Category name. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE` | Lifecycle status used by catalog management. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+
+#### Authors
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| AuthorId | INT | PK, IDENTITY | Author identifier. |
+| AuthorName | NVARCHAR(100) | NN, UQ | Author name. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE` | Lifecycle status used by catalog management. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+
+#### Publishers
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| PublisherId | INT | PK, IDENTITY | Publisher identifier. |
+| PublisherName | NVARCHAR(100) | NN, UQ | Publisher name. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE` | Lifecycle status used by catalog management. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+
+#### Books
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| BookId | INT | PK, IDENTITY | Catalog book identifier. |
+| Title | NVARCHAR(255) | NN | Book title. |
+| ISBN | NVARCHAR(20) | NULL, filtered UQ when present | ISBN. |
+| CategoryId | INT | NULL, FK → `Categories.CategoryId` | Category reference. |
+| AuthorId | INT | NULL, FK → `Authors.AuthorId` | Author reference. |
+| PublisherId | INT | NULL, FK → `Publishers.PublisherId` | Publisher reference. |
+| PublishYear | INT | NULL | Publication year. |
+| Description | NVARCHAR(MAX) | NULL | Catalog description. |
+| CoverUrl | NVARCHAR(255) | NULL | Cover image URL. |
+| Rating | DECIMAL(2,1) | NULL | Display rating. |
+| Pages | INT | NULL | Page count. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE`; `ACTIVE`, `INACTIVE` | Catalog lifecycle status. |
+| CreatedBy | INT | NULL, FK → `Users.UserId` | Creating staff account. |
+| UpdatedBy | INT | NULL, FK → `Users.UserId` | Last updating staff account. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+| RowVersion | ROWVERSION | NN | Optimistic concurrency token for book updates. |
+
+#### BookCopies
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| CopyId | INT | PK, IDENTITY | Physical-copy identifier. |
+| BookId | INT | NN, FK → `Books.BookId` | Parent catalog book. |
+| Barcode | NVARCHAR(100) | NN, UQ | Physical-copy barcode. |
+| Status | NVARCHAR(20) | NN, default `AVAILABLE`; `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE` | Copy lifecycle/availability status. |
+| Location | NVARCHAR(100) | NULL | Shelf or storage location. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+| Version | ROWVERSION | NN | Optimistic concurrency token for copy mutations. |
+
+#### BorrowRequests
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| RequestId | INT | PK, IDENTITY | Borrow-request identifier. |
+| UserId | INT | NN, FK → `Users.UserId` | Requesting account. |
+| RequestDate | DATETIME | NN, default `GETDATE()` | Business request time. |
+| Status | NVARCHAR(20) | NN, default `PENDING`; `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED` | Request lifecycle status. |
+| CreatedBy | INT | NULL, FK → `Users.UserId` | Account that created the request. |
+| ApprovedBy | INT | NULL, FK → `Users.UserId` | Staff account that processed approval/rejection. |
+| ApprovedAt | DATETIME | NULL | Approval time. |
+| RejectedAt | DATETIME | NULL | Rejection time. |
+| ProcessedAt | DATETIME | NULL | Final processing time. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Persistence creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### BorrowDetails
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| BorrowDetailId | INT | PK, IDENTITY | Borrow line identifier. |
+| RequestId | INT | NN, FK → `BorrowRequests.RequestId` | Parent borrow request. |
+| CopyId | INT | NN, FK → `BookCopies.CopyId` | Requested/borrowed physical copy. |
+| BorrowDate | DATE | NULL | Checkout date, assigned on approval. |
+| DueDate | DATE | NULL | Due date, assigned before status becomes `BORROWED`. |
+| ReturnDate | DATE | NULL | Actual return date. |
+| RenewalCount | INT | NN, default `0` | Number of approved renewals. |
+| Status | NVARCHAR(20) | NN, default `REQUESTED`; `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` | Item lifecycle status. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### Reservations
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| ReservationId | INT | PK, IDENTITY | Reservation identifier. |
+| UserId | INT | NN, FK → `Users.UserId` | Reserving account. |
+| CopyId | INT | NN, FK → `BookCopies.CopyId` | Reserved physical copy. |
+| ReservedAt | DATETIME | NN, default `GETDATE()` | Reservation time. |
+| QueuePosition | INT | NULL | Position in the reservation queue. |
+| ExpiresAt | DATETIME | NULL | Hold expiration time. |
+| NotifiedAt | DATETIME | NULL | Availability-notification time. |
+| CancelledAt | DATETIME | NULL | Cancellation time. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE`; `ACTIVE`, `FULFILLED`, `CANCELLED`, `EXPIRED`, `NOTIFIED` | Reservation lifecycle status. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### Fines
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| FineId | INT | PK, IDENTITY | Fine identifier. |
+| UserId | INT | NN, FK → `Users.UserId` | Account owing the fine. |
+| BorrowDetailId | INT | NN, FK → `BorrowDetails.BorrowDetailId` | Related borrow line. |
+| OverdueDays | INT | NN, default `0` | Traceable overdue-day count. |
+| RatePerDay | DECIMAL(10,2) | NN, default `5000` | Fine rate per overdue day. |
+| Amount | DECIMAL(10,2) | NN | Calculated fine amount. |
+| PaidAmount | DECIMAL(10,2) | NN, default `0` | Collected amount. |
+| Reason | NVARCHAR(255) | NULL | Fine, waiver, or cancellation reason. |
+| Status | NVARCHAR(20) | NN, default `UNPAID`; `UNPAID`, `PAID`, `WAIVED`, `CANCELLED` | Fine lifecycle status. |
+| CalculatedAt | DATETIME | NN, default `GETDATE()` | Calculation time. |
+| PaidAt | DATETIME | NULL | Payment completion time. |
+| CreatedBy | INT | NULL, FK → `Users.UserId` | Account that created/calculated the fine. |
+| CollectedBy | INT | NULL, FK → `Users.UserId` | Staff account that collected payment. |
+| PaymentMethod | NVARCHAR(50) | NULL | Recorded payment method. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### NotificationTemplates
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| TemplateId | INT | PK, IDENTITY | Template identifier. |
+| TemplateCode | NVARCHAR(100) | NN, UQ | Stable template code. |
+| Subject | NVARCHAR(255) | NN | Email subject template. |
+| Body | NVARCHAR(MAX) | NN | Email body template. |
+| Status | NVARCHAR(20) | NN, default `ACTIVE`; `ACTIVE`, `INACTIVE` | Template lifecycle status. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| UpdatedAt | DATETIME | NULL | Most recent update time. |
+
+#### Notifications
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| NotificationId | INT | PK, IDENTITY | Notification identifier. |
+| NotificationType | NVARCHAR(50) | NULL; constrained supported types | Business notification type. |
+| TemplateId | INT | NULL, FK → `NotificationTemplates.TemplateId` | Selected template. |
+| TemplateKey | NVARCHAR(100) | NULL | Template lookup key retained with the notification. |
+| UserId | INT | NULL, FK → `Users.UserId` | Recipient account when available. |
+| RecipientEmail | NVARCHAR(255) | NN | Delivery email address. |
+| Channel | NVARCHAR(20) | NN, default `EMAIL`; `EMAIL` only | Delivery channel. |
+| Status | NVARCHAR(20) | NN, default `PENDING`; `PENDING`, `PROCESSING`, `SENT`, `DELIVERED`, `FAILED`, `SKIPPED`, `CANCELLED` | Durable delivery status. |
+| Title | NVARCHAR(255) | NULL | Rendered notification title. |
+| Body | NVARCHAR(MAX) | NULL | Rendered notification body. |
+| SourceFeature | NVARCHAR(20) | NULL | Originating feature identifier. |
+| SourceEntityType | NVARCHAR(50) | NULL | Originating entity type. |
+| SourceEntityId | INT | NULL | Originating entity identifier. |
+| IdempotencyKey | NVARCHAR(100) | NULL, filtered UQ when present | Duplicate-delivery prevention key. |
+| SafePayload | NVARCHAR(MAX) | NULL | Redacted/non-secret delivery payload. |
+| AttemptCount | INT | NN, default `0` | Number of delivery attempts. |
+| LastErrorMessage | NVARCHAR(500) | NULL | Latest safe error summary. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Creation time. |
+| SentAt | DATETIME | NULL | Successful send time. |
+
+Supported `NotificationType` values are `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `RESERVATION_AVAILABLE`, `DUE_DATE_REMINDER`, `OVERDUE_NOTICE`, `FINE_NOTICE`, and `GENERAL_SYSTEM`.
+
+#### NotificationAttempts
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| AttemptId | INT | PK, IDENTITY | Delivery-attempt identifier. |
+| NotificationId | INT | NN, FK → `Notifications.NotificationId` | Parent notification. |
+| AttemptedAt | DATETIME | NN, default `GETDATE()` | Attempt time. |
+| Status | NVARCHAR(20) | NN; `SENT`, `FAILED` | Attempt result. |
+| SafeErrorMessage | NVARCHAR(500) | NULL | Redacted provider error. |
+| ProviderMessageId | NVARCHAR(255) | NULL | Provider-side message identifier. |
+
+#### AuditLogs
+
+| Column | Data type | Rules | Description |
+| --- | --- | --- | --- |
+| LogId | INT | PK, IDENTITY | Audit-event identifier. |
+| UserId | INT | NULL, FK → `Users.UserId` | Actor account, when authenticated. |
+| Action | NVARCHAR(255) | NN | Audited action name. |
+| TargetType | NVARCHAR(100) | NULL | Affected entity type. |
+| TargetId | INT | NULL | Affected entity identifier. |
+| Metadata | NVARCHAR(MAX) | NULL | Safe structured audit metadata. |
+| IpAddress | NVARCHAR(50) | NULL | Request IP address. |
+| UserAgent | NVARCHAR(255) | NULL | Request user-agent value. |
+| CreatedAt | DATETIME | NN, default `GETDATE()` | Event time. |
 
 # II. Code Designs
 
