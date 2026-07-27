@@ -1,189 +1,189 @@
-﻿# Phase 1 Open Questions Resolution Packet
+﻿# Gói giải quyết câu hỏi mở Giai đoạn 1
 
-Date: 2026-06-10
-Status: REVIEWED - OPEN QUESTIONS APPROVED
-Source review: `.sdd/reviews/review-phase-1-specs-2026-06-10.md`
-Purpose: Use this file in the team review meeting to approve, change, or defer every open question before moving specs to Phase 2 Planning.
+Ngày: 2026-06-10
+Trạng thái: ĐÃ RÀ SOÁT - CÂU HỎI MỞ ĐƯỢC PHÊ DUYỆT
+Bản rà soát nguồn: `.sdd/reviews/review-phase-1-specs-2026-06-10.md`
+Mục đích: Dùng tệp này trong cuộc họp rà soát nhóm để phê duyệt, thay đổi hoặc hoãn mọi câu hỏi mở trước khi chuyển đặc tả sang Lập kế hoạch Giai đoạn 2.
 
-Review note: Rows marked `APPROVED` are approved by this review pass. No `PENDING` open-question rows remain in this packet.
+Ghi chú rà soát: Các hàng được đánh dấu `APPROVED` đã được lần rà soát này phê duyệt. Không còn hàng câu hỏi mở `PENDING` trong gói này.
 
 
-## Meeting Rule
+## Quy tắc cuộc họp
 
-A question is resolved only when the team writes one of these outcomes:
+Một câu hỏi chỉ được giải quyết khi nhóm ghi một trong các kết quả sau:
 
-- `APPROVED`: accept the proposed decision.
-- `CHANGED`: replace the proposed decision with a different rule.
-- `DEFERRED`: explicitly move the question out of Phase 1 scope.
+- `APPROVED`: chấp nhận quyết định đề xuất.
+- `CHANGED`: thay quyết định đề xuất bằng quy tắc khác.
+- `DEFERRED`: chuyển rõ câu hỏi ra ngoài phạm vi Giai đoạn 1.
 
-Do not change any feature `SPEC.md` status to `APPROVED` until its questions below are resolved and copied back into the related `SPEC.md` / `CHANGELOG.md`.
+Không đổi trạng thái `SPEC.md` của bất kỳ tính năng nào thành `APPROVED` cho đến khi các câu hỏi bên dưới của nó được giải quyết và sao chép lại vào `SPEC.md` / `CHANGELOG.md` liên quan.
 
 ---
 
-## 1. Cross-Feature Decisions To Approve First
+## 1. Các quyết định liên tính năng cần phê duyệt trước
 
-| ID | Affected Features | Proposed Decision | Outcome | Notes |
+| ID | Tính năng bị ảnh hưởng | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- | --- |
-| X-001 | FE01, FE05 | FE01 owns public browse/search/detail; FE05 owns staff book CRUD and internal book management. Public views hide inactive books. | APPROVED |  |
-| X-002 | FE02, FE10, FE11 | Password setup email is owned by FE02/FE11; FE10 provides reusable notification delivery only if called by those features. | APPROVED |  |
-| X-003 | FE03, FE11 | FE03 updates own profile fields; FE11 updates admin-managed account fields/status/roles; email changes go through FE02 verification. | APPROVED |  |
-| X-004 | FE04, FE11 | Membership approval changes membership application/status only; role assignment remains FE11. | APPROVED |  |
-| X-005 | FE06, FE07, FE08 | Phase 1 copy statuses are `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`. FE07 owns `BORROWED`; FE08 owns `RESERVED`; FE06 cannot manually override active borrow/reservation. | APPROVED |  |
-| X-006 | FE07, FE09 | Any unpaid fine amount > 0 blocks borrow/renewal. Phase 1 supports overdue fines only. FE09 owns fine calculation/creation. | APPROVED |  |
-| X-007 | FE07, FE08 | Active reservation/held copy for another member blocks renewal. Phase 1 reservation targets `CopyId`. | APPROVED |  |
-| X-008 | FE07, FE09, FE10 | Due-date reminders are manually/scheduler triggered in Phase 1; notification failure does not roll back borrow/return/fine flows. | APPROVED |  |
-| X-009 | FE06, FE07, FE09, FE11, FE12 | FE12 reports must use approved source status values from FE06/FE07/FE09/FE11 and stay read-only. | APPROVED |  |
+| X-001 | FE01, FE05 | FE01 sở hữu duyệt/tìm kiếm/chi tiết công khai; FE05 sở hữu CRUD sách cho nhân viên và quản lý sách nội bộ. Khung nhìn công khai ẩn sách không hoạt động. | APPROVED |  |
+| X-002 | FE02, FE10, FE11 | Email thiết lập mật khẩu thuộc sở hữu FE02/FE11; FE10 chỉ cung cấp việc gửi thông báo tái sử dụng khi các tính năng đó gọi. | APPROVED |  |
+| X-003 | FE03, FE11 | FE03 cập nhật trường hồ sơ của chính người dùng; FE11 cập nhật trường/trạng thái/vai trò tài khoản do quản trị viên quản lý; thay đổi email đi qua xác minh FE02. | APPROVED |  |
+| X-004 | FE04, FE11 | Phê duyệt thành viên chỉ thay đổi đơn/trạng thái thành viên; việc gán vai trò vẫn thuộc FE11. | APPROVED |  |
+| X-005 | FE06, FE07, FE08 | Trạng thái bản sao Giai đoạn 1 là `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`. FE07 sở hữu `BORROWED`; FE08 sở hữu `RESERVED`; FE06 không thể ghi đè thủ công lượt mượn/đặt chỗ đang hoạt động. | APPROVED |  |
+| X-006 | FE07, FE09 | Mọi số tiền phạt chưa trả > 0 đều chặn mượn/gia hạn. Giai đoạn 1 chỉ hỗ trợ tiền phạt quá hạn. FE09 sở hữu việc tính/tạo tiền phạt. | APPROVED |  |
+| X-007 | FE07, FE08 | Đặt chỗ đang hoạt động/bản sao được giữ cho thành viên khác chặn gia hạn. Đặt chỗ Giai đoạn 1 nhắm `CopyId`. | APPROVED |  |
+| X-008 | FE07, FE09, FE10 | Nhắc hạn trả được kích hoạt thủ công/bởi bộ lập lịch trong Giai đoạn 1; thông báo thất bại không hoàn tác luồng mượn/trả/phạt. | APPROVED |  |
+| X-009 | FE06, FE07, FE09, FE11, FE12 | Báo cáo FE12 phải dùng giá trị trạng thái nguồn đã phê duyệt từ FE06/FE07/FE09/FE11 và giữ chế độ chỉ đọc. | APPROVED |  |
 
 ---
 
-## 2. Feature Question Decisions
+## 2. Quyết định câu hỏi theo tính năng
 
-### FE01 Public / Browse - Owner: Dung
+### FE01 Công khai / Duyệt - Chủ sở hữu: Dung
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | APPROVED |  |
-| Q-FE01-002 | Guests see simple availability only: `Available` / `Unavailable`, not exact copy count. | APPROVED |  |
-| Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | APPROVED |  |
-| Q-FE01-004 | ISBN is visible to guests when available. | APPROVED |  |
-| Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | APPROVED |  |
+| Q-FE01-001 | Ẩn sách không hoạt động/đã vô hiệu hóa khỏi mọi khung nhìn tìm kiếm/chi tiết công khai. | APPROVED |  |
+| Q-FE01-002 | Khách chỉ thấy khả dụng đơn giản: `Available` / `Unavailable`, không thấy số bản sao chính xác. | APPROVED |  |
+| Q-FE01-003 | Bộ lọc Giai đoạn 1: từ khóa, tựa sách, tác giả, thể loại; bắt buộc phân trang. | APPROVED |  |
+| Q-FE01-004 | ISBN hiển thị cho khách khi có. | APPROVED |  |
+| Q-FE01-005 | Trang chủ hiển thị điều hướng/tìm kiếm và sách gần đây; sách nổi bật là tùy chọn/ngoài phạm vi trừ khi được cấu hình thủ công. | APPROVED |  |
 
-### FE02 Authentication - Owner: Dat
+### FE02 Xác thực - Chủ sở hữu: Dat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE02-001 | Password requires at least 8 chars, 1 uppercase, 1 number, 1 special char. | APPROVED |  |
-| Q-FE02-002 | Access token expires after 15 minutes; refresh token expires after 7 days. | APPROVED | APPROVED - reasonable secure default for Phase 1; update FE02 token/session rules. |
-| Q-FE02-003 | Email verification is required if email/mock provider is available; otherwise mark as mock/planned for Phase 1. | APPROVED |  |
-| Q-FE02-004 | Multiple concurrent sessions are allowed in Phase 1. | APPROVED |  |
-| Q-FE02-005 | Failed login attempts are rate-limited by IP/email with a simple server-side rule. | APPROVED |  |
-| Q-FE02-006 | Password reset token expires after 15 minutes. | APPROVED |  |
-| Q-FE02-007 | Log password change attempts and failed login attempts. | APPROVED |  |
-| Q-FE02-008 | Inactive users cannot log in; no auto-lock job in Phase 1. | APPROVED |  |
-| Q-FE02-009 | Use JWT access token plus refresh token. | APPROVED |  |
-| Q-FE02-010 | Password reset requires verified email ownership through reset token only; no extra recovery checks in Phase 1. | APPROVED |  |
+| Q-FE02-001 | Mật khẩu yêu cầu ít nhất 8 ký tự, 1 chữ hoa, 1 chữ số, 1 ký tự đặc biệt. | APPROVED |  |
+| Q-FE02-002 | Token truy cập hết hạn sau 15 phút; token làm mới hết hạn sau 7 ngày. | APPROVED | APPROVED - mặc định bảo mật hợp lý cho Giai đoạn 1; cập nhật quy tắc token/phiên FE02. |
+| Q-FE02-003 | Bắt buộc xác minh email nếu nhà cung cấp email/giả lập khả dụng; nếu không thì đánh dấu là giả lập/đã lập kế hoạch cho Giai đoạn 1. | APPROVED |  |
+| Q-FE02-004 | Cho phép nhiều phiên đồng thời trong Giai đoạn 1. | APPROVED |  |
+| Q-FE02-005 | Lần đăng nhập thất bại bị giới hạn tốc độ theo IP/email bằng quy tắc phía máy chủ đơn giản. | APPROVED |  |
+| Q-FE02-006 | Token đặt lại mật khẩu hết hạn sau 15 phút. | APPROVED |  |
+| Q-FE02-007 | Ghi nhật ký lần thử đổi mật khẩu và lần đăng nhập thất bại. | APPROVED |  |
+| Q-FE02-008 | Người dùng không hoạt động không thể đăng nhập; không có tác vụ tự động khóa trong Giai đoạn 1. | APPROVED |  |
+| Q-FE02-009 | Dùng token truy cập JWT cùng token làm mới. | APPROVED |  |
+| Q-FE02-010 | Đặt lại mật khẩu chỉ yêu cầu quyền sở hữu email đã xác minh qua token đặt lại; không có kiểm tra khôi phục bổ sung trong Giai đoạn 1. | APPROVED |  |
 
-### FE03 User Profile - Owner: Dat
+### FE03 Hồ sơ Người dùng - Chủ sở hữu: Dat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE03-001 | FE03 can update `Users.Phone`. | APPROVED |  |
-| Q-FE03-002 | FE03 cannot update email; email changes must go through FE02 verification. | APPROVED |  |
-| Q-FE03-003 | Missing profile records are auto-created on first view. | APPROVED |  |
-| Q-FE03-004 | Phase 1 supports avatar URL text only, not file upload. | APPROVED |  |
-| Q-FE03-005 | Profile updates write audit logs for changed fields, actor, and timestamp. | APPROVED |  |
+| Q-FE03-001 | FE03 có thể cập nhật `Users.Phone`. | APPROVED |  |
+| Q-FE03-002 | FE03 không thể cập nhật email; thay đổi email phải đi qua xác minh FE02. | APPROVED |  |
+| Q-FE03-003 | Bản ghi hồ sơ bị thiếu được tự động tạo ở lần xem đầu tiên. | APPROVED |  |
+| Q-FE03-004 | Giai đoạn 1 chỉ hỗ trợ văn bản URL ảnh đại diện, không tải tệp lên. | APPROVED |  |
+| Q-FE03-005 | Cập nhật hồ sơ ghi nhật ký kiểm toán cho trường đã thay đổi, tác nhân và dấu thời gian. | APPROVED |  |
 
-### FE04 Membership Management - Owner: Dat
+### FE04 Quản lý Tư cách Thành viên - Chủ sở hữu: Dat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE04-001 | Rejected users can re-apply after correcting information. | APPROVED |  |
-| Q-FE04-002 | Rejection reason is required. | APPROVED |  |
-| Q-FE04-003 | Membership does not expire in Phase 1. | APPROVED |  |
-| Q-FE04-004 | Approved membership changes application/member status only, not user role. | APPROVED |  |
-| Q-FE04-005 | Librarian and Admin can approve/reject. | APPROVED | APPROVED - current FE04 already uses Librarian/Admin permission model. |
-| Q-FE04-006 | Approval/rejection triggers FE10 notification when notification provider is available; failure does not roll back approval/rejection. | APPROVED |  |
+| Q-FE04-001 | Người dùng bị từ chối có thể nộp lại sau khi sửa thông tin. | APPROVED |  |
+| Q-FE04-002 | Bắt buộc có lý do từ chối. | APPROVED |  |
+| Q-FE04-003 | Tư cách thành viên không hết hạn trong Giai đoạn 1. | APPROVED |  |
+| Q-FE04-004 | Phê duyệt thành viên chỉ thay đổi trạng thái đơn/thành viên, không thay đổi vai trò người dùng. | APPROVED |  |
+| Q-FE04-005 | Thủ thư và Quản trị viên có thể phê duyệt/từ chối. | APPROVED | APPROVED - FE04 hiện tại đã dùng mô hình quyền Thủ thư/Quản trị viên. |
+| Q-FE04-006 | Phê duyệt/từ chối kích hoạt thông báo FE10 khi nhà cung cấp thông báo khả dụng; lỗi không hoàn tác phê duyệt/từ chối. | APPROVED |  |
 
-### FE05 Book Management - Owner: Dung
+### FE05 Quản lý Sách - Chủ sở hữu: Dung
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE05-001 | ISBN is optional but must be unique when provided. | APPROVED |  |
-| Q-FE05-002 | Multiple books can share the same title. | APPROVED |  |
-| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | APPROVED |  |
-| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | APPROVED |  |
-| Q-FE05-005 | A book belongs to one category in Phase 1. | APPROVED | APPROVED - current SQL schema has single `CategoryId`; many-to-many is future work. |
-| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | APPROVED |  |
-| Q-FE05-007 | Deactivation is blocked when active copies are borrowed or reserved. | APPROVED |  |
+| Q-FE05-001 | ISBN là tùy chọn nhưng phải duy nhất khi được cung cấp. | APPROVED |  |
+| Q-FE05-002 | Nhiều sách có thể có cùng tựa. | APPROVED |  |
+| Q-FE05-003 | Sách đã vô hiệu hóa bị ẩn khỏi tìm kiếm công khai nhưng hiển thị trong khung nhìn quản lý nhân viên/quản trị viên. | APPROVED |  |
+| Q-FE05-004 | Bắt buộc xóa mềm/vô hiệu hóa; không xóa vật lý trong Giai đoạn 1. | APPROVED |  |
+| Q-FE05-005 | Một sách thuộc một thể loại trong Giai đoạn 1. | APPROVED | APPROVED - lược đồ SQL hiện tại có một `CategoryId`; quan hệ nhiều-nhiều là công việc tương lai. |
+| Q-FE05-006 | Ảnh bìa được lưu dưới dạng văn bản URL/đường dẫn, không phải nội dung nhị phân trong cơ sở dữ liệu. | APPROVED |  |
+| Q-FE05-007 | Việc vô hiệu hóa bị chặn khi các bản sao đang hoạt động được mượn hoặc đặt chỗ. | APPROVED |  |
 
-### FE06 Inventory / Book Copy Management - Owner: Dat
+### FE06 Quản lý Kho / Bản sao Sách - Chủ sở hữu: Dat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE06-001 | Allowed copy statuses: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`. | APPROVED |  |
-| Q-FE06-002 | Staff cannot manually set `BORROWED` or `RESERVED`; those come only from FE07/FE08 flows. | APPROVED |  |
-| Q-FE06-003 | `DELETE /api/book-copies/{id}` deactivates instead of physical delete. | APPROVED |  |
-| Q-FE06-004 | `Location` is optional in Phase 1. | APPROVED |  |
-| Q-FE06-005 | Copy condition is not separate from status in Phase 1. | APPROVED |  |
-| Q-FE06-006 | Create/update/deactivate/status-change actions write `AuditLogs`. | APPROVED |  |
+| Q-FE06-001 | Trạng thái bản sao được phép: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`. | APPROVED |  |
+| Q-FE06-002 | Nhân viên không thể đặt thủ công `BORROWED` hay `RESERVED`; chúng chỉ đến từ luồng FE07/FE08. | APPROVED |  |
+| Q-FE06-003 | `DELETE /api/book-copies/{id}` vô hiệu hóa thay vì xóa vật lý. | APPROVED |  |
+| Q-FE06-004 | `Location` là tùy chọn trong Giai đoạn 1. | APPROVED |  |
+| Q-FE06-005 | Tình trạng bản sao không tách biệt với trạng thái trong Giai đoạn 1. | APPROVED |  |
+| Q-FE06-006 | Hành động tạo/cập nhật/vô hiệu hóa/đổi trạng thái ghi `AuditLogs`. | APPROVED |  |
 
-### FE08 Reservation Management - Owner: Nhat
+### FE08 Quản lý Đặt chỗ - Chủ sở hữu: Nhat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE08-001 | Reservation targets physical copy `CopyId` in Phase 1. | APPROVED |  |
-| Q-FE08-002 | Member cannot reserve when a copy is currently available. | APPROVED |  |
-| Q-FE08-003 | Maximum 3 active reservations per member. | APPROVED | APPROVED - simple Phase 1 limit; add business rule and test. |
-| Q-FE08-004 | Notified reservation stays valid for 2 calendar days. | APPROVED | APPROVED - simple Phase 1 hold window; add expiration rule. |
-| Q-FE08-005 | Queue processing is manual by librarian in Phase 1; automatic trigger is future work. | APPROVED |  |
+| Q-FE08-001 | Đặt chỗ nhắm bản sao vật lý `CopyId` trong Giai đoạn 1. | APPROVED |  |
+| Q-FE08-002 | Thành viên không thể đặt chỗ khi một bản sao hiện đang khả dụng. | APPROVED |  |
+| Q-FE08-003 | Tối đa 3 đặt chỗ đang hoạt động cho mỗi thành viên. | APPROVED | APPROVED - giới hạn Giai đoạn 1 đơn giản; thêm quy tắc nghiệp vụ và kiểm thử. |
+| Q-FE08-004 | Đặt chỗ đã thông báo giữ hiệu lực trong 2 ngày lịch. | APPROVED | APPROVED - khoảng giữ Giai đoạn 1 đơn giản; thêm quy tắc hết hạn. |
+| Q-FE08-005 | Hàng đợi được thủ thư xử lý thủ công trong Giai đoạn 1; kích hoạt tự động là công việc tương lai. | APPROVED |  |
 
-### FE09 Fine Management - Owner: Dung
+### FE09 Quản lý Tiền phạt - Chủ sở hữu: Dung
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE09-001 | Phase 1 supports overdue fines only; lost/damaged fines are out of scope. | APPROVED |  |
-| Q-FE09-003 | No partial payments in Phase 1. | APPROVED |  |
-| Q-FE09-004 | Store collector ID and note with the fine payment record/table if payment tracking exists; otherwise store on fine record for Phase 1. | APPROVED |  |
-| Q-FE09-005 | Admin can waive/cancel fines with required reason and audit log. | APPROVED | APPROVED - admin-only sensitive action; require reason and audit log. |
-| Q-FE09-006 | Fine calculation runs on return and may also run manually by librarian/admin; scheduled daily job is future work. | APPROVED |  |
+| Q-FE09-001 | Giai đoạn 1 chỉ hỗ trợ tiền phạt quá hạn; phạt do mất/hư hỏng nằm ngoài phạm vi. | APPROVED |  |
+| Q-FE09-003 | Không thanh toán một phần trong Giai đoạn 1. | APPROVED |  |
+| Q-FE09-004 | Lưu ID người thu và ghi chú cùng bản ghi/bảng thanh toán tiền phạt nếu có theo dõi thanh toán; nếu không thì lưu trên bản ghi tiền phạt trong Giai đoạn 1. | APPROVED |  |
+| Q-FE09-005 | Quản trị viên có thể miễn/hủy tiền phạt với lý do bắt buộc và nhật ký kiểm toán. | APPROVED | APPROVED - hành động nhạy cảm chỉ dành cho quản trị viên; yêu cầu lý do và nhật ký kiểm toán. |
+| Q-FE09-006 | Việc tính tiền phạt chạy khi trả và cũng có thể được thủ thư/quản trị viên chạy thủ công; tác vụ hằng ngày được lập lịch là công việc tương lai. | APPROVED |  |
 
-### FE10 Notification Management - Owner: Nhat
+### FE10 Quản lý Thông báo - Chủ sở hữu: Nhat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE10-001 | Phase 1 required channel is email with mock provider. | APPROVED |  |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | APPROVED |  |
-| Q-FE10-003 | Required templates: verification, password reset, due reminder, overdue notice, reservation ready, membership result. | APPROVED |  |
-| Q-FE10-004 | Store notification send attempts and status. | APPROVED |  |
-| Q-FE10-005 | Retry failed sends manually only in Phase 1. | APPROVED |  |
-| Q-FE10-006 | Notification failure must not block source business flow. | APPROVED |  |
-| Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | APPROVED |  |
+| Q-FE10-001 | Kênh bắt buộc của Giai đoạn 1 là email với nhà cung cấp giả lập. | APPROVED |  |
+| Q-FE10-002 | Thông báo trong ứng dụng là tùy chọn/công việc tương lai trong Giai đoạn 1. | APPROVED |  |
+| Q-FE10-003 | Mẫu bắt buộc: xác minh, đặt lại mật khẩu, nhắc hạn trả, báo quá hạn, đặt chỗ sẵn sàng, kết quả thành viên. | APPROVED |  |
+| Q-FE10-004 | Lưu lần thử gửi thông báo và trạng thái. | APPROVED |  |
+| Q-FE10-005 | Chỉ thử lại lượt gửi thất bại theo cách thủ công trong Giai đoạn 1. | APPROVED |  |
+| Q-FE10-006 | Thông báo thất bại không được chặn luồng nghiệp vụ nguồn. | APPROVED |  |
+| Q-FE10-007 | Hệ thống/Bộ lập lịch có thể kích hoạt thông báo nội bộ; không phải vai trò đăng nhập. | APPROVED |  |
 
-### FE11 User & Role Management - Owner: Dung
+### FE11 Quản lý Người dùng và Vai trò - Chủ sở hữu: Dung
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE11-001 | Admins cannot deactivate themselves. | APPROVED |  |
-| Q-FE11-002 | Prevent deactivation of users with active borrowings. | APPROVED | APPROVED - safer than warning; prevents invalid borrowing lifecycle. |
-| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | APPROVED |  |
-| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | APPROVED |  |
-| Q-FE11-005 | Admin-created user receives one-time password setup link when FE10/email mock is available. | APPROVED |  |
-| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | APPROVED |  |
-| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | APPROVED |  |
-| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | APPROVED |  |
-| Q-FE11-009 | User deactivation notification is optional/future work unless FE10 scope accepts it. | APPROVED | APPROVED - optional/future work; no mandatory Phase 1 notification. |
+| Q-FE11-001 | Quản trị viên không thể tự vô hiệu hóa chính mình. | APPROVED |  |
+| Q-FE11-002 | Ngăn vô hiệu hóa người dùng có khoản mượn đang hoạt động. | APPROVED | APPROVED - an toàn hơn cảnh báo; ngăn vòng đời mượn không hợp lệ. |
+| Q-FE11-003 | Thiết lập mật khẩu dùng cùng quy tắc độ phức tạp mật khẩu FE02. | APPROVED |  |
+| Q-FE11-004 | Email không phân biệt hoa thường khi đăng nhập và kiểm tra tính duy nhất. | APPROVED |  |
+| Q-FE11-005 | Người dùng do Quản trị viên tạo nhận liên kết thiết lập mật khẩu dùng một lần khi FE10/email giả lập khả dụng. | APPROVED |  |
+| Q-FE11-006 | Không xóa vĩnh viễn dữ liệu người dùng đã vô hiệu hóa trong Giai đoạn 1. | APPROVED |  |
+| Q-FE11-007 | Không có phân cấp vai trò trong Giai đoạn 1; vai trò là ngang hàng. | APPROVED |  |
+| Q-FE11-008 | Quản trị viên không thể xem trường tài khoản nhạy cảm như hàm băm mật khẩu, token đặt lại, token làm mới. | APPROVED |  |
+| Q-FE11-009 | Thông báo vô hiệu hóa người dùng là tùy chọn/công việc tương lai trừ khi phạm vi FE10 chấp nhận. | APPROVED | APPROVED - tùy chọn/công việc tương lai; không có thông báo Giai đoạn 1 bắt buộc. |
 
-### FE12 Reporting & Statistics - Owner: Nhat
+### FE12 Báo cáo và Thống kê - Chủ sở hữu: Nhat
 
-| Question | Proposed Decision | Outcome | Notes |
+| Câu hỏi | Quyết định đề xuất | Kết quả | Ghi chú |
 | --- | --- | --- | --- |
-| Q-FE12-001 | Librarian and Admin can view reports; Member/Guest cannot. | APPROVED |  |
-| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. | APPROVED |  |
-| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, low/no availability books. | APPROVED |  |
-| Q-FE12-004 | User statistics: total members, active/inactive users, new members by period. | APPROVED |  |
-| Q-FE12-005 | CSV/PDF export is out of scope unless team requires it. | APPROVED |  |
-| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views. | APPROVED |  |
+| Q-FE12-001 | Thủ thư và Quản trị viên có thể xem báo cáo; Thành viên/Khách không thể. | APPROVED |  |
+| Q-FE12-002 | Số liệu mượn: khoản mượn đang hoạt động, khoản mượn quá hạn, số lượt mượn theo kỳ, sách được mượn nhiều nhất. | APPROVED |  |
+| Q-FE12-003 | Số liệu kho: tổng số sách, tổng số bản sao, bản sao theo trạng thái, sách có ít/không có khả dụng. | APPROVED |  |
+| Q-FE12-004 | Thống kê người dùng: tổng thành viên, người dùng hoạt động/không hoạt động, thành viên mới theo kỳ. | APPROVED |  |
+| Q-FE12-005 | Xuất CSV/PDF nằm ngoài phạm vi trừ khi nhóm yêu cầu. | APPROVED |  |
+| Q-FE12-006 | Truy cập báo cáo ghi nhật ký kiểm toán cho lượt xem báo cáo của Quản trị viên/Thủ thư. | APPROVED |  |
 
 ---
 
-## 3. Approval Checklist
+## 3. Danh sách kiểm tra phê duyệt
 
-Audit note: items below were rechecked against approved `SPEC.md` files, feature `CHANGELOG.md` files, and the Week 3 closeout. Team signoff is recorded for the Phase 1 specification baseline.
+Ghi chú kiểm toán: các mục bên dưới được kiểm tra lại theo các tệp `SPEC.md` đã phê duyệt, tệp `CHANGELOG.md` tính năng và phần hoàn tất Tuần 3. Xác nhận của nhóm được ghi cho đường cơ sở đặc tả Giai đoạn 1.
 
-- [x] Cross-feature decisions X-001 to X-009 are approved/changed/deferred.
-- [x] Each owner reviews their feature decisions.
-- [x] Changed decisions are copied into affected `SPEC.md` files.
-- [x] Deferred decisions are added to each feature `Out of Scope` / `Open Questions` section.
-- [x] Each affected `CHANGELOG.md` records the approval update.
-- [x] Approved feature `SPEC.md` files change status from `DRAFT` to `APPROVED`.
-- [x] `PLAN.md` is expanded only after the related `SPEC.md` is approved.
-- [x] `TASKS.md` is expanded only after the related `PLAN.md` is approved.
-- [x] Reviewer signs off. (Team review signoff recorded on 2026-06-10.)
+- [x] Các quyết định liên tính năng từ X-001 đến X-009 được phê duyệt/thay đổi/hoãn.
+- [x] Mỗi chủ sở hữu rà soát quyết định tính năng của mình.
+- [x] Quyết định đã thay đổi được sao chép vào các tệp `SPEC.md` bị ảnh hưởng.
+- [x] Quyết định bị hoãn được thêm vào phần `Out of Scope` / `Open Questions` của từng tính năng.
+- [x] Mỗi `CHANGELOG.md` bị ảnh hưởng ghi nhận cập nhật phê duyệt.
+- [x] Các tệp `SPEC.md` tính năng đã phê duyệt đổi trạng thái từ `DRAFT` thành `APPROVED`.
+- [x] `PLAN.md` chỉ được mở rộng sau khi `SPEC.md` liên quan được phê duyệt.
+- [x] `TASKS.md` chỉ được mở rộng sau khi `PLAN.md` liên quan được phê duyệt.
+- [x] Người rà soát xác nhận. (Xác nhận rà soát nhóm được ghi vào 2026-06-10.)
 
-## 4. Suggested Review Agenda
+## 4. Chương trình rà soát đề xuất
 
-1. Approve cross-feature decisions first.
-2. Review features by dependency order: FE02, FE11, FE03, FE04, FE05, FE06, FE08, FE09, FE10, FE12, FE01.
-3. For each row, write `APPROVED`, `CHANGED`, or `DEFERRED`.
-4. Assign one owner to update specs and changelogs after the meeting.
-5. Re-run review before changing any status to `APPROVED`.
+1. Phê duyệt các quyết định liên tính năng trước.
+2. Rà soát tính năng theo thứ tự phần phụ thuộc: FE02, FE11, FE03, FE04, FE05, FE06, FE08, FE09, FE10, FE12, FE01.
+3. Với mỗi hàng, ghi `APPROVED`, `CHANGED` hoặc `DEFERRED`.
+4. Giao một chủ sở hữu cập nhật đặc tả và nhật ký thay đổi sau cuộc họp.
+5. Chạy lại rà soát trước khi đổi bất kỳ trạng thái nào thành `APPROVED`.
