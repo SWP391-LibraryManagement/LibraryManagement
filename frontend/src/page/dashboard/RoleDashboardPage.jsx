@@ -21,6 +21,7 @@ const MEMBER_ACTIONS = [
   { label: 'Tạo yêu cầu mượn', path: '/borrowing/new', icon: BookOpen },
   { label: 'Xem lịch sử mượn', path: '/borrowing/history', icon: History },
   { label: 'Quản lý đặt chỗ', path: '/reservations/mine', icon: Bookmark },
+  { label: 'Đăng ký hội viên', path: '/membership', icon: ClipboardList },
 ];
 
 const STAFF_ACTIONS = [

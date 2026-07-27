@@ -250,7 +250,18 @@ Use App Service -> Configuration to enter secret values:
 - `JWT_SECRET`
 - `DB_USER=libraryadmin`
 - `DB_PASSWORD`
-- optional SMTP credentials
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `MAIL_FROM`
+
+SMTP is required for staging registration, verification/reset OTP, and account-setup delivery. A
+successful code deployment does not create or replace these App Service settings. For Gmail SMTP,
+use an account with two-step verification and a dedicated App Password; never use or commit the
+normal mailbox password. `MAIL_FROM` must be an address the configured SMTP account is permitted
+to send as.
 
 Generate `JWT_SECRET` locally:
 

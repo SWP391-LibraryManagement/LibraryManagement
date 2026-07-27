@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-28 - Fit Admin circulation data without horizontal dragging (v0.8.2)
+
+- Removed the separate request-ID and barcode columns from the Admin circulation
+  directory and its DOCX projection while preserving both canonical fields for
+  request decisions, copy tracking, search, and return details.
+- Kept the borrow-detail ID as the visible operational identifier.
+- Rebalanced the nine remaining columns and allowed long member/book values to
+  wrap in their own cells so the supported desktop layout no longer requires
+  horizontal dragging.
+
 ## 2026-07-27 - Prevent same-title request spam (v0.8.1)
 
 - Enforced one active `PENDING/REQUESTED` or `BORROWED` workflow per Member and

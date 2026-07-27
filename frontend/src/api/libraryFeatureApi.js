@@ -1,6 +1,7 @@
 import axios from 'axios';
 import {
   getBorrowingErrorMessage,
+  getFineErrorMessage,
   getLibraryFeatureErrorMessage,
   getInventoryErrorMessage,
   getMembershipErrorMessage,
@@ -252,25 +253,26 @@ export const fineApi = {
     return authorizedRequest(
       { method: 'get', url: '/fines/me', params },
       'Không thể tải tiền phạt của bạn.',
+      getFineErrorMessage,
     );
   },
   list(params = {}) {
-    return authorizedRequest({ method: 'get', url: '/fines', params }, 'Không thể tải danh sách phiếu phạt.');
+    return authorizedRequest({ method: 'get', url: '/fines', params }, 'Không thể tải danh sách phiếu phạt.', getFineErrorMessage);
   },
   calculate(borrowDetailId) {
-    return authorizedRequest({ method: 'post', url: '/fines/calculate', data: { borrowDetailId } }, 'Không thể tính tiền phạt.');
+    return authorizedRequest({ method: 'post', url: '/fines/calculate', data: { borrowDetailId } }, 'Không thể tính tiền phạt.', getFineErrorMessage);
   },
   collect(fineId, data) {
-    return authorizedRequest({ method: 'post', url: `/fines/${fineId}/collections`, data }, 'Không thể ghi nhận thu tiền.');
+    return authorizedRequest({ method: 'post', url: `/fines/${fineId}/collections`, data }, 'Không thể ghi nhận thu tiền.', getFineErrorMessage);
   },
   markPaid(fineId, data) {
-    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/paid`, data }, 'Không thể đánh dấu phiếu phạt đã thanh toán.');
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/paid`, data }, 'Không thể đánh dấu phiếu phạt đã thanh toán.', getFineErrorMessage);
   },
   waive(fineId, reason) {
-    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/waive`, data: { reason } }, 'Không thể miễn phiếu phạt.');
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/waive`, data: { reason } }, 'Không thể miễn phiếu phạt.', getFineErrorMessage);
   },
   cancel(fineId, reason) {
-    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/cancel`, data: { reason } }, 'Không thể hủy phiếu phạt.');
+    return authorizedRequest({ method: 'patch', url: `/fines/${fineId}/cancel`, data: { reason } }, 'Không thể hủy phiếu phạt.', getFineErrorMessage);
   },
 };
 

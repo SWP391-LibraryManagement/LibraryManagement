@@ -119,6 +119,8 @@ test('registration exposes two-step OTP progress and resend cooldown', async () 
 
   assert.match(card, /1\. Thông tin tài khoản/);
   assert.match(card, /2\. Xác thực email/);
+  assert.match(card, /Mã có hiệu lực trong 15 phút\./);
+  assert.doesNotMatch(card, /Mã có hiệu lực trong 24 giờ\./);
   assert.match(card, /inputMode: 'numeric'/);
   assert.match(card, /autoComplete: 'one-time-code'/);
   assert.match(card, /Gửi lại mã/);

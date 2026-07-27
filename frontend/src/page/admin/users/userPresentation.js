@@ -63,8 +63,11 @@ export function validateUserCreateForm(form) {
     errors.email = 'Vui lòng nhập email hợp lệ.';
   }
 
-  if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
-    errors.phone = 'Số điện thoại không hợp lệ.';
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 15 || !/^[0-9+\-\s()]+$/.test(phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ (7-15 chữ số).';
+    }
   }
 
   if (address.length > 255) {
@@ -86,8 +89,11 @@ export function validateManagedUserEditForm(form) {
     errors.fullName = 'Họ và tên không được vượt quá 100 ký tự.';
   }
 
-  if (phone && (phone.length > 20 || !/^[0-9+\-\s()]+$/.test(phone))) {
-    errors.phone = 'Số điện thoại không hợp lệ.';
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 15 || !/^[0-9+\-\s()]+$/.test(phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ (7-15 chữ số).';
+    }
   }
 
   if (address.length > 255) {

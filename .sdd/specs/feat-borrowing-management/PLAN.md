@@ -32,6 +32,7 @@ Included:
 - Renewal checks overdue, unpaid fine, renewal limit, and FE08 reservation conflict.
 - Borrowing actions write audit logs and create safe FE10 notification requests where useful.
 - Frontend borrowing screens expose actionable loading, empty, permission, eligibility, invalid-state, and API error feedback.
+- Admin circulation keeps request/copy identifiers in canonical data while showing nine operational columns that fit the supported desktop layout without horizontal scrolling.
 
 Not included:
 

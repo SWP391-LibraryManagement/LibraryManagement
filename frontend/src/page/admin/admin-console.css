@@ -1290,7 +1290,28 @@
 }
 
 .admin-circulation-table {
-  min-width: 1300px;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.admin-circulation-table th:nth-child(1) { width: 7%; }
+.admin-circulation-table th:nth-child(2) { width: 14%; }
+.admin-circulation-table th:nth-child(3) { width: 18%; }
+.admin-circulation-table th:nth-child(4),
+.admin-circulation-table th:nth-child(5),
+.admin-circulation-table th:nth-child(6) { width: 10%; }
+.admin-circulation-table th:nth-child(7) { width: 7%; }
+.admin-circulation-table th:nth-child(8) { width: 11%; }
+.admin-circulation-table th:nth-child(9) { width: 13%; }
+
+.admin-circulation-table th,
+.admin-circulation-table td {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.admin-circulation-table .admin-user-actions {
+  align-items: flex-start;
 }
 
 .admin-badge--borrowing-requested { background: #dbeafe; color: #1d4ed8; }

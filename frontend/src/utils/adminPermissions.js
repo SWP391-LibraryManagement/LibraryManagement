@@ -24,8 +24,9 @@ export function buildPermissionModuleCoverage(roles = [], permissions = []) {
     }
 
     const module = modules.get(permission.moduleKey);
+    const allowedRoles = Array.isArray(permission.allowedRoles) ? permission.allowedRoles : [];
     for (const { roleName } of roles) {
-      if (permission.allowedRoles.includes(roleName)) {
+      if (allowedRoles.includes(roleName)) {
         module.counts[roleName] += 1;
       }
     }
@@ -35,5 +36,6 @@ export function buildPermissionModuleCoverage(roles = [], permissions = []) {
 }
 
 export function roleAllowsPermission(permission, roleName) {
-  return permission.allowedRoles.includes(roleName);
+  const allowedRoles = Array.isArray(permission?.allowedRoles) ? permission.allowedRoles : [];
+  return allowedRoles.includes(roleName);
 }

@@ -19,6 +19,7 @@ import {
   fetchRoles,
   fetchUsers,
   replaceManagedUserRole,
+  resendSetupEmail,
   updateManagedUser,
 } from '../../../api/userManagementApi';
 import { normalizeAdminUserStatistics } from '../../../utils/adminStatistics';
@@ -42,8 +43,18 @@ import {
   ROLE_CATALOG_ERROR,
 } from './userPresentation';
 
-const ADMIN_TABLE_PAGE_SIZE = 8;
+const ADMIN_TABLE_PAGE_SIZE = 20;
 const EMPTY_STATS = { total: 0, active: 0, librarians: 0, inactive: 0, usersByRole: {} };
+
+// @spec BR-FE11-027 — read current admin's userId for self-deactivation guard.
+function readCurrentUserId() {
+  try {
+    const raw = localStorage.getItem('authUser') || sessionStorage.getItem('authUser');
+    return raw ? Number(JSON.parse(raw).userId) : null;
+  } catch {
+    return null;
+  }
+}
 
 function UserAvatar({ user }) {
   return (
@@ -208,26 +219,32 @@ export function AdminUsersSection({
   }
 
   async function openUserDetail(userId) {
+    const { guard, token } = beginLatestRequest('user-detail');
     setSelectedUser(null);
     setDetailLoading(true);
     try {
       const detail = await fetchManagedUser(userId);
+      if (!guard.isLatest(token)) return;
       setSelectedUser(detail);
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       notify('error', error.message);
       if (isManagedUserNotFound(error)) await loadUsers(pagination.page);
     } finally {
-      setDetailLoading(false);
+      if (guard.isLatest(token)) setDetailLoading(false);
     }
   }
 
   async function openUserEditor(user) {
     if (!requireAdminSession() || !user?.userId) return;
+    const { guard, token } = beginLatestRequest('user-editor');
     try {
       const detail = await fetchManagedUser(user.userId);
+      if (!guard.isLatest(token)) return;
       setSelectedUser(null);
       setModal({ mode: 'edit', user: detail });
     } catch (error) {
+      if (!guard.isLatest(token)) return;
       notify('error', error.message);
       if (isManagedUserNotFound(error)) await loadUsers(pagination.page);
     }
@@ -266,6 +283,16 @@ export function AdminUsersSection({
 
   async function deactivateUser(user) {
     if (!requireAdminSession()) return;
+    // @spec BR-FE11-027, BR-FE11-028 — defense-in-depth pre-checks (server still authoritative).
+    const currentUserId = readCurrentUserId();
+    if (currentUserId && Number(user.userId) === Number(currentUserId)) {
+      notify('error', 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.');
+      return;
+    }
+    if (user.roles?.includes('ADMIN') && user.status === 'ACTIVE' && (statistics.usersByRole.ADMIN || 0) <= 1) {
+      notify('error', 'Không thể vô hiệu hóa quản trị viên đang hoạt động cuối cùng.');
+      return;
+    }
     if (!window.confirm(`Vô hiệu hóa tài khoản ${user.fullName || user.email}? Người dùng sẽ không thể đăng nhập.`)) return;
     try {
       await deactivateManagedUser(user.userId, user.updatedAt);
@@ -274,6 +301,23 @@ export function AdminUsersSection({
       await refreshUserDirectory(pagination.page);
     } catch (error) {
       notify('error', error.message);
+    }
+  }
+
+  // @spec MF-FE11-014, FR-FE11-036..038, AC-FE11-021/022, BR-FE11-025
+  async function resendSetup(user) {
+    if (!requireAdminSession()) return;
+    if (!user?.userId) return;
+    setDetailLoading(true);
+    try {
+      await resendSetupEmail(user.userId);
+      notify('success', 'Đã xoay email thiết lập mật khẩu và gửi lại. Vui lòng đợi 60 giây trước khi gửi lại lần tiếp theo.');
+      const refreshedUser = await fetchManagedUser(user.userId);
+      setSelectedUser(refreshedUser);
+    } catch (error) {
+      notify('error', error.message);
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -342,10 +386,23 @@ export function AdminUsersSection({
     );
   }
 
+  // @spec BR-FE11-027, BR-FE11-028 — pre-check deactivation eligibility for UI gating.
+  const currentUserId = readCurrentUserId();
+  const selectedIsSelf = selectedUser && currentUserId && Number(selectedUser.userId) === Number(currentUserId);
+  const selectedIsLastActiveAdmin = selectedUser?.roles?.includes('ADMIN') && selectedUser?.status === 'ACTIVE' && (statistics.usersByRole.ADMIN || 0) <= 1;
+  const canDeactivateSelected = selectedUser && ['ACTIVE', 'LOCKED'].includes(selectedUser.status) && !selectedIsSelf && !selectedIsLastActiveAdmin;
+  const deactivateHint = selectedIsSelf
+    ? 'Không thể tự vô hiệu hóa tài khoản của chính bạn.'
+    : selectedIsLastActiveAdmin
+      ? 'Không thể vô hiệu hóa quản trị viên đang hoạt động cuối cùng.'
+      : !selectedUser || !['ACTIVE', 'LOCKED'].includes(selectedUser.status)
+        ? 'Tài khoản này đã ngừng hoạt động.'
+        : '';
+
   return (
     <section className="admin-users">
       <AdminPageHeader
-        eyebrow="FE11 · Tài khoản và vai trò"
+        eyebrow="Tài khoản và vai trò"
         title="Quản lý người dùng"
         refreshing={loading}
         onRefresh={() => refreshUserDirectory(pagination.page, { announce: true })}
@@ -444,7 +501,7 @@ export function AdminUsersSection({
       </section>
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
-      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
+      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} onResendSetup={resendSetup} resending={detailLoading} detailLoading={detailLoading} canDeactivate={canDeactivateSelected} deactivateHint={deactivateHint} /> : null}
       {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} onManageRole={openRoleFromEditor} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRole} /> : null}
     </section>

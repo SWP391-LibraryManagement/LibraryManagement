@@ -84,6 +84,7 @@ export function AdminAuditSection({ onToast }) {
         <header><div><h2>Danh sách hoạt động</h2><p>Theo dõi các thao tác quan trọng trong hệ thống.</p></div><span>Chỉ đọc</span></header>
         <div className="admin-table-scroll">
           <table className="admin-data-table admin-audit-table">
+            <caption>Nhật ký hoạt động hệ thống</caption>
             <colgroup>
               <col className="admin-audit-column--action" />
               <col className="admin-audit-column--actor" />

@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-27 - Align deployed verification OTP guidance
+
+- Corrected the registration verification screen from the stale 24-hour label to the canonical
+  15-minute verification OTP lifetime.
+- Clarified that staging requires configured App Service SMTP settings; deploying application code
+  does not provision or replace email-provider credentials.
+
 ## 2026-07-27 - Link repeatable FE02 performance evidence
 
 - Closed FE02-T048 using the existing deterministic performance harness: valid login p95 `61.46 ms` against `< 1,000 ms`, and `/api/auth/me` p95 `1.52 ms` against `< 50 ms`, with bcrypt cost 10.

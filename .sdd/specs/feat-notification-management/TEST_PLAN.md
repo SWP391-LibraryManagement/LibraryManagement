@@ -1,8 +1,8 @@
 # FE10 Test Plan - Notification Management
 
-Version: 0.3.3
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Version: 0.5.0
+Status: V0.5.0 INBOX TEST STRATEGY PLANNED - IMPLEMENTATION NOT_STARTED
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
 Feature IDs: `BR-FE10-*`, `FR-FE10-*`, `AC-FE10-*`
@@ -12,7 +12,9 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 
 ## 1. Test Scope
 
-Notification requests, source/type ownership, sensitive in-memory delivery, template validation, safe persistence, idempotency, queued processing, and retry behavior.
+Notification requests, source/type ownership, sensitive in-memory delivery,
+template validation, safe persistence, idempotency, queued processing, retry,
+and the approved personal notification inbox/read-state behavior.
 
 ## 2. Unit Test Targets
 
@@ -30,13 +32,25 @@ Notification requests, source/type ownership, sensitive in-memory delivery, temp
 - In-process FE02 requester: verification/reset OTP success/failure, variables, idempotency, and no duplicate delivery.
 - In-process FE11 requester: account-setup success/failure, variables, source ownership, and new-token resend semantics.
 - `POST /notifications/process-pending`: happy path, no pending, failed send handling, unauthorized.
-- Inbox/list/read endpoints if exposed by backend: own-notification-only access, mark-read behavior, empty inbox.
+- `GET /notifications/mine`: authentication, three allowed roles, SQL-side
+  filters/pagination/order, safe projection, own-record boundary, and empty page.
+- `GET /notifications/mine/unread-count`: own eligible unread rows only.
+- `PATCH /notifications/{id}/read`: idempotence plus indistinguishable `404`
+  for missing, sensitive, and other-user rows.
+- `PATCH /notifications/mine/read-all`: one server timestamp, own eligible rows
+  only, and replay count zero.
+- FE04/FE07/FE08 fan-in proves one persisted email record is also the inbox row.
 
 ## 4. E2E / Manual Acceptance Flow
 
 - Registration/reset/account-setup messages reach the configured test mailbox/provider mock.
 - Sensitive credentials and rendered sensitive content never appear in API/audit/admin surfaces.
 - Provider failure leaves source flow completed with safe status.
+- MEMBER, LIBRARIAN, and ADMIN each see the shared bell and only their own inbox.
+- Badge cap, five-unread preview, filters, 20-item pagination, mark-all, and
+  backend-derived navigation behave as specified.
+- A failed read mutation leaves the row unread, shows safe feedback, and does
+  not block an already allowlisted business route.
 
 ## 5. Current Evidence
 
@@ -65,3 +79,17 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
+
+## 8. V0.5.0 Planned Evidence
+
+- Static and executable migration tests, including two disposable SQL Server
+  executions and legacy-row backfill/index postconditions.
+- Focused repository/service/route tests for ownership, IDOR, sensitive
+  exclusion, filter validation, pagination, action allowlist, and read-state
+  idempotence.
+- Frontend Node tests for API contracts and component/source structure plus
+  pure view-model tests for badge, state, and action behavior.
+- Playwright E2E covering MEMBER, LIBRARIAN, and ADMIN, a cross-user negative
+  API probe, and the non-blocking read-failure path.
+- Full backend/frontend/deployment/system/traceability gates and backend-first
+  Azure staging smoke/browser verification.
