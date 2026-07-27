@@ -413,7 +413,7 @@ Tính năng này không bao gồm:
 
 ---
 
-## 17. Danh sách kiểm tra review
+## 17. Danh Sách Kiểm Tra Rà Soát
 
 Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn thành vào 2026-06-10):
 

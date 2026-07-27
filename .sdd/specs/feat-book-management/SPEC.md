@@ -517,7 +517,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép vào tệp hợp đồng API được chia sẻ chuyên dụng nếu nhóm giới thiệu lại một tệp.
 - [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 
-### 17.1 Cổng review bản sửa đổi v0.5.0
+### 17.1 Cổng Rà Soát Bản Sửa Đổi v0.5.0
 
 - [x] Xác nhận FE05 không có endpoint thay đổi `BookCopies.Status`.
 - [x] Xác nhận tính sẵn có dẫn xuất và bảo vệ sổ gốc `ACTIVE` trên FE01/FE06/FE07.

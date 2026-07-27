@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.4.4
 
-# Trạng thái: YÊU CẦU ĐANG CHỜ PHÊ DUYỆT - ĐANG ĐƯỢC CON NGƯỜI REVIEW
+# Trạng thái: YÊU CẦU ĐANG CHỜ PHÊ DUYỆT - ĐANG ĐƯỢC CON NGƯỜI RÀ SOÁT
 
 # Tình trạng triển khai: COMPLETE - ĐÃ GHI NHẬN BẰNG CHỨNG HOÀN TẤT GIAI ĐOẠN 2
 

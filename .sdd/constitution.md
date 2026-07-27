@@ -109,7 +109,7 @@ Quy ước commit:
 - chore:
 
 
-## 8.1 Các Gate Cho Nhánh Và Review
+## 8.1 Các Cổng Cho Nhánh Và Rà Soát
 
 - Công việc phải được thực hiện trên nhánh feature, fix, docs, refactor, test hoặc chore.
 - Pull request phải nêu rõ SPEC.md, PLAN.md và mục TASKS.md liên quan khi thay đổi hành vi của chức năng cốt lõi.

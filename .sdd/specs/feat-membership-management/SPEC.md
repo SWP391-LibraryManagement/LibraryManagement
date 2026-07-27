@@ -438,7 +438,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Hợp đồng API được phê duyệt trong SPEC.md hoặc được sao chép vào tệp hợp đồng API được chia sẻ chuyên dụng nếu nhóm giới thiệu lại một tệp.
 - [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 
-### 17.1 Cổng review bản sửa đổi v0.2.3
+### 17.1 Cổng Rà Soát Bản Sửa Đổi v0.2.3
 
 - [x] Xác nhận `Members.Status` là nguồn đủ điều kiện FE07/FE08 chuẩn.
 - [x] Xác nhận thao tác ghi đơn đăng ký/thành viên/audit là nguyên tử và có cơ chế bảo vệ bằng ràng buộc lọc chỉ cho trạng thái chờ khi đăng ký đồng thời.

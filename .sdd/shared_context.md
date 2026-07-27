@@ -246,7 +246,7 @@ database/
 
 ---
 
-## 10. Các Gate Xác Thực
+## 10. Các Cổng Xác Thực
 
 Trước khi một chức năng được xem là hoàn thành:
 

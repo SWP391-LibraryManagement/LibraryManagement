@@ -292,7 +292,7 @@ Không tự đặt ra quy tắc nghiệp vụ không có trong SPEC.md. Ánh x�
 7. Không làm yếu hoặc xóa kiểm thử hiện có phải không?
 8. Nếu mã nguồn và đặc tả không thống nhất, sự khác biệt có được báo cáo (không bị che giấu) không?
 
-### 6.3 Yêu Cầu Review Của Con Người
+### 6.3 Yêu Cầu Rà Soát Của Con Người
 
 Kiểm thử được tạo vẫn là bản nháp cho đến khi con người review các vấn đề: thiếu quy tắc nghiệp vụ; giả định sai; assertion
 yếu; mock quá mức làm che giấu lỗi tích hợp; kiểm thử sao chép lỗi triển khai;

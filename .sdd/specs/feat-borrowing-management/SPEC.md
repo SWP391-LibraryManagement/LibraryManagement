@@ -2,7 +2,7 @@
 
 # Phiên bản: 0.8.2
 
-# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI REVIEW 2026-07-28
+# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI RÀ SOÁT 2026-07-28
 
 # Chủ sở hữu: Nhat
 
@@ -651,11 +651,11 @@ Tính năng này không bao gồm:
 
 ---
 
-## 15.1 Ghi chú review phê duyệt
+## 15.1 Ghi Chú Rà Soát Phê Duyệt
 
 | Đánh giá sản phẩm | Kết quả |
 | ----------- | ------ |
-| Review luồng | Các luồng tạo yêu cầu, phê duyệt/từ chối, trả, gia hạn và lịch sử đã được review theo các quyết định FE07 đã giải quyết. Cập nhật luồng được phản ánh tại Mục 4, 6, 7 và 8. |
+| Rà soát luồng | Các luồng tạo yêu cầu, phê duyệt/từ chối, trả, gia hạn và lịch sử đã được rà soát theo các quyết định FE07 đã giải quyết. Cập nhật luồng được phản ánh tại Mục 4, 6, 7 và 8. |
 | Hợp đồng API | Được phê duyệt tại Mục 11 để lập kế hoạch API RESTful Giai đoạn 1. Các endpoint vẫn nằm trong SPEC.md này trừ khi tài liệu hợp đồng API dùng chung được giới thiệu lại. |
 | Phụ thuộc FE08 | Tích hợp được phê duyệt: ưu tiên hàng đợi `ACTIVE` chặn tạo/phê duyệt thông thường; chủ sở hữu đã nhận thông báo có thể yêu cầu bản sao được giữ và phê duyệt FE07 sẽ hoàn tất đặt chỗ phù hợp một cách nguyên tử. FE08 vẫn sở hữu hàng đợi. |
 | Phụ thuộc FE09 | Không còn xung đột FE07 sau quyết định: tiền phạt chưa thanh toán chặn mượn/gia hạn; FE07 cung cấp dữ liệu trả và FE09 sở hữu việc tính/tạo tiền phạt. |
@@ -776,7 +776,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - [x] Các phần phụ thuộc FE08/FE09 được kiểm tra xung đột.
 - [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 
-### 17.1 Cổng review bản sửa đổi v0.5.0
+### 17.1 Cổng Rà Soát Bản Sửa Đổi v0.5.0
 
 - [x] Xác nhận bộ bảo vệ `Members.Status` và `Books.Status = ACTIVE` chuẩn.
 - [x] Xác nhận `activeBorrowedCount + requestedDetailCount <= 5` và khóa phê duyệt trong phạm vi thành viên.
@@ -787,7 +787,7 @@ Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10
 - Danh sách Trả về Quy trình và chi tiết khoản vay đã chọn sử dụng không gian làm việc một cột ổn định để bảng giao dịch bảy cột không thể va chạm với bảng chi tiết trên máy tính để bàn hoặc có chiều rộng hẹp.
 - Các lệnh phê duyệt và từ chối lấy rõ mục tiêu yêu cầu, xác thực ID dạng số, gọi endpoint FE07 chuẩn và tải lại trạng thái máy chủ. Cơ sở dữ liệu hiện tại phải có các cột dấu thời gian quy trình BorrowRequests chuẩn qua migration tương thích 2026-07-22.
 
-### 17.2 Sửa đổi v0.7.3 Quyết định và trả lại của nhân viên UX Gate
+### 17.2 Cổng UX Cho Quyết Định Và Trả Sách Của Nhân Viên Trong Bản Sửa Đổi v0.7.3
 
 - [x] Xác nhận thao tác phê duyệt/từ chối vẫn giới hạn cho tác nhân `LIBRARIAN`/`ADMIN` đã xác thực và dùng endpoint FE07 chuẩn.
 - [x] Hộp thoại xác nhận quyết định chỉ sử dụng các trường chuẩn do nhân viên đọc và không tạo ra bằng chứng đủ điều kiện.
