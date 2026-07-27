@@ -1,6 +1,6 @@
 # Staging Email Delivery Remediation Validation - 2026-07-27
 
-Status: H2 PASS; PUBLICATION, CI, STAGING VALIDATION, AND H3 PENDING
+Status: H2 ADDENDUM PASS; UPDATED CI, REDEPLOY, AND H3 PENDING
 
 Baseline: `a408bf0808ed79eeb9dd4f2a6f9253f587dffa4b`
 
@@ -13,6 +13,7 @@ H2-reviewed product commits:
 - `7920d4b` - restore the FE10 account-setup template;
 - `2134d44` - preserve FE10 delivery evidence and SYSTEM processing boundary;
 - `ccb590c` - process queued notifications automatically.
+- `a98f459` - use Azure-compatible notification claim locks (H2 addendum).
 
 ## Scope
 
@@ -105,3 +106,74 @@ CI are still required before any staging mutation. Staging evidence must record
 setting names only, masked aggregate counts, provider-ID presence only, two
 migration executions, deployment run/commit, temporary firewall cleanup, and
 the F1 limitation.
+
+## Initial Publication And Staging Evidence
+
+- PR #65 published head
+  `8f39baa0b58b772c462ea8d11a2049a1bfe102ce`.
+- CI run `30272237192` passed dependency audits, traceability, backend tests and
+  coverage, frontend tests/lint/build, browser E2E, deployment utilities, and
+  backend import checks.
+- The migration ran twice through one exact-IP temporary firewall rule.
+- The post-migration aggregate was `1|1|1|1|1`: one matching row, one ACTIVE
+  row, one canonical subject, and one row containing each required variable.
+- The temporary migration firewall rule was removed; task-created rules
+  remaining were zero.
+- The three reviewed worker settings were applied without printing any SMTP or
+  SQL secret.
+- Manual deploy run `30272792025` used exact head `8f39baa` and passed backend,
+  frontend, and staging smoke jobs.
+- Independent checks returned API health 200, frontend `/home` 200, and
+  anonymous manual queue processing 401.
+
+## Staging Worker Finding And Safe Rollback
+
+The first masked queue check found:
+
+- 15 non-sensitive `PENDING` rows;
+- zero new post-deploy delivery attempts;
+- fixed-code `NOTIFICATION_WORKER_BATCH_FAILED` entries at startup and the next
+  interval.
+
+A transaction-rollback probe reproduced SQL Server error 650 before any
+notification state change:
+
+```text
+You can only specify the READPAST lock in the READ COMMITTED or REPEATABLE READ
+isolation levels.
+```
+
+Root cause: `claimNextPending()` combined `READPAST` with `HOLDLOCK`;
+`HOLDLOCK` requests serializable isolation and is incompatible with
+`READPAST`. The worker was immediately rolled back with
+`NOTIFICATION_WORKER_ENABLED=false`. No queue row was claimed, no attempt was
+created, and all task-created firewall rules were removed.
+
+## H2 Addendum Decision
+
+Scope is limited to:
+
+- `backend/src/repositories/notificationRepository.js`;
+- `backend/tests/notificationRepository.test.js`;
+- this FE10 evidence/status update.
+
+The candidate replaces `HOLDLOCK` with `READCOMMITTEDLOCK` while retaining
+`UPDLOCK`, `READPAST`, and `ROWLOCK`. A direct Azure SQL transaction-rollback
+probe returned one claimable row with the corrected hints.
+
+Fresh addendum evidence:
+
+| Check | Result |
+| --- | --- |
+| RED repository lock contract | PASS as RED - old hints failed the new Azure-compatible expectation |
+| Azure SQL corrected-hint rollback probe | PASS - one claimable row, no mutation |
+| Focused FE10/config/runtime gate | PASS - 6 suites, 165 tests |
+| Full backend | PASS - 64 suites, 1,079 tests |
+| System integration | PASS - 10/10 |
+| Deployment utilities | PASS - 9/9 |
+| Task-created firewall rules remaining | PASS - 0 |
+
+The user approved the H2 addendum on 2026-07-27 after review of the bounded
+two-file product diff and the fresh evidence above. The correction is committed
+as `a98f459`. Push, exact-head CI, worker re-enable, redeploy, and repeated
+masked staging verification remain required.

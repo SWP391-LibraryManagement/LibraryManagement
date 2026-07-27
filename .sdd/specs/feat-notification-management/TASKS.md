@@ -341,7 +341,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S15 Add The Best-Effort SYSTEM Worker
 
-- [~] Status: H2 APPROVED; PUBLICATION AND STAGING ENABLEMENT PENDING
+- [~] Status: H2 ADDENDUM APPROVED; PUBLICATION, CI, AND REDEPLOY PENDING
 - Depends on: FE10-S12.
 - Files: notification service/worker/runtime/config/index, `.env.example`, and
   focused service/worker/runtime/config tests.
@@ -353,10 +353,14 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   interval work, overlap prevention, safe recovery, shutdown, and import
   behavior. SYSTEM audits actual work but does not create empty-poll audit
   rows; existing protected HTTP tests remain green.
+- Staging addendum: the first deployed worker pass exposed SQL Server error 650
+  because `READPAST` was combined with serializable `HOLDLOCK`. The worker was
+  rolled back to disabled. The candidate replaces `HOLDLOCK` with
+  `READCOMMITTEDLOCK`; an Azure SQL rollback probe and local tests pass.
 
 ### FE10-S16 Pass Local H2 And Staging Validation
 
-- [~] Status: H2 PASS; PUBLICATION, CI, AND STAGING VALIDATION PENDING
+- [~] Status: H2 ADDENDUM PASS; UPDATED CI AND REDEPLOY PENDING
 - Depends on: FE10-S13..S15.
 - Files: FE10 TASKS/CHANGELOG and
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
@@ -368,3 +372,11 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   secret/log review pass on the uncommitted H2 candidate.
 - H2: user approved the complete candidate on 2026-07-27. Product commits are
   `7920d4b`, `2134d44`, and `ccb590c`; CI and staging evidence remain required.
+- Initial publication: PR #65 head `8f39baa` passed CI run `30272237192`;
+  deploy run `30272792025` passed backend, frontend, and smoke. The migration
+  passed twice and the template aggregate was `1|1|1|1|1`.
+- Staging worker verification found 15 non-sensitive rows still pending and
+  fixed-code worker failures. Error 650 was reproduced without mutation and the
+  worker setting was returned to `false`; addendum H2/CI/redeploy remain open.
+- H2 addendum: user approved the Azure-compatible claim correction on
+  2026-07-27; product commit is `a98f459`. Updated CI and redeploy remain open.

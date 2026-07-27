@@ -17,6 +17,11 @@
   are `7920d4b`, `2134d44`, and `ccb590c`; publication/CI, migration execution,
   worker settings, deployment, safe staging evidence, H3, and merge are not yet
   claimed.
+- PR #65 CI and the first staging deploy passed, and the template migration
+  passed twice. Live queue evidence then exposed SQL Server error 650 from the
+  `READPAST` plus `HOLDLOCK` claim hints; the worker was disabled and an
+  Azure-probed `READCOMMITTEDLOCK` correction was approved in the H2 addendum
+  and committed as `a98f459`. Updated CI and redeploy remain pending.
 
 ## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
 
