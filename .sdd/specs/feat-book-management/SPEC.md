@@ -1,534 +1,534 @@
-# SPEC.md - FE05 Book Management
+# SPEC.md - Quản lý sách FE05
 
-# Version: 0.6.7
+# Phiên bản: 0.6.7
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Owner: Dung
+# Chủ sở hữu: Dũng
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature ID: FE05
+# ID tính năng: FE05
 
-# Feature folder: `.sdd/specs/feat-book-management/`
+# Thư mục tính năng: `.sdd/specs/feat-book-management/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn cũ hơn như `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ review được giữ lại bên dưới chỉ là
+> ảnh chụp nhanh lịch sử về kế hoạch/bằng chứng, không phải trạng thái phân phối hiện tại.
 
-> Source of truth for FE05 Book Management. Revision v0.5.0 was approved by human review on 2026-07-16 and is ready for implementation planning.
-
----
-
-## 1. Feature Overview
-
-### 1.1 Feature Name
-
-Book Management
-
-### 1.2 Business Context
-
-Book Management controls the library catalog and provides accurate book information for guests, members, librarians, and other library features.
-
-This feature is important because incorrect book information can affect searching, inventory tracking, borrowing operations, reservations, reporting, and audit records.
-
-### 1.3 Goal / Outcome
-
-The system shall:
-
-- Allow guests and members to search books.
-- Allow guests and members to view book details.
-- Allow librarians/admins to view book lists.
-- Allow librarians/admins to add new books.
-- Allow librarians/admins to update book information.
-- Derive public availability from FE06-owned physical-copy state without allowing FE05 to mutate copy status.
-- Allow librarians/admins to deactivate books.
-- Maintain accurate book metadata for inventory, borrowing, and reporting features.
-- Keep book management actions traceable for audit purposes.
-
-### 1.4 Scope Level
-
-- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
-- [x] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+> Nguồn sự thật cho Quản lý sách FE05. Bản sửa đổi v0.5.0 đã được phê duyệt thủ công vào 2026-07-16 và sẵn sàng để lập kế hoạch triển khai.
 
 ---
 
-## 2. Actors and Permissions
+## 1. Tổng quan về tính năng
 
-| Actor | Description | Permission / Responsibility |
+### 1.1 Tên tính năng
+
+Quản lý sách
+
+### 1.2 Bối cảnh kinh doanh
+
+Quản lý Sách kiểm soát danh mục thư viện và cung cấp thông tin sách chính xác cho khách, thành viên, thủ thư và các tính năng khác của thư viện.
+
+Tính năng này rất quan trọng vì thông tin sách không chính xác có thể ảnh hưởng đến tìm kiếm, theo dõi tồn kho, hoạt động mượn, đặt chỗ, báo cáo và hồ sơ audit.
+
+### 1.3 Mục tiêu / Kết quả
+
+Hệ thống sẽ:
+
+- Cho phép khách và thành viên tìm kiếm sách.
+- Cho phép khách và thành viên xem chi tiết sách.
+- Cho phép Thủ thư/Quản trị viên xem danh sách sách.
+- Cho phép Thủ thư/Quản trị viên thêm sách mới.
+- Cho phép Thủ thư/Quản trị viên cập nhật thông tin sách.
+- Suy ra tính khả dụng công khai từ trạng thái bản sao vật lý do FE06 sở hữu mà không cho phép FE05 thay đổi trạng thái bản sao.
+- Cho phép Thủ thư/Quản trị viên vô hiệu hóa sách.
+- Duy trì siêu dữ liệu sách chính xác cho các tính năng kiểm kê, mượn và báo cáo.
+- Bảo đảm các thao tác quản lý sách có thể truy vết cho mục đích audit.
+
+### 1.4 Mức độ phạm vi
+
+- [ ] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [x] Đặc tả tiêu chuẩn - tính năng thông thường, có quy tắc nghiệp vụ và bước xác thực dữ liệu
+- [ ] Đặc tả rút gọn - UI đơn giản, tài liệu hoặc tính năng ít rủi ro
+
+---
+
+## 2. Tác nhân và quyền
+
+| Tác nhân | Mô tả | Quyền/Trách nhiệm |
 |---------|-------------|-----------------------------|
-| Guest | Unauthenticated visitor | Search books and view book details. |
-| Member | Registered library user | Search books and view book details. |
-| Librarian | Library staff | View active metadata choices and the staff book list; add/update books; upload managed covers; deactivate/reactivate books. |
-| Admin | System administrator | Has Librarian FE05 permissions, may use the canonical FE05 workspace inside FE11 Admin Console, and may manage category/author/publisher reference records through the Admin-only integration boundary. |
+| Khách | Khách truy cập không được xác thực | Tìm kiếm sách và xem chi tiết sách. |
+| Thành viên | Người dùng thư viện đã đăng ký | Tìm kiếm sách và xem chi tiết sách. |
+| Thủ thư | Nhân viên thư viện | Xem các lựa chọn siêu dữ liệu đang hoạt động và danh sách quản lý sách; thêm/cập nhật sách; tải bìa được quản lý; vô hiệu hóa/kích hoạt lại sách. |
+| Quản trị viên | Quản trị viên hệ thống | Có các quyền FE05 của Thủ thư, dùng được không gian làm việc FE05 chuẩn trong Bảng điều khiển quản trị FE11 và quản lý được bản ghi tham chiếu danh mục/tác giả/nhà xuất bản qua ranh giới tích hợp chỉ dành cho Quản trị viên. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE05-001: The book record exists before it can be viewed or updated.
-- PRE-FE05-002: Protected actions are performed by an authenticated actor with the correct role.
-- PRE-FE05-003: Required book information is provided before creating a book.
-- PRE-FE05-004: ISBN uniqueness rules are configured and approved by the team.
-- PRE-FE05-005: Categories, authors, and publishers exist before being assigned to books.
-
----
-
-## 4. Main Flows
-
-### MF-FE05-001: Search Books
-
-1. Guest or member enters search criteria.
-2. The system validates search parameters.
-3. The system searches active books.
-4. The system returns matching results.
-5. The system supports pagination when applicable.
-
-### MF-FE05-002: View Book Details
-
-1. Guest or member selects a book.
-2. The system retrieves book information.
-3. The system displays detailed book information.
-4. The system displays author, category, publisher, and availability information.
-
-### MF-FE05-003: View Book List
-
-1. Librarian opens book management.
-2. The system retrieves book records.
-3. The system displays paginated book list.
-4. The system applies the approved query filters and `sort`/`order` fields defined in Section 11.
-
-### MF-FE05-004: Add Book
-
-1. Librarian enters book information.
-2. The system validates required fields.
-3. The system validates ISBN uniqueness.
-4. The system creates a new book record.
-5. The system writes an audit log entry.
-
-### MF-FE05-005: Update Book Information
-
-1. Librarian selects an existing book.
-2. Librarian modifies information.
-3. The system validates updated data.
-4. The system saves changes.
-5. The system writes an audit log entry.
-
-### MF-FE05-006: Deactivate Book
-
-1. Librarian selects an active book.
-2. Librarian provides a reason and confirms deactivation using the last-seen book version.
-3. The system rechecks the version and changes book status to `INACTIVE`.
-4. The system prevents future borrowing/public visibility without rewriting copy/workflow history.
-5. The book update and audit log commit atomically.
-
-### MF-FE05-007: View Derived Public Availability
-
-1. A guest/member opens public browse, or a librarian/admin opens book management.
-2. The system loads the current `Books.Status` and FE06-owned `BookCopies.Status` values.
-3. The system derives `AVAILABLE` (`Còn sách`) only when `Books.Status = ACTIVE` and at least one related copy is `AVAILABLE`.
-4. Otherwise, the system derives `UNAVAILABLE` (`Không khả dụng`) without exposing whether copies are borrowed, reserved, damaged, lost, or inactive.
-5. FE05 returns the derived summary and does not modify any `BookCopies` record.
-
-### MF-FE05-008: Reactivate Book
-
-1. Librarian/admin opens an `INACTIVE` book in management view.
-2. The actor provides a reason and confirms reactivation using the last-seen book version.
-3. The system rechecks the version and changes only `Books.Status` to `ACTIVE`.
-4. Existing copy states remain unchanged; derived availability is recalculated from current FE06-owned copies.
-5. The book update and audit log commit atomically.
+- PRE-FE05-001: Bản ghi sách tồn tại trước khi có thể xem hoặc cập nhật.
+- PRE-FE05-002: Hành động được bảo vệ được thực hiện bởi tác nhân đã được xác thực với vai trò chính xác.
+- PRE-FE05-003: Thông tin sách bắt buộc được cung cấp trước khi tạo sách.
+- PRE-FE05-004: Quy tắc duy nhất ISBN được nhóm định cấu hình và phê duyệt.
+- PRE-FE05-005: Danh mục, tác giả và nhà xuất bản tồn tại trước khi được gán cho sách.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE05-001: Duplicate ISBN
+### MF-FE05-001: Tìm kiếm sách
 
-1. Librarian submits a new book.
-2. The system detects an existing ISBN.
-3. The system rejects creation.
-4. The system returns a validation error.
+1. Khách hoặc Thành viên nhập tiêu chí tìm kiếm.
+2. Hệ thống kiểm tra hợp lệ các tham số tìm kiếm.
+3. Hệ thống tìm kiếm sách đang hoạt động.
+4. Hệ thống trả về kết quả trùng khớp.
+5. Hệ thống hỗ trợ phân trang khi có thể.
 
-### AF-FE05-002: Invalid Category
+### MF-FE05-002: Xem chi tiết sách
 
-1. Librarian submits book information.
-2. The selected category does not exist.
-3. The system rejects the request.
-4. The system returns an error message.
+1. Khách hoặc thành viên chọn một cuốn sách.
+2. Hệ thống lấy thông tin sách.
+3. Hệ thống hiển thị thông tin chi tiết về sách.
+4. Hệ thống hiển thị thông tin về tác giả, danh mục, nhà xuất bản và tính khả dụng.
 
-### AF-FE05-003: Book Not Found
+### MF-FE05-003: Xem danh sách sách
 
-1. User requests book details.
-2. The book ID does not exist.
-3. The system returns a not-found response.
+1. Thủ thư mở quản lý sách.
+2. Hệ thống truy xuất bản ghi sách.
+3. Hệ thống hiển thị danh mục sách được phân trang.
+4. Hệ thống áp dụng các bộ lọc truy vấn đã được phê duyệt và các trường `sort`/`order` được xác định trong Phần 11.
 
-### AF-FE05-004: Unauthorized Access
+### MF-FE05-004: Thêm sách
 
-1. Guest or member attempts to add, update, or deactivate a book.
-2. The system validates permissions.
-3. The system denies access.
+1. Thủ thư nhập thông tin sách.
+2. Hệ thống xác nhận các trường bắt buộc.
+3. Hệ thống xác nhận tính duy nhất của ISBN.
+4. Hệ thống tạo một bản ghi sách mới.
+5. Hệ thống ghi một mục audit.
 
----
+### MF-FE05-005: Cập nhật thông tin sách
 
-## 6. Business Rules
+1. Thủ thư chọn một cuốn sách hiện có.
+2. Thủ thư sửa đổi thông tin.
+3. Hệ thống xác nhận dữ liệu cập nhật.
+4. Hệ thống lưu các thay đổi.
+5. Hệ thống ghi một mục audit.
 
-Use these stable IDs for tasks and tests.
+### MF-FE05-006: Vô hiệu hóa sách
 
-- BR-FE05-001: Guests may only search books and view book details.
-- BR-FE05-002: Only librarians and admins may add books.
-- BR-FE05-003: Only librarians and admins may update books.
-- BR-FE05-004: Only librarians and admins may deactivate books.
-- BR-FE05-005: ISBN must be unique across all books.
-- BR-FE05-006: Book title is required.
-- BR-FE05-007: A book belongs to exactly one category in Phase 1.
-- BR-FE05-008: Deactivated books cannot be borrowed.
-- BR-FE05-009: Deactivated books must not appear in public search/detail results.
-- BR-FE05-010: Every create, update, deactivate, and reactivate action must be auditable.
-- BR-FE05-011: Public availability is not the same as catalog visibility; `Books.Status` controls active/inactive catalog visibility, while FE06-owned `BookCopies.Status` values provide the read-only availability source.
-- BR-FE05-012: FE05 must not create or perform manual transitions on `BookCopies.Status`; copy lifecycle changes belong to FE06, FE07, or FE08 according to the owning workflow.
-- BR-FE05-013: For an `ACTIVE` book, public availability is `AVAILABLE` only when at least one related copy has `BookCopies.Status = AVAILABLE`; otherwise it is `UNAVAILABLE`. An `INACTIVE` book is never public-visible or borrowable regardless of copy state.
-- BR-FE05-014: `Books.Status` has exactly two states, `ACTIVE` and `INACTIVE`; valid transitions are create -> `ACTIVE`, `ACTIVE -> INACTIVE`, and `INACTIVE -> ACTIVE`. Physical deletion is forbidden in Phase 1.
-- BR-FE05-015: Deactivation/reactivation changes only `Books.Status`; FE05 never rewrites related copy, borrowing, reservation, or history rows.
-- BR-FE05-016: Every update/deactivate/reactivate of an existing book requires the caller's last-seen SQL `rowversion` through `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE` with no mutation.
-- BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100. Public `/api/books` accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; public `q` matches only title/author and results exclude ISBN. Staff `/api/admin/books` may match title, ISBN, author, category, or publisher and additionally accepts sort fields `title`, `publishYear`, or `createdAt` and order `asc` or `desc`.
-- BR-FE05-018: Deactivation/reactivation requires a trimmed non-empty reason of at most 500 characters, stored in audit metadata.
-- BR-FE05-019: Librarian/Admin cover selection uses one optional managed image file named `cover`. The backend accepts only JPG/JPEG, PNG, or WebP whose extension, declared MIME type, and byte signature agree, with a maximum size of 2 MB; it generates the filename and stores the public path under `/uploads/book-covers/`.
-- BR-FE05-020: A failed create/update after a new cover file is stored must remove that uncommitted file. A successful replacement preserves the committed new path and removes the previous file only when the previous path is FE05-managed; external and unmanaged paths are never deleted.
-- BR-FE05-021: Librarian/Admin book forms may read only `ACTIVE` category, author, and publisher choices from FE05. Mutation of those reference records is restricted to Admin through the FE11 Admin Library integration.
-- BR-FE05-022: A deployed backend is not catalog-ready until `Authors`, `Publishers`, and `Categories` each persist the canonical `Status` and database-generated `CreatedAt` columns. Before accepting HTTP traffic, backend startup must apply the reviewed, transactional, idempotent metadata compatibility migration and verify its postcondition; startup must fail instead of serving a partially compatible catalog when reconciliation cannot complete.
+1. Thủ thư chọn một cuốn sách đang hoạt động.
+2. Thủ thư cung cấp lý do và xác nhận việc vô hiệu hóa bằng phiên bản sách được xem lần cuối.
+3. Hệ thống kiểm tra lại phiên bản và thay đổi trạng thái sách thành `INACTIVE`.
+4. Hệ thống ngăn hiển thị công khai và ngăn mượn trong tương lai mà không ghi đè lịch sử bản sao/quy trình.
+5. Thao tác cập nhật sách và log audit commit nguyên tử.
 
+### MF-FE05-007: Xem tính khả dụng công khai có nguồn gốc
 
----
+1. Khách/Thành viên mở trang duyệt công khai hoặc Thủ thư/Quản trị viên mở trang quản lý sách.
+2. Hệ thống tải giá trị `Books.Status` hiện tại và `BookCopies.Status` do FE06 sở hữu.
+3. Hệ thống chỉ lấy được `AVAILABLE` (`Còn sách`) khi `Books.Status = ACTIVE` và ít nhất một bản sao liên quan là `AVAILABLE`.
+4. Nếu không, hệ thống suy ra `UNAVAILABLE` (`Không khả dụng`) mà không tiết lộ bản sao đang được mượn, đặt chỗ, hư hỏng, thất lạc hay không hoạt động.
+5. FE05 trả về bản tóm tắt dẫn xuất và không sửa đổi bất kỳ bản ghi `BookCopies` nào.
 
-## 7. Functional Requirements
+### MF-FE05-008: Kích hoạt lại sách
 
-- FR-FE05-001: The system shall allow Guests to search active books by title or author without exposing or matching ISBN.
-- FR-FE05-002: The system shall allow Members to search active books by title or author without exposing or matching ISBN.
-- FR-FE05-003: The system shall return public book details without ISBN to Guest/Member and may return ISBN only to a server-authorized Librarian/Admin management projection.
-- FR-FE05-004: The system shall allow Librarian/Admin users to view management book lists and search/view ISBN.
-- FR-FE05-005: The system shall validate ISBN uniqueness before creating a book.
-- FR-FE05-006: The system shall create a new book when provided valid data.
-- FR-FE05-007: The system shall allow updating existing books.
-- FR-FE05-008: The system shall deactivate books using status-based deactivation.
-- FR-FE05-009: The system shall support pagination in book searches.
-- FR-FE05-010: The system shall support filtering by category, author, and status.
-
-### Unwanted Behaviour Requirements (Error / Abnormal Conditions)
-
-- FR-FE05-011: IF an ISBN is provided that already exists on another book during create or update, the system shall reject the request and return a validation error without modifying any record. (Source: AF-FE05-001, EC-FE05-003, BR-FE05-005)
-- FR-FE05-012: IF book title is missing or empty during create or update, the system shall reject the request and return a validation error identifying the title field. (Source: EC-FE05-002, BR-FE05-006, NFR-FE05-UX-001)
-- FR-FE05-013: IF a referenced category, author, or publisher does not exist during create or update, the system shall reject the request and return an error message. (Source: AF-FE05-002, EC-FE05-005, EC-FE05-006, EC-FE05-007)
-- FR-FE05-014: IF a requested book ID does not exist when viewing, updating, or deactivating a book, the system shall return a not-found response and shall not create a new record. (Source: AF-FE05-003, EC-FE05-001)
-- FR-FE05-015: IF a guest or member attempts to add, update, or deactivate a book, the system shall deny access and return a forbidden response. (Source: AF-FE05-004, EC-FE05-009, BR-FE05-002, BR-FE05-003, BR-FE05-004)
-- FR-FE05-016: IF a provided publish year is invalid or set in the future during create or update, the system shall reject the request and return a validation error. (Source: EC-FE05-008)
-- FR-FE05-017: IF a search keyword exceeds the allowed maximum length, the system shall reject the search and return a validation message. (Source: EC-FE05-011)
-- FR-FE05-018: IF a book update or its audit log entry fails partway through, the system shall roll back both the book update and the audit log so no partial change persists. (Source: EC-FE05-012, NFR-FE05-TXN-001)
-- FR-FE05-019: WHERE a book has status `INACTIVE`, the system shall prevent it from being borrowed and shall exclude it from public search results while keeping borrow/reservation history and copy records unchanged. (Source: BR-FE05-008, BR-FE05-009, EC-FE05-010, Q-FE05-007)
-- FR-FE05-020: WHEN book data is returned to staff or public browse, the system shall derive the availability summary from the latest committed FE06 copy states according to BR-FE05-013 and shall not persist an FE05-owned availability value. (Source: MF-FE05-007, BR-FE05-011, BR-FE05-012, BR-FE05-013)
-- FR-FE05-021: IF a caller attempts to change `BookCopies.Status` through an FE05 book endpoint, the system shall reject the request and shall not modify `Books` or `BookCopies`. (Source: BR-FE05-012, EC-FE05-013)
-- FR-FE05-022: WHEN an authorized actor reactivates an `INACTIVE` book with a matching version and non-empty reason, the system shall set `Books.Status = ACTIVE`, preserve all related copy/workflow records, recalculate derived availability, and write the audit atomically. (Source: MF-FE05-008, BR-FE05-014, BR-FE05-015)
-- FR-FE05-023: IF `If-Match` is missing or does not match current book `rowversion` during update/deactivate/reactivate, the system shall return `409 STALE_BOOK_STATE` and change no record. (Source: BR-FE05-016, EC-FE05-014)
-- FR-FE05-024: IF a public query contains an unapproved field, or any keyword, pagination, staff sort, or staff order value violates BR-FE05-017, the system shall return a validation error rather than silently applying a different policy. (Source: EC-FE05-011, EC-FE05-015)
-- FR-FE05-025: IF deactivation/reactivation reason is missing, blank after trimming, or longer than 500 characters, the system shall reject the command and preserve all state. (Source: BR-FE05-018, EC-FE05-016)
-- FR-FE05-026: IF `pages` is not an integer from 1 to 10,000, or `rating` is outside 0.0 to 5.0 or has more than one decimal place during create/update, the system shall reject the request with field-level validation and change no record. (Source: EC-FE05-017, Section 10.2)
-- FR-FE05-027: WHEN Librarian/Admin creates or updates a book with `multipart/form-data`, the system shall read the JSON book metadata from `metadata`, validate and store the optional `cover` image under a server-generated path, persist that path as `Books.CoverUrl`, and return it through staff/public book reads.
-- FR-FE05-028: IF the supplied cover is missing its required multipart metadata, exceeds 2 MB, has an unsupported or mismatched type/signature, or the associated book mutation fails, the system shall reject or compensate the operation without replacing the committed cover path or retaining an uncommitted managed file.
-- FR-FE05-029: WHEN the update form changes a book between `ACTIVE` and `INACTIVE`, the frontend shall reload the canonical management list using the new status and page 1 so the successfully updated book is not immediately hidden by the previous status filter.
-- FR-FE05-030: WHEN an authenticated Librarian/Admin requests `/api/books/metadata`, the system shall return only active category/author/publisher choices; Guest/Member requests shall be rejected and no reference record shall be mutated.
-- FR-FE05-031: WHEN backend startup begins, the system shall apply the reviewed metadata compatibility migration before listening and verify the canonical metadata columns; IF migration or verification fails, the backend shall not listen. WHEN readiness is checked through `/health/ready`, the system shall perform a read-only verification and return HTTP `503` with a safe `not_ready` result for any later schema drift or database failure.
+1. Thủ thư/Quản trị viên mở một cuốn sách `INACTIVE` trong giao diện quản lý.
+2. Tác nhân cung cấp lý do và xác nhận kích hoạt lại bằng phiên bản sách đã xem gần nhất.
+3. Hệ thống kiểm tra lại phiên bản và chỉ thay đổi `Books.Status` thành `ACTIVE`.
+4. Trạng thái bản sao hiện tại không thay đổi; tính khả dụng dẫn xuất được tính lại từ các bản sao hiện tại do FE06 sở hữu.
+5. Thao tác cập nhật sách và log audit commit nguyên tử.
 
 ---
 
-## 8. Acceptance Criteria
+## 5. Luồng thay thế
 
-- AC-FE05-001: Given public-visible books exist, when a Guest searches by title/author, then matching active books are returned without ISBN; an ISBN-only keyword does not match.
-- AC-FE05-002: Given public-visible books exist, when a Member searches by title/author, then matching active books are returned without ISBN; an ISBN-only keyword does not match.
-- AC-FE05-003: Given a valid active book, when a Guest or Member opens book details, then public metadata is displayed without ISBN.
-- AC-FE05-004: Given a Librarian/Admin opens the book list, when filters or an ISBN keyword are applied, then the system returns a paginated management list that includes ISBN.
-- AC-FE05-005: Given valid required book data and a unique ISBN when provided, when a librarian/admin adds a book, then the system creates the book record.
-- AC-FE05-006: Given a duplicate ISBN, when a librarian/admin adds or updates a book, then the system rejects the request.
-- AC-FE05-007: Given an existing book and valid updates, when a librarian/admin updates book information, then the system saves the changes.
-- AC-FE05-008: Given an active book, when a librarian/admin deactivates it, then the book becomes inactive and is excluded from public search.
-- AC-FE05-009: Given a guest or member attempts to add, update, or deactivate a book, when the request is processed, then access is denied.
-- AC-FE05-010: Given a create, update, deactivate, or reactivate action succeeds, when the action completes, then the book change and required audit record commit atomically.
-- AC-FE05-011: Given an active book whose latest committed copy state contains at least one `AVAILABLE` copy, when staff or public browse loads the book, then the response shows `AVAILABLE`/`Còn sách` without changing any copy.
-- AC-FE05-012: Given a caller submits a copy-status mutation through an FE05 endpoint, when the request is processed, then the request is rejected and all book/copy states remain unchanged.
-- AC-FE05-013: Given an `INACTIVE` book, matching `If-Match`, and non-empty reason, when staff reactivates it, then only `Books.Status` becomes `ACTIVE`, copy states remain unchanged, and derived availability reflects current copies.
-- AC-FE05-014: Given a stale or missing `If-Match`, when staff updates/deactivates/reactivates a book, then FE05 returns `409 STALE_BOOK_STATE` and preserves all state.
-- AC-FE05-015: Given an unapproved public query field or invalid pagination/staff-sort/keyword input, when a list/search endpoint is called, then FE05 returns a validation error using the deterministic query policy.
-- AC-FE05-016: Given a missing/blank/overlength deactivation or reactivation reason, when staff submits the command, then FE05 rejects it and preserves book/copy/workflow state.
-- AC-FE05-017: Given invalid `pages` or `rating`, when staff creates or updates a book, then FE05 returns field-level validation and preserves the book, copy, workflow, and audit state.
-- AC-FE05-018: Given Librarian/Admin selects a valid local JPG/PNG/WebP cover in either book form, when the form is reviewed and submitted, then the UI previews the selected image, sends multipart metadata plus `cover`, and the returned managed cover renders in staff and public views.
-- AC-FE05-019: Given an invalid cover or a stale/database/audit failure after a replacement file is staged, when create/update finishes, then the committed book/cover remains unchanged and the uncommitted managed file is removed.
-- AC-FE05-020: Given the management list is filtered to the book's old status, when staff saves a valid status change, then the status command succeeds, the filter switches to the new status, and the canonical list reload keeps the updated book visible when it belongs to the returned page.
-- AC-FE05-021: Given active and inactive reference records exist, when Librarian/Admin loads a book form, then only active choices are returned; Guest/Member cannot access the endpoint.
-- AC-FE05-022: Given a legacy deployed database is missing a canonical metadata column, when the backend starts, then it applies the packaged reviewed migration before listening; after successful postcondition verification, readiness returns HTTP `200` and all three Admin metadata lists load persisted data. If reconciliation fails, the backend does not listen and deployment verification fails.
+### AF-FE05-001: ISBN trùng lặp
+
+1. Thủ thư nộp một cuốn sách mới.
+2. Hệ thống phát hiện ISBN hiện có.
+3. Hệ thống từ chối việc tạo.
+4. Hệ thống trả về lỗi xác thực.
+
+### AF-FE05-002: Danh mục không hợp lệ
+
+1. Thủ thư gửi thông tin sách.
+2. Danh mục đã chọn không tồn tại.
+3. Hệ thống từ chối yêu cầu.
+4. Hệ thống trả về thông báo lỗi.
+
+### AF-FE05-003: Không tìm thấy sách
+
+1. Người dùng yêu cầu chi tiết sách.
+2. ID sách không tồn tại.
+3. Hệ thống trả về phản hồi không tìm thấy.
+
+### AF-FE05-004: Truy cập trái phép
+
+1. Khách hoặc Thành viên cố gắng thêm, cập nhật hoặc vô hiệu hóa sách.
+2. Hệ thống xác nhận quyền.
+3. Hệ thống từ chối truy cập.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 6. Quy tắc kinh doanh
 
-| ID | Edge Case / Error | Expected System Behavior |
+Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
+
+- BR-FE05-001: Khách chỉ có thể tìm kiếm sách và xem chi tiết sách.
+- BR-FE05-002: Chỉ thủ thư và quản trị viên mới có thể thêm sách.
+- BR-FE05-003: Chỉ thủ thư và quản trị viên mới có thể cập nhật sách.
+- BR-FE05-004: Chỉ Thủ thư và Quản trị viên mới có thể vô hiệu hóa sách.
+- BR-FE05-005: ISBN phải là duy nhất trên tất cả các sách.
+- BR-FE05-006: Cần có tên sách.
+- BR-FE05-007: Một cuốn sách thuộc đúng một danh mục trong Giai đoạn 1.
+- BR-FE05-008: Không thể mượn sách đã ngừng hoạt động.
+- BR-FE05-009: Sách bị vô hiệu hóa không được xuất hiện trong kết quả search/detail công khai.
+- BR-FE05-010: Mọi thao tác tạo, cập nhật, vô hiệu hóa và kích hoạt lại đều phải được audit.
+- BR-FE05-011: Tính khả dụng công khai khác với khả năng hiển thị trong danh mục; `Books.Status` kiểm soát sách hoạt động/không hoạt động có được hiển thị trong danh mục hay không, còn `BookCopies.Status` do FE06 sở hữu cung cấp nguồn tính khả dụng chỉ đọc.
+- BR-FE05-012: FE05 không được tạo hoặc tự chuyển đổi `BookCopies.Status`; thay đổi vòng đời bản sao thuộc FE06, FE07 hoặc FE08 theo quy trình của tính năng sở hữu.
+- BR-FE05-013: Đối với một cuốn sách `ACTIVE`, tính khả dụng công khai là `AVAILABLE` chỉ khi có ít nhất một bản sao liên quan có `BookCopies.Status = AVAILABLE`; nếu không thì đó là `UNAVAILABLE`. Một cuốn sách `INACTIVE` không bao giờ được hiển thị công khai hoặc có thể mượn được bất kể trạng thái bản sao.
+- BR-FE05-014: `Books.Status` có chính xác hai trạng thái, `ACTIVE` và `INACTIVE`; các chuyển tiếp hợp lệ được tạo -> `ACTIVE`, `ACTIVE -> INACTIVE`, và `INACTIVE -> ACTIVE`. Việc xóa vật lý bị cấm trong Giai đoạn 1.
+- BR-FE05-015: Vô hiệu hóa/kích hoạt lại chỉ thay đổi `Books.Status`; FE05 không bao giờ ghi lại các hàng bản sao, khoản mượn, đặt chỗ hoặc lịch sử liên quan.
+- BR-FE05-016: Mỗi lần cập nhật/vô hiệu hóa/kích hoạt lại sách hiện có đều yêu cầu `If-Match` chứa SQL `rowversion` mà người gọi đã thấy gần nhất; phiên bản cũ hoặc bị thiếu trả về `409 STALE_BOOK_STATE` mà không thay đổi dữ liệu.
+- BR-FE05-017: Truy vấn sách sử dụng các điều khiển xác định: độ dài từ khóa 1..200 khi được cung cấp; `page` mặc định là 1; `limit` mặc định là 20 và phải là 1..100. `/api/books` công khai chỉ chấp nhận `q`, `categoryId`, `authorId`, `publisherId`, `page` và `limit`; `q` công khai chỉ khớp với tiêu đề/tác giả và kết quả không bao gồm ISBN. `/api/admin/books` dành cho nhân viên có thể khớp tiêu đề, ISBN, tác giả, danh mục hoặc nhà xuất bản và chấp nhận thêm các trường sắp xếp `title`, `publishYear` hoặc `createdAt` cùng thứ tự `asc` hoặc `desc`.
+- BR-FE05-018: Vô hiệu hóa/kích hoạt lại yêu cầu lý do không trống, đã cắt khoảng trắng, dài tối đa 500 ký tự và được lưu trong siêu dữ liệu audit.
+- BR-FE05-019: Thủ thư/Quản trị viên có thể chọn một tệp ảnh bìa được quản lý, tùy chọn, tên là `cover`. Backend chỉ chấp nhận JPG/JPEG, PNG hoặc WebP có đuôi tệp, loại MIME khai báo và chữ ký byte khớp nhau, kích thước tối đa 2 MB; backend tạo tên tệp và lưu đường dẫn công khai trong `/uploads/book-covers/`.
+- BR-FE05-020: Nếu thao tác tạo/cập nhật thất bại sau khi lưu tệp bìa mới thì phải xóa tệp chưa commit đó. Khi thay thế thành công, hệ thống giữ đường dẫn mới đã commit và chỉ xóa tệp trước nếu đường dẫn đó do FE05 quản lý; không bao giờ xóa đường dẫn bên ngoài hoặc không được quản lý.
+- BR-FE05-021: Biểu mẫu sách của Thủ thư/Quản trị viên chỉ được đọc các lựa chọn danh mục, tác giả và nhà xuất bản `ACTIVE` từ FE05. Chỉ Quản trị viên được thay đổi các bản ghi tham chiếu này qua tích hợp Thư viện quản trị FE11.
+- BR-FE05-022: Backend đã triển khai chưa sẵn sàng phục vụ danh mục cho đến khi `Authors`, `Publishers` và `Categories` đều có `Status` chuẩn cùng cột `CreatedAt` do cơ sở dữ liệu tạo. Trước khi nhận lưu lượng HTTP, tiến trình khởi động backend phải áp dụng migration tương thích siêu dữ liệu chuẩn đã được review trong một giao dịch và xác minh hậu điều kiện; nếu không thể hoàn tất đối soát, tiến trình phải khởi động thất bại thay vì phục vụ danh mục chỉ tương thích một phần.
+
+
+---
+
+## 7. Yêu cầu chức năng
+
+- FR-FE05-001: Hệ thống sẽ cho phép Khách tìm kiếm sách đang hoạt động theo tên sách hoặc tác giả mà không để lộ hoặc khớp ISBN.
+- FR-FE05-002: Hệ thống sẽ cho phép Thành viên tìm kiếm sách đang hoạt động theo tên sách hoặc tác giả mà không để lộ hoặc khớp ISBN.
+- FR-FE05-003: Hệ thống phải trả về chi tiết sách công khai không có ISBN cho Khách/Thành viên và chỉ được trả ISBN trong phép chiếu quản lý của Thủ thư/Quản trị viên đã được máy chủ phân quyền.
+- FR-FE05-004: Hệ thống phải cho phép Thủ thư/Quản trị viên xem danh sách quản lý sách và tìm kiếm/xem ISBN.
+- FR-FE05-005: Hệ thống sẽ xác thực tính duy nhất của ISBN trước khi tạo sách.
+- FR-FE05-006: Hệ thống phải tạo sách mới khi được cung cấp dữ liệu hợp lệ.
+- FR-FE05-007: Hệ thống cho phép cập nhật các sách hiện có.
+- FR-FE05-008: Hệ thống phải vô hiệu hóa sách bằng cơ chế vô hiệu hóa dựa trên trạng thái.
+- FR-FE05-009: Hệ thống sẽ hỗ trợ phân trang trong tìm kiếm sách.
+- FR-FE05-010: Hệ thống sẽ hỗ trợ lọc theo danh mục, tác giả và trạng thái.
+
+### Yêu cầu về hành vi không mong muốn (Lỗi / Điều kiện bất thường)
+
+- FR-FE05-011: NẾU ISBN được cung cấp đã tồn tại trên một cuốn sách khác trong quá trình tạo hoặc cập nhật, hệ thống sẽ từ chối yêu cầu và trả về lỗi xác thực mà không sửa đổi bất kỳ bản ghi nào. (Nguồn: AF-FE05-001, EC-FE05-003, BR-FE05-005)
+- FR-FE05-012: NẾU tên sách bị thiếu hoặc trống trong quá trình tạo hoặc cập nhật, hệ thống sẽ từ chối yêu cầu và trả về lỗi xác thực xác định trường tên sách. (Nguồn: EC-FE05-002, BR-FE05-006, NFR-FE05-UX-001)
+- FR-FE05-013: NẾU danh mục, tác giả hoặc nhà xuất bản được tham chiếu không tồn tại trong quá trình tạo hoặc cập nhật, hệ thống sẽ từ chối yêu cầu và trả về thông báo lỗi. (Nguồn: AF-FE05-002, EC-FE05-005, EC-FE05-006, EC-FE05-007)
+- FR-FE05-014: NẾU ID sách được yêu cầu không tồn tại khi xem, cập nhật hoặc hủy kích hoạt sách, hệ thống sẽ trả về phản hồi không tìm thấy và sẽ không tạo bản ghi mới. (Nguồn: AF-FE05-003, EC-FE05-001)
+- FR-FE05-015: NẾU Khách hoặc Thành viên cố thêm, cập nhật hoặc vô hiệu hóa sách, hệ thống phải từ chối truy cập và trả về phản hồi cấm truy cập. (Nguồn: AF-FE05-004, EC-FE05-009, BR-FE05-002, BR-FE05-003, BR-FE05-004)
+- FR-FE05-016: NẾU năm xuất bản được cung cấp không hợp lệ hoặc được đặt trong tương lai trong quá trình tạo hoặc cập nhật, hệ thống sẽ từ chối yêu cầu và trả về lỗi xác thực. (Nguồn: EC-FE05-008)
+- FR-FE05-017: NẾU từ khóa tìm kiếm vượt quá độ dài tối đa cho phép, hệ thống sẽ từ chối tìm kiếm và trả về thông báo xác thực. (Nguồn: EC-FE05-011)
+- FR-FE05-018: NẾU cập nhật sách hoặc ghi log audit bị lỗi giữa chừng, hệ thống phải rollback cả cập nhật sách lẫn log audit để không tồn tại thay đổi một phần. (Nguồn: EC-FE05-012, NFR-FE05-TXN-001)
+- FR-FE05-019: KHI sách có trạng thái `INACTIVE`, hệ thống phải ngăn mượn sách đó, loại sách khỏi kết quả tìm kiếm công khai và vẫn giữ nguyên lịch sử mượn/đặt chỗ cùng các bản ghi bản sao. (Nguồn: BR-FE05-008, BR-FE05-009, EC-FE05-010, Q-FE05-007)
+- FR-FE05-020: KHI dữ liệu sách được trả về cho nhân viên hoặc trình duyệt công khai, hệ thống sẽ lấy bản tóm tắt tính khả dụng từ trạng thái bản sao FE06 đã commit mới nhất theo BR-FE05-013 và không lưu giá trị khả dụng do FE05 sở hữu. (Nguồn: MF-FE05-007, BR-FE05-011, BR-FE05-012, BR-FE05-013)
+- FR-FE05-021: NẾU người gọi cố thay đổi `BookCopies.Status` thông qua endpoint sách FE05, hệ thống sẽ từ chối yêu cầu và không sửa đổi `Books` hoặc `BookCopies`. (Nguồn: BR-FE05-012, EC-FE05-013)
+- FR-FE05-022: KHI tác nhân được phân quyền kích hoạt lại sách `INACTIVE` với phiên bản khớp và lý do không trống, hệ thống phải đặt `Books.Status = ACTIVE`, giữ mọi bản ghi bản sao/quy trình liên quan, tính lại tính khả dụng dẫn xuất và ghi audit theo cách nguyên tử. (Nguồn: MF-FE05-008, BR-FE05-014, BR-FE05-015)
+- FR-FE05-023: NẾU `If-Match` bị thiếu hoặc không khớp với `rowversion` của sách hiện tại khi cập nhật/vô hiệu hóa/kích hoạt lại, hệ thống sẽ trả về `409 STALE_BOOK_STATE` và không thay đổi bản ghi. (Nguồn: BR-FE05-016, EC-FE05-014)
+- FR-FE05-024: NẾU truy vấn công khai chứa trường không được phê duyệt hoặc bất kỳ từ khóa, phân trang, sắp xếp nhân viên hoặc giá trị thứ tự nhân viên nào vi phạm BR-FE05-017, hệ thống sẽ trả về lỗi xác thực thay vì âm thầm áp dụng chính sách khác. (Nguồn: EC-FE05-011, EC-FE05-015)
+- FR-FE05-025: NẾU lý do vô hiệu hóa/kích hoạt lại bị thiếu, trống sau khi cắt khoảng trắng hoặc dài hơn 500 ký tự, hệ thống phải từ chối lệnh và giữ nguyên mọi trạng thái. (Nguồn: BR-FE05-018, EC-FE05-016)
+- FR-FE05-026: NẾU `pages` không phải là số nguyên từ 1 đến 10,000, hoặc `rating` nằm ngoài 0.0 đến 5.0 hoặc có nhiều hơn một chữ số thập phân khi tạo/cập nhật, hệ thống sẽ từ chối yêu cầu với xác thực cấp trường và không thay đổi bản ghi. (Nguồn: EC-FE05-017, Phần 10.2)
+- FR-FE05-027: KHI Thủ thư/Quản trị viên tạo hoặc cập nhật sách bằng `multipart/form-data`, hệ thống sẽ đọc siêu dữ liệu sách JSON từ `metadata`, xác thực và lưu ảnh `cover` tùy chọn theo đường dẫn do máy chủ tạo, lưu đường dẫn đó dưới dạng `Books.CoverUrl` và trả về qua các lần đọc sách dành cho nhân viên/công khai.
+- FR-FE05-028: NẾU bìa được cung cấp thiếu siêu dữ liệu nhiều phần bắt buộc, vượt quá 2 MB, có loại/chữ ký không được hỗ trợ hoặc không khớp, hoặc thao tác thay đổi sách liên quan thất bại, hệ thống phải từ chối hoặc bù trừ thao tác mà không thay đường dẫn bìa đã commit hay giữ lại tệp được quản lý chưa commit.
+- FR-FE05-029: KHI biểu mẫu cập nhật thay đổi một cuốn sách giữa `ACTIVE` và `INACTIVE`, giao diện người dùng sẽ tải lại danh sách quản lý chuẩn bằng trạng thái mới và trang 1 để cuốn sách được cập nhật thành công không bị bộ lọc trạng thái trước đó ẩn ngay lập tức.
+- FR-FE05-030: KHI Thủ thư/Quản trị viên đã xác thực yêu cầu `/api/books/metadata`, hệ thống sẽ chỉ trả về các lựa chọn danh mục/tác giả/nhà xuất bản đang hoạt động; yêu cầu của Khách/Thành viên sẽ bị từ chối và không bản ghi tham chiếu nào bị thay đổi.
+- FR-FE05-031: KHI bắt đầu khởi động backend, hệ thống sẽ áp dụng migration tương thích siêu dữ liệu đã được review trước khi lắng nghe và xác minh các cột siêu dữ liệu chuẩn; NẾU migration hoặc bước xác minh thất bại, backend sẽ không lắng nghe. KHI kiểm tra mức sẵn sàng qua `/health/ready`, hệ thống sẽ thực hiện xác minh chỉ đọc và trả về HTTP `503` với kết quả `not_ready` an toàn nếu sau này xảy ra sai lệch lược đồ hoặc lỗi cơ sở dữ liệu.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE05-001: Với các sách hiển thị công khai hiện có, khi Khách tìm kiếm theo tiêu đề/tác giả, các sách đang hoạt động phù hợp được trả về mà không có ISBN; từ khóa chỉ chứa ISBN sẽ không khớp.
+- AC-FE05-002: Với các sách hiển thị công khai hiện có, khi Thành viên tìm kiếm theo tiêu đề/tác giả, các sách đang hoạt động phù hợp được trả về mà không có ISBN; từ khóa chỉ chứa ISBN sẽ không khớp.
+- AC-FE05-003: Với một cuốn sách đang hoạt động hợp lệ, khi Khách hoặc Thành viên mở chi tiết sách thì siêu dữ liệu công khai sẽ được hiển thị mà không có ISBN.
+- AC-FE05-004: Cho trước Thủ thư/Quản trị viên mở danh sách sách, khi áp dụng bộ lọc hoặc từ khóa ISBN thì hệ thống trả về danh sách quản lý có phân trang và chứa ISBN.
+- AC-FE05-005: Cho trước dữ liệu sách bắt buộc hợp lệ và ISBN duy nhất nếu có, khi Thủ thư/Quản trị viên thêm sách thì hệ thống tạo bản ghi sách.
+- AC-FE05-006: Cho trước ISBN trùng lặp, khi Thủ thư/Quản trị viên thêm hoặc cập nhật sách thì hệ thống từ chối yêu cầu.
+- AC-FE05-007: Cho trước sách hiện có và dữ liệu cập nhật hợp lệ, khi Thủ thư/Quản trị viên cập nhật thông tin thì hệ thống lưu các thay đổi.
+- AC-FE05-008: Cho trước một sách đang hoạt động, khi Thủ thư/Quản trị viên vô hiệu hóa thì sách chuyển sang không hoạt động và bị loại khỏi tìm kiếm công khai.
+- AC-FE05-009: Khi Khách hoặc Thành viên cố thêm, cập nhật hoặc vô hiệu hóa sách, hệ thống sẽ từ chối quyền truy cập khi xử lý yêu cầu.
+- AC-FE05-010: Cho trước thao tác tạo, cập nhật, vô hiệu hóa hoặc kích hoạt lại thành công, khi thao tác hoàn tất thì thay đổi sách và bản ghi audit bắt buộc phải commit nguyên tử.
+- AC-FE05-011: Cho trước một sách đang hoạt động có trạng thái bản sao đã commit gần nhất chứa ít nhất một bản `AVAILABLE`, khi nhân viên hoặc trình duyệt công khai tải sách thì phản hồi hiển thị `AVAILABLE`/`Còn sách` mà không thay đổi bản sao nào.
+- AC-FE05-012: Nếu người gọi gửi yêu cầu thay đổi trạng thái bản sao thông qua endpoint FE05, hệ thống sẽ từ chối yêu cầu và giữ nguyên mọi trạng thái sách/bản sao.
+- AC-FE05-013: Cho trước một sách `INACTIVE`, `If-Match` khớp và lý do không trống, khi nhân viên kích hoạt lại thì chỉ `Books.Status` trở thành `ACTIVE`, trạng thái bản sao không đổi và tính khả dụng dẫn xuất phản ánh các bản sao hiện tại.
+- AC-FE05-014: Cho trước `If-Match` cũ hoặc bị thiếu, khi nhân viên cập nhật/vô hiệu hóa/kích hoạt lại sách thì FE05 trả về `409 STALE_BOOK_STATE` và giữ nguyên mọi trạng thái.
+- AC-FE05-015: Với trường truy vấn công khai không được phê duyệt hoặc đầu vào phân trang/sắp xếp nhân viên/từ khóa không hợp lệ, khi endpoint danh sách/tìm kiếm được gọi, FE05 sẽ trả về lỗi xác thực theo chính sách truy vấn xác định.
+- AC-FE05-016: Cho trước lý do vô hiệu hóa hoặc kích hoạt lại bị thiếu/trống/quá dài, khi nhân viên gửi lệnh thì FE05 từ chối và giữ nguyên trạng thái sách/bản sao/quy trình.
+- AC-FE05-017: Với `pages` hoặc `rating` không hợp lệ, khi nhân viên tạo hoặc cập nhật sách thì FE05 trả về xác thực cấp trường và giữ nguyên trạng thái sách, bản sao, quy trình làm việc và kiểm tra.
+- AC-FE05-018: Cho trước Thủ thư/Quản trị viên chọn một bìa JPG/PNG/WebP cục bộ hợp lệ trong biểu mẫu tạo hoặc cập nhật sách, khi xem lại và gửi biểu mẫu thì UI xem trước ảnh đã chọn, gửi siêu dữ liệu nhiều phần cùng `cover`, và bìa được quản lý trả về hiển thị trong giao diện nhân viên lẫn công khai.
+- AC-FE05-019: Cho trước bìa không hợp lệ hoặc lỗi phiên bản cũ/cơ sở dữ liệu/audit sau khi tệp thay thế được tạm lưu, khi thao tác tạo/cập nhật kết thúc thì sách/bìa đã commit vẫn không đổi và tệp được quản lý chưa commit bị xóa.
+- AC-FE05-020: Cho trước danh sách quản lý đang lọc theo trạng thái cũ của sách, khi nhân viên lưu thay đổi trạng thái hợp lệ thì lệnh thành công, bộ lọc chuyển sang trạng thái mới và danh sách chuẩn được tải lại để hiển thị sách nếu sách thuộc trang trả về.
+- AC-FE05-021: Với các bản ghi tham chiếu đang hoạt động và không hoạt động, khi Thủ thư/Quản trị viên tải biểu mẫu sách thì chỉ các lựa chọn đang hoạt động được trả về; Khách/Thành viên không thể truy cập endpoint.
+- AC-FE05-022: Cho trước cơ sở dữ liệu đã triển khai cũ thiếu cột siêu dữ liệu chuẩn, khi backend khởi động thì áp dụng migration đã review và đóng gói trước khi lắng nghe; sau khi xác minh hậu điều kiện thành công, endpoint sẵn sàng trả HTTP `200` và cả ba danh sách siêu dữ liệu Quản trị viên tải dữ liệu ổn định. Nếu đối soát thất bại, backend không lắng nghe và bước xác minh triển khai thất bại.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống mong đợi |
 | -- | ----------------- | ------------------------ |
-| EC-FE05-001 | Book ID does not exist | Return not found. |
-| EC-FE05-002 | Book title is missing | Reject create/update request. |
-| EC-FE05-003 | ISBN is duplicate | Reject create/update request. |
-| EC-FE05-004 | ISBN is empty | Allow empty ISBN; when provided, ISBN must be unique. |
-| EC-FE05-005 | Category ID does not exist | Reject request. |
-| EC-FE05-006 | Author ID does not exist | Reject request. |
-| EC-FE05-007 | Publisher ID does not exist | Reject request. |
-| EC-FE05-008 | Publish year is invalid or in the future | Reject request. |
-| EC-FE05-009 | Guest/member attempts protected book management | Return forbidden response. |
-| EC-FE05-010 | Deactivate book with active borrowed/reserved copies | Allow status-based catalog deactivation; keep borrow/reservation history and copy records unchanged. |
-| EC-FE05-011 | Search keyword too long | Reject with validation message. |
-| EC-FE05-012 | Database update partially fails | Roll back book update and audit log. |
-| EC-FE05-013 | Caller attempts copy-status mutation through FE05 | Reject request; direct copy transitions must use the owning FE06/FE07/FE08 workflow. |
-| EC-FE05-014 | Missing/stale `If-Match` rowversion | Return `409 STALE_BOOK_STATE`; caller reloads current state. |
-| EC-FE05-015 | Unapproved public query field or invalid page/limit/staff sort/order | Reject using BR-FE05-017; do not silently normalize. |
-| EC-FE05-016 | Missing/blank/overlength state-transition reason | Reject command and preserve all state. |
-| EC-FE05-017 | `pages` or `rating` violates Section 10.2 bounds/precision | Reject create/update with field-level validation and no mutation. |
-| EC-FE05-018 | Cover is larger than 2 MB, unsupported, extension/MIME/signature mismatched, duplicated, or malformed multipart | Reject before book mutation and expose a safe field-level error. |
-| EC-FE05-019 | Cover file is stored but create/update later fails or loses the `If-Match` race | Remove the new file and preserve the previously committed book/cover. |
+| EC-FE05-001 | ID sách không tồn tại | Trả lại không tìm thấy. |
+| EC-FE05-002 | Thiếu tên sách | Từ chối yêu cầu tạo/cập nhật. |
+| EC-FE05-003 | ISBN bị trùng lặp | Từ chối yêu cầu tạo/cập nhật. |
+| EC-FE05-004 | ISBN trống | Cho phép ISBN trống; khi được cung cấp, ISBN phải là duy nhất. |
+| EC-FE05-005 | ID danh mục không tồn tại | Từ chối yêu cầu. |
+| EC-FE05-006 | ID tác giả không tồn tại | Từ chối yêu cầu. |
+| EC-FE05-007 | ID nhà xuất bản không tồn tại | Từ chối yêu cầu. |
+| EC-FE05-008 | Năm xuất bản không hợp lệ hoặc trong tương lai | Từ chối yêu cầu. |
+| EC-FE05-009 | Khách/Thành viên thử quản lý sách được bảo vệ | Trả về phản hồi cấm truy cập. |
+| EC-FE05-010 | Vô hiệu hóa sách có bản sao đang được mượn/đặt chỗ | Cho phép vô hiệu hóa danh mục dựa trên trạng thái; giữ nguyên lịch sử mượn/đặt chỗ và bản ghi bản sao. |
+| EC-FE05-011 | Từ khóa tìm kiếm quá dài | Từ chối với thông báo xác nhận. |
+| EC-FE05-012 | Cập nhật cơ sở dữ liệu thất bại một phần | Rollback cập nhật sách và log audit. |
+| EC-FE05-013 | Người gọi thử thay đổi trạng thái bản sao qua FE05 | Từ chối yêu cầu; chuyển đổi bản sao trực tiếp phải dùng quy trình do FE06/FE07/FE08 sở hữu. |
+| EC-FE05-014 | Thiếu hoặc cũ `If-Match` của hàng đang chuyển đổi | Trả về `409 STALE_BOOK_STATE`; người gọi tải lại trạng thái hiện tại. |
+| EC-FE05-015 | Trường truy vấn công khai không được phê duyệt hoặc trang/giới hạn/sắp xếp/thứ tự của nhân viên không hợp lệ | Từ chối theo BR-FE05-017; không âm thầm chuẩn hóa. |
+| EC-FE05-016 | Lý do chuyển trạng thái bị thiếu/trống/quá dài | Từ chối lệnh và giữ nguyên mọi trạng thái. |
+| EC-FE05-017 | `pages` hoặc `rating` vi phạm giới hạn/độ chính xác tại Mục 10.2 | Từ chối tạo/cập nhật bằng xác thực cấp trường và không thay đổi dữ liệu. |
+| EC-FE05-018 | Bìa lớn hơn 2 MB, không được hỗ trợ, đuôi tệp/MIME/chữ ký không khớp, trùng lặp hoặc dữ liệu nhiều phần sai định dạng | Từ chối trước khi thay đổi sách và hiển thị lỗi cấp trường an toàn. |
+| EC-FE05-019 | Tệp bìa đã lưu nhưng tạo/cập nhật sau đó thất bại hoặc thua cạnh tranh `If-Match` | Xóa tệp mới và giữ nguyên sách/bìa. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể có liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Books | Stores book catalog metadata. |
-| Categories | Provides book category classification. |
-| Authors | Provides author information. |
-| Publishers | Provides publisher information. |
-| BookCopies | Provides availability summary through FE06. |
-| UserRoles | Checks librarian/admin permissions. |
-| AuditLogs | Records every create, update, deactivate, and reactivate action. |
+| Books | Lưu siêu dữ liệu danh mục sách. |
+| Categories | Cung cấp phân loại danh mục sách. |
+| Authors | Cung cấp thông tin tác giả. |
+| Publishers | Cung cấp thông tin nhà xuất bản. |
+| BookCopies | Cung cấp bản tóm tắt về tính khả dụng thông qua FE06. |
+| UserRoles | Kiểm tra quyền Thủ thư/Quản trị viên. |
+| AuditLogs | Ghi lại mọi hành động tạo, cập nhật, hủy kích hoạt và kích hoạt lại. |
 
-### 10.2 Data Fields
+### 10.2 Trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Kiểm tra hợp lệ / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| bookId | integer | Yes for updates | Must exist in `Books`. |
-| title | string | Yes | Required, trimmed, 1..255 characters. |
-| isbn | string | No | FE05 staff-management field only; trimmed, max 20 characters, unique when provided. Excluded from Guest/Member public projection and public q matching. |
-| categoryId | integer | Yes | Must reference `Categories`. |
-| authorId | integer | Yes | Must reference `Authors` in current SQL. |
-| publisherId | integer | No | Must reference `Publishers` when provided. |
-| publishYear | integer | No | Must be a valid year and not in the future. |
-| pages | integer | No | Integer from 1 to 10,000 when provided. |
-| rating | decimal | No | Value from 0.0 to 5.0 with at most one decimal place when provided. |
-| description | string | No | Must be sanitized before display. |
-| coverUrl | string | No | Server-generated managed path such as `/uploads/book-covers/{uuid}.png` for UI uploads; safe legacy URL/path input remains accepted for API compatibility. |
-| cover | binary image | No | Multipart field; JPG/JPEG, PNG, or WebP; maximum 2 MB; server validates extension, MIME type, and byte signature. |
-| status | string | Yes | Values: `ACTIVE`, `INACTIVE`; controls catalog visibility and borrow eligibility. |
-| availabilityStatus | string | Derived/read-only | Values: `AVAILABLE`, `UNAVAILABLE`; computed from `Books.Status` and FE06-owned copy states according to BR-FE05-013. |
-| actionReason | string | Required for deactivate/reactivate | Trimmed, 1..500 characters; stored in audit metadata. |
-| version | opaque string | Yes for existing-book mutation | API representation of SQL Server `rowversion`; supplied through `If-Match` and advanced on every mutation. |
-| metadataCreatedAt | datetime | Yes for category/author/publisher records | Database-generated creation timestamp returned by protected metadata-management reads. |
-| metadataStatus | string | Yes for category/author/publisher records | `ACTIVE` or `INACTIVE`; inactive metadata remains on existing books but cannot be assigned by new book mutations. |
+| bookId | số nguyên | Có để cập nhật | Phải tồn tại trong `Books`. |
+| title | chuỗi | Có | Bắt buộc, cắt khoảng trắng, 1..255 ký tự. |
+| isbn | chuỗi | Không | Trường chỉ dành cho quản lý nhân viên trong FE05; cắt khoảng trắng, tối đa 20 ký tự, duy nhất nếu có. Bị loại khỏi phép chiếu công khai Khách/Thành viên và không được so khớp bởi q công khai. |
+| categoryId | số nguyên | Có | Phải tham khảo `Categories`. |
+| authorId | số nguyên | Có | Phải tham chiếu `Authors` trong SQL hiện tại. |
+| publisherId | số nguyên | Không | Phải tham khảo `Publishers` khi được cung cấp. |
+| publishYear | số nguyên | Không | Phải là một năm hợp lệ và không phải trong tương lai. |
+| pages | số nguyên | Không | Số nguyên từ 1 đến 10,000 nếu có. |
+| rating | số thập phân | Không | Giá trị từ 0.0 đến 5.0, có tối đa một chữ số thập phân nếu có. |
+| description | chuỗi | Không | Phải được làm sạch trước khi hiển thị. |
+| coverUrl | chuỗi | Không | Đường dẫn được quản lý do máy chủ tạo như `/uploads/book-covers/{uuid}.png` để tải lên UI; đầu vào URL/đường dẫn legacy an toàn vẫn được chấp nhận để tương thích với API. |
+| cover | ảnh nhị phân | Không | Trường nhiều phần; JPG/JPEG, PNG hoặc WebP; tối đa 2 MB; máy chủ xác thực đuôi tệp, loại MIME và chữ ký byte. |
+| status | chuỗi | Có | Các giá trị: `ACTIVE`, `INACTIVE`; kiểm soát khả năng hiển thị danh mục và điều kiện mượn. |
+| availabilityStatus | chuỗi | Dẫn xuất/chỉ đọc | Các giá trị: `AVAILABLE`, `UNAVAILABLE`; được tính từ `Books.Status` và trạng thái bản sao do FE06 sở hữu theo BR-FE05-013. |
+| actionReason | chuỗi | Bắt buộc khi vô hiệu hóa/kích hoạt lại | Cắt khoảng trắng, 1..500 ký tự; được lưu trong siêu dữ liệu audit. |
+| version | chuỗi không trong suốt | Có khi thay đổi sách hiện có | Biểu diễn API của SQL Server `rowversion`; được cung cấp qua `If-Match` và tăng sau mọi thay đổi. |
+| metadataCreatedAt | ngày giờ | Có đối với bản ghi danh mục/tác giả/nhà xuất bản | Dấu thời gian tạo do cơ sở dữ liệu tạo được trả về trong các lần đọc quản lý siêu dữ liệu được bảo vệ. |
+| metadataStatus | chuỗi | Có đối với bản ghi danh mục/tác giả/nhà xuất bản | `ACTIVE` hoặc `INACTIVE`; siêu dữ liệu không hoạt động vẫn còn trên các sách hiện có nhưng không thể được gán bởi các thao tác thay đổi sách mới. |
 
-### 10.3 Book State Model
+### 10.3 Mô hình trạng thái sách
 
-- New books start `ACTIVE`.
-- `ACTIVE -> INACTIVE` is deactivation; `INACTIVE -> ACTIVE` is reactivation.
-- Neither transition changes `BookCopies`, borrowings, reservations, or historical records.
-- Public endpoints return `404` for `INACTIVE` books; staff management endpoints may return both states.
-- No state transitions to physical deletion in Phase 1.
+- Sách mới bắt đầu `ACTIVE`.
+- `ACTIVE -> INACTIVE` là vô hiệu hóa; `INACTIVE -> ACTIVE` là kích hoạt lại.
+- Quá trình chuyển đổi không làm thay đổi `BookCopies`, các khoản vay, đặt chỗ hoặc hồ sơ lịch sử.
+- Endpoint công khai trả về `404` cho sách `INACTIVE`; endpoint quản lý dành cho nhân viên có thể trả về cả hai trạng thái.
+- Không có chuyển đổi trạng thái sang xóa vật lý trong Giai đoạn 1.
 
 ---
 
-## 11. API / Interface Contract
+## 11. API / Hợp đồng giao diện
 
-> RESTful API contract for FE05 review. Existing-book mutation endpoints require `If-Match` with the last-seen version.
+> Hợp đồng API RESTful cho FE05. Các endpoint thay đổi sách hiện có yêu cầu `If-Match` chứa phiên bản được xem lần cuối.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Public `q` matches title/author only and results exclude ISBN. Authentication does not widen this list projection; BR-FE05-017 applies. |
-| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Guest/Member receive public-safe `ACTIVE` detail without ISBN or `404`; authenticated Librarian/Admin may receive management fields including ISBN for both `ACTIVE` and `INACTIVE` books. |
-| GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; `q` may match ISBN and the response includes ISBN; BR-FE05-017 applies. |
-| GET | `/api/books/metadata` | Librarian/Admin | - | `{ categories, authors, publishers }` active reference choices | Protected read used by the canonical FE05 forms. It does not grant Librarians FE11 Admin-only reference-data mutation permission. |
-| GET | `/health/ready` | Deployment monitor/operator | - | `{ status, checks: { catalogMetadata } }` | Read-only post-start readiness check. Returns `503 not_ready` if the canonical metadata tables later lose persisted `Status` or `CreatedAt`; migration is owned by the pre-listen startup gate, not this endpoint. |
-| POST | `/api/books` | Librarian/Admin | JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Created `ACTIVE` book + version | Validates required fields, unique ISBN, and managed cover policy. |
-| PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Updated book + new version | Metadata/cover only; never changes book status or copies; failed replacement is compensated. |
-| PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
-| PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Reactivated book + new version | Sets `ACTIVE`; reason required; copy states remain unchanged. |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Truy vấn: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | `q` công khai chỉ khớp tiêu đề/tác giả và kết quả không bao gồm ISBN. Việc xác thực không mở rộng phép chiếu danh sách này; áp dụng BR-FE05-017. |
+| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Chi tiết sách | Khách/Thành viên nhận chi tiết `ACTIVE` an toàn công khai không có ISBN hoặc nhận `404`; Thủ thư/Quản trị viên đã xác thực có thể nhận các trường quản lý, bao gồm ISBN, cho cả sách `ACTIVE` và `INACTIVE`. |
+| GET | `/api/admin/books` | Librarian/Admin | Truy vấn: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Danh sách quản lý được phân trang | Endpoint được bảo vệ; `q` có thể khớp ISBN và phản hồi bao gồm ISBN; áp dụng BR-FE05-017. |
+| GET | `/api/books/metadata` | Librarian/Admin | - | Các lựa chọn tham chiếu đang hoạt động `{ categories, authors, publishers }` | Quyền đọc được bảo vệ dùng cho các biểu mẫu FE05 chuẩn. Quyền này không cấp cho Thủ thư quyền thay đổi dữ liệu tham chiếu vốn chỉ dành cho Quản trị viên trong FE11. |
+| GET | `/health/ready` | Bộ giám sát/người vận hành triển khai | - | `{ status, checks: { catalogMetadata } }` | Kiểm tra mức sẵn sàng chỉ đọc sau khi khởi động. Trả về `503 not_ready` nếu sau này các bảng siêu dữ liệu chuẩn bị mất cột `Status` hoặc `CreatedAt`; migration thuộc cổng khởi động trước khi lắng nghe, không thuộc endpoint này. |
+| POST | `/api/books` | Librarian/Admin | Nội dung JSON tương thích hoặc `multipart/form-data` với trường chuỗi JSON `metadata` và trường ảnh tùy chọn `cover` | Sách đã tạo + phiên bản `ACTIVE` | Xác thực trường bắt buộc, ISBN duy nhất và chính sách bìa được quản lý. |
+| PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; nội dung tương thích JSON hoặc `multipart/form-data` với trường chuỗi JSON `metadata` và trường ảnh tùy chọn `cover` | Sách đã cập nhật + phiên bản mới | Chỉ thay đổi siêu dữ liệu/bìa; không bao giờ thay đổi trạng thái sách hoặc bản sao; việc thay thế thất bại được bù trừ. |
+| PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Sách đã vô hiệu hóa + phiên bản mới | Đặt `INACTIVE`; bắt buộc có lý do; không xóa vật lý hoặc ghi lại bản sao. |
+| PATCH | `/api/books/{bookId}/reactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Sách đã kích hoạt lại + phiên bản mới | Đặt `ACTIVE`; bắt buộc có lý do; trạng thái bản sao không thay đổi. |
 
-### 11.1 Frontend Ownership Boundary
+### 11.1 Ranh giới sở hữu giao diện người dùng
 
-- `frontend/src/page/BookManagement.jsx` is the canonical FE05 mutation surface for book create, metadata update, deactivate, and reactivate actions.
-- `frontend/src/page/UserManagement.jsx` may read the Admin Library book list for console context, but its book rows are read-only and expose no duplicate FE05 mutation controls.
-- FE11 `adminApi` contains no book mutation aliases; all existing-book mutations use the FE05 API contract above with `If-Match` and reason where required.
-- FE11 Admin Library may create/update/deactivate category, author, and publisher reference records through its Admin-only `/api/admin/library/*` boundary. Librarians receive only the active `/api/books/metadata` choices needed for FE05 book mutations.
-
----
-
-## 12. Non-functional Requirements
-
-### 12.1 Security
-
-- NFR-FE05-SEC-001: Book management endpoints must require authentication and Librarian/Admin role.
-- NFR-FE05-SEC-002: Guest/Member public book projections must exclude ISBN and all other staff-only fields; Librarian/Admin ISBN access requires server-side role authorization.
-- NFR-FE05-SEC-003: `title`, `ISBN`, category/author/publisher IDs, publish year, pages, rating, description, cover URL, and query inputs must be validated server-side.
-- NFR-FE05-SEC-004: SQL injection must be prevented using parameterized queries or approved ORM patterns.
-- NFR-FE05-SEC-005: Description and cover URL must be sanitized or escaped before display.
-- NFR-FE05-SEC-006: Cover uploads must be authenticated and role-authorized before body buffering; client filenames must never determine server paths, and content validation must inspect both declared metadata and byte signatures.
-
-### 12.2 Transaction Integrity
-
-- NFR-FE05-TXN-001: Create/update/deactivate/reactivate and the required audit log must succeed or roll back together.
-- NFR-FE05-TXN-002: Book deactivation changes only `Books.Status`; FE05 must leave FE06 copy lifecycle state unchanged and all availability reads must combine the latest committed book/copy states.
-- NFR-FE05-TXN-003: Filesystem writes are compensated around the atomic book/audit transaction: a failed mutation deletes the new managed cover, while a successful replacement deletes only the previous FE05-managed file.
-
-### 12.3 Performance
-
-- NFR-FE05-PERF-001: Book search and management list must support pagination.
-- NFR-FE05-PERF-002: Search queries must apply the approved keyword/ID filters and pagination in the database query before materializing rows; application-layer full-catalog filtering is not permitted.
-
-### 12.4 Deployment Readiness
-
-- NFR-FE05-DEP-001: The staging backend package must include the reviewed idempotent `database/migrations/2026-07-22-library-metadata-compatibility.sql`. The application startup gate applies only this narrowly scoped migration before listening and verifies its postcondition. CI does not connect to the database or mutate schema, the staging workflow remains manual-only, liveness remains separate from readiness, and staging smoke fails closed when startup or the read-only readiness check is unsuccessful.
-
-### 12.5 Logging and Audit
-
-- NFR-FE05-LOG-001: Add, update, deactivate, and reactivate actions must be traceable with actor, timestamp, book ID, old/new status, reason when applicable, and result.
-
-### 12.6 Usability
-
-- NFR-FE05-UX-001: Validation errors must clearly identify invalid book fields.
-- NFR-FE05-UX-002: Deactivation and reactivation must require confirmation in the UI before submission.
-- NFR-FE05-UX-003: The canonical create/update forms shall show a local image picker, accepted type/size guidance, filename, and preview instead of an editable cover-URL text field.
-- NFR-FE05-UX-004: A successful status change from the update form shall reconcile the visible status filter instead of making the selected record appear to vanish under its old filter.
+- `frontend/src/page/BookManagement.jsx` là giao diện thay đổi FE05 chuẩn cho các thao tác tạo sách, cập nhật siêu dữ liệu, vô hiệu hóa và kích hoạt lại.
+- `frontend/src/page/UserManagement.jsx` có thể đọc danh sách sách của Thư viện quản trị để cung cấp ngữ cảnh bảng điều khiển, nhưng các hàng sách ở chế độ chỉ đọc và không hiển thị điều khiển thay đổi FE05 trùng lặp.
+- `adminApi` của FE11 không chứa bí danh thay đổi sách; mọi thay đổi sách hiện có đều dùng hợp đồng API FE05 ở trên với `If-Match` và lý do khi bắt buộc.
+- Thư viện quản trị FE11 có thể tạo/cập nhật/vô hiệu hóa bản ghi tham chiếu danh mục, tác giả và nhà xuất bản qua ranh giới `/api/admin/library/*` chỉ dành cho Quản trị viên. Thủ thư chỉ nhận các lựa chọn `/api/books/metadata` đang hoạt động cần thiết cho việc thay đổi sách FE05.
 
 ---
 
-## 13. Out of Scope
+## 12. Yêu cầu phi chức năng
 
-This feature does not include:
+### 12.1 Bảo mật
 
-- Physical copy/barcode/location management.
-- Borrow request, return, or renewal workflow.
-- Reservation queue workflow.
-- Fine calculation or payment.
-- Public home page design and navigation.
-- User, role, or membership management.
-- Bulk import/export unless approved later.
+- NFR-FE05-SEC-001: Các endpoint quản lý sách phải yêu cầu xác thực và vai trò Thủ thư/Quản trị viên.
+- NFR-FE05-SEC-002: Phép chiếu sách công khai cho Khách/Thành viên phải loại trừ ISBN và mọi trường chỉ dành cho nhân viên khác; quyền truy cập ISBN của Thủ thư/Quản trị viên phải được phân quyền phía máy chủ.
+- NFR-FE05-SEC-003: ID, `title`, `ISBN`, danh mục/tác giả/nhà xuất bản, năm xuất bản, số trang, xếp hạng, mô tả, URL bìa và đầu vào truy vấn phải được xác thực phía máy chủ.
+- NFR-FE05-SEC-004: Việc tiêm SQL phải được ngăn chặn bằng cách sử dụng các truy vấn được tham số hóa hoặc các mẫu ORM đã được phê duyệt.
+- NFR-FE05-SEC-005: Mô tả và URL bìa phải được khử trùng hoặc thoát trước khi hiển thị.
+- NFR-FE05-SEC-006: Việc tải ảnh bìa lên phải được xác thực và phân quyền theo vai trò trước khi lưu nội dung; tên tệp từ máy khách không bao giờ được quyết định đường dẫn máy chủ, và việc xác thực nội dung phải kiểm tra cả siêu dữ liệu đã khai báo lẫn chữ ký byte.
+
+### 12.2 Tính toàn vẹn giao dịch
+
+- NFR-FE05-TXN-001: Tạo/cập nhật/vô hiệu hóa/kích hoạt lại và log audit bắt buộc phải cùng thành công hoặc cùng rollback.
+- NFR-FE05-TXN-002: Việc vô hiệu hóa sách chỉ thay đổi `Books.Status`; FE05 phải giữ nguyên trạng thái vòng đời bản sao của FE06 và mọi lần đọc tính khả dụng phải kết hợp các trạng thái sách/bản sao đã commit mới nhất.
+- NFR-FE05-TXN-003: Việc ghi hệ thống tệp được bù trừ quanh giao dịch sách/audit nguyên tử: thao tác thay đổi thất bại sẽ xóa bìa được quản lý mới, còn thay thế thành công chỉ xóa tệp được FE05 quản lý trước đó.
+
+### 12.3 Hiệu năng
+
+- NFR-FE05-PERF-001: Danh sách quản lý và tìm kiếm sách phải hỗ trợ phân trang.
+- NFR-FE05-PERF-002: Truy vấn tìm kiếm phải áp dụng bộ lọc từ khóa/ID đã được phê duyệt và phân trang ngay trong truy vấn cơ sở dữ liệu trước khi hiện thực hóa các hàng; không được lọc toàn bộ danh mục ở lớp ứng dụng.
+
+### 12.4 Mức sẵn sàng triển khai
+
+- NFR-FE05-DEP-001: Gói backend staging phải chứa migration chuẩn đã được review `database/migrations/2026-07-22-library-metadata-compatibility.sql`. Cổng khởi động ứng dụng chỉ áp dụng migration phạm vi hẹp này trước khi lắng nghe và xác minh hậu điều kiện. CI không kết nối cơ sở dữ liệu hoặc thay đổi lược đồ; quy trình staging vẫn chỉ kích hoạt thủ công; kiểm tra sống và sẵn sàng vẫn tách biệt; kiểm thử khói staging không được kết thúc thành công nếu khởi động hoặc bước kiểm tra sẵn sàng chỉ đọc thất bại.
+
+### 12.5 Ghi log và audit
+
+- NFR-FE05-LOG-001: Thao tác thêm, cập nhật, vô hiệu hóa và kích hoạt lại phải truy vết được bằng tác nhân, dấu thời gian, ID sách, trạng thái cũ/mới, lý do khi áp dụng và kết quả.
+
+### 12.6 Khả năng sử dụng
+
+- NFR-FE05-UX-001: Lỗi xác thực phải xác định rõ ràng các trường sách không hợp lệ.
+- NFR-FE05-UX-002: Việc vô hiệu hóa và kích hoạt lại phải yêu cầu xác nhận trong UI trước khi gửi.
+- NFR-FE05-UX-003: Biểu mẫu tạo/cập nhật chuẩn phải hiển thị bộ chọn ảnh cục bộ, hướng dẫn về loại/kích thước được chấp nhận, tên tệp và bản xem trước thay vì trường văn bản URL bìa có thể chỉnh sửa.
+- NFR-FE05-UX-004: Thay đổi trạng thái thành công từ biểu mẫu cập nhật sẽ điều chỉnh bộ lọc trạng thái hiển thị thay vì làm cho bản ghi đã chọn có vẻ biến mất dưới bộ lọc cũ của nó.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Quản lý bản sao/mã vạch/vị trí vật lý.
+- Quy trình yêu cầu mượn, trả lại hoặc gia hạn.
+- Quy trình làm việc của hàng đợi đặt chỗ.
+- Tính hoặc thanh toán tiền phạt.
+- Thiết kế và điều hướng trang chủ công cộng.
+- Quản lý người dùng, vai trò hoặc thành viên.
+- Nhập/xuất số lượng lớn, trừ khi được phê duyệt sau.
+
+---
+
+## 14. Sự phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE01 Public / Browse | Internal | Uses public-safe catalog data for home/search/detail pages. |
-| FE02 Authentication | Internal | Identifies staff actors for protected actions. |
-| FE06 Inventory / Book Copy Management | Internal | Owns physical copies and availability counts. |
-| FE07 Borrowing Management | Internal | Uses book data during borrowing. |
-| FE08 Reservation Management | Internal | Uses book data during reservation. |
-| FE11 User & Role Management | Internal | Provides librarian/admin permissions. |
-| SQL Server database | Technical | Current SQL has catalog tables and `Books.Status`; implementation must add SQL `rowversion` for the approved `If-Match` contract. |
+| FE01 Công cộng / Duyệt | Nội bộ | Sử dụng dữ liệu danh mục an toàn công cộng cho các trang home/search/detail. |
+| Xác thực FE02 | Nội bộ | Xác định các tác nhân nhân viên cho các hành động được bảo vệ. |
+| FE06 Quản lý tồn kho / bản sao sách | Nội bộ | Sở hữu các bản sao vật lý và số lượng sẵn có. |
+| Quản lý mượn sách FE07 | Nội bộ | Sử dụng dữ liệu sách trong quy trình mượn. |
+| Quản lý đặt chỗ FE08 | Nội bộ | Sử dụng dữ liệu sách trong quy trình đặt chỗ. |
+| FE11 Quản lý vai trò và người dùng | Nội bộ | Cung cấp quyền Thủ thư/Quản trị viên. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | SQL hiện tại có các bảng danh mục và `Books.Status`; triển khai phải bổ sung SQL `rowversion` cho hợp đồng `If-Match` đã được phê duyệt. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE05-001 | ISBN is optional but must be unique when provided. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-002 | Multiple books can share the same title. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
-| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
-| Q-FE05-008 | Staff may transition book status through dedicated deactivate/reactivate commands; metadata PUT does not change status, and public browse hides `INACTIVE` books. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
-| Q-FE05-009 | Staff/public views display simple derived availability (`Còn sách` / `Không khả dụng`). FE05 never updates `BookCopies.Status`; FE06/FE07/FE08 own copy transitions. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
-| Q-FE05-010 | Existing-book mutations use SQL `rowversion` exposed as an opaque version and require `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE`. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
-| Q-FE05-011 | Query policy is deterministic: public browse uses the exact FE01 allowlist and fixed `Title ASC, BookId ASC`; staff list additionally accepts sort in title/publishYear/createdAt and order asc/desc. | Nhat approval after cross-feature audit 2026-07-15; user envelope approval 2026-07-19 | APPROVED |
-| Q-FE05-012 | Librarian/Admin may read active reference choices from `/api/books/metadata`; only Admin may mutate category/author/publisher reference data through the FE11 Admin Library integration. Book mutations remain owned by FE05 for both roles. | Cross-feature role reconciliation 2026-07-23 | APPROVED |
+| Q-FE05-001 | ISBN là tùy chọn nhưng phải là duy nhất khi được cung cấp. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-002 | Nhiều cuốn sách có thể chia sẻ cùng một tiêu đề. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-003 | Sách đã vô hiệu hóa bị ẩn khỏi tìm kiếm công khai nhưng vẫn hiển thị trong chế độ xem quản lý dành cho nhân viên/Quản trị viên. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-004 | Bắt buộc xóa mềm/vô hiệu hóa; không xóa vật lý trong Giai đoạn 1. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-005 | Một cuốn sách thuộc một thể loại trong Giai đoạn 1; danh mục nhiều-nhiều là công việc trong tương lai. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-006 | Ảnh bìa được lưu dưới dạng văn bản URL/đường dẫn, không phải nội dung nhị phân trong cơ sở dữ liệu. | Gói review 2026-06-10 | APPROVED |
+| Q-FE05-007 | Việc hủy kích hoạt sẽ ẩn sách khỏi danh mục công khai ngay cả khi các bản sao được mượn hoặc đặt trước; hồ sơ lịch sử và bản sao vẫn không thay đổi. | Chỉnh sửa của người dùng 2026-06-21 | APPROVED |
+| Q-FE05-008 | Nhân viên có thể chuyển trạng thái sách bằng lệnh vô hiệu hóa/kích hoạt lại chuyên dụng; PUT siêu dữ liệu không thay đổi trạng thái và trình duyệt công khai ẩn sách `INACTIVE`. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-009 | Các khung nhìn dành cho nhân viên/công khai hiển thị tính khả dụng dẫn xuất đơn giản (`Còn sách` / `Không khả dụng`). FE05 không bao giờ cập nhật `BookCopies.Status`; FE06/FE07/FE08 sở hữu các chuyển đổi bản sao tương ứng. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-010 | Thay đổi sách hiện có dùng SQL `rowversion` được cung cấp dưới dạng phiên bản không trong suốt và yêu cầu `If-Match`; phiên bản cũ/bị thiếu trả về `409 STALE_BOOK_STATE`. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15 | APPROVED |
+| Q-FE05-011 | Chính sách truy vấn mang tính quyết định: trình duyệt công khai sử dụng danh sách cho phép FE01 chính xác và `Title ASC, BookId ASC` cố định; danh sách nhân viên cũng chấp nhận sắp xếp trong title/publishYear/createdAt và đặt hàng asc/desc. | Nhật phê duyệt sau khi kiểm tra tính năng chéo 2026-07-15; phê duyệt phong bì người dùng 2026-07-19 | APPROVED |
+| Q-FE05-012 | Thủ thư/Quản trị viên có thể đọc các lựa chọn tham chiếu đang hoạt động từ `/api/books/metadata`; chỉ Quản trị viên mới có thể thay đổi dữ liệu tham chiếu danh mục/tác giả/nhà xuất bản qua tích hợp Thư viện quản trị FE11. Các thao tác thay đổi sách vẫn do FE05 sở hữu cho cả hai vai trò. | Đối chiếu vai trò đa tính năng 2026-07-23 | APPROVED |
 
 ---
 
-## 15.1 Approved Design Decisions
+## 15.1 Quyết định thiết kế được phê duyệt
 
-The following decisions were approved in the Phase 1 review packet on 2026-06-10 and are now part of this spec.
+Các quyết định sau đây đã được phê duyệt trong gói đánh giá Giai đoạn 1 trên 2026-06-10 và hiện là một phần của đặc tả này.
 
-| Decision | Approved Answer | Status |
+| Quyết định | Câu trả lời được phê duyệt | Trạng thái |
 | -------- | --------------- | ------ |
-| Q-FE05-001 | ISBN is optional but must be unique when provided. | APPROVED |
-| Q-FE05-002 | Multiple books can share the same title. | APPROVED |
-| Q-FE05-003 | Deactivated books are hidden from public search but visible in staff/admin management views. | APPROVED |
-| Q-FE05-004 | Soft delete/deactivation is required; no physical delete in Phase 1. | APPROVED |
-| Q-FE05-005 | A book belongs to one category in Phase 1; many-to-many categories are future work. | APPROVED |
-| Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | APPROVED |
-| Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | APPROVED |
+| Q-FE05-001 | ISBN là tùy chọn nhưng phải là duy nhất khi được cung cấp. | APPROVED |
+| Q-FE05-002 | Nhiều cuốn sách có thể chia sẻ cùng một tiêu đề. | APPROVED |
+| Q-FE05-003 | Sách đã vô hiệu hóa bị ẩn khỏi tìm kiếm công khai nhưng vẫn hiển thị trong chế độ xem quản lý dành cho nhân viên/Quản trị viên. | APPROVED |
+| Q-FE05-004 | Bắt buộc xóa mềm/vô hiệu hóa; không xóa vật lý trong Giai đoạn 1. | APPROVED |
+| Q-FE05-005 | Một cuốn sách thuộc một thể loại trong Giai đoạn 1; danh mục nhiều-nhiều là công việc trong tương lai. | APPROVED |
+| Q-FE05-006 | Ảnh bìa được lưu dưới dạng văn bản URL/đường dẫn, không phải nội dung nhị phân trong cơ sở dữ liệu. | APPROVED |
+| Q-FE05-007 | Việc hủy kích hoạt sẽ ẩn sách khỏi danh mục công khai ngay cả khi các bản sao được mượn hoặc đặt trước; hồ sơ lịch sử và bản sao vẫn không thay đổi. | APPROVED |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| Requirement ID | Related Use Case | Related Test Case | Status |
+| ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
-| BR-FE05-011..018 | UC17-UC24, UC25-UC39 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
-| BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
-| BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
-| BR-FE05-022 | Deployment readiness | `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
-| FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
-| FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
-| FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
-| FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` status-filter reconciliation | Complete |
-| FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` Guest/Member denial and Librarian/Admin active choices | Complete |
-| FR-FE05-031 | Deployment readiness | `app.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
-| AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Complete |
-| AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Complete |
-| AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
-| AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Complete |
-| AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
-| AC-FE05-022 | Deployment readiness | `libraryMetadataMigration.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
+| BR-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Hoàn thành |
+| BR-FE05-011..018 | UC17-UC24, UC25-UC39 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; Hồi quy gốc không hoạt động FE07 | Hoàn thành |
+| BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
+| BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` ranh giới vai trò tham chiếu tích cực | Hoàn thành |
+| BR-FE05-022 | Sẵn sàng triển khai | `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
+| FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Hoàn thành |
+| FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; Hồi quy gốc không hoạt động FE07 | Hoàn thành |
+| FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
+| FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` đối chiếu bộ lọc trạng thái | Hoàn thành |
+| FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` từ chối Khách/Thành viên và trả các lựa chọn đang hoạt động cho Thủ thư/Quản trị viên | Hoàn thành |
+| FR-FE05-031 | Sẵn sàng triển khai | `app.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
+| AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
+| AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Hoàn thành |
+| AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Hoàn thành |
+| AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Hoàn thành |
+| AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` ranh giới vai trò tham chiếu tích cực | Hoàn thành |
+| AC-FE05-022 | Sẵn sàng triển khai | `libraryMetadataMigration.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Hoàn thành |
 
-Coverage: 22/22 BR, 31/31 FR, and 22/22 AC have current automated evidence mappings.
+Độ bao phủ: 22/22 BR, 31/31 FR và 22/22 AC hiện có ánh xạ bằng chứng tự động.
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra đánh giá
 
-### 2026-07-22 staff-console correction
+### Điều chỉnh bảng điều khiển nhân viên 2026-07-22
 
-- Staff search, status filter, category filter, pagination, and totals use one canonical `/api/admin/books` query; search must not use the active-only public catalog as a separate result source.
-- The Librarian/Admin book form and detail/list views do not expose `rating`; the API/database field remains backward-compatible and server validated when supplied by another approved client.
-- Deactivate/reactivate retains the canonical non-empty audit reason and `If-Match`, but the staff UI generates a bounded operation reason instead of displaying a reason input or duplicate checkbox.
-- The Librarian update form exposes the catalog status as `Còn sách` (`ACTIVE`) or `Không khả dụng` (`INACTIVE`) and invokes the dedicated deactivate/reactivate command after metadata update; metadata PUT still cannot mutate status or physical-copy state.
-- Metadata selectors depend on the deployed `Authors`, `Publishers`, and `Categories` compatibility columns documented in ADR-002 and the 2026-07-22 migration.
+- Tìm kiếm nhân viên, bộ lọc trạng thái, bộ lọc danh mục, phân trang và tính tổng sử dụng một truy vấn `/api/admin/books` chuẩn; tìm kiếm không được dùng danh mục công khai chỉ gồm sách hoạt động làm nguồn kết quả riêng biệt.
+- Biểu mẫu sách cho Thủ thư/Quản trị viên và các chế độ xem chi tiết/danh sách không hiển thị `rating`; trường API/cơ sở dữ liệu vẫn tương thích ngược và được máy chủ xác thực khi một máy khách được phê duyệt khác cung cấp.
+- Vô hiệu hóa/kích hoạt lại giữ lý do audit chuẩn, không trống và `If-Match`, nhưng UI nhân viên tạo lý do thao tác bị chặn thay vì hiển thị hộp nhập lý do trùng lặp hoặc không kiểm soát.
+- Biểu mẫu cập nhật của Thủ thư hiển thị trạng thái danh mục dưới dạng `Còn sách` (`ACTIVE`) hoặc `Không khả dụng` (`INACTIVE`) và gọi các lệnh vô hiệu hóa/kích hoạt lại chuyên dụng sau khi cập nhật siêu dữ liệu; PUT siêu dữ liệu vẫn không thể thay đổi trạng thái sách hoặc trạng thái bản sao vật lý.
+- Bộ chọn siêu dữ liệu phụ thuộc vào các cột tương thích `Authors`, `Publishers` và `Categories` được triển khai được ghi lại trong ADR-002 và quá trình di chuyển 2026-07-22.
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10):
 
-- [x] Proposed decisions in Section 15.1 are approved or changed.
-- [x] ISBN mandatory/optional rule is approved.
-- [x] Book status/deactivation schema is confirmed with database owner.
-- [x] Public search/detail boundary with FE01 is confirmed.
-- [x] Physical copy boundary with FE06 is confirmed.
-- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
-- [x] Every acceptance criterion can become a test.
+- [x] Các quyết định đề xuất tại Mục 15.1 được phê duyệt hoặc thay đổi.
+- [x] Quy tắc ISBN bắt buộc/tùy chọn được phê duyệt.
+- [x] Lược đồ trạng thái/vô hiệu hóa sách được xác nhận với chủ sở hữu cơ sở dữ liệu.
+- [x] Ranh giới search/detail công khai với FE01 được xác nhận.
+- [x] Ranh giới bản sao vật lý với FE06 được xác nhận.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép vào tệp hợp đồng API được chia sẻ chuyên dụng nếu nhóm giới thiệu lại một tệp.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 
-### 17.1 Revision v0.5.0 Review Gate
+### 17.1 Cổng review bản sửa đổi v0.5.0
 
-- [x] Confirm FE05 has no `BookCopies.Status` mutation endpoint.
-- [x] Confirm derived availability and `ACTIVE` parent-book guard across FE01/FE06/FE07.
-- [x] Confirm dedicated deactivate/reactivate commands preserve all copy/workflow rows.
-- [x] Confirm `rowversion`/`If-Match`, query limits, and required transition reasons.
+- [x] Xác nhận FE05 không có endpoint thay đổi `BookCopies.Status`.
+- [x] Xác nhận tính sẵn có dẫn xuất và bảo vệ sổ gốc `ACTIVE` trên FE01/FE06/FE07.
+- [x] Xác nhận các lệnh vô hiệu hóa/kích hoạt lại chuyên dụng bảo toàn mọi hàng bản sao/quy trình.
+- [x] Xác nhận `rowversion`/`If-Match`, giới hạn truy vấn và lý do chuyển đổi bắt buộc.
 
-### 17.2 Revision v0.6.0 Managed Book Cover Upload Gate
+### 17.2 Cổng tải bìa sách được quản lý của bản sửa đổi v0.6.0
 
-- [x] Keep `Books.CoverUrl` as the persisted field; no image bytes or schema expansion enter SQL Server.
-- [x] Keep JSON create/update compatibility while making multipart upload the canonical Librarian/Admin UI path.
-- [x] Authenticate and authorize before buffering multipart content.
-- [x] Limit uploads to validated JPG/PNG/WebP files of at most 2 MB and use server-generated filenames.
-- [x] Compensate failed/stale mutations and never delete external/unmanaged cover paths.
-- [ ] Human-review the complete v0.6.0 diff and verification evidence before integration.
+- [x] Giữ `Books.CoverUrl` làm trường ổn định; không có byte hình ảnh hoặc mở rộng lược đồ nào vào Máy chủ SQL.
+- [x] Giữ khả năng tương thích JSON khi tạo/cập nhật, đồng thời dùng quy trình tải lên nhiều phần trong UI chuẩn dành cho Thủ thư/Quản trị viên.
+- [x] Xác thực và ủy quyền trước khi lưu vào bộ đệm nội dung nhiều phần.
+- [x] Giới hạn tải lên ở các tệp JPG/PNG/WebP đã được xác thực có kích thước tối đa là 2 MB và sử dụng tên tệp do máy chủ tạo.
+- [x] Bù trừ các thao tác thất bại/dùng phiên bản cũ và không bao giờ xóa đường dẫn bìa bên ngoài/không được quản lý.
+- [ ] Rà soát thủ công toàn bộ diff v0.6.0 và bằng chứng xác minh trước khi tích hợp.
