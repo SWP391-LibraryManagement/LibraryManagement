@@ -1,0 +1,32 @@
+name: Staging keepalive
+
+on:
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Wake staging backend
+        shell: bash
+        run: |
+          curl \
+            --fail \
+            --show-error \
+            --silent \
+            --retry 2 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 60 \
+            "https://app-library-api-staging-nhat714.azurewebsites.net/health"
