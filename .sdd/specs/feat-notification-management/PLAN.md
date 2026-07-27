@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: READY FOR REVIEW - V0.4.4 TEMPLATE SAFETY
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
@@ -8,9 +8,13 @@ Updated: 2026-07-27
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
-Workflow State: The approved Phase 2/G1-G12 baseline remains complete. The
-approved v0.4.4 stored-template safety correction is mapped to a review-ready
-plan; RED tests and implementation await PLAN/TASKS approval.
+Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
+approved the v0.4.4 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
+2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
+PR #63, and CI run `30244750250` passed. The first H3 review confirmed
+idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
+code or business-rule defect. The documentation-only governance remediation
+remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 

@@ -169,18 +169,21 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 
 ## 10. Quality Gates
 
-Nhat confirmed the single-role decision and authorized SPEC/PLAN/TASKS
-reconciliation on 2026-07-27. The open merge now includes `origin/main` at
-`8d0059b`; fresh automated, compliance, safety, and runtime evidence now
-completes G4-G6, while G7 waits for the next H2 addendum.
+Nhat approved the latest `8d0059b` H2 addendum on 2026-07-27. The reviewed
+merge was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no code or business-spec
+defect, but it did find stale current-state H2 wording in the checked-in
+governance evidence. Product gates G4-G7 remain passed; the documentation-only
+H3 remediation requires fresh H2 before publication and repeated H3.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-007 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted `8d0059b` merge and evidence |
+| SL-001 to SL-007 | passed | passed | passed | passed | passed | passed | passed | passed | H3 governance-evidence remediation | Codex / Nhat | Fresh H2 for the documentation-only diff, updated PR CI, and repeated H3 |
 
 Historical green results against `origin/main` at `e20fdc3` and `e99daf5`
-remain baseline evidence only. G4-G6 were repeated against `8d0059b`; G7
-remains pending.
+remain baseline evidence only. G4-G7 are associated with the reviewed
+`f346ae0` head and CI run `30244750250`; they do not authorize the new
+uncommitted documentation remediation.
 
 ## 11. Security And Safety Boundary
 
@@ -196,20 +199,56 @@ remains pending.
 
 ## 12. Execution Boundary
 
-Authorized by Nhat's single-role confirmation:
+Completed under Nhat's approved H2:
 
 - Reconcile SPEC, PLAN/TASKS, task IDs, tests, and the merged implementation.
 - Remove the superseded multi-role renewal scenario.
 - Preserve upstream `FE08-T045`/`FE08-T046` and their same-book/queue-position
   rules while moving this branch's regression-only boundary to `FE08-T047`.
 - Run focused, full, traceability, and local runtime validation.
+- Commit the reviewed merge as `f346ae0`, push draft PR #63, and run required
+  PR checks.
 
-Blocked until H2 addendum:
+Authorized for uncommitted H3 remediation:
 
-- Committing the pending merge.
-- Pushing the reconciled branch or updating the draft PR head.
-- Marking the PR ready or merging it.
+- Synchronize only current-state governance wording with the observed H2,
+  commit, PR, and CI evidence.
+- Preserve historical pre-H2 instructions and all product behavior.
+- Run documentation, traceability, deployment, and diff checks.
+
+Blocked until fresh H2:
+
+- Committing or pushing the H3 remediation diff.
+- Repeating H3 or merging PR #63.
 - Running mutable SQL without a named disposable database and explicit mutation
   flag.
 
 There are no unresolved business questions inside this bounded slice.
+
+## 13. H3 Governance-Evidence Remediation Addendum
+
+The first H3 review compared `origin/main@8d0059b` with
+`f346ae07d5d2885c0d5b8131479dee764edd97ec` after CI run `30244750250`
+completed successfully.
+
+Review conclusions:
+
+- Standards review found no unauthorized commit. Nhat's explicit H2 approval
+  preceded commit and push.
+- Spec review found no missing requirement, scope creep, or incorrect product
+  behavior.
+- The initial FE10 idempotent-replay concern was withdrawn because
+  `AC-FE10-008` and `EC-FE10-008` require duplicate keys to return the existing
+  `200` record, and that path performs no render, persistence, or provider I/O.
+- One valid P2 finding remains: current-state validation, PLAN, TASKS, and one
+  FE10 traceability row still describe the reviewed merge as uncommitted or H2
+  pending.
+
+Remediation decision:
+
+- Update only the stale current-state governance fields.
+- Do not change production code, tests, business rules, API contracts, schema,
+  dependencies, or historical pre-H2 process instructions.
+- Record the remediation as Task 12 and prepare a fresh uncommitted H2 package.
+- After fresh H2, commit and push the exact reviewed documentation diff, wait
+  for updated PR CI, and repeat H3 before merge.

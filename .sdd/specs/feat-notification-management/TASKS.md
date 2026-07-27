@@ -1,16 +1,19 @@
 # TASKS.md - FE10 Notification Management
 
-Status: READY FOR REVIEW - V0.4.4 TEMPLATE SAFETY
-Implementation State: PARTIAL
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Implementation State: COMPLETE
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
 Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
-approved FE10-S11 PLAN/TASKS on 2026-07-27. Local implementation and
-verification are complete. Nhat approved H2 on 2026-07-27, authorizing
-publication while H3 remains required before merge.
+approved FE10-S11 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
+2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
+PR #63, and CI run `30244750250` passed. The first H3 review confirmed
+idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
+code or business-rule defect. The documentation-only governance remediation
+remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -292,11 +295,13 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S11 Reject Unsafe Stored Template Definitions
 
-- [x] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; INTEGRATED H2 ADDENDUM PENDING
+- [x] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; INTEGRATED H2 AND PR CI PASSED
 - Maps to: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006, EC-FE10-010, NFR-FE10-SEC-005.
 - RED: unsafe stored subject/body definitions are silently sanitized and accepted.
 - GREEN: `validateStoredTemplateDefinition(template)` rejects raw HTML tags, inline event-handler attributes, and `javascript:` URLs with safe `400 UNSAFE_TEMPLATE_DEFINITION` before render/persist/provider work.
 - Evidence: 3/3 RED cases resolved as `SENT`; focused GREEN passed 4/4 including runtime sanitization, and the full FE10 suite passed 139/139.
 - Preservation: runtime values remain escaped/sanitized; secret-like key rejection, `safePayload` redaction, source ownership, idempotency, DTOs, and durable delivery state remain unchanged.
 - Files: `backend/tests/notificationRoutes.test.js`, `backend/src/services/notificationService.js`.
-- Gate: the pre-integration H2 does not cover the merged `main` result; H2 addendum remains required before committing the open merge, and H3 remains required before merging to `main`.
+- Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
+  `30244750250` passed. The documentation-only H3 remediation requires fresh H2
+  and repeated H3 before merge.

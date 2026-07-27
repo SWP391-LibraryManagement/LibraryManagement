@@ -1,17 +1,18 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: IN PROGRESS - V0.7.9 H2 ADDENDUM PENDING
-Implementation State: PARTIAL
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Implementation State: COMPLETE
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. The v0.7.5 batch passed
-local verification and H2, then `main` introduced the approved single-role
-account contract and later FE09-T024 Member-fine reconciliation. Fresh
-`8d0059b` validation passes. The integrated result remains uncommitted pending
-the v0.7.9 H2 addendum; H3 remains required before merge.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved the
+`8d0059b` H2 addendum on 2026-07-27; the reviewed result was committed as
+`f346ae0`, pushed to draft PR #63, and CI run `30244750250` passed. The first
+H3 review found no FE07 code or business-rule defect and returned only stale
+governance wording. The documentation-only remediation remains uncommitted
+pending fresh H2 and repeated H3.
 
 ---
 
@@ -315,4 +316,6 @@ This closeout remains historical evidence for the earlier approved baseline. It 
     above all 80% thresholds; frontend 231/231 plus lint/build; traceability
     and diff hygiene; Chromium 2/2.
   - SQL boundary: optional mutable SQL was not run because `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` were unset; no real-SQL mutation claim is made.
-  - Integration gate: H2 addendum remains required before committing the open merge.
+  - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
+    CI run `30244750250` passed. The documentation-only H3 remediation requires
+    fresh H2 and repeated H3 before merge.

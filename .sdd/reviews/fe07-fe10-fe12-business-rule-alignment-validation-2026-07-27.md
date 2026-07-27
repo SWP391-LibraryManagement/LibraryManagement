@@ -5,20 +5,26 @@ Date: 2026-07-27
 ## 1. Review State
 
 - Branch: `codex/fe07-fe10-fe12-rule-alignment`
-- Branch head before the open merge: `2a478ba1ac025d319c6e09ef0eff73ae650a09d3`
+- Published branch head:
+  `f346ae07d5d2885c0d5b8131479dee764edd97ec`
 - Integrated `origin/main`: `8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
 - Approved delivery order: SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN -> L1-L4/runtime evidence
 - Approved account model: every persisted account has exactly one mutually
   exclusive role under `DEC-GEN-005`; Member and staff renewal use separate
   single-role accounts.
-- Reconciliation state: conflicts are reconciled and the latest-main merge
-  remains open and uncommitted.
-- H2 addendum: pending Nhat review of this latest integrated diff and evidence.
-- Publication authority: not granted for this `8d0059b` merge result. Do not
-  commit, push, or update draft PR #63 until the latest H2 addendum is approved.
+- Reconciliation state: Nhat approved the latest `8d0059b` H2 addendum on
+  2026-07-27. The reviewed merge was committed as `f346ae0` and pushed to
+  draft PR #63.
+- Required PR checks: CI run `30244750250` passed for exact head `f346ae0`.
+- First H3 result: no product-code or business-spec defect; one valid P2
+  finding identified stale current-state H2 wording in governance documents.
+- Current publication authority: the documentation-only H3 remediation may be
+  prepared uncommitted. Fresh H2 remains required before committing or pushing
+  it, and repeated H3 remains required before merge.
 
 Sections 3-9 retain the prior `e99daf5` evidence as historical baseline.
-Section 11 is the authoritative addendum for the current `8d0059b` gate.
+Section 11 is the authoritative product addendum for `8d0059b`; Section 12 is
+the authoritative current gate for the H3 governance-evidence remediation.
 
 ## 2. Changed Files
 
@@ -302,7 +308,73 @@ return -> fine -> report and retained the safe unknown-report-query rejection.
 
 ### 11.8 Current gate
 
-The complete `8d0059b` merge, reconciliation, bounded FE08 remediation, and
-fresh L1-L4 evidence remain uncommitted and unpushed pending Nhat's explicit H2
-addendum approval. H2 may authorize the reviewed merge commit, push, and draft
-PR #63 update; H3 remains mandatory before merge to `main`.
+Nhat approved the complete `8d0059b` merge, reconciliation, bounded FE08
+remediation, and fresh L1-L4 evidence at H2 on 2026-07-27. The reviewed merge
+was committed as `f346ae0`, pushed to draft PR #63, and CI run `30244750250`
+passed. The first H3 review found one documentation-only current-state defect;
+Section 12 supersedes this gate for the remediation.
+
+## 12. H3 Governance-Evidence Remediation
+
+### 12.1 First H3 review
+
+Fixed point and published evidence:
+
+- Base: `origin/main@8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
+- Head: `f346ae07d5d2885c0d5b8131479dee764edd97ec`
+- Draft PR: #63, merge state `CLEAN`
+- Required CI: run `30244750250`, `foundation-checks` success
+- Diff parity: local and PR both contained 40 files with no name mismatch,
+  unmerged entry, whitespace error, or conflict marker.
+
+Review conclusions:
+
+- Standards review found no unauthorized commit after confirming Nhat's H2
+  approval preceded commit and push.
+- Spec review found no missing requirement, scope creep, or incorrect product
+  behavior.
+- The initial FE10 idempotent-replay concern was withdrawn:
+  `AC-FE10-008`/`EC-FE10-008` require duplicate keys to return the existing
+  `200` record, and the replay path performs no render, new persistence, or
+  provider I/O.
+- One valid P2 remained: current-state validation, PLAN, TASKS, and one FE10
+  traceability row still described the integrated result as uncommitted, H2
+  pending, or awaiting PLAN/TASKS approval.
+
+### 12.2 Remediation scope
+
+The uncommitted remediation updates only these 12 Markdown files:
+
+- `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
+- `.sdd/specs/feat-borrowing-management/PLAN.md`
+- `.sdd/specs/feat-borrowing-management/TASKS.md`
+- `.sdd/specs/feat-reservation-management/PLAN.md`
+- `.sdd/specs/feat-reservation-management/TASKS.md`
+- `.sdd/specs/feat-notification-management/PLAN.md`
+- `.sdd/specs/feat-notification-management/SPEC.md`
+- `.sdd/specs/feat-notification-management/TASKS.md`
+- `.sdd/specs/feat-reporting-statistics/PLAN.md`
+- `.sdd/specs/feat-reporting-statistics/TASKS.md`
+- `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
+- `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
+
+No production code, test, schema, dependency, API, business rule, or historical
+pre-H2 process instruction changes in this remediation.
+
+### 12.3 Bounded validation
+
+| Command | Observed result |
+| --- | --- |
+| `npm.cmd run test:traceability-state` | 3/3 passed. |
+| `npm.cmd run trace:enforce` | PASS; FE07/FE10/FE12 remain 100%, FE08 remains 97%, and all active features exceed 70%. |
+| `npm.cmd run test:deployment` | 9/9 passed. |
+| Documentation-only scope check | 12 changed Markdown files, 0 non-Markdown files, and 0 staged files. |
+| Current-state stale wording scan | 0 stale original-H2 matches; fresh-H2 wording refers only to this uncommitted documentation remediation. |
+| `git diff --check`; `git diff --cached --check` | Both passed with zero error lines; only normal LF-to-CRLF working-copy warnings were emitted. |
+
+### 12.4 Current gate
+
+The documentation-only remediation is uncommitted and unpushed. Fresh H2 must
+review the complete 12-file diff and final diff-hygiene evidence before commit
+or push. PR #63 remains Draft; updated PR CI and repeated H3 remain mandatory
+before merge to `main`.

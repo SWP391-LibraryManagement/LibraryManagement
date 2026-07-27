@@ -1,7 +1,7 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: IN PROGRESS - 8D0059B H2 ADDENDUM PENDING
-Implementation State: PARTIAL
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Implementation State: COMPLETE
 
 Owner: Nhat
 
@@ -9,10 +9,11 @@ Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
 `FE08-T041` through `FE08-T046`; the rule-alignment regression-only task is
-`FE08-T047`. Nhat authorized integration on 2026-07-27. The upstream same-book
-and copy-scoped queue rules are preserved. Null-safe queue presentation and
-fresh validation pass; the merged result stays uncommitted pending an H2
-addendum.
+`FE08-T047`. Nhat approved the `8d0059b` H2 addendum on 2026-07-27; the
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE08 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -279,6 +280,7 @@ addendum.
     SIT coverage inside the 7-suite cross-feature gate `295/295`, full backend
     and coverage `1,052/1,052`, frontend `232/232`, and Chromium acceptance
     `2/2`.
-  - Integration gate: fresh H2 addendum remains required before committing the
-    open merge.
+  - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
+    CI run `30244750250` passed. The documentation-only H3 remediation requires
+    fresh H2 and repeated H3 before merge.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

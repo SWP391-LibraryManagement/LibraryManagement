@@ -1261,6 +1261,81 @@ H2 approval.
 
 ---
 
+### Task 12: Remediate H3 Governance-Evidence Drift
+
+**Task ID:** `GOV-H3-001`
+
+**Files:**
+- Modify:
+  `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
+- Modify:
+  `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
+- Modify current-state fields in the affected FE07, FE08, FE10, and FE12
+  `SPEC.md`, `PLAN.md`, and `TASKS.md` files.
+- Modify:
+  `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
+- Do not modify production code, tests, schema, dependencies, API contracts,
+  or historical pre-H2 process instructions.
+
+**Interfaces:**
+- Consumes: explicit H2 approval on 2026-07-27, merge commit `f346ae0`, draft
+  PR #63, and successful CI run `30244750250`.
+- Produces: truthful current-state H2/H3 evidence and a fresh uncommitted
+  documentation-only H2 package.
+
+- [x] **Step 1: Record the first H3 review**
+
+Record that Standards and Spec review found no product-code or business-rule
+defect. Preserve the FE10 idempotent replay because `AC-FE10-008` and
+`EC-FE10-008` require the duplicate `200` path and it performs no render,
+new persistence, or provider call.
+
+- [x] **Step 2: Synchronize current-state governance wording**
+
+Update the validation record and affected feature status fields so they state:
+
+```text
+- latest 8d0059b H2 addendum approved;
+- reviewed merge committed/pushed as f346ae0;
+- PR #63 CI run 30244750250 passed;
+- first H3 review found only stale governance wording;
+- documentation remediation is uncommitted pending fresh H2;
+- repeated H3 remains mandatory before merge.
+```
+
+Do not rewrite historical instructions that correctly describe how work was
+held before the original H2 gate.
+
+- [x] **Step 3: Verify the documentation-only scope**
+
+Confirm the remediation diff contains no production, test, schema, dependency,
+or API file. Confirm the prior 40-file product PR diff remains otherwise
+unchanged.
+
+- [x] **Step 4: Run the bounded validation gate**
+
+Run:
+
+```powershell
+npm.cmd run test:traceability-state
+npm.cmd run trace:enforce
+npm.cmd run test:deployment
+git diff --check
+git diff --cached --check
+```
+
+Scan the current-state sections for stale H2-pending, uncommitted-merge, or
+awaiting-PLAN/TASKS wording. Historical task instructions may remain.
+
+- [x] **Step 5: Prepare fresh H2; do not commit**
+
+Update the validation record with exact changed files and observed command
+results. Present the complete uncommitted documentation diff for fresh H2.
+Do not stage, commit, push, update PR #63, mark it ready, or merge before Nhat
+explicitly approves this remediation H2 addendum.
+
+---
+
 ## Plan Approval Gate
 
 - [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T047,
@@ -1271,3 +1346,5 @@ H2 approval.
   reconciliation on 2026-07-27.
 - [x] Nhat authorizes Task 10 integration of upstream `e99daf5` on 2026-07-27.
 - [x] Nhat authorizes Task 11 integration of upstream `8d0059b` on 2026-07-27.
+- [x] Nhat authorizes Task 12 documentation-only H3 remediation on 2026-07-27.
+- [ ] Nhat approves the Task 12 H2 addendum before commit or push.

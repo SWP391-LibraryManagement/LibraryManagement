@@ -1,14 +1,17 @@
 # PLAN.md - FE12 Reporting & Statistics
 
-Status: READY FOR REVIEW - V0.2.0 QUERY ALLOWLIST
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. The approved v0.2.0
-query-allowlist correction is mapped to a review-ready plan; RED tests and
-implementation await PLAN/TASKS approval.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved the
+v0.2.0 PLAN/TASKS and integrated `8d0059b` H2 addendum on 2026-07-27. The
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE12 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 

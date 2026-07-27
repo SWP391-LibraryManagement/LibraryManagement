@@ -1,16 +1,18 @@
 # TASKS.md - FE12 Reporting & Statistics
 
-Status: READY FOR REVIEW - V0.2.0 QUERY ALLOWLIST
-Implementation State: PARTIAL
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Implementation State: COMPLETE
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. Nhat approved FE12-N11
-PLAN/TASKS on 2026-07-27. Local implementation, HTTP runtime acceptance, and
-automated verification are complete. Nhat approved H2 on 2026-07-27,
-authorizing publication while H3 remains required before merge.
+PLAN/TASKS and the integrated `8d0059b` H2 addendum on 2026-07-27. The reviewed
+result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE12 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -175,4 +177,6 @@ Detailed automated evidence is recorded in
   - Evidence: all three RED cases returned `200`; focused GREEN passed 3/3, full FE12 passed 14/14, and the local golden path observed safe HTTP `400`.
   - Files: `backend/tests/reportRoutes.test.js`, `backend/src/validators/reportValidators.js`.
   - Preservation: existing approved value validators, read-only report behavior, audit privacy, SQL parameterization, empty-ID semantics, pagination, and ordering remain unchanged.
-  - Gate: the pre-integration H2 does not cover the merged `main` result; H2 addendum remains required before committing the open merge, and H3 remains required before merging to `main`.
+  - Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
+    `30244750250` passed. The documentation-only H3 remediation requires fresh
+    H2 and repeated H3 before merge.

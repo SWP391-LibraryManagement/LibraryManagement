@@ -1,6 +1,6 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: IN PROGRESS - 8D0059B H2 ADDENDUM PENDING
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
@@ -8,10 +8,11 @@ Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
 `FE08-T041` through `FE08-T046`; the rule-alignment regression boundary is
-`FE08-T047`. Nhat authorized integration on 2026-07-27. The upstream same-book
-and copy-scoped queue rules are preserved. The bounded null-position
-presentation remediation and fresh `8d0059b` evidence pass; the H2 addendum
-remains pending.
+`FE08-T047`. Nhat approved the `8d0059b` H2 addendum on 2026-07-27; the
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE08 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
