@@ -1,65 +1,65 @@
-# FE02 Authentication Debt Closure Validation - 2026-07-19
+# Xác thực đóng nợ Xác thực FE02 - 2026-07-19
 
-Status: FULL LOCAL AND PR CI PASS; HUMAN ACCEPTANCE PENDING
+Trạng thái: TOÀN BỘ CỤC BỘ VÀ CI PR ĐẠT; CHẤP THUẬN CỦA CON NGƯỜI ĐANG CHỜ
 
-Scope: `TD-018`, `TD-019`, and `TD-020` in draft PR #40.
+Phạm vi: `TD-018`, `TD-019` và `TD-020` trong PR nháp #40.
 
-## Contract Decisions
+## Quyết định hợp đồng
 
-- `TD-018` was a test-evidence gap. The approved FE02 API already supports canonical `{ email, otp }` verification/reset and rejects duplicate registration and weak passwords.
-- `TD-019` requires no implementation. `Q-FE02-005`, `BR-FE02-008`, and `NFR-FE02-SEC-005` approve known-account lockout for Phase 1 and explicitly state that IP-wide login limiting is not implemented.
-- `TD-020` was a public authentication defect. `BR-FE02-007` and `NFR-FE02-SEC-010` require login responses not to disclose whether an email is registered, while `AC-FE02-007` requires only that inactive login be rejected.
+- `TD-018` là khoảng trống bằng chứng kiểm thử. API FE02 đã phê duyệt đã hỗ trợ xác minh/đặt lại `{ email, otp }` chuẩn và từ chối đăng ký trùng cùng mật khẩu yếu.
+- `TD-019` không cần triển khai. `Q-FE02-005`, `BR-FE02-008` và `NFR-FE02-SEC-005` phê duyệt việc khóa tài khoản đã biết cho Giai đoạn 1 và nêu rõ không triển khai giới hạn đăng nhập trên toàn IP.
+- `TD-020` là lỗi xác thực công khai. `BR-FE02-007` và `NFR-FE02-SEC-010` yêu cầu phản hồi đăng nhập không tiết lộ email đã đăng ký hay chưa, trong khi `AC-FE02-007` chỉ yêu cầu từ chối đăng nhập tài khoản không hoạt động.
 
-## RED Evidence
+## Bằng chứng ĐỎ
 
-Command:
+Lệnh:
 
 ```powershell
 npm.cmd test -- --runInBand --runTestsByPath tests/authRoutes.test.js
 ```
 
-Initial focused result after adding the regressions: 29 passed, 1 failed.
+Kết quả trọng tâm ban đầu sau khi thêm các hồi quy: 29 đạt, 1 thất bại.
 
-- Inactive login returned `403 ACCOUNT_INACTIVE`.
-- Unknown login returned `401 INVALID_CREDENTIALS`.
-- The response parity assertion failed exactly at the enumeration boundary.
+- Đăng nhập tài khoản không hoạt động trả về `403 ACCOUNT_INACTIVE`.
+- Đăng nhập không xác định trả về `401 INVALID_CREDENTIALS`.
+- Xác nhận tương đương phản hồi thất bại chính xác tại ranh giới dò liệt kê.
 
-## Minimal Production Change
+## Thay đổi production tối thiểu
 
-`backend/src/services/authService.js` retains the internal `AUTH_LOGIN_INACTIVE` audit event but returns the generic `401 INVALID_CREDENTIALS` public envelope used by unknown email and invalid password branches.
+`backend/src/services/authService.js` giữ sự kiện kiểm toán nội bộ `AUTH_LOGIN_INACTIVE` nhưng trả về vỏ công khai chung `401 INVALID_CREDENTIALS` được các nhánh email không xác định và mật khẩu không hợp lệ sử dụng.
 
-Locked-account behavior remains unchanged because `FR-FE02-017` and `AC-FE02-008` explicitly require the account-lock message.
+Hành vi tài khoản bị khóa không đổi vì `FR-FE02-017` và `AC-FE02-008` yêu cầu rõ thông báo khóa tài khoản.
 
-No route, schema, dependency, credential, token lifetime, lock threshold, or frontend behavior changed.
+Không có tuyến, lược đồ, phụ thuộc, thông tin xác thực, thời hạn token, ngưỡng khóa hoặc hành vi frontend nào thay đổi.
 
-## GREEN Evidence
+## Bằng chứng XANH
 
-Focused result: **1/1 suite, 30/30 tests passed**.
+Kết quả trọng tâm: **1/1 bộ, 30/30 kiểm thử đạt**.
 
-New API evidence proves:
+Bằng chứng API mới chứng minh:
 
-- duplicate registration returns `409 EMAIL_ALREADY_REGISTERED` without another user, token, notification request, notification, or direct email;
-- weak registration returns `400 WEAK_PASSWORD` without auth-state persistence;
-- canonical email/OTP verification activates the account and consumes the verification OTP;
-- canonical email/OTP reset updates the password and consumes the reset OTP;
-- weak canonical reset changes neither password nor reset credential;
-- inactive and unknown logins return the same `401 INVALID_CREDENTIALS` response.
+- đăng ký trùng trả về `409 EMAIL_ALREADY_REGISTERED` mà không có thêm người dùng, token, yêu cầu thông báo, thông báo hoặc email trực tiếp;
+- đăng ký với mật khẩu yếu trả về `400 WEAK_PASSWORD` mà không lưu trạng thái xác thực;
+- xác minh email/OTP chuẩn kích hoạt tài khoản và tiêu thụ OTP xác minh;
+- đặt lại email/OTP chuẩn cập nhật mật khẩu và tiêu thụ OTP đặt lại;
+- đặt lại chuẩn với mật khẩu yếu không thay đổi mật khẩu lẫn thông tin xác thực đặt lại;
+- đăng nhập tài khoản không hoạt động và không xác định trả về cùng phản hồi `401 INVALID_CREDENTIALS`.
 
-Fresh affected/full evidence:
+Bằng chứng mới cho phần bị ảnh hưởng/toàn bộ:
 
-- backend regression: 52/52 suites, 893/893 tests;
-- backend coverage gate: 92.69% statements, 81.79% branches, 96.55% functions, 92.62% lines;
-- system integration: 1/1 suite, 10/10 tests;
-- FE01-FE12 traceability: every feature 100%, enforcement PASS;
-- JavaScript syntax, high-confidence secret scan, and diff hygiene: PASS.
+- hồi quy backend: 52/52 bộ, 893/893 kiểm thử;
+- cổng độ bao phủ backend: câu lệnh 92.69%, nhánh 81.79%, hàm 96.55%, dòng 92.62%;
+- tích hợp hệ thống: 1/1 bộ, 10/10 kiểm thử;
+- truy vết FE01-FE12: mọi tính năng 100%, thực thi PASS;
+- cú pháp JavaScript, quét bí mật độ tin cậy cao và vệ sinh diff: PASS.
 
-## Pull Request CI Evidence
+## Bằng chứng CI của yêu cầu kéo
 
-- Implementation commit: `0040e0f978b51d8e4919f89610e25cbba4139c7d`.
-- Draft PR: #40, clean and mergeable at the recorded boundary.
-- GitHub Actions run: `29680011551`.
-- Result: PASS. Traceability, backend regression, system integration, coverage, frontend lint/tests/build, Playwright system E2E, and backend health import all completed successfully.
+- Commit triển khai: `0040e0f978b51d8e4919f89610e25cbba4139c7d`.
+- PR nháp: #40, sạch và có thể hợp nhất tại ranh giới đã ghi nhận.
+- Lần chạy GitHub Actions: `29680011551`.
+- Kết quả: PASS. Truy vết, hồi quy backend, tích hợp hệ thống, độ bao phủ, lint/kiểm thử/bản dựng frontend, E2E hệ thống Playwright và nhập tình trạng backend đều hoàn tất thành công.
 
-## Remaining Gate
+## Cổng còn lại
 
-Final FE01-FE12 human integration acceptance remains required by the project Definition of Done.
+Chấp thuận tích hợp cuối của con người cho FE01-FE12 vẫn được Định nghĩa Hoàn thành của dự án yêu cầu.

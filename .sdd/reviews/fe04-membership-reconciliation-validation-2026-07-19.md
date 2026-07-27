@@ -1,64 +1,64 @@
-# FE04 Membership Reconciliation Validation - 2026-07-19
+# Xác thực đối soát Thành viên FE04 - 2026-07-19
 
-Status: CONFIGURED NON-SQL AUTOMATED PASS; LIVE SQL, CROSS-FEATURE FAN-IN, AND HUMAN ACCEPTANCE PENDING
+Trạng thái: TỰ ĐỘNG KHÔNG SQL ĐÃ CẤU HÌNH ĐẠT; SQL TRỰC TIẾP, HỘI TỤ XUYÊN TÍNH NĂNG VÀ CHẤP THUẬN CỦA CON NGƯỜI ĐANG CHỜ
 
-Branch: `feat/fe04-membership-reconciliation`
+Nhánh: `feat/fe04-membership-reconciliation`
 
-## Decision
+## Quyết định
 
-Use Hybrid delivery with Full depth for the membership lifecycle Core. SDD controls canonical
-eligibility, immutable history, concurrency, transaction/audit atomicity, API/privacy, and FE10
-ownership. ADD is limited to reversible UI projection and copy against that approved contract.
+Dùng phương thức bàn giao Kết hợp với độ sâu Đầy đủ cho Lõi vòng đời Thành viên. SDD kiểm soát
+điều kiện đủ chuẩn, lịch sử bất biến, đồng thời, tính nguyên tử giao dịch/kiểm toán, API/quyền riêng tư và quyền sở hữu FE10.
+ADD được giới hạn ở phép chiếu và nội dung UI có thể đảo ngược theo hợp đồng đã phê duyệt đó.
 
-## Scope
+## Phạm vi
 
-- Active authenticated users may apply and read only their canonical own-status envelope.
-- `Members.Status` remains canonical; application history is retained and deterministically ordered.
-- One pending application and one final review outcome are enforced at the persistence boundary.
-- Application/member/audit writes share a transaction; FE10 delivery occurs only after commit and is
-  non-blocking with exact FE04 source metadata and idempotency.
-- Staff list/search/pagination and the frontend consume server truth without demo or false `NONE`
-  fallback state.
+- Người dùng đang hoạt động đã xác thực có thể đăng ký và chỉ đọc vỏ trạng thái của chính họ theo chuẩn.
+- `Members.Status` vẫn là chuẩn; lịch sử đăng ký được giữ lại và sắp xếp tất định.
+- Một đơn đang chờ và một kết quả đánh giá cuối được thực thi tại ranh giới lưu trữ lâu dài.
+- Ghi đơn/Thành viên/kiểm toán dùng chung một giao dịch; việc gửi FE10 chỉ xảy ra sau commit và
+  không chặn, với siêu dữ liệu nguồn FE04 chính xác và tính lũy đẳng.
+- Danh sách/tìm kiếm/phân trang của nhân viên và frontend sử dụng sự thật máy chủ mà không có trình diễn hoặc trạng thái dự phòng `NONE`
+  sai.
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused backend | PASS - 1 suite, 18 tests |
-| Static SQL contract | PASS - 4 tests; 6 mutable SQL tests skipped without DB configuration |
-| Focused frontend | PASS - 5 tests |
-| Full backend | PASS - 38 suites, 619 tests |
-| Backend coverage | PASS - 92.51% statements, 82.46% branches, 97.10% functions, 92.44% lines |
-| Full frontend | PASS - 122 tests |
-| Frontend lint/build | PASS |
-| Backend import health | PASS |
-| FE04 source traceability | PASS - 12/12 FR tags, 100% |
-| Diff hygiene | PASS - `git diff --check` |
+| Backend trọng tâm | PASS - 1 bộ, 18 kiểm thử |
+| Hợp đồng SQL tĩnh | PASS - 4 kiểm thử; bỏ qua 6 kiểm thử SQL có thể thay đổi khi không có cấu hình DB |
+| Frontend trọng tâm | PASS - 5 kiểm thử |
+| Toàn bộ backend | PASS - 38 bộ, 619 kiểm thử |
+| Độ bao phủ backend | PASS - câu lệnh 92.51%, nhánh 82.46%, hàm 97.10%, dòng 92.44% |
+| Toàn bộ frontend | PASS - 122 kiểm thử |
+| Lint/bản dựng frontend | PASS |
+| Tình trạng nhập backend | PASS |
+| Truy vết nguồn FE04 | PASS - 12/12 thẻ FR, 100% |
+| Vệ sinh diff | PASS - `git diff --check` |
 
-## Validation Layers
+## Các lớp xác thực
 
-| Layer | Status | Evidence / Gap |
+| Lớp | Trạng thái | Bằng chứng / Khoảng trống |
 | --- | --- | --- |
-| L1 Automated | PARTIAL | All configured non-SQL gates pass; six required mutable SQL cases and browser E2E remain unrun |
-| L2 Spec compliance | PASS for local scope | Canonical state, history, race, audit, privacy, notification, and frontend requirements map to source/tests |
-| L3 Constitution/safety | PASS for current diff | Parameterized SQL, protected routes, safe DTO/errors, no new dependency, secret, PII, role assignment, or physical history deletion |
-| L4 Acceptance | PENDING | Dat/FE07/FE08 owner confirmation and end-user browser review have not occurred |
+| L1 Tự động | MỘT PHẦN | Mọi cổng không SQL đã cấu hình đều đạt; sáu ca SQL có thể thay đổi bắt buộc và E2E trình duyệt chưa chạy |
+| L2 Tuân thủ đặc tả | ĐẠT cho phạm vi cục bộ | Yêu cầu về trạng thái chuẩn, lịch sử, tranh chấp, kiểm toán, quyền riêng tư, thông báo và frontend ánh xạ tới nguồn/kiểm thử |
+| L3 Hiến chương/an toàn | ĐẠT cho diff hiện tại | SQL tham số hóa, tuyến được bảo vệ, DTO/lỗi an toàn, không có phụ thuộc, bí mật, PII, gán vai trò hoặc xóa vật lý lịch sử mới |
+| L4 Chấp thuận | ĐANG CHỜ | Xác nhận của chủ sở hữu Dat/FE07/FE08 và đánh giá trình duyệt của người dùng cuối chưa diễn ra |
 
-## Remaining Gates
+## Các cổng còn lại
 
-- Run the migration twice and all mutable SQL cases against an approved disposable SQL Server.
-- Fan FE04, FE10, FE02, and the FE11 schema baseline into one branch and rerun cross-feature suites.
-- Capture applicant/staff browser evidence, including network failure and rejected re-application.
-- Obtain human system-fit review before commit, push, PR publication, or merge.
+- Chạy phần di chuyển hai lần và mọi ca SQL có thể thay đổi trên SQL Server dùng một lần đã phê duyệt.
+- Hội tụ FE04, FE10, FE02 và đường cơ sở lược đồ FE11 vào một nhánh rồi chạy lại các bộ xuyên tính năng.
+- Thu thập bằng chứng trình duyệt của người đăng ký/nhân viên, gồm lỗi mạng và đăng ký lại bị từ chối.
+- Nhận đánh giá độ phù hợp hệ thống của con người trước khi commit, đẩy, công bố PR hoặc hợp nhất.
 
-## Post-Origin Sync Revalidation
+## Xác thực lại sau đồng bộ Origin
 
-- Fast-forwarded the dirty feature worktree from `62ac2d1` to `origin/main@b2ad9b1` without overlap, commit, stash, or loss of local changes.
-- Fresh focused verification after the sync: `membershipRoutes.test.js` passed 18/18.
+- Tua nhanh worktree tính năng đang có thay đổi từ `62ac2d1` lên `origin/main@b2ad9b1` mà không chồng lấn, commit, cất tạm hoặc mất thay đổi cục bộ.
+- Xác minh trọng tâm mới sau đồng bộ: `membershipRoutes.test.js` đạt 18/18.
 
-## Scope Control
+## Kiểm soát phạm vi
 
-- No role assignment, borrowing/reservation workflow, expiry/payment behavior, dependency, or
-  out-of-scope membership state was added.
-- No commit, push, PR, or merge was created.
-- The FE11 exact diff and primary checkout were not modified.
+- Không thêm việc gán vai trò, quy trình mượn/đặt trước, hành vi hết hạn/thanh toán, phụ thuộc hoặc
+  trạng thái Thành viên ngoài phạm vi nào.
+- Không tạo commit, thao tác đẩy, PR hoặc hợp nhất.
+- Diff FE11 chính xác và checkout chính không bị sửa.
