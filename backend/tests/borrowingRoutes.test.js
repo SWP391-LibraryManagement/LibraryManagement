@@ -629,6 +629,67 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.fines).toHaveLength(0);
   });
 
+  test('return response and audit use the due date locked by the repository', async () => {
+    let currentTime = new Date('2026-06-01T00:00:00.000Z');
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => currentTime,
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-locked-owner@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-locked-librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    );
+    storedDetail.dueDate = '2026-06-08';
+    currentTime = new Date('2026-06-20T00:00:00.000Z');
+
+    const originalReturn = borrowingDependencies.borrowingRepository.returnBorrowDetail;
+    borrowingDependencies.borrowingRepository.returnBorrowDetail = async (input) => {
+      storedDetail.dueDate = '2026-06-18';
+      return originalReturn.call(borrowingDependencies.borrowingRepository, input);
+    };
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-20' })
+      .expect(200);
+
+    expect(response.body.borrowDetail).not.toHaveProperty('authoritativeReturn');
+    expect(response.body.fineCandidate.overdueDays).toBe(2);
+    const audit = authDependencies.state.auditLogs.find(
+      (entry) => entry.action === 'BORROW_DETAIL_RETURN'
+    );
+    expect(audit.metadata).toMatchObject({
+      dueDate: '2026-06-18',
+      returnDate: '2026-06-20',
+      overdueDays: 2,
+      condition: 'NORMAL',
+    });
+  });
+
   test('return fine candidate uses the Vietnam business date across UTC midnight', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp({
       clock: () => new Date('2026-07-22T17:30:00.000Z'),
@@ -836,7 +897,7 @@ describe('FE07 borrowing management', () => {
         purpose: 'BORROW_RENEWED',
         requestId,
         borrowDetailId: firstDetail.borrowDetailId,
-        dueDate: expect.any(Date),
+        dueDate: '2026-07-08',
       },
       sourceEntityType: 'BORROWING',
       sourceEntityId: requestId,
@@ -866,6 +927,106 @@ describe('FE07 borrowing management', () => {
 
     expect(reservationConflictResponse.status).toBe(409);
     expect(reservationConflictResponse.body.error.code).toBe('RESERVATION_BLOCKS_RENEWAL');
+  });
+
+  test('multi-role librarian renews another member loan while member-only remains owner-scoped', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => new Date('2026-03-07T12:00:00.000Z'),
+    });
+    const owner = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-owner@example.test',
+    });
+    const memberOnly = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-member-only@example.test',
+    });
+    const staff = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-multi-role@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    authDependencies.state.rolesByUserId.set(staff.userId, ['MEMBER', 'LIBRARIAN']);
+    const multiRoleLogin = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'renew-multi-role@example.test', password: 'Password1!' })
+      .expect(200);
+
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(owner.accessToken))
+      .send({ copyIds: [1, 2] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({})
+      .expect(200);
+    const [staffTarget, memberTarget] = approved.body.borrowRequest.details;
+
+    const staffResponse = await request(app)
+      .patch(`/api/borrow-details/${staffTarget.borrowDetailId}/renew`)
+      .set('Authorization', authHeader(multiRoleLogin.body.accessToken))
+      .send({});
+    expect(staffResponse.status).toBe(200);
+    expect(staffResponse.body.borrowDetail.renewalCount).toBe(1);
+
+    const memberResponse = await request(app)
+      .patch(`/api/borrow-details/${memberTarget.borrowDetailId}/renew`)
+      .set('Authorization', authHeader(memberOnly.accessToken))
+      .send({});
+    expect(memberResponse.status).toBe(403);
+    expect(memberResponse.body.error.code).toBe('BORROW_DETAIL_OWNER_REQUIRED');
+  });
+
+  test('renewal extends the business due date identically across host timezones', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => new Date('2026-03-07T12:00:00.000Z'),
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-business-date@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-business-date-staff@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    ).dueDate = '2026-03-08';
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({})
+      .expect(200);
+
+    expect(response.body.borrowDetail.dueDate).toBe('2026-03-22');
   });
 
   // BR-FE07-015, BR-FE07-016, FR-FE07-009: the repository conditional write must choose one
@@ -2402,9 +2563,10 @@ describe('FE07 borrowing management', () => {
         requestId,
         memberId: member.userId,
         copyId: 1,
+        dueDate: '2026-06-24',
+        returnDate: '2026-06-10',
         condition: 'NORMAL',
         overdueDays: 0,
-
         notes: 'intact',
       },
       ipAddress: expect.any(String),

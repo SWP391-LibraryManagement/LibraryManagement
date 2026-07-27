@@ -155,13 +155,15 @@ function usePostCommitReadbackFailure(operation) {
         if (query.includes('SELECT CopyId, Status')) {
           return { recordset: [{ CopyId: 7, Status: 'BORROWED' }] };
         }
-        if (query.includes('SELECT BorrowDetailId, RequestId, CopyId, Status')) {
+        if (query.includes('SELECT bd.BorrowDetailId, bd.RequestId, bd.CopyId, bd.Status')) {
           return {
             recordset: [{
               BorrowDetailId: 4,
               RequestId: 41,
               CopyId: 7,
               Status: 'BORROWED',
+              DueDate: new Date('2026-07-27T00:00:00.000Z'),
+              UserId: 9,
             }],
           };
         }
@@ -169,7 +171,13 @@ function usePostCommitReadbackFailure(operation) {
           return { recordset: [{ BorrowDetailId: 4, Status: 'BORROWED' }] };
         }
         if (query.includes('OUTPUT INSERTED.RequestId, INSERTED.CopyId')) {
-          return { recordset: [{ RequestId: 41, CopyId: 7 }] };
+          return {
+            recordset: [{
+              RequestId: 41,
+              CopyId: 7,
+              ReturnDate: new Date('2026-07-13T00:00:00.000Z'),
+            }],
+          };
         }
         if (query.includes('UPDATE BookCopies')) {
           return { recordset: [], rowsAffected: [1] };
@@ -317,7 +325,7 @@ test('return serializes one request before locking copies, details, and reservat
   const source = repositorySource.slice(start, end);
   const requestLockIndex = source.indexOf('sp_getapplock');
   const copyLockIndex = source.indexOf('FROM BookCopies WITH (UPDLOCK, HOLDLOCK)');
-  const detailLockIndex = source.indexOf('FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)');
+  const detailLockIndex = source.indexOf('FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)');
   const reservationLockIndex = source.indexOf('FROM Reservations WITH (UPDLOCK, HOLDLOCK)');
   const mutationIndex = source.indexOf('UPDATE BorrowDetails');
 
@@ -327,6 +335,13 @@ test('return serializes one request before locking copies, details, and reservat
   expect(detailLockIndex).toBeGreaterThan(copyLockIndex);
   expect(reservationLockIndex).toBeGreaterThan(detailLockIndex);
   expect(mutationIndex).toBeGreaterThan(reservationLockIndex);
+  expect(source).toContain('bd.DueDate');
+  expect(source).toContain('br.UserId');
+  expect(source).toContain('INSERTED.ReturnDate');
+  expect(source).toContain('buildReturnEvidence(authoritativeReturn)');
+  expect(source.indexOf('buildReturnEvidence(authoritativeReturn)')).toBeGreaterThan(
+    detailLockIndex
+  );
 });
 
 test('renewal revalidates member and all blockers under canonical locks before mutation', () => {

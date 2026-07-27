@@ -7,9 +7,10 @@ Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. FE12-N11 is activated
-by the approved v0.2.0 SPEC but awaits PLAN/TASKS approval before RED tests or
-implementation.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved FE12-N11
+PLAN/TASKS on 2026-07-27. Local implementation, HTTP runtime acceptance, and
+automated verification are complete. Nhat approved H2 on 2026-07-27,
+authorizing publication while H3 remains required before merge.
 
 ---
 
@@ -167,10 +168,11 @@ Detailed automated evidence is recorded in
 
 ## 11. V0.2.0 Query-Allowlist Boundary
 
-- [ ] **FE12-N11 - Reject unsupported report query keys before execution.**
+- [x] **FE12-N11 - Reject unsupported report query keys before execution.**
   - Maps to: BD-005, BR-FE12-008, FR-FE12-005, AC-FE12-005, EC-FE12-011, NFR-FE12-SEC-004.
   - RED: `?bogus=runtime-secret-value` returns `200` and reaches the selected report method.
   - GREEN: endpoint-specific exact-key middleware returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution and never echoes the unknown value.
+  - Evidence: all three RED cases returned `200`; focused GREEN passed 3/3, full FE12 passed 14/14, and the local golden path observed safe HTTP `400`.
   - Files: `backend/tests/reportRoutes.test.js`, `backend/src/validators/reportValidators.js`.
   - Preservation: existing approved value validators, read-only report behavior, audit privacy, SQL parameterization, empty-ID semantics, pagination, and ordering remain unchanged.
-  - Gate: focused/full FE12 tests, real HTTP runtime evidence, traceability, and diff hygiene pass; leave product changes uncommitted until Nhat grants H2.
+  - Gate: H2 was approved by Nhat on 2026-07-27; merge remains blocked pending H3.

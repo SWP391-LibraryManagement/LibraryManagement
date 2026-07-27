@@ -84,6 +84,39 @@ function authHeader(accessToken) {
 }
 
 describe('FE12 reporting and statistics', () => {
+  test.each([
+    ['/api/reports/borrowing', 'getBorrowingReport'],
+    ['/api/reports/inventory', 'getInventoryReport'],
+    ['/api/reports/users', 'getUserStatistics'],
+  ])('rejects unsupported query keys before %s executes', async (path, repositoryMethod) => {
+    const { app, authDependencies, borrowingDependencies, reportDependencies } =
+      makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: `report-allowlist-${repositoryMethod}@example.test`,
+      role: 'ADMIN',
+      approveMember: false,
+    });
+    const spies = [
+      jest.spyOn(reportDependencies.reportRepository, 'getBorrowingReport'),
+      jest.spyOn(reportDependencies.reportRepository, 'getInventoryReport'),
+      jest.spyOn(reportDependencies.reportRepository, 'getUserStatistics'),
+    ];
+
+    const response = await request(app)
+      .get(`${path}?bogus=runtime-secret-value`)
+      .set('Authorization', authHeader(admin.accessToken));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('UNSUPPORTED_REPORT_QUERY_PARAMETER');
+    expect(JSON.stringify(response.body)).not.toContain('runtime-secret-value');
+    for (const spy of spies) {
+      expect(spy).not.toHaveBeenCalled();
+    }
+  });
+
   test('borrowing and inventory reports return aggregates without mutating source data', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const librarian = await createVerifiedUser({

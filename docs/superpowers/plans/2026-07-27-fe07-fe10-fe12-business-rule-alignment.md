@@ -75,7 +75,7 @@ Server through `mssql`, React/Vite, and Playwright.
 - Produces: role-order-independent staff scope; loan-owner eligibility remains
   unchanged.
 
-- [ ] **Step 1: Add the failing route regression**
+- [x] **Step 1: Add the failing route regression**
 
 Add this test inside `describe('FE07 borrowing management', ...)`:
 
@@ -139,7 +139,7 @@ test('multi-role librarian renews another member loan while member-only remains 
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run:
 
@@ -150,7 +150,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 Expected: FAIL because the staff request returns
 `403 BORROW_DETAIL_OWNER_REQUIRED`.
 
-- [ ] **Step 3: Apply the minimal authorization change**
+- [x] **Step 3: Apply the minimal authorization change**
 
 Replace the ownership/role block in `renewBorrowDetail` with:
 
@@ -175,13 +175,13 @@ Do not change `ensureEligibleMember(borrowDetail.userId)`,
 `ensureNoBorrowingBlockers(borrowDetail.userId)`, renewal count, fine,
 overdue, or reservation checks.
 
-- [ ] **Step 4: Run GREEN**
+- [x] **Step 4: Run GREEN**
 
 Run the command from Step 2.
 
 Expected: PASS for both multi-role staff success and member-only denial.
 
-- [ ] **Step 5: Checkpoint without commit**
+- [x] **Step 5: Checkpoint without commit**
 
 Inspect `git diff -- backend/src/services/borrowingService.js
 backend/tests/borrowingRoutes.test.js`. Do not stage or commit.
@@ -210,7 +210,7 @@ backend/tests/borrowingRoutes.test.js`. Do not stage or commit.
   `dueDate`, `returnDate`, and `overdueDays`. The service strips this internal
   object before returning the public `borrowDetail`.
 
-- [ ] **Step 1: Add the stale-preflight RED regression**
+- [x] **Step 1: Add the stale-preflight RED regression**
 
 Add a route test that sets an initial due date, changes it only when the
 repository transaction starts, and checks response/audit parity:
@@ -278,7 +278,7 @@ test('return response and audit use the due date locked by the repository', asyn
 });
 ```
 
-- [ ] **Step 2: Add the repository source-contract RED assertions**
+- [x] **Step 2: Add the repository source-contract RED assertions**
 
 Extend the existing return lock-order test in
 `backend/tests/borrowingRepository.test.js`:
@@ -293,7 +293,7 @@ expect(source.indexOf('buildReturnEvidence(authoritativeReturn)')).toBeGreaterTh
 );
 ```
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -304,7 +304,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 Expected: the route test reports stale `overdueDays = 12`, and the repository
 source-contract assertions fail.
 
-- [ ] **Step 4: Extend the SQL repository contract**
+- [x] **Step 4: Extend the SQL repository contract**
 
 In `backend/src/repositories/borrowingRepository.js`:
 
@@ -366,7 +366,7 @@ async function returnBorrowDetail({
 The real implementation must retain every existing rollback and conflict path;
 the snippet defines only the changed contract and ordering.
 
-- [ ] **Step 5: Mirror the contract in the in-memory repository**
+- [x] **Step 5: Mirror the contract in the in-memory repository**
 
 After the detail/copy are selected and before mutation, call the same
 `buildReturnEvidence` callback with the current in-memory detail:
@@ -397,7 +397,7 @@ return {
 };
 ```
 
-- [ ] **Step 6: Build response and audit from one service callback**
+- [x] **Step 6: Build response and audit from one service callback**
 
 In `backend/src/services/borrowingService.js`, remove the preflight
 `overdueDays` and prebuilt return audit. Pass:
@@ -446,7 +446,7 @@ return {
 };
 ```
 
-- [ ] **Step 7: Run GREEN**
+- [x] **Step 7: Run GREEN**
 
 Run the command from Step 3, then:
 
@@ -458,6 +458,9 @@ Expected: both suites pass; public response has no internal evidence field;
 audit and `fineCandidate` use the locked due date.
 
 - [ ] **Step 8: Optional real SQL evidence**
+
+Not run: `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` were both unset, so no
+mutable SQL command was authorized.
 
 First print only the database name and confirm it is disposable local data:
 
@@ -477,7 +480,7 @@ Expected: return concurrency, locked snapshot, and audit rollback tests pass.
 Otherwise record SQL evidence as not run; do not point the test at staging or a
 shared database.
 
-- [ ] **Step 9: Checkpoint without commit**
+- [x] **Step 9: Checkpoint without commit**
 
 Inspect the five-file FE07 diff. Do not stage or commit.
 
@@ -498,7 +501,7 @@ Inspect the five-file FE07 diff. Do not stage or commit.
   `compareBusinessDates` from `backend/src/utils/libraryBusinessTime.js`.
 - Produces: an exact `YYYY-MM-DD` `newDueDate` independent of host timezone.
 
-- [ ] **Step 1: Add the timezone-sensitive RED regression**
+- [x] **Step 1: Add the timezone-sensitive RED regression**
 
 ```js
 test('renewal extends the business due date identically across host timezones', async () => {
@@ -544,7 +547,7 @@ test('renewal extends the business due date identically across host timezones', 
 });
 ```
 
-- [ ] **Step 2: Run the RED timezone matrix**
+- [x] **Step 2: Run the RED timezone matrix**
 
 ```powershell
 $env:TZ='UTC'
@@ -557,7 +560,7 @@ Remove-Item Env:TZ -ErrorAction SilentlyContinue
 Expected: the current host-local implementation fails in at least
 `America/New_York`.
 
-- [ ] **Step 3: Remove host-local service arithmetic**
+- [x] **Step 3: Remove host-local service arithmetic**
 
 Delete the local `addDays()` helper and replace renewal extension with:
 
@@ -567,7 +570,7 @@ const currentDueDate = formatBusinessDate(borrowDetail.dueDate);
 const newDueDate = addBusinessDays(currentDueDate, LOAN_DAYS);
 ```
 
-- [ ] **Step 4: Use shared comparison helpers in repository parity**
+- [x] **Step 4: Use shared comparison helpers in repository parity**
 
 Import `formatBusinessDate` and `compareBusinessDates` in the SQL repository
 and in-memory helper. Replace affected renewal comparisons with:
@@ -587,13 +590,13 @@ service preflight and authoritative in-memory transaction agree. Do not alter
 the SQL `bd.DueDate < @Today` predicate because SQL Server already compares
 typed `date` values.
 
-- [ ] **Step 5: Run GREEN in both timezones**
+- [x] **Step 5: Run GREEN in both timezones**
 
 Repeat Step 2.
 
 Expected: both timezone runs pass with due date `2026-03-22`.
 
-- [ ] **Step 6: Run the focused FE07 suites**
+- [x] **Step 6: Run the focused FE07 suites**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js
@@ -601,7 +604,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 
 Expected: PASS with no renewal, return, audit, or reservation regression.
 
-- [ ] **Step 7: Checkpoint without commit**
+- [x] **Step 7: Checkpoint without commit**
 
 Search the affected renewal path:
 
@@ -629,7 +632,7 @@ logic. Do not stage or commit.
   `validateStoredTemplateDefinition(template): void`, throwing safe
   `400 UNSAFE_TEMPLATE_DEFINITION` before rendering or side effects.
 
-- [ ] **Step 1: Add table-driven RED tests**
+- [x] **Step 1: Add table-driven RED tests**
 
 ```js
 test.each([
@@ -669,7 +672,7 @@ test.each([
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"
@@ -678,7 +681,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.
 Expected: requests are accepted/rendered instead of rejecting with
 `UNSAFE_TEMPLATE_DEFINITION`.
 
-- [ ] **Step 3: Add the stored-definition gate**
+- [x] **Step 3: Add the stored-definition gate**
 
 Add near `renderTemplate()`:
 
@@ -714,7 +717,7 @@ const recipient = await resolveRecipient(requestInput);
 Keep `sanitizeString`, `sanitizePayload`, and `renderTemplate` unchanged so
 runtime values remain escaped/sanitized.
 
-- [ ] **Step 4: Run GREEN plus runtime-value preservation**
+- [x] **Step 4: Run GREEN plus runtime-value preservation**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template|sanitizes script content in template data"
@@ -723,7 +726,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.
 Expected: unsafe stored definitions reject with zero side effects; the existing
 runtime-value sanitization test still passes.
 
-- [ ] **Step 5: Run the full FE10 route suite**
+- [x] **Step 5: Run the full FE10 route suite**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js
@@ -732,7 +735,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.
 Expected: PASS with source ownership, secret redaction, idempotency,
 `PROCESSING`, retry, and DTO contracts unchanged.
 
-- [ ] **Step 6: Checkpoint without commit**
+- [x] **Step 6: Checkpoint without commit**
 
 Inspect the two-file diff and verify no template content or secret value appears
 in errors. Do not stage or commit.
@@ -753,7 +756,7 @@ in errors. Do not stage or commit.
 - The middleware calls `next()` for exact allowed keys and otherwise calls
   `next(errors.badRequest('UNSUPPORTED_REPORT_QUERY_PARAMETER', ...))`.
 
-- [ ] **Step 1: Add the route-level RED matrix**
+- [x] **Step 1: Add the route-level RED matrix**
 
 ```js
 test.each([
@@ -790,7 +793,7 @@ test.each([
 });
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"
@@ -798,7 +801,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --t
 
 Expected: all three requests return `200` and invoke a report repository method.
 
-- [ ] **Step 3: Add the reusable exact-key middleware**
+- [x] **Step 3: Add the reusable exact-key middleware**
 
 Import safe errors and define exact allowlists:
 
@@ -845,14 +848,14 @@ const borrowingReportValidators = [
 Repeat for inventory and users. Export the factory and key arrays only if a
 focused unit test needs them; route behavior is the primary contract.
 
-- [ ] **Step 4: Run GREEN**
+- [x] **Step 4: Run GREEN**
 
 Repeat Step 2.
 
 Expected: all endpoints return safe `400`, do not echo the value, and all three
 repository spies remain untouched.
 
-- [ ] **Step 5: Run approved-key preservation tests**
+- [x] **Step 5: Run approved-key preservation tests**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js
@@ -861,7 +864,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js
 Expected: existing filters, empty IDs, date-only validation, role guards,
 audit privacy, pagination, and all report responses remain green.
 
-- [ ] **Step 6: Checkpoint without commit**
+- [x] **Step 6: Checkpoint without commit**
 
 Inspect the two-file diff. Confirm the unknown-key middleware is first in all
 three validator arrays. Do not stage or commit.
@@ -884,7 +887,7 @@ three validator arrays. Do not stage or commit.
 - FE08 -> FE07: active reservation priority blocks another member's renewal
   without changing the loan.
 
-- [ ] **Step 1: Run the canonical requester regression**
+- [x] **Step 1: Run the canonical requester regression**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.js --testNamePattern "binds FE08 and submits the canonical reservation-ready notification request"
@@ -892,7 +895,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/reservationRoutes.test.j
 
 Expected: PASS with one FE08-bound requester and canonical source metadata.
 
-- [ ] **Step 2: Run cross-feature SIT-003 and SIT-004**
+- [x] **Step 2: Run cross-feature SIT-003 and SIT-004**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.js --testNamePattern "SIT-003|SIT-004"
@@ -901,7 +904,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/systemIntegration.test.j
 Expected: queue hold creates one FE10 request, and reservation priority blocks
 FE07 renewal without mutation.
 
-- [ ] **Step 3: Stop on any FE08 failure**
+- [x] **Step 3: Stop on any FE08 failure**
 
 Do not modify FE08. Diagnose and return to SPEC review if the failure requires
 a product-rule change.
@@ -922,7 +925,7 @@ a product-rule change.
 - Produces the H2 review package: complete uncommitted diff, L1-L4 results,
   runtime evidence, gaps, and residual risks.
 
-- [ ] **Step 1: Run the focused L1 gate**
+- [x] **Step 1: Run the focused L1 gate**
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js tests/notificationRoutes.test.js tests/reportRoutes.test.js tests/reservationRoutes.test.js tests/systemIntegration.test.js
@@ -930,7 +933,7 @@ npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js 
 
 Expected: all six suites pass.
 
-- [ ] **Step 2: Run the timezone matrix**
+- [x] **Step 2: Run the timezone matrix**
 
 ```powershell
 $env:TZ='UTC'
@@ -942,7 +945,7 @@ Remove-Item Env:TZ -ErrorAction SilentlyContinue
 
 Expected: both runs pass with identical business dates and outcomes.
 
-- [ ] **Step 3: Run full automated quality checks**
+- [x] **Step 3: Run full automated quality checks**
 
 ```powershell
 npm.cmd --prefix backend test
@@ -958,7 +961,7 @@ git diff --check
 Expected: all commands exit 0; backend coverage remains above the repository's
 80% global thresholds; FE07, FE08, FE10, and FE12 traceability remains enforced.
 
-- [ ] **Step 4: Run real browser/runtime acceptance**
+- [x] **Step 4: Run real browser/runtime acceptance**
 
 ```powershell
 npx.cmd playwright test tests/e2e/system-golden-path.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium
@@ -969,7 +972,7 @@ The golden path proves login -> borrow -> approve -> return -> fine -> report;
 the FE08 scenario proves candidate search and a real reservation request. Keep
 failure traces/screenshots; do not promote them as passing evidence.
 
-- [ ] **Step 5: Verify FE12 through the running HTTP boundary**
+- [x] **Step 5: Verify FE12 through the running HTTP boundary**
 
 During the Playwright runtime, use the authenticated Admin/Librarian request
 context already created by the test and assert:
@@ -991,7 +994,7 @@ Add this assertion to `tests/e2e/system-golden-path.spec.js` after the existing
 `accessToken` is read. This is test-only runtime evidence and does not change a
 frontend workflow.
 
-- [ ] **Step 6: Perform L2 and L3 review**
+- [x] **Step 6: Perform L2 and L3 review**
 
 Check:
 
@@ -1014,7 +1017,7 @@ L3 Constitution/Safety:
 
 Any gap returns to the owning task; do not weaken the SPEC.
 
-- [ ] **Step 7: Record observed evidence**
+- [x] **Step 7: Record observed evidence**
 
 Create
 `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
@@ -1033,7 +1036,7 @@ with:
 
 Do not write PASS for an unrun command.
 
-- [ ] **Step 8: Prepare H2; do not commit**
+- [x] **Step 8: Prepare H2; do not commit**
 
 Run:
 
@@ -1050,7 +1053,7 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 ## Plan Approval Gate
 
-- [ ] Nhat approves this consolidated plan and FE07-T047..T050, FE08-T041,
+- [x] Nhat approves this consolidated plan and FE07-T047..T050, FE08-T041,
   FE10-S11, and FE12-N11.
-- [ ] Only after approval, begin Task 1 with RED tests.
-- [ ] Do not infer plan approval from the earlier SPEC approval.
+- [x] Only after approval, begin Task 1 with RED tests.
+- [x] Do not infer plan approval from the earlier SPEC approval.

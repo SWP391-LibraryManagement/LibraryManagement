@@ -7,9 +7,9 @@ Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. FE08-T041 is a pending
-regression-only task activated by the approved FE07/FE10 boundary; no FE08
-product behavior is authorized to change.
+Workflow State: The Phase 2 baseline remains complete. FE08-T041 regression
+verification passed locally on 2026-07-27; no FE08 product behavior changed.
+Nhat approved the batch H2 on 2026-07-27; H3 remains required before merge.
 
 ---
 
@@ -214,8 +214,9 @@ product behavior is authorized to change.
 
 ## 9. 2026-07-27 FE07/FE10 regression boundary
 
-- [ ] **FE08-T041 - Verify unchanged FE07 and FE10 handoffs.**
+- [x] **FE08-T041 - Verify unchanged FE07 and FE10 handoffs.**
   - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
   - Scope: regression evidence only; no FE08 production or contract change.
   - Evidence: focused FE08 canonical requester test, `SIT-003` queue/notification flow, `SIT-004` FE07 renewal-priority flow, and the FE08 browser candidate acceptance remain green.
+  - Observed: requester 1/1, SIT-003/SIT-004 2/2, and FE08 browser acceptance passed.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

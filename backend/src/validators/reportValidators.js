@@ -1,5 +1,6 @@
 const { query } = require('express-validator');
 const { handleValidationErrors } = require('./authValidators');
+const errors = require('../utils/safeErrors');
 
 const borrowingStatuses = [
   'PENDING',
@@ -17,6 +18,55 @@ const borrowingStatuses = [
 const copyStatuses = ['AVAILABLE', 'BORROWED', 'RESERVED', 'DAMAGED', 'LOST', 'INACTIVE'];
 const userStatuses = ['ACTIVE', 'INACTIVE', 'LOCKED'];
 const membershipStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'INACTIVE'];
+const borrowingReportQueryKeys = [
+  'q',
+  'fromDate',
+  'toDate',
+  'status',
+  'bookId',
+  'userId',
+  'page',
+  'limit',
+];
+const inventoryReportQueryKeys = [
+  'q',
+  'categoryId',
+  'bookId',
+  'status',
+  'location',
+  'page',
+  'limit',
+];
+const userStatisticsQueryKeys = [
+  'q',
+  'roleId',
+  'status',
+  'membershipStatus',
+  'fromDate',
+  'toDate',
+  'page',
+  'limit',
+];
+
+// @spec BR-FE12-008, FR-FE12-005
+function rejectUnsupportedQueryParameters(allowedKeys) {
+  const allowed = new Set(allowedKeys);
+
+  return function validateReportQueryKeys(req, res, next) {
+    const unsupportedKey = Object.keys(req.query || {}).find((key) => !allowed.has(key));
+
+    if (!unsupportedKey) {
+      return next();
+    }
+
+    return next(
+      errors.badRequest(
+        'UNSUPPORTED_REPORT_QUERY_PARAMETER',
+        'Report query parameter is not supported.'
+      )
+    );
+  };
+}
 
 const paginationValidators = [
   query('page')
@@ -76,6 +126,7 @@ const commonDateValidators = [
 ];
 
 const borrowingReportValidators = [
+  rejectUnsupportedQueryParameters(borrowingReportQueryKeys),
   searchValidator,
   ...commonDateValidators,
   query('status')
@@ -98,6 +149,7 @@ const borrowingReportValidators = [
 ];
 
 const inventoryReportValidators = [
+  rejectUnsupportedQueryParameters(inventoryReportQueryKeys),
   searchValidator,
   query('categoryId')
     .optional({ nullable: true, checkFalsy: true })
@@ -124,6 +176,7 @@ const inventoryReportValidators = [
 ];
 
 const userStatisticsValidators = [
+  rejectUnsupportedQueryParameters(userStatisticsQueryKeys),
   searchValidator,
   ...commonDateValidators,
   query('roleId')

@@ -7,9 +7,10 @@ Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The approved Phase 2/G1-G12 baseline remains complete.
-FE10-S11 is activated by the approved v0.4.4 SPEC but awaits PLAN/TASKS
-approval before RED tests or implementation.
+Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
+approved FE10-S11 PLAN/TASKS on 2026-07-27. Local implementation and
+verification are complete. Nhat approved H2 on 2026-07-27, authorizing
+publication while H3 remains required before merge.
 
 ---
 
@@ -291,10 +292,11 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S11 Reject Unsafe Stored Template Definitions
 
-- [ ] Status: PLAN READY FOR REVIEW; IMPLEMENTATION NOT STARTED
+- [x] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; H2 APPROVED; H3 PENDING
 - Maps to: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006, EC-FE10-010, NFR-FE10-SEC-005.
 - RED: unsafe stored subject/body definitions are silently sanitized and accepted.
 - GREEN: `validateStoredTemplateDefinition(template)` rejects raw HTML tags, inline event-handler attributes, and `javascript:` URLs with safe `400 UNSAFE_TEMPLATE_DEFINITION` before render/persist/provider work.
+- Evidence: 3/3 RED cases resolved as `SENT`; focused GREEN passed 4/4 including runtime sanitization, and the full FE10 suite passed 139/139.
 - Preservation: runtime values remain escaped/sanitized; secret-like key rejection, `safePayload` redaction, source ownership, idempotency, DTOs, and durable delivery state remain unchanged.
 - Files: `backend/tests/notificationRoutes.test.js`, `backend/src/services/notificationService.js`.
-- Gate: focused/full FE10 tests and security review pass; leave product changes uncommitted until Nhat grants H2.
+- Gate: H2 was approved by Nhat on 2026-07-27; merge remains blocked pending H3.
