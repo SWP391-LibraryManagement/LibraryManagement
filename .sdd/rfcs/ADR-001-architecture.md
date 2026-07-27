@@ -1,28 +1,28 @@
-# ADR-001: Architecture
+# ADR-001: Kiến trúc
 
-Status: Approved for Week 4 scaffolding
-Date: 2026-06-10
+Trạng thái: Đã phê duyệt cho phần dựng khung Tuần 4
+Ngày: 2026-06-10
 
-## Context
+## Bối cảnh
 
-The project follows the Hybrid Spec-Driven & Agent-Driven Development playbook. Week 1-3 gates are closed, and the project is entering Week 4 Architecture & Scaffolding.
+Dự án tuân theo playbook Phát triển kết hợp hướng đặc tả và hướng tác nhân. Các cổng Tuần 1-3 đã đóng và dự án đang bước vào Tuần 4: Kiến trúc & Dựng khung.
 
-Approved stack from the Constitution:
+Stack đã được Hiến chương phê duyệt:
 
 - Backend: Node.js + Express.js
 - Frontend: React + Bootstrap
-- Database: SQL Server
-- API style: RESTful API
+- Cơ sở dữ liệu: SQL Server
+- Kiểu API: RESTful API
 
-The repository already contains an Express backend skeleton and a React/Vite frontend prototype. These are allowed as scaffolding/prototype artifacts, but feature implementation must still follow approved `SPEC.md`, `PLAN.md`, and `TASKS.md`.
+Repository đã có bộ khung backend Express và nguyên mẫu frontend React/Vite. Chúng được phép tồn tại như hiện vật dựng khung/nguyên mẫu, nhưng việc triển khai tính năng vẫn phải tuân theo `SPEC.md`, `PLAN.md` và `TASKS.md` đã được phê duyệt.
 
-## Decision
+## Quyết định
 
-Use a layered modular architecture with REST API boundaries.
+Sử dụng kiến trúc mô-đun phân tầng với ranh giới REST API.
 
-### Backend Layers
+### Các tầng backend
 
-Backend code lives under `backend/src` and should use this structure:
+Mã backend nằm trong `backend/src` và nên dùng cấu trúc sau:
 
 ```text
 backend/src/
@@ -40,22 +40,22 @@ backend/src/
   Constrant/
 ```
 
-Layer responsibilities:
+Trách nhiệm của từng tầng:
 
-| Layer | Responsibility |
+| Tầng | Trách nhiệm |
 | --- | --- |
-| routes | Bind HTTP method/path to controller handlers. No business logic. |
-| controllers | Parse request context, call validators/services, return safe HTTP responses. |
-| validators | Server-side request validation near the boundary. |
-| services | Business rules and orchestration. Must be testable without UI. |
-| repositories | SQL Server access using parameterized queries through `mssql`. |
-| models | Data shape helpers/constants; not an ORM unless approved later. |
-| middleware | Error handling, auth guard, role guard, request logging, security wrappers. |
-| config | Environment loading and configuration validation. No secrets committed. |
+| routes | Liên kết phương thức/đường dẫn HTTP với trình xử lý controller. Không chứa logic nghiệp vụ. |
+| controllers | Phân tích ngữ cảnh yêu cầu, gọi validator/service và trả về phản hồi HTTP an toàn. |
+| validators | Xác thực yêu cầu phía máy chủ gần ranh giới hệ thống. |
+| services | Chứa quy tắc nghiệp vụ và điều phối. Phải kiểm thử được mà không cần UI. |
+| repositories | Truy cập SQL Server bằng truy vấn tham số hóa thông qua `mssql`. |
+| models | Thành phần hỗ trợ/hằng số về cấu trúc dữ liệu; không phải ORM trừ khi được phê duyệt sau này. |
+| middleware | Xử lý lỗi, bảo vệ xác thực, bảo vệ vai trò, ghi nhật ký yêu cầu và lớp bọc bảo mật. |
+| config | Nạp môi trường và xác thực cấu hình. Không commit bí mật. |
 
-### Frontend Layers
+### Các tầng frontend
 
-Frontend code lives under `frontend/src` and should use this structure:
+Mã frontend nằm trong `frontend/src` và nên dùng cấu trúc sau:
 
 ```text
 frontend/src/
@@ -70,47 +70,47 @@ frontend/src/
   utils/
 ```
 
-Layer responsibilities:
+Trách nhiệm của từng tầng:
 
-| Layer | Responsibility |
+| Tầng | Trách nhiệm |
 | --- | --- |
-| page | Route-level screens and workflow composition. |
-| component | Reusable UI components. No business rules that belong on the server. |
-| api | Axios/client wrappers for REST endpoints. |
-| hooks | Frontend state helpers. |
-| routes | Route definitions/guards when needed. |
-| styles | CSS and Bootstrap/MUI integration. |
-| utils | Pure client helpers only. |
+| page | Màn hình cấp route và thành phần điều phối quy trình. |
+| component | Thành phần UI có thể tái sử dụng. Không chứa quy tắc nghiệp vụ thuộc về máy chủ. |
+| api | Lớp bọc Axios/client cho các endpoint REST. |
+| hooks | Thành phần hỗ trợ trạng thái frontend. |
+| routes | Định nghĩa/bảo vệ route khi cần. |
+| styles | Tích hợp CSS và Bootstrap/MUI. |
+| utils | Chỉ chứa thành phần hỗ trợ thuần phía client. |
 
-### API Boundary
+### Ranh giới API
 
-- REST endpoints are the contract between frontend and backend.
-- API contracts may live inside approved `SPEC.md` files for Week 4 unless the team creates `docs/api/api-contract.md` as a shared contract.
-- Shared API changes must be reflected in the related spec before implementation.
+- Các endpoint REST là hợp đồng giữa frontend và backend.
+- Hợp đồng API có thể nằm trong các tệp `SPEC.md` đã phê duyệt cho Tuần 4, trừ khi nhóm tạo `docs/api/api-contract.md` làm hợp đồng dùng chung.
+- Thay đổi API dùng chung phải được phản ánh trong đặc tả liên quan trước khi triển khai.
 
-## Constraints
+## Ràng buộc
 
-- Do not introduce another backend framework, frontend framework, database, or API style without updating the Constitution and ADRs.
-- Use `mssql` with parameterized queries for database access.
-- Validate all user input on the backend.
-- Enforce role-based authorization on the backend.
-- Do not expose internal stack traces to users.
-- Keep code simple enough for an SWP391 student project.
+- Không đưa vào framework backend, framework frontend, cơ sở dữ liệu hoặc kiểu API khác nếu chưa cập nhật Hiến chương và các ADR.
+- Dùng `mssql` với truy vấn tham số hóa để truy cập cơ sở dữ liệu.
+- Xác thực mọi đầu vào người dùng ở backend.
+- Thực thi phân quyền theo vai trò ở backend.
+- Không để lộ stack trace nội bộ cho người dùng.
+- Giữ mã đủ đơn giản cho một dự án sinh viên SWP391.
 
-## Consequences
+## Hệ quả
 
-- Feature teams can work in parallel using common folder and layer boundaries.
-- Services become the main target for unit tests.
-- Repositories isolate SQL Server access and reduce SQL injection risk.
-- Existing prototype UI must be refactored into the frontend structure as feature tasks are approved.
+- Các nhóm tính năng có thể làm việc song song theo ranh giới thư mục và tầng dùng chung.
+- Service trở thành mục tiêu chính của kiểm thử đơn vị.
+- Repository cô lập việc truy cập SQL Server và giảm rủi ro SQL injection.
+- UI nguyên mẫu hiện có phải được tái cấu trúc theo cấu trúc frontend khi các nhiệm vụ tính năng được phê duyệt.
 
-## Week 4 Scaffolding Gate
+## Cổng dựng khung Tuần 4
 
-Before Week 5 feature implementation starts:
+Trước khi bắt đầu triển khai tính năng Tuần 5:
 
-- Backend folders above should exist.
-- A common error handler should exist.
-- A database connection module should exist without hardcoded credentials.
-- Auth and role middleware placeholders may exist, but protected behavior must be implemented through approved FE02/FE11 tasks.
-- Frontend API client structure should exist.
-- Build/import checks must pass in CI.
+- Các thư mục backend nêu trên phải tồn tại.
+- Phải có trình xử lý lỗi dùng chung.
+- Phải có mô-đun kết nối cơ sở dữ liệu không chứa thông tin xác thực hardcode.
+- Có thể tồn tại placeholder middleware xác thực và vai trò, nhưng hành vi được bảo vệ phải được triển khai qua các nhiệm vụ FE02/FE11 đã phê duyệt.
+- Phải có cấu trúc API client frontend.
+- Kiểm tra build/import phải đạt trên CI.
