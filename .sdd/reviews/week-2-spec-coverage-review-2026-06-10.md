@@ -1,18 +1,18 @@
-﻿# Week 2 Spec Draft Coverage Review
+﻿# Đánh giá độ bao phủ Bản nháp đặc tả Tuần 2
 
-Date: 2026-06-10
-Source: `C:/Users/admin/Downloads/Library Management (4).xlsx`
-Scope: Compare Excel UC/FT assignment list against `.sdd/specs/*/SPEC.md`.
+Ngày: 2026-06-10
+Nguồn: `C:/Users/admin/Downloads/Library Management (4).xlsx`
+Phạm vi: So sánh danh sách phân công UC/FT trong Excel với `.sdd/specs/*/SPEC.md`.
 
-## Verdict
+## Kết luận
 
-Week 2 Spec Draft is broadly complete: every Excel UC/FT item has a likely matching requirement or acceptance criterion by name in the approved feature specs.
+Bản nháp đặc tả Tuần 2 nhìn chung đã hoàn thành: mọi mục UC/FT trong Excel đều có yêu cầu hoặc tiêu chí chấp thuận có khả năng khớp theo tên trong các đặc tả tính năng đã phê duyệt.
 
-Remaining cleanup before closing Week 2: add or normalize explicit UC/FT IDs in specs where the name is present but the exact Excel ID is missing.
+Phần dọn dẹp còn lại trước khi đóng Tuần 2: thêm hoặc chuẩn hóa ID UC/FT rõ ràng trong các đặc tả nơi có tên nhưng thiếu ID Excel chính xác.
 
-## Summary
+## Tóm tắt
 
-| Feature | Excel Items | Exact UC/FT IDs Found | Name Match Found | Status |
+| Tính năng | Mục Excel | ID UC/FT chính xác đã tìm thấy | Tìm thấy tên khớp | Trạng thái |
 |---|---:|---:|---:|---|
 | FE01 | 8 | 8 | 8 | OK |
 | FE02 | 13 | 7 | 13 | OK |
@@ -27,33 +27,33 @@ Remaining cleanup before closing Week 2: add or normalize explicit UC/FT IDs in 
 | FE11 | 18 | 9 | 18 | OK |
 | FE12 | 6 | 6 | 6 | OK |
 
-## Exact ID Cleanup Needed
+## Cần dọn dẹp ID chính xác
 
-| Feature | ID | Excel Name | Owner | Name Score | Spec |
+| Tính năng | ID | Tên trong Excel | Chủ sở hữu | Điểm khớp tên | Đặc tả |
 |---|---|---|---|---:|---|
-| FE02 | UC05 | Register Account | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE02 | UC06 | Login | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE02 | UC07 | Logout | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE02 | UC08 | Change Password | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE02 | UC09 | Forgot Password | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE02 | UC10 | Reset Password | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
-| FE10 | UC45 | Send Account Verification Notification | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
-| FE10 | UC46 | Send Password Reset Notification | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
-| FE10 | UC47 | Send Book Reservation Notification | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
-| FE10 | UC48 | Send Due Date Or Fine Notification | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
-| FE11 | UC49 | View User List | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC50 | View User Information | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC51 | Create User Account | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC52 | Update User Information | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC53 | Deactivate User Account | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC54 | Create Librarian Account | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC55 | Update Librarian Account | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC56 | Deactivate Librarian Account | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
-| FE11 | UC57 | Manage Roles | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE02 | UC05 | Đăng ký tài khoản | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE02 | UC06 | Đăng nhập | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE02 | UC07 | Đăng xuất | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE02 | UC08 | Đổi mật khẩu | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE02 | UC09 | Quên mật khẩu | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE02 | UC10 | Đặt lại mật khẩu | Đạt | 1.00 | `.sdd/specs/feat-auth/SPEC.md` |
+| FE10 | UC45 | Gửi thông báo xác minh tài khoản | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
+| FE10 | UC46 | Gửi thông báo đặt lại mật khẩu | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
+| FE10 | UC47 | Gửi thông báo đặt trước sách | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
+| FE10 | UC48 | Gửi thông báo hạn trả hoặc tiền phạt | Nhật | 1.00 | `.sdd/specs/feat-notification-management/SPEC.md` |
+| FE11 | UC49 | Xem danh sách người dùng | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC50 | Xem thông tin người dùng | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC51 | Tạo tài khoản người dùng | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC52 | Cập nhật thông tin người dùng | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC53 | Vô hiệu hóa tài khoản người dùng | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC54 | Tạo tài khoản Thủ thư | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC55 | Cập nhật tài khoản Thủ thư | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC56 | Vô hiệu hóa tài khoản Thủ thư | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
+| FE11 | UC57 | Quản lý vai trò | Dũng | 1.00 | `.sdd/specs/feat-user-role-management/SPEC.md` |
 
-## Recommended Week 2 Closeout Actions
+## Hành động tổng kết Tuần 2 được khuyến nghị
 
-1. Team owners review the ID cleanup table and decide whether specs must include the Excel UC/FT IDs explicitly.
-2. If yes, update the related SPEC.md traceability matrix only; do not change business behavior.
-3. After owner sign-off, mark Week 2 Spec Draft as closed and proceed to Week 3 review/finalization gates.
+1. Chủ sở hữu trong nhóm đánh giá bảng dọn dẹp ID và quyết định đặc tả có phải ghi rõ ID UC/FT trong Excel hay không.
+2. Nếu có, chỉ cập nhật ma trận truy vết SPEC.md liên quan; không thay đổi hành vi nghiệp vụ.
+3. Sau khi chủ sở hữu xác nhận, đánh dấu Bản nháp đặc tả Tuần 2 là đã đóng và tiếp tục đến các cổng đánh giá/hoàn thiện Tuần 3.
 
