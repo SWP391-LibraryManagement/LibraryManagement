@@ -10,6 +10,8 @@
   from silently retaining the default `false` migration input.
 - Made the App Service runner call the bounded Node script directly and surface a length-limited,
   credential-redacted diagnostic when the remote command fails.
+- Included locked production dependencies in backend deployment packages and made the repair
+  workflow deploy that complete package before invoking the migration runner.
 - Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
 - Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
 

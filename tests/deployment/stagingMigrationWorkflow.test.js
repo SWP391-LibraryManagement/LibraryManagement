@@ -26,6 +26,14 @@ test('packages only the reviewed metadata migration with its bounded runner', ()
     workflow,
     /Copy-Item database\/migrations\/2026-07-22-library-metadata-compatibility\.sql deploy\/backend\/database\/migrations\//
   );
+  assert.match(
+    workflow,
+    /Copy-Item backend\/package\.json,backend\/package-lock\.json deploy\/backend\/migration-runtime\//
+  );
+  assert.match(
+    workflow,
+    /name: Install migration runtime dependencies[\s\S]*?run: npm ci --omit=dev[\s\S]*?working-directory: deploy\/backend\/migration-runtime/
+  );
 });
 
 test('applies the migration only after an explicit manual workflow choice', () => {
@@ -39,7 +47,10 @@ test('applies the migration only after an explicit manual workflow choice', () =
 });
 
 test('runs the bounded command in the deployed Linux App Service directory without logging credentials', () => {
-  assert.match(operatorScript, /command = 'node scripts\/migrateLibraryMetadata\.js'/);
+  assert.match(
+    operatorScript,
+    /command = 'NODE_PATH=\/home\/site\/wwwroot\/migration-runtime\/node_modules node scripts\/migrateLibraryMetadata\.js'/
+  );
   assert.match(operatorScript, /dir = '\/home\/site\/wwwroot'/);
   assert.match(operatorScript, /\/api\/command/);
   assert.match(operatorScript, /Protect-CommandDiagnostic/);
@@ -55,6 +66,15 @@ test('provides a discoverable manual-only repair workflow that verifies staging 
   assert.match(repairWorkflow, /^name: Repair staging metadata schema/m);
   assert.match(repairWorkflow, /on:\s+workflow_dispatch:/);
   assert.doesNotMatch(repairWorkflow, /\b(workflow_run|push|schedule):/);
+  assert.match(
+    repairWorkflow,
+    /name: Install migration runtime dependencies[\s\S]*?run: npm ci --omit=dev[\s\S]*?working-directory: deploy\/backend\/migration-runtime/
+  );
+  assert.match(repairWorkflow, /name: Deploy migration-ready backend package/);
   assert.match(repairWorkflow, /run: \.\/scripts\/invoke-appservice-library-metadata-migration\.ps1/);
   assert.match(repairWorkflow, /run: npm run smoke:staging/);
+  assert.ok(
+    repairWorkflow.indexOf('name: Deploy migration-ready backend package')
+      < repairWorkflow.indexOf('name: Apply reviewed library metadata migration')
+  );
 });

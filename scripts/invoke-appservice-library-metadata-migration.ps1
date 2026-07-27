@@ -61,7 +61,7 @@ try {
   $basicToken = [Convert]::ToBase64String($credentialBytes)
 
   $requestBody = @{
-    command = 'node scripts/migrateLibraryMetadata.js'
+    command = 'NODE_PATH=/home/site/wwwroot/migration-runtime/node_modules node scripts/migrateLibraryMetadata.js'
     dir = '/home/site/wwwroot'
   } | ConvertTo-Json
 
