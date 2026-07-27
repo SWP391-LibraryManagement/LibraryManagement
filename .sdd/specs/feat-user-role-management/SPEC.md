@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.3
+# Version: 0.6.4
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
@@ -274,7 +274,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-005: When an Admin creates a user, the account must start with `INACTIVE` status and remain unable to authenticate until FE02 completes password setup and atomically activates it.
 - BR-FE11-006: When a user account is deactivated, status change, `deactivatedAt`, invalidation of all active refresh/session credentials, and the audit log must commit atomically.
 - BR-FE11-007: Every persisted account must have exactly one role assigned: Member, Librarian, or Admin.
-- BR-FE11-008: Account roles are mutually exclusive. A role change replaces the current mapping atomically and must never create a second mapping or leave the account without a role.
+- BR-FE11-008: Account roles are mutually exclusive. A role change replaces the current mapping and revokes the target account's active refresh/session credentials atomically; it must never create a second mapping or leave the account without a role. The user must authenticate again before using the replacement role.
 - BR-FE11-009: The system must never allow replacement of the last active Admin role. The remaining-Admin count and role replacement must be checked under a transaction lock so concurrent changes cannot bypass this rule.
 - BR-FE11-010: Every FE11-owned user management action (create, Librarian work-field update, deactivate, role change) must be auditable.
 - BR-FE11-011: A member user cannot create or manage other users.
@@ -311,7 +311,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-009: When Admin creates a new librarian account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile with trimmed nullable `department`/`specialization`, Librarian role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
 - FR-FE11-010: When Admin updates a managed account, the system shall accept trimmed `fullName` (1..100), nullable validated `phone` (maximum 20), and nullable `address` (maximum 255), advance storage timestamps only for effective changes, and audit only a successful effective change.
 - FR-FE11-011: When admin deactivates an `ACTIVE` or `LOCKED` librarian account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
-- FR-FE11-012: When Admin changes a user's role, the system shall replace all current UserRoles mappings with exactly one selected valid role in the same transaction as the audit entry.
+- FR-FE11-012: When Admin changes a user's role, the system shall replace all current UserRoles mappings with exactly one selected valid role, revoke the target's active refresh/session credentials, and write the audit entry in one transaction.
 - FR-FE11-013: The role-management API shall expose one atomic replacement operation and shall not expose standalone assign/revoke operations that can create invalid intermediate cardinality.
 - FR-FE11-014: When Admin replaces a role, the system shall lock the affected mapping, evaluate the remaining active Admin count in the same transaction, and reject any mutation that would leave zero active Admin role holders.
 - FR-FE11-030: When admin opens the console, the system shall display the eight approved sidebar sections with Membership Review after All Users, hide removed Permissions / Confirm Payment / Confirm Borrow navigation items, use the shared Member/Librarian application shell, and keep Admin Library actions inside the Admin console without redirecting to Librarian routes.
@@ -360,7 +360,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-010: Given valid librarian data, when Admin creates a new librarian account, then an inactive user, Librarian role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-011: Given an existing current Librarian account, when Admin submits only valid `department` and/or `specialization` with matching effective `expectedUpdatedAt`, then effective work-field changes are saved and storage `UpdatedAt` advances; personal or unknown fields are rejected.
 - AC-FE11-012: Given an `ACTIVE` or `LOCKED` librarian account and matching effective `expectedUpdatedAt`, when admin deactivates it, then status changes to `INACTIVE` and active sessions are invalidated.
-- AC-FE11-013: Given a Member account, when Admin replaces its role with Librarian, then exactly one Librarian mapping remains and one replacement audit is committed.
+- AC-FE11-013: Given a Member account with an active session, when Admin replaces its role with Librarian, then exactly one Librarian mapping remains, its active refresh/session credentials are revoked, one replacement audit is committed, and the next protected request requires authentication under the new role.
 - AC-FE11-014: Given an Admin account that is not the last active Admin, when Admin replaces its role with Member, then exactly one Member mapping remains.
 - AC-FE11-015: Given the last active Admin account, when Admin attempts to replace its Admin role, then the system rejects the action without mapping or audit mutation.
 - AC-FE11-016: Given admin opens the console, then the eight approved sections are visible in order with Membership Review after All Users, removed workflows are hidden, and catalog management opens inside Admin Library without a Librarian-route redirect.

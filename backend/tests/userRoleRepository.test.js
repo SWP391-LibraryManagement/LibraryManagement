@@ -104,6 +104,9 @@ test('replaces every existing mapping with exactly one role and audits atomicall
 
   expect(calls.filter(({ query }) => query.includes('DELETE FROM UserRoles'))).toHaveLength(1);
   expect(calls.filter(({ query }) => query.includes('INSERT INTO UserRoles'))).toHaveLength(1);
+  const sessionCall = calls.find(({ query }) => query.includes('UPDATE AuthTokens'));
+  expect(sessionCall.inputs.UserId).toBe(7);
+  expect(sessionCall.inputs.Now).toEqual(FIXED_NOW);
   const auditCall = calls.find(({ query }) => query.includes('INSERT INTO AuditLogs'));
   expect(auditCall.inputs.Action).toBe('USER_ROLE_REPLACE');
   expect(JSON.parse(auditCall.inputs.Metadata)).toEqual({
@@ -197,6 +200,7 @@ test('rolls back the role replacement when audit insertion fails', async () => {
     TARGET_USER,
     LIBRARIAN_ROLE,
     [{ RoleId: 3, RoleName: 'MEMBER' }],
+    [],
     [],
     [],
     auditError,

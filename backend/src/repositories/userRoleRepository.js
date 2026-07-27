@@ -5,7 +5,7 @@ async function rollbackWith(transaction, outcome) {
   return { outcome };
 }
 
-// @spec BR-FE11-007, BR-FE11-009, BR-FE11-010, FR-FE11-012, FR-FE11-014
+// @spec BR-FE11-007..010, FR-FE11-012, FR-FE11-014
 // @spec FR-FE11-017, FR-FE11-024
 async function replaceUserRole({
   adminUserId,
@@ -116,6 +116,19 @@ async function replaceUserRole({
       .query(`
         INSERT INTO UserRoles (UserId, RoleId, CreatedAt)
         VALUES (@UserId, @RoleId, @Now)
+      `);
+
+    // Make every role-owned surface converge on the new sole role after login.
+    await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('Now', sql.DateTime, now)
+      .query(`
+        UPDATE AuthTokens
+        SET RevokedAt = COALESCE(RevokedAt, @Now)
+        WHERE UserId = @UserId
+          AND TokenType = 'REFRESH'
+          AND UsedAt IS NULL
+          AND RevokedAt IS NULL
       `);
 
     await new sql.Request(transaction)

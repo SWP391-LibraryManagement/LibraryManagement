@@ -26,6 +26,10 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
       setError('Mỗi tài khoản phải có đúng một vai trò.');
       return;
     }
+    if (!roles.some((role) => role.roleName === selectedRole)) {
+      setError('Vai trò được chọn không còn hợp lệ. Vui lòng tải lại danh mục vai trò.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -54,6 +58,9 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
         </header>
         <div className="admin-modal__body admin-modal__body--single">
           <div className="admin-role-user"><strong>{user.fullName || user.email}</strong><span>{user.email}</span></div>
+          <p className="admin-form-hint">
+            Mỗi tài khoản có đúng một vai trò. Sau khi thay đổi, người dùng phải đăng nhập lại để nhận quyền mới.
+          </p>
           <div className="admin-role-options">
             {roles.filter((role) => role.roleName !== 'GUEST').map((role) => (
               <label key={role.roleName}>

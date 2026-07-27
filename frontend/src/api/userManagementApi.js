@@ -121,6 +121,9 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
     CANNOT_DEACTIVATE_SELF: 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.',
     LAST_ADMIN_ROLE: 'Không thể thay vai trò của quản trị viên đang hoạt động cuối cùng.',
+    ROLE_NOT_FOUND: 'Vai trò được chọn không tồn tại hoặc không được phép sử dụng.',
+    INVALID_ROLE_ID: 'Vai trò được chọn không hợp lệ.',
+    INVALID_USER_ID: 'Tài khoản người dùng không hợp lệ.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
     MANAGED_USER_UPDATE_FORBIDDEN: 'Quản trị viên chỉ được cập nhật họ tên, số điện thoại và địa chỉ.',
   };
@@ -207,11 +210,20 @@ export async function deactivateManagedUser(userId, expectedUpdatedAt) {
 }
 
 export async function replaceManagedUserRole(userId, roleId) {
+  const normalizedUserId = Number(userId);
+  const normalizedRoleId = Number(roleId);
+  if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+    throw new Error('Tài khoản người dùng không hợp lệ.');
+  }
+  if (!Number.isInteger(normalizedRoleId) || normalizedRoleId <= 0) {
+    throw new Error('Vai trò được chọn không hợp lệ.');
+  }
+
   try {
     const response = await authorizedRequest({
       method: 'put',
-      url: `/users/${userId}/role`,
-      data: { roleId },
+      url: `/users/${normalizedUserId}/role`,
+      data: { roleId: normalizedRoleId },
     });
     return response.data;
   } catch (error) {

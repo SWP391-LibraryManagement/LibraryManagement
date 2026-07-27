@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Harden single-role replacement and session convergence
+
+- Applied the existing `UX_UserRoles_UserId` migration to the configured database after confirming no duplicate mappings.
+- Restricted the replacement request to exactly one positive numeric `roleId` and added client-side ID/catalog validation.
+- Revoked the target account's active refresh/session credentials inside the role-replacement transaction so FE02, navigation, and role-owned APIs converge after re-authentication.
+- Added focused route, repository, API-adapter, and modal regression coverage.
+
 ## 2026-07-27 - Extend the single-role audience boundary to FE09
 
 - Restricted Member own-fine self-service to the single `MEMBER` role.

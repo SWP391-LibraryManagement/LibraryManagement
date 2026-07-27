@@ -546,7 +546,9 @@ Rules:
 
 - Roles are flat in Phase 1.
 - Every persisted account has exactly one mutually exclusive role.
-- Replacement deletes the current mapping, inserts the selected mapping, and writes the audit in one transaction.
+- The request body accepts exactly one positive numeric `roleId`; unknown, missing, or malformed fields return `400 VALIDATION_ERROR`.
+- Replacement deletes the current mapping, inserts the selected mapping, revokes the target account's active `REFRESH` credentials, and writes the audit in one transaction.
+- The target account must authenticate again before using the replacement role; protected APIs reload the current sole role through FE02.
 - Selecting the current sole role is an idempotent no-op with no role-change audit.
 - The last active Admin role must not be replaced.
 

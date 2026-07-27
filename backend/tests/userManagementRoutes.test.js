@@ -628,6 +628,27 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.replaceRole).not.toHaveBeenCalled();
   });
 
+  test('rejects unknown fields in the role-replacement payload', async () => {
+    const userManagementService = { replaceRole: jest.fn() };
+    const app = makeApp({ userManagementService });
+
+    const response = await request(app)
+      .put('/api/users/7/role')
+      .set('Authorization', 'Bearer token')
+      .send({ roleId: 3, roleName: 'MEMBER' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.details).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: 'Role replacement accepts exactly one roleId field.',
+        }),
+      ])
+    );
+    expect(userManagementService.replaceRole).not.toHaveBeenCalled();
+  });
+
   test('keeps Admin authorization ahead of role body validation', async () => {
     const userManagementService = { replaceRole: jest.fn() };
     const app = makeApp({ roles: ['MEMBER'], userManagementService });

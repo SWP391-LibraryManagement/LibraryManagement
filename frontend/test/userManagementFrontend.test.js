@@ -168,6 +168,8 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
   assert.match(roleModal, /type="radio"/);
   assert.match(roleModal, /Mỗi tài khoản phải có đúng một vai trò/);
+  assert.match(roleModal, /người dùng phải đăng nhập lại để nhận quyền mới/);
+  assert.match(roleModal, /roles\.some\(\(role\) => role\.roleName === selectedRole\)/);
   assert.match(drawer, /relatedSummary\?\.activeBorrowingCount/);
   assert.match(drawer, /relatedSummary\?\.unpaidFineTotal/);
   assert.match(drawer, /relatedSummary\?\.openReservationCount/);

@@ -38,6 +38,11 @@ function assignValidatedUserStatus(req, res, next) {
   return next();
 }
 
+function assignValidatedRoleReplacement(req, res, next) {
+  req.validatedRoleReplacement = matchedData(req, { locations: ['body'] });
+  return next();
+}
+
 const MANAGED_USER_UPDATE_FIELDS = new Set([
   'expectedUpdatedAt',
   'fullName',
@@ -57,6 +62,25 @@ function rejectForbiddenManagedUserFields(req, _res, next) {
   }
 
   return next();
+}
+
+function rejectUnexpectedRoleReplacementFields(req, _res, next) {
+  const submittedFields = Object.keys(req.body || {});
+  if (
+    submittedFields.length === 0
+    || (submittedFields.length === 1 && submittedFields[0] === 'roleId')
+  ) {
+    return next();
+  }
+
+  return next(errors.badRequest(
+    'VALIDATION_ERROR',
+    'Validation failed.',
+    [{
+      field: 'body',
+      message: 'Role replacement accepts exactly one roleId field.',
+    }]
+  ));
 }
 
 function positiveIdParam(name, label) {
@@ -223,8 +247,10 @@ const updateUserStatusValidators = [
   assignValidatedUserStatus,
 ];
 
+// @spec FR-FE11-013, FR-FE11-015, FR-FE11-024
 const replaceRoleValidators = [
   positiveIdParam('userId', 'User ID'),
+  rejectUnexpectedRoleReplacementFields,
   body('roleId')
     .exists({ values: 'null' })
     .withMessage('Role ID is required.')
@@ -233,6 +259,7 @@ const replaceRoleValidators = [
     .withMessage('Role ID must be a positive integer.')
     .toInt(),
   handleValidationErrors,
+  assignValidatedRoleReplacement,
 ];
 
 module.exports = {

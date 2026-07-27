@@ -90,7 +90,11 @@ function createUserManagementController(userManagementService = defaultUserManag
 
     replaceRole: async (req, res, next) => {
       try {
-        const result = await userManagementService.replaceRole(req.params.userId, req.body, requestContext(req));
+        const result = await userManagementService.replaceRole(
+          req.params.userId,
+          req.validatedRoleReplacement || req.body,
+          requestContext(req)
+        );
         return res.status(200).json(result);
       } catch (error) {
         return next(error);

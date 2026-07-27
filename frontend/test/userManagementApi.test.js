@@ -103,7 +103,7 @@ test('FE11 role replacement sends one numeric role ID through the canonical cont
 
   assert.match(
     source,
-    /export async function replaceManagedUserRole\(userId, roleId\)[\s\S]*?method: 'put'[\s\S]*?url: `\/users\/\$\{userId\}\/role`[\s\S]*?data: \{ roleId \}/,
+    /export async function replaceManagedUserRole\(userId, roleId\)[\s\S]*?Number\.isInteger\(normalizedUserId\)[\s\S]*?Number\.isInteger\(normalizedRoleId\)[\s\S]*?method: 'put'[\s\S]*?url: `\/users\/\$\{normalizedUserId\}\/role`[\s\S]*?data: \{ roleId: normalizedRoleId \}/,
   );
   assert.doesNotMatch(
     source,

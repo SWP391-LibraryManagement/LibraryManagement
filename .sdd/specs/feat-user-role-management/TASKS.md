@@ -377,3 +377,9 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Add `UX_UserRoles_UserId` to the baseline and an idempotent fail-safe migration for existing environments.
   - Replace Admin checkboxes with one radio selection and keep the compatibility `roles` array at exactly one item.
   - Validation: focused backend/frontend tests, full regression, lint/build, traceability, schema static checks, and human review.
+
+- [x] **FE11-SR02 - Harden role replacement validation and session convergence.**
+  - Maps to: BR-FE11-008/028; FR-FE11-012/013/015; AC-FE11-013.
+  - Accept exactly `{ roleId: positive integer }`, reject unknown/missing fields, and validate the selected catalog role in the Admin modal.
+  - Revoke the target account's active refresh/session credentials in the same transaction as the sole-role replacement and audit so every feature reconnects through FE02 with the new role.
+  - Apply and verify `UX_UserRoles_UserId` on the configured database; run focused backend/frontend tests, full regression, lint/build, traceability, and human review.

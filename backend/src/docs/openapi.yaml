@@ -1690,7 +1690,7 @@ paths:
   /api/users/{userId}/role:
     put:
       tags: [User Management]
-      summary: Atomically replace the account's single role (FR-FE11-012..014)
+      summary: Atomically replace the account's single role and revoke its active sessions (FR-FE11-012..014)
       parameters:
         - { name: userId, in: path, required: true, schema: { type: integer, minimum: 1 } }
       requestBody:
@@ -1705,7 +1705,7 @@ paths:
                 roleId: { type: integer, minimum: 1 }
       responses:
         '200':
-          description: Authoritative user DTO with exactly one role; current-role selection is a no-op.
+          description: Authoritative user DTO with exactly one role; changed roles revoke active refresh credentials, while current-role selection is a no-op.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/UserManagementView' }
