@@ -1,5 +1,23 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-27 - Implement staging email delivery remediation locally
+
+- Added the transactional, repeatable `ACCOUNT_SETUP` template update-or-insert
+  migration without destructive cleanup.
+- Preserved the SMTP adapter message ID for successful FE02 verification/reset
+  and FE11 account-setup delivery attempts without persisting sensitive content.
+- Added the opt-in best-effort SYSTEM worker, safe defaults, lifecycle shutdown,
+  overlap prevention, fixed-code error logging, and empty-poll audit suppression.
+- Preserved the protected manual processing route, manual-only failed retry,
+  sensitive synchronous delivery, existing public DTOs, and role boundaries.
+- Fresh local evidence passes 165 focused tests, 1,079 backend tests, 232
+  frontend tests, 9 deployment tests, 10 system integration tests, lint, build,
+  trace enforcement, and diff/security review.
+- H2 approved the complete candidate on 2026-07-27. Reviewed product commits
+  are `7920d4b`, `2134d44`, and `ccb590c`; publication/CI, migration execution,
+  worker settings, deployment, safe staging evidence, H3, and merge are not yet
+  claimed.
+
 ## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
 
 - Required an idempotent existing-database upsert for the canonical active
