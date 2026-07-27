@@ -66,7 +66,7 @@ test('FE09 reuses shared operational components with canonical API alignment', a
   assert.match(source, /fineApi\.waive/);
   assert.match(source, /fineApi\.cancel/);
 
-  assert.doesNotMatch(source, /ConfirmAction/);
+  assert.match(source, /ConfirmAction/);
   assert.doesNotMatch(source, /DAILY_FINE_RATE/);
   assert.doesNotMatch(source, /saveFineRecords/);
 });
