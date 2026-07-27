@@ -1,6 +1,6 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.17
+# Version: 0.6.18
 
 # Status: APPROVED BASELINE 2026-07-17 - CONTRACT RECONCILIATION PENDING HUMAN REVIEW
 
@@ -129,7 +129,7 @@ The feature can only start when:
 2. The system verifies the password and detects mismatch.
 3. The system increments failed login counter for the user.
 4. If the account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the system sets `LOCKED` and `lockedUntil` to 30 minutes after the locking event.
-5. The system returns generic error message (not revealing user existence).
+5. Before the threshold, the system returns the generic invalid-credentials message. On the threshold attempt, the system returns `ACCOUNT_LOCKED` with the remaining lock duration so the login client disables submission until the lock expires.
 6. The system writes an audit log: login failed, reason.
 
 ### MF-FE02-005: User Logout
@@ -280,7 +280,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, for an eligible pending self-registration account, the system shall atomically activate the account, invalidate the OTP/token, and record the verification audit; a deactivated account shall remain inactive and the credential shall remain unconsumed.
 - FR-FE02-004: When a user submits login form with valid credentials and the persisted account remains `ACTIVE` when the login transaction commits, the system shall create a session/token and return it to the client.
 - FR-FE02-005: When a user submits login form with invalid email or password, the system shall reject the request and not reveal whether the email exists.
-- FR-FE02-006: When a currently `ACTIVE` known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the system shall atomically set `LOCKED`, set `lockedUntil` to 30 minutes after the locking event, and reject further login attempts until unlock; failed-login writes shall not overwrite a concurrent terminal account-state change.
+- FR-FE02-006: When a currently `ACTIVE` known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the system shall atomically set `LOCKED`, set `lockedUntil` to 30 minutes after the locking event, return `ACCOUNT_LOCKED` with `retryAfterSeconds`, and reject further login attempts until unlock; the login client shall disable submission for that server-provided duration, and failed-login writes shall not overwrite a concurrent terminal account-state change.
 - FR-FE02-007: When a user requests logout, the system shall invalidate the session/token immediately.
 - FR-FE02-008: When a user makes a protected request, the system shall validate the access token, current `ACTIVE` user state, linked active refresh/session credential, expiry, and current server-side roles before allowing the request.
 - FR-FE02-009: When an access token or its linked refresh/session credential is missing, invalid, expired, revoked, belongs to another user, or the current user is no longer `ACTIVE`, the system shall return 401 Unauthorized before processing the protected operation.
@@ -319,7 +319,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 - AC-FE02-005: Given invalid email, when user logs in, then the system returns error without revealing email existence.
 - AC-FE02-006: Given valid email but invalid password, when user logs in, then the system returns error and increments failed attempt counter.
 - AC-FE02-007: Given an inactive account that is not eligible for self-registration recovery, when the user logs in, then the system rejects login without exposing verification state.
-- AC-FE02-008: Given locked account, when user logs in, then the system rejects login with account lock message.
+- AC-FE02-008: Given the fifth failed password attempt or an account with an unexpired timed lock, when the user logs in, then the system returns the account-lock message and remaining lock duration, and the login button stays disabled until that duration elapses.
 - AC-FE02-009: Given a valid access token linked to an active refresh/session credential for a current `ACTIVE` user, when the user makes a protected request, then current server-side roles are loaded and the request is allowed.
 - AC-FE02-010: Given an invalid/expired access token, an invalid/expired/revoked/wrong-user linked refresh/session credential, or a current user whose status is not `ACTIVE`, when a protected request is made, then the system returns 401 Unauthorized before business processing.
 - AC-FE02-011: Given authenticated user, when user logs out, then the session/token is invalidated.

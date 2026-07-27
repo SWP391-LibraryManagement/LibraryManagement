@@ -26,7 +26,8 @@ export default function LoginForm({
   onRegister,
   onInputChange,
   feedback,
-  isSubmitting = false
+  isSubmitting = false,
+  isLocked = false
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +37,7 @@ export default function LoginForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isLocked) return;
 
     const nextErrors = validateLoginFields({ email, password });
     setFieldErrors(nextErrors);
@@ -180,7 +181,7 @@ export default function LoginForm({
       <button
         type="submit"
         className="login-button"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isLocked}
       >
         {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>

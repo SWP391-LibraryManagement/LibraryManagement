@@ -1096,9 +1096,11 @@ describe('FE02 auth vertical slice', () => {
     const { app, dependencies } = makeTestApp({ clock: () => FIXED_NOW });
     await registerAndVerify(app, 'locked@example.test');
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await login(app, 'locked@example.test', 'WrongPassword1!');
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await login(app, 'locked@example.test', 'WrongPassword1!');
+      expect(response.status).toBe(401);
     }
+    const thresholdResponse = await login(app, 'locked@example.test', 'WrongPassword1!');
 
     expect(dependencies.state.users[0].status).toBe('LOCKED');
     expect(dependencies.state.users[0].lockedUntil).toEqual(
@@ -1110,10 +1112,16 @@ describe('FE02 auth vertical slice', () => {
         metadata: { identifier: 'locked@example.test', reason: 'FAILED_ATTEMPT_THRESHOLD' },
       }),
     ]));
+    expect(thresholdResponse.status).toBe(429);
+    expect(thresholdResponse.body.error).toMatchObject({
+      code: 'ACCOUNT_LOCKED',
+      details: { retryAfterSeconds: 30 * 60 },
+    });
 
     const lockedResponse = await login(app, 'locked@example.test', 'Password1!');
     expect(lockedResponse.status).toBe(429);
     expect(lockedResponse.body.error.code).toBe('ACCOUNT_LOCKED');
+    expect(lockedResponse.body.error.details.retryAfterSeconds).toBe(30 * 60);
   });
 
   test('only failures in the rolling 15-minute window count toward account lock', async () => {

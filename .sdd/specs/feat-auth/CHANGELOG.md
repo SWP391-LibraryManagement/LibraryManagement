@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-28 - Disable login submission during timed account lock
+
+- Return `ACCOUNT_LOCKED` with `retryAfterSeconds` on the fifth failed password attempt and subsequent attempts during the timed lock.
+- Disable the frontend login button for the server-provided duration and automatically enable it when the lock expires.
+- Added focused backend and frontend regressions; FE02 route/repository tests pass 60/60, frontend tests pass 235/235, and frontend lint/build pass.
+
 ## 2026-07-28 - Reconcile staging change-password OTP token constraint
 
 - Added fail-closed startup readiness for deployed `CK_AuthTokens_TokenType` compatibility with `CHANGE_PASSWORD_OTP`.

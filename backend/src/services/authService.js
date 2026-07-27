@@ -500,7 +500,11 @@ function createAuthService({
         targetId: user.userId,
         metadata: { identifier, reason: 'ACCOUNT_LOCKED' },
       });
-      throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
+      throw errors.tooManyRequests(
+        'ACCOUNT_LOCKED',
+        'Account is locked due to too many failed attempts. Please reset your password or contact support.',
+        { retryAfterSeconds: Math.ceil((lockExpiry - clock().getTime()) / 1000) }
+      );
     }
 
     // AF-FE02-003: tự động mở khóa khi cửa sổ khóa do đăng nhập sai đã hết hạn
@@ -573,6 +577,11 @@ function createAuthService({
           targetId: user.userId,
           metadata: { identifier, reason: 'FAILED_ATTEMPT_THRESHOLD' },
         });
+        throw errors.tooManyRequests(
+          'ACCOUNT_LOCKED',
+          'Account is locked due to too many failed attempts. Please reset your password or contact support.',
+          { retryAfterSeconds: Math.ceil((failure.lockedUntil.getTime() - clock().getTime()) / 1000) }
+        );
       }
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
