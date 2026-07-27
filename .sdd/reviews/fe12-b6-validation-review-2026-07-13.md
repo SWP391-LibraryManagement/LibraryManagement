@@ -1,106 +1,106 @@
-# FE12 B6 Validation Review - 2026-07-13
+# Rà soát xác thực B6 FE12 - 2026-07-13
 
-Status: B6 COMPLETE - HUMAN REVIEW CONFIRMED, INDEPENDENT RE-REVIEW CLEAN
+Trạng thái: B6 HOÀN TẤT - ĐÃ XÁC NHẬN RÀ SOÁT BỞI CON NGƯỜI, RÀ SOÁT LẠI ĐỘC LẬP SẠCH
 
-Branch: `feat/fe12-validation`
+Nhánh: `feat/fe12-validation`
 
-## Purpose
+## Mục đích
 
-Record the FE12 validation hardening evidence before human review and any integration decision.
-This review stays inside the approved borrowing, inventory, and user-statistics report scope.
+Ghi lại bằng chứng tăng cường xác thực FE12 trước khi con người rà soát và trước mọi quyết định tích hợp.
+Bản rà soát này nằm trong phạm vi báo cáo mượn, kho và thống kê người dùng đã phê duyệt.
 
-## Correctness Findings Addressed
+## Các phát hiện về tính đúng đắn đã xử lý
 
-| Finding | Resolution | Evidence |
+| Phát hiện | Cách xử lý | Bằng chứng |
 | --- | --- | --- |
-| Joined borrow details duplicated request status counts | Deduplicate rows by `RequestId` before request aggregation | `backend/tests/reportRepository.test.js` |
-| Date-only `toDate` excluded activity after midnight | Use an exclusive next-day boundary | `backend/tests/reportRepository.test.js` |
-| New-member periods used account creation time | Select and aggregate `Members.ApprovedAt` | `backend/tests/reportRepository.test.js` |
-| Category counts represented copies and low-stock rows lacked totals | Count unique books and expose `totalCopies`/`availableCopies` | `backend/tests/reportRepository.test.js` |
-| Failed report access was not safely audited | Add route-scoped failure auditing with code, status, method, and path only | `backend/tests/reportRoutes.test.js` |
-| OpenAPI omitted or misnamed FE12 filters | Document the implemented query parameters for all three endpoints | `backend/tests/reportContract.test.js` |
-| OpenAPI omitted FE12 success schemas and exact runtime enums | Add reusable response schemas and compare documented enums with exported validator enums | `backend/tests/reportContract.test.js` |
-| FE12 frontend routes and API failures could show unauthorized or fabricated data | Add staff route guards and truthful loading/empty/error states | `frontend/test/reportAccess.test.js` |
-| Inventory category options read the wrong response shape | Read `response.data.categories` from the production controller envelope | `frontend/test/reportAccess.test.js` |
-| Report layouts overflowed horizontally at desktop/mobile widths | Allow flex content to shrink, preserve responsive split rules, and stack date filters on mobile | `frontend/test/reportAccess.test.js` |
-| Network errors still claimed the UI used demo fallback data | Add an FE12-specific truthful error resolver | `frontend/test/apiErrorMessages.test.js` |
-| Successful report audits stored raw filter values | Omit success metadata while retaining safe failure diagnostics | `backend/tests/reportRoutes.test.js` |
-| User date filters changed global totals through `Users.CreatedAt` | Keep global totals and filter only `newMembersByPeriod` by `Members.ApprovedAt` | `backend/tests/reportRepository.test.js`, `backend/tests/reportRoutes.test.js` |
-| Inventory/User OpenAPI operations omitted validation responses | Add `400` responses and contract assertions for every FE12 endpoint | `backend/tests/reportContract.test.js` |
-| Borrowing/User pages imposed fixed sample dates | Start unfiltered and build params from non-blank dates only | `frontend/test/reportAccess.test.js`, `frontend/test/reportFilters.test.js` |
-| Date validators accepted timestamps despite `format: date` | Accept only real calendar dates in exact `YYYY-MM-DD` form | `backend/tests/reportRoutes.test.js` |
-| Backend low-stock set differed from the UI | Use `availableCopies <= 2` in production and in-memory report repositories | `backend/tests/reportRepository.test.js`, `backend/tests/reportRoutes.test.js` |
-| Status/location filters distorted low-stock availability | Select matching books/copies for filtered totals while calculating low stock from each selected book's full copy set, including zero-copy books | `backend/tests/reportRepository.test.js` |
-| Inventory chart described book counts as copy counts | Rename the chart to `Đầu sách theo thể loại` | `frontend/test/reportAccess.test.js` |
-| Borrowing date-range integration test had no source data | Create a borrow request before asserting a future range returns empty and apply date filters in the in-memory repository | `backend/tests/reportRoutes.test.js` |
-| In-memory borrowing and user filters diverged from production SQL semantics | Aggregate from production-equivalent selected rows and cover role/status/membership/book/date parity | `backend/tests/reportInMemoryParity.test.js` |
-| In-memory low-stock rows omitted production/OpenAPI fields | Include `categoryName`, `copies`, `totalCopies`, and `availableCopies` | `backend/tests/reportInMemoryParity.test.js` |
-| Pending `REQUESTED` details appeared as borrow-period/top-book activity | Count only actual-loan statuses: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, and `OVERDUE` | `backend/tests/reportRepository.test.js`, `backend/tests/reportInMemoryParity.test.js` |
-| User-statistics spec named the wrong runtime membership source | Align the source of membership status and approval periods to `Members` | `.sdd/specs/feat-reporting-statistics/SPEC.md` |
+| Chi tiết mượn đã nối làm trùng số lượng trạng thái yêu cầu | Loại trùng hàng theo `RequestId` trước khi tổng hợp yêu cầu | `backend/tests/reportRepository.test.js` |
+| `toDate` chỉ có ngày loại bỏ hoạt động sau nửa đêm | Dùng ranh giới loại trừ của ngày kế tiếp | `backend/tests/reportRepository.test.js` |
+| Khoảng thời gian thành viên mới dùng thời điểm tạo tài khoản | Chọn và tổng hợp `Members.ApprovedAt` | `backend/tests/reportRepository.test.js` |
+| Số lượng theo thể loại đại diện cho bản sao và hàng sắp hết thiếu tổng số | Đếm sách duy nhất và hiển thị `totalCopies`/`availableCopies` | `backend/tests/reportRepository.test.js` |
+| Truy cập báo cáo thất bại chưa được kiểm toán an toàn | Thêm kiểm toán lỗi theo phạm vi tuyến chỉ với mã, trạng thái, phương thức và đường dẫn | `backend/tests/reportRoutes.test.js` |
+| OpenAPI bỏ sót hoặc đặt sai tên bộ lọc FE12 | Ghi tài liệu các tham số truy vấn đã triển khai cho cả ba điểm cuối | `backend/tests/reportContract.test.js` |
+| OpenAPI bỏ sót lược đồ thành công FE12 và enum chính xác lúc chạy | Thêm lược đồ phản hồi tái sử dụng và so sánh enum trong tài liệu với enum bộ xác thực được xuất | `backend/tests/reportContract.test.js` |
+| Tuyến frontend FE12 và lỗi API có thể hiển thị dữ liệu trái phép hoặc bịa đặt | Thêm chốt bảo vệ tuyến nhân viên và trạng thái tải/rỗng/lỗi trung thực | `frontend/test/reportAccess.test.js` |
+| Tùy chọn thể loại kho đọc sai hình dạng phản hồi | Đọc `response.data.categories` từ cấu trúc bao của bộ điều khiển production | `frontend/test/reportAccess.test.js` |
+| Bố cục báo cáo tràn ngang ở chiều rộng máy tính/di động | Cho phép nội dung flex co lại, giữ quy tắc chia đáp ứng và xếp chồng bộ lọc ngày trên di động | `frontend/test/reportAccess.test.js` |
+| Lỗi mạng vẫn tuyên bố UI dùng dữ liệu demo dự phòng | Thêm bộ phân giải lỗi trung thực dành riêng cho FE12 | `frontend/test/apiErrorMessages.test.js` |
+| Kiểm toán báo cáo thành công lưu giá trị bộ lọc thô | Bỏ siêu dữ liệu thành công trong khi giữ chẩn đoán lỗi an toàn | `backend/tests/reportRoutes.test.js` |
+| Bộ lọc ngày người dùng thay đổi tổng toàn cục qua `Users.CreatedAt` | Giữ tổng toàn cục và chỉ lọc `newMembersByPeriod` theo `Members.ApprovedAt` | `backend/tests/reportRepository.test.js`, `backend/tests/reportRoutes.test.js` |
+| Thao tác OpenAPI Kho/Người dùng bỏ sót phản hồi xác thực | Thêm phản hồi `400` và khẳng định hợp đồng cho mọi điểm cuối FE12 | `backend/tests/reportContract.test.js` |
+| Trang Mượn/Người dùng áp đặt ngày mẫu cố định | Bắt đầu không lọc và chỉ dựng tham số từ ngày không để trống | `frontend/test/reportAccess.test.js`, `frontend/test/reportFilters.test.js` |
+| Bộ xác thực ngày chấp nhận dấu thời gian dù có `format: date` | Chỉ chấp nhận ngày lịch thực theo đúng dạng `YYYY-MM-DD` | `backend/tests/reportRoutes.test.js` |
+| Tập sắp hết hàng backend khác với UI | Dùng `availableCopies <= 2` trong kho báo cáo production và trong bộ nhớ | `backend/tests/reportRepository.test.js`, `backend/tests/reportRoutes.test.js` |
+| Bộ lọc trạng thái/vị trí làm sai lệch khả dụng sắp hết hàng | Chọn sách/bản sao khớp cho tổng đã lọc, đồng thời tính sắp hết hàng từ toàn bộ tập bản sao của từng sách được chọn, kể cả sách không có bản sao | `backend/tests/reportRepository.test.js` |
+| Biểu đồ kho mô tả số lượng sách là số lượng bản sao | Đổi tên biểu đồ thành `Đầu sách theo thể loại` | `frontend/test/reportAccess.test.js` |
+| Kiểm thử tích hợp khoảng ngày mượn không có dữ liệu nguồn | Tạo yêu cầu mượn trước khi khẳng định khoảng tương lai trả về rỗng và áp dụng bộ lọc ngày trong kho lưu trữ trong bộ nhớ | `backend/tests/reportRoutes.test.js` |
+| Bộ lọc mượn và người dùng trong bộ nhớ sai khác ngữ nghĩa SQL production | Tổng hợp từ các hàng được chọn tương đương production và bao phủ tính tương đương vai trò/trạng thái/thành viên/sách/ngày | `backend/tests/reportInMemoryParity.test.js` |
+| Hàng sắp hết trong bộ nhớ bỏ sót trường production/OpenAPI | Bao gồm `categoryName`, `copies`, `totalCopies` và `availableCopies` | `backend/tests/reportInMemoryParity.test.js` |
+| Chi tiết `REQUESTED` đang chờ xuất hiện như hoạt động theo kỳ mượn/sách hàng đầu | Chỉ đếm các trạng thái khoản mượn thực tế: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` và `OVERDUE` | `backend/tests/reportRepository.test.js`, `backend/tests/reportInMemoryParity.test.js` |
+| Đặc tả thống kê người dùng đặt sai tên nguồn tư cách thành viên lúc chạy | Căn chỉnh nguồn trạng thái thành viên và khoảng phê duyệt theo `Members` | `.sdd/specs/feat-reporting-statistics/SPEC.md` |
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused FE12 backend tests after review remediation | PASS - 4 suites, 31 tests |
-| Focused FE12 frontend access/filter tests | PASS - 9 tests |
-| Full backend suite | PASS - 18 suites, 236 tests |
-| Full frontend suite | PASS - 24 tests |
-| Frontend lint | PASS |
-| Frontend production build | PASS |
-| Traceability enforcement | PASS; FE12 8/8 FR tags, 100% |
+| Kiểm thử backend FE12 tập trung sau khi khắc phục qua rà soát | PASS - 4 bộ, 31 kiểm thử |
+| Kiểm thử truy cập/bộ lọc frontend FE12 tập trung | PASS - 9 kiểm thử |
+| Toàn bộ bộ kiểm thử backend | PASS - 18 bộ, 236 kiểm thử |
+| Toàn bộ bộ kiểm thử frontend | PASS - 24 kiểm thử |
+| Lint frontend | PASS |
+| Bản dựng frontend production | PASS |
+| Thực thi truy vết | PASS; FE12 8/8 thẻ FR, 100% |
 
-## Manual Browser Evidence
+## Bằng chứng trình duyệt thủ công
 
-The frontend and temporary in-memory backend harness ran at `http://127.0.0.1:5173`
-and `http://127.0.0.1:3000`.
+Frontend và bộ kiểm thử backend tạm thời trong bộ nhớ chạy tại `http://127.0.0.1:5173`
+và `http://127.0.0.1:3000`.
 
-- Guest access to `/reports/borrowing` redirected to `/login`.
-- Member access to `/reports/users` redirected to `/forbidden` with the 403 page.
-- Admin loaded borrowing, inventory, and user statistics from the real report endpoints.
-- The original in-memory browser harness exposed `Software Engineering`; selecting category ID `1`
-  remained selected after applying the filter. A later review found that its metadata envelope did
-  not match production, so the production `response.data.categories` path was fixed and regression-tested.
-- Desktop `1265x720`: document, body, main, and content widths did not overflow.
-- Mobile `390x844`: document, main, content, report split, and date filter all had
-  `scrollWidth === clientWidth`; the report split resolved to one column. Wide tables
-  remained scrollable only inside `.lib-table-wrap`.
-- Loading and low-inventory empty states were visible.
-- After stopping the temporary backend, the report removed loaded metrics and displayed
-  `Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.` without demo data.
+- Khách truy cập `/reports/borrowing` được chuyển hướng tới `/login`.
+- Thành viên truy cập `/reports/users` được chuyển hướng tới `/forbidden` với trang 403.
+- Quản trị viên tải thống kê mượn, kho và người dùng từ các điểm cuối báo cáo thật.
+- Bộ kiểm thử trình duyệt trong bộ nhớ ban đầu hiển thị `Software Engineering`; việc chọn ID thể loại `1`
+  vẫn được giữ sau khi áp dụng bộ lọc. Rà soát sau đó phát hiện cấu trúc bao siêu dữ liệu của nó
+  không khớp production, nên đường dẫn production `response.data.categories` đã được sửa và kiểm thử hồi quy.
+- Máy tính `1265x720`: chiều rộng tài liệu, thân, phần chính và nội dung không tràn.
+- Di động `390x844`: tài liệu, phần chính, nội dung, vùng chia báo cáo và bộ lọc ngày đều có
+  `scrollWidth === clientWidth`; vùng chia báo cáo chuyển thành một cột. Bảng rộng
+  chỉ tiếp tục cuộn được bên trong `.lib-table-wrap`.
+- Trạng thái đang tải và trạng thái rỗng khi kho thấp đều hiển thị.
+- Sau khi dừng backend tạm thời, báo cáo xóa số liệu đã tải và hiển thị
+  `Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.` mà không có dữ liệu demo.
 
-The browser screenshot command timed out, so no image artifact is claimed. The evidence
-above comes from browser DOM snapshots, route URLs, selected control state, and measured
-layout values. The temporary backend harness was stopped and removed after validation.
+Lệnh chụp màn hình trình duyệt hết thời gian chờ nên không tuyên bố có sản phẩm hình ảnh. Bằng chứng
+bên trên đến từ ảnh chụp DOM trình duyệt, URL tuyến, trạng thái điều khiển đã chọn và các giá trị
+bố cục đã đo. Bộ kiểm thử backend tạm thời đã được dừng và xóa sau khi xác thực.
 
-## Follow-up Outside FE12
+## Theo dõi ngoài FE12
 
-The shared `AppLayout` sidebar Logout button currently navigates to `/login` without clearing
-stored authentication. Guest validation used the existing Home-page logout flow, which does
-clear storage. This pre-existing auth-shell issue was not changed on the FE12 branch.
+Nút Đăng xuất trên thanh bên `AppLayout` dùng chung hiện điều hướng tới `/login` mà không xóa
+xác thực đã lưu. Xác thực cho Khách dùng luồng đăng xuất Trang chủ hiện có, vốn
+xóa kho lưu trữ. Sự cố vỏ xác thực đã tồn tại này không được thay đổi trên nhánh FE12.
 
-## Scope Control
+## Kiểm soát phạm vi
 
-- No export, dashboard, BI, schema, dependency, or unrelated feature work was added.
-- Unrelated untracked paths were left untouched: `.superpowers/`, `backend/coverage/`,
-  and `docs/briefing-thuyet-trinh-du-an-vi.docx`.
-- The branch is not pushed or merged by this validation step.
+- Không bổ sung công việc xuất dữ liệu, bảng điều khiển, BI, lược đồ, phần phụ thuộc hay tính năng không liên quan.
+- Các đường dẫn không liên quan và chưa được theo dõi được giữ nguyên: `.superpowers/`, `backend/coverage/`
+  và `docs/briefing-thuyet-trinh-du-an-vi.docx`.
+- Nhánh không được push hay merge bởi bước xác thực này.
 
-## Final Independent Re-review
+## Rà soát lại độc lập cuối cùng
 
-The final read-only re-review found no remaining Critical or Important FE12 issues.
-It confirmed the explicit category mapping, production-valid copy statuses, production/in-memory
-aggregation parity, actual-loan metrics, low-stock semantics, metadata envelope, authorization,
-audit privacy, OpenAPI contract, frontend states, tests, documentation, and scope controls.
+Lần rà soát lại cuối cùng chỉ đọc không tìm thấy sự cố FE12 Nghiêm trọng hay Quan trọng nào còn lại.
+Lần này xác nhận ánh xạ thể loại rõ ràng, trạng thái bản sao hợp lệ cho production, tính tương đương tổng hợp
+production/trong bộ nhớ, số liệu khoản mượn thực, ngữ nghĩa sắp hết hàng, cấu trúc bao siêu dữ liệu, phân quyền,
+quyền riêng tư kiểm toán, hợp đồng OpenAPI, trạng thái frontend, kiểm thử, tài liệu và kiểm soát phạm vi.
 
-Verdict: **Ready for human review: Yes**.
+Kết luận: **Sẵn sàng để con người rà soát: Có**.
 
-## Human Review
+## Rà soát bởi con người
 
-Nhat explicitly confirmed `đã review` in this Codex task after the final clean independent
-re-review. This records the human review gate only; no PR, commit, push, merge, or separate
-reviewer identity is inferred.
+Nhat đã xác nhận rõ `đã review` trong tác vụ Codex này sau lần rà soát lại độc lập cuối cùng
+sạch. Nội dung này chỉ ghi nhận cổng rà soát bởi con người; không suy luận PR, commit, push, merge hay danh tính
+người rà soát riêng.
 
-## Remaining Gate
+## Cổng còn lại
 
-1. Choose the B7 integration path: local merge, push/PR, or keep the branch for later.
+1. Chọn đường tích hợp B7: merge cục bộ, push/PR hoặc giữ nhánh lại cho sau này.
