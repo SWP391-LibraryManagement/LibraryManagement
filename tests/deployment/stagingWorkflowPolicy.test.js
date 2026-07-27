@@ -32,4 +32,10 @@ test('operator guide matches the manual-only workflow and canonical schema size'
   assert.match(guide, /## Manual Deployment With Startup Reconciliation/);
   assert.doesNotMatch(guide, /runs automatically for every push to `main`/);
   assert.match(guide, /table count `21`/);
+
+  const operatorMigrationList = guide.match(/```text\s+([\s\S]*?)```/)?.[1] || '';
+  assert.doesNotMatch(
+    operatorMigrationList,
+    /2026-07-22-library-metadata-compatibility\.sql/
+  );
 });

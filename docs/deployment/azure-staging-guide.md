@@ -158,7 +158,7 @@ Before executing:
    IP. Do not widen the range.
 4. Confirm the connected database is `LibraryManagementStaging`.
 5. Execute through Azure Query Editor, SSMS, or `sqlcmd`: use the generated schema once for an empty
-   database, or execute the following approved migrations once and in order for an existing
+   database, or execute the following operator-owned migrations once and in order for an existing
    pre-reconciliation database:
 
    Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
@@ -175,10 +175,12 @@ database/migrations/2026-07-19-fe05-book-rowversion.sql
 database/migrations/2026-07-19-fe06-bookcopy-rowversion.sql
 database/migrations/2026-07-19-fe10-otp-templates.sql
 database/migrations/2026-07-19-fe11-finalization.sql
-database/migrations/2026-07-22-library-metadata-compatibility.sql
 database/migrations/2026-07-22-borrow-request-workflow-columns.sql
 database/migrations/2026-07-23-fe10-processing-status.sql
 ```
+
+Do not run `2026-07-22-library-metadata-compatibility.sql` manually. The backend startup gate owns
+that one packaged migration and applies it before the HTTP listener opens.
 
 6. Verify the target, table count, and reconciliation columns:
 
