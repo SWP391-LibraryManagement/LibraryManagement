@@ -338,6 +338,99 @@ judging the smoke result. A first request may return `503` while the application
 restarts. Re-run the read-only smoke check after `/health` returns `200`; do not
 hide a persistent `503` as warm-up.
 
+## Free-Tier Staging Keepalive
+
+The `Staging keepalive` GitHub Actions workflow sends a read-only request to the
+public backend `/health` endpoint every 10 minutes. It also supports
+`workflow_dispatch` for an operator check. The workflow needs no repository
+secret and must not call an authentication, notification-processing, or other
+mutation endpoint.
+
+This is a best-effort staging/demo measure. GitHub can delay scheduled workflow
+runs, and Azure App Service F1 can unload an idle application. Do not describe
+this configuration as guaranteed uptime or guaranteed notification timing.
+GitHub also disables scheduled workflows in a public repository after 60 days
+without repository activity. Check and re-enable this workflow when reviving an
+inactive staging environment:
+
+```powershell
+gh workflow view staging-keepalive.yml
+gh workflow enable staging-keepalive.yml
+```
+
+Keep the backend on B1 with Always On enabled until the workflow is merged into
+the default branch. Scheduled workflows do not protect staging while they exist
+only on a feature branch. Use this transition order:
+
+1. Merge the reviewed workflow into `main` and require the exact `main` CI run
+   to pass.
+2. Start the workflow manually:
+
+   ```powershell
+   gh workflow run staging-keepalive.yml --ref main
+   gh run list --workflow staging-keepalive.yml --limit 1
+   ```
+
+3. Wait until the manual `Staging keepalive` run succeeds.
+4. Disable Always On:
+
+   ```powershell
+   az webapp config set `
+     --name app-library-api-staging-nhat714 `
+     --resource-group rg-library-staging `
+     --always-on false
+   ```
+
+5. Confirm `alwaysOn=false`, then scale `plan-library-staging` to F1:
+
+   ```powershell
+   az appservice plan update `
+     --name plan-library-staging `
+     --resource-group rg-library-staging `
+     --sku F1
+   ```
+
+6. Verify the live state without printing secret settings:
+
+   ```powershell
+   az appservice plan show `
+     --name plan-library-staging `
+     --resource-group rg-library-staging `
+     --query '{sku:sku.name,tier:sku.tier}' `
+     --output table
+
+   az webapp config show `
+     --name app-library-api-staging-nhat714 `
+     --resource-group rg-library-staging `
+     --query '{alwaysOn:alwaysOn}' `
+     --output table
+
+   az webapp config appsettings list `
+     --name app-library-api-staging-nhat714 `
+     --resource-group rg-library-staging `
+     --query "[?starts_with(name, 'NOTIFICATION_WORKER_')].[name,value]" `
+     --output table
+
+   Invoke-WebRequest `
+     -Uri 'https://app-library-api-staging-nhat714.azurewebsites.net/health' `
+     -UseBasicParsing
+
+   Invoke-WebRequest `
+     -Uri 'https://app-library-api-staging-nhat714.azurewebsites.net/api/books' `
+     -UseBasicParsing
+   ```
+
+Expected settings are `NOTIFICATION_WORKER_ENABLED=true`,
+`NOTIFICATION_WORKER_INTERVAL_MS=60000`, and
+`NOTIFICATION_WORKER_BATCH_SIZE=20`. Record only aggregate notification queue
+counts; do not include recipients, rendered content, tokens, credentials, or
+connection strings in deployment evidence.
+
+If the keepalive repeatedly fails or staging becomes unreliable,
+scale the plan back to B1 and set `alwaysOn=true`, then repeat the health, public catalog,
+worker-setting, and aggregate queue checks. Disabling the workflow alone does not restore availability
+on F1.
+
 ## Run Smoke Tests
 
 Run an independent local check after GitHub Actions succeeds:
