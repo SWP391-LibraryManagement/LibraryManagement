@@ -1,8 +1,8 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.6
+# Version: 0.6.8
 
-# Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
+# Status: ADMIN REQUEST REVISION IMPLEMENTED - HUMAN REVIEW PENDING
 
 # Owner: Dung
 
@@ -34,6 +34,11 @@
 > ownership. `department` and `specialization` are removed from the FE11 Admin UI
 > and existing-user update contract. This paragraph supersedes every conflicting
 > 2026-07-22 ownership/work-field statement retained below as historical evidence.
+>
+> Revision v0.6.8 connects account lifecycle to FE07: removing `MEMBER` or
+> deactivating an account is blocked while pending requests or active loans
+> exist. Admin Request detail exposes known approval blockers and disables only
+> approval; rejection remains available for legacy invalid requests.
 
 ---
 
@@ -178,7 +183,7 @@ The feature can only start when:
 
 1. Admin opens an existing librarian account.
 2. Admin confirms deactivation and submits the loaded effective `expectedUpdatedAt`.
-3. The system rejects pending activation, stale state, self-target, or active-borrowing conflicts without mutation.
+3. The system rejects pending activation, stale state, self-target, pending-borrow-request, or active-borrowing conflicts without mutation.
 4. For an `ACTIVE` or `LOCKED` librarian, the system sets status to `INACTIVE` and records server timestamp `deactivatedAt`.
 5. In the same transaction, the system invalidates all active refresh/session credentials for that librarian.
 6. The system writes the audit log entry in the same transaction; failure rolls back the deactivation.
@@ -190,9 +195,10 @@ The feature can only start when:
 2. Admin views current roles assigned to the user.
 3. Admin selects exactly one replacement role.
 4. The system locks the affected role mapping, counts active Admin role holders in the same transaction, and rejects a replacement that would leave zero active Admin role holders.
-5. The system atomically deletes the current mapping, inserts the selected mapping, and writes one audit log entry with the previous and new role.
-6. Selecting the current role is an idempotent no-op with no success audit.
-7. The system returns the authoritative safe user DTO whose `roles` array contains exactly one item.
+5. If replacing `MEMBER` with another role, the system serializes with FE07 and rejects while pending requests or active loans exist.
+6. The system atomically deletes the current mapping, inserts the selected mapping, and writes one audit log entry with the previous and new role.
+7. Selecting the current role is an idempotent no-op with no success audit.
+8. The system returns the authoritative safe user DTO whose `roles` array contains exactly one item.
 
 ### MF-FE11-014: Resend Password Setup Email
 
@@ -295,6 +301,9 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-026: User list/detail/Librarian-work-update responses must use the approved `UserManagementView` DTO and must never expose password hashes, raw or hashed auth credentials, session identifiers, setup/reset links, or secret audit metadata.
 - BR-FE11-027: Every managed-profile update and deactivation must use the loaded non-null `updatedAt`, defined as the latest effective timestamp across `Users` and `UserProfiles`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. A no-op returns the current safe DTO without advancing the version or writing a success audit.
 - BR-FE11-028: The account's single role determines its audience across FE01, FE07, FE08, FE09, and shared navigation. Only `MEMBER` receives member self-service borrowing/reservation/own-fine access; `LIBRARIAN` and `ADMIN` use their staff-owned routes.
+- BR-FE11-029: FE11 Admin Request Management is a composition/read surface over FE07. It must expose the current physical copy status in the safe detail DTO, use only FE07 approve/reject commands, and reload canonical request state after either success or conflict; it must not invent a separate Admin request lifecycle.
+- BR-FE11-030: FE11 must not deactivate an account or replace its `MEMBER` role while FE07 reports a pending borrow request or active borrowed detail. The lifecycle mutation and FE07 create/approval use the same member-scoped transaction lock.
+- BR-FE11-031: For a legacy pending request with a known inactive/non-Member owner or unavailable copy, Admin Request Management disables approval with an actionable blocker but keeps rejection enabled; FE07 remains authoritative at command time.
 
 ---
 
@@ -323,6 +332,10 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revalidate the active acting Admin inside the source transaction, revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery only after commit.
 - FR-FE11-037: IF FE10 setup delivery fails during create or resend, FE11 shall preserve the committed `INACTIVE` account/token state and return only safe `FAILED` delivery status.
 - FR-FE11-038: IF setup resend targets an ineligible account or occurs within 60 seconds of the latest setup-token issuance, FE11 shall reject the request without issuing or exposing a new credential.
+- FR-FE11-039: When Admin opens a borrow-request detail, the safe FE11 projection shall include each item's canonical FE07 detail status and current FE06 physical copy status without exposing internal inventory or credential fields.
+- FR-FE11-040: When an Admin approve/reject command succeeds or conflicts, Request Management shall reload the canonical list and detail. Rejection shall require a trimmed 1..500-character reason and explain that rejecting a pending request releases its logical copy claim.
+- FR-FE11-041: IF Admin attempts to deactivate a user with pending borrow requests, FE11 shall return `409 PENDING_BORROW_REQUESTS_EXIST`; IF Admin attempts to replace `MEMBER` while pending requests or active loans exist, FE11 shall return `409 MEMBER_BORROWING_WORKFLOW_EXISTS`.
+- FR-FE11-042: WHEN Admin opens a legacy pending request that is known not to be approvable, the detail shall list safe blocker messages, disable approval only, and keep rejection available.
 
 ### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
 
@@ -371,6 +384,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-021: Given an eligible incomplete setup account outside cooldown, when Admin resends setup, then prior active tokens are revoked and a new FE10 event uses a new token ID/idempotency key.
 - AC-FE11-022: Given an active, locked, self-registered inactive, completed-setup, or cooldown-limited account, when Admin requests setup resend, then the system rejects it without creating a credential.
 - AC-FE11-023: Given an Admin submits a Librarian work-field update or deactivation with stale effective `expectedUpdatedAt`, when the current user record has changed, then the system returns `409 STALE_USER_STATE` and persists no submitted field, lifecycle change, credential revocation, or success audit.
+- AC-FE11-024: Given Admin opens a pending request, then every requested barcode is paired with its current physical copy status; after an approve conflict, the refreshed state remains truthful and rejection with a valid reason remains available.
 
 ---
 
@@ -687,9 +701,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 ### Coverage Summary (FE11)
 
-- **Total AC**: 23 (AC-FE11-001 to AC-FE11-023); all ACs are mapped, and account-setup ACs map to FT52/FT55 and FE11-S02/S06.
-- **Total FR**: 38 (FR-FE11-001 to FR-FE11-038); FR-FE11-036 maps through AC-FE11-021 and FE11-S06, while FR-FE11-037..038 are mapped above.
-- **Total BR**: 27 (BR-FE11-001 to BR-FE11-027).
+- **Total AC**: 24 (AC-FE11-001 to AC-FE11-024).
+- **Total FR**: 40 (FR-FE11-001 to FR-FE11-040).
+- **Total BR**: 31 (BR-FE11-001 to BR-FE11-031).
 - **Assignment tests**: FT50 to FT58 remain the external baseline; focused account-setup service/integration tests are mandatory before implementation can close.
 
 ### External Assignment Traceability (Excel UC IDs)

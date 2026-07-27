@@ -217,6 +217,19 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
         throw new AppException(409, 'ACTIVE_BORROW_CONFLICT', 'Borrowed copies must be handled through the return flow.');
       }
       if (
+        borrowDetails.some(
+          (detail) => detail.copyId === Number(copyId)
+            && detail.status === 'REQUESTED'
+            && detail.requestStatus === 'PENDING'
+        )
+      ) {
+        throw new AppException(
+          409,
+          'PENDING_BORROW_REQUEST_CONFLICT',
+          'Copies in pending borrow requests must be handled through the borrowing request flow.'
+        );
+      }
+      if (
         copy.status === 'RESERVED' ||
         reservations.some(
           (reservation) => reservation.copyId === Number(copyId) && reservation.status === 'ACTIVE'
@@ -235,6 +248,13 @@ function makeInMemoryInventoryDependencies(authDependencies, initialState = {}) 
     async hasActiveBorrow(copyId) {
       return borrowDetails.some(
         (detail) => detail.copyId === Number(copyId) && ['BORROWED', 'OVERDUE'].includes(detail.status)
+      );
+    },
+    async hasPendingBorrowClaim(copyId) {
+      return borrowDetails.some(
+        (detail) => detail.copyId === Number(copyId)
+          && detail.status === 'REQUESTED'
+          && detail.requestStatus === 'PENDING'
       );
     },
     async hasActiveReservation(copyId) {

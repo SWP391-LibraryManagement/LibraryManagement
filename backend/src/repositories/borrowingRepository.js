@@ -21,6 +21,13 @@ const borrowRequestSelect = `
     u.Email,
     u.Phone,
     u.Status AS UserStatus,
+    CASE WHEN EXISTS (
+      SELECT 1
+      FROM UserRoles memberUr
+      INNER JOIN Roles memberRole ON memberRole.RoleId = memberUr.RoleId
+      WHERE memberUr.UserId = u.UserId
+        AND UPPER(memberRole.RoleName) = 'MEMBER'
+    ) THEN 1 ELSE 0 END AS HasMemberRole,
     up.FullName,
     m.MemberId,
     bd.BorrowDetailId,
@@ -58,6 +65,13 @@ const borrowDetailSelect = `
     u.Email,
     u.Phone,
     u.Status AS UserStatus,
+    CASE WHEN EXISTS (
+      SELECT 1
+      FROM UserRoles memberUr
+      INNER JOIN Roles memberRole ON memberRole.RoleId = memberUr.RoleId
+      WHERE memberUr.UserId = u.UserId
+        AND UPPER(memberRole.RoleName) = 'MEMBER'
+    ) THEN 1 ELSE 0 END AS HasMemberRole,
     up.FullName,
     m.MemberId,
     bd.BorrowDetailId,
@@ -126,6 +140,7 @@ function mapMember(row) {
     phone: row.Phone,
     memberId: row.MemberId,
     status: row.UserStatus,
+    hasMemberRole: Boolean(row.HasMemberRole),
   };
 }
 
@@ -195,6 +210,7 @@ function mapBorrowRequests(rows) {
   return Array.from(requestsById.values());
 }
 
+// @spec BR-FE07-034, FR-FE07-034, FR-FE07-036
 async function listBorrowCandidates({ bookId = null, q = '', userId }) {
   const request = (await getPool()).request().input('UserId', sql.Int, userId);
   const where = ["b.Status = 'ACTIVE'"];
@@ -228,6 +244,29 @@ async function listBorrowCandidates({ bookId = null, q = '', userId }) {
       ORDER BY CASE WHEN r.Status = 'NOTIFIED' THEN 0 ELSE 1 END, r.ReservationId
     ) claim
     WHERE ${where.join(' AND ')}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM BorrowRequests memberRequest
+        INNER JOIN BorrowDetails memberDetail
+          ON memberDetail.RequestId = memberRequest.RequestId
+        INNER JOIN BookCopies memberCopy
+          ON memberCopy.CopyId = memberDetail.CopyId
+        WHERE memberRequest.UserId = @UserId
+          AND memberCopy.BookId = b.BookId
+          AND (
+            (memberRequest.Status = 'PENDING' AND memberDetail.Status = 'REQUESTED')
+            OR memberDetail.Status = 'BORROWED'
+          )
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM BorrowDetails pendingDetail
+        INNER JOIN BorrowRequests pendingRequest
+          ON pendingRequest.RequestId = pendingDetail.RequestId
+        WHERE pendingDetail.CopyId = bc.CopyId
+          AND pendingDetail.Status = 'REQUESTED'
+          AND pendingRequest.Status = 'PENDING'
+      )
       AND (
         (bc.Status = 'AVAILABLE' AND claim.ReservationId IS NULL)
         OR (bc.Status = 'RESERVED' AND claim.Status = 'NOTIFIED' AND claim.UserId = @UserId)
@@ -473,6 +512,7 @@ async function findBorrowDetailById(borrowDetailId) {
 
 // @spec BR-FE07-005A, BR-FE07-024, FR-FE07-014A, FR-FE07-022, FR-FE07-023
 // Eligibility, limits, copy state, reservation priority, inserts, and audit share one transaction.
+// @spec BR-FE07-034, FR-FE07-034, FR-FE07-036
 async function createBorrowRequest({
   userId,
   copyIds,
@@ -540,7 +580,7 @@ async function createBorrowRequest({
       const copyResult = await new sql.Request(transaction)
         .input('CopyId', sql.Int, copyId)
         .query(`
-          SELECT bc.CopyId, bc.Status AS CopyStatus, b.Status AS BookStatus
+          SELECT bc.CopyId, bc.BookId, bc.Status AS CopyStatus, b.Status AS BookStatus
           FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
           INNER JOIN Books b WITH (HOLDLOCK) ON b.BookId = bc.BookId
           WHERE bc.CopyId = @CopyId;
@@ -558,6 +598,39 @@ async function createBorrowRequest({
       }
 
       lockedCopies.set(copyId, copy);
+    }
+
+    const requestedBookIdList = Array.from(lockedCopies.values())
+      .map((copy) => Number(copy.BookId));
+    const requestedBookIds = [...new Set(requestedBookIdList)];
+    if (requestedBookIds.length !== requestedBookIdList.length) {
+      await transaction.rollback();
+      return { outcome: 'DUPLICATE_BOOK_IN_REQUEST' };
+    }
+
+    for (const bookId of requestedBookIds) {
+      const activeBookWorkflowResult = await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .input('BookId', sql.Int, bookId)
+        .query(`
+          SELECT TOP 1 bd.BorrowDetailId
+          FROM BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+            ON bd.RequestId = br.RequestId
+          INNER JOIN BookCopies bc WITH (HOLDLOCK)
+            ON bc.CopyId = bd.CopyId
+          WHERE br.UserId = @UserId
+            AND bc.BookId = @BookId
+            AND (
+              (br.Status = 'PENDING' AND bd.Status = 'REQUESTED')
+              OR bd.Status = 'BORROWED'
+            );
+        `);
+
+      if (activeBookWorkflowResult.recordset.length) {
+        await transaction.rollback();
+        return { outcome: 'BOOK_ALREADY_IN_BORROWING_WORKFLOW', bookId };
+      }
     }
 
     const fineResult = await new sql.Request(transaction)
@@ -627,6 +700,23 @@ async function createBorrowRequest({
     }
 
     for (const copyId of requestedCopyIds) {
+      const pendingClaimResult = await new sql.Request(transaction)
+        .input('CopyId', sql.Int, copyId)
+        .query(`
+          SELECT TOP 1 bd.BorrowDetailId
+          FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+            ON br.RequestId = bd.RequestId
+          WHERE bd.CopyId = @CopyId
+            AND bd.Status = 'REQUESTED'
+            AND br.Status = 'PENDING';
+        `);
+
+      if (pendingClaimResult.recordset.length) {
+        await transaction.rollback();
+        return { outcome: 'COPY_PENDING_REQUEST_CONFLICT' };
+      }
+
       const reservationResult = await new sql.Request(transaction)
         .input('CopyId', sql.Int, copyId)
         .query(`
@@ -804,7 +894,7 @@ async function listBorrowDetails({ userId, status, fromDate, toDate, page = 1, l
   return { rows: result.recordset.map(mapBorrowDetail), total: countResult.recordset[0]?.Total || 0 };
 }
 
-// @spec BR-FE07-005, BR-FE07-025, FR-FE07-019, FR-FE07-022, FR-FE07-025
+// @spec BR-FE07-005, BR-FE07-025, BR-FE07-034, FR-FE07-019, FR-FE07-022, FR-FE07-025, FR-FE07-037
 // @spec FR-FE08-023, FR-FE08-025, FR-FE08-026, FR-FE08-028
 // serializes borrowing and matching reservation fulfillment (NFR-FE07-TXN-001).
 async function approveBorrowRequest({
@@ -879,7 +969,7 @@ async function approveBorrowRequest({
     const member = memberResult.recordset[0];
     if (!member || Number(member.HasMemberRole) !== 1) {
       await transaction.rollback();
-      return { outcome: 'MEMBER_ROLE_REQUIRED' };
+      return { outcome: 'BORROW_REQUEST_OWNER_NOT_MEMBER' };
     }
 
     if (member.UserStatus !== 'ACTIVE') {
@@ -895,7 +985,7 @@ async function approveBorrowRequest({
       const copyResult = await new sql.Request(transaction)
         .input('CopyId', sql.Int, copyId)
         .query(`
-          SELECT bc.CopyId, bc.Status, b.Status AS BookStatus
+          SELECT bc.CopyId, bc.BookId, bc.Status, b.Status AS BookStatus
           FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
           INNER JOIN Books b WITH (UPDLOCK, HOLDLOCK) ON b.BookId = bc.BookId
           WHERE bc.CopyId = @CopyId
@@ -944,6 +1034,37 @@ async function approveBorrowRequest({
     ) {
       await transaction.rollback();
       return { outcome: 'REQUEST_NOT_APPROVABLE' };
+    }
+
+    const requestedBookIds = [...new Set(
+      Array.from(lockedCopies.values()).map((copy) => Number(copy.BookId))
+    )];
+    if (requestedBookIds.length !== requestedCopyIds.length) {
+      await transaction.rollback();
+      return { outcome: 'DUPLICATE_BOOK_IN_REQUEST' };
+    }
+    for (const bookId of requestedBookIds) {
+      const existingBorrowedBookResult = await new sql.Request(transaction)
+        .input('UserId', sql.Int, memberUserId)
+        .input('BookId', sql.Int, bookId)
+        .input('RequestId', sql.Int, requestId)
+        .query(`
+          SELECT TOP 1 bd.BorrowDetailId
+          FROM BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+            ON bd.RequestId = br.RequestId
+          INNER JOIN BookCopies bc WITH (HOLDLOCK)
+            ON bc.CopyId = bd.CopyId
+          WHERE br.UserId = @UserId
+            AND br.RequestId <> @RequestId
+            AND bc.BookId = @BookId
+            AND bd.Status = 'BORROWED';
+        `);
+
+      if (existingBorrowedBookResult.recordset.length) {
+        await transaction.rollback();
+        return { outcome: 'BOOK_ALREADY_BORROWED_BY_MEMBER', bookId };
+      }
     }
 
     for (const copyId of requestedCopyIds) {

@@ -1,8 +1,8 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.9
+# Version: 0.8.1
 
-# Status: APPROVED - RULE ALIGNMENT 2026-07-27
+# Status: REVISION IMPLEMENTED - HUMAN REVIEW PENDING 2026-07-27
 
 # Owner: Nhat
 
@@ -49,6 +49,18 @@
 > positive-`UNPAID` blocker and read-only Member fine context from
 > `main@8d0059b`; staff collection ownership and all prior FE07 invariants are
 > unchanged.
+>
+> Revision v0.8.0 closes the cross-role pending-copy gap: one `PENDING`
+> BorrowRequest exclusively claims each requested copy without changing
+> `BookCopies.Status`. Member candidates and creates exclude claimed copies;
+> FE06 manual mutations respect the claim; Admin/Librarian decisions reload
+> canonical state and rejection releases the claim logically.
+>
+> Revision v0.8.1 closes the same-title spam gap: one Member may have at most
+> one active borrowing workflow per `BookId` (`PENDING + REQUESTED` or
+> `BORROWED`). Candidate reads and create transactions enforce the rule; legacy
+> duplicate pending requests remain rejectable, while approval cannot create a
+> second active loan for the same title.
 
 ---
 
@@ -240,6 +252,8 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
 - BR-FE07-031: Member-self-service borrow candidate, create-request, and own-history endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot place or borrow books for themselves.
 - BR-FE07-032: A current `BorrowDetails.Status = BORROWED` detail is FE08's authoritative signal that the same Member cannot reserve any other copy with the same `BookId`; terminal detail states do not block a later reservation.
+- BR-FE07-033: A copy may belong to at most one active borrow-request claim, defined as `BorrowRequests.Status = PENDING` plus its `BorrowDetails.Status = REQUESTED`. Creating the claim must lock and recheck the copy and existing claims atomically. The claim does not add a new `BookCopies.Status`; approval consumes it into `BORROWED`, while rejection releases it because the owning request is no longer `PENDING`.
+- BR-FE07-034: One Member may have at most one active borrowing workflow and at most one requested physical copy per request for a `BookId`. Active means either `BorrowRequests.Status = PENDING` with `BorrowDetails.Status = REQUESTED`, or `BorrowDetails.Status = BORROWED`. Rejected and terminal/returned workflows do not block a later request.
 
 ---
 
@@ -264,6 +278,10 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
 - FR-FE07-032: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject member-self-service candidate, create-request, and own-history access with `403 ROLE_REQUIRED`; staff operational FE07 routes remain available according to their existing role guards. This is not a supported multi-role account model.
 - FR-FE07-033: WHEN a Member follows the FE08 handoff for a requester-owned `NOTIFIED` hold, the FE07 frontend shall select the exact canonical `bookId` and `copyId` returned by the protected borrow-candidate catalog and submit that copy through the normal pending-request workflow; server-side reservation-aware checks remain authoritative.
+- FR-FE07-034: WHEN a Member lists borrow candidates or creates a request, FE07 shall exclude/reject any copy already claimed by another pending request; the authoritative create transaction shall return `409 COPY_PENDING_REQUEST_CONFLICT` without partial request/detail/audit writes.
+- FR-FE07-035: WHEN Admin/Librarian approves or rejects a request, the UI shall reload canonical request state after both success and conflict. The Admin detail shall show each physical copy's current status, and rejection shall explain that its required 1..500-character reason releases the pending claim.
+- FR-FE07-036: WHEN a Member lists candidates or creates a request, FE07 shall hide/reject every copy whose `BookId` already has an active workflow for that Member; the authoritative create transaction returns `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW` without partial writes. A single payload containing two copies of one `BookId` returns `400 DUPLICATE_BOOK_IN_REQUEST`.
+- FR-FE07-037: IF a legacy pending request would give its owner a second `BORROWED` copy of the same `BookId`, approval shall return `409 BOOK_ALREADY_BORROWED_BY_MEMBER`, preserve the pending request, and still allow staff rejection with a valid reason.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -317,6 +335,9 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
 - AC-FE07-026: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member borrow candidates, request creation, or own history, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without creating or exposing member-self-service state; persisted accounts still have exactly one role.
 - AC-FE07-027: Given FE08 links a Member's held copy to `/borrowing/new?bookId={bookId}&copyId={copyId}`, when the FE07 candidate catalog contains that requester-owned hold, then FE07 preselects the exact copy and creates the usual `PENDING` request for Librarian/Admin approval.
+- AC-FE07-028: Given Member A has a pending request for a copy, when Member B loads candidates or submits that same copy, then the copy is absent from candidates and create returns `409 COPY_PENDING_REQUEST_CONFLICT`; after staff rejects A's request, the copy can be requested again if all other FE07/FE08 rules pass.
+- AC-FE07-029: Given a legacy pending request whose physical copy is no longer approvable, when Admin/Librarian attempts approval, then FE07 keeps the request pending, returns actionable conflict feedback, reloads canonical copy/request status, and still permits rejection with a valid reason.
+- AC-FE07-030: Given a Member already has a pending request or active loan for one title, when the Member loads candidates or submits another copy of that title, then the title is hidden and create returns `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW`; after rejection or terminal return, a new request may proceed.
 
 ---
 
@@ -735,6 +756,8 @@ This feature does not include:
 | FR-FE07-033 | UC29, UC36 | FE07-T048 exact held-copy handoff frontend test | Complete |
 | AC-FE07-026 | UC29-UC31 | FE07-T047 invalid legacy-array denial tests | Complete |
 | AC-FE07-027 | UC29, UC36 | FE07-T048 exact held-copy preselection test | Complete |
+| BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | pending-copy claim route/repository regressions | Automated pass; human review pending |
+| FR-FE07-035; AC-FE07-029 | UC32, UC35 | Admin/Librarian canonical reload and copy-status presentation tests | Automated pass; human review pending |
 
 ---
 

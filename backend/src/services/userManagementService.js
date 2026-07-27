@@ -117,7 +117,8 @@ function parsePositiveId(value, code, message, errorFactory = errors.badRequest)
   return parsed;
 }
 
-function throwRoleMutationError(outcome) {
+function throwRoleMutationError(result) {
+  const outcome = result?.outcome;
   const mappings = {
     ADMIN_NOT_FOUND: () =>
       errors.notFound('ADMIN_NOT_FOUND', 'Acting admin was not found.'),
@@ -127,6 +128,14 @@ function throwRoleMutationError(outcome) {
     ROLE_NOT_FOUND: () => errors.notFound('ROLE_NOT_FOUND', 'Role was not found.'),
     LAST_ADMIN_ROLE: () =>
       errors.badRequest('LAST_ADMIN_ROLE', 'Cannot replace the last active Admin role.'),
+    MEMBER_BORROWING_WORKFLOW_EXISTS: () => errors.conflict(
+      'MEMBER_BORROWING_WORKFLOW_EXISTS',
+      'Resolve the member pending requests and active borrowings before replacing the member role.',
+      {
+        pendingRequestCount: result.pendingRequestCount || 0,
+        activeBorrowingCount: result.activeBorrowingCount || 0,
+      }
+    ),
   };
   const createError = mappings[outcome];
 
@@ -510,6 +519,11 @@ function createUserManagementService({
         `This user has ${result.activeBorrowingCount} active borrowed item(s).`,
         { activeBorrowingCount: result.activeBorrowingCount }
       ),
+      PENDING_BORROW_REQUESTS_EXIST: () => errors.conflict(
+        'PENDING_BORROW_REQUESTS_EXIST',
+        `This user has ${result.pendingRequestCount} pending borrow request(s).`,
+        { pendingRequestCount: result.pendingRequestCount }
+      ),
       VALIDATION_ERROR: () => errors.badRequest('VALIDATION_ERROR', 'User cannot be deactivated.'),
     };
 
@@ -548,7 +562,7 @@ function createUserManagementService({
       userAgent: context.userAgent || null,
     });
     if (!['REPLACED', 'UNCHANGED'].includes(result.outcome)) {
-      throwRoleMutationError(result.outcome);
+      throwRoleMutationError(result);
     }
 
     const updatedUser = await userRepository.getManagedUserById(parsedUserId);

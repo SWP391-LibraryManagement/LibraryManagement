@@ -134,3 +134,15 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 ## Phase 5: Convergence
 
 - [x] FE06-T012 - Align the SQL concurrency static assertion with the dynamic `Version`/`RowVersion` projection required by the FE06 corrective batch (contradicts).
+
+## 2026-07-27 FE07 pending-claim integration
+
+- [~] **FE06-T013 - Protect copies claimed by pending borrow requests.**
+  - Maps to: FR-FE06-026, AC-FE06-016; BR-FE07-033.
+  - Add service precheck and transaction-locked repository recheck for
+    `BorrowRequests.PENDING + BorrowDetails.REQUESTED`.
+  - Return `PENDING_BORROW_REQUEST_CONFLICT` without copy/audit mutation.
+  - Evidence: focused backend is included in 123/123; full backend
+    1,056/1,056, full frontend 232/232, lint/build, traceability, and diff
+    hygiene passed locally.
+  - Remaining: human review.

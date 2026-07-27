@@ -266,3 +266,28 @@ The detailed executable plan is
 4. Re-run focused fine/borrowing, one-role, timezone, cross-feature, full, and
    browser gates against `main@8d0059b`.
 5. Keep the merge uncommitted and unpushed until the H2 addendum is approved.
+
+## 13. V0.8.0 Pending-Copy Claim Correction
+
+1. Add focused RED cases proving a second member can neither see nor request a
+   copy already claimed by a `PENDING` request.
+2. Under the existing member/copy transaction locks, recheck
+   `PENDING + REQUESTED` claims before inserting any request/detail rows.
+3. Keep `BookCopies.Status` unchanged while pending; approval consumes the
+   claim into `BORROWED`, and rejection releases it through request status.
+4. Make FE06 status/deactivation mutations reject a pending FE07 claim.
+5. Expose current physical copy status in the safe FE11 Admin detail and reload
+   Admin/Librarian state after both successful and conflicting decisions.
+6. Run focused backend/frontend tests, full regression, lint/build,
+   traceability, and diff hygiene; human review remains required.
+
+## 14. V0.8.1 Same-Title Workflow Invariant
+
+1. Add RED coverage for a Member submitting another copy of a `BookId` already
+   present in their pending request or active loan.
+2. Filter candidates at `BookId` scope and revalidate under the existing
+   member-scoped transaction lock before request insertion.
+3. During approval, reject a legacy duplicate if the Member already has a
+   `BORROWED` detail for the same `BookId`; preserve rejection as cleanup.
+4. Expose distinct owner-role/account/copy approval blockers to FE11 without
+   transferring FE07 command ownership.

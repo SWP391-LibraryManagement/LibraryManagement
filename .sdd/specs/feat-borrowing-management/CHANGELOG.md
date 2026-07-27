@@ -1,5 +1,26 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Prevent same-title request spam (v0.8.1)
+
+- Enforced one active `PENDING/REQUESTED` or `BORROWED` workflow per Member and
+  `BookId`, including transaction-authoritative concurrent-create checks.
+- Rejected a single request containing multiple physical copies of one title.
+- Hid every copy of an already-active title from that Member's candidates.
+- Prevented legacy duplicate pending rows from becoming two active same-title
+  loans while retaining the staff rejection path.
+- Split stale-owner approval errors from Member self-service authorization.
+
+## 2026-07-27 - Prevent duplicate pending claims for one copy (v0.8.0)
+
+- Made `PENDING + REQUESTED` the logical exclusive claim for a physical copy
+  without adding a new inventory status or schema column.
+- Hid claimed copies from Member candidates and rejected stale/concurrent
+  creates atomically with `COPY_PENDING_REQUEST_CONFLICT`.
+- Connected FE06 manual mutation protection and FE11 Admin/Librarian canonical
+  decision reloads, including current copy status and clearer rejection help.
+- Preserved legacy conflict safety: an unapprovable pending request remains
+  pending and may still be rejected with the required reason.
+
 ## 2026-07-27 - Reconcile FE09 Member fines with rule alignment (v0.7.9)
 
 - Combined the parallel v0.7.8 changes for FE08 same-book eligibility and

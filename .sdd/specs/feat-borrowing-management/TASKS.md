@@ -1,7 +1,10 @@
 # TASKS.md - FE07 Borrowing Management
 
 Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
-Implementation State: COMPLETE
+Implementation State: PARTIAL
+
+Current Extension: v0.8.0 implementation and automated validation are complete;
+human review remains pending. The prior Phase 2 baseline remains complete.
 
 Owner: Nhat
 
@@ -319,3 +322,28 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
     CI run `30244750250` passed. The documentation-only H3 remediation requires
     fresh H2 and repeated H3 before merge.
+
+## 2026-07-27 v0.8.0 pending-copy claim correction
+
+- [~] **FE07-T053 - Enforce one pending request claim per copy across roles.**
+  - Maps to: BR-FE07-033, FR-FE07-034/035, AC-FE07-028/029; FE06 pending-claim boundary; FE11 Admin composition.
+  - Backend: candidate SQL excludes active claims; create transaction locks and
+    rejects a conflicting claim with `COPY_PENDING_REQUEST_CONFLICT`; FE06
+    status/deactivation rejects `PENDING_BORROW_REQUEST_CONFLICT`.
+  - Frontend: Admin detail displays physical copy status; Admin and Librarian
+    decision failures reload canonical state; rejection help explains the
+    required reason and claim release.
+  - Evidence: focused backend 123/123 and focused frontend 36/36; full backend
+    1,056/1,056; full frontend 232/232; frontend lint/build; traceability and
+    diff hygiene passed locally.
+  - Remaining: human review.
+
+## 2026-07-27 v0.8.1 same-title workflow correction
+
+- [~] **FE07-T054 - Enforce one active borrowing workflow per Member/title.**
+  - Maps to: BR-FE07-034, FR-FE07-036/037, AC-FE07-030; FE11 lifecycle guards.
+  - Candidate and create paths use `BookId`; create/approve revalidate under
+    the member-scoped transaction lock.
+  - Legacy invalid requests remain rejectable and now expose distinct owner,
+    account, copy, and same-title approval conflicts.
+  - Automated backend/frontend regression is required; human review remains.

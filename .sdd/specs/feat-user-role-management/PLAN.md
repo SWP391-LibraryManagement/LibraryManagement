@@ -430,3 +430,22 @@ behavior while retaining it as historical evidence.
 
 Validation order: focused frontend/backend contracts, full backend tests and
 coverage, full frontend tests/lint/build, OpenAPI parsing, traceability, and diff hygiene.
+
+## 2026-07-27 Admin Request State Revision
+
+- Keep FE11 as the Admin composition/read owner and FE07 as the only
+  approve/reject business owner.
+- Add current physical copy status to the safe Admin request-detail projection.
+- Reload list/detail after successful or conflicting decisions so Admin never
+  acts on fabricated or stale state.
+- Keep rejection available for a legacy unapprovable pending request and make
+  its required reason/claim-release behavior explicit.
+- Validate focused Admin/FE07/FE06 tests, full regression, lint/build,
+  traceability, and human review.
+
+## 2026-07-27 FE07 Lifecycle Guard Revision
+
+- Serialize deactivation and Member-role replacement with FE07's member lock.
+- Reject those lifecycle mutations while pending requests or active loans exist.
+- Project known approval blockers in Admin detail, disable approval only, and
+  preserve FE07 rejection for legacy cleanup.

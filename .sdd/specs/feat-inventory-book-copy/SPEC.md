@@ -1,8 +1,8 @@
 # SPEC.md - FE06 Inventory / Book Copy Management
 
-# Version: 0.4.3
+# Version: 0.4.4
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: PENDING-CLAIM REVISION IMPLEMENTED - HUMAN REVIEW PENDING
 
 # Implementation Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
@@ -217,6 +217,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE06-023: IF a manual status-transition or deactivation reason is missing, blank, or longer than 500 characters, the system shall reject the command. (Source: BR-FE06-017, EC-FE06-012)
 - FR-FE06-024: IF a supplied inventory `page` or `limit` violates BR-FE06-018, the system shall reject the request with a validation error and shall not normalize the value or query inventory. (Source: BR-FE06-018, EC-FE06-013)
 - FR-FE06-025: When staff applies inventory search and filters, FE06 shall execute one canonical server query contract, return only the approved safe copy/book projection, and distinguish a load failure from a valid empty result in the UI.
+- FR-FE06-026: IF a copy belongs to an FE07 `PENDING + REQUESTED` claim, any FE06 manual status transition or deactivation shall return `409 PENDING_BORROW_REQUEST_CONFLICT`, preserve copy/audit state, and direct staff to approve or reject the owning borrow request.
 
 ---
 
@@ -237,6 +238,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE06-013: Given a missing, blank, or over-500-character manual status/deactivation reason, FE06 rejects the command; a trimmed 1..500-character reason is accepted.
 - AC-FE06-014: Given omitted pagination values, when staff views inventory, then FE06 uses `page = 1` and `limit = 20`; given a supplied non-integer, `page < 1`, `limit < 1`, or `limit > 100`, FE06 rejects the request without normalization.
 - AC-FE06-015: Given a Librarian/Admin combines text search, barcode, location, and status filters, when applying them, then matching rows, `totalItems`, `totalPages`, and `countsByStatus` are derived from the same database-filtered set; a backend failure shows an error rather than “no data”.
+- AC-FE06-016: Given an `AVAILABLE` copy is claimed by an FE07 pending request, when staff tries to mark it damaged/lost/inactive or otherwise change it manually, then FE06 returns `409 PENDING_BORROW_REQUEST_CONFLICT` and changes no copy or audit state.
 
 ---
 
@@ -257,6 +259,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE06-011 | Parent book is `INACTIVE` during any FE06-owned create/manual transition to `AVAILABLE` | Return `409 INACTIVE_PARENT_BOOK`; change no copy or audit state. |
 | EC-FE06-012 | Missing/blank/overlength manual status reason | Reject missing/blank or values longer than 500 characters. |
 | EC-FE06-013 | Invalid inventory `page`/`limit` | Reject with validation error; do not normalize or query inventory. |
+| EC-FE06-014 | Copy has an FE07 pending-request claim | Reject manual status/deactivation; resolve through FE07 approve/reject. |
 
 ---
 
@@ -268,7 +271,7 @@ Use these stable IDs for tasks and tests.
 | ------ | ----------------------- |
 | Books | Parent book record for each physical copy. |
 | BookCopies | Stores physical copy barcode, status, and location. |
-| BorrowDetails | Locked and rechecked for active borrowed copies inside manual status/deactivation transactions. |
+| BorrowRequests / BorrowDetails | Locked and rechecked for active borrowed copies and `PENDING + REQUESTED` claims inside manual status/deactivation transactions. |
 | Reservations | Locked and rechecked for active reservations inside manual status/deactivation transactions. |
 | UserRoles | Checks librarian/admin permissions. |
 | AuditLogs | Records every copy management transition. |
@@ -530,6 +533,7 @@ The status notes in this matrix are the historical verification snapshot retaine
 | AC-FE06-013 | UC27 | Route reason 1..500 cases | Automated pass; owner/H3 pending |
 | AC-FE06-014 | UC25 | Route exact pagination policy cases | Automated pass; owner/H3 pending |
 | AC-FE06-015 | UC25 | Route combined filters/counts and frontend load-error state | Automated pass; owner/H3 pending |
+| FR-FE06-026; AC-FE06-016 | UC27, UC32 | inventoryRoutes pending-claim mutation regression | Automated pass; human review pending |
 
 ---
 

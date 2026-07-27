@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE06 Inventory / Book Copy Management
 
+## 2026-07-27 - Respect FE07 pending-copy claims (v0.4.4)
+
+- Added a locked `PENDING + REQUESTED` conflict check to manual status changes
+  and deactivation.
+- Kept the physical copy status unchanged while a request is pending.
+- Added actionable `PENDING_BORROW_REQUEST_CONFLICT` feedback directing staff
+  to FE07 Request Management.
+
 ## 2026-07-22 - Align inventory aggregate queries
 
 - Added publisher search to the shared inventory query and joined publisher metadata in both the pagination-total and status-count queries.

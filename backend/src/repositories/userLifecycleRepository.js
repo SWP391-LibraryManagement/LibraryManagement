@@ -185,7 +185,7 @@ async function updateManagedUser({
   }
 }
 
-// @spec BR-FE11-003, BR-FE11-006, BR-FE11-027, FR-FE11-008, FR-FE11-011
+// @spec BR-FE11-003, BR-FE11-006, BR-FE11-027, BR-FE11-030, FR-FE11-008, FR-FE11-011, FR-FE11-041
 async function deactivateManagedUser({
   adminUserId,
   userId,
@@ -204,6 +204,19 @@ async function deactivateManagedUser({
     if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
       return rollbackWith(transaction, 'ADMIN_REQUIRED');
     }
+
+    await new sql.Request(transaction)
+      .input('MemberLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${userId}`)
+      .query(`
+        DECLARE @MemberLockResult INT;
+        EXEC @MemberLockResult = sp_getapplock
+          @Resource = @MemberLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        IF @MemberLockResult < 0
+          THROW 51001, 'Unable to acquire borrowing member lock.', 1;
+      `);
 
     const target = await lockManagedUser(transaction, userId, expectedUpdatedAt);
     if (!target) return rollbackWith(transaction, 'USER_NOT_FOUND');
@@ -249,6 +262,26 @@ async function deactivateManagedUser({
     if (activeBorrowingCount > 0) {
       return rollbackWith(transaction, 'ACTIVE_BORROWINGS_EXIST', {
         activeBorrowingCount,
+      });
+    }
+
+    const pendingRequestResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .query(`
+        SELECT COUNT(DISTINCT br.RequestId) AS PendingRequestCount
+        FROM BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+          ON bd.RequestId = br.RequestId
+        WHERE br.UserId = @UserId
+          AND br.Status = 'PENDING'
+          AND bd.Status = 'REQUESTED'
+      `);
+    const pendingRequestCount = Number(
+      pendingRequestResult.recordset[0]?.PendingRequestCount || 0
+    );
+    if (pendingRequestCount > 0) {
+      return rollbackWith(transaction, 'PENDING_BORROW_REQUESTS_EXIST', {
+        pendingRequestCount,
       });
     }
 

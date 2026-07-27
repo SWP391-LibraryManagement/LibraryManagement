@@ -106,7 +106,12 @@ function usePostCommitReadbackFailure(operation) {
         }
         if (query.includes('FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)')) {
           return {
-            recordset: [{ CopyId: 7, CopyStatus: 'AVAILABLE', BookStatus: 'ACTIVE' }],
+            recordset: [{
+              CopyId: 7,
+              BookId: 3,
+              CopyStatus: 'AVAILABLE',
+              BookStatus: 'ACTIVE',
+            }],
           };
         }
         if (query.includes('COUNT(*) AS ActiveCount')) {
@@ -140,8 +145,15 @@ function usePostCommitReadbackFailure(operation) {
         if (query.includes('SELECT bd.CopyId')) {
           return { recordset: [{ CopyId: 7 }] };
         }
-        if (query.includes('SELECT bc.CopyId, bc.Status')) {
-          return { recordset: [{ CopyId: 7, Status: 'AVAILABLE', BookStatus: 'ACTIVE' }] };
+        if (query.includes('SELECT bc.CopyId, bc.BookId, bc.Status')) {
+          return {
+            recordset: [{
+              CopyId: 7,
+              BookId: 3,
+              Status: 'AVAILABLE',
+              BookStatus: 'ACTIVE',
+            }],
+          };
         }
         if (query.includes('COUNT(*) AS ActiveCount')) {
           return { recordset: [{ ActiveCount: 0 }] };
@@ -252,7 +264,7 @@ test('approval revalidates MEMBER role and derives the daily tier inside the tra
 
   expect(source).toContain("r.RoleName = 'MEMBER'");
   expect(source).toContain("member.MemberStatus === 'APPROVED'");
-  expect(source).toContain("outcome: 'MEMBER_ROLE_REQUIRED'");
+  expect(source).toContain("outcome: 'BORROW_REQUEST_OWNER_NOT_MEMBER'");
 });
 
 test('approval locks member scope, copies, request details, then reservations', () => {
@@ -281,6 +293,10 @@ test('create revalidates eligibility, limits, copies, and reservations inside on
   const copyLockIndex = source.indexOf('FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)');
   const activeCountIndex = source.indexOf('COUNT(*) AS ActiveCount');
   const dailyCountIndex = source.indexOf('COUNT(*) AS DailyCount');
+  const pendingClaimIndex = source.indexOf(
+    "bd.Status = 'REQUESTED'",
+    dailyCountIndex
+  );
   const reservationLockIndex = source.indexOf('FROM Reservations WITH (UPDLOCK, HOLDLOCK)');
   const insertIndex = source.indexOf('INSERT INTO BorrowRequests');
 
@@ -289,12 +305,26 @@ test('create revalidates eligibility, limits, copies, and reservations inside on
   expect(copyLockIndex).toBeGreaterThan(memberRowsIndex);
   expect(activeCountIndex).toBeGreaterThan(copyLockIndex);
   expect(dailyCountIndex).toBeGreaterThan(activeCountIndex);
-  expect(reservationLockIndex).toBeGreaterThan(dailyCountIndex);
+  expect(pendingClaimIndex).toBeGreaterThan(dailyCountIndex);
+  expect(reservationLockIndex).toBeGreaterThan(pendingClaimIndex);
   expect(insertIndex).toBeGreaterThan(reservationLockIndex);
   expect(source).toContain("r.RoleName = 'MEMBER'");
   expect(source).toContain("outcome: 'MEMBER_ROLE_REQUIRED'");
   expect(source).toContain("outcome: 'BORROW_DAILY_LIMIT_EXCEEDED'");
   expect(source).toContain("outcome: 'RESERVATION_QUEUE_PRIORITY'");
+  expect(source).toContain("outcome: 'COPY_PENDING_REQUEST_CONFLICT'");
+  expect(source).toContain("outcome: 'BOOK_ALREADY_IN_BORROWING_WORKFLOW'");
+});
+
+test('member candidate SQL hides copies claimed by pending borrow requests', () => {
+  const start = repositorySource.indexOf('async function listBorrowCandidates');
+  const end = repositorySource.indexOf('async function getMemberEligibility', start);
+  const source = repositorySource.slice(start, end);
+
+  expect(source).toContain('NOT EXISTS');
+  expect(source).toContain("pendingDetail.Status = 'REQUESTED'");
+  expect(source).toContain("pendingRequest.Status = 'PENDING'");
+  expect(source).toContain('memberCopy.BookId = b.BookId');
 });
 
 test('daily request and approval counts use Vietnam-day UTC bounds', () => {

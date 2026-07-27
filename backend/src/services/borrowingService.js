@@ -107,7 +107,7 @@ function createBorrowingService({
   }
 
   // @spec FR-FE07-015 — require the current MEMBER role and an active account (BR-FE07-004).
-  async function ensureEligibleMember(userId) {
+  async function ensureEligibleMember(userId, { requestOwner = false } = {}) {
     const eligibility = await borrowingRepository.getMemberEligibility(userId);
 
     if (!eligibility) {
@@ -115,10 +115,22 @@ function createBorrowingService({
     }
 
     if (eligibility.hasMemberRole === false) {
+      if (requestOwner) {
+        throw errors.conflict(
+          'BORROW_REQUEST_OWNER_NOT_MEMBER',
+          'The request owner no longer has the member role. Reject this stale request instead.'
+        );
+      }
       throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The account no longer has the member role.');
     }
 
     if (eligibility.userStatus !== 'ACTIVE') {
+      if (requestOwner) {
+        throw errors.conflict(
+          'BORROW_REQUEST_OWNER_INACTIVE',
+          'The request owner is inactive. Reject this stale request instead.'
+        );
+      }
       throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
     }
 
@@ -336,6 +348,27 @@ function createBorrowingService({
       );
     }
 
+    if (createResult?.outcome === 'COPY_PENDING_REQUEST_CONFLICT') {
+      throw errors.conflict(
+        'COPY_PENDING_REQUEST_CONFLICT',
+        'A requested copy already belongs to another pending borrow request.'
+      );
+    }
+
+    if (createResult?.outcome === 'BOOK_ALREADY_IN_BORROWING_WORKFLOW') {
+      throw errors.conflict(
+        'BOOK_ALREADY_IN_BORROWING_WORKFLOW',
+        'This member already has a pending request or active loan for this book.'
+      );
+    }
+
+    if (createResult?.outcome === 'DUPLICATE_BOOK_IN_REQUEST') {
+      throw errors.badRequest(
+        'DUPLICATE_BOOK_IN_REQUEST',
+        'A borrow request may contain only one copy of each book.'
+      );
+    }
+
     if (createResult?.outcome !== 'CREATED') {
       throw errors.conflict('COPY_NOT_AVAILABLE', 'A requested copy is not available.');
     }
@@ -459,7 +492,10 @@ function createBorrowingService({
       end: businessDayEndUtc,
     } = businessDateUtcBounds(approvalDate);
 
-    const eligibility = await ensureEligibleMember(borrowRequest.userId);
+    const eligibility = await ensureEligibleMember(
+      borrowRequest.userId,
+      { requestOwner: true }
+    );
     await ensureNoBorrowingBlockers(borrowRequest.userId, approvalDate);
     await validateBorrowLimit(borrowRequest.userId, copyIds.length);
     const dailyLimit = await validateDailyBorrowLimit(
@@ -504,12 +540,18 @@ function createBorrowingService({
       );
     }
 
-    if (approvalResult?.outcome === 'MEMBER_ROLE_REQUIRED') {
-      throw errors.forbidden('MEMBER_ROLE_REQUIRED', 'The request owner no longer has the member role.');
+    if (approvalResult?.outcome === 'BORROW_REQUEST_OWNER_NOT_MEMBER') {
+      throw errors.conflict(
+        'BORROW_REQUEST_OWNER_NOT_MEMBER',
+        'The request owner no longer has the member role. Reject this stale request instead.'
+      );
     }
 
     if (approvalResult?.outcome === 'MEMBER_ACCOUNT_INACTIVE') {
-      throw errors.forbidden('MEMBER_ACCOUNT_INACTIVE', 'Member account is not active.');
+      throw errors.conflict(
+        'BORROW_REQUEST_OWNER_INACTIVE',
+        'The request owner is inactive. Reject this stale request instead.'
+      );
     }
 
 
@@ -523,6 +565,20 @@ function createBorrowingService({
 
     if (approvalResult?.outcome === 'OVERDUE_LOAN_BLOCKS_BORROWING') {
       throw errors.conflict('OVERDUE_LOAN_BLOCKS_BORROWING', 'Overdue borrowed item blocks borrowing.');
+    }
+
+    if (approvalResult?.outcome === 'BOOK_ALREADY_BORROWED_BY_MEMBER') {
+      throw errors.conflict(
+        'BOOK_ALREADY_BORROWED_BY_MEMBER',
+        'The request owner is already borrowing another copy of this book.'
+      );
+    }
+
+    if (approvalResult?.outcome === 'DUPLICATE_BOOK_IN_REQUEST') {
+      throw errors.conflict(
+        'DUPLICATE_BOOK_IN_REQUEST',
+        'This legacy request contains multiple copies of the same book. Reject it instead.'
+      );
     }
 
     if (approvalResult?.outcome === 'REQUEST_NOT_APPROVABLE') {

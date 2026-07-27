@@ -81,6 +81,9 @@ function makeLifecycleHarness(results) {
   getPool.mockResolvedValue({
     async transactionQuery(query, inputs) {
       calls.push({ query, inputs });
+      if (query.includes('sp_getapplock')) {
+        return { recordset: [] };
+      }
       const next = queued.shift();
       if (next instanceof Error) throw next;
       return { recordset: next || [] };
@@ -285,6 +288,25 @@ describe('deactivateManagedUser', () => {
     expect(borrowingReadIndex).toBeGreaterThan(memberLockIndex);
     expect(harness.calls[memberLockIndex].query).toContain('UPDLOCK');
     expect(harness.calls[borrowingReadIndex].query).toContain('UPDLOCK');
+    expect(harness.transaction.rollbackCount).toBe(1);
+  });
+
+  test('pending borrow requests block deactivation', async () => {
+    const harness = makeLifecycleHarness([
+      ACTIVE_ADMIN,
+      [CURRENT_LIBRARIAN],
+      CURRENT_ROLES,
+      [{ MemberId: 5 }],
+      [{ ActiveBorrowingCount: 0 }],
+      [{ PendingRequestCount: 2 }],
+    ]);
+
+    await expect(harness.invokeDeactivate()).resolves.toEqual({
+      outcome: 'PENDING_BORROW_REQUESTS_EXIST',
+      pendingRequestCount: 2,
+    });
+    expect(harness.calls.find(({ query }) => query.includes('PendingRequestCount')).query)
+      .toContain('UPDLOCK');
     expect(harness.transaction.rollbackCount).toBe(1);
   });
 

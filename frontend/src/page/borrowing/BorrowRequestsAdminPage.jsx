@@ -79,6 +79,7 @@ function RequestReviewSummary({ request }) {
 }
 
 export default function BorrowRequestsAdminPage() {
+  // @spec FR-FE07-035
   const [requests, setRequests] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -174,6 +175,7 @@ export default function BorrowRequestsAdminPage() {
       showToast(`Đã duyệt yêu cầu ${approveTarget.id}.`, 'success');
     } catch (error) {
       showToast(error.message, 'error');
+      await loadRequests();
     } finally {
       setActionPending(false);
     }
@@ -196,6 +198,7 @@ export default function BorrowRequestsAdminPage() {
       showToast(`Đã từ chối yêu cầu ${rejectedId}.`, 'info');
     } catch (error) {
       showToast(error.message, 'error');
+      await loadRequests();
     } finally {
       setActionPending(false);
     }

@@ -388,3 +388,20 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Maps to: MF-FE11-009; FR-FE11-012/013; AC-FE11-013.
   - Show the current sole role inside the managed-user edit dialog and provide an explicit `Đổi vai trò` action that opens the canonical radio-based role replacement dialog.
   - Keep profile editing and atomic role replacement as separate commands so no partial cross-command transaction is implied.
+
+- [~] **FE11-REQ04 - Reconcile Admin decisions with FE07 pending-copy claims.**
+  - Maps to: BR-FE11-029, FR-FE11-039/040, AC-FE11-024; BR-FE07-033.
+  - Project physical `copyStatus` in the safe Admin request detail.
+  - Reload canonical list/detail after both success and conflict; retain FE07
+    reject ownership and required reason.
+  - Evidence: focused backend 123/123 and frontend 36/36; full backend
+    1,056/1,056; full frontend 232/232; lint/build, traceability, and diff
+    hygiene passed locally.
+  - Remaining: authenticated browser and human review.
+
+- [~] **FE11-REQ05 - Guard role/account lifecycle and legacy approvals.**
+  - Maps to: BR-FE11-030/031, FR-FE11-041/042; FE07 BR-FE07-034.
+  - Block deactivation and removal of `MEMBER` while FE07 workflows remain.
+  - Disable only known-invalid approvals, show the blocker, and retain reject.
+  - Repository, service, route, and frontend regression evidence required;
+    authenticated browser/human review remains.

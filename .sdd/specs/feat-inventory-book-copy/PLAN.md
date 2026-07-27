@@ -131,6 +131,17 @@ All existing-copy mutation responses include the advanced opaque version. Missin
 
 FE06 lock and state contracts must remain compatible with FE07 approval/return and FE08 hold/release transactions.
 
+## 10. Pending FE07 Claim Addendum
+
+- Treat FE07 `PENDING + REQUESTED` as a workflow claim, not as a new
+  `BookCopies.Status`.
+- Lock/recheck that claim in the same FE06 mutation transaction used for active
+  borrow and reservation conflicts.
+- Return `PENDING_BORROW_REQUEST_CONFLICT` and direct staff to Request
+  Management; never provide a manual override that invalidates a pending
+  member request.
+- Validate route behavior, full regression, traceability, and human review.
+
 ## 9. Verification Gates
 
 | Gate | Command | Expected result |

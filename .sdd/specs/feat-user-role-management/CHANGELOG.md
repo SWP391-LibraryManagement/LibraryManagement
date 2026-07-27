@@ -1,5 +1,21 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Connect role/account lifecycle to FE07 (v0.6.8)
+
+- Blocked Member-role replacement and account deactivation while FE07 pending
+  requests or active loans exist, using the shared member transaction lock.
+- Added safe approval blockers for stale owner role/account and unavailable
+  physical copies.
+- Disabled only approval for known-invalid legacy requests and preserved the
+  required-reason rejection cleanup path.
+
+## 2026-07-27 - Reconcile Admin request decisions with FE07 (v0.6.7)
+
+- Added canonical physical copy status to the safe Admin request detail.
+- Reloaded list/detail after approve/reject success or conflict.
+- Clarified the required rejection reason and logical pending-claim release.
+- Preserved FE07 as the only approve/reject business owner.
+
 ## 2026-07-27 - Keep email and username readable in the user table
 
 - Corrected the desktop user-table column widths from an over-constrained total to exactly 100%.
