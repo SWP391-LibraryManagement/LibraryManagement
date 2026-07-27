@@ -1,73 +1,73 @@
-# CONTEXT.md - FE01 Public / Browse
+# CONTEXT.md - FE01 Công Khai / Duyệt Sách
 
-# Version: 0.1.2
+# Phiên bản: 0.1.2
 
-# Status: APPROVED - BASELINE 2026-07-17; HOMEPAGE ROLE/ISBN BOUNDARY ALIGNED 2026-07-27
+# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17; RANH GIỚI VAI TRÒ/ISBN HOMEPAGE ĐÃ ĐƯỢC CĂN CHỈNH 2026-07-27
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature folder: `.sdd/specs/feat-public-browse/`
-
----
-
-## 1. Feature Purpose
-
-Public / Browse exists so guests can discover library books before logging in or becoming members.
-
-This feature must keep four things clear:
-
-- Public users can view safe catalog information.
-- Guest/Member search the official catalog by title or author; ISBN remains staff-management metadata.
-- Public pages do not expose protected user, borrowing, reservation, or fine data.
-- Public browse remains read-only and does not modify book or inventory records.
-
-FE01 is a Standard Spec feature because it is user-facing and depends on catalog correctness, but it does not own core catalog management.
+# Thư mục chức năng: `.sdd/specs/feat-public-browse/`
 
 ---
 
-## 2. Real-World Workflow
+## 1. Mục Đích Chức Năng
 
-The typical public browsing workflow:
+Chức năng Công khai / Duyệt sách giúp Khách khám phá sách của thư viện trước khi đăng nhập hoặc trở thành Thành viên.
 
-1. A guest opens the library website.
-2. The system displays a home page with available public navigation.
-3. The guest searches or browses books.
-4. The system returns matching public book information without ISBN.
-5. The guest opens a book result.
-6. The system displays safe book details without exposing availability labels to Guest/Member.
-7. The system may use the latest availability internally to choose the correct owning Member workflow; Librarian/Admin may see the approved high-level status.
-8. If the guest wants member-only actions, the system routes them to authentication or membership flows.
+Chức năng này phải làm rõ bốn điều:
 
----
+- Người dùng công khai có thể xem thông tin danh mục an toàn.
+- Khách/Thành viên tìm kiếm danh mục chính thức theo tên sách hoặc tác giả; ISBN vẫn là metadata dành cho nhân viên quản lý.
+- Các trang công khai không làm lộ dữ liệu được bảo vệ về người dùng, mượn sách, đặt chỗ hoặc khoản phạt.
+- Hoạt động duyệt sách công khai chỉ có quyền đọc và không sửa hồ sơ sách hoặc kho.
 
-## 3. Feature Boundary
-
-FE01 includes:
-
-- View home page.
-- Search public book catalog.
-- Search by title or author; ISBN search belongs to FE05 Librarian/Admin management.
-- View public book information and details without ISBN.
-- Read-only display of categories, authors, publishers, and covers.
-- Role-aware HomePage presentation: Guest/Member do not see availability labels; Librarian/Admin may see the high-level state.
-- Responsive navigation, connected public sections, footer contact details, and readable policy information.
-
-FE01 does not include:
-
-- Creating, updating, or deactivating books. That belongs to FE05 Book Management.
-- Managing physical copies, barcode, location, or detailed copy state. That belongs to FE06 Inventory / Book Copy Management.
-- Borrowing books. That belongs to FE07 Borrowing Management.
-- Reserving books. That belongs to FE08 Reservation Management.
-- Authentication, registration, or membership approval. Those belong to FE02 and FE04.
-- Admin/librarian catalog management screens.
+FE01 là chức năng có Đặc tả Tiêu chuẩn vì hướng tới người dùng và phụ thuộc vào tính chính xác của danh mục, nhưng không sở hữu hoạt động quản lý danh mục cốt lõi.
 
 ---
 
-## 4. Current Data Model Notes
+## 2. Quy Trình Thực Tế
 
-The current SQL script already includes:
+Quy trình duyệt sách công khai điển hình:
+
+1. Khách mở website thư viện.
+2. Hệ thống hiển thị trang chủ với các điều hướng công khai hiện có.
+3. Khách tìm kiếm hoặc duyệt sách.
+4. Hệ thống trả về thông tin sách công khai phù hợp mà không có ISBN.
+5. Khách mở một kết quả sách.
+6. Hệ thống hiển thị chi tiết sách an toàn mà không làm lộ nhãn tình trạng có sẵn cho Khách/Thành viên.
+7. Hệ thống có thể dùng nội bộ tình trạng có sẵn mới nhất để chọn đúng quy trình Thành viên sở hữu; Thủ thư/Quản trị viên có thể xem trạng thái cấp cao đã được phê duyệt.
+8. Nếu Khách muốn thực hiện hành động chỉ dành cho Thành viên, hệ thống chuyển họ tới luồng xác thực hoặc đăng ký tư cách thành viên.
+
+---
+
+## 3. Ranh Giới Chức Năng
+
+FE01 bao gồm:
+
+- Xem trang chủ.
+- Tìm kiếm danh mục sách công khai.
+- Tìm kiếm theo tên sách hoặc tác giả; tìm kiếm ISBN thuộc phạm vi quản lý FE05 của Thủ thư/Quản trị viên.
+- Xem thông tin và chi tiết sách công khai không có ISBN.
+- Hiển thị chỉ đọc thể loại, tác giả, nhà xuất bản và ảnh bìa.
+- Cách hiển thị HomePage nhận biết vai trò: Khách/Thành viên không thấy nhãn tình trạng có sẵn; Thủ thư/Quản trị viên có thể xem trạng thái cấp cao.
+- Điều hướng responsive, các phần công khai được kết nối, thông tin liên hệ ở footer và thông tin chính sách dễ đọc.
+
+FE01 không bao gồm:
+
+- Tạo, cập nhật hoặc ngừng kích hoạt sách. Phạm vi này thuộc FE05 Quản lý sách.
+- Quản lý bản sao vật lý, barcode, vị trí hoặc trạng thái chi tiết của bản sao. Phạm vi này thuộc FE06 Quản lý kho / Bản sao sách.
+- Mượn sách. Phạm vi này thuộc FE07 Quản lý mượn sách.
+- Đặt chỗ sách. Phạm vi này thuộc FE08 Quản lý đặt chỗ.
+- Xác thực, đăng ký hoặc phê duyệt tư cách thành viên. Các phạm vi này thuộc FE02 và FE04.
+- Các màn hình quản lý danh mục dành cho Quản trị viên/Thủ thư.
+
+---
+
+## 4. Ghi Chú Về Mô Hình Dữ Liệu Hiện Tại
+
+Script SQL hiện tại đã bao gồm:
 
 - `Books(BookId, Title, ISBN, CategoryId, AuthorId, PublisherId, PublishYear, Description, CoverUrl)`
 - `Categories(CategoryId, CategoryName)`
@@ -75,83 +75,83 @@ The current SQL script already includes:
 - `Publishers(PublisherId, PublisherName)`
 - `BookCopies(CopyId, BookId, Barcode, Status, Location)`
 
-Potential issues to review:
+Các vấn đề tiềm ẩn cần review:
 
-- The SQL script does not yet define a book active/inactive status field, while public search normally should hide inactive books.
-- Availability is calculated from `BookCopies.Status = AVAILABLE`; it remains in the canonical response for workflow routing and approved staff presentation.
-- Public responses must not expose ISBN or internal inventory fields such as exact barcode policy.
-- Public `q` matches title or author only; FE05 staff management search may also match ISBN, category, and publisher.
-- Pagination defaults to `page=1`, `limit=20`, with `page>=1`, `limit=1..100`; invalid values are rejected. Empty search returns the default first page ordered by `Title ASC, BookId ASC`.
+- Script SQL chưa định nghĩa trường trạng thái hoạt động/không hoạt động của sách, trong khi tìm kiếm công khai thông thường phải ẩn sách không hoạt động.
+- Tình trạng có sẵn được tính từ `BookCopies.Status = AVAILABLE`; dữ liệu này vẫn nằm trong phản hồi chuẩn để định tuyến quy trình và hiển thị cho nhân viên đã được phê duyệt.
+- Phản hồi công khai không được làm lộ ISBN hoặc các trường kho nội bộ như chính sách barcode chính xác.
+- `q` công khai chỉ khớp tên sách hoặc tác giả; tìm kiếm quản lý dành cho nhân viên FE05 còn có thể khớp ISBN, thể loại và nhà xuất bản.
+- Phân trang mặc định là `page=1`, `limit=20`, với `page>=1`, `limit=1..100`; giá trị không hợp lệ bị từ chối. Tìm kiếm trống trả về trang đầu tiên mặc định được sắp xếp theo `Title ASC, BookId ASC`.
 
-These are not blockers for drafting, but they must be resolved before implementation.
+Đây không phải các yếu tố chặn việc soạn thảo, nhưng phải được giải quyết trước khi triển khai.
 
 ---
 
-## 5. Main Use Cases From Assignment Sheet
+## 5. Use Case Chính Từ Bảng Phân Công
 
-| Use Case ID | Use Case Name | Owner |
+| ID Use Case | Tên Use Case | Chủ sở hữu |
 | ----------- | ------------- | ----- |
-| UC01 | View Home Page | Dung |
-| UC02 | Search Books | Dung |
-| UC03 | View Book Information | Dung |
-| UC04 | View Book Details | Dung |
+| UC01 | Xem trang chủ | Dung |
+| UC02 | Tìm kiếm sách | Dung |
+| UC03 | Xem thông tin sách | Dung |
+| UC04 | Xem chi tiết sách | Dung |
 
 ---
 
-## 6. Feature Tests From Assignment Sheet
+## 6. Kiểm Thử Chức Năng Từ Bảng Phân Công
 
-| Test ID | Test Name | Owner |
+| ID kiểm thử | Tên kiểm thử | Chủ sở hữu |
 | ------- | --------- | ----- |
-| FT01 | Home page display | Dung |
-| FT02 | Search books | Dung |
-| FT03 | View book information | Dung |
-| FT04 | View book details | Dung |
+| FT01 | Hiển thị trang chủ | Dung |
+| FT02 | Tìm kiếm sách | Dung |
+| FT03 | Xem thông tin sách | Dung |
+| FT04 | Xem chi tiết sách | Dung |
 
 ---
 
-## 7. Key Risks
+## 7. Rủi Ro Chính
 
-- FE01 may duplicate FE05 book management scope if write actions are accidentally added.
-- Public search may expose inactive or internal-only books if filtering rules are unclear.
-- Member workflow routing or staff presentation may become stale if availability is not calculated consistently with FE06.
-- Public endpoints may expose protected data if response DTOs are not controlled.
-- Empty, invalid, or very broad searches may degrade performance without pagination.
+- FE01 có thể trùng lặp phạm vi quản lý sách của FE05 nếu vô tình bổ sung hành động ghi.
+- Tìm kiếm công khai có thể làm lộ sách không hoạt động hoặc chỉ dùng nội bộ nếu quy tắc lọc không rõ ràng.
+- Việc định tuyến quy trình Thành viên hoặc hiển thị cho nhân viên có thể lỗi thời nếu tình trạng có sẵn không được tính nhất quán với FE06.
+- Endpoint công khai có thể làm lộ dữ liệu được bảo vệ nếu DTO phản hồi không được kiểm soát.
+- Tìm kiếm trống, không hợp lệ hoặc quá rộng có thể làm giảm hiệu năng nếu không phân trang.
 
 ---
 
-## 8. Dependencies
+## 8. Phụ Thuộc
 
-| Dependency | Why It Matters |
+| Phụ thuộc | Lý do quan trọng |
 | ---------- | -------------- |
-| FE05 Book Management | Owns official book metadata and active/deactivated catalog state. |
-| FE06 Inventory / Book Copy Management | Provides the derived availability status for internal routing and approved Librarian/Admin HomePage presentation; exact counts remain private. |
-| FE02 Authentication | Provides login/register routing for member-only actions. |
-| FE04 Membership Management | Owns membership application flow after public discovery. |
-| FE07 Borrowing Management | Owns Member borrow/history and Librarian/Admin request/return destinations opened from Homepage. |
-| FE08 Reservation Management | Owns Member reservations and staff reservation management; FE01 only routes to an existing screen. |
-| FE11 User & Role Management | Supplies role precedence and Admin user-management destinations. |
-| FE12 Reporting & Statistics | Owns Librarian/Admin report destinations exposed by role-aware Homepage actions. |
-| SQL Server database | Stores books, categories, authors, publishers, and copies. |
+| FE05 Quản lý sách | Sở hữu metadata sách chính thức và trạng thái danh mục hoạt động/ngừng kích hoạt. |
+| FE06 Quản lý kho / Bản sao sách | Cung cấp trạng thái có sẵn được suy ra để định tuyến nội bộ và hiển thị HomePage đã được phê duyệt cho Thủ thư/Quản trị viên; số lượng chính xác vẫn là dữ liệu riêng tư. |
+| FE02 Xác thực | Cung cấp định tuyến đăng nhập/đăng ký cho các hành động chỉ dành cho Thành viên. |
+| FE04 Quản lý tư cách thành viên | Sở hữu luồng đăng ký tư cách thành viên sau khi khám phá công khai. |
+| FE07 Quản lý mượn sách | Sở hữu các đích mượn/lịch sử của Thành viên và yêu cầu/trả sách của Thủ thư/Quản trị viên được mở từ Homepage. |
+| FE08 Quản lý đặt chỗ | Sở hữu việc đặt chỗ của Thành viên và quản lý đặt chỗ của nhân viên; FE01 chỉ định tuyến tới màn hình hiện có. |
+| FE11 Quản lý người dùng và vai trò | Cung cấp thứ tự ưu tiên vai trò và các đích quản lý người dùng dành cho Quản trị viên. |
+| FE12 Báo cáo và thống kê | Sở hữu các đích báo cáo của Thủ thư/Quản trị viên được hiển thị bởi hành động Homepage nhận biết vai trò. |
+| Cơ sở dữ liệu SQL Server | Lưu sách, thể loại, tác giả, nhà xuất bản và bản sao. |
 
 ---
 
-## 9. Resolved Questions For Team / Teacher
+## 9. Câu Hỏi Đã Giải Quyết Cho Nhóm / Giảng Viên
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định được phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | Availability badges are staff-only. Guest uses a generic login continuation; Member sees the explicit FE07 borrow or FE08 reservation action selected from current availability; Librarian/Admin sees high-level status and management actions. No exact copy count is exposed. | Product-owner correction 2026-07-27, superseding the 2026-07-25 action-label decision | APPROVED |
-| Q-FE01-003 | Phase 1 public q matches title or author; approved ID filters and pagination remain required. | Review packet 2026-06-10; product-owner clarification 2026-07-27 | APPROVED |
-| Q-FE01-004 | ISBN is excluded from Guest/Member HomePage search, public list, and public detail; it remains visible/searchable only in authenticated Librarian/Admin FE05 management. | Product-owner correction 2026-07-27 (supersedes review packet 2026-06-10) | APPROVED |
-| Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-008 | Missing optional catalog metadata returns `null` without excluding a public-visible book. | Spec normalization 2026-07-17 | APPROVED |
+| Q-FE01-001 | Ẩn sách không hoạt động/đã ngừng kích hoạt khỏi mọi chế độ xem tìm kiếm/chi tiết công khai. | Gói review 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE01-002 | Huy hiệu tình trạng có sẵn chỉ dành cho nhân viên. Khách sử dụng bước tiếp tục đăng nhập chung; Thành viên thấy hành động mượn FE07 hoặc đặt chỗ FE08 rõ ràng được chọn từ tình trạng có sẵn hiện tại; Thủ thư/Quản trị viên thấy trạng thái cấp cao và hành động quản lý. Không làm lộ số lượng bản sao chính xác. | Sửa đổi của chủ sản phẩm 2026-07-27, thay thế quyết định nhãn hành động 2026-07-25 | ĐÃ PHÊ DUYỆT |
+| Q-FE01-003 | Trong Giai đoạn 1, q công khai khớp tên sách hoặc tác giả; bộ lọc ID và phân trang đã phê duyệt vẫn bắt buộc. | Gói review 2026-06-10; làm rõ của chủ sản phẩm 2026-07-27 | ĐÃ PHÊ DUYỆT |
+| Q-FE01-004 | ISBN bị loại khỏi tìm kiếm HomePage, danh sách công khai và chi tiết công khai cho Khách/Thành viên; ISBN chỉ hiển thị/có thể tìm kiếm trong phần quản lý FE05 đã xác thực dành cho Thủ thư/Quản trị viên. | Sửa đổi của chủ sản phẩm 2026-07-27 (thay thế gói review 2026-06-10) | ĐÃ PHÊ DUYỆT |
+| Q-FE01-005 | Trang chủ hiển thị điều hướng/tìm kiếm và sách gần đây; sách nổi bật là tùy chọn/ngoài phạm vi trừ khi được cấu hình thủ công. | Gói review 2026-06-10 | ĐÃ PHÊ DUYỆT |
+| Q-FE01-008 | Metadata danh mục tùy chọn bị thiếu trả về `null` mà không loại bỏ sách hiển thị công khai. | Chuẩn hóa đặc tả 2026-07-17 | ĐÃ PHÊ DUYỆT |
 
 ---
 
-## 10. Notes For Implementation Later
+## 10. Ghi Chú Cho Việc Triển Khai Sau Này
 
-- The FE01 baseline, responsive addendum, and local Homepage polish tasks are implemented with automated evidence; current-main human visual/navigation acceptance remains a release-level review.
-- Prototype behavior is not completion evidence; use the focused tests, traceability gate, and recorded human review for final acceptance.
-- Keep public browse endpoints read-only.
-- Return only public-safe book fields.
-- Search and detail behavior must stay consistent with FE05 and FE06.
+- Baseline FE01, phụ lục responsive và các nhiệm vụ hoàn thiện Homepage cục bộ đã được triển khai kèm bằng chứng tự động; việc con người chấp nhận giao diện/điều hướng trên main hiện tại vẫn là review cấp phát hành.
+- Hành vi prototype không phải bằng chứng hoàn thành; sử dụng kiểm thử tập trung, gate truy vết và review của con người đã ghi nhận để chấp nhận cuối cùng.
+- Giữ các endpoint duyệt sách công khai ở chế độ chỉ đọc.
+- Chỉ trả về các trường sách an toàn cho công khai.
+- Hành vi tìm kiếm và chi tiết phải nhất quán với FE05 và FE06.

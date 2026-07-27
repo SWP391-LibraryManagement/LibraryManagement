@@ -1,137 +1,137 @@
-# TASKS.md - FE01 Public / Browse
+# TASKS.md - FE01 Công khai / Duyệt sách
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED; RESPONSIVE FOLLOW-UP MERGED IN PR #59; LOCAL HOMEPAGE POLISH VALIDATED
+Trạng thái: HOÀN THÀNH - ĐÃ GHI NHẬN BẰNG CHỨNG KẾT THÚC GIAI ĐOẠN 2; PHẦN TIẾP NỐI RESPONSIVE ĐÃ ĐƯỢC MERGE TRONG PR #59; PHẦN HOÀN THIỆN HOMEPAGE CỤC BỘ ĐÃ ĐƯỢC XÁC THỰC
 Implementation State: COMPLETE
 
-Owner: Dung
+Người phụ trách: Dung
 
-Updated: 2026-07-26
+Cập nhật: 2026-07-26
 
-Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the responsive HomePage follow-up after H3 review. FE01-T009 through FE01-T013 are complete locally with automated evidence; human visual, navigation, and role-visibility acceptance remains a release-level review.
+Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đã phê duyệt; PR #59 đã merge phần tiếp nối HomePage responsive sau review H3. FE01-T009 đến FE01-T013 đã hoàn thành cục bộ với bằng chứng tự động; nghiệm thu thủ công về giao diện, điều hướng và khả năng hiển thị theo vai trò vẫn là review cấp bản phát hành.
 
 ---
 
-## Task Rules
+## Quy tắc thực hiện nhiệm vụ
 
-- Execute tasks in numeric order and begin each behavior task with its named RED tests.
-- FE01 is read-only. No task may write `Books`, `BookCopies`, borrow, reservation, fine, membership, user, or audit business records.
-- Keep FE01 public-safe projections separate from FE05 staff/catalog projections in shared backend files.
-- Use only the canonical endpoints `/api/books` and `/api/books/{bookId}`; do not add `/api/public/*` aliases or a category endpoint.
-- Add `@spec` tags to changed implementation files for the mapped BR/FR IDs.
-- Do not mark a task complete because prototype code already exists; record fresh focused evidence.
+- Thực hiện nhiệm vụ theo thứ tự số và bắt đầu mỗi nhiệm vụ hành vi bằng các test RED được nêu tên.
+- FE01 chỉ đọc. Không nhiệm vụ nào được ghi các bản ghi nghiệp vụ `Books`, `BookCopies`, lượt mượn, đặt chỗ, khoản phạt, tư cách thành viên, người dùng hoặc kiểm toán.
+- Giữ phép chiếu công khai an toàn FE01 tách biệt với phép chiếu nhân viên/danh mục FE05 trong các tệp backend dùng chung.
+- Chỉ dùng các endpoint chuẩn `/api/books` và `/api/books/{bookId}`; không thêm alias `/api/public/*` hoặc endpoint thể loại.
+- Thêm thẻ `@spec` vào các tệp triển khai đã thay đổi cho ID BR/FR được ánh xạ.
+- Không đánh dấu nhiệm vụ hoàn thành chỉ vì mã prototype đã tồn tại; phải ghi nhận bằng chứng tập trung mới.
 
-## Ordered Tasks
+## Các nhiệm vụ theo thứ tự
 
-- [x] **FE01-T001 - Add RED public browse contract tests.**
-  - Maps to: BR-FE01-001 through BR-FE01-014; FR-FE01-001 through FR-FE01-013; AC-FE01-001 through AC-FE01-013; NFR-FE01-SEC-001 through NFR-FE01-SEC-004; NFR-FE01-PERF-001/002.
-  - Files: create `backend/tests/publicBrowseRoutes.test.js`, create `backend/tests/publicBrowseRepository.test.js`, create `backend/tests/sql/publicBrowseAvailability.sqltest.js`, create `frontend/test/publicBrowseFrontend.test.js`.
-  - Dependency: FE05 owner confirms the shared public response envelope and FE06 owner confirms the availability fixture contract.
-  - RED: assert unauthenticated `GET /api/books` and `GET /api/books/{bookId}`, exact query-field allowlist, title/author-only q matching, q length 1..200, positive ID filters, page/limit bounds, stable order, empty search defaults, inactive/not-found behavior, public-safe fields without ISBN, null optional metadata, latest availability, and no FE01 mutation.
-  - Verify RED: focused commands fail only on the missing v0.3.1 public behavior or missing dedicated test fixtures, not on malformed test setup.
-  - DoD: every BR/FR/AC is represented by an assertion or an explicit integration test mapping, including SQL latest-commit availability and frontend unavailable/null states.
+- [x] **FE01-T001 - Thêm các test hợp đồng duyệt công khai RED.**
+  - Ánh xạ tới: BR-FE01-001 đến BR-FE01-014; FR-FE01-001 đến FR-FE01-013; AC-FE01-001 đến AC-FE01-013; NFR-FE01-SEC-001 đến NFR-FE01-SEC-004; NFR-FE01-PERF-001/002.
+  - Tệp: tạo `backend/tests/publicBrowseRoutes.test.js`, tạo `backend/tests/publicBrowseRepository.test.js`, tạo `backend/tests/sql/publicBrowseAvailability.sqltest.js`, tạo `frontend/test/publicBrowseFrontend.test.js`.
+  - Phụ thuộc: người phụ trách FE05 xác nhận lớp bọc phản hồi công khai dùng chung và người phụ trách FE06 xác nhận hợp đồng fixture tình trạng có sẵn.
+  - RED: xác nhận `GET /api/books` và `GET /api/books/{bookId}` không cần xác thực, allowlist trường truy vấn chính xác, q chỉ khớp tiêu đề/tác giả, độ dài q 1..200, bộ lọc ID dương, giới hạn page/limit, thứ tự ổn định, mặc định tìm kiếm trống, hành vi không hoạt động/không tìm thấy, trường công khai an toàn không có ISBN, siêu dữ liệu tùy chọn null, tình trạng có sẵn mới nhất và không có thay đổi dữ liệu FE01.
+  - Xác minh RED: các lệnh tập trung chỉ thất bại do thiếu hành vi công khai v0.3.1 hoặc thiếu fixture test chuyên biệt, không phải do thiết lập test sai định dạng.
+  - DoD: mọi BR/FR/AC được thể hiện bằng một assertion hoặc ánh xạ test tích hợp rõ ràng, bao gồm tình trạng có sẵn theo commit mới nhất trong SQL và trạng thái không khả dụng/null ở frontend.
 
-- [x] **FE01-T002 - Reconcile canonical public route and validation boundary.**
-  - Maps to: BR-FE01-001 through BR-FE01-007, BR-FE01-013; FR-FE01-001 through FR-FE01-007, FR-FE01-011/012; AC-FE01-001 through AC-FE01-007, AC-FE01-010/011/012; NFR-FE01-SEC-001/003.
-  - Files: `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
-  - Dependency: FE01-T001 and FE05 shared-route boundary approval.
-  - GREEN: expose only the canonical public GET contracts; accept exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; reject unknown query fields, invalid positive IDs, q values over 200 characters, page below 1, and limit outside 1..100 before repository execution.
-  - Verify: focused route tests assert `200`, `400`, `404`, and safe generic `500` responses, no authentication requirement, no stack traces, and no public access to mutation routes.
-  - DoD: `/api/public/*` aliases and FE01-owned `/api/books/categories` behavior are absent from the FE01 contract; shared FE05 management routes remain intact.
+- [x] **FE01-T002 - Đối soát route công khai chuẩn và ranh giới validation.**
+  - Ánh xạ tới: BR-FE01-001 đến BR-FE01-007, BR-FE01-013; FR-FE01-001 đến FR-FE01-007, FR-FE01-011/012; AC-FE01-001 đến AC-FE01-007, AC-FE01-010/011/012; NFR-FE01-SEC-001/003.
+  - Tệp: `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
+  - Phụ thuộc: FE01-T001 và phê duyệt ranh giới route dùng chung FE05.
+  - GREEN: chỉ làm lộ các hợp đồng GET công khai chuẩn; chấp nhận chính xác `q`, `categoryId`, `authorId`, `publisherId`, `page` và `limit`; từ chối trường truy vấn không xác định, ID dương không hợp lệ, giá trị q dài hơn 200 ký tự, page nhỏ hơn 1 và limit ngoài 1..100 trước khi thực thi repository.
+  - Xác minh: test route tập trung xác nhận phản hồi `200`, `400`, `404` và `500` chung an toàn, không yêu cầu xác thực, không có stack trace và không có quyền truy cập công khai tới route thay đổi dữ liệu.
+  - DoD: alias `/api/public/*` và hành vi `/api/books/categories` do FE01 sở hữu không có trong hợp đồng FE01; route quản lý FE05 dùng chung vẫn nguyên vẹn.
 
-- [x] **FE01-T003 - Reconcile database-side public filtering, pagination, and availability.**
-  - Maps to: BR-FE01-003, BR-FE01-005, BR-FE01-006, BR-FE01-008, BR-FE01-011 through BR-FE01-013; FR-FE01-002/003/008/009/011; AC-FE01-002/003/009/010/011; NFR-FE01-PERF-001/002.
-  - Files: `backend/src/repositories/bookRepository.js`, `backend/src/services/bookService.js`, `backend/tests/publicBrowseRepository.test.js`, `backend/tests/sql/publicBrowseAvailability.sqltest.js`.
-  - Dependency: FE01-T001 and FE01-T002.
-  - GREEN: filter only active books; match q against title or author name case-insensitively; apply positive ID filters in SQL; use default `page=1`, `limit=20`; order by `Title ASC, BookId ASC`; calculate availability from current `BookCopies.Status = AVAILABLE` without exposing copy counts or writing copy rows.
-  - Verify: repository tests inspect parameterized predicates, `OFFSET/FETCH`, stable ordering, empty search, missing optional joins, zero/one available-copy cases, and no full-catalog application filtering.
-  - DoD: the query reflects the latest committed database state on every request and never uses a hardcoded or stale UI-only availability value.
+- [x] **FE01-T003 - Đối soát bộ lọc công khai, phân trang và tình trạng có sẵn phía cơ sở dữ liệu.**
+  - Ánh xạ tới: BR-FE01-003, BR-FE01-005, BR-FE01-006, BR-FE01-008, BR-FE01-011 đến BR-FE01-013; FR-FE01-002/003/008/009/011; AC-FE01-002/003/009/010/011; NFR-FE01-PERF-001/002.
+  - Tệp: `backend/src/repositories/bookRepository.js`, `backend/src/services/bookService.js`, `backend/tests/publicBrowseRepository.test.js`, `backend/tests/sql/publicBrowseAvailability.sqltest.js`.
+  - Phụ thuộc: FE01-T001 và FE01-T002.
+  - GREEN: chỉ lọc sách hoạt động; khớp q với tiêu đề hoặc tên tác giả không phân biệt hoa thường; áp dụng bộ lọc ID dương trong SQL; dùng mặc định `page=1`, `limit=20`; sắp xếp theo `Title ASC, BookId ASC`; tính tình trạng có sẵn từ `BookCopies.Status = AVAILABLE` hiện tại mà không làm lộ số lượng bản sao hoặc ghi hàng bản sao.
+  - Xác minh: test repository kiểm tra vị từ tham số hóa, `OFFSET/FETCH`, thứ tự ổn định, tìm kiếm trống, phép join tùy chọn bị thiếu, trường hợp không có/có một bản sao có sẵn và không lọc toàn bộ danh mục ở tầng ứng dụng.
+  - DoD: truy vấn phản ánh trạng thái cơ sở dữ liệu đã xác nhận mới nhất trên mọi yêu cầu và không bao giờ dùng giá trị tình trạng có sẵn hardcode hoặc chỉ có trên giao diện đã lỗi thời.
 
-- [x] **FE01-T004 - Implement public-safe list/detail projection and error behavior.**
-  - Maps to: BR-FE01-004, BR-FE01-007, BR-FE01-010, BR-FE01-014; FR-FE01-004 through FR-FE01-006, FR-FE01-010/013; AC-FE01-004 through AC-FE01-008, AC-FE01-012/013; NFR-FE01-SEC-002/003/004.
-  - Files: `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/repositories/bookRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
-  - Dependency: FE01-T002 and FE01-T003.
-  - GREEN: return only title, category/author/publisher names, publish year, description, cover URL, and `AVAILABLE`/`UNAVAILABLE`; exclude ISBN from Guest/Member list/detail while preserving it in the authorized FE05 staff projection; return `null` for missing optional public metadata; return safe `404` for missing/inactive books; sanitize or escape public display content and hide status, barcodes, locations, borrower data, reservation data, fines, and audit data.
-  - Verify: route tests assert exact public field allowlists, null preservation, hidden-book behavior, malformed-versus-missing ID behavior, and generic database failure responses.
-  - DoD: no public response contains internal copy counts, staff fields, protected records, SQL details, or stack traces.
+- [x] **FE01-T004 - Triển khai phép chiếu danh sách/chi tiết công khai an toàn và hành vi lỗi.**
+  - Ánh xạ tới: BR-FE01-004, BR-FE01-007, BR-FE01-010, BR-FE01-014; FR-FE01-004 đến FR-FE01-006, FR-FE01-010/013; AC-FE01-004 đến AC-FE01-008, AC-FE01-012/013; NFR-FE01-SEC-002/003/004.
+  - Tệp: `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/repositories/bookRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
+  - Phụ thuộc: FE01-T002 và FE01-T003.
+  - GREEN: chỉ trả về tiêu đề, tên thể loại/tác giả/nhà xuất bản, năm xuất bản, mô tả, URL bìa và `AVAILABLE`/`UNAVAILABLE`; loại ISBN khỏi danh sách/chi tiết cho Khách/Thành viên trong khi giữ ISBN trong phép chiếu nhân viên FE05 đã được cấp quyền; trả về `null` cho siêu dữ liệu công khai tùy chọn bị thiếu; trả về `404` an toàn cho sách bị thiếu/không hoạt động; làm sạch hoặc escape nội dung hiển thị công khai và ẩn trạng thái, barcode, vị trí, dữ liệu người mượn, dữ liệu đặt chỗ, khoản phạt và dữ liệu kiểm toán.
+  - Xác minh: test route xác nhận allowlist trường công khai chính xác, giữ nguyên null, hành vi sách bị ẩn, hành vi ID sai định dạng so với bị thiếu và phản hồi lỗi cơ sở dữ liệu chung.
+  - DoD: không phản hồi công khai nào chứa số lượng bản sao nội bộ, trường nhân viên, bản ghi được bảo vệ, chi tiết SQL hoặc stack trace.
 
-- [x] **FE01-T005 - Add the public browse API client and server-backed HomePage data flow.**
-  - Maps to: FR-FE01-001 through FR-FE01-005, FR-FE01-008 through FR-FE01-013; AC-FE01-001 through AC-FE01-005, AC-FE01-009/010/013; NFR-FE01-UX-001/002.
-  - Files: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
-  - Dependency: FE01-T004 and the approved public response envelope.
-  - RED: assert the page calls only `/books` and `/books/{bookId}`, sends approved query names, does not request `/books/categories`, uses server availability only for approved staff presentation/internal routing, and does not report fake local borrow success.
-  - GREEN: add a small public browse API wrapper, load paginated public data, pass q/ID/page/limit parameters, load public detail through the canonical endpoint, and preserve guest access without an access token.
-  - Verify: frontend tests inspect request URLs/parameters, list/detail loading, refresh after query changes, and safe handling of API errors.
-  - DoD: HomePage no longer treats local mock arrays, local fake borrow completion, or legacy category fetches as FE01 data sources.
+- [x] **FE01-T005 - Thêm client API duyệt công khai và luồng dữ liệu HomePage dựa trên máy chủ.**
+  - Ánh xạ tới: FR-FE01-001 đến FR-FE01-005, FR-FE01-008 đến FR-FE01-013; AC-FE01-001 đến AC-FE01-005, AC-FE01-009/010/013; NFR-FE01-UX-001/002.
+  - Tệp: `frontend/src/api/libraryFeatureApi.js`, `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
+  - Phụ thuộc: FE01-T004 và lớp bọc phản hồi công khai đã được phê duyệt.
+  - RED: xác nhận trang chỉ gọi `/books` và `/books/{bookId}`, gửi các tên truy vấn đã phê duyệt, không yêu cầu `/books/categories`, chỉ dùng tình trạng có sẵn từ máy chủ cho cách trình bày nhân viên/định tuyến nội bộ đã phê duyệt và không báo mượn cục bộ thành công giả.
+  - GREEN: thêm lớp bọc API duyệt công khai nhỏ, tải dữ liệu công khai được phân trang, truyền tham số q/ID/page/limit, tải chi tiết công khai qua endpoint chuẩn và giữ quyền truy cập của Khách không cần access token.
+  - Xác minh: test frontend kiểm tra URL/tham số yêu cầu, tải danh sách/chi tiết, làm mới sau thay đổi truy vấn và xử lý lỗi API an toàn.
+  - DoD: HomePage không còn coi mảng mock cục bộ, hoàn tất mượn giả cục bộ hoặc lần lấy thể loại legacy là nguồn dữ liệu FE01.
 
-- [x] **FE01-T006 - Complete public browse loading, empty, role-safe availability, and null-metadata states.**
-  - Maps to: BR-FE01-002, BR-FE01-004, BR-FE01-008, BR-FE01-014; FR-FE01-001, FR-FE01-003 through FR-FE01-005, FR-FE01-010/013; AC-FE01-001, AC-FE01-003 through AC-FE01-005, AC-FE01-009/013; NFR-FE01-UX-001/002.
-  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
-  - Dependency: FE01-T005.
-  - RED: assert loading, no-results, unavailable, missing-cover, missing-author/category/publisher, and not-found detail states before implementation.
-  - GREEN: preserve books with null optional fields, render the safe no-cover fallback, show understandable empty/error states, hide availability labels from Guest/Member, show the approved high-level state only to Librarian/Admin, and route member actions to their owning borrowing/reservation flows without implementing those flows in FE01.
-  - Verify: focused frontend tests cover a public guest, Member/staff role presentation, empty search, no matches, unavailable routing, null metadata, missing detail, and safe generic error.
-  - DoD: no public UI exposes copy counts, borrower data, internal locations, or a false success message for borrowing/reservation actions; the responsive HomePage follow-up keeps the existing login/register, membership, and account routes reachable on mobile. Local implementation, H2 review, and PR #59 H3 integration review are complete.
+- [x] **FE01-T006 - Hoàn thiện các trạng thái đang tải, trống, tình trạng có sẵn an toàn theo vai trò và siêu dữ liệu null của duyệt công khai.**
+  - Ánh xạ tới: BR-FE01-002, BR-FE01-004, BR-FE01-008, BR-FE01-014; FR-FE01-001, FR-FE01-003 đến FR-FE01-005, FR-FE01-010/013; AC-FE01-001, AC-FE01-003 đến AC-FE01-005, AC-FE01-009/013; NFR-FE01-UX-001/002.
+  - Tệp: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`.
+  - Phụ thuộc: FE01-T005.
+  - RED: xác nhận các trạng thái đang tải, không có kết quả, không khả dụng, thiếu bìa, thiếu tác giả/thể loại/nhà xuất bản và chi tiết không tìm thấy trước khi triển khai.
+  - GREEN: giữ sách có trường tùy chọn null, kết xuất giá trị dự phòng không có bìa an toàn, hiển thị trạng thái trống/lỗi dễ hiểu, ẩn nhãn tình trạng có sẵn khỏi Khách/Thành viên, chỉ hiển thị trạng thái cấp cao đã phê duyệt cho Thủ thư/Quản trị viên và định tuyến hành động của Thành viên tới luồng mượn/đặt chỗ sở hữu mà không triển khai các luồng đó trong FE01.
+  - Xác minh: test frontend tập trung bao phủ Khách công khai, cách trình bày vai trò Thành viên/nhân viên, tìm kiếm trống, không khớp, định tuyến không khả dụng, siêu dữ liệu null, chi tiết bị thiếu và lỗi chung an toàn.
+  - DoD: không giao diện công khai nào làm lộ số lượng bản sao, dữ liệu người mượn, vị trí nội bộ hoặc thông báo thành công giả cho hành động mượn/đặt chỗ; phần tiếp nối HomePage responsive giữ các route đăng nhập/đăng ký, tư cách thành viên và tài khoản hiện có truy cập được trên thiết bị di động. Triển khai cục bộ, review H2 và review tích hợp H3 của PR #59 đã hoàn thành.
 
-- [x] **FE01-T007 - Close API documentation, test plan, and traceability.**
-  - Maps to: all FE01 BR/FR/AC/NFR IDs and the Definition of Done.
-  - Files: `backend/src/docs/openapi.yaml`, `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`, `.sdd/specs/feat-public-browse/SPEC.md` only if the shared response envelope is formally clarified before implementation.
-  - Dependency: FE01-T001 through FE01-T006.
-  - GREEN: document the canonical public endpoints, query allowlist, pagination defaults/bounds, safe fields, availability values, error statuses, no-auth rule, and focused test commands; update every FE01 traceability row from `Not Started` only when its evidence exists.
-  - Verify: `rg` confirms every FE01 BR/FR/AC ID maps to a task and test; no `/api/public/*`, category-endpoint, exact-copy-count, or stale `Đã mượn` contract remains in active FE01 docs.
-  - DoD: documentation never claims implementation or test completion without recorded evidence.
+- [x] **FE01-T007 - Hoàn tất tài liệu API, kế hoạch test và truy vết.**
+  - Ánh xạ tới: mọi ID BR/FR/AC/NFR của FE01 và Định nghĩa hoàn thành.
+  - Tệp: `backend/src/docs/openapi.yaml`, `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`, `.sdd/specs/feat-public-browse/SPEC.md` chỉ khi lớp bọc phản hồi dùng chung được làm rõ chính thức trước khi triển khai.
+  - Phụ thuộc: FE01-T001 đến FE01-T006.
+  - GREEN: lập tài liệu cho endpoint công khai chuẩn, allowlist truy vấn, mặc định/giới hạn phân trang, trường an toàn, giá trị tình trạng có sẵn, trạng thái lỗi, quy tắc không cần xác thực và lệnh test tập trung; chỉ cập nhật từng hàng truy vết FE01 khỏi `Not Started` khi có bằng chứng.
+  - Xác minh: `rg` xác nhận mọi ID BR/FR/AC FE01 ánh xạ tới một nhiệm vụ và test; không còn hợp đồng `/api/public/*`, endpoint thể loại, số lượng bản sao chính xác hoặc `Đã mượn` lỗi thời trong tài liệu FE01 đang hoạt động.
+  - DoD: tài liệu không bao giờ tuyên bố triển khai hoặc test hoàn thành khi chưa có bằng chứng được ghi nhận.
 
-- [x] **FE01-T008 - Pass focused validation and integration review.**
-  - Maps to: all FE01 requirements and project Definition of Done.
-  - Files: all FE01 implementation/test files changed by T001-T007 and `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - Dependency: FE01-T007.
-  - Verify: run `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js`, run the SQL test when SQL configuration is available, run `node --test frontend/test/publicBrowseFrontend.test.js`, run `npm.cmd run trace:enforce`, and run `git diff --check`.
-  - DoD: focused evidence passes and PR #59 satisfies the repository H3 integration gate. Current-main human visual and owner sign-off is tracked in the release checklist.
+- [x] **FE01-T008 - Vượt qua xác thực tập trung và review tích hợp.**
+  - Ánh xạ tới: mọi yêu cầu FE01 và Định nghĩa hoàn thành của dự án.
+  - Tệp: mọi tệp triển khai/test FE01 được T001-T007 thay đổi và `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - Phụ thuộc: FE01-T007.
+  - Xác minh: chạy `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js`, chạy test SQL khi có cấu hình SQL, chạy `node --test frontend/test/publicBrowseFrontend.test.js`, chạy `npm.cmd run trace:enforce` và chạy `git diff --check`.
+  - DoD: bằng chứng tập trung đạt và PR #59 đáp ứng cổng tích hợp H3 của kho mã. Xác nhận giao diện thủ công và phê duyệt của người phụ trách trên main hiện tại được theo dõi trong danh sách kiểm tra bản phát hành.
 
-- [x] **FE01-T009 - Polish footer contacts and activate policy information controls.**
-  - Maps to: FR-FE01-015, AC-FE01-015, NFR-FE01-UX-003.
-  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - GREEN: show phone, single-line desktop email, and address as three compact borderless desktop contact groups with two-column/tablet and one-column/mobile fallbacks; replace empty `#` links with accessible Privacy, Terms, and browser-storage dialogs.
-  - Verify: run `node --test frontend/test/publicBrowseFrontend.test.js`, `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build`, and `git diff --check`.
-  - DoD: footer controls have visible content, dialogs close from their button, backdrop, or Escape key, and the layout does not require horizontal scrolling.
+- [x] **FE01-T009 - Hoàn thiện liên hệ ở footer và kích hoạt điều khiển thông tin chính sách.**
+  - Ánh xạ tới: FR-FE01-015, AC-FE01-015, NFR-FE01-UX-003.
+  - Tệp: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: hiển thị điện thoại, email một dòng trên desktop và địa chỉ dưới dạng ba nhóm liên hệ desktop gọn không viền, có phương án dự phòng hai cột/máy tính bảng và một cột/thiết bị di động; thay liên kết `#` trống bằng hộp thoại Quyền riêng tư, Điều khoản và lưu trữ trình duyệt có khả năng truy cập.
+  - Xác minh: chạy `node --test frontend/test/publicBrowseFrontend.test.js`, `npm.cmd --prefix frontend run lint`, `npm.cmd --prefix frontend run build` và `git diff --check`.
+  - DoD: điều khiển footer có nội dung hiển thị, hộp thoại đóng được bằng nút, nền hộp thoại hoặc phím Escape và bố cục không yêu cầu cuộn ngang.
 
-- [x] **FE01-T010 - Connect public navigation groups to role-owned destinations.**
-  - Maps to: FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
-  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - GREEN: add animated desktop dropdowns and mobile accordions for `Khám phá sách`, the role-aware `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ` group, `Về thư viện`, and `Hỗ trợ`; route Guest/Member/Librarian/Admin actions to existing owning screens with staff-first precedence.
-  - Verify: run the focused frontend tests, assert every Homepage path is registered by `App.jsx`, run frontend lint/build, traceability enforcement, and `git diff --check`.
-  - DoD: no navigation item is an empty placeholder, contact actions are direct, dropdowns close with Escape, and every role destination reuses an existing route protected by its owning feature.
+- [x] **FE01-T010 - Kết nối các nhóm điều hướng công khai với đích do vai trò sở hữu.**
+  - Ánh xạ tới: FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
+  - Tệp: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: thêm dropdown desktop có animation và accordion di động cho `Khám phá sách`, nhóm nhận biết vai trò `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện` và `Hỗ trợ`; định tuyến hành động Khách/Thành viên/Thủ thư/Quản trị viên tới màn hình sở hữu hiện có với ưu tiên nhân viên trước.
+  - Xác minh: chạy test frontend tập trung, xác nhận mọi đường dẫn Homepage được `App.jsx` đăng ký, chạy lint/build frontend, thực thi truy vết và `git diff --check`.
+  - DoD: không mục điều hướng nào là chỗ giữ chỗ trống, hành động liên hệ là trực tiếp, dropdown đóng bằng Escape và mọi đích theo vai trò tái sử dụng route hiện có được tính năng sở hữu bảo vệ.
 
-- [x] **FE01-T011 - Extend the home page with useful connected content.**
-  - Maps to: FR-FE01-017, AC-FE01-017, NFR-FE01-UX-005.
-  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - GREEN: add public catalog-topic filters, a truthful library journey, and a Guest/Member/Librarian/Admin continuation panel backed by existing routes; add on-view, hover/focus, mobile, and reduced-motion presentation.
-  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
-  - DoD: the longer home page adds no fake counts or workflows, every action filters current data or reaches an owning feature, and all new sections remain usable on narrow screens.
+- [x] **FE01-T011 - Mở rộng trang chủ bằng nội dung hữu ích được kết nối.**
+  - Ánh xạ tới: FR-FE01-017, AC-FE01-017, NFR-FE01-UX-005.
+  - Tệp: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: thêm bộ lọc chủ đề danh mục công khai, hành trình thư viện trung thực và bảng tiếp tục Khách/Thành viên/Thủ thư/Quản trị viên được hỗ trợ bởi route hiện có; thêm cách trình bày khi xuất hiện trong khung nhìn, hover/focus, trên thiết bị di động và giảm chuyển động.
+  - Xác minh: chạy test frontend tập trung, lint/build frontend, thực thi truy vết và `git diff --check`.
+  - DoD: trang chủ dài hơn không thêm số liệu hay quy trình giả, mọi hành động lọc dữ liệu hiện tại hoặc tới tính năng sở hữu và mọi phần mới vẫn dùng được trên màn hình hẹp.
 
-- [x] **FE01-T012 - Restrict HomePage availability presentation by role.**
-  - Maps to: BR-FE01-016, FR-FE01-008/009/010/018, AC-FE01-005/009/018, NFR-FE01-UX-002.
-  - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - GREEN: hide availability badges from Guest/Member; keep Guest continuation generic, expose explicit FE07 borrow or FE08 reservation labels to Member, and preserve Librarian/Admin high-level status plus management actions across list/search/panel/modal.
-  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
-  - DoD: Guest does not infer availability; Member can identify and enter the correct borrow/reservation workflow; staff precedence and FE05/FE06 routing remain unchanged.
+- [x] **FE01-T012 - Giới hạn cách trình bày tình trạng có sẵn trên HomePage theo vai trò.**
+  - Ánh xạ tới: BR-FE01-016, FR-FE01-008/009/010/018, AC-FE01-005/009/018, NFR-FE01-UX-002.
+  - Tệp: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
+  - GREEN: ẩn huy hiệu tình trạng có sẵn khỏi Khách/Thành viên; giữ bước tiếp tục của Khách ở dạng chung, làm lộ nhãn mượn FE07 hoặc đặt chỗ FE08 rõ ràng cho Thành viên và giữ trạng thái cấp cao cùng hành động quản lý của Thủ thư/Quản trị viên trên danh sách/tìm kiếm/bảng/modal.
+  - Xác minh: chạy test frontend tập trung, lint/build frontend, thực thi truy vết và `git diff --check`.
+  - DoD: Khách không suy ra tình trạng có sẵn; Thành viên có thể nhận biết và vào đúng quy trình mượn/đặt chỗ; ưu tiên nhân viên và định tuyến FE05/FE06 không thay đổi.
 
-- [x] **FE01-T013 - Synchronize the Homepage specification set and current evidence.**
-  - Maps to: FR-FE01-015 through FR-FE01-018, AC-FE01-015 through AC-FE01-018, NFR-FE01-UX-002 through NFR-FE01-UX-005.
-  - Files: `.sdd/specs/feat-public-browse/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, and `CHANGELOG.md`.
-  - GREEN: remove the superseded Guest/Member availability wording, document `/home` versus `/homepage`, add the Homepage Role Connection Matrix, record the current role-aware navigation/footer behavior, and replace stale test/traceability totals with fresh evidence.
-  - Verify: run focused frontend tests, traceability enforcement, documentation consistency searches, and `git diff --check`.
-  - DoD: active FE01 documents describe one consistent Homepage contract and distinguish merged baseline evidence, local polish evidence, and pending human acceptance.
+- [x] **FE01-T013 - Đồng bộ bộ đặc tả Homepage và bằng chứng hiện tại.**
+  - Ánh xạ tới: FR-FE01-015 đến FR-FE01-018, AC-FE01-015 đến AC-FE01-018, NFR-FE01-UX-002 đến NFR-FE01-UX-005.
+  - Tệp: `.sdd/specs/feat-public-browse/CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, `TEST_PLAN.md` và `CHANGELOG.md`.
+  - GREEN: loại bỏ cách diễn đạt tình trạng có sẵn cho Khách/Thành viên đã bị thay thế, lập tài liệu phân biệt `/home` với `/homepage`, thêm Ma trận kết nối vai trò Homepage, ghi nhận hành vi điều hướng/footer nhận biết vai trò hiện tại và thay tổng số test/truy vết lỗi thời bằng bằng chứng mới.
+  - Xác minh: chạy test frontend tập trung, thực thi truy vết, tìm kiếm tính nhất quán tài liệu và `git diff --check`.
+  - DoD: tài liệu FE01 đang hoạt động mô tả một hợp đồng Homepage nhất quán và phân biệt bằng chứng baseline đã merge, bằng chứng hoàn thiện cục bộ và nghiệm thu thủ công đang chờ.
 
-- [x] **FE01-T014 - Simplify the Homepage header navigation.**
-  - Maps to: BR-FE01-017, FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
-  - Files: `frontend/src/page/HomePage.jsx`, focused frontend tests, `SPEC.md`, `TASKS.md`, and `CHANGELOG.md`.
-  - GREEN: remove the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from desktop and mobile header navigation while preserving branding, account controls, and role continuation actions elsewhere on the page.
-  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
-  - DoD: none of the four removed groups or their unused dropdown/accordion implementation remains in the header.
+- [x] **FE01-T014 - Đơn giản hóa điều hướng header Homepage.**
+  - Ánh xạ tới: BR-FE01-017, FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
+  - Tệp: `frontend/src/page/HomePage.jsx`, test frontend tập trung, `SPEC.md`, `TASKS.md` và `CHANGELOG.md`.
+  - GREEN: loại các nhóm `Khám phá sách`, dịch vụ theo đối tượng, `Về thư viện` và `Hỗ trợ` khỏi điều hướng header desktop và di động trong khi giữ thương hiệu, điều khiển tài khoản và hành động tiếp tục theo vai trò ở nơi khác trên trang.
+  - Xác minh: chạy test frontend tập trung, lint/build frontend, thực thi truy vết và `git diff --check`.
+  - DoD: không còn nhóm nào trong bốn nhóm đã loại bỏ hoặc phần triển khai dropdown/accordion không dùng của chúng trong header.
 
-## Requirement-To-Task Coverage
+## Độ bao phủ từ yêu cầu tới nhiệm vụ
 
-| Requirement IDs | Planned tasks |
+| ID yêu cầu | Nhiệm vụ đã lập kế hoạch |
 | --- | --- |
 | BR-FE01-001 through BR-FE01-007 | FE01-T001, FE01-T002, FE01-T004 |
 | BR-FE01-008 through BR-FE01-014 | FE01-T001, FE01-T003, FE01-T004, FE01-T006 |
@@ -149,9 +149,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 | BR-FE01-016, FR-FE01-018, AC-FE01-018 | FE01-T012, FE01-T013 |
 | BR-FE01-017 | FE01-T014 |
 
-### Explicit Cross-Boundary Mappings
+### Ánh xạ xuyên ranh giới rõ ràng
 
-| Requirement ID | Planned tasks |
+| ID yêu cầu | Nhiệm vụ đã lập kế hoạch |
 | --- | --- |
 | BR-FE01-009 | FE01-T001, FE01-T002, FE01-T004, FE01-T006 |
 | BR-FE01-012 | FE01-T001, FE01-T003, FE01-T004 |
@@ -160,22 +160,22 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 | AC-FE01-006 | FE01-T001, FE01-T002, FE01-T004, FE01-T006 |
 | AC-FE01-011 | FE01-T001, FE01-T002, FE01-T003, FE01-T006 |
 
-## Completion Gate
+## Cổng hoàn thành
 
-- [x] FE01-T001 through FE01-T008 are complete through the PR #59 H3 merge gate; current-main human visual/owner sign-off remains release-level evidence.
-- [x] FE01-T009 local implementation and automated validation are complete; human visual acceptance remains pending.
-- [x] FE01-T010 local implementation and automated validation are complete; human navigation acceptance remains pending.
-- [x] FE01-T011 local implementation and automated validation are complete; human visual acceptance remains pending.
-- [x] FE01-T012 local implementation and automated validation are complete; human role-visibility acceptance remains pending.
-- [x] FE01-T013 documentation synchronization and fresh automated evidence are complete.
-- [x] FE01-T014 Homepage header simplification is implemented with focused automated coverage.
-- [x] Focused backend, SQL, frontend, traceability, and diff checks pass.
-- [ ] FE05 owner confirms shared public catalog response compatibility.
-- [ ] FE06 owner confirms availability aggregation and no copy mutation.
-- [ ] Nhat confirms final public-safe DTO, guest UX states, and read-only boundary.
+- [x] FE01-T001 đến FE01-T008 đã hoàn thành qua cổng merge H3 của PR #59; xác nhận giao diện thủ công/phê duyệt của người phụ trách trên main hiện tại vẫn là bằng chứng cấp bản phát hành.
+- [x] Triển khai cục bộ và xác thực tự động FE01-T009 đã hoàn thành; nghiệm thu giao diện thủ công vẫn đang chờ.
+- [x] Triển khai cục bộ và xác thực tự động FE01-T010 đã hoàn thành; nghiệm thu điều hướng thủ công vẫn đang chờ.
+- [x] Triển khai cục bộ và xác thực tự động FE01-T011 đã hoàn thành; nghiệm thu giao diện thủ công vẫn đang chờ.
+- [x] Triển khai cục bộ và xác thực tự động FE01-T012 đã hoàn thành; nghiệm thu khả năng hiển thị theo vai trò thủ công vẫn đang chờ.
+- [x] Đồng bộ tài liệu và bằng chứng tự động mới FE01-T013 đã hoàn thành.
+- [x] Đơn giản hóa header Homepage FE01-T014 đã được triển khai với độ bao phủ tự động tập trung.
+- [x] Các kiểm tra backend, SQL, frontend, truy vết và diff tập trung đều đạt.
+- [ ] Người phụ trách FE05 xác nhận khả năng tương thích của phản hồi danh mục công khai dùng chung.
+- [ ] Người phụ trách FE06 xác nhận việc tổng hợp tình trạng có sẵn và không thay đổi bản sao.
+- [ ] Nhat xác nhận DTO công khai an toàn cuối cùng, trạng thái UX của Khách và ranh giới chỉ đọc.
 
-## 2026-07-23 role-integration correction
+## 2026-07-23 hiệu chỉnh tích hợp vai trò
 
-- [x] Align FE01 actor/API wording for Guest, Member, Librarian, and Admin reads.
-- [x] Connect public-book actions to FE11's single account role; keep defensive handling for stale legacy role arrays.
-- [x] Add defensive frontend regression coverage for invalid legacy `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility arrays.
+- [x] Căn chỉnh cách diễn đạt tác nhân/API FE01 cho thao tác đọc của Khách, Thành viên, Thủ thư và Quản trị viên.
+- [x] Kết nối hành động sách công khai với vai trò tài khoản duy nhất của FE11; giữ xử lý phòng vệ cho mảng vai trò legacy lỗi thời.
+- [x] Thêm độ bao phủ hồi quy frontend phòng vệ cho mảng tương thích legacy `MEMBER + LIBRARIAN` và `MEMBER + ADMIN` không hợp lệ.

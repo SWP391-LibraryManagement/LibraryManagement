@@ -1,145 +1,145 @@
-# CHANGELOG.md - FE01 Public / Browse
+# CHANGELOG.md - FE01 Công khai / Duyệt sách
 
-## 2026-07-27 - Explicit Member book actions
+## 2026-07-27 - Hành động sách rõ ràng cho Thành viên
 
-- Replaced the ambiguous Member `Tiếp tục` label with `Mượn sách này` for available books and `Đặt chỗ sách này` for unavailable books in search cards, information panel, and detail modal.
-- Preserved hidden availability badges for Guest/Member; Guest uses a generic login continuation, while Librarian/Admin retain FE05/FE06 status and management actions.
-- Kept selected `bookId` deep links connected to FE07 borrowing and FE08 reservation candidate selection.
+- Thay nhãn `Tiếp tục` mơ hồ của Thành viên bằng `Mượn sách này` cho sách có sẵn và `Đặt chỗ sách này` cho sách không có sẵn trong thẻ tìm kiếm, bảng thông tin và modal chi tiết.
+- Tiếp tục ẩn huy hiệu tình trạng có sẵn đối với Khách/Thành viên; Khách dùng bước tiếp tục đăng nhập chung, còn Thủ thư/Quản trị viên giữ trạng thái và hành động quản lý FE05/FE06.
+- Giữ deep link theo `bookId` đã chọn kết nối tới chọn ứng viên mượn FE07 và đặt chỗ FE08.
 
-## 2026-07-27 - Membership benefit card alignment
+## 2026-07-27 - Căn chỉnh thẻ lợi ích thành viên
 
-- Removed the permanent vertical stagger from even membership cards so both columns share the same row baselines.
-- Preserved equal-width responsive columns, card hover feedback, and the mobile single-column layout.
-- Added focused frontend regression coverage for the non-staggered grid contract.
+- Loại bỏ độ so le dọc cố định khỏi các thẻ thành viên chẵn để cả hai cột có cùng đường cơ sở theo hàng.
+- Giữ các cột responsive có chiều rộng bằng nhau, phản hồi hover trên thẻ và bố cục một cột trên thiết bị di động.
+- Thêm độ bao phủ hồi quy frontend tập trung cho hợp đồng lưới không so le.
 
-## 2026-07-27 - Public ISBN boundary
+## 2026-07-27 - Ranh giới ISBN công khai
 
-- Removed ISBN from Guest/Member HomePage search copy, book cards, detail UI, public API DTO, and OpenAPI schema.
-- Confirmed public `q` searches title/author only, while authenticated Librarian/Admin FE05 management reads and search retain ISBN.
-- Updated FE01 requirements, acceptance criteria, tasks, and test strategy to connect the public boundary to FE05 and FE11 single-role authorization.
+- Loại ISBN khỏi nội dung tìm kiếm HomePage, thẻ sách, giao diện chi tiết, DTO API công khai và schema OpenAPI của Khách/Thành viên.
+- Xác nhận `q` công khai chỉ tìm tiêu đề/tác giả, trong khi thao tác đọc và tìm kiếm quản lý FE05 của Thủ thư/Quản trị viên đã xác thực vẫn giữ ISBN.
+- Cập nhật yêu cầu, tiêu chí chấp nhận, nhiệm vụ và chiến lược test FE01 để kết nối ranh giới công khai với FE05 và xác thực vai trò duy nhất FE11.
 
-## 2026-07-27 - Homepage header simplification
+## 2026-07-27 - Đơn giản hóa header Homepage
 
-- Removed the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from the desktop header and mobile header menu at the request of the product owner.
-- Preserved library branding, login/account controls, and the role-aware continuation actions elsewhere on HomePage.
-- Removed the unused dropdown/accordion state, markup, icon, animation, and styling, and updated focused regression coverage.
+- Loại các nhóm `Khám phá sách`, dịch vụ theo đối tượng, `Về thư viện` và `Hỗ trợ` khỏi header desktop và menu header di động theo yêu cầu của chủ sản phẩm.
+- Giữ thương hiệu thư viện, điều khiển đăng nhập/tài khoản và hành động tiếp tục nhận biết vai trò ở nơi khác trên HomePage.
+- Loại trạng thái, markup, biểu tượng, animation và styling dropdown/accordion không dùng, đồng thời cập nhật độ bao phủ hồi quy tập trung.
 
-## 2026-07-26 - Homepage specification synchronization
+## 2026-07-26 - Đồng bộ đặc tả Homepage
 
-- Synchronized `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, and `TEST_PLAN.md` with the current HomePage contract.
-- Removed superseded statements that required Guest/Member to see `Còn sách` or `Không khả dụng`; retained server availability for internal Member routing and approved Librarian/Admin presentation.
-- Clarified that Guest uses `/home`, while authenticated actors use `/homepage` to open the public library experience.
-- Recorded the current navigation groups: `Khám phá sách`, audience-aware `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện`, and `Hỗ trợ`.
-- Added the authoritative Homepage Role Connection Matrix and automated coverage proving every Guest/Member/Librarian/Admin destination is registered by the application router.
-- Recorded the lighter footer palette and desktop single-line email presentation without changing contact destinations or policy behavior.
-- Refreshed local evidence to public-browse frontend 14/14, combined focused frontend 39/39, and FE01 traceability 18/18.
+- Đồng bộ `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md` và `TEST_PLAN.md` với hợp đồng HomePage hiện tại.
+- Loại các tuyên bố đã bị thay thế yêu cầu Khách/Thành viên thấy `Còn sách` hoặc `Không khả dụng`; giữ tình trạng có sẵn từ máy chủ cho định tuyến nội bộ của Thành viên và cách trình bày Thủ thư/Quản trị viên đã phê duyệt.
+- Làm rõ Khách dùng `/home`, còn tác nhân đã xác thực dùng `/homepage` để mở trải nghiệm thư viện công khai.
+- Ghi nhận các nhóm điều hướng hiện tại: `Khám phá sách`, `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ` nhận biết đối tượng, `Về thư viện` và `Hỗ trợ`.
+- Thêm Ma trận kết nối vai trò Homepage có thẩm quyền và độ bao phủ tự động chứng minh mọi đích Khách/Thành viên/Thủ thư/Quản trị viên đều được bộ định tuyến ứng dụng đăng ký.
+- Ghi nhận bảng màu footer nhẹ hơn và cách trình bày email một dòng trên desktop mà không thay đổi đích liên hệ hoặc hành vi chính sách.
+- Làm mới bằng chứng cục bộ thành frontend duyệt công khai 14/14, frontend tập trung kết hợp 39/39 và truy vết FE01 18/18.
 
-## 2026-07-25 - Homepage footer contact presentation
+## 2026-07-25 - Cách trình bày liên hệ ở footer Homepage
 
-- Replaced the legacy Library, Account, and Support link columns with the library phone, email, and physical address requested for the public footer.
-- Added clickable phone/email actions and responsive contact cards without changing FE01 APIs, authentication routes, or business rules.
-- Reworked phone, email, and address into borderless editorial contact groups with subtle separators, plus tablet and mobile fallbacks.
-- Replaced the empty Privacy, Terms, and Cookie anchors with accessible information dialogs that close by button, backdrop, or Escape key.
-- Added an on-view footer reveal, staggered contact entrance, ambient gold glow, icon/link hover feedback, and reduced-motion fallback.
-- Centered the footer contact heading over the Email column and removed its decorative trailing line.
-- Replaced the four placeholder-like top navigation buttons with animated desktop dropdowns and mobile accordions connected to existing Guest, Member, Librarian, and Admin destinations.
-- Extended the home page with four connected topic filters, a three-step library journey, and a role-aware continuation panel for Guest, Member, Librarian, and Admin.
-- Added responsive layouts, on-view reveals, hover/focus feedback, and reduced-motion handling for the new home sections.
-- Unified the complete home-page visual hierarchy with distinct Hero, catalog, topic, journey, role, membership, and footer bands; added gradient dividers, richer hover/focus states, and motion-safe entrance effects.
-- Changed HomePage availability presentation to staff-only: Guest/Member no longer see availability badges or revealing action labels, while Librarian/Admin retain the high-level status and Member workflow routing still uses latest availability internally.
+- Thay các cột liên kết Thư viện, Tài khoản và Hỗ trợ legacy bằng số điện thoại, email và địa chỉ thực của thư viện theo yêu cầu cho footer công khai.
+- Thêm hành động điện thoại/email có thể nhấp và thẻ liên hệ responsive mà không thay đổi API FE01, route xác thực hoặc quy tắc nghiệp vụ.
+- Thiết kế lại điện thoại, email và địa chỉ thành các nhóm liên hệ biên tập không viền có đường phân cách tinh tế, cùng phương án dự phòng cho máy tính bảng và thiết bị di động.
+- Thay anchor Quyền riêng tư, Điều khoản và Cookie trống bằng hộp thoại thông tin có khả năng truy cập, đóng được bằng nút, nền hộp thoại hoặc phím Escape.
+- Thêm hiệu ứng lộ footer khi xuất hiện trong khung nhìn, xuất hiện liên hệ so le, ánh vàng môi trường, phản hồi hover biểu tượng/liên kết và phương án dự phòng giảm chuyển động.
+- Căn giữa tiêu đề liên hệ footer trên cột Email và loại đường trang trí theo sau.
+- Thay bốn nút điều hướng trên cùng giống chỗ giữ chỗ bằng dropdown desktop có animation và accordion di động kết nối tới đích Khách, Thành viên, Thủ thư và Quản trị viên hiện có.
+- Mở rộng trang chủ bằng bốn bộ lọc chủ đề được kết nối, hành trình thư viện ba bước và bảng tiếp tục nhận biết vai trò cho Khách, Thành viên, Thủ thư và Quản trị viên.
+- Thêm bố cục responsive, hiệu ứng lộ khi xuất hiện trong khung nhìn, phản hồi hover/focus và xử lý giảm chuyển động cho các phần trang chủ mới.
+- Hợp nhất toàn bộ phân cấp thị giác trang chủ bằng các dải Hero, danh mục, chủ đề, hành trình, vai trò, thành viên và footer riêng biệt; thêm đường phân cách gradient, trạng thái hover/focus phong phú hơn và hiệu ứng xuất hiện an toàn với chuyển động.
+- Đổi cách trình bày tình trạng có sẵn trên HomePage thành chỉ dành cho nhân viên: Khách/Thành viên không còn thấy huy hiệu tình trạng có sẵn hoặc nhãn hành động làm lộ trạng thái, còn Thủ thư/Quản trị viên giữ trạng thái cấp cao và định tuyến quy trình Thành viên vẫn dùng tình trạng có sẵn mới nhất ở nội bộ.
 
-## 2026-07-23 - Cross-role public-book actions
+## 2026-07-23 - Hành động sách công khai xuyên vai trò
 
-- Clarified that all roles may consume the public catalog while FE01 remains read-only.
-- Connected Homepage actions to FE11's exactly-one-role account model so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
-- Added focused frontend regression coverage for invalid legacy Member/staff compatibility arrays.
+- Làm rõ mọi vai trò đều có thể sử dụng danh mục công khai trong khi FE01 vẫn chỉ đọc.
+- Kết nối hành động Homepage với mô hình tài khoản đúng một vai trò của FE11 để người dùng Thủ thư/Quản trị viên không bị định tuyến vào màn hình FE07/FE08 chỉ dành cho Thành viên.
+- Thêm độ bao phủ hồi quy frontend tập trung cho mảng tương thích Thành viên/nhân viên legacy không hợp lệ.
 
-## 2026-07-20 - Vietnamese UI localization and typography
+## 2026-07-20 - Bản địa hóa giao diện tiếng Việt và typography
 
-- Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.
-- Preserved API contracts, raw enum values, permissions, business rules, and user-owned catalog/profile data.
-- Applied the shared `Be Vietnam Pro` body and `Noto Serif` heading typography contract with Unicode-capable fallbacks.
-- Added the requestor-approved responsive HomePage shell follow-up: mobile navigation keeps the existing browse, account, and membership actions reachable without changing their routes or API behavior.
+- Bản địa hóa các nhãn, trạng thái, tên hỗ trợ khả năng truy cập và phản hồi lỗi an toàn do frontend tạo cho tính năng này.
+- Giữ nguyên hợp đồng API, giá trị enum thô, quyền, quy tắc nghiệp vụ và dữ liệu danh mục/hồ sơ do người dùng sở hữu.
+- Áp dụng hợp đồng typography dùng chung với `Be Vietnam Pro` cho nội dung và `Noto Serif` cho tiêu đề, cùng font dự phòng hỗ trợ Unicode.
+- Thêm phần tiếp nối khung HomePage responsive được người yêu cầu phê duyệt: điều hướng di động giữ các hành động duyệt, tài khoản và tư cách thành viên hiện có truy cập được mà không đổi route hoặc hành vi API.
 
-## 2026-07-19 - Phase 2 Exit Closeout
+## 2026-07-19 - Hoàn tất kết thúc Giai đoạn 2
 
-- feat-public-browse is accepted within the complete Phase 2 FE01-FE12 reconciliation recorded by PR #40/#41; validation and residual boundaries are consolidated in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
-- Deferred and future-scope limitations remain explicit and are not widened by this closeout.
+- feat-public-browse được chấp nhận trong đợt đối soát FE01-FE12 đầy đủ của Giai đoạn 2 được ghi nhận bởi PR #40/#41; ranh giới xác thực và phần tồn dư được hợp nhất trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`.
+- Các giới hạn bị hoãn và thuộc phạm vi tương lai vẫn rõ ràng, không được mở rộng bởi lần hoàn tất này.
 
-## 2026-07-19 - Public Browse Reconciliation Implemented
+## 2026-07-19 - Đã triển khai đối soát duyệt công khai
 
-- Added canonical unauthenticated list/detail reads with exact filters, server pagination, stable ordering, inactive-book hiding, and public-safe DTOs.
-- Derived `AVAILABLE`/`UNAVAILABLE` from current FE06 copy state without exposing copy counts or retaining the legacy categories route.
-- Replaced HomePage fallback/fake actions with canonical public API state and safe null/unavailable/error rendering.
-- Passed FE01 backend 9/9, frontend 4/4, traceability 13/13, diff hygiene, and disposable SQL availability evidence; human integration remains open.
+- Thêm thao tác đọc danh sách/chi tiết chuẩn không cần xác thực với bộ lọc chính xác, phân trang máy chủ, thứ tự ổn định, ẩn sách không hoạt động và DTO công khai an toàn.
+- Suy ra `AVAILABLE`/`UNAVAILABLE` từ trạng thái bản sao FE06 hiện tại mà không làm lộ số lượng bản sao hoặc giữ route thể loại legacy.
+- Thay hành động dự phòng/giả trên HomePage bằng trạng thái API công khai chuẩn và cách kết xuất null/không khả dụng/lỗi an toàn.
+- Đã đạt backend FE01 9/9, frontend 4/4, truy vết 13/13, vệ sinh diff và bằng chứng tình trạng có sẵn SQL dùng một lần; tích hợp thủ công vẫn để ngỏ.
 
-## 2026-07-19 - Public Safety Reconciliation In Progress
+## 2026-07-19 - Đang đối soát an toàn công khai
 
-- Replaced the copy-state-revealing `Đã mượn` label with the approved public-safe `Không khả dụng` label.
-- Removed fake homepage login behavior and routed authenticated borrowing-history links to the real role-protected workflow.
-- Public pagination, safe DTO projection, API adapter, and focused FE01 task evidence remain pending.
+- Thay nhãn `Đã mượn` làm lộ trạng thái bản sao bằng nhãn công khai an toàn `Không khả dụng` đã được phê duyệt.
+- Loại hành vi đăng nhập giả trên trang chủ và định tuyến liên kết lịch sử mượn đã xác thực tới quy trình thật được bảo vệ theo vai trò.
+- Phân trang công khai, phép chiếu DTO an toàn, adapter API và bằng chứng nhiệm vụ FE01 tập trung vẫn đang chờ.
 
-## 2026-07-18 - Authenticated Homepage Navigation
+## 2026-07-18 - Điều hướng Homepage đã xác thực
 
-- Added a dedicated `Home` sidebar item for Member/Librarian/Admin users that opens the authenticated public library homepage at `/homepage`.
-- Preserved `/home` as the role-aware `Tổng quan` dashboard so the two navigation destinations remain distinct.
+- Thêm mục sidebar `Home` riêng cho người dùng Thành viên/Thủ thư/Quản trị viên để mở trang chủ thư viện công khai đã xác thực tại `/homepage`.
+- Giữ `/home` làm dashboard `Tổng quan` nhận biết vai trò để hai đích điều hướng vẫn tách biệt.
 
-## 2026-07-17 - Phase 1 Baseline Approved
+## 2026-07-17 - Baseline Giai đoạn 1 đã được phê duyệt
 
-- Nhật approved the normalized FE01 public visibility, search, pagination, safe-detail, and availability contract as the Phase 1 baseline; plan and task decomposition remain pending.
+- Nhật đã phê duyệt hợp đồng hiển thị công khai, tìm kiếm, phân trang, chi tiết an toàn và tình trạng có sẵn FE01 đã chuẩn hóa làm baseline Giai đoạn 1; kế hoạch và phân rã nhiệm vụ vẫn đang chờ.
 
-## 2026-07-17 - Implementation Planning Decomposition
+## 2026-07-17 - Phân rã kế hoạch triển khai
 
-- Added the approved FE01 implementation plan and FE01-T001 through FE01-T008 task sequence.
-- Defined the FE01/FE05 shared public-read boundary, FE06 availability ownership, dedicated test evidence, and explicit frontend/API drift reconciliation.
-- Updated `TEST_PLAN.md` to the canonical query, pagination, safe-field, and availability contract; implementation remains pending.
+- Thêm kế hoạch triển khai FE01 đã phê duyệt và chuỗi nhiệm vụ FE01-T001 đến FE01-T008.
+- Xác định ranh giới đọc công khai dùng chung FE01/FE05, quyền sở hữu tình trạng có sẵn FE06, bằng chứng test chuyên biệt và đối soát sai lệch frontend/API rõ ràng.
+- Cập nhật `TEST_PLAN.md` theo hợp đồng truy vấn, phân trang, trường an toàn và tình trạng có sẵn chuẩn; triển khai vẫn đang chờ.
 
-## 2026-07-17 - Final Browse Contract Audit
+## 2026-07-17 - Kiểm toán cuối cùng hợp đồng duyệt
 
-- Made recent public books part of the home-page contract while keeping featured content out of scope.
-- Removed optional highlights behavior and made search filtering/database handling deterministic.
+- Đưa sách công khai gần đây vào hợp đồng trang chủ trong khi giữ nội dung nổi bật ngoài phạm vi.
+- Loại hành vi điểm nhấn tùy chọn và làm cho bộ lọc tìm kiếm/xử lý cơ sở dữ liệu có tính xác định.
 
-## 2026-07-17 - Public Filter Scope Hardening
+## 2026-07-17 - Củng cố phạm vi bộ lọc công khai
 
-- Defined the exact Phase 1 query fields and `q` matching semantics.
-- Removed optional `/api/public/*` aliases from the canonical API contract.
+- Xác định các trường truy vấn Giai đoạn 1 chính xác và ngữ nghĩa khớp `q`.
+- Loại alias `/api/public/*` tùy chọn khỏi hợp đồng API chuẩn.
 
-## 2026-07-17 - Deterministic Browse Contract
+## 2026-07-17 - Hợp đồng duyệt có tính xác định
 
-- Bumped `SPEC.md` to 0.3.1 and kept the revision `READY FOR REVIEW`.
-- Empty search now returns the default first page; pagination defaults/bounds and stable ordering are explicit.
-- Distinguished validation errors for malformed IDs/query values from `404` for well-formed missing/hidden books.
-- Missing optional catalog metadata now returns `null` with a UI fallback instead of excluding the book.
-- Completed BR/FR/AC traceability with explicit planned test intent.
+- Nâng `SPEC.md` lên 0.3.1 và giữ bản sửa đổi ở trạng thái `READY FOR REVIEW`.
+- Tìm kiếm trống giờ trả về trang mặc định đầu tiên; mặc định/giới hạn phân trang và thứ tự ổn định được nêu rõ.
+- Phân biệt lỗi validation cho ID/giá trị truy vấn sai định dạng với `404` cho sách đúng định dạng nhưng bị thiếu/bị ẩn.
+- Siêu dữ liệu danh mục tùy chọn bị thiếu giờ trả về `null` cùng giá trị dự phòng giao diện thay vì loại sách.
+- Hoàn tất truy vết BR/FR/AC với ý định test đã lập kế hoạch rõ ràng.
 
-## 2026-07-15 - Read-Only Availability Ownership (v0.3.0)
+## 2026-07-15 - Quyền sở hữu tình trạng có sẵn chỉ đọc (v0.3.0)
 
-- Removed the FE01 dependency on FE05 manual copy-status updates.
-- Clarified that FE06/FE07/FE08 own copy transitions and FE01/FE05 only read the latest committed availability summary.
-- Standardized the simple public display as `Còn sách` / `Không khả dụng`, removed stale conditional wording, and kept exact copy counts private.
+- Loại phụ thuộc FE01 vào cập nhật trạng thái bản sao thủ công của FE05.
+- Làm rõ FE06/FE07/FE08 sở hữu các lần chuyển trạng thái bản sao và FE01/FE05 chỉ đọc tóm tắt tình trạng có sẵn đã xác nhận mới nhất.
+- Chuẩn hóa cách hiển thị công khai đơn giản thành `Còn sách` / `Không khả dụng`, loại cách diễn đạt điều kiện lỗi thời và giữ số lượng bản sao chính xác ở chế độ riêng tư.
 
 ## 2026-06-10
 
-- Created FE01 Public / Browse feature specification structure.
-- Established specification files: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md, and CHANGELOG.md.
-- Aligned owner and assignment scope with the latest assignment sheet: UC01-UC04 and FT01-FT04 owned by Dung.
-- Defined FE01 as a read-only public browsing feature and separated it from FE05 catalog management and FE06 copy management.
-- Clarified API contract policy so REST endpoints may stay in SPEC.md unless the team reintroduces a shared API contract file.
+- Tạo cấu trúc đặc tả tính năng FE01 Công khai / Duyệt sách.
+- Thiết lập các tệp đặc tả: CONTEXT.md, SPEC.md, PLAN.md, TASKS.md và CHANGELOG.md.
+- Căn chỉnh người phụ trách và phạm vi phân công với bảng phân công mới nhất: UC01-UC04 và FT01-FT04 do Dung phụ trách.
+- Xác định FE01 là tính năng duyệt công khai chỉ đọc và tách khỏi quản lý danh mục FE05 cùng quản lý bản sao FE06.
+- Làm rõ chính sách hợp đồng API để endpoint REST có thể ở lại SPEC.md trừ khi nhóm đưa tệp hợp đồng API dùng chung trở lại.
 
-## 2026-06-10 - Phase 1 Review Decisions Approved
+## 2026-06-10 - Quyết định review Giai đoạn 1 đã được phê duyệt
 
-- Approved open-question decisions from `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
-- Updated `SPEC.md` decision status from draft/proposed/open to approved where applicable.
-- Preserved Phase 1 scope controls and deferred future-work items explicitly.
+- Phê duyệt các quyết định cho câu hỏi mở từ `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+- Cập nhật trạng thái quyết định trong `SPEC.md` từ bản nháp/đề xuất/để ngỏ thành đã phê duyệt ở nơi áp dụng.
+- Giữ rõ ràng kiểm soát phạm vi Giai đoạn 1 và các hạng mục công việc tương lai bị hoãn.
 
 ## 2026-06-21
 
-- Aligned FE01 API contract with the current prototype routes: public browse uses `/api/books` and `/api/books/{bookId}`.
-- Kept `/api/public/*` routes as optional future aliases rather than the required implementation path.
+- Căn chỉnh hợp đồng API FE01 với route prototype hiện tại: duyệt công khai dùng `/api/books` và `/api/books/{bookId}`.
+- Giữ route `/api/public/*` làm alias tương lai tùy chọn thay vì đường triển khai bắt buộc.
 
 ## 2026-06-30
 
-- Bumped `SPEC.md` version to 0.2.0 and updated Last Updated to 2026-06-30.
-- Added the FE05/FE06 -> FE01 availability sync rule so `/home`, public search, and book detail display the latest `BookCopies.Status` summary.
-- Clarified that public browse shows only simple availability (`Còn sách` / `Đã mượn`) and never exposes copy barcodes, borrower data, locations, fines, or staff-only inventory fields.
-- Added BR-FE01-011..012, FR-FE01-009..010, AC-FE01-009, EC-FE01-011, and Q-FE01-007.
+- Nâng phiên bản `SPEC.md` lên 0.2.0 và cập nhật Lần cập nhật cuối thành 2026-06-30.
+- Thêm quy tắc đồng bộ tình trạng có sẵn FE05/FE06 -> FE01 để `/home`, tìm kiếm công khai và chi tiết sách hiển thị tóm tắt `BookCopies.Status` mới nhất.
+- Làm rõ duyệt công khai chỉ hiển thị tình trạng có sẵn đơn giản (`Còn sách` / `Đã mượn`) và không bao giờ làm lộ barcode bản sao, dữ liệu người mượn, vị trí, khoản phạt hoặc trường kho chỉ dành cho nhân viên.
+- Thêm BR-FE01-011..012, FR-FE01-009..010, AC-FE01-009, EC-FE01-011 và Q-FE01-007.

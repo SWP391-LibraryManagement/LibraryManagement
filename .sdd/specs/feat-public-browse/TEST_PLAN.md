@@ -1,74 +1,74 @@
-﻿# FE01 Test Plan - Public / Browse
+# Kế Hoạch Kiểm Thử FE01 - Công Khai / Duyệt Sách
 
-Version: 0.3.8
-Status: COMPLETE - BASELINE EVIDENCE RECORDED; LOCAL HOMEPAGE POLISH VALIDATED
-Last Updated: 2026-07-27
+Phiên bản: 0.3.8
+Trạng thái: HOÀN THÀNH - BẰNG CHỨNG BASELINE ĐÃ ĐƯỢC GHI NHẬN; HOÀN THIỆN HOMEPAGE CỤC BỘ ĐÃ ĐƯỢC XÁC THỰC
+Cập nhật lần cuối: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
-Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
-Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file is the strategy, not the case list).
+Đặc tả nguồn: `.sdd/specs/feat-public-browse/SPEC.md`
+ID chức năng: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
+Ánh xạ AC↔kiểm thử có thẩm quyền: §16 Ma trận truy vết trong `SPEC.md` (file này là chiến lược, không phải danh sách ca kiểm thử).
 
 ---
 
-## 1. Test Scope
+## 1. Phạm Vi Kiểm Thử
 
-Public browse/search/detail behavior for guests and authenticated users viewing public catalog information.
+Hành vi duyệt/tìm kiếm/chi tiết công khai dành cho Khách và người dùng đã xác thực khi xem thông tin danh mục công khai.
 
-## 2. Unit Test Targets
+## 2. Mục Tiêu Kiểm Thử Unit
 
-- Search q and positive-ID filter validation.
-- Public q matches title/author only; searching by ISBN does not return a match.
-- Guest/Member list, detail, and HomePage never expose ISBN.
-- Public visibility rule: users see only active/public catalog data.
-- Empty search/default pagination and no-result handling.
-- Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
-- Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
-- FE11 Admin/Librarian accounts use staff book actions and never enter Member-only borrow/reservation routes.
-- Guest/Member HomePage presentations omit availability badges; Guest sees a generic login continuation, while Member sees explicit FE07 borrow or FE08 reservation actions.
-- Librarian/Admin HomePage presentations retain the approved high-level status.
-- Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.
-- Every Homepage destination is registered by `App.jsx`; protected routes retain their owning guards.
-- Footer contacts, policy dialogs, responsive sections, and reduced-motion behavior remain usable.
-- The four membership benefit cards use an equal-width, row-aligned 2x2 desktop grid and a non-staggered single column on mobile.
+- Validation q tìm kiếm và bộ lọc ID dương.
+- q công khai chỉ khớp tên sách/tác giả; tìm kiếm theo ISBN không trả về kết quả khớp.
+- Danh sách, chi tiết và HomePage cho Khách/Thành viên không bao giờ làm lộ ISBN.
+- Quy tắc hiển thị công khai: người dùng chỉ thấy dữ liệu danh mục hoạt động/công khai.
+- Xử lý tìm kiếm trống/phân trang mặc định và không có kết quả.
+- Thứ tự `Title ASC, BookId ASC` ổn định và ranh giới page/limit.
+- Metadata tùy chọn null và phép chiếu `AVAILABLE`/`UNAVAILABLE`.
+- Tài khoản Quản trị viên/Thủ thư FE11 sử dụng hành động sách dành cho nhân viên và không bao giờ vào route mượn/đặt chỗ chỉ dành cho Thành viên.
+- Cách hiển thị HomePage cho Khách/Thành viên không có huy hiệu tình trạng có sẵn; Khách thấy bước tiếp tục đăng nhập chung, còn Thành viên thấy hành động mượn FE07 hoặc đặt chỗ FE08 rõ ràng.
+- Cách hiển thị HomePage cho Thủ thư/Quản trị viên giữ trạng thái cấp cao đã được phê duyệt.
+- Nhãn và đích của nhóm điều hướng phù hợp với đối tượng Khách, Thành viên, Thủ thư và Quản trị viên.
+- Mọi đích Homepage được đăng ký bởi `App.jsx`; route được bảo vệ giữ guard của chức năng sở hữu.
+- Thông tin liên hệ footer, hộp thoại chính sách, phần responsive và hành vi giảm chuyển động vẫn sử dụng được.
+- Bốn thẻ lợi ích thành viên sử dụng lưới desktop 2x2 có chiều rộng bằng nhau, căn theo hàng và một cột không so le trên thiết bị di động.
 
-## 3. API / Integration Test Targets
+## 3. Mục Tiêu Kiểm Thử API / Tích Hợp
 
-- `GET /api/books` with canonical q/ID filters and pagination.
-- `GET /api/books/{bookId}` with public-safe active detail.
-- Guest/Member responses omit ISBN while an authorized Librarian/Admin detail retains the FE05 ISBN field.
-- Invalid book ID, invalid filters, invalid page/limit, and overlong q.
-- Missing book and inactive/deactivated book hidden from public response.
-- Null optional metadata preserved in list/detail responses.
-- Current FE06 copy state reflected without exposing exact counts or writing copies.
-- No authentication required for public browse endpoints and mutation routes remain protected.
+- `GET /api/books` với bộ lọc q/ID và phân trang chuẩn.
+- `GET /api/books/{bookId}` với chi tiết đang hoạt động, an toàn cho công khai.
+- Phản hồi cho Khách/Thành viên không có ISBN, trong khi chi tiết dành cho Thủ thư/Quản trị viên được cấp quyền vẫn giữ trường ISBN của FE05.
+- ID sách không hợp lệ, bộ lọc không hợp lệ, page/limit không hợp lệ và q quá dài.
+- Sách bị thiếu và sách không hoạt động/đã ngừng kích hoạt bị ẩn khỏi phản hồi công khai.
+- Metadata tùy chọn null được giữ trong phản hồi danh sách/chi tiết.
+- Trạng thái bản sao FE06 hiện tại được phản ánh mà không làm lộ số lượng chính xác hoặc ghi vào bản sao.
+- Endpoint duyệt sách công khai không yêu cầu xác thực và các route mutation vẫn được bảo vệ.
 
-## 4. E2E / Manual Acceptance Flow
+## 4. Luồng Chấp Nhận E2E / Thủ Công
 
-- Guest opens the home/catalog view.
-- Guest searches with empty, valid, invalid, and no-result criteria.
-- Guest opens an active book detail and sees public-safe metadata without ISBN or an availability label.
-- Guest opens a missing or inactive detail and sees a safe not-found state.
-- Guest and Member see safe null/no-cover fallbacks without an availability badge; Member actions still identify the correct owning workflow.
-- Member selects an available book and reaches `/borrowing/new?bookId=...`; an unavailable book reaches `/reservations/mine?bookId=...`.
-- Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.
-- Guest opens `/home`; authenticated actors open the public library at `/homepage`.
-- No actor sees the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` header groups on desktop or mobile; branding, account actions, and role continuation controls remain usable.
-- Footer phone, email, and address remain readable; Privacy, Terms, and Cookie dialogs open and dismiss correctly.
+- Khách mở chế độ xem trang chủ/danh mục.
+- Khách tìm kiếm với tiêu chí trống, hợp lệ, không hợp lệ và không có kết quả.
+- Khách mở chi tiết sách đang hoạt động và thấy metadata an toàn cho công khai, không có ISBN hoặc nhãn tình trạng có sẵn.
+- Khách mở chi tiết bị thiếu hoặc không hoạt động và thấy trạng thái không tìm thấy an toàn.
+- Khách và Thành viên thấy fallback null/không có ảnh bìa an toàn mà không có huy hiệu tình trạng có sẵn; hành động của Thành viên vẫn xác định đúng quy trình sở hữu.
+- Thành viên chọn sách có sẵn và tới `/borrowing/new?bookId=...`; sách không có sẵn dẫn tới `/reservations/mine?bookId=...`.
+- Thủ thư/Quản trị viên thấy trạng thái cấp cao `Còn sách` hoặc `Không khả dụng` đã được phê duyệt.
+- Khách mở `/home`; tác nhân đã xác thực mở thư viện công khai tại `/homepage`.
+- Không tác nhân nào thấy các nhóm header `Khám phá sách`, dịch vụ theo đối tượng, `Về thư viện` hoặc `Hỗ trợ` đã bị xóa trên desktop hoặc thiết bị di động; thương hiệu, hành động tài khoản và điều khiển tiếp tục theo vai trò vẫn sử dụng được.
+- Số điện thoại, email và địa chỉ ở footer vẫn dễ đọc; các hộp thoại Quyền riêng tư, Điều khoản và Cookie mở và đóng đúng cách.
 
-## 5. Current Evidence
+## 5. Bằng Chứng Hiện Tại
 
-- Dedicated FE01 backend route/repository tests pass 9/9.
-- FE01 public browse frontend tests pass 14/14.
-- Combined focused frontend tests pass 39/39 across public browse, App Shell, and HomePage book actions.
-- The public availability SQL suite passes in the aggregate 61/61 disposable SQL Server run.
-- FE01 traceability covers the simplified header contract; frontend lint, production build, and `git diff --check` pass.
+- Kiểm thử route/repository backend chuyên biệt cho FE01 đạt 9/9.
+- Kiểm thử frontend duyệt sách công khai FE01 đạt 14/14.
+- Kiểm thử frontend tập trung kết hợp đạt 39/39 trên duyệt sách công khai, App Shell và hành động sách HomePage.
+- Bộ kiểm thử SQL về tình trạng có sẵn công khai đạt trong lượt chạy SQL Server dùng một lần tổng hợp 61/61.
+- Truy vết FE01 bao phủ hợp đồng header đã đơn giản hóa; lint frontend, build production và `git diff --check` đều đạt.
 
-## 6. Gaps
+## 6. Khoảng Trống
 
-- Historical FE05/FE06 ownership confirmation remains recorded as an open baseline governance item.
-- Human visual, navigation, and role-visibility acceptance of the current local Homepage polish remains required before release.
+- Việc xác nhận quyền sở hữu FE05/FE06 trong lịch sử vẫn được ghi nhận là hạng mục quản trị baseline còn mở.
+- Vẫn cần con người chấp nhận giao diện, điều hướng và khả năng hiển thị theo vai trò của phần hoàn thiện Homepage cục bộ hiện tại trước khi phát hành.
 
-## 7. Required Commands / Evidence Before Merge
+## 7. Lệnh / Bằng Chứng Bắt Buộc Trước Merge
 
 ```powershell
 npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js tests/publicBrowseRepository.test.js

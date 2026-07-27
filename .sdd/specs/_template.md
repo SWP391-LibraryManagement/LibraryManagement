@@ -1,218 +1,218 @@
-# SPEC.md Template — Library Management System
+# Mẫu SPEC.md — Hệ Thống Quản Lý Thư Viện
 
-# Version: 0.1.0
+# Phiên bản: 0.1.0
 
-# Status: DRAFT
+# Trạng thái: BẢN NHÁP
 
-# Owner: TBD
+# Chủ sở hữu: TBD
 
-# Last Updated: YYYY-MM-DD
+# Cập nhật lần cuối: YYYY-MM-DD
 
-> Use this template for every core feature in `.sdd/specs/feat-{name}/SPEC.md`.
-> SPEC.md is the source of truth for the feature. Implementation, tests, API contracts, and UI behavior must follow this file.
-
----
-
-## 1. Feature Overview
-
-### 1.1 Feature Name
-
-[Feature name]
-
-### 1.2 Business Context
-
-[Explain why this feature exists in the Library Management System. Describe the real problem it solves for librarians, administrators, members, or library operation.]
-
-### 1.3 Goal / Outcome
-
-[Describe the expected outcome. Focus on what the system must achieve, not how the code will be written.]
-
-### 1.4 Scope Level
-
-Choose one:
-
-- [ ] Full Spec — core business logic, high risk, must be correct from the beginning
-- [ ] Standard Spec — normal feature with business rules and validations
-- [ ] Light Spec — simple UI, documentation, or low-risk feature
+> Sử dụng mẫu này cho mọi chức năng cốt lõi trong `.sdd/specs/feat-{name}/SPEC.md`.
+> SPEC.md là nguồn chuẩn của chức năng. Phần triển khai, kiểm thử, hợp đồng API và hành vi giao diện phải tuân theo file này.
 
 ---
 
-## 2. Actors and Permissions
+## 1. Tổng Quan Chức Năng
 
-| Actor   | Description   | Permission / Responsibility              |
+### 1.1 Tên Chức Năng
+
+[Tên chức năng]
+
+### 1.2 Bối Cảnh Nghiệp Vụ
+
+[Giải thích lý do chức năng này tồn tại trong Hệ thống Quản lý Thư viện. Mô tả vấn đề thực tế mà chức năng giải quyết cho Thủ thư, Quản trị viên, Thành viên hoặc hoạt động thư viện.]
+
+### 1.3 Mục Tiêu / Kết Quả
+
+[Mô tả kết quả mong đợi. Tập trung vào những gì hệ thống phải đạt được, không tập trung vào cách viết mã nguồn.]
+
+### 1.4 Mức Phạm Vi
+
+Chọn một mức:
+
+- [ ] Đặc tả đầy đủ — logic nghiệp vụ cốt lõi, rủi ro cao, phải chính xác ngay từ đầu
+- [ ] Đặc tả tiêu chuẩn — chức năng thông thường có quy tắc nghiệp vụ và validation
+- [ ] Đặc tả gọn — giao diện đơn giản, tài liệu hoặc chức năng có rủi ro thấp
+
+---
+
+## 2. Tác Nhân Và Quyền
+
+| Tác nhân   | Mô tả   | Quyền / Trách nhiệm              |
 | ------- | ------------- | ---------------------------------------- |
-| [Actor] | [Description] | [What this actor can do in this feature] |
+| [Tác nhân] | [Mô tả] | [Những gì tác nhân này có thể làm trong chức năng] |
 
-Example actors: Admin, Librarian, Member, Guest.
-
----
-
-## 3. Preconditions
-
-The feature can only start when:
-
-- PRE-001: [Condition before the feature can be executed]
-- PRE-002: [Condition before the feature can be executed]
+Ví dụ về tác nhân: Quản trị viên, Thủ thư, Thành viên, Khách.
 
 ---
 
-## 4. Main Flow
+## 3. Điều Kiện Tiên Quyết
 
-1. [Step 1]
-2. [Step 2]
-3. [Step 3]
-4. [Step 4]
+Chức năng chỉ có thể bắt đầu khi:
 
----
-
-## 5. Alternative Flows
-
-### AF-001: [Alternative flow name]
-
-1. [Alternative step 1]
-2. [Alternative step 2]
-3. [Expected result]
+- PRE-001: [Điều kiện trước khi có thể thực thi chức năng]
+- PRE-002: [Điều kiện trước khi có thể thực thi chức năng]
 
 ---
 
-## 6. Business Rules
+## 4. Luồng Chính
 
-Use stable IDs so requirements can be traced to tasks and tests.
-
-- BR-001: [Business rule]
-- BR-002: [Business rule]
-- BR-003: [Business rule]
-
-Example:
-
-- BR-001: A book cannot be borrowed if its available quantity is 0.
-- BR-002: A member cannot borrow more than the configured borrowing limit.
+1. [Bước 1]
+2. [Bước 2]
+3. [Bước 3]
+4. [Bước 4]
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng Thay Thế
 
-Use EARS-style wording when possible.
+### AF-001: [Tên luồng thay thế]
 
-- FR-001: When [event], the system shall [expected behavior].
-- FR-002: If [condition], then the system shall [expected behavior].
-- FR-003: While [state], the system shall [expected behavior].
-
----
-
-## 8. Acceptance Criteria
-
-Use Given / When / Then format.
-
-- AC-001: Given [context], when [action], then [expected result].
-- AC-002: Given [context], when [action], then [expected result].
-- AC-003: Given [context], when [action], then [expected result].
+1. [Bước thay thế 1]
+2. [Bước thay thế 2]
+3. [Kết quả mong đợi]
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 6. Quy Tắc Nghiệp Vụ
 
-| ID     | Edge Case / Error | Expected System Behavior |
+Sử dụng ID ổn định để yêu cầu có thể được truy vết tới nhiệm vụ và kiểm thử.
+
+- BR-001: [Quy tắc nghiệp vụ]
+- BR-002: [Quy tắc nghiệp vụ]
+- BR-003: [Quy tắc nghiệp vụ]
+
+Ví dụ:
+
+- BR-001: Không thể mượn sách khi số lượng có sẵn bằng 0.
+- BR-002: Thành viên không được mượn quá hạn mức đã cấu hình.
+
+---
+
+## 7. Yêu Cầu Chức Năng
+
+Sử dụng cách diễn đạt theo EARS khi có thể.
+
+- FR-001: Khi [sự kiện], hệ thống phải [hành vi mong đợi].
+- FR-002: Nếu [điều kiện], hệ thống phải [hành vi mong đợi].
+- FR-003: Trong khi [trạng thái], hệ thống phải [hành vi mong đợi].
+
+---
+
+## 8. Tiêu Chí Chấp Nhận
+
+Sử dụng định dạng Cho trước / Khi / Thì.
+
+- AC-001: Cho trước [bối cảnh], khi [hành động], thì [kết quả mong đợi].
+- AC-002: Cho trước [bối cảnh], khi [hành động], thì [kết quả mong đợi].
+- AC-003: Cho trước [bối cảnh], khi [hành động], thì [kết quả mong đợi].
+
+---
+
+## 9. Trường Hợp Biên Và Xử Lý Lỗi
+
+| ID     | Trường hợp biên / Lỗi | Hành vi hệ thống mong đợi |
 | ------ | ----------------- | ------------------------ |
-| EC-001 | [Edge case]       | [Expected behavior]      |
-| EC-002 | [Edge case]       | [Expected behavior]      |
+| EC-001 | [Trường hợp biên] | [Hành vi mong đợi]       |
+| EC-002 | [Trường hợp biên] | [Hành vi mong đợi]       |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu Cầu Dữ Liệu
 
-### 10.1 Entities Involved
+### 10.1 Các Thực Thể Liên Quan
 
-| Entity   | Purpose in this feature |
+| Thực thể   | Mục đích trong chức năng |
 | -------- | ----------------------- |
-| [Entity] | [Purpose]               |
+| [Thực thể] | [Mục đích]             |
 
-### 10.2 Data Fields
+### 10.2 Các Trường Dữ Liệu
 
-| Field   | Type   | Required | Validation / Notes |
+| Trường   | Kiểu   | Bắt buộc | Validation / Ghi chú |
 | ------- | ------ | -------- | ------------------ |
-| [field] | [type] | Yes/No   | [rules]            |
+| [trường] | [kiểu] | Có/Không | [quy tắc]         |
 
 ---
 
-## 11. API / Interface Contract
+## 11. Hợp Đồng API / Giao Diện
 
-> Leave as TBD if the API design has not been approved yet.
+> Giữ nguyên là TBD nếu thiết kế API chưa được phê duyệt.
 
-| Method                | Endpoint   | Actor   | Request       | Response       | Notes   |
+| Phương thức            | Endpoint   | Tác nhân   | Request       | Response       | Ghi chú   |
 | --------------------- | ---------- | ------- | ------------- | -------------- | ------- |
-| [GET/POST/PUT/DELETE] | [/api/...] | [Actor] | [Request DTO] | [Response DTO] | [Notes] |
+| [GET/POST/PUT/DELETE] | [/api/...] | [Tác nhân] | [Request DTO] | [Response DTO] | [Ghi chú] |
 
 ---
 
-## 12. Non-functional Requirements
+## 12. Yêu Cầu Phi Chức Năng
 
-### 12.1 Security
+### 12.1 Bảo Mật
 
-- NFR-SEC-001: All user input must be validated.
-- NFR-SEC-002: No secrets, passwords, API keys, or tokens may be hardcoded.
-- NFR-SEC-003: The system must enforce role-based access for protected actions.
+- NFR-SEC-001: Mọi dữ liệu đầu vào của người dùng phải được kiểm tra hợp lệ.
+- NFR-SEC-002: Không được mã hóa cứng thông tin bí mật, mật khẩu, khóa API hoặc token.
+- NFR-SEC-003: Hệ thống phải thực thi kiểm soát truy cập dựa trên vai trò đối với các hành động được bảo vệ.
 
-### 12.2 Performance
+### 12.2 Hiệu Năng
 
-- NFR-PERF-001: [Expected performance requirement]
+- NFR-PERF-001: [Yêu cầu hiệu năng mong đợi]
 
-### 12.3 Logging and Audit
+### 12.3 Ghi Log Và Kiểm Toán
 
-- NFR-LOG-001: Important business actions must be logged with actor, timestamp, and result.
+- NFR-LOG-001: Các hành động nghiệp vụ quan trọng phải được ghi log cùng tác nhân, timestamp và kết quả.
 
-### 12.4 Usability
+### 12.4 Tính Dễ Sử Dụng
 
-- NFR-UX-001: Error messages must be understandable for the intended user.
-
----
-
-## 13. Out of Scope
-
-This feature does not include:
-
-- [Out-of-scope item 1]
-- [Out-of-scope item 2]
+- NFR-UX-001: Thông báo lỗi phải dễ hiểu đối với người dùng dự kiến.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài Phạm Vi
 
-| Dependency                   | Type              | Notes   |
+Chức năng này không bao gồm:
+
+- [Hạng mục ngoài phạm vi 1]
+- [Hạng mục ngoài phạm vi 2]
+
+---
+
+## 14. Phụ Thuộc
+
+| Phụ thuộc                    | Loại              | Ghi chú   |
 | ---------------------------- | ----------------- | ------- |
-| [Feature / Module / Service] | Internal/External | [Notes] |
+| [Chức năng / Mô-đun / Service] | Nội bộ/Bên ngoài | [Ghi chú] |
 
 ---
 
-## 15. Open Questions
+## 15. Câu Hỏi Còn Mở
 
-| ID    | Question   | Owner   | Status |
+| ID    | Câu hỏi   | Chủ sở hữu   | Trạng thái |
 | ----- | ---------- | ------- | ------ |
-| Q-001 | [Question] | [Owner] | Open   |
+| Q-001 | [Câu hỏi] | [Chủ sở hữu] | Mở   |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma Trận Truy Vết
 
-| Requirement ID | Related Task ID | Related Test Case ID | Status      |
+| ID yêu cầu | ID nhiệm vụ liên quan | ID ca kiểm thử liên quan | Trạng thái |
 | -------------- | --------------- | -------------------- | ----------- |
-| BR-001         | T001            | TC001                | Not Started |
-| FR-001         | T002            | TC002                | Not Started |
-| AC-001         | T003            | TC003                | Not Started |
+| BR-001         | T001            | TC001                | Chưa bắt đầu |
+| FR-001         | T002            | TC002                | Chưa bắt đầu |
+| AC-001         | T003            | TC003                | Chưa bắt đầu |
 
 ---
 
-## 17. Review Checklist
+## 17. Checklist Review
 
-Before this SPEC.md is approved:
+Trước khi SPEC.md này được phê duyệt:
 
-- [ ] Business context is clear.
-- [ ] Actors and permissions are defined.
-- [ ] Preconditions are testable.
-- [ ] Business rules have stable IDs.
-- [ ] Acceptance criteria are written in Given / When / Then format.
-- [ ] Edge cases are listed.
-- [ ] Out-of-scope items are explicit.
-- [ ] Security and validation requirements are included.
-- [ ] Open questions are resolved or assigned.
-- [ ] Traceability matrix is ready for TASKS.md and tests.
+- [ ] Bối cảnh nghiệp vụ rõ ràng.
+- [ ] Tác nhân và quyền được xác định.
+- [ ] Điều kiện tiên quyết có thể kiểm thử.
+- [ ] Quy tắc nghiệp vụ có ID ổn định.
+- [ ] Tiêu chí chấp nhận được viết theo định dạng Cho trước / Khi / Thì.
+- [ ] Các trường hợp biên được liệt kê.
+- [ ] Các hạng mục ngoài phạm vi được nêu rõ.
+- [ ] Có các yêu cầu về bảo mật và validation.
+- [ ] Các câu hỏi còn mở đã được giải quyết hoặc phân công.
+- [ ] Ma trận truy vết đã sẵn sàng cho TASKS.md và kiểm thử.
