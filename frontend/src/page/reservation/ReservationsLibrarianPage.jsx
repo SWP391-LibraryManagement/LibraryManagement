@@ -19,7 +19,11 @@ import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Badge, ConfirmAction, DataNotice, EmptyState, Toast, useToast } from '../../component/shared/Feedback';
 import { DataTable } from '../../component/shared/OperationalPatterns';
-import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import {
+  fmtDate,
+  formatReservationQueuePosition,
+  mapReservation,
+} from '../../utils/libraryFeatureViewModels';
 import {
   getExpireHoldsSuccessMessage,
   isActiveReservationQueueStatus,
@@ -270,7 +274,7 @@ export default function ReservationsLibrarianPage() {
                       <div className="stack-sm"><strong>{item.title}</strong><span className="muted">{item.barcode} • {item.location}</span></div>
                     </td>
                     <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
-                    <td data-label="Vị trí của bản sách">#{item.queue} trong hàng đợi bản này</td>
+                    <td data-label="Vị trí của bản sách">{formatReservationQueuePosition(item.queue, 'bản này')}</td>
                     <td data-label="Trạng thái"><Badge status={item.status}>{STATUS_LABELS[item.status] || item.status}</Badge></td>
                     <td data-label="Thao tác">
                       {item.status === 'Waiting' ? (

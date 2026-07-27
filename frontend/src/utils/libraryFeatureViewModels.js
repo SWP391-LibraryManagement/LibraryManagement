@@ -184,6 +184,13 @@ export function memberReservationBadgeStatus(status) {
   return 'default';
 }
 
+// @spec FR-FE08-035, AC-FE08-022
+export function formatReservationQueuePosition(queuePosition, scopeLabel = '') {
+  if (queuePosition == null) return 'Chưa xác định';
+  const scope = String(scopeLabel).trim();
+  return `#${queuePosition}${scope ? ` trong hàng đợi ${scope}` : ''}`;
+}
+
 export function mapReservation(reservation) {
   return {
     id: `RS-${reservation.reservationId}`,

@@ -13,6 +13,7 @@ import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '.
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
 import {
   fmtDate,
+  formatReservationQueuePosition,
   isOpenMemberReservationStatus,
   mapReservation,
   memberReservationBadgeStatus,
@@ -151,7 +152,10 @@ export default function MyReservationsPage() {
         loadReservations(),
         loadCandidates(search, candidatePagination.page),
       ]);
-      showToast(`Đã đặt "${next.title}". Vị trí hiện tại: #${next.queue}.`, 'success');
+      showToast(
+        `Đã đặt "${next.title}". Vị trí hiện tại: ${formatReservationQueuePosition(next.queue)}.`,
+        'success',
+      );
     } catch (error) {
       showToast(error.message, 'error');
       await loadCandidates(search, candidatePagination.page);
@@ -254,7 +258,7 @@ export default function MyReservationsPage() {
                   ? <span className="row-flex" style={{ gap: 6, color: 'var(--st-green)' }}><CheckCircle2 size={15} /> Đến lượt bạn</span>
                   : !isOpenMemberReservationStatus(item.rawStatus)
                     ? <span className="muted">-</span>
-                    : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue} trong hàng đợi cuốn này</span>}
+                    : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> {formatReservationQueuePosition(item.queue, 'cuốn này')}</span>}
               </td>
               <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
@@ -305,7 +309,12 @@ export default function MyReservationsPage() {
           onConfirm={confirmCancel}
         >
           <p>Bạn có chắc muốn hủy đặt chỗ cho <strong>{cancelTarget.title}</strong>?</p>
-          {cancelTarget.status === 'Waiting' && <div className="alert-box info" style={{ marginTop: 12 }}>Bạn sẽ mất vị trí #{cancelTarget.queue} trong hàng đợi và không thể khôi phục.</div>}
+          {cancelTarget.status === 'Waiting' && (
+            <div className="alert-box info" style={{ marginTop: 12 }}>
+              Vị trí hiện tại: {formatReservationQueuePosition(cancelTarget.queue)}. Sau khi hủy,
+              vị trí này không thể khôi phục.
+            </div>
+          )}
         </ConfirmAction>
       )}
       <Toast toast={toast} onClose={clearToast} />

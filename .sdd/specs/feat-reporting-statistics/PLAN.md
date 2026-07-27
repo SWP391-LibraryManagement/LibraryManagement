@@ -1,12 +1,17 @@
 # PLAN.md - FE12 Reporting & Statistics
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved the
+v0.2.0 PLAN/TASKS and integrated `8d0059b` H2 addendum on 2026-07-27. The
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE12 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -118,3 +123,21 @@ semantics remained Core; frontend response consumption remained bounded Shell wo
 
 Current evidence is recorded in
 `.sdd/reviews/fe12-deterministic-policy-validation-2026-07-19.md`.
+
+## 7. V0.2.0 Exact Query-Allowlist Boundary
+
+The detailed executable plan is
+`docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
+
+1. Add a table-driven RED route regression for `?bogus=runtime-secret-value`
+   on borrowing, inventory, and user reports.
+2. Verify safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER`, no unknown value in
+   the response, and zero report-service/repository calls.
+3. Add one reusable exact-key middleware factory in
+   `backend/src/validators/reportValidators.js` and place the endpoint-specific
+   middleware first in each validator array.
+4. Preserve all approved-key value validation, well-formed unknown-ID empty
+   reports, parameterized SQL, pagination/order, audit privacy, and read-only
+   behavior.
+5. Run focused/full FE12 tests, traceability, diff hygiene, and a real HTTP
+   runtime request before H2.

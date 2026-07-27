@@ -403,7 +403,7 @@ This feature does not include:
 | AC-FE01-001..008 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | AC-FE01-009 | UC01, UC02 | `publicBrowseAvailability.sqltest.js`; `bookAvailabilityRepository.test.js` | Complete |
 | AC-FE01-010..013 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
-| AC-FE01-014 | UC01-UC04 | `homeBookActions.test.js` mixed Member/staff role cases | Complete |
+| AC-FE01-014 | UC01-UC04 | `homeBookActions.test.js` invalid legacy Member/staff-array cases | Complete |
 | AC-FE01-015 | UC01 | `publicBrowseFrontend.test.js` accessible policy dialog case | Complete |
 | AC-FE01-016 | UC01 | `publicBrowseFrontend.test.js` removed header groups and retained account/role actions | Complete |
 | AC-FE01-017 | UC01 | `publicBrowseFrontend.test.js` topic and role continuation actions | Complete |

@@ -1,11 +1,19 @@
 # TASKS.md - FE10 Notification Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 Implementation State: COMPLETE
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
+
+Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
+approved FE10-S11 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
+2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
+PR #63, and CI run `30244750250` passed. The first H3 review confirmed
+idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
+code or business-rule defect. The documentation-only governance remediation
+remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -282,3 +290,18 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 - RED evidence: missing internal source references, terminal-transition persistence failures, duplicate replay while uncertain, and claim/finalization concurrency failed against the previous `PENDING`-through-provider implementation.
 - GREEN contract: sensitive acceptance and queued claim persist `PROCESSING` before provider I/O; guarded terminal transitions use new short transactions; uncertain rows are not reclaimed or retried; manual retry returns safe `DELIVERY_STATE_UNCERTAIN`.
 - Verification evidence: focused FE10 tests, the migration twice on a named disposable local SQL database, full repository checks, security/diff review, and cleanup are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed; the reviewed migration was applied once to staging. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned bounded round-two completeness findings only. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+
+## 13. Stored Template Definition Safety
+
+### FE10-S11 Reject Unsafe Stored Template Definitions
+
+- [x] Status: IMPLEMENTED AND AUTOMATED-VERIFIED; INTEGRATED H2 AND PR CI PASSED
+- Maps to: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006, EC-FE10-010, NFR-FE10-SEC-005.
+- RED: unsafe stored subject/body definitions are silently sanitized and accepted.
+- GREEN: `validateStoredTemplateDefinition(template)` rejects raw HTML tags, inline event-handler attributes, and `javascript:` URLs with safe `400 UNSAFE_TEMPLATE_DEFINITION` before render/persist/provider work.
+- Evidence: 3/3 RED cases resolved as `SENT`; focused GREEN passed 4/4 including runtime sanitization, and the full FE10 suite passed 139/139.
+- Preservation: runtime values remain escaped/sanitized; secret-like key rejection, `safePayload` redaction, source ownership, idempotency, DTOs, and durable delivery state remain unchanged.
+- Files: `backend/tests/notificationRoutes.test.js`, `backend/src/services/notificationService.js`.
+- Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
+  `30244750250` passed. The documentation-only H3 remediation requires fresh H2
+  and repeated H3 before merge.

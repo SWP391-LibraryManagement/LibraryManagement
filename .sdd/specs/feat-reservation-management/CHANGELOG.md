@@ -1,10 +1,39 @@
 # CHANGELOG.md - FE08 Reservation Management
 
-## 2026-07-27 - Clarify copy-scoped queue positions
+## 2026-07-27 - Reconcile parallel v0.5.9 changes (v0.5.10)
+
+- Combined same-book current-loan exclusion with copy-scoped queue-position
+  presentation from `main@8d0059b`.
+- Kept upstream `FE08-T046` authoritative for queue-position clarity and
+  renumbered this branch's regression-only handoff verification to
+  `FE08-T047`.
+- Clarified that a null canonical queue position renders `Chưa xác định`
+  instead of the invalid `#null`/`#undefined` presentation.
+- Fresh integrated evidence and H2 review remain required before commit/push.
+
+## 2026-07-27 - Clarify copy-scoped queue positions (parallel v0.5.9)
 
 - Kept queue position canonical per physical `CopyId`; `#2` for two different books is valid because they are separate queues.
 - Reworded Member and Librarian table labels to identify the position as belonging to that book copy.
 - Removed the frontend fallback that invented `#1` when the server returned no queue position.
+
+## 2026-07-27 - Integrate same-book exclusion with rule alignment (v0.5.9)
+
+- Integrated the upstream same-book current-loan exclusion with the existing
+  pickup-window, exact FE07 handoff, and single-role compatibility contracts.
+- Kept upstream `FE08-T045` authoritative and renumbered this branch's
+  regression-only handoff verification to `FE08-T046`.
+- Fresh integrated evidence is recorded; an H2 addendum remains required before
+  the open merge may be committed or pushed.
+
+## 2026-07-27 - Reconcile pickup handoff with rule alignment (v0.5.8)
+
+- Preserved upstream FE08 pickup-window and exact FE07 `bookId`/`copyId`
+  handoff behavior.
+- Preserved the one-account/one-role contract and invalid legacy-array
+  defensive boundary.
+- Kept upstream `FE08-T044` authoritative and renumbered this slice's
+  regression-only task to `FE08-T046`.
 
 ## 2026-07-27 - Block same-book reservations during an active loan
 
@@ -19,6 +48,18 @@
 - Added `Tạo yêu cầu mượn` for `NOTIFIED` rows and handed the exact held `bookId`/`copyId` to FE07.
 - Preserved FE08 Librarian/Admin queue ownership, FE07 pending-request approval and atomic reservation fulfillment, and FE10's existing reservation-ready request.
 - Updated the Chromium candidate acceptance assertion to the current `Đang đặt chỗ` label.
+
+## 2026-07-27 - Reconcile v0.5.7 single-role wording with latest Member flows
+
+- Preserved the selected-book handoff and current-versus-history presentation
+  introduced by v0.5.6.
+- Clarified that `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays are
+  deliberately corrupted legacy compatibility data, not supported accounts.
+- Renumbered the rule-alignment regression-only task so upstream
+  `FE08-T042` through `FE08-T044` remain authoritative.
+- Aligned NFR-FE08-UX-003 and browser acceptance with the v0.5.6
+  `Đang đặt chỗ`/`Đến lượt bạn` lifecycle labels.
+- Added no FE08 schema, API, lifecycle, queue-policy, or production behavior.
 
 ## 2026-07-27 - Clarify current Member reservations versus history
 
@@ -36,7 +77,7 @@
 ## 2026-07-27 - Enforce non-staff member self-service
 
 - Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use reservation self-service.
-- `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` can no longer open or call member candidate, create, own-list, or cancellation flows.
+- Invalid legacy `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays can no longer open or call member candidate, create, own-list, or cancellation flows.
 - Preserved Librarian/Admin reservation list, queue processing, and hold-expiration operations.
 - Connected frontend direct-route redirects with the same backend authorization boundary.
 - Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.

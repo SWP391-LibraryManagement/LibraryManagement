@@ -161,6 +161,26 @@ function extractVariables(templateText) {
   return Array.from(variables);
 }
 
+function containsUnsafeTemplateDefinition(value) {
+  const definition = String(value ?? '');
+  return /<\/?[a-z][^>]*>/i.test(definition)
+    || /\bon[a-z]+\s*=/i.test(definition)
+    || /\bjavascript\s*:/i.test(definition);
+}
+
+// @spec BR-FE10-010, FR-FE10-005, FR-FE10-009
+function validateStoredTemplateDefinition(template) {
+  if (
+    containsUnsafeTemplateDefinition(template?.subject)
+    || containsUnsafeTemplateDefinition(template?.body)
+  ) {
+    throw errors.badRequest(
+      'UNSAFE_TEMPLATE_DEFINITION',
+      'Notification template definition is unsafe.'
+    );
+  }
+}
+
 function renderTemplate(templateText, templateData) {
   return sanitizeString(
     String(templateText || '').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, key) =>
@@ -632,6 +652,7 @@ function createNotificationService({
       throw errors.badRequest('TEMPLATE_NOT_AVAILABLE', 'Notification template is not available.');
     }
 
+    validateStoredTemplateDefinition(template);
     const recipient = await resolveRecipient(requestInput);
 
     validateTemplateData(template, rawTemplateData);

@@ -29,7 +29,7 @@ test('homepage prevents guests and staff from using member-only actions', () => 
   );
 });
 
-test('homepage keeps staff precedence for FE11 multi-role accounts', () => {
+test('homepage keeps staff-safe actions for stale legacy role arrays', () => {
   assert.deepEqual(
     getHomeBookAction({
       book: { bookId: 9, availabilityStatus: 'AVAILABLE' },

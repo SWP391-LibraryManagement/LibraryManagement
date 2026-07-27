@@ -1024,6 +1024,42 @@ describe('FE10 notification management', () => {
     );
   });
 
+  test.each([
+    ['subject', '<script>alert(1)</script>Verify'],
+    ['body', 'Click onclick=alert(1) to continue'],
+    ['body', 'Open javascript:alert(1)'],
+  ])('rejects unsafe stored template %s before persistence or delivery', async (field, value) => {
+    const {
+      notificationService,
+      notificationDependencies,
+      emailProviderMessages,
+    } = makeTestApp();
+    const template = notificationDependencies.state.templates.find(
+      (item) => item.templateCode === 'ACCOUNT_VERIFICATION'
+    );
+    template[field] = value;
+
+    await expect(
+      notificationService
+        .createSourceNotificationRequester('FE02')
+        .createNotificationRequest(
+          makeSensitiveRequestInput({
+            type: 'ACCOUNT_VERIFICATION',
+            recipientEmail: 'unsafe-template@example.test',
+            templateData: { otp: '123456', expiresInMinutes: 15 },
+            sourceEntityId: 901,
+          })
+        )
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'UNSAFE_TEMPLATE_DEFINITION',
+    });
+
+    expect(notificationDependencies.state.notifications).toEqual([]);
+    expect(notificationDependencies.state.attempts).toEqual([]);
+    expect(emailProviderMessages).toEqual([]);
+  });
+
   // BR-FE10-004: template data is sanitized so injected markup is not stored/rendered.
   test('sanitizes script content in template data', async () => {
     const { app, authDependencies, notificationDependencies } = makeTestApp();

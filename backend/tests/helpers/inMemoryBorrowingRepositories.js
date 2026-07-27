@@ -1,3 +1,8 @@
+const {
+  formatBusinessDate,
+  compareBusinessDates,
+} = require('../../src/utils/libraryBusinessTime');
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -300,14 +305,17 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     },
 
     async hasOverdueActiveLoans(userId, today) {
-      const todayTime = new Date(today).setHours(0, 0, 0, 0);
+      const todayBusinessDate = formatBusinessDate(today);
 
       return borrowDetails.some(
         (detail) =>
           detail.userId === Number(userId) &&
           detail.status === 'BORROWED' &&
           detail.dueDate &&
-          new Date(detail.dueDate).setHours(0, 0, 0, 0) < todayTime
+          compareBusinessDates(
+            formatBusinessDate(detail.dueDate),
+            todayBusinessDate
+          ) < 0
       );
     },
 
@@ -721,6 +729,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       returnDate,
       auditLogRepository,
       auditEntry,
+      buildReturnEvidence,
     }) {
       const snapshot = snapshotMutationState();
 
@@ -736,6 +745,18 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       if (!copy || copy.status !== 'BORROWED') {
         return { outcome: 'BORROW_STATE_CONFLICT' };
       }
+
+      const authoritativeReturn = {
+        requestId: detail.requestId,
+        userId: detail.userId,
+        copyId: detail.copyId,
+        dueDate: detail.dueDate,
+        returnDate,
+      };
+      const returnEvidence = typeof buildReturnEvidence === 'function'
+        ? buildReturnEvidence(authoritativeReturn)
+        : null;
+      const resolvedAuditEntry = returnEvidence?.auditEntry || auditEntry;
 
       detail.status = detailStatus;
       detail.returnDate = returnDate;
@@ -753,16 +774,22 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         request.updatedAt = new Date();
       }
 
-      if (auditLogRepository && auditEntry) {
+      if (auditLogRepository && resolvedAuditEntry) {
         try {
-          await auditLogRepository.create(auditEntry);
+          await auditLogRepository.create(resolvedAuditEntry);
         } catch (error) {
           restoreMutationState(snapshot);
           throw error;
         }
       }
 
-      return mapDetail(detail);
+      return {
+        ...mapDetail(detail),
+        authoritativeReturn: {
+          ...authoritativeReturn,
+          overdueDays: returnEvidence?.overdueDays ?? null,
+        },
+      };
     },
 
     async renewBorrowDetail({
@@ -789,12 +816,11 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
       }
 
-      const todayTime = new Date(today).setHours(0, 0, 0, 0);
       if (borrowDetails.some((item) => (
         item.userId === Number(userId)
         && item.status === 'BORROWED'
         && item.dueDate
-        && new Date(item.dueDate).setHours(0, 0, 0, 0) < todayTime
+        && compareBusinessDates(formatBusinessDate(item.dueDate), String(today)) < 0
       ))) {
         return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
       }
@@ -814,7 +840,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'RENEWAL_LIMIT_REACHED' };
       }
 
-      if (toDateOnly(detail.dueDate) < String(today).slice(0, 10)) {
+      if (compareBusinessDates(formatBusinessDate(detail.dueDate), String(today)) < 0) {
         return { outcome: 'BORROW_DETAIL_OVERDUE' };
       }
 

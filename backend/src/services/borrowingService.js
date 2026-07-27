@@ -34,12 +34,6 @@ function toPositiveInteger(value, fieldName) {
   return numberValue;
 }
 
-function addDays(date, days) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}
-
 function createBorrowingService({
   borrowingRepository,
   auditLogRepository,
@@ -655,27 +649,39 @@ function createBorrowingService({
     }
 
     const { detailStatus, copyStatus } = mapReturnConditionToStatuses(input.condition);
-    const overdueDays = overdueDaysBetween(borrowDetail.dueDate, returnDate);
-    const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RETURN', {
-      userId: actor.userId,
-      targetType: 'BORROW_DETAIL',
-      targetId: borrowDetailId,
-      metadata: {
-        requestId: borrowDetail.requestId,
-        memberId: borrowDetail.userId,
-        copyId: borrowDetail.copyId,
-        condition: input.condition,
-        overdueDays,
-        notes: input.notes || null,
-      },
-    });
     const returnedDetail = await borrowingRepository.returnBorrowDetail({
       borrowDetailId,
       detailStatus,
       copyStatus,
       returnDate,
       auditLogRepository,
-      auditEntry,
+      buildReturnEvidence: ({
+        requestId,
+        userId,
+        copyId,
+        dueDate,
+        returnDate: committedReturnDate,
+      }) => {
+        const overdueDays = overdueDaysBetween(dueDate, committedReturnDate);
+        return {
+          overdueDays,
+          auditEntry: buildAuditEntry(context, 'BORROW_DETAIL_RETURN', {
+            userId: actor.userId,
+            targetType: 'BORROW_DETAIL',
+            targetId: borrowDetailId,
+            metadata: {
+              requestId,
+              memberId: userId,
+              copyId,
+              dueDate: formatBusinessDate(dueDate),
+              returnDate: formatBusinessDate(committedReturnDate),
+              condition: input.condition,
+              overdueDays,
+              notes: input.notes || null,
+            },
+          }),
+        };
+      },
     });
 
     if (!returnedDetail) {
@@ -689,12 +695,15 @@ function createBorrowingService({
       );
     }
 
+    const { authoritativeReturn, ...publicBorrowDetail } = returnedDetail;
+    const overdueDays = authoritativeReturn.overdueDays;
+
     return {
-      borrowDetail: returnedDetail,
+      borrowDetail: publicBorrowDetail,
       fineCandidate: {
-        userId: borrowDetail.userId,
+        userId: authoritativeReturn.userId,
         borrowDetailId,
-        copyId: borrowDetail.copyId,
+        copyId: authoritativeReturn.copyId,
         condition: input.condition,
         overdueDays,
         needsFineReview: overdueDays > 0 || input.condition === 'DAMAGED' || input.condition === 'LOST',
@@ -741,7 +750,9 @@ function createBorrowingService({
       throw errors.conflict('RESERVATION_BLOCKS_RENEWAL', 'Another member has reservation priority for this copy.');
     }
 
-    const newDueDate = addDays(new Date(borrowDetail.dueDate), LOAN_DAYS);
+    // @spec BR-FE07-015, FR-FE07-009, NFR-FE07-TIME-001
+    const currentDueDate = formatBusinessDate(borrowDetail.dueDate);
+    const newDueDate = addBusinessDays(currentDueDate, LOAN_DAYS);
     const auditEntry = buildAuditEntry(context, 'BORROW_DETAIL_RENEW', {
       userId: actor.userId,
       targetType: 'BORROW_DETAIL',

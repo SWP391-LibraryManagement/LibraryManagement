@@ -1,4 +1,8 @@
 const { sql, getPool } = require('../config/db');
+const {
+  formatBusinessDate,
+  compareBusinessDates,
+} = require('../utils/libraryBusinessTime');
 
 const borrowRequestSelect = `
   SELECT
@@ -1200,7 +1204,8 @@ async function rejectBorrowRequest({ requestId, rejectedBy, auditLogRepository, 
   return findBorrowRequestById(requestId);
 }
 
-// @spec FR-FE07-022 — return updates detail, copy status and request completion atomically; partial failure rolls back (NFR-FE07-TXN-002)
+// @spec FR-FE07-007, FR-FE07-008, FR-FE07-022 — return updates detail, copy
+// status, request completion, and authoritative evidence atomically.
 async function returnBorrowDetail({
   borrowDetailId,
   detailStatus,
@@ -1208,9 +1213,12 @@ async function returnBorrowDetail({
   returnDate,
   auditLogRepository,
   auditEntry,
+  buildReturnEvidence,
 }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
+  let authoritativeReturn = null;
+  let returnEvidence = null;
 
   await transaction.begin();
 
@@ -1265,9 +1273,12 @@ async function returnBorrowDetail({
     const lockedDetailResult = await new sql.Request(transaction)
       .input('BorrowDetailId', sql.Int, borrowDetailId)
       .query(`
-        SELECT BorrowDetailId, RequestId, CopyId, Status
-        FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
-        WHERE BorrowDetailId = @BorrowDetailId;
+        SELECT bd.BorrowDetailId, bd.RequestId, bd.CopyId, bd.Status,
+               bd.DueDate, br.UserId
+        FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+          ON br.RequestId = bd.RequestId
+        WHERE bd.BorrowDetailId = @BorrowDetailId;
       `);
 
     const lockedDetail = lockedDetailResult.recordset[0];
@@ -1307,7 +1318,7 @@ async function returnBorrowDetail({
         SET Status = @DetailStatus,
             ReturnDate = @ReturnDate,
             UpdatedAt = GETDATE()
-        OUTPUT INSERTED.RequestId, INSERTED.CopyId
+        OUTPUT INSERTED.RequestId, INSERTED.CopyId, INSERTED.ReturnDate
         WHERE BorrowDetailId = @BorrowDetailId
           AND Status = 'BORROWED'
       `);
@@ -1350,8 +1361,20 @@ async function returnBorrowDetail({
         `);
     }
 
-    if (auditLogRepository && auditEntry) {
-      await auditLogRepository.create({ ...auditEntry, transaction });
+    authoritativeReturn = {
+      requestId: Number(lockedDetail.RequestId),
+      userId: Number(lockedDetail.UserId),
+      copyId: Number(lockedDetail.CopyId),
+      dueDate: lockedDetail.DueDate,
+      returnDate: detail.ReturnDate,
+    };
+    returnEvidence = typeof buildReturnEvidence === 'function'
+      ? buildReturnEvidence(authoritativeReturn)
+      : null;
+    const resolvedAuditEntry = returnEvidence?.auditEntry || auditEntry;
+
+    if (auditLogRepository && resolvedAuditEntry) {
+      await auditLogRepository.create({ ...resolvedAuditEntry, transaction });
     }
 
     await transaction.commit();
@@ -1360,7 +1383,14 @@ async function returnBorrowDetail({
     throw error;
   }
 
-  return findBorrowDetailById(borrowDetailId);
+  const returnedDetail = await findBorrowDetailById(borrowDetailId);
+  return {
+    ...returnedDetail,
+    authoritativeReturn: {
+      ...authoritativeReturn,
+      overdueDays: returnEvidence?.overdueDays ?? null,
+    },
+  };
 }
 
 // @spec FR-FE07-015, FR-FE07-016, FR-FE07-020, FR-FE07-021, FR-FE08-024
@@ -1480,7 +1510,7 @@ async function renewBorrowDetail({
       return { outcome: 'RENEWAL_LIMIT_REACHED' };
     }
 
-    if (new Date(detail.DueDate).getTime() < new Date(today).getTime()) {
+    if (compareBusinessDates(formatBusinessDate(detail.DueDate), String(today)) < 0) {
       await transaction.rollback();
       return { outcome: 'BORROW_DETAIL_OVERDUE' };
     }

@@ -89,6 +89,17 @@ test('[E2E-SYS-001] login, borrow, approve, return, fine, and report golden path
   );
   expect(accessToken).toBeTruthy();
 
+  const unsupportedReportResponse = await request.get(
+    `${BACKEND_URL}/api/reports/borrowing?bogus=runtime-secret-value`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  expect(unsupportedReportResponse.status()).toBe(400);
+  const unsupportedReportPayload = await unsupportedReportResponse.json();
+  expect(unsupportedReportPayload).toMatchObject({
+    error: { code: 'UNSUPPORTED_REPORT_QUERY_PARAMETER' },
+  });
+  expect(JSON.stringify(unsupportedReportPayload)).not.toContain('runtime-secret-value');
+
   const fineResponse = await request.post(`${BACKEND_URL}/api/fines/calculate`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     data: { borrowDetailId: state.latestBorrowDetailId },

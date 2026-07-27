@@ -1,14 +1,20 @@
 # PLAN.md - FE10 Notification Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
-Workflow State: COMPLETE for the approved Phase 2 scope; G1-G12 implementation, FE10-S03/S04/S05/S09, disposable SQL migration evidence, and live provider delivery observation are recorded through B7. Inbox UI and FE09 caller integration remain explicit future boundaries.
+Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
+approved the v0.4.4 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
+2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
+PR #63, and CI run `30244750250` passed. The first H3 review confirmed
+idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
+code or business-rule defect. The documentation-only governance remediation
+remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -246,3 +252,20 @@ ownership durable before that call.
 5. Synchronize the model, canonical SQL, OpenAPI, ADR, and idempotent migration;
    then run focused/full tests and two disposable migration executions before
    H2 review.
+
+## 13. V0.4.4 Fail-Closed Stored Template Validation
+
+The detailed executable plan is
+`docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
+
+1. Add table-driven RED tests for raw HTML tags, inline event-handler
+   attributes, and `javascript:` URLs in stored template subject/body fields.
+2. Require safe `400 UNSAFE_TEMPLATE_DEFINITION` before recipient rendering,
+   notification/attempt persistence, or provider I/O.
+3. Keep `sanitizeString()` and `sanitizePayload()` for runtime values; do not
+   weaken recursive secret-key detection, redaction, ownership, idempotency,
+   minimal DTO, or durable `PROCESSING` rules.
+4. Run the unsafe-definition regressions together with the existing runtime
+   template-data sanitization regression and the full FE10 route suite.
+5. Keep implementation changes uncommitted until the cross-feature L1-L4
+   evidence passes and Nhat grants H2.

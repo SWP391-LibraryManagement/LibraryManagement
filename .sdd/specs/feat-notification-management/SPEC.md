@@ -1,12 +1,12 @@
 # SPEC.md - FE10 Notification Management
 
-# Version: 0.4.3
+# Version: 0.4.4
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: APPROVED - TEMPLATE SAFETY 2026-07-27
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE10
 
@@ -27,6 +27,13 @@
 > The 2026-07-23 delivery-safety remediation adds the approved durable
 > `PROCESSING` state so claim ownership commits before provider I/O and an
 > uncertain delivery is never sent automatically a second time.
+>
+> Revision v0.4.4 separates trusted template-definition validation from runtime
+> value escaping: unsafe stored markup is rejected before rendering,
+> persistence, or delivery; runtime values remain escaped/sanitized.
+> Nhat approved this written revision on 2026-07-27. Approval authorizes
+> PLAN/TASKS preparation only; implementation remains unclaimed until
+> RED-GREEN evidence and acceptance gates are completed.
 
 ---
 
@@ -160,12 +167,13 @@ The feature can only start when:
 1. Source feature sends the same idempotency key more than once.
 2. FE10 returns `200 { notificationId, status }` for the existing record, regardless of its status, instead of creating or sending a duplicate.
 
-### AF-FE10-003: Template Missing Or Inactive
+### AF-FE10-003: Template Missing, Inactive, Or Unsafe
 
-1. Source feature requests a template key that does not exist or is inactive.
-2. FE10 returns a safe 4xx validation/template error before creating a notification record.
+1. Source feature requests a template key that does not exist, is inactive, or whose stored title/body contains unsafe executable markup.
+2. FE10 returns a safe 4xx validation/template error before rendering or creating a notification record.
 3. FE10 does not persist invalid request content; persisted `FAILED` is reserved for accepted requests whose provider delivery fails.
 4. A type/template mismatch is always rejected before delivery or queued persistence; it is never converted by a caller flag or alias.
+5. FE10 does not sanitize an unsafe stored template definition into an accepted template. Runtime values inserted into an otherwise safe definition remain escaped or sanitized.
 
 ### AF-FE10-004: Email Provider Unavailable
 
@@ -202,7 +210,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE10-007: FE10 must support the eight approved Phase 1 type/template pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; no undocumented alias or pair is supported.
 - BR-FE10-008: Failed notification delivery must be recorded with safe failure reason and attempt count. Only failed non-sensitive queued notifications may be manually retried on the same record; failed sensitive authentication delivery requires a new source event. A `PROCESSING` record has uncertain provider outcome and must not be reclaimed or retried automatically or manually.
 - BR-FE10-009: Email provider credentials must be stored outside source code.
-- BR-FE10-010: Notification templates must define required variables, enforce the canonical pair, and must not render missing required data silently. `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` each require `otp` and `expiresInMinutes`; `ACCOUNT_SETUP` requires `setupLink` and `expiresInHours`.
+- BR-FE10-010: Notification templates must define required variables, enforce the canonical pair, and must not render missing required data silently. Phase 1 definitions are plain text plus `{{variable}}` tokens. Before rendering any request, FE10 must reject a stored title/body containing raw HTML tag syntax (including `<script>`), inline event-handler attributes, or `javascript:` URLs instead of sanitizing that definition into an accepted template. Runtime template values inserted into an otherwise safe definition remain escaped or sanitized. `ACCOUNT_VERIFICATION` and `PASSWORD_RESET` each require `otp` and `expiresInMinutes`; `ACCOUNT_SETUP` requires `setupLink` and `expiresInHours`.
 - BR-FE10-011: Notification HTTP endpoints must remain protected from public/member callers and allow only `LIBRARIAN`/`ADMIN` for non-sensitive types. HTTP callers cannot provide `sourceFeature` and must receive safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` for `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`. In-process source requests use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; only FE02 may submit verification/reset, only FE04 may submit `MEMBERSHIP_RESULT`, and only FE11 may submit account setup; `SYSTEM` is not a login role.
 - BR-FE10-012: Notification delivery failure must not automatically roll back the source business transaction.
 - BR-FE10-013: Notification status changes and source-request audits must be traceable with safe metadata. Source audits use `userId: null` plus bound source metadata; retry preserves the same notification ID, idempotency key, and attempt history. Claiming must atomically commit `PENDING -> PROCESSING` before provider I/O, and terminal transitions must be guarded from `PROCESSING`.
@@ -215,11 +223,11 @@ Use these stable IDs for tasks and tests.
 - FR-FE10-002: When the requester bound to `FE02` submits canonical password-reset OTP data with `otp`, `expiresInMinutes`, and an `AuthToken` source reference, FE10 shall persist only safe source metadata as `PROCESSING` before provider I/O, synchronously render/send through the configured provider adapter, record a redacted `SENT` or `FAILED` summary and attempt when the terminal transition commits, and return `{ notificationId, status }` without exposing raw or rendered sensitive content.
 - FR-FE10-003: When FE04 requests canonical membership-result delivery or FE08 requests canonical reservation-ready delivery with valid non-sensitive data, FE10 shall create one queued `PENDING` notification without deciding the source feature's business outcome; the worker later processes it.
 - FR-FE10-004: When FE07 or a future FE09 caller requests canonical due date, overdue, or fine delivery with valid non-sensitive data, FE10 shall create a queued `PENDING` notification without calculating fines or changing borrowing state. FE09 caller integration remains deferred.
-- FR-FE10-005: When required fields, integer source reference, canonical mapping, recipient, source/type ownership, HTTP source override, or queued-payload safety checks fail, FE10 shall reject the request safely before persistence or delivery.
+- FR-FE10-005: When required fields, integer source reference, canonical mapping, recipient, source/type ownership, HTTP source override, queued-payload safety checks, or stored template-definition safety checks fail, FE10 shall reject the request safely before rendering, persistence, or delivery.
 - FR-FE10-006: Before calling the configured provider, FE10 shall commit the accepted request or worker claim as `PROCESSING`. When the provider accepts the send, FE10 shall guard `PROCESSING -> SENT`, set `sentAt` to the server timestamp, and record the successful attempt; Phase 1 never transitions the record to `DELIVERED`.
 - FR-FE10-007: When delivery fails, FE10 shall guard `PROCESSING -> FAILED` and record attempt details plus a safe reason without rolling back source flow. Manual retry changes only a failed non-sensitive queued record from `FAILED` to `PENDING`; sensitive retry returns safe `409 REISSUE_REQUIRED`; retry of `PROCESSING` returns safe `409 DELIVERY_STATE_UNCERTAIN`.
 - FR-FE10-008: When a duplicate source event is submitted with the same idempotency key, FE10 shall return `200 { notificationId, status }` for the existing record across any status and shall not create or send a duplicate.
-- FR-FE10-009: FE10 shall recognize all eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. A missing/inactive template, missing required sensitive variable, mismatched pair, unauthorized sensitive source, HTTP source override, or recursively detected secret-like queued key shall return a safe 4xx before persistence without leaking the submitted value.
+- FR-FE10-009: FE10 shall recognize all eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. A missing/inactive template, unsafe stored template definition, missing required sensitive variable, mismatched pair, unauthorized sensitive source, HTTP source override, or recursively detected secret-like queued key shall return a safe 4xx before rendering or persistence without leaking the submitted value.
 - FR-FE10-010: When the requester bound to `FE11` submits canonical account-setup data with `setupLink`, `expiresInHours`, and an `AuthToken` source reference, FE10 shall persist safe source metadata as `PROCESSING` before provider I/O, synchronously render/send, record safe terminal status/attempt metadata when the transition commits, and return `{ notificationId, status }` without exposing raw or rendered setup content.
 
 ---
@@ -231,7 +239,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE10-003: Given FE04 submits canonical membership-result data or FE08 submits canonical reservation-ready data, when FE10 accepts it, then exactly one non-sensitive `PENDING` notification is queued without FE10 deciding or changing the source business outcome.
 - AC-FE10-004: Given FE07 submits canonical due-date data, when FE10 accepts it, then one non-sensitive `PENDING` reminder is queued without FE10 changing borrowing state.
 - AC-FE10-005: Given a future FE09 caller submits canonical overdue/fine data, when FE10 accepts it, then one non-sensitive `PENDING` notification is queued without FE10 calculating fines; current FE09 caller integration remains deferred.
-- AC-FE10-006: Given each of the eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, when FE10 validates a complete request from an authorized boundary, then mapping validation succeeds. Given a missing recipient/variable, string source ID, mismatched pair, unknown template, HTTP source override, unauthorized sensitive source, or queued nested secret key, validation returns a safe 4xx before request content is persisted or delivered.
+- AC-FE10-006: Given each of the eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`, when FE10 validates a complete request from an authorized boundary and a safe stored template definition, then mapping validation succeeds and runtime values are escaped/sanitized. Given a missing recipient/variable, string source ID, mismatched pair, unknown/inactive template, unsafe stored template definition, HTTP source override, unauthorized sensitive source, or queued nested secret key, validation returns a safe 4xx before rendering, persistence, attempt creation, or delivery.
 - AC-FE10-007: Given FE02 provides an OTP through its bound requester, when FE10 sends it, then the OTP and rendered sensitive title/body do not appear in persistence, logs, audits, or HTTP responses.
 - AC-FE10-008: Given an idempotency key already exists in any status, when FE10 receives the duplicate request, then it returns `200 { notificationId, status }` for that record and performs no duplicate send.
 - AC-FE10-009: Given provider delivery failure, when FE10 records it, then the source flow remains completed; a failed non-sensitive queued record may retry on the same history, while sensitive retry returns safe `409 REISSUE_REQUIRED`. Given provider I/O finishes but terminal persistence fails, the row remains `PROCESSING`, duplicate replay performs no send, and retry returns safe `409 DELIVERY_STATE_UNCERTAIN`.
@@ -252,7 +260,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE10-007 | Missing required template variable | Return safe `400`; create no notification or attempt. |
 | EC-FE10-008 | Duplicate idempotency key in any status | Return `200 { notificationId, status }` for the existing record without duplicate send. |
 | EC-FE10-009 | Email provider timeout | Record `FAILED` plus an attempt and safe reason; sensitive content remains provider-memory-only. |
-| EC-FE10-010 | Template contains unsafe HTML/script | Reject the template before rendering or persistence with a safe validation error. |
+| EC-FE10-010 | Stored template title/body contains raw HTML tag syntax (including `<script>`), an inline event-handler attribute, or a `javascript:` URL | Reject the template definition before rendering, notification/attempt persistence, or provider delivery with a safe validation error; do not silently sanitize and accept the definition. Runtime values in a safe plain-text-plus-variables template remain escaped/sanitized. |
 | EC-FE10-011 | Source transaction completed but delivery failed or requester throws | Keep source transaction completed; record/catch FE10 failure safely. Only failed non-sensitive queued records may retry to `PENDING`. |
 | EC-FE10-012 | Provider returns sensitive details, caller overrides bound source, or sensitive retry is requested | Store only a sanitized summary; reject source override; sensitive retry returns `409 REISSUE_REQUIRED`. |
 | EC-FE10-013 | Staff HTTP or a requester without ownership submits a sensitive authentication notification | Return safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY`; FE02 exclusively owns verification/reset and FE11 exclusively owns account setup. |
@@ -270,7 +278,7 @@ Use these stable IDs for tasks and tests.
 | Entity | Purpose in this feature |
 | ------ | ----------------------- |
 | Users | Stores recipient identity and email address. |
-| NotificationTemplates | Stores approved email templates and required variables. |
+| NotificationTemplates | Stores approved email templates and required variables. A stored title/body must pass template-definition safety validation before every render. |
 | Notifications | Stores source references, status, safe payload, non-sensitive rendered content, and redacted sensitive summaries. |
 | NotificationAttempts | Stores delivery attempts and safe failure details. |
 | UserNotificationPreferences | Reserved for future optional/in-app preference work; not used by the hardening slice. |
@@ -348,7 +356,7 @@ The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_IN
 - NFR-FE10-SEC-002: Protected APIs must enforce role-based access on the server.
 - NFR-FE10-SEC-003: Email provider credentials must not be hardcoded or committed.
 - NFR-FE10-SEC-004: FE10 must not persist, log, audit, or return raw tokens, OTPs, passwords, reset/verification/setup links, rendered sensitive authentication content, provider credentials/details, or internal stack traces.
-- NFR-FE10-SEC-005: Template rendering must escape or sanitize unsafe HTML/script content.
+- NFR-FE10-SEC-005: Template-definition validation and runtime-value rendering are separate security gates. FE10 must reject raw HTML tag syntax, inline event-handler attributes, and `javascript:` URLs in a stored template title/body before rendering, persistence, or delivery; it must escape or sanitize runtime values inserted into an otherwise safe plain-text-plus-variables definition.
 - NFR-FE10-SEC-006: HTTP notification endpoints must require `LIBRARIAN`/`ADMIN`, reject caller-controlled `sourceFeature`, and reject sensitive authentication types with safe `403`; in-process requests must use the fixed bound-source allowlist, reject source override, enforce FE02 ownership for verification/reset, and enforce FE11 ownership for account setup.
 
 ### 12.2 Reliability
@@ -431,6 +439,7 @@ This feature does not include:
 | Q-FE10-009 | `MEMBERSHIP_RESULT` is FE04-owned; FE04 submits it through the FE04-bound requester after the membership decision commits. | FE04 cross-feature audit 2026-07-17 | APPROVED |
 | Q-FE10-010 | Phase 1 notification statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; claim/sensitive acceptance commits `PROCESSING` before provider I/O, and compatibility statuses have no Phase 1 transitions. | Notification lifecycle normalization 2026-07-17; delivery-safety remediation approved 2026-07-23 | APPROVED |
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
+| Q-FE10-012 | Does FE10 sanitize an unsafe stored template definition or reject it? | Nhat, 2026-07-27 | APPROVED: reject the stored definition before rendering/persistence/delivery; continue escaping or sanitizing runtime values. |
 
 ---
 
@@ -462,6 +471,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | G12 | FE04 owns `MEMBERSHIP_RESULT` source events; FE10 accepts them only from the FE04-bound requester and keeps delivery failure non-blocking. | APPROVED 2026-07-17 |
 | Q-FE10-010 | Phase 1 statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; `PROCESSING` is durable before provider I/O and is never automatically reclaimed. | APPROVED; revised 2026-07-23 |
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
+| Q-FE10-012 | Unsafe stored template definitions are rejected before rendering/persistence/delivery; runtime values remain escaped/sanitized. | APPROVED 2026-07-27 |
 
 ---
 
@@ -474,7 +484,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | AC-FE10-003 | FE04 membership-result and FE08 reservation-ready notifications are queued without FE10 changing source outcomes | FR-FE10-003 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-011, BR-FE10-012 | FT48 plus planned FE04 requester case | FE10-H02, FE10-H05, FE10-H07, G12 | Approved for implementation |
 | AC-FE10-004 | FE07 due-date notification is queued without changing borrowing state | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H02, FE10-H05, FE10-H06 | Approved for implementation |
 | AC-FE10-005 | FE09 overdue/fine contract is approved without FE10 calculating fines; caller integration is deferred | FR-FE10-004 | BR-FE10-001, BR-FE10-002, BR-FE10-007, BR-FE10-012 | FT49 | FE10-H01, FE10-H02, FE10-H05 | Approved; integration deferred |
-| AC-FE10-006 | All eight canonical pairs validate; invalid recipient, variable, source ID, mapping, template, source ownership, HTTP source override, or recursively detected queued secret returns safe 4xx before persistence | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 to FT49 | FE10-H02, FE10-H04, FE10-S02, FE10-S06 | Approved for implementation |
+| AC-FE10-006 | All eight canonical pairs and safe definitions validate; invalid recipient, variable, source ID, mapping, unsafe/missing/inactive template, source ownership, HTTP source override, or recursively detected queued secret returns safe 4xx before rendering/persistence/delivery | FR-FE10-005, FR-FE10-009 | BR-FE10-002, BR-FE10-004, BR-FE10-007, BR-FE10-010, BR-FE10-011 | FT46 to FT49 plus `notificationRoutes.test.js` unsafe stored-definition matrix | FE10-H02, FE10-H04, FE10-S02, FE10-S06, FE10-S11 | Automated evidence complete; integrated H2 approved; PR CI passed; documentation-only H3 remediation pending fresh H2 |
 | AC-FE10-007 | Authentication OTPs and rendered sensitive content never cross persistence/log/audit/HTTP boundaries | FR-FE10-001, FR-FE10-002 | BR-FE10-003, BR-FE10-004, BR-FE10-008, BR-FE10-013 | FT46, FT47 | FE10-H03, FE10-H04, FE10-S03 | Approved for implementation |
 | AC-FE10-008 | Duplicate key replays the same record across all statuses with minimal `200` DTO | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 to FT49 | FE10-H08 | Approved for implementation |
 | AC-FE10-009 | Failure is safe/non-blocking; FE02 reissues a new OTP/token event, non-sensitive `FAILED` retry reuses history, and uncertain `PROCESSING` is never resent | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | `backend/tests/notificationRoutes.test.js` provider/transition/retry cases | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Automated evidence; H2 review pending |
@@ -495,6 +505,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | FR-FE10-003 | FE04 membership-result and FE08 reservation-ready requests create one pending record without changing source outcomes | Planned FE04 requester and reservation queue cases |
 | FR-FE10-006 | Provider acceptance sets `SENT`, `sentAt`, and a successful attempt | Planned |
 | BR-FE10-011 / Q-FE10-009 | FE04-bound membership-result ownership and protected HTTP boundary | Planned |
+| BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` rejects three unsafe stored-definition classes with zero render/persistence/provider calls while preserving runtime-value sanitization | Complete |
 
 
 ### External Assignment Traceability (Excel UC IDs)
@@ -536,3 +547,10 @@ Hardening contract checklist (approved by Nhat on 2026-07-13):
 - [x] FE02 verification/reset OTP requester integration is approved through ADR-004; `CHANGE_PASSWORD_OTP` and FE09 caller integration remain explicitly deferred.
 - [x] Staff HTTP is denied all sensitive authentication types; non-owning requesters are denied FE02 verification/reset and FE11 account setup.
 - [x] G1-G7 trace to the revised BR/FR/AC/API/NFR contract and FE10-H01 to FE10-H09.
+
+### Revision v0.4.4 Template-Safety Gate
+
+- [x] Separate stored template-definition rejection from runtime-value escaping.
+- [x] Preserve canonical pair, secret-like key, safe-payload, minimal DTO, and source-ownership rules.
+- [x] Require safe rejection before rendering, notification/attempt persistence, or provider delivery.
+- [x] Nhat human-reviewed and approved the written v0.4.4 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
