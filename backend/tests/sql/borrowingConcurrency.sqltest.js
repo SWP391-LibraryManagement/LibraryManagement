@@ -821,7 +821,7 @@ test('approval does not approve a pending request whose member row is missing', 
 
     const result = await approve(requestId, actorUserId);
 
-    expect(result).toEqual({ outcome: 'MEMBER_ROLE_REQUIRED' });
+    expect(result).toEqual({ outcome: 'BORROW_REQUEST_OWNER_NOT_MEMBER' });
     const requestRow = await pool
       .request()
       .input('RequestId', sql.Int, requestId)
@@ -1362,7 +1362,7 @@ test('SQL return audit failure rolls back request, detail return date, copy, and
 
 test.each([
   ['inactive account', 'MEMBER_ACCOUNT_INACTIVE'],
-  ['removed member role', 'MEMBER_ROLE_REQUIRED'],
+  ['removed member role', 'BORROW_REQUEST_OWNER_NOT_MEMBER'],
   ['unpaid positive fine', 'UNPAID_FINE_BLOCKS_BORROWING'],
   ['overdue active loan', 'OVERDUE_LOAN_BLOCKS_BORROWING'],
 ])('SQL approval revalidates %s inside the transaction', async (blocker, expectedOutcome) => {

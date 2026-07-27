@@ -25,4 +25,8 @@ test('library metadata migration is transactional and idempotently adds deployed
     expect(source).toMatch(new RegExp(`ALTER TABLE dbo\\.${table} ADD Status`, 'i'));
     expect(source).toMatch(new RegExp(`ALTER TABLE dbo\\.${table} ADD CreatedAt`, 'i'));
   }
+
+  expect(source).toMatch(
+    /EXEC\s+sys\.sp_executesql\s+N'[\s\S]*FROM dbo\.Authors WHERE Status[\s\S]*FROM dbo\.Publishers WHERE Status[\s\S]*FROM dbo\.Categories WHERE Status/i
+  );
 });

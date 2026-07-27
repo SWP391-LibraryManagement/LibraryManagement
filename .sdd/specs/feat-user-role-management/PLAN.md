@@ -430,3 +430,38 @@ behavior while retaining it as historical evidence.
 
 Validation order: focused frontend/backend contracts, full backend tests and
 coverage, full frontend tests/lint/build, OpenAPI parsing, traceability, and diff hygiene.
+
+## 2026-07-27 Admin Request State Revision
+
+- Keep FE11 as the Admin composition/read owner and FE07 as the only
+  approve/reject business owner.
+- Add current physical copy status to the safe Admin request-detail projection.
+- Reload list/detail after successful or conflicting decisions so Admin never
+  acts on fabricated or stale state.
+- Keep rejection available for a legacy unapprovable pending request and make
+  its required reason/claim-release behavior explicit.
+- Validate focused Admin/FE07/FE06 tests, full regression, lint/build,
+  traceability, and human review.
+
+## 2026-07-27 FE07 Lifecycle Guard Revision
+
+- Serialize deactivation and Member-role replacement with FE07's member lock.
+- Reject those lifecycle mutations while pending requests or active loans exist.
+- Project known approval blockers in Admin detail, disable approval only, and
+  preserve FE07 rejection for legacy cleanup.
+
+## 2026-07-27 Admin Dashboard Connection Revision
+
+1. Add RED repository coverage for active-account counts from the canonical
+   `Users -> UserRoles -> Roles` mapping and separate pending FE04/FE07 counts.
+2. Correct return-today aggregation to include timestamped returns across the
+   complete current calendar day.
+3. Replace static summary tiles with accessible module links.
+4. Carry role/status context into Users, Circulation, and Requests; keep FE04
+   membership review on its canonical pending view.
+5. Run focused backend/frontend tests, full regression, lint/build,
+   traceability, diff hygiene, and human review.
+6. Reconcile FE07 activity charts so historical borrowing requires a committed
+   `BorrowDate`, bind the return-today query to the shared Vietnam business
+   date instead of the SQL Server host date, and preserve the approved
+   five-card/three-chart presentation.

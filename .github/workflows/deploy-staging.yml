@@ -1,13 +1,6 @@
 name: Deploy staging
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -19,15 +12,12 @@ concurrency:
 
 jobs:
   deploy-backend:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: ${{ vars.STAGING_API_URL }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Prepare backend deployment package
         shell: pwsh
@@ -35,6 +25,8 @@ jobs:
           New-Item -ItemType Directory -Force deploy/backend | Out-Null
           Copy-Item backend/package.json,backend/package-lock.json deploy/backend/
           Copy-Item backend/src deploy/backend/src -Recurse
+          New-Item -ItemType Directory -Force deploy/backend/database/migrations | Out-Null
+          Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql deploy/backend/database/migrations/
 
       - name: Deploy backend
         uses: azure/webapps-deploy@v3
@@ -44,15 +36,12 @@ jobs:
           package: deploy/backend
 
   deploy-frontend:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: ${{ vars.STAGING_FRONTEND_URL }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:
@@ -87,8 +76,6 @@ jobs:
       url: ${{ vars.STAGING_FRONTEND_URL }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:

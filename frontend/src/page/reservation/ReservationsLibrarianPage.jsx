@@ -1,4 +1,4 @@
- /**
+/**
  * FE08 - UC38 View Reservation List + UC39 Process Reservation Queue + UC40 Notify.
  * Dữ liệu thật: GET /api/reservations, POST /api/reservations/process-queue,
  * POST /api/reservations/expire-holds.
@@ -8,8 +8,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Bell,
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   PackageCheck,
   RefreshCw,
   Search,
@@ -18,16 +16,23 @@ import {
 import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Badge, ConfirmAction, DataNotice, EmptyState, Toast, useToast } from '../../component/shared/Feedback';
-import { DataTable } from '../../component/shared/OperationalPatterns';
-import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import { DataTable, Pagination } from '../../component/shared/OperationalPatterns';
+import {
+  fmtDate,
+  formatReservationQueuePosition,
+  librarianReservationBadgeStatus,
+  mapReservation,
+} from '../../utils/libraryFeatureViewModels';
 import {
   getExpireHoldsSuccessMessage,
   isActiveReservationQueueStatus,
   runHoldExpirationWorkflow,
 } from '../../utils/reservationViewState';
+import { getNotificationFeedback, describeNotificationWarnings } from '../../utils/notificationFeedback.js';
 
 const PAGE_SIZE = 8;
 const RESERVATION_API_PAGE_SIZE = 100;
+const TERMINAL_STATUSES = new Set(['Completed', 'Cancelled', 'Expired']);
 const STATUSES = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
   { value: 'Waiting', label: 'Đang chờ' },
@@ -50,6 +55,14 @@ function normalizeSearch(value) {
 function getQueueSortValue(item) {
   const reservedAt = new Date(item.reservedDate).getTime();
   return Number.isNaN(reservedAt) ? Number.MAX_SAFE_INTEGER : reservedAt;
+}
+
+// @spec NFR-FE08-UX-001 — vẽ queue position chỉ cho hàng đợi active, terminal status hiện '-'.
+function renderQueuePosition(item) {
+  if (TERMINAL_STATUSES.has(item.status)) {
+    return <span className="muted">-</span>;
+  }
+  return formatReservationQueuePosition(item.queue, 'cuốn sách này');
 }
 
 // @spec FR-FE08-035, AC-FE08-022
@@ -97,6 +110,7 @@ export default function ReservationsLibrarianPage() {
     } catch (error) {
       setRows([]);
       setLoadError(error.message || 'Không thể tải dữ liệu đặt chỗ.');
+      setLastUpdated('');
     } finally {
       setLoading(false);
     }
@@ -158,6 +172,16 @@ export default function ReservationsLibrarianPage() {
     setPage(1);
   }
 
+  function resetFilters() {
+    setSearchDraft('');
+    setSearch('');
+    setBookFilter('ALL');
+    setStatusFilter('ALL');
+    setPage(1);
+  }
+
+  const hasActiveFilters = Boolean(search) || bookFilter !== 'ALL' || statusFilter !== 'ALL';
+
   async function confirmNotify() {
     if (!notifyTarget || notifying) return;
     setNotifying(true);
@@ -168,7 +192,14 @@ export default function ReservationsLibrarianPage() {
         showToast('Không có thành viên đủ điều kiện trong hàng chờ.', 'info');
       } else {
         const selected = mapReservation(result.selectedReservation);
-        showToast(`Đã giữ sách và tạo thông báo cho ${selected.member}.`, 'success');
+        // @spec BR-FE10-012, MF-FE10-003 — đọc notificationStatus, không luôn báo success.
+        const feedback = getNotificationFeedback({
+          action: 'notify',
+          notificationStatus: result.notificationStatus,
+          customActionLabel: 'Đã giữ sách',
+          successMessage: `Đã giữ "${selected.title}" cho ${selected.member} và tạo thông báo sẵn sàng nhận.`,
+        });
+        showToast(feedback.message, feedback.type);
       }
       setNotifyTarget(null);
     } catch (error) {
@@ -184,7 +215,19 @@ export default function ReservationsLibrarianPage() {
       await runHoldExpirationWorkflow({
         expireHolds: reservationApi.expireHolds,
         reloadReservations: loadReservations,
-        onSuccess: (result) => showToast(getExpireHoldsSuccessMessage(result), 'success'),
+        onSuccess: (result) => {
+          showToast(getExpireHoldsSuccessMessage(result), 'success');
+          // @spec FR-FE08-021 — hiển thị cảnh báo RESERVATION_NOTIFY_AUDIT_FAILED nếu có.
+          const warningMessages = describeNotificationWarnings(result?.notificationWarnings);
+          if (warningMessages.length > 0) {
+            setTimeout(() => {
+              showToast(
+                warningMessages.length === 1 ? warningMessages[0] : `${warningMessages.length} cảnh báo khi gửi thông báo:\n• ${warningMessages.join('\n• ')}`,
+                'warning',
+              );
+            }, 0);
+          }
+        },
       });
     } catch (error) {
       showToast(error.message, 'error');
@@ -217,10 +260,24 @@ export default function ReservationsLibrarianPage() {
 
       <section className="reservation-workspace">
         <div className="reservation-tabs" role="tablist" aria-label="Chế độ xem đặt chỗ">
-          <button className={`tab${view === 'list' ? ' active' : ''}`} onClick={() => setView('list')} role="tab" aria-selected={view === 'list'}>
+          <button
+            className={`tab${view === 'list' ? ' active' : ''}`}
+            onClick={() => setView('list')}
+            role="tab"
+            id="reservation-tab-list"
+            aria-selected={view === 'list'}
+            aria-controls="reservation-tabpanel"
+          >
             <CalendarClock size={15} /> Tất cả đặt chỗ
           </button>
-          <button className={`tab${view === 'queue' ? ' active' : ''}`} onClick={() => setView('queue')} role="tab" aria-selected={view === 'queue'}>
+          <button
+            className={`tab${view === 'queue' ? ' active' : ''}`}
+            onClick={() => setView('queue')}
+            role="tab"
+            id="reservation-tab-queue"
+            aria-selected={view === 'queue'}
+            aria-controls="reservation-tabpanel"
+          >
             <PackageCheck size={15} /> Hàng đợi theo sách
           </button>
           <span className="reservation-updated muted">
@@ -228,6 +285,11 @@ export default function ReservationsLibrarianPage() {
           </span>
         </div>
 
+        <div
+          id="reservation-tabpanel"
+          role="tabpanel"
+          aria-labelledby={view === 'list' ? 'reservation-tab-list' : 'reservation-tab-queue'}
+        >
         {view === 'list' ? (
           <>
             <form className="reservation-toolbar" onSubmit={submitSearch}>
@@ -247,6 +309,9 @@ export default function ReservationsLibrarianPage() {
               <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Lọc theo trạng thái">
                 {STATUSES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
               </select>
+              {hasActiveFilters && (
+                <button type="button" className="btn btn-outline btn-sm" onClick={resetFilters}>Xóa bộ lọc</button>
+              )}
             </form>
 
             <div className="reservation-table-card">
@@ -270,8 +335,8 @@ export default function ReservationsLibrarianPage() {
                       <div className="stack-sm"><strong>{item.title}</strong><span className="muted">{item.barcode} • {item.location}</span></div>
                     </td>
                     <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
-                    <td data-label="Vị trí của bản sách">#{item.queue} trong hàng đợi bản này</td>
-                    <td data-label="Trạng thái"><Badge status={item.status}>{STATUS_LABELS[item.status] || item.status}</Badge></td>
+                    <td data-label="Vị trí của bản sách">{renderQueuePosition(item)}</td>
+                    <td data-label="Trạng thái"><Badge status={librarianReservationBadgeStatus(item.status, item.rawStatus)}>{STATUS_LABELS[item.status] || item.status}</Badge></td>
                     <td data-label="Thao tác">
                       {item.status === 'Waiting' ? (
                          <button type="button" className="btn btn-outline btn-sm" onClick={() => { setQueueCopyId(item.copyId); setView('queue'); }}>
@@ -282,17 +347,14 @@ export default function ReservationsLibrarianPage() {
                   </tr>
                 ))}
               </DataTable>
-              {!loading && (
-                <div className="pagination reservation-pagination">
-                  <span className="muted">Trang {safePage}/{totalPages} • {filtered.length} kết quả</span>
-                  <div className="page-controls">
-                    <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Trang trước"><ChevronLeft size={16} /></button>
-                    {Array.from({ length: totalPages }, (_, index) => (
-                      <button key={index} className={`page-btn${safePage === index + 1 ? ' active' : ''}`} onClick={() => setPage(index + 1)}>{index + 1}</button>
-                    ))}
-                    <button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Trang sau"><ChevronRight size={16} /></button>
-                  </div>
-                </div>
+              {!loading && filtered.length > 0 && (
+                <Pagination
+                  currentPage={safePage}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  summary={`Trang ${safePage}/${totalPages} • ${filtered.length} kết quả`}
+                  ariaLabel="Phân trang danh sách đặt chỗ"
+                />
               )}
             </div>
           </>
@@ -330,6 +392,7 @@ export default function ReservationsLibrarianPage() {
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {notifyTarget && (

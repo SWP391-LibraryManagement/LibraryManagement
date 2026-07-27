@@ -28,6 +28,14 @@ const REQUEST_STATUS_LABELS = Object.freeze({
   REJECTED: 'Từ chối',
   CANCELLED: 'Đã hủy',
 });
+const COPY_STATUS_LABELS = Object.freeze({
+  AVAILABLE: 'Sẵn sàng',
+  RESERVED: 'Đang giữ chỗ',
+  BORROWED: 'Đang được mượn',
+  DAMAGED: 'Hư hỏng',
+  LOST: 'Thất lạc',
+  INACTIVE: 'Ngừng sử dụng',
+});
 
 function formatDate(value) {
   if (!value) return '-';
@@ -43,8 +51,10 @@ function RequestStatusBadge({ status }) {
 }
 
 function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, onClose, onApprove, onReject }) {
-  // @spec FR-FE11-035
+  // @spec BR-FE11-031, FR-FE11-035, FR-FE11-042
   const pending = request.status === 'PENDING';
+  const approvalAllowed = request.approval?.allowed !== false;
+  const approvalBlockers = request.approval?.blockers || [];
   return (
     <div className="admin-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <div className="admin-modal admin-modal--compact" role="dialog" aria-modal="true" aria-labelledby="admin-request-detail-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -56,13 +66,32 @@ function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, 
           <p><strong>Tài khoản</strong><span>{request.member?.fullName || '-'} · {request.member?.email || '-'}</span></p>
           <p><strong>Số điện thoại</strong><span>{request.member?.phoneNumber || '-'}</span></p>
           <p><strong>Sách</strong><span>{request.items?.map((item) => item.title).filter(Boolean).join(' | ') || '-'}</span></p>
-          <p><strong>Mã bản sao</strong><span>{request.items?.map((item) => item.barcode).filter(Boolean).join(' | ') || '-'}</span></p>
+          <p>
+            <strong>Mã bản sao</strong>
+            <span>
+              {request.items?.map((item) => (
+                `${item.barcode || `#${item.copyId}`} (${COPY_STATUS_LABELS[item.copyStatus] || item.copyStatus || 'Chưa rõ'})`
+              )).join(' | ') || '-'}
+            </span>
+          </p>
           <p><strong>Thời gian đặt</strong><span>{formatDate(request.requestDate)}</span></p>
           <p><strong>Trạng thái</strong><RequestStatusBadge status={request.status} /></p>
+          {pending && !approvalAllowed ? (
+            <div className="admin-form-note admin-text-error" role="alert">
+              Không thể duyệt yêu cầu này:
+              <ul>
+                {approvalBlockers.map((blocker) => (
+                  <li key={blocker.code}>{blocker.message}</li>
+                ))}
+              </ul>
+              Bạn vẫn có thể từ chối yêu cầu và ghi rõ lý do.
+            </div>
+          ) : null}
           {pending ? (
             <label className="admin-field">
               <span>Lý do từ chối</span>
-              <textarea maxLength={500} value={rejectionReason} onChange={(event) => onReasonChange(event.target.value)} placeholder="Bắt buộc khi từ chối yêu cầu" />
+              <textarea required aria-describedby="admin-request-rejection-help" maxLength={500} value={rejectionReason} onChange={(event) => onReasonChange(event.target.value)} placeholder="Bắt buộc khi từ chối yêu cầu" />
+              <small id="admin-request-rejection-help">Nhập 1–500 ký tự. Từ chối sẽ giải phóng claim bản sao cho thành viên khác.</small>
             </label>
           ) : (
             <p className="admin-form-note">Yêu cầu đã ở trạng thái kết thúc và chỉ có thể xem.</p>
@@ -71,7 +100,7 @@ function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, 
         {pending ? (
           <footer className="admin-modal__actions">
             <button type="button" disabled={saving} onClick={onReject}>Từ chối</button>
-            <button className="admin-modal__primary" type="button" disabled={saving} onClick={onApprove}>
+            <button className="admin-modal__primary" type="button" disabled={saving || !approvalAllowed} onClick={onApprove}>
               {saving ? 'Đang xử lý...' : 'Duyệt yêu cầu'}
             </button>
           </footer>
@@ -81,11 +110,14 @@ function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, 
   );
 }
 
-export function AdminRequestsSection({ onToast }) {
+export function AdminRequestsSection({ onToast, initialStatus = 'ALL' }) {
+  // @spec FR-FE11-040
+  const startingStatus = Object.hasOwn(REQUEST_STATUS_LABELS, initialStatus) ? initialStatus : 'ALL';
+  const startingFilters = { ...EMPTY_REQUEST_FILTERS, status: startingStatus };
   const requestGuard = useRef(createLatestRequestGuard());
   const [requests, setRequests] = useState([]);
-  const [requestFilter, setRequestFilter] = useState({ ...EMPTY_REQUEST_FILTERS });
-  const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_REQUEST_FILTERS });
+  const [requestFilter, setRequestFilter] = useState(startingFilters);
+  const [appliedFilters, setAppliedFilters] = useState(startingFilters);
   const [requestPage, setRequestPage] = useState(1);
   const [requestPagination, setRequestPagination] = useState({ page: 1, limit: REQUEST_TABLE_PAGE_SIZE, total: 0, totalPages: 0 });
   const [requestsLoading, setRequestsLoading] = useState(false);
@@ -187,6 +219,10 @@ export function AdminRequestsSection({ onToast }) {
 
   async function approveBorrowRequest() {
     if (!viewRequest || requestActionSaving) return;
+    if (viewRequest.approval?.allowed === false) {
+      notify('error', 'Yêu cầu này không đủ điều kiện duyệt. Hãy từ chối và ghi rõ lý do.');
+      return;
+    }
     setRequestActionSaving(true);
     try {
       await borrowingApi.approve(viewRequest.requestId);
@@ -195,6 +231,12 @@ export function AdminRequestsSection({ onToast }) {
       notify('success', 'Đã duyệt yêu cầu mượn.');
     } catch (error) {
       notify('error', error.message);
+      await loadRequests();
+      try {
+        setViewRequest(await adminApi.requestDetail(viewRequest.requestId));
+      } catch {
+        setViewRequest(null);
+      }
     } finally {
       setRequestActionSaving(false);
     }
@@ -216,6 +258,12 @@ export function AdminRequestsSection({ onToast }) {
       notify('success', 'Đã từ chối yêu cầu mượn.');
     } catch (error) {
       notify('error', error.message);
+      await loadRequests();
+      try {
+        setViewRequest(await adminApi.requestDetail(viewRequest.requestId));
+      } catch {
+        setViewRequest(null);
+      }
     } finally {
       setRequestActionSaving(false);
     }

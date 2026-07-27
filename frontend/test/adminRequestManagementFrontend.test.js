@@ -88,6 +88,14 @@ test('Admin Request Management consumes server pagination and authoritative deta
   assert.match(page, /<AdminDateField id="request-to" label="Đến ngày"/);
   assert.match(page, /aria-label="Lọc trạng thái"/);
   assert.match(page, /const REQUEST_TABLE_PAGE_SIZE = 20/);
+  assert.match(page, /COPY_STATUS_LABELS/);
+  assert.match(page, /item\.copyStatus/);
+  assert.match(page, /textarea required aria-describedby="admin-request-rejection-help"/);
+  assert.match(page, /request\.approval\?\.allowed !== false/);
+  assert.match(page, /Không thể duyệt yêu cầu này/);
+  assert.match(page, /disabled=\{saving \|\| !approvalAllowed\}/);
+  assert.match(page, /Bạn vẫn có thể từ chối yêu cầu/);
+  assert.match(page, /catch \(error\) \{[\s\S]*await loadRequests\(\);[\s\S]*adminApi\.requestDetail\(viewRequest\.requestId\)/);
   assert.doesNotMatch(page, /Xuất CSV|\.csv'/);
   assert.match(exportUtility, /REQUEST_DOCX_COLUMNS/);
 });

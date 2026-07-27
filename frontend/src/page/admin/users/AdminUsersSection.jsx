@@ -53,14 +53,18 @@ function UserAvatar({ user }) {
   );
 }
 
-export function AdminUsersSection({ onToast }) {
+export function AdminUsersSection({
+  onToast,
+  initialRole = 'ALL',
+  initialStatus = 'ALL',
+}) {
   const requestGuards = useRef(new Map());
   const [users, setUsers] = useState([]);
   const [statistics, setStatistics] = useState(EMPTY_STATS);
   const [pagination, setPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState(initialRole || 'ALL');
+  const [statusFilter, setStatusFilter] = useState(initialStatus || 'ALL');
   const [loading, setLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
   const [statisticsLoading, setStatisticsLoading] = useState(false);
@@ -190,8 +194,16 @@ export function AdminUsersSection({ onToast }) {
       buildRoleReplacement(user.roles || [], user.roles?.[0], catalog);
       setRoleSyncBlocked(false);
       setRoleUser(user);
+      return true;
     } catch (error) {
       notify('error', error.message);
+      return false;
+    }
+  }
+
+  async function openRoleFromEditor(user) {
+    if (await openRoleModal(user)) {
+      setModal(null);
     }
   }
 
@@ -393,7 +405,7 @@ export function AdminUsersSection({ onToast }) {
             <tbody>{users.map((user) => (
               <tr key={user.userId} onClick={() => openUserDetail(user.userId)}>
                 <td><button className="admin-user-identity" type="button" onClick={(event) => { event.stopPropagation(); openUserDetail(user.userId); }}><UserAvatar user={user} /><span><strong>{user.fullName || 'Chưa cập nhật tên'}</strong><small>#{user.userId} · {user.email}</small></span></button></td>
-                <td className="admin-user-cell--truncate" title={user.username || '-'}>{user.username || '-'}</td>
+                <td className="admin-user-username" title={user.username || '-'}>{user.username || '-'}</td>
                 <td>{user.phoneNumber || '-'}</td>
                 <td><div className="admin-badge-row">{(user.roles || []).map((role) => <RoleBadge key={role} role={role} />)}</div></td>
                 <td><StatusBadge status={user.status} /></td>
@@ -433,7 +445,7 @@ export function AdminUsersSection({ onToast }) {
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
       {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
-      {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
+      {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} onManageRole={openRoleFromEditor} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRole} /> : null}
     </section>
   );

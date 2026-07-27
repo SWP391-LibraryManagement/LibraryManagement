@@ -118,6 +118,8 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     INVALID_PHONE: 'Số điện thoại không hợp lệ.',
     FULL_NAME_REQUIRED: 'Họ và tên là bắt buộc.',
     ACTIVE_BORROWINGS_EXIST: 'Không thể vô hiệu hóa người dùng đang mượn sách.',
+    PENDING_BORROW_REQUESTS_EXIST: 'Không thể vô hiệu hóa người dùng khi còn yêu cầu mượn đang chờ xử lý.',
+    MEMBER_BORROWING_WORKFLOW_EXISTS: 'Không thể đổi role MEMBER khi người dùng còn yêu cầu chờ xử lý hoặc sách đang mượn.',
     ACCOUNT_PENDING_ACTIVATION: 'Tài khoản đang chờ kích hoạt nên chưa thể vô hiệu hóa.',
     CANNOT_DEACTIVATE_SELF: 'Quản trị viên không thể tự vô hiệu hóa tài khoản của mình.',
     LAST_ADMIN_ROLE: 'Không thể thay vai trò của quản trị viên đang hoạt động cuối cùng.',

@@ -148,11 +148,15 @@ test('FE11 desktop table and mobile cards expose profile editing for every manag
   assert.doesNotMatch(section, /openLibrarianWorkEditor|department|specialization/);
   assert.doesNotMatch(section, /openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
+  assert.match(section, /className="admin-user-username"/);
   assert.match(section, /placeholder="Tìm theo tên, email hoặc ID\.\.\."/);
   assert.match(css, /\.admin-user-cards\s*\{\s*display: none;/s);
   assert.match(css, /@media \(max-width: 1440px\)[^]*?\.admin-user-table \{ display: none; \}[^]*?\.admin-user-cards \{ display: grid;/);
   assert.match(css, /\.admin-shell__main\s*\{[^}]*min-width: 0;/s);
   assert.match(css, /\.admin-user-table\s*\{[^}]*overflow-x: auto;/s);
+  assert.match(css, /\.admin-user-table table\s*\{[^}]*min-width: 1240px;[^}]*table-layout: fixed;/s);
+  assert.match(css, /\.admin-user-username\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
+  assert.match(css, /\.admin-user-identity small\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
 });
 
 test('FE11 create and edit flows share profile fields while email remains read-only on edit', async () => {
@@ -165,6 +169,10 @@ test('FE11 create and edit flows share profile fields while email remains read-o
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
   assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
+  assert.match(editor, /Vai trò hiện tại/);
+  assert.match(editor, /<RoleBadge role=\{currentRole\} \/>/);
+  assert.match(editor, /onClick=\{\(\) => onManageRole\?\.\(user\)\}/);
+  assert.match(editor, /Đổi vai trò/);
   assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
   assert.match(roleModal, /type="radio"/);
   assert.match(roleModal, /Mỗi tài khoản phải có đúng một vai trò/);
@@ -178,6 +186,7 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   }
   assert.match(drawer, /label="Chỉnh sửa"[^]*?onEdit\(user\)/);
   assert.match(section, /onEdit=\{openUserEditor\}/);
+  assert.match(section, /onManageRole=\{openRoleFromEditor\}/);
   assert.doesNotMatch(section, /openEditModal|onEdit=\{openEditModal\}/);
 });
 
@@ -230,7 +239,7 @@ test('FE11 library and circulation preserve canonical ownership boundaries', asy
   assert.match(circulation, /adminApi\.borrowings/);
   assert.match(circulation, /borrowingApi\.renewDetail/);
   assert.match(circulation, /borrowingApi\.returnDetail/);
-  assert.match(page, /onOpenRequests=\{\(\) => setActiveSection\('requests'\)\}/);
+  assert.match(page, /onOpenRequests=\{\(\) => openDashboardDestination\(\{ section: 'requests', status: 'PENDING' \}\)\}/);
 
   const adminSource = library + '\n' + circulation + '\n' + page;
   assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords/);

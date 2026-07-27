@@ -1,5 +1,36 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-27 - Run compile-safe metadata compatibility migration at backend startup
+
+- Packaged the reviewed transactional metadata migration with the backend deployment.
+- Added a pre-listen startup gate that applies the idempotent migration, verifies its postcondition,
+  and refuses to serve a partially compatible catalog when reconciliation fails.
+- Deferred metadata `Status` validation to `sp_executesql` so SQL Server compiles the query after
+  the missing columns are added in the surrounding transaction.
+- Added regression coverage and verified two consecutive passes on the disposable local database
+  `CodexMetadataMigrationValidation_20260727`, then removed that database.
+- Kept `/health/ready` read-only, staging deployment manual-only, smoke fail-closed, and the existing
+  Admin-only mutation plus Librarian/Admin active-reference role boundaries.
+- Avoided the removed Kudu/`Repair staging metadata schema` path and its isolated Node runtime.
+- Reconciled the operator guide with the manual-only staging workflow and the canonical 21-table
+  schema.
+
+## 2026-07-27 - Remove failed Kudu staging repair workflow
+
+- Removed `Repair staging metadata schema`, its Kudu/Node runner, bundled runtime, npm command,
+  workflow input, dedicated tests, and addendum evidence.
+- Changed `Deploy staging` to manual-only so pushes run CI without automatically creating a known
+  failing staging deployment while the database still requires operator migration.
+- Retained the reviewed SQL migration, read-only readiness endpoint, fail-closed smoke check, and
+  FE05/FE11 Admin/Librarian role boundaries.
+
+## 2026-07-27 - Detect and repair deployed metadata schema drift
+
+- Added read-only catalog schema readiness for persisted author/publisher/category `Status` and `CreatedAt`.
+- Added the reviewed metadata compatibility SQL migration for authorized operator execution.
+- Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
+- Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
+
 ## 2026-07-27 - Public/staff ISBN boundary
 
 - Classified ISBN as FE05 staff-management metadata: searchable and visible to authenticated Librarian/Admin users.

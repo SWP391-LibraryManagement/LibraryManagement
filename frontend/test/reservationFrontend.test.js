@@ -58,15 +58,29 @@ test('reservation mapping preserves the normalized backend lifecycle state', asy
 });
 
 test('reservation queue position is copy-scoped and never invented when absent', async () => {
-  const { mapReservation } = await loadViewModels();
+  const { formatReservationQueuePosition, mapReservation } = await loadViewModels();
   const memberPage = await readFile(
     new URL('../src/page/reservation/MyReservationsPage.jsx', import.meta.url),
     'utf8',
   );
+  const staffPage = await readFile(
+    new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
+    'utf8',
+  );
 
   assert.equal(mapReservation({ reservationId: 9, status: 'NOTIFIED' }).queue, null);
+  assert.equal(typeof formatReservationQueuePosition, 'function');
+  assert.equal(formatReservationQueuePosition(null), 'Chưa xác định');
+  assert.equal(formatReservationQueuePosition(undefined), 'Chưa xác định');
+  assert.equal(
+    formatReservationQueuePosition(2, 'cuốn này'),
+    '#2 trong hàng đợi cuốn này',
+  );
   assert.match(memberPage, /Vị trí của bản sách/);
-  assert.match(memberPage, /#\{item\.queue\} trong hàng đợi cuốn này/);
+  assert.match(memberPage, /formatReservationQueuePosition\(item\.queue, 'cuốn này'\)/);
+  assert.match(staffPage, /formatReservationQueuePosition\(item\.queue, 'cuốn sách này'\)/);
+  assert.doesNotMatch(memberPage, /#\{(?:item|next|cancelTarget)\.queue\}/);
+  assert.doesNotMatch(staffPage, /#\{item\.queue\}/);
 });
 
 test('member reservation view separates current state from terminal history and uses visible badge tones', async () => {
@@ -250,7 +264,8 @@ test('librarian page wires the hold expiration workflow and omits local-only act
   assert.doesNotMatch(source, /reservationApi\.process\(/);
   assert.match(source, /expireHolds: reservationApi\.expireHolds/);
   assert.match(source, /reloadReservations: loadReservations/);
-  assert.match(source, /onSuccess: \(result\) => showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
+  assert.match(source, /onSuccess: \(result\) => \{/);
+  assert.match(source, /showToast\(getExpireHoldsSuccessMessage\(result\), 'success'\)/);
   assert.match(source, /disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /onClick=\{loadReservations\} disabled=\{loading \|\| expiringHolds\}/);
   assert.match(source, /POST \/api\/reservations\/expire-holds/);

@@ -96,7 +96,7 @@ function AdminLineChart({ title, rows }) {
   );
 }
 
-export function AdminDashboardSection() {
+export function AdminDashboardSection({ onNavigate = () => {} }) {
   const requestGuard = useRef(createLatestRequestGuard());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -131,11 +131,36 @@ export function AdminDashboardSection() {
   const returnedToday = selectOperationalChartRows(data?.charts?.returnedToday);
 
   const summary = [
-    { label: 'Tổng số sách', value: data?.summary?.totalBooks || 0, icon: BookOpen },
-    { label: 'Tổng số thành viên', value: data?.summary?.totalMembers || 0, icon: Users },
-    { label: 'Tác giả', value: data?.summary?.totalAuthors || 0, icon: UserCog },
-    { label: 'Sách đang được mượn', value: data?.summary?.totalBorrowed || 0, icon: BookCopy },
-    { label: 'Sách mượn quá hạn', value: data?.summary?.overdueBorrowed || 0, icon: AlertTriangle },
+    {
+      label: 'Tổng số sách',
+      value: data?.summary?.totalBooks ?? 0,
+      icon: BookOpen,
+      destination: { section: 'library' },
+    },
+    {
+      label: 'Tổng số thành viên',
+      value: data?.summary?.totalMembers ?? 0,
+      icon: Users,
+      destination: { section: 'users', role: 'MEMBER', status: 'ACTIVE' },
+    },
+    {
+      label: 'Tác giả',
+      value: data?.summary?.totalAuthors ?? 0,
+      icon: UserCog,
+      destination: { section: 'library' },
+    },
+    {
+      label: 'Sách đang được mượn',
+      value: data?.summary?.totalBorrowed ?? 0,
+      icon: BookCopy,
+      destination: { section: 'circulation', status: 'BORROWED' },
+    },
+    {
+      label: 'Sách mượn quá hạn',
+      value: data?.summary?.overdueBorrowed ?? 0,
+      icon: AlertTriangle,
+      destination: { section: 'circulation', status: 'OVERDUE' },
+    },
   ];
 
   return (
@@ -184,14 +209,20 @@ export function AdminDashboardSection() {
       {data ? (
         <>
           <section className="admin-dashboard__stats" aria-label="Chỉ số tổng quan">
-            {summary.map(({ label, value, icon: Icon }) => (
-              <article className="admin-dashboard__stat" key={label}>
+            {summary.map(({ label, value, icon: Icon, destination }) => (
+              <button
+                className="admin-dashboard__stat"
+                type="button"
+                key={label}
+                aria-label={`${label}: ${value}. Mở phần liên quan`}
+                onClick={() => onNavigate(destination)}
+              >
                 <Icon aria-hidden="true" />
                 <div>
                   <span>{label}</span>
                   <strong>{value}</strong>
                 </div>
-              </article>
+              </button>
             ))}
           </section>
 

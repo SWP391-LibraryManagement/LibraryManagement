@@ -97,6 +97,22 @@ function authHeader(accessToken) {
   return `Bearer ${accessToken}`;
 }
 
+function assignCopiesToDistinctBooks(borrowingDependencies, copyIds) {
+  copyIds.forEach((copyId, index) => {
+    if (index === 0) return;
+    const bookId = 1000 + copyId;
+    const copy = borrowingDependencies.state.copies.find(
+      (item) => item.copyId === copyId
+    );
+    copy.bookId = bookId;
+    borrowingDependencies.state.books.push({
+      bookId,
+      title: `Test book ${bookId}`,
+      status: 'ACTIVE',
+    });
+  });
+}
+
 function makeAfterWriteFailingAuditLogRepository(auditLogRepository) {
   return {
     create: jest.fn(async (entry) => {
@@ -196,6 +212,7 @@ describe('FE07 borrowing management', () => {
 
   test('member creates a pending request only for available unique copies', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -233,6 +250,106 @@ describe('FE07 borrowing management', () => {
 
     expect(unavailableResponse.status).toBe(409);
     expect(unavailableResponse.body.error.code).toBe('COPY_NOT_AVAILABLE');
+  });
+
+  test('member cannot request two physical copies of the same title at once', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'duplicate-title.member@example.test',
+    });
+
+    const response = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1, 2] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('DUPLICATE_BOOK_IN_REQUEST');
+    expect(borrowingDependencies.state.borrowRequests).toEqual([]);
+    expect(borrowingDependencies.state.borrowDetails).toEqual([]);
+  });
+
+  test('a pending borrow request exclusively claims its copies until staff decides it', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    const firstMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'pending-claim.first@example.test',
+    });
+    const secondMember = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'pending-claim.second@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'pending-claim.librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const firstRequest = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+
+    const sameMemberCandidates = await request(app)
+      .get('/api/borrow-requests/candidates?bookId=1')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .expect(200);
+    expect(sameMemberCandidates.body.books).toEqual([]);
+
+    const duplicateTitleRequest = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(firstMember.accessToken))
+      .send({ copyIds: [2] });
+    expect(duplicateTitleRequest.status).toBe(409);
+    expect(duplicateTitleRequest.body.error.code).toBe(
+      'BOOK_ALREADY_IN_BORROWING_WORKFLOW'
+    );
+
+    const candidates = await request(app)
+      .get('/api/borrow-requests/candidates?bookId=1')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .expect(200);
+
+    expect(candidates.body.books[0].copies.map((copy) => copy.copyId)).not.toContain(1);
+
+    const conflictingRequest = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyIds: [1] });
+
+    expect(conflictingRequest.status).toBe(409);
+    expect(conflictingRequest.body.error.code).toBe('COPY_PENDING_REQUEST_CONFLICT');
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
+    expect(borrowingDependencies.state.borrowDetails).toHaveLength(1);
+
+    await request(app)
+      .patch(`/api/borrow-requests/${firstRequest.body.borrowRequest.requestId}/reject`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ reason: 'Member changed borrowing plan.' })
+      .expect(200);
+
+    const releasedCandidates = await request(app)
+      .get('/api/borrow-requests/candidates?bookId=1')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .expect(200);
+    expect(releasedCandidates.body.books[0].copies.map((copy) => copy.copyId)).toContain(1);
+
+    await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(secondMember.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
   });
 
   test('active reservation queue blocks ordinary borrow request creation', async () => {
@@ -629,6 +746,67 @@ describe('FE07 borrowing management', () => {
     expect(borrowingDependencies.state.fines).toHaveLength(0);
   });
 
+  test('return response and audit use the due date locked by the repository', async () => {
+    let currentTime = new Date('2026-06-01T00:00:00.000Z');
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => currentTime,
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-locked-owner@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'return-locked-librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    const storedDetail = borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    );
+    storedDetail.dueDate = '2026-06-08';
+    currentTime = new Date('2026-06-20T00:00:00.000Z');
+
+    const originalReturn = borrowingDependencies.borrowingRepository.returnBorrowDetail;
+    borrowingDependencies.borrowingRepository.returnBorrowDetail = async (input) => {
+      storedDetail.dueDate = '2026-06-18';
+      return originalReturn.call(borrowingDependencies.borrowingRepository, input);
+    };
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/return`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ condition: 'NORMAL', returnDate: '2026-06-20' })
+      .expect(200);
+
+    expect(response.body.borrowDetail).not.toHaveProperty('authoritativeReturn');
+    expect(response.body.fineCandidate.overdueDays).toBe(2);
+    const audit = authDependencies.state.auditLogs.find(
+      (entry) => entry.action === 'BORROW_DETAIL_RETURN'
+    );
+    expect(audit.metadata).toMatchObject({
+      dueDate: '2026-06-18',
+      returnDate: '2026-06-20',
+      overdueDays: 2,
+      condition: 'NORMAL',
+    });
+  });
+
   test('return fine candidate uses the Vietnam business date across UTC midnight', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp({
       clock: () => new Date('2026-07-22T17:30:00.000Z'),
@@ -782,6 +960,7 @@ describe('FE07 borrowing management', () => {
 
   test('renewal uses the FE07-bound requester with the canonical due-date request', async () => {
     const { app, authDependencies, borrowingDependencies, notificationStub } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -836,7 +1015,7 @@ describe('FE07 borrowing management', () => {
         purpose: 'BORROW_RENEWED',
         requestId,
         borrowDetailId: firstDetail.borrowDetailId,
-        dueDate: expect.any(Date),
+        dueDate: '2026-07-08',
       },
       sourceEntityType: 'BORROWING',
       sourceEntityId: requestId,
@@ -866,6 +1045,101 @@ describe('FE07 borrowing management', () => {
 
     expect(reservationConflictResponse.status).toBe(409);
     expect(reservationConflictResponse.body.error.code).toBe('RESERVATION_BLOCKS_RENEWAL');
+  });
+
+  test('single-role librarian renews another member loan while member remains owner-scoped', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => new Date('2026-03-07T12:00:00.000Z'),
+    });
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2]);
+    const owner = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-owner@example.test',
+    });
+    const memberOnly = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-member-only@example.test',
+    });
+    const staff = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-single-role-librarian@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(owner.accessToken))
+      .send({ copyIds: [1, 2] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({})
+      .expect(200);
+    const [staffTarget, memberTarget] = approved.body.borrowRequest.details;
+
+    const staffResponse = await request(app)
+      .patch(`/api/borrow-details/${staffTarget.borrowDetailId}/renew`)
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({});
+    expect(staffResponse.status).toBe(200);
+    expect(staffResponse.body.borrowDetail.renewalCount).toBe(1);
+
+    const memberResponse = await request(app)
+      .patch(`/api/borrow-details/${memberTarget.borrowDetailId}/renew`)
+      .set('Authorization', authHeader(memberOnly.accessToken))
+      .send({});
+    expect(memberResponse.status).toBe(403);
+    expect(memberResponse.body.error.code).toBe('BORROW_DETAIL_OWNER_REQUIRED');
+  });
+
+  test('renewal extends the business due date identically across host timezones', async () => {
+    const { app, authDependencies, borrowingDependencies } = makeTestApp({
+      clock: () => new Date('2026-03-07T12:00:00.000Z'),
+    });
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-business-date@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      borrowingDependencies,
+      email: 'renew-business-date-staff@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+    const created = await request(app)
+      .post('/api/borrow-requests')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyIds: [1] })
+      .expect(201);
+    const approved = await request(app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/approve`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({})
+      .expect(200);
+    const borrowDetailId = approved.body.borrowRequest.details[0].borrowDetailId;
+    borrowingDependencies.state.borrowDetails.find(
+      (detail) => detail.borrowDetailId === borrowDetailId
+    ).dueDate = '2026-03-08';
+
+    const response = await request(app)
+      .patch(`/api/borrow-details/${borrowDetailId}/renew`)
+      .set('Authorization', authHeader(member.accessToken))
+      .send({})
+      .expect(200);
+
+    expect(response.body.borrowDetail.dueDate).toBe('2026-03-22');
   });
 
   // BR-FE07-015, BR-FE07-016, FR-FE07-009: the repository conditional write must choose one
@@ -1072,6 +1346,7 @@ describe('FE07 borrowing management', () => {
 
   test('librarian retrieves only the matching selected-member borrowing with status and date filters', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2, 4, 5, 6]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1192,6 +1467,7 @@ describe('FE07 borrowing management', () => {
 
   test('member history includes a request later on toDate and excludes the following date', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1501,6 +1777,7 @@ describe('FE07 borrowing management', () => {
 
   test('history returns deterministic pagination metadata and borrow-date ordering', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1565,6 +1842,7 @@ describe('FE07 borrowing management', () => {
   // AC-FE07-003, FR-FE07-014: exceeding 5 active borrowed copies is rejected.
   test('member exceeding the borrow limit of 5 active copies is rejected', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2, 4, 5, 6]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1607,6 +1885,7 @@ describe('FE07 borrowing management', () => {
 
   test('member without approved membership is limited to 3 requested copies per day', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2, 4]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -1636,6 +1915,7 @@ describe('FE07 borrowing management', () => {
   test('daily request limit follows the Vietnam business day across UTC midnight', async () => {
     let currentTime = new Date('2026-06-09T17:30:00.000Z');
     const setup = makeTestApp({ clock: () => currentTime });
+    assignCopiesToDistinctBooks(setup.borrowingDependencies, [1, 2, 4]);
     const member = await createVerifiedUser({
       app: setup.app,
       authDependencies: setup.authDependencies,
@@ -1965,9 +2245,9 @@ describe('FE07 borrowing management', () => {
     ).toHaveLength(1);
   });
 
-  // FR-FE07-019: two requests target the same copy; only one approval may win and the copy must not
-  // be double-borrowed. The later approval is rejected and its request stays PENDING.
-  test('concurrent approvals of the same copy do not double-borrow it', async () => {
+  // FR-FE07-019: the first pending request claims the copy, so a later member cannot
+  // create a second request that would become impossible for staff to approve.
+  test('a second request for the same pending copy is rejected before staff approval', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
     const firstMember = await createVerifiedUser({
       app,
@@ -1990,7 +2270,6 @@ describe('FE07 borrowing management', () => {
       approveMember: false,
     });
 
-    // Both members request the same available copy while it is still AVAILABLE.
     const firstRequest = await request(app)
       .post('/api/borrow-requests')
       .set('Authorization', authHeader(firstMember.accessToken))
@@ -2001,29 +2280,16 @@ describe('FE07 borrowing management', () => {
       .send({ copyIds: [1] });
 
     expect(firstRequest.status).toBe(201);
-    expect(secondRequest.status).toBe(201);
+    expect(secondRequest.status).toBe(409);
+    expect(secondRequest.body.error.code).toBe('COPY_PENDING_REQUEST_CONFLICT');
 
-    // First approval wins.
     await request(app)
       .patch(`/api/borrow-requests/${firstRequest.body.borrowRequest.requestId}/approve`)
       .set('Authorization', authHeader(librarian.accessToken))
       .send({})
       .expect(200);
 
-    // Second approval on the now-unavailable copy is rejected; no double-borrow.
-    const secondApproval = await request(app)
-      .patch(`/api/borrow-requests/${secondRequest.body.borrowRequest.requestId}/approve`)
-      .set('Authorization', authHeader(librarian.accessToken))
-      .send({});
-
-    expect(secondApproval.status).toBe(409);
-    expect(secondApproval.body.error.code).toBe('COPY_NOT_AVAILABLE');
-
-    const secondStored = borrowingDependencies.state.borrowRequests.find(
-      (item) => item.requestId === secondRequest.body.borrowRequest.requestId
-    );
-    expect(secondStored.status).toBe('PENDING');
-    // The copy is borrowed exactly once.
+    expect(borrowingDependencies.state.borrowRequests).toHaveLength(1);
     const borrowedForCopyOne = borrowingDependencies.state.borrowDetails.filter(
       (detail) => detail.copyId === 1 && detail.status === 'BORROWED'
     );
@@ -2035,6 +2301,7 @@ describe('FE07 borrowing management', () => {
   // different available copies cannot both be approved after separate prechecks at four loans.
   test('concurrent approvals for different copies by the same member allow only one at the five-copy limit', async () => {
     const { app, authDependencies, borrowingDependencies } = makeTestApp();
+    assignCopiesToDistinctBooks(borrowingDependencies, [1, 2, 3, 4, 5, 6]);
     const member = await createVerifiedUser({
       app,
       authDependencies,
@@ -2433,9 +2700,10 @@ describe('FE07 borrowing management', () => {
         requestId,
         memberId: member.userId,
         copyId: 1,
+        dueDate: '2026-06-24',
+        returnDate: '2026-06-10',
         condition: 'NORMAL',
         overdueDays: 0,
-
         notes: 'intact',
       },
       ipAddress: expect.any(String),
@@ -2453,8 +2721,9 @@ describe('FE07 borrowing management', () => {
   });
 
   test.each([
-    ['MEMBER_ROLE_REQUIRED', 403, 'MEMBER_ROLE_REQUIRED'],
-    ['MEMBER_ACCOUNT_INACTIVE', 403, 'MEMBER_ACCOUNT_INACTIVE'],
+    ['BORROW_REQUEST_OWNER_NOT_MEMBER', 409, 'BORROW_REQUEST_OWNER_NOT_MEMBER'],
+    ['MEMBER_ACCOUNT_INACTIVE', 409, 'BORROW_REQUEST_OWNER_INACTIVE'],
+    ['BOOK_ALREADY_BORROWED_BY_MEMBER', 409, 'BOOK_ALREADY_BORROWED_BY_MEMBER'],
     ['UNPAID_FINE_BLOCKS_BORROWING', 409, 'UNPAID_FINE_BLOCKS_BORROWING'],
     ['OVERDUE_LOAN_BLOCKS_BORROWING', 409, 'OVERDUE_LOAN_BLOCKS_BORROWING'],
     ['REQUEST_NOT_APPROVABLE', 409, 'BORROW_REQUEST_NOT_PENDING'],
@@ -2528,10 +2797,17 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(librarian.accessToken))
       .send({});
 
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe('MEMBER_ROLE_REQUIRED');
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('BORROW_REQUEST_OWNER_NOT_MEMBER');
     expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('PENDING');
     expect(setup.borrowingDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+
+    await request(setup.app)
+      .patch(`/api/borrow-requests/${created.body.borrowRequest.requestId}/reject`)
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ reason: 'Chủ yêu cầu không còn vai trò thành viên.' })
+      .expect(200);
+    expect(setup.borrowingDependencies.state.borrowRequests[0].status).toBe('REJECTED');
   });
 
   test('create rejects when MEMBER role is removed after service preflight', async () => {
@@ -2566,6 +2842,7 @@ describe('FE07 borrowing management', () => {
 
   test('concurrent creates cannot exceed the locked daily borrowing tier', async () => {
     const setup = makeTestApp();
+    assignCopiesToDistinctBooks(setup.borrowingDependencies, [1, 2, 4, 5, 6, 7]);
     const member = await createVerifiedUser({
       app: setup.app,
       authDependencies: setup.authDependencies,
@@ -2668,6 +2945,7 @@ describe('FE07 borrowing management', () => {
 
   test('approval derives the daily tier from locked membership state instead of a stale service read', async () => {
     const setup = makeTestApp();
+    assignCopiesToDistinctBooks(setup.borrowingDependencies, [1, 2, 4, 5]);
     const member = await createVerifiedUser({
       app: setup.app,
       authDependencies: setup.authDependencies,

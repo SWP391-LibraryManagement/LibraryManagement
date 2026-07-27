@@ -1,5 +1,38 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Lock Admin library metadata role boundary (v0.6.12)
+
+- Made the single current role authoritative for catalog reference management.
+- Kept author/publisher/category mutation under Admin `/api/admin/library/*` routes.
+- Kept Librarian access read-only through FE05 active metadata choices and rejected Librarian/Member access before Admin persistence.
+
+## 2026-07-27 - Connect role/account lifecycle to FE07 (v0.6.8)
+
+- Blocked Member-role replacement and account deactivation while FE07 pending
+  requests or active loans exist, using the shared member transaction lock.
+- Added safe approval blockers for stale owner role/account and unavailable
+  physical copies.
+- Disabled only approval for known-invalid legacy requests and preserved the
+  required-reason rejection cleanup path.
+
+## 2026-07-27 - Reconcile Admin request decisions with FE07 (v0.6.7)
+
+- Added canonical physical copy status to the safe Admin request detail.
+- Reloaded list/detail after approve/reject success or conflict.
+- Clarified the required rejection reason and logical pending-claim release.
+- Preserved FE07 as the only approve/reject business owner.
+
+## 2026-07-27 - Keep email and username readable in the user table
+
+- Corrected the desktop user-table column widths from an over-constrained total to exactly 100%.
+- Increased the identity and username space and allowed long email/username values to wrap instead of hiding them behind ellipses.
+
+## 2026-07-27 - Connect user editing to role replacement
+
+- Displayed the current sole role in the managed-user edit dialog.
+- Added a clear `Đổi vai trò` action that switches to the canonical radio-based role modal without mixing profile and role mutations.
+- Preserved the existing row/detail `Phân quyền` shortcuts and atomic backend replacement contract.
+
 ## 2026-07-27 - Harden single-role replacement and session convergence
 
 - Applied the existing `UX_UserRoles_UserId` migration to the configured database after confirming no duplicate mappings.
@@ -413,3 +446,22 @@
 ## 2026-07-22 admin console correction
 
 - Removed user edit actions and the Audit safe-details column; contained wide tables inside the content area.
+
+## 2026-07-27 - Admin Dashboard connections
+
+- Bumped FE11 to v0.6.9.
+- Replaced the disconnected approved-membership total with active account
+  metrics sourced from the canonical `Users -> UserRoles -> Roles` mapping.
+- Added separate pending FE04 membership and FE07 borrow-request counts.
+- Connected each Dashboard summary card to its owning Admin module and carried
+  applicable role/status filters into the destination.
+- Corrected the return-today query to use FE07's persisted business date
+  instead of deriving the day from the SQL Server host clock.
+- Bumped FE11 to v0.6.10 and aligned activity aggregation with FE07:
+  unapproved `REQUESTED` details no longer inflate top-borrowed counts,
+  borrow/return-today use the Vietnam business date, and zero daily activity is
+  displayed as a confirmed zero rather than a generic disconnected-data state.
+- Bumped FE11 to v0.6.11 and restored the approved five-card/three-chart
+  Dashboard presentation. Retained canonical active-member counting, actual
+  FE07 borrowing aggregation, Vietnam-business-date returns, and module links;
+  removed the additional daily activity cards/chart.

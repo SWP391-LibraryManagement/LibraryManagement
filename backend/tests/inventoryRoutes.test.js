@@ -425,6 +425,29 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
     expectStateUnchanged(inventoryDependencies, beforeReservation);
   });
 
+  test('a pending borrow request claim blocks manual inventory status changes', async () => {
+    const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup();
+    inventoryDependencies.state.borrowDetails.push({
+      borrowDetailId: 99,
+      requestId: 99,
+      requestStatus: 'PENDING',
+      copyId: 1,
+      status: 'REQUESTED',
+    });
+    const auditCount = authDependencies.state.auditLogs.length;
+
+    const response = await request(app)
+      .patch('/api/book-copies/1/status')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'copy-v1')
+      .send({ status: 'DAMAGED', reason: 'Manual mutation while pending' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('PENDING_BORROW_REQUEST_CONFLICT');
+    expect(inventoryDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe('AVAILABLE');
+    expect(authDependencies.state.auditLogs).toHaveLength(auditCount);
+  });
+
   // @spec AC-FE06-007, BR-FE06-007, FR-FE06-007, NFR-FE06-TXN-002
   test('status mutation rechecks an active borrow that appears after the service precheck', async () => {
     const { app, staff, authDependencies, inventoryDependencies } = await makeStaffSetup();

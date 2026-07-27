@@ -5,20 +5,19 @@ import {
   Barcode,
   BookOpen,
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   Hash,
   Mail,
   Phone,
   RefreshCw,
   Search,
   UserRound,
+  X,
 } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
-import { DataTable } from '../../component/shared/OperationalPatterns';
+import { DataTable, Pagination } from '../../component/shared/OperationalPatterns';
 import { fmtDate, statusToUi } from '../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../utils/uiLabels';
 
@@ -30,7 +29,7 @@ const STATUS_OPTIONS = [
   { value: 'OVERDUE', label: 'Quá hạn' },
   { value: 'RETURNED', label: 'Đã trả' },
   { value: 'DAMAGED', label: 'Hư hỏng' },
-  { value: 'LOST', label: 'Mất sách' },
+  { value: 'LOST', label: 'Thất lạc' },
 ];
 
 function normalize(value) {
@@ -186,7 +185,15 @@ export default function MemberBorrowingDetailsPage() {
         <aside className="member-directory" aria-label="Danh sách thành viên">
           <div className="member-directory-header">
             <div><strong>Thành viên có giao dịch</strong><span className="muted">{visibleMembers.length} thành viên</span></div>
-            <div className="member-directory-search"><Search size={16} /><input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Tìm tên, email, mã..." aria-label="Tìm thành viên" /></div>
+            <div className="member-directory-search">
+              <Search size={16} />
+              <input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Tìm tên, email, mã..." aria-label="Tìm thành viên" />
+              {memberSearch && (
+                <button type="button" className="icon-btn" aria-label="Xóa từ khóa tìm thành viên" onClick={() => setMemberSearch('')}>
+                  <X size={16} />
+                </button>
+              )}
+            </div>
           </div>
           <div className="member-directory-list">
             {visibleMembers.map((member) => (
@@ -221,7 +228,15 @@ export default function MemberBorrowingDetailsPage() {
               </div>
 
               <div className="member-borrow-toolbar">
-                <div className="member-transaction-search"><Search size={16} /><input value={transactionSearch} onChange={(event) => { setTransactionSearch(event.target.value); setPage(1); }} placeholder="Tìm sách, tác giả, barcode..." aria-label="Tìm giao dịch mượn" /></div>
+                <div className="member-transaction-search">
+                  <Search size={16} />
+                  <input value={transactionSearch} onChange={(event) => { setTransactionSearch(event.target.value); setPage(1); }} placeholder="Tìm sách, tác giả, barcode..." aria-label="Tìm giao dịch mượn" />
+                  {transactionSearch && (
+                    <button type="button" className="icon-btn" aria-label="Xóa từ khóa tìm giao dịch" onClick={() => { setTransactionSearch(''); setPage(1); }}>
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
                 <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Lọc trạng thái mượn">
                   {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
@@ -233,7 +248,7 @@ export default function MemberBorrowingDetailsPage() {
                   caption="Lịch sử mượn trả của thành viên"
                   headers={['Mã lượt', 'Sách / bản sao', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái']}
                   loading={loadingDetails}
-                  isEmpty={!loadingDetails && pageRows.length === 0}
+                  isEmpty={!notice && !loadingDetails && pageRows.length === 0}
                   emptyState={<EmptyState icon={BookOpen} title="Không có giao dịch phù hợp" />}
                 >
                   {pageRows.map((row) => (
@@ -247,15 +262,14 @@ export default function MemberBorrowingDetailsPage() {
                     </tr>
                   ))}
                 </DataTable>
-                {!loadingDetails && (
-                  <nav className="pagination member-borrow-pagination" aria-label="Phân trang lịch sử mượn">
-                    <span className="muted">Trang {safePage}/{totalPages} • {filteredRows.length} giao dịch</span>
-                    <div className="page-controls">
-                      <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Trang trước"><ChevronLeft size={16} /></button>
-                      {Array.from({ length: totalPages }, (_, index) => <button key={index} className={`page-btn${safePage === index + 1 ? ' active' : ''}`} onClick={() => setPage(index + 1)}>{index + 1}</button>)}
-                      <button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Trang sau"><ChevronRight size={16} /></button>
-                    </div>
-                  </nav>
+                {!loadingDetails && filteredRows.length > 0 && (
+                  <Pagination
+                    currentPage={safePage}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    summary={`Trang ${safePage}/${totalPages} • ${filteredRows.length} giao dịch`}
+                    ariaLabel="Phân trang lịch sử mượn"
+                  />
                 )}
               </div>
             </>

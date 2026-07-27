@@ -95,6 +95,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | BR-FE05-014 through BR-FE05-018 | FE05-T002, FE05-T003, FE05-T005, FE05-T006 |
 | BR-FE05-019, BR-FE05-020 | FE05-T009 |
 | BR-FE05-021 | FE05-T012 |
+| BR-FE05-022 | FE05-T013, FE05-T014, FE05-T015 |
 | FR-FE05-001 through FR-FE05-004 | FE05-T003, FE05-T004 |
 | FR-FE05-005 through FR-FE05-010 | FE05-T004, FE05-T005, FE05-T006 |
 | FR-FE05-011 through FR-FE05-017 | FE05-T003, FE05-T005 |
@@ -103,6 +104,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE05-027, FR-FE05-028 | FE05-T009 |
 | FR-FE05-029 | FE05-T011 |
 | FR-FE05-030 | FE05-T012 |
+| FR-FE05-031 | FE05-T013, FE05-T014, FE05-T015 |
 | AC-FE05-001 through AC-FE05-004 | FE05-T004 |
 | AC-FE05-005 through AC-FE05-007 | FE05-T005 |
 | AC-FE05-008 through AC-FE05-010 | FE05-T005, FE05-T006 |
@@ -111,6 +113,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | AC-FE05-018, AC-FE05-019 | FE05-T009 |
 | AC-FE05-020 | FE05-T011 |
 | AC-FE05-021 | FE05-T012 |
+| AC-FE05-022 | FE05-T013, FE05-T014, FE05-T015 |
 
 ## Completion Gate
 
@@ -147,3 +150,27 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Add the implemented `/api/books/metadata` boundary to SPEC/PLAN/TEST_PLAN and cover Guest/Member denial plus Librarian/Admin active-only results.
 - [x] Clarify Librarian/Admin FE05 parity and the Admin-only FE11 reference-data mutation boundary.
 - [x] Reconcile the managed-cover scope and current SPEC version in PLAN.
+
+## 2026-07-27 deployed metadata readiness correction
+
+- [x] **FE05-T013 - Fail deployment readiness on metadata schema drift.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Add a read-only `/health/ready` check for the canonical `Authors`, `Publishers`, and `Categories` tables plus their persisted `Status`/`CreatedAt` columns.
+  - Keep the reviewed `2026-07-22-library-metadata-compatibility.sql` migration available for direct execution by an authorized database operator.
+  - Extend staging smoke so a code-only deploy cannot pass while the Admin metadata tabs remain broken.
+  - Preserve the migration policy: liveness never mutates schema, and CI does not apply SQL automatically.
+- [x] **FE05-T014 - Remove the failed Kudu repair path and keep deployment fail-closed.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Remove the `Repair staging metadata schema` workflow, Kudu runner, bundled migration runtime, operator npm command, and their dedicated tests/review evidence.
+  - Make `Deploy staging` manual-only so normal pushes run CI without automatically producing a known-failing staging deployment.
+  - Preserve the reviewed SQL migration, read-only readiness endpoint, Admin/Librarian role boundaries, and fail-closed staging smoke.
+- [x] **FE05-T015 - Reconcile legacy metadata schema in the backend startup runtime.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Package the reviewed metadata compatibility SQL with the backend and apply it transactionally before the HTTP listener starts.
+  - Verify the postcondition, refuse to listen on failure, keep `/health/ready` read-only, and retain the manual-only staging workflow.
+  - Defer `Status` validation to a dynamic SQL batch so SQL Server compiles it only after the missing
+    metadata columns have been added in the same transaction.
+  - Lock the compile-order correction with a regression test and execute the candidate twice on a
+    specifically named disposable local SQL Server database before deployment.
+  - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke
+    behavior, and existing Admin/Librarian role boundaries.

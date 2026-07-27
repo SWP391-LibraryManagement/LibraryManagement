@@ -1,12 +1,18 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. `main` owns
+`FE08-T041` through `FE08-T046`; the rule-alignment regression boundary is
+`FE08-T047`. Nhat approved the `8d0059b` H2 addendum on 2026-07-27; the
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE08 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -192,23 +198,52 @@ Not included:
 
 ## 11. V0.5.7 Notified Pickup Window And FE07 Handoff
 
-1. Use FE08's canonical `NotifiedAt` and `ExpiresAt` values as the Member pickup window; do not add a second manually entered date.
+1. Use FE08's canonical `NotifiedAt` and `ExpiresAt` values as the Member
+   pickup window; do not add a second manually entered date.
 2. Show a clear ready-for-pickup notice only for `NOTIFIED` reservations.
-3. Pass the exact held `bookId` and `copyId` to FE07 so the Member creates the normal pending borrow request for that physical copy.
-4. Keep Librarian/Admin queue processing in FE08 and borrow approval/atomic reservation fulfillment in FE07.
-5. Reconcile the Chromium FE08 acceptance assertion with the current `Đang đặt chỗ` label.
+3. Pass the exact held `bookId` and `copyId` to FE07 so the Member creates the
+   normal pending borrow request for that physical copy.
+4. Keep Librarian/Admin queue processing in FE08 and borrow approval/atomic
+   reservation fulfillment in FE07.
+5. Keep the Chromium FE08 acceptance assertion on the current
+   `Đang đặt chỗ` label.
 
 ## 12. V0.5.8 Current Same-Book Loan Exclusion
 
-1. Treat FE07 `BorrowDetails.Status = BORROWED` joined through the physical copy's `BookId` as the authoritative current-loan signal.
-2. Exclude every same-book copy from the requesting Member's FE08 candidate catalog.
-3. Revalidate inside the create transaction and return `409 BOOK_ALREADY_BORROWED` so direct API calls cannot bypass the catalog.
-4. Revalidate queue eligibility when Librarian/Admin processes a returned copy; keep a stale reservation `ACTIVE` and the copy unchanged while continuing to the next eligible Member.
-5. Share the FE07 member circulation lock before FE08 mutation locks so borrow approval and reservation creation/holding cannot race for the same Member.
+1. Treat FE07 `BorrowDetails.Status = BORROWED` joined through the physical
+   copy's `BookId` as the authoritative current-loan signal.
+2. Exclude every same-book copy from the requesting Member's FE08 candidate
+   catalog.
+3. Revalidate inside the create transaction and return
+   `409 BOOK_ALREADY_BORROWED` so direct API calls cannot bypass the catalog.
+4. Revalidate queue eligibility when Librarian/Admin processes a returned
+   copy; keep a stale reservation `ACTIVE` and the copy unchanged while
+   continuing to the next eligible Member.
+5. Share the FE07 member circulation lock before FE08 mutation locks so borrow
+   approval and reservation creation/holding cannot race for the same Member.
 
 ## 13. V0.5.9 Copy-Scoped Queue Position Clarity
 
-1. Preserve canonical FE08 queue calculation per `CopyId`; do not introduce a global Member reservation sequence.
-2. Replace ambiguous “Vị trí hàng đợi” copy with “Vị trí của bản sách” for Member and staff.
-3. Render the position as belonging to the current book/copy and preserve equal values across different queues.
-4. Stop the view model from fabricating `#1` when `queuePosition` is absent.
+1. Preserve canonical FE08 queue calculation per `CopyId`; do not introduce a
+   global Member reservation sequence.
+2. Replace ambiguous “Vị trí hàng đợi” copy with “Vị trí của bản sách” for
+   Member and staff.
+3. Render the position as belonging to the current book/copy and preserve
+   equal values across different queues.
+4. Keep a missing canonical position as null and render `Chưa xác định`;
+   never invent `#1` or stringify the null value.
+
+## 14. V0.5.10 Latest-Main Integration Boundary
+
+1. Do not add FE08 production code, schema, API, lifecycle, or queue-policy
+   changes beyond the null-safe presentation required by FR-FE08-035.
+2. Preserve `FE08-T041` through `FE08-T046` from `main` and use `FE08-T047`
+   for this batch's regression-only verification.
+3. Add a failing frontend contract test for null Member/staff queue positions,
+   then make the smallest presentation fix.
+4. Re-run the focused reservation requester test proving FE08 constructs the
+   canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.
+5. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
+   proving FE08 priority still blocks FE07 renewal without mutation.
+6. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
+   do not broaden this batch silently.

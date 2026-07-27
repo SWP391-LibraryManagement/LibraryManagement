@@ -1,5 +1,59 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-27 - Implement staging email delivery remediation locally
+
+- Added the transactional, repeatable `ACCOUNT_SETUP` template update-or-insert
+  migration without destructive cleanup.
+- Preserved the SMTP adapter message ID for successful FE02 verification/reset
+  and FE11 account-setup delivery attempts without persisting sensitive content.
+- Added the opt-in best-effort SYSTEM worker, safe defaults, lifecycle shutdown,
+  overlap prevention, fixed-code error logging, and empty-poll audit suppression.
+- Preserved the protected manual processing route, manual-only failed retry,
+  sensitive synchronous delivery, existing public DTOs, and role boundaries.
+- Fresh local evidence passes 165 focused tests, 1,079 backend tests, 232
+  frontend tests, 9 deployment tests, 10 system integration tests, lint, build,
+  trace enforcement, and diff/security review.
+- H2 approved the complete candidate on 2026-07-27. Reviewed product commits
+  are `7920d4b`, `2134d44`, and `ccb590c`; publication/CI, migration execution,
+  worker settings, deployment, safe staging evidence, H3, and merge are not yet
+  claimed.
+- PR #65 CI and the first staging deploy passed, and the template migration
+  passed twice. Live queue evidence then exposed SQL Server error 650 from the
+  `READPAST` plus `HOLDLOCK` claim hints; the worker was disabled and an
+  Azure-probed `READCOMMITTEDLOCK` correction was approved in the H2 addendum
+  and committed as `a98f459`.
+- Updated CI `30274110435` and deploy `30274367534` passed. After re-enabling
+  the corrected worker, all 15 non-sensitive pending rows reached SENT with 15
+  provider IDs, no sensitive persistence violation or empty SYSTEM audit was
+  found, and every task-created firewall rule was removed. H3 and merge remain
+  pending.
+
+## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
+
+- Required an idempotent existing-database upsert for the canonical active
+  `ACCOUNT_SETUP` template.
+- Required successful sensitive sends to retain only the SMTP provider message
+  ID in attempt history.
+- Approved an opt-in, lifecycle-managed SYSTEM worker for non-sensitive
+  `PENDING` rows with defaults of 60 seconds and 20 rows.
+- Preserved protected manual processing, manual-only failed retry, sensitive
+  synchronous delivery, minimal DTOs, and provider-memory-only credentials.
+- Recorded that Azure App Service F1 pauses the worker while the app sleeps.
+- User approved the design and written contract on 2026-07-27; implementation
+  remains unclaimed pending RED/GREEN evidence and H2.
+
+## 2026-07-27 - Specify fail-closed stored template validation (v0.4.4)
+
+- Required raw HTML tag syntax, inline event-handler attributes, and
+  `javascript:` URLs in a stored template title/body to be rejected before
+  rendering, notification/attempt persistence, or provider delivery.
+- Kept runtime template values escaped/sanitized and preserved the existing
+  recursive secret-like key rejection and `safePayload` redaction rules.
+- Reconciled the previous ambiguity between EC-FE10-010 rejection and
+  NFR-FE10-SEC-005 sanitization wording.
+- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
+  preparation only; no code or tests are claimed by this entry.
+
 ## 2026-07-23 - Make queued delivery ownership and claiming deterministic
 
 - Enforced canonical feature ownership for all queued notification types and required idempotency keys at every in-process source boundary.

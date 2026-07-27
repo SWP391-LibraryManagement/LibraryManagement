@@ -1,13 +1,21 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Implementation State: PARTIAL
+
+Current Extension: v0.8.0 implementation and automated validation are complete;
+human review remains pending. The prior Phase 2 baseline remains complete.
 
 Owner: Nhat
 
-Updated: 2026-07-22
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved the
+`8d0059b` H2 addendum on 2026-07-27; the reviewed result was committed as
+`f346ae0`, pushed to draft PR #63, and CI run `30244750250` passed. The first
+H3 review found no FE07 code or business-rule defect and returned only stale
+governance wording. The documentation-only remediation remains uncommitted
+pending fresh H2 and repeated H3.
 
 ---
 
@@ -267,13 +275,75 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - GREEN: return/renewal use `libraryBusinessTime`; in-memory and SQL doubles share the physical-copy invariant; SQL expectations use current `MEMBER` role eligibility and explicit conflict outcomes.
   - Verification: focused FE07 tests are green under `TZ=UTC`; disposable SQL and full regression are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned the bounded round-two completeness findings. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
 
+## 2026-07-27 single-role member-self-service baseline
+
 - [x] **FE07-T047 - Enforce single-role access to member borrowing flows.**
   - Maps to: BR-FE07-031, FR-FE07-032, AC-FE07-026; BR-FE11-028.
   - Replace member-any-role guards on candidate/create/own-history routes with the shared non-staff-member guard.
-  - Redirect mixed Member/staff accounts away from frontend member routes while preserving staff operational routes.
-  - Verify mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` backend/frontend cases.
+  - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff operational routes.
+  - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
 
 - [x] **FE07-T048 - Preselect the exact requester-owned FE08 held copy.**
   - Maps to: FR-FE07-024/033, AC-FE07-016/027; FR-FE08-033, AC-FE08-020.
   - Read FE08's `bookId`/`copyId` handoff and select the exact copy only from the canonical Member borrow-candidate response.
   - Preserve normal pending-request creation, server revalidation, Librarian/Admin approval, and atomic reservation fulfillment.
+
+## 2026-07-27 v0.7.7 rule-alignment integration batch
+
+- [x] **FE07-T052 - Retire the superseded multi-role renewal scenario.**
+  - Maps to: DEC-GEN-005, BD-007, BR-FE07-003/031, FR-FE07-009/032, AC-FE07-009/026.
+  - Decision: every account has exactly one role; the former multi-role renewal scenario is not a supported business case.
+  - Reconciliation: preserve Member owner-only renewal and Librarian/Admin cross-member renewal using separate single-role actors; remove the branch-local multi-role test and its unnecessary authorization delta.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`.
+  - Evidence: single-role/FE11 invariant selection passed 3/3 before cleanup and 3/3 after cleanup; full FE07 route/repository verification passed 79/79.
+- [x] **FE07-T049 - Return the authoritative transaction snapshot.**
+  - Maps to: BD-002, BR-FE07-014/016, FR-FE07-007/008, AC-FE07-008.
+  - RED: a due-date change between preflight and the repository lock produces stale response/audit overdue data.
+  - GREEN: SQL and in-memory return repositories build audit evidence from the locked due date and committed return date; the service builds `fineCandidate` from that same evidence.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/tests/borrowingRepository.test.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`.
+  - Evidence: RED returned 12 instead of 2 overdue days and failed the repository source contract; focused and full FE07 GREEN passed. Mutable SQL was not run because no named disposable DB or mutation flag was configured.
+- [x] **FE07-T050 - Use shared renewal calendar arithmetic.**
+  - Maps to: BD-003, BR-FE07-015/018, FR-FE07-009/020, NFR-FE07-TIME-001.
+  - RED: the same due date extends differently under `TZ=UTC` and `TZ=America/New_York`.
+  - GREEN: service extension and every renewal-overdue comparison use `libraryBusinessTime` helpers; no host-local `setDate`, `getDate`, or `setHours` remains in the affected renewal path.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`.
+  - Evidence: RED produced `2026-03-21` in New York instead of `2026-03-22`; both UTC and New York matrices now pass.
+- [x] **FE07-T051 - Complete FE07 verification and evidence.**
+  - Maps to: AT-001, AT-002, AT-003 and the v0.7.6 plan gates.
+  - Evidence: focused route/repository tests, UTC/New York timezone matrix,
+    full backend regression, traceability, diff hygiene, L2/L3 review, and
+    local runtime acceptance; optional mutable SQL is recorded separately.
+  - Final integrated evidence against the open `e20fdc3` merge: single-role
+    baseline 3/3; 7 focused suites/281 tests; FE07 route/repository 79/79;
+    both timezone matrices 3/3; backend coverage run 61 suites/1,047 tests
+    above all 80% thresholds; frontend 231/231 plus lint/build; traceability
+    and diff hygiene; Chromium 2/2.
+  - SQL boundary: optional mutable SQL was not run because `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` were unset; no real-SQL mutation claim is made.
+  - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
+    CI run `30244750250` passed. The documentation-only H3 remediation requires
+    fresh H2 and repeated H3 before merge.
+
+## 2026-07-27 v0.8.0 pending-copy claim correction
+
+- [~] **FE07-T053 - Enforce one pending request claim per copy across roles.**
+  - Maps to: BR-FE07-033, FR-FE07-034/035, AC-FE07-028/029; FE06 pending-claim boundary; FE11 Admin composition.
+  - Backend: candidate SQL excludes active claims; create transaction locks and
+    rejects a conflicting claim with `COPY_PENDING_REQUEST_CONFLICT`; FE06
+    status/deactivation rejects `PENDING_BORROW_REQUEST_CONFLICT`.
+  - Frontend: Admin detail displays physical copy status; Admin and Librarian
+    decision failures reload canonical state; rejection help explains the
+    required reason and claim release.
+  - Evidence: focused backend 123/123 and focused frontend 36/36; full backend
+    1,056/1,056; full frontend 232/232; frontend lint/build; traceability and
+    diff hygiene passed locally.
+  - Remaining: human review.
+
+## 2026-07-27 v0.8.1 same-title workflow correction
+
+- [~] **FE07-T054 - Enforce one active borrowing workflow per Member/title.**
+  - Maps to: BR-FE07-034, FR-FE07-036/037, AC-FE07-030; FE11 lifecycle guards.
+  - Candidate and create paths use `BookId`; create/approve revalidate under
+    the member-scoped transaction lock.
+  - Legacy invalid requests remain rejectable and now expose distinct owner,
+    account, copy, and same-title approval conflicts.
+  - Automated backend/frontend regression is required; human review remains.

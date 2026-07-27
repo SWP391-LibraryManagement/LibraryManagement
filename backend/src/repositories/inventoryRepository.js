@@ -274,6 +274,13 @@ async function lockCopyForMutation(copyId, expectedVersion, transaction) {
       SELECT TOP 1 BorrowDetailId
       FROM BorrowDetails WITH (UPDLOCK, HOLDLOCK)
       WHERE CopyId = @CopyId AND Status IN ('BORROWED', 'OVERDUE');
+      SELECT TOP 1 bd.BorrowDetailId
+      FROM BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+      INNER JOIN BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+        ON br.RequestId = bd.RequestId
+      WHERE bd.CopyId = @CopyId
+        AND bd.Status = 'REQUESTED'
+        AND br.Status = 'PENDING';
       SELECT TOP 1 ReservationId
       FROM Reservations WITH (UPDLOCK, HOLDLOCK)
       WHERE CopyId = @CopyId AND Status = 'ACTIVE';
@@ -283,7 +290,12 @@ async function lockCopyForMutation(copyId, expectedVersion, transaction) {
   if (encodeVersion(row.RowVersion) !== expectedVersion) {
     throw new AppException(409, 'STALE_COPY_STATE', 'Copy version is missing or stale. Reload before retrying.');
   }
-  return { row, borrow: result.recordsets[1]?.[0], reservation: result.recordsets[2]?.[0] };
+  return {
+    row,
+    borrow: result.recordsets[1]?.[0],
+    pendingBorrowClaim: result.recordsets[2]?.[0],
+    reservation: result.recordsets[3]?.[0],
+  };
 }
 
 async function updateCopy(copyId, patch = {}, expectedVersion, transaction) {
@@ -308,6 +320,13 @@ async function updateCopyStatus(copyId, status, expectedVersion, transaction) {
   const locked = await lockCopyForMutation(copyId, expectedVersion, transaction);
   if (locked.row.CopyStatus === 'BORROWED' || locked.borrow) {
     throw new AppException(409, 'ACTIVE_BORROW_CONFLICT', 'Borrowed copies must be handled through the return flow.');
+  }
+  if (locked.pendingBorrowClaim) {
+    throw new AppException(
+      409,
+      'PENDING_BORROW_REQUEST_CONFLICT',
+      'Copies in pending borrow requests must be handled through the borrowing request flow.'
+    );
   }
   if (locked.row.CopyStatus === 'RESERVED' || locked.reservation) {
     throw new AppException(409, 'RESERVATION_STATE_CONFLICT', 'Reserved copies must be handled through the reservation flow.');
@@ -351,6 +370,22 @@ async function hasActiveReservation(copyId, transaction) {
   return result.recordset.length > 0;
 }
 
+// @spec FR-FE06-026
+async function hasPendingBorrowClaim(copyId, transaction) {
+  const request = await requestFor(transaction);
+  const result = await request
+    .input('CopyId', sql.Int, copyId)
+    .query(`
+      SELECT TOP 1 bd.BorrowDetailId
+      FROM BorrowDetails bd
+      INNER JOIN BorrowRequests br ON br.RequestId = bd.RequestId
+      WHERE bd.CopyId = @CopyId
+        AND bd.Status = 'REQUESTED'
+        AND br.Status = 'PENDING'
+    `);
+  return result.recordset.length > 0;
+}
+
 module.exports = {
   findBookById,
   findCopyById,
@@ -362,5 +397,6 @@ module.exports = {
   updateCopy,
   updateCopyStatus,
   hasActiveBorrow,
+  hasPendingBorrowClaim,
   hasActiveReservation,
 };

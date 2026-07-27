@@ -1,6 +1,6 @@
 # CONTEXT.md - FE05 Book Management
 
-# Version: 0.2.1
+# Version: 0.2.2
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -81,6 +81,7 @@ Implementation reconciliation points:
 - Current SQL includes `Books.Status = ACTIVE|INACTIVE`; FE05 deactivation/reactivation changes only this field and leaves FE06 copy state untouched.
 - FE05 availability is read-only and derived from `Books.Status` plus FE06-owned `BookCopies.Status`; FE05 has no copy-status mutation endpoint.
 - Existing-book mutations require SQL `rowversion`/`If-Match` to reject stale updates deterministically.
+- Deployed environments must apply the reviewed metadata compatibility migration before the backend is catalog-ready; liveness alone is not evidence that protected author/publisher/category reads can execute.
 - Search performance may require indexing on ISBN, Title, and Author.
 
 These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against the existing prototype before implementation can be considered complete.

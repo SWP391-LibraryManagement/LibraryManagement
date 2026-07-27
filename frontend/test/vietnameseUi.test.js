@@ -87,8 +87,7 @@ test('public and member pages translate generated copy while preserving source d
   assert.doesNotMatch(home, /Programming: 'Code'|Novel: 'Novel'|\|\| 'Book'/);
   assert.match(home, /Programming: 'Mã'|Programming: 'Lập trình'/);
   assert.match(history, /caption="Lịch sử mượn sách"/);
-  assert.match(history, /aria-label="Trang trước"/);
-  assert.match(history, /aria-label="Trang sau"/);
+  assert.match(history, /ariaLabel="Phân trang lịch sử mượn"/);
   assert.match(history, /getStatusLabel\(row\.status\)/);
   assert.match(mine, /caption="Danh sách đặt chỗ đang hoạt động của tôi"/);
   assert.match(mine, /caption="Lịch sử đặt chỗ của tôi"/);
@@ -96,6 +95,13 @@ test('public and member pages translate generated copy while preserving source d
   assert.doesNotMatch(viewModels, /`Copy #|`Member #/);
   assert.match(viewModels, /`Bản sao #/);
   assert.match(viewModels, /`Thành viên #/);
+});
+
+test('shared pagination component keeps Vietnamese aria labels', async () => {
+  const pagination = await readFile(new URL('../src/component/shared/OperationalPatterns.jsx', import.meta.url), 'utf8');
+  assert.match(pagination, /aria-label="Trang trước"/);
+  assert.match(pagination, /aria-label="Trang sau"/);
+  assert.match(pagination, /aria-current=\{isActive \? 'page' : undefined\}/);
 });
 
 test('librarian and report surfaces remove known English interface copy', async () => {

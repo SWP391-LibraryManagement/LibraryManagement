@@ -146,9 +146,16 @@ function createInventoryService({ inventoryRepository, auditLogRepository } = {}
     }
   }
 
+  // @spec FR-FE06-026
   async function ensureNoActiveConflict(copy) {
     if (copy.status === 'BORROWED' || await inventoryRepository.hasActiveBorrow(copy.copyId)) {
       throw errors.conflict('ACTIVE_BORROW_CONFLICT', 'Borrowed copies must be handled through the return flow.');
+    }
+    if (await inventoryRepository.hasPendingBorrowClaim?.(copy.copyId)) {
+      throw errors.conflict(
+        'PENDING_BORROW_REQUEST_CONFLICT',
+        'Copies in pending borrow requests must be handled through the borrowing request flow.'
+      );
     }
     if (copy.status === 'RESERVED' || await inventoryRepository.hasActiveReservation(copy.copyId)) {
       throw errors.conflict('RESERVATION_STATE_CONFLICT', 'Reserved copies must be handled through the reservation flow.');

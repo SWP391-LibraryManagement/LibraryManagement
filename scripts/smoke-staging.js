@@ -78,6 +78,30 @@ async function runStagingSmoke({
   }
   checks.push('health');
 
+  const readinessResponse = await request(
+    fetchImpl,
+    'API readiness',
+    `${api}/health/ready`,
+    {},
+    timeoutMs,
+    requestAttempts,
+    retryDelayMs
+  );
+  const readiness = await readinessResponse.json().catch(() => ({}));
+  if (
+    readinessResponse.status !== 200
+    || readiness.status !== 'ok'
+    || readiness.checks?.catalogMetadata !== 'ok'
+  ) {
+    throw new Error(
+      `API schema readiness check failed with HTTP ${readinessResponse.status}. `
+      + 'The backend startup compatibility migration did not complete. '
+      + 'Inspect App Service startup logs and verify that the configured database principal '
+      + 'can alter Authors, Publishers, and Categories.'
+    );
+  }
+  checks.push('schema-readiness');
+
   const catalogResponse = await request(
     fetchImpl,
     'SQL-backed catalog',

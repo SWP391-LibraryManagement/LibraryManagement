@@ -77,6 +77,15 @@ module.exports = {
   changePasswordOtpTtlMinutes: numberFromEnv('CHANGE_PASSWORD_OTP_TTL_MINUTES', 10),
   maxFailedLoginAttempts: numberFromEnv('MAX_FAILED_LOGIN_ATTEMPTS', 5),
   lockoutMinutes: numberFromEnv('LOGIN_LOCKOUT_MINUTES', 30),
+  notificationWorkerEnabled: booleanFromEnv('NOTIFICATION_WORKER_ENABLED', false),
+  notificationWorkerIntervalMs: positiveIntegerFromEnv(
+    'NOTIFICATION_WORKER_INTERVAL_MS',
+    60000
+  ),
+  notificationWorkerBatchSize: positiveIntegerFromEnv(
+    'NOTIFICATION_WORKER_BATCH_SIZE',
+    20
+  ),
   smtpHost: process.env.SMTP_HOST || '',
   smtpPort: numberFromEnv('SMTP_PORT', 587),
   smtpSecure: booleanFromEnv('SMTP_SECURE', false),

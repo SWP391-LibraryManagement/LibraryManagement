@@ -1,6 +1,57 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
-## 2026-07-27 - Connect unpaid-fine blockers to Member reconciliation
+## 2026-07-27 - Prevent same-title request spam (v0.8.1)
+
+- Enforced one active `PENDING/REQUESTED` or `BORROWED` workflow per Member and
+  `BookId`, including transaction-authoritative concurrent-create checks.
+- Rejected a single request containing multiple physical copies of one title.
+- Hid every copy of an already-active title from that Member's candidates.
+- Prevented legacy duplicate pending rows from becoming two active same-title
+  loans while retaining the staff rejection path.
+- Split stale-owner approval errors from Member self-service authorization.
+
+## 2026-07-27 - Prevent duplicate pending claims for one copy (v0.8.0)
+
+- Made `PENDING + REQUESTED` the logical exclusive claim for a physical copy
+  without adding a new inventory status or schema column.
+- Hid claimed copies from Member candidates and rejected stale/concurrent
+  creates atomically with `COPY_PENDING_REQUEST_CONFLICT`.
+- Connected FE06 manual mutation protection and FE11 Admin/Librarian canonical
+  decision reloads, including current copy status and clearer rejection help.
+- Preserved legacy conflict safety: an unapprovable pending request remains
+  pending and may still be rejected with the required reason.
+
+## 2026-07-27 - Reconcile FE09 Member fines with rule alignment (v0.7.9)
+
+- Combined the parallel v0.7.8 changes for FE08 same-book eligibility and
+  FE09 positive-`UNPAID` borrow/renew blockers.
+- Preserved the exact held-copy handoff, one-account/one-role contract,
+  transaction-locked return evidence, and timezone-independent renewal.
+- Exposed FE07 due/return dates only through FE09's read-only Member fine view;
+  Librarian/Admin retain collection ownership.
+- Fresh integrated evidence and H2 review remain required before commit/push.
+
+## 2026-07-27 - Integrate same-book reservation eligibility (v0.7.8)
+
+- Integrated the upstream FE07 current-loan signal used by FE08 while
+  preserving the exact held-copy handoff, one-account/one-role contract,
+  transaction-locked return evidence, and timezone-independent renewal.
+- Kept upstream `FE08-T045` authoritative for same-book reservation exclusion
+  and retained `FE07-T049` through `FE07-T052` for this branch's rule-alignment
+  work.
+- Fresh integrated evidence is recorded; an H2 addendum remains required before
+  the open merge may be committed or pushed.
+
+## 2026-07-27 - Reconcile held-copy handoff with rule alignment (v0.7.7)
+
+- Preserved upstream FE08-to-FE07 exact `bookId`/`copyId` handoff and normal
+  pending-request/approval ownership.
+- Preserved the one-account/one-role rule, transaction-locked return evidence,
+  and timezone-independent renewal behavior.
+- Kept upstream `FE07-T048` authoritative and renumbered the rule-alignment
+  tasks to `FE07-T049` through `FE07-T052`.
+
+## 2026-07-27 - Connect unpaid-fine blockers to Member reconciliation (parallel v0.7.8)
 
 - Linked the existing FE07 borrow/renew blocker to FE09's canonical positive `UNPAID` state.
 - Exposed FE07 due and return dates through the read-only Member fine view for reconciliation.
@@ -17,6 +68,34 @@
 - FE07 now reads both `bookId` and `copyId` from a Member's `NOTIFIED` FE08 reservation action.
 - The request screen preselects that exact copy only when the protected reservation-aware candidate catalog returns it for the current Member.
 - Preserved normal pending-request creation, Librarian/Admin approval, backend revalidation, and atomic FE08 fulfillment.
+
+## 2026-07-27 - Reconcile single-role main with rule alignment (v0.7.6)
+
+- Adopted project-wide `DEC-GEN-005`: every persisted account has exactly one
+  role.
+- Confirmed multi-role accounts are not supported; each account has exactly one
+  role.
+- Kept Member owner-only renewal and Librarian/Admin cross-member renewal as
+  separate single-role actor paths while preserving every loan-owner
+  eligibility check.
+- Renumbered the rule-alignment tasks because `main` assigned `FE07-T047` and
+  `FE07-T048` to single-role member-self-service and the held-copy handoff.
+- Marked the former multi-role renewal scenario as superseded and removed its
+  branch-local test/authorization delta during integration.
+
+## 2026-07-27 - Specify renewal authorization and authoritative return data (v0.7.5)
+
+- Made `LIBRARIAN`/`ADMIN` cross-member renewal permission take precedence for
+  multi-role actors while preserving member-only ownership and loan-owner
+  eligibility checks.
+- Required `fineCandidate` and return audit metadata to use the due date and
+  return values locked by the authoritative return transaction.
+- Required renewal eligibility and due-date extension to use shared
+  `Asia/Ho_Chi_Minh` business-date helpers without host-local `Date` arithmetic.
+- Corrected the stale FE04 edge-case wording: lack of FE04 approval selects the
+  three-copy daily tier and is not itself a borrowing rejection.
+- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
+  preparation only; no code or tests are claimed by this entry.
 
 ## 2026-07-27 - Enforce non-staff member self-service
 

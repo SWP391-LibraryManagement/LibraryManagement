@@ -102,6 +102,7 @@ test('request detail projects the explicit safe FE07 read DTO', async () => {
         title: 'Book A',
         author: 'Author A',
         location: 'Shelf A',
+        status: 'AVAILABLE',
         internalNote: 'must-not-leak',
       },
     }],
@@ -123,17 +124,21 @@ test('request detail projects the explicit safe FE07 read DTO', async () => {
       email: 'member@example.test',
       phoneNumber: '0900000000',
       status: 'ACTIVE',
+      hasMemberRole: true,
     },
     items: [{
       borrowDetailId: 80,
       copyId: 44,
+      bookId: null,
       barcode: 'BC-0044',
       title: 'Book A',
       author: 'Author A',
       location: 'Shelf A',
       status: 'REQUESTED',
+      copyStatus: 'AVAILABLE',
     }],
     lifecycle: { approvedAt: null, rejectedAt: null, processedAt: null },
+    approval: { allowed: true, blockers: [] },
   });
   expect(JSON.stringify(result)).not.toContain('must-not-leak');
 });
@@ -144,5 +149,44 @@ test('missing request detail returns the canonical FE07 not-found error', async 
   await expect(adminService.getRequestDetail(999)).rejects.toMatchObject({
     statusCode: 404,
     code: 'BORROW_REQUEST_NOT_FOUND',
+  });
+});
+
+test('request detail exposes known approval blockers without disabling rejection ownership', async () => {
+  borrowingRepository.findBorrowRequestById.mockResolvedValue({
+    requestId: 26,
+    requestDate: new Date('2026-07-19T08:00:00.000Z'),
+    status: 'PENDING',
+    member: {
+      userId: 10,
+      status: 'ACTIVE',
+      hasMemberRole: false,
+    },
+    details: [{
+      borrowDetailId: 81,
+      copyId: 45,
+      status: 'REQUESTED',
+      copy: {
+        copyId: 45,
+        barcode: 'BC-0045',
+        status: 'BORROWED',
+      },
+    }],
+  });
+
+  const result = await adminService.getRequestDetail(26);
+
+  expect(result.approval).toEqual({
+    allowed: false,
+    blockers: [
+      {
+        code: 'BORROW_REQUEST_OWNER_NOT_MEMBER',
+        message: 'Chủ yêu cầu không còn vai trò thành viên.',
+      },
+      {
+        code: 'COPY_NOT_AVAILABLE',
+        message: 'Bản sao BC-0045 không còn khả dụng.',
+      },
+    ],
   });
 });

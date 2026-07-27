@@ -703,6 +703,7 @@ describe('FE11 atomic managed-user deactivation service', () => {
     [{ outcome: 'STALE_USER_STATE' }, 409, 'STALE_USER_STATE'],
     [{ outcome: 'ACCOUNT_PENDING_ACTIVATION' }, 409, 'ACCOUNT_PENDING_ACTIVATION'],
     [{ outcome: 'ACTIVE_BORROWINGS_EXIST', activeBorrowingCount: 2 }, 409, 'ACTIVE_BORROWINGS_EXIST'],
+    [{ outcome: 'PENDING_BORROW_REQUESTS_EXIST', pendingRequestCount: 2 }, 409, 'PENDING_BORROW_REQUESTS_EXIST'],
   ])('maps deactivation outcome %s safely', async (result, statusCode, code) => {
     const harness = makeDeactivateHarness(result);
 
@@ -808,6 +809,12 @@ describe('FE11 transactional role service', () => {
     ['USER_NOT_FOUND', 404, 'USER_NOT_FOUND', 'User was not found.'],
     ['ROLE_NOT_FOUND', 404, 'ROLE_NOT_FOUND', 'Role was not found.'],
     ['LAST_ADMIN_ROLE', 400, 'LAST_ADMIN_ROLE', 'Cannot replace the last active Admin role.'],
+    [
+      'MEMBER_BORROWING_WORKFLOW_EXISTS',
+      409,
+      'MEMBER_BORROWING_WORKFLOW_EXISTS',
+      'Resolve the member pending requests and active borrowings before replacing the member role.',
+    ],
   ])('maps %s to a safe service error', async (outcome, statusCode, code, message) => {
     const harness = makeRoleHarness(outcome);
 

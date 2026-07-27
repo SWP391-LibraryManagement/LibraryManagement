@@ -53,6 +53,9 @@ function useTransactionResults(results) {
   getPool.mockResolvedValue({
     async transactionQuery(query, inputs) {
       calls.push({ query, inputs });
+      if (query.includes('sp_getapplock')) {
+        return { recordset: [] };
+      }
       const next = queued.shift();
       if (next instanceof Error) throw next;
       return { recordset: next || [] };
@@ -132,6 +135,25 @@ test('repairs legacy multiple mappings by replacing all of them with one role', 
 
   await expect(invoke()).resolves.toMatchObject({ outcome: 'REPLACED' });
   expect(calls.find(({ query }) => query.includes('DELETE FROM UserRoles')).inputs.UserId).toBe(7);
+});
+
+test('blocks removing MEMBER while borrowing workflows are still active', async () => {
+  const calls = useTransactionResults([
+    ACTIVE_ADMIN,
+    TARGET_USER,
+    LIBRARIAN_ROLE,
+    [{ RoleId: 3, RoleName: 'MEMBER' }],
+    [{ PendingRequestCount: 2, ActiveBorrowingCount: 1 }],
+  ]);
+
+  await expect(invoke()).resolves.toEqual({
+    outcome: 'MEMBER_BORROWING_WORKFLOW_EXISTS',
+    pendingRequestCount: 2,
+    activeBorrowingCount: 1,
+  });
+  const workflowRead = calls.find(({ query }) => query.includes('PendingRequestCount'));
+  expect(workflowRead.query).toContain('UPDLOCK');
+  expectRolledBackWithoutMutation(calls);
 });
 
 test('returns unchanged without audit when the account already has exactly the selected role', async () => {
@@ -224,11 +246,12 @@ test('uses locked parameterized reads for actor, target, role, and current mappi
   ]);
 
   await invoke();
-  for (const call of calls.slice(0, 4)) {
+  const lockedReads = calls.filter(({ query }) => query.includes('UPDLOCK')).slice(0, 4);
+  for (const call of lockedReads) {
     expect(call.query).toContain('UPDLOCK');
     expect(call.query).toContain('HOLDLOCK');
   }
   expect(calls[0].inputs.AdminUserId).toBe(99);
-  expect(calls[1].inputs.UserId).toBe(7);
-  expect(calls[2].inputs.RoleId).toBe(2);
+  expect(lockedReads[1].inputs.UserId).toBe(7);
+  expect(lockedReads[2].inputs.RoleId).toBe(2);
 });

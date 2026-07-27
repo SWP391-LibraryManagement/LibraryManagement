@@ -52,7 +52,7 @@
 
 - Clarified that all roles may consume the public catalog while FE01 remains read-only.
 - Connected Homepage actions to FE11's exactly-one-role account model so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
-- Added focused frontend regression coverage for mixed Member/staff roles.
+- Added focused frontend regression coverage for invalid legacy Member/staff compatibility arrays.
 
 ## 2026-07-20 - Vietnamese UI localization and typography
 

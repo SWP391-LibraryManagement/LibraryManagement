@@ -1,13 +1,19 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 Implementation State: COMPLETE
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. `main` owns
+`FE08-T041` through `FE08-T046`; the rule-alignment regression-only task is
+`FE08-T047`. Nhat approved the `8d0059b` H2 addendum on 2026-07-27; the
+reviewed result was committed as `f346ae0`, pushed to draft PR #63, and CI run
+`30244750250` passed. The first H3 review found no FE08 code or business-rule
+defect and returned only stale governance wording. The documentation-only
+remediation remains uncommitted pending fresh H2 and repeated H3.
 
 ---
 
@@ -218,11 +224,13 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
   - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
 
+## 9. 2026-07-27 single-role and member presentation baseline
+
 - [x] **FE08-T041 - Enforce single-role access to member reservation flows.**
   - Maps to: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
   - Replace member-any-role guards on candidate/create/own-list/cancel routes with the shared non-staff-member guard.
-  - Redirect mixed Member/staff accounts away from frontend member routes while preserving staff list/queue operations.
-  - Verify mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` backend/frontend cases.
+  - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff list/queue operations.
+  - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
 
 - [x] **FE08-T042 - Connect FE01 selected-book reservation handoff.**
   - Maps to: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
@@ -247,8 +255,32 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Exclude same-`BookId` candidates, reject direct create with `BOOK_ALREADY_BORROWED`, and revalidate stale queue entries during Librarian/Admin processing.
   - Coordinate FE07 borrow approval and FE08 create/hold through the Member circulation lock.
   - Verify repository source, service mapping, route behavior, queue behavior, and Vietnamese error mapping.
+  - Source: upstream-approved and implemented on `main` at `e99daf5`; this is
+    not a new RED claim from the rule-alignment branch.
 
 - [x] **FE08-T046 - Clarify copy-scoped queue positions.**
   - Maps to: BR-FE08-020, FR-FE08-035, AC-FE08-022.
-  - Preserve per-`CopyId` positions, label Member/Librarian tables with the copy scope, and remove the view-model fallback that invented `#1`.
-  - Verify equal positions across different books remain valid and understandable.
+  - Preserve per-`CopyId` positions, label Member/Librarian tables with the
+    copy scope, and remove the view-model fallback that invented `#1`.
+  - Render `Chưa xác định` for null canonical positions instead of `#null` or
+    `#undefined`.
+  - Verify equal positions across different books and null positions in both
+    Member and staff presentation contracts.
+
+## 10. 2026-07-27 FE07/FE10 integration regression boundary
+
+- [x] **FE08-T047 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
+  - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
+  - Scope: regression evidence only after the bounded FE08-T046 null-safe
+    presentation remediation.
+  - Historical evidence against the prior `e20fdc3` merge remains baseline
+    only.
+  - Fresh evidence against the open `8d0059b` merge: queue-position RED/GREEN
+    `1/1`, FE09 backend `22/22`, FE08/FE09 frontend `17/17`, requester and
+    SIT coverage inside the 7-suite cross-feature gate `295/295`, full backend
+    and coverage `1,052/1,052`, frontend `232/232`, and Chromium acceptance
+    `2/2`.
+  - Integration gate: the product H2 addendum approved commit `f346ae0` and PR
+    CI run `30244750250` passed. The documentation-only H3 remediation requires
+    fresh H2 and repeated H3 before merge.
+  - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

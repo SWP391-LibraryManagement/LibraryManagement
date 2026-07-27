@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Search, BookOpen, CheckCircle2, X } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -103,9 +103,35 @@ export default function BorrowRequestPage() {
       {notice && <DataNotice type={noticeType} title={noticeType === 'error' ? 'Không thể gửi yêu cầu' : 'Kết quả gửi yêu cầu'}>{notice}</DataNotice>}
       <div className="split member-borrow-grid">
         <div className="lib-card member-catalog-card">
-          <DataToolbar primary={<div className="search-input" style={{ width: '100%' }}><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" /></div>} />
+          <DataToolbar primary={(
+            <div className="search-input" style={{ width: '100%' }}>
+              <Search size={18} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên sách hoặc tác giả..." aria-label="Tìm sách" />
+              {query && (
+                <button type="button" className="icon-btn" aria-label="Xóa từ khóa tìm sách" onClick={() => setQuery('')}>
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          )} />
           <div className="queue-list" style={{ marginTop: 16 }}>
-            {results.map((book) => <button type="button" key={book.bookId} onClick={() => pickBook(book)} className={`queue-item${book.bookId === selected?.bookId ? ' head' : ''}`} style={{ cursor: 'pointer' }}><span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} /><span className="stack-sm" style={{ flex: 1, textAlign: 'left' }}><strong>{book.title}</strong><span className="muted" style={{ fontSize: 13 }}>{book.author}</span></span><span className="badge badge-available">{book.copies.length} bản</span></button>)}
+            {results.map((book) => (
+              <button
+                type="button"
+                key={book.bookId}
+                onClick={() => pickBook(book)}
+                className={`queue-item${book.bookId === selected?.bookId ? ' head' : ''}`}
+                style={{ cursor: 'pointer' }}
+                aria-pressed={book.bookId === selected?.bookId}
+              >
+                <span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} />
+                <span className="stack-sm" style={{ flex: 1, textAlign: 'left' }}>
+                  <strong>{book.title}</strong>
+                  <span className="muted" style={{ fontSize: 13 }}>{book.author}</span>
+                </span>
+                <span className="badge badge-available">{book.copies.length} bản</span>
+              </button>
+            ))}
             {!loading && results.length === 0 && <EmptyState icon={BookOpen} title="Không tìm thấy sách có thể mượn">Hãy thử tên sách hoặc tác giả khác.</EmptyState>}
             {loading && <EmptyState icon={BookOpen} title="Đang tải danh sách sách..." />}
           </div>

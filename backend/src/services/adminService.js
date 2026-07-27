@@ -3,6 +3,7 @@ const auditLogRepository = require('../repositories/auditLogRepository');
 const borrowingRepository = require('../repositories/borrowingRepository');
 const { adminPermissionPolicy } = require('../policies/adminPermissionPolicy');
 const errors = require('../utils/safeErrors');
+const { formatBusinessDate } = require('../utils/libraryBusinessTime');
 
 const RESOURCE_NAMES = new Set(['authors', 'publishers', 'categories']);
 const BORROW_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED']);
@@ -490,7 +491,7 @@ function getPermissions() {
 
 // @spec FR-FE11-031
 async function getDashboard() {
-  return adminRepository.getDashboard();
+  return adminRepository.getDashboard(formatBusinessDate(new Date()));
 }
 
 // @spec FR-FE11-033, BR-FE11-018, BR-FE11-026, AC-FE11-018
@@ -596,11 +597,49 @@ async function listRequests(filters = {}) {
   };
 }
 
+// @spec BR-FE11-031, FR-FE11-039, FR-FE11-042
 async function getRequestDetail(requestIdInput) {
   const requestId = positiveInt(requestIdInput, 'Request ID');
   const request = await borrowingRepository.findBorrowRequestById(requestId);
   if (!request) {
     throw errors.notFound('BORROW_REQUEST_NOT_FOUND', 'Borrow request was not found.');
+  }
+
+  const approvalBlockers = [];
+  if (request.status === 'PENDING') {
+    if (request.member?.hasMemberRole === false) {
+      approvalBlockers.push({
+        code: 'BORROW_REQUEST_OWNER_NOT_MEMBER',
+        message: 'Chủ yêu cầu không còn vai trò thành viên.',
+      });
+    } else if (request.member?.status !== 'ACTIVE') {
+      approvalBlockers.push({
+        code: 'BORROW_REQUEST_OWNER_INACTIVE',
+        message: 'Tài khoản chủ yêu cầu không hoạt động.',
+      });
+    }
+
+    const unavailableCopies = (request.details || []).filter(
+      (detail) => !['AVAILABLE', 'RESERVED'].includes(detail.copy?.status)
+    );
+    if (unavailableCopies.length) {
+      approvalBlockers.push({
+        code: 'COPY_NOT_AVAILABLE',
+        message: `Bản sao ${unavailableCopies
+          .map((detail) => detail.copy?.barcode || `#${detail.copyId}`)
+          .join(', ')} không còn khả dụng.`,
+      });
+    }
+
+    const requestedBookIds = (request.details || [])
+      .map((detail) => detail.copy?.bookId)
+      .filter(Boolean);
+    if (new Set(requestedBookIds).size !== requestedBookIds.length) {
+      approvalBlockers.push({
+        code: 'DUPLICATE_BOOK_IN_REQUEST',
+        message: 'Yêu cầu chứa nhiều bản sao của cùng một đầu sách.',
+      });
+    }
   }
 
   return {
@@ -616,20 +655,27 @@ async function getRequestDetail(requestIdInput) {
       email: request.member?.email,
       phoneNumber: request.member?.phone || null,
       status: request.member?.status,
+      hasMemberRole: request.member?.hasMemberRole !== false,
     },
     items: (request.details || []).map((detail) => ({
       borrowDetailId: detail.borrowDetailId,
       copyId: detail.copy?.copyId,
+      bookId: detail.copy?.bookId || null,
       barcode: detail.copy?.barcode || null,
       title: detail.copy?.title || null,
       author: detail.copy?.author || null,
       location: detail.copy?.location || null,
       status: detail.status,
+      copyStatus: detail.copy?.status || null,
     })),
     lifecycle: {
       approvedAt: request.approvedAt || null,
       rejectedAt: request.rejectedAt || null,
       processedAt: request.processedAt || null,
+    },
+    approval: {
+      allowed: request.status === 'PENDING' && approvalBlockers.length === 0,
+      blockers: approvalBlockers,
     },
   };
 }

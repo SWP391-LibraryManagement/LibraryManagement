@@ -32,6 +32,7 @@ const { defaultFineManagementService } = require('./services/fineManagementServi
 const { defaultInventoryService } = require('./services/inventoryService');
 const { createMembershipService } = require('./services/membershipService');
 const { createUserManagementService } = require('./services/userManagementService');
+const { defaultSchemaReadinessService } = require('./services/schemaReadinessService');
 
 function corsOptionsFromEnvironment() {
   if (process.env.NODE_ENV !== 'production') {
@@ -63,6 +64,7 @@ function createApp({
   membershipService,
   userManagementService,
   adminService,
+  schemaReadinessService = defaultSchemaReadinessService,
 } = {}) {
   if (!membershipService) {
     const notificationRequester =
@@ -108,6 +110,28 @@ function createApp({
       status: 'ok',
       uptime: process.uptime(),
     });
+  });
+
+  // @spec BR-FE05-022, FR-FE05-031, AC-FE05-022
+  app.get('/health/ready', async (req, res) => {
+    try {
+      const catalogMetadataReady =
+        await schemaReadinessService.checkCatalogMetadataSchema();
+      const status = catalogMetadataReady ? 'ok' : 'not_ready';
+      return res.status(catalogMetadataReady ? 200 : 503).json({
+        status,
+        checks: {
+          catalogMetadata: status,
+        },
+      });
+    } catch (_error) {
+      return res.status(503).json({
+        status: 'not_ready',
+        checks: {
+          catalogMetadata: 'not_ready',
+        },
+      });
+    }
   });
 
   app.use('/api/auth', createAuthRoutes(authService));

@@ -6,7 +6,7 @@ import { ClipboardList, ThumbsUp, ThumbsDown, Phone, Mail, Hash, RefreshCw, User
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
-import { DataTable } from '../../component/shared/OperationalPatterns';
+import { DataTable, Pagination } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapBorrowRequestsToAdminRows } from '../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../utils/uiLabels';
 
@@ -79,6 +79,7 @@ function RequestReviewSummary({ request }) {
 }
 
 export default function BorrowRequestsAdminPage() {
+  // @spec FR-FE07-035
   const [requests, setRequests] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -174,6 +175,7 @@ export default function BorrowRequestsAdminPage() {
       showToast(`Đã duyệt yêu cầu ${approveTarget.id}.`, 'success');
     } catch (error) {
       showToast(error.message, 'error');
+      await loadRequests();
     } finally {
       setActionPending(false);
     }
@@ -196,6 +198,7 @@ export default function BorrowRequestsAdminPage() {
       showToast(`Đã từ chối yêu cầu ${rejectedId}.`, 'info');
     } catch (error) {
       showToast(error.message, 'error');
+      await loadRequests();
     } finally {
       setActionPending(false);
     }
@@ -250,7 +253,7 @@ export default function BorrowRequestsAdminPage() {
             caption="Danh sách yêu cầu mượn"
             headers={['Yêu cầu', 'Thành viên', 'Sách', 'Ngày gửi', 'Trạng thái', 'Thao tác']}
             loading={loading}
-            isEmpty={filteredRequests.length === 0}
+            isEmpty={!notice && filteredRequests.length === 0}
             emptyState={<EmptyState icon={ClipboardList} title="Không có yêu cầu phù hợp" />}
           >
             {pagedRequests.map((row) => (
@@ -289,26 +292,13 @@ export default function BorrowRequestsAdminPage() {
             ))}
           </DataTable>
           {!loading && filteredRequests.length > 0 && (
-            <nav className="pagination borrow-request-pagination" aria-label="Phân trang yêu cầu mượn">
-              <span className="muted">
-                Trang {currentPage}/{totalPages} • {filteredRequests.length} yêu cầu
-              </span>
-              <div className="page-controls">
-                <button type="button" className="page-btn" disabled={currentPage === 1} onClick={() => changePage(currentPage - 1)}>Trước</button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                  <button
-                    type="button"
-                    className={`page-btn ${pageNumber === currentPage ? 'active' : ''}`}
-                    key={pageNumber}
-                    aria-current={pageNumber === currentPage ? 'page' : undefined}
-                    onClick={() => changePage(pageNumber)}
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
-                <button type="button" className="page-btn" disabled={currentPage === totalPages} onClick={() => changePage(currentPage + 1)}>Sau</button>
-              </div>
-            </nav>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={changePage}
+              summary={`Trang ${currentPage}/${totalPages} • ${filteredRequests.length} yêu cầu`}
+              ariaLabel="Phân trang yêu cầu mượn"
+            />
           )}
         </div>
 

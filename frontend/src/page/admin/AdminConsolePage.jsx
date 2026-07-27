@@ -18,6 +18,7 @@ export default function AdminConsolePage() {
   const navigate = useNavigate();
   const access = readStoredAdminAccess();
   const [activeSection, setActiveSection] = useState('users');
+  const [sectionContext, setSectionContext] = useState({});
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -29,20 +30,34 @@ export default function AdminConsolePage() {
   if (!access.authenticated) return <Navigate to="/login" replace />;
   if (!access.isAdmin) return <Navigate to="/home" replace />;
 
+  function changeSection(section) {
+    setSectionContext({});
+    setActiveSection(section);
+  }
+
+  function openDashboardDestination(destination) {
+    setSectionContext(destination);
+    setActiveSection(destination.section);
+  }
+
   return (
     <AdminShell
       activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      onSectionChange={changeSection}
       onHome={() => navigate('/home')}
     >
       {activeSection === 'users' ? (
-        <AdminUsersSection onToast={setToast} />
+        <AdminUsersSection
+          onToast={setToast}
+          initialRole={sectionContext.role}
+          initialStatus={sectionContext.status}
+        />
       ) : activeSection === 'membership' ? (
         <AdminMembershipSection onToast={setToast} />
       ) : activeSection === 'dashboard' ? (
-        <AdminDashboardSection />
+        <AdminDashboardSection onNavigate={openDashboardDestination} />
       ) : activeSection === 'requests' ? (
-        <AdminRequestsSection onToast={setToast} />
+        <AdminRequestsSection onToast={setToast} initialStatus={sectionContext.status} />
       ) : activeSection === 'permissions' ? (
         <AdminPermissionsSection />
       ) : activeSection === 'audit' ? (
@@ -50,7 +65,11 @@ export default function AdminConsolePage() {
       ) : activeSection === 'library' ? (
         <AdminLibrarySection onToast={setToast} />
       ) : activeSection === 'circulation' ? (
-        <AdminCirculationSection onToast={setToast} onOpenRequests={() => setActiveSection('requests')} />
+        <AdminCirculationSection
+          onToast={setToast}
+          initialStatus={sectionContext.status}
+          onOpenRequests={() => openDashboardDestination({ section: 'requests', status: 'PENDING' })}
+        />
       ) : (
         <section className="admin-section-placeholder">
           <p className="admin-page-eyebrow">Admin Console</p>

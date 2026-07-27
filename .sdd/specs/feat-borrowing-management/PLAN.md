@@ -1,12 +1,17 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
 
 Owner: Nhat
 
-Updated: 2026-07-22
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. Nhat approved the
+`8d0059b` H2 addendum on 2026-07-27; the reviewed result was committed as
+`f346ae0`, pushed to draft PR #63, and CI run `30244750250` passed. The first
+H3 review found no FE07 code or business-rule defect and returned only stale
+governance wording. The documentation-only remediation remains uncommitted
+pending fresh H2 and repeated H3.
 
 ---
 
@@ -204,6 +209,85 @@ Not included:
 ## 9. V0.7.6 FE08 Held-Copy Handoff
 
 1. Accept `bookId` plus `copyId` as frontend-only selection hints from FE08.
-2. Select the exact copy only when it exists in FE07's protected, reservation-aware candidate response for the current Member.
-3. Keep `POST /api/borrow-requests` and its server-side eligibility/reservation checks authoritative.
-4. Preserve the normal `PENDING` request followed by Librarian/Admin approval and atomic FE08 fulfillment.
+2. Select the exact copy only when it exists in FE07's protected,
+   reservation-aware candidate response for the current Member.
+3. Keep `POST /api/borrow-requests` and its server-side eligibility/reservation
+   checks authoritative.
+4. Preserve the normal `PENDING` request followed by Librarian/Admin approval
+   and atomic FE08 fulfillment.
+
+## 10. V0.7.5 Rule-Alignment Plan
+
+The detailed executable plan is
+`docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
+
+1. Reconcile the branch with `DEC-GEN-005` and `main` task `FE07-T047`: every
+   account has exactly one role and the former multi-role renewal scenario is
+   superseded.
+2. Preserve Member owner-only renewal and Librarian/Admin cross-member renewal
+   as separate single-role paths; remove the branch-local multi-role test and
+   unnecessary authorization delta while retaining all loan-owner checks.
+3. Add a RED return regression that changes the due date between service
+   preflight and the repository lock, then require response and audit metadata
+   to use the locked transaction snapshot.
+4. Extend the SQL and in-memory repository return contract with authoritative
+   `userId`, `requestId`, `copyId`, `dueDate`, `returnDate`, and `overdueDays`
+   evidence without exposing the internal evidence in the public DTO.
+5. Add a renewal regression that passes under both `TZ=UTC` and
+   `TZ=America/New_York`; remove host-local date arithmetic from service,
+   SQL-repository checks, and in-memory parity checks.
+6. Run focused FE07 route/repository tests first. Run mutable SQL only when
+   `DB_NAME` is a named disposable local database and
+   `FE07_SQL_TEST_ALLOW_MUTATION=true`.
+7. Keep the implementation diff uncommitted until L1-L4 evidence is complete
+   and Nhat grants the H2 addendum.
+
+## 11. V0.7.7 Main-Integration Addendum
+
+1. Preserve `FE07-T047` and `FE07-T048` from `main` for single-role
+   member-self-service and the exact held-copy handoff.
+2. Use `FE07-T049` through `FE07-T052` for the rule-alignment tasks; do not
+   reuse or overwrite the upstream task IDs.
+3. Keep the authoritative return snapshot and shared business-date changes from
+   v0.7.5 because they are independent of account cardinality.
+4. Run the FE07 role/renewal, return snapshot, and timezone regressions against
+   the merged `main` implementation before full verification.
+5. Do not commit the merge until the reconciled SPEC, PLAN/TASKS, code, tests,
+   and evidence receive H2 addendum approval.
+
+## 12. V0.7.9 FE09 Member-Fine Integration Addendum
+
+1. Keep FE07's positive-`UNPAID` borrow/renew blocker unchanged and identify
+   FE09 as the canonical fine-state owner.
+2. Let FE09-T024 project FE07 due/return/borrow status through the Member-only
+   read path; do not add an FE07 fine mutation.
+3. Preserve exactly-one-role access: Member reconciles own fines, while
+   Librarian/Admin record collection through staff routes.
+4. Re-run focused fine/borrowing, one-role, timezone, cross-feature, full, and
+   browser gates against `main@8d0059b`.
+5. Keep the merge uncommitted and unpushed until the H2 addendum is approved.
+
+## 13. V0.8.0 Pending-Copy Claim Correction
+
+1. Add focused RED cases proving a second member can neither see nor request a
+   copy already claimed by a `PENDING` request.
+2. Under the existing member/copy transaction locks, recheck
+   `PENDING + REQUESTED` claims before inserting any request/detail rows.
+3. Keep `BookCopies.Status` unchanged while pending; approval consumes the
+   claim into `BORROWED`, and rejection releases it through request status.
+4. Make FE06 status/deactivation mutations reject a pending FE07 claim.
+5. Expose current physical copy status in the safe FE11 Admin detail and reload
+   Admin/Librarian state after both successful and conflicting decisions.
+6. Run focused backend/frontend tests, full regression, lint/build,
+   traceability, and diff hygiene; human review remains required.
+
+## 14. V0.8.1 Same-Title Workflow Invariant
+
+1. Add RED coverage for a Member submitting another copy of a `BookId` already
+   present in their pending request or active loan.
+2. Filter candidates at `BookId` scope and revalidate under the existing
+   member-scoped transaction lock before request insertion.
+3. During approval, reject a legacy duplicate if the Member already has a
+   `BORROWED` detail for the same `BookId`; preserve rejection as cleanup.
+4. Expose distinct owner-role/account/copy approval blockers to FE11 without
+   transferring FE07 command ownership.

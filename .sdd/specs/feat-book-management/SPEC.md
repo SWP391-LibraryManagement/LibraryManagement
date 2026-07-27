@@ -1,6 +1,6 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.3
+# Version: 0.6.7
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -200,6 +200,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-019: Librarian/Admin cover selection uses one optional managed image file named `cover`. The backend accepts only JPG/JPEG, PNG, or WebP whose extension, declared MIME type, and byte signature agree, with a maximum size of 2 MB; it generates the filename and stores the public path under `/uploads/book-covers/`.
 - BR-FE05-020: A failed create/update after a new cover file is stored must remove that uncommitted file. A successful replacement preserves the committed new path and removes the previous file only when the previous path is FE05-managed; external and unmanaged paths are never deleted.
 - BR-FE05-021: Librarian/Admin book forms may read only `ACTIVE` category, author, and publisher choices from FE05. Mutation of those reference records is restricted to Admin through the FE11 Admin Library integration.
+- BR-FE05-022: A deployed backend is not catalog-ready until `Authors`, `Publishers`, and `Categories` each persist the canonical `Status` and database-generated `CreatedAt` columns. Before accepting HTTP traffic, backend startup must apply the reviewed, transactional, idempotent metadata compatibility migration and verify its postcondition; startup must fail instead of serving a partially compatible catalog when reconciliation cannot complete.
 
 
 ---
@@ -239,6 +240,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-028: IF the supplied cover is missing its required multipart metadata, exceeds 2 MB, has an unsupported or mismatched type/signature, or the associated book mutation fails, the system shall reject or compensate the operation without replacing the committed cover path or retaining an uncommitted managed file.
 - FR-FE05-029: WHEN the update form changes a book between `ACTIVE` and `INACTIVE`, the frontend shall reload the canonical management list using the new status and page 1 so the successfully updated book is not immediately hidden by the previous status filter.
 - FR-FE05-030: WHEN an authenticated Librarian/Admin requests `/api/books/metadata`, the system shall return only active category/author/publisher choices; Guest/Member requests shall be rejected and no reference record shall be mutated.
+- FR-FE05-031: WHEN backend startup begins, the system shall apply the reviewed metadata compatibility migration before listening and verify the canonical metadata columns; IF migration or verification fails, the backend shall not listen. WHEN readiness is checked through `/health/ready`, the system shall perform a read-only verification and return HTTP `503` with a safe `not_ready` result for any later schema drift or database failure.
 
 ---
 
@@ -265,6 +267,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-019: Given an invalid cover or a stale/database/audit failure after a replacement file is staged, when create/update finishes, then the committed book/cover remains unchanged and the uncommitted managed file is removed.
 - AC-FE05-020: Given the management list is filtered to the book's old status, when staff saves a valid status change, then the status command succeeds, the filter switches to the new status, and the canonical list reload keeps the updated book visible when it belongs to the returned page.
 - AC-FE05-021: Given active and inactive reference records exist, when Librarian/Admin loads a book form, then only active choices are returned; Guest/Member cannot access the endpoint.
+- AC-FE05-022: Given a legacy deployed database is missing a canonical metadata column, when the backend starts, then it applies the packaged reviewed migration before listening; after successful postcondition verification, readiness returns HTTP `200` and all three Admin metadata lists load persisted data. If reconciliation fails, the backend does not listen and deployment verification fails.
 
 ---
 
@@ -351,6 +354,7 @@ Use these stable IDs for tasks and tests.
 | GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Guest/Member receive public-safe `ACTIVE` detail without ISBN or `404`; authenticated Librarian/Admin may receive management fields including ISBN for both `ACTIVE` and `INACTIVE` books. |
 | GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; `q` may match ISBN and the response includes ISBN; BR-FE05-017 applies. |
 | GET | `/api/books/metadata` | Librarian/Admin | - | `{ categories, authors, publishers }` active reference choices | Protected read used by the canonical FE05 forms. It does not grant Librarians FE11 Admin-only reference-data mutation permission. |
+| GET | `/health/ready` | Deployment monitor/operator | - | `{ status, checks: { catalogMetadata } }` | Read-only post-start readiness check. Returns `503 not_ready` if the canonical metadata tables later lose persisted `Status` or `CreatedAt`; migration is owned by the pre-listen startup gate, not this endpoint. |
 | POST | `/api/books` | Librarian/Admin | JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Created `ACTIVE` book + version | Validates required fields, unique ISBN, and managed cover policy. |
 | PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Updated book + new version | Metadata/cover only; never changes book status or copies; failed replacement is compensated. |
 | PATCH | `/api/books/{bookId}/deactivate` | Librarian/Admin | Header `If-Match`; `{ reason: string }` | Deactivated book + new version | Sets `INACTIVE`; reason required; no physical delete/copy rewrite. |
@@ -387,11 +391,15 @@ Use these stable IDs for tasks and tests.
 - NFR-FE05-PERF-001: Book search and management list must support pagination.
 - NFR-FE05-PERF-002: Search queries must apply the approved keyword/ID filters and pagination in the database query before materializing rows; application-layer full-catalog filtering is not permitted.
 
-### 12.4 Logging and Audit
+### 12.4 Deployment Readiness
+
+- NFR-FE05-DEP-001: The staging backend package must include the reviewed idempotent `database/migrations/2026-07-22-library-metadata-compatibility.sql`. The application startup gate applies only this narrowly scoped migration before listening and verifies its postcondition. CI does not connect to the database or mutate schema, the staging workflow remains manual-only, liveness remains separate from readiness, and staging smoke fails closed when startup or the read-only readiness check is unsuccessful.
+
+### 12.5 Logging and Audit
 
 - NFR-FE05-LOG-001: Add, update, deactivate, and reactivate actions must be traceable with actor, timestamp, book ID, old/new status, reason when applicable, and result.
 
-### 12.5 Usability
+### 12.6 Usability
 
 - NFR-FE05-UX-001: Validation errors must clearly identify invalid book fields.
 - NFR-FE05-UX-002: Deactivation and reactivation must require confirmation in the UI before submission.
@@ -471,18 +479,21 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | BR-FE05-011..018 | UC17-UC24, UC25-UC39 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
 | BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
+| BR-FE05-022 | Deployment readiness | `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 | FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
 | FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
 | FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` status-filter reconciliation | Complete |
 | FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` Guest/Member denial and Librarian/Admin active choices | Complete |
+| FR-FE05-031 | Deployment readiness | `app.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 | AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Complete |
 | AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Complete |
 | AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Complete |
 | AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
+| AC-FE05-022 | Deployment readiness | `libraryMetadataMigration.test.js`; `schemaReadinessService.test.js`; `startApplication.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 
-Coverage: 21/21 BR, 30/30 FR, and 21/21 AC have current automated evidence mappings.
+Coverage: 22/22 BR, 31/31 FR, and 22/22 AC have current automated evidence mappings.
 
 ---
 

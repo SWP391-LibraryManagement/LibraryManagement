@@ -6,14 +6,34 @@ require('dotenv').config({
 });
 
 const { createApp } = require('./app');
+const env = require('./config/env');
+const { defaultNotificationService } = require('./services/notificationService');
+const { defaultSchemaReadinessService } = require('./services/schemaReadinessService');
+const { createNotificationWorker } = require('./services/notificationWorker');
+const { createServerRuntime } = require('./serverRuntime');
+const { startApplication } = require('./startApplication');
 
 const app = createApp();
-
-const port = Number(process.env.PORT || 3000);
+const processor = defaultNotificationService.createSystemNotificationProcessor();
+const worker = createNotificationWorker({
+  processor,
+  enabled: env.notificationWorkerEnabled,
+  intervalMs: env.notificationWorkerIntervalMs,
+  batchSize: env.notificationWorkerBatchSize,
+});
+const runtime = createServerRuntime({
+  app,
+  worker,
+  port: Number(process.env.PORT || 3000),
+});
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Backend server listening on http://localhost:${port}`);
+  void startApplication({
+    runtime,
+    schemaReadinessService: defaultSchemaReadinessService,
+  }).catch((error) => {
+    console.error(`Backend startup failed: ${error.message}`);
+    process.exitCode = 1;
   });
 }
 

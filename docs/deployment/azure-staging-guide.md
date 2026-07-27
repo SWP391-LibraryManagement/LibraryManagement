@@ -158,13 +158,16 @@ Before executing:
    IP. Do not widen the range.
 4. Confirm the connected database is `LibraryManagementStaging`.
 5. Execute through Azure Query Editor, SSMS, or `sqlcmd`: use the generated schema once for an empty
-   database, or execute the following approved migrations once and in order for an existing
+   database, or execute the following operator-owned migrations once and in order for an existing
    pre-reconciliation database:
 
    Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
    `Books.RowVersion` or the metadata `Status` columns are absent. FE10 delivery requests cannot
    enter the durable `PROCESSING` state until the notification status constraint is upgraded.
-   Deploying backend/frontend code does not apply these SQL migrations automatically.
+   Most SQL migrations remain operator-applied. The one documented exception is
+   `2026-07-22-library-metadata-compatibility.sql`: the backend package carries this reviewed,
+   idempotent script and applies it before opening the HTTP listener so legacy author, publisher,
+   and category tables cannot leave the deployed Admin Library page broken.
 
 ```text
 database/migrations/2026-07-19-fe04-membership-concurrency.sql
@@ -172,10 +175,12 @@ database/migrations/2026-07-19-fe05-book-rowversion.sql
 database/migrations/2026-07-19-fe06-bookcopy-rowversion.sql
 database/migrations/2026-07-19-fe10-otp-templates.sql
 database/migrations/2026-07-19-fe11-finalization.sql
-database/migrations/2026-07-22-library-metadata-compatibility.sql
 database/migrations/2026-07-22-borrow-request-workflow-columns.sql
 database/migrations/2026-07-23-fe10-processing-status.sql
 ```
+
+Do not run `2026-07-22-library-metadata-compatibility.sql` manually. The backend startup gate owns
+that one packaged migration and applies it before the HTTP listener opens.
 
 6. Verify the target, table count, and reconciliation columns:
 
@@ -195,12 +200,24 @@ SELECT
   ) THEN 1 ELSE 0 END AS NotificationProcessingAllowed;
 ```
 
-Expected database: `LibraryManagementStaging`, table count `20`, and each listed reconciliation
+Expected database: `LibraryManagementStaging`, table count `21`, and each listed reconciliation
 column length `8`; `NotificationProcessingAllowed` must be `1`. CI must not execute this schema
 automatically.
 
 7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
    read-only checks. Staging must not be used to prove migration idempotence.
+
+If deployment cannot start or reports `API schema readiness check failed with HTTP 503`, do not
+remove or skip the readiness check. Inspect App Service startup logs for the safe
+`Backend startup failed` message. Confirm that the configured application database principal can
+alter `Authors`, `Publishers`, and `Categories`; the startup gate must add only the missing
+`Status`/`CreatedAt` columns through the packaged reviewed migration. Do not expose Azure SQL to
+GitHub-hosted runner IP ranges or widen the firewall.
+
+After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
+`checks.catalogMetadata = "ok"`. The staging workflow remains `workflow_dispatch` only: pushes run
+CI but do not automatically deploy staging. The workflow itself does not connect to SQL or execute
+SQL; schema reconciliation runs inside the configured backend application identity before listen.
 
 ## Configure App Service Runtime Settings
 
@@ -288,18 +305,21 @@ Download the backend publish profile from App Service and paste it directly into
 Paste the Static Web Apps deployment token directly into the second. Enable required reviewer
 approval for the environment when the repository plan supports it.
 
-## Automatic Deployment After Merge
+## Manual Deployment With Startup Reconciliation
 
-The staging workflow runs automatically for every push to `main` (including a pull-request merge):
+The staging workflow is manual-only:
 
 1. Merge the approved change into `main`.
-2. GitHub Actions starts `Deploy staging` automatically.
-3. Approve the `staging` Environment when prompted, if environment approval is enabled.
-4. Confirm quality, backend deploy, frontend deploy, and smoke jobs all pass.
+2. Wait for the exact `main` CI run to pass.
+3. Apply any required operator-owned migrations other than the packaged metadata compatibility
+   migration.
+4. Open `Deploy staging` in GitHub Actions and select **Run workflow** for `main`.
+5. Approve the `staging` Environment when prompted, if environment approval is enabled.
+6. Confirm backend startup applied the packaged metadata migration and `/health/ready` returns `200`.
+7. Confirm backend deploy, frontend deploy, and the fail-closed smoke job all pass.
 
-`workflow_dispatch` remains enabled for a manual rerun from GitHub Actions when needed.
-
-No deployment should run if the quality gate fails.
+A push or merge must not start a staging deployment. Do not run the manual workflow while CI is
+failing or known operator-owned migrations remain unapplied.
 
 After changing App Service settings, allow the F1 instance to warm up before
 judging the smoke result. A first request may return `503` while the application
@@ -323,7 +343,9 @@ anonymous rejection from `/api/auth/me`.
 
 - Backend: redeploy the last known-good commit or use App Service deployment history.
 - Frontend: rerun the workflow from the last known-good commit.
-- Database: CI performs no schema mutation, so database rollback remains an explicit operator action.
+- Database: CI performs no schema mutation. The backend startup exception only adds the canonical
+  metadata compatibility columns through the reviewed idempotent script; any database rollback
+  remains an explicit operator action.
 - Smoke failure: do not mark staging accepted; inspect App Service logs and GitHub job output without
   printing secret settings.
 

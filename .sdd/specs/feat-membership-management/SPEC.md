@@ -447,4 +447,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 ## 2026-07-22 staff-console correction
 
 - A successful rejection is presented as a neutral informational outcome (“Đã từ chối”), not as an approval-style success notification; failed rejection requests continue to show an error and must not close the review state.
-- Member-only navigation is suppressed whenever the authenticated actor also has Librarian or Admin responsibility.
+- Member-only navigation is suppressed for Librarian/Admin accounts and for invalid legacy compatibility arrays that include a staff role; persisted accounts remain single-role.

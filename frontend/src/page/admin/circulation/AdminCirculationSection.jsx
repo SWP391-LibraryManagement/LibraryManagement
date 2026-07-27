@@ -39,11 +39,16 @@ function ReturnModal({ borrowing, saving, condition, onConditionChange, onClose,
   );
 }
 
-export function AdminCirculationSection({ onToast, onOpenRequests }) {
+export function AdminCirculationSection({
+  onToast,
+  onOpenRequests,
+  initialStatus = 'ALL',
+}) {
+  const startingStatus = BORROWING_STATUSES.includes(initialStatus) ? initialStatus : 'ALL';
   const requestGuard = useRef(createLatestRequestGuard());
   const [borrowings, setBorrowings] = useState([]);
-  const [filters, setFilters] = useState({ q: '', status: 'ALL' });
-  const [appliedFilters, setAppliedFilters] = useState({ q: '', status: 'ALL' });
+  const [filters, setFilters] = useState({ q: '', status: startingStatus });
+  const [appliedFilters, setAppliedFilters] = useState({ q: '', status: startingStatus });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [updatedAt, setUpdatedAt] = useState(null);

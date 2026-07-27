@@ -1,3 +1,8 @@
+const {
+  formatBusinessDate,
+  compareBusinessDates,
+} = require('../../src/utils/libraryBusinessTime');
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -101,6 +106,28 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     return { outcome: 'COPY_NOT_AVAILABLE' };
   }
 
+  function hasPendingBorrowClaim(copyId) {
+    return borrowDetails.some((detail) => {
+      const request = borrowRequests.find((item) => item.requestId === detail.requestId);
+      return detail.copyId === Number(copyId)
+        && detail.status === 'REQUESTED'
+        && request?.status === 'PENDING';
+    });
+  }
+
+  function hasActiveBookWorkflow(userId, bookId) {
+    return borrowDetails.some((detail) => {
+      const request = borrowRequests.find((item) => item.requestId === detail.requestId);
+      const copy = getCopy(detail.copyId);
+      return detail.userId === Number(userId)
+        && copy?.bookId === Number(bookId)
+        && (
+          (detail.status === 'REQUESTED' && request?.status === 'PENDING')
+          || detail.status === 'BORROWED'
+        );
+    });
+  }
+
   function mapCopy(copy) {
     if (!copy) {
       return null;
@@ -127,6 +154,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       username: user?.username || null,
       email: user?.email || null,
       status: user?.status || null,
+      hasMemberRole: (authState.rolesByUserId.get(Number(userId)) || []).includes('MEMBER'),
     };
   }
 
@@ -210,6 +238,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         .filter((book) => book.status === 'ACTIVE')
         .filter((book) => !bookId || book.bookId === Number(bookId))
         .filter((book) => !normalizedQuery || book.title.toLowerCase().includes(normalizedQuery))
+        .filter((book) => !hasActiveBookWorkflow(userId, book.bookId))
         .map((book) => ({
           bookId: book.bookId,
           title: book.title,
@@ -217,6 +246,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
           category: book.category || 'Chưa phân loại',
           copies: copies
             .filter((copy) => copy.bookId === book.bookId)
+            .filter((copy) => !hasPendingBorrowClaim(copy.copyId))
             .filter((copy) => ['NORMAL_AVAILABLE', 'HELD_FOR_MEMBER'].includes(classifyCopyBorrowability(copy, userId).outcome))
             .map((copy) => ({ copyId: copy.copyId, barcode: copy.barcode, location: copy.location })),
         }))
@@ -300,14 +330,17 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
     },
 
     async hasOverdueActiveLoans(userId, today) {
-      const todayTime = new Date(today).setHours(0, 0, 0, 0);
+      const todayBusinessDate = formatBusinessDate(today);
 
       return borrowDetails.some(
         (detail) =>
           detail.userId === Number(userId) &&
           detail.status === 'BORROWED' &&
           detail.dueDate &&
-          new Date(detail.dueDate).setHours(0, 0, 0, 0) < todayTime
+          compareBusinessDates(
+            formatBusinessDate(detail.dueDate),
+            todayBusinessDate
+          ) < 0
       );
     },
 
@@ -352,6 +385,24 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'MEMBER_ACCOUNT_INACTIVE' };
       }
 
+      const requestedBookIds = [...new Set(
+        copyIds
+          .map((copyId) => getCopy(copyId)?.bookId)
+          .filter(Boolean)
+      )];
+      if (requestedBookIds.length !== copyIds.length) {
+        return { outcome: 'DUPLICATE_BOOK_IN_REQUEST' };
+      }
+      const conflictingBookId = requestedBookIds.find(
+        (bookId) => hasActiveBookWorkflow(userId, bookId)
+      );
+      if (conflictingBookId) {
+        return {
+          outcome: 'BOOK_ALREADY_IN_BORROWING_WORKFLOW',
+          bookId: conflictingBookId,
+        };
+      }
+
       if (await this.hasBlockingFine(userId)) {
         return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
       }
@@ -389,6 +440,9 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         }
         if (getBook(copy.bookId)?.status !== 'ACTIVE') {
           return { outcome: 'BOOK_INACTIVE' };
+        }
+        if (hasPendingBorrowClaim(copyId)) {
+          return { outcome: 'COPY_PENDING_REQUEST_CONFLICT' };
         }
         const classification = classifyCopyBorrowability(copy, userId);
         if (!['NORMAL_AVAILABLE', 'HELD_FOR_MEMBER'].includes(classification.outcome)) {
@@ -561,7 +615,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
       const roles = authState.rolesByUserId.get(request.userId) || [];
       if (!roles.includes('MEMBER')) {
-        return { outcome: 'MEMBER_ROLE_REQUIRED' };
+        return { outcome: 'BORROW_REQUEST_OWNER_NOT_MEMBER' };
       }
 
       if (member.status !== 'ACTIVE') {
@@ -584,6 +638,23 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
 
       if (!requestedDetails.length) {
         return { outcome: 'REQUEST_NOT_APPROVABLE' };
+      }
+
+      const requestedBookIds = new Set(
+        requestedDetails.map((detail) => getCopy(detail.copyId)?.bookId).filter(Boolean)
+      );
+      if (requestedBookIds.size !== requestedDetails.length) {
+        return { outcome: 'DUPLICATE_BOOK_IN_REQUEST' };
+      }
+      const alreadyBorrowedBook = borrowDetails.some((detail) => {
+        const copy = getCopy(detail.copyId);
+        return detail.userId === request.userId
+          && detail.requestId !== request.requestId
+          && detail.status === 'BORROWED'
+          && requestedBookIds.has(copy?.bookId);
+      });
+      if (alreadyBorrowedBook) {
+        return { outcome: 'BOOK_ALREADY_BORROWED_BY_MEMBER' };
       }
 
       const borrowabilityResults = requestedDetails.map((detail) => {
@@ -721,6 +792,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       returnDate,
       auditLogRepository,
       auditEntry,
+      buildReturnEvidence,
     }) {
       const snapshot = snapshotMutationState();
 
@@ -736,6 +808,18 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
       if (!copy || copy.status !== 'BORROWED') {
         return { outcome: 'BORROW_STATE_CONFLICT' };
       }
+
+      const authoritativeReturn = {
+        requestId: detail.requestId,
+        userId: detail.userId,
+        copyId: detail.copyId,
+        dueDate: detail.dueDate,
+        returnDate,
+      };
+      const returnEvidence = typeof buildReturnEvidence === 'function'
+        ? buildReturnEvidence(authoritativeReturn)
+        : null;
+      const resolvedAuditEntry = returnEvidence?.auditEntry || auditEntry;
 
       detail.status = detailStatus;
       detail.returnDate = returnDate;
@@ -753,16 +837,22 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         request.updatedAt = new Date();
       }
 
-      if (auditLogRepository && auditEntry) {
+      if (auditLogRepository && resolvedAuditEntry) {
         try {
-          await auditLogRepository.create(auditEntry);
+          await auditLogRepository.create(resolvedAuditEntry);
         } catch (error) {
           restoreMutationState(snapshot);
           throw error;
         }
       }
 
-      return mapDetail(detail);
+      return {
+        ...mapDetail(detail),
+        authoritativeReturn: {
+          ...authoritativeReturn,
+          overdueDays: returnEvidence?.overdueDays ?? null,
+        },
+      };
     },
 
     async renewBorrowDetail({
@@ -789,12 +879,11 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'UNPAID_FINE_BLOCKS_BORROWING' };
       }
 
-      const todayTime = new Date(today).setHours(0, 0, 0, 0);
       if (borrowDetails.some((item) => (
         item.userId === Number(userId)
         && item.status === 'BORROWED'
         && item.dueDate
-        && new Date(item.dueDate).setHours(0, 0, 0, 0) < todayTime
+        && compareBusinessDates(formatBusinessDate(item.dueDate), String(today)) < 0
       ))) {
         return { outcome: 'OVERDUE_LOAN_BLOCKS_BORROWING' };
       }
@@ -814,7 +903,7 @@ function makeInMemoryBorrowingDependencies(authState, initialState = {}) {
         return { outcome: 'RENEWAL_LIMIT_REACHED' };
       }
 
-      if (toDateOnly(detail.dueDate) < String(today).slice(0, 10)) {
+      if (compareBusinessDates(formatBusinessDate(detail.dueDate), String(today)) < 0) {
         return { outcome: 'BORROW_DETAIL_OVERDUE' };
       }
 

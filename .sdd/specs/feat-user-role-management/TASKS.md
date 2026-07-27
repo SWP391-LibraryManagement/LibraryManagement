@@ -383,3 +383,38 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Accept exactly `{ roleId: positive integer }`, reject unknown/missing fields, and validate the selected catalog role in the Admin modal.
   - Revoke the target account's active refresh/session credentials in the same transaction as the sole-role replacement and audit so every feature reconnects through FE02 with the new role.
   - Apply and verify `UX_UserRoles_UserId` on the configured database; run focused backend/frontend tests, full regression, lint/build, traceability, and human review.
+
+- [x] **FE11-SR03 - Connect managed-user editing to role replacement.**
+  - Maps to: MF-FE11-009; FR-FE11-012/013; AC-FE11-013.
+  - Show the current sole role inside the managed-user edit dialog and provide an explicit `Đổi vai trò` action that opens the canonical radio-based role replacement dialog.
+  - Keep profile editing and atomic role replacement as separate commands so no partial cross-command transaction is implied.
+
+- [~] **FE11-REQ04 - Reconcile Admin decisions with FE07 pending-copy claims.**
+  - Maps to: BR-FE11-029, FR-FE11-039/040, AC-FE11-024; BR-FE07-033.
+  - Project physical `copyStatus` in the safe Admin request detail.
+  - Reload canonical list/detail after both success and conflict; retain FE07
+    reject ownership and required reason.
+  - Evidence: focused backend 123/123 and frontend 36/36; full backend
+    1,056/1,056; full frontend 232/232; lint/build, traceability, and diff
+    hygiene passed locally.
+  - Remaining: authenticated browser and human review.
+
+- [~] **FE11-REQ05 - Guard role/account lifecycle and legacy approvals.**
+  - Maps to: BR-FE11-030/031, FR-FE11-041/042; FE07 BR-FE07-034.
+  - Block deactivation and removal of `MEMBER` while FE07 workflows remain.
+  - Disable only known-invalid approvals, show the blocker, and retain reject.
+  - Repository, service, route, and frontend regression evidence required;
+    authenticated browser/human review remains.
+
+- [~] **FE11-DASH01 - Connect Admin Dashboard metrics and owning modules.**
+  - Maps to: BR-FE11-020/032; FR-FE11-031; AC-FE11-025.
+  - Count active Members from the canonical single-role mapping and keep
+    authors sourced from the canonical author catalogue.
+  - Make every summary card open its owning module with the applicable
+    status filter and include timestamped returns from the current day.
+  - Count only committed FE07 borrow activity, keep the approved five-card and
+    three-chart presentation, and use the Vietnam business date for returns.
+  - Evidence: DB-backed read confirmed 7 actual historical borrows and 0
+    returns today; backend 1,064/1,064 and frontend 232/232 pass,
+    with lint/build, traceability, and diff hygiene green.
+  - Remaining: authenticated deployed-browser and human review.

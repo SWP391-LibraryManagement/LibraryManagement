@@ -1,11 +1,11 @@
 const { sql, getPool } = require('../config/db');
 
-async function rollbackWith(transaction, outcome) {
+async function rollbackWith(transaction, outcome, extra = {}) {
   await transaction.rollback();
-  return { outcome };
+  return { outcome, ...extra };
 }
 
-// @spec BR-FE11-007..010, FR-FE11-012, FR-FE11-014
+// @spec BR-FE11-007..010, BR-FE11-030, FR-FE11-012, FR-FE11-014, FR-FE11-041
 // @spec FR-FE11-017, FR-FE11-024
 async function replaceUserRole({
   adminUserId,
@@ -42,6 +42,19 @@ async function replaceUserRole({
     if (actor.Status !== 'ACTIVE' || !actor.IsAdmin) {
       return rollbackWith(transaction, 'ADMIN_REQUIRED');
     }
+
+    await new sql.Request(transaction)
+      .input('MemberLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${userId}`)
+      .query(`
+        DECLARE @MemberLockResult INT;
+        EXEC @MemberLockResult = sp_getapplock
+          @Resource = @MemberLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        IF @MemberLockResult < 0
+          THROW 51001, 'Unable to acquire borrowing member lock.', 1;
+      `);
 
     const targetResult = await new sql.Request(transaction)
       .input('UserId', sql.Int, userId)
@@ -84,6 +97,42 @@ async function replaceUserRole({
     if (currentRoles.length === 1 && currentRoles[0].roleId === roleId) {
       await transaction.commit();
       return { outcome: 'UNCHANGED', role };
+    }
+
+    const removesMember = currentRoles.some(({ roleName }) => roleName === 'MEMBER')
+      && role.roleName !== 'MEMBER';
+
+    if (removesMember) {
+      const workflowResult = await new sql.Request(transaction)
+        .input('UserId', sql.Int, userId)
+        .query(`
+          SELECT
+            COUNT(DISTINCT CASE
+              WHEN br.Status = 'PENDING' AND bd.Status = 'REQUESTED'
+              THEN br.RequestId
+            END) AS PendingRequestCount,
+            COUNT(CASE WHEN bd.Status = 'BORROWED' THEN 1 END) AS ActiveBorrowingCount
+          FROM BorrowRequests br WITH (UPDLOCK, HOLDLOCK)
+          INNER JOIN BorrowDetails bd WITH (UPDLOCK, HOLDLOCK)
+            ON bd.RequestId = br.RequestId
+          WHERE br.UserId = @UserId
+            AND (
+              (br.Status = 'PENDING' AND bd.Status = 'REQUESTED')
+              OR bd.Status = 'BORROWED'
+            )
+        `);
+      const pendingRequestCount = Number(
+        workflowResult.recordset[0]?.PendingRequestCount || 0
+      );
+      const activeBorrowingCount = Number(
+        workflowResult.recordset[0]?.ActiveBorrowingCount || 0
+      );
+      if (pendingRequestCount > 0 || activeBorrowingCount > 0) {
+        return rollbackWith(transaction, 'MEMBER_BORROWING_WORKFLOW_EXISTS', {
+          pendingRequestCount,
+          activeBorrowingCount,
+        });
+      }
     }
 
     const removesAdmin = currentRoles.some(({ roleName }) => roleName === 'ADMIN')

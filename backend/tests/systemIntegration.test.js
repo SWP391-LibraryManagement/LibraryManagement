@@ -204,6 +204,14 @@ describe('System integration', () => {
       approveMember: false,
     });
     await createBorrowAndApprove({ setup, member, librarian, copyId: 1 });
+    setup.dependencies.borrowingDependencies.state.books.push({
+      bookId: 2,
+      title: 'Second report book',
+      status: 'ACTIVE',
+    });
+    setup.dependencies.borrowingDependencies.state.copies.find(
+      (copy) => copy.copyId === 2
+    ).bookId = 2;
     await request(setup.app)
       .post('/api/borrow-requests')
       .set('Authorization', authHeader(member.accessToken))
