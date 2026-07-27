@@ -1,4 +1,6 @@
 const request = require('supertest');
+const fs = require('fs/promises');
+const path = require('path');
 
 const app = require('../src/index');
 const { createApp } = require('../src/app');
@@ -20,6 +22,22 @@ describe('backend app foundation routes', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
     expect(typeof response.body.uptime).toBe('number');
+  });
+
+  test('uploaded avatars can render from the frontend origin', async () => {
+    const uploadDir = path.resolve(__dirname, '../uploads/avatars');
+    const filename = 'app-static-avatar.test.png';
+    await fs.mkdir(uploadDir, { recursive: true });
+    await fs.writeFile(path.join(uploadDir, filename), Buffer.from('avatar'));
+
+    try {
+      const response = await request(createApp()).get(`/uploads/avatars/${filename}`);
+
+      expect(response.status).toBe(200);
+      expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
+    } finally {
+      await fs.unlink(path.join(uploadDir, filename)).catch(() => undefined);
+    }
   });
 
   test('GET /health/ready reports canonical catalog metadata readiness', async () => {
