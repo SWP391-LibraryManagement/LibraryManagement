@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.4
+# Version: 0.6.5
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
@@ -140,7 +140,7 @@ The feature can only start when:
 
 ### MF-FE11-005: Deactivate User Account
 
-1. Admin opens user detail page.
+1. Admin opens the role action from the user row, user detail, or the managed-user edit dialog.
 2. Admin clicks "Deactivate Account" button and submits the loaded `expectedUpdatedAt` effective version.
 3. The system rejects an `INACTIVE` pending-activation account with `409 ACCOUNT_PENDING_ACTIVATION`; only an already-deactivated account with non-null `deactivatedAt` is an idempotent no-op.
 4. The system checks active borrowings and blocks deactivation when active borrowings exist.
@@ -360,7 +360,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-010: Given valid librarian data, when Admin creates a new librarian account, then an inactive user, Librarian role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
 - AC-FE11-011: Given an existing current Librarian account, when Admin submits only valid `department` and/or `specialization` with matching effective `expectedUpdatedAt`, then effective work-field changes are saved and storage `UpdatedAt` advances; personal or unknown fields are rejected.
 - AC-FE11-012: Given an `ACTIVE` or `LOCKED` librarian account and matching effective `expectedUpdatedAt`, when admin deactivates it, then status changes to `INACTIVE` and active sessions are invalidated.
-- AC-FE11-013: Given a Member account with an active session, when Admin replaces its role with Librarian, then exactly one Librarian mapping remains, its active refresh/session credentials are revoked, one replacement audit is committed, and the next protected request requires authentication under the new role.
+- AC-FE11-013: Given a Member account with an active session, when Admin opens role management directly or through the managed-user edit dialog and replaces its role with Librarian, then exactly one Librarian mapping remains, its active refresh/session credentials are revoked, one replacement audit is committed, and the next protected request requires authentication under the new role.
 - AC-FE11-014: Given an Admin account that is not the last active Admin, when Admin replaces its role with Member, then exactly one Member mapping remains.
 - AC-FE11-015: Given the last active Admin account, when Admin attempts to replace its Admin role, then the system rejects the action without mapping or audit mutation.
 - AC-FE11-016: Given admin opens the console, then the eight approved sections are visible in order with Membership Review after All Users, removed workflows are hidden, and catalog management opens inside Admin Library without a Librarian-route redirect.

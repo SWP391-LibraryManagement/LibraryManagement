@@ -190,8 +190,16 @@ export function AdminUsersSection({ onToast }) {
       buildRoleReplacement(user.roles || [], user.roles?.[0], catalog);
       setRoleSyncBlocked(false);
       setRoleUser(user);
+      return true;
     } catch (error) {
       notify('error', error.message);
+      return false;
+    }
+  }
+
+  async function openRoleFromEditor(user) {
+    if (await openRoleModal(user)) {
+      setModal(null);
     }
   }
 
@@ -433,7 +441,7 @@ export function AdminUsersSection({ onToast }) {
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
       {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
-      {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
+      {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} onManageRole={openRoleFromEditor} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRole} /> : null}
     </section>
   );

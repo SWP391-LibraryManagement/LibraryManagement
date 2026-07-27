@@ -1,11 +1,13 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
 
+import { RoleBadge } from './UserBadges';
 import { validateUserForm } from './userPresentation';
 
-export function UserEditorModal({ mode, user, onClose, onSubmit }) {
+export function UserEditorModal({ mode, user, onClose, onSubmit, onManageRole }) {
   const isEdit = mode === 'edit';
   const expectedUpdatedAt = user?.updatedAt || '';
+  const currentRole = user?.roles?.[0] || '';
   const [form, setForm] = useState({
     type: user?.roles?.includes('LIBRARIAN') ? 'librarian' : 'member',
     fullName: user?.fullName || '',
@@ -80,6 +82,22 @@ export function UserEditorModal({ mode, user, onClose, onSubmit }) {
             <input type="email" value={form.email} maxLength={255} readOnly={isEdit} aria-readonly={isEdit} onChange={isEdit ? undefined : (event) => update('email', event.target.value)} />
             {errors.email ? <small className="admin-field-error">{errors.email}</small> : null}
           </label>
+
+          {isEdit ? (
+            <div className="admin-field admin-field--wide">
+              <span>Vai trò hiện tại</span>
+              <div className="admin-role-edit-row">
+                <RoleBadge role={currentRole} />
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onManageRole?.(user)}
+                >
+                  Đổi vai trò
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <label className="admin-field">
             <span>Số điện thoại</span>

@@ -165,6 +165,10 @@ test('FE11 create and edit flows share profile fields while email remains read-o
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
   assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
+  assert.match(editor, /Vai trò hiện tại/);
+  assert.match(editor, /<RoleBadge role=\{currentRole\} \/>/);
+  assert.match(editor, /onClick=\{\(\) => onManageRole\?\.\(user\)\}/);
+  assert.match(editor, /Đổi vai trò/);
   assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
   assert.match(roleModal, /type="radio"/);
   assert.match(roleModal, /Mỗi tài khoản phải có đúng một vai trò/);
@@ -178,6 +182,7 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   }
   assert.match(drawer, /label="Chỉnh sửa"[^]*?onEdit\(user\)/);
   assert.match(section, /onEdit=\{openUserEditor\}/);
+  assert.match(section, /onManageRole=\{openRoleFromEditor\}/);
   assert.doesNotMatch(section, /openEditModal|onEdit=\{openEditModal\}/);
 });
 

@@ -725,6 +725,40 @@
 
 .admin-role-options input { width: 17px; height: 17px; }
 
+.admin-role-edit-row {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: var(--admin-paper);
+}
+
+.admin-role-edit-row button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--admin-brass);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--admin-brass-dark);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-role-edit-row button:hover:not(:disabled),
+.admin-role-edit-row button:focus-visible {
+  background: color-mix(in srgb, var(--admin-brass) 12%, var(--admin-paper));
+}
+
+.admin-role-edit-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .admin-modal__actions {
   justify-content: flex-end;
   border-top: 1px solid var(--admin-line);

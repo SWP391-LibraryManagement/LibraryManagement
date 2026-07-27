@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Connect user editing to role replacement
+
+- Displayed the current sole role in the managed-user edit dialog.
+- Added a clear `Đổi vai trò` action that switches to the canonical radio-based role modal without mixing profile and role mutations.
+- Preserved the existing row/detail `Phân quyền` shortcuts and atomic backend replacement contract.
+
 ## 2026-07-27 - Harden single-role replacement and session convergence
 
 - Applied the existing `UX_UserRoles_UserId` migration to the configured database after confirming no duplicate mappings.

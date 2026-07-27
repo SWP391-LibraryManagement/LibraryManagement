@@ -383,3 +383,8 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Accept exactly `{ roleId: positive integer }`, reject unknown/missing fields, and validate the selected catalog role in the Admin modal.
   - Revoke the target account's active refresh/session credentials in the same transaction as the sole-role replacement and audit so every feature reconnects through FE02 with the new role.
   - Apply and verify `UX_UserRoles_UserId` on the configured database; run focused backend/frontend tests, full regression, lint/build, traceability, and human review.
+
+- [x] **FE11-SR03 - Connect managed-user editing to role replacement.**
+  - Maps to: MF-FE11-009; FR-FE11-012/013; AC-FE11-013.
+  - Show the current sole role inside the managed-user edit dialog and provide an explicit `Đổi vai trò` action that opens the canonical radio-based role replacement dialog.
+  - Keep profile editing and atomic role replacement as separate commands so no partial cross-command transaction is implied.
