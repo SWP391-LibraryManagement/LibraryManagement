@@ -1,5 +1,45 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Remediate FE10 inbox H3 round-one findings
+
+- User approved H1 drift reconciliation through `main@a5fcbb9`. PR #75 head
+  `28c4f80` remained clean/mergeable; exact-head CI `30306805399` and Azure
+  staging deployment `30307855616` passed.
+- The user later approved H1 drift reconciliation through `main@12faead`.
+  Incoming changes delete only retired `document/` artifacts, have no path or
+  Core-contract overlap with this remediation, and rebased without conflict.
+  Current Azure staging now serves that `main`, so the remediation needs a new
+  exact-head deployment after H2 and publication.
+- Live Azure verification covered migration/index postconditions, protected
+  aggregate preservation, MEMBER/LIBRARIAN/ADMIN ownership, sensitive
+  exclusion, read replay, filters, safe navigation, HTTPS/CORS, and complete
+  probe/firewall cleanup.
+- H3 round one found missing ADR-002 read-state documentation, stale lifecycle
+  source-of-truth text, stale item state after a successful no-navigation read,
+  and mark-all incorrectly disabled by the current filtered page.
+- A user screenshot additionally proved the notification popover could be
+  painted below page content because the blurred topbar formed a lower stacking
+  context. Focused RED/GREEN coverage now fixes the two page-state defects and
+  elevates the topbar only while the popover is open. The popover keeps its
+  approved size and sits above every current layout layer.
+- The bounded remediation remains local pending complete verification, a fresh
+  H2 fingerprint, exact-head CI/Azure redeployment, repeated H3, merge, and
+  post-merge CI/deployment.
+- Fresh complete gates on the rebased candidate passed: backend 69/69 suites
+  and 1116/1116 tests; frontend 259/259 plus lint/build; deployment 20/20;
+  system 10/10; traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11;
+  audits, Azure schema preparation, diff hygiene, and contradiction scans.
+- The user approved H2 fingerprint `e1143e6a...`, but the mandatory pre-stage
+  fetch found `main@a240705`, so no file was staged, committed, or pushed under
+  that authority. The user then approved `H1 drift addendum main@a240705`.
+  Reconciliation preserves the upstream FE11 Admin edit-action removal, exact
+  main CI `30311801599`, and Azure deployment `30311973740`; the branch rebased
+  without conflict and requires a new matrix/fingerprint/H2.
+- Fresh validation on `main@a240705` passed backend 69/69 suites and 1084/1084
+  tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
+  traceability state 3/3, FE10 14/16 (88%), Chromium 11/11, audits, Azure
+  schema preparation, and diff hygiene.
+
 ## 2026-07-28 - Remediate cross-platform staging migration hash gate
 
 - H2 approved fingerprint `2b53d7e`; FE10 was published as commit `b11b59e`

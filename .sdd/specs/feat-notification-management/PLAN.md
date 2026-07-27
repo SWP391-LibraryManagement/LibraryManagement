@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
+Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 
 Owner: Nhat
 
@@ -12,13 +12,20 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 were
-H2-approved and published as commit `b11b59e`; PR #75 CI run `30304661463`
-passed. The exact migration was applied twice and verified on Azure staging.
-Manual deploy run `30305596861` failed closed because the Windows-applied CRLF
-hash differed from the Linux checkout's LF byte hash. A focused local TDD
-remediation accepts only the exact LF/CRLF renderings of unchanged UTF-8
-content; its H2 addendum, redeploy, H3, merge, and post-merge CI remain pending.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
+the cross-platform migration-hash remediation are H2-approved on PR #75 head
+`28c4f80`. Exact-head CI `30306805399` and Azure staging deployment
+`30307855616` passed, followed by three-role API/browser and Azure SQL cleanup
+verification. H3 round one against `main@a5fcbb9...28c4f80` found an omitted
+ADR update, stale lifecycle documentation, two bounded inbox page state defects,
+and a reported popover stacking defect. Their local TDD/documentation
+remediation requires fresh H2, exact-head CI/Azure redeployment, repeated H3,
+merge, and post-merge CI/deployment.
+The user subsequently approved non-overlapping drift through `main@12faead`;
+the branch rebased cleanly and retains an uncommitted remediation candidate.
+Azure currently serves that newer `main`, not the unmerged PR candidate.
+Fresh local gates passed on the rebased candidate; H2, publication, exact-head
+CI/Azure redeployment, repeated H3, merge, and post-merge evidence remain open.
 
 ---
 
@@ -345,15 +352,18 @@ The implementation sequence is additive and backend-first:
 
 ### 15.4 Current Candidate State
 
-- FE10-I01 through FE10-I08 are implemented and locally validated in one
-  uncommitted H2 candidate.
-- Backend schema/repository/API, frontend context/bell/page, FE04/FE07/FE08
-  fan-in, privacy negatives, and three-role Chromium E2E are focused-green.
-- FE10-I08 disposable SQL rehearsal and complete local gates are green after
-  the approved `main@db97f17` rebase and non-overlapping `main@f3ebe95`
-  test-only sync. A fresh H2 evidence/fingerprint,
-  publication, backend-first Azure staging, H3, merge, and exact post-merge CI
-  remain; none is claimed early.
+- PR #75 head `28c4f80` contains the H2-approved FE10-I01..I08 candidate and
+  cross-platform migration-hash addendum.
+- Exact-head CI `30306805399` and Azure staging deployment `30307855616`
+  passed. Azure SQL retained one nullable `ReadAt` column and one supporting
+  index, protected aggregates were unchanged, and temporary probes/firewall
+  rules were removed.
+- Three-role API/browser checks passed own-record isolation, sensitive
+  exclusion, read replay, filters, navigation, HTTPS, and CORS.
+- H3 round one failed on bounded ADR/documentation and UI-state/stacking
+  findings. The remediation is local and must receive a new H2 fingerprint,
+  exact-head CI/Azure redeployment, and repeated H3 before merge. Post-merge
+  main CI and automatic staging remain unclaimed.
 
 ### 15.5 H1 Deployment Addendum
 
@@ -386,3 +396,27 @@ reservation-cancellation reason and responsive return/reservation tab styles,
 plus every other upstream FE07/FE08/FE10/FE12 round-two correction, while
 retaining the FE10 inbox client and scoped notification styles. Complete
 post-drift gates and a new fingerprint/H2 remain mandatory before publication.
+
+Upstream later advanced through `main@12faead` by deleting retired files only
+under `document/`. The user approved a third H1 drift addendum on 2026-07-28.
+There is no path or Core-contract overlap with the FE10 H3 remediation, and the
+rebase completed without conflict. Complete gates and a new H2 fingerprint
+remain mandatory; after publication, the exact head must replace current
+`main` on Azure staging and be verified there before repeated H3.
+
+The complete local matrix then passed: backend 69/69 suites and 1116/1116
+tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
+traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
+schema preparation, diff hygiene, and focused contradiction scans.
+
+Before the approved round-3 H2 could be used, the mandatory pre-stage fetch
+advanced upstream to `main@a240705`. The user approved a fourth H1 drift
+addendum on 2026-07-28. Reconciliation preserves the upstream deletion of the
+FE11 Admin user-edit API/UI/test surface while retaining FE10. Main CI
+`30311801599` and Azure deployment `30311973740` passed, the branch rebased
+without conflict, and complete gates plus a new fingerprint/H2 are mandatory.
+
+Fresh validation on that exact base passed backend 69/69 suites and 1084/1084
+tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
+traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11, audits,
+Azure schema preparation, and diff hygiene. The new fingerprint/H2 remains.

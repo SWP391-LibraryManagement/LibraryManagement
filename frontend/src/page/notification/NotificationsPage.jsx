@@ -109,6 +109,13 @@ export default function NotificationsPage() {
     }
   }
 
+  async function handleOpenNotification(item) {
+    const result = await openNotification(item);
+    if (result?.readSucceeded && !result.navigated) {
+      await loadNotifications(page);
+    }
+  }
+
   const totalPages = Math.max(1, Number(pagination.totalPages) || 0);
   const currentPage = Math.min(Number(pagination.page) || page, totalPages);
 
@@ -166,7 +173,7 @@ export default function NotificationsPage() {
               type="button"
               className="btn btn-primary btn-sm"
               onClick={handleMarkAllRead}
-              disabled={loading || markingAll || items.length === 0}
+              disabled={loading || markingAll}
             >
               <CheckCheck size={16} aria-hidden="true" />
               {markingAll ? 'Đang cập nhật...' : 'Đánh dấu tất cả đã đọc'}
@@ -190,7 +197,7 @@ export default function NotificationsPage() {
                 key={item.notificationId}
                 type="button"
                 className={`notification-item${item.readAt ? ' read' : ' unread'}`}
-                onClick={() => openNotification(item)}
+                onClick={() => handleOpenNotification(item)}
               >
                 <span className="notification-item-mark" aria-hidden="true"><BellRing size={17} /></span>
                 <span className="notification-item-body">

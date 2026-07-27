@@ -2,7 +2,7 @@
 
 Trạng thái: ĐÃ PHÊ DUYỆT - MIGRATION HOÀN THIỆN FE11 ĐANG HOẠT ĐỘNG; ĐANG CHỜ TRIỂN KHAI
 Ngày: 2026-06-10
-Cập nhật lần cuối: 2026-07-23
+Cập nhật lần cuối: 2026-07-28
 
 ## Bối cảnh
 
@@ -89,6 +89,36 @@ Ràng buộc chuẩn được đồng bộ bằng migration có tính idempotent
 `database/migrations/2026-07-23-fe10-processing-status.sql`. Việc rà soát yêu cầu
 tính tương đương tĩnh giữa model/baseline/OpenAPI cùng hai lần thực thi thành công trên một
 cơ sở dữ liệu SQL Server cục bộ dùng một lần có tên trước khi triển khai Azure.
+
+## Quyết định trạng thái đọc của hộp thư cá nhân FE10
+
+FE10 v0.5.0 lưu trạng thái đọc của hộp thư cá nhân trên chính hàng
+`Notifications` một-người-nhận hiện có bằng cột `ReadAt DATETIME2` có thể
+null; không tạo bảng phép chiếu thứ hai và không thay đổi trạng thái gửi. Chỉ
+các hàng có `UserId` khác null và thuộc một cặp loại/mẫu không nhạy cảm đã được
+phê duyệt mới có thể được chủ sở hữu đã xác thực liệt kê hoặc thay đổi.
+
+Baseline chuẩn và model đều chứa `ReadAt`. Cơ sở dữ liệu Azure hiện có sử dụng
+migration có thể rà soát
+`database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql`, với các
+thuộc tính:
+
+- chạy trong một giao dịch `XACT_ABORT` và đóng an toàn nếu thiếu
+  `Notifications`;
+- chỉ thêm `ReadAt` khi cột chưa tồn tại và chỉ khi đó mới điền lùi các hàng đủ
+  điều kiện đã tồn tại về `CreatedAt`, tránh làm tăng đột biến badge chưa đọc;
+- không thay đổi các hàng nhạy cảm, không có người dùng và được tạo sau đó;
+- chỉ tạo `IX_Notifications_User_ReadAt_CreatedAt` khi chưa tồn tại, với khóa
+  `(UserId, ReadAt, CreatedAt DESC)` và các cột phép chiếu hộp thư được include;
+- an toàn khi chạy lặp lại và dùng SQL động để tương thích việc biên dịch cột
+  cùng batch trên Azure SQL.
+
+Triển khai phải khóa bằng hash chính xác của migration này, áp dụng và xác minh
+trước backend/frontend, đồng thời xóa mọi firewall rule Azure SQL tạm. Ngày
+2026-07-28, migration đã rà soát được chạy hai lần trên Azure staging và xác
+nhận đúng một cột nullable, một chỉ mục hỗ trợ, chỉ điền lùi lịch sử đủ điều
+kiện, giữ probe tạo sau lần một ở trạng thái chưa đọc, không thay đổi các tổng
+hợp gửi/lần thử/idempotency và dọn sạch probe/firewall.
 
 ## Quyết định migration hoàn thiện FE11
 

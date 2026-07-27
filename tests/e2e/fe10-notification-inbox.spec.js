@@ -66,6 +66,18 @@ test('[E2E-FE10-001] member inbox enforces privacy, read filters, mark-all repla
   await page.getByRole('button', { name: 'Mở thông báo' }).click();
   const preview = page.getByRole('region', { name: 'Thông báo mới' });
   await expect(preview).toBeVisible();
+  await expect(preview).toHaveCSS('width', '380px');
+  const previewStack = await page.evaluate(() => {
+    const popover = document.querySelector('.notification-popover');
+    const topbar = document.querySelector('.app-topbar');
+    const rect = popover.getBoundingClientRect();
+    const topElement = document.elementFromPoint(rect.left + 24, rect.top + 200);
+    return {
+      topbarZIndex: getComputedStyle(topbar).zIndex,
+      pointInsidePopover: Boolean(topElement?.closest('.notification-popover')),
+    };
+  });
+  expect(previewStack).toEqual({ topbarZIndex: '100', pointInsidePopover: true });
   await expect(preview.locator('.notification-preview-item')).toHaveCount(5);
   await expect(page.getByText(seeded.sensitiveTitle, { exact: true })).toHaveCount(0);
   await expect(page.getByText(seeded.userlessTitle, { exact: true })).toHaveCount(0);

@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
 Version: 0.5.0
-Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
+Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -70,10 +70,10 @@ and the approved personal notification inbox/read-state behavior.
   suite cover exact safe projection, action allowlist, SQL ownership/filtering,
   all three login roles, validation, IDOR-safe `404`, idempotent mark-one and
   mark-all, and delivery-state neutrality. Focused evidence passed 154/154.
-- Full backend coverage gate after the approved `main@db97f17` rebase passed 69/69
-  suites and 1114/1114
+- Full backend coverage gate after the approved `main@12faead` rebase passed 69/69
+  suites and 1116/1116
   tests at 91.84% statements, 80.70% branches, 97.59% functions, and 91.76% lines.
-- FE10-I04..I06 frontend evidence passed 258/258 Node tests, ESLint, and the
+- FE10-I04..I06 frontend evidence passed 259/259 Node tests, ESLint, and the
   Vite production build. It covers the four authorized client methods,
   non-overlapping 60-second/focus count refresh, exact action allowlist,
   accessible five-item preview, guarded page, filters, and server pagination.
@@ -88,10 +88,19 @@ and the approved personal notification inbox/read-state behavior.
   MEMBER/LIBRARIAN/ADMIN, `99+`, sensitive/userless/cross-user exclusion,
   mark-one/mark-all replay, non-blocking read failure, and 390x844 no-overflow.
 - The complete Chromium suite passed 11/11 after the FE09 synthetic-auth fixture
-  was updated to isolate the new background unread-count request. Deployment policy passed 15/15,
+  was updated to isolate the new background unread-count request. Deployment policy passed 20/20,
   system integration passed 10/10, traceability state passed 3/3, and enforced
   traceability passed with FE10 at 14/16 FR tags (88%, above the 70% gate).
-- Fresh security checks after `main@db97f17` found zero backend dependency
+- Exact PR head `28c4f80` passed CI `30306805399` and Azure staging deployment
+  `30307855616`. Live Azure verification covered MEMBER/LIBRARIAN/ADMIN
+  ownership, sensitive exclusion, mark-one/mark-all replay, filters, safe
+  navigation, HTTPS/CORS, migration postconditions, protected aggregates, and
+  probe/firewall cleanup.
+- H3 round-one UI findings now have focused RED/GREEN coverage for refreshing
+  a successfully read no-navigation item, keeping mark-all independent from
+  the current filtered page, and elevating the unchanged-size popover above
+  every current layout layer only while it is open.
+- Fresh security checks after `main@12faead` found zero backend dependency
   vulnerabilities, no added high-confidence secret, conflict marker, stale
   inbox-deferred contradiction, or unsafe response field. The repository
   frontend audit gate accepted only GHSA-qwww-vcr4-c8h2 because the application
@@ -104,6 +113,12 @@ and the approved personal notification inbox/read-state behavior.
 - Upstream `main@f3ebe95` then added only three non-overlapping FE07/FE08
   regression-test files; the candidate synchronized them without conflict and
   reran the full frontend suite at 258/258 before fingerprinting.
+- The approved `main@a240705` rebase preserves the independent upstream FE11
+  edit-action removal. Fresh gates passed backend 69/69 suites and 1084/1084
+  tests, frontend 259/259 plus lint/build, deployment 20/20, system 10/10,
+  traceability state 3/3, FE10 traceability 14/16 (88%), Chromium 11/11,
+  dependency audits, Azure schema preparation, and diff hygiene. The backend
+  count decreased only because upstream removed obsolete FE11 edit tests.
 - Pre-implementation baseline on `main@25c09ec`: backend 67 suites / 1091 tests
   passed and frontend 234/234 tests passed.
 
@@ -135,18 +150,23 @@ npm.cmd --prefix frontend run build
 npm.cmd run trace:enforce
 ```
 
-## 8. V0.5.0 Final Local Evidence State
+## 8. V0.5.0 Current Evidence State
 
 - Local migration, focused API/repository/frontend, fan-in, privacy, full
   backend/frontend, deployment, system, traceability, diff/security scans, and
   complete Chromium E2E evidence are complete.
-- H2 approved commit `b11b59e`; PR #75 CI run `30304661463` and the exact
+- H2 approved commit `b11b59e`; its PR CI and the exact
   two-run Azure migration passed. Manual deploy `30305596861` failed closed at
   preflight because Windows CRLF and Linux LF produced different raw hashes.
 - A RED deployment-policy test reproduced the missing cross-platform boundary.
   GREEN now derives exact LF and CRLF byte hashes from unchanged UTF-8 content,
   accepts the stored operator hash only when it equals one, and rejects a
   content mutation. Deployment policy passes 16/16.
-- The staging remediation H2 addendum, updated PR CI, backend-first redeploy,
-  three-role live browser verification, H3, merge, and exact post-merge CI are
-  not yet claimed.
+- The staging-hash addendum was H2-approved and published on PR #75 head
+  `28c4f80`; exact-head CI `30306805399`, backend-first Azure deployment
+  `30307855616`, and three-role live verification passed.
+- H3 round one failed on ADR/current-state and bounded UI-state/stacking
+  findings. Focused UI remediation and the complete local matrix are GREEN on
+  H1-approved `main@a240705`; the remediation still requires a fresh H2
+  fingerprint, exact-head CI/Azure redeployment, repeated H3, merge, and exact
+  post-merge CI/deployment.

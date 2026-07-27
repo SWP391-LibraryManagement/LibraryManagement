@@ -1,12 +1,14 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
+Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 Implementation State: PARTIAL
 
-Current v0.5.0 detail: FE10-I01..I08 are H2-approved in commit `b11b59e`; PR
-#75 exact-head CI passed and the Azure migration passed twice. The first manual
-deploy failed closed on platform-specific LF/CRLF hashing. The focused local
-TDD remediation is green and requires an H2 addendum before publication.
+Current v0.5.0 detail: FE10-I01..I08 and the migration-hash remediation are
+H2-approved on PR #75 head `28c4f80`; exact-head CI `30306805399` and Azure
+staging deployment `30307855616` passed. H3 round one found bounded
+ADR/source-of-truth and inbox UI-state/stacking defects. Their local
+remediation is rebased cleanly on H1-approved `main@a240705` and requires fresh
+H2, exact-head CI/Azure redeployment, and repeated H3 before merge.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -18,9 +20,10 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
 Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
-published on PR #75 as `b11b59e`; PR CI and the two-run Azure migration pass.
-Staging remediation H2, redeploy/live verification, H3, merge, and post-merge
-gates remain open.
+published on PR #75 head `28c4f80`; PR CI, two-run Azure migration, exact-head
+redeploy, and live three-role verification pass. H3 round-one remediation,
+fresh H2/CI/Azure redeploy, repeated H3, merge, and post-merge gates remain
+open.
 
 ---
 
@@ -342,7 +345,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S14 Preserve Sensitive Provider Message IDs
 
-- [~] Status: H2/CI/STAGING EVIDENCE PASS; H3 PENDING
+- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
 - Depends on: FE10-S12.
 - Files: `backend/src/services/notificationService.js`,
   `backend/tests/notificationRoutes.test.js`.
@@ -354,7 +357,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S15 Add The Best-Effort SYSTEM Worker
 
-- [~] Status: H2 ADDENDUM/CI/REDEPLOY PASS; H3 PENDING
+- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
 - Depends on: FE10-S12.
 - Files: notification service/worker/runtime/config/index, `.env.example`, and
   focused service/worker/runtime/config tests.
@@ -376,7 +379,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S16 Pass Local H2 And Staging Validation
 
-- [~] Status: STAGING VALIDATION PASS; H3 PENDING
+- [x] Status: COMPLETE - H3 APPROVED, PR #65 MERGED, POST-MERGE CI PASS
 - Depends on: FE10-S13..S15.
 - Files: FE10 TASKS/CHANGELOG and
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
@@ -402,6 +405,9 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   queue aggregate was `0|0|15|0`, attempt/provider aggregate was `15|15`,
   sensitive/unsafe aggregate was `21|0`, SYSTEM/no-op audit aggregate was
   `1|0`, and task-created firewall rules remaining were zero.
+- Integration: after explicit H3 approval, PR #65 merged as `01807f0`; exact
+  post-merge `main` CI `30275341156` passed. Later FE10 Azure deployment
+  `30307855616` passed with this v0.4.5 baseline still active.
 
 ## 15. V0.5.0 Personal Notification Inbox Tasks
 
@@ -410,7 +416,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I01 Add The Additive Read-State Migration
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Maps to: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 to AC-FE10-014.
 - Files: canonical SQL, Notification model, new idempotent migration, migration
   contract tests.
@@ -420,7 +426,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I02 Add Own-Record Repository And Safe Projection
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I01.
 - Maps to: BR-FE10-014 to BR-FE10-017, BR-FE10-020; AC-FE10-011 to AC-FE10-015.
 - Files: notification repository, inbox projection/action utility, in-memory
@@ -432,7 +438,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I03 Expose The Authenticated Personal Inbox API
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I02.
 - Maps to: FR-FE10-011 to FR-FE10-015; AC-FE10-011 to AC-FE10-015.
 - Files: notification validators, service, controller, routes, OpenAPI, route
@@ -443,7 +449,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I04 Add The Frontend Client And Shared Inbox Context
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I03.
 - Maps to: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
 - Files: shared frontend API, error mapping, notification view model/context,
@@ -454,7 +460,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I05 Add The Authenticated Shell Bell And Preview
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
 - Files: Header, notification bell component, app-shell styles, frontend tests.
@@ -464,7 +470,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I06 Add The Personal Notification Page
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
   AC-FE10-011, AC-FE10-013, AC-FE10-014, AC-FE10-016.
@@ -476,7 +482,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I07 Prove Cross-Feature And Browser Behavior
 
-- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
+- [x] Status: H2/CI/AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 - Depends on: FE10-I03, FE10-I05, FE10-I06.
 - Maps to: AC-FE10-011 to AC-FE10-016.
 - Files: FE04/FE07/FE08 integration tests, FE10 Playwright E2E, test support
@@ -487,7 +493,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
 
-- [ ] Status: IN_PROGRESS - H2/PR CI/MIGRATION PASS; STAGING REMEDIATION H2 PENDING
+- [ ] Status: IN_PROGRESS - AZURE STAGING PASS; H3 REMEDIATION LOCAL
 - Depends on: FE10-I01..I07.
 - Maps to: all v0.5.0 BR/FR/AC entries.
 - Files: OpenAPI, architecture/integration map, user manual, Azure staging
@@ -510,8 +516,8 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
   and in-memory selector did. A RED repository regression reproduced the
   mismatch; both SQL pending selectors now share the complete four-type
   exclusion and focused GREEN passed 161/161 before the full backend rerun.
-- H2 approved fingerprint `2b53d7e`; commit `b11b59e` and PR #75 CI run
-  `30304661463` passed. Azure staging migrated from zero to one `ReadAt` column
+- H2 approved fingerprint `2b53d7e`; commit `b11b59e` and its PR CI passed.
+  Azure staging migrated from zero to one `ReadAt` column
   and supporting index; 17 eligible historical rows were backfilled, 25
   excluded rows stayed unread, a post-run-one probe stayed unread after run
   two, protected aggregates were unchanged, and probe/firewall cleanup passed.
@@ -519,7 +525,33 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
   Windows applied the CRLF migration bytes (`6e8b6b4...`) while the Linux
   runner hashed the equivalent LF checkout (`143cd8e...`). RED/GREEN
   deployment policy coverage now permits only those exact LF/CRLF renderings
-  of unchanged UTF-8 content; publication requires a fresh H2 addendum.
+  of unchanged UTF-8 content.
+- The hash addendum was H2-approved as fingerprint `f78e0cc9...` and published
+  on exact PR head `28c4f80`; CI `30306805399` and Azure staging deployment
+  `30307855616` passed all jobs. Live API/browser checks covered all three
+  roles, own-record isolation, sensitive exclusion, read replay, safe
+  navigation, HTTPS/CORS, and Azure probe/firewall cleanup.
+- H3 round one found missing ADR/current-state reconciliation, stale item state
+  after a successful no-navigation read, mark-all incorrectly disabled by the
+  current filtered page, and a browser-reported popover stacking defect. The
+  local TDD/documentation fixes require a fresh H2 fingerprint and exact-head
+  Azure redeployment before repeated H3.
+- H1 approved the later non-overlapping drift through `main@12faead`. The
+  incoming commits delete retired `document/` artifacts only; the branch
+  rebased without conflict. Current Azure staging serves that `main`, so the
+  remediation must be published and redeployed at its new exact head.
+- Fresh post-rebase local evidence passed: backend 69/69 suites and 1116/1116
+  tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
+  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
+  schema preparation, diff hygiene, and contradiction scans.
+- H2 round 3 was approved but superseded before use by `main@a240705`. The user
+  approved a fourth H1 drift addendum; upstream FE11 Admin edit removal, exact
+  main CI `30311801599`, Azure deployment `30311973740`, and a conflict-free
+  rebase are preserved. A new full matrix and H2 remain mandatory.
+- Fresh matrix on `main@a240705` passed: backend 69/69 suites and 1084/1084
+  tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
+  traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
+  schema preparation, and diff hygiene. A new fingerprint/H2 remains.
 
 ### V0.5.0 Traceability
 

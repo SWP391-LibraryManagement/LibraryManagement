@@ -1,6 +1,6 @@
 # Staging Email Delivery Remediation Validation - 2026-07-27
 
-Status: STAGING VALIDATION PASS; H3 AND MERGE PENDING
+Status: COMPLETE - H3 APPROVED; PR #65 MERGED; POST-MERGE CI PASS
 
 Baseline: `a408bf0808ed79eeb9dd4f2a6f9253f587dffa4b`
 
@@ -203,10 +203,13 @@ as `a98f459`.
 - No expired setup token was reused. Live sensitive inbox validation remains an
   explicit Admin-resend action that must create a fresh token/event.
 
-## Remaining H3 Boundary
+## Integration Closeout
 
 - App Service F1 remains best-effort: automatic processing pauses while the
   process sleeps.
 - Rollback remains `NOTIFICATION_WORKER_ENABLED=false`.
-- PR #65 must receive explicit H3 approval before merge.
-- The documentation evidence commit must pass exact-head CI before merge.
+- The user explicitly approved H3 before merge.
+- PR #65 merged as `01807f043a9273f9c664b647dd84512307e8c86c`.
+- Exact post-merge `main` CI run `30275341156` passed.
+- Later FE10 Azure staging deployment `30307855616` passed with the v0.4.5
+  template/provider/worker baseline still active.

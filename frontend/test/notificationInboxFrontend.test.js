@@ -212,6 +212,8 @@ test('notification preview is accessible and never exposes destructive controls'
 test('notification preview styles fit mobile and keep unread emphasis and focus visible', async () => {
   const styles = await readFile(new URL('../src/styles/app-shell.css', import.meta.url), 'utf8');
 
+  assert.match(styles, /\.app-topbar\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*40;/);
+  assert.match(styles, /\.app-topbar:has\(\.notification-popover\)\s*\{\s*z-index:\s*100;\s*\}/);
   assert.match(styles, /\.notification-popover\s*\{[\s\S]*?width:\s*min\(380px, calc\(100vw - 28px\)\)/);
   assert.match(styles, /\.notification-preview-item::before/);
   assert.match(styles, /\.notification-badge[\s\S]*?min-width/);
@@ -270,8 +272,11 @@ test('notifications page marks all through context, refreshes server state, and 
   assert.match(source, /useNotificationInbox\(\)/);
   assert.match(source, /await markAllRead\(\)/);
   assert.match(source, /await loadNotifications\(page\)/);
-  assert.match(source, /disabled=\{loading \|\| markingAll/);
-  assert.match(source, /onClick=\{\(\) => openNotification\(item\)\}/);
+  assert.match(source, /disabled=\{loading \|\| markingAll\}/);
+  assert.doesNotMatch(source, /disabled=\{[^}]*items\.length === 0/);
+  assert.match(source, /const result = await openNotification\(item\)/);
+  assert.match(source, /if \(result\?\.readSucceeded && !result\.navigated\)[\s\S]*?await loadNotifications\(page\)/);
+  assert.match(source, /onClick=\{\(\) => handleOpenNotification\(item\)\}/);
   assert.match(source, /requestedPage > lastValidPage[\s\S]*?notificationInboxApi\.listMine/);
   assert.doesNotMatch(source, /delete|archive|global log|nhật ký toàn cục|xóa thông báo|lưu trữ/i);
 });

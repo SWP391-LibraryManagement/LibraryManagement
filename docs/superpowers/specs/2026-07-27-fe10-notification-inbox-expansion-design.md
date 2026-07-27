@@ -1,6 +1,6 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
+**Status:** AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
 
 **Design approved:** 2026-07-27
 
@@ -15,13 +15,14 @@ authorization, and migration; bounded ADD may later implement the approved UI
 shell.
 
 **Implementation baseline:** governance PR #70 merged to `main` as
-`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`; the local candidate was then
-rebased onto approved upstream `main@db97f1760d4dd37bd37fa979fb46c4e600f82e3f`
-and mechanically synchronized with non-overlapping regression-test-only
-`main@f3ebe95ed00cef5119d2b6788ebccd72c5cda190`.
-FE10-I01 through FE10-I08 are implemented and fresh post-drift
-local/SQL/browser validation is green; fresh H2, Azure staging, H3, merge, and
-post-merge CI remain unclaimed.
+`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`. FE10-I01 through FE10-I08 and
+the cross-platform migration-hash remediation are H2-approved on PR #75 head
+`28c4f80`. Exact-head CI `30306805399` and Azure staging deployment
+`30307855616` passed, followed by three-role API/browser and Azure SQL cleanup
+verification. H3 round one against `main@a5fcbb9...28c4f80` found bounded
+ADR/source-of-truth and UI-state/stacking defects. Their local remediation
+requires fresh H2, exact-head CI/Azure redeployment, repeated H3, merge, and
+post-merge CI/deployment.
 
 **H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
 automatic staging deployment plus manual reruns. Both paths fail closed unless
@@ -43,6 +44,21 @@ reason, responsive return/reservation controls, and all other round-two
 FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
 notification styles, then run complete validation and obtain a new H2
 fingerprint.
+
+**Third H1 drift addendum approved 2026-07-28:** reconcile with
+`main@12faead`, whose incoming changes delete only retired `document/`
+artifacts. There is no FE10 file or Core-contract overlap. Rebase the
+remediation without changing its contract, rerun complete validation, obtain a
+new H2 fingerprint, and redeploy the new exact head to Azure before repeated
+H3 because current staging serves the newer `main`.
+
+**Fourth H1 drift addendum approved 2026-07-28:** reconcile with
+`main@a240705`, which removes the FE11 Admin user-edit API, UI, and tests. The
+FE11 contract is independent from FE10 and has no path overlap with the H3
+remediation; the committed merge-tree is clean. Preserve both contracts, rerun
+complete validation, obtain a new H2 fingerprint, and redeploy the exact FE10
+head because upstream CI `30311801599` and Azure run `30311973740` now serve
+that newer `main`.
 
 ## 1. Outcome And Scope
 
