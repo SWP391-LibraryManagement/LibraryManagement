@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Clarify copy-scoped queue positions
+
+- Kept queue position canonical per physical `CopyId`; `#2` for two different books is valid because they are separate queues.
+- Reworded Member and Librarian table labels to identify the position as belonging to that book copy.
+- Removed the frontend fallback that invented `#1` when the server returned no queue position.
+
 ## 2026-07-27 - Block same-book reservations during an active loan
 
 - Connected FE08 eligibility to FE07's canonical `BorrowDetails.Status = BORROWED` state at the `BookId` level.

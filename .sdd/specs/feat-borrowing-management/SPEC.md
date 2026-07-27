@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.7
+# Version: 0.7.8
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -187,7 +187,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-004: A member must have the `MEMBER` role and `Users.Status = ACTIVE` before borrowing or renewal; FE04 membership application status does not block FE07.
 - BR-FE07-005A: FE04 approval determines the daily borrowing tier without blocking borrowing: canonical `Members.Status = APPROVED` permits 5 copies per `Asia/Ho_Chi_Minh` business day; `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` permits 3 copies per business day.
 - BR-FE07-005: At create and approval, `activeBorrowedCount + requestedDetailCount` must be less than or equal to 5. `activeBorrowedCount` counts only the member's current `BorrowDetails.Status = BORROWED`; approval acquires the member-scoped lock and relevant rows in the order defined by NFR-FE07-TXN-003 before calculating the count, so concurrent approvals cannot exceed 5.
-- BR-FE07-006: A member with overdue active loans or any unpaid fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy.
+- BR-FE07-006: A member with overdue active loans or any FE09 `UNPAID` fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy. The Member may reconcile the fine against FE07 due/return dates through read-only `/fines/mine`; only Librarian/Admin can record collection.
 - BR-FE07-007: A copy can be borrowed only when FE07 classifies it as borrowable under BR-FE07-023.
 - BR-FE07-008: Approval must recheck reservation-aware copy borrowability and member eligibility.
 - BR-FE07-009: When a borrow request is approved, each borrowed copy status must change to `BORROWED`.

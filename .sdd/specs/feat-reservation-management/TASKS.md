@@ -247,3 +247,8 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Exclude same-`BookId` candidates, reject direct create with `BOOK_ALREADY_BORROWED`, and revalidate stale queue entries during Librarian/Admin processing.
   - Coordinate FE07 borrow approval and FE08 create/hold through the Member circulation lock.
   - Verify repository source, service mapping, route behavior, queue behavior, and Vietnamese error mapping.
+
+- [x] **FE08-T046 - Clarify copy-scoped queue positions.**
+  - Maps to: BR-FE08-020, FR-FE08-035, AC-FE08-022.
+  - Preserve per-`CopyId` positions, label Member/Librarian tables with the copy scope, and remove the view-model fallback that invented `#1`.
+  - Verify equal positions across different books remain valid and understandable.

@@ -205,3 +205,10 @@ Not included:
 3. Revalidate inside the create transaction and return `409 BOOK_ALREADY_BORROWED` so direct API calls cannot bypass the catalog.
 4. Revalidate queue eligibility when Librarian/Admin processes a returned copy; keep a stale reservation `ACTIVE` and the copy unchanged while continuing to the next eligible Member.
 5. Share the FE07 member circulation lock before FE08 mutation locks so borrow approval and reservation creation/holding cannot race for the same Member.
+
+## 13. V0.5.9 Copy-Scoped Queue Position Clarity
+
+1. Preserve canonical FE08 queue calculation per `CopyId`; do not introduce a global Member reservation sequence.
+2. Replace ambiguous “Vị trí hàng đợi” copy with “Vị trí của bản sách” for Member and staff.
+3. Render the position as belonging to the current book/copy and preserve equal values across different queues.
+4. Stop the view model from fabricating `#1` when `queuePosition` is absent.

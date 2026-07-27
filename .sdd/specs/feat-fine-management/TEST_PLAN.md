@@ -1,10 +1,10 @@
 # FE09 Test Plan - Fine Management
 
-Version: 0.3.3
+Version: 0.3.4
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-21
 
-Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.1
+Source Spec: `.sdd/specs/feat-fine-management/SPEC.md` v0.4.3
 Feature IDs: `BR-FE09-*`, `FR-FE09-*`, `AC-FE09-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -37,6 +37,7 @@ Project human acceptance remains a release gate.
 
 - `POST /api/fines/calculate`: Librarian/Admin access, overdue calculation, on-time/no-fine result, missing borrow detail, missing due date, timezone boundary, client-tampering rejection/ignore behavior, and idempotency.
 - `GET /api/fines/me`: member-only own-fine isolation, default pagination, status filtering, and invalid query rejection before repository access.
+- Member fine integration: Guest receives `401`; Librarian/Admin receive `403`; Member rows expose FE07 due/return context, explain the positive-`UNPAID` blocker, link to borrowing history, and expose no mutation control.
 - `GET /api/fines`: staff-only list, member/guest denial, `q`/user/status filters, default pagination, fixed `FineId ASC` ordering, and invalid page/limit/status/user ID rejection.
 - `GET /api/fines/:fineId`: owner-only member detail access, staff access, foreign-member denial, and safe not-found behavior.
 - `POST /api/fines/:fineId/collections`: full offline collection only; reject `collectedAmount` or partial-payment payloads; store all payment metadata and return `PAID` atomically.
@@ -52,6 +53,7 @@ Project human acceptance remains a release gate.
 - Staff lists fines with omitted pagination -> the first 20 records appear in `FineId ASC` order; invalid filters are rejected without a data query.
 - Frontend `FineManagement.jsx` sends canonical search/status/page/limit queries, consumes the server list envelope, and renders responsive desktop/mobile pagination without browser-side filtering or slicing.
 - Frontend preserves one canonical selected fine from calculation or list selection through collection/paid reconciliation, including when that fine is outside the currently rendered list page; payment steps reject missing or terminal selections.
+- Member opens “Tiền phạt của tôi” -> sees only own fines with book/due/return context -> an unpaid notice explains FE07 borrowing and renewal restrictions -> borrowing history opens for reconciliation -> only staff may record offline collection.
 
 ## 5. Current Evidence
 

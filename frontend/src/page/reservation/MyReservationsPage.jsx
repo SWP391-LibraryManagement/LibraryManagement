@@ -29,6 +29,7 @@ const EMPTY_CANDIDATE_PAGINATION = {
   totalPages: 0,
 };
 
+// @spec FR-FE08-035, AC-FE08-022
 export default function MyReservationsPage() {
   const [searchParams] = useSearchParams();
   const requestedBookId = Number(searchParams.get('bookId'));
@@ -238,7 +239,7 @@ export default function MyReservationsPage() {
         <h3 className="lib-card-title">Đặt chỗ đang hoạt động</h3>
         <DataTable
           caption="Danh sách đặt chỗ đang hoạt động của tôi"
-          headers={['Sách', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
+          headers={['Sách', 'Ngày đặt', 'Vị trí của bản sách', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
           loading={loading}
           loadingRows={3}
           isEmpty={currentReservations.length === 0}
@@ -248,12 +249,12 @@ export default function MyReservationsPage() {
             <tr key={item.id}>
               <td data-label="Sách"><div className="stack-sm"><strong>{item.title}</strong><span className="muted" style={{ fontSize: 13 }}>{item.author}</span></div></td>
               <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
-              <td data-label="Vị trí hàng đợi">
+              <td data-label="Vị trí của bản sách">
                 {item.status === 'Ready to pick up'
                   ? <span className="row-flex" style={{ gap: 6, color: 'var(--st-green)' }}><CheckCircle2 size={15} /> Đến lượt bạn</span>
                   : !isOpenMemberReservationStatus(item.rawStatus)
                     ? <span className="muted">-</span>
-                    : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue}</span>}
+                    : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue} trong hàng đợi cuốn này</span>}
               </td>
               <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
@@ -275,7 +276,7 @@ export default function MyReservationsPage() {
         <h3 className="lib-card-title">Lịch sử đặt chỗ</h3>
         <DataTable
           caption="Lịch sử đặt chỗ của tôi"
-          headers={['Sách', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
+          headers={['Sách', 'Ngày đặt', 'Vị trí của bản sách', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
           loading={loading}
           loadingRows={3}
           isEmpty={reservationHistory.length === 0}
@@ -285,7 +286,7 @@ export default function MyReservationsPage() {
             <tr key={item.id}>
               <td data-label="Sách"><div className="stack-sm"><strong>{item.title}</strong><span className="muted" style={{ fontSize: 13 }}>{item.author}</span></div></td>
               <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
-              <td data-label="Vị trí hàng đợi"><span className="muted">-</span></td>
+              <td data-label="Vị trí của bản sách"><span className="muted">-</span></td>
               <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge></td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}><span className="muted">-</span></td>
             </tr>

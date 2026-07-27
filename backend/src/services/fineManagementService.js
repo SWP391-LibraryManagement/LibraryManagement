@@ -127,6 +127,14 @@ function createFineManagementService({
     }
   }
 
+  function requireMember(actor) {
+    const isMember = hasAnyRole(actor, ['MEMBER']);
+    const isStaff = hasAnyRole(actor, ['LIBRARIAN', 'ADMIN']);
+    if (!isMember || isStaff) {
+      throw errors.forbidden('ROLE_REQUIRED', 'Only non-staff members can view their own fines.');
+    }
+  }
+
   function requireAdmin(actor) {
     if (!hasAnyRole(actor, ['ADMIN'])) {
       throw errors.forbidden('ADMIN_ROLE_REQUIRED', 'Only an admin can waive or cancel a fine.');
@@ -199,8 +207,9 @@ function createFineManagementService({
     });
   }
 
-  // @spec FR-FE09-001
+  // @spec FR-FE09-001 FR-FE09-019
   async function listMyFines(filters, actor) {
+    requireMember(actor);
     const normalized = normalizeListFilters(filters, { allowSearch: false, userId: actor.userId });
     const result = await fineRepository.listFines(normalized);
     return {

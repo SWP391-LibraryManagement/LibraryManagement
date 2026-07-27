@@ -1,6 +1,10 @@
 const express = require('express');
 const { createFineManagementController } = require('../controllers/fineManagementController');
-const { createAuthenticate, requireAnyRole } = require('../middleware/authMiddleware');
+const {
+  createAuthenticate,
+  requireAnyRole,
+  requireMemberOnly,
+} = require('../middleware/authMiddleware');
 
 function createFineRoutes({ authService, fineManagementService } = {}) {
   const router = express.Router();
@@ -9,7 +13,7 @@ function createFineRoutes({ authService, fineManagementService } = {}) {
   const fineManagement = createFineManagementController(fineManagementService);
 
   // --- Server-side FE09 workflow (SPEC §11). Specific paths are declared before '/:fineId'. ---
-  router.get('/me', authenticate, fineManagement.listMine);
+  router.get('/me', authenticate, requireMemberOnly, fineManagement.listMine);
   router.post('/calculate', requireStaff, fineManagement.calculate);
   router.post('/:fineId/collections', requireStaff, fineManagement.collect);
   router.patch('/:fineId/paid', requireStaff, fineManagement.markPaid);

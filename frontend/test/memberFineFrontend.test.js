@@ -28,5 +28,10 @@ test('Member fines page is server-backed, paginated, retryable, and read-only', 
   assert.match(page, /fine\.bookTitle/);
   assert.match(page, /fine\.reason/);
   assert.match(page, /fine\.borrowDetailId/);
+  assert.match(page, /fine\.dueDate/);
+  assert.match(page, /fine\.returnDate/);
+  assert.match(page, /fine\.paidAt/);
+  assert.match(page, /Khoản phạt chưa thanh toán sẽ chặn tạo/);
+  assert.match(page, /to="\/borrowing\/history"/);
   assert.doesNotMatch(page, /fineApi\.(calculate|collect|markPaid|waive|cancel)/);
 });

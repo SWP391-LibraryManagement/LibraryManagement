@@ -149,3 +149,11 @@ Resolved fine collection conflicts return `409 FINE_NOT_COLLECTIBLE`; resolved p
 - [x] Nhat confirmed the prototype frontend is not production completion evidence on 2026-07-17; upstream v0.4.1 removes its legacy create/update/delete server mutations.
 
 Agent-side implementation and L4 evidence are recorded in `.sdd/reviews/fe09-fine-reconciliation-validation-2026-07-19.md`; live SQL evidence is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`. These automated gates do not substitute for final project human acceptance.
+
+## 11. V0.4.3 Member Fine And Role Integration
+
+1. Guard `GET /api/fines/me` with the shared single-role Member boundary used by FE07/FE08.
+2. Extend the canonical fine DTO with FE07-owned due date, return date, and borrow-detail status.
+3. Keep the Member page read-only, explain the positive-`UNPAID` FE07 borrow/renew blocker, and link to canonical borrowing history.
+4. Preserve Librarian/Admin calculation and full offline collection; preserve Admin-only waive/cancel.
+5. Verify Guest/Member/Librarian/Admin access, borrowing-context projection, frontend read-only behavior, OpenAPI, and traceability.

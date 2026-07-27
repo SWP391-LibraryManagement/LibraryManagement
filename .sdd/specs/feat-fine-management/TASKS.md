@@ -113,6 +113,12 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Keep barcode in the server-owned fine DTO and search contract, but show only the book title in the Librarian list and selected-fine book card.
   - Verify the table heading, row markup, detail card, and search prompt do not present barcode as a visible book field.
 
+- [x] **FE09-T024 - Connect Member fines to borrowing context and single-role access.**
+  - Maps to: BR-FE09-020, FR-FE09-019, AC-FE09-017; BR-FE07-006 and BR-FE11-028.
+  - Guard `/api/fines/me` for Member only, include due/return/borrow status from FE07, and keep Member presentation read-only.
+  - Explain the unpaid-fine borrowing/renewal blocker and link the Member to canonical borrowing history.
+  - Preserve Librarian/Admin collection ownership and Admin-only waive/cancel.
+
 ## Validation Status
 
 - Historical TD-001/002/003 evidence remains in the changelog and does not close FE09-T013 through FE09-T020.

@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-27 - Connect Member fines to borrowing and role ownership
+
+- Restricted `/api/fines/me` to the single `MEMBER` role; Librarian/Admin continue through the staff fine workspace.
+- Added FE07-owned due date, return date, and borrow status to the canonical fine DTO.
+- Kept “Tiền phạt của tôi” read-only, added borrowing-history reconciliation, and explained that positive `UNPAID` fines block borrowing and renewal.
+- Preserved Librarian/Admin offline collection and Admin-only waive/cancel ownership.
+
 ## 2026-07-22 - Simplify Librarian book display
 
 - Changed the Librarian fine list column from `Sách / barcode` to `Sách` and removed the barcode subtitle from both the row and selected-fine card.

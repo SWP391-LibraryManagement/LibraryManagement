@@ -1,10 +1,10 @@
 # FE08 Test Plan - Reservation Management
 
-Version: 0.5.5
+Version: 0.5.6
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 Last Updated: 2026-07-27
 
-Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.8
+Source Spec: `.sdd/specs/feat-reservation-management/SPEC.md` v0.5.9
 Feature IDs: `BR-FE08-*`, `FR-FE08-*`, `AC-FE08-*`
 Authoritative AC-to-test mapping: `SPEC.md` section 16 Traceability Matrix (this file is the strategy, not the case list).
 
@@ -24,6 +24,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 - Eligibility: active user, approved membership, unavailable physical copy, duplicate active reservation, and the maximum of 3 active reservations.
 - Contract validation: `CopyId` is the only reservation target; `bookId` is rejected from `process-queue` and invalid values are rejected before repository access.
 - Queue selection: exact copy scope, `ReservedAt ASC, ReservationId ASC` ordering, cancelled/expired exclusion, and at most one `NOTIFIED` hold per copy.
+- Queue presentation: equal positions on different copies remain valid, labels identify the copy-scoped queue, and null canonical positions are never replaced with an invented number.
 - Ineligible queue entry: skip for the current run, preserve `ACTIVE`, and leave the copy unchanged.
 - Current same-book loan: FE07 `BORROWED` state removes all same-`BookId` candidates, direct create returns `BOOK_ALREADY_BORROWED`, terminal loan history does not block, and a stale queue entry is skipped without mutation.
 - Empty queue: return no selection and leave copy and reservation state unchanged.

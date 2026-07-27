@@ -31,7 +31,10 @@ const fineSelect = `
     u.Email,
     up.FullName,
     b.Title AS BookTitle,
-    bc.Barcode
+    bc.Barcode,
+    bd.DueDate,
+    bd.ReturnDate,
+    bd.Status AS BorrowStatus
   ${fineFrom}
 `;
 
@@ -55,6 +58,9 @@ function mapFine(row) {
     paymentMethod: row.PaymentMethod,
     bookTitle: row.BookTitle,
     barcode: row.Barcode,
+    dueDate: row.DueDate,
+    returnDate: row.ReturnDate,
+    borrowStatus: row.BorrowStatus,
     createdAt: row.CreatedAt,
     updatedAt: row.UpdatedAt,
     member: {
@@ -171,6 +177,7 @@ function escapeLikePattern(value) {
   return String(value).replace(/[\\%_\[]/g, (character) => `\\${character}`);
 }
 
+// @spec FR-FE09-019
 async function listFines({ q, userId, status, page = 1, limit = 20 } = {}) {
   const request = await createRequest();
   const where = [];

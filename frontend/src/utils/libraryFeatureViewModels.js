@@ -199,7 +199,7 @@ export function mapReservation(reservation) {
     username: reservation.member?.username || null,
     email: reservation.member?.email || null,
     reservedDate: reservation.reservedAt || reservation.createdAt,
-    queue: reservation.queuePosition || 1,
+    queue: reservation.queuePosition ?? null,
     rawStatus: String(reservation.status || '').toUpperCase(),
     status: statusToUi(reservation.status, reservation),
     pickupStart: reservation.notifiedAt,

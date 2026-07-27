@@ -1,6 +1,6 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.4.2
+# Version: 0.4.3
 
 # Status: APPROVED BASELINE 2026-07-17 - PHASE 2 EXIT COMPLETE
 
@@ -189,6 +189,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE09-017: Phase 1 does not require an admin confirm/refuse payment step after librarian collection; a full offline collection by librarian/admin may directly resolve the fine as `PAID`.
 - BR-FE09-018: Fine lists must use stable ordering by fine ID ascending by default to support reconciliation and classroom review.
 - BR-FE09-019: Overdue-day calculation uses the current server business date in `Asia/Ho_Chi_Minh`.
+- BR-FE09-020: `GET /api/fines/me` is Member self-service and requires the account's single role to be `MEMBER`; Librarian/Admin use the staff fine workspace, Member cannot collect or resolve fines, and Admin-only waive/cancel authority remains unchanged.
 
 ---
 
@@ -212,6 +213,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE09-016: IF a supplied fine-list page, limit, status, or user ID is invalid, the system shall reject the request without normalizing the value or querying fines.
 - FR-FE09-017: When calculating a fine, the system shall derive overdue days from the `Asia/Ho_Chi_Minh` business date and stored due/return dates.
 - FR-FE09-018: The Librarian/Admin fine workspace shall preserve the selected fine across list, calculation, collection, and paid-reconciliation steps. A newly calculated overdue fine shall become the selected `UNPAID` fine for collection, and payment steps shall reject entry unless an `UNPAID` fine is selected, including when that selected fine is outside the currently rendered server page.
+- FR-FE09-019: WHEN a single-role Member views “Tiền phạt của tôi”, the system shall return only that Member's fines with the related book, `borrowDetailId`, due date, return date, amount, reason, status, and paid timestamp; the frontend shall explain that positive `UNPAID` fines block FE07 borrowing/renewal, link to borrowing history for reconciliation, and remain read-only.
 
 ---
 
@@ -233,6 +235,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-014: Given an unpaid fine and a valid admin reason, when the admin cancels the fine, then status becomes `CANCELLED`, the fine remains visible, and an audit record is written atomically.
 - AC-FE09-015: Given a fine calculation at a timezone boundary, when the server business date is evaluated, then overdue days use `Asia/Ho_Chi_Minh` consistently.
 - AC-FE09-016: Given a Librarian/Admin calculates or selects an unpaid fine, when moving to collection or paid reconciliation, then the same fine ID, member, borrowing context, and amount remain selected; after success, the returned canonical `PAID` fine is shown and FE07/FE12 consume the resolved state.
+- AC-FE09-017: Given Guest, Librarian, Admin, and Member actors, when they access `/api/fines/me`, then Guest receives `401`, Librarian/Admin receive `403 ROLE_REQUIRED`, and only Member receives their own borrowing-linked fine records; Member sees no calculate, collect, paid, waive, or cancel action.
 
 ---
 
@@ -278,6 +281,10 @@ Use these stable IDs for tasks and tests.
 | fineId | integer | Yes for updates | Must exist in `Fines`. |
 | userId | integer | Yes | Must reference member user. |
 | borrowDetailId | integer | Yes | Must reference related borrow detail. |
+| bookTitle | string | Read projection | FE05 title joined through FE07 copy context. |
+| dueDate | date | Read projection | Canonical FE07 due date used for Member/staff reconciliation. |
+| returnDate | date/null | Read projection | Canonical FE07 return date; null while not returned. |
+| borrowStatus | string | Read projection | Canonical `BorrowDetails.Status`; FE09 does not mutate it. |
 | overdueDays | integer | Yes | Server-calculated non-negative number of overdue business days. |
 | ratePerDay | decimal | Yes | Server-controlled Phase 1 rate: 5,000 VND. |
 | amount | decimal | Yes | Server-calculated; strictly greater than 0 for persisted fine rows. |
@@ -358,7 +365,7 @@ Note: when calculated overdue days are zero or negative, **no fine record is cre
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/fines/me` | Member | Query: `status?, page?, limit?` | Own fines | Defaults `page = 1`, `limit = 20`; member sees own fines only. |
+| GET | `/api/fines/me` | Member only | Query: `status?, page?, limit?` | Own fines with book and borrowing dates | Defaults `page = 1`, `limit = 20`; single-role Member sees own fines only; Librarian/Admin receive `403 ROLE_REQUIRED`. |
 | GET | `/api/fines` | Librarian/Admin | Query: `q?, userId?, status?, page?, limit?` | Fine list | Defaults `page = 1`, `limit = 20`; fixed order is `FineId ASC`. |
 | GET | `/api/fines/{fineId}` | Owner or Librarian/Admin | - | Fine detail | Owner can view own fine only. |
 | POST | `/api/fines/calculate` | Librarian/Admin | `{ borrowDetailId }` | Fine result | Manual Phase 1 calculation from stored borrowing data; no scheduler actor. |
@@ -481,6 +488,7 @@ This feature does not include:
 | BR-FE09-017 | UC43, UC44 | Full collection directly resolves fine test | Ready for review |
 | BR-FE09-018 | UC41 | Fixed `FineId ASC` list order test | Ready for review |
 | BR-FE09-019 | UC42 | `Asia/Ho_Chi_Minh` date boundary test | Ready for review |
+| BR-FE09-020 | UC41-UC44 | FE09-T024 single-role own-list and staff mutation boundary tests | Automated pass; human review pending |
 | FR-FE09-001 | UC41 | Member own-fines endpoint | Ready for review |
 | FR-FE09-002 | UC41 | Staff list/detail filter endpoint | Ready for review |
 | FR-FE09-003 | UC42 | Overdue-day calculation endpoint | Ready for review |
@@ -499,6 +507,7 @@ This feature does not include:
 | FR-FE09-016 | UC41 | Invalid list query rejected before repository | Ready for review |
 | FR-FE09-017 | UC42 | Business-date calculation boundary | Ready for review |
 | FR-FE09-018 | UC41-UC44 | Selected-fine workflow continuity source/UI test | Ready for review |
+| FR-FE09-019 | UC41 | FE09-T024 Member borrowing-context, blocker explanation, and role tests | Automated pass; human review pending |
 | AC-FE09-001 | UC41 | Own-fines response contains only actor records | Ready for review |
 | AC-FE09-002 | UC41 | Staff selected-member fines response | Ready for review |
 | AC-FE09-003 | UC42 | Overdue amount equals days * 5000 | Ready for review |
@@ -515,6 +524,7 @@ This feature does not include:
 | AC-FE09-014 | UC44 | Valid admin cancel is terminal and audited | Ready for review |
 | AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Ready for review |
 | AC-FE09-016 | UC41-UC44 | Calculate/select -> collect/paid preserves one canonical fine | Ready for review |
+| AC-FE09-017 | UC41-UC44 | Guest/staff own-list denial and read-only Member fine page | Automated pass; human review pending |
 
 ---
 

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Connect unpaid-fine blockers to Member reconciliation
+
+- Linked the existing FE07 borrow/renew blocker to FE09's canonical positive `UNPAID` state.
+- Exposed FE07 due and return dates through the read-only Member fine view for reconciliation.
+- Preserved Librarian/Admin collection ownership; Member cannot self-mark a fine paid.
+
 ## 2026-07-27 - Expose current loans as FE08 reservation eligibility
 
 - Defined current `BorrowDetails.Status = BORROWED` plus the copy's `BookId` as the authoritative cross-feature signal for FE08 same-book reservation exclusion.

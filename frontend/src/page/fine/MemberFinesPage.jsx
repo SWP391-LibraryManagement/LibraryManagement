@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ReceiptText, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { fineApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
@@ -24,6 +25,12 @@ function formatCurrency(value) {
   }).format(Number(value || 0));
 }
 
+function formatDate(value) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('vi-VN').format(new Date(value));
+}
+
+// @spec FR-FE09-019, AC-FE09-017
 export default function MemberFinesPage() {
   const [page, setPage] = useState(1);
   const [fines, setFines] = useState([]);
@@ -59,6 +66,8 @@ export default function MemberFinesPage() {
 
   const totalPages = Math.max(1, pagination.totalPages || 0);
   const currentPage = Math.min(pagination.page || page, totalPages);
+  const unpaidFines = fines.filter((fine) => fine.status === 'UNPAID' && Number(fine.amount) > 0);
+  const unpaidTotal = unpaidFines.reduce((total, fine) => total + Number(fine.amount || 0), 0);
 
   return (
     <AppLayout
@@ -69,10 +78,24 @@ export default function MemberFinesPage() {
     >
       {notice && <DataNotice type="error" title="Không thể tải tiền phạt">{notice}</DataNotice>}
 
+      <div className={`alert-box ${unpaidFines.length ? 'warn' : 'info'}`}>
+        {unpaidFines.length ? (
+          <span>
+            Trang này có <strong>{unpaidFines.length}</strong> khoản chưa thanh toán, tổng cộng{' '}
+            <strong>{formatCurrency(unpaidTotal)}</strong>. Khoản phạt chưa thanh toán sẽ chặn tạo
+            yêu cầu mượn và gia hạn cho đến khi Librarian/Admin ghi nhận đã thu tiền.
+          </span>
+        ) : (
+          <span>Bạn không có khoản phạt chưa thanh toán trên trang hiện tại.</span>
+        )}
+        {' '}
+        <Link to="/borrowing/history">Đối chiếu lịch sử mượn</Link>
+      </div>
+
       <div className="lib-card">
         <DataTable
           caption="Danh sách tiền phạt của tôi"
-          headers={['Sách', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái', 'Mã mượn']}
+          headers={['Sách', 'Hạn trả', 'Ngày trả', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái', 'Mã mượn']}
           loading={loading}
           loadingRows={4}
           isEmpty={fines.length === 0}
@@ -81,10 +104,17 @@ export default function MemberFinesPage() {
           {fines.map((fine) => (
             <tr key={fine.fineId}>
               <td data-label="Sách"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></td>
+              <td data-label="Hạn trả">{formatDate(fine.dueDate)}</td>
+              <td data-label="Ngày trả">{formatDate(fine.returnDate)}</td>
               <td data-label="Lý do">{fine.reason || 'Quá hạn trả sách'}</td>
               <td data-label="Quá hạn">{Number(fine.overdueDays || 0)} ngày</td>
               <td data-label="Số tiền"><strong>{formatCurrency(fine.amount)}</strong></td>
-              <td data-label="Trạng thái"><Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge></td>
+              <td data-label="Trạng thái">
+                <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>
+                {fine.status === 'PAID' && fine.paidAt && (
+                  <div className="field-hint">Đã ghi nhận ngày {formatDate(fine.paidAt)}</div>
+                )}
+              </td>
               <td data-label="Mã mượn">#{fine.borrowDetailId}</td>
             </tr>
           ))}

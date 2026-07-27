@@ -71,6 +71,9 @@ function unpaidFine(overrides = {}) {
     },
     bookTitle: 'Clean Code',
     barcode: 'BC1',
+    dueDate: '2026-06-01',
+    returnDate: '2026-06-08',
+    borrowStatus: 'RETURNED',
     ...overrides,
   };
 }
@@ -254,6 +257,31 @@ describe('FE09 fine management (server-side)', () => {
     expect(mine.status).toBe(200);
     expect(mine.body.fines).toHaveLength(1);
     expect(mine.body.fines[0].userId).toBe(MEMBER_ID);
+    expect(mine.body.fines[0]).toMatchObject({
+      bookTitle: 'Clean Code',
+      dueDate: '2026-06-01',
+      returnDate: '2026-06-08',
+      borrowStatus: 'RETURNED',
+    });
+  });
+
+  // @spec FR-FE09-019, AC-FE09-017
+  test('own-fines endpoint is reserved for the single Member role', async () => {
+    const { app } = makeApp({ fines: [unpaidFine()] });
+
+    await request(app).get('/api/fines/me').expect(401);
+
+    const librarian = await request(app)
+      .get('/api/fines/me')
+      .set(...auth(99, 'LIBRARIAN'));
+    expect(librarian.status).toBe(403);
+    expect(librarian.body.error.code).toBe('ROLE_REQUIRED');
+
+    const admin = await request(app)
+      .get('/api/fines/me')
+      .set(...auth(98, 'ADMIN'));
+    expect(admin.status).toBe(403);
+    expect(admin.body.error.code).toBe('ROLE_REQUIRED');
   });
 
   // @spec AC-FE09-002 AC-FE09-011
