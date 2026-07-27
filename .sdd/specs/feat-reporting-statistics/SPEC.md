@@ -1,12 +1,12 @@
 # SPEC.md - FE12 Reporting & Statistics
 
-# Version: 0.1.9
+# Version: 0.2.0
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: READY FOR REVIEW - QUERY ALLOWLIST 2026-07-27
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE12
 
@@ -23,6 +23,12 @@
 > Revision v0.1.9 records the existing parameterized SQL `LIKE` behavior for
 > report search and requires in-memory test repositories to preserve that
 > behavior instead of treating wildcard characters as literals.
+>
+> Revision v0.2.0 makes each endpoint's query allowlist an enforced boundary:
+> any unknown key returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before
+> report service or repository execution.
+> This written revision does not claim implementation until its PLAN/TASKS,
+> RED-GREEN evidence, and acceptance gates are completed.
 
 ---
 
@@ -76,7 +82,7 @@ The feature can only start when:
 - PRE-FE12-001: Actor is authenticated.
 - PRE-FE12-002: Actor has a role allowed to view the requested report.
 - PRE-FE12-003: Report source tables exist and status definitions are approved.
-- PRE-FE12-004: Every supplied report filter is one of the exact query fields in Section 11 and satisfies the validation rules in Sections 6 and 10.3.
+- PRE-FE12-004: Every supplied report query key is in the exact endpoint allowlist in Section 11 and every value satisfies the validation rules in Sections 6 and 10.2.
 - PRE-FE12-005: The report is read-only and does not update source data.
 
 ---
@@ -86,8 +92,8 @@ The feature can only start when:
 ### MF-FE12-001: View Borrowing Report
 
 1. Librarian/admin opens borrowing report.
-2. Actor selects zero or more approved filters: `fromDate`, `toDate`, `status`, `bookId`, or `userId`.
-3. The system validates filters.
+2. Actor selects zero or more approved filters: `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, or `limit`.
+3. The system rejects unknown query keys, then validates approved filter values before report execution.
 4. The system reads `BorrowRequests`, `BorrowDetails`, `BookCopies`, `Books`, and related member data.
 5. The system calculates approved borrowing metrics.
 6. The system displays the report without changing borrowing data.
@@ -95,8 +101,8 @@ The feature can only start when:
 ### MF-FE12-002: View Inventory Report
 
 1. Librarian/admin opens inventory report.
-2. Actor selects zero or more approved filters: `categoryId`, `bookId`, `status`, or `location`.
-3. The system validates filters.
+2. Actor selects zero or more approved filters: `q`, `categoryId`, `bookId`, `status`, `location`, `page`, or `limit`.
+3. The system rejects unknown query keys, then validates approved filter values before report execution.
 4. The system reads `Books`, `BookCopies`, categories, authors, and publishers.
 5. The system calculates approved inventory metrics.
 6. The system displays inventory counts and status summaries.
@@ -104,8 +110,8 @@ The feature can only start when:
 ### MF-FE12-003: View User Statistics
 
 1. Librarian/admin opens user statistics.
-2. Actor selects zero or more approved filters: `roleId`, `status`, `membershipStatus`, `fromDate`, or `toDate`.
-3. The system validates filters.
+2. Actor selects zero or more approved filters: `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, or `limit`.
+3. The system rejects unknown query keys, then validates approved filter values before report execution.
 4. The system reads `Users`, `UserRoles`, `Roles`, and `Members`; runtime membership status and approval date come from `Members`.
 5. The system calculates approved user/member metrics.
 6. The system displays aggregate statistics without exposing unnecessary personal details.
@@ -122,9 +128,9 @@ The feature can only start when:
 
 ### AF-FE12-002: Invalid Filter
 
-1. Actor submits invalid date range, status, role, or ID filter.
-2. The system rejects malformed values, unsupported enum values, and invalid date ranges with a validation error. A well-formed positive ID that has no matching source record follows AF-FE12-003 instead.
-3. The report is not generated.
+1. Actor submits an unknown query key or an invalid date range, status, role, ID, search, or pagination value.
+2. The system rejects an unknown key with safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER`; malformed values, unsupported enum values, and invalid ranges receive the existing safe validation response. A well-formed positive ID that has no matching source record follows AF-FE12-003 instead.
+3. The report service and repository are not executed.
 
 ### AF-FE12-003: No Data For Report
 
@@ -151,7 +157,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE12-005: Inventory reports must use FE06/BookCopies status as source of truth.
 - BR-FE12-006: User statistics must use FE11/Users/Roles data as source of truth.
 - BR-FE12-007: Membership statistics, if shown, must use FE04 membership data as source of truth.
-- BR-FE12-008: Report filter syntax, enum membership, dates, and pagination must be validated before query execution; a well-formed positive filter ID that does not match a source record is valid and yields an empty report.
+- BR-FE12-008: FE12 must enforce the exact endpoint query allowlists before report service or repository execution. Borrowing accepts only `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, `limit`; inventory accepts only `q`, `categoryId`, `bookId`, `status`, `location`, `page`, `limit`; users accepts only `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, `limit`. Any other key returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` without echoing its value. Approved-key syntax, enum membership, dates, search, IDs, and pagination must then be validated before query execution; a well-formed positive filter ID that does not match a source record is valid and yields an empty report.
 - BR-FE12-009: Date range filters must use valid `YYYY-MM-DD` values with start <= end. For user statistics, the date range limits only `newMembersByPeriod` by non-null `Members.ApprovedAt`; a historical approval remains counted even if the current membership/account status later becomes inactive, while total/status/role counts remain global subject to non-date filters.
 - BR-FE12-010: Reports must use approved status definitions from source features; an unrecognized persisted source status must be grouped as `UNKNOWN` and remain included in reproducible totals.
 - BR-FE12-011: User statistics must not expose unnecessary personal data.
@@ -169,7 +175,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE12-002: When an authorized actor views inventory report, the system shall return the exact inventory metrics and row fields defined in Section 10.3 and identify low-stock books with two or fewer effective available copies.
 - FR-FE12-003: When an authorized actor views user statistics, the system shall return the exact user/member metrics and row fields defined in Section 10.3, with date filters applied to approval-period growth only.
 - FR-FE12-004: If an actor is unauthorized, then the system shall deny report access.
-- FR-FE12-005: If report filter syntax, enum membership, date range, page, or limit is invalid, then the system shall reject the request before report query execution.
+- FR-FE12-005: If a report request contains a query key outside the selected endpoint's allowlist, the system shall return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service or repository execution. If an approved key has invalid syntax, enum membership, date range, search length, ID, page, or limit, the system shall return the existing safe validation error before report query execution.
 - FR-FE12-006: If valid filters match no data, including a well-formed unknown source ID, then the system shall return zero aggregates and empty detailed rows.
 - FR-FE12-007: When reports are generated, the system shall not update source data.
 - FR-FE12-008: When user statistics are generated, the system shall return aggregate data by default rather than raw personal details.
@@ -185,7 +191,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE12-002: Given a Librarian or Admin, when viewing inventory report, then copy counts by status and book/category are displayed according to filters, and books with 0-2 available copies appear in the low-stock list. Status/location filters select matching books and filtered copy totals without hiding those books' full availability from low-stock calculation.
 - AC-FE12-003: Given a Librarian or Admin, when viewing user statistics with a date range, then total/status/role counts remain global and `newMembersByPeriod` includes only approvals in that range.
 - AC-FE12-004: Given a guest or member, when requesting staff reports, then access is denied.
-- AC-FE12-005: Given malformed/unsupported report filters or invalid pagination/date range, when submitted, then the system returns a validation error before querying.
+- AC-FE12-005: Given any of the three report endpoints receives `?bogus=1` or another unknown query key, when submitted, then the system returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` and neither report service nor repository executes. Given an approved key with a malformed/unsupported value or invalid pagination/date range, the existing safe validation error is returned before querying.
 - AC-FE12-006: Given valid filters with no matching data or a well-formed unknown ID, when the report is generated, then the system returns zero aggregates and empty rows.
 - AC-FE12-007: Given a report request, when the report completes, then no source business records are modified.
 - AC-FE12-008: Given user statistics, when results are returned, then unnecessary personal profile details are not exposed.
@@ -209,6 +215,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE12-008 | Report query timeout | Return safe error and log safely. |
 | EC-FE12-009 | Large valid date range | Return aggregate metrics and paginate detailed rows using the approved defaults/bounds; do not substitute a warning-only response. |
 | EC-FE12-010 | Missing optional source field | Use safe fallback in report display. |
+| EC-FE12-011 | Request contains one or more query keys outside the selected endpoint allowlist | Return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution; the error may identify the key but must not echo its value. |
 
 ---
 
@@ -236,10 +243,12 @@ Use these stable IDs for tasks and tests.
 | fromDate | date | No | Exact `YYYY-MM-DD`; must be <= `toDate` when both provided. For user statistics, applies to `Members.ApprovedAt` growth only. |
 | toDate | date | No | Exact `YYYY-MM-DD`; must be >= `fromDate` when both provided and includes the full selected day. For user statistics, applies to `Members.ApprovedAt` growth only. |
 | status | string | No | Must be an approved status for selected report type. |
+| membershipStatus | string | No | Used only for user statistics and must be an approved FE04 membership status. |
 | categoryId | integer | No | Used for inventory report. |
 | bookId | integer | No | Used for borrowing/inventory report. |
 | userId | integer | No | Staff-only filter when approved. |
 | roleId | integer | No | Used for user statistics. |
+| location | string | No | Used only for inventory report; validated under the approved inventory filter contract. |
 | page | integer | No | Defaults to 1; must be an integer at least 1 for detailed rows. |
 | limit | integer | No | Defaults to 20; must be an integer from 1 through 100. |
 | q | string | No | Trimmed free-text search, maximum 200 characters, using the report-specific fields in BR-FE12-016. |
@@ -270,6 +279,12 @@ Date filters for the borrowing report apply to `BorrowDate`; date filters for us
 | GET | `/api/reports/inventory` | Librarian/Admin | Query: `q?, categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` from Section 10.3 | Stable row order: `Title ASC, BookId ASC, CopyId ASC`. |
 | GET | `/api/reports/users` | Librarian/Admin | Query: `q?, roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` from Section 10.3 | Stable row order: `UserId ASC`; no raw personal profile details. |
 
+The query fields shown for each endpoint are an exact allowlist, not examples.
+Before any report service or repository call, an unknown key returns
+`400 { error: { code: "UNSUPPORTED_REPORT_QUERY_PARAMETER", message: "Unsupported report query parameter." } }`.
+The safe error may identify the unsupported key in structured validation
+details but must not echo its value.
+
 ---
 
 ## 12. Non-functional Requirements
@@ -279,7 +294,7 @@ Date filters for the borrowing report apply to `BorrowDate`; date filters for us
 - NFR-FE12-SEC-001: Report endpoints must require authentication.
 - NFR-FE12-SEC-002: Report endpoints must enforce role-based access on the server.
 - NFR-FE12-SEC-003: User statistics must avoid unnecessary personal data exposure.
-- NFR-FE12-SEC-004: Report filters must be validated to prevent injection and excessive queries.
+- NFR-FE12-SEC-004: Report query key names must match the exact endpoint allowlist and approved values must be validated before service/repository execution to prevent unreviewed behavior, injection, and excessive queries. SQL values remain parameterized.
 
 ### 12.2 Read-only Integrity
 
@@ -346,6 +361,7 @@ This feature does not include:
 | Q-FE12-008 | Unknown persisted source statuses are grouped as `UNKNOWN` and retained in totals. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE12-009 | Detailed rows use deterministic pagination and report-specific stable ordering; large valid date ranges do not return warning-only alternatives. | Spec normalization 2026-07-17 | APPROVED |
 | Q-FE12-010 | Report responses use the exact metrics and row fields in Section 10.3; top borrowed books is limited to 10 with deterministic tie-breaking. | Report contract normalization 2026-07-17 | APPROVED |
+| Q-FE12-011 | How are unknown report query keys handled? | Nhat, 2026-07-27 | APPROVED: reject with safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service/repository execution; endpoint allowlists are exact. |
 
 ---
 
@@ -360,7 +376,7 @@ This feature does not include:
 | BR-FE12-005 | UC59 | FT60 | Ready for review |
 | BR-FE12-006 | UC60 | FT61 | Ready for review |
 | BR-FE12-007 | UC60 | FT61 | Ready for review |
-| BR-FE12-008 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| BR-FE12-008 | UC58, UC59, UC60 | Planned route boundary matrix: exact allowlists pass and unknown keys never reach service/repository | Written revision ready for review |
 | BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | BR-FE12-011 | UC60 | FT61 | Ready for review |
@@ -373,7 +389,7 @@ This feature does not include:
 | FR-FE12-002 | UC59 | FT60 | Ready for review |
 | FR-FE12-003 | UC60 | FT61 | Ready for review |
 | FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| FR-FE12-005 | UC58, UC59, UC60 | Planned route boundary matrix for `UNSUPPORTED_REPORT_QUERY_PARAMETER` plus existing value validation | Written revision ready for review |
 | FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | FR-FE12-008 | UC60 | FT61 | Ready for review |
@@ -384,7 +400,7 @@ This feature does not include:
 | AC-FE12-002 | UC59 | FT60 | Ready for review |
 | AC-FE12-003 | UC60 | FT61 | Ready for review |
 | AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| AC-FE12-005 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
+| AC-FE12-005 | UC58, UC59, UC60 | Planned regression: `?bogus=1` returns safe 400 on all endpoints with zero service/repository calls | Written revision ready for review |
 | AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
 | AC-FE12-008 | UC60 | FT61 | Ready for review |
@@ -420,3 +436,10 @@ Phase 1 approval checklist (completed on 2026-06-10):
 
 - Search and filter controls on all three FE12 pages use the canonical report query contracts and render only the returned `metrics`, `rows`, and `totalRows`; demo/chart fallback data is forbidden.
 - Report pages use compact bottom spacing so the scrollable content does not end with an oversized blank region.
+
+### Revision v0.2.0 Query-Allowlist Gate
+
+- [x] Define an exact query allowlist for each report endpoint.
+- [x] Define safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution.
+- [x] Preserve approved value validation, unknown-ID empty reports, parameterized SQL, and read-only behavior.
+- [ ] Human-review and approve the written v0.2.0 SPEC before PLAN/TASKS or implementation.

@@ -1,5 +1,20 @@
 # CHANGELOG.md - FE12 Reporting & Statistics
 
+## 2026-07-27 - Specify exact report query allowlists (v0.2.0)
+
+- Defined exact query-key allowlists separately for borrowing, inventory, and
+  user-statistics endpoints.
+- Required unknown keys to return safe
+  `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service or repository
+  execution.
+- Preserved existing validation for approved values, well-formed unknown-ID
+  empty reports, parameterized SQL, stable pagination/order, and read-only
+  behavior.
+- Added the previously implicit `membershipStatus` and `location` query fields
+  to the data-field contract.
+- Marked the written revision ready for human SPEC review; no code or tests are
+  claimed by this entry.
+
 ## 2026-07-23 - Move detail pagination into SQL snapshots
 
 - Materialized each filtered report source once per request, calculated totals and grouped metrics in SQL, and returned stable detail pages with `OFFSET/FETCH`.

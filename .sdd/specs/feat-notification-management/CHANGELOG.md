@@ -1,5 +1,17 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-27 - Specify fail-closed stored template validation (v0.4.4)
+
+- Required raw HTML tag syntax, inline event-handler attributes, and
+  `javascript:` URLs in a stored template title/body to be rejected before
+  rendering, notification/attempt persistence, or provider delivery.
+- Kept runtime template values escaped/sanitized and preserved the existing
+  recursive secret-like key rejection and `safePayload` redaction rules.
+- Reconciled the previous ambiguity between EC-FE10-010 rejection and
+  NFR-FE10-SEC-005 sanitization wording.
+- Marked the written revision ready for human SPEC review; no code or tests are
+  claimed by this entry.
+
 ## 2026-07-23 - Make queued delivery ownership and claiming deterministic
 
 - Enforced canonical feature ownership for all queued notification types and required idempotency keys at every in-process source boundary.

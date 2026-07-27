@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Specify renewal authorization and authoritative return data (v0.7.5)
+
+- Made `LIBRARIAN`/`ADMIN` cross-member renewal permission take precedence for
+  multi-role actors while preserving member-only ownership and loan-owner
+  eligibility checks.
+- Required `fineCandidate` and return audit metadata to use the due date and
+  return values locked by the authoritative return transaction.
+- Required renewal eligibility and due-date extension to use shared
+  `Asia/Ho_Chi_Minh` business-date helpers without host-local `Date` arithmetic.
+- Corrected the stale FE04 edge-case wording: lack of FE04 approval selects the
+  three-copy daily tier and is not itself a borrowing rejection.
+- Marked the written revision ready for human SPEC review; no code or tests are
+  claimed by this entry.
+
 ## 2026-07-23 - Reconcile approval and return transaction invariants
 
 - Revalidated the request owner's current `MEMBER` role and FE04-derived 3/5 daily tier inside the approval transaction.
