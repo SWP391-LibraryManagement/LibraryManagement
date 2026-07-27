@@ -90,8 +90,9 @@ if ($null -eq $response.ExitCode -or [int]$response.ExitCode -ne 0) {
     -Secrets @([string]$profile.userName, [string]$profile.userPWD)
   $exitCode = if ($null -eq $response.ExitCode) { 'missing' } else { [string]$response.ExitCode }
 
-  throw "The reviewed metadata migration command failed inside App Service "
+  $failureMessage = 'The reviewed metadata migration command failed inside App Service ' `
     + "(exit code: $exitCode).`n$safeDiagnostic"
+  throw $failureMessage
 }
 
 Write-Output 'The reviewed library metadata migration completed inside App Service.'

@@ -44,6 +44,10 @@ test('runs the bounded command in the deployed Linux App Service directory witho
   assert.match(operatorScript, /\/api\/command/);
   assert.match(operatorScript, /Protect-CommandDiagnostic/);
   assert.match(operatorScript, /\[REDACTED\]/);
+  assert.match(
+    operatorScript,
+    /\$failureMessage = 'The reviewed metadata migration command failed inside App Service '[\s\S]*?throw \$failureMessage/
+  );
   assert.doesNotMatch(operatorScript, /Write-(Host|Output).*credential/i);
 });
 
