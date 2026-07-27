@@ -111,9 +111,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 - [x] **FE01-T012 - Restrict HomePage availability presentation by role.**
   - Maps to: BR-FE01-016, FR-FE01-008/009/010/018, AC-FE01-005/009/018, NFR-FE01-UX-002.
   - Files: `frontend/src/page/HomePage.jsx`, `frontend/test/publicBrowseFrontend.test.js`, `.sdd/specs/feat-public-browse/SPEC.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md`.
-  - GREEN: hide availability badges, unavailable notices, and revealing action labels from Guest/Member across HomePage list/search/panel/modal; preserve Librarian/Admin high-level status and internal latest-state routing.
+  - GREEN: hide availability badges from Guest/Member; keep Guest continuation generic, expose explicit FE07 borrow or FE08 reservation labels to Member, and preserve Librarian/Admin high-level status plus management actions across list/search/panel/modal.
   - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
-  - DoD: no Guest/Member HomePage presentation reveals availability while staff precedence and Member borrow/reservation routing remain unchanged.
+  - DoD: Guest does not infer availability; Member can identify and enter the correct borrow/reservation workflow; staff precedence and FE05/FE06 routing remain unchanged.
 
 - [x] **FE01-T013 - Synchronize the Homepage specification set and current evidence.**
   - Maps to: FR-FE01-015 through FR-FE01-018, AC-FE01-015 through AC-FE01-018, NFR-FE01-UX-002 through NFR-FE01-UX-005.

@@ -191,8 +191,12 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE08-018/020/021/027 | FE08-T028, FE08-T029 |
 | AC-FE08-013 | FE08-T028, FE08-T032 |
 | FR-FE08-029 | FE08-T035, FE08-T036, FE08-T037, FE08-T038, FE08-T039 |
+| FR-FE08-030 | FE08-T041 |
+| FR-FE08-031 | FE08-T042 |
 | AC-FE08-015 | FE08-T035, FE08-T036, FE08-T037, FE08-T038 |
 | AC-FE08-016 | FE08-T035, FE08-T037, FE08-T038 |
+| AC-FE08-017 | FE08-T041 |
+| AC-FE08-018 | FE08-T042 |
 | NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
 | NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
@@ -215,3 +219,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Replace member-any-role guards on candidate/create/own-list/cancel routes with the shared non-staff-member guard.
   - Redirect mixed Member/staff accounts away from frontend member routes while preserving staff list/queue operations.
   - Verify mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` backend/frontend cases.
+
+- [x] **FE08-T042 - Connect FE01 selected-book reservation handoff.**
+  - Maps to: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
+  - Read the FE01 `bookId` deep link, resolve its public title, and initialize the protected FE08 candidate search.
+  - Keep candidate `copyId` selection and `POST /api/reservations` authoritative inside FE08; do not widen FE01 public data.
+  - Verify focused FE01 action labels/routes and FE08 selected-book candidate initialization.

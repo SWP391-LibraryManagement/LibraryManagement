@@ -232,6 +232,10 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /DEMO_MY_RESERVATIONS|RS-DEMO|Backend chưa nhận yêu cầu/);
   assert.doesNotMatch(mine, /DEMO_RESERVABLE|useMemo/);
   assert.match(mine, /reservationApi\.listCandidates/);
+  assert.match(mine, /searchParams\.get\('bookId'\)/);
+  assert.match(mine, /publicBrowseApi\.detail\(requestedBookId\)/);
+  assert.match(mine, /setSearch\(selectedTitle\)/);
+  assert.match(mine, /@spec FR-FE08-031/);
   assert.match(mine, /candidate\.copyId/);
   assert.match(mine, /activeReservedCopyIds/);
   assert.match(mine, /isOpenMemberReservationStatus/);

@@ -24,7 +24,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
 - Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
 - FE11 Admin/Librarian accounts use staff book actions and never enter Member-only borrow/reservation routes.
-- Guest/Member HomePage presentations omit availability badges, unavailable notices, and revealing action labels.
+- Guest/Member HomePage presentations omit availability badges; Guest sees a generic login continuation, while Member sees explicit FE07 borrow or FE08 reservation actions.
 - Librarian/Admin HomePage presentations retain the approved high-level status.
 - Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.
 - Every Homepage destination is registered by `App.jsx`; protected routes retain their owning guards.
@@ -48,7 +48,8 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Guest searches with empty, valid, invalid, and no-result criteria.
 - Guest opens an active book detail and sees public-safe metadata without ISBN or an availability label.
 - Guest opens a missing or inactive detail and sees a safe not-found state.
-- Guest and Member see safe null/no-cover fallbacks without availability disclosure.
+- Guest and Member see safe null/no-cover fallbacks without an availability badge; Member actions still identify the correct owning workflow.
+- Member selects an available book and reaches `/borrowing/new?bookId=...`; an unavailable book reaches `/reservations/mine?bookId=...`.
 - Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.
 - Guest opens `/home`; authenticated actors open the public library at `/homepage`.
 - No actor sees the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` header groups on desktop or mobile; branding, account actions, and role continuation controls remain usable.

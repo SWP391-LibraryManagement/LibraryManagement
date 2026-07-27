@@ -5,8 +5,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Bookmark, BookOpen, Search, X, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
-import { reservationApi } from '../../api/libraryFeatureApi';
+import { publicBrowseApi, reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
@@ -23,6 +24,8 @@ const EMPTY_CANDIDATE_PAGINATION = {
 };
 
 export default function MyReservationsPage() {
+  const [searchParams] = useSearchParams();
+  const requestedBookId = Number(searchParams.get('bookId'));
   const [reservations, setReservations] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [candidatePagination, setCandidatePagination] = useState(EMPTY_CANDIDATE_PAGINATION);
@@ -91,6 +94,25 @@ export default function MyReservationsPage() {
     const timer = window.setTimeout(() => { loadReservations(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // @spec FR-FE08-031
+  useEffect(() => {
+    if (!Number.isInteger(requestedBookId) || requestedBookId <= 0) return undefined;
+
+    let active = true;
+    publicBrowseApi.detail(requestedBookId)
+      .then((data) => {
+        const selectedTitle = data?.book?.title?.trim();
+        if (active && selectedTitle) setSearch(selectedTitle);
+      })
+      .catch(() => {
+        if (active) {
+          setCandidateError('Không thể xác định sách đã chọn. Bạn vẫn có thể tìm sách để đặt chỗ.');
+        }
+      });
+
+    return () => { active = false; };
+  }, [requestedBookId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { loadCandidates(search, 1); }, 250);

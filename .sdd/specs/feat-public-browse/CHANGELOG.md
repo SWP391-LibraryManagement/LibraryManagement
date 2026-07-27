@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Explicit Member book actions
+
+- Replaced the ambiguous Member `Tiếp tục` label with `Mượn sách này` for available books and `Đặt chỗ sách này` for unavailable books in search cards, information panel, and detail modal.
+- Preserved hidden availability badges for Guest/Member; Guest uses a generic login continuation, while Librarian/Admin retain FE05/FE06 status and management actions.
+- Kept selected `bookId` deep links connected to FE07 borrowing and FE08 reservation candidate selection.
+
 ## 2026-07-27 - Membership benefit card alignment
 
 - Removed the permanent vertical stagger from even membership cards so both columns share the same row baselines.

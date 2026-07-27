@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - FE01 selected-book handoff
+
+- Connected the FE01 Member `Đặt chỗ sách này` deep link to FE08 through `bookId`.
+- FE08 resolves the public book title and initializes its protected candidate search while keeping physical `copyId` selection and reservation mutation inside FE08.
+- Added frontend regression coverage without widening the public DTO or exposing copy metadata on HomePage.
+
 ## 2026-07-27 - Enforce non-staff member self-service
 
 - Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use reservation self-service.

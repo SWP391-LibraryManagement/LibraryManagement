@@ -1,6 +1,6 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.4
+# Version: 0.5.5
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -223,6 +223,7 @@ The feature can only start when:
 - FR-FE08-028: WHEN a `NOTIFIED` reservation becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, the system shall preserve its original `NotifiedAt` and `ExpiresAt`; cancellation shall additionally set `CancelledAt`, while non-cancelled states keep `CancelledAt = null`.
 - FR-FE08-029: WHEN an authenticated member requests `GET /api/reservations/candidates`, the system shall return a paginated, server-owned catalog of active-book physical copies whose status is `BORROWED` or `RESERVED`, expose only the approved safe projection, and leave `POST /api/reservations { copyId }` authoritative for all mutation-time checks.
 - FR-FE08-030: IF an authenticated account has `LIBRARIAN` or `ADMIN`, including together with `MEMBER`, the system shall reject reservation candidate, create, own-list, and owner-cancel access with `403 ROLE_REQUIRED`; staff queue/list/process routes remain available according to their existing role guards.
+- FR-FE08-031: WHEN a single-role `MEMBER` enters `/reservations/mine?bookId={bookId}` from FE01, the frontend shall resolve that public book, initialize the protected FE08 candidate search with its title, and present matching unavailable physical-copy candidates without exposing copy identifiers through FE01.
 
 ---
 
@@ -245,6 +246,7 @@ The feature can only start when:
 - AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount`, and the member-scoped boolean `hasActiveReservation`; barcode, location, owner, email, timestamps, and version are absent.
 - AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
 - AC-FE08-017: Given `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member reservation candidates, create, own-list, or cancel, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without mutating reservation state.
+- AC-FE08-018: Given a Member selects `Đặt chỗ sách này` on HomePage, when the FE08 page opens with a valid `bookId`, then its candidate catalog is filtered to the selected public book title and the Member chooses an authoritative candidate `copyId` before creating the reservation.
 
 ---
 
@@ -506,6 +508,8 @@ This feature does not include:
 | FR-FE08-027 | UC38 | FE08-T028 pagination validation test | Automated pass; human review pending |
 | FR-FE08-028 | UC37, UC39, UC40 | FE08-T030 terminal timestamp-retention tests | Automated pass; human review pending |
 | FR-FE08-029 | UC36 | FE08-T035 route/service/redaction tests; FE08-T036 SQL projection tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
+| FR-FE08-030 | UC36-UC38 | FE08-T041 backend/frontend single-role access tests | Automated pass; human review pending |
+| FR-FE08-031 | UC36 | FE08-T042 FE01 selected-book handoff frontend test | Automated pass; human review pending |
 | AC-FE08-001 | UC36 | FT37 eligible unavailable-copy reservation test | Ready for review |
 | AC-FE08-002 | UC36 | FT37 duplicate open reservation rejection, including `NOTIFIED` | Automated pass; human review pending |
 | AC-FE08-003 | UC36 | FT37 available-copy reservation rejection test | Ready for review |
@@ -522,6 +526,8 @@ This feature does not include:
 | AC-FE08-014 | UC37, UC39, UC40 | FE08-T030 fulfilled/expired/cancelled timestamp-retention cases | Automated pass; human review pending |
 | AC-FE08-015 | UC36 | FE08-T035 safe-key route tests; FE08-T036 SQL redaction tests | Automated pass; design approved; human walkthrough/H3 pending |
 | AC-FE08-016 | UC36 | FE08-T037 frontend source/API tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
+| AC-FE08-017 | UC36-UC38 | FE08-T041 mixed-role denial tests | Automated pass; human review pending |
+| AC-FE08-018 | UC36 | FE08-T042 selected-book candidate initialization test | Automated pass; human review pending |
 | NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Automated pass; design approved; human walkthrough/H3 pending |
 | NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Automated pass; design approved; human walkthrough/H3 pending |
 

@@ -44,6 +44,7 @@ Not included:
 | Hold window is 2 calendar days | Queue processing sets `ExpiresAt` to now + 2 days. |
 | Queue processing is manual in Phase 1 | Staff triggers `/api/reservations/process-queue`. |
 | Member candidate source is FE08 protected API | `GET /api/reservations/candidates` returns one redacted row per active-book `BORROWED`/`RESERVED` copy; FE01 and FE06 contracts remain unchanged. |
+| FE01 selected-book handoff remains copy-safe | `/reservations/mine?bookId=...` resolves the public title and initializes FE08 candidate search; the Member still selects an authoritative protected `copyId` before mutation. |
 
 ---
 

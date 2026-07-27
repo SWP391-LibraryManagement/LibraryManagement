@@ -140,7 +140,7 @@ These are not blockers for drafting, but they must be resolved before implementa
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | HomePage availability labels are staff-only. Guest/Member do not see availability badges or revealing action labels; Librarian/Admin may see the high-level state. The canonical response retains availability for workflow routing without exact copy counts. | User correction 2026-07-25, superseding the 2026-06-10 presentation decision | APPROVED |
+| Q-FE01-002 | Availability badges are staff-only. Guest uses a generic login continuation; Member sees the explicit FE07 borrow or FE08 reservation action selected from current availability; Librarian/Admin sees high-level status and management actions. No exact copy count is exposed. | Product-owner correction 2026-07-27, superseding the 2026-07-25 action-label decision | APPROVED |
 | Q-FE01-003 | Phase 1 public q matches title or author; approved ID filters and pagination remain required. | Review packet 2026-06-10; product-owner clarification 2026-07-27 | APPROVED |
 | Q-FE01-004 | ISBN is excluded from Guest/Member HomePage search, public list, and public detail; it remains visible/searchable only in authenticated Librarian/Admin FE05 management. | Product-owner correction 2026-07-27 (supersedes review packet 2026-06-10) | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |

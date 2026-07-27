@@ -1,6 +1,6 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.3.9
+# Version: 0.4.0
 
 # Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59; HOMEPAGE POLISH IMPLEMENTED LOCALLY, HUMAN ACCEPTANCE PENDING
 
@@ -197,7 +197,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-013: Public browse defaults to `page=1`, `limit=20`, and stable ordering `Title ASC, BookId ASC`; `page` must be an integer at least 1 and `limit` must be an integer from 1 through 100.
 - BR-FE01-014: Missing optional catalog metadata must not remove an otherwise public-visible book; the response returns `null` and the UI uses a safe fallback label/image.
 - BR-FE01-015: FE11 accounts hold exactly one role. Public-book actions route `MEMBER` to member-owned borrowing/reservation workflows and route `ADMIN`/`LIBRARIAN` to staff-owned management workflows.
-- BR-FE01-016: HomePage must not render `Còn sách`, `Không khả dụng`, or equivalent availability-revealing action labels to Guest or Member; Librarian/Admin may see the high-level status, and internal status may still select the correct owning route.
+- BR-FE01-016: HomePage must not render availability badges to Guest or Member. Guest receives a generic login continuation without availability disclosure; an authenticated `MEMBER` must see the explicit owning action selected from current availability (`Mượn sách này` to FE07 or `Đặt chỗ sách này` to FE08). Librarian/Admin may see the high-level status and explicit FE05/FE06 management action.
 - BR-FE01-017: The HomePage header must not render the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups on desktop or mobile.
 
 ---
@@ -221,7 +221,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-015: The public footer shall present compact responsive contact information, keep phone/email readable without avoidable desktop wrapping, and open readable, dismissible information for Privacy, Terms, and browser storage controls without navigating to an empty link.
 - FR-FE01-016: The public home header shall show library branding and account actions without the former `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups; role continuation actions shall remain connected to registered owning routes through the account's single role.
 - FR-FE01-017: The home page shall provide additional catalog-topic, library-journey, and role-aware continuation sections whose actions reuse current public filters and owning feature routes.
-- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; Librarian/Admin accounts retain the high-level status display.
+- FR-FE01-018: Guest and Member shall not see availability badges in HomePage list, search, information-panel, or detail-modal presentations. Guest shall see a generic login continuation; Member shall see `Mượn sách này` for `AVAILABLE` and `Đặt chỗ sách này` otherwise, with `bookId` passed to the owning FE07/FE08 route. Librarian/Admin accounts retain high-level status and management actions.
 
 ---
 
@@ -244,7 +244,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-015: Given a user on the public home page, when the footer is displayed, then phone, email, and address remain readable at the supported width; selecting Privacy, Terms, or Cookie opens matching information in an accessible dialog that can be closed by its controls, backdrop, or Escape key.
 - AC-FE01-016: Given a Guest, Member, Librarian, or Admin on the public home page, when the header is displayed, then none of the four removed navigation groups is rendered on desktop or mobile, while branding, account actions, and role continuation destinations remain available.
 - AC-FE01-017: Given a Guest, Member, Librarian, or Admin viewing the extended home page, when the user selects a topic or role continuation action, then the catalog is filtered or the user is routed to an existing screen valid for that audience without simulated data or success.
-- AC-FE01-018: Given the same book is viewed on HomePage by Guest, Member, Librarian, and Admin, then Guest/Member sees no availability badge or revealing action label while Librarian/Admin sees the approved high-level status.
+- AC-FE01-018: Given the same book is viewed on HomePage by each role, then Guest sees no availability badge and a generic login continuation; Member sees no badge but receives the explicit FE07 borrow or FE08 reservation action; Librarian/Admin sees the approved high-level status and staff management action.
 
 ---
 
@@ -369,7 +369,7 @@ This feature does not include:
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | HomePage availability labels are staff-only: Guest/Member do not see `Còn sách`, `Không khả dụng`, or revealing action labels; Librarian/Admin may see the high-level state. The canonical FE01 response retains `availabilityStatus` for current action routing and no exact copy count is exposed. | User correction 2026-07-25 (supersedes review packet 2026-06-10 presentation decision) | APPROVED |
+| Q-FE01-002 | Availability badges remain staff-only. Guest receives a generic login continuation; Member receives an explicit `Mượn sách này` or `Đặt chỗ sách này` action connected to FE07/FE08 using the selected `bookId`; Librarian/Admin receives the high-level state and FE05/FE06 action. No exact copy count is exposed. | Product-owner correction 2026-07-27 (supersedes the 2026-07-25 action-label decision) | APPROVED |
 | Q-FE01-003 | Phase 1 public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; `q` matches title or author name case-insensitively. | Review packet 2026-06-10; filter normalization 2026-07-17 | APPROVED |
 | Q-FE01-004 | ISBN is excluded from Guest/Member HomePage search, public list, and public detail. It remains FE05 management metadata visible/searchable only to authenticated Librarian/Admin users. | Product-owner correction 2026-07-27 (supersedes review packet 2026-06-10) | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |

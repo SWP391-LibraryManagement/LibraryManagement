@@ -153,7 +153,7 @@ const FooterPolicyDialog = ({ policy, onClose }) => {
 };
 
 // -- Book Information Panel (sidebar-style) --
-const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClose, onViewDetails, onAction }) => (
+const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, detailLoading, onClose, onViewDetails, onAction }) => (
   <div style={{
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, zIndex: 300,
     background: '#FFF', boxShadow: '-8px 0 40px rgba(78,52,46,0.12)',
@@ -243,14 +243,14 @@ const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClo
         onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
       >
-        {canViewAvailability ? action.label : 'Tiếp tục'}
+        {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
       </button>
     </div>
   </div>
 );
 
 // -- Modal chi tiết sách --
-const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, onAction }) => (
+const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, onClose, onBack, onAction }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 400,
     background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -302,7 +302,7 @@ const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, 
               onMouseEnter={e => { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; }}
             >
-              {canViewAvailability ? action.label : 'Tiếp tục'}
+              {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
             </button>
           </div>
         </div>
@@ -394,6 +394,7 @@ const HomePage = () => {
   const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
   // @spec FR-FE01-018
   const canViewAvailability = ['ADMIN', 'LIBRARIAN'].includes(primaryRole);
+  const showRoleBookAction = canViewAvailability || primaryRole === 'MEMBER';
   const roleLabel = getRoleLabel(primaryRole);
   const showMemberAccountActions = roleLabel === 'Thành viên';
   const showAdminConsoleAction = roleLabel === 'Quản trị viên';
@@ -1031,7 +1032,7 @@ const HomePage = () => {
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
                     <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
                       style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'var(--sans)', transition: 'all 0.2s' }}
-                    >{canViewAvailability ? getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label : 'Tiếp tục'}</button>
+                    >{showRoleBookAction ? getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label : 'Đăng nhập để tiếp tục'}</button>
                   </div>
                 </div>
               ))}
@@ -1379,6 +1380,7 @@ const HomePage = () => {
           book={selectedBook}
           action={selectedBookAction}
           canViewAvailability={canViewAvailability}
+          showRoleAction={showRoleBookAction}
           detailLoading={detailLoading}
           onClose={() => setSelectedBook(null)}
           onViewDetails={handleViewDetails}
@@ -1392,6 +1394,7 @@ const HomePage = () => {
           book={selectedBook}
           action={selectedBookAction}
           canViewAvailability={canViewAvailability}
+          showRoleAction={showRoleBookAction}
           onClose={() => { setSelectedBook(null); setShowDetails(false); }}
           onBack={() => setShowDetails(false)}
           onAction={() => handleBookAction(selectedBook)}
