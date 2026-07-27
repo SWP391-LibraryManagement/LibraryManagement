@@ -107,9 +107,10 @@ The response envelope must follow the approved shared API convention used by the
 5. Integrate the guest HomePage with the public API and remove FE01-owned fake mutation behavior.
 6. Complete OpenAPI, traceability, focused validation, and human review.
 7. Polish footer contacts and replace empty policy links with accessible dialogs.
-8. Connect desktop/mobile navigation groups to role-owned destinations.
+8. Connect desktop/mobile navigation groups to role-owned destinations (historical implementation, superseded by step 11).
 9. Add truthful catalog-topic, journey, role-continuation, and membership sections with motion-safe presentation.
 10. Hide availability presentation from Guest/Member while retaining Librarian/Admin status and internal Member route selection.
+11. Remove the four header navigation groups on desktop/mobile while retaining branding, account controls, and role continuation actions.
 
 ## 9. Dependencies And Sequencing
 

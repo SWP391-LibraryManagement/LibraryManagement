@@ -47,7 +47,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Guest and Member see safe null/no-cover fallbacks without availability disclosure.
 - Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.
 - Guest opens `/home`; authenticated actors open the public library at `/homepage`.
-- Each actor sees the correct `Khám phá sách`, role-aware service, `Về thư viện`, and `Hỗ trợ` navigation groups.
+- No actor sees the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` header groups on desktop or mobile; branding, account actions, and role continuation controls remain usable.
 - Footer phone, email, and address remain readable; Privacy, Terms, and Cookie dialogs open and dismiss correctly.
 
 ## 5. Current Evidence
@@ -56,7 +56,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - FE01 public browse frontend tests pass 14/14.
 - Combined focused frontend tests pass 39/39 across public browse, App Shell, and HomePage book actions.
 - The public availability SQL suite passes in the aggregate 61/61 disposable SQL Server run.
-- FE01 traceability is 18/18; frontend lint, production build, and `git diff --check` pass.
+- FE01 traceability covers the simplified header contract; frontend lint, production build, and `git diff --check` pass.
 
 ## 6. Gaps
 

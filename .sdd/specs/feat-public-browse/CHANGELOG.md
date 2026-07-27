@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Homepage header simplification
+
+- Removed the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from the desktop header and mobile header menu at the request of the product owner.
+- Preserved library branding, login/account controls, and the role-aware continuation actions elsewhere on HomePage.
+- Removed the unused dropdown/accordion state, markup, icon, animation, and styling, and updated focused regression coverage.
+
 ## 2026-07-26 - Homepage specification synchronization
 
 - Synchronized `CONTEXT.md`, `SPEC.md`, `PLAN.md`, `TASKS.md`, and `TEST_PLAN.md` with the current HomePage contract.

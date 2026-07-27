@@ -122,6 +122,13 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
   - Verify: run focused frontend tests, traceability enforcement, documentation consistency searches, and `git diff --check`.
   - DoD: active FE01 documents describe one consistent Homepage contract and distinguish merged baseline evidence, local polish evidence, and pending human acceptance.
 
+- [x] **FE01-T014 - Simplify the Homepage header navigation.**
+  - Maps to: BR-FE01-017, FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004.
+  - Files: `frontend/src/page/HomePage.jsx`, focused frontend tests, `SPEC.md`, `TASKS.md`, and `CHANGELOG.md`.
+  - GREEN: remove the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from desktop and mobile header navigation while preserving branding, account controls, and role continuation actions elsewhere on the page.
+  - Verify: run focused frontend tests, frontend lint/build, traceability enforcement, and `git diff --check`.
+  - DoD: none of the four removed groups or their unused dropdown/accordion implementation remains in the header.
+
 ## Requirement-To-Task Coverage
 
 | Requirement IDs | Planned tasks |
@@ -137,9 +144,10 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 | NFR-FE01-LOG-001/002 | FE01-T002, FE01-T004, FE01-T007 |
 | NFR-FE01-UX-001/002 | FE01-T005, FE01-T006 |
 | FR-FE01-015, AC-FE01-015, NFR-FE01-UX-003 | FE01-T009, FE01-T013 |
-| FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004 | FE01-T010, FE01-T013 |
+| FR-FE01-016, AC-FE01-016, NFR-FE01-UX-004 | FE01-T010, FE01-T013, FE01-T014 |
 | FR-FE01-017, AC-FE01-017, NFR-FE01-UX-005 | FE01-T011, FE01-T013 |
 | BR-FE01-016, FR-FE01-018, AC-FE01-018 | FE01-T012, FE01-T013 |
+| BR-FE01-017 | FE01-T014 |
 
 ### Explicit Cross-Boundary Mappings
 
@@ -160,6 +168,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 - [x] FE01-T011 local implementation and automated validation are complete; human visual acceptance remains pending.
 - [x] FE01-T012 local implementation and automated validation are complete; human role-visibility acceptance remains pending.
 - [x] FE01-T013 documentation synchronization and fresh automated evidence are complete.
+- [x] FE01-T014 Homepage header simplification is implemented with focused automated coverage.
 - [x] Focused backend, SQL, frontend, traceability, and diff checks pass.
 - [ ] FE05 owner confirms shared public catalog response compatibility.
 - [ ] FE06 owner confirms availability aggregation and no copy mutation.
