@@ -1,8 +1,8 @@
-# Reviews
+# Rà soát
 
-This folder stores review outputs for specs, plans, tasks, and generated code.
+Thư mục này lưu kết quả rà soát đặc tả, kế hoạch, nhiệm vụ và mã được tạo.
 
-Recommended naming:
+Quy tắc đặt tên được khuyến nghị:
 
 ```text
 review-{feature-name}-{yyyy-mm-dd}.md

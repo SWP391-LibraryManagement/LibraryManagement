@@ -1,14 +1,14 @@
-﻿# Spec Review Verdict - Open Questions Resolution
+﻿# Kết luận rà soát đặc tả - Giải quyết câu hỏi mở
 
-Date: 2026-06-10
-Reviewer: Claude
-Status: RECOMMENDED FOR TEAM APPROVAL
-Input packet: `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`
-Limit: This file records review recommendations only. It does not replace team approval.
+Ngày: 2026-06-10
+Người rà soát: Claude
+Trạng thái: ĐỀ XUẤT ĐỂ NHÓM PHÊ DUYỆT
+Gói đầu vào: `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`
+Giới hạn: Tệp này chỉ ghi đề xuất rà soát. Tệp này không thay thế phê duyệt của nhóm.
 
-## Executive Verdict
+## Kết luận điều hành
 
-The proposed decisions in the resolution packet are internally consistent with:
+Các quyết định đề xuất trong gói giải quyết nhất quán nội bộ với:
 
 - `.sdd/constitution.md`
 - `.sdd/shared_context.md`
@@ -16,190 +16,190 @@ The proposed decisions in the resolution packet are internally consistent with:
 - `.sdd/constraints/business.md`
 - `.sdd/constraints/safety.md`
 - `.agents/AGENTS.md`
-- Playbook principles from the SDD/ADD PDF
+- Các nguyên tắc cẩm nang từ PDF SDD/ADD
 
-Review result:
+Kết quả rà soát:
 
-- `APPROVE AS PROPOSED` for most decisions.
-- `APPROVE WITH NOTE` for decisions that are acceptable for Phase 1 but should be written carefully in the related `SPEC.md`.
-- `KEEP TEAM DECISION` for items that depend on project preference, assignment constraints, or team delivery capacity.
-
----
-
-## 1. Cross-Feature Review Verdict
-
-| ID | Review Verdict | Notes |
-| --- | --- | --- |
-| X-001 | APPROVE AS PROPOSED | Good boundary. Prevents FE01/FE05 overlap. |
-| X-002 | APPROVE AS PROPOSED | Good separation: business ownership in FE02/FE11, delivery support in FE10. |
-| X-003 | APPROVE AS PROPOSED | Clean ownership split across FE03, FE11, FE02. |
-| X-004 | APPROVE AS PROPOSED | Keeps membership workflow separate from role management. |
-| X-005 | APPROVE AS PROPOSED | Required to prevent invalid copy transitions and double-borrowing. |
-| X-006 | APPROVE AS PROPOSED | Matches shared context and keeps Phase 1 scope controlled. |
-| X-007 | APPROVE AS PROPOSED | Consistent with FE07 renewal rule already resolved. |
-| X-008 | APPROVE WITH NOTE | Write clearly whether reminder trigger is manual, scheduler, or both in each affected spec. |
-| X-009 | APPROVE AS PROPOSED | Necessary for FE12 reporting consistency. |
+- `APPROVE AS PROPOSED` cho phần lớn quyết định.
+- `APPROVE WITH NOTE` cho các quyết định có thể chấp nhận ở Giai đoạn 1 nhưng cần được viết cẩn thận trong `SPEC.md` liên quan.
+- `KEEP TEAM DECISION` cho các hạng mục phụ thuộc vào ưu tiên dự án, ràng buộc bài tập hoặc năng lực bàn giao của nhóm.
 
 ---
 
-## 2. Feature-Level Review Verdict
+## 1. Kết luận rà soát liên tính năng
 
-### FE01 Public / Browse
-
-| Question | Review Verdict | Notes |
+| ID | Kết luận rà soát | Ghi chú |
 | --- | --- | --- |
-| Q-FE01-001 | APPROVE AS PROPOSED | Public should not see inactive books. |
-| Q-FE01-002 | APPROVE AS PROPOSED | Simple availability is enough for Phase 1. |
-| Q-FE01-003 | APPROVE AS PROPOSED | Good minimum filter set. |
-| Q-FE01-004 | APPROVE WITH NOTE | Acceptable if ISBN is treated as bibliographic metadata, not sensitive data. |
-| Q-FE01-005 | APPROVE AS PROPOSED | Keeps scope small and testable. |
-
-### FE02 Authentication
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE02-001 | APPROVE AS PROPOSED | Meets baseline security without over-engineering. |
-| Q-FE02-002 | KEEP TEAM DECISION | 15m/7d is reasonable, but the team may prefer a different duration. |
-| Q-FE02-003 | APPROVE WITH NOTE | If FE10 mock email is not ready, mark verification as planned/mock, not silently dropped. |
-| Q-FE02-004 | APPROVE AS PROPOSED | Fine for Phase 1. |
-| Q-FE02-005 | APPROVE WITH NOTE | Spec should define simple measurable limit, not vague rate limiting. |
-| Q-FE02-006 | APPROVE AS PROPOSED | 15 minutes is reasonable. |
-| Q-FE02-007 | APPROVE AS PROPOSED | Good for auditability. |
-| Q-FE02-008 | APPROVE AS PROPOSED | Clear and simple. |
-| Q-FE02-009 | APPROVE AS PROPOSED | Matches current stack and common backend pattern. |
-| Q-FE02-010 | APPROVE AS PROPOSED | Good Phase 1 compromise. |
-
-### FE03 User Profile
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE03-001 | APPROVE AS PROPOSED | Consistent with profile ownership. |
-| Q-FE03-002 | APPROVE AS PROPOSED | Email change should stay with FE02 verification flow. |
-| Q-FE03-003 | APPROVE AS PROPOSED | Reduces null-profile edge cases. |
-| Q-FE03-004 | APPROVE AS PROPOSED | Correct Phase 1 scope cut. |
-| Q-FE03-005 | APPROVE WITH NOTE | Audit log detail level should stay lightweight and not expose old sensitive values unnecessarily. |
-
-### FE04 Membership Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE04-001 | APPROVE AS PROPOSED | Reasonable lifecycle behavior. |
-| Q-FE04-002 | APPROVE AS PROPOSED | Required for traceability. |
-| Q-FE04-003 | APPROVE AS PROPOSED | Good scope control. |
-| Q-FE04-004 | APPROVE AS PROPOSED | Prevents FE04/FE11 overlap. |
-| Q-FE04-005 | KEEP TEAM DECISION | Librarian+Admin is practical, but the reviewer may prefer Admin-only for stronger control. |
-| Q-FE04-006 | APPROVE WITH NOTE | Notification dependency should be non-blocking and explicit in FE04/FE10. |
-
-### FE05 Book Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE05-001 | APPROVE AS PROPOSED | Good bibliographic compromise. |
-| Q-FE05-002 | APPROVE AS PROPOSED | Realistic library rule. |
-| Q-FE05-003 | APPROVE AS PROPOSED | Good split between public and staff views. |
-| Q-FE05-004 | APPROVE AS PROPOSED | Safer than physical delete. |
-| Q-FE05-005 | KEEP TEAM DECISION | One category is simpler, but assignment/business expectation may want many-to-many. |
-| Q-FE05-006 | APPROVE AS PROPOSED | Best for Phase 1 simplicity. |
-| Q-FE05-007 | APPROVE AS PROPOSED | Protects active operational data. |
-
-### FE06 Inventory / Book Copy Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE06-001 | APPROVE AS PROPOSED | Needed shared baseline. |
-| Q-FE06-002 | APPROVE AS PROPOSED | Prevents staff bypass of borrow/reservation flows. |
-| Q-FE06-003 | APPROVE AS PROPOSED | Consistent with soft-delete strategy. |
-| Q-FE06-004 | APPROVE AS PROPOSED | Optional location is acceptable in Phase 1. |
-| Q-FE06-005 | APPROVE WITH NOTE | Fine for Phase 1, but document that condition/status split is future work. |
-| Q-FE06-006 | APPROVE AS PROPOSED | Matches audit requirement in shared rules. |
-
-### FE08 Reservation Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE08-001 | APPROVE AS PROPOSED | Matches current SQL and limits database change risk. |
-| Q-FE08-002 | APPROVE AS PROPOSED | Prevents reservation when immediate borrowing is possible. |
-| Q-FE08-003 | KEEP TEAM DECISION | `3` is reasonable, but this limit should be team-approved, not guessed. |
-| Q-FE08-004 | KEEP TEAM DECISION | `2` days is reasonable, but still a business decision. |
-| Q-FE08-005 | APPROVE AS PROPOSED | Manual queue fits Phase 1 capacity. |
-
-### FE09 Fine Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE09-001 | APPROVE AS PROPOSED | Keeps scope aligned with baseline. |
-| Q-FE09-003 | APPROVE AS PROPOSED | Simpler accounting model for Phase 1. |
-| Q-FE09-004 | APPROVE WITH NOTE | Use the simplest schema that still preserves collector and note traceability. |
-| Q-FE09-005 | KEEP TEAM DECISION | Waive/cancel power is sensitive; the team should confirm. |
-| Q-FE09-006 | APPROVE WITH NOTE | Make ownership explicit: FE09 calculates fines; FE07 triggers return event; scheduler is future work unless approved. |
-
-### FE10 Notification Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE10-001 | APPROVE AS PROPOSED | Fits project phase and avoids provider lock-in. |
-| Q-FE10-002 | APPROVE AS PROPOSED | Good out-of-scope cut. |
-| Q-FE10-003 | APPROVE WITH NOTE | If the team cannot finish all templates, classify lower-priority ones as deferred. |
-| Q-FE10-004 | APPROVE AS PROPOSED | Good for observability. |
-| Q-FE10-005 | APPROVE AS PROPOSED | Manual retry is enough for Phase 1. |
-| Q-FE10-006 | APPROVE AS PROPOSED | Important non-blocking rule. |
-| Q-FE10-007 | APPROVE AS PROPOSED | Consistent with shared context. |
-
-### FE11 User & Role Management
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE11-001 | APPROVE AS PROPOSED | Prevents accidental lockout. |
-| Q-FE11-002 | KEEP TEAM DECISION | Prevent vs warn is a policy choice; prevent is safer. |
-| Q-FE11-003 | APPROVE AS PROPOSED | Reuse FE02 password rule. |
-| Q-FE11-004 | APPROVE AS PROPOSED | Standard and safer uniqueness behavior. |
-| Q-FE11-005 | APPROVE WITH NOTE | If FE10 mock email is unavailable, keep this as planned/manual admin setup path. |
-| Q-FE11-006 | APPROVE AS PROPOSED | Good Phase 1 safety rule. |
-| Q-FE11-007 | APPROVE AS PROPOSED | Flat roles reduce complexity. |
-| Q-FE11-008 | APPROVE AS PROPOSED | Required by safety constraints. |
-| Q-FE11-009 | KEEP TEAM DECISION | Optional is acceptable, but depends on FE10 scope and delivery capacity. |
-
-### FE12 Reporting & Statistics
-
-| Question | Review Verdict | Notes |
-| --- | --- | --- |
-| Q-FE12-001 | APPROVE AS PROPOSED | Good role boundary. |
-| Q-FE12-002 | APPROVE AS PROPOSED | Good minimum borrowing metrics. |
-| Q-FE12-003 | APPROVE AS PROPOSED | Good minimum inventory metrics. |
-| Q-FE12-004 | APPROVE AS PROPOSED | Good minimum user metrics. |
-| Q-FE12-005 | APPROVE AS PROPOSED | Correct scope cut for Phase 1. |
-| Q-FE12-006 | APPROVE WITH NOTE | Audit should be simple event logging, not heavy analytics. |
+| X-001 | APPROVE AS PROPOSED | Ranh giới tốt. Ngăn chồng lấn FE01/FE05. |
+| X-002 | APPROVE AS PROPOSED | Phân tách tốt: quyền sở hữu nghiệp vụ ở FE02/FE11, hỗ trợ gửi ở FE10. |
+| X-003 | APPROVE AS PROPOSED | Phân chia quyền sở hữu rõ ràng giữa FE03, FE11, FE02. |
+| X-004 | APPROVE AS PROPOSED | Giữ quy trình thành viên tách biệt với quản lý vai trò. |
+| X-005 | APPROVE AS PROPOSED | Bắt buộc để ngăn chuyển đổi bản sao không hợp lệ và mượn trùng. |
+| X-006 | APPROVE AS PROPOSED | Khớp ngữ cảnh dùng chung và giữ phạm vi Giai đoạn 1 được kiểm soát. |
+| X-007 | APPROVE AS PROPOSED | Nhất quán với quy tắc gia hạn FE07 đã giải quyết. |
+| X-008 | APPROVE WITH NOTE | Ghi rõ kích hoạt nhắc nhở là thủ công, bộ lập lịch hay cả hai trong từng đặc tả bị ảnh hưởng. |
+| X-009 | APPROVE AS PROPOSED | Cần thiết cho tính nhất quán báo cáo FE12. |
 
 ---
 
-## 3. Remaining Team Decisions
+## 2. Kết luận rà soát cấp tính năng
 
-The following items should still be explicitly approved by the team because they are business-policy choices rather than purely technical consistency choices:
+### FE01 Công khai / Duyệt
 
-- `Q-FE02-002` session durations
-- `Q-FE04-005` approver roles for membership decisions
-- `Q-FE05-005` one category vs multiple categories per book
-- `Q-FE08-003` max active reservations per member
-- `Q-FE08-004` reservation hold duration
-- `Q-FE09-005` admin waive/cancel fine policy
-- `Q-FE11-002` prevent vs warn on deactivating users with active borrowings
-- `Q-FE11-009` user deactivation notification requirement
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE01-001 | APPROVE AS PROPOSED | Công chúng không nên thấy sách không hoạt động. |
+| Q-FE01-002 | APPROVE AS PROPOSED | Khả dụng đơn giản là đủ cho Giai đoạn 1. |
+| Q-FE01-003 | APPROVE AS PROPOSED | Tập bộ lọc tối thiểu tốt. |
+| Q-FE01-004 | APPROVE WITH NOTE | Có thể chấp nhận nếu ISBN được xem là siêu dữ liệu thư mục, không phải dữ liệu nhạy cảm. |
+| Q-FE01-005 | APPROVE AS PROPOSED | Giữ phạm vi nhỏ và có thể kiểm thử. |
 
-These do not block discussion, but they should not be silently assumed without team sign-off.
+### FE02 Xác thực
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE02-001 | APPROVE AS PROPOSED | Đáp ứng bảo mật đường cơ sở mà không thiết kế quá mức. |
+| Q-FE02-002 | KEEP TEAM DECISION | 15m/7d là hợp lý nhưng nhóm có thể muốn thời hạn khác. |
+| Q-FE02-003 | APPROVE WITH NOTE | Nếu email giả lập FE10 chưa sẵn sàng, đánh dấu xác minh là đã lập kế hoạch/giả lập, không âm thầm loại bỏ. |
+| Q-FE02-004 | APPROVE AS PROPOSED | Phù hợp cho Giai đoạn 1. |
+| Q-FE02-005 | APPROVE WITH NOTE | Đặc tả nên định nghĩa giới hạn đơn giản có thể đo, không phải giới hạn tốc độ mơ hồ. |
+| Q-FE02-006 | APPROVE AS PROPOSED | 15 phút là hợp lý. |
+| Q-FE02-007 | APPROVE AS PROPOSED | Tốt cho khả năng kiểm toán. |
+| Q-FE02-008 | APPROVE AS PROPOSED | Rõ ràng và đơn giản. |
+| Q-FE02-009 | APPROVE AS PROPOSED | Khớp ngăn xếp hiện tại và mẫu backend phổ biến. |
+| Q-FE02-010 | APPROVE AS PROPOSED | Thỏa hiệp tốt cho Giai đoạn 1. |
+
+### FE03 Hồ sơ Người dùng
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE03-001 | APPROVE AS PROPOSED | Nhất quán với quyền sở hữu hồ sơ. |
+| Q-FE03-002 | APPROVE AS PROPOSED | Thay đổi email nên thuộc luồng xác minh FE02. |
+| Q-FE03-003 | APPROVE AS PROPOSED | Giảm trường hợp biên hồ sơ rỗng. |
+| Q-FE03-004 | APPROVE AS PROPOSED | Cắt phạm vi Giai đoạn 1 đúng. |
+| Q-FE03-005 | APPROVE WITH NOTE | Mức chi tiết nhật ký kiểm toán nên nhẹ và không làm lộ giá trị nhạy cảm cũ khi không cần thiết. |
+
+### FE04 Quản lý Tư cách Thành viên
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE04-001 | APPROVE AS PROPOSED | Hành vi vòng đời hợp lý. |
+| Q-FE04-002 | APPROVE AS PROPOSED | Bắt buộc cho truy vết. |
+| Q-FE04-003 | APPROVE AS PROPOSED | Kiểm soát phạm vi tốt. |
+| Q-FE04-004 | APPROVE AS PROPOSED | Ngăn chồng lấn FE04/FE11. |
+| Q-FE04-005 | KEEP TEAM DECISION | Thủ thư+Quản trị viên là thực tế nhưng người rà soát có thể muốn chỉ Quản trị viên để kiểm soát mạnh hơn. |
+| Q-FE04-006 | APPROVE WITH NOTE | Phần phụ thuộc thông báo nên không gây chặn và rõ ràng trong FE04/FE10. |
+
+### FE05 Quản lý Sách
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE05-001 | APPROVE AS PROPOSED | Thỏa hiệp thư mục tốt. |
+| Q-FE05-002 | APPROVE AS PROPOSED | Quy tắc thư viện thực tế. |
+| Q-FE05-003 | APPROVE AS PROPOSED | Phân chia tốt giữa khung nhìn công khai và nhân viên. |
+| Q-FE05-004 | APPROVE AS PROPOSED | An toàn hơn xóa vật lý. |
+| Q-FE05-005 | KEEP TEAM DECISION | Một thể loại đơn giản hơn nhưng kỳ vọng bài tập/nghiệp vụ có thể muốn quan hệ nhiều-nhiều. |
+| Q-FE05-006 | APPROVE AS PROPOSED | Tốt nhất cho sự đơn giản của Giai đoạn 1. |
+| Q-FE05-007 | APPROVE AS PROPOSED | Bảo vệ dữ liệu vận hành đang hoạt động. |
+
+### FE06 Quản lý Kho / Bản sao Sách
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE06-001 | APPROVE AS PROPOSED | Đường cơ sở dùng chung cần thiết. |
+| Q-FE06-002 | APPROVE AS PROPOSED | Ngăn nhân viên bỏ qua luồng mượn/đặt chỗ. |
+| Q-FE06-003 | APPROVE AS PROPOSED | Nhất quán với chiến lược xóa mềm. |
+| Q-FE06-004 | APPROVE AS PROPOSED | Vị trí tùy chọn có thể chấp nhận trong Giai đoạn 1. |
+| Q-FE06-005 | APPROVE WITH NOTE | Phù hợp cho Giai đoạn 1 nhưng cần ghi rằng tách tình trạng/trạng thái là công việc tương lai. |
+| Q-FE06-006 | APPROVE AS PROPOSED | Khớp yêu cầu kiểm toán trong quy tắc dùng chung. |
+
+### FE08 Quản lý Đặt chỗ
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE08-001 | APPROVE AS PROPOSED | Khớp SQL hiện tại và giới hạn rủi ro thay đổi cơ sở dữ liệu. |
+| Q-FE08-002 | APPROVE AS PROPOSED | Ngăn đặt chỗ khi có thể mượn ngay. |
+| Q-FE08-003 | KEEP TEAM DECISION | `3` là hợp lý nhưng giới hạn này nên được nhóm phê duyệt, không phải phỏng đoán. |
+| Q-FE08-004 | KEEP TEAM DECISION | `2` ngày là hợp lý nhưng vẫn là quyết định nghiệp vụ. |
+| Q-FE08-005 | APPROVE AS PROPOSED | Hàng đợi thủ công phù hợp năng lực Giai đoạn 1. |
+
+### FE09 Quản lý Tiền phạt
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE09-001 | APPROVE AS PROPOSED | Giữ phạm vi căn chỉnh với đường cơ sở. |
+| Q-FE09-003 | APPROVE AS PROPOSED | Mô hình kế toán đơn giản hơn cho Giai đoạn 1. |
+| Q-FE09-004 | APPROVE WITH NOTE | Dùng lược đồ đơn giản nhất vẫn giữ khả năng truy vết người thu và ghi chú. |
+| Q-FE09-005 | KEEP TEAM DECISION | Quyền miễn/hủy là nhạy cảm; nhóm nên xác nhận. |
+| Q-FE09-006 | APPROVE WITH NOTE | Làm rõ quyền sở hữu: FE09 tính tiền phạt; FE07 kích hoạt sự kiện trả; bộ lập lịch là công việc tương lai trừ khi được phê duyệt. |
+
+### FE10 Quản lý Thông báo
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE10-001 | APPROVE AS PROPOSED | Phù hợp giai đoạn dự án và tránh bị khóa vào nhà cung cấp. |
+| Q-FE10-002 | APPROVE AS PROPOSED | Cắt ngoài phạm vi tốt. |
+| Q-FE10-003 | APPROVE WITH NOTE | Nếu nhóm không thể hoàn tất mọi mẫu, phân loại mẫu ưu tiên thấp hơn là hoãn. |
+| Q-FE10-004 | APPROVE AS PROPOSED | Tốt cho khả năng quan sát. |
+| Q-FE10-005 | APPROVE AS PROPOSED | Thử lại thủ công là đủ cho Giai đoạn 1. |
+| Q-FE10-006 | APPROVE AS PROPOSED | Quy tắc không gây chặn quan trọng. |
+| Q-FE10-007 | APPROVE AS PROPOSED | Nhất quán với ngữ cảnh dùng chung. |
+
+### FE11 Quản lý Người dùng và Vai trò
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE11-001 | APPROVE AS PROPOSED | Ngăn tự khóa ngoài ý muốn. |
+| Q-FE11-002 | KEEP TEAM DECISION | Ngăn hay cảnh báo là lựa chọn chính sách; ngăn an toàn hơn. |
+| Q-FE11-003 | APPROVE AS PROPOSED | Tái sử dụng quy tắc mật khẩu FE02. |
+| Q-FE11-004 | APPROVE AS PROPOSED | Hành vi duy nhất tiêu chuẩn và an toàn hơn. |
+| Q-FE11-005 | APPROVE WITH NOTE | Nếu email giả lập FE10 không khả dụng, giữ nội dung này là đường thiết lập quản trị viên đã lập kế hoạch/thủ công. |
+| Q-FE11-006 | APPROVE AS PROPOSED | Quy tắc an toàn Giai đoạn 1 tốt. |
+| Q-FE11-007 | APPROVE AS PROPOSED | Vai trò ngang hàng giảm độ phức tạp. |
+| Q-FE11-008 | APPROVE AS PROPOSED | Được ràng buộc an toàn yêu cầu. |
+| Q-FE11-009 | KEEP TEAM DECISION | Tùy chọn là có thể chấp nhận nhưng phụ thuộc phạm vi FE10 và năng lực bàn giao. |
+
+### FE12 Báo cáo và Thống kê
+
+| Câu hỏi | Kết luận rà soát | Ghi chú |
+| --- | --- | --- |
+| Q-FE12-001 | APPROVE AS PROPOSED | Ranh giới vai trò tốt. |
+| Q-FE12-002 | APPROVE AS PROPOSED | Số liệu mượn tối thiểu tốt. |
+| Q-FE12-003 | APPROVE AS PROPOSED | Số liệu kho tối thiểu tốt. |
+| Q-FE12-004 | APPROVE AS PROPOSED | Số liệu người dùng tối thiểu tốt. |
+| Q-FE12-005 | APPROVE AS PROPOSED | Cắt phạm vi Giai đoạn 1 đúng. |
+| Q-FE12-006 | APPROVE WITH NOTE | Kiểm toán nên là ghi sự kiện đơn giản, không phải phân tích nặng. |
 
 ---
 
-## 4. Reviewer Recommendation
+## 3. Các quyết định nhóm còn lại
 
-Recommended next step:
+Các hạng mục sau vẫn cần được nhóm phê duyệt rõ vì chúng là lựa chọn chính sách nghiệp vụ thay vì lựa chọn thuần túy về tính nhất quán kỹ thuật:
 
-1. Use the review verdict to pre-fill the packet outcomes.
-2. Hold a short team review meeting focused only on the items in Section 3 above.
-3. Update each affected `SPEC.md` and `CHANGELOG.md`.
-4. Change feature status to `APPROVED` only after those updates are finished.
+- `Q-FE02-002` thời hạn phiên
+- `Q-FE04-005` vai trò phê duyệt quyết định thành viên
+- `Q-FE05-005` một hay nhiều thể loại cho mỗi sách
+- `Q-FE08-003` số đặt chỗ đang hoạt động tối đa cho mỗi thành viên
+- `Q-FE08-004` thời hạn giữ đặt chỗ
+- `Q-FE09-005` chính sách quản trị viên miễn/hủy tiền phạt
+- `Q-FE11-002` ngăn hay cảnh báo khi vô hiệu hóa người dùng có khoản mượn đang hoạt động
+- `Q-FE11-009` yêu cầu thông báo vô hiệu hóa người dùng
 
-Recommended pre-fill policy:
+Các hạng mục này không chặn thảo luận nhưng không nên bị âm thầm giả định khi chưa có xác nhận của nhóm.
 
-- Mark all `APPROVE AS PROPOSED` items as `APPROVED`.
-- Mark all `APPROVE WITH NOTE` items as `APPROVED`, then copy the note into the related `SPEC.md` wording.
-- Leave all `KEEP TEAM DECISION` items as `PENDING` until team sign-off.
+---
+
+## 4. Đề xuất của người rà soát
+
+Bước tiếp theo được đề xuất:
+
+1. Dùng kết luận rà soát để điền trước kết quả trong gói.
+2. Tổ chức cuộc họp rà soát nhóm ngắn chỉ tập trung vào các mục trong Phần 3 bên trên.
+3. Cập nhật từng `SPEC.md` và `CHANGELOG.md` bị ảnh hưởng.
+4. Chỉ đổi trạng thái tính năng thành `APPROVED` sau khi hoàn tất các cập nhật đó.
+
+Chính sách điền trước được đề xuất:
+
+- Đánh dấu mọi mục `APPROVE AS PROPOSED` là `APPROVED`.
+- Đánh dấu mọi mục `APPROVE WITH NOTE` là `APPROVED`, sau đó sao chép ghi chú vào cách diễn đạt `SPEC.md` liên quan.
+- Giữ mọi mục `KEEP TEAM DECISION` ở trạng thái `PENDING` đến khi nhóm xác nhận.

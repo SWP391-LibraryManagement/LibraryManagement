@@ -1,105 +1,105 @@
-# ADR-002: Database Design
+# ADR-002: Thiết kế cơ sở dữ liệu
 
-Status: APPROVED - FE11 FINALIZATION MIGRATION ACTIVE; IMPLEMENTATION PENDING
-Date: 2026-06-10
-Last Updated: 2026-07-23
+Trạng thái: ĐÃ PHÊ DUYỆT - MIGRATION HOÀN THIỆN FE11 ĐANG HOẠT ĐỘNG; ĐANG CHỜ TRIỂN KHAI
+Ngày: 2026-06-10
+Cập nhật lần cuối: 2026-07-23
 
-## Context
+## Bối cảnh
 
-The approved database is SQL Server. The current baseline script is `database/Librarymanagement.sql`.
+Cơ sở dữ liệu đã được phê duyệt là SQL Server. Script baseline hiện tại là `database/Librarymanagement.sql`.
 
-Feature specs define the source of truth for business behavior. The SQL script is a baseline design artifact and must be reviewed against approved specs before feature implementation.
+Đặc tả tính năng là nguồn chuẩn cho hành vi nghiệp vụ. Script SQL là hiện vật thiết kế baseline và phải được rà soát đối chiếu với các đặc tả đã phê duyệt trước khi triển khai tính năng.
 
-## Decision
+## Quyết định
 
-Use SQL Server with relational tables for users, roles, books, copies, borrowing, reservations, fines, notifications, reports source data, and audit logs.
+Dùng SQL Server với các bảng quan hệ cho người dùng, vai trò, sách, bản sao, mượn, đặt chỗ, tiền phạt, thông báo, dữ liệu nguồn báo cáo và nhật ký kiểm toán.
 
-Database access in the application must use the `mssql` Node.js package with parameterized queries. Direct string interpolation in SQL is forbidden.
+Ứng dụng phải truy cập cơ sở dữ liệu bằng package Node.js `mssql` với truy vấn tham số hóa. Cấm nội suy chuỗi trực tiếp trong SQL.
 
-## Baseline Table Ownership
+## Quyền sở hữu bảng baseline
 
-| Area | Expected Tables | Owning Feature |
+| Khu vực | Bảng dự kiến | Tính năng sở hữu |
 | --- | --- | --- |
-| Users and roles | `Users`, `Roles`, `UserRoles` | FE02, FE11 |
-| Profile and membership | `UserProfiles`, `Members`, membership/application tables if present | FE03, FE04 |
-| Books | `Books`, `Categories`, `Authors`, `Publishers` if present | FE01, FE05 |
-| Inventory/copies | `BookCopies` or equivalent copy inventory table | FE06 |
-| Borrowing | `BorrowRequests`, `BorrowTransactions`, `BorrowDetails` or equivalent | FE07 |
-| Reservations | `Reservations` or equivalent queue/hold table | FE08 |
-| Fines | `Fines`, fine payment/collection records if present | FE09 |
-| Notifications | `Notifications`, `NotificationTemplates`, `NotificationAttempts` if present | FE10 |
-| Audit | `AuditLogs` | Cross-feature, especially FE02, FE05, FE07, FE09, FE11 |
-| Reporting | Read-only queries over source tables | FE12 |
+| Người dùng và vai trò | `Users`, `Roles`, `UserRoles` | FE02, FE11 |
+| Hồ sơ và tư cách thành viên | `UserProfiles`, `Members`, các bảng tư cách thành viên/đơn đăng ký nếu có | FE03, FE04 |
+| Sách | `Books`, `Categories`, `Authors`, `Publishers` nếu có | FE01, FE05 |
+| Tồn kho/bản sao | `BookCopies` hoặc bảng tồn kho bản sao tương đương | FE06 |
+| Mượn | `BorrowRequests`, `BorrowTransactions`, `BorrowDetails` hoặc tương đương | FE07 |
+| Đặt chỗ | `Reservations` hoặc bảng hàng đợi/giữ sách tương đương | FE08 |
+| Tiền phạt | `Fines`, bản ghi thanh toán/thu tiền phạt nếu có | FE09 |
+| Thông báo | `Notifications`, `NotificationTemplates`, `NotificationAttempts` nếu có | FE10 |
+| Kiểm toán | `AuditLogs` | Liên tính năng, đặc biệt FE02, FE05, FE07, FE09, FE11 |
+| Báo cáo | Truy vấn chỉ đọc trên các bảng nguồn | FE12 |
 
-## Required Schema Review Items
+## Các mục bắt buộc rà soát lược đồ
 
-Before implementation, check `database/Librarymanagement.sql` against these approved rules:
+Trước khi triển khai, kiểm tra `database/Librarymanagement.sql` theo các quy tắc đã phê duyệt sau:
 
-- Users must support active/inactive status and role assignments.
-- Password hashes must be stored, never plaintext passwords.
-- Email/username uniqueness must match FE02/FE11 approved rules.
-- Refresh/reset/setup tokens must not be stored as raw secrets if implementation stores tokens; store hashed tokens where feasible.
-- Book availability must derive from approved copy/status data, not only a loose display field.
-- Categories, authors, and publishers store a database-generated `CreatedAt` timestamp so protected catalog-management reads do not invent creation dates.
-- Categories, authors, and publishers use `ACTIVE`/`INACTIVE` status instead of physical deletion; existing book references are preserved.
-- Copy statuses must align with approved Phase 1 statuses: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`.
-- Borrowing must record member, copy/book, borrow date, due date, status, and creator.
-- Fine calculation must be traceable: overdue days, rate, amount, related borrow/copy, calculation date.
-- Notification attempts must not store raw reset tokens or sensitive links in logs.
-- Audit logs must capture actor, action, target, timestamp, and safe metadata.
-- FE07 persists `BorrowRequests.Status` as `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED`; `BorrowDetails.Status` as `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, or `DAMAGED`. `BorrowDetails.DueDate` is nullable for `REQUESTED` details and required by the approval flow before `BORROWED`. `OVERDUE` is derived for FE09/FE12 from `BORROWED` plus `DueDate < today`, so it is excluded from `CK_BorrowDetails_Status`.
+- Người dùng phải hỗ trợ trạng thái hoạt động/không hoạt động và gán vai trò.
+- Phải lưu mã băm mật khẩu, không bao giờ lưu mật khẩu văn bản thuần.
+- Tính duy nhất của email/tên người dùng phải khớp quy tắc FE02/FE11 đã phê duyệt.
+- Nếu phần triển khai lưu token, token refresh/đặt lại/thiết lập không được lưu như bí mật thô; lưu token đã băm khi khả thi.
+- Tính sẵn có của sách phải được suy ra từ dữ liệu bản sao/trạng thái đã phê duyệt, không chỉ từ một trường hiển thị rời rạc.
+- Danh mục, tác giả và nhà xuất bản lưu dấu thời gian `CreatedAt` do cơ sở dữ liệu tạo để các thao tác đọc quản lý danh mục được bảo vệ không tự tạo ngày khởi tạo.
+- Danh mục, tác giả và nhà xuất bản dùng trạng thái `ACTIVE`/`INACTIVE` thay vì xóa vật lý; giữ nguyên các tham chiếu sách hiện có.
+- Trạng thái bản sao phải khớp các trạng thái Giai đoạn 1 đã phê duyệt: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`.
+- Lượt mượn phải ghi thành viên, bản sao/sách, ngày mượn, hạn trả, trạng thái và người tạo.
+- Phép tính tiền phạt phải truy vết được: số ngày quá hạn, mức phạt, số tiền, lượt mượn/bản sao liên quan và ngày tính.
+- Lần thử thông báo không được lưu token đặt lại thô hoặc liên kết nhạy cảm trong nhật ký.
+- Nhật ký kiểm toán phải ghi tác nhân, hành động, mục tiêu, dấu thời gian và siêu dữ liệu an toàn.
+- FE07 lưu `BorrowRequests.Status` là `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED` hoặc `CANCELLED`; lưu `BorrowDetails.Status` là `REQUESTED`, `BORROWED`, `RETURNED`, `LOST` hoặc `DAMAGED`. `BorrowDetails.DueDate` có thể null với chi tiết `REQUESTED` và luồng phê duyệt bắt buộc phải đặt giá trị trước khi chuyển sang `BORROWED`. `OVERDUE` được FE09/FE12 suy ra từ `BORROWED` cùng `DueDate < today`, nên bị loại khỏi `CK_BorrowDetails_Status`.
 
-## Migration Policy
+## Chính sách migration
 
-- Do not silently change database schema.
-- Any schema change affecting behavior must update the related `SPEC.md` or ADR before implementation.
-- For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
-- CI must not connect to the database or execute schema changes. Staging deployment remains manual.
-  Migrations are normally applied by an authorized operator through an approved database
-  administration path. The sole Phase 1 startup exception is
-  `2026-07-22-library-metadata-compatibility.sql`: the backend applies this reviewed,
-  transactional, idempotent compatibility script before listening because the legacy staging
-  schema otherwise makes the Admin metadata APIs unusable. Startup verifies the postcondition and
-  fails closed; `/health/ready` remains read-only.
-- Seed data must not include real personal data, passwords, tokens, or secrets.
+- Không âm thầm thay đổi lược đồ cơ sở dữ liệu.
+- Mọi thay đổi lược đồ ảnh hưởng hành vi phải cập nhật `SPEC.md` hoặc ADR liên quan trước khi triển khai.
+- Trong Giai đoạn 1 có thể dùng script SQL thay cho framework migration, nhưng mọi bản sửa đổi lược đồ phải có thể rà soát.
+- CI không được kết nối cơ sở dữ liệu hoặc thực thi thay đổi lược đồ. Triển khai staging vẫn thực hiện thủ công.
+  Migration thường được áp dụng bởi người vận hành được ủy quyền qua đường quản trị
+  cơ sở dữ liệu đã phê duyệt. Ngoại lệ khởi động duy nhất của Giai đoạn 1 là
+  `2026-07-22-library-metadata-compatibility.sql`: backend áp dụng script tương thích có giao dịch,
+  có tính idempotent và đã được rà soát này trước khi lắng nghe, vì nếu không thì lược đồ staging
+  legacy khiến API siêu dữ liệu Quản trị viên không thể sử dụng. Khi khởi động, hệ thống xác minh hậu điều kiện và
+  đóng an toàn khi thất bại; `/health/ready` vẫn chỉ đọc.
+- Dữ liệu seed không được chứa dữ liệu cá nhân thực, mật khẩu, token hoặc bí mật.
 
-## FE11 Single-Role Account Decision
+## Quyết định tài khoản một vai trò FE11
 
-Each persisted account has exactly one `UserRoles` row. `MEMBER`, `LIBRARIAN`, and `ADMIN` are mutually exclusive login roles; role changes delete the current mapping and insert the selected mapping in one locked transaction with the audit entry. The compatibility `roles` response field remains an array but has exactly one item.
+Mỗi tài khoản được lưu có chính xác một hàng `UserRoles`. `MEMBER`, `LIBRARIAN` và `ADMIN` là các vai trò đăng nhập loại trừ lẫn nhau; thay đổi vai trò xóa ánh xạ hiện tại và chèn ánh xạ đã chọn trong một giao dịch có khóa cùng mục kiểm toán. Trường phản hồi tương thích `roles` vẫn là mảng nhưng có chính xác một phần tử.
 
-The baseline schema uses deterministic unique index `UX_UserRoles_UserId`. Existing environments use the reviewable, idempotent migration `database/migrations/2026-07-27-fe11-single-role-per-account.sql`. The migration fails safely if any user already has more than one mapping; an Admin must resolve those accounts explicitly before retrying, so deployment never guesses which privilege to retain.
+Lược đồ baseline dùng chỉ mục duy nhất mang tính xác định `UX_UserRoles_UserId`. Các môi trường hiện có dùng migration có tính idempotent, có thể rà soát `database/migrations/2026-07-27-fe11-single-role-per-account.sql`. Migration thất bại an toàn nếu người dùng nào đã có nhiều hơn một ánh xạ; Quản trị viên phải xử lý rõ các tài khoản đó trước khi thử lại để quá trình triển khai không bao giờ tự đoán quyền nào cần giữ.
 
-## FE10 Durable Delivery Claim Decision
+## Quyết định claim phân phối bền vững FE10
 
-The approved FE10 lifecycle includes `PENDING`, `PROCESSING`, `SENT`, and
-`FAILED`. `DELIVERED`, `SKIPPED`, and `CANCELLED` remain compatibility values
-without Phase 1 transitions.
+Vòng đời FE10 đã phê duyệt gồm `PENDING`, `PROCESSING`, `SENT` và
+`FAILED`. `DELIVERED`, `SKIPPED` và `CANCELLED` vẫn là các giá trị tương thích
+không có chuyển đổi trong Giai đoạn 1.
 
-- A queued worker changes one eligible row from `PENDING` to `PROCESSING` in a
-  locked transaction and commits before provider I/O.
-- A synchronous sensitive request is inserted as `PROCESSING` before provider
-  I/O, while rendered credentials remain memory-only.
-- `PROCESSING -> SENT` and `PROCESSING -> FAILED` each use a new short
-  transaction that also inserts the matching `NotificationAttempts` row.
-- If provider I/O completes but terminal persistence fails, the durable row
-  remains `PROCESSING`. It is not automatically reclaimed and cannot use the
-  manual retry endpoint because delivery may already have occurred.
+- Worker hàng đợi chuyển một hàng đủ điều kiện từ `PENDING` sang `PROCESSING` trong
+  một giao dịch có khóa và commit trước I/O của nhà cung cấp.
+- Yêu cầu nhạy cảm đồng bộ được chèn ở trạng thái `PROCESSING` trước I/O của nhà cung cấp,
+  còn thông tin xác thực đã kết xuất chỉ nằm trong bộ nhớ.
+- `PROCESSING -> SENT` và `PROCESSING -> FAILED` đều dùng một giao dịch ngắn mới,
+  đồng thời chèn hàng `NotificationAttempts` tương ứng.
+- Nếu I/O của nhà cung cấp hoàn tất nhưng lưu bền trạng thái cuối thất bại, hàng bền vững
+  vẫn ở `PROCESSING`. Hàng này không được tự động thu hồi và không thể dùng endpoint
+  thử lại thủ công vì việc phân phối có thể đã xảy ra.
 
-The canonical constraint is synchronized by the reviewable idempotent migration
-`database/migrations/2026-07-23-fe10-processing-status.sql`. Review requires
-static model/baseline/OpenAPI parity plus two successful executions on a named
-disposable local SQL Server database before Azure deployment.
+Ràng buộc chuẩn được đồng bộ bằng migration có tính idempotent, có thể rà soát
+`database/migrations/2026-07-23-fe10-processing-status.sql`. Việc rà soát yêu cầu
+tính tương đương tĩnh giữa model/baseline/OpenAPI cùng hai lần thực thi thành công trên một
+cơ sở dữ liệu SQL Server cục bộ dùng một lần có tên trước khi triển khai Azure.
 
-## FE11 Finalization Migration Decision
+## Quyết định migration hoàn thiện FE11
 
-The approved FE11 Finalization Batch activates one reviewable, idempotent SQL Server script at
-`database/migrations/2026-07-19-fe11-finalization.sql`. Product implementation has not started at
-this governance checkpoint.
+Lô hoàn thiện FE11 đã phê duyệt kích hoạt một script SQL Server có tính idempotent, có thể rà soát tại
+`database/migrations/2026-07-19-fe11-finalization.sql`. Việc triển khai sản phẩm chưa bắt đầu tại
+điểm kiểm soát quản trị này.
 
-The migration must synchronize these five existing-table columns with the baseline schema and
-application contracts:
+Migration phải đồng bộ năm cột của bảng hiện có sau với lược đồ baseline và
+hợp đồng ứng dụng:
 
-| Table | Column | Target definition |
+| Bảng | Cột | Định nghĩa mục tiêu |
 | --- | --- | --- |
 | `Users` | `Email` | `NVARCHAR(255) NOT NULL` |
 | `Users` | `DeactivatedAt` | `DATETIME NULL` |
@@ -107,45 +107,45 @@ application contracts:
 | `UserProfiles` | `Specialization` | `NVARCHAR(100) NULL` |
 | `Notifications` | `RecipientEmail` | `NVARCHAR(255) NOT NULL` |
 
-`Users.Email` uses deterministic unique index `UX_Users_Email`. Before altering it, the script must
-fail safely when any email exceeds 255 characters or when case-insensitive duplicates exist. The
-script must preserve data, use deterministic object names, contain no seed identity or credential,
-and be safe to execute twice without duplicate columns, constraints, indexes, or data mutation.
+`Users.Email` dùng chỉ mục duy nhất mang tính xác định `UX_Users_Email`. Trước khi thay đổi, script phải
+thất bại an toàn nếu email nào dài quá 255 ký tự hoặc tồn tại giá trị trùng không phân biệt hoa thường.
+Script phải giữ nguyên dữ liệu, dùng tên đối tượng mang tính xác định, không chứa danh tính seed hoặc thông tin xác thực,
+và an toàn khi thực thi hai lần mà không tạo cột, ràng buộc, chỉ mục trùng hoặc thay đổi dữ liệu.
 
-Review requires static contract checks plus two successful executions against a disposable SQL
-Server database when that environment is available. If live SQL Server is unavailable, only that
-execution evidence may remain recorded under `TD-021`; the script, baseline, models, bindings, and
-static idempotence checks remain mandatory.
+Việc rà soát yêu cầu kiểm tra hợp đồng tĩnh cùng hai lần thực thi thành công trên một cơ sở dữ liệu SQL
+Server dùng một lần khi môi trường đó sẵn có. Nếu không có SQL Server trực tiếp, chỉ bằng chứng
+thực thi này được phép còn ghi dưới `TD-021`; script, baseline, model, binding và
+kiểm tra idempotency tĩnh vẫn bắt buộc.
 
-The required disposable SQL Server evidence passed on 2026-07-19: the canonical baseline and all
-five reconciliation migrations executed successfully, the migrations passed a second execution,
-and the database/login were removed afterward. See
+Các bằng chứng SQL Server dùng một lần bắt buộc đã đạt vào 2026-07-19: baseline chuẩn và cả
+năm migration đối soát đã thực thi thành công, các migration đạt ở lần thực thi thứ hai,
+và cơ sở dữ liệu/thông tin đăng nhập đã được xóa sau đó. Xem
 `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 
-The Phase 3 Azure staging upgrade exposed one legacy-schema difference that the disposable
-canonical baseline did not: `Books.ISBN` still had the filtered unique index
-`UX_Books_ISBN_NotNull` while its width needed reconciliation. The FE05 migration therefore drops
-that named index only inside the width-change branch, alters `ISBN`, and recreates the same unique
-filtered index in the transaction. The target schema and FE05 contract are unchanged; this makes
-the approved migration safe for an existing Week 13 database as well as a canonical baseline.
+Nâng cấp staging Azure Giai đoạn 3 cho thấy một khác biệt lược đồ legacy mà baseline chuẩn
+dùng một lần không có: `Books.ISBN` vẫn có chỉ mục duy nhất có lọc
+`UX_Books_ISBN_NotNull` trong khi độ rộng cần đối soát. Vì vậy migration FE05 chỉ xóa
+chỉ mục có tên đó bên trong nhánh thay đổi độ rộng, thay đổi `ISBN` và tạo lại cùng chỉ mục duy nhất
+có lọc trong giao dịch. Lược đồ mục tiêu và hợp đồng FE05 không thay đổi; điều này giúp
+migration đã phê duyệt an toàn cho cả cơ sở dữ liệu Tuần 13 hiện có lẫn baseline chuẩn.
 
-## FE04 Membership Concurrency Migration Decision
+## Quyết định migration đồng thời tư cách thành viên FE04
 
-FE04 owns the filtered unique index
-`UX_MembershipApplications_User_Pending` on `MembershipApplications(UserId)` where
-`Status = 'PENDING'`. This preserves immutable approved/rejected history while making one pending
-application per user a database invariant rather than a service-only pre-check.
+FE04 sở hữu chỉ mục duy nhất có lọc
+`UX_MembershipApplications_User_Pending` trên `MembershipApplications(UserId)` khi
+`Status = 'PENDING'`. Điều này giữ lịch sử phê duyệt/từ chối bất biến, đồng thời biến quy tắc mỗi người dùng chỉ có một
+đơn đang chờ thành bất biến cơ sở dữ liệu thay vì bước kiểm tra trước chỉ ở service.
 
-The reviewable, idempotent migration is
-`database/migrations/2026-07-19-fe04-membership-concurrency.sql`. It must fail safely when existing
-data already contains duplicate pending rows, create no seed data, and be safe to execute twice.
-Application and review mutations must keep the canonical `Members` projection and matching audit
-entry in the same SQL transaction; final review reads use `UPDLOCK, HOLDLOCK` and updates retain a
-`Status = 'PENDING'` predicate.
+Migration có tính idempotent, có thể rà soát là
+`database/migrations/2026-07-19-fe04-membership-concurrency.sql`. Nó phải thất bại an toàn khi dữ liệu
+hiện có đã chứa các hàng đang chờ trùng lặp, không tạo dữ liệu seed và an toàn khi thực thi hai lần.
+Các thao tác thay đổi đơn và rà soát phải giữ phép chiếu `Members` chuẩn cùng mục kiểm toán tương ứng
+trong cùng giao dịch SQL; thao tác đọc để rà soát cuối dùng `UPDLOCK, HOLDLOCK` và thao tác cập nhật giữ
+điều kiện `Status = 'PENDING'`.
 
-## Configuration
+## Cấu hình
 
-Database connection values must come from environment variables, for example:
+Giá trị kết nối cơ sở dữ liệu phải lấy từ biến môi trường, ví dụ:
 
 - `DB_SERVER`
 - `DB_PORT`
@@ -155,46 +155,46 @@ Database connection values must come from environment variables, for example:
 - `DB_ENCRYPT`
 - `DB_TRUST_SERVER_CERTIFICATE`
 
-No database credentials may be committed.
+Không được commit thông tin xác thực cơ sở dữ liệu.
 
-## Consequences
+## Hệ quả
 
-- Week 4 should include a schema gap review before backend repositories are implemented.
-- Repository methods must be written around approved table/column names after schema review.
-- FE12 reporting must read from source tables and remain read-only.
+- Tuần 4 nên có đợt rà soát khoảng cách lược đồ trước khi triển khai repository backend.
+- Phương thức repository phải được viết theo tên bảng/cột đã phê duyệt sau khi rà soát lược đồ.
+- Báo cáo FE12 phải đọc từ bảng nguồn và giữ chế độ chỉ đọc.
 
-## Week 4 Smoke Test Result
+## Kết quả smoke test Tuần 4
 
-`database/Librarymanagement.sql` was revised after the Week 4 database gap review and smoke-tested on local SQL Server.
+`database/Librarymanagement.sql` đã được sửa sau đợt rà soát khoảng cách cơ sở dữ liệu Tuần 4 và được smoke test trên SQL Server cục bộ.
 
-Command:
+Lệnh:
 
 ```powershell
 sqlcmd -S localhost -E -b -i database\Librarymanagement.sql
 ```
 
-Result:
+Kết quả:
 
-- PASS on local `MSSQLSERVER`.
-- Database created: `LibraryManagementDB`.
-- Tables created: 20.
-- Confirmed key Week 4 tables: `AuthTokens`, `NotificationTemplates`, `Notifications`, `NotificationAttempts`, `Members`, `AuditLogs`.
+- PASS trên `MSSQLSERVER` cục bộ.
+- Cơ sở dữ liệu đã tạo: `LibraryManagementDB`.
+- Số bảng đã tạo: 20.
+- Đã xác nhận các bảng Tuần 4 chính: `AuthTokens`, `NotificationTemplates`, `Notifications`, `NotificationAttempts`, `Members`, `AuditLogs`.
 
-Team review is still required before merge because database schema is a Core artifact.
+Vẫn cần nhóm rà soát trước khi merge vì lược đồ cơ sở dữ liệu là hiện vật Cốt lõi.
 
-## Week 4 Schema Gate
+## Cổng lược đồ Tuần 4
 
-Before Week 5 implementation starts:
+Trước khi bắt đầu triển khai Tuần 5:
 
-- [x] Produce a database gap review against all approved specs.
-- [x] Decide whether `Librarymanagement.sql` is the Phase 1 baseline or needs revision.
-- [x] Document required schema changes through the Week 4 database gap review and this ADR.
-- [x] Confirm token/session/audit tables for FE02 and FE11 before auth implementation.
-- [ ] Team review of the revised SQL script before merge.
-## 2026-07-22 deployed metadata reconciliation
+- [x] Lập bản rà soát khoảng cách cơ sở dữ liệu theo mọi đặc tả đã phê duyệt.
+- [x] Quyết định `Librarymanagement.sql` là baseline Giai đoạn 1 hay cần sửa.
+- [x] Ghi lại thay đổi lược đồ bắt buộc qua bản rà soát khoảng cách cơ sở dữ liệu Tuần 4 và ADR này.
+- [x] Xác nhận các bảng token/phiên/kiểm toán cho FE02 và FE11 trước khi triển khai xác thực.
+- [ ] Nhóm rà soát script SQL đã sửa trước khi merge.
+## Đối soát siêu dữ liệu đã triển khai 2026-07-22
 
-Some pre-baseline staging databases contain `Authors`, `Publishers`, and `Categories` without the canonical `Status` and `CreatedAt` columns. The Admin library repository already relies on those fields for list/export/deactivation, so code-only deployment can produce `INTERNAL_ERROR` even when the frontend bundle is current.
+Một số cơ sở dữ liệu ở môi trường staging trước mốc cơ sở có `Authors`, `Publishers` và `Categories` nhưng thiếu các cột chuẩn `Status` và `CreatedAt`. Tầng truy cập dữ liệu thư viện dành cho Quản trị viên đã phụ thuộc vào các trường đó để liệt kê/xuất/vô hiệu hóa, vì vậy triển khai chỉ mã có thể sinh `INTERNAL_ERROR` ngay cả khi gói frontend là phiên bản hiện tại.
 
-The reviewable, transactional, idempotent reconciliation script is `database/migrations/2026-07-22-library-metadata-compatibility.sql`. It adds only missing columns with canonical defaults, preserves existing rows, and validates supported status values. The deployment package includes this exact file, and backend startup applies it and verifies the resulting columns before opening the HTTP listener. A failure leaves the application unavailable rather than serving broken Admin metadata APIs.
+Script đối soát có giao dịch, có tính idempotent và có thể rà soát là `database/migrations/2026-07-22-library-metadata-compatibility.sql`. Script chỉ thêm cột còn thiếu với giá trị mặc định chuẩn, giữ nguyên các hàng hiện có và xác thực giá trị trạng thái được hỗ trợ. Gói triển khai chứa chính xác tệp này; khi khởi động, backend áp dụng script và xác minh các cột kết quả trước khi mở HTTP listener. Khi thất bại, ứng dụng sẽ không khả dụng thay vì phục vụ API siêu dữ liệu Quản trị viên bị lỗi.
 
-The same staging review found that older `BorrowRequests` tables can predate the canonical approval/rejection timestamps. `database/migrations/2026-07-22-borrow-request-workflow-columns.sql` idempotently adds missing `ApprovedAt`, `RejectedAt`, `ProcessedAt`, and `UpdatedAt` columns so the FE07 approve/reject transactions can execute on an upgraded database.
+Cùng đợt rà soát staging cho thấy các bảng `BorrowRequests` cũ có thể xuất hiện trước các dấu thời gian phê duyệt/từ chối chuẩn. `database/migrations/2026-07-22-borrow-request-workflow-columns.sql` thêm có tính idempotent các cột còn thiếu `ApprovedAt`, `RejectedAt`, `ProcessedAt` và `UpdatedAt` để các giao dịch phê duyệt/từ chối FE07 có thể chạy trên cơ sở dữ liệu đã nâng cấp.

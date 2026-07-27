@@ -1,41 +1,41 @@
-# System Integration Evidence - 2026-07-14
+# Bằng chứng tích hợp hệ thống - 2026-07-14
 
-Branch: `test/system-integration`
+Nhánh: `test/system-integration`
 
-Plan: `docs/superpowers/plans/2026-07-14-system-integration-test-plan.md`
+Kế hoạch: `docs/superpowers/plans/2026-07-14-system-integration-test-plan.md`
 
-Only observed results are marked `PASS`. The presentation rehearsals below used the automated fallback without a browser, so a final human visual check of the live UI is still recommended before presenting.
+Chỉ các kết quả đã quan sát mới được đánh dấu `PASS`. Các lần diễn tập thuyết trình dưới đây dùng phương án dự phòng tự động không có trình duyệt, vì vậy vẫn khuyến nghị con người kiểm tra trực quan lần cuối trên UI đang chạy trước khi trình bày.
 
-| ID | Status | Command / action | Observed result | Cleanup |
+| ID | Trạng thái | Lệnh / thao tác | Kết quả quan sát | Dọn dẹp |
 | --- | --- | --- | --- | --- |
-| SIT-000 | PASS | `npm.cmd run test:system` | All six completed production-aligned services were wired into one Express application. | In-memory state is recreated per harness. |
-| SIT-001 | PASS | `npm.cmd run test:system` | Authentication and role boundaries were enforced across FE07/FE08/FE09/FE10/FE12. | In-memory state is recreated per harness. |
-| SIT-002 | PASS | `npm.cmd run test:system` | FE07 approval produced FE10 due-date notification data and FE12 loan activity. | In-memory state is recreated per harness. |
-| SIT-003 | PASS | `npm.cmd run test:system` | FE08 queue processing held the copy, notified the member, and blocked another FE07 borrow. | In-memory state is recreated per harness. |
-| SIT-004 | PASS | `npm.cmd run test:system` | Reservation priority blocked renewal without mutating the active loan. | In-memory state is recreated per harness. |
-| SIT-005 | PASS | `npm.cmd run test:system` | A 14-day overdue return produced a 70,000 VND `UNPAID` fine. | In-memory state is recreated per harness. |
-| SIT-006 | PASS | `npm.cmd run test:system` | The unpaid fine blocked borrowing; marking it paid allowed the next valid request. | In-memory state is recreated per harness. |
-| SIT-007 | PASS | `npm.cmd run test:system` | Notification requests remained idempotent and exposed only safe response data. | In-memory state is recreated per harness. |
-| SIT-008 | PASS | `npm.cmd run test:system` | FE12 remained read-only and excluded `REQUESTED` details from actual loan activity. | In-memory state is recreated per harness. |
-| SIT-009 | PASS | `npm.cmd run test:system` | FE10 request failure did not roll back the approved FE07 borrowing state. | In-memory state is recreated per harness. |
-| SIT-SQL-001 | PASS | `$env:SYSTEM_SQL_TEST_ALLOW_MUTATION='true'; $env:SYSTEM_SQL_TEST_ENV_FILE='D:\SWP391\library-management-system\backend\.env'; npm.cmd --prefix backend run test:sql:system` | 1 suite passed, 1 test passed. FE07 approval/return was visible to FE10, FE09 calculated 14 days = 70,000 VND, and FE12 reported the activity. | Cleanup assertions returned `TestUsers=0` and `TestCopies=0`; temporary notification template and seeded rows were removed. |
+| SIT-000 | PASS | `npm.cmd run test:system` | Cả sáu dịch vụ đã hoàn thành và bám sát production được kết nối vào một ứng dụng Express. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-001 | PASS | `npm.cmd run test:system` | Các ranh giới xác thực và vai trò được thực thi xuyên suốt FE07/FE08/FE09/FE10/FE12. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-002 | PASS | `npm.cmd run test:system` | Việc phê duyệt FE07 tạo ra dữ liệu thông báo hạn trả FE10 và hoạt động khoản mượn FE12. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-003 | PASS | `npm.cmd run test:system` | Xử lý hàng đợi FE08 giữ bản sao, thông báo cho Thành viên và chặn một lượt mượn FE07 khác. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-004 | PASS | `npm.cmd run test:system` | Ưu tiên đặt trước chặn gia hạn mà không làm thay đổi khoản mượn đang hoạt động. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-005 | PASS | `npm.cmd run test:system` | Một lượt trả quá hạn 14 ngày tạo ra khoản phạt `UNPAID` trị giá 70,000 VND. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-006 | PASS | `npm.cmd run test:system` | Khoản phạt chưa thanh toán chặn việc mượn; đánh dấu đã thanh toán cho phép yêu cầu hợp lệ tiếp theo. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-007 | PASS | `npm.cmd run test:system` | Các yêu cầu thông báo vẫn có tính lũy đẳng và chỉ để lộ dữ liệu phản hồi an toàn. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-008 | PASS | `npm.cmd run test:system` | FE12 vẫn chỉ đọc và loại các chi tiết `REQUESTED` khỏi hoạt động mượn thực tế. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-009 | PASS | `npm.cmd run test:system` | Lỗi yêu cầu FE10 không hoàn tác trạng thái mượn FE07 đã được phê duyệt. | Trạng thái trong bộ nhớ được tạo lại cho mỗi bộ kiểm thử. |
+| SIT-SQL-001 | PASS | `$env:SYSTEM_SQL_TEST_ALLOW_MUTATION='true'; $env:SYSTEM_SQL_TEST_ENV_FILE='D:\SWP391\library-management-system\backend\.env'; npm.cmd --prefix backend run test:sql:system` | 1 bộ kiểm thử đạt, 1 kiểm thử đạt. Việc phê duyệt/trả FE07 được FE10 nhìn thấy, FE09 tính 14 ngày = 70,000 VND và FE12 báo cáo hoạt động. | Các xác nhận dọn dẹp trả về `TestUsers=0` và `TestCopies=0`; mẫu thông báo tạm thời và các hàng dữ liệu mồi đã được xóa. |
 
-## Verification Gates
+## Các cổng xác minh
 
-| Gate | Status | Observed result |
+| Cổng | Trạng thái | Kết quả quan sát |
 | --- | --- | --- |
-| Full backend test suite | PASS | `npm.cmd --prefix backend test`: 21 suites passed, 282 tests passed. |
-| Full frontend test suite | PASS | `npm.cmd --prefix frontend test`: 37 tests passed. |
-| Focused system integration gate | PASS | `npm.cmd run test:system`: 1 suite passed, 9 tests passed. SMTP-not-configured warnings were advisory only. |
-| SQL shared-state gate | PASS | `npm.cmd --prefix backend run test:sql:system`: 1 suite passed, 1 test passed with cleanup assertions. |
-| Frontend lint | PASS | `npm.cmd --prefix frontend run lint` exited 0 with no lint errors. |
-| Frontend build | PASS | `npm.cmd --prefix frontend run build` exited 0; Vite reported an advisory that the 952.61 kB JS chunk exceeds 500 kB. |
-| Traceability enforcement | PASS | `npm.cmd run trace:enforce`: 6 implemented features, 0 below the 70% threshold. |
-| Diff whitespace check | PASS | `git diff --check` exited 0; only line-ending conversion warnings were printed. |
+| Toàn bộ bộ kiểm thử backend | PASS | `npm.cmd --prefix backend test`: 21 bộ kiểm thử đạt, 282 kiểm thử đạt. |
+| Toàn bộ bộ kiểm thử frontend | PASS | `npm.cmd --prefix frontend test`: 37 kiểm thử đạt. |
+| Cổng tích hợp hệ thống trọng tâm | PASS | `npm.cmd run test:system`: 1 bộ kiểm thử đạt, 9 kiểm thử đạt. Cảnh báo SMTP chưa được cấu hình chỉ mang tính khuyến cáo. |
+| Cổng trạng thái dùng chung SQL | PASS | `npm.cmd --prefix backend run test:sql:system`: 1 bộ kiểm thử đạt, 1 kiểm thử đạt cùng các xác nhận dọn dẹp. |
+| Kiểm tra lint frontend | PASS | `npm.cmd --prefix frontend run lint` thoát với mã 0 và không có lỗi lint. |
+| Bản dựng frontend | PASS | `npm.cmd --prefix frontend run build` thoát với mã 0; Vite đưa ra khuyến cáo rằng khối JS 952.61 kB vượt quá 500 kB. |
+| Thực thi truy vết | PASS | `npm.cmd run trace:enforce`: 6 tính năng đã triển khai, 0 tính năng dưới ngưỡng 70%. |
+| Kiểm tra khoảng trắng của diff | PASS | `git diff --check` thoát với mã 0; chỉ in cảnh báo chuyển đổi kết thúc dòng. |
 
-## Presentation Rehearsals
+## Diễn tập thuyết trình
 
-| Rehearsal | Status | Required observation |
+| Diễn tập | Trạng thái | Quan sát bắt buộc |
 | --- | --- | --- |
-| Normal pace | PASS | Automated fallback ran with verbose case names: SIT 9/9 and SQL 1/1 passed in 6.62 seconds; SQL cleanup assertions passed. No browser or live UI claim was used. |
-| Timed five-minute fallback | PASS | Automated fallback completed in 6.67 seconds, below the 300-second limit; SIT 9/9 and SQL 1/1 passed with cleanup. |
+| Nhịp độ bình thường | PASS | Phương án dự phòng tự động chạy với tên ca chi tiết: SIT 9/9 và SQL 1/1 đạt trong 6.62 giây; các xác nhận dọn dẹp SQL đạt. Không có tuyên bố nào về trình duyệt hoặc UI trực tiếp. |
+| Phương án dự phòng giới hạn năm phút | PASS | Phương án dự phòng tự động hoàn tất trong 6.67 giây, dưới giới hạn 300 giây; SIT 9/9 và SQL 1/1 đạt kèm dọn dẹp. |

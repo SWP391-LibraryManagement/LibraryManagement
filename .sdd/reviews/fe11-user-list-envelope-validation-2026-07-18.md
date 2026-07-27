@@ -1,34 +1,34 @@
-# FE11 User-List Envelope Validation
+# Xác thực vỏ danh sách người dùng FE11
 
-Status: B7 INTEGRATION COMPLETE
+Trạng thái: TÍCH HỢP B7 HOÀN THÀNH
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Scope: `TD-026` / `FE11-ENV01`
+Phạm vi: `TD-026` / `FE11-ENV01`
 
-## Contract Checks
+## Kiểm tra hợp đồng
 
-- `GET /api/users` returns exactly `data` and `pagination`; no top-level `summary` remains.
-- The repository no longer executes the global status/role aggregate SQL.
-- Admin user cards and role summary consume FE12 `GET /api/reports/users` independently of the paginated list.
-- FE12 mapping uses `totals.users`, `usersByStatus.ACTIVE`, `usersByStatus.INACTIVE`, and `usersByRole.LIBRARIAN` with numeric zero defaults.
-- List and statistics failures retain their own state and do not erase the other successful result.
-- No `/api/admin/user-summary` endpoint or FE12 production change was added.
+- `GET /api/users` trả về chính xác `data` và `pagination`; không còn `summary` ở cấp cao nhất.
+- Kho dữ liệu không còn thực thi SQL tổng hợp trạng thái/vai trò toàn cục.
+- Các thẻ người dùng Quản trị viên và tóm tắt vai trò sử dụng FE12 `GET /api/reports/users` độc lập với danh sách phân trang.
+- Ánh xạ FE12 dùng `totals.users`, `usersByStatus.ACTIVE`, `usersByStatus.INACTIVE` và `usersByRole.LIBRARIAN` với giá trị số không mặc định.
+- Lỗi danh sách và thống kê duy trì trạng thái riêng, không xóa kết quả thành công còn lại.
+- Không thêm endpoint `/api/admin/user-summary` hoặc thay đổi FE12 trên môi trường production.
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Backend focused TD-026 suites | PASS - 95/95 (`userRepository`, `userManagementService`, `userManagementRoutes`) |
-| Backend full suite | PASS - 600/600 across 36 suites |
-| Frontend full suite | PASS - 113/113 |
-| Frontend lint | PASS |
-| Frontend production build | PASS; existing Vite chunk-size warning only |
-| Traceability enforcement | PASS - `node scripts/check-traceability.js --enforce --min=70` |
-| Diff hygiene | PASS - `git diff --check` |
-| Changed-file secret scan | PASS - no key/private-key/password literal matches |
+| Các bộ backend trọng tâm TD-026 | PASS - 95/95 (`userRepository`, `userManagementService`, `userManagementRoutes`) |
+| Toàn bộ bộ backend | PASS - 600/600 trên 36 bộ |
+| Toàn bộ bộ frontend | PASS - 113/113 |
+| Lint frontend | PASS |
+| Bản dựng frontend cho môi trường production | PASS; chỉ có cảnh báo kích thước khối Vite hiện hữu |
+| Thực thi truy vết | PASS - `node scripts/check-traceability.js --enforce --min=70` |
+| Vệ sinh diff | PASS - `git diff --check` |
+| Quét bí mật trong tệp đã thay đổi | PASS - không khớp literal khóa/khóa riêng/mật khẩu |
 
-## Changed Files
+## Các tệp đã thay đổi
 
 - `backend/src/repositories/userRepository.js`
 - `backend/tests/userRepository.test.js`
@@ -39,13 +39,13 @@ Scope: `TD-026` / `FE11-ENV01`
 - `docs/api/api-contract.md`
 - `.sdd/reviews/fe11-user-list-envelope-validation-2026-07-18.md`
 
-## H2 Review Boundary
+## Ranh giới đánh giá H2
 
-Human H2 review was approved on 2026-07-18. The FE12 report read model remains the approved source for global Admin counters, and `TD-027` stays serialized until this slice is merged.
+Đánh giá H2 của con người được phê duyệt vào 2026-07-18. Mô hình đọc báo cáo FE12 vẫn là nguồn đã phê duyệt cho các bộ đếm Quản trị viên toàn cục và `TD-027` tiếp tục được tuần tự hóa đến khi lát cắt này được hợp nhất.
 
-## B7 Integration Evidence
+## Bằng chứng tích hợp B7
 
-- Human H3 review was approved on 2026-07-18.
-- PR #34 merged into `main` as `411fa25ab60bb38c195307d983392ce362c1d633`.
-- Post-merge CI run `29652243809` completed successfully.
-- `TD-026` / `FE11-ENV01` is complete through B7; no new summary endpoint was introduced.
+- Đánh giá H3 của con người được phê duyệt vào 2026-07-18.
+- PR #34 được hợp nhất vào `main` dưới dạng `411fa25ab60bb38c195307d983392ce362c1d633`.
+- Lần chạy CI sau hợp nhất `29652243809` hoàn tất thành công.
+- `TD-026` / `FE11-ENV01` hoàn thành đến B7; không có endpoint tóm tắt mới nào được đưa vào.

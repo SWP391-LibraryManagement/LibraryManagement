@@ -1,406 +1,406 @@
-# SPEC.md - FE03 User Profile
+# SPEC.md - Hồ sơ người dùng FE03
 
-# Version: 0.3.6
+# Phiên bản: 0.3.6
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Trạng thái: ĐÃ PHÊ DUYỆT - BASELINE 2026-07-17
 
-# Owner: Dat
+# Chủ sở hữu: Dat
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature ID: FE03
+# ID tính năng: FE03
 
-# Feature folder: `.sdd/specs/feat-user-profile/`
+# Thư mục tính năng: `.sdd/specs/feat-user-profile/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn cũ hơn như `Not Started`,
+> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ review được giữ lại bên dưới chỉ là
+> ảnh chụp nhanh lịch sử về kế hoạch/bằng chứng, không phải trạng thái phân phối hiện tại.
 
-> Source of truth for FE03 User Profile. The previously approved profile/avatar scope is preserved; v0.3.2 makes missing-profile, protected-field, avatar ownership, audit, and status-display behavior deterministic and awaits human re-review.
-
----
-
-## 1. Feature Overview
-
-### 1.1 Feature Name
-
-User Profile
-
-### 1.2 Business Context
-
-Members and librarians need to view and maintain their personal information so the library can contact them and identify them correctly during membership, borrowing, reservation, and fine workflows.
-
-Profile management must protect personal data. A user can update only the approved profile fields and cannot change password, role, account status, or membership approval through this feature.
-
-### 1.3 Goal / Outcome
-
-The system shall:
-
-- Allow authenticated members and librarians to view their own profile.
-- Allow authenticated members and librarians to update approved profile fields.
-- Allow authenticated users to upload their own avatar image from their local device.
-- Validate profile data on the server.
-- Validate uploaded avatar files on the server.
-- Prevent users from viewing or editing another user's profile.
-- Prevent profile updates from changing credentials, roles, status, or membership approval.
-
-### 1.4 Scope Level
-
-- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
-- [x] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+> Nguồn sự thật cho Hồ sơ người dùng FE03. Phạm vi hồ sơ/hình đại diện đã được phê duyệt trước đó được giữ nguyên; v0.3.2 xác định tất định hành vi khi thiếu hồ sơ, xử lý trường được bảo vệ, quyền sở hữu hình đại diện, audit và hiển thị trạng thái, đồng thời đang chờ rà soát lại thủ công.
 
 ---
 
-## 2. Actors and Permissions
+## 1. Tổng quan về tính năng
 
-| Actor | Description | Permission / Responsibility |
+### 1.1 Tên tính năng
+
+Hồ sơ người dùng
+
+### 1.2 Bối cảnh kinh doanh
+
+Thành viên và Thủ thư cần xem, duy trì thông tin cá nhân để thư viện có thể liên hệ và nhận dạng họ chính xác trong các quy trình thành viên, mượn sách, đặt chỗ và xử lý tiền phạt.
+
+Quản lý hồ sơ phải bảo vệ dữ liệu cá nhân. Người dùng chỉ có thể cập nhật các trường hồ sơ đã được phê duyệt và không thể thay đổi mật khẩu, vai trò, trạng thái tài khoản hoặc phê duyệt thành viên thông qua tính năng này.
+
+### 1.3 Mục tiêu / Kết quả
+
+Hệ thống sẽ:
+
+- Cho phép các thành viên và thủ thư được xác thực xem hồ sơ của chính họ.
+- Cho phép các thành viên và thủ thư được xác thực cập nhật các trường hồ sơ đã được phê duyệt.
+- Cho phép người dùng được xác thực tải lên hình đại diện của chính họ từ thiết bị cục bộ của họ.
+- Xác thực dữ liệu hồ sơ trên máy chủ.
+- Xác thực các tập tin avatar được tải lên trên máy chủ.
+- Ngăn người dùng xem hoặc chỉnh sửa hồ sơ của người dùng khác.
+- Ngăn cập nhật hồ sơ thay đổi thông tin xác thực, vai trò, trạng thái hoặc phê duyệt thành viên.
+
+### 1.4 Mức độ phạm vi
+
+- [ ] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [x] Đặc tả tiêu chuẩn - tính năng thông thường, có quy tắc nghiệp vụ và bước xác thực dữ liệu
+- [ ] Đặc tả rút gọn - UI đơn giản, tài liệu hoặc tính năng ít rủi ro
+
+---
+
+## 2. Tác nhân và quyền
+
+| Tác nhân | Mô tả | Quyền/Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | View and update own profile. |
-| Librarian | Library staff | View and update own profile. |
-| Admin | System administrator | May view/update own profile; admin management of other users belongs to FE11. |
-| Guest | Unauthenticated visitor | No profile access. |
+| Thành viên | Người dùng thư viện đã đăng ký | Xem và cập nhật hồ sơ riêng. |
+| Thủ thư | Nhân viên thư viện | Xem và cập nhật hồ sơ riêng. |
+| Quản trị viên | Quản trị viên hệ thống | Có thể xem/cập nhật hồ sơ của chính mình; việc quản trị người dùng khác thuộc FE11. |
+| Khách | Khách truy cập chưa được xác thực | Không có quyền truy cập hồ sơ. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE03-001: The actor is authenticated.
-- PRE-FE03-002: The user account exists in `Users`.
-- PRE-FE03-003: The profile record exists in `UserProfiles`, or the system has an approved rule to create it on first access.
-- PRE-FE03-004: The actor is requesting their own profile.
-- PRE-FE03-005: Allowed editable fields are approved by the team.
-- PRE-FE03-006: Avatar upload storage policy, allowed file types, and maximum file size are approved by the team (see Q-FE03-004: server local filesystem, JPG/JPEG/PNG/WebP, max 2 MB).
-
----
-
-## 4. Main Flows
-
-### MF-FE03-001: View Profile
-
-1. Authenticated user opens profile page.
-2. The system identifies the current user from the authenticated session/token.
-3. The system loads profile data for that user only; if no `UserProfiles` row exists, it atomically creates a blank row for the current user and continues.
-4. The system returns safe account summary and profile fields.
-5. The system includes account `status` as read-only display data and excludes password hash, role management fields, and internal audit data.
-
-### MF-FE03-002: Update Profile
-
-1. Authenticated user submits changes to allowed profile fields.
-2. The system verifies the request belongs to the current user.
-3. The system validates each submitted field.
-4. The system rejects protected fields such as role, status, password hash, and membership approval.
-5. The system saves valid profile changes.
-6. The system writes an audit entry containing actor, changed field names, and timestamp without raw before/after personal values.
-7. The system returns the updated safe profile view.
-
-### MF-FE03-003: Upload Avatar
-
-1. Authenticated user selects an avatar image from their local device.
-2. The frontend submits the image as multipart form-data to the avatar upload endpoint.
-3. The system verifies the request belongs to the current authenticated user.
-4. The system validates file type, file size, and safe storage rules.
-5. The system stores the image using a server-generated safe filename.
-6. The system saves the generated public avatar URL/path in `UserProfiles.AvatarUrl`.
-7. The system writes a profile-avatar audit entry without recording file bytes, local paths, or secret metadata.
-8. If the database or audit transaction fails, the system deletes the newly stored file and preserves the previous avatar URL; after a successful commit, cleanup of the replaced old file is attempted without changing the committed profile state, and any cleanup failure is logged safely.
-9. The system returns the updated safe profile view.
+- PRE-FE03-001: Tác nhân đã được xác thực.
+- PRE-FE03-002: Tài khoản người dùng tồn tại trong `Users`.
+- PRE-FE03-003: Bản ghi hồ sơ tồn tại trong `UserProfiles`, hoặc hệ thống có quy tắc được phê duyệt để tạo nó trong lần truy cập đầu tiên.
+- PRE-FE03-004: Tác nhân đang yêu cầu hồ sơ của chính mình.
+- PRE-FE03-005: Các trường có thể chỉnh sửa được phép đã được nhóm phê duyệt.
+- PRE-FE03-006: Chính sách lưu trữ tải lên hình đại diện, loại tệp được phép và kích thước tệp tối đa được nhóm phê duyệt (xem Q-FE03-004: hệ thống tệp cục bộ của máy chủ, JPG/JPEG/PNG/WebP, tối đa 2 MB).
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE03-001: Profile Record Missing
+### MF-FE03-001: Xem hồ sơ
 
-1. Authenticated user opens profile.
-2. `UserProfiles` record does not exist.
-3. The system atomically creates one blank `UserProfiles` record for the current user and returns the normal safe profile response.
+1. Người dùng được xác thực sẽ mở trang hồ sơ.
+2. Hệ thống xác định người dùng hiện tại từ phiên/mã thông báo đã được xác thực.
+3. Hệ thống chỉ tải dữ liệu hồ sơ của người dùng đó; nếu chưa có hàng `UserProfiles`, hệ thống tạo nguyên tử một hàng trống cho người dùng hiện tại rồi tiếp tục.
+4. Hệ thống trả về các trường hồ sơ và tóm tắt tài khoản an toàn.
+5. Hệ thống bao gồm tài khoản `status` dưới dạng dữ liệu hiển thị chỉ đọc và loại trừ hàm băm mật khẩu, trường quản lý vai trò và dữ liệu kiểm tra nội bộ.
 
-### AF-FE03-002: User Attempts To Access Another Profile
+### MF-FE03-002: Cập nhật hồ sơ
 
-1. Authenticated user requests another user's profile ID.
-2. The system detects the profile does not belong to the current user.
-3. The system denies the request.
+1. Người dùng được xác thực gửi các thay đổi đối với các trường hồ sơ được phép.
+2. Hệ thống xác minh yêu cầu thuộc về người dùng hiện tại.
+3. Hệ thống xác nhận từng trường được gửi.
+4. Hệ thống từ chối các trường được bảo vệ như vai trò, trạng thái, hàm băm mật khẩu và phê duyệt thành viên.
+5. Hệ thống lưu các thay đổi hồ sơ hợp lệ.
+6. Hệ thống ghi một mục audit chứa tác nhân, tên các trường đã thay đổi và dấu thời gian, không chứa giá trị cá nhân thô trước/sau thay đổi.
+7. Hệ thống trả về chế độ xem hồ sơ an toàn đã cập nhật.
 
-### AF-FE03-003: Invalid Profile Data
+### MF-FE03-003: Tải lên hình đại diện
 
-1. User submits invalid date, phone, or overlong editable text.
-2. The system rejects the update.
-3. The existing profile data remains unchanged.
-
-### AF-FE03-004: Protected Field Submitted
-
-1. User submits role, account status, password, or membership approval fields.
-2. The system rejects the entire update with a validation response.
-3. The protected account data remains unchanged.
-
-### AF-FE03-005: Invalid Avatar Upload
-
-1. User submits a missing file, unsupported file type, oversized file, or unsafe file.
-2. The system rejects the upload.
-3. The existing avatar remains unchanged.
-
----
-
-## 6. Business Rules
-
-Use these stable IDs for tasks and tests.
-
-- BR-FE03-001: Guests cannot view or update profiles.
-- BR-FE03-002: A user can view only their own profile in FE03.
-- BR-FE03-003: A user can update only their own allowed profile fields in FE03.
-- BR-FE03-004: FE03 must not return password hash or credential secrets.
-- BR-FE03-005: FE03 must not update password, role, account status, or membership approval.
-- BR-FE03-006: Profile updates must be validated on the server.
-- BR-FE03-007: Editable fields are `fullName` (trimmed, max 100), `address` (trimmed, max 255), `dateOfBirth` (valid ISO date, not future), and `phone` (10-15 digits with optional leading `+`).
-- BR-FE03-008: Invalid update requests must not partially change profile data.
-- BR-FE03-009: Email changes are out of FE03 scope unless FE02 verification behavior is approved.
-- BR-FE03-010: Profile data must be treated as personal information and returned only to authorized actors.
-- BR-FE03-011: Avatar file upload must be authenticated and may update only the current user's profile.
-- BR-FE03-012: Avatar uploads must accept only approved image file types and reject executable or unsupported content.
-- BR-FE03-013: Avatar uploads must enforce the approved maximum file size.
-- BR-FE03-014: Avatar storage must use server-generated filenames and must not trust or persist the user's local file path.
-- BR-FE03-015: Avatar files must be stored on the server local filesystem under a public uploads directory (e.g. `/uploads/avatars/`); the generated public path/URL is saved in `UserProfiles.AvatarUrl`. Cloud/object storage is out of scope for Phase 1.
-- BR-FE03-016: `avatarUrl` is read-only in profile GET/PUT contracts and may be changed only by the authenticated avatar-upload endpoint after file validation.
-- BR-FE03-017: Every successful profile-field update and avatar update must write an audit entry with actor, changed field names, action, and timestamp; raw personal values, file content, paths, tokens, and secrets are forbidden in audit metadata. If avatar storage succeeds before the database/audit transaction fails, the newly stored file must be deleted; after commit, the replaced old file must be cleaned up, and a cleanup failure must be logged safely without rolling back the committed profile state.
+1. Người dùng được xác thực chọn hình ảnh đại diện từ thiết bị cục bộ của họ.
+2. Giao diện người dùng gửi hình ảnh dưới dạng dữ liệu biểu mẫu nhiều phần đến điểm cuối tải lên hình đại diện.
+3. Hệ thống xác minh yêu cầu thuộc về người dùng được xác thực hiện tại.
+4. Hệ thống xác thực loại tệp, kích thước tệp và quy tắc lưu trữ an toàn.
+5. Hệ thống lưu trữ hình ảnh bằng tên tệp an toàn do máy chủ tạo.
+6. Hệ thống lưu URL/đường dẫn công khai đã tạo của hình đại diện vào `UserProfiles.AvatarUrl`.
+7. Hệ thống ghi mục audit hình đại diện hồ sơ mà không ghi byte tệp, đường dẫn cục bộ hoặc siêu dữ liệu bí mật.
+8. Nếu giao dịch cơ sở dữ liệu hoặc audit thất bại, hệ thống xóa tệp mới lưu và giữ nguyên URL hình đại diện trước đó; sau khi commit thành công, hệ thống cố gắng dọn tệp cũ đã bị thay thế mà không làm thay đổi trạng thái hồ sơ đã commit, đồng thời ghi nhận mọi lỗi dọn dẹp theo cách an toàn.
+9. Hệ thống trả về chế độ xem hồ sơ an toàn đã cập nhật.
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng thay thế
 
-- FR-FE03-001: When an authenticated user opens profile, the system shall atomically create a blank profile if missing and return the user's own safe profile data.
-- FR-FE03-002: If a guest requests profile data, then the system shall deny access.
-- FR-FE03-003: If a user requests another user's profile through FE03, then the system shall deny access.
-- FR-FE03-004: When an authenticated user submits valid allowed profile fields, the system shall update the profile.
-- FR-FE03-005: If submitted profile fields are invalid, then the system shall reject the update and keep existing data unchanged.
-- FR-FE03-006: If any protected, unknown, or read-only field is submitted to profile update, including `avatarUrl`, then the system shall reject the entire request without changing profile or account data.
-- FR-FE03-007: When a profile response is returned, the system shall exclude password hash, credential tokens, and internal role-management data.
-- FR-FE03-008: When an authenticated user uploads a valid avatar image, the system shall store it and update that user's `avatarUrl`.
-- FR-FE03-009: If an avatar upload is invalid, then the system shall reject it and keep the existing avatar unchanged.
-- FR-FE03-010: When a profile-field update or avatar update succeeds, the system shall write the required safe audit entry in the same source transaction as the database change; avatar file storage must follow the compensation and post-commit cleanup rules in BR-FE03-017, including safe logging when old-file cleanup fails after commit.
+### AF-FE03-001: Thiếu bản ghi hồ sơ
+
+1. Người dùng được xác thực sẽ mở hồ sơ.
+2. Bản ghi `UserProfiles` không tồn tại.
+3. Hệ thống tự động tạo một bản ghi `UserProfiles` trống cho người dùng hiện tại và trả về phản hồi hồ sơ an toàn thông thường.
+
+### AF-FE03-002: Người dùng cố gắng truy cập hồ sơ khác
+
+1. Người dùng được xác thực yêu cầu ID hồ sơ của người dùng khác.
+2. Hệ thống phát hiện hồ sơ không thuộc về người dùng hiện tại.
+3. Hệ thống từ chối yêu cầu.
+
+### AF-FE03-003: Dữ liệu hồ sơ không hợp lệ
+
+1. Người dùng gửi ngày, số điện thoại không hợp lệ hoặc văn bản có thể chỉnh sửa quá dài.
+2. Hệ thống từ chối cập nhật.
+3. Dữ liệu hồ sơ hiện có vẫn không thay đổi.
+
+### AF-FE03-004: Đã gửi trường được bảo vệ
+
+1. Người dùng gửi vai trò, trạng thái tài khoản, mật khẩu hoặc các trường phê duyệt thành viên.
+2. Hệ thống từ chối toàn bộ bản cập nhật bằng phản hồi xác thực.
+3. Dữ liệu tài khoản được bảo vệ vẫn không thay đổi.
+
+### AF-FE03-005: Tải lên hình đại diện không hợp lệ
+
+1. Người dùng gửi tệp bị thiếu, loại tệp không được hỗ trợ, tệp quá khổ hoặc tệp không an toàn.
+2. Hệ thống từ chối tải lên.
+3. Hình đại diện hiện tại không thay đổi.
 
 ---
 
-## 8. Acceptance Criteria
+## 6. Quy tắc kinh doanh
 
-- AC-FE03-001: Given an authenticated member, when the member views profile, then the system returns only that member's safe profile data.
-- AC-FE03-002: Given an authenticated librarian, when the librarian views profile, then the system returns only that librarian's safe profile data.
-- AC-FE03-003: Given a guest, when the guest requests a profile, then the system denies access.
-- AC-FE03-004: Given a user tries to view another user's profile, when the request is processed, then the system denies access.
-- AC-FE03-005: Given valid profile updates, when the user submits changes, then the system saves the changes.
-- AC-FE03-006: Given invalid profile data, when the user submits changes, then the system rejects the update.
-- AC-FE03-007: Given any protected, unknown, or read-only field in the update payload, when the system processes it, then the entire request is rejected and no profile or account field changes.
-- AC-FE03-008: Given a profile response, when it is returned, then it does not include `PasswordHash`.
-- AC-FE03-009: Given an authenticated user and a valid avatar image, when the user uploads it, then the response includes the updated `avatarUrl`.
-- AC-FE03-010: Given an invalid avatar upload, when the request is processed, then the upload is rejected and the old `avatarUrl` remains unchanged.
-- AC-FE03-011: Given a guest, when the guest uploads an avatar, then the system denies access.
-- AC-FE03-012: Given an authenticated user without a `UserProfiles` row, when the user views the profile, then exactly one blank row is created and the normal safe profile response is returned.
-- AC-FE03-013: Given `avatarUrl` in a profile PUT payload, when the request is processed, then it is rejected and the current avatar remains unchanged.
-- AC-FE03-014: Given an avatar file is stored, when the database/audit transaction fails, then the new file is deleted and the old avatar remains; when the transaction commits, one safe audit entry is written, old-file cleanup is attempted, and a cleanup failure is safely logged without rolling back the profile state.
+Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
+
+- BR-FE03-001: Khách không thể xem hoặc cập nhật hồ sơ.
+- BR-FE03-002: Người dùng chỉ có thể xem hồ sơ của chính họ trong FE03.
+- BR-FE03-003: Người dùng chỉ có thể cập nhật các trường hồ sơ được phép của riêng họ trong FE03.
+- BR-FE03-004: FE03 không được trả về giá trị băm mật khẩu hoặc bí mật thông tin xác thực.
+- BR-FE03-005: FE03 không được cập nhật mật khẩu, vai trò, trạng thái tài khoản hoặc phê duyệt thành viên.
+- BR-FE03-006: Cập nhật hồ sơ phải được xác thực trên máy chủ.
+- BR-FE03-007: Các trường có thể chỉnh sửa gồm `fullName` (cắt khoảng trắng, tối đa 100), `address` (cắt khoảng trắng, tối đa 255), `dateOfBirth` (ngày ISO hợp lệ, không ở tương lai) và `phone` (10-15 chữ số, có thể bắt đầu bằng `+`).
+- BR-FE03-008: Yêu cầu cập nhật không hợp lệ không được thay đổi một phần dữ liệu hồ sơ.
+- BR-FE03-009: Các thay đổi về email nằm ngoài phạm vi FE03 trừ khi hành vi xác minh FE02 được phê duyệt.
+- BR-FE03-010: Dữ liệu hồ sơ phải được coi là thông tin cá nhân và chỉ được trả lại cho những người được ủy quyền.
+- BR-FE03-011: Tải lên tệp avatar phải được xác thực và chỉ có thể cập nhật hồ sơ của người dùng hiện tại.
+- BR-FE03-012: Nội dung tải lên hình đại diện chỉ được chấp nhận các loại tệp hình ảnh đã được phê duyệt và từ chối nội dung thực thi hoặc không được hỗ trợ.
+- BR-FE03-013: Tải lên hình đại diện phải thực thi kích thước tệp tối đa đã được phê duyệt.
+- BR-FE03-014: Bộ lưu trữ hình đại diện phải sử dụng tên tệp do máy chủ tạo và không được tin tưởng hay duy trì đường dẫn tệp cục bộ của người dùng.
+- BR-FE03-015: Tệp hình đại diện phải được lưu trên hệ thống tệp cục bộ của máy chủ trong thư mục tải lên công khai (ví dụ: `/uploads/avatars/`); đường dẫn/URL công khai đã tạo được lưu vào `UserProfiles.AvatarUrl`. Lưu trữ đám mây/đối tượng nằm ngoài phạm vi Giai đoạn 1.
+- BR-FE03-016: `avatarUrl` ở chế độ chỉ đọc trong các hợp đồng GET/PUT hồ sơ và chỉ có thể được thay đổi bởi điểm cuối tải lên hình đại diện đã được xác thực sau khi xác thực tệp.
+- BR-FE03-017: Mỗi lần cập nhật trường hồ sơ hoặc hình đại diện thành công đều phải ghi một mục audit chứa tác nhân, tên trường đã thay đổi, hành động và dấu thời gian; cấm ghi giá trị cá nhân thô, nội dung tệp, đường dẫn, mã thông báo và bí mật trong siêu dữ liệu audit. Nếu lưu hình đại diện thành công nhưng giao dịch cơ sở dữ liệu/audit sau đó thất bại thì phải xóa tệp mới; sau khi commit, phải dọn tệp cũ đã bị thay thế và ghi lỗi dọn dẹp theo cách an toàn mà không hoàn tác trạng thái hồ sơ đã commit.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 7. Yêu cầu chức năng
 
-| ID | Edge Case / Error | Expected System Behavior |
+- FR-FE03-001: Khi người dùng đã xác thực mở hồ sơ, nếu hồ sơ chưa tồn tại thì hệ thống phải tạo nguyên tử một hồ sơ trống và trả về dữ liệu hồ sơ an toàn của chính người dùng.
+- FR-FE03-002: Nếu khách yêu cầu dữ liệu hồ sơ thì hệ thống sẽ từ chối quyền truy cập.
+- FR-FE03-003: Nếu người dùng yêu cầu hồ sơ của người dùng khác thông qua FE03 thì hệ thống sẽ từ chối quyền truy cập.
+- FR-FE03-004: Khi người dùng được xác thực gửi các trường hồ sơ được phép hợp lệ, hệ thống sẽ cập nhật hồ sơ.
+- FR-FE03-005: Nếu các trường hồ sơ đã gửi không hợp lệ thì hệ thống sẽ từ chối cập nhật và giữ nguyên dữ liệu hiện có.
+- FR-FE03-006: Nếu bất kỳ trường được bảo vệ, không xác định hoặc chỉ đọc nào được gửi tới bản cập nhật hồ sơ, bao gồm `avatarUrl`, thì hệ thống sẽ từ chối toàn bộ yêu cầu mà không thay đổi hồ sơ hoặc dữ liệu tài khoản.
+- FR-FE03-007: Khi phản hồi hồ sơ được trả về, hệ thống sẽ loại trừ hàm băm mật khẩu, mã thông báo xác thực và dữ liệu quản lý vai trò nội bộ.
+- FR-FE03-008: Khi người dùng được xác thực tải lên hình ảnh đại diện hợp lệ, hệ thống sẽ lưu trữ hình ảnh đó và cập nhật `avatarUrl` của người dùng đó.
+- FR-FE03-009: Nếu tải lên hình đại diện không hợp lệ thì hệ thống sẽ từ chối nó và giữ nguyên hình đại diện hiện có.
+- FR-FE03-010: Khi cập nhật trường hồ sơ hoặc hình đại diện thành công, hệ thống phải ghi mục audit an toàn bắt buộc trong cùng giao dịch nguồn với thay đổi cơ sở dữ liệu; việc lưu tệp hình đại diện phải tuân theo quy tắc bù trừ và dọn dẹp sau commit trong BR-FE03-017, bao gồm ghi log an toàn nếu việc dọn tệp cũ thất bại sau commit.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE03-001: Với thành viên đã được xác thực, khi thành viên xem hồ sơ, hệ thống chỉ trả về dữ liệu hồ sơ an toàn của thành viên đó.
+- AC-FE03-002: Cho trước một Thủ thư đã xác thực, khi Thủ thư xem hồ sơ thì hệ thống chỉ trả về dữ liệu hồ sơ an toàn của Thủ thư đó.
+- AC-FE03-003: Cho trước một Khách, khi Khách yêu cầu hồ sơ thì hệ thống từ chối truy cập.
+- AC-FE03-004: Nếu người dùng cố gắng xem hồ sơ của người dùng khác, khi yêu cầu được xử lý, hệ thống sẽ từ chối quyền truy cập.
+- AC-FE03-005: Cho trước các thay đổi hồ sơ hợp lệ, khi người dùng gửi thay đổi thì hệ thống lưu các thay đổi đó.
+- AC-FE03-006: Với dữ liệu hồ sơ không hợp lệ, khi người dùng gửi thay đổi thì hệ thống sẽ từ chối cập nhật.
+- AC-FE03-007: Với bất kỳ trường được bảo vệ, không xác định hoặc chỉ đọc nào trong tải trọng cập nhật, khi hệ thống xử lý trường đó thì toàn bộ yêu cầu sẽ bị từ chối và không có trường hồ sơ hoặc trường tài khoản nào thay đổi.
+- AC-FE03-008: Cho trước một phản hồi hồ sơ, khi phản hồi được trả về thì không được chứa `PasswordHash`.
+- AC-FE03-009: Cho trước một người dùng đã xác thực và một ảnh đại diện hợp lệ, khi người dùng tải ảnh lên thì phản hồi chứa `avatarUrl` đã cập nhật.
+- AC-FE03-010: Cho trước một tệp hình đại diện không hợp lệ, khi yêu cầu được xử lý thì hệ thống từ chối tải lên và giữ nguyên `avatarUrl` cũ.
+- AC-FE03-011: Cho trước một Khách, khi Khách tải ảnh đại diện lên thì hệ thống từ chối truy cập.
+- AC-FE03-012: Cho một người dùng được xác thực không có hàng `UserProfiles`, khi người dùng xem hồ sơ, thì chính xác một hàng trống sẽ được tạo và phản hồi hồ sơ an toàn thông thường sẽ được trả về.
+- AC-FE03-013: Cho `avatarUrl` trong tải trọng PUT của hồ sơ, khi yêu cầu được xử lý thì nó sẽ bị từ chối và hình đại diện hiện tại không thay đổi.
+- AC-FE03-014: Cho trước một tệp hình đại diện đã được lưu, khi giao dịch cơ sở dữ liệu/audit thất bại thì tệp mới bị xóa và hình đại diện cũ được giữ nguyên; khi giao dịch commit, hệ thống ghi một mục audit an toàn, thử dọn tệp cũ và ghi lỗi dọn dẹp theo cách an toàn mà không hoàn tác trạng thái hồ sơ.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống mong đợi |
 | -- | ----------------- | ------------------------ |
-| EC-FE03-001 | User is not authenticated | Return unauthorized response. |
-| EC-FE03-002 | User account does not exist | Return `404 PROFILE_ACCOUNT_NOT_FOUND`; do not create a profile row or mutate account state. |
-| EC-FE03-003 | Profile record missing | Atomically create one blank profile for the current user and return the normal safe profile response. |
-| EC-FE03-004 | User requests another user's profile | Return forbidden response. |
-| EC-FE03-005 | Full name too long | Reject update. |
-| EC-FE03-006 | Invalid date of birth | Reject update. |
-| EC-FE03-007 | Future date of birth | Reject update. |
-| EC-FE03-008 | Invalid phone format | Reject update if phone is editable. |
-| EC-FE03-009 | PUT payload includes `avatarUrl` | Reject the entire update; avatar changes are accepted only through `POST /api/profile/me/avatar`. |
-| EC-FE03-010 | Payload includes password/role/status/unknown field | Reject the entire update; do not change profile or protected data. |
-| EC-FE03-011 | Database or audit update fails after avatar storage | Keep previous profile state, delete the newly stored file, and return a safe error. |
-| EC-FE03-012 | Avatar upload has no file | Reject upload. |
-| EC-FE03-013 | Avatar upload is not an approved image type | Reject upload. |
-| EC-FE03-014 | Avatar upload exceeds maximum size | Reject upload. |
-| EC-FE03-015 | Avatar upload uses unsafe file name or path | Ignore original path/name and use a server-generated safe filename. |
-| EC-FE03-016 | Avatar storage fails | Keep previous avatar state and return safe error. |
-| EC-FE03-017 | Replaced old avatar cannot be cleaned after commit | Keep the committed new avatar URL, log a safe cleanup failure, and do not roll back the profile transaction. |
+| EC-FE03-001 | Người dùng chưa được xác thực | Trả về phản hồi chưa được xác thực. |
+| EC-FE03-002 | Tài khoản người dùng không tồn tại | Trả về `404 PROFILE_ACCOUNT_NOT_FOUND`; không tạo hàng hồ sơ hoặc thay đổi trạng thái tài khoản. |
+| EC-FE03-003 | Thiếu bản ghi hồ sơ | Tạo nguyên tử một hồ sơ trống cho người dùng hiện tại và trả về phản hồi hồ sơ an toàn thông thường. |
+| EC-FE03-004 | Người dùng yêu cầu hồ sơ của người dùng khác | Trả về phản hồi cấm truy cập. |
+| EC-FE03-005 | Tên đầy đủ quá dài | Từ chối cập nhật. |
+| EC-FE03-006 | Ngày sinh không hợp lệ | Từ chối cập nhật. |
+| EC-FE03-007 | Ngày sinh trong tương lai | Từ chối cập nhật. |
+| EC-FE03-008 | Định dạng điện thoại không hợp lệ | Từ chối cập nhật nếu điện thoại có thể chỉnh sửa được. |
+| EC-FE03-009 | Tải trọng PUT bao gồm `avatarUrl` | Từ chối toàn bộ bản cập nhật; thay đổi hình đại diện chỉ được chấp nhận thông qua `POST /api/profile/me/avatar`. |
+| EC-FE03-010 | Payload chứa trường mật khẩu/vai trò/trạng thái/không xác định | Từ chối toàn bộ bản cập nhật; không thay đổi hồ sơ hoặc dữ liệu được bảo vệ. |
+| EC-FE03-011 | Cập nhật cơ sở dữ liệu hoặc audit thất bại sau khi lưu hình đại diện | Giữ trạng thái hồ sơ trước đó, xóa tệp mới lưu và trả về lỗi an toàn. |
+| EC-FE03-012 | Tải lên avatar không có tập tin | Từ chối tải lên. |
+| EC-FE03-013 | Tải lên hình đại diện không phải là loại hình ảnh được phê duyệt | Từ chối tải lên. |
+| EC-FE03-014 | Tải lên avatar vượt quá kích thước tối đa | Từ chối tải lên. |
+| EC-FE03-015 | Tải lên hình đại diện dùng tên tệp hoặc đường dẫn không an toàn | Bỏ qua đường dẫn/tên gốc và dùng tên tệp an toàn do máy chủ tạo. |
+| EC-FE03-016 | Lưu trữ avatar không thành công | Giữ trạng thái avatar trước đó và trả về lỗi an toàn. |
+| EC-FE03-017 | Không thể dọn hình đại diện cũ đã thay thế sau commit | Giữ URL hình đại diện mới đã commit, ghi lỗi dọn dẹp theo cách an toàn và không hoàn tác giao dịch hồ sơ. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể có liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Provides account identity, username, email, phone, status, created date. |
-| UserProfiles | Stores personal profile details. |
-| UserRoles | May be read only for display constraints, but role management is FE11. |
+| Users | Cung cấp danh tính tài khoản, tên người dùng, email, điện thoại, trạng thái và ngày tạo. |
+| UserProfiles | Lưu trữ chi tiết hồ sơ cá nhân. |
+| UserRoles | Có thể chỉ đọc đối với các ràng buộc hiển thị nhưng quản lý vai trò là FE11. |
 
-### 10.2 Data Fields
+### 10.2 Trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Kiểm tra hợp lệ / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| userId | integer | Yes | Comes from authenticated identity; not client-controlled for own profile update. |
-| username | string | Yes | Display only unless FE11/FE02 approves changes. |
-| email | string | Yes | Display only unless FE02 email-change flow is approved. |
-| phone | string | No | Editable only if Q-FE03-001 is approved. |
-| fullName | string | No | Editable; trimmed; maximum 100 characters. |
-| address | string | No | Editable; trimmed; maximum 255 characters. |
-| dateOfBirth | date | No | Must not be in the future. |
-| avatarUrl | string | No | Read-only server-generated public path/URL (for example `/uploads/avatars/{generated}.png`); changed only by avatar upload, never by profile PUT. |
-| avatarFile | file | No | Upload-only field. Accepted extensions: JPG, JPEG, PNG, WebP. Maximum size: 2 MB. Stored using a server-generated filename. |
-| status | string | No | Included in the safe profile DTO as read-only account state; never editable by FE03. |
-| department | string | No | Nullable `UserProfiles.Department`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
-| specialization | string | No | Nullable `UserProfiles.Specialization`, maximum 100 characters. FE11 Admin management only; excluded from FE03 self-profile reads and updates. |
+| userId | số nguyên | Có | Lấy từ danh tính đã xác thực; máy khách không được kiểm soát giá trị này khi cập nhật hồ sơ cá nhân. |
+| username | chuỗi | Có | Chỉ hiển thị, trừ khi FE11/FE02 phê duyệt thay đổi. |
+| email | chuỗi | Có | Chỉ hiển thị trừ khi luồng thay đổi email FE02 được phê duyệt. |
+| phone | chuỗi | Không | Chỉ có thể chỉnh sửa nếu Q-FE03-001 được phê duyệt. |
+| fullName | chuỗi | Không | Có thể chỉnh sửa; cắt khoảng trắng; tối đa 100 ký tự. |
+| address | chuỗi | Không | Có thể chỉnh sửa; cắt khoảng trắng; tối đa 255 ký tự. |
+| dateOfBirth | ngày | Không | Không được ở tương lai. |
+| avatarUrl | chuỗi | Không | Đường dẫn/URL công khai chỉ đọc do máy chủ tạo (ví dụ `/uploads/avatars/{generated}.png`); chỉ thay đổi khi tải lên hình đại diện, không bao giờ thay đổi qua PUT hồ sơ. |
+| avatarFile | tập tin | Không | Trường chỉ tải lên. Các phần mở rộng được chấp nhận: JPG, JPEG, PNG, WebP. Kích thước tối đa: 2 MB. Được lưu trữ bằng tên tệp do máy chủ tạo. |
+| status | chuỗi | Không | Được đưa vào DTO hồ sơ an toàn dưới dạng trạng thái tài khoản chỉ đọc; FE03 không bao giờ được chỉnh sửa trường này. |
+| department | chuỗi | Không | `UserProfiles.Department` có thể null, tối đa 100 ký tự. Chỉ quản trị viên FE11 quản lý; trường này bị loại khỏi thao tác đọc và cập nhật hồ sơ cá nhân của FE03. |
+| specialization | chuỗi | Không | `UserProfiles.Specialization` có thể null, tối đa 100 ký tự. Chỉ quản trị viên FE11 quản lý; trường này bị loại khỏi thao tác đọc và cập nhật hồ sơ cá nhân của FE03. |
 
 ---
 
-## 11. API / Interface Contract
+## 11. API / Hợp đồng giao diện
 
-> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
+> Các điểm cuối và hình dạng request/response bên dưới là hợp đồng Giai đoạn 1 chuẩn cho tính năng này.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/profile/me` | Member/Librarian/Admin | - | Safe profile DTO | Current user's profile only. |
-| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, phone? }` | Updated safe profile DTO | Unknown/protected/read-only fields, including `avatarUrl`, reject the entire request. |
-| POST | `/api/profile/me/avatar` | Member/Librarian/Admin | multipart form-data with `avatar` file | Updated safe profile DTO | Uploads an avatar image from the user's local device and stores the generated URL/path in `avatarUrl`. |
+| GET | `/api/profile/me` | Member/Librarian/Admin | - | Hồ sơ an toàn DTO | Chỉ hồ sơ của người dùng hiện tại. |
+| PUT | `/api/profile/me` | Member/Librarian/Admin | `{ fullName?, address?, dateOfBirth?, phone? }` | DTO hồ sơ an toàn đã cập nhật | Nếu có trường không xác định/được bảo vệ/chỉ đọc, bao gồm `avatarUrl`, hệ thống từ chối toàn bộ yêu cầu. |
+| POST | `/api/profile/me/avatar` | Member/Librarian/Admin | Dữ liệu biểu mẫu nhiều phần có tệp `avatar` | DTO hồ sơ an toàn đã cập nhật | Tải ảnh đại diện từ thiết bị cục bộ của người dùng và lưu URL/đường dẫn đã tạo vào `avatarUrl`. |
 
 ---
 
-## 12. Non-functional Requirements
+## 12. Yêu cầu phi chức năng
 
-### 12.1 Security
+### 12.1 Bảo mật
 
-- NFR-FE03-SEC-001: Profile endpoints must require authentication.
-- NFR-FE03-SEC-002: Users must not access another user's profile through FE03.
-- NFR-FE03-SEC-003: Responses must not include password hash, tokens, internal authorization data, or secrets.
-- NFR-FE03-SEC-004: All profile input must be validated server-side.
-- NFR-FE03-SEC-005: Avatar upload must validate MIME type, file extension, file size, and safe storage path server-side.
-- NFR-FE03-SEC-006: Avatar upload must not store client local file paths or trust original filenames.
+- NFR-FE03-SEC-001: Điểm cuối hồ sơ phải yêu cầu xác thực.
+- NFR-FE03-SEC-002: Người dùng không được truy cập hồ sơ của người dùng khác thông qua FE03.
+- NFR-FE03-SEC-003: Phản hồi không được bao gồm hàm băm mật khẩu, mã thông báo, dữ liệu ủy quyền nội bộ hoặc bí mật.
+- NFR-FE03-SEC-004: Mọi dữ liệu đầu vào của hồ sơ phải được kiểm tra hợp lệ ở phía máy chủ.
+- NFR-FE03-SEC-005: Tải lên hình đại diện phải xác thực loại MIME, đuôi tệp, kích thước tệp và đường dẫn lưu trữ an toàn phía máy chủ.
+- NFR-FE03-SEC-006: Tải lên hình đại diện không được lưu trữ đường dẫn tệp cục bộ của máy khách hoặc tin cậy vào tên tệp gốc.
 
-### 12.2 Transaction Integrity
+### 12.2 Tính toàn vẹn giao dịch
 
-- NFR-FE03-TXN-001: Profile update must be atomic; invalid fields must not cause partial profile changes.
-- NFR-FE03-TXN-002: Invalid avatar uploads must not change the current stored `avatarUrl`; a database/audit failure after file storage must delete the new file and preserve the previous URL.
-- NFR-FE03-TXN-003: Replacing an avatar must commit the profile URL and audit atomically; cleanup of the old file occurs after commit and cannot change the committed profile state.
+- NFR-FE03-TXN-001: Cập nhật hồ sơ phải nguyên tử; trường không hợp lệ không được gây thay đổi một phần dữ liệu hồ sơ.
+- NFR-FE03-TXN-002: Tệp hình đại diện không hợp lệ không được làm thay đổi `avatarUrl` hiện có; nếu cơ sở dữ liệu/audit thất bại sau khi lưu tệp thì phải xóa tệp mới và giữ nguyên URL trước đó.
+- NFR-FE03-TXN-003: Khi thay hình đại diện, URL hồ sơ và audit phải được commit theo cách nguyên tử; việc dọn tệp cũ diễn ra sau commit và không được làm thay đổi trạng thái hồ sơ đã commit.
 
-### 12.3 Performance
+### 12.3 Hiệu năng
 
-- NFR-FE03-PERF-001: Profile GET must read only the authenticated user's `Users` row and at most one `UserProfiles` row; collection-wide scans are not permitted.
+- NFR-FE03-PERF-001: Thao tác GET hồ sơ chỉ được đọc hàng `Users` của người dùng đã xác thực và tối đa một hàng `UserProfiles`; không được phép quét toàn bộ tập dữ liệu.
 
-### 12.4 Logging and Audit
+### 12.4 Ghi log và audit
 
-- NFR-FE03-LOG-001: Profile update failures must be logged safely without storing sensitive payloads.
-- NFR-FE03-LOG-002: Every successful profile-field update and avatar update must be audited with actor, action, changed field names, and timestamp; raw personal values and file/path secrets must not be logged.
+- NFR-FE03-LOG-001: Lỗi cập nhật hồ sơ phải được ghi lại một cách an toàn mà không lưu trữ tải trọng nhạy cảm.
+- NFR-FE03-LOG-002: Mọi cập nhật trường hồ sơ hoặc hình đại diện thành công đều phải được audit với tác nhân, hành động, tên trường đã thay đổi và dấu thời gian; không được ghi giá trị cá nhân thô hoặc bí mật về tệp/đường dẫn.
 
-### 12.5 Usability
+### 12.5 Khả năng sử dụng
 
-- NFR-FE03-UX-001: Validation errors must identify the invalid field clearly.
-- NFR-FE03-UX-002: Profile view must clearly separate editable profile fields from account fields managed elsewhere.
-- NFR-FE03-UX-003: Avatar upload errors must identify whether file size or file type validation failed.
-- NFR-FE03-UX-004: Member access to `/profile` must remain available through the shared avatar/account menu, while the Member sidebar must not duplicate that destination as a separate `Thông tin cá nhân` item or empty `Tài khoản` group.
-
----
-
-## 13. Out of Scope
-
-This feature does not include:
-
-- Login, logout, registration, password change, forgot password, or reset password.
-- Email verification or email change workflow unless FE02 approves it.
-- Creating/deactivating users or changing account status.
-- Role assignment or permission management.
-- Membership application approval or rejection.
-- Borrowing, reservation, or fine history.
-- Admin editing another user's profile unless FE11 scope is changed.
+- NFR-FE03-UX-001: Lỗi xác thực phải xác định rõ trường không hợp lệ.
+- NFR-FE03-UX-002: Chế độ xem hồ sơ phải tách biệt rõ ràng các trường hồ sơ có thể chỉnh sửa khỏi các trường tài khoản được quản lý ở nơi khác.
+- NFR-FE03-UX-003: Lỗi tải lên hình đại diện phải xác định liệu xác thực kích thước tệp hoặc loại tệp có thất bại hay không.
+- NFR-FE03-UX-004: Thành viên phải tiếp tục truy cập được `/profile` qua menu hình đại diện/tài khoản dùng chung; thanh bên Thành viên không được lặp lại đích này thành một mục `Thông tin cá nhân` riêng hoặc một nhóm `Tài khoản` trống.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Đăng nhập, đăng xuất, đăng ký, thay đổi mật khẩu, quên mật khẩu hoặc đặt lại mật khẩu.
+- Quy trình xác minh email hoặc thay đổi email trừ khi FE02 phê duyệt.
+- Tạo/vô hiệu hóa người dùng hoặc thay đổi trạng thái tài khoản.
+- Phân công vai trò hoặc quản lý quyền.
+- Phê duyệt hoặc từ chối đơn đăng ký thành viên.
+- Lịch sử mượn, đặt chỗ hoặc tiền phạt.
+- Quản trị viên chỉnh sửa hồ sơ của người dùng khác trừ khi phạm vi FE11 được thay đổi.
+
+---
+
+## 14. Sự phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE02 Authentication | Internal | Provides authenticated identity and credential flows. |
-| FE04 Membership Management | Internal | Owns membership status; FE03 does not display or change membership status in Phase 1. |
-| FE11 User & Role Management | Internal | Owns user status and role management. |
-| SQL Server database | Technical | Current SQL script has `Users` and `UserProfiles`. |
+| Xác thực FE02 | Nội bộ | Cung cấp danh tính được xác thực và các luồng thông tin xác thực. |
+| Quản lý thành viên FE04 | Nội bộ | Sở hữu tư cách thành viên; FE03 không hiển thị hoặc thay đổi trạng thái thành viên trong Giai đoạn 1. |
+| FE11 Quản lý vai trò và người dùng | Nội bộ | Sở hữu trạng thái người dùng và quản lý vai trò. |
+| Cơ sở dữ liệu máy chủ SQL | Kỹ thuật | Tập lệnh SQL hiện tại có `Users` và `UserProfiles`. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE03-001 | FE03 can update `Users.Phone`. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-002 | FE03 cannot update email; email changes must go through FE02 verification. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-003 | Missing profile records are auto-created on first view. | Review packet 2026-06-10 | APPROVED |
-| Q-FE03-004 | Phase 1 supports avatar upload from the user's local device. Avatars are stored on the server local filesystem under a public uploads directory (e.g. `/uploads/avatars/`) using a server-generated filename; the generated public path/URL is saved in `UserProfiles.AvatarUrl`. Allowed types: JPG/JPEG/PNG/WebP; max size 2 MB. Cloud/object storage is out of scope for Phase 1. | User decision 2026-06-25 | APPROVED |
-| Q-FE03-005 | Profile-field and avatar updates must write safe audit logs containing actor, action, changed field names, and timestamp without raw personal values or file/path secrets. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
-| Q-FE03-006 | The safe profile DTO includes account `status` as read-only display data. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE03-007 | `avatarUrl` is changed only by the file-upload endpoint; direct profile PUT mutation is rejected. | Spec normalization 2026-07-17 | APPROVED |
+| Q-FE03-001 | FE03 có thể cập nhật `Users.Phone`. | Gói review 2026-06-10 | APPROVED |
+| Q-FE03-002 | FE03 không thể cập nhật email; thay đổi email phải trải qua quá trình xác minh FE02. | Gói review 2026-06-10 | APPROVED |
+| Q-FE03-003 | Bản ghi hồ sơ bị thiếu được tự động tạo ở lần xem đầu tiên. | Gói review 2026-06-10 | APPROVED |
+| Q-FE03-004 | Giai đoạn 1 hỗ trợ tải ảnh đại diện từ thiết bị cục bộ của người dùng. Ảnh được lưu trên hệ thống tệp cục bộ của máy chủ, trong thư mục tải lên công khai (ví dụ: `/uploads/avatars/`) với tên tệp do máy chủ tạo; đường dẫn/URL công khai đã tạo được lưu vào `UserProfiles.AvatarUrl`. Loại được phép: JPG/JPEG/PNG/WebP; kích thước tối đa 2 MB. Lưu trữ đám mây/đối tượng nằm ngoài phạm vi Giai đoạn 1. | Quyết định của người dùng 2026-06-25 | APPROVED |
+| Q-FE03-005 | Cập nhật trường hồ sơ và hình đại diện phải ghi log audit an toàn chứa tác nhân, hành động, tên trường đã thay đổi và dấu thời gian, không chứa giá trị cá nhân thô hoặc bí mật về tệp/đường dẫn. | Gói review 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE03-006 | DTO hồ sơ an toàn chứa `status` của tài khoản dưới dạng dữ liệu hiển thị chỉ đọc. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE03-007 | `avatarUrl` chỉ được thay đổi bởi endpoint tải tệp lên; hệ thống từ chối việc sửa trực tiếp qua PUT hồ sơ. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| Requirement ID | Related Use Case | Related Test Case | Status |
+| ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE03-001 | UC11 | `profileRoutes.test.js` GET/avatar authentication cases | Automated pass; human review pending |
-| BR-FE03-002 | UC11 | `profileRoutes.test.js` `/me` current-user route contract | Automated pass; human review pending |
-| BR-FE03-003 | UC12 | `profileRoutes.test.js`, `profileService.test.js` authenticated-user update cases | Automated pass; human review pending |
-| BR-FE03-004 | UC11, UC12 | `profileService.test.js` safe DTO case | Automated pass; human review pending |
-| BR-FE03-005 | UC12 | `profileService.test.js` protected-field rejection cases | Automated pass; human review pending |
-| BR-FE03-006 | UC12 | `profileService.test.js` invalid and field-level validation cases | Automated pass; human review pending |
-| BR-FE03-007 | UC12 | `profileService.test.js` allowed-field, phone, date, and length cases | Automated pass; human review pending |
-| BR-FE03-008 | UC12 | `profileService.test.js`, `profileRepository.test.js` no-partial-write and rollback cases | Automated pass; SQL/human pending |
-| BR-FE03-009 | UC12 | `profileService.test.js` email/protected-field rejection cases | Automated pass; human review pending |
-| BR-FE03-010 | UC11 | `profileService.test.js`, `profileRoutes.test.js` safe own-profile DTO cases | Automated pass; human review pending |
-| BR-FE03-011 | UC12 | `profileRoutes.test.js`, `profileService.test.js` authenticated avatar ownership cases | Automated pass; human review pending |
-| BR-FE03-012 | UC12 | `profileService.test.js` MIME, extension, and byte-signature cases | Automated pass; human review pending |
-| BR-FE03-013 | UC12 | `profileService.test.js` oversized avatar case | Automated pass; human review pending |
-| BR-FE03-014 | UC12 | `avatarStorage.test.js` generated managed filename case | Automated pass; human review pending |
-| BR-FE03-015 | UC12 | `avatarStorage.test.js`, `profileService.test.js` managed local URL/storage cases | Automated pass; human review pending |
-| BR-FE03-016 | UC12 | `profileService.test.js`, `profileFrontend.test.js` PUT allowlist cases | Automated pass; human review pending |
-| BR-FE03-017 | UC12 | `profileRepository.test.js`, `profileService.test.js`, `avatarStorage.test.js` | Automated pass; SQL/human pending |
-| FR-FE03-001 | UC11 | `profileService.test.js`, `profileRepository.test.js` missing-profile cases | Automated pass; SQL/human pending |
-| FR-FE03-002 | UC11 | `profileRoutes.test.js` unauthenticated GET case | Automated pass; human review pending |
-| FR-FE03-003 | UC11 | `profileRoutes.test.js` current-user-only `/me` contract | Automated pass; human review pending |
-| FR-FE03-004 | UC12 | `profileRoutes.test.js`, `profileService.test.js` valid update cases | Automated pass; human review pending |
-| FR-FE03-005 | UC12 | `profileService.test.js` invalid update/no-partial-write cases | Automated pass; human review pending |
-| FR-FE03-006 | UC12 | `profileService.test.js`, `profileFrontend.test.js` protected/unknown/read-only rejection | Automated pass; human review pending |
-| FR-FE03-007 | UC11 | `profileService.test.js` safe DTO case | Automated pass; human review pending |
-| FR-FE03-008 | UC12 | `profileRoutes.test.js`, `profileService.test.js` valid avatar cases | Automated pass; human review pending |
-| FR-FE03-009 | UC12 | `profileRoutes.test.js`, `profileService.test.js` invalid avatar cases | Automated pass; human review pending |
-| FR-FE03-010 | UC12 | `profileRepository.test.js`, `profileService.test.js` audit/compensation cases | Automated pass; SQL/human pending |
-| AC-FE03-001 | UC11 | `profileRoutes.test.js`, `profileService.test.js` member own-profile behavior | Automated pass; human review pending |
-| AC-FE03-002 | UC11 | `profileRoutes.test.js` authenticated own-profile behavior | Automated pass; human review pending |
-| AC-FE03-003 | UC11 | `profileRoutes.test.js` unauthenticated GET case | Automated pass; human review pending |
-| AC-FE03-004 | UC11 | `profileRoutes.test.js` no client-controlled profile ID contract | Automated pass; human review pending |
-| AC-FE03-005 | UC12 | `profileService.test.js` valid update/audit case | Automated pass; human review pending |
-| AC-FE03-006 | UC12 | `profileService.test.js` invalid field-level validation cases | Automated pass; human review pending |
-| AC-FE03-007 | UC12 | `profileService.test.js` protected/unknown field rejection cases | Automated pass; human review pending |
-| AC-FE03-008 | UC11 | `profileService.test.js` secret/internal-field exclusion case | Automated pass; human review pending |
-| AC-FE03-009 | UC12 | `profileRoutes.test.js`, `profileService.test.js` valid avatar cases | Automated and agent browser pass; human pending |
-| AC-FE03-010 | UC12 | `profileService.test.js` invalid avatar preserves current URL case | Automated and agent browser pass; human pending |
-| AC-FE03-011 | UC12 | `profileRoutes.test.js` guest avatar rejection case | Automated pass; human review pending |
-| AC-FE03-012 | UC11 | `profileRepository.test.js`, `profileService.test.js` locked auto-create case | Automated pass; SQL/human pending |
-| AC-FE03-013 | UC12 | `profileService.test.js`, `profileFrontend.test.js` direct `avatarUrl` rejection | Automated pass; human review pending |
-| AC-FE03-014 | UC12 | `profileRepository.test.js`, `profileService.test.js`, `avatarStorage.test.js` compensation and cleanup cases | Automated pass; SQL/human pending |
+| BR-FE03-001 | UC11 | Các ca xác thực GET/hình đại diện trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-002 | UC11 | Hợp đồng route `/me` chỉ dành cho người dùng hiện tại trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-003 | UC12 | Các ca cập nhật của người dùng đã xác thực trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-004 | UC11, UC12 | Ca DTO an toàn trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-005 | UC12 | Các ca từ chối trường được bảo vệ trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-006 | UC12 | Các ca dữ liệu không hợp lệ và kiểm tra ở cấp trường trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-007 | UC12 | Các ca trường được phép, điện thoại, ngày và độ dài trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-008 | UC12 | Các ca không ghi một phần và rollback trong `profileService.test.js`, `profileRepository.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
+| BR-FE03-009 | UC12 | Các ca từ chối email/trường được bảo vệ trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-010 | UC11 | Các ca DTO an toàn của hồ sơ cá nhân trong `profileService.test.js`, `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-011 | UC12 | Các ca quyền sở hữu hình đại diện đã xác thực trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-012 | UC12 | Các ca MIME, đuôi tệp và chữ ký byte trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-013 | UC12 | Ca hình đại diện quá kích thước trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-014 | UC12 | Ca tên tệp do hệ thống tạo và quản lý trong `avatarStorage.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-015 | UC12 | Các ca URL/lưu trữ cục bộ được quản lý trong `avatarStorage.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-016 | UC12 | Các ca danh sách trường PUT cho phép trong `profileService.test.js`, `profileFrontend.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| BR-FE03-017 | UC12 | `profileRepository.test.js`, `profileService.test.js`, `avatarStorage.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
+| FR-FE03-001 | UC11 | Các ca thiếu hồ sơ trong `profileService.test.js`, `profileRepository.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
+| FR-FE03-002 | UC11 | Ca GET chưa xác thực trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-003 | UC11 | Hợp đồng `/me` chỉ dành cho người dùng hiện tại trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-004 | UC12 | Các ca cập nhật hợp lệ trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-005 | UC12 | Các ca cập nhật không hợp lệ/không ghi một phần trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-006 | UC12 | Các ca từ chối trường được bảo vệ/không xác định/chỉ đọc trong `profileService.test.js`, `profileFrontend.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-007 | UC11 | Ca DTO an toàn trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-008 | UC12 | Các ca hình đại diện hợp lệ trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-009 | UC12 | Các ca hình đại diện không hợp lệ trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| FR-FE03-010 | UC12 | Các ca audit/bù trừ trong `profileRepository.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
+| AC-FE03-001 | UC11 | Hành vi hồ sơ cá nhân của Thành viên trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-002 | UC11 | Hành vi hồ sơ cá nhân đã xác thực trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-003 | UC11 | Ca GET chưa xác thực trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-004 | UC11 | Hợp đồng không có ID hồ sơ do máy khách kiểm soát trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-005 | UC12 | Ca cập nhật/audit hợp lệ trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-006 | UC12 | Các ca kiểm tra cấp trường không hợp lệ trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-007 | UC12 | Các ca từ chối trường được bảo vệ/không xác định trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-008 | UC11 | Ca loại trừ trường bí mật/nội bộ trong `profileService.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-009 | UC12 | Các ca hình đại diện hợp lệ trong `profileRoutes.test.js`, `profileService.test.js` | Kiểm thử tự động và trình duyệt của tác nhân đạt; đang chờ review thủ công |
+| AC-FE03-010 | UC12 | Ca hình đại diện không hợp lệ giữ nguyên URL hiện tại trong `profileService.test.js` | Kiểm thử tự động và trình duyệt của tác nhân đạt; đang chờ review thủ công |
+| AC-FE03-011 | UC12 | Ca từ chối hình đại diện của Khách trong `profileRoutes.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-012 | UC11 | Các ca tự động tạo có khóa trong `profileRepository.test.js`, `profileService.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
+| AC-FE03-013 | UC12 | Từ chối trực tiếp `avatarUrl` trong `profileService.test.js`, `profileFrontend.test.js` | Kiểm thử tự động đạt; đang chờ review thủ công |
+| AC-FE03-014 | UC12 | Các ca bù trừ và dọn dẹp trong `profileRepository.test.js`, `profileService.test.js`, `avatarStorage.test.js` | Kiểm thử tự động đạt; đang chờ SQL/review thủ công |
 
-Coverage: 17/17 BR, 10/10 FR, and 14/14 AC have explicit use-case and test intent mappings.
+Phạm vi áp dụng: 17/17 BR, 10/10 FR và 14/14 AC có ánh xạ mục đích thử nghiệm và trường hợp sử dụng rõ ràng.
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra đánh giá
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10):
 
-- [x] Editable profile fields are approved.
-- [x] Phone and email ownership is confirmed with FE02/FE11.
-- [x] Missing profile behavior is approved.
-- [x] Avatar upload storage policy revision is reviewed and approved (Q-FE03-004: local filesystem, approved 2026-06-25).
-- [x] Privacy and response DTO rules are reviewed.
-- [x] Every acceptance criterion can become a test.
-- [x] FE11-owned `department` and `specialization` columns are excluded from the FE03 safe DTO and PUT allowlist.
+- [x] Các trường hồ sơ có thể chỉnh sửa được phê duyệt.
+- [x] Quyền sở hữu điện thoại và email được xác nhận với FE02/FE11.
+- [x] Hành vi thiếu hồ sơ đã được phê duyệt.
+- [x] Bản sửa đổi chính sách lưu trữ tải lên hình đại diện đã được xem xét và phê duyệt (Q-FE03-004: hệ thống tệp cục bộ, 2026-06-25 đã được phê duyệt).
+- [x] Các quy tắc DTO về quyền riêng tư và phản hồi được xem xét.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
+- [x] Các cột `department` và `specialization` thuộc sở hữu của FE11 được loại trừ khỏi danh sách cho phép DTO và PUT an toàn FE03.

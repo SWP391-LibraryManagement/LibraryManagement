@@ -1,68 +1,68 @@
-# FE11 Transactional Role Management Validation
+# Xác thực Quản lý vai trò có giao dịch FE11
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Scope: FE11-R01..R05 transactional role assignment/revocation only
+Phạm vi: chỉ gán/thu hồi vai trò có giao dịch FE11-R01..R05
 
-Method: SDD Full, RED-GREEN TDD, security review, and B1-B7 evidence
+Phương pháp: SDD Đầy đủ, TDD ĐỎ-XANH, đánh giá bảo mật và bằng chứng B1-B7
 
-## Decision
+## Quyết định
 
-The bounded implementation passed automated validation, human implementation review, merge, and post-merge CI. Evidence covers the route boundary, service outcome mapping, locked SQL transaction, atomic audit behavior, full backend regression suite, project coverage gate, traceability gate, and integration into `main`.
+Phần triển khai giới hạn đã vượt qua xác thực tự động, đánh giá triển khai của con người, hợp nhất và CI sau hợp nhất. Bằng chứng bao phủ ranh giới tuyến, ánh xạ kết quả dịch vụ, giao dịch SQL có khóa, hành vi kiểm toán nguyên tử, toàn bộ bộ hồi quy backend, cổng độ bao phủ dự án, cổng truy vết và tích hợp vào `main`.
 
-Remaining FE11 work stays deferred. This record does not claim completion of user detail/update/deactivation, librarian fields, Admin UI, audit-log UI, or the remaining FE11 requirements.
+Công việc FE11 còn lại tiếp tục bị hoãn. Bản ghi này không tuyên bố hoàn thành chi tiết/cập nhật/vô hiệu hóa người dùng, trường Thủ thư, UI Quản trị viên, UI nhật ký kiểm toán hoặc các yêu cầu FE11 còn lại.
 
-## L1 Automated Evidence
+## Bằng chứng tự động L1
 
-| Command | Result |
+| Lệnh | Kết quả |
 | --- | --- |
-| `npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementService.test.js tests/userRoleRepository.test.js tests/userManagementRoutes.test.js` | PASS; 70/70 tests, 3/3 suites |
-| `npm.cmd --prefix backend test` | PASS; 399/399 tests, 29/29 suites |
-| `npm.cmd --prefix backend run test:coverage:ci` | PASS; 92.47% statements, 82.35% branches, 97.1% functions, 92.4% lines |
-| Focused repository Jest coverage | PASS; 100% statements, 90.24% branches, 100% functions, 100% lines |
-| `npm.cmd run trace:enforce` | PASS; FE11 reports 13/38 tagged FRs (34%). The current `main` checker reads the top status as `APPROVED` and does not enforce FE11; that pre-existing status-heuristic limitation is outside this FE11-only PR. |
+| `npm.cmd --prefix backend test -- --runTestsByPath tests/userManagementService.test.js tests/userRoleRepository.test.js tests/userManagementRoutes.test.js` | PASS; 70/70 kiểm thử, 3/3 bộ |
+| `npm.cmd --prefix backend test` | PASS; 399/399 kiểm thử, 29/29 bộ |
+| `npm.cmd --prefix backend run test:coverage:ci` | PASS; câu lệnh 92.47%, nhánh 82.35%, hàm 97.1%, dòng 92.4% |
+| Độ bao phủ Jest kho dữ liệu trọng tâm | PASS; câu lệnh 100%, nhánh 90.24%, hàm 100%, dòng 100% |
+| `npm.cmd run trace:enforce` | PASS; FE11 báo cáo 13/38 FR được gắn thẻ (34%). Trình kiểm tra `main` hiện tại đọc trạng thái trên cùng là `APPROVED` và không thực thi FE11; giới hạn phỏng đoán trạng thái có từ trước đó nằm ngoài PR chỉ dành cho FE11 này. |
 | `git diff --check origin/main...HEAD` | PASS |
-| GitHub Actions run `29631406399` on merge commit `0e1ef8f` | PASS; `foundation-checks` completed successfully, including backend tests, system integration, coverage, frontend lint/tests/build, browser E2E, and backend health import. |
+| Lần chạy GitHub Actions `29631406399` trên commit hợp nhất `0e1ef8f` | PASS; `foundation-checks` hoàn tất thành công, gồm kiểm thử backend, tích hợp hệ thống, độ bao phủ, lint/kiểm thử/bản dựng frontend, E2E trình duyệt và nhập tình trạng backend. |
 
-Observed RED evidence:
+Bằng chứng ĐỎ quan sát được:
 
-- Route tests failed because role IDs remained strings and invalid IDs reached the service.
-- Repository tests failed because `userRoleRepository.js` did not exist.
-- Service tests failed because the old path still called `userRepository.findRoleById` and returned non-deterministic semantics.
+- Kiểm thử tuyến thất bại vì ID vai trò vẫn là chuỗi và ID không hợp lệ tới được dịch vụ.
+- Kiểm thử kho dữ liệu thất bại vì `userRoleRepository.js` không tồn tại.
+- Kiểm thử dịch vụ thất bại vì đường dẫn cũ vẫn gọi `userRepository.findRoleById` và trả về ngữ nghĩa không tất định.
 
-## L2 Spec Compliance
+## Tuân thủ đặc tả L2
 
-- `FR-FE11-012..014`: assignment/revocation now use one transactional repository.
-- `FR-FE11-017`: the acting user is revalidated as an existing active Admin under transaction locks.
-- `FR-FE11-024..027`: missing role, duplicate assignment, absent mapping, and final-role branches return deterministic outcomes without mutation.
-- `BR-FE11-009` and `NFR-FE11-TXN-006`: active Admin holders are materialized under `UPDLOCK, HOLDLOCK` before Admin revocation.
-- `BR-FE11-010` and `NFR-FE11-TXN-003`: role mapping plus audit commit or roll back together.
-- Public endpoint paths and the safe managed-user readback remain unchanged.
+- `FR-FE11-012..014`: việc gán/thu hồi hiện dùng một kho dữ liệu có giao dịch.
+- `FR-FE11-017`: người dùng đang thao tác được xác thực lại là Quản trị viên đang hoạt động và tồn tại dưới khóa giao dịch.
+- `FR-FE11-024..027`: các nhánh thiếu vai trò, gán trùng, thiếu ánh xạ và vai trò cuối trả về kết quả tất định mà không thay đổi.
+- `BR-FE11-009` và `NFR-FE11-TXN-006`: các chủ thể giữ vai trò Quản trị viên đang hoạt động được cụ thể hóa dưới `UPDLOCK, HOLDLOCK` trước khi thu hồi Quản trị viên.
+- `BR-FE11-010` và `NFR-FE11-TXN-003`: ánh xạ vai trò cùng kiểm toán commit hoặc hoàn tác cùng nhau.
+- Đường dẫn endpoint công khai và việc đọc lại người dùng được quản lý an toàn không đổi.
 
-## L3 Constitution And Safety
+## Hiến chương và an toàn L3
 
-- Authentication and Admin authorization execute before role-input validators.
-- The transaction rechecks active Admin privilege so a stale token role cannot authorize the mutation by itself.
-- All SQL values use typed parameters; request values are not concatenated into SQL.
-- Audit metadata contains only role ID/name and request context; no password, token, session, or setup link is added.
-- Unexpected repository errors are preserved for the central safe error handler; unknown business outcomes map to a generic internal error.
-- No database schema, credential handling, frontend behavior, or unrelated feature code changed.
+- Xác thực và phân quyền Quản trị viên chạy trước các bộ xác thực đầu vào vai trò.
+- Giao dịch kiểm tra lại đặc quyền Quản trị viên đang hoạt động để vai trò token cũ không thể tự cho phép thao tác thay đổi.
+- Mọi giá trị SQL dùng tham số có kiểu; giá trị yêu cầu không được nối vào SQL.
+- Siêu dữ liệu kiểm toán chỉ chứa ID/tên vai trò và ngữ cảnh yêu cầu; không thêm mật khẩu, token, phiên hoặc liên kết thiết lập.
+- Lỗi kho dữ liệu ngoài dự kiến được giữ lại cho bộ xử lý lỗi an toàn trung tâm; kết quả nghiệp vụ không xác định ánh xạ tới lỗi nội bộ chung.
+- Không thay đổi lược đồ cơ sở dữ liệu, xử lý thông tin xác thực, hành vi frontend hoặc mã tính năng không liên quan.
 
-## L4 Acceptance And Residual Risks
+## Chấp thuận và rủi ro còn lại L4
 
-Human implementation review was approved on 2026-07-18. `FE11-R05` is complete for this bounded slice.
+Đánh giá triển khai của con người được phê duyệt vào 2026-07-18. `FE11-R05` đã hoàn thành cho lát cắt giới hạn này.
 
-PR #25 merged into `main` as `0e1ef8f67e2d7a454e96b8b5d6878d31ed03eae0`. Post-merge CI run `29631406399` passed, so B7 integration is complete for this bounded slice.
+PR #25 được hợp nhất vào `main` dưới dạng `0e1ef8f67e2d7a454e96b8b5d6878d31ed03eae0`. Lần chạy CI sau hợp nhất `29631406399` đạt, nên tích hợp B7 hoàn thành cho lát cắt giới hạn này.
 
-Residual risks:
+Rủi ro còn lại:
 
-- SQL lock clauses and transaction branches are unit-tested, but no disposable SQL Server environment was available for a real two-session concurrency test.
-- The safe managed-user readback occurs after commit; a rare post-commit read failure can return an error after the mutation has committed.
-- Remaining FE11 user update/deactivation and acting-admin semantics are tracked by `TD-012`, `TD-014`, and `TD-015`.
-- The frontend development bypass risk remains tracked separately as `TD-017`.
-- The current `main` traceability checker derives enforcement from the human-readable top status; a repository-wide state-metadata correction remains outside this FE11-only PR.
+- Mệnh đề khóa SQL và nhánh giao dịch được kiểm thử đơn vị, nhưng không có môi trường SQL Server dùng một lần cho kiểm thử đồng thời hai phiên thật.
+- Việc đọc lại người dùng được quản lý an toàn xảy ra sau commit; lỗi đọc hiếm gặp sau commit có thể trả về lỗi sau khi thao tác thay đổi đã commit.
+- Ngữ nghĩa cập nhật/vô hiệu hóa người dùng FE11 còn lại và Quản trị viên đang thao tác được theo dõi bởi `TD-012`, `TD-014` và `TD-015`.
+- Rủi ro bỏ qua frontend trong phát triển vẫn được theo dõi riêng dưới `TD-017`.
+- Trình kiểm tra truy vết `main` hiện tại suy ra việc thực thi từ trạng thái cấp cao nhất dễ đọc; sửa siêu dữ liệu trạng thái toàn kho mã vẫn nằm ngoài PR chỉ dành cho FE11 này.
 
-## Files Changed
+## Các tệp đã thay đổi
 
 - `backend/src/repositories/userRoleRepository.js`
 - `backend/src/repositories/userRepository.js`
@@ -72,9 +72,9 @@ Residual risks:
 - `backend/tests/userRoleRepository.test.js`
 - `backend/tests/userManagementService.test.js`
 - `backend/tests/userManagementRoutes.test.js`
-- FE11 `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, and `CHANGELOG.md`
+- `PLAN.md`, `TASKS.md`, `TEST_PLAN.md` và `CHANGELOG.md` của FE11
 - `TECH_DEBT.md`
 
-## Remaining FE11 Work
+## Công việc FE11 còn lại
 
-The account-setup and transactional role slices have automated evidence. User list/detail DTO reconciliation, optimistic updates, atomic deactivation, librarian fields, Admin console/permissions/audit/request UI, and other deferred FE11 requirements remain outside this validation.
+Các lát cắt thiết lập tài khoản và vai trò có giao dịch có bằng chứng tự động. Đối soát DTO danh sách/chi tiết người dùng, cập nhật lạc quan, vô hiệu hóa nguyên tử, trường Thủ thư, UI bảng điều khiển/quyền/kiểm toán/yêu cầu Quản trị viên và các yêu cầu FE11 bị hoãn khác vẫn nằm ngoài xác thực này.

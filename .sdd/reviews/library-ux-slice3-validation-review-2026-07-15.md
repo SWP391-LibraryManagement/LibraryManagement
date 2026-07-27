@@ -1,42 +1,42 @@
-# Library UX Slice 3 Validation Review - 2026-07-15
+# Đánh giá xác thực Lát cắt UX Thư viện 3 - 2026-07-15
 
-Status: READY FOR HUMAN REVIEW
+Trạng thái: SẴN SÀNG CHO CON NGƯỜI ĐÁNH GIÁ
 
-Branch: `docs/ux-slice3-operational-patterns`
+Nhánh: `docs/ux-slice3-operational-patterns`
 
-## Scope
+## Phạm vi
 
-Record automated evidence for shared operational patterns and their ordered application to FE07, FE08, FE06, FE09, and FE12. This record does not claim human acceptance, merge, FE06 completion, or FE09-T012 completion.
+Ghi nhận bằng chứng tự động cho các mẫu vận hành dùng chung và việc áp dụng chúng theo thứ tự vào FE07, FE08, FE06, FE09 và FE12. Bản ghi này không tuyên bố sự chấp thuận của con người, việc hợp nhất, hoàn thành FE06 hoặc hoàn thành FE09-T012.
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Frontend tests | PASS - 73 tests, 0 failures |
-| Frontend lint | PASS |
-| Frontend production build | PASS |
-| Diff whitespace | PASS |
-| API/backend/database scope | PASS - no changes |
-| FE06 boundary | PASS - mock/in-memory ownership retained |
-| FE09 boundary | PASS - localStorage/sample-data retained; FE09-T012 open |
+| Kiểm thử frontend | PASS - 73 kiểm thử, 0 lỗi |
+| Kiểm tra lint frontend | PASS |
+| Bản dựng frontend cho môi trường production | PASS |
+| Khoảng trắng của diff | PASS |
+| Phạm vi API/backend/cơ sở dữ liệu | PASS - không có thay đổi |
+| Ranh giới FE06 | PASS - duy trì quyền sở hữu của mô phỏng/bộ nhớ |
+| Ranh giới FE09 | PASS - duy trì localStorage/dữ liệu mẫu; FE09-T012 còn mở |
 
-The production build emitted Vite's non-blocking warning for a JavaScript chunk larger than 500 kB after minification.
+Bản dựng production phát cảnh báo không chặn của Vite về một khối JavaScript lớn hơn 500 kB sau khi thu nhỏ.
 
-## Human Review Checklist
+## Danh sách kiểm tra của con người
 
-- Borrowing: loading, error, empty, filtered, approval, rejection, renewal, and return confirmation.
-- Reservations: demo fallback warning, cancellation, staff list, queue, and notification confirmation.
-- Inventory: one page header, filters, empty results, edit dialog, copy table, and prototype warning.
-- Fines: shared shell, local tabs, list filters, confirmations, toast, and no loss of embedded book-management access.
-- Reports: date/category filters, zero results, values, charts, and table readability.
-- Mobile: labeled rows remain understandable at 390px without incoherent overlap.
+- Mượn sách: đang tải, lỗi, trống, đã lọc, phê duyệt, từ chối, gia hạn và xác nhận trả.
+- Đặt trước: cảnh báo phương án dự phòng trình diễn, hủy, danh sách nhân viên, hàng đợi và xác nhận thông báo.
+- Kho sách: một phần đầu trang, bộ lọc, kết quả trống, hộp thoại chỉnh sửa, bảng bản sao và cảnh báo nguyên mẫu.
+- Tiền phạt: khung dùng chung, tab cục bộ, bộ lọc danh sách, xác nhận, thông báo nhanh và không mất quyền truy cập quản lý sách nhúng.
+- Báo cáo: bộ lọc ngày/danh mục, kết quả bằng không, giá trị, biểu đồ và khả năng đọc của bảng.
+- Di động: các hàng có nhãn vẫn dễ hiểu ở 390px mà không bị chồng lấn rối.
 
-## Residual Risks
+## Rủi ro còn lại
 
-- FE06 remains a prototype until its feature plan/tasks are approved.
-- FE09 remains local-data UI until FE09-T012 is implemented.
-- Full responsive and keyboard acceptance remains Slice 4.
+- FE06 vẫn là nguyên mẫu cho đến khi kế hoạch/nhiệm vụ của tính năng được phê duyệt.
+- FE09 vẫn là UI dữ liệu cục bộ cho đến khi FE09-T012 được triển khai.
+- Việc chấp thuận đầy đủ về khả năng đáp ứng và bàn phím vẫn thuộc Lát cắt 4.
 
-## Review Outcome
+## Kết quả đánh giá
 
-Verdict: **Automated Slice 3 evidence is complete; Nhat's human review is required before integration.**
+Kết luận: **Bằng chứng tự động của Lát cắt 3 đã hoàn tất; cần Nhat đánh giá trước khi tích hợp.**

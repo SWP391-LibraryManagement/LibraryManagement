@@ -1,83 +1,83 @@
-# FE03 Deterministic Profile Validation
+# Xác thực Hồ sơ tất định FE03
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Status: AUTOMATED AND SQL-BACKED PASS; HUMAN ACCEPTANCE PENDING
+Trạng thái: TỰ ĐỘNG VÀ DỰA TRÊN SQL ĐẠT; CHẤP THUẬN CỦA CON NGƯỜI ĐANG CHỜ
 
-## Decision
+## Quyết định
 
-- Delivery method: Hybrid, Standard depth.
-- Core: own-profile authorization, exact PUT allowlist, mandatory atomic audit,
-  deterministic missing-profile creation, avatar compensation, and safe logging.
-- Shell: repository wiring, generated file cleanup helper, and focused test
-  fixtures.
+- Phương thức bàn giao: Kết hợp, độ sâu Tiêu chuẩn.
+- Lõi: phân quyền hồ sơ của chính mình, danh sách trắng PUT chính xác, kiểm toán nguyên tử bắt buộc,
+  tạo hồ sơ còn thiếu tất định, bù trừ ảnh đại diện và ghi nhật ký an toàn.
+- Khung: nối kho dữ liệu, công cụ hỗ trợ dọn dẹp tệp được tạo và dữ liệu cố định kiểm thử
+  trọng tâm.
 
-## Implemented Scope
+## Phạm vi đã triển khai
 
-- `PUT /api/profile/me` accepts only `fullName`, `address`, `dateOfBirth`, and
-  `phone`; direct `avatarUrl`, protected, unknown, and empty payloads are
-  rejected before mutation.
-- The profile edit dialog has no direct Avatar URL field, and its PUT client
-  sends only the four approved editable fields.
-- Profile-field and avatar database updates require a safe audit entry inside
-  the same SQL transaction.
-- Missing-profile creation uses `UPDLOCK` and `HOLDLOCK` before inserting the
-  unique `UserProfiles.UserId` row.
-- Avatar database/audit failure triggers new-file compensation. Successful
-  replacement commits first, then attempts managed old-file cleanup without
-  rolling back committed profile state.
-- Managed deletion refuses external URLs, nested paths, traversal paths, and
-  dot-directory targets.
-- Shared 5xx logging retains only error code, method, and path; raw error text,
-  stack traces, and query strings are excluded.
+- `PUT /api/profile/me` chỉ chấp nhận `fullName`, `address`, `dateOfBirth` và
+  `phone`; tải trọng `avatarUrl` trực tiếp, được bảo vệ, không xác định và trống bị
+  từ chối trước khi thay đổi.
+- Hộp thoại chỉnh sửa hồ sơ không có trường URL Ảnh đại diện trực tiếp và máy khách PUT
+  chỉ gửi bốn trường có thể chỉnh sửa đã phê duyệt.
+- Cập nhật trường hồ sơ và ảnh đại diện trong cơ sở dữ liệu yêu cầu mục kiểm toán an toàn bên trong
+  cùng giao dịch SQL.
+- Việc tạo hồ sơ còn thiếu dùng `UPDLOCK` và `HOLDLOCK` trước khi chèn hàng
+  `UserProfiles.UserId` duy nhất.
+- Lỗi cơ sở dữ liệu/kiểm toán ảnh đại diện kích hoạt bù trừ tệp mới. Thay thế thành công
+  commit trước, rồi thử dọn dẹp tệp cũ được quản lý mà không
+  hoàn tác trạng thái hồ sơ đã commit.
+- Việc xóa được quản lý từ chối URL bên ngoài, đường dẫn lồng, đường dẫn duyệt ngược và
+  đích thư mục dấu chấm.
+- Ghi nhật ký 5xx dùng chung chỉ giữ mã lỗi, phương thức và đường dẫn; văn bản lỗi thô,
+  dấu vết ngăn xếp và chuỗi truy vấn bị loại.
 
-## Traceability
+## Truy vết
 
-| Requirement | Code and tests |
+| Yêu cầu | Mã và kiểm thử |
 | --- | --- |
-| BR-FE03-016, FR-FE03-006, AC-FE03-013 | backend service tests plus `profileFrontend.test.js` |
+| BR-FE03-016, FR-FE03-006, AC-FE03-013 | kiểm thử dịch vụ backend cùng `profileFrontend.test.js` |
 | BR-FE03-017, FR-FE03-010 | `profileRepository.js`, `profileRepository.test.js` |
-| FR-FE03-001, AC-FE03-012 | locked `createBlankProfile`, service/repository tests |
-| AC-FE03-014 | avatar service compensation, storage deletion tests, safe cleanup logging |
-| SAFE-005, NFR-FE03-LOG-001 | `errorHandler.js`, `securityRegression.test.js`, route error tests |
+| FR-FE03-001, AC-FE03-012 | `createBlankProfile` đã khóa, kiểm thử dịch vụ/kho dữ liệu |
+| AC-FE03-014 | bù trừ dịch vụ ảnh đại diện, kiểm thử xóa nơi lưu, ghi nhật ký dọn dẹp an toàn |
+| SAFE-005, NFR-FE03-LOG-001 | `errorHandler.js`, `securityRegression.test.js`, kiểm thử lỗi tuyến |
 
-## Automated Evidence
+## Bằng chứng tự động
 
-- Baseline before changes: backend 38 suites, 606/606; frontend 120/120.
-- Focused FE03: 4 suites, 41/41.
-- Focused FE03 coverage: statements 90.83%, branches 81.92%, functions
-  92.30%, lines 93.54%.
-- Full backend after changes: 40 suites, 632/632.
-- Full frontend: 123/123.
-- Frontend lint: pass.
-- Frontend production build: pass with the existing project-wide chunk-size
-  warning.
-- Traceability enforcement: pass.
-- FE03 source traceability reconciliation: 10/10 functional requirements tagged (100%).
-- Playwright browser acceptance with intercepted API: valid PNG upload updated
-  the displayed avatar; unsupported `.json` and a PNG larger than 2 MB showed
-  the approved Vietnamese errors; the captured PUT body contained exactly
-  `fullName`, `address`, `dateOfBirth`, and `phone`; browser console reported
-  zero errors and zero warnings.
-- Fresh exact-diff reconciliation gate passed: 5 focused backend suites, 48/48 tests;
-  focused frontend 3/3; traceability 10/10 FE03 FR tags; `git diff --check` clean.
-- Fresh isolated Playwright CLI acceptance on port `4185` reconfirmed the valid PNG flow,
-  unsupported `.json` feedback, oversized 23 MB `.png` feedback, the exact four-field PUT
-  payload, and a clean session with 0 console errors and 0 warnings. Port `4173` remained
-  untouched because it belongs to the existing FE03 Vite process. Screenshot:
+- Đường cơ sở trước thay đổi: backend 38 bộ, 606/606; frontend 120/120.
+- FE03 trọng tâm: 4 bộ, 41/41.
+- Độ bao phủ FE03 trọng tâm: câu lệnh 90.83%, nhánh 81.92%, hàm
+  92.30%, dòng 93.54%.
+- Toàn bộ backend sau thay đổi: 40 bộ, 632/632.
+- Toàn bộ frontend: 123/123.
+- Lint frontend: đạt.
+- Bản dựng frontend production: đạt với cảnh báo kích thước khối toàn dự án
+  hiện có.
+- Thực thi truy vết: đạt.
+- Đối soát truy vết nguồn FE03: 10/10 yêu cầu chức năng được gắn thẻ (100%).
+- Chấp thuận trình duyệt Playwright với API bị chặn: tải lên PNG hợp lệ cập nhật
+  ảnh đại diện hiển thị; `.json` không được hỗ trợ và PNG lớn hơn 2 MB hiển thị
+  lỗi tiếng Việt đã phê duyệt; thân PUT thu được chứa chính xác
+  `fullName`, `address`, `dateOfBirth` và `phone`; bảng điều khiển trình duyệt báo
+  không lỗi và không cảnh báo.
+- Cổng đối soát diff chính xác mới đạt: 5 bộ backend trọng tâm, 48/48 kiểm thử;
+  frontend trọng tâm 3/3; truy vết 10/10 thẻ FR FE03; `git diff --check` sạch.
+- Chấp thuận CLI Playwright cô lập mới trên cổng `4185` tái xác nhận luồng PNG hợp lệ,
+  phản hồi `.json` không được hỗ trợ, phản hồi `.png` 23 MB quá lớn, tải trọng PUT chính xác bốn trường
+  và phiên sạch với 0 lỗi bảng điều khiển cùng 0 cảnh báo. Cổng `4173` vẫn
+  không bị tác động vì thuộc tiến trình Vite FE03 hiện có. Ảnh chụp màn hình:
   `output/playwright/fe03-exact-profile-updated.png`.
 
-## SQL-Backed Addendum
+## Phụ lục dựa trên SQL
 
-- `backend/tests/sql/profileConcurrency.sqltest.js` was added through RED-GREEN and passes 6/6 on the disposable reconciliation SQL Server runtime.
-- Concurrent first views create exactly one `UserProfiles` row and return the same profile ID.
-- Profile-field/phone and avatar URL changes roll back with their audit writes after injected failures.
-- The aggregate SQL gate passes 8/8 suites and 61/61 tests with database/login cleanup.
+- `backend/tests/sql/profileConcurrency.sqltest.js` được thêm qua ĐỎ-XANH và đạt 6/6 trên môi trường chạy SQL Server đối soát dùng một lần.
+- Các lượt xem đầu đồng thời tạo chính xác một hàng `UserProfiles` và trả về cùng ID hồ sơ.
+- Thay đổi trường hồ sơ/điện thoại và URL ảnh đại diện hoàn tác cùng phần ghi kiểm toán sau lỗi được chèn.
+- Cổng SQL tổng hợp đạt 8/8 bộ và 61/61 kiểm thử kèm dọn dẹp cơ sở dữ liệu/đăng nhập.
 
-## Remaining Gates
+## Các cổng còn lại
 
-- Complete T-FE03-015 manual profile-screen checks for valid upload, invalid
-  type, and oversized-file feedback. The automated browser pass above does not
-  replace human L4 acceptance.
-- Dat/Nhat must complete final B7/L4 output and integration review before FE03
-  can be called complete or merged.
+- Hoàn thành kiểm tra thủ công màn hình hồ sơ T-FE03-015 cho tải lên hợp lệ, loại
+  không hợp lệ và phản hồi tệp quá lớn. Lượt trình duyệt tự động ở trên không
+  thay thế chấp thuận L4 của con người.
+- Dat/Nhat phải hoàn thành đầu ra B7/L4 cuối và đánh giá tích hợp trước khi FE03
+  có thể được gọi là hoàn thành hoặc được hợp nhất.

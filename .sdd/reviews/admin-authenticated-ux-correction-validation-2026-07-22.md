@@ -1,94 +1,94 @@
-# Admin Authenticated UX Correction Validation - 2026-07-22
+# Xác thực sửa UX Quản trị viên đã xác thực - 2026-07-22
 
-## Decision
+## Quyết định
 
-The authenticated Admin presentation correction is implemented and locally
-validated at `157b59b`. This is a Shell-only correction under `FE11-UXR08`:
-the sidebar no longer exposes a separate Permissions destination, User
-Management changes to cards before the desktop table can force page-level
-horizontal scrolling, and Audit preserves every canonical filter while making
-actions and safe row details easier to read.
+Phần sửa trình bày Quản trị viên đã xác thực được triển khai và xác thực cục bộ
+tại `157b59b`. Đây là phần sửa chỉ dành cho Khung theo `FE11-UXR08`:
+thanh bên không còn cung cấp đích Quyền riêng, Quản lý
+người dùng chuyển sang thẻ trước khi bảng máy tính để bàn có thể gây
+cuộn ngang cấp trang và Kiểm toán giữ mọi bộ lọc chuẩn trong khi làm cho
+thao tác và chi tiết hàng an toàn dễ đọc hơn.
 
-No backend, API, schema, authentication, authorization, role policy, lifecycle,
-pagination, or audit-redaction contract changed. Azure Staging deployment has
-passed. `FE11-UXR08` and the parent `FE11-UXR07` remain open until an
-authenticated human reviewer accepts the deployed desktop/mobile presentation.
+Không có hợp đồng backend, API, lược đồ, xác thực, phân quyền, chính sách vai trò, vòng đời,
+phân trang hoặc che dữ liệu kiểm toán nào thay đổi. Việc triển khai Azure Staging đã
+đạt. `FE11-UXR08` và phần cha `FE11-UXR07` vẫn còn mở đến khi một
+người đánh giá đã xác thực chấp thuận phần trình bày máy tính để bàn/di động đã triển khai.
 
-## Corrected Presentation Boundary
+## Ranh giới trình bày đã sửa
 
-- The Admin sidebar exposes exactly seven entries and omits only the separate
-  `permissions` destination.
-- User role management remains reachable through the `Phân quyền` action in
-  User Management; the FE11 role mutation flow was not removed or rewritten.
-- User Management uses the table above 1440px and responsive cards at 1440px
-  and below, preventing the page-level horizontal drag reported during review.
-- Audit retains `q`, `action`, `actorId`, `from`, and `to` query inputs.
-- Audit action entry accepts canonical raw values and provides readable
-  Vietnamese suggestions without changing the value sent to the API.
-- Safe audit details are collapsed per row and the table uses bounded semantic
-  columns, truncated long actor/target text, and compact date/time presentation.
+- Thanh bên Quản trị viên cung cấp chính xác bảy mục và chỉ bỏ đích
+  `permissions` riêng.
+- Quản lý vai trò người dùng vẫn có thể truy cập qua thao tác `Phân quyền` trong
+  Quản lý người dùng; luồng thay đổi vai trò FE11 không bị xóa hoặc viết lại.
+- Quản lý người dùng dùng bảng trên 1440px và thẻ đáp ứng ở 1440px
+  trở xuống, ngăn thao tác kéo ngang cấp trang được báo khi đánh giá.
+- Kiểm toán giữ đầu vào truy vấn `q`, `action`, `actorId`, `from` và `to`.
+- Mục nhập thao tác Kiểm toán chấp nhận giá trị thô chuẩn và cung cấp gợi ý
+  tiếng Việt dễ đọc mà không thay đổi giá trị gửi tới API.
+- Chi tiết kiểm toán an toàn được thu gọn theo hàng và bảng dùng các cột ngữ nghĩa
+  giới hạn, cắt ngắn văn bản tác nhân/đích dài và trình bày ngày/giờ gọn.
 
-## Test-First Evidence
+## Bằng chứng kiểm thử trước
 
-Focused RED contracts failed for the absent seven-entry navigation contract,
-the missing 1440px table-to-card breakpoint, the missing Audit action choices,
-and the missing per-row details disclosure. The corresponding GREEN contracts
-now pass and are included in the full frontend suite.
+Hợp đồng ĐỎ trọng tâm thất bại do thiếu hợp đồng điều hướng bảy mục,
+thiếu điểm ngắt bảng-sang-thẻ 1440px, thiếu lựa chọn thao tác Kiểm toán
+và thiếu phần công khai chi tiết theo hàng. Các hợp đồng XANH tương ứng
+hiện đạt và được đưa vào toàn bộ bộ frontend.
 
-## Fresh Local Automated Validation
+## Xác thực tự động cục bộ mới
 
-| Command | Result |
+| Lệnh | Kết quả |
 | --- | --- |
 | `npm.cmd --prefix frontend test` | PASS - 192/192 |
-| `npm.cmd --prefix frontend run lint` | PASS - no findings |
-| `npm.cmd --prefix frontend run build` | PASS - Vite production build |
-| `npm.cmd run trace:enforce` | PASS - all implemented features above threshold; FE11 36/38 FR tags (95%) |
-| Focused `fe11-admin-request-management.spec.js` with isolated ports | PASS - 1/1 Chromium |
-| `git diff --check` | PASS - no whitespace errors |
+| `npm.cmd --prefix frontend run lint` | PASS - không có phát hiện |
+| `npm.cmd --prefix frontend run build` | PASS - bản dựng Vite production |
+| `npm.cmd run trace:enforce` | PASS - mọi tính năng đã triển khai trên ngưỡng; FE11 có 36/38 thẻ FR (95%) |
+| `fe11-admin-request-management.spec.js` trọng tâm với cổng cô lập | PASS - 1/1 Chromium |
+| `git diff --check` | PASS - không có lỗi khoảng trắng |
 
-The isolated browser run used frontend port `48173` and backend port `43100`
-so pre-existing local Vite processes were not modified.
+Lần chạy trình duyệt cô lập dùng cổng frontend `48173` và cổng backend `43100`
+để không sửa các tiến trình Vite cục bộ có từ trước.
 
-## Responsive And Visual Evidence
+## Bằng chứng đáp ứng và hình ảnh
 
-Authenticated browser coverage proves that the document has no horizontal
-overflow and that the intended User Management presentation is active at each
-review width:
+Độ bao phủ trình duyệt đã xác thực chứng minh tài liệu không
+tràn ngang và phần trình bày Quản lý người dùng dự kiến hoạt động tại mỗi
+chiều rộng đánh giá:
 
-- `output/playwright/admin-user-management-1440.png` - cards;
-- `output/playwright/admin-user-management-1366.png` - cards;
-- `output/playwright/admin-user-management-1280.png` - cards;
-- `output/playwright/admin-user-management-390.png` - mobile cards;
-- `output/playwright/admin-audit-1366.png` - retained filters, readable columns,
-  and per-row safe-detail disclosure.
+- `output/playwright/admin-user-management-1440.png` - thẻ;
+- `output/playwright/admin-user-management-1366.png` - thẻ;
+- `output/playwright/admin-user-management-1280.png` - thẻ;
+- `output/playwright/admin-user-management-390.png` - thẻ di động;
+- `output/playwright/admin-audit-1366.png` - bộ lọc được giữ lại, cột dễ đọc
+  và phần công khai chi tiết an toàn theo hàng.
 
-The sidebar assertion also proves exactly seven entries with no Permissions
-destination, while the User Management assertion proves the role-management
-button remains available.
+Xác nhận thanh bên cũng chứng minh chính xác bảy mục không có đích Quyền,
+trong khi xác nhận Quản lý người dùng chứng minh nút quản lý vai trò
+vẫn khả dụng.
 
-## Four-Layer Validation
+## Xác thực bốn lớp
 
-- **L1 Implementation:** PASS - source, focused contracts, full frontend tests,
-  lint, and build are green.
-- **L2 Traceability:** PASS - the correction maps to BR-FE11-016..018,
-  FR-FE11-030/032/033, AC-FE11-016..018, and Q-FE11-011.
-- **L3 Boundary safety:** PASS - production changes are limited to Admin
-  presentation files; API ownership and security behavior are unchanged.
-- **L4 Integration:** AUTOMATED PASS - authenticated Chromium, responsive
-  images, Azure deployment, smoke test, health, and direct SPA route pass.
-  Explicit human visual approval remains pending.
+- **L1 Triển khai:** PASS - nguồn, hợp đồng trọng tâm, toàn bộ kiểm thử frontend,
+  lint và bản dựng đều đạt.
+- **L2 Truy vết:** PASS - phần sửa ánh xạ tới BR-FE11-016..018,
+  FR-FE11-030/032/033, AC-FE11-016..018 và Q-FE11-011.
+- **L3 An toàn ranh giới:** PASS - thay đổi production được giới hạn ở các tệp
+  trình bày Quản trị viên; quyền sở hữu API và hành vi bảo mật không đổi.
+- **L4 Tích hợp:** TỰ ĐỘNG ĐẠT - Chromium đã xác thực, ảnh
+  đáp ứng, triển khai Azure, kiểm tra nhanh, tình trạng và tuyến SPA trực tiếp đạt.
+  Phê duyệt hình ảnh rõ ràng của con người vẫn đang chờ.
 
-## Azure Staging And Human Acceptance
+## Azure Staging và chấp thuận của con người
 
-Workflow [29873466035](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29873466035)
-deployed `8627508e729f91deb74279bf7b47cd764c078934` successfully:
+Quy trình [29873466035](https://github.com/SWP391-LibraryManagement/LibraryManagement/actions/runs/29873466035)
+triển khai `8627508e729f91deb74279bf7b47cd764c078934` thành công:
 
-- `deploy-backend`, `deploy-frontend`, and `smoke-test` all concluded `success`;
+- `deploy-backend`, `deploy-frontend` và `smoke-test` đều kết thúc với `success`;
 - `GET https://app-library-api-staging-nhat714.azurewebsites.net/health`
-  returned HTTP 200 with `status: ok`;
+  trả về HTTP 200 với `status: ok`;
 - `GET https://lemon-wave-04db51100.7.azurestaticapps.net/admin/users`
-  returned HTTP 200 with the SPA root.
+  trả về HTTP 200 với gốc SPA.
 
-Still pending: authenticated human review of User Management and Audit at the
-deployed desktop/mobile widths. Automated evidence does not replace that visual
-acceptance.
+Vẫn đang chờ: đánh giá của con người đã xác thực đối với Quản lý người dùng và Kiểm toán ở các
+chiều rộng máy tính để bàn/di động đã triển khai. Bằng chứng tự động không thay thế chấp thuận
+hình ảnh đó.

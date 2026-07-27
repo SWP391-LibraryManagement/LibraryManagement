@@ -1,50 +1,50 @@
-# FE11 Evidence Metadata Validation
+# Xác thực siêu dữ liệu bằng chứng FE11
 
-Status: B7 INTEGRATION COMPLETE
+Trạng thái: TÍCH HỢP B7 HOÀN THÀNH
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Scope: `TD-027` / `FE11-META01`
+Phạm vi: `TD-027` / `FE11-META01`
 
-Base integration evidence:
+Bằng chứng tích hợp cơ sở:
 
-- TD-026 PR #34 merged as `411fa25ab60bb38c195307d983392ce362c1d633`.
-- TD-026 post-merge CI run `29652243809` completed successfully.
-- The serial `SPEC.md` writer window started from `origin/main@411fa25`.
+- PR #34 của TD-026 được hợp nhất dưới dạng `411fa25ab60bb38c195307d983392ce362c1d633`.
+- Lần chạy CI sau hợp nhất `29652243809` của TD-026 hoàn tất thành công.
+- Cửa sổ ghi `SPEC.md` tuần tự bắt đầu từ `origin/main@411fa25`.
 
-## Approved Diff
+## Diff đã phê duyệt
 
-- Changed exactly 22 approved FE11 traceability rows.
-- Changed only the existing `Test Case` and `Status` cells for those rows.
-- Marked 20 rows `COMPLETE (B7)` and 2 rows `PARTIAL` according to the approved matrix.
-- Preserved requirement IDs, wording, actors, flows, business rules, API behavior, acceptance criteria, and table structure.
-- Preserved every explicitly deferred AC/FR row as `Not Started`.
-- Kept whole-feature `Implementation State: DEFERRED` unchanged.
+- Thay đổi chính xác 22 hàng truy vết FE11 đã được phê duyệt.
+- Chỉ thay đổi các ô `Test Case` và `Status` hiện có của những hàng đó.
+- Đánh dấu 20 hàng là `COMPLETE (B7)` và 2 hàng là `PARTIAL` theo ma trận đã phê duyệt.
+- Giữ nguyên ID yêu cầu, cách diễn đạt, tác nhân, luồng, quy tắc nghiệp vụ, hành vi API, tiêu chí chấp thuận và cấu trúc bảng.
+- Giữ nguyên mọi hàng AC/FR được hoãn rõ ràng ở trạng thái `Not Started`.
+- Giữ nguyên `Implementation State: DEFERRED` của toàn tính năng.
 
-## Validation Evidence
+## Bằng chứng xác thực
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Approved-row scope comparison against `origin/main` | PASS - only 22 approved rows changed and only columns 5-6 changed |
-| Exact matrix replacement check | PASS - every Test Case/Status value matches the approved TD-027 matrix |
-| Deferred-row status check | PASS - all listed deferred rows remain `Not Started` |
-| Traceability enforcement | PASS - `node scripts/check-traceability.js --enforce --min=70` |
-| Full backend regression | PASS - 600/600 across 36 suites |
-| Frontend regression/lint/build | PASS - 113/113; lint and production build pass |
-| Diff hygiene | PASS - `git diff --check`; SPEC diff is exactly 22 additions and 22 deletions |
+| So sánh phạm vi hàng đã phê duyệt với `origin/main` | PASS - chỉ 22 hàng đã phê duyệt thay đổi và chỉ cột 5-6 thay đổi |
+| Kiểm tra thay thế ma trận chính xác | PASS - mọi giá trị Ca kiểm thử/Trạng thái khớp ma trận TD-027 đã phê duyệt |
+| Kiểm tra trạng thái hàng bị hoãn | PASS - mọi hàng bị hoãn đã liệt kê vẫn là `Not Started` |
+| Thực thi truy vết | PASS - `node scripts/check-traceability.js --enforce --min=70` |
+| Hồi quy toàn bộ backend | PASS - 600/600 trên 36 bộ |
+| Hồi quy/lint/bản dựng frontend | PASS - 113/113; lint và bản dựng production đạt |
+| Vệ sinh diff | PASS - `git diff --check`; diff SPEC chính xác là 22 dòng thêm và 22 dòng xóa |
 
-## Changed Files
+## Các tệp đã thay đổi
 
 - `.sdd/specs/feat-user-role-management/SPEC.md`
 - `.sdd/reviews/fe11-evidence-metadata-validation-2026-07-18.md`
 
-## H2 Review Boundary
+## Ranh giới đánh giá H2
 
-Human H2 review was approved on 2026-07-18. This evidence-only diff does not mark FE11 complete and does not authorize `TD-023` or `TD-025`.
+Đánh giá H2 của con người được phê duyệt vào 2026-07-18. Diff chỉ chứa bằng chứng này không đánh dấu FE11 hoàn thành và không cho phép `TD-023` hoặc `TD-025`.
 
-## B7 Integration Evidence
+## Bằng chứng tích hợp B7
 
-- Human H3 review was approved on 2026-07-18.
-- PR #35 merged into `main` as `c286cd9b98fc669ce6f140b75bd151483238c908`.
-- Post-merge CI run `29652617587` completed successfully.
-- `TD-027` / `FE11-META01` is complete through B7; whole FE11 remains deferred.
+- Đánh giá H3 của con người được phê duyệt vào 2026-07-18.
+- PR #35 được hợp nhất vào `main` dưới dạng `c286cd9b98fc669ce6f140b75bd151483238c908`.
+- Lần chạy CI sau hợp nhất `29652617587` hoàn tất thành công.
+- `TD-027` / `FE11-META01` hoàn thành đến B7; toàn bộ FE11 vẫn bị hoãn.

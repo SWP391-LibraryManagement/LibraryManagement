@@ -1,10 +1,10 @@
-# Skills
+# Kỹ năng
 
-This folder stores reusable project skills for agents.
+Thư mục này lưu các kỹ năng dự án có thể tái sử dụng cho tác nhân.
 
-Examples:
+Ví dụ:
 
-- SQL Server query review
-- REST API security review
-- React Bootstrap UI review
-- Library domain rule review
+- Rà soát truy vấn SQL Server
+- Rà soát bảo mật REST API
+- Rà soát UI React Bootstrap
+- Rà soát quy tắc nghiệp vụ thư viện

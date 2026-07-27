@@ -1,8 +1,8 @@
-# RFCs And ADRs
+# RFC và ADR
 
-This folder stores architecture decisions and request-for-comment documents.
+Thư mục này lưu các quyết định kiến trúc và tài liệu yêu cầu góp ý.
 
-Use the ADR naming style from the playbook:
+Sử dụng quy tắc đặt tên ADR trong playbook:
 
 ```text
 ADR-001-architecture.md

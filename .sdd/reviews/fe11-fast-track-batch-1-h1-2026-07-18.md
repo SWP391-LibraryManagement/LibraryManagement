@@ -1,43 +1,43 @@
-# FE11 Fast-Track Batch 1 H1 Review
+# Rà soát H1 Lô 1 Fast-Track FE11
 
-Status: APPROVED BY HUMAN - 2026-07-18
+Trạng thái: ĐƯỢC CON NGƯỜI PHÊ DUYỆT - 2026-07-18
 
-Date: 2026-07-18
+Ngày: 2026-07-18
 
-Baseline: `origin/main@1eb426196ebbc80339e2aed4558270967cd7269e`
+Đường cơ sở: `origin/main@1eb426196ebbc80339e2aed4558270967cd7269e`
 
-Batch scope: `TD-024`, `TD-026`, `TD-027`
+Phạm vi lô: `TD-024`, `TD-026`, `TD-027`
 
-Forecast only, outside Batch 1: `TD-023`, `TD-025`
+Chỉ dự báo, ngoài Lô 1: `TD-023`, `TD-025`
 
-## Pre-H1 Corrections Included
+## Các bản sửa trước H1 được bao gồm
 
-- Constitution review wording now distinguishes local pre-commit AI-output review from final post-check PR integration review.
-- Audit query names remain aligned with FE11 SPEC: `q`, `action`, `actorId`, `from`, `to`, `page`, and `limit`.
-- Audit metadata uses action-aware default-deny projection across current cross-feature writers; raw metadata and free text are never returned.
-- User counters reuse the completed FE12 `/api/reports/users` read model; no `/api/admin/user-summary` endpoint is introduced.
-- TD-027 targets only existing `Test Case` and `Status` cells and serializes its actual `SPEC.md` edit after TD-026 merges.
-- Batch activation requires a governance documentation PR, required checks, H3, and merge to `main`.
+- Cách diễn đạt rà soát Hiến chương giờ phân biệt rà soát đầu ra AI cục bộ trước commit với rà soát tích hợp PR cuối cùng sau kiểm tra.
+- Tên truy vấn kiểm toán vẫn căn chỉnh với SPEC FE11: `q`, `action`, `actorId`, `from`, `to`, `page` và `limit`.
+- Siêu dữ liệu kiểm toán dùng phép chiếu từ chối mặc định có nhận biết hành động trên các bên ghi liên tính năng hiện tại; siêu dữ liệu thô và văn bản tự do không bao giờ được trả về.
+- Bộ đếm người dùng tái sử dụng mô hình đọc FE12 `/api/reports/users` đã hoàn tất; không đưa vào điểm cuối `/api/admin/user-summary`.
+- TD-027 chỉ nhắm các ô `Test Case` và `Status` hiện có, đồng thời tuần tự hóa lần sửa `SPEC.md` thực tế sau khi TD-026 merge.
+- Kích hoạt lô yêu cầu PR tài liệu quản trị, các kiểm tra bắt buộc, H3 và merge vào `main`.
 
-## H1 Decisions
+## Các quyết định H1
 
-| ID | Decision | Recommendation |
+| ID | Quyết định | Đề xuất |
 | --- | --- | --- |
-| H1-001 | Adopt the corrected H1/H2/H3 authority model and Constitution wording | APPROVE |
-| H1-002 | Adopt canonical `GET /api/admin/audit-logs` with SPEC query names, cross-feature row scope, action-aware projection, and legacy `404 NOT_FOUND` retirement | APPROVE |
-| H1-003 | Adopt TD-026 Option C: preserve `{ data, pagination }`, remove list `summary`, and reuse FE12 `/api/reports/users` for Admin counters | APPROVE |
-| H1-004 | Use the corrected TD-027 matrix for existing test/evidence status cells only | APPROVE |
-| H1-005 | Batch order is `TD-024 -> TD-026 -> TD-027`; `TD-023` and `TD-025` remain unauthorized dependency forecasts | APPROVE |
-| H1-006 | Publish the exact governance activation diff as a docs PR; activate task/debt state only after required checks, H3, and merge | APPROVE |
+| H1-001 | Áp dụng mô hình thẩm quyền H1/H2/H3 đã sửa và cách diễn đạt Hiến chương | APPROVE |
+| H1-002 | Áp dụng `GET /api/admin/audit-logs` chuẩn với tên truy vấn SPEC, phạm vi hàng liên tính năng, phép chiếu có nhận biết hành động và loại bỏ `404 NOT_FOUND` cũ | APPROVE |
+| H1-003 | Áp dụng Phương án C TD-026: giữ `{ data, pagination }`, xóa `summary` danh sách và tái sử dụng FE12 `/api/reports/users` cho bộ đếm Quản trị viên | APPROVE |
+| H1-004 | Chỉ dùng ma trận TD-027 đã sửa cho các ô trạng thái kiểm thử/bằng chứng hiện có | APPROVE |
+| H1-005 | Thứ tự lô là `TD-024 -> TD-026 -> TD-027`; `TD-023` và `TD-025` vẫn là dự báo phần phụ thuộc chưa được cấp quyền | APPROVE |
+| H1-006 | Công bố chính xác phần khác biệt kích hoạt quản trị dưới dạng PR tài liệu; chỉ kích hoạt trạng thái tác vụ/nợ sau kiểm tra bắt buộc, H3 và merge | APPROVE |
 
-## Core And Shell
+## Core và Shell
 
-- Core: gate authority, Audit authorization/query/redaction/API ownership, FE11/FE12 read-model ownership, SPEC evidence truthfulness, and serial shared-file ownership.
-- Shell: Audit filter controls/rendering, mechanical endpoint adapters, dashboard-card mapping, and evidence formatting.
+- Core: thẩm quyền cổng, quyền sở hữu phân quyền/truy vấn/che dữ liệu/API Kiểm toán, quyền sở hữu mô hình đọc FE11/FE12, tính trung thực bằng chứng SPEC và quyền sở hữu tệp dùng chung tuần tự.
+- Shell: điều khiển/kết xuất bộ lọc Kiểm toán, bộ chuyển đổi điểm cuối cơ học, ánh xạ thẻ bảng điều khiển và định dạng bằng chứng.
 
-## Governance Activation Diff
+## Phần khác biệt kích hoạt quản trị
 
-H1 reviews and authorizes the exact documentation-only activation set:
+H1 rà soát và cho phép chính xác tập kích hoạt chỉ gồm tài liệu:
 
 - `.sdd/constitution.md`
 - `.agents/AGENTS.md`
@@ -55,13 +55,13 @@ H1 reviews and authorizes the exact documentation-only activation set:
 - `.sdd/specs/feat-user-role-management/CHANGELOG.md`
 - `TECH_DEBT.md`
 
-No backend, frontend, database, schema, dependency, or runtime configuration file belongs to the activation PR.
+Không tệp backend, frontend, cơ sở dữ liệu, lược đồ, phần phụ thuộc hay cấu hình thời gian chạy nào thuộc PR kích hoạt.
 
-## File Ownership After Activation
+## Quyền sở hữu tệp sau kích hoạt
 
-### TD-024 Builder-Owned Files
+### Các tệp thuộc sở hữu Builder TD-024
 
-- `.sdd/specs/feat-user-role-management/SPEC.md` only for H1-required API/detail clarification
+- `.sdd/specs/feat-user-role-management/SPEC.md` chỉ để làm rõ API/chi tiết H1 yêu cầu
 - `docs/api/api-contract.md`
 - `backend/src/docs/openapi.yaml`
 - `backend/src/routes/adminRoutes.js`
@@ -71,26 +71,26 @@ No backend, frontend, database, schema, dependency, or runtime configuration fil
 - `backend/src/services/adminService.js`
 - `backend/src/services/userManagementService.js`
 - `backend/src/repositories/auditLogRepository.js`
-- `backend/src/validators/adminValidators.js` (new)
-- `backend/tests/adminAuditLogRoutes.test.js` (new)
-- `backend/tests/adminAuditLogService.test.js` (new)
-- `backend/tests/auditLogRepository.test.js` (new)
+- `backend/src/validators/adminValidators.js` (mới)
+- `backend/tests/adminAuditLogRoutes.test.js` (mới)
+- `backend/tests/adminAuditLogService.test.js` (mới)
+- `backend/tests/auditLogRepository.test.js` (mới)
 - `backend/tests/userManagementRoutes.test.js`
 - `backend/tests/userManagementService.test.js`
 - `frontend/src/api/adminApi.js`
 - `frontend/src/api/userManagementApi.js`
 - `frontend/src/page/UserManagement.jsx`
-- `frontend/test/adminApi.test.js` (new)
+- `frontend/test/adminApi.test.js` (mới)
 - `frontend/test/userManagementApi.test.js`
 - `frontend/test/userManagementFrontend.test.js`
 
-### TD-026 Builder-Owned Files
+### Các tệp thuộc sở hữu Builder TD-026
 
-- `.sdd/specs/feat-user-role-management/SPEC.md` only if list-envelope documentation needs clarification
+- `.sdd/specs/feat-user-role-management/SPEC.md` chỉ khi tài liệu cấu trúc bao danh sách cần làm rõ
 - `docs/api/api-contract.md`
 - `backend/src/docs/openapi.yaml`
 - `backend/src/repositories/userRepository.js`
-- `backend/src/services/userManagementService.js` only if it forwards repository summary state
+- `backend/src/services/userManagementService.js` chỉ khi nó chuyển tiếp trạng thái tổng hợp của kho lưu trữ
 - `backend/tests/userRepository.test.js`
 - `backend/tests/userManagementService.test.js`
 - `backend/tests/userManagementRoutes.test.js`
@@ -98,70 +98,70 @@ No backend, frontend, database, schema, dependency, or runtime configuration fil
 - `frontend/test/userManagementApi.test.js`
 - `frontend/test/userManagementFrontend.test.js`
 
-TD-026 does not own Admin backend files, FE12 production files, or a new summary endpoint.
+TD-026 không sở hữu tệp backend Quản trị viên, tệp production FE12 hay điểm cuối tổng hợp mới.
 
-### TD-027 Integration-Lead Files
+### Các tệp của Trưởng nhóm Tích hợp TD-027
 
-- `.sdd/specs/feat-user-role-management/SPEC.md` existing `Test Case` and `Status` cells only
-- `.sdd/specs/feat-user-role-management/PLAN.md` stale slice-state text only
-- `.sdd/specs/feat-user-role-management/TASKS.md` stale slice-state text only
-- `.sdd/specs/feat-user-role-management/TEST_PLAN.md` stale evidence text only
-- `.sdd/specs/feat-user-role-management/CHANGELOG.md` only if new integration evidence is required; historical entries remain unchanged
+- `.sdd/specs/feat-user-role-management/SPEC.md` chỉ các ô `Test Case` và `Status` hiện có
+- `.sdd/specs/feat-user-role-management/PLAN.md` chỉ văn bản trạng thái lát cắt lỗi thời
+- `.sdd/specs/feat-user-role-management/TASKS.md` chỉ văn bản trạng thái lát cắt lỗi thời
+- `.sdd/specs/feat-user-role-management/TEST_PLAN.md` chỉ văn bản bằng chứng lỗi thời
+- `.sdd/specs/feat-user-role-management/CHANGELOG.md` chỉ khi cần bằng chứng tích hợp mới; mục lịch sử vẫn không thay đổi
 - `.sdd/reviews/auth-account-setup-boundary-validation-review-2026-07-15.md`
 - `TECH_DEBT.md`
 - `.agents/CLAUDE.md`
 
-TD-027 matrix preparation may run in parallel. The actual `SPEC.md` edit runs only after TD-026 merges, in a serial Integration Lead window, and receives its own H2/H3 PR flow.
+Việc chuẩn bị ma trận TD-027 có thể chạy song song. Lần sửa `SPEC.md` thực tế chỉ chạy sau khi TD-026 merge, trong cửa sổ Trưởng nhóm Tích hợp tuần tự và nhận luồng PR H2/H3 riêng.
 
-## Validation Gates
+## Các cổng xác thực
 
-- L1: focused/full affected tests, lint/build where affected, traceability, diff hygiene, secret/security scans, and required PR CI.
-- L2: requirement-to-task/code/test/evidence mapping with exact row IDs.
-- L3: Admin-first authorization, typed validation, default-deny redaction, no secret/schema/auth expansion, and Constitution gate consistency.
-- L4: Admin Audit read/filter flow, independent FE11-list/FE12-statistics behavior, and evidence-status acceptance review.
+- L1: kiểm thử bị ảnh hưởng tập trung/đầy đủ, lint/bản dựng khi bị ảnh hưởng, truy vết, vệ sinh phần khác biệt, quét bí mật/bảo mật và CI PR bắt buộc.
+- L2: ánh xạ yêu cầu tới tác vụ/mã/kiểm thử/bằng chứng với ID hàng chính xác.
+- L3: phân quyền ưu tiên Quản trị viên, xác thực có kiểu, che dữ liệu từ chối mặc định, không mở rộng bí mật/lược đồ/xác thực và tính nhất quán cổng Hiến chương.
+- L4: luồng đọc/lọc Kiểm toán Quản trị viên, hành vi danh sách FE11/thống kê FE12 độc lập và rà soát chấp nhận trạng thái bằng chứng.
 
-## Activation State Rules
+## Quy tắc trạng thái kích hoạt
 
-- Before the governance activation PR merges, `TD-024`, `TD-026`, and `TD-027` remain authoritative `OPEN` on `main`.
-- The activation PR diff changes them to `IN PROGRESS`; that state becomes authoritative only when the PR reaches `main`.
-- `FE11-FT01` becomes complete after activation merge. `FE11-AUD01`, `FE11-ENV01`, and `FE11-META01` remain open task groups.
-- `TD-023` and `TD-025` remain `OPEN`.
-- Whole FE11 remains `Implementation State: DEFERRED`.
-- `TD-027` becomes `RESOLVED` only after its later exact SPEC metadata PR passes H2, required checks, H3, merge, and integration evidence.
+- Trước khi PR kích hoạt quản trị merge, `TD-024`, `TD-026` và `TD-027` vẫn có trạng thái `OPEN` có thẩm quyền trên `main`.
+- Phần khác biệt PR kích hoạt đổi chúng thành `IN PROGRESS`; trạng thái đó chỉ có thẩm quyền khi PR tới `main`.
+- `FE11-FT01` hoàn tất sau merge kích hoạt. `FE11-AUD01`, `FE11-ENV01` và `FE11-META01` vẫn là nhóm tác vụ mở.
+- `TD-023` và `TD-025` vẫn `OPEN`.
+- Toàn bộ FE11 vẫn ở `Implementation State: DEFERRED`.
+- `TD-027` chỉ thành `RESOLVED` sau khi PR siêu dữ liệu SPEC chính xác sau đó của nó đạt H2, kiểm tra bắt buộc, H3, merge và bằng chứng tích hợp.
 
-## Stop Rules
+## Quy tắc dừng
 
-- Stop if H1 changes any approved contract or ownership boundary.
-- Stop for overlapping Core drift after this packet is approved.
-- Stop if a current Audit action cannot be represented by the approved projector without raw free text or sensitive fields.
-- Stop if FE12 `/api/reports/users` no longer supplies the approved counts or its owner rejects reuse.
-- Stop for permission/schema/authentication expansion, secret exposure, failed required checks, or incompatible agent assumptions.
+- Dừng nếu H1 thay đổi bất kỳ hợp đồng hay ranh giới sở hữu đã phê duyệt nào.
+- Dừng khi có sai lệch Core chồng lấn sau khi gói này được phê duyệt.
+- Dừng nếu hành động Kiểm toán hiện tại không thể được bộ chiếu đã phê duyệt biểu diễn mà không có văn bản tự do thô hay trường nhạy cảm.
+- Dừng nếu FE12 `/api/reports/users` không còn cung cấp số lượng đã phê duyệt hoặc chủ sở hữu từ chối tái sử dụng.
+- Dừng khi mở rộng quyền/lược đồ/xác thực, làm lộ bí mật, kiểm tra bắt buộc thất bại hoặc giả định tác nhân không tương thích.
 
-## H1 Approval Effect
+## Hiệu lực phê duyệt H1
 
-Approval authorizes:
+Phê duyệt cho phép:
 
-- Mechanical status substitution from `H1 REVIEW READY` to `APPROVED BY HUMAN - 2026-07-18` in the three H1 artifacts and this packet.
-- Mechanical Fast-Track design status substitution from `APPROVED CONCEPT - H1 REVISION REVIEW READY` to `APPROVED BY HUMAN - 2026-07-18`.
-- The exact governance/FE11 documentation activation edits defined in the execution plan.
-- Commit and publication of the documentation-only activation PR.
-- Automatic generation of the detailed TD-024 implementation plan in a separate docs worktree while activation PR checks run.
+- Thay thế trạng thái cơ học từ `H1 REVIEW READY` thành `APPROVED BY HUMAN - 2026-07-18` trong ba sản phẩm H1 và gói này.
+- Thay thế trạng thái thiết kế Fast-Track cơ học từ `APPROVED CONCEPT - H1 REVISION REVIEW READY` thành `APPROVED BY HUMAN - 2026-07-18`.
+- Chính xác các lần sửa kích hoạt tài liệu quản trị/FE11 được xác định trong kế hoạch thực thi.
+- Commit và công bố PR kích hoạt chỉ gồm tài liệu.
+- Tự động tạo kế hoạch triển khai TD-024 chi tiết trong worktree tài liệu riêng khi kiểm tra PR kích hoạt chạy.
 
-Approval does not authorize:
+Phê duyệt không cho phép:
 
-- Backend/frontend product-code commit or push.
-- Product implementation before the activation PR merges into `main`.
-- Merge of any PR without H3.
-- TD-023 or TD-025 implementation.
+- Commit hay push mã sản phẩm backend/frontend.
+- Triển khai sản phẩm trước khi PR kích hoạt merge vào `main`.
+- Merge bất kỳ PR nào không có H3.
+- Triển khai TD-023 hay TD-025.
 
-## Human Approval
+## Phê duyệt bởi con người
 
-Approved on 2026-07-18. H1-001..H1-006 are locked for Batch 1.
+Được phê duyệt vào 2026-07-18. H1-001..H1-006 bị khóa cho Lô 1.
 
-## Human Review Checklist
+## Danh sách kiểm tra rà soát bởi con người
 
-1. Approve or reject H1-001 through H1-006 as one locked package.
-2. Confirm Audit uses `q/from/to`, all persisted rows, action-aware default-deny details, and legacy `404 NOT_FOUND`.
-3. Confirm TD-026 reuses FE12 and creates no summary endpoint.
-4. Confirm TD-027 edits only existing evidence/status cells in a serial post-TD-026 window.
-5. Confirm activation requires docs PR checks, H3, and merge before work state becomes authoritative.
+1. Phê duyệt hoặc từ chối từ H1-001 đến H1-006 như một gói đã khóa.
+2. Xác nhận Kiểm toán dùng `q/from/to`, mọi hàng đã lưu, chi tiết từ chối mặc định có nhận biết hành động và `404 NOT_FOUND` cũ.
+3. Xác nhận TD-026 tái sử dụng FE12 và không tạo điểm cuối tổng hợp.
+4. Xác nhận TD-027 chỉ sửa các ô bằng chứng/trạng thái hiện có trong cửa sổ tuần tự sau TD-026.
+5. Xác nhận kích hoạt yêu cầu kiểm tra PR tài liệu, H3 và merge trước khi trạng thái công việc có thẩm quyền.

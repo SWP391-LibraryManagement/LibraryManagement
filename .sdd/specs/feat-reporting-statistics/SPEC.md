@@ -1,446 +1,446 @@
-# SPEC.md - FE12 Reporting & Statistics
+# SPEC.md - FE12 Báo cáo & Thống kê
 
-# Version: 0.2.0
+# Phiên bản: 0.2.0
 
-# Status: APPROVED - QUERY ALLOWLIST 2026-07-27
+# Trạng thái: APPROVED - DANH SÁCH CHO PHÉP THAM SỐ TRUY VẤN 2026-07-27
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature ID: FE12
+# ID tính năng: FE12
 
-# Feature folder: `.sdd/specs/feat-reporting-statistics/`
+# Thư mục tính năng: `.sdd/specs/feat-reporting-statistics/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> là nguồn có thẩm quyền về trạng thái triển khai hiện tại. Các nhãn `Not Started` cũ hơn,
+> `PARTIAL`, `READY FOR REVIEW` hoặc đang chờ đánh giá được giữ lại bên dưới là
+> ảnh chụp nhanh lịch sử về kế hoạch/bằng chứng, không phải trạng thái phân phối hiện tại.
 
-> Source of truth for FE12 Reporting & Statistics. v0.1.5 preserves the approved report scope while making access, empty-filter, unknown-status, pagination, audit, and export behavior deterministic; human re-review is required.
+> Nguồn chuẩn cho Báo cáo & Thống kê FE12. v0.1.5 giữ nguyên phạm vi báo cáo đã phê duyệt, đồng thời quy định rõ hành vi truy cập, bộ lọc trống, trạng thái không xác định, phân trang, kiểm toán và xuất; bắt buộc con người đánh giá lại.
 >
-> Revision v0.1.9 records the existing parameterized SQL `LIKE` behavior for
-> report search and requires in-memory test repositories to preserve that
-> behavior instead of treating wildcard characters as literals.
+> Bản sửa đổi v0.1.9 ghi nhận hành vi SQL `LIKE` tham số hóa hiện có cho
+> tìm kiếm báo cáo và yêu cầu các repository kiểm thử trong bộ nhớ giữ nguyên
+> hành vi đó thay vì coi ký tự đại diện là ký tự chữ.
 >
-> Revision v0.2.0 makes each endpoint's query allowlist an enforced boundary:
-> any unknown key returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before
-> report service or repository execution.
-> Nhat approved this written revision on 2026-07-27. Approval authorizes
-> PLAN/TASKS preparation only; implementation remains unclaimed until
-> RED-GREEN evidence and acceptance gates are completed.
+> Bản sửa đổi v0.2.0 biến danh sách cho phép tham số truy vấn của từng endpoint thành ranh giới bắt buộc:
+> mọi khóa không xác định đều trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi
+> thực thi service hoặc repository báo cáo.
+> Nhat đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Phê duyệt chỉ cho phép
+> chuẩn bị PLAN/TASKS; chưa được tuyên bố là đã triển khai cho đến khi
+> hoàn tất bằng chứng RED-GREEN và các cổng nghiệm thu.
 
 ---
 
-## 1. Feature Overview
+## 1. Tổng quan về tính năng
 
-### 1.1 Feature Name
+### 1.1 Tên tính năng
 
-Reporting & Statistics
+Báo cáo & Thống kê
 
-### 1.2 Business Context
+### 1.2 Bối cảnh kinh doanh
 
-Librarians and administrators need summary information to understand library activity: borrowing volume, returned/overdue items, inventory status, and user/member statistics. Reports support operational decisions without requiring staff to manually inspect raw database records.
+Thủ thư và quản trị viên cần thông tin tóm tắt để hiểu hoạt động thư viện: khối lượng mượn, tài liệu đã trả/quá hạn, trạng thái tồn kho và thống kê người dùng/thành viên. Báo cáo hỗ trợ quyết định vận hành mà không buộc nhân viên kiểm tra thủ công các bản ghi cơ sở dữ liệu thô.
 
-Reporting must be read-only. Source features remain responsible for creating and updating business data; FE12 only aggregates and presents approved metrics.
+Báo cáo phải ở dạng chỉ đọc. Các tính năng nguồn vẫn chịu trách nhiệm tạo và cập nhật dữ liệu kinh doanh; FE12 chỉ tổng hợp và trình bày các số liệu đã được phê duyệt.
 
-### 1.3 Goal / Outcome
+### 1.3 Mục tiêu / Kết quả
 
-The system shall:
+Hệ thống sẽ:
 
-- Allow authorized actors to view borrowing reports.
-- Allow authorized actors to view inventory reports.
-- Allow authorized actors to view user statistics.
-- Validate report filters.
-- Aggregate data from source tables without modifying source records.
-- Protect reports from unauthorized access and excessive personal data exposure.
+- Cho phép các bên được ủy quyền xem báo cáo vay.
+- Cho phép các tác nhân được ủy quyền xem báo cáo hàng tồn kho.
+- Cho phép các tác nhân được ủy quyền xem số liệu thống kê của người dùng.
+- Xác thực bộ lọc báo cáo.
+- Tổng hợp dữ liệu từ các bảng nguồn mà không sửa đổi bản ghi nguồn.
+- Bảo vệ báo cáo khỏi bị truy cập trái phép và để lộ dữ liệu cá nhân quá mức.
 
-### 1.4 Scope Level
+### 1.4 Mức phạm vi
 
-- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
-- [x] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+- [ ] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [x] Đặc tả tiêu chuẩn - tính năng thông thường có quy tắc nghiệp vụ và xác thực
+- [ ] Đặc tả nhẹ - UI đơn giản, tài liệu hoặc tính năng rủi ro thấp
 
 ---
 
-## 2. Actors and Permissions
+## 2. Tác nhân và phân quyền
 
-| Actor | Description | Permission / Responsibility |
+| Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Librarian | Library staff | View all three Phase 1 reports: borrowing, inventory, and user statistics. |
-| Admin | System administrator | View all three Phase 1 reports: borrowing, inventory, and user statistics. |
-| Member | Registered library user | No staff reporting access in FE12. |
-| Guest | Unauthenticated visitor | No reporting access. |
-| Source Features | Internal data providers | Provide source data through database records. |
+| Thủ thư | Nhân viên thư viện | Xem tất cả ba báo cáo Giai đoạn 1: số liệu thống kê về vay, tồn kho và người dùng. |
+| Quản trị viên | Quản trị viên hệ thống | Xem tất cả ba báo cáo Giai đoạn 1: số liệu thống kê về vay, tồn kho và người dùng. |
+| Thành viên | Người dùng thư viện đã đăng ký | Không có quyền truy cập báo cáo dành cho nhân viên trong FE12. |
+| Khách | Khách truy cập không được xác thực | Không có quyền truy cập báo cáo. |
+| Các tính năng nguồn | Nguồn cung cấp dữ liệu nội bộ | Cung cấp dữ liệu nguồn qua các bản ghi cơ sở dữ liệu. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE12-001: Actor is authenticated.
-- PRE-FE12-002: Actor has a role allowed to view the requested report.
-- PRE-FE12-003: Report source tables exist and status definitions are approved.
-- PRE-FE12-004: Every supplied report query key is in the exact endpoint allowlist in Section 11 and every value satisfies the validation rules in Sections 6 and 10.2.
-- PRE-FE12-005: The report is read-only and does not update source data.
-
----
-
-## 4. Main Flows
-
-### MF-FE12-001: View Borrowing Report
-
-1. Librarian/admin opens borrowing report.
-2. Actor selects zero or more approved filters: `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, or `limit`.
-3. The system rejects unknown query keys, then validates approved filter values before report execution.
-4. The system reads `BorrowRequests`, `BorrowDetails`, `BookCopies`, `Books`, and related member data.
-5. The system calculates approved borrowing metrics.
-6. The system displays the report without changing borrowing data.
-
-### MF-FE12-002: View Inventory Report
-
-1. Librarian/admin opens inventory report.
-2. Actor selects zero or more approved filters: `q`, `categoryId`, `bookId`, `status`, `location`, `page`, or `limit`.
-3. The system rejects unknown query keys, then validates approved filter values before report execution.
-4. The system reads `Books`, `BookCopies`, categories, authors, and publishers.
-5. The system calculates approved inventory metrics.
-6. The system displays inventory counts and status summaries.
-
-### MF-FE12-003: View User Statistics
-
-1. Librarian/admin opens user statistics.
-2. Actor selects zero or more approved filters: `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, or `limit`.
-3. The system rejects unknown query keys, then validates approved filter values before report execution.
-4. The system reads `Users`, `UserRoles`, `Roles`, and `Members`; runtime membership status and approval date come from `Members`.
-5. The system calculates approved user/member metrics.
-6. The system displays aggregate statistics without exposing unnecessary personal details.
+- PRE-FE12-001: Tác nhân được xác thực.
+- PRE-FE12-002: Tác nhân có vai trò được phép xem báo cáo được yêu cầu.
+- PRE-FE12-003: Bảng nguồn báo cáo tồn tại và định nghĩa trạng thái được phê duyệt.
+- PRE-FE12-004: Mọi khóa truy vấn báo cáo được cung cấp đều nằm trong danh sách cho phép chính xác của endpoint ở Phần 11 và mọi giá trị đều đáp ứng quy tắc xác thực trong Phần 6 và 10.2.
+- PRE-FE12-005: Báo cáo ở dạng chỉ đọc và không cập nhật dữ liệu nguồn.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE12-001: Unauthorized Report Access
+### MF-FE12-001: Xem báo cáo mượn
 
-1. Guest, member, or unauthorized actor requests a report.
-2. The system checks role permission.
-3. The system denies access.
+1. Thủ thư/quản trị viên mở báo cáo mượn.
+2. Tác nhân chọn không có hoặc có nhiều bộ lọc đã phê duyệt: `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page` hoặc `limit`.
+3. Hệ thống từ chối các khóa truy vấn không xác định, sau đó xác thực các giá trị bộ lọc đã được phê duyệt trước khi thực hiện báo cáo.
+4. Hệ thống đọc `BorrowRequests`, `BorrowDetails`, `BookCopies`, `Books` và dữ liệu thành viên liên quan.
+5. Hệ thống tính toán số liệu vay được phê duyệt.
+6. Hệ thống hiển thị báo cáo mà không thay đổi dữ liệu mượn.
 
-### AF-FE12-002: Invalid Filter
+### MF-FE12-002: Xem báo cáo tồn kho
 
-1. Actor submits an unknown query key or an invalid date range, status, role, ID, search, or pagination value.
-2. The system rejects an unknown key with safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER`; malformed values, unsupported enum values, and invalid ranges receive the existing safe validation response. A well-formed positive ID that has no matching source record follows AF-FE12-003 instead.
-3. The report service and repository are not executed.
+1. Thủ thư/quản trị viên mở báo cáo tồn kho.
+2. Tác nhân chọn không có hoặc có nhiều bộ lọc đã phê duyệt: `q`, `categoryId`, `bookId`, `status`, `location`, `page` hoặc `limit`.
+3. Hệ thống từ chối các khóa truy vấn không xác định, sau đó xác thực các giá trị bộ lọc đã được phê duyệt trước khi thực hiện báo cáo.
+4. Hệ thống đọc `Books`, `BookCopies`, danh mục, tác giả và nhà xuất bản.
+5. Hệ thống tính toán số liệu tồn kho được phê duyệt.
+6. Hệ thống hiển thị số lượng hàng tồn kho và tóm tắt trạng thái.
 
-### AF-FE12-003: No Data For Report
+### MF-FE12-003: Xem thống kê người dùng
 
-1. Actor selects filters that match no records.
-2. The system returns an empty report with zero counts.
-3. The system does not return an error.
-
-### AF-FE12-004: Source Data Incomplete
-
-1. Report source records are missing optional fields.
-2. The system returns `null` for missing optional display fields and groups an unrecognized source status as `UNKNOWN`; it does not silently remove the source record from reproducible totals.
-3. The system does not change source records.
-
----
-
-## 6. Business Rules
-
-Use these stable IDs for tasks and tests.
-
-- BR-FE12-001: Reports are read-only and must not modify source data.
-- BR-FE12-002: Guests and members cannot access staff reports.
-- BR-FE12-003: Report access must be role-protected on the server; both Librarian and Admin may access borrowing, inventory, and user-statistics reports, while Member and Guest may access none.
-- BR-FE12-004: Borrowing reports must use FE07 borrowing records as source of truth. Borrow-period and top-book metrics count only `BorrowDetails` in `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, or `OVERDUE`; `REQUESTED` is not a handed-over loan and does not contribute.
-- BR-FE12-005: Inventory reports must use FE06/BookCopies status as source of truth.
-- BR-FE12-006: User statistics must use FE11/Users/Roles data as source of truth.
-- BR-FE12-007: Membership statistics, if shown, must use FE04 membership data as source of truth.
-- BR-FE12-008: FE12 must enforce the exact endpoint query allowlists before report service or repository execution. Borrowing accepts only `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, `limit`; inventory accepts only `q`, `categoryId`, `bookId`, `status`, `location`, `page`, `limit`; users accepts only `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, `limit`. Any other key returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` without echoing its value. Approved-key syntax, enum membership, dates, search, IDs, and pagination must then be validated before query execution; a well-formed positive filter ID that does not match a source record is valid and yields an empty report.
-- BR-FE12-009: Date range filters must use valid `YYYY-MM-DD` values with start <= end. For user statistics, the date range limits only `newMembersByPeriod` by non-null `Members.ApprovedAt`; a historical approval remains counted even if the current membership/account status later becomes inactive, while total/status/role counts remain global subject to non-date filters.
-- BR-FE12-010: Reports must use approved status definitions from source features; an unrecognized persisted source status must be grouped as `UNKNOWN` and remain included in reproducible totals.
-- BR-FE12-011: User statistics must not expose unnecessary personal data.
-- BR-FE12-012: Aggregate counts must be reproducible from source records.
-- BR-FE12-013: CSV, PDF, spreadsheet, and other report export are strictly out of scope for Phase 1; FE12 exposes no export endpoint or export control.
-- BR-FE12-014: Every successful Librarian/Admin report view must write one safe audit event identifying actor, report type, timestamp, and success without raw filter/query values or returned report rows.
-- BR-FE12-015: Detailed rows use `page=1`, `limit=20`, with `page>=1` and `limit=1..100`; stable ordering is borrowing `BorrowDate DESC, BorrowDetailId DESC`, inventory `Title ASC, BookId ASC, CopyId ASC`, and users `UserId ASC`.
-- BR-FE12-016: Each report accepts an optional trimmed `q` of at most 200 characters. Production binds the effective `%${q}%` pattern as a parameterized SQL `LIKE` value and does not escape or reject `%`, `_`, bracket classes/ranges, or negated bracket classes; in-memory report repositories shall emulate those case-insensitive semantics. Borrowing search matches book title, barcode, username, email, or user ID; inventory search matches title, barcode, location, or book ID; user search matches user ID, role, account status, or membership status. Search and selected filters are applied before aggregation and pagination.
+1. Thủ thư/quản trị viên mở thống kê người dùng.
+2. Tác nhân chọn không có hoặc có nhiều bộ lọc đã phê duyệt: `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page` hoặc `limit`.
+3. Hệ thống từ chối các khóa truy vấn không xác định, sau đó xác thực các giá trị bộ lọc được phê duyệt trước khi thực hiện báo cáo.
+4. Hệ thống đọc `Users`, `UserRoles`, `Roles` và `Members`; trạng thái thành viên thời gian chạy và ngày phê duyệt đến từ `Members`.
+5. Hệ thống tính các chỉ số người dùng/thành viên đã được phê duyệt.
+6. Hệ thống hiển thị số liệu thống kê tổng hợp mà không để lộ các chi tiết cá nhân không cần thiết.
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng thay thế
 
-- FR-FE12-001: When an authorized actor views borrowing report, the system shall return the exact borrowing metrics and row fields defined in Section 10.3.
-- FR-FE12-002: When an authorized actor views inventory report, the system shall return the exact inventory metrics and row fields defined in Section 10.3 and identify low-stock books with two or fewer effective available copies.
-- FR-FE12-003: When an authorized actor views user statistics, the system shall return the exact user/member metrics and row fields defined in Section 10.3, with date filters applied to approval-period growth only.
-- FR-FE12-004: If an actor is unauthorized, then the system shall deny report access.
-- FR-FE12-005: If a report request contains a query key outside the selected endpoint's allowlist, the system shall return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service or repository execution. If an approved key has invalid syntax, enum membership, date range, search length, ID, page, or limit, the system shall return the existing safe validation error before report query execution.
-- FR-FE12-006: If valid filters match no data, including a well-formed unknown source ID, then the system shall return zero aggregates and empty detailed rows.
-- FR-FE12-007: When reports are generated, the system shall not update source data.
-- FR-FE12-008: When user statistics are generated, the system shall return aggregate data by default rather than raw personal details.
-- FR-FE12-009: When an authorized report request succeeds, the system shall write the safe report-view audit event required by BR-FE12-014.
-- FR-FE12-010: When detailed rows are returned, the system shall apply the approved pagination defaults, bounds, and report-specific stable ordering from BR-FE12-015.
-- FR-FE12-011: When staff searches or filters a report, the system shall combine `q` with all supplied report-specific filters, reload canonical server metrics and rows, and avoid a redundant successful-load banner.
+### AF-FE12-001: Truy cập báo cáo trái phép
 
----
+1. Khách, thành viên hoặc tác nhân trái phép yêu cầu báo cáo.
+2. Hệ thống kiểm tra quyền của vai trò.
+3. Hệ thống từ chối truy cập.
 
-## 8. Acceptance Criteria
+### AF-FE12-002: Bộ lọc không hợp lệ
 
-- AC-FE12-001: Given a Librarian or Admin, when viewing borrowing report, then borrowing totals and status counts are displayed.
-- AC-FE12-002: Given a Librarian or Admin, when viewing inventory report, then copy counts by status and book/category are displayed according to filters, and books with 0-2 available copies appear in the low-stock list. Status/location filters select matching books and filtered copy totals without hiding those books' full availability from low-stock calculation.
-- AC-FE12-003: Given a Librarian or Admin, when viewing user statistics with a date range, then total/status/role counts remain global and `newMembersByPeriod` includes only approvals in that range.
-- AC-FE12-004: Given a guest or member, when requesting staff reports, then access is denied.
-- AC-FE12-005: Given any of the three report endpoints receives `?bogus=1` or another unknown query key, when submitted, then the system returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` and neither report service nor repository executes. Given an approved key with a malformed/unsupported value or invalid pagination/date range, the existing safe validation error is returned before querying.
-- AC-FE12-006: Given valid filters with no matching data or a well-formed unknown ID, when the report is generated, then the system returns zero aggregates and empty rows.
-- AC-FE12-007: Given a report request, when the report completes, then no source business records are modified.
-- AC-FE12-008: Given user statistics, when results are returned, then unnecessary personal profile details are not exposed.
-- AC-FE12-009: Given a successful Librarian/Admin report view, when the response completes, then one safe audit event records actor, report type, timestamp, and success without raw filters or report rows.
-- AC-FE12-010: Given detailed report rows without explicit pagination, when returned, then `page=1`, `limit=20`, and the report-specific stable ordering apply; invalid bounds are rejected.
-- AC-FE12-011: Given a Librarian/Admin enters search text and report filters, when applying them, then filtering occurs before aggregation/pagination, user rows are ordered by increasing `userId`, and no “Đã tải dữ liệu” success notice is rendered.
+1. Tác nhân gửi khóa truy vấn không xác định hoặc phạm vi ngày, trạng thái, vai trò, ID, tìm kiếm hoặc giá trị phân trang không hợp lệ.
+2. Hệ thống từ chối khóa không xác định bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn; giá trị sai định dạng, giá trị enum không được hỗ trợ và phạm vi không hợp lệ nhận phản hồi xác thực an toàn hiện có. ID dương đúng định dạng nhưng không có bản ghi nguồn khớp sẽ theo AF-FE12-003.
+3. Service và repository báo cáo không được thực thi.
+
+### AF-FE12-003: Không có dữ liệu cho báo cáo
+
+1. Tác nhân chọn các bộ lọc không khớp với bản ghi nào.
+2. Hệ thống trả về báo cáo trống với số lượng bằng không.
+3. Hệ thống không trả về lỗi.
+
+### AF-FE12-004: Dữ liệu nguồn chưa đầy đủ
+
+1. Bản ghi nguồn báo cáo thiếu các trường tùy chọn.
+2. Hệ thống trả về `null` cho các trường hiển thị tùy chọn bị thiếu và nhóm trạng thái nguồn không được nhận dạng thành `UNKNOWN`; nó không âm thầm xóa bản ghi nguồn khỏi tổng số có thể lặp lại.
+3. Hệ thống không thay đổi hồ sơ nguồn.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 6. Quy tắc kinh doanh
 
-| ID | Edge Case / Error | Expected System Behavior |
+Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
+
+- BR-FE12-001: Báo cáo ở dạng chỉ đọc và không được sửa đổi dữ liệu nguồn.
+- BR-FE12-002: Khách và thành viên không thể truy cập báo cáo của nhân viên.
+- BR-FE12-003: Quyền truy cập báo cáo phải được bảo vệ theo vai trò trên máy chủ; cả Thủ thư và Quản trị viên đều có thể truy cập báo cáo mượn, tồn kho và thống kê người dùng, còn Thành viên và Khách không được truy cập.
+- BR-FE12-004: Báo cáo mượn phải dùng bản ghi mượn FE07 làm nguồn chuẩn. Các chỉ số theo kỳ mượn và sách được mượn nhiều nhất chỉ tính `BorrowDetails` ở trạng thái `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` hoặc `OVERDUE`; `REQUESTED` chưa phải lượt mượn đã bàn giao nên không được tính.
+- BR-FE12-005: Báo cáo tồn kho phải dùng trạng thái FE06/BookCopies làm nguồn chuẩn.
+- BR-FE12-006: Thống kê người dùng phải dùng dữ liệu FE11/Users/Roles làm nguồn chuẩn.
+- BR-FE12-007: Thống kê tư cách thành viên, nếu hiển thị, phải dùng dữ liệu thành viên FE04 làm nguồn chuẩn.
+- BR-FE12-008: FE12 phải thực thi chính xác danh sách cho phép tham số truy vấn của endpoint trước khi chạy service hoặc repository báo cáo. Báo cáo mượn chỉ chấp nhận `q`, `fromDate`, `toDate`, `status`, `bookId`, `userId`, `page`, `limit`; báo cáo tồn kho chỉ chấp nhận `q`, `categoryId`, `bookId`, `status`, `location`, `page`, `limit`; báo cáo người dùng chỉ chấp nhận `q`, `roleId`, `status`, `membershipStatus`, `fromDate`, `toDate`, `page`, `limit`. Mọi khóa khác trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn mà không phản chiếu giá trị của khóa. Sau đó phải xác thực cú pháp của khóa đã phê duyệt, tư cách thành viên trong enum, ngày, tìm kiếm, ID và phân trang trước khi thực thi truy vấn; ID bộ lọc dương, đúng định dạng nhưng không khớp bản ghi nguồn là hợp lệ và tạo báo cáo trống.
+- BR-FE12-009: Bộ lọc phạm vi ngày phải dùng giá trị `YYYY-MM-DD` hợp lệ với ngày bắt đầu <= ngày kết thúc. Với thống kê người dùng, phạm vi ngày chỉ giới hạn `newMembersByPeriod` theo `Members.ApprovedAt` khác null; một lần phê duyệt lịch sử vẫn được tính kể cả khi trạng thái tư cách thành viên/tài khoản hiện tại sau đó trở thành không hoạt động, còn số lượng tổng/trạng thái/vai trò vẫn là toàn cục nhưng chịu các bộ lọc không theo ngày.
+- BR-FE12-010: Báo cáo phải dùng định nghĩa trạng thái đã phê duyệt từ các tính năng nguồn; trạng thái nguồn đã lưu nhưng không được nhận diện phải được nhóm vào `UNKNOWN` và vẫn tính trong tổng số có thể tái tạo.
+- BR-FE12-011: Số liệu thống kê người dùng không được để lộ dữ liệu cá nhân không cần thiết.
+- BR-FE12-012: Số lượng tổng hợp phải được tái tạo từ bản ghi nguồn.
+- BR-FE12-013: Xuất CSV, PDF, bảng tính và các định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1; FE12 không cung cấp endpoint hoặc điều khiển xuất.
+- BR-FE12-014: Mỗi lần Thủ thư/Quản trị viên xem báo cáo thành công phải ghi một sự kiện kiểm toán an toàn, xác định tác nhân, loại báo cáo, dấu thời gian và kết quả thành công nhưng không chứa giá trị bộ lọc/truy vấn thô hay các hàng báo cáo đã trả về.
+- BR-FE12-015: Các hàng chi tiết sử dụng `page=1`, `limit=20`, với `page>=1` và `limit=1..100`; thứ tự ổn định là mượn `BorrowDate DESC, BorrowDetailId DESC`, hàng tồn kho `Title ASC, BookId ASC, CopyId ASC` và người dùng `UserId ASC`.
+- BR-FE12-016: Mỗi báo cáo chấp nhận `q` tùy chọn, đã trim và tối đa 200 ký tự. Môi trường production bind mẫu hiệu lực `%${q}%` làm giá trị SQL `LIKE` tham số hóa và không escape hoặc từ chối `%`, `_`, lớp/khoảng trong ngoặc vuông hay lớp ngoặc vuông phủ định; repository báo cáo trong bộ nhớ phải mô phỏng các ngữ nghĩa không phân biệt hoa thường đó. Tìm kiếm mượn khớp tiêu đề sách, mã vạch, tên người dùng, email hoặc ID người dùng; tìm kiếm tồn kho khớp tiêu đề, mã vạch, vị trí hoặc ID sách; tìm kiếm người dùng khớp ID người dùng, vai trò, trạng thái tài khoản hoặc trạng thái tư cách thành viên. Tìm kiếm và các bộ lọc đã chọn được áp dụng trước khi tổng hợp và phân trang.
+
+---
+
+## 7. Yêu cầu chức năng
+
+- FR-FE12-001: Khi tác nhân được ủy quyền xem báo cáo mượn, hệ thống phải trả về chính xác các chỉ số mượn và trường dữ liệu hàng được định nghĩa trong Phần 10.3.
+- FR-FE12-002: Khi tác nhân được ủy quyền xem báo cáo tồn kho, hệ thống phải trả về chính xác các chỉ số tồn kho và trường dữ liệu hàng được định nghĩa trong Phần 10.3, đồng thời xác định sách sắp hết hàng có từ hai bản sao sẵn có hiệu lực trở xuống.
+- FR-FE12-003: Khi tác nhân được ủy quyền xem thống kê người dùng, hệ thống phải trả về chính xác các chỉ số và trường dữ liệu hàng của người dùng/thành viên được định nghĩa trong Phần 10.3, với bộ lọc ngày chỉ áp dụng cho mức tăng trưởng trong kỳ phê duyệt.
+- FR-FE12-004: Nếu tác nhân không được ủy quyền thì hệ thống sẽ từ chối quyền truy cập báo cáo.
+- FR-FE12-005: Nếu yêu cầu báo cáo chứa khóa truy vấn ngoài danh sách cho phép của endpoint đã chọn, hệ thống phải trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service hoặc repository báo cáo. Nếu khóa được phê duyệt có cú pháp, tư cách thành viên trong enum, phạm vi ngày, độ dài tìm kiếm, ID, trang hoặc giới hạn không hợp lệ, hệ thống phải trả về lỗi xác thực an toàn hiện có trước khi thực thi truy vấn báo cáo.
+- FR-FE12-006: Nếu các bộ lọc hợp lệ không khớp dữ liệu nào, bao gồm ID nguồn không xác định nhưng đúng định dạng, hệ thống sẽ trả về số liệu tổng hợp bằng không và các hàng chi tiết trống.
+- FR-FE12-007: Khi báo cáo được tạo, hệ thống sẽ không cập nhật dữ liệu nguồn.
+- FR-FE12-008: Khi số liệu thống kê người dùng được tạo, hệ thống sẽ trả về dữ liệu tổng hợp theo mặc định thay vì chi tiết cá nhân thô.
+- FR-FE12-009: Khi yêu cầu báo cáo được ủy quyền thành công, hệ thống phải ghi sự kiện kiểm toán xem báo cáo an toàn theo BR-FE12-014.
+- FR-FE12-010: Khi các hàng chi tiết được trả về, hệ thống sẽ áp dụng các giá trị mặc định, giới hạn phân trang đã được phê duyệt và thứ tự ổn định dành riêng cho báo cáo từ BR-FE12-015.
+- FR-FE12-011: Khi nhân viên tìm kiếm hoặc lọc một báo cáo, hệ thống sẽ kết hợp `q` với tất cả các bộ lọc dành riêng cho báo cáo được cung cấp, tải lại các hàng và chỉ số máy chủ chuẩn, đồng thời tránh biểu ngữ tải thành công dư thừa.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE12-001: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo mượn, hệ thống hiển thị tổng số lượt mượn và số lượng theo trạng thái.
+- AC-FE12-002: Với Thủ thư hoặc Quản trị viên, khi xem báo cáo tồn kho, hệ thống hiển thị số bản sao theo trạng thái và sách/danh mục tương ứng với bộ lọc, đồng thời các sách có 0-2 bản sao sẵn có xuất hiện trong danh sách sắp hết hàng. Bộ lọc trạng thái/vị trí chọn các sách và tổng số bản sao đã lọc tương ứng nhưng không che mất toàn bộ mức sẵn có của các sách đó khỏi phép tính sắp hết hàng.
+- AC-FE12-003: Với Thủ thư hoặc Quản trị viên, khi xem thống kê người dùng trong một phạm vi ngày, số lượng tổng/trạng thái/vai trò vẫn là toàn cục và `newMembersByPeriod` chỉ gồm các lần phê duyệt trong phạm vi đó.
+- AC-FE12-004: Với Khách hoặc Thành viên, khi yêu cầu báo cáo dành cho nhân viên, quyền truy cập bị từ chối.
+- AC-FE12-005: Với bất kỳ một trong ba endpoint báo cáo nhận `?bogus=1` hoặc khóa truy vấn không xác định khác, khi gửi yêu cầu, hệ thống trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn và cả service lẫn repository báo cáo đều không chạy. Với khóa đã phê duyệt có giá trị sai định dạng/không được hỗ trợ hoặc phạm vi phân trang/ngày không hợp lệ, lỗi xác thực an toàn hiện có được trả về trước khi truy vấn.
+- AC-FE12-006: Với các bộ lọc hợp lệ không có dữ liệu khớp hoặc ID không xác định nhưng đúng định dạng, khi tạo báo cáo, hệ thống trả về số liệu tổng hợp bằng không và các hàng trống.
+- AC-FE12-007: Với một yêu cầu báo cáo, khi báo cáo hoàn tất, không có bản ghi nghiệp vụ nguồn nào bị sửa đổi.
+- AC-FE12-008: Dựa vào số liệu thống kê của người dùng, khi kết quả được trả về, các chi tiết hồ sơ cá nhân không cần thiết sẽ không bị lộ.
+- AC-FE12-009: Với lần Thủ thư/Quản trị viên xem báo cáo thành công, khi phản hồi hoàn tất, một sự kiện kiểm toán an toàn ghi lại tác nhân, loại báo cáo, dấu thời gian và kết quả thành công mà không chứa bộ lọc thô hay hàng báo cáo.
+- AC-FE12-010: Với các hàng báo cáo chi tiết không chỉ định phân trang, khi trả về, hệ thống áp dụng `page=1`, `limit=20` và thứ tự ổn định riêng của báo cáo; giới hạn không hợp lệ bị từ chối.
+- AC-FE12-011: Với Thủ thư/Quản trị viên nhập văn bản tìm kiếm và bộ lọc báo cáo, khi áp dụng, việc lọc diễn ra trước tổng hợp/phân trang, các hàng người dùng được sắp xếp theo `userId` tăng dần và không hiển thị thông báo thành công “Đã tải dữ liệu”.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống dự kiến |
 | -- | ----------------- | ------------------------ |
-| EC-FE12-001 | Guest requests report | Return unauthorized response. |
-| EC-FE12-002 | Member requests staff report | Return forbidden response. |
-| EC-FE12-003 | Invalid date range | Reject request. |
-| EC-FE12-004 | Unsupported status filter | Reject request. |
-| EC-FE12-005 | Well-formed positive category/book/member/role ID has no matching source record | Return zero aggregates and empty rows; do not treat the unknown ID as malformed. |
-| EC-FE12-006 | No matching records | Return zero counts and empty rows. |
-| EC-FE12-007 | Persisted source status value is not recognized | Group as `UNKNOWN` and keep the record in reproducible totals. |
-| EC-FE12-008 | Report query timeout | Return safe error and log safely. |
-| EC-FE12-009 | Large valid date range | Return aggregate metrics and paginate detailed rows using the approved defaults/bounds; do not substitute a warning-only response. |
-| EC-FE12-010 | Missing optional source field | Use safe fallback in report display. |
-| EC-FE12-011 | Request contains one or more query keys outside the selected endpoint allowlist | Return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution; the error may identify the key but must not echo its value. |
+| EC-FE12-001 | Khách yêu cầu báo cáo | Trả về phản hồi chưa xác thực. |
+| EC-FE12-002 | Thành viên yêu cầu báo cáo dành cho nhân viên | Trả về phản hồi bị cấm. |
+| EC-FE12-003 | Phạm vi ngày không hợp lệ | Từ chối yêu cầu. |
+| EC-FE12-004 | Bộ lọc trạng thái không được hỗ trợ | Từ chối yêu cầu. |
+| EC-FE12-005 | ID danh mục/sách/thành viên/vai trò dương, đúng định dạng nhưng không có bản ghi nguồn khớp | Trả về số liệu tổng hợp bằng không và các hàng trống; không coi ID không xác định là sai định dạng. |
+| EC-FE12-006 | Không có bản ghi khớp | Trả về số lượng bằng không và các hàng trống. |
+| EC-FE12-007 | Giá trị trạng thái nguồn đã lưu không được nhận diện | Nhóm vào `UNKNOWN` và giữ bản ghi trong tổng số có thể tái tạo. |
+| EC-FE12-008 | Truy vấn báo cáo hết thời gian | Trả về lỗi an toàn và ghi nhật ký an toàn. |
+| EC-FE12-009 | Phạm vi ngày hợp lệ nhưng lớn | Trả về chỉ số tổng hợp và phân trang các hàng chi tiết bằng giá trị mặc định/giới hạn đã phê duyệt; không thay thế bằng phản hồi chỉ cảnh báo. |
+| EC-FE12-010 | Thiếu trường nguồn tùy chọn | Sử dụng dự phòng an toàn trong hiển thị báo cáo. |
+| EC-FE12-011 | Yêu cầu chứa một hoặc nhiều khóa truy vấn ngoài danh sách cho phép của endpoint đã chọn | Trả về `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service/repository; lỗi có thể xác định khóa nhưng không được phản chiếu giá trị của khóa. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Source for user statistics and member/staff counts. |
-| UserRoles | Source for role-based user statistics. |
-| Roles | Provides role names. |
-| Members | Source for runtime membership status counts and `ApprovedAt` growth periods. |
-| Books | Source for inventory and borrowing report book metadata. |
-| Categories | Source for inventory grouping. |
-| BookCopies | Source for inventory status counts. |
-| BorrowRequests | Source for borrowing request counts and status. |
-| BorrowDetails | Source for borrowed/returned/overdue item counts. |
-| Fines | Not used by the three approved Phase 1 reports; any fine-report extension requires a later FE12 spec revision. |
+| Users | Nguồn thống kê người dùng và số lượng thành viên/nhân viên. |
+| UserRoles | Nguồn thống kê người dùng theo vai trò. |
+| Roles | Cung cấp tên vai trò. |
+| Members | Nguồn đếm trạng thái tư cách thành viên tại runtime và các kỳ tăng trưởng theo `ApprovedAt`. |
+| Books | Nguồn siêu dữ liệu sách cho báo cáo tồn kho và mượn. |
+| Categories | Nguồn nhóm tồn kho. |
+| BookCopies | Nguồn để đếm trạng thái hàng tồn kho. |
+| BorrowRequests | Nguồn đếm yêu cầu mượn và trạng thái. |
+| BorrowDetails | Nguồn đếm tài liệu đã mượn/đã trả/quá hạn. |
+| Fines | Không dùng trong ba báo cáo Giai đoạn 1 đã phê duyệt; mọi phần mở rộng báo cáo tiền phạt đều cần một bản sửa đổi đặc tả FE12 sau này. |
 
-### 10.2 Data Fields
+### 10.2 Các trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Xác thực / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| fromDate | date | No | Exact `YYYY-MM-DD`; must be <= `toDate` when both provided. For user statistics, applies to `Members.ApprovedAt` growth only. |
-| toDate | date | No | Exact `YYYY-MM-DD`; must be >= `fromDate` when both provided and includes the full selected day. For user statistics, applies to `Members.ApprovedAt` growth only. |
-| status | string | No | Must be an approved status for selected report type. |
-| membershipStatus | string | No | Used only for user statistics and must be an approved FE04 membership status. |
-| categoryId | integer | No | Used for inventory report. |
-| bookId | integer | No | Used for borrowing/inventory report. |
-| userId | integer | No | Staff-only filter when approved. |
-| roleId | integer | No | Used for user statistics. |
-| location | string | No | Used only for inventory report; validated under the approved inventory filter contract. |
-| page | integer | No | Defaults to 1; must be an integer at least 1 for detailed rows. |
-| limit | integer | No | Defaults to 20; must be an integer from 1 through 100. |
-| q | string | No | Trimmed free-text search, maximum 200 characters, using the report-specific fields in BR-FE12-016. |
+| fromDate | date | Không | Chính xác `YYYY-MM-DD`; phải <= `toDate` khi cung cấp cả hai. Với thống kê người dùng, chỉ áp dụng cho mức tăng trưởng `Members.ApprovedAt`. |
+| toDate | date | Không | Chính xác `YYYY-MM-DD`; phải >= `fromDate` khi cung cấp cả hai và bao gồm toàn bộ ngày đã chọn. Với thống kê người dùng, chỉ áp dụng cho mức tăng trưởng `Members.ApprovedAt`. |
+| status | string | Không | Phải là trạng thái đã phê duyệt cho loại báo cáo được chọn. |
+| membershipStatus | string | Không | Chỉ dùng cho thống kê người dùng và phải là trạng thái tư cách thành viên FE04 đã phê duyệt. |
+| categoryId | integer | Không | Dùng cho báo cáo tồn kho. |
+| bookId | integer | Không | Dùng cho báo cáo mượn/tồn kho. |
+| userId | integer | Không | Bộ lọc chỉ dành cho nhân viên khi được phê duyệt. |
+| roleId | integer | Không | Dùng cho thống kê người dùng. |
+| location | string | Không | Chỉ dùng cho báo cáo tồn kho; được xác thực theo hợp đồng bộ lọc tồn kho đã phê duyệt. |
+| page | integer | Không | Mặc định là 1; phải là số nguyên ít nhất bằng 1 đối với các hàng chi tiết. |
+| limit | integer | Không | Mặc định là 20; phải là số nguyên từ 1 đến 100. |
+| q | string | Không | Tìm kiếm văn bản tự do đã trim, tối đa 200 ký tự, dùng các trường riêng của báo cáo trong BR-FE12-016. |
 
 ---
 
-### 10.3 Report Response Contract
+### 10.3 Hợp đồng phản hồi báo cáo
 
-All three report endpoints return `{ metrics, rows, page, limit, totalRows }`. `rows` are the detailed records after filters; `metrics` are calculated from the full filtered source set before pagination.
+Cả ba endpoint báo cáo đều trả về `{ metrics, rows, page, limit, totalRows }`. `rows` là các bản ghi chi tiết sau khi lọc; `metrics` được tính từ toàn bộ tập nguồn đã lọc trước khi phân trang.
 
-| Report | Metrics contract | Detailed row contract |
+| Báo cáo | Hợp đồng số liệu | Hợp đồng hàng chi tiết |
 | ------ | ---------------- | --------------------- |
-| Borrowing | `activeLoans` counts `BORROWED` details; `overdueLoans` counts `BORROWED` details whose due date is before the current `Asia/Ho_Chi_Minh` business date; `borrowCountByPeriod` groups qualifying actual-loan details by `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` returns at most 10 books ordered by borrow count descending, title ascending, then `BookId` ascending. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` is a derived display status for an overdue `BORROWED` detail. |
-| Inventory | `totalBooks` counts distinct books in the filtered book scope; `totalCopies` counts filtered copies; `copiesByStatus` groups filtered copies by approved FE06 status; `lowStockBooks` lists distinct books with 0..2 effective `AVAILABLE` copies, using full availability for each selected book even when a status/location filter narrows the rows. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
-| Users | `totalMembers` counts users with the `Member` role; `usersByStatus` groups users by approved FE02 status; `usersByRole` groups users by FE11 role; `membershipByStatus` groups canonical FE04 member status; `newMembersByPeriod` groups every non-null historical `Members.ApprovedAt` by `YYYY-MM-DD` within the requested range regardless of current membership/account status. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; no profile address, phone, password, token, or unnecessary personal fields. |
+| Mượn | `activeLoans` đếm các chi tiết `BORROWED`; `overdueLoans` đếm các chi tiết `BORROWED` có hạn trả trước ngày nghiệp vụ `Asia/Ho_Chi_Minh` hiện tại; `borrowCountByPeriod` nhóm các chi tiết lượt mượn thực tế đủ điều kiện theo `BorrowDate` (`YYYY-MM-DD`); `topBorrowedBooks` trả về tối đa 10 sách, sắp xếp theo số lượt mượn giảm dần, tiêu đề tăng dần, rồi `BookId` tăng dần. | `borrowDetailId`, `requestId`, `userId`, `bookId`, `copyId`, `status`, `borrowDate`, `dueDate`, `returnDate`. `OVERDUE` là trạng thái hiển thị suy ra cho một chi tiết `BORROWED` đã quá hạn. |
+| Tồn kho | `totalBooks` đếm các sách riêng biệt trong phạm vi sách đã lọc; `totalCopies` đếm các bản sao đã lọc; `copiesByStatus` nhóm các bản sao đã lọc theo trạng thái FE06 được phê duyệt; `lowStockBooks` liệt kê các sách riêng biệt có 0..2 bản sao `AVAILABLE` hiệu lực, dùng toàn bộ mức sẵn có của từng sách đã chọn ngay cả khi bộ lọc trạng thái/vị trí thu hẹp các hàng. | `bookId`, `title`, `copyId`, `barcode`, `location`, `status`, `effectiveAvailability`. |
+| Người dùng | `totalMembers` đếm người dùng có vai trò `Member`; `usersByStatus` nhóm người dùng theo trạng thái FE02 đã phê duyệt; `usersByRole` nhóm người dùng theo vai trò FE11; `membershipByStatus` nhóm trạng thái thành viên FE04 chuẩn; `newMembersByPeriod` nhóm mọi `Members.ApprovedAt` lịch sử khác null theo `YYYY-MM-DD` trong phạm vi yêu cầu, bất kể trạng thái tư cách thành viên/tài khoản hiện tại. | `userId`, `status`, `roles`, `membershipStatus`, `createdAt`, `approvedAt`; không có địa chỉ hồ sơ, số điện thoại, mật khẩu, token hoặc trường cá nhân không cần thiết. |
 
-Date filters for the borrowing report apply to `BorrowDate`; date filters for user statistics apply only to `newMembersByPeriod`; inventory reports have no date filter in Phase 1.
+Bộ lọc ngày cho báo cáo mượn áp dụng cho `BorrowDate`; bộ lọc ngày cho thống kê người dùng chỉ áp dụng cho `newMembersByPeriod`; báo cáo hàng tồn kho không có bộ lọc ngày trong Giai đoạn 1.
 
 ---
 
-## 11. API / Interface Contract
+## 11. Hợp đồng API / Giao diện
 
-> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
+> Các endpoint và cấu trúc request/response dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho tính năng này.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/reports/borrowing` | Librarian/Admin | Query: `q?, fromDate?, toDate?, status?, bookId?, userId?, page=1, limit=20` | `BorrowingReportResponse` from Section 10.3 | Stable row order: `BorrowDate DESC, BorrowDetailId DESC`. |
-| GET | `/api/reports/inventory` | Librarian/Admin | Query: `q?, categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` from Section 10.3 | Stable row order: `Title ASC, BookId ASC, CopyId ASC`. |
-| GET | `/api/reports/users` | Librarian/Admin | Query: `q?, roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` from Section 10.3 | Stable row order: `UserId ASC`; no raw personal profile details. |
+| GET | `/api/reports/borrowing` | Thủ thư/Quản trị viên | Query: `q?, fromDate?, toDate?, status?, bookId?, userId?, page=1, limit=20` | `BorrowingReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `BorrowDate DESC, BorrowDetailId DESC`. |
+| GET | `/api/reports/inventory` | Thủ thư/Quản trị viên | Query: `q?, categoryId?, bookId?, status?, location?, page=1, limit=20` | `InventoryReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `Title ASC, BookId ASC, CopyId ASC`. |
+| GET | `/api/reports/users` | Thủ thư/Quản trị viên | Query: `q?, roleId?, status?, membershipStatus?, fromDate?, toDate?, page=1, limit=20` | `UserReportResponse` từ Phần 10.3 | Thứ tự hàng ổn định: `UserId ASC`; không có chi tiết hồ sơ cá nhân thô. |
 
-The query fields shown for each endpoint are an exact allowlist, not examples.
-Before any report service or repository call, an unknown key returns
+Các trường truy vấn hiển thị cho mỗi endpoint là danh sách cho phép chính xác, không phải ví dụ.
+Trước mọi lệnh gọi service hoặc repository báo cáo, khóa không xác định sẽ trả về
 `400 { error: { code: "UNSUPPORTED_REPORT_QUERY_PARAMETER", message: "Unsupported report query parameter." } }`.
-The safe error may identify the unsupported key in structured validation
-details but must not echo its value.
+Lỗi an toàn có thể xác định khóa không được hỗ trợ trong chi tiết xác thực
+có cấu trúc nhưng không được phản chiếu giá trị của khóa.
 
 ---
 
-## 12. Non-functional Requirements
+## 12. Yêu cầu phi chức năng
 
-### 12.1 Security
+### 12.1 Bảo mật
 
-- NFR-FE12-SEC-001: Report endpoints must require authentication.
-- NFR-FE12-SEC-002: Report endpoints must enforce role-based access on the server.
-- NFR-FE12-SEC-003: User statistics must avoid unnecessary personal data exposure.
-- NFR-FE12-SEC-004: Report query key names must match the exact endpoint allowlist and approved values must be validated before service/repository execution to prevent unreviewed behavior, injection, and excessive queries. SQL values remain parameterized.
+- NFR-FE12-SEC-001: Các endpoint báo cáo phải yêu cầu xác thực.
+- NFR-FE12-SEC-002: Các endpoint báo cáo phải thực thi quyền truy cập theo vai trò trên máy chủ.
+- NFR-FE12-SEC-003: Thống kê người dùng phải tránh làm lộ dữ liệu cá nhân không cần thiết.
+- NFR-FE12-SEC-004: Tên khóa truy vấn báo cáo phải khớp chính xác danh sách cho phép của endpoint và các giá trị đã phê duyệt phải được xác thực trước khi chạy service/repository, nhằm ngăn hành vi chưa được rà soát, injection và truy vấn quá mức. Giá trị SQL vẫn phải được tham số hóa.
 
-### 12.2 Read-only Integrity
+### 12.2 Tính toàn vẹn chỉ đọc
 
-- NFR-FE12-INT-001: Report generation must not create, update, or delete source business records.
-- NFR-FE12-INT-002: Report metrics must be traceable to source tables and approved status definitions.
+- NFR-FE12-INT-001: Việc tạo báo cáo không được tạo, cập nhật hoặc xóa bản ghi nghiệp vụ nguồn.
+- NFR-FE12-INT-002: Chỉ số báo cáo phải truy vết được tới bảng nguồn và định nghĩa trạng thái đã phê duyệt.
 
-### 12.3 Performance
+### 12.3 Hiệu năng
 
-- NFR-FE12-PERF-001: Report queries must apply every supplied approved filter in the database before aggregation and pagination; application-layer full-source filtering is not permitted.
-- NFR-FE12-PERF-002: Detailed report rows must use `page=1`, `limit=20`, bounds `page>=1`, `limit=1..100`, and the stable order defined by BR-FE12-015.
-- NFR-FE12-PERF-003: Report joins and filters must use the approved primary/foreign-key paths and available indexed status/date fields; unbounded per-row lookup loops are not permitted.
+- NFR-FE12-PERF-001: Truy vấn báo cáo phải áp dụng trong cơ sở dữ liệu mọi bộ lọc đã phê duyệt được cung cấp trước khi tổng hợp và phân trang; không được lọc toàn bộ nguồn ở tầng ứng dụng.
+- NFR-FE12-PERF-002: Các hàng báo cáo chi tiết phải sử dụng `page=1`, `limit=20`, giới hạn `page>=1`, `limit=1..100` và thứ tự ổn định được xác định bởi BR-FE12-015.
+- NFR-FE12-PERF-003: Các phép join và bộ lọc báo cáo phải dùng đường dẫn khóa chính/khóa ngoại đã phê duyệt cùng các trường trạng thái/ngày đã có chỉ mục; không được lặp tra cứu từng hàng không giới hạn.
 
-### 12.4 Logging and Audit
+### 12.4 Ghi nhật ký và kiểm toán
 
-- NFR-FE12-LOG-001: Report access failures must be logged safely.
-- NFR-FE12-LOG-002: Every successful Librarian/Admin report view must be audited without raw query/filter values, report rows, tokens, or internal errors.
+- NFR-FE12-LOG-001: Lỗi truy cập báo cáo phải được ghi nhật ký an toàn.
+- NFR-FE12-LOG-002: Mọi lần Thủ thư/Quản trị viên xem báo cáo thành công phải được kiểm toán mà không chứa giá trị truy vấn/bộ lọc thô, hàng báo cáo, token hoặc lỗi nội bộ.
 
-### 12.5 Usability
+### 12.5 Khả năng sử dụng
 
-- NFR-FE12-UX-001: Report filters and zero-result states must be understandable.
-- NFR-FE12-UX-002: Metrics must use clear labels and units.
-
----
-
-## 13. Out of Scope
-
-This feature does not include:
-
-- Editing borrowing, inventory, user, membership, fine, or reservation records.
-- Borrowing/return processing.
-- Book copy management.
-- User/role management.
-- Fine calculation or collection.
-- External BI tools or analytics warehouse.
-- CSV/PDF/spreadsheet or other report export in Phase 1.
-- Real-time dashboards unless approved.
+- NFR-FE12-UX-001: Bộ lọc báo cáo và trạng thái kết quả bằng không phải dễ hiểu.
+- NFR-FE12-UX-002: Các số liệu phải sử dụng nhãn và đơn vị rõ ràng.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Chỉnh sửa bản ghi mượn, tồn kho, người dùng, thành viên, tiền phạt hoặc đặt chỗ.
+- Xử lý mượn/trả.
+- Quản lý bản sao sách.
+- Quản lý người dùng/vai trò.
+- Tính hoặc thu tiền phạt.
+- Công cụ BI bên ngoài hoặc kho phân tích.
+- Xuất CSV/PDF/bảng tính hoặc định dạng báo cáo khác trong Giai đoạn 1.
+- Trang tổng quan thời gian thực trừ khi được phê duyệt.
+
+---
+
+## 14. Phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE06 Inventory / Book Copy Management | Internal | Provides copy status and inventory source data. |
-| FE07 Borrowing Management | Internal | Provides borrowing and return source data. |
-| FE09 Fine Management | Internal | Provides fine data if included in later report scope. |
-| FE11 User & Role Management | Internal | Provides user/role data and report permissions. |
-| FE04 Membership Management | Internal | Provides membership application/status data. |
-| SQL Server database | Technical | Stores report source data. |
+| FE06 Quản lý tồn kho / Bản sao sách | Nội bộ | Cung cấp trạng thái bản sao và dữ liệu nguồn tồn kho. |
+| FE07 Quản lý mượn | Nội bộ | Cung cấp dữ liệu nguồn mượn và trả. |
+| FE09 Quản lý tiền phạt | Nội bộ | Cung cấp dữ liệu tiền phạt nếu được đưa vào phạm vi báo cáo sau này. |
+| FE11 Quản lý người dùng & vai trò | Nội bộ | Cung cấp dữ liệu người dùng/vai trò và quyền báo cáo. |
+| FE04 Quản lý tư cách thành viên | Nội bộ | Cung cấp dữ liệu đơn đăng ký/trạng thái tư cách thành viên. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | Lưu dữ liệu nguồn báo cáo. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE12-001 | Librarian and Admin can view all three reports (borrowing, inventory, users); Member/Guest cannot view any FE12 report. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
-| Q-FE12-002 | Borrowing metrics: active loans, overdue loans, borrow count by period, top borrowed books. Borrow-period and top-book metrics exclude `REQUESTED` and count only actual-loan statuses: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, and `OVERDUE`. | Review packet 2026-06-10; final-review remediation 2026-07-13 | APPROVED |
-| Q-FE12-003 | Inventory metrics: total books, total copies, copies by status, and low-stock books defined as 0-2 available copies. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
-| Q-FE12-004 | User statistics: total members, active/inactive users, and new members by `Members.ApprovedAt`; date ranges affect the new-member period only. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
-| Q-FE12-005 | CSV/PDF/spreadsheet and all other report export are strictly out of scope for Phase 1. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
-| Q-FE12-006 | Report access writes audit logs for Admin/Librarian report views without persisting raw query/filter values. | Review packet 2026-06-10; B6 clarification 2026-07-13 | APPROVED |
-| Q-FE12-007 | A well-formed unknown filter ID returns an empty report; malformed IDs are validation errors. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE12-008 | Unknown persisted source statuses are grouped as `UNKNOWN` and retained in totals. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE12-009 | Detailed rows use deterministic pagination and report-specific stable ordering; large valid date ranges do not return warning-only alternatives. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE12-010 | Report responses use the exact metrics and row fields in Section 10.3; top borrowed books is limited to 10 with deterministic tie-breaking. | Report contract normalization 2026-07-17 | APPROVED |
-| Q-FE12-011 | How are unknown report query keys handled? | Nhat, 2026-07-27 | APPROVED: reject with safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report service/repository execution; endpoint allowlists are exact. |
+| Q-FE12-001 | Thủ thư và Quản trị viên có thể xem cả ba báo cáo (mượn, tồn kho, người dùng); Thành viên/Khách không thể xem báo cáo FE12 nào. | Gói đánh giá 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-002 | Chỉ số mượn: lượt mượn đang hoạt động, lượt mượn quá hạn, số lượt mượn theo kỳ, sách được mượn nhiều nhất. Chỉ số theo kỳ mượn và sách đứng đầu loại trừ `REQUESTED` và chỉ tính các trạng thái lượt mượn thực tế: `BORROWED`, `RETURNED`, `LOST`, `DAMAGED` và `OVERDUE`. | Gói đánh giá 2026-06-10; khắc phục đánh giá cuối 2026-07-13 | APPROVED |
+| Q-FE12-003 | Chỉ số tồn kho: tổng số sách, tổng số bản sao, bản sao theo trạng thái và sách sắp hết hàng được định nghĩa là có 0-2 bản sao sẵn có. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
+| Q-FE12-004 | Thống kê người dùng: tổng số thành viên, người dùng hoạt động/không hoạt động và thành viên mới theo `Members.ApprovedAt`; phạm vi ngày chỉ ảnh hưởng kỳ thành viên mới. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
+| Q-FE12-005 | Xuất CSV/PDF/bảng tính và mọi định dạng báo cáo khác hoàn toàn nằm ngoài phạm vi Giai đoạn 1. | Gói đánh giá 2026-06-10; chuẩn hóa 2026-07-17 | APPROVED |
+| Q-FE12-006 | Truy cập báo cáo ghi nhật ký kiểm toán cho các lần Quản trị viên/Thủ thư xem báo cáo mà không lưu giá trị truy vấn/bộ lọc thô. | Gói đánh giá 2026-06-10; làm rõ B6 2026-07-13 | APPROVED |
+| Q-FE12-007 | ID bộ lọc không xác định được định dạng đúng sẽ trả về một báo cáo trống; ID không đúng định dạng là lỗi xác thực. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE12-008 | Các trạng thái nguồn liên tục không xác định được nhóm thành `UNKNOWN` và được giữ lại trong tổng số. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE12-009 | Các hàng chi tiết sử dụng phân trang xác định và thứ tự ổn định dành riêng cho báo cáo; phạm vi ngày hợp lệ lớn không trả về các lựa chọn thay thế chỉ mang tính cảnh báo. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE12-010 | Phản hồi báo cáo dùng chính xác các chỉ số và trường dữ liệu hàng trong Phần 10.3; danh sách sách được mượn nhiều nhất giới hạn ở 10 sách với quy tắc phân hạng hòa mang tính xác định. | Chuẩn hóa hợp đồng báo cáo 2026-07-17 | APPROVED |
+| Q-FE12-011 | Xử lý khóa truy vấn báo cáo không xác định như thế nào? | Nhat, 2026-07-27 | APPROVED: từ chối bằng `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi chạy service/repository báo cáo; danh sách cho phép của endpoint là chính xác. |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| Requirement ID | Related Use Case | Related Test Case | Status |
+| ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| BR-FE12-001 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-002 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-004 | UC58 | FT59 | Ready for review |
-| BR-FE12-005 | UC59 | FT60 | Ready for review |
-| BR-FE12-006 | UC60 | FT61 | Ready for review |
-| BR-FE12-007 | UC60 | FT61 | Ready for review |
-| BR-FE12-008 | UC58, UC59, UC60 | `reportRoutes.test.js` exact-key matrix plus Chromium HTTP boundary check | Complete |
-| BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-011 | UC60 | FT61 | Ready for review |
-| BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` no-export route/OpenAPI/frontend check | Automated evidence; human re-review pending |
-| BR-FE12-014 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` safe successful-view audit cases | Automated evidence; human re-review pending |
-| BR-FE12-015 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` pagination/order cases | Automated evidence; human re-review pending |
-| BR-FE12-016 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` combined `q`/filter and user-field parity cases | Automated evidence; H2 review pending |
-| FR-FE12-001 | UC58 | FT59 | Ready for review |
-| FR-FE12-002 | UC59 | FT60 | Ready for review |
-| FR-FE12-003 | UC60 | FT61 | Ready for review |
-| FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` verifies safe `UNSUPPORTED_REPORT_QUERY_PARAMETER`, zero repository calls, and existing value validation | Complete |
-| FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| FR-FE12-008 | UC60 | FT61 | Ready for review |
-| FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
-| FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
-| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Automated evidence; H2 review pending |
-| AC-FE12-001 | UC58 | FT59 | Ready for review |
-| AC-FE12-002 | UC59 | FT60 | Ready for review |
-| AC-FE12-003 | UC60 | FT61 | Ready for review |
-| AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| AC-FE12-005 | UC58, UC59, UC60 | Three-endpoint route matrix plus real HTTP `?bogus=runtime-secret-value` check | Complete |
-| AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Ready for review |
-| AC-FE12-008 | UC60 | FT61 | Ready for review |
-| AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Automated evidence; human re-review pending |
-| AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Automated evidence; human re-review pending |
-| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` user search/history/order parity; `frontend/test/reportFrontend.test.js` no-success-banner behavior | Automated evidence; H2 review pending |
+| BR-FE12-001 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-002 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-003 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-004 | UC58 | FT59 | Sẵn sàng để xem xét |
+| BR-FE12-005 | UC59 | FT60 | Sẵn sàng để xem xét |
+| BR-FE12-006 | UC60 | FT61 | Sẵn sàng để xem xét |
+| BR-FE12-007 | UC60 | FT61 | Sẵn sàng để xem xét |
+| BR-FE12-008 | UC58, UC59, UC60 | Ma trận khóa chính xác trong `reportRoutes.test.js` cùng kiểm tra ranh giới HTTP trên Chromium | Hoàn thành |
+| BR-FE12-009 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-010 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-011 | UC60 | FT61 | Sẵn sàng để xem xét |
+| BR-FE12-012 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| BR-FE12-013 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js` kiểm tra không có route/OpenAPI/giao diện xuất | Bằng chứng tự động; đang chờ con người đánh giá lại |
+| BR-FE12-014 | UC58, UC59, UC60 | Các trường hợp kiểm toán lượt xem thành công an toàn trong `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
+| BR-FE12-015 | UC58, UC59, UC60 | Các trường hợp phân trang/thứ tự trong `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js` | Bằng chứng tự động; đang chờ con người đánh giá lại |
+| BR-FE12-016 | UC58, UC59, UC60 | Các trường hợp kết hợp `q`/bộ lọc và tương đương trường người dùng trong `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js` | Bằng chứng tự động; đang chờ đánh giá H2 |
+| FR-FE12-001 | UC58 | FT59 | Sẵn sàng để xem xét |
+| FR-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
+| FR-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
+| FR-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| FR-FE12-005 | UC58, UC59, UC60 | `reportRoutes.test.js` xác minh `UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn, không gọi repository và giữ xác thực giá trị hiện có | Hoàn thành |
+| FR-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| FR-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| FR-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
+| FR-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
+| FR-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
+| FR-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportRoutes.test.js`, `backend/tests/reportInMemoryParity.test.js`, `frontend/test/reportFrontend.test.js` | Bằng chứng tự động; Đang chờ xem xét H2 |
+| AC-FE12-001 | UC58 | FT59 | Sẵn sàng để xem xét |
+| AC-FE12-002 | UC59 | FT60 | Sẵn sàng để xem xét |
+| AC-FE12-003 | UC60 | FT61 | Sẵn sàng để xem xét |
+| AC-FE12-004 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| AC-FE12-005 | UC58, UC59, UC60 | Ma trận route của ba endpoint cùng kiểm tra HTTP thực với `?bogus=runtime-secret-value` | Hoàn thành |
+| AC-FE12-006 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| AC-FE12-007 | UC58, UC59, UC60 | FT59, FT60, FT61 | Sẵn sàng để xem xét |
+| AC-FE12-008 | UC60 | FT61 | Sẵn sàng để xem xét |
+| AC-FE12-009 | UC58, UC59, UC60 | `backend/tests/reportService.test.js`, `backend/tests/reportRoutes.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
+| AC-FE12-010 | UC58, UC59, UC60 | `backend/tests/reportDeterministicPolicy.test.js`, `backend/tests/reportRepository.test.js`, `backend/tests/reportContract.test.js` | Bằng chứng tự động; đang chờ xem xét lại con người |
+| AC-FE12-011 | UC58, UC59, UC60 | `backend/tests/reportInMemoryParity.test.js` kiểm tra tương đương tìm kiếm/lịch sử/thứ tự người dùng; `frontend/test/reportFrontend.test.js` kiểm tra hành vi không có banner thành công | Bằng chứng tự động; đang chờ đánh giá H2 |
 
-### 16.1 Coverage Summary
+### 16.1 Tóm tắt độ bao phủ
 
-| Requirement Type | Total IDs | Mapped IDs | Coverage |
+| Loại yêu cầu | Tổng số ID | ID được ánh xạ | Độ bao phủ |
 | ---------------- | --------- | ---------- | -------- |
-| Business Rules (BR-FE12-*) | 16 | 16 | 100% |
-| Functional Requirements (FR-FE12-*) | 11 | 11 | 100% |
-| Acceptance Criteria (AC-FE12-*) | 11 | 11 | 100% |
-| **Total** | **38** | **38** | **100%** |
+| Quy tắc kinh doanh (BR-FE12-*) | 16 | 16 | 100% |
+| Yêu cầu chức năng (FR-FE12-*) | 11 | 11 | 100% |
+| Tiêu chí chấp nhận (AC-FE12-*) | 11 | 11 | 100% |
+| **Tổng** | **38** | **38** | **100%** |
 
-> BR-FE12-013 is mapped to an out-of-scope contract check: the absence of export endpoints and controls is itself verified without implementing export behavior.
+> BR-FE12-013 được ánh xạ tới một kiểm tra hợp đồng ngoài phạm vi: chính việc không có endpoint và điều khiển xuất được xác minh mà không triển khai hành vi xuất.
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra rà soát
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 
-- [x] Report viewer roles are approved.
-- [x] Required borrowing metrics are approved.
-- [x] Required inventory metrics are approved.
-- [x] Required user statistics are approved.
-- [x] Export scope is approved or explicitly out of scope.
-- [x] API contract is approved in SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
-- [x] Every acceptance criterion can become a test.
-## 2026-07-22 staff-console correction
+- [x] Vai trò của người xem báo cáo đã được phê duyệt.
+- [x] Các số liệu vay bắt buộc đã được phê duyệt.
+- [x] Các chỉ số tồn kho bắt buộc đã được phê duyệt.
+- [x] Số liệu thống kê người dùng cần thiết đã được phê duyệt.
+- [x] Phạm vi xuất được phê duyệt hoặc được xác định rõ là ngoài phạm vi.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md hoặc được sao chép sang tệp hợp đồng API dùng chung chuyên biệt nếu nhóm tạo lại tệp đó.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
+## Hiệu chỉnh giao diện nhân viên 2026-07-22
 
-- Search and filter controls on all three FE12 pages use the canonical report query contracts and render only the returned `metrics`, `rows`, and `totalRows`; demo/chart fallback data is forbidden.
-- Report pages use compact bottom spacing so the scrollable content does not end with an oversized blank region.
+- Các điều khiển tìm kiếm và lọc trên cả ba trang FE12 dùng hợp đồng truy vấn báo cáo chuẩn và chỉ hiển thị `metrics`, `rows` và `totalRows` được trả về; cấm dữ liệu dự phòng demo/biểu đồ.
+- Các trang báo cáo sử dụng khoảng cách dưới cùng nhỏ gọn để nội dung có thể cuộn không kết thúc bằng một vùng trống quá khổ.
 
-### Revision v0.2.0 Query-Allowlist Gate
+### Cổng danh sách cho phép tham số truy vấn v0.2.0
 
-- [x] Define an exact query allowlist for each report endpoint.
-- [x] Define safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution.
-- [x] Preserve approved value validation, unknown-ID empty reports, parameterized SQL, and read-only behavior.
-- [x] Nhat human-reviewed and approved the written v0.2.0 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
+- [x] Xác định danh sách cho phép tham số truy vấn chính xác cho từng endpoint báo cáo.
+- [x] Xác định `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` an toàn trước khi thực thi service/repository.
+- [x] Duy trì xác thực giá trị đã phê duyệt, báo cáo trống cho ID không xác định, SQL tham số hóa và hành vi chỉ đọc.
+- [x] Nhat đã trực tiếp đánh giá và phê duyệt bản SPEC v0.2.0 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, còn triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.

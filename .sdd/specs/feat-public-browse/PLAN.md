@@ -1,142 +1,142 @@
-# PLAN.md - FE01 Public / Browse
+# PLAN.md - FE01 Công Khai / Duyệt Sách
 
-Version: 0.3.7
+Phiên bản: 0.3.7
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Trạng thái: HOÀN THÀNH - BẰNG CHỨNG KẾT THÚC GIAI ĐOẠN 2 ĐÃ ĐƯỢC GHI NHẬN
 
-Owner: Dung
+Chủ sở hữu: Dung
 
-Updated: 2026-07-26
+Cập nhật: 2026-07-26
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Trạng thái quy trình: HOÀN THÀNH đối với phạm vi Giai đoạn 2 đã được phê duyệt; H3, merge và CI `main` chính xác sau merge được ghi nhận trong `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Các tuyên bố gate đang chờ/còn mở được giữ lại bên dưới là snapshot triển khai lịch sử đã được bằng chứng đó thay thế.
 
-> **For implementation agents:** Execute `TASKS.md` in order. FE01 is read-only. Do not create or update books, copies, borrowing records, reservations, fines, users, or audit business records.
+> **Dành cho tác nhân triển khai:** Thực hiện `TASKS.md` theo thứ tự. FE01 chỉ có quyền đọc. Không tạo hoặc cập nhật sách, bản sao, hồ sơ mượn, đặt chỗ, khoản phạt, người dùng hoặc hồ sơ audit nghiệp vụ.
 
 ---
 
-## 1. Goal
+## 1. Mục Tiêu
 
-Maintain the public home, search, and detail experience against the approved FE01 v0.3.7 contract: exact public filters, deterministic pagination/order, inactive-book hiding, safe DTOs, current FE06-owned availability, role-safe presentation, connected navigation, responsive Homepage sections, and safe user-facing errors.
+Duy trì trải nghiệm trang chủ, tìm kiếm và chi tiết công khai theo hợp đồng FE01 v0.3.7 đã được phê duyệt: bộ lọc công khai chính xác, phân trang/thứ tự xác định, ẩn sách không hoạt động, DTO an toàn, tình trạng có sẵn hiện tại do FE06 sở hữu, cách hiển thị an toàn theo vai trò, điều hướng được kết nối, các phần Homepage responsive và lỗi an toàn hướng tới người dùng.
 
-## 2. Source Documents
+## 2. Tài Liệu Nguồn
 
 - `.sdd/specs/feat-public-browse/SPEC.md` v0.3.7.
 - `.sdd/specs/feat-public-browse/CONTEXT.md` v0.1.1.
 - `.sdd/specs/feat-public-browse/TASKS.md`.
 - `.sdd/specs/feat-public-browse/TEST_PLAN.md`.
-- `.sdd/specs/feat-book-management/SPEC.md` for shared public catalog ownership.
-- `.sdd/specs/feat-inventory-book-copy/SPEC.md` for `BookCopies.Status` ownership.
-- `.sdd/constraints/global.md`, `.sdd/constraints/business.md`, and `.sdd/constraints/safety.md`.
+- `.sdd/specs/feat-book-management/SPEC.md` cho quyền sở hữu danh mục công khai dùng chung.
+- `.sdd/specs/feat-inventory-book-copy/SPEC.md` cho quyền sở hữu `BookCopies.Status`.
+- `.sdd/constraints/global.md`, `.sdd/constraints/business.md` và `.sdd/constraints/safety.md`.
 
-## 3. Historical Drift Reconciled
+## 3. Sai Lệch Lịch Sử Đã Được Đối Soát
 
-The following table records the original Phase 2 drift. FE01-T001 through FE01-T008 resolved these items; it is not a description of the current implementation.
+Bảng sau ghi nhận sai lệch ban đầu của Giai đoạn 2. FE01-T001 đến FE01-T008 đã giải quyết các hạng mục này; đây không phải mô tả phần triển khai hiện tại.
 
-| Approved contract | Current drift to reconcile |
+| Hợp đồng đã phê duyệt | Sai lệch cần đối soát |
 | --- | --- |
-| Public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`. | Reconciled: public repository accepts the approved fields; staff-only search fields remain isolated in FE05. |
-| `q` matches title or author name case-insensitively and is limited to 1..200 characters when supplied. | Reconciled: public SQL matches title/author only and does not match ISBN/category/publisher text. |
-| Public results use `page=1`, `limit=20`, bounds `page>=1`, `limit=1..100`, and `Title ASC, BookId ASC`. | The current home query returns an unpaginated list ordered by `BookId DESC`. |
-| Public detail hides inactive books and returns only public-safe fields. | `getBookById` currently returns inactive rows and maps internal status/copy-count fields into the shared book DTO. |
-| Availability is `AVAILABLE` when at least one current `BookCopies.Status = AVAILABLE`, otherwise `UNAVAILABLE`. | The current response exposes exact copy counts and the UI displays a legacy `ĐÃ MƯỢN` label instead of `Không khả dụng`. |
-| Optional metadata remains in the response as `null`. | Current mapping replaces missing values with display strings such as `Không rõ tác giả`, `Chưa phân loại`, and a default image before the public contract is applied. |
-| FE01 is read-only and uses `/api/books` plus `/api/books/{bookId}`. | `HomePage.jsx` owns direct fetches, category-endpoint usage, local mock actions, and a fake successful borrow flow that must not be presented as FE01 behavior. |
-| Public behavior has dedicated evidence. | No dedicated FE01 backend/frontend contract test files exist yet. |
+| Các trường query công khai chính xác là `q`, `categoryId`, `authorId`, `publisherId`, `page` và `limit`. | Đã đối soát: repository công khai chấp nhận các trường đã được phê duyệt; trường tìm kiếm chỉ dành cho nhân viên vẫn được cô lập trong FE05. |
+| `q` khớp tên sách hoặc tên tác giả không phân biệt hoa thường và được giới hạn 1..200 ký tự khi được cung cấp. | Đã đối soát: SQL công khai chỉ khớp tên sách/tác giả và không khớp nội dung ISBN/thể loại/nhà xuất bản. |
+| Kết quả công khai sử dụng `page=1`, `limit=20`, ranh giới `page>=1`, `limit=1..100` và `Title ASC, BookId ASC`. | Query trang chủ hiện tại trả về danh sách không phân trang, sắp xếp theo `BookId DESC`. |
+| Chi tiết công khai ẩn sách không hoạt động và chỉ trả về trường an toàn cho công khai. | `getBookById` hiện trả về hàng không hoạt động và ánh xạ trường trạng thái/số lượng bản sao nội bộ vào DTO sách dùng chung. |
+| Tình trạng có sẵn là `AVAILABLE` khi có ít nhất một `BookCopies.Status = AVAILABLE` hiện tại, nếu không là `UNAVAILABLE`. | Phản hồi hiện tại làm lộ số lượng bản sao chính xác và giao diện hiển thị nhãn cũ `ĐÃ MƯỢN` thay cho `Không khả dụng`. |
+| Metadata tùy chọn vẫn nằm trong phản hồi dưới dạng `null`. | Ánh xạ hiện tại thay giá trị bị thiếu bằng chuỗi hiển thị như `Không rõ tác giả`, `Chưa phân loại` và ảnh mặc định trước khi áp dụng hợp đồng công khai. |
+| FE01 chỉ có quyền đọc và sử dụng `/api/books` cùng `/api/books/{bookId}`. | `HomePage.jsx` sở hữu thao tác fetch trực tiếp, việc dùng endpoint thể loại, hành động mock cục bộ và luồng mượn thành công giả không được trình bày như hành vi FE01. |
+| Hành vi công khai có bằng chứng chuyên biệt. | Chưa có file kiểm thử hợp đồng backend/frontend chuyên biệt cho FE01. |
 
-## 4. Ownership And Shared-File Boundary
+## 4. Quyền Sở Hữu Và Ranh Giới File Dùng Chung
 
-- FE01 owns public-safe reads, title/author query validation, a public DTO that excludes ISBN, and guest-facing browse states.
-- FE05 owns ISBN and other catalog metadata mutations plus staff management views. FE01 must not change FE05 mutation routes or management-only fields.
-- FE06 owns physical copy state and availability transitions. FE01 may read the latest committed aggregate but must not write `BookCopies`.
-- FE07 and FE08 own borrowing/reservation transitions. FE01 only reflects the committed availability result on a later read.
-- Shared backend files such as `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, and `backend/src/repositories/bookRepository.js` require coordination with the FE05 owner. Public changes must be isolated from management mutation paths.
-- The canonical FE01 API has no `/api/public/*` alias and no FE01-owned `/api/books/categories` endpoint. A category selector must not be added unless a separate approved contract supplies its data source; `categoryId` remains an accepted API filter.
+- FE01 sở hữu thao tác đọc an toàn cho công khai, validation query tên sách/tác giả, DTO công khai loại trừ ISBN và các trạng thái duyệt sách hướng tới Khách.
+- FE05 sở hữu ISBN và các mutation metadata danh mục khác cùng chế độ xem quản lý dành cho nhân viên. FE01 không được thay đổi route mutation FE05 hoặc trường chỉ dành cho quản lý.
+- FE06 sở hữu trạng thái bản sao vật lý và các chuyển tiếp tình trạng có sẵn. FE01 có thể đọc dữ liệu tổng hợp đã commit mới nhất nhưng không được ghi `BookCopies`.
+- FE07 và FE08 sở hữu các chuyển tiếp mượn/đặt chỗ. FE01 chỉ phản ánh kết quả tình trạng có sẵn đã commit trong lần đọc sau.
+- Các file backend dùng chung như `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js` và `backend/src/repositories/bookRepository.js` cần phối hợp với chủ sở hữu FE05. Thay đổi công khai phải được cô lập khỏi các đường mutation quản lý.
+- API FE01 chuẩn không có alias `/api/public/*` và không có endpoint `/api/books/categories` do FE01 sở hữu. Không được thêm bộ chọn thể loại trừ khi một hợp đồng riêng đã được phê duyệt cung cấp nguồn dữ liệu; `categoryId` vẫn là bộ lọc API được chấp nhận.
 
-## 5. Canonical Public Interfaces
+## 5. Giao Diện Công Khai Chuẩn
 
-| Method | Endpoint | Required behavior |
+| Phương thức | Endpoint | Hành vi bắt buộc |
 | --- | --- | --- |
-| `GET` | `/api/books` | Guest/Member/Librarian/Admin public-safe access; `q` matches only title/author; return paginated summaries without ISBN, with deterministic order and current availability. |
-| `GET` | `/api/books/{bookId}` | Guest/Member receive public-safe active detail without ISBN; server-authorized Librarian/Admin may receive FE05 management fields including ISBN; validate a positive integer ID and return `404` for missing/hidden public books. |
+| `GET` | `/api/books` | Truy cập an toàn cho công khai dành cho Khách/Thành viên/Thủ thư/Quản trị viên; `q` chỉ khớp tên sách/tác giả; trả về bản tóm tắt được phân trang không có ISBN, với thứ tự xác định và tình trạng có sẵn hiện tại. |
+| `GET` | `/api/books/{bookId}` | Khách/Thành viên nhận chi tiết đang hoạt động an toàn cho công khai, không có ISBN; Thủ thư/Quản trị viên được server cấp quyền có thể nhận trường quản lý FE05 gồm ISBN; kiểm tra ID số nguyên dương và trả về `404` đối với sách công khai bị thiếu/bị ẩn. |
 
-The response envelope must follow the approved shared API convention used by the FE05 public read contract. It must contain pagination metadata for list responses and must never include ISBN, barcodes, locations, borrower/member data, reservation rows, fine data, audit data, or other staff-only fields. If the shared envelope changes, FE01 and FE05 specs must be reviewed together before implementation continues.
+Envelope phản hồi phải tuân theo quy ước API dùng chung đã được phê duyệt mà hợp đồng đọc công khai FE05 sử dụng. Envelope phải chứa metadata phân trang cho phản hồi danh sách và tuyệt đối không được bao gồm ISBN, barcode, vị trí, dữ liệu người mượn/thành viên, hàng đặt chỗ, dữ liệu khoản phạt, dữ liệu audit hoặc trường chỉ dành cho nhân viên khác. Nếu envelope dùng chung thay đổi, đặc tả FE01 và FE05 phải được review cùng nhau trước khi tiếp tục triển khai.
 
-## 6. Scope
+## 6. Phạm Vi
 
-### In Scope
+### Trong Phạm Vi
 
-- Public list/search query validation and database-side filtering.
-- Stable pagination and `Title ASC, BookId ASC` ordering.
-- Public-safe list/detail projections with `null` optional metadata.
-- Inactive/hidden book filtering and safe `400`/`404`/`500` behavior.
-- Current availability summary derived from active book records and FE06-owned copy status.
-- Guest/Member home/search/detail loading, empty states, no-result states, role-safe availability presentation, and safe fallback rendering.
-- Role-aware desktop/mobile navigation connected to existing owning routes.
-- Responsive catalog-topic, journey, continuation, membership, and footer sections with motion-safe feedback.
-- Footer phone, email, address, and accessible Privacy/Terms/browser-storage information.
-- Dedicated backend/frontend/SQL evidence and complete traceability.
+- Validation query danh sách/tìm kiếm công khai và lọc phía cơ sở dữ liệu.
+- Phân trang ổn định và thứ tự `Title ASC, BookId ASC`.
+- Phép chiếu danh sách/chi tiết an toàn cho công khai với metadata tùy chọn `null`.
+- Lọc sách không hoạt động/bị ẩn và hành vi `400`/`404`/`500` an toàn.
+- Bản tóm tắt tình trạng có sẵn hiện tại được suy ra từ hồ sơ sách hoạt động và trạng thái bản sao do FE06 sở hữu.
+- Trạng thái đang tải, trống, không có kết quả của trang chủ/tìm kiếm/chi tiết cho Khách/Thành viên, cách hiển thị tình trạng có sẵn an toàn theo vai trò và render fallback an toàn.
+- Điều hướng desktop/thiết bị di động nhận biết vai trò, kết nối tới các route sở hữu hiện có.
+- Các phần chủ đề danh mục, hành trình, tiếp tục, tư cách thành viên và footer responsive với phản hồi an toàn về chuyển động.
+- Số điện thoại, email, địa chỉ ở footer và thông tin Quyền riêng tư/Điều khoản/lưu trữ trình duyệt có thể truy cập.
+- Bằng chứng backend/frontend/SQL chuyên biệt và truy vết đầy đủ.
 
-### Out Of Scope
+### Ngoài Phạm Vi
 
-- Book create/update/deactivate/reactivate workflows.
-- Category metadata endpoint or `/api/public/*` aliases.
-- Physical copies, barcodes, locations, or copy-status transitions.
-- Owning borrowing, reservation, membership, authentication, fine, review, reading-list, or payment behavior; FE01 may only route to those existing workflows.
-- Exact copy counts, borrower identity, queue position, staff inventory details, or protected records in public responses.
+- Quy trình tạo/cập nhật/ngừng kích hoạt/kích hoạt lại sách.
+- Endpoint metadata thể loại hoặc alias `/api/public/*`.
+- Bản sao vật lý, barcode, vị trí hoặc chuyển tiếp trạng thái bản sao.
+- Quyền sở hữu hành vi mượn, đặt chỗ, tư cách thành viên, xác thực, khoản phạt, review, danh sách đọc hoặc thanh toán; FE01 chỉ có thể định tuyến tới các quy trình hiện có đó.
+- Số lượng bản sao chính xác, danh tính người mượn, vị trí hàng đợi, chi tiết kho dành cho nhân viên hoặc hồ sơ được bảo vệ trong phản hồi công khai.
 
-## 7. File And Interface Map
+## 7. Bản Đồ File Và Giao Diện
 
-| Area | Files | Responsibility |
+| Khu vực | File | Trách nhiệm |
 | --- | --- | --- |
-| Backend public boundary | `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js` | Keep canonical public GET routes and route-level safe error behavior; do not widen public access to mutation routes. |
-| Backend business rules | `backend/src/services/bookService.js` | Validate FE01 query/ID rules, select public projection, and preserve read-only ownership. |
-| Backend persistence | `backend/src/repositories/bookRepository.js` | Apply database-side filters, active visibility, availability aggregation, stable order, and pagination with parameterized inputs. |
-| API documentation | `backend/src/docs/openapi.yaml` | Document canonical public list/detail parameters, fields, pagination, safe errors, and no authentication requirement. |
-| Backend tests | Create `backend/tests/publicBrowseRoutes.test.js`, `backend/tests/publicBrowseRepository.test.js`, and `backend/tests/sql/publicBrowseAvailability.sqltest.js` | Cover route contract, public redaction, query validation, SQL filtering/order, and latest committed availability. |
-| Frontend API | `frontend/src/api/libraryFeatureApi.js` | Add a small public browse API wrapper for list/detail requests without requiring an access token. |
-| Frontend page | `frontend/src/page/HomePage.jsx` | Use canonical server data, hide availability from Guest/Member, route from the account's single role, and render the connected responsive Homepage/navigation/footer experience. |
-| Frontend tests | `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `frontend/test/homeBookActions.test.js` | Lock endpoint/query usage, role-safe rendering/routing, navigation/footer behavior, responsive contracts, null fallbacks, and no fake FE01 mutation. |
-| Test strategy/history | `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md` | Record focused commands, evidence, and implementation status. |
+| Ranh giới công khai backend | `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js` | Giữ các route GET công khai chuẩn và hành vi lỗi an toàn ở cấp route; không mở rộng truy cập công khai tới route mutation. |
+| Quy tắc nghiệp vụ backend | `backend/src/services/bookService.js` | Kiểm tra quy tắc query/ID FE01, chọn phép chiếu công khai và bảo toàn quyền sở hữu chỉ đọc. |
+| Lưu trữ backend | `backend/src/repositories/bookRepository.js` | Áp dụng bộ lọc phía cơ sở dữ liệu, khả năng hiển thị hoạt động, tổng hợp tình trạng có sẵn, thứ tự ổn định và phân trang với dữ liệu đầu vào có tham số. |
+| Tài liệu API | `backend/src/docs/openapi.yaml` | Ghi lại tham số, trường, phân trang, lỗi an toàn và việc không yêu cầu xác thực của danh sách/chi tiết công khai chuẩn. |
+| Kiểm thử backend | Tạo `backend/tests/publicBrowseRoutes.test.js`, `backend/tests/publicBrowseRepository.test.js` và `backend/tests/sql/publicBrowseAvailability.sqltest.js` | Bao phủ hợp đồng route, che dữ liệu công khai, validation query, lọc/thứ tự SQL và tình trạng có sẵn đã commit mới nhất. |
+| API frontend | `frontend/src/api/libraryFeatureApi.js` | Thêm wrapper API duyệt sách công khai nhỏ cho yêu cầu danh sách/chi tiết mà không cần access token. |
+| Trang frontend | `frontend/src/page/HomePage.jsx` | Sử dụng dữ liệu server chuẩn, ẩn tình trạng có sẵn khỏi Khách/Thành viên, định tuyến từ vai trò duy nhất của tài khoản và render trải nghiệm Homepage/điều hướng/footer responsive được kết nối. |
+| Kiểm thử frontend | `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `frontend/test/homeBookActions.test.js` | Khóa việc dùng endpoint/query, render/định tuyến an toàn theo vai trò, hành vi điều hướng/footer, hợp đồng responsive, fallback null và không có mutation FE01 giả. |
+| Chiến lược/lịch sử kiểm thử | `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md` | Ghi nhận lệnh tập trung, bằng chứng và trạng thái triển khai. |
 
-## 8. Ordered Implementation Strategy
+## 8. Chiến Lược Triển Khai Theo Thứ Tự
 
-1. Add failing FE01 route, repository, SQL, and frontend contract tests.
-2. Reconcile public query validation and canonical route/controller boundary.
-3. Reconcile repository filtering, pagination, stable ordering, and FE06 availability aggregation.
-4. Implement public-safe list/detail projection and hidden-book/error behavior.
-5. Integrate the guest HomePage with the public API and remove FE01-owned fake mutation behavior.
-6. Complete OpenAPI, traceability, focused validation, and human review.
-7. Polish footer contacts and replace empty policy links with accessible dialogs.
-8. Connect desktop/mobile navigation groups to role-owned destinations (historical implementation, superseded by step 11).
-9. Add truthful catalog-topic, journey, role-continuation, and membership sections with motion-safe presentation.
-10. Hide availability presentation from Guest/Member while retaining Librarian/Admin status and internal Member route selection.
-11. Remove the four header navigation groups on desktop/mobile while retaining branding, account controls, and role continuation actions.
+1. Thêm kiểm thử hợp đồng route, repository, SQL và frontend FE01 đang thất bại.
+2. Đối soát validation query công khai và ranh giới route/controller chuẩn.
+3. Đối soát lọc repository, phân trang, thứ tự ổn định và tổng hợp tình trạng có sẵn FE06.
+4. Triển khai phép chiếu danh sách/chi tiết an toàn cho công khai và hành vi sách bị ẩn/lỗi.
+5. Tích hợp HomePage dành cho Khách với API công khai và xóa hành vi mutation giả do FE01 sở hữu.
+6. Hoàn tất OpenAPI, truy vết, xác thực tập trung và review của con người.
+7. Hoàn thiện thông tin liên hệ footer và thay liên kết chính sách trống bằng hộp thoại có thể truy cập.
+8. Kết nối nhóm điều hướng desktop/thiết bị di động tới đích do vai trò sở hữu (triển khai lịch sử, được bước 11 thay thế).
+9. Thêm các phần chủ đề danh mục, hành trình, tiếp tục theo vai trò và tư cách thành viên trung thực với cách hiển thị an toàn về chuyển động.
+10. Ẩn cách hiển thị tình trạng có sẵn khỏi Khách/Thành viên trong khi giữ trạng thái cho Thủ thư/Quản trị viên và lựa chọn route Thành viên nội bộ.
+11. Xóa bốn nhóm điều hướng header trên desktop/thiết bị di động trong khi giữ thương hiệu, điều khiển tài khoản và hành động tiếp tục theo vai trò.
 
-## 9. Dependencies And Sequencing
+## 9. Phụ Thuộc Và Trình Tự
 
-1. FE05 owner confirms the shared public book response envelope and shared-file edit boundary.
-2. FE06 owner confirms the availability aggregate uses only the latest committed `BookCopies.Status` values.
-3. FE01-T001 through FE01-T004 complete before frontend integration.
-4. FE01 frontend work may proceed after the canonical list/detail response shape is stable.
-5. FE01 must be validated after FE05/FE06 public read contracts are available, or with deterministic in-memory/SQL fixtures that represent those contracts.
+1. Chủ sở hữu FE05 xác nhận envelope phản hồi sách công khai dùng chung và ranh giới chỉnh sửa file dùng chung.
+2. Chủ sở hữu FE06 xác nhận dữ liệu tổng hợp tình trạng có sẵn chỉ dùng các giá trị `BookCopies.Status` đã commit mới nhất.
+3. FE01-T001 đến FE01-T004 hoàn thành trước khi tích hợp frontend.
+4. Công việc frontend FE01 có thể tiếp tục sau khi hình dạng phản hồi danh sách/chi tiết chuẩn ổn định.
+5. FE01 phải được xác thực sau khi có hợp đồng đọc công khai FE05/FE06 hoặc bằng fixture trong bộ nhớ/SQL xác định, đại diện cho các hợp đồng đó.
 
-## 10. Verification Gates
+## 10. Các Gate Xác Minh
 
-| Gate | Command | Expected result |
+| Gate | Lệnh | Kết quả mong đợi |
 | --- | --- | --- |
-| FE01 backend routes | `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js` | Public list/detail, validation, hidden-book, redaction, and read-only cases pass. |
-| FE01 repository | `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRepository.test.js` | Database-side filters, pagination/order, null metadata, and availability projection cases pass. |
-| FE01 SQL availability | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/publicBrowseAvailability.sqltest.js` | Latest committed copy-state reflection and inactive-book hiding pass when SQL configuration is available. |
-| FE01 frontend | `node --test frontend/test/publicBrowseFrontend.test.js frontend/test/appShellFrontend.test.js frontend/test/homeBookActions.test.js` | Home/search/detail API usage, role-safe availability, registered navigation/footer destinations, null fallbacks, and no fake mutation pass. |
-| Frontend quality | `npm.cmd --prefix frontend run lint` and `npm.cmd --prefix frontend run build` | Lint and production build pass. |
-| Traceability | `npm.cmd run trace:enforce` | FE01 changed implementation files satisfy the repository traceability threshold. |
-| Diff hygiene | `git diff --check` | No whitespace errors. |
+| Route backend FE01 | `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRoutes.test.js` | Các trường hợp danh sách/chi tiết công khai, validation, sách bị ẩn, che dữ liệu và chỉ đọc đều đạt. |
+| Repository FE01 | `npm.cmd --prefix backend test -- --runTestsByPath tests/publicBrowseRepository.test.js` | Các trường hợp bộ lọc phía cơ sở dữ liệu, phân trang/thứ tự, metadata null và phép chiếu tình trạng có sẵn đều đạt. |
+| Tình trạng có sẵn SQL FE01 | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/publicBrowseAvailability.sqltest.js` | Việc phản ánh trạng thái bản sao đã commit mới nhất và ẩn sách không hoạt động đạt khi có cấu hình SQL. |
+| Frontend FE01 | `node --test frontend/test/publicBrowseFrontend.test.js frontend/test/appShellFrontend.test.js frontend/test/homeBookActions.test.js` | Việc dùng API trang chủ/tìm kiếm/chi tiết, tình trạng có sẵn an toàn theo vai trò, đích điều hướng/footer đã đăng ký, fallback null và không có mutation giả đều đạt. |
+| Chất lượng frontend | `npm.cmd --prefix frontend run lint` và `npm.cmd --prefix frontend run build` | Lint và build production đạt. |
+| Truy vết | `npm.cmd run trace:enforce` | Các file triển khai FE01 đã thay đổi đáp ứng ngưỡng truy vết của repository. |
+| Vệ sinh diff | `git diff --check` | Không có lỗi khoảng trắng. |
 
-## 11. Human Review Gate
+## 11. Gate Review Của Con Người
 
-- [x] Nhat approved the FE01 public query fields, pagination, visibility, availability, and safe-field contract on 2026-07-17.
-- [ ] FE05 owner confirms the shared public response envelope and shared-file ownership before code changes.
-- [ ] FE06 owner confirms availability aggregation and latest-commit behavior before code changes.
-- [x] FE01 focused backend 9/9 and disposable SQL availability evidence are recorded for the baseline.
-- [x] Current Homepage evidence passes: public browse frontend 14/14, combined focused frontend 39/39, traceability 18/18, lint, production build, and diff checks.
-- [ ] Dung and Nhat review the final public-safe DTO and no-mutation boundary before merge.
+- [x] Nhat đã phê duyệt các trường query công khai, phân trang, khả năng hiển thị, tình trạng có sẵn và hợp đồng trường an toàn FE01 vào 2026-07-17.
+- [ ] Chủ sở hữu FE05 xác nhận envelope phản hồi công khai dùng chung và quyền sở hữu file dùng chung trước khi thay đổi mã nguồn.
+- [ ] Chủ sở hữu FE06 xác nhận việc tổng hợp tình trạng có sẵn và hành vi commit mới nhất trước khi thay đổi mã nguồn.
+- [x] Bằng chứng backend tập trung 9/9 và tình trạng có sẵn SQL dùng một lần của FE01 đã được ghi nhận cho baseline.
+- [x] Bằng chứng Homepage hiện tại đạt: frontend duyệt sách công khai 14/14, frontend tập trung kết hợp 39/39, truy vết 18/18, lint, build production và kiểm tra diff.
+- [ ] Dung và Nhat review DTO an toàn cho công khai cuối cùng và ranh giới không mutation trước khi merge.

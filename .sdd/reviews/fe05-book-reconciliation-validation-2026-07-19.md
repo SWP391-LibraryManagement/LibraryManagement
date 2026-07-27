@@ -1,50 +1,50 @@
-# FE05 Book Reconciliation Validation - 2026-07-19
+# Xác thực đối soát Sách FE05 - 2026-07-19
 
-## Decision
+## Quyết định
 
-- Method: Hybrid SDD+ADD, Full depth for FE05 Core and bounded ADD for the frontend Shell.
-- Scope: FE05-T001 through FE05-T008 in `feat/fe05-book-reconciliation`.
-- Integration state: ready for human review; no commit, push, PR, or merge performed.
+- Phương pháp: SDD+ADD kết hợp, độ sâu Đầy đủ cho Lõi FE05 và ADD giới hạn cho Khung frontend.
+- Phạm vi: FE05-T001 đến FE05-T008 trong `feat/fe05-book-reconciliation`.
+- Trạng thái tích hợp: sẵn sàng để con người đánh giá; chưa thực hiện commit, đẩy, PR hoặc hợp nhất.
 
-## Evidence
+## Bằng chứng
 
-| Gate | Command / check | Result |
+| Cổng | Lệnh / kiểm tra | Kết quả |
 | --- | --- | --- |
-| Focused backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js --silent` | 45/45 passed |
-| Focused SQL contract | `npm.cmd --prefix backend run test:sql:fe05 -- --silent` | 7/7 passed on disposable SQL Server |
-| Frontend FE05 | `node --test frontend/test/bookManagementFrontend.test.js` | 6/6 passed |
-| Full backend | `npm.cmd --prefix backend test -- --silent` | 649/649 passed |
-| Full frontend | `npm.cmd --prefix frontend test` | 120/120 passed |
-| Coverage | `npm.cmd --prefix backend run test:coverage:ci -- --silent` | statements 92.51%, branches 82.46%, functions 97.10%, lines 92.44% |
-| Frontend lint | `npm.cmd --prefix frontend run lint` | passed |
-| Frontend build | `npm.cmd --prefix frontend run build` | passed; Vite chunk-size warning only |
-| Traceability | `npm.cmd run trace:enforce` | FE05 26/26 (100%); enforcement passed |
-| OpenAPI parse | PyYAML load plus FE05 route assertions | passed |
-| Import smoke | backend app/routes/service require smoke | passed |
-| Diff hygiene | `git diff --check` | passed |
+| Backend trọng tâm | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js --silent` | 45/45 đạt |
+| Hợp đồng SQL trọng tâm | `npm.cmd --prefix backend run test:sql:fe05 -- --silent` | 7/7 đạt trên SQL Server dùng một lần |
+| Frontend FE05 | `node --test frontend/test/bookManagementFrontend.test.js` | 6/6 đạt |
+| Toàn bộ backend | `npm.cmd --prefix backend test -- --silent` | 649/649 đạt |
+| Toàn bộ frontend | `npm.cmd --prefix frontend test` | 120/120 đạt |
+| Độ bao phủ | `npm.cmd --prefix backend run test:coverage:ci -- --silent` | câu lệnh 92.51%, nhánh 82.46%, hàm 97.10%, dòng 92.44% |
+| Lint frontend | `npm.cmd --prefix frontend run lint` | đạt |
+| Bản dựng frontend | `npm.cmd --prefix frontend run build` | đạt; chỉ có cảnh báo kích thước khối của Vite |
+| Truy vết | `npm.cmd run trace:enforce` | FE05 26/26 (100%); thực thi đạt |
+| Phân tích OpenAPI | Nạp PyYAML cùng các xác nhận tuyến FE05 | đạt |
+| Kiểm tra nhanh nhập mô-đun | yêu cầu nạp ứng dụng/tuyến/dịch vụ backend | đạt |
+| Vệ sinh diff | `git diff --check` | đạt |
 
-## Spec and safety checks
+## Kiểm tra đặc tả và an toàn
 
-- Public reads hide inactive books; staff reads use `/api/admin/books` and server-owned pagination.
-- Create starts `ACTIVE`; metadata update excludes status and copy lifecycle fields.
-- Update/deactivate/reactivate require `If-Match`; stale state maps to `409 STALE_BOOK_STATE` and a reload instruction.
-- Deactivate/reactivate require a trimmed reason and write only `Books.Status`; FE05 does not mutate `BookCopies.Status`.
-- Availability is derived as `AVAILABLE`/`UNAVAILABLE`; the UI does not label unrelated unavailable states as borrowed.
-- SQL access remains parameterized and no secrets were added.
+- Đọc công khai ẩn sách không hoạt động; đọc của nhân viên dùng `/api/admin/books` và phân trang do máy chủ sở hữu.
+- Tạo mới bắt đầu ở `ACTIVE`; cập nhật siêu dữ liệu không gồm trạng thái và các trường vòng đời bản sao.
+- Cập nhật/vô hiệu hóa/kích hoạt lại yêu cầu `If-Match`; trạng thái cũ ánh xạ tới `409 STALE_BOOK_STATE` và hướng dẫn tải lại.
+- Vô hiệu hóa/kích hoạt lại yêu cầu lý do đã cắt khoảng trắng và chỉ ghi `Books.Status`; FE05 không thay đổi `BookCopies.Status`.
+- Tính khả dụng được suy ra là `AVAILABLE`/`UNAVAILABLE`; UI không gắn nhãn các trạng thái không khả dụng không liên quan là đã mượn.
+- Truy cập SQL vẫn được tham số hóa và không có bí mật nào được thêm.
 
-## Open gates
+## Các cổng còn mở
 
-- L4 browser acceptance and FE06 ownership confirmation remain pending.
-- Human B7 integration review remains mandatory before commit, publication, or merge.
+- Chấp thuận trình duyệt L4 và xác nhận quyền sở hữu FE06 vẫn đang chờ.
+- Đánh giá tích hợp B7 của con người vẫn là bắt buộc trước khi commit, công bố hoặc hợp nhất.
 
-## Post-Origin Sync Revalidation
+## Xác thực lại sau đồng bộ Origin
 
-- Fast-forwarded the dirty feature worktree from `62ac2d1` to `origin/main@b2ad9b1` without overlap, commit, stash, or loss of local changes.
-- Fresh focused verification after the sync and rowversion remediation: `bookRoutes.test.js` plus `bookAvailabilityRepository.test.js` passed 45/45.
+- Tua nhanh worktree tính năng đang có thay đổi từ `62ac2d1` lên `origin/main@b2ad9b1` mà không chồng lấn, commit, cất tạm hoặc mất thay đổi cục bộ.
+- Xác minh trọng tâm mới sau đồng bộ và khắc phục rowversion: `bookRoutes.test.js` cùng `bookAvailabilityRepository.test.js` đạt 45/45.
 
-## Live SQL Addendum
+## Phụ lục SQL trực tiếp
 
-- The missing `bookConcurrency.sqltest.js` fan-in was restored through RED-GREEN: the FE05 SQL command first failed with `No tests found`, then passed 4/4 static checks.
-- Mutable SQL initially proved that every valid mutation was incorrectly classified as stale because `CONVERT(VARCHAR, RowVersion, 2)` crossed the `mssql` driver as an 8-byte binary string while API versions were 16-character hex.
-- `bookRepository` now reads raw rowversion buffers and normalizes both operands through one hex encoder.
-- FE05 then passed 7/7 SQL cases; after adding the FE03 suite, the aggregate SQL gate passed 8/8 suites, 61/61 tests with `DB_CLEAN`/`LOGIN_CLEAN` cleanup.
+- Phần hội tụ còn thiếu của `bookConcurrency.sqltest.js` được khôi phục qua ĐỎ-XANH: lệnh SQL FE05 ban đầu thất bại với `No tests found`, sau đó đạt 4/4 kiểm tra tĩnh.
+- SQL có thể thay đổi ban đầu chứng minh rằng mọi thao tác thay đổi hợp lệ đều bị phân loại sai là cũ vì `CONVERT(VARCHAR, RowVersion, 2)` đi qua trình điều khiển `mssql` dưới dạng chuỗi nhị phân 8 byte trong khi phiên bản API là mã hex 16 ký tự.
+- `bookRepository` hiện đọc vùng đệm rowversion thô và chuẩn hóa cả hai toán hạng qua một bộ mã hóa hex.
+- Sau đó FE05 đạt 7/7 ca SQL; sau khi thêm bộ FE03, cổng SQL tổng hợp đạt 8/8 bộ, 61/61 kiểm thử kèm dọn dẹp `DB_CLEAN`/`LOGIN_CLEAN`.

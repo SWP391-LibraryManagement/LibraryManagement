@@ -1,20 +1,20 @@
-# Global Constraints — Library Management System
+# Ràng Buộc Toàn Cục — Hệ Thống Quản Lý Thư Viện
 
-# Version: 0.1.1
+# Phiên bản: 0.1.1
 
-# Status: APPROVED
+# Trạng thái: ĐÃ PHÊ DUYỆT
 
-# Last Updated: 2026-07-20
+# Cập nhật lần cuối: 2026-07-20
 
-> High-level engineering rules every feature in this project must follow. See [`business.md`](business.md) for domain rules and [`safety.md`](safety.md) for security rules.
+> Các quy tắc kỹ thuật cấp cao mà mọi chức năng trong dự án phải tuân theo. Xem [`business.md`](business.md) để biết các quy tắc miền nghiệp vụ và [`safety.md`](safety.md) để biết các quy tắc bảo mật.
 
-## High-Level Engineering Rules
+## Quy Tắc Kỹ Thuật Cấp Cao
 
-- GLB-001: Spec-first development. No core feature is built without an approved [`.sdd/specs/feat-{name}/SPEC.md`](../specs).
-- GLB-002: Keep code simple and maintainable. Choose the smallest design that satisfies the spec.
-- GLB-003: No feature creep. Implement only what the current `SPEC.md` and `TASKS.md` require.
-- GLB-004: Code must follow the approved `SPEC.md`. If code conflicts with the spec, the code is wrong unless the spec is updated and re-approved.
-- GLB-005: Any change in observable business behavior must update the related `SPEC.md` (and `CHANGELOG.md`) before or alongside the code change.
-- GLB-006: The approved stack is Node.js + Express.js for backend, React + Bootstrap for frontend, SQL Server for database, and RESTful API for client-server communication.
+- GLB-001: Phát triển theo hướng đặc tả trước. Không xây dựng chức năng cốt lõi khi chưa có [`.sdd/specs/feat-{name}/SPEC.md`](../specs) được phê duyệt.
+- GLB-002: Giữ mã nguồn đơn giản và dễ bảo trì. Chọn thiết kế nhỏ nhất đáp ứng được đặc tả.
+- GLB-003: Không mở rộng chức năng ngoài phạm vi. Chỉ triển khai những gì `SPEC.md` và `TASKS.md` hiện hành yêu cầu.
+- GLB-004: Mã nguồn phải tuân theo `SPEC.md` đã được phê duyệt. Nếu mã nguồn mâu thuẫn với đặc tả thì mã nguồn là sai, trừ khi đặc tả đã được cập nhật và phê duyệt lại.
+- GLB-005: Mọi thay đổi đối với hành vi nghiệp vụ có thể quan sát được phải cập nhật `SPEC.md` liên quan (và `CHANGELOG.md`) trước hoặc đồng thời với thay đổi mã nguồn.
+- GLB-006: Công nghệ đã được phê duyệt gồm Node.js + Express.js cho backend, React + Bootstrap cho frontend, SQL Server cho cơ sở dữ liệu và RESTful API cho giao tiếp client-server.
 
-> Concrete tooling rules such as logging library, formatter, dependency policy, and branching scheme may still be refined later. The main application stack is now fixed.
+> Các quy tắc công cụ cụ thể như thư viện ghi log, trình định dạng, chính sách dependency và mô hình nhánh vẫn có thể được hoàn thiện sau. Công nghệ chính của ứng dụng hiện đã được cố định.

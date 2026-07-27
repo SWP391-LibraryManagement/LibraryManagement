@@ -1,431 +1,431 @@
-# SPEC.md - FE07 Borrowing Management
+# SPEC.md - FE07 Quản lý mượn
 
-# Version: 0.8.3
+# Phiên bản: 0.8.3
 
-# Status: REVISION IMPLEMENTED - HUMAN REVIEW PENDING 2026-07-28
+# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI - ĐANG ĐƯỢC CON NGƯỜI RÀ SOÁT 2026-07-28
 
-# Owner: Nhat
+# Chủ sở hữu: Nhat
 
-# Last Updated: 2026-07-28
+# Cập nhật lần cuối: 2026-07-28
 
-# Feature ID: FE07
+# ID tính năng: FE07
 
-# Feature folder: `.sdd/specs/feat-borrowing-management/`
+# Thư mục tính năng: `.sdd/specs/feat-borrowing-management/`
 
-> Current delivery status (2026-07-20): `COMPLETE` for the approved Phase 1 scope.
-> `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
-> are authoritative for current implementation state. Older `Not Started`,
-> `PARTIAL`, `READY FOR REVIEW`, or pending-review labels retained below are
-> historical planning/evidence snapshots, not the current delivery state.
+> Trạng thái phân phối hiện tại (2026-07-20): `COMPLETE` cho phạm vi Giai đoạn 1 đã được phê duyệt.
+> `TASKS.md` và `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
+> có thẩm quyền cho trạng thái thực hiện hiện tại. `Not Started` cũ hơn,
+> `PARTIAL`, `READY FOR REVIEW` hoặc các nhãn đang chờ xem xét được giữ lại bên dưới là
+> ảnh chụp nhanh planning/evidence lịch sử, không phải trạng thái phân phối hiện tại.
 
-> Source of truth for FE07 Borrowing Management. v0.5.1 preserves the approved reconciliation contract and makes borrowing-history filters, pagination, ordering, and date semantics deterministic; human re-review is required.
+> Nguồn sự thật của FE07 Quản lý mượn. v0.5.1 giữ nguyên hợp đồng đối chiếu đã được phê duyệt và xác định rõ bộ lọc, phân trang, thứ tự cùng ngữ nghĩa ngày tháng của lịch sử mượn; bắt buộc có con người review lại.
 >
-> Revision v0.7.4 requires return/renewal overdue decisions to use the shared
-> `Asia/Ho_Chi_Minh` business-date helper and treats a non-`BORROWED` physical
-> copy as an explicit return-state conflict.
+> Bản sửa đổi v0.7.4 yêu cầu các quyết định quá hạn khi trả/gia hạn phải dùng trình hỗ trợ ngày làm việc
+> `Asia/Ho_Chi_Minh` dùng chung và xử lý bản sao vật lý không ở trạng thái `BORROWED`
+> như một xung đột trạng thái trả sách rõ ràng.
 >
-> Revision v0.7.5 originally modeled staff authorization for multi-role
-> renewal actors, requires return responses/audits to use the
-> transaction-locked due date, and forbids host-local renewal date arithmetic.
-> Nhat approved this written revision on 2026-07-27. Approval authorizes
-> PLAN/TASKS preparation only; implementation remains unclaimed until
-> RED-GREEN evidence and acceptance gates are completed. Its multi-role premise
-> is historical and superseded by v0.7.6.
+> Bản sửa đổi v0.7.5 ban đầu mô hình hóa quyền nhân viên đối với tác nhân gia hạn có nhiều vai trò,
+> yêu cầu phản hồi/audit khi trả sách phải dùng ngày đến hạn đã khóa trong giao dịch,
+> đồng thời cấm phép tính ngày gia hạn theo múi giờ cục bộ của máy chủ.
+> Nhat đã phê duyệt bản sửa đổi bằng văn bản này vào 2026-07-27. Việc phê duyệt chỉ cho phép
+> chuẩn bị PLAN/TASKS; triển khai vẫn chưa được xác nhận cho đến khi hoàn tất bằng chứng
+> RED-GREEN và cổng chấp nhận. Tiền đề đa vai trò của bản sửa đổi này chỉ mang tính lịch sử
+> và đã được v0.7.6 thay thế.
 >
-> Revision v0.7.6 reconciles v0.7.5 with project-wide `DEC-GEN-005`: every
-> account has exactly one role. Multi-role accounts are not a supported actor
-> model. Member self-service is available only to `MEMBER`; Librarian/Admin
-> retain staff renewal scope without bypassing loan-owner eligibility. Nhat
-> confirmed this decision and authorized reconciliation on 2026-07-27.
+> Bản sửa đổi v0.7.6 dung hòa v0.7.5 với `DEC-GEN-005` trên toàn dự án: mọi
+> tài khoản có chính xác một vai trò. Tài khoản đa vai trò không phải mô hình tác nhân được hỗ trợ.
+> Tự phục vụ của Thành viên chỉ dành cho `MEMBER`; Thủ thư/Quản trị viên vẫn có phạm vi gia hạn
+> cho nhân viên nhưng không được bỏ qua điều kiện của chủ sở hữu khoản mượn. Nhat đã xác nhận
+> quyết định này và cho phép đối chiếu vào 2026-07-27.
 >
-> Revision v0.7.7 integrates the upstream exact FE08 held-copy handoff while
-> preserving the single-role, authoritative-return, and business-date rules.
+> Bản sửa đổi v0.7.7 tích hợp thao tác bàn giao bản sao chuẩn ở phía FE08, đồng thời
+> duy trì các quy tắc một vai trò, có thẩm quyền và ngày làm việc.
 >
-> Revision v0.7.8 integrates FE07's upstream current-loan signal for FE08
-> same-book reservation exclusion while preserving the v0.7.7 handoff and all
-> rule-alignment contracts.
+> Bản sửa đổi v0.7.8 tích hợp tín hiệu mượn hiện tại ở phía FE07 để FE08
+> loại trừ đặt chỗ cùng một cuốn sách, đồng thời giữ nguyên thao tác bàn giao của v0.7.7 và mọi
+> hợp đồng đối chiếu quy tắc.
 >
-> Revision v0.7.9 reconciles the parallel v0.7.8 branch with FE09's canonical
-> positive-`UNPAID` blocker and read-only Member fine context from
-> `main@8d0059b`; staff collection ownership and all prior FE07 invariants are
-> unchanged.
+> Bản sửa đổi v0.7.9 đối chiếu nhánh v0.7.8 song song với quy tắc chặn chuẩn của FE09 cho
+> giá trị dương `UNPAID` và ngữ cảnh tiền phạt chỉ đọc của Thành viên từ
+> `main@8d0059b`; quyền sở hữu bộ sưu tập nhân viên và tất cả các bất biến FE07 trước đó là
+> không thay đổi.
 >
-> Revision v0.8.0 closes the cross-role pending-copy gap: one `PENDING`
-> BorrowRequest exclusively claims each requested copy without changing
-> `BookCopies.Status`. Member candidates and creates exclude claimed copies;
-> FE06 manual mutations respect the claim; Admin/Librarian decisions reload
-> canonical state and rejection releases the claim logically.
+> Bản sửa đổi v0.8.0 khép khoảng trống quyền sở hữu bản sao đang chờ: một `PENDING`
+> BorrowRequest độc quyền giữ quyền sở hữu từng bản sao được yêu cầu mà không thay đổi
+> `BookCopies.Status`. Danh sách ứng viên của Thành viên và thao tác tạo đều loại trừ bản sao đã được yêu cầu;
+> các thay đổi thủ công của FE06 tôn trọng quyền sở hữu này; quyết định của Quản trị viên/Thủ thư
+> tải lại trạng thái chuẩn và thao tác từ chối giải phóng quyền sở hữu một cách nguyên tử.
 >
-> Revision v0.8.1 closes the same-title spam gap: one Member may have at most
-> one active borrowing workflow per `BookId` (`PENDING + REQUESTED` or
-> `BORROWED`). Candidate reads and create transactions enforce the rule; legacy
-> duplicate pending requests remain rejectable, while approval cannot create a
-> second active loan for the same title.
+> Bản sửa đổi v0.8.1 thu hẹp khoảng cách spam cùng tiêu đề: một Thành viên có thể có nhiều nhất
+> một quy trình mượn đang hoạt động cho mỗi `BookId` (`PENDING + REQUESTED` hoặc
+> `BORROWED`). Ứng viên đọc và tạo giao dịch thực thi quy tắc; di sản
+> các yêu cầu đang chờ trùng lặp vẫn có thể bị từ chối, còn thao tác phê duyệt không thể tạo
+> khoản vay hoạt động thứ hai cho cùng một tiêu đề.
 
 ---
 
-## 1. Feature Overview
+## 1. Tổng quan về tính năng
 
-### 1.1 Feature Name
+### 1.1 Tên tính năng
 
-Borrowing Management
+Quản lý vay
 
-### 1.2 Business Context
+### 1.2 Bối cảnh kinh doanh
 
-Borrowing Management controls the main circulation workflow of the library: members request to borrow books, librarians approve and process the request, borrowed copies are returned, loans may be renewed, and borrowing history is kept for later reports and fine calculation.
+Quản lý mượn sách kiểm soát quy trình lưu thông chính của thư viện: thành viên yêu cầu mượn sách, thủ thư phê duyệt và xử lý yêu cầu, trả lại bản sao đã mượn, có thể gia hạn khoản vay và lịch sử mượn sách được lưu giữ để báo cáo sau này và tính toán tiền phạt.
 
-This feature is core because wrong borrowing data can break inventory, fines, reservation, reports, and audit history.
+Tính năng này là cốt lõi vì dữ liệu mượn sai có thể làm hỏng hàng tồn kho, tiền phạt, đặt trước, báo cáo và lịch sử kiểm tra.
 
-### 1.3 Goal / Outcome
+### 1.3 Mục tiêu / Kết quả
 
-The system shall:
+Hệ thống sẽ:
 
-- Allow eligible members to create borrow requests.
-- Allow librarians/admins to approve or reject borrow requests.
-- Record borrowed book copies with due dates and statuses.
-- Process returned book copies and update inventory accurately.
-- Allow renewals when policy allows.
-- Provide borrowing history for members and librarians.
-- Keep every borrow/return action traceable for audit and reporting.
+- Cho phép Thành viên đủ điều kiện tạo yêu cầu mượn.
+- Cho phép Thủ thư/Quản trị viên phê duyệt hoặc từ chối yêu cầu mượn.
+- Ghi lại các bản sao sách đã mượn với ngày đến hạn và trạng thái.
+- Xử lý các bản sao sách bị trả lại và cập nhật hàng tồn kho một cách chính xác.
+- Cho phép gia hạn khi chính sách cho phép.
+- Cung cấp lịch sử mượn sách cho thành viên và thủ thư.
+- Giữ mọi thao tác mượn/trả có thể truy vết để audit và báo cáo.
 
-### 1.4 Scope Level
+### 1.4 Mức độ phạm vi
 
-- [x] Full Spec - core business logic, high risk, must be correct from the beginning
-- [ ] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+- [x] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [ ] Đặc tả tiêu chuẩn - tính năng thông thường, có quy tắc nghiệp vụ và bước xác thực
+- [ ] Đặc tả rút gọn - UI đơn giản, tài liệu hoặc tính năng ít rủi ro
 
 ---
 
-## 2. Actors and Permissions
+## 2. Tác nhân và quyền
 
-| Actor     | Description                  | Permission / Responsibility |
+| Tác nhân | Mô tả | Quyền/Trách nhiệm |
 | --------- | ---------------------------- | --------------------------- |
-| Member    | Registered non-staff library user | Create an own borrow request, view own borrowing history, and renew only an own borrowed detail. |
-| Librarian | Library staff                | View member borrowing information, approve/reject borrow requests, process borrow handover/returns, and renew an eligible borrowed detail for any member. |
-| Admin     | System administrator         | Has librarian permissions, including cross-member renewal, and can view all borrowing records. |
-| Guest     | Unauthenticated visitor      | No borrowing permissions. |
-| Notification Service | External service | May receive notification requests when borrow/return/renewal result changes. |
+| Thành viên | Người dùng thư viện không phải là nhân viên đã đăng ký | Tạo yêu cầu vay của riêng mình, xem lịch sử vay của riêng mình và chỉ gia hạn chi tiết đã mượn của riêng mình. |
+| Thủ thư | Nhân viên thư viện | Xem thông tin mượn của Thành viên, phê duyệt/từ chối yêu cầu mượn, xử lý bàn giao/trả sách và gia hạn chi tiết mượn đủ điều kiện cho bất kỳ Thành viên nào. |
+| Quản trị viên | Quản trị viên hệ thống | Có quyền của thủ thư, bao gồm cả việc gia hạn giữa các thành viên và có thể xem tất cả hồ sơ mượn. |
+| Khách | Khách truy cập không được xác thực | Không có quyền mượn. |
+| Dịch vụ thông báo | Dịch vụ bên ngoài | Có thể nhận yêu cầu thông báo khi kết quả mượn/trả/gia hạn thay đổi. |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE07-001: The user account exists and has an active status.
-- PRE-FE07-002: The borrowing member/loan owner has the single role `MEMBER` and `Users.Status = ACTIVE`; FE04 membership approval is not required. An authenticated Librarian/Admin account with its own single staff role may process an allowed staff action on that member's behalf.
-- PRE-FE07-003: The requested book copy exists in `BookCopies`.
-- PRE-FE07-004: Protected actions are performed by an authenticated actor with the correct role.
-- PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5; daily limit is 5 copies for canonical `Members.Status = APPROVED` and 3 copies otherwise; default loan duration is 14 calendar days; renewal limit is 1 renewal per borrowed copy.
-
----
-
-## 4. Main Flows
-
-### MF-FE07-001: Create Borrow Request
-
-1. Member searches or browses books.
-2. Member selects one or more physical copies that FE07 may classify as borrowable.
-3. The system validates member eligibility.
-4. The system validates borrow limit and reservation-aware copy borrowability.
-5. The system creates a `BorrowRequests` record with status `PENDING`.
-6. The system creates related `BorrowDetails` records for requested copies with status `REQUESTED`.
-7. The system shows the request result to the member.
-
-### MF-FE07-002: Approve And Process Borrow Request
-
-1. Librarian opens pending borrow requests.
-2. Librarian reviews member information, requested copies, and eligibility warnings.
-3. Librarian approves the request.
-4. The system revalidates member eligibility and reservation-aware copy borrowability.
-5. The system sets `BorrowRequests.Status` to `APPROVED`.
-6. The system sets each approved `BorrowDetails.Status` to `BORROWED`.
-7. The system stores `ApprovedAt`, `ApprovedBy`, and each detail's `BorrowDate` using the server business time/date in `Asia/Ho_Chi_Minh`.
-8. The system assigns each due date as `BorrowDate + 14 calendar days`.
-9. The system updates each related `BookCopies.Status` to `BORROWED`.
-10. For each requester-owned `NOTIFIED` hold, the system changes the matching reservation to `FULFILLED`.
-11. The system writes borrowing and reservation-fulfillment audit log entries in the same transaction.
-
-### MF-FE07-003: Reject Borrow Request
-
-1. Librarian opens a pending borrow request.
-2. Librarian enters a rejection reason.
-3. The system sets `BorrowRequests.Status` to `REJECTED`.
-4. The system keeps all related book copies available.
-5. The system writes an audit log entry.
-
-### MF-FE07-004: Process Return Request
-
-1. Librarian searches for the member or borrow request.
-2. Librarian selects the borrowed copy being returned.
-3. Librarian confirms return condition: normal, damaged, or lost.
-4. The system revalidates that both the detail and physical copy are `BORROWED`, then stores the return date using the `Asia/Ho_Chi_Minh` business date.
-5. The system updates `BorrowDetails.Status` to `RETURNED`, `DAMAGED`, or `LOST`.
-6. The system updates `BookCopies.Status` to `AVAILABLE`, `DAMAGED`, or `LOST`.
-7. The system calculates overdue calendar days between due date and return business date in `Asia/Ho_Chi_Minh`, then exposes overdue, damaged, or lost return data for FE09 Fine Management.
-8. If all details in the request are `RETURNED`, `DAMAGED`, or `LOST`, the system sets `BorrowRequests.Status` to `COMPLETED`.
-9. The system writes an audit log entry.
-
-### MF-FE07-005: Renew Borrowed Books
-
-1. A single-role Member opens an own active borrowed item, or a single-role Librarian/Admin opens any member's active borrowed item.
-2. Actor selects a borrowed copy to renew.
-3. The system checks the loan owner's renewal eligibility against the current `Asia/Ho_Chi_Minh` business date: not overdue, no unpaid fine, renewal count is 0, and no active reservation conflict from FE08.
-4. The system extends due date by 14 calendar days from the current due date using the shared business-date helper.
-5. The system sets renewal count to 1.
-6. The system writes an audit log entry and shows the new due date.
-
-### MF-FE07-006: View Borrowing History
-
-1. Member opens own borrowing history, or librarian/admin opens a member's borrowing information.
-2. The system validates optional `status`, `fromDate`, `toDate`, `page`, and `limit` before querying.
-3. The system returns only the member-scoped records allowed to the actor, using `BorrowDate` for approved details and `RequestDate` for still-requested details when date filters are applied.
-4. The system returns page 1 with 20 rows by default, never more than 100 rows per page, in stable order: `BorrowDate DESC` with nulls last, then `BorrowDetailId DESC`.
-5. The system supports filtering by detail status and inclusive business-date range.
+- PRE-FE07-001: Tài khoản người dùng tồn tại và có trạng thái hoạt động.
+- PRE-FE07-002: Thành viên/chủ sở hữu khoản mượn có vai trò duy nhất là `MEMBER` và `Users.Status = ACTIVE`; không yêu cầu phê duyệt tư cách Thành viên FE04. Tài khoản Thủ thư/Quản trị viên đã xác thực với vai trò nhân viên duy nhất có thể thay mặt Thành viên xử lý thao tác nhân viên được phép.
+- PRE-FE07-003: Bản sao sách được yêu cầu tồn tại trong `BookCopies`.
+- PRE-FE07-004: Hành động được bảo vệ được thực hiện bởi tác nhân được xác thực với vai trò chính xác.
+- PRE-FE07-005: Giá trị chính sách cho vay được phê duyệt: số bản mượn hoạt động tối đa là 5; giới hạn hàng ngày là 5 bản cho `Members.Status = APPROVED` chuẩn và 3 bản cho các bản khác; thời hạn cho vay mặc định là 14 ngày dương lịch; giới hạn gia hạn là 1 lần gia hạn cho mỗi bản sao được mượn.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE07-001: Member Is Not Eligible
+### MF-FE07-001: Tạo yêu cầu vay
 
-1. The system detects an inactive account, unpaid blocking fine, overdue active loan, or exceeded borrow limit.
-2. The system rejects the request or approval action.
-3. The system returns a clear error message explaining the blocking reason.
+1. Thành viên tìm kiếm hoặc duyệt sách.
+2. Thành viên chọn một hoặc nhiều bản sao vật lý mà FE07 có thể phân loại là có thể mượn được.
+3. Hệ thống xác nhận tính đủ điều kiện của thành viên.
+4. Hệ thống xác nhận giới hạn mượn và khả năng mượn bản sao có nhận biết trước.
+5. Hệ thống tạo bản ghi `BorrowRequests` với trạng thái `PENDING`.
+6. Hệ thống tạo các bản ghi `BorrowDetails` liên quan cho các bản sao được yêu cầu với trạng thái `REQUESTED`.
+7. Hệ thống hiển thị kết quả yêu cầu cho thành viên.
 
-### AF-FE07-002: Copy Becomes Non-Borrowable Before Approval
+### MF-FE07-002: Phê duyệt và xử lý yêu cầu vay
 
-1. Member creates a borrow request while the copy satisfies the reservation-aware borrowability contract.
-2. Before librarian approval, another process changes the copy or reservation state.
-3. The system revalidates copy status and reservation claims during approval.
-4. The system rejects the whole approval (all-or-nothing in Phase 1), keeps the request `PENDING`, and returns the safe blocking conflict.
+1. Thủ thư mở các yêu cầu mượn đang chờ xử lý.
+2. Thủ thư xem xét thông tin thành viên, bản sao được yêu cầu và cảnh báo về tính đủ điều kiện.
+3. Thủ thư phê duyệt yêu cầu.
+4. Hệ thống xác nhận lại tính đủ điều kiện của thành viên và khả năng mượn bản sao có nhận biết trước.
+5. Hệ thống đặt `BorrowRequests.Status` thành `APPROVED`.
+6. Hệ thống đặt mỗi `BorrowDetails.Status` được phê duyệt thành `BORROWED`.
+7. Hệ thống lưu `ApprovedAt`, `ApprovedBy` và `BorrowDate` của từng chi tiết bằng ngày/giờ máy chủ trong `Asia/Ho_Chi_Minh`.
+8. Hệ thống chỉ định mỗi ngày đáo hạn là `BorrowDate + 14 calendar days`.
+9. Hệ thống cập nhật từng `BookCopies.Status` liên quan thành `BORROWED`.
+10. Đối với mỗi khoản giữ `NOTIFIED` thuộc sở hữu của người yêu cầu, hệ thống sẽ thay đổi việc đặt chỗ phù hợp thành `FULFILLED`.
+11. Hệ thống ghi các mục log audit về thao tác mượn và hoàn tất đặt chỗ trong cùng một giao dịch.
 
-### AF-FE07-003: Partial Return
+### MF-FE07-003: Từ chối yêu cầu vay
 
-1. A borrow request contains multiple borrowed copies.
-2. Member returns only some copies.
-3. The system updates only returned `BorrowDetails`.
-4. The remaining details stay `BORROWED` until returned, lost, or damaged.
+1. Thủ thư mở một yêu cầu mượn đang chờ xử lý.
+2. Thủ thư nhập lý do từ chối.
+3. Hệ thống đặt `BorrowRequests.Status` thành `REJECTED`.
+4. Hệ thống giữ tất cả các bản sao sách liên quan có sẵn.
+5. Hệ thống ghi một mục log audit.
 
-### AF-FE07-004: Renewal Not Allowed
+### MF-FE07-004: Xử lý trả sách
 
-1. Actor requests renewal.
-2. The system detects a blocking condition: overdue item, unpaid blocking fine, renewal limit reached, or active reservation by another member.
-3. The system rejects renewal and keeps the due date unchanged.
+1. Thủ thư tìm kiếm thành viên hoặc yêu cầu mượn.
+2. Thủ thư chọn bản mượn đang được trả lại.
+3. Thủ thư xác nhận tình trạng trả lại: bình thường, hư hỏng hoặc thất lạc.
+4. Hệ thống xác nhận lại rằng cả bản sao chi tiết và bản sao vật lý đều là `BORROWED`, sau đó lưu trữ ngày trả lại bằng cách sử dụng ngày làm việc của `Asia/Ho_Chi_Minh`.
+5. Hệ thống cập nhật `BorrowDetails.Status` thành `RETURNED`, `DAMAGED` hoặc `LOST`.
+6. Hệ thống cập nhật `BookCopies.Status` thành `AVAILABLE`, `DAMAGED` hoặc `LOST`.
+7. Hệ thống tính số ngày quá hạn theo lịch giữa ngày đến hạn và ngày làm việc trả sách trong `Asia/Ho_Chi_Minh`, rồi cung cấp dữ liệu trả quá hạn, hư hỏng hoặc thất lạc cho FE09 Quản lý tiền phạt.
+8. Nếu tất cả chi tiết trong yêu cầu là `RETURNED`, `DAMAGED` hoặc `LOST`, hệ thống sẽ đặt `BorrowRequests.Status` thành `COMPLETED`.
+9. Hệ thống ghi một mục log audit.
 
----
+### MF-FE07-005: Gia hạn sách mượn
 
-## 6. Business Rules
+1. Thành viên có một vai trò mở mục đang mượn của chính mình, hoặc Thủ thư/Quản trị viên có một vai trò mở mục đang mượn của bất kỳ Thành viên nào.
+2. Tác nhân chọn bản mượn để gia hạn.
+3. Hệ thống kiểm tra tính đủ điều kiện gia hạn của chủ sở hữu khoản vay so với ngày kinh doanh `Asia/Ho_Chi_Minh` hiện tại: không quá hạn, không có khoản tiền phạt chưa thanh toán, số lần gia hạn là 0 và không có xung đột bảo lưu hoạt động từ FE08.
+4. Hệ thống kéo dài ngày đến hạn thêm 14 ngày theo lịch kể từ ngày đến hạn hiện tại bằng cách sử dụng trình trợ giúp ngày làm việc chung.
+5. Hệ thống đặt số lần gia hạn thành 1.
+6. Hệ thống ghi một mục log audit và hiển thị ngày đến hạn mới.
 
-Use these stable IDs for tasks and tests.
+### MF-FE07-006: Xem lịch sử vay
 
-- BR-FE07-001: A guest cannot create, approve, process, or view protected borrowing records.
-- BR-FE07-002: A member can create borrow requests only for their own account.
-- BR-FE07-003: Every account has exactly one role under `DEC-GEN-005`. A `LIBRARIAN` or `ADMIN` can view and process borrowing actions, including renewal, for any member. A `MEMBER` is restricted to their own detail, and staff authorization does not bypass eligibility rules evaluated against the loan owner.
-- BR-FE07-004: A member must have the `MEMBER` role and `Users.Status = ACTIVE` before borrowing or renewal; FE04 membership application status does not block FE07.
-- BR-FE07-005A: FE04 approval determines the daily borrowing tier without blocking borrowing: canonical `Members.Status = APPROVED` permits 5 copies per `Asia/Ho_Chi_Minh` business day; `NONE`, `PENDING`, `REJECTED`, or `INACTIVE` permits 3 copies per business day.
-- BR-FE07-005: At create and approval, `activeBorrowedCount + requestedDetailCount` must be less than or equal to 5. `activeBorrowedCount` counts only the member's current `BorrowDetails.Status = BORROWED`; approval acquires the member-scoped lock and relevant rows in the order defined by NFR-FE07-TXN-003 before calculating the count, so concurrent approvals cannot exceed 5.
-- BR-FE07-006: A member with overdue active loans or any FE09 `UNPAID` fine with amount greater than 0 cannot create a new borrow request or renew an existing borrowed copy. The Member may reconcile the fine against FE07 due/return dates through read-only `/fines/mine`; only Librarian/Admin can record collection.
-- BR-FE07-007: A copy can be borrowed only when FE07 classifies it as borrowable under BR-FE07-023.
-- BR-FE07-008: Approval must recheck reservation-aware copy borrowability and member eligibility.
-- BR-FE07-009: When a borrow request is approved, each borrowed copy status must change to `BORROWED`.
-- BR-FE07-010: Every borrowed copy must store `BorrowDate`; the default due date is `BorrowDate + 14 calendar days`.
-- BR-FE07-011: Every return must store a return date in the library business timezone `Asia/Ho_Chi_Minh`; it cannot precede `BorrowDate` or be later than the current server business date. Return requires both the borrow detail and its physical copy to remain `BORROWED`; inconsistent copy state returns `BORROW_STATE_CONFLICT` without mutation.
-- BR-FE07-012: A returned normal copy must become `AVAILABLE`; if an `ACTIVE` FE08 reservation queue exists for that copy, the return transaction must preserve that queue claim and ordinary FE07 create/approve actions remain blocked until FE08 processes or terminally resolves the queue.
-- BR-FE07-013: A lost or damaged copy must not become available automatically.
-- BR-FE07-014: Overdue return must be detectable and traceable for FE09 Fine Management. Overdue days are whole calendar-day boundaries between the due date locked by the authoritative return transaction and the committed return date in `Asia/Ho_Chi_Minh`, never a stale preflight due date or host-local midnight boundary. The returned `fineCandidate` must describe those same locked values.
-- BR-FE07-015: Each borrow detail may be renewed at most 1 time; a valid renewal extends the current due date by 14 calendar days using the shared `Asia/Ho_Chi_Minh` business-date helper and never host-local `Date` arithmetic.
-- BR-FE07-016: Every create/approve/reject/return/renew action must be auditable. Return audit metadata must use the same transaction-locked due date, committed return date, condition, and overdue-day result as the returned `fineCandidate`.
-- BR-FE07-017: Borrowing history must be read-only for members.
-- BR-FE07-018: Renewal must not be allowed when the item is overdue, the member has an unpaid fine, the renewal limit has been reached, or the item is reserved by another member.
-- BR-FE07-019: Pending borrow request items must be stored in `BorrowDetails` with status `REQUESTED`; no separate request-detail table is used in Phase 1.
-- BR-FE07-020: When all details in a borrow request reach a terminal status (`RETURNED`, `LOST`, or `DAMAGED`), the request status must become `COMPLETED`.
-- BR-FE07-021: FE07 must not calculate or create fine records for overdue, damaged, or lost returns; it only exposes return data for FE09 Fine Management.
-- BR-FE07-022: Phase 1 borrow-request handling is all-or-nothing: if any requested copy is duplicate, non-existent, or not borrowable under BR-FE07-023 (at create or approval), the entire request/approval is rejected and no partial request is created. Per-item rejection (keeping the valid copies) is deferred to a later phase.
-- BR-FE07-023: FE07 may accept a copy only when its parent `Books.Status = ACTIVE` and it is `AVAILABLE` with no `ACTIVE`/`NOTIFIED` reservation claim, or when its parent book is `ACTIVE` and it is `RESERVED` by a `NOTIFIED` reservation owned by the requesting member.
-- BR-FE07-024: An `ACTIVE` reservation queue for a copy blocks ordinary borrow-request creation and approval until staff processes or resolves that queue.
-- BR-FE07-025: Approving a borrow request for a requester-owned `NOTIFIED` reservation must atomically change the matching reservation to `FULFILLED` with the borrow request, details, copy status, and audit records.
-- BR-FE07-026: Every request stores `CreatedBy`; approval stores `ApprovedAt` and `ApprovedBy`; every approved detail stores `BorrowDate`. These fields are required transaction history, not optional audit-only metadata.
-- BR-FE07-027: Rejection requires a trimmed non-empty reason of at most 500 characters and stores it in the rejection audit metadata.
-- BR-FE07-028: Borrowing-history endpoints accept only `status?`, `fromDate?`, `toDate?`, `page?`, and `limit?`; defaults are `page=1`, `limit=20`, bounds are `page>=1`, `limit=1..100`, the date range is inclusive, and rows use stable `BorrowDate DESC (nulls last), BorrowDetailId DESC` ordering.
-- BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
-- BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
-- BR-FE07-031: Member-self-service borrow candidate, create-request, and own-history endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot place or borrow books for themselves.
-- BR-FE07-032: A current `BorrowDetails.Status = BORROWED` detail is FE08's authoritative signal that the same Member cannot reserve any other copy with the same `BookId`; terminal detail states do not block a later reservation.
-- BR-FE07-033: A copy may belong to at most one active borrow-request claim, defined as `BorrowRequests.Status = PENDING` plus its `BorrowDetails.Status = REQUESTED`. Creating the claim must lock and recheck the copy and existing claims atomically. The claim does not add a new `BookCopies.Status`; approval consumes it into `BORROWED`, while rejection releases it because the owning request is no longer `PENDING`.
-- BR-FE07-034: One Member may have at most one active borrowing workflow and at most one requested physical copy per request for a `BookId`. Active means either `BorrowRequests.Status = PENDING` with `BorrowDetails.Status = REQUESTED`, or `BorrowDetails.Status = BORROWED`. Rejected and terminal/returned workflows do not block a later request.
+1. Thành viên mở lịch sử mượn của chính mình hoặc Thủ thư/Quản trị viên mở thông tin mượn của Thành viên.
+2. Hệ thống xác thực `status`, `fromDate`, `toDate`, `page` và `limit` tùy chọn trước khi truy vấn.
+3. Hệ thống chỉ trả về các bản ghi trong phạm vi thành viên được phép cho tác nhân, sử dụng `BorrowDate` cho các chi tiết được phê duyệt và `RequestDate` cho các chi tiết vẫn được yêu cầu khi áp dụng bộ lọc ngày.
+4. Hệ thống trả về trang 1 với 20 hàng theo mặc định, không bao giờ nhiều hơn 100 hàng trên mỗi trang, theo thứ tự ổn định: `BorrowDate DESC` có giá trị rỗng cuối cùng, sau đó đến `BorrowDetailId DESC`.
+5. Hệ thống hỗ trợ lọc theo trạng thái chi tiết và phạm vi ngày làm việc toàn diện.
 
 ---
 
-## 7. Functional Requirements
+## 5. Luồng thay thế
 
-- FR-FE07-001: When a member submits a borrow request, the system shall validate member eligibility before creating the request.
-- FR-FE07-002: When a member submits a borrow request with valid data, the system shall create a pending borrow request and store requested items as `BorrowDetails.Status = REQUESTED`.
-- FR-FE07-003: If any requested copy is not borrowable under BR-FE07-023, the system shall reject the whole borrow request and shall not create a partial request. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see Section 6 BR-FE07-022.)
-- FR-FE07-004: When a librarian approves a borrow request, the system shall revalidate all business rules before approval.
-- FR-FE07-005: When approval succeeds, the system shall store `ApprovedAt`, `ApprovedBy`, `BorrowDate`, due dates, request/detail states, copy states, matching reservation fulfillment, and audits in one transaction.
-- FR-FE07-006: When a librarian rejects a borrow request, the system shall require and store the rejection reason in audit metadata while keeping copy statuses unchanged.
-- FR-FE07-007: When a librarian processes a return, the system shall lock and require the physical copy to be `BORROWED`, lock the detail and relevant reservation claims, then atomically update return date, detail status, copy status, and audit state; a normal return sets the copy `AVAILABLE` while preserving any `ACTIVE` FE08 queue claim. The transaction result shall return the locked due date and committed return values needed by response and audit construction.
-- FR-FE07-008: If the return is overdue, damaged, or lost, the system shall expose enough data for FE09 to calculate or create the related fine, and `fineCandidate` plus return audit metadata shall be derived only from values returned by the authoritative locked transaction.
-- FR-FE07-009: When renewal is requested, the system shall grant cross-member scope to a single-role `LIBRARIAN` or `ADMIN` account. A single-role `MEMBER` account must own the detail. The system shall evaluate every blocker against the loan owner, allow at most 1 renewal, and extend the due date by 14 calendar days through the shared `Asia/Ho_Chi_Minh` business-date helper only when all rules pass.
-- FR-FE07-010: When a member views borrowing history, the system shall return only that member's records.
-- FR-FE07-011: When a librarian/admin views member borrowing information, the system shall allow searching by member identity.
-- FR-FE07-012: While a borrow detail is `BORROWED`, the related copy shall not be available for another borrow approval.
-- FR-FE07-013: When all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, the system shall update the request status to `COMPLETED`.
-- FR-FE07-028: When a member or authorized staff requests borrowing history, the system shall validate `status`, date-only `fromDate/toDate`, `page`, and `limit` before querying, apply the member scope, and return deterministic paginated results using the BR-FE07-028 ordering.
-- FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
-- FR-FE07-030: When Librarian/Admin opens an approval or rejection decision, the frontend shall show request/member/contact data and all requested copy titles, authors, identifiers, barcodes, locations, and current statuses already present in the canonical staff response without repeating those statuses in a generic availability banner; typing a rejection reason shall preserve focus and the complete controlled value across rerenders.
-- FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
-- FR-FE07-032: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject member-self-service candidate, create-request, and own-history access with `403 ROLE_REQUIRED`; staff operational FE07 routes remain available according to their existing role guards. This is not a supported multi-role account model.
-- FR-FE07-033: WHEN a Member follows the FE08 handoff for a requester-owned `NOTIFIED` hold, the FE07 frontend shall select the exact canonical `bookId` and `copyId` returned by the protected borrow-candidate catalog and submit that copy through the normal pending-request workflow; server-side reservation-aware checks remain authoritative.
-- FR-FE07-034: WHEN a Member lists borrow candidates or creates a request, FE07 shall exclude/reject any copy already claimed by another pending request; the authoritative create transaction shall return `409 COPY_PENDING_REQUEST_CONFLICT` without partial request/detail/audit writes.
-- FR-FE07-035: WHEN Admin/Librarian approves or rejects a request, the UI shall reload canonical request state after both success and conflict. The Admin detail shall show each physical copy's current status, and rejection shall explain that its required 1..500-character reason releases the pending claim.
-- FR-FE07-036: WHEN a Member lists candidates or creates a request, FE07 shall hide/reject every copy whose `BookId` already has an active workflow for that Member; the authoritative create transaction returns `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW` without partial writes. A single payload containing two copies of one `BookId` returns `400 DUPLICATE_BOOK_IN_REQUEST`.
-- FR-FE07-037: IF a legacy pending request would give its owner a second `BORROWED` copy of the same `BookId`, approval shall return `409 BOOK_ALREADY_BORROWED_BY_MEMBER`, preserve the pending request, and still allow staff rejection with a valid reason.
-- FR-FE07-038: WHEN Admin views the circulation directory, the table shall present the operational fields `borrowDetailId`, member, book title, borrow date, due date, return date, renewal count, status, and available action in matching columns without requiring horizontal scrolling at the supported desktop layout. `requestId` and copy barcode remain canonical internal/detail data but shall not be separate directory columns.
-- FR-FE07-039: WHEN Librarian/Admin selects an active loan whose due state is `OVERDUE`, the return workspace shall expose a `Tạo phiếu phạt` action that passes only the canonical `borrowDetailId` to FE09 calculation; FE09 remains authoritative for stored dates, overdue days, amount, duplicate handling, and fine state.
+### AF-FE07-001: Thành viên không đủ điều kiện
 
-### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
+1. Hệ thống phát hiện tài khoản không hoạt động, phạt chặn chưa thanh toán, khoản vay quá hạn hoặc vượt quá hạn mức vay.
+2. Hệ thống từ chối yêu cầu hoặc hành động phê duyệt.
+3. Hệ thống trả về thông báo lỗi rõ ràng giải thích lý do chặn.
 
-These EARS requirements cover error and abnormal conditions. Each traces back to an existing Edge Case (EC-*), Business Rule (BR-*), or Alternative Flow (AF-*).
+### AF-FE07-002: Bản sao trở nên không thể mượn trước khi được phê duyệt
 
-- FR-FE07-014: IF `activeBorrowedCount + requestedDetailCount > 5` at create or approval, the system shall reject the whole action with `BORROW_LIMIT_EXCEEDED` and change no record. Approval must acquire the member-scoped lock and relevant rows in the NFR-FE07-TXN-003 order before performing this calculation. (Source: BR-FE07-005, AF-FE07-001, AC-FE07-003)
-- FR-FE07-014A: IF the member's copies already requested on the request business day plus the new request exceed the FE04-derived daily tier, or copies already approved on the approval business day plus the approval exceed that tier, the system shall reject the whole action with `BORROW_DAILY_LIMIT_EXCEEDED`. The limit is 5 for `APPROVED` and 3 otherwise, using `Asia/Ho_Chi_Minh` dates.
-- FR-FE07-015: IF a member submits a borrow request or renewal request while the account is inactive, the system shall reject the action and return an eligibility error; an active `MEMBER` may proceed without FE04 approval. (Source: BR-FE07-004, EC-FE07-002, AF-FE07-001)
-- FR-FE07-016: IF a member submits a borrow request or renewal request while having an overdue active loan or any `UNPAID` fine with amount greater than 0, the system shall reject the action and return an error identifying the blocking fine or overdue loan. (Source: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
-- FR-FE07-017: IF a borrow request contains a duplicate copy, a non-existent copy, or any copy that fails BR-FE07-023, the system shall reject the whole request and shall not create any `BorrowRequests`/`BorrowDetails` record. (Phase 1 policy: all-or-nothing; per-item rejection is future work - see BR-FE07-022.) (Source: EC-FE07-004, EC-FE07-006, EC-FE07-007)
-- FR-FE07-018: IF any copy fails the reservation-aware borrowability contract at the moment of approval, the system shall reject the whole approval, keep all data unchanged (request stays `PENDING`), and return the safe blocking conflict. (Phase 1 policy: all-or-nothing.) (Source: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
-- FR-FE07-019: WHERE approval actions target the same copy or the same member concurrently, the system shall serialize them using `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; all active-count and copy/reservation revalidation occurs only after the relevant locks are acquired, so at most one conflicting action succeeds. (Source: EC-FE07-011, EC-FE07-013, FR-FE07-012, BR-FE07-005)
-- FR-FE07-020: IF a renewal is requested for a borrow detail that is overdue under the current `Asia/Ho_Chi_Minh` business date, already renewed once, blocked by an unpaid fine, or reserved by another member, the system shall reject the renewal and keep the existing due date unchanged. The overdue comparison shall use the shared business-date helper and be independent of the host timezone. (Source: BR-FE07-015, BR-FE07-018, AF-FE07-004, EC-FE07-010, AC-FE07-010)
-- FR-FE07-021: IF a return or renewal targets an invalid detail state, a return finds the physical copy outside `BORROWED`, or a supplied return date is earlier than `BorrowDate` or later than the current business date in `Asia/Ho_Chi_Minh`, the system shall reject the action without changing due date, return data, copy state, or audit success state. Physical-copy inconsistency returns `BORROW_STATE_CONFLICT`. (Source: EC-FE07-008, EC-FE07-009, EC-FE07-010)
-- FR-FE07-022: IF any step of an approve or return transaction fails, the system shall roll back the whole transaction so that request status, detail status, due date, copy status, reservation status, and audit log remain consistent. (Source: EC-FE07-012, NFR-FE07-TXN-001, NFR-FE07-TXN-002)
-- FR-FE07-023: IF a requested copy has an `ACTIVE` reservation queue, FE07 shall reject create/approve with `RESERVATION_QUEUE_PRIORITY` and shall change no record.
-- FR-FE07-024: IF a copy is `RESERVED` by a `NOTIFIED` reservation owned by the borrowing member, FE07 shall allow request creation and shall revalidate that ownership during approval.
-- FR-FE07-025: WHEN staff approves a held owner's request, FE07 shall update every matching `NOTIFIED` reservation to `FULFILLED` in the approval transaction.
-- FR-FE07-026: IF the parent book is `INACTIVE` at request creation or approval, FE07 shall reject the action with `BOOK_INACTIVE` and shall change no borrowing, copy, reservation, or audit state.
-- FR-FE07-027: IF rejection reason is missing, blank after trimming, or longer than 500 characters, FE07 shall reject the rejection command and keep the request `PENDING`.
+1. Thành viên tạo yêu cầu mượn khi bản sao đáp ứng hợp đồng khả năng mượn có xét đến đặt chỗ.
+2. Trước khi thủ thư phê duyệt, một quy trình khác sẽ thay đổi trạng thái bản sao hoặc trạng thái đặt trước.
+3. Hệ thống xác nhận lại trạng thái bản sao và quyền sở hữu đặt chỗ trong quá trình phê duyệt.
+4. Hệ thống từ chối toàn bộ phê duyệt (tất cả hoặc không có gì trong Giai đoạn 1), giữ yêu cầu `PENDING` và trả về xung đột chặn an toàn.
+
+### AF-FE07-003: Hoàn trả một phần
+
+1. Một yêu cầu mượn có chứa nhiều bản sao được mượn.
+2. Thành viên chỉ trả lại một số bản sao.
+3. Hệ thống chỉ cập nhật các `BorrowDetails` được trả.
+4. Các chi tiết còn lại sẽ được lưu giữ ở `BORROWED` cho đến khi được trả lại, bị mất hoặc bị hư hỏng.
+
+### AF-FE07-004: Không được phép gia hạn
+
+1. Tác nhân yêu cầu gia hạn.
+2. Hệ thống phát hiện tình trạng chặn: mục quá hạn, phạt chặn chưa thanh toán, đạt đến giới hạn gia hạn hoặc đặt chỗ đang hoạt động của thành viên khác.
+3. Hệ thống từ chối gia hạn và giữ nguyên ngày đến hạn.
 
 ---
 
-## 8. Acceptance Criteria
+## 6. Quy tắc nghiệp vụ
 
-- AC-FE07-001: Given an eligible member and an `AVAILABLE` copy with no reservation claim, when the member creates a borrow request, then the system creates a `PENDING` borrow request with requested details marked `REQUESTED`.
-- AC-FE07-002: Given an inactive member, when the member creates a borrow request, then the system rejects the request.
-- AC-FE07-003: Given a member has 4 active borrowed details and submits/approves a request containing 2 details, when the limit is checked, then FE07 returns `BORROW_LIMIT_EXCEEDED` and preserves all state.
-- AC-FE07-003A: Given an active `MEMBER` without canonical FE04 approval has already requested 3 copies on the current business day, when another copy is requested, then FE07 returns `BORROW_DAILY_LIMIT_EXCEEDED`; given canonical status `APPROVED`, requests up to 5 copies that day are allowed subject to all other borrowing rules.
-- AC-FE07-004: Given a pending request and copies that still satisfy BR-FE07-023, when a librarian approves it, then FE07 stores approver/approval time/borrow dates, marks request/details/copies correctly, sets due dates to borrow date +14 days, and commits matching reservation/audit updates atomically.
-- AC-FE07-005: Given a pending request whose copy is no longer borrowable under BR-FE07-023, when a librarian approves it, then the system rejects approval and keeps data unchanged.
-- AC-FE07-006: Given a detail and physical copy both remain `BORROWED`, when the librarian processes a normal return, then the system stores the `Asia/Ho_Chi_Minh` business return date and marks the copy `AVAILABLE`; if an `ACTIVE` FE08 queue exists, the queue claim remains and ordinary borrowing stays blocked until FE08 resolves it. If copy state is inconsistent, the return is rejected unchanged with `BORROW_STATE_CONFLICT`.
-- AC-FE07-007: Given a borrowed copy returned damaged, when the librarian processes the return, then the system marks the copy `DAMAGED` and does not make it available.
-- AC-FE07-008: Given an overdue borrowed copy whose due date changes before the return transaction acquires its lock, when return commits, then `fineCandidate.overdueDays`, response data, and audit metadata are calculated from the due date locked by that transaction and the committed `Asia/Ho_Chi_Minh` return date.
-- AC-FE07-009: Given an eligible borrowed copy with no previous renewal, when its single-role owner account or a single-role Librarian/Admin account renews it, then the due date is extended by 14 calendar days using the shared `Asia/Ho_Chi_Minh` helper and renewal count becomes 1. A Member account cannot renew another member's detail.
-- AC-FE07-010: Given a borrowed copy that is overdue under the shared `Asia/Ho_Chi_Minh` business date, already renewed, blocked by unpaid fine, or reserved by another member, when renewal is requested under any host timezone, then the due date remains unchanged and the system returns a reason.
-- AC-FE07-011: Given a logged-in member, when viewing borrowing history, then only that member's borrowing records are returned.
-- AC-FE07-012: Given a librarian/admin, when viewing member borrowing information, then the system can return records for the selected member.
-- AC-FE07-013: Given all details in a borrow request are `RETURNED`, `LOST`, or `DAMAGED`, when the return processing finishes, then the request status becomes `COMPLETED`.
-- AC-FE07-014: Given a damaged or lost return, when FE07 records it, then FE07 does not create a fine record and FE09 can later calculate or create the fine from the recorded data.
-- AC-FE07-015: Given an active reservation queue, when another member creates or approves a borrow request, then FE07 returns `409 RESERVATION_QUEUE_PRIORITY` and preserves all state.
-- AC-FE07-016: Given a requester-owned notified reservation and reserved copy, when the owner creates a borrow request, then FE07 creates the normal pending request without releasing the hold.
-- AC-FE07-017: Given that pending request, when staff approves it, then borrowing records, copy status, reservation fulfillment, and audits commit atomically.
-- AC-FE07-018: Given a copy whose parent book is `INACTIVE`, when create or approval is attempted, then FE07 returns `BOOK_INACTIVE` and preserves all state.
-- AC-FE07-019: Given two concurrent approvals that would take one member from 4 to 6 active borrowed details, then at most one approval succeeds and the committed total never exceeds 5.
-- AC-FE07-020: Given a return date before `BorrowDate` or after the current `Asia/Ho_Chi_Minh` business date, when return is submitted, then FE07 returns `INVALID_RETURN_DATE` and preserves all state.
-- AC-FE07-021: Given a pending request and missing/blank/overlength rejection reason, when staff rejects it, then FE07 rejects the command and leaves the request `PENDING`.
-- AC-FE07-022: Given a valid history request, when no pagination is supplied, then FE07 uses `page=1`, `limit=20`, inclusive date filters, and stable `BorrowDate DESC`/`BorrowDetailId DESC` ordering; invalid values are rejected before query execution.
-- AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
-- AC-FE07-024: Given a pending request with one or more copies, when Librarian/Admin opens approve or reject, then the dialog identifies the request/member and lists every copy with circulation-relevant fields without a redundant generic availability banner; when the actor types a multi-character rejection reason, the textarea retains focus/value and the canonical reject command receives the trimmed reason.
-- AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
-- AC-FE07-026: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member borrow candidates, request creation, or own history, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without creating or exposing member-self-service state; persisted accounts still have exactly one role.
-- AC-FE07-027: Given FE08 links a Member's held copy to `/borrowing/new?bookId={bookId}&copyId={copyId}`, when the FE07 candidate catalog contains that requester-owned hold, then FE07 preselects the exact copy and creates the usual `PENDING` request for Librarian/Admin approval.
-- AC-FE07-028: Given Member A has a pending request for a copy, when Member B loads candidates or submits that same copy, then the copy is absent from candidates and create returns `409 COPY_PENDING_REQUEST_CONFLICT`; after staff rejects A's request, the copy can be requested again if all other FE07/FE08 rules pass.
-- AC-FE07-029: Given a legacy pending request whose physical copy is no longer approvable, when Admin/Librarian attempts approval, then FE07 keeps the request pending, returns actionable conflict feedback, reloads canonical copy/request status, and still permits rejection with a valid reason.
-- AC-FE07-030: Given a Member already has a pending request or active loan for one title, when the Member loads candidates or submits another copy of that title, then the title is hidden and create returns `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW`; after rejection or terminal return, a new request may proceed.
-- AC-FE07-031: Given canonical Admin circulation rows, when the desktop directory renders, then each row aligns with the nine approved headers, long member/book values wrap inside their own cells, and neither a `Mã yêu cầu` nor `Barcode` directory column creates horizontal overflow.
-- AC-FE07-032: Given Librarian/Admin selects an overdue active loan, when the actor chooses `Tạo phiếu phạt`, then the frontend calls the canonical FE09 calculation with that loan's `borrowDetailId`, reports the server result, and never submits a client-controlled fine amount; the action is absent for a loan that is not overdue.
+Sử dụng các ID ổn định này cho các nhiệm vụ và bài kiểm tra.
+
+- BR-FE07-001: Khách không thể tạo, phê duyệt, xử lý hoặc xem hồ sơ vay được bảo vệ.
+- BR-FE07-002: Thành viên chỉ có thể tạo yêu cầu vay cho tài khoản của chính họ.
+- BR-FE07-003: Mỗi tài khoản có chính xác một vai trò theo `DEC-GEN-005`. `LIBRARIAN` hoặc `ADMIN` có thể xem và xử lý thao tác mượn, bao gồm gia hạn, cho bất kỳ Thành viên nào. `MEMBER` chỉ được truy cập chi tiết của chính mình; quyền nhân viên không được bỏ qua các điều kiện được đánh giá đối với chủ sở hữu khoản mượn.
+- BR-FE07-004: Thành viên phải có vai trò `MEMBER` và `Users.Status = ACTIVE` trước khi mượn hoặc gia hạn; Trạng thái đăng ký thành viên FE04 không chặn FE07.
+- BR-FE07-005A: Phê duyệt FE04 xác định mức mượn hàng ngày mà không chặn việc mượn: `Members.Status = APPROVED` chuẩn cho phép 5 bản sao mỗi ngày làm việc của `Asia/Ho_Chi_Minh`; `NONE`, `PENDING`, `REJECTED` hoặc `INACTIVE` cho phép 3 bản sao mỗi ngày làm việc.
+- BR-FE07-005: Khi tạo và phê duyệt, `activeBorrowedCount + requestedDetailCount` phải nhỏ hơn hoặc bằng 5. `activeBorrowedCount` chỉ tính `BorrowDetails.Status = BORROWED` hiện tại của thành viên; phê duyệt lấy khóa trong phạm vi thành viên và các hàng có liên quan theo thứ tự được xác định bởi NFR-FE07-TXN-003 trước khi tính toán số lượng, do đó các phê duyệt đồng thời không thể vượt quá 5.
+- BR-FE07-006: Thành viên có khoản mượn quá hạn hoặc bất kỳ khoản phạt FE09 `UNPAID` nào lớn hơn 0 không thể tạo yêu cầu mượn mới hoặc gia hạn bản sao đang mượn. Thành viên có thể đối chiếu số tiền phạt với ngày đến hạn/trả sách của FE07 qua `/fines/mine` chỉ đọc; chỉ Thủ thư/Quản trị viên mới có thể ghi nhận thu tiền.
+- BR-FE07-007: Chỉ có thể mượn một bản sao khi FE07 phân loại nó là có thể mượn được theo BR-FE07-023.
+- BR-FE07-008: Phê duyệt phải kiểm tra lại khả năng mượn bản sao nhận biết đặt trước và tính đủ điều kiện của thành viên.
+- BR-FE07-009: Khi yêu cầu mượn được phê duyệt, mỗi trạng thái bản sao được mượn phải thay đổi thành `BORROWED`.
+- BR-FE07-010: Mọi bản sao được mượn đều phải lưu trữ `BorrowDate`; ngày đáo hạn mặc định là `BorrowDate + 14 calendar days`.
+- BR-FE07-011: Mỗi lần trả sách phải lưu ngày trả trong múi giờ hoạt động của thư viện `Asia/Ho_Chi_Minh`; ngày này không thể trước `BorrowDate` hoặc sau ngày làm việc hiện tại của máy chủ. Thao tác trả yêu cầu cả chi tiết mượn và bản sao vật lý vẫn ở trạng thái `BORROWED`; trạng thái bản sao không nhất quán trả về `BORROW_STATE_CONFLICT` mà không thay đổi dữ liệu.
+- BR-FE07-012: Bản sao được trả bình thường phải trở thành `AVAILABLE`; nếu có hàng đợi đặt chỗ FE08 `ACTIVE` cho bản sao đó thì giao dịch trả phải giữ quyền sở hữu hàng đợi, và thao tác tạo/phê duyệt FE07 thông thường vẫn bị chặn đến khi FE08 xử lý hoặc giải quyết dứt điểm hàng đợi.
+- BR-FE07-013: Bản sao bị mất hoặc bị hỏng không được tự động cung cấp.
+- BR-FE07-014: Phải phát hiện và truy vết lượt trả quá hạn cho FE09 Quản lý tiền phạt. Số ngày quá hạn là khoảng cách theo ngày lịch giữa ngày đến hạn được khóa bởi giao dịch trả sách có thẩm quyền và ngày trả đã commit trong `Asia/Ho_Chi_Minh`; không bao giờ dùng ngày đến hạn cũ từ bước kiểm tra trước hoặc ranh giới nửa đêm theo múi giờ cục bộ của máy chủ. `fineCandidate` trả về phải phản ánh cùng các giá trị đã khóa.
+- BR-FE07-015: Mỗi chi tiết vay được gia hạn tối đa 1 lần; một lần gia hạn hợp lệ sẽ kéo dài ngày đến hạn hiện tại thêm 14 ngày theo lịch bằng cách sử dụng trình trợ giúp ngày làm việc `Asia/Ho_Chi_Minh` được chia sẻ và không bao giờ sử dụng số học `Date` trên máy chủ lưu trữ.
+- BR-FE07-016: Mọi thao tác tạo/phê duyệt/từ chối/trả/gia hạn đều phải được audit. Siêu dữ liệu audit khi trả sách phải dùng cùng ngày đến hạn đã khóa trong giao dịch, ngày trả đã commit, tình trạng và kết quả quá hạn như `fineCandidate` trả về.
+- BR-FE07-017: Lịch sử mượn phải ở chế độ chỉ đọc đối với thành viên.
+- BR-FE07-018: Không được phép gia hạn khi vật phẩm đã quá hạn, thành viên chưa thanh toán tiền phạt, đã đạt đến giới hạn gia hạn hoặc vật phẩm đã được thành viên khác bảo lưu.
+- BR-FE07-019: Các mục yêu cầu mượn đang chờ xử lý phải được lưu trữ trong `BorrowDetails` với trạng thái `REQUESTED`; không có bảng chi tiết yêu cầu riêng biệt nào được sử dụng trong Giai đoạn 1.
+- BR-FE07-020: Khi tất cả chi tiết trong yêu cầu mượn đạt đến trạng thái cuối (`RETURNED`, `LOST` hoặc `DAMAGED`), trạng thái yêu cầu phải trở thành `COMPLETED`.
+- BR-FE07-021: FE07 không được tính hoặc tạo bản ghi phạt cho lượt trả quá hạn, hư hỏng hoặc thất lạc; tính năng này chỉ cung cấp dữ liệu trả cho FE09 Quản lý tiền phạt.
+- BR-FE07-022: Xử lý yêu cầu mượn ở Giai đoạn 1 là tất cả hoặc không có gì: nếu bất kỳ bản sao được yêu cầu nào bị trùng, không tồn tại hoặc không thể mượn theo BR-FE07-023 tại thời điểm tạo hay phê duyệt, toàn bộ yêu cầu/phê duyệt sẽ bị từ chối và không tạo yêu cầu một phần. Việc từ chối từng mục nhưng giữ các bản sao hợp lệ được hoãn sang giai đoạn sau.
+- BR-FE07-023: FE07 chỉ có thể chấp nhận bản sao khi sách gốc có `Books.Status = ACTIVE` và bản sao là `AVAILABLE` mà không có quyền sở hữu đặt chỗ `ACTIVE`/`NOTIFIED`; hoặc khi sách gốc là `ACTIVE` và bản sao là `RESERVED` bởi đặt chỗ `NOTIFIED` thuộc Thành viên yêu cầu.
+- BR-FE07-024: Hàng đợi đặt trước `ACTIVE` cho một bản sao chặn việc tạo và phê duyệt yêu cầu mượn thông thường cho đến khi nhân viên xử lý hoặc giải quyết hàng đợi đó.
+- BR-FE07-025: Việc phê duyệt yêu cầu mượn cho đặt chỗ `NOTIFIED` thuộc người yêu cầu phải chuyển đặt chỗ phù hợp thành `FULFILLED` một cách nguyên tử cùng yêu cầu mượn, chi tiết, trạng thái bản sao và bản ghi audit.
+- BR-FE07-026: Mọi yêu cầu đều lưu `CreatedBy`; lần phê duyệt lưu `ApprovedAt` và `ApprovedBy`; mọi chi tiết được phê duyệt đều lưu `BorrowDate`. Đây là các trường lịch sử giao dịch bắt buộc, không phải siêu dữ liệu audit tùy chọn.
+- BR-FE07-027: Thao tác từ chối yêu cầu lý do không trống, đã cắt khoảng trắng, dài tối đa 500 ký tự và lưu lý do trong siêu dữ liệu audit từ chối.
+- BR-FE07-028: Endpoint lịch sử mượn chỉ chấp nhận `status?`, `fromDate?`, `toDate?`, `page?` và `limit?`; mặc định là `page=1`, `limit=20`, giới hạn là `page>=1`, `limit=1..100`, phạm vi ngày bao gồm hai đầu và các hàng dùng thứ tự ổn định `BorrowDate DESC (nulls last), BorrowDetailId DESC`.
+- BR-FE07-029: Các hàng chi tiết lịch sử vay phải hiển thị trạng thái yêu cầu sở hữu tách biệt với trạng thái chi tiết được duy trì. Khi yêu cầu sở hữu là `REJECTED`, trạng thái hiển thị thành viên bị từ chối trong khi chi tiết vẫn tồn tại vẫn là `REQUESTED`.
+- BR-FE07-030: Trước khi Thủ thư/Quản trị viên được phân quyền phê duyệt hoặc từ chối yêu cầu đang chờ, hộp thoại quyết định phải xác định chính xác yêu cầu, Thành viên, ngày yêu cầu và mọi bản sao vật lý được yêu cầu bằng phản hồi đọc chuẩn. Trường lý do từ chối phải luôn chỉnh sửa được, yêu cầu lý do đã cắt khoảng trắng dài 1..500 ký tự và không được mất tiêu điểm khi hộp thoại render lại.
+- BR-FE07-031: Danh sách ứng viên mượn tự phục vụ của Thành viên, endpoint tạo yêu cầu và lịch sử cá nhân yêu cầu vai trò duy nhất của tài khoản là `MEMBER`; tài khoản `LIBRARIAN` và `ADMIN` không thể tự đặt hoặc mượn sách.
+- BR-FE07-032: Chi tiết `BorrowDetails.Status = BORROWED` hiện tại là tín hiệu chính thức của FE08 rằng cùng một Thành viên không thể đặt trước bất kỳ bản sao nào khác có cùng `BookId`; trạng thái chi tiết đầu cuối không chặn việc đặt chỗ sau này.
+- BR-FE07-033: Một bản sao có thể thuộc nhiều nhất một quyền sở hữu yêu cầu mượn đang hoạt động, được định nghĩa bằng `BorrowRequests.Status = PENDING` cùng `BorrowDetails.Status = REQUESTED`. Thao tác tạo quyền sở hữu phải khóa và kiểm tra lại bản sao cùng các quyền sở hữu hiện có một cách nguyên tử. Quyền sở hữu này không thêm giá trị `BookCopies.Status` mới; phê duyệt chuyển bản sao sang `BORROWED`, còn từ chối giải phóng quyền sở hữu vì yêu cầu không còn là `PENDING`.
+- BR-FE07-034: Một Thành viên có thể có nhiều nhất một quy trình mượn đang hoạt động cho mỗi `BookId`, và mỗi yêu cầu chỉ được chứa nhiều nhất một bản sao vật lý của BookId đó. Hoạt động nghĩa là `BorrowRequests.Status = PENDING` với `BorrowDetails.Status = REQUESTED` hoặc `BorrowDetails.Status = BORROWED`. Quy trình bị từ chối hoặc đã kết thúc/đã trả không chặn yêu cầu sau này.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 7. Yêu cầu chức năng
 
-| ID | Edge Case / Error | Expected System Behavior |
+- FR-FE07-001: Khi thành viên gửi yêu cầu vay, hệ thống sẽ xác thực tính đủ điều kiện của thành viên trước khi tạo yêu cầu.
+- FR-FE07-002: Khi thành viên gửi yêu cầu mượn với dữ liệu hợp lệ, hệ thống sẽ tạo một yêu cầu mượn đang chờ xử lý và lưu trữ các mục được yêu cầu dưới dạng `BorrowDetails.Status = REQUESTED`.
+- FR-FE07-003: Nếu không thể mượn bất kỳ bản sao nào được yêu cầu theo BR-FE07-023 thì hệ thống sẽ từ chối toàn bộ yêu cầu mượn và sẽ không tạo một phần yêu cầu. (Chính sách Giai đoạn 1: tất cả hoặc không có gì; việc từ chối từng mục là công việc trong tương lai - xem Phần 6 BR-FE07-022.)
+- FR-FE07-004: Khi thủ thư phê duyệt yêu cầu mượn, hệ thống sẽ xác nhận lại tất cả các quy tắc kinh doanh trước khi phê duyệt.
+- FR-FE07-005: Khi phê duyệt thành công, hệ thống sẽ lưu `ApprovedAt`, `ApprovedBy`, `BorrowDate`, ngày đến hạn, trạng thái yêu cầu/chi tiết, trạng thái bản sao, thao tác hoàn tất đặt chỗ phù hợp và audit trong một giao dịch.
+- FR-FE07-006: Khi Thủ thư từ chối yêu cầu mượn, hệ thống sẽ yêu cầu và lưu lý do từ chối trong siêu dữ liệu audit, đồng thời giữ nguyên trạng thái bản sao.
+- FR-FE07-007: Khi Thủ thư xử lý trả sách, hệ thống sẽ khóa và yêu cầu bản sao vật lý ở trạng thái `BORROWED`, khóa chi tiết cùng các quyền sở hữu đặt chỗ liên quan, rồi cập nhật nguyên tử ngày trả, trạng thái chi tiết, trạng thái bản sao và audit; lượt trả bình thường đặt bản sao thành `AVAILABLE` nhưng giữ nguyên mọi quyền sở hữu hàng đợi `ACTIVE` của FE08. Kết quả giao dịch trả về ngày đến hạn đã khóa và các giá trị trả đã commit để tạo phản hồi và audit.
+- FR-FE07-008: Nếu hàng trả lại quá hạn, bị hư hỏng hoặc bị mất, hệ thống sẽ cung cấp đủ dữ liệu để FE09 tính toán hoặc tạo ra khoản tiền phạt liên quan và `fineCandidate` cộng với siêu dữ liệu kiểm tra trả lại sẽ chỉ được lấy từ các giá trị được trả về bởi giao dịch bị khóa có thẩm quyền.
+- FR-FE07-009: Khi yêu cầu gia hạn, hệ thống sẽ cấp phạm vi nhiều thành viên cho tài khoản `LIBRARIAN` hoặc `ADMIN` một vai trò. Tài khoản `MEMBER` một vai trò phải sở hữu chi tiết. Hệ thống sẽ đánh giá mọi trình chặn đối với chủ sở hữu khoản vay, cho phép tối đa 1 lần gia hạn và gia hạn ngày đến hạn thêm 14 ngày theo lịch thông qua trình trợ giúp ngày làm việc `Asia/Ho_Chi_Minh` được chia sẻ chỉ khi tất cả các quy tắc đều vượt qua.
+- FR-FE07-010: Khi thành viên xem lịch sử vay, hệ thống sẽ chỉ trả về hồ sơ của thành viên đó.
+- FR-FE07-011: Khi Thủ thư/Quản trị viên xem thông tin mượn của Thành viên, hệ thống sẽ cho phép tìm kiếm theo danh tính Thành viên.
+- FR-FE07-012: Mặc dù chi tiết khoản vay là `BORROWED`, bản sao liên quan sẽ không có sẵn để phê duyệt khoản vay khác.
+- FR-FE07-013: Khi tất cả chi tiết trong yêu cầu mượn là `RETURNED`, `LOST` hoặc `DAMAGED`, hệ thống sẽ cập nhật trạng thái yêu cầu thành `COMPLETED`.
+- FR-FE07-028: Khi một thành viên hoặc nhân viên được ủy quyền yêu cầu lịch sử mượn, hệ thống sẽ xác thực `status`, `fromDate/toDate`, `page` và `limit` trước khi truy vấn, áp dụng phạm vi thành viên và trả về kết quả phân trang xác định bằng cách sử dụng thứ tự BR-FE07-028.
+- FR-FE07-029: Khi thành viên xem chi tiết mượn có yêu cầu sở hữu là `REJECTED`, hệ thống sẽ trả về `requestStatus = REJECTED` và giao diện người dùng sẽ hiển thị `Đã từ chối` thay vì `Chờ xử lý` mà không thay đổi `BorrowDetails.Status`.
+- FR-FE07-030: Khi Thủ thư/Quản trị viên mở quyết định phê duyệt hoặc từ chối, UI sẽ hiển thị dữ liệu yêu cầu/Thành viên/liên hệ cùng tiêu đề, tác giả, định danh, mã vạch, vị trí và trạng thái hiện tại của mọi bản sao đã có trong phản hồi nhân viên chuẩn, không lặp lại các trạng thái đó trong biểu ngữ tính khả dụng chung; trường lý do từ chối giữ nguyên tiêu điểm và toàn bộ giá trị được kiểm soát qua các lần render lại.
+- FR-FE07-031: Khi Thủ thư/Quản trị viên xem xét khoản mượn đang hoạt động để trả, UI sẽ giữ nguyên ngày mượn, ngày đến hạn và số lần gia hạn `BorrowDetails` chuẩn, dẫn xuất trạng thái đến hạn so với ngày làm việc `Asia/Ho_Chi_Minh` hiện tại và gắn nhãn rõ `Còn N ngày`, `Đến hạn hôm nay` hoặc `Quá hạn N ngày`, thay vì đặt `Đúng hạn` dưới tiêu đề `Quá hạn`.
+- FR-FE07-032: NẾU mảng vai trò tương thích là dữ liệu kế thừa không hợp lệ chứa `MEMBER` cùng với `LIBRARIAN` hoặc `ADMIN` mặc dù có `DEC-GEN-005`, hệ thống sẽ từ chối một cách phòng thủ ứng cử viên tự phục vụ, tạo yêu cầu và truy cập lịch sử riêng bằng `403 ROLE_REQUIRED`; nhân viên vận hành các tuyến FE07 vẫn có sẵn theo vai trò bảo vệ hiện có của họ. Đây không phải là mô hình tài khoản đa vai trò được hỗ trợ.
+- FR-FE07-033: KHI Thành viên tuân theo quá trình chuyển giao FE08 cho khoản lưu giữ `NOTIFIED` thuộc sở hữu của người yêu cầu, giao diện người dùng FE07 sẽ chọn `bookId` và `copyId` chuẩn chính xác được trả về bởi danh mục ứng viên mượn được bảo vệ và gửi bản sao đó thông qua quy trình làm việc yêu cầu chờ xử lý thông thường; Kiểm tra nhận thức đặt trước phía máy chủ vẫn có thẩm quyền.
+- FR-FE07-034: KHI Thành viên liệt kê ứng viên mượn hoặc tạo yêu cầu, FE07 sẽ loại trừ/từ chối mọi bản sao đã thuộc một yêu cầu đang chờ khác; giao dịch tạo có thẩm quyền trả về `409 COPY_PENDING_REQUEST_CONFLICT` mà không ghi một phần yêu cầu/chi tiết/audit.
+- FR-FE07-035: KHI Quản trị viên/Thủ thư phê duyệt hoặc từ chối yêu cầu, UI sẽ tải lại trạng thái yêu cầu chuẩn sau cả thành công lẫn xung đột. Chi tiết Quản trị viên hiển thị trạng thái hiện tại của từng bản sao vật lý; thao tác từ chối giải thích rằng lý do bắt buộc dài 1..500 ký tự sẽ giải phóng quyền sở hữu đang chờ.
+- FR-FE07-036: KHI Thành viên liệt kê ứng viên hoặc tạo yêu cầu, FE07 sẽ ẩn/từ chối mọi bản sao có `BookId` đã có quy trình đang hoạt động cho Thành viên đó; giao dịch tạo có thẩm quyền trả về `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW` mà không ghi một phần. Payload chứa hai bản sao của cùng một `BookId` trả về `400 DUPLICATE_BOOK_IN_REQUEST`.
+- FR-FE07-037: NẾU một yêu cầu đang chờ xử lý cũ sẽ cung cấp cho chủ sở hữu của nó bản sao `BORROWED` thứ hai của cùng một `BookId`, phê duyệt sẽ trả về `409 BOOK_ALREADY_BORROWED_BY_MEMBER`, giữ nguyên yêu cầu đang chờ xử lý và vẫn cho phép nhân viên từ chối với lý do chính đáng.
+- FR-FE07-038: KHI Quản trị viên xem danh sách lưu hành, bảng sẽ hiển thị các trường thao tác `borrowDetailId`, Thành viên, tên sách, ngày mượn, ngày đến hạn, ngày trả, số lần gia hạn, trạng thái và thao tác khả dụng trong các cột khớp, không yêu cầu cuộn ngang trên bố cục desktop được hỗ trợ. `requestId` và mã vạch bản sao vẫn là dữ liệu nội bộ/chi tiết chuẩn nhưng không phải cột riêng trong danh sách.
+- FR-FE07-039: KHI Thủ thư/Quản trị viên chọn một khoản mượn đang hoạt động có trạng thái hạn trả là `OVERDUE`, không gian làm việc trả sách phải hiển thị thao tác `Tạo phiếu phạt` chỉ truyền `borrowDetailId` chuẩn sang phép tính FE09; FE09 tiếp tục là nguồn có thẩm quyền đối với ngày tháng đã lưu, số ngày quá hạn, số tiền, xử lý trùng lặp và trạng thái khoản phạt.
+
+### 7.1 Yêu cầu hành vi không mong muốn (Lỗi / Điều kiện bất thường)
+
+Các yêu cầu EARS này bao gồm lỗi và các điều kiện bất thường. Mỗi dấu vết quay trở lại Trường hợp biên hiện có (EC-*), Quy tắc kinh doanh (BR-*) hoặc Luồng thay thế (AF-*).
+
+- FR-FE07-014: NẾU `activeBorrowedCount + requestedDetailCount > 5` khi tạo hoặc phê duyệt, hệ thống sẽ từ chối toàn bộ hành động với `BORROW_LIMIT_EXCEEDED` và không thay đổi bản ghi nào. Sự phê duyệt phải có được khóa phạm vi thành viên và các hàng có liên quan theo thứ tự NFR-FE07-TXN-003 trước khi thực hiện phép tính này. (Nguồn: BR-FE07-005, AF-FE07-001, AC-FE07-003)
+- FR-FE07-014A: NẾU bản sao của thành viên đã được yêu cầu vào ngày làm việc yêu cầu cộng với yêu cầu mới vượt quá cấp hàng ngày bắt nguồn từ FE04 hoặc các bản sao đã được phê duyệt vào ngày làm việc phê duyệt cộng với phê duyệt vượt quá cấp đó thì hệ thống sẽ từ chối toàn bộ hành động với `BORROW_DAILY_LIMIT_EXCEEDED`. Giới hạn là 5 đối với `APPROVED` và 3 đối với các trường hợp khác, sử dụng ngày `Asia/Ho_Chi_Minh`.
+- FR-FE07-015: NẾU thành viên gửi yêu cầu vay hoặc yêu cầu gia hạn trong khi tài khoản không hoạt động, hệ thống sẽ từ chối hành động đó và trả về lỗi về tính đủ điều kiện; một `MEMBER` đang hoạt động có thể tiếp tục mà không cần sự chấp thuận của FE04. (Nguồn: BR-FE07-004, EC-FE07-002, AF-FE07-001)
+- FR-FE07-016: NẾU thành viên gửi yêu cầu vay hoặc yêu cầu gia hạn trong khi có khoản vay quá hạn hoặc bất kỳ khoản phạt `UNPAID` nào với số tiền lớn hơn 0, hệ thống sẽ từ chối hành động và trả về lỗi xác định khoản tiền phạt chặn hoặc khoản vay quá hạn. (Nguồn: BR-FE07-006, BR-FE07-018, AF-FE07-001, AF-FE07-004)
+- FR-FE07-017: NẾU yêu cầu mượn có chứa bản sao trùng lặp, bản sao không tồn tại hoặc bất kỳ bản sao nào không đạt BR-FE07-023, hệ thống sẽ từ chối toàn bộ yêu cầu và sẽ không tạo bất kỳ bản ghi `BorrowRequests`/`BorrowDetails` nào. (Chính sách Giai đoạn 1: tất cả hoặc không có gì; việc từ chối từng mặt hàng là công việc trong tương lai - xem BR-FE07-022.) (Nguồn: EC-FE07-004, EC-FE07-006, EC-FE07-007)
+- FR-FE07-018: NẾU bất kỳ bản sao nào không đạt được hợp đồng mượn nhận biết đặt trước tại thời điểm phê duyệt, hệ thống sẽ từ chối toàn bộ phê duyệt, giữ nguyên tất cả dữ liệu (yêu cầu vẫn là `PENDING`) và trả về xung đột chặn an toàn. (Chính sách Giai đoạn 1: tất cả hoặc không có gì.) (Nguồn: BR-FE07-007, BR-FE07-008, EC-FE07-005, AF-FE07-002, AC-FE07-005)
+- FR-FE07-019: KHI các thao tác phê duyệt đồng thời nhắm vào cùng bản sao hoặc cùng Thành viên, hệ thống sẽ tuần tự hóa chúng bằng `member-scoped lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; mọi phép đếm đang hoạt động và việc xác nhận lại bản sao/đặt chỗ chỉ diễn ra sau khi lấy các khóa liên quan, vì vậy nhiều nhất một thao tác xung đột có thể thành công. (Nguồn: EC-FE07-011, EC-FE07-013, FR-FE07-012, BR-FE07-005)
+- FR-FE07-020: NẾU yêu cầu gia hạn đối với chi tiết khoản vay đã quá hạn theo ngày làm việc `Asia/Ho_Chi_Minh` hiện tại, đã được gia hạn một lần, bị chặn do chưa thanh toán tiền phạt hoặc được thành viên khác bảo lưu, hệ thống sẽ từ chối gia hạn và giữ nguyên ngày đến hạn hiện tại. Việc so sánh quá hạn sẽ sử dụng trình trợ giúp ngày làm việc chung và độc lập với múi giờ của máy chủ. (Nguồn: BR-FE07-015, BR-FE07-018, AF-FE07-004, EC-FE07-010, AC-FE07-010)
+- FR-FE07-021: NẾU thao tác trả hoặc gia hạn nhắm đến trạng thái chi tiết không hợp lệ, thao tác trả phát hiện bản sao vật lý không ở trạng thái `BORROWED`, hoặc ngày trả được cung cấp trước `BorrowDate` hay sau ngày làm việc hiện tại trong `Asia/Ho_Chi_Minh`, hệ thống sẽ từ chối thao tác mà không thay đổi ngày đến hạn, dữ liệu trả, trạng thái bản sao hoặc audit thành công. Bản sao vật lý không nhất quán trả về `BORROW_STATE_CONFLICT`. (Nguồn: EC-FE07-008, EC-FE07-009, EC-FE07-010)
+- FR-FE07-022: NẾU bất kỳ bước nào trong giao dịch phê duyệt hoặc trả sách thất bại, hệ thống sẽ rollback toàn bộ giao dịch để trạng thái yêu cầu, trạng thái chi tiết, ngày đến hạn, trạng thái bản sao, trạng thái đặt chỗ và log audit vẫn nhất quán. (Nguồn: EC-FE07-012, NFR-FE07-TXN-001, NFR-FE07-TXN-002)
+- FR-FE07-023: NẾU bản sao được yêu cầu có hàng đợi đặt chỗ `ACTIVE`, FE07 sẽ từ chối tạo/phê duyệt bằng `RESERVATION_QUEUE_PRIORITY` và không thay đổi bản ghi nào.
+- FR-FE07-024: NẾU bản sao là `RESERVED` theo đặt trước `NOTIFIED` thuộc sở hữu của thành viên bên vay, FE07 sẽ cho phép tạo yêu cầu và sẽ xác nhận lại quyền sở hữu đó trong quá trình phê duyệt.
+- FR-FE07-025: KHI nhân viên phê duyệt yêu cầu của chủ sở hữu đã nắm giữ, FE07 sẽ cập nhật mọi đặt chỗ `NOTIFIED` phù hợp thành `FULFILLED` trong giao dịch phê duyệt.
+- FR-FE07-026: NẾU sách gốc là `INACTIVE` khi tạo hoặc phê duyệt yêu cầu, FE07 sẽ từ chối thao tác bằng `BOOK_INACTIVE` và không thay đổi trạng thái mượn, bản sao, đặt chỗ hoặc audit.
+- FR-FE07-027: NẾU thiếu lý do từ chối, trống sau khi cắt bớt hoặc dài hơn 500 ký tự, FE07 sẽ từ chối lệnh từ chối và giữ nguyên yêu cầu `PENDING`.
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE07-001: Với Thành viên đủ điều kiện và bản sao `AVAILABLE` không có quyền sở hữu đặt chỗ, khi Thành viên tạo yêu cầu mượn, hệ thống sẽ tạo yêu cầu `PENDING` với các chi tiết được đánh dấu `REQUESTED`.
+- AC-FE07-002: Với thành viên không hoạt động, khi thành viên tạo yêu cầu vay thì hệ thống sẽ từ chối yêu cầu.
+- AC-FE07-003: Với Thành viên có 4 chi tiết mượn đang hoạt động và gửi/phê duyệt yêu cầu chứa 2 chi tiết, khi kiểm tra giới hạn, FE07 sẽ trả về `BORROW_LIMIT_EXCEEDED` và giữ nguyên mọi trạng thái.
+- AC-FE07-003A: Với một `MEMBER` đang hoạt động mà không có phê duyệt FE04 chính tắc đã yêu cầu 3 bản sao vào ngày làm việc hiện tại, khi một bản sao khác được yêu cầu, thì FE07 sẽ trả về `BORROW_DAILY_LIMIT_EXCEEDED`; với trạng thái chuẩn `APPROVED`, cho phép yêu cầu tối đa 5 bản sao vào ngày hôm đó theo tất cả các quy tắc mượn khác.
+- AC-FE07-004: Với yêu cầu đang chờ và các bản sao vẫn đáp ứng BR-FE07-023, khi Thủ thư phê duyệt, FE07 sẽ lưu người phê duyệt/thời điểm phê duyệt/ngày mượn, đặt đúng trạng thái yêu cầu/chi tiết/bản sao, đặt ngày đến hạn bằng ngày mượn +14 ngày và commit nguyên tử các cập nhật đặt chỗ/audit phù hợp.
+- AC-FE07-005: Đưa ra yêu cầu đang chờ xử lý có bản sao không thể mượn được nữa theo BR-FE07-023, khi thủ thư phê duyệt yêu cầu đó thì hệ thống sẽ từ chối phê duyệt và giữ nguyên dữ liệu.
+- AC-FE07-006: Khi cả chi tiết và bản sao vật lý vẫn là `BORROWED`, nếu Thủ thư xử lý lượt trả bình thường, hệ thống sẽ lưu ngày làm việc trả sách theo `Asia/Ho_Chi_Minh` và đánh dấu bản sao là `AVAILABLE`; nếu có hàng đợi FE08 `ACTIVE`, quyền sở hữu hàng đợi vẫn được giữ và thao tác mượn thông thường tiếp tục bị chặn cho đến khi FE08 giải quyết. Nếu trạng thái bản sao không nhất quán, thao tác trả bị từ chối bằng `BORROW_STATE_CONFLICT` mà không thay đổi dữ liệu.
+- AC-FE07-007: Đối với một bản sao mượn được trả lại bị hỏng, khi thủ thư xử lý bản trả lại thì hệ thống sẽ đánh dấu bản sao `DAMAGED` và không cung cấp bản sao đó.
+- AC-FE07-008: Đưa ra một bản sao mượn quá hạn có ngày đến hạn thay đổi trước khi giao dịch trả lại nhận được khóa của nó, khi cam kết trả lại, thì `fineCandidate.overdueDays`, dữ liệu phản hồi và siêu dữ liệu kiểm tra được tính từ ngày đến hạn bị khóa bởi giao dịch đó và ngày trả lại `Asia/Ho_Chi_Minh` đã cam kết.
+- AC-FE07-009: Được cấp một bản sao được mượn đủ điều kiện mà không gia hạn trước đó, khi tài khoản chủ sở hữu một vai trò hoặc tài khoản Librarian/Admin một vai trò gia hạn nó thì ngày đến hạn sẽ được kéo dài thêm 14 ngày theo lịch bằng cách sử dụng trình trợ giúp `Asia/Ho_Chi_Minh` được chia sẻ và số lần gia hạn sẽ trở thành 1. Tài khoản Thành viên không thể gia hạn chi tiết của thành viên khác.
+- AC-FE07-010: Cung cấp một bản sao đã mượn quá hạn theo ngày làm việc chung của `Asia/Ho_Chi_Minh`, đã được gia hạn, bị chặn do chưa thanh toán tiền phạt hoặc được thành viên khác bảo lưu, khi gia hạn được yêu cầu theo bất kỳ múi giờ nào của máy chủ thì ngày đến hạn vẫn không thay đổi và hệ thống sẽ trả về lý do.
+- AC-FE07-011: Với thành viên đã đăng nhập, khi xem lịch sử vay sẽ chỉ trả về hồ sơ vay của thành viên đó.
+- AC-FE07-012: Với Thủ thư/Quản trị viên, khi xem thông tin mượn của Thành viên, hệ thống có thể trả về hồ sơ cho Thành viên đã chọn.
+- AC-FE07-013: Với tất cả các chi tiết trong yêu cầu mượn là `RETURNED`, `LOST` hoặc `DAMAGED`, khi quá trình xử lý trả lại kết thúc thì trạng thái yêu cầu sẽ trở thành `COMPLETED`.
+- AC-FE07-014: Với lượt trả bị hư hỏng hoặc thất lạc, khi FE07 ghi nhận, FE07 không tạo bản ghi phạt; FE09 có thể tính hoặc tạo tiền phạt sau đó từ dữ liệu đã ghi.
+- AC-FE07-015: Cho một hàng đặt trước đang hoạt động, khi thành viên khác tạo hoặc phê duyệt yêu cầu mượn, thì FE07 trả về `409 RESERVATION_QUEUE_PRIORITY` và giữ nguyên tất cả trạng thái.
+- AC-FE07-016: Với bản sao RESERVED và đặt chỗ NOTIFIED thuộc người yêu cầu, khi chủ sở hữu tạo yêu cầu mượn, FE07 sẽ tạo yêu cầu đang chờ thông thường mà không giải phóng lượt giữ chỗ.
+- AC-FE07-017: Với yêu cầu đang chờ, khi nhân viên phê duyệt, các bản ghi mượn, trạng thái bản sao, thao tác hoàn tất đặt chỗ và audit sẽ được commit nguyên tử.
+- AC-FE07-018: Cho một bản sao có sổ gốc là `INACTIVE`, khi cố gắng tạo hoặc phê duyệt, thì FE07 trả về `BOOK_INACTIVE` và giữ nguyên tất cả trạng thái.
+- AC-FE07-019: Với hai phê duyệt đồng thời sẽ đưa một thành viên từ 4 đến 6 chi tiết mượn hoạt động, sau đó tối đa một phê duyệt thành công và tổng số cam kết không bao giờ vượt quá 5.
+- AC-FE07-020: Cho ngày trả lại trước `BorrowDate` hoặc sau ngày kinh doanh `Asia/Ho_Chi_Minh` hiện tại, khi gửi trả lại thì FE07 trả về `INVALID_RETURN_DATE` và giữ nguyên tất cả trạng thái.
+- AC-FE07-021: Với yêu cầu đang chờ và lý do từ chối bị thiếu/trống/quá dài, khi nhân viên từ chối yêu cầu, FE07 sẽ từ chối lệnh và giữ yêu cầu ở trạng thái `PENDING`.
+- AC-FE07-022: Đưa ra một yêu cầu lịch sử hợp lệ, khi không cung cấp phân trang thì FE07 sử dụng `page=1`, `limit=20`, bộ lọc ngày bao gồm và thứ tự `BorrowDate DESC`/`BorrowDetailId DESC` ổn định; các giá trị không hợp lệ sẽ bị từ chối trước khi thực hiện truy vấn.
+- AC-FE07-023: Đưa ra yêu cầu vay đang chờ xử lý của thành viên, khi nhân viên từ chối và thành viên tải lại lịch sử vay, thì mọi chi tiết thuộc yêu cầu đó sẽ hiển thị `Đã từ chối`; yêu cầu vẫn là `REJECTED` và mỗi chi tiết được lưu giữ vẫn là `REQUESTED`.
+- AC-FE07-024: Với yêu cầu đang chờ có một hoặc nhiều bản sao, khi Thủ thư/Quản trị viên mở thao tác phê duyệt hoặc từ chối, hộp thoại sẽ xác định yêu cầu/Thành viên và liệt kê mọi bản sao cùng các trường lưu hành liên quan, không có biểu ngữ tính khả dụng chung dư thừa; khi tác nhân nhập lý do từ chối nhiều ký tự, vùng văn bản giữ tiêu điểm/giá trị và lệnh từ chối chuẩn nhận lý do đã cắt khoảng trắng.
+- AC-FE07-025: Với khoản mượn đang hoạt động có ngày mượn/đến hạn chuẩn và `renewalCount`, khi nhân viên mở quy trình Trả trước, đúng hoặc sau ngày đến hạn, màn hình sẽ hiển thị nhãn còn lại/hôm nay/quá hạn phù hợp theo `Asia/Ho_Chi_Minh` và giải thích khoản mượn đã được gia hạn hay chưa mà không thay đổi ngày đã lưu.
+- AC-FE07-026: Với mảng vai trò tương thích legacy cố ý bị hỏng, chứa `MEMBER + LIBRARIAN` hoặc `MEMBER + ADMIN`, khi tác nhân trực tiếp mở hoặc gọi danh sách ứng viên mượn của Thành viên, thao tác tạo yêu cầu hoặc lịch sử cá nhân, UI sẽ chuyển hướng đến trang chủ nhân viên và backend trả về `403 ROLE_REQUIRED` mà không tạo hay tiết lộ trạng thái tự phục vụ của Thành viên; các tài khoản được lưu vẫn có chính xác một vai trò.
+- AC-FE07-027: Khi FE08 liên kết bản sao được giữ cho Thành viên đến `/borrowing/new?bookId={bookId}&copyId={copyId}`, nếu danh mục ứng viên FE07 chứa lượt giữ thuộc người yêu cầu, FE07 sẽ chọn trước chính xác bản sao và tạo yêu cầu `PENDING` thông thường để Thủ thư/Quản trị viên phê duyệt.
+- AC-FE07-028: Cho Thành viên A có yêu cầu cấp bản sao đang chờ xử lý, khi Thành viên B tải ứng viên hoặc gửi cùng bản sao đó, thì bản sao đó sẽ không có trong ứng viên và tạo ra kết quả `409 COPY_PENDING_REQUEST_CONFLICT`; sau khi nhân viên từ chối yêu cầu của A, bản sao có thể được yêu cầu lại nếu tất cả các quy tắc FE07/FE08 khác đều vượt qua.
+- AC-FE07-029: Với yêu cầu cũ đang chờ có bản sao vật lý không còn đủ điều kiện phê duyệt, khi Quản trị viên/Thủ thư cố phê duyệt, FE07 sẽ giữ yêu cầu ở trạng thái chờ, trả về xung đột có hướng xử lý, tải lại trạng thái bản sao/yêu cầu chuẩn và vẫn cho phép từ chối bằng lý do hợp lệ.
+- AC-FE07-030: Với Thành viên đã có yêu cầu đang chờ hoặc khoản mượn đang hoạt động cho một đầu sách, khi Thành viên tải ứng viên hoặc gửi bản sao khác của đầu sách đó, đầu sách sẽ bị ẩn và thao tác tạo trả về `409 BOOK_ALREADY_IN_BORROWING_WORKFLOW`; sau khi yêu cầu bị từ chối hoặc bản sao được trả về trạng thái cuối, có thể tiếp tục tạo yêu cầu mới.
+- AC-FE07-031: Với các hàng lưu hành chuẩn của Quản trị viên, khi danh sách trên màn hình hiển thị, mỗi hàng sẽ căn với chín tiêu đề đã phê duyệt, các giá trị Thành viên/sách dài được ngắt dòng trong ô tương ứng và cả cột `Mã yêu cầu` lẫn `Barcode` đều không gây tràn ngang.
+- AC-FE07-032: Cho trước Thủ thư/Quản trị viên chọn một khoản mượn đang hoạt động và quá hạn, khi tác nhân chọn `Tạo phiếu phạt` thì frontend gọi phép tính FE09 chuẩn bằng `borrowDetailId` của khoản mượn đó, thông báo kết quả từ máy chủ và không bao giờ gửi số tiền phạt do máy khách kiểm soát; thao tác này không xuất hiện với khoản mượn chưa quá hạn.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống mong đợi |
 | -- | ----------------- | ------------------------ |
-| EC-FE07-001 | Member ID does not exist | Return not found error. |
-| EC-FE07-002 | Member account inactive | Reject borrow/renewal action. |
-| EC-FE07-003 | Active `MEMBER` does not have FE04 approval | Do not reject solely for membership status; apply the three-copy daily tier and all other FE07 rules. |
-| EC-FE07-004 | Copy ID does not exist | Reject request item. |
-| EC-FE07-005 | Copy or reservation state fails BR-FE07-023 during approval | Reject the whole approval and preserve all state. |
-| EC-FE07-006 | Duplicate copy in the same borrow request | Reject duplicate item. |
-| EC-FE07-007 | Borrow request has zero valid items | Reject request. |
-| EC-FE07-008 | Return action on already returned item | Reject as invalid state transition. |
-| EC-FE07-009 | Return date before persisted `BorrowDate` | Reject invalid date. |
-| EC-FE07-010 | Renewal requested after item is already returned | Reject renewal. |
-| EC-FE07-011 | Concurrent approval of same copy | Only one approval may succeed; later action must fail safely. |
-| EC-FE07-012 | Database update partially fails | Roll back the whole transaction. |
-| EC-FE07-013 | Concurrent approvals for the same member would exceed 5 active details | Serialize by member; at most one conflicting approval succeeds. |
-| EC-FE07-014 | Return date is in the future in `Asia/Ho_Chi_Minh` | Reject invalid date and preserve all state. |
-| EC-FE07-015 | Missing/blank/overlength rejection reason | Reject command; request remains `PENDING`. |
-| EC-FE07-016 | History request has invalid status/date/page/limit | Reject with a validation response before querying; do not silently normalize. |
-| EC-FE07-017 | Due date changes after return preflight but before the return transaction locks the detail | Use the transaction-locked due date for mutation, `fineCandidate`, and audit metadata; never mix preflight and committed values. |
-| EC-FE07-018 | Account data contains more than one role despite `DEC-GEN-005` | Treat the account as invalid legacy data to be repaired by FE11; multi-role accounts are not part of the supported FE07 actor model. |
-| EC-FE07-019 | Renewal runs under a host timezone other than `Asia/Ho_Chi_Minh` | Produce the same eligibility decision and due date as every other host by using the shared business-date helper. |
+| EC-FE07-001 | ID thành viên không tồn tại | Trả về lỗi không tìm thấy. |
+| EC-FE07-002 | Tài khoản Thành viên không hoạt động | Từ chối thao tác mượn/gia hạn. |
+| EC-FE07-003 | `MEMBER` đang hoạt động không được FE04 phê duyệt | Đừng từ chối chỉ vì tư cách thành viên; áp dụng cấp ba bản hàng ngày và tất cả các quy tắc FE07 khác. |
+| EC-FE07-004 | ID bản sao không tồn tại | Từ chối mục yêu cầu. |
+| EC-FE07-005 | Trạng thái bản sao hoặc đặt chỗ không đạt BR-FE07-023 trong quá trình phê duyệt | Từ chối toàn bộ phê duyệt và giữ nguyên mọi trạng thái. |
+| EC-FE07-006 | Bản sao trùng trong cùng một yêu cầu mượn | Từ chối mục trùng lặp. |
+| EC-FE07-007 | Yêu cầu vay không có mục hợp lệ | Từ chối yêu cầu. |
+| EC-FE07-008 | Hành động trả lại đối với mặt hàng đã được trả lại | Từ chối vì quá trình chuyển đổi trạng thái không hợp lệ. |
+| EC-FE07-009 | Ngày trả về trước khi tồn tại `BorrowDate` | Từ chối ngày không hợp lệ. |
+| EC-FE07-010 | Yêu cầu gia hạn sau khi mặt hàng đã được trả lại | Từ chối gia hạn. |
+| EC-FE07-011 | Đồng thời phê duyệt cùng một bản sao | Chỉ có một sự chấp thuận có thể thành công; hành động sau đó phải thất bại một cách an toàn. |
+| EC-FE07-012 | Cập nhật cơ sở dữ liệu bị lỗi một phần | Quay lại toàn bộ giao dịch. |
+| EC-FE07-013 | Phê duyệt đồng thời cho cùng một thành viên sẽ vượt quá 5 chi tiết hoạt động | Tuần tự hóa theo thành viên; nhiều nhất một phê duyệt xung đột sẽ thành công. |
+| EC-FE07-014 | Ngày trở về trong tương lai trong `Asia/Ho_Chi_Minh` | Từ chối ngày không hợp lệ và giữ nguyên tất cả trạng thái. |
+| EC-FE07-015 | Lý do từ chối bị thiếu/trống/quá dài | Từ chối lệnh; yêu cầu vẫn là `PENDING`. |
+| EC-FE07-016 | Yêu cầu lịch sử có trạng thái/ngày/trang/giới hạn không hợp lệ | Từ chối bằng phản hồi xác thực trước khi truy vấn; không âm thầm chuẩn hóa. |
+| EC-FE07-017 | Ngày đến hạn thay đổi sau bước kiểm tra trước nhưng trước khi giao dịch trả sách khóa chi tiết | Dùng ngày đến hạn đã khóa trong giao dịch cho thao tác thay đổi, `fineCandidate` và siêu dữ liệu audit; không trộn giá trị kiểm tra trước với giá trị đã commit. |
+| EC-FE07-018 | Dữ liệu tài khoản chứa nhiều hơn một vai trò mặc dù `DEC-GEN-005` | Hãy coi tài khoản là dữ liệu cũ không hợp lệ cần được FE11 sửa chữa; tài khoản đa vai trò không nằm trong mô hình tác nhân FE07 được hỗ trợ. |
+| EC-FE07-019 | Việc gia hạn diễn ra theo múi giờ của máy chủ khác với `Asia/Ho_Chi_Minh` | Đưa ra quyết định đủ điều kiện và ngày đến hạn giống như mọi máy chủ khác bằng cách sử dụng công cụ trợ giúp ngày làm việc chung. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể có liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Stores member, librarian, and admin accounts. |
-| UserRoles | Checks actor permission. |
-| Users/UserRoles | Canonical FE02/FE11 account and role authorization; active `MEMBER` passes. |
-| Books | Provides book display information and the required `ACTIVE` parent status guard. |
-| BookCopies | Tracks physical copy status and location. |
-| BorrowRequests | Stores borrow request header and workflow status. |
-| BorrowDetails | Stores copy-level due date, return date, and borrow status. |
-| Fines | Read to block borrowing if unpaid fines are configured as blocking. |
-| Reservations | Read to enforce create/approval priority and renewal rules; update matching `NOTIFIED` holds to `FULFILLED` during approval. |
-| AuditLogs | Records important borrowing actions. |
+| Users | Lưu tài khoản Thành viên, Thủ thư và Quản trị viên. |
+| UserRoles | Kiểm tra quyền của tác nhân. |
+| Users/UserRoles | Nguồn tài khoản và quyền vai trò chuẩn của FE02/FE11; `MEMBER` đang hoạt động sẽ đạt điều kiện. |
+| Books | Cung cấp thông tin hiển thị sách và bảo vệ trạng thái sách gốc `ACTIVE` bắt buộc. |
+| BookCopies | Theo dõi trạng thái và vị trí bản sao vật lý. |
+| BorrowRequests | Lưu trữ tiêu đề yêu cầu mượn và trạng thái quy trình làm việc. |
+| BorrowDetails | Lưu trữ ngày đến hạn cấp bản sao, ngày trả lại và trạng thái mượn. |
+| Fines | Được đọc để chặn mượn khi tiền phạt chưa thanh toán được cấu hình là điều kiện chặn. |
+| Reservations | Được đọc để thực thi quy tắc ưu tiên và gia hạn khi tạo/phê duyệt; đặt chỗ `NOTIFIED` phù hợp được cập nhật nguyên tử thành `FULFILLED` khi phê duyệt. |
+| AuditLogs | Ghi lại các hoạt động vay mượn quan trọng. |
 
-### 10.2 Data Fields
+### 10.2 Trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Xác thực / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| requestId | integer | Yes for updates | Must exist in `BorrowRequests`. |
-| userId | integer | Yes | Must reference a member user. |
-| copyId | integer | Yes | Must reference `BookCopies`. |
-| requestDate | datetime | Yes | Defaults to current server time. |
-| createdBy | integer | Yes | Request creator; member-created requests use the authenticated member ID. |
-| approvedAt | datetime | Required on approval | Server timestamp in `Asia/Ho_Chi_Minh`; stored on `BorrowRequests`. |
-| approvedBy | integer | Required on approval | Authenticated Librarian/Admin who approved the request. |
-| borrowDate | date | Required when approved | Server business date in `Asia/Ho_Chi_Minh`; stored on each approved detail. |
-| dueDate | date | Required when approved | `borrowDate + 14 calendar days`. |
-| returnDate | date | Required for returned/lost/damaged | Defaults to current `Asia/Ho_Chi_Minh` business date; must be between `borrowDate` and current business date inclusive. |
-| renewalCount | integer | Yes for renewal support | Defaults to 0; maximum 1 per `BorrowDetail`; existing SQL supports this field. |
-| requestStatus | string | Yes | Values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Borrowing-history detail responses expose this owning-request state separately from persisted `detailStatus`. |
-| detailStatus | string | Yes | Persisted values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`. `OVERDUE` is derived when `status = BORROWED` and `dueDate < today`. |
-| copyStatus | string | Yes | Approved values: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`; FE07 uses only its owned transitions. |
-| actionReason | string | Required for rejection; optional otherwise | Rejection reason is trimmed 1..500 characters and stored in audit metadata; return/renew notes remain optional. |
-| activeBorrowedCount | integer | Derived | Count of the member's current `BorrowDetails.Status = BORROWED`, computed under the approval member lock. |
-| requestedDetailCount | integer | Derived | Number of unique details in the current create/approval action; `activeBorrowedCount + requestedDetailCount <= 5`. |
-| historyStatus | string | No | Query-only; one of `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, `OVERDUE`; `OVERDUE` is derived. |
-| fromDate | date | No | Query-only inclusive `YYYY-MM-DD` in `Asia/Ho_Chi_Minh`; must be <= `toDate` when both are supplied. |
-| toDate | date | No | Query-only inclusive `YYYY-MM-DD` in `Asia/Ho_Chi_Minh`; must be >= `fromDate` when both are supplied. |
-| page | integer | No | Query-only; defaults to 1 and must be at least 1. |
-| limit | integer | No | Query-only; defaults to 20 and must be from 1 through 100. |
+| requestId | số nguyên | Có để cập nhật | Phải tồn tại trong `BorrowRequests`. |
+| userId | số nguyên | Có | Phải tham khảo một người dùng thành viên. |
+| copyId | số nguyên | Có | Phải tham khảo `BookCopies`. |
+| requestDate | ngày giờ | Có | Mặc định theo thời gian máy chủ hiện tại. |
+| createdBy | số nguyên | Có | Yêu cầu người tạo; yêu cầu do thành viên tạo sử dụng ID thành viên được xác thực. |
+| approvedAt | ngày giờ | Bắt buộc phải phê duyệt | Dấu thời gian của máy chủ trong `Asia/Ho_Chi_Minh`; được lưu trữ trên `BorrowRequests`. |
+| approvedBy | số nguyên | Bắt buộc phải phê duyệt | Đã xác thực Librarian/Admin, người đã phê duyệt yêu cầu. |
+| borrowDate | ngày | Bắt buộc khi được phê duyệt | Ngày hoạt động của máy chủ ở `Asia/Ho_Chi_Minh`; được lưu trữ trên từng chi tiết được phê duyệt. |
+| dueDate | ngày | Bắt buộc khi được phê duyệt | `borrowDate + 14 calendar days`. |
+| returnDate | ngày | Cần thiết cho returned/lost/damaged | Mặc định là ngày kinh doanh `Asia/Ho_Chi_Minh` hiện tại; phải nằm trong khoảng từ `borrowDate` đến ngày làm việc hiện tại. |
+| renewalCount | số nguyên | Có để được hỗ trợ gia hạn | Mặc định là 0; tối đa 1 cho mỗi `BorrowDetail`; SQL hiện có hỗ trợ trường này. |
+| requestStatus | chuỗi | Có | Các giá trị: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`. Phản hồi chi tiết về lịch sử vay mượn hiển thị trạng thái yêu cầu sở hữu này tách biệt với `detailStatus` vẫn tồn tại. |
+| detailStatus | chuỗi | Có | Giá trị ổn định: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`. `OVERDUE` được suy ra khi `status = BORROWED` và `dueDate < today`. |
+| copyStatus | chuỗi | Có | Các giá trị được phê duyệt: `AVAILABLE`, `BORROWED`, `RESERVED`, `DAMAGED`, `LOST`, `INACTIVE`; FE07 chỉ sử dụng các chuyển tiếp thuộc sở hữu của nó. |
+| actionReason | chuỗi | Bắt buộc khi từ chối; trường hợp khác là tùy chọn | Lý do từ chối được cắt khoảng trắng, dài 1..500 ký tự và lưu trong siêu dữ liệu audit; ghi chú trả/gia hạn vẫn là tùy chọn. |
+| activeBorrowedCount | số nguyên | Dẫn xuất | Đếm `BorrowDetails.Status = BORROWED` hiện tại của Thành viên, được tính dưới khóa Thành viên khi phê duyệt. |
+| requestedDetailCount | số nguyên | Dẫn xuất | Số chi tiết duy nhất trong thao tác tạo/phê duyệt hiện tại; `activeBorrowedCount + requestedDetailCount <= 5`. |
+| historyStatus | chuỗi | Không | Chỉ truy vấn; một trong các `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`, `OVERDUE`; `OVERDUE` có nguồn gốc. |
+| fromDate | ngày | Không | `YYYY-MM-DD` chỉ bao gồm truy vấn trong `Asia/Ho_Chi_Minh`; phải <= `toDate` khi cả hai đều được cung cấp. |
+| toDate | ngày | Không | `YYYY-MM-DD` chỉ bao gồm truy vấn trong `Asia/Ho_Chi_Minh`; phải >= `fromDate` khi cả hai đều được cung cấp. |
+| page | số nguyên | Không | Chỉ dùng cho truy vấn; mặc định là 1 và phải ít nhất bằng 1. |
+| limit | số nguyên | Không | Chỉ dùng cho truy vấn; mặc định là 20 và phải từ 1 đến 100. |
 
-### 10.3 State Model & Transition Rules
+### 10.3 Mô hình trạng thái & Quy tắc chuyển đổi
 
-FE07 has two lifecycles that must be modeled separately but kept consistent: the request-level lifecycle (`BorrowRequests.Status`) and the copy-level lifecycle (`BorrowDetails.Status`). Persisted states use the values declared in Section 10.2. `OVERDUE` remains a derived reporting/filter result, not a persisted detail state.
+FE07 có hai vòng đời phải được mô hình hóa riêng nhưng nhất quán: vòng đời cấp yêu cầu (`BorrowRequests.Status`) và vòng đời cấp bản sao (`BorrowDetails.Status`). Trạng thái được lưu sử dụng các giá trị khai báo tại Mục 10.2. `OVERDUE` vẫn là kết quả báo cáo/bộ lọc dẫn xuất, không phải trạng thái chi tiết được lưu lâu dài.
 
-The two lifecycles are linked: a request aggregates one or more details, and the request reaches a terminal `COMPLETED` state only when every detail it owns has reached a terminal copy-level state (BR-FE07-020, FR-FE07-013).
+Hai vòng đời được liên kết với nhau: một yêu cầu tổng hợp một hoặc nhiều chi tiết và yêu cầu đó chỉ đạt đến trạng thái `COMPLETED` đầu cuối khi mọi chi tiết mà nó sở hữu đã đạt đến trạng thái cấp bản sao đầu cuối (BR-FE07-020, FR-FE07-013).
 
-#### (A) BorrowRequest Lifecycle (`BorrowRequests.Status`)
+#### (A) Vòng đời BorrowRequest (`BorrowRequests.Status`)
 
-State values: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`.
+Giá trị trạng thái: `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, `CANCELLED`.
 
-##### A.1 State Diagram
+##### A.1 Sơ đồ trạng thái
 
 ```mermaid
 stateDiagram-v2
@@ -438,59 +438,59 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
-##### A.2 State Descriptions
+##### A.2 Mô tả trạng thái
 
-| State | Description |
+| Trạng thái | Mô tả |
 | ----- | ----------- |
-| `PENDING` | Request created by the member; requested copies stored as `BorrowDetails.Status = REQUESTED`. Awaiting librarian/admin decision. |
-| `APPROVED` | Librarian/admin approved the request; each approved detail moved to `BORROWED`, due dates set, related copies set to `BORROWED`. Request is active until all details are returned/lost/damaged. |
-| `REJECTED` | Librarian/admin rejected the request; all copies stay available, no detail becomes `BORROWED`. Terminal. |
-| `COMPLETED` | Every detail of the request has reached a terminal copy-level state (`RETURNED`, `LOST`, or `DAMAGED`). Terminal. |
-| `CANCELLED` | Terminal enum value retained for future compatibility. It is outside the current endpoint/task scope because its actor, trigger, and payload rules are not approved. |
+| `PENDING` | Yêu cầu do Thành viên tạo; bản sao được yêu cầu được lưu dưới dạng `BorrowDetails.Status = REQUESTED`. Đang chờ quyết định của Thủ thư/Quản trị viên. |
+| `APPROVED` | Thủ thư/Quản trị viên đã phê duyệt yêu cầu; mỗi chi tiết được phê duyệt chuyển sang `BORROWED`, ngày đến hạn được đặt và bản sao liên quan chuyển thành `BORROWED`. Yêu cầu vẫn hoạt động đến khi mọi chi tiết đã trả/thất lạc/hư hỏng. |
+| `REJECTED` | Thủ thư/Quản trị viên từ chối yêu cầu; mọi bản sao vẫn có sẵn và không chi tiết nào chuyển thành `BORROWED`. Trạng thái cuối. |
+| `COMPLETED` | Mọi chi tiết của yêu cầu đã đạt trạng thái cấp bản sao cuối (`RETURNED`, `LOST` hoặc `DAMAGED`). Trạng thái cuối. |
+| `CANCELLED` | Giá trị enum cuối được giữ để tương thích trong tương lai. Trạng thái này nằm ngoài phạm vi endpoint/task hiện tại vì chưa phê duyệt quy tắc tác nhân, trình kích hoạt và payload. |
 
-##### A.3 Valid Transitions
+##### A.3 Chuyển tiếp hợp lệ
 
-| From | To | Trigger | Condition | FR/BR |
+| Từ | Đến | Kích hoạt | Tình trạng | FR/BR |
 | ---- | -- | ------- | --------- | ----- |
-| `[*]` | `PENDING` | Member submits a valid borrow request | Member eligible; every requested copy satisfies BR-FE07-023 | MF-FE07-001, FR-FE07-001, FR-FE07-002, BR-FE07-004, BR-FE07-005, BR-FE07-023 |
-| `PENDING` | `APPROVED` | Librarian/admin approves | Eligibility, member-scoped borrow limit, parent book, and reservation-aware borrowability revalidation pass | MF-FE07-002, FR-FE07-004, FR-FE07-005, BR-FE07-005, BR-FE07-008, BR-FE07-009, BR-FE07-023 |
-| `PENDING` | `REJECTED` | Librarian/admin rejects | Rejection reason provided; copies left unchanged | MF-FE07-003, FR-FE07-006, BR-FE07-001 |
-| `APPROVED` | `COMPLETED` | Return processing finishes | All owned details are `RETURNED`, `LOST`, or `DAMAGED` | MF-FE07-004, FR-FE07-013, BR-FE07-020 |
+| `[*]` | `PENDING` | Thành viên gửi yêu cầu vay hợp lệ | Thành viên đủ điều kiện; mọi bản sao được yêu cầu đều đáp ứng BR-FE07-023 | MF-FE07-001, FR-FE07-001, FR-FE07-002, BR-FE07-004, BR-FE07-005, BR-FE07-023 |
+| `PENDING` | `APPROVED` | Thủ thư/Quản trị viên phê duyệt | Xác nhận lại điều kiện, giới hạn mượn trong phạm vi Thành viên, sách gốc và khả năng mượn có xét đặt chỗ | MF-FE07-002, FR-FE07-004, FR-FE07-005, BR-FE07-005, BR-FE07-008, BR-FE07-009, BR-FE07-023 |
+| `PENDING` | `REJECTED` | Thủ thư/Quản trị viên từ chối | Có lý do từ chối; bản sao không thay đổi | MF-FE07-003, FR-FE07-006, BR-FE07-001 |
+| `APPROVED` | `COMPLETED` | Trả lại kết thúc xử lý | Tất cả các chi tiết được sở hữu là `RETURNED`, `LOST` hoặc `DAMAGED` | MF-FE07-004, FR-FE07-013, BR-FE07-020 |
 
-##### A.4 Invalid Transitions (Explicitly Forbidden)
+##### A.4 Chuyển đổi không hợp lệ (Bị cấm rõ ràng)
 
-| Forbidden | Reason |
+| Bị cấm | Lý do |
 | --------- | ------ |
-| `REJECTED` → `APPROVED` | A rejected request is terminal; it cannot be approved without a new request. |
-| `REJECTED` → any state | `REJECTED` is terminal. |
-| `CANCELLED` → any state | `CANCELLED` is terminal. |
-| `COMPLETED` → `APPROVED` / `PENDING` | A completed request cannot reopen; a returned loan does not re-borrow. |
-| `PENDING` → `COMPLETED` | A request cannot complete without being approved first (no detail can be terminal before `BORROWED`). |
-| `APPROVED` → `PENDING` / `REJECTED` | Once approved (copies set to `BORROWED`), the request cannot revert to pending or be rejected. |
+| `REJECTED` → `APPROVED` | Yêu cầu bị từ chối là trạng thái cuối; không thể phê duyệt nếu không tạo yêu cầu mới. |
+| `REJECTED` → bất kỳ trạng thái nào | `REJECTED` là trạng thái cuối. |
+| `CANCELLED` → bất kỳ trạng thái nào | `CANCELLED` là trạng thái cuối. |
+| `COMPLETED` → `APPROVED` / `PENDING` | Yêu cầu đã hoàn thành không thể mở lại; khoản vay được trả lại không được vay lại. |
+| `PENDING` → `COMPLETED` | Một yêu cầu không thể hoàn thành nếu không được phê duyệt trước (không có chi tiết nào có thể kết thúc trước `BORROWED`). |
+| `APPROVED` → `PENDING` / `REJECTED` | Sau khi được phê duyệt (bản sao được đặt thành `BORROWED`), yêu cầu không thể trở lại trạng thái chờ xử lý hoặc bị từ chối. |
 
-##### A.5 Invariants
+##### A.5 Bất biến
 
-| ID | Invariant |
+| ID | Bất biến |
 | -- | --------- |
-| INV-FE07-A1 | A `BorrowRequests` record always holds exactly one `Status` value from the declared enum. |
-| INV-FE07-A2 | A request may move to `APPROVED` only after eligibility and reservation-aware borrowability are revalidated (BR-FE07-008, BR-FE07-023). |
-| INV-FE07-A3 | Only an `APPROVED` request can own `BORROWED` details; `PENDING`/`REJECTED`/`CANCELLED` requests never own a `BORROWED` detail. |
-| INV-FE07-A4 | A request becomes `COMPLETED` if and only if all of its details are in a terminal copy-level state (`RETURNED`/`LOST`/`DAMAGED`) (BR-FE07-020, FR-FE07-013). |
-| INV-FE07-A5 | Every request-level transition writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
-| INV-FE07-A6 | `REJECTED`, `CANCELLED`, and `COMPLETED` are terminal and cannot transition further. |
-| INV-FE07-A7 | Approval cannot commit if the member's locked active borrowed count plus this request's detail count exceeds 5 (BR-FE07-005, FR-FE07-014, FR-FE07-019). |
+| INV-FE07-A1 | Một bản ghi `BorrowRequests` luôn giữ chính xác một giá trị `Status` từ enum được khai báo. |
+| INV-FE07-A2 | Yêu cầu chỉ có thể chuyển đến `APPROVED` sau khi tính đủ điều kiện và khả năng mượn theo yêu cầu đặt trước được xác nhận lại (BR-FE07-008, BR-FE07-023). |
+| INV-FE07-A3 | Chỉ yêu cầu `APPROVED` mới có thể sở hữu thông tin chi tiết về `BORROWED`; Các yêu cầu `PENDING`/`REJECTED`/`CANCELLED` không bao giờ sở hữu chi tiết `BORROWED`. |
+| INV-FE07-A4 | Một yêu cầu trở thành `COMPLETED` khi và chỉ khi mọi chi tiết ở trạng thái cấp bản sao cuối (`RETURNED`/`LOST`/`DAMAGED`) (BR-FE07-020, FR-FE07-013). |
+| INV-FE07-A5 | Mỗi chuyển đổi cấp yêu cầu đều ghi một mục log audit (BR-FE07-016, NFR-FE07-LOG-001). |
+| INV-FE07-A6 | `REJECTED`, `CANCELLED` và `COMPLETED` là trạng thái cuối, không thể chuyển đổi thêm. |
+| INV-FE07-A7 | Phê duyệt không thể cam kết nếu số lượng khoản vay đang hoạt động bị khóa của thành viên cộng với số lượng chi tiết của yêu cầu này vượt quá 5 (BR-FE07-005, FR-FE07-014, FR-FE07-019). |
 
-#### (B) BorrowDetail Lifecycle (`BorrowDetails.Status`)
+#### (B) Vòng đời BorrowDetail (`BorrowDetails.Status`)
 
-Persisted state values: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`.
+Các giá trị trạng thái được lưu: `REQUESTED`, `BORROWED`, `RETURNED`, `LOST`, `DAMAGED`.
 
-> **Phase 1 implementation note (OVERDUE is derived):** In Phase 1 the system does **not** persist
-> `BorrowDetails.Status = 'OVERDUE'`. "Overdue" is computed at query time as a `BORROWED` detail whose
-> `dueDate` is earlier than the current `Asia/Ho_Chi_Minh` business date, and this derived value is what FE09 consumes (BR-FE07-014).
-> Returns and renewal validation are processed from `BORROWED` regardless of whether the item is past
-> due. A persisted `OVERDUE` status plus a scheduled job to set it is deferred to a later phase.
+> Ghi chú triển khai **Giai đoạn 1 (OVERDUE dẫn xuất):** Trong Giai đoạn 1, hệ thống **không** lưu
+> `BorrowDetails.Status = 'OVERDUE'`. “Quá hạn” được tính tại thời điểm truy vấn cho chi tiết `BORROWED` có
+> `dueDate` trước ngày làm việc `Asia/Ho_Chi_Minh` hiện tại; FE09 sử dụng giá trị dẫn xuất này (BR-FE07-014).
+> Việc xác thực trả và gia hạn bắt đầu từ `BORROWED` bất kể mục đó đã quá hạn hay chưa.
+> Việc lưu trạng thái `OVERDUE` cùng công việc định kỳ để đặt trạng thái này được hoãn sang giai đoạn sau.
 
-##### B.1 State Diagram
+##### B.1 Sơ đồ trạng thái
 
 ```mermaid
 stateDiagram-v2
@@ -506,309 +506,309 @@ stateDiagram-v2
     LOST --> [*]
 ```
 
-##### B.2 State Descriptions
+##### B.2 Mô tả trạng thái
 
-| State | Description |
+| Trạng thái | Mô tả |
 | ----- | ----------- |
-| `REQUESTED` | Copy requested inside a `PENDING` request; copy not yet handed over, no due date. |
-| `BORROWED` | Copy approved and handed over; has persisted `BorrowDate` and due date (`BorrowDate + 14 calendar days`). May be renewed once. Related `BookCopies.Status = BORROWED`. |
-| `OVERDUE` | Copy still held past its due date and not yet returned. **Derived in Phase 1 (not persisted)** — computed from a `BORROWED` detail with `dueDate < today`; must be detectable/traceable for FE09 (BR-FE07-014). Not a terminal state — a return still follows. |
-| `RETURNED` | Copy returned in normal condition; related `BookCopies.Status = AVAILABLE`. Terminal. |
-| `DAMAGED` | Copy returned damaged; related `BookCopies.Status = DAMAGED`; not auto-available. Terminal. |
-| `LOST` | Copy reported lost; related `BookCopies.Status = LOST`; not auto-available. Terminal. |
+| `REQUESTED` | Bản sao được yêu cầu bên trong yêu cầu `PENDING`; bản sao chưa bàn giao, chưa có thời hạn nộp. |
+| `BORROWED` | Bản sao được phê duyệt và bàn giao; vẫn tồn tại `BorrowDate` và ngày đáo hạn (`BorrowDate + 14 calendar days`). Có thể gia hạn một lần. `BookCopies.Status = BORROWED` liên quan. |
+| `OVERDUE` | Bản sao vẫn bị giữ sau ngày đến hạn và chưa được trả. **Dẫn xuất trong Giai đoạn 1 (không được lưu)** — được tính từ chi tiết `BORROWED` có `dueDate < today`; phải có thể phát hiện/truy vết cho FE09 (BR-FE07-014). Đây không phải trạng thái cuối; vẫn có thể trả sách. |
+| `RETURNED` | Bản sao được trả trong tình trạng bình thường; `BookCopies.Status = AVAILABLE` tương ứng. Trạng thái cuối. |
+| `DAMAGED` | Bản sao trả lại bị hư hỏng; `BookCopies.Status = DAMAGED` tương ứng; không tự động có sẵn. Trạng thái cuối. |
+| `LOST` | Bản sao được báo thất lạc; `BookCopies.Status = LOST` tương ứng; không tự động có sẵn. Trạng thái cuối. |
 
-##### B.3 Valid Transitions
+##### B.3 Chuyển tiếp hợp lệ
 
-| From | To | Trigger | Condition | FR/BR |
+| Từ | Đến | Kích hoạt | Tình trạng | FR/BR |
 | ---- | -- | ------- | --------- | ----- |
-| `[*]` | `REQUESTED` | Borrow request created | Owning request is `PENDING` | MF-FE07-001, FR-FE07-002, BR-FE07-019 |
-| `REQUESTED` | `BORROWED` | Request approved | Locked member limit passes; copy satisfies BR-FE07-023; borrow/due dates and approver metadata stored; matching notified hold fulfilled | MF-FE07-002, FR-FE07-005, FR-FE07-025, BR-FE07-005, BR-FE07-007, BR-FE07-009, BR-FE07-010, BR-FE07-025, BR-FE07-026 |
-| `REQUESTED` | `[*]` | Owning request rejected | Copy stays available, never handed over | MF-FE07-003, BR-FE07-019 |
-| `BORROWED` | `BORROWED` | Renewal | Not overdue, no unpaid fine, renewalCount = 0, no reservation conflict; due date +14 days, renewalCount → 1 | MF-FE07-005, FR-FE07-009, BR-FE07-015, BR-FE07-018 |
-| `BORROWED` | `RETURNED` | Normal return | Return date stored; copy → `AVAILABLE`; any `ACTIVE` FE08 queue claim remains enforced | MF-FE07-004, FR-FE07-007, BR-FE07-011, BR-FE07-012 |
-| `BORROWED` | `DAMAGED` | Return reported damaged | Return date stored; copy → `DAMAGED`; not auto-available | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
-| `BORROWED` | `LOST` | Return/report lost | Return date stored; copy → `LOST`; not auto-available | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+| `[*]` | `REQUESTED` | Đã tạo yêu cầu vay | Yêu cầu sở hữu là `PENDING` | MF-FE07-001, FR-FE07-002, BR-FE07-019 |
+| `REQUESTED` | `BORROWED` | Yêu cầu được phê duyệt | Giới hạn Thành viên được khóa; bản sao đáp ứng BR-FE07-023; lưu ngày mượn/đến hạn và siêu dữ liệu người phê duyệt; hoàn tất lượt giữ NOTIFIED phù hợp | MF-FE07-002, FR-FE07-005, FR-FE07-025, BR-FE07-005, BR-FE07-007, BR-FE07-009, BR-FE07-010, BR-FE07-025, BR-FE07-026 |
+| `REQUESTED` | `[*]` | Yêu cầu sở hữu bị từ chối | Bản sao có sẵn, chưa bàn giao | MF-FE07-003, BR-FE07-019 |
+| `BORROWED` | `BORROWED` | Gia hạn | Không quá hạn, không nộp phạt chưa nộp, renewalCount = 0, không xung đột bảo lưu; ngày đến hạn +14 ngày, renewalCount → 1 | MF-FE07-005, FR-FE07-009, BR-FE07-015, BR-FE07-018 |
+| `BORROWED` | `RETURNED` | Trả bình thường | Lưu ngày trả; bản sao → `AVAILABLE`; mọi quyền sở hữu hàng đợi FE08 `ACTIVE` vẫn được thực thi | MF-FE07-004, FR-FE07-007, BR-FE07-011, BR-FE07-012 |
+| `BORROWED` | `DAMAGED` | Trả và báo hư hỏng | Lưu ngày trả; bản sao → `DAMAGED`; không tự động có sẵn | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
+| `BORROWED` | `LOST` | Trả/báo thất lạc | Lưu ngày trả; bản sao → `LOST`; không tự động có sẵn | MF-FE07-004, FR-FE07-007, BR-FE07-013 |
 
-##### B.4 Invalid Transitions (Explicitly Forbidden)
+##### B.4 Chuyển tiếp không hợp lệ (Bị cấm rõ ràng)
 
-| Forbidden | Reason |
+| Bị cấm | Lý do |
 | --------- | ------ |
-| `RETURNED` / `DAMAGED` / `LOST` → `BORROWED` | Terminal copy-level states cannot reopen; a returned copy cannot become borrowed again on the same detail (FR-FE07-021, EC-FE07-008, EC-FE07-010). |
-| `RETURNED` / `DAMAGED` / `LOST` → any state | Terminal states cannot transition further. |
-| Past-due `BORROWED` → renewal | Renewal is not allowed when `dueDate < today` (BR-FE07-018, FR-FE07-020, AF-FE07-004). |
-| `REQUESTED` → `RETURNED` / `LOST` / `DAMAGED` | A copy that was never handed over (`BORROWED`) cannot be returned, lost, or damaged. |
-| `BORROWED` → `BORROWED` second renewal | At most 1 renewal per detail; second renewal forbidden (BR-FE07-015, FR-FE07-009, FR-FE07-020). |
-| Any return with date before `BorrowDate` or after current `Asia/Ho_Chi_Minh` business date | Invalid date transition (BR-FE07-011, FR-FE07-021, EC-FE07-009, EC-FE07-014). |
+| `RETURNED` / `DAMAGED` / `LOST` → `BORROWED` | Trạng thái cấp bản sao cuối không thể mở lại; bản sao đã trả không thể được mượn lại trên cùng một chi tiết (FR-FE07-021, EC-FE07-008, EC-FE07-010). |
+| `RETURNED` / `DAMAGED` / `LOST` → bất kỳ trạng thái nào | Trạng thái cuối không thể chuyển đổi thêm. |
+| Quá hạn `BORROWED` → đổi mới | Không được phép gia hạn khi `dueDate < today` (BR-FE07-018, FR-FE07-020, AF-FE07-004). |
+| `REQUESTED` → `RETURNED` / `LOST` / `DAMAGED` | Một bản sao chưa bao giờ được bàn giao (`BORROWED`) không thể được trả lại, bị mất hoặc bị hư hỏng. |
+| `BORROWED` → `BORROWED` gia hạn lần thứ hai | Tối đa 1 lần gia hạn cho mỗi chi tiết; cấm gia hạn lần thứ hai (BR-FE07-015, FR-FE07-009, FR-FE07-020). |
+| Bất kỳ khoản hoàn trả nào có ngày trước `BorrowDate` hoặc sau ngày kinh doanh `Asia/Ho_Chi_Minh` hiện tại | Chuyển đổi ngày không hợp lệ (BR-FE07-011, FR-FE07-021, EC-FE07-009, EC-FE07-014). |
 
-##### B.5 Invariants
+##### B.5 Bất biến
 
-| ID | Invariant |
+| ID | Bất biến |
 | -- | --------- |
-| INV-FE07-B1 | A `BorrowDetails` record always holds exactly one `Status` value from the declared enum. |
-| INV-FE07-B2 | A detail can be `BORROWED` only if its owning request is `APPROVED` (mirrors INV-FE07-A3). |
-| INV-FE07-B3 | Every `BORROWED` detail has non-null `BorrowDate` and due date = `BorrowDate + 14 calendar days` (BR-FE07-010, BR-FE07-026). |
-| INV-FE07-B4 | `renewalCount` is in {0, 1}; a renewal is allowed only from `BORROWED` with `renewalCount = 0` and no blocking condition (BR-FE07-015, BR-FE07-018). |
-| INV-FE07-B5 | Reaching `RETURNED`, `LOST`, or `DAMAGED` requires a stored return date between `BorrowDate` and the current `Asia/Ho_Chi_Minh` business date inclusive (BR-FE07-011, FR-FE07-021). |
-| INV-FE07-B6 | The related `BookCopies.Status` is kept consistent with the detail status: `BORROWED` -> `BORROWED`, `RETURNED` -> `AVAILABLE`, `DAMAGED` -> `DAMAGED`, `LOST` -> `LOST`; an `ACTIVE` FE08 queue claim can remain over an `AVAILABLE` copy and still blocks ordinary borrowing; requester-owned notified holds become `FULFILLED` with approval (BR-FE07-007, BR-FE07-012, BR-FE07-013, BR-FE07-025, FR-FE07-012). |
-| INV-FE07-B7 | Every detail-level transition (approve/return/renew/lost/damaged) writes an audit log entry (BR-FE07-016, NFR-FE07-LOG-001). |
-| INV-FE07-B8 | Approve and return transitions are atomic with their related updates; approval includes matching reservation fulfillment and all related audits, and partial failure rolls back the whole transaction (FR-FE07-022, FR-FE07-025, NFR-FE07-TXN-001, NFR-FE07-TXN-002). |
+| INV-FE07-B1 | Một bản ghi `BorrowDetails` luôn giữ chính xác một giá trị `Status` từ enum được khai báo. |
+| INV-FE07-B2 | Một chi tiết chỉ có thể là `BORROWED` nếu yêu cầu sở hữu của nó là `APPROVED` (mirror INV-FE07-A3). |
+| INV-FE07-B3 | Mọi chi tiết `BORROWED` đều có `BorrowDate` khác null và ngày đến hạn = `BorrowDate + 14 calendar days` (BR-FE07-010, BR-FE07-026). |
+| INV-FE07-B4 | `renewalCount` nằm trong {0, 1}; chỉ được phép gia hạn từ `BORROWED` với `renewalCount = 0` và không có điều kiện chặn (BR-FE07-015, BR-FE07-018). |
+| INV-FE07-B5 | Chuyển đến `RETURNED`, `LOST` hoặc `DAMAGED` yêu cầu ngày trả được lưu trong khoảng bao gồm từ `BorrowDate` đến ngày làm việc `Asia/Ho_Chi_Minh` hiện tại (BR-FE07-011, FR-FE07-021). |
+| INV-FE07-B6 | `BookCopies.Status` liên quan được giữ nhất quán với trạng thái chi tiết: `BORROWED` -> `BORROWED`, `RETURNED` -> `AVAILABLE`, `DAMAGED` -> `DAMAGED`, `LOST` -> `LOST`; yêu cầu xếp hàng `ACTIVE` FE08 có thể vẫn tồn tại trên bản sao `AVAILABLE` và vẫn chặn việc vay mượn thông thường; khoản lưu giữ được thông báo thuộc sở hữu của người yêu cầu trở thành `FULFILLED` với sự chấp thuận (BR-FE07-007, BR-FE07-012, BR-FE07-013, BR-FE07-025, FR-FE07-012). |
+| INV-FE07-B7 | Mọi chuyển đổi cấp chi tiết (phê duyệt/trả/gia hạn/thất lạc/hư hỏng) đều ghi một mục log audit (BR-FE07-016, NFR-FE07-LOG-001). |
+| INV-FE07-B8 | Phê duyệt và trả lại các quá trình chuyển đổi là nguyên tử với các bản cập nhật liên quan của chúng; phê duyệt bao gồm việc thực hiện đặt chỗ phù hợp và tất cả các hoạt động kiểm tra liên quan, đồng thời việc thất bại một phần sẽ hủy bỏ toàn bộ giao dịch (FR-FE07-022, FR-FE07-025, NFR-FE07-TXN-001, NFR-FE07-TXN-002). |
 
 ---
 
-## 11. API / Interface Contract
+## 11. API / Hợp đồng giao diện
 
-> API contract approved for FE07 Phase 1. Final contract stays in this SPEC.md unless the team reintroduces a dedicated shared API contract document.
+> Hợp đồng API đã được phê duyệt cho FE07 Giai đoạn 1. Hợp đồng cuối cùng vẫn có trong SPEC.md này trừ khi nhóm giới thiệu lại tài liệu hợp đồng API được chia sẻ chuyên dụng.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Endpoint | Tác nhân | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| POST | `/api/borrow-requests` | Member | `{ copyIds: number[] }` | Created borrow request | Creates pending request. |
-| GET | `/api/borrow-requests/me` | Member | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated own borrowing history | `status` is a detail status including derived `OVERDUE`; date filters are inclusive and use BorrowDate, or RequestDate for still-requested rows; stable order is BorrowDate DESC nulls last, BorrowDetailId DESC. Each returned detail includes `requestStatus` from its owning request; `status` remains the detail status used by filters. |
-| GET | `/api/borrow-requests` | Librarian/Admin | Query: status, memberId | Borrow request list | Protected endpoint. |
-| GET | `/api/members/{memberId}/borrowings` | Librarian/Admin | Query: `status?, fromDate?, toDate?, page=1, limit=20` | Paginated selected-member borrowing history | Same validation, date semantics, member scope, bounds, and stable ordering as the member endpoint. Each returned detail includes `requestStatus` from its owning request; `status` remains the detail status used by filters. |
-| PATCH | `/api/borrow-requests/{requestId}/approve` | Librarian/Admin | Optional notes | Approved request | Transactional update. |
-| PATCH | `/api/borrow-requests/{requestId}/reject` | Librarian/Admin | `{ reason: string }` | Rejected request | Reason required, trimmed, max 500; stored in audit metadata. |
-| PATCH | `/api/borrow-details/{borrowDetailId}/return` | Librarian/Admin | `{ condition: "NORMAL"|"DAMAGED"|"LOST", returnDate?: date, notes?: string }` | Updated borrow detail plus `fineCandidate` | Defaults to current `Asia/Ho_Chi_Minh` business date; future/pre-borrow dates are rejected; a normal return preserves any `ACTIVE` FE08 queue claim and its borrowing priority. Response and audit derive from transaction-locked due/return values. |
-| PATCH | `/api/borrow-details/{borrowDetailId}/renew` | Member/Librarian/Admin | Optional notes | Updated due date | Every account has one role. Librarian/Admin permit cross-member renewal; Member requires ownership. All loan-owner eligibility and business-date rules still apply. |
+| POST | `/api/borrow-requests` | Thành viên | `{ copyIds: number[] }` | Đã tạo yêu cầu vay | Tạo yêu cầu đang chờ xử lý. |
+| GET | `/api/borrow-requests/me` | Thành viên | Truy vấn: `status?, fromDate?, toDate?, page=1, limit=20` | Lịch sử vay mượn của chính mình được phân trang | `status` là trạng thái chi tiết bao gồm `OVERDUE` dẫn xuất; bộ lọc ngày được bao gồm và sử dụng BorrowDate hoặc RequestDate cho các hàng vẫn được yêu cầu; thứ tự ổn định là BorrowDate DESC null cuối cùng, BorrowDetailId DESC. Mỗi chi tiết được trả về bao gồm `requestStatus` từ yêu cầu sở hữu của nó; `status` vẫn giữ nguyên trạng thái chi tiết được các bộ lọc sử dụng. |
+| GET | `/api/borrow-requests` | Librarian/Admin | Truy vấn: trạng thái, memberId | Danh sách yêu cầu mượn | Endpoint được bảo vệ. |
+| GET | `/api/members/{memberId}/borrowings` | Librarian/Admin | Truy vấn: `status?, fromDate?, toDate?, page=1, limit=20` | Lịch sử mượn của Thành viên được chọn, có phân trang | Dùng cùng xác thực, ngữ nghĩa ngày, phạm vi Thành viên, giới hạn và thứ tự ổn định như endpoint Thành viên. Mỗi chi tiết trả về bao gồm `requestStatus` từ yêu cầu sở hữu; `status` vẫn là trạng thái chi tiết được bộ lọc sử dụng. |
+| PATCH | `/api/borrow-requests/{requestId}/approve` | Librarian/Admin | Ghi chú tùy chọn | Yêu cầu được phê duyệt | Cập nhật giao dịch. |
+| PATCH | `/api/borrow-requests/{requestId}/reject` | Librarian/Admin | `{ reason: string }` | Yêu cầu bị từ chối | Bắt buộc có lý do đã cắt khoảng trắng, tối đa 500 ký tự; lưu trong siêu dữ liệu audit. |
+| PATCH | `/api/borrow-details/{borrowDetailId}/return` | Librarian/Admin | `{ condition: "NORMAL"|"DAMAGED"|"LOST", returnDate?: date, notes?: string }` | Chi tiết mượn đã cập nhật cùng `fineCandidate` | Mặc định là ngày làm việc `Asia/Ho_Chi_Minh` hiện tại; từ chối ngày tương lai/trước ngày mượn; lượt trả bình thường giữ mọi quyền sở hữu hàng đợi FE08 `ACTIVE` và ưu tiên mượn tương ứng. Phản hồi và audit lấy từ các giá trị ngày đến hạn/trả đã khóa trong giao dịch. |
+| PATCH | `/api/borrow-details/{borrowDetailId}/renew` | Member/Librarian/Admin | Ghi chú tùy chọn | Ngày đến hạn đã cập nhật | Mỗi tài khoản có một vai trò. Thủ thư/Quản trị viên được gia hạn cho nhiều Thành viên; Thành viên phải sở hữu chi tiết. Mọi quy tắc về điều kiện của chủ sở hữu khoản mượn và ngày làm việc vẫn áp dụng. |
 
 ---
 
-## 12. Non-functional Requirements
+## 12. Yêu cầu phi chức năng
 
-### 12.1 Security
+### 12.1 Bảo mật
 
-- NFR-FE07-SEC-001: All protected endpoints must require authentication.
-- NFR-FE07-SEC-002: Role-based access must be enforced on the server.
-- NFR-FE07-SEC-003: A member must not access another member's borrowing history.
-- NFR-FE07-SEC-004: All request IDs, copy IDs, status values, and dates must be validated on the server.
+- NFR-FE07-SEC-001: Mọi endpoint được bảo vệ phải yêu cầu xác thực.
+- NFR-FE07-SEC-002: Quyền truy cập dựa trên vai trò phải được thực thi trên máy chủ.
+- NFR-FE07-SEC-003: Thành viên không được truy cập vào lịch sử vay mượn của thành viên khác.
+- NFR-FE07-SEC-004: Tất cả ID yêu cầu, ID bản sao, giá trị trạng thái và ngày phải được xác thực trên máy chủ.
 
-### 12.2 Transaction Integrity
+### 12.2 Tính toàn vẹn giao dịch
 
-- NFR-FE07-TXN-001: Approving a borrow request must be atomic: member-scoped limit check, approver metadata, borrow/due dates, request/detail/copy status, matching reservation fulfillment, and audit logs must succeed together or roll back together.
-- NFR-FE07-TXN-002: Returning a copy must be atomic: detail status, return date, copy status, FE08 reservation-claim revalidation, and audit log must succeed together or roll back together. The return path locks `BookCopies -> BorrowDetails -> Reservations` before committing the normal-return state, and its result is the only authoritative source for response/audit due date, return date, condition, and overdue days.
-- NFR-FE07-TXN-003: Approval lock order is `member-scoped borrow-limit lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`. The active borrowed count and copy/reservation revalidation occur only after the relevant rows are locked, and all approval writes remain in the same transaction. The shared copy-related suffix stays consistent with FE06: `BookCopies -> BorrowDetails -> Reservations`.
+- NFR-FE07-TXN-001: Phê duyệt yêu cầu mượn phải nguyên tử: kiểm tra giới hạn trong phạm vi Thành viên, siêu dữ liệu người phê duyệt, ngày mượn/đến hạn, trạng thái yêu cầu/chi tiết/bản sao, thao tác hoàn tất đặt chỗ phù hợp và log audit phải cùng thành công hoặc cùng rollback.
+- NFR-FE07-TXN-002: Trả bản sao phải nguyên tử: trạng thái chi tiết, ngày trả, trạng thái bản sao, xác nhận lại quyền sở hữu đặt chỗ FE08 và log audit phải cùng thành công hoặc cùng rollback. Luồng trả khóa `BookCopies -> BorrowDetails -> Reservations` trước khi chuyển trạng thái trả bình thường; kết quả giao dịch là nguồn có thẩm quyền duy nhất cho ngày đến hạn, ngày trả, tình trạng và số ngày quá hạn trong phản hồi/audit.
+- NFR-FE07-TXN-003: Thứ tự khóa phê duyệt là `member-scoped borrow-limit lock -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`. Việc đếm khoản mượn đang hoạt động và xác nhận lại bản sao/đặt chỗ chỉ diễn ra sau khi khóa các hàng liên quan; mọi lần ghi phê duyệt vẫn thuộc cùng giao dịch. Hậu tố liên quan đến bản sao dùng chung vẫn nhất quán với FE06: `BookCopies -> BorrowDetails -> Reservations`.
 
-### 12.3 Performance
+### 12.3 Hiệu năng
 
-- NFR-FE07-PERF-001: Borrowing history must support the canonical `page`/`limit` pagination contract.
-- NFR-FE07-PERF-002: Borrowing-history queries must apply member, status, date, and pagination filters in the database before materializing rows; full-table application scans are not permitted.
-- NFR-FE07-PERF-003: History endpoints must apply pagination and stable ordering before returning rows; default `limit=20` and maximum `limit=100` are fixed contract values.
+- NFR-FE07-PERF-001: Lịch sử mượn phải hỗ trợ hợp đồng phân trang `page`/`limit` chuẩn.
+- NFR-FE07-PERF-002: Truy vấn lịch sử vay mượn phải áp dụng các bộ lọc thành viên, trạng thái, ngày tháng và phân trang trong cơ sở dữ liệu trước khi cụ thể hóa các hàng; không được phép quét ứng dụng toàn bảng.
+- NFR-FE07-PERF-003: Điểm cuối lịch sử phải áp dụng phân trang và thứ tự ổn định trước khi trả về hàng; `limit=20` mặc định và `limit=100` tối đa là các giá trị hợp đồng cố định.
 
-### 12.4 Logging and Audit
+### 12.4 Ghi log và audit
 
-- NFR-FE07-LOG-001: Create, approve, reservation fulfillment, reject, return, damaged, lost, and renewal actions must write audit log entries.
+- NFR-FE07-LOG-001: Các thao tác tạo, phê duyệt, hoàn tất đặt chỗ, từ chối, trả, hư hỏng, thất lạc và gia hạn phải ghi các mục log audit.
 
-### 12.5 Usability
+### 12.5 Khả năng sử dụng
 
-- NFR-FE07-UX-001: Validation errors must explain the reason: inactive member, borrow limit, unavailable copy, reservation queue priority, reservation state conflict, unpaid fine, overdue loan, or invalid state.
-- NFR-FE07-UX-002: The member borrow-request confirmation shall show only circulation-relevant book information and shall not display ratings.
-- NFR-FE07-UX-003: The member borrowing-history toolbar, table, and pagination shall remain visually separated without overlapping or breaking the card layout.
-- NFR-FE07-UX-004: FE07 decision dialogs shall preserve keyboard focus during controlled-input rerenders, provide an accessible label/help relationship for the rejection reason, and remain usable at desktop and narrow widths.
-- NFR-FE07-UX-005: The staff return workspace shall show fine-review warnings only for exceptional overdue, damaged, or lost outcomes; it shall not show a redundant affirmative banner when the selected return is on time and `NORMAL`.
-- NFR-FE07-TIME-001: Borrow, due, return, renewal, and overdue business dates use the shared `Asia/Ho_Chi_Minh` date helpers, including renewal eligibility comparison and `dueDate + 14 calendar days`; host-local `Date.setDate()`, host timezone, and UTC-midnight conversion must not alter calendar-day outcomes. Persisted timestamps may use UTC internally only if API/business-date conversion remains deterministic.
-
----
-
-## 13. Out of Scope
-
-This feature does not include:
-
-- FE08 queue selection, hold expiration, or cancellation ownership; FE07 only reads reservation claims and fulfills a matching requester-owned `NOTIFIED` hold during approval.
-- FE09 Fine calculation implementation, although this feature exposes overdue/return data for FE09.
-- FE10 Notification delivery implementation.
-- Real online payment gateway.
-- RFID/QR hardware integration.
-- Study seat reservation.
+- NFR-FE07-UX-001: Lỗi xác thực phải giải thích lý do: thành viên không hoạt động, giới hạn mượn, bản sao không có sẵn, ưu tiên hàng đợi đặt trước, xung đột trạng thái đặt trước, tiền phạt chưa thanh toán, khoản vay quá hạn hoặc trạng thái không hợp lệ.
+- NFR-FE07-UX-002: Xác nhận yêu cầu mượn của thành viên sẽ chỉ hiển thị thông tin sách liên quan đến lưu hành và không hiển thị xếp hạng.
+- NFR-FE07-UX-003: Thanh công cụ, bảng và phân trang lịch sử mượn của thành viên sẽ vẫn được tách biệt về mặt trực quan mà không chồng chéo hoặc phá vỡ bố cục thẻ.
+- NFR-FE07-UX-004: Hộp thoại quyết định FE07 phải duy trì tiêu điểm bàn phím khi render trường nhập được kiểm soát, cung cấp quan hệ nhãn/trợ giúp có thể truy cập cho lý do từ chối và vẫn sử dụng được trên desktop lẫn màn hình hẹp.
+- NFR-FE07-UX-005: Không gian làm việc trả sách của nhân viên chỉ hiển thị cảnh báo xem xét tiền phạt cho kết quả đặc biệt là quá hạn, hư hỏng hoặc thất lạc; không hiển thị biểu ngữ xác nhận dư thừa khi lượt trả đúng hạn và chọn `NORMAL`.
+- NFR-FE07-TIME-001: Ngày vay, đến hạn, trả lại, gia hạn và quá hạn sử dụng công cụ trợ giúp ngày `Asia/Ho_Chi_Minh` được chia sẻ, bao gồm so sánh khả năng đủ điều kiện gia hạn và `dueDate + 14 calendar days`; `Date.setDate()` của máy chủ cục bộ, múi giờ của máy chủ và chuyển đổi UTC-nửa đêm không được làm thay đổi kết quả theo ngày theo lịch. Dấu thời gian liên tục chỉ có thể sử dụng UTC nội bộ nếu chuyển đổi API/business-date vẫn mang tính quyết định.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Lựa chọn hàng đợi FE08, hết hạn lượt giữ hoặc hủy quyền sở hữu; FE07 chỉ đọc quyền sở hữu đặt chỗ và hoàn tất lượt giữ `NOTIFIED` phù hợp thuộc người yêu cầu trong quá trình phê duyệt.
+- Triển khai tính tiền phạt FE09, dù tính năng này cung cấp dữ liệu quá hạn/trả sách cho FE09.
+- Triển khai gửi thông báo FE10.
+- Cổng thanh toán trực tuyến thực sự.
+- Tích hợp phần cứng RFID/QR.
+- Đặt chỗ ngồi học.
+
+---
+
+## 14. Sự phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE02 Authentication | Internal | Required for actor identity. |
-| FE04 Membership Management | Independent | Tracks optional membership applications; does not gate FE07. |
-| FE06 Inventory / Book Copy Management | Internal | Provides copy availability and status updates. |
-| FE08 Reservation Management | Internal | FE08 owns queue order, hold selection, cancellation, and expiration. FE07 reads `ACTIVE`/`NOTIFIED` claims for create/approval/renewal and changes only matching requester-owned `NOTIFIED` holds to `FULFILLED` during approval. |
-| FE09 Fine Management | Internal | Checked on 2026-06-10: any unpaid fine with amount greater than 0 blocks new borrowing and renewal. FE09 owns fine calculation/creation from FE07 return data. |
-| FE10 Notification Management | Internal | May notify borrow/return/renewal results. |
-| FE11 User & Role Management | Internal | Provides roles and permissions. |
-| SQL Server database | Technical | Current SQL script has `BorrowRequests`, `BorrowDetails`, and `BookCopies`. |
+| Xác thực FE02 | Nội bộ | Cần thiết cho danh tính tác nhân. |
+| Quản lý Thành viên FE04 | Độc lập | Theo dõi đơn đăng ký Thành viên tùy chọn; không làm cổng chặn FE07. |
+| FE06 Quản lý tồn kho / bản sao sách | Nội bộ | Cung cấp tính khả dụng bản sao và cập nhật trạng thái. |
+| Quản lý đặt chỗ FE08 | Nội bộ | FE08 sở hữu thứ tự hàng đợi, lựa chọn lượt giữ, hủy và hết hạn. FE07 đọc quyền sở hữu `ACTIVE`/`NOTIFIED` khi tạo/phê duyệt/gia hạn và chỉ chuyển lượt giữ `NOTIFIED` phù hợp thuộc người yêu cầu thành `FULFILLED` trong quá trình phê duyệt. |
+| FE09 Quản lý tiền phạt | Nội bộ | Đối chiếu ngày 2026-06-10: mọi khoản phạt chưa thanh toán lớn hơn 0 chặn khoản mượn mới và gia hạn. FE09 sở hữu việc tính/tạo tiền phạt từ dữ liệu trả sách FE07. |
+| Quản lý thông báo FE10 | Nội bộ | Có thể thông báo kết quả mượn/trả/gia hạn. |
+| FE11 Quản lý vai trò và người dùng | Nội bộ | Cung cấp vai trò và quyền. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | Script SQL hiện tại có `BorrowRequests`, `BorrowDetails` và `BookCopies`. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Question | Owner | Status |
+| ID | Câu hỏi | Chủ sở hữu | Trạng thái |
 | -- | -------- | ----- | ------ |
-| Q-FE07-001 | What is the maximum number of active borrowed copies per member? | Team/Teacher | Resolved: 5 active borrowed copies per member (DEC-GEN-001); daily tier is 5 for FE04-approved members and 3 for other active `MEMBER` accounts (user decision 2026-07-21). |
-| Q-FE07-002 | What is the default loan duration in days? | Team/Teacher | Resolved: 14 calendar days from persisted `BorrowDate`, which is the approval business date in `Asia/Ho_Chi_Minh` (DEC-GEN-002). |
-| Q-FE07-003 | How many renewals are allowed per borrow detail? | Team/Teacher | Resolved: 1 renewal per `BorrowDetail`, adding 14 calendar days from current due date. |
-| Q-FE07-004 | Does unpaid fine block new borrowing? If yes, what fine statuses/amounts block it? | Team/Teacher | Resolved: any `UNPAID` fine with amount greater than 0 blocks new borrowing and renewal. |
-| Q-FE07-005 | Can a member create borrow request directly, or must librarian create it at the desk? | Team/Teacher | Resolved: member creates own borrow request; librarian/admin approves, rejects, returns, renews, and views history. |
-| Q-FE07-006 | Should `BorrowDetails` support `REQUESTED`, or should requested copies be stored in another table before approval? | Team/DB owner | Resolved: use `BorrowDetails.Status = REQUESTED`; no extra request-detail table in Phase 1. |
-| Q-FE07-007 | Should request status become `COMPLETED` automatically when all details are returned/lost/damaged? | Team | Resolved: yes, mark `BorrowRequests.Status = COMPLETED` when all details are terminal. |
-| Q-FE07-008 | Should damaged/lost returns immediately create a fine record, or only expose data for FE09? | Team/Teacher | Resolved: FE07 records damaged/lost return data only; FE09 owns fine creation. |
-| Q-FE07-009 | What is the borrowing-history query contract? | Spec normalization 2026-07-17 | Resolved: `status?, fromDate?, toDate?, page?, limit?`; page 1/limit 20, max 100, inclusive business dates, stable BorrowDate/BorrowDetailId order, and validation before query. |
-| Q-FE07-010 | Are multi-role accounts supported, and which role owns renewal scope? | Nhat, 2026-07-27 | Resolved: no. Every account has exactly one role under DEC-GEN-005. Member accounts renew only their own details; Librarian/Admin accounts may renew any member's detail, and all business blockers are evaluated against the loan owner. |
+| Q-FE07-001 | Số lượng bản sao được mượn tối đa cho mỗi thành viên là bao nhiêu? | Team/Teacher | Đã giải quyết: 5 bản mượn đang hoạt động cho mỗi thành viên (DEC-GEN-001); cấp hàng ngày là 5 đối với các thành viên được FE04 phê duyệt và 3 đối với các tài khoản `MEMBER` đang hoạt động khác (quyết định của người dùng 2026-07-21). |
+| Q-FE07-002 | Thời hạn cho vay mặc định tính bằng ngày là bao nhiêu? | Team/Teacher | Đã giải quyết: 14 ngày theo lịch kể từ `BorrowDate` vẫn tồn tại, đây là ngày kinh doanh được phê duyệt trong `Asia/Ho_Chi_Minh` (DEC-GEN-002). |
+| Q-FE07-003 | Mỗi chi tiết vay được phép gia hạn bao nhiêu lần? | Team/Teacher | Đã giải quyết: 1 lần gia hạn cho mỗi `BorrowDetail`, thêm 14 ngày theo lịch kể từ ngày đáo hạn hiện tại. |
+| Q-FE07-004 | Tiền phạt chưa thanh toán có chặn khoản mượn mới không? Nếu có, trạng thái/số tiền nào gây chặn? | Team/Teacher | Đã giải quyết: mọi khoản tiền phạt `UNPAID` lớn hơn 0 chặn khoản mượn mới và gia hạn. |
+| Q-FE07-005 | Thành viên có thể tạo yêu cầu mượn trực tiếp hay Thủ thư phải tạo tại quầy? | Team/Teacher | Đã giải quyết: Thành viên tự tạo yêu cầu mượn; Thủ thư/Quản trị viên phê duyệt, từ chối, trả, gia hạn và xem lịch sử. |
+| Q-FE07-006 | `BorrowDetails` có nên hỗ trợ `REQUESTED` hay các bản sao được yêu cầu nên được lưu trữ trong một bảng khác trước khi được phê duyệt? | Chủ sở hữu Team/DB | Đã giải quyết: sử dụng `BorrowDetails.Status = REQUESTED`; không có bảng chi tiết yêu cầu bổ sung trong Giai đoạn 1. |
+| Q-FE07-007 | Trạng thái yêu cầu có tự động trở thành `COMPLETED` khi mọi chi tiết đã trả/thất lạc/hư hỏng không? | Đội | Đã giải quyết: có, đặt `BorrowRequests.Status = COMPLETED` khi mọi chi tiết đều ở trạng thái cuối. |
+| Q-FE07-008 | Lượt trả hư hỏng/thất lạc có tạo ngay bản ghi phạt hay chỉ cung cấp dữ liệu cho FE09? | Team/Teacher | Đã giải quyết: FE07 chỉ ghi dữ liệu trả hư hỏng/thất lạc; FE09 sở hữu việc tạo tiền phạt. |
+| Q-FE07-009 | Hợp đồng truy vấn lịch sử mượn là gì? | Chuẩn hóa đặc tả 2026-07-17 | Đã giải quyết: `status?, fromDate?, toDate?, page?, limit?`; trang 1/giới hạn 20, tối đa 100, phạm vi ngày làm việc bao gồm hai đầu, thứ tự BorrowDate/BorrowDetailId ổn định và xác thực trước truy vấn. |
+| Q-FE07-010 | Tài khoản đa vai trò có được hỗ trợ không và vai trò nào có phạm vi gia hạn? | Nhat, 2026-07-27 | Đã giải quyết: không. Mỗi tài khoản có chính xác một vai trò theo DEC-GEN-005. Tài khoản Thành viên chỉ gia hạn chi tiết của chính mình; tài khoản Thủ thư/Quản trị viên có thể gia hạn chi tiết của bất kỳ Thành viên nào, và mọi bộ chặn nghiệp vụ đều được đánh giá theo chủ sở hữu khoản mượn. |
 
 ---
 
-## 15.1 Approval Review Notes
+## 15.1 Ghi Chú Rà Soát Phê Duyệt
 
-| Review Item | Result |
+| Đánh giá sản phẩm | Kết quả |
 | ----------- | ------ |
-| Flow review | Create request, approve/reject, return, renewal, and history flows were reviewed against resolved FE07 decisions. Flow updates are reflected in Sections 4, 6, 7, and 8. |
-| API contract | Approved in Section 11 for Phase 1 RESTful API planning. Endpoints stay in this SPEC.md unless a shared API contract document is reintroduced. |
-| FE08 dependency | Approved integration: `ACTIVE` queue priority blocks ordinary create/approve, the notified owner may request the held copy, and FE07 approval atomically fulfills the matching reservation. FE08 retains queue ownership. |
-| FE09 dependency | No FE07 conflict after decision: unpaid fines block borrowing/renewal; FE07 exposes return data and FE09 owns fine calculation/creation. |
-| Testability | AC-FE07-001 to AC-FE07-026 are concrete and observable. The history, staff-decision, return-due-state, single-role renewal, and invalid legacy role-array defense contracts map to focused validation, pagination, ordering, rejected-request display, decision-context, stable-input, business-time, renewal-metadata, and role-boundary tests before implementation conformance can be claimed. |
+| Rà soát luồng | Các luồng tạo yêu cầu, phê duyệt/từ chối, trả, gia hạn và lịch sử đã được rà soát theo các quyết định FE07 đã giải quyết. Cập nhật luồng được phản ánh tại Mục 4, 6, 7 và 8. |
+| Hợp đồng API | Được phê duyệt tại Mục 11 để lập kế hoạch API RESTful Giai đoạn 1. Các endpoint vẫn nằm trong SPEC.md này trừ khi tài liệu hợp đồng API dùng chung được giới thiệu lại. |
+| Phụ thuộc FE08 | Tích hợp được phê duyệt: ưu tiên hàng đợi `ACTIVE` chặn tạo/phê duyệt thông thường; chủ sở hữu đã nhận thông báo có thể yêu cầu bản sao được giữ và phê duyệt FE07 sẽ hoàn tất đặt chỗ phù hợp một cách nguyên tử. FE08 vẫn sở hữu hàng đợi. |
+| Phụ thuộc FE09 | Không còn xung đột FE07 sau quyết định: tiền phạt chưa thanh toán chặn mượn/gia hạn; FE07 cung cấp dữ liệu trả và FE09 sở hữu việc tính/tạo tiền phạt. |
+| Khả năng kiểm tra | AC-FE07-001 đến AC-FE07-026 là cụ thể và có thể quan sát được. Lịch sử, quyết định của nhân viên, trạng thái trả lại, gia hạn một vai trò và hợp đồng bảo vệ mảng vai trò kế thừa không hợp lệ ánh xạ tới xác thực tập trung, phân trang, đặt hàng, hiển thị yêu cầu bị từ chối, bối cảnh quyết định, đầu vào ổn định, thời gian kinh doanh, siêu dữ liệu gia hạn và kiểm tra ranh giới vai trò trước khi có thể yêu cầu tuân thủ triển khai. |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-| Requirement ID | Related Use Case | Related Test Case | Status |
+| ID yêu cầu | Trường hợp sử dụng liên quan | Trường hợp thử nghiệm liên quan | Trạng thái |
 | -------------- | ---------------- | ----------------- | ------ |
-| AC-FE07-001 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
-| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Ready for review |
-| AC-FE07-003 | UC29, UC32 | Planned: 4 active + 2 requested is rejected at create/approval | Planned |
-| AC-FE07-004 | UC32 | Planned: approval persists approver, borrow date, due date, copy/reservation/audit atomically | Planned |
-| AC-FE07-005 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
-| AC-FE07-006 | UC33 | borrowingRoutes.test.js > "normal return marks the copy AVAILABLE, stores the return date, and preserves reservation priority" | Ready for review |
-| AC-FE07-007 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
-| AC-FE07-008 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository"; borrowingRepository.test.js > transactional return source contract | Complete |
-| AC-FE07-009 | UC31 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Complete |
-| AC-FE07-010 | UC31 | UTC and America/New_York timezone matrix plus existing renewal-blocker preservation cases | Complete |
-| AC-FE07-011 | UC30 | borrowingRoutes.test.js > "member history excludes another member request" | Ready for review |
-| AC-FE07-012 | UC34 | borrowingRoutes.test.js > "librarian retrieves only the matching selected-member borrowing with status and date filters"; "librarian filters selected-member borrowings by derived OVERDUE status" | Ready for review |
-| AC-FE07-013 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
-| AC-FE07-014 | UC33 | borrowingRoutes.test.js > "return processing updates detail, copy, completion, and fine candidate data" | Ready for review |
-| AC-FE07-015 | UC29, UC32 | FE07-T029 route and SQL reservation-priority tests | Planned |
-| AC-FE07-016 | UC29 | FE07-T029 route test for requester-owned notified hold | Planned |
-| AC-FE07-017 | UC32, UC35 | FE07-T030 approval and rollback tests | Planned |
-| AC-FE07-018 | UC29, UC32 | Planned: inactive parent book returns `BOOK_INACTIVE` | Planned |
-| AC-FE07-019 | UC32 | Planned: concurrent same-member approvals never exceed 5 | Planned |
-| AC-FE07-020 | UC33 | Planned: pre-borrow/future return date rejection test | Planned |
-| AC-FE07-021 | UC32 | Planned: required rejection reason boundary test | Planned |
-| AC-FE07-022 | UC30, UC34 | Planned: history filter/date/page/limit validation and stable-order case | Planned |
-| AC-FE07-023 | UC30 | borrowingRoutes.test.js > "member history exposes a rejected owning request without changing detail status"; borrowingFrontend.test.js > "member history displays rejected requests without relabeling pending details" | Complete |
-| AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "borrow request decisions show full context and rejection input keeps focus across renders" | Complete |
-| AC-FE07-025 | UC33 | borrowingFrontend.test.js > "return due status uses the Asia Ho Chi Minh business date and explains the state"; "return rows preserve canonical renewal metadata from BorrowDetails" | Complete |
-| BR-FE07-001 | UC29-UC35 | Planned: guest/protected borrowing authorization matrix | Planned |
-| BR-FE07-002 | UC29 | Planned: member request identity is token-bound test | Planned |
-| BR-FE07-003 | UC31-UC35 | borrowingRoutes.test.js > "single-role librarian renews another member loan while member remains owner-scoped" | Complete |
-| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Ready for review |
-| BR-FE07-005 | UC29, UC32 | Planned: formula + member-scoped approval lock test | Planned |
-| BR-FE07-006 | UC29, UC31, UC32 | Planned: overdue/unpaid-fine blocker test | Planned |
-| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Ready for review |
-| BR-FE07-008 | UC32 | Planned: approval revalidates all eligibility/copy rules | Planned |
-| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Ready for review |
-| BR-FE07-010 | UC32, UC35 | Planned: BorrowDate +14 due-date test | Planned |
-| BR-FE07-011 | UC33 | FT34 | Ready for review |
-| BR-FE07-012 | UC33 | Planned: normal return sets copy AVAILABLE atomically while preserving an ACTIVE reservation claim | Planned |
-| BR-FE07-013 | UC33 | Planned: damaged/lost copy remains unavailable test | Planned |
-| BR-FE07-014 | UC33 | borrowingRoutes.test.js > "return response and audit use the due date locked by the repository" | Complete |
-| BR-FE07-015 | UC31 | UTC and America/New_York renewal timezone matrix | Complete |
-| BR-FE07-016 | UC29, UC31-UC33, UC35 | locked return-audit regression plus existing required action-audit coverage | Complete |
-| BR-FE07-017 | UC30 | Planned: member history is read-only/owner-only test | Planned |
-| BR-FE07-018 | UC31 | FT32 | Ready for review |
-| BR-FE07-019 | UC29 | FT30 | Ready for review |
-| BR-FE07-020 | UC33 | FT34 | Ready for review |
-| BR-FE07-021 | UC33 | FT34 | Ready for review |
-| BR-FE07-022 | UC29, UC32 | Planned: all-or-nothing multi-copy create/approval test | Planned |
-| BR-FE07-023 | UC29, UC32 | FE07-T029 | Planned |
-| BR-FE07-024 | UC29, UC32 | FE07-T029 | Planned |
-| BR-FE07-025 | UC32, UC35 | FE07-T030 | Planned |
-| BR-FE07-026 | UC29, UC32 | Planned: CreatedBy/ApprovedAt/ApprovedBy/BorrowDate persistence test | Planned |
-| BR-FE07-027 | UC32 | Planned: rejection reason stored in audit metadata test | Planned |
-| BR-FE07-028 | UC30, UC34 | Planned: deterministic history contract case | Planned |
-| BR-FE07-029 | UC30 | FE07-T041 | Complete |
-| BR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
-| BR-FE07-032 | UC29, UC36, UC39 | FE08-T045 same-book reservation exclusion tests | Automated pass; human review pending |
-| FR-FE07-001 | UC29 | Planned: eligibility validation precedes request insert | Planned |
-| FR-FE07-002 | UC29 | Planned: PENDING request + REQUESTED details creation test | Planned |
-| FR-FE07-003 | UC29 | Planned: non-borrowable item rejects whole request test | Planned |
-| FR-FE07-004 | UC32 | Planned: approval revalidation test | Planned |
-| FR-FE07-005 | UC32, UC35 | Planned: complete approval metadata/state transaction test | Planned |
-| FR-FE07-006 | UC32 | Planned: rejection reason audit + unchanged copies test | Planned |
-| FR-FE07-007 | UC33 | locked return route regression and repository transaction-source contract | Complete |
-| FR-FE07-008 | UC33 | locked return route regression proves one due/return snapshot for fine candidate and audit | Complete |
-| FR-FE07-009 | UC31 | single-role staff/member boundary, owner blockers, and two-timezone +14-day renewal matrix | Complete |
-| FR-FE07-010 | UC30 | FT31 | Ready for review |
-| FR-FE07-011 | UC34 | FT35 | Ready for review |
-| FR-FE07-012 | UC32, UC35 | Planned: BORROWED copy blocks another approval test | Planned |
-| FR-FE07-013 | UC33 | FT34 | Ready for review |
-| FR-FE07-014 | UC29, UC32 | Planned: active count + request count boundary/rollback test | Planned |
-| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "inactive account is rejected while an active MEMBER can create a borrow request" | Ready for review |
-| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "member with an unpaid fine cannot create a borrow request" | Ready for review |
-| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "member creates a pending request only for available unique copies" | Ready for review |
-| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "approval is rejected when a copy is no longer available and leaves data unchanged" | Ready for review |
-| FR-FE07-019 | UC32 | Planned: same-copy and same-member concurrent approval test | Planned |
-| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "renewal blockers reject and preserve due date: <blocker>" | Ready for review |
-| FR-FE07-021 | UC31, UC33 | Planned: invalid state + pre-borrow/future business-date rejection test | Planned |
-| FR-FE07-022 | UC29, UC32, UC33 | borrowingConcurrency.sqltest.js > "SQL create audit failure rolls back request, detail, copy, and audit rows"; "SQL approval audit failure rolls back request, detail due date, copy, and audit rows"; "SQL return audit failure rolls back request, detail return date, copy, and audit rows" | Ready for review |
-| FR-FE07-023 | UC29, UC32 | FE07-T029 route and SQL reservation-priority tests | Planned |
-| FR-FE07-024 | UC29, UC32 | FE07-T029 owner-held-copy tests | Planned |
-| FR-FE07-025 | UC32, UC35 | FE07-T030 approval fulfillment and rollback tests | Planned |
-| FR-FE07-026 | UC29, UC32 | Planned: parent book inactive create/approval rejection test | Planned |
-| FR-FE07-027 | UC32 | Planned: rejection reason trim/length validation test | Planned |
-| FR-FE07-028 | UC30, UC34 | Planned: member/staff history scope, filters, pagination, and order case | Planned |
-| FR-FE07-029 | UC30 | FE07-T041 | Complete |
-| FR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
-| FR-FE07-031 | UC33 | FE07-T045 | Complete |
-| FR-FE07-032 | UC29-UC31 | FE07-T047 single-role access tests | Complete |
-| FR-FE07-033 | UC29, UC36 | FE07-T048 exact held-copy handoff frontend test | Complete |
-| AC-FE07-026 | UC29-UC31 | FE07-T047 invalid legacy-array denial tests | Complete |
-| AC-FE07-027 | UC29, UC36 | FE07-T048 exact held-copy preselection test | Complete |
-| BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | pending-copy claim route/repository regressions | Automated pass; human review pending |
-| FR-FE07-035; AC-FE07-029 | UC32, UC35 | Admin/Librarian canonical reload and copy-status presentation tests | Automated pass; human review pending |
-| FR-FE07-038; AC-FE07-031 | UC34 | Admin circulation column and desktop-fit frontend contract test | Automated pass; human review pending |
-| FR-FE07-039; AC-FE07-032 | UC33, UC42 | Overdue return-workspace to FE09 calculation frontend contract test | Automated pass; human review pending |
+| AC-FE07-001 | UC29 | borrowingRoutes.test.js > "thành viên chỉ tạo một yêu cầu đang chờ xử lý đối với các bản sao duy nhất có sẵn" | Sẵn sàng để xem xét |
+| AC-FE07-002 | UC29 | borrowingRoutes.test.js > "tài khoản không hoạt động bị từ chối trong khi MEMBER đang hoạt động có thể tạo yêu cầu vay" | Sẵn sàng để xem xét |
+| AC-FE07-003 | UC29, UC32 | Đã lên kế hoạch: từ chối 4 khoản đang hoạt động + yêu cầu 2 chi tiết khi tạo/phê duyệt | Đã lên kế hoạch |
+| AC-FE07-004 | UC32 | Đã lên kế hoạch: lưu người phê duyệt, ngày mượn, ngày đến hạn và cập nhật bản sao/đặt chỗ/audit nguyên tử | Đã lên kế hoạch |
+| AC-FE07-005 | UC32 | borrowingRoutes.test.js > "sự phê duyệt bị từ chối khi bản sao không còn tồn tại và dữ liệu không thay đổi" | Sẵn sàng để xem xét |
+| AC-FE07-006 | UC33 | borrowingRoutes.test.js > "trả lại bình thường đánh dấu bản sao AVAILABLE, lưu ngày trả lại và giữ nguyên mức độ ưu tiên đặt trước" | Sẵn sàng để xem xét |
+| AC-FE07-007 | UC33 | borrowingRoutes.test.js > "trả lại thông tin cập nhật xử lý chi tiết, sao chép, hoàn thiện và dữ liệu ứng viên tốt" | Sẵn sàng để xem xét |
+| AC-FE07-008 | UC33 | borrowingRoutes.test.js > "trả lời phản hồi và kiểm tra sử dụng ngày đến hạn bị khóa bởi kho lưu trữ"; borrowingRepository.test.js > hợp đồng nguồn hoàn trả giao dịch | Hoàn thành |
+| AC-FE07-009 | UC31 | borrowingRoutes.test.js > "thủ thư một vai trò gia hạn khoản vay thành viên khác trong khi thành viên vẫn thuộc phạm vi chủ sở hữu" | Hoàn thành |
+| AC-FE07-010 | UC31 | Ma trận múi giờ UTC và America/New_York cộng với các trường hợp bảo tồn trình chặn gia hạn hiện có | Hoàn thành |
+| AC-FE07-011 | UC30 | borrowingRoutes.test.js > "lịch sử thành viên loại trừ yêu cầu thành viên khác" | Sẵn sàng để xem xét |
+| AC-FE07-012 | UC34 | borrowingRoutes.test.js > "thủ thư chỉ truy xuất tài liệu mượn của thành viên được chọn phù hợp với các bộ lọc trạng thái và ngày tháng"; "thủ thư lọc các khoản mượn của thành viên được chọn theo trạng thái QUÁ HẠN" | Sẵn sàng để xem xét |
+| AC-FE07-013 | UC33 | borrowingRoutes.test.js > "trả lại các bản cập nhật xử lý chi tiết, sao chép, hoàn thiện và dữ liệu ứng viên tốt" | Sẵn sàng để xem xét |
+| AC-FE07-014 | UC33 | borrowingRoutes.test.js > "trả lại thông tin cập nhật xử lý chi tiết, sao chép, hoàn thiện và dữ liệu ứng viên tốt" | Sẵn sàng để xem xét |
+| AC-FE07-015 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt trước SQL | Đã lên kế hoạch |
+| AC-FE07-016 | UC29 | Kiểm tra lộ trình FE07-T029 dành cho lưu giữ thông báo thuộc sở hữu của người yêu cầu | Đã lên kế hoạch |
+| AC-FE07-017 | UC32, UC35 | Các thử nghiệm phê duyệt và khôi phục FE07-T030 | Đã lên kế hoạch |
+| AC-FE07-018 | UC29, UC32 | Đã lên kế hoạch: sách gốc không hoạt động trả về `BOOK_INACTIVE` | Đã lên kế hoạch |
+| AC-FE07-019 | UC32 | Dự kiến: số phê duyệt đồng thời của các thành viên không bao giờ vượt quá 5 | Đã lên kế hoạch |
+| AC-FE07-020 | UC33 | Đã lên kế hoạch: kiểm thử từ chối ngày trả trước ngày mượn/trong tương lai | Đã lên kế hoạch |
+| AC-FE07-021 | UC32 | Đã lên kế hoạch: yêu cầu kiểm tra ranh giới lý do từ chối | Đã lên kế hoạch |
+| AC-FE07-022 | UC30, UC34 | Đã lên kế hoạch: lịch sử xác thực filter/date/page/limit và trường hợp trật tự ổn định | Đã lên kế hoạch |
+| AC-FE07-023 | UC30 | borrowingRoutes.test.js > "lịch sử thành viên hiển thị yêu cầu sở hữu bị từ chối mà không thay đổi trạng thái chi tiết"; borrowingFrontend.test.js > "lịch sử thành viên hiển thị các yêu cầu bị từ chối mà không gắn nhãn lại các chi tiết đang chờ xử lý" | Hoàn thành |
+| AC-FE07-024 | UC32, UC35 | borrowingFrontend.test.js > "các quyết định yêu cầu mượn hiển thị đầy đủ bối cảnh và đầu vào từ chối giúp tập trung vào các kết xuất" | Hoàn thành |
+| AC-FE07-025 | UC33 | borrowingFrontend.test.js > "tình trạng hoàn trả sử dụng ngày kinh doanh tại Châu Á Hồ Chí Minh và giải thích trạng thái"; "các hàng trả về bảo toàn siêu dữ liệu gia hạn chuẩn từ BorrowDetails" | Hoàn thành |
+| BR-FE07-001 | UC29-UC35 | Đã lên kế hoạch: ma trận phân quyền Khách/thao tác mượn được bảo vệ | Đã lên kế hoạch |
+| BR-FE07-002 | UC29 | Đã lên kế hoạch: danh tính yêu cầu thành viên là thử nghiệm gắn với mã thông báo | Đã lên kế hoạch |
+| BR-FE07-003 | UC31-UC35 | borrowingRoutes.test.js > "thủ thư một vai trò gia hạn khoản vay thành viên khác trong khi thành viên vẫn thuộc phạm vi chủ sở hữu" | Hoàn thành |
+| BR-FE07-004 | UC29, UC32 | FT30, FT33 | Sẵn sàng để xem xét |
+| BR-FE07-005 | UC29, UC32 | Đã lên kế hoạch: công thức + kiểm tra khóa phê duyệt trong phạm vi thành viên | Đã lên kế hoạch |
+| BR-FE07-006 | UC29, UC31, UC32 | Đã lên kế hoạch: kiểm thử bộ chặn quá hạn/tiền phạt chưa thanh toán | Đã lên kế hoạch |
+| BR-FE07-007 | UC29, UC32 | FT30, FT33 | Sẵn sàng để xem xét |
+| BR-FE07-008 | UC32 | Đã lên kế hoạch: phê duyệt xác nhận lại mọi quy tắc điều kiện/bản sao | Đã lên kế hoạch |
+| BR-FE07-009 | UC32, UC35 | FT33, FT36 | Sẵn sàng để xem xét |
+| BR-FE07-010 | UC32, UC35 | Đã lên kế hoạch: Kiểm tra ngày đáo hạn BorrowDate +14 | Đã lên kế hoạch |
+| BR-FE07-011 | UC33 | FT34 | Sẵn sàng để xem xét |
+| BR-FE07-012 | UC33 | Đã lên kế hoạch: lượt trả bình thường đặt bản sao thành AVAILABLE một cách nguyên tử trong khi giữ quyền sở hữu đặt chỗ ACTIVE | Đã lên kế hoạch |
+| BR-FE07-013 | UC33 | Đã lên kế hoạch: kiểm thử bản sao hư hỏng/thất lạc vẫn không khả dụng | Đã lên kế hoạch |
+| BR-FE07-014 | UC33 | borrowingRoutes.test.js > "trả lời phản hồi và kiểm tra sử dụng ngày đến hạn bị khóa bởi kho lưu trữ" | Hoàn thành |
+| BR-FE07-015 | UC31 | Ma trận múi giờ gia hạn UTC và America/New_York | Hoàn thành |
+| BR-FE07-016 | UC29, UC31-UC33, UC35 | hồi quy kiểm toán lợi nhuận bị khóa cộng với phạm vi kiểm toán hành động bắt buộc hiện có | Hoàn thành |
+| BR-FE07-017 | UC30 | Đã lên kế hoạch: kiểm thử lịch sử Thành viên chỉ đọc/chỉ chủ sở hữu | Đã lên kế hoạch |
+| BR-FE07-018 | UC31 | FT32 | Sẵn sàng để xem xét |
+| BR-FE07-019 | UC29 | FT30 | Sẵn sàng để xem xét |
+| BR-FE07-020 | UC33 | FT34 | Sẵn sàng để xem xét |
+| BR-FE07-021 | UC33 | FT34 | Sẵn sàng để xem xét |
+| BR-FE07-022 | UC29, UC32 | Đã lên kế hoạch: kiểm thử tạo/phê duyệt nhiều bản sao theo nguyên tắc tất cả hoặc không có gì | Đã lên kế hoạch |
+| BR-FE07-023 | UC29, UC32 | FE07-T029 | Đã lên kế hoạch |
+| BR-FE07-024 | UC29, UC32 | FE07-T029 | Đã lên kế hoạch |
+| BR-FE07-025 | UC32, UC35 | FE07-T030 | Đã lên kế hoạch |
+| BR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: Kiểm tra độ bền CreatedBy/ApprovedAt/ApprovedBy/BorrowDate | Đã lên kế hoạch |
+| BR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối được lưu trữ trong kiểm tra siêu dữ liệu kiểm tra | Đã lên kế hoạch |
+| BR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: trường hợp hợp đồng lịch sử xác định | Đã lên kế hoạch |
+| BR-FE07-029 | UC30 | FE07-T041 | Hoàn thành |
+| BR-FE07-030 | UC32, UC35 | FE07-T042 | Hoàn thành |
+| BR-FE07-032 | UC29, UC36, UC39 | FE08-T045 Bài kiểm tra loại trừ đặt trước cùng một cuốn sách | Thẻ tự động; đang chờ đánh giá của con người |
+| FR-FE07-001 | UC29 | Đã lên kế hoạch: xác nhận tính đủ điều kiện trước khi chèn yêu cầu | Đã lên kế hoạch |
+| FR-FE07-002 | UC29 | Đã lên kế hoạch: Yêu cầu ĐANG CHỜ + Thử nghiệm tạo chi tiết YÊU CẦU | Đã lên kế hoạch |
+| FR-FE07-003 | UC29 | Đã lên kế hoạch: mục không thể mượn được từ chối toàn bộ bài kiểm tra yêu cầu | Đã lên kế hoạch |
+| FR-FE07-004 | UC32 | Đã lên kế hoạch: kiểm tra xác nhận lại phê duyệt | Đã lên kế hoạch |
+| FR-FE07-005 | UC32, UC35 | Đã lên kế hoạch: hoàn thành phê duyệt thử nghiệm giao dịch metadata/state | Đã lên kế hoạch |
+| FR-FE07-006 | UC32 | Đã lên kế hoạch: kiểm tra lý do từ chối + kiểm tra bản sao không thay đổi | Đã lên kế hoạch |
+| FR-FE07-007 | UC33 | hồi quy tuyến đường trả về bị khóa và hợp đồng nguồn giao dịch kho lưu trữ | Hoàn thành |
+| FR-FE07-008 | UC33 | Hồi quy tuyến trả đã khóa chứng minh cùng ảnh chụp ngày đến hạn/trả cho ứng viên phạt và audit | Hoàn thành |
+| FR-FE07-009 | UC31 | Ranh giới nhân viên/Thành viên một vai trò, bộ chặn chủ sở hữu và ma trận gia hạn +14 ngày trên hai múi giờ | Hoàn thành |
+| FR-FE07-010 | UC30 | FT31 | Sẵn sàng để xem xét |
+| FR-FE07-011 | UC34 | FT35 | Sẵn sàng để xem xét |
+| FR-FE07-012 | UC32, UC35 | Đã lên kế hoạch: Bản sao Mượn chặn một bài kiểm tra phê duyệt khác | Đã lên kế hoạch |
+| FR-FE07-013 | UC33 | FT34 | Sẵn sàng để xem xét |
+| FR-FE07-014 | UC29, UC32 | Đã lên kế hoạch: số lượng hoạt động + số lượng yêu cầu Kiểm tra boundary/rollback | Đã lên kế hoạch |
+| FR-FE07-015 | UC29, UC31 | borrowingRoutes.test.js > "tài khoản không hoạt động bị từ chối trong khi MEMBER đang hoạt động có thể tạo yêu cầu vay" | Sẵn sàng để xem xét |
+| FR-FE07-016 | UC29, UC31 | borrowingRoutes.test.js > "thành viên chưa nộp phạt không thể tạo yêu cầu vay" | Sẵn sàng để xem xét |
+| FR-FE07-017 | UC29 | borrowingRoutes.test.js > "thành viên chỉ tạo một yêu cầu đang chờ xử lý đối với các bản sao duy nhất có sẵn" | Sẵn sàng để xem xét |
+| FR-FE07-018 | UC32 | borrowingRoutes.test.js > "sự phê duyệt bị từ chối khi bản sao không còn tồn tại và dữ liệu không thay đổi" | Sẵn sàng để xem xét |
+| FR-FE07-019 | UC32 | Đã lên kế hoạch: kiểm tra phê duyệt đồng thời cùng một bản sao và cùng một thành viên | Đã lên kế hoạch |
+| FR-FE07-020 | UC31 | borrowingRoutes.test.js > "các trình chặn gia hạn từ chối và duy trì ngày đến hạn: <blocker>" | Sẵn sàng để xem xét |
+| FR-FE07-021 | UC31, UC33 | Đã lên kế hoạch: trạng thái không hợp lệ + kiểm thử từ chối ngày làm việc trước ngày mượn/trong tương lai | Đã lên kế hoạch |
+| FR-FE07-022 | UC29, UC32, UC33 | borrowingConcurrency.sqltest.js > "SQL tạo lỗi kiểm tra khôi phục các hàng yêu cầu, chi tiết, sao chép và kiểm tra"; "Lỗi kiểm tra phê duyệt SQL khôi phục yêu cầu, ngày đến hạn chi tiết, bản sao và hàng kiểm tra"; "Lỗi kiểm tra trả lại SQL yêu cầu quay lại, ngày trả lại chi tiết, bản sao và hàng kiểm tra" | Sẵn sàng để xem xét |
+| FR-FE07-023 | UC29, UC32 | Tuyến FE07-T029 và các bài kiểm tra ưu tiên đặt trước SQL | Đã lên kế hoạch |
+| FR-FE07-024 | UC29, UC32 | FE07-T029 bài kiểm tra bản sao do chủ sở hữu giữ | Đã lên kế hoạch |
+| FR-FE07-025 | UC32, UC35 | FE07-T030 thực hiện các thử nghiệm hoàn thành và khôi phục phê duyệt | Đã lên kế hoạch |
+| FR-FE07-026 | UC29, UC32 | Đã lên kế hoạch: kiểm thử từ chối tạo/phê duyệt khi sách gốc không hoạt động | Đã lên kế hoạch |
+| FR-FE07-027 | UC32 | Đã lên kế hoạch: lý do từ chối Kiểm tra xác thực trim/length | Đã lên kế hoạch |
+| FR-FE07-028 | UC30, UC34 | Đã lên kế hoạch: phạm vi lịch sử Thành viên/nhân viên, bộ lọc, phân trang và thứ tự | Đã lên kế hoạch |
+| FR-FE07-029 | UC30 | FE07-T041 | Hoàn thành |
+| FR-FE07-030 | UC32, UC35 | FE07-T042 | Hoàn thành |
+| FR-FE07-031 | UC33 | FE07-T045 | Hoàn thành |
+| FR-FE07-032 | UC29-UC31 | Các bài kiểm tra truy cập đơn vai trò FE07-T047 | Hoàn thành |
+| FR-FE07-033 | UC29, UC36 | FE07-T048 thử nghiệm giao diện bàn giao bản sao chính xác được giữ lại | Hoàn thành |
+| AC-FE07-026 | UC29-UC31 | FE07-T047 kiểm tra từ chối mảng kế thừa không hợp lệ | Hoàn thành |
+| AC-FE07-027 | UC29, UC36 | FE07-T048 kiểm tra chọn trước bản sao chính xác | Hoàn thành |
+| BR-FE07-033; FR-FE07-034; AC-FE07-028 | UC29, UC32 | Hồi quy quyền sở hữu bản sao của yêu cầu đang chờ ở tuyến/repository | Kiểm thử tự động đạt; đang chờ con người review |
+| FR-FE07-035; AC-FE07-029 | UC32, UC35 | Kiểm thử hiển thị trạng thái bản sao và tải lại chuẩn cho Quản trị viên/Thủ thư | Kiểm thử tự động đạt; đang chờ con người review |
+| FR-FE07-038; AC-FE07-031 | UC34 | Cột lưu thông của quản trị viên và bài kiểm tra hợp đồng giao diện người dùng phù hợp với máy tính để bàn | Thẻ tự động; đang chờ đánh giá của con người |
+| FR-FE07-039; AC-FE07-032 | UC33, UC42 | Kiểm thử hợp đồng frontend từ không gian trả sách quá hạn tới phép tính FE09 | Kiểm thử tự động đạt; đang chờ con người rà soát |
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra đánh giá
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt giai đoạn 1 (hoàn thành trên 2026-06-10):
 
-- [x] Resolved questions Q-FE07-001 to Q-FE07-008 are recorded in Section 15 with approved decisions.
-- [x] Borrow limit and loan duration are approved.
-- [x] Database design for requested copies before approval is confirmed.
-- [x] Return, renewal, and borrowing history flows are reviewed by the team.
-- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
-- [x] FE08/FE09 dependencies are checked for conflicts.
-- [x] Every acceptance criterion can become a test.
+- [x] Các câu hỏi đã giải quyết Q-FE07-001 đến Q-FE07-008 được ghi vào Mục 15 với các quyết định đã được phê duyệt.
+- [x] Hạn mức vay và thời hạn vay đã được phê duyệt.
+- [x] Thiết kế cơ sở dữ liệu cho các bản sao được yêu cầu trước khi phê duyệt được xác nhận.
+- [x] Nhóm xem xét các luồng lịch sử trả lại, gia hạn và mượn.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép vào tệp hợp đồng API được chia sẻ chuyên dụng nếu nhóm giới thiệu lại một tệp.
+- [x] Các phần phụ thuộc FE08/FE09 được kiểm tra xung đột.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
 
-### 17.1 Revision v0.5.0 Review Gate
+### 17.1 Cổng Rà Soát Bản Sửa Đổi v0.5.0
 
-- [x] Confirm canonical `Members.Status` and `Books.Status = ACTIVE` guards.
-- [x] Confirm `activeBorrowedCount + requestedDetailCount <= 5` and member-scoped approval locking.
-- [x] Confirm required request/approval/borrow metadata and `Asia/Ho_Chi_Minh` business dates.
-- [x] Confirm future return-date rejection and mandatory rejection reason.
-## 2026-07-22 return-workspace correction
+- [x] Xác nhận bộ bảo vệ `Members.Status` và `Books.Status = ACTIVE` chuẩn.
+- [x] Xác nhận `activeBorrowedCount + requestedDetailCount <= 5` và khóa phê duyệt trong phạm vi thành viên.
+- [x] Xác nhận siêu dữ liệu yêu cầu/phê duyệt/mượn bắt buộc và ngày làm việc `Asia/Ho_Chi_Minh`.
+- [x] Xác nhận việc từ chối ngày trả lại trong tương lai và lý do từ chối bắt buộc.
+## Chỉnh sửa không gian làm việc trả sách 2026-07-22
 
-- The Process Returns list and selected-loan detail use a stable single-column workspace so the seven-column transaction table cannot collide with the detail panel at desktop or narrow widths.
-- Approve and reject commands capture an explicit request target, validate its numeric ID, call the canonical FE07 endpoint, and reload server state. Existing databases must include the canonical BorrowRequests workflow timestamp columns through the 2026-07-22 compatibility migration.
+- Danh sách Trả về Quy trình và chi tiết khoản vay đã chọn sử dụng không gian làm việc một cột ổn định để bảng giao dịch bảy cột không thể va chạm với bảng chi tiết trên máy tính để bàn hoặc có chiều rộng hẹp.
+- Các lệnh phê duyệt và từ chối lấy rõ mục tiêu yêu cầu, xác thực ID dạng số, gọi endpoint FE07 chuẩn và tải lại trạng thái máy chủ. Cơ sở dữ liệu hiện tại phải có các cột dấu thời gian quy trình BorrowRequests chuẩn qua migration tương thích 2026-07-22.
 
-### 17.2 Revision v0.7.3 Staff Decision And Return UX Gate
+### 17.2 Cổng UX Cho Quyết Định Và Trả Sách Của Nhân Viên Trong Bản Sửa Đổi v0.7.3
 
-- [x] Confirm approval/rejection remains restricted to authenticated `LIBRARIAN`/`ADMIN` actors and uses the canonical FE07 endpoints.
-- [x] Confirm decision dialogs use only canonical staff-read fields and do not fabricate eligibility evidence.
-- [x] Confirm approval still revalidates eligibility, limit, copy, book, fine, overdue, and reservation state on the server.
-- [x] Confirm rejection still requires the canonical trimmed 1..500-character reason and changes no copy state.
-- [ ] Human-review the complete v0.7.3 implementation diff and focused verification evidence before integration.
+- [x] Xác nhận thao tác phê duyệt/từ chối vẫn giới hạn cho tác nhân `LIBRARIAN`/`ADMIN` đã xác thực và dùng endpoint FE07 chuẩn.
+- [x] Hộp thoại xác nhận quyết định chỉ sử dụng các trường chuẩn do nhân viên đọc và không tạo ra bằng chứng đủ điều kiện.
+- [x] Xác nhận thao tác phê duyệt vẫn xác nhận lại điều kiện, giới hạn, bản sao, đặt chỗ, tiền phạt, quá hạn và trạng thái đặt chỗ trên máy chủ.
+- [x] Xác nhận thao tác từ chối vẫn yêu cầu lý do chuẩn dài 1..500 ký tự đã cắt khoảng trắng và không thay đổi trạng thái bản sao.
+- [ ] Con người xem xét sự khác biệt hoàn chỉnh khi triển khai v0.7.3 và bằng chứng xác minh tập trung trước khi tích hợp.
 
-### 17.3 Revision v0.7.5 Business-Rule Alignment Gate
+### 17.3 Bản sửa đổi v0.7.5 Cổng điều chỉnh quy tắc kinh doanh
 
-- [x] Historical v0.7.5 multi-role precedence decision recorded; superseded by the v0.7.6 single-role contract below.
-- [x] Lock return response and audit calculations to the authoritative transaction result.
-- [x] Lock renewal comparison and extension to shared `Asia/Ho_Chi_Minh` helpers.
-- [x] Nhat human-reviewed and approved the written v0.7.5 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
+- [x] Quyết định ưu tiên đa vai trò v0.7.5 lịch sử được ghi lại; được thay thế bằng hợp đồng vai trò đơn v0.7.6 bên dưới.
+- [x] Khóa phản hồi trả về và tính toán kiểm tra đối với kết quả giao dịch có thẩm quyền.
+- [x] Khóa so sánh gia hạn và mở rộng cho những người trợ giúp `Asia/Ho_Chi_Minh` được chia sẻ.
+- [x] Nhat đã trực tiếp xem xét và phê duyệt SPEC v0.7.5 bằng văn bản vào 2026-07-27; PLAN/TASKS có thể tiếp tục, trong khi việc triển khai vẫn bị chặn trong khi chờ phê duyệt kế hoạch.
 
-### 17.4 Revision v0.7.6 Main-Integration Gate
+### 17.4 Bản sửa đổi v0.7.6 Cổng tích hợp chính
 
-- [x] Adopt project-wide `DEC-GEN-005`: every persisted account has exactly one role.
-- [x] Reject multi-role accounts as an unsupported actor model; FE11 repairs legacy mappings to one role.
-- [x] Keep member-self-service exclusive to Member accounts while preserving Librarian/Admin operational renewal.
-- [x] Preserve loan-owner eligibility, fine, overdue, reservation, and renewal-limit checks.
-- [x] Nhat authorized the reconciliation implementation on 2026-07-27; the integrated diff remains subject to H2 addendum before commit.
+- [x] Áp dụng `DEC-GEN-005` trên toàn dự án: mỗi tài khoản được duy trì đều có chính xác một vai trò.
+- [x] Từ chối các tài khoản đa vai trò dưới dạng mô hình tác nhân không được hỗ trợ; FE11 sửa chữa các ánh xạ cũ thành một vai trò.
+- [x] Duy trì tính năng tự phục vụ dành riêng cho thành viên đối với tài khoản Thành viên trong khi vẫn duy trì việc gia hạn hoạt động Librarian/Admin.
+- [x] Duy trì tính đủ điều kiện của chủ sở hữu khoản vay, tiền phạt, quá hạn, bảo lưu và kiểm tra giới hạn gia hạn.
+- [x] Nhat ủy quyền thực hiện đối chiếu vào 2026-07-27; khác biệt tích hợp vẫn tuân theo phụ lục H2 trước khi commit.

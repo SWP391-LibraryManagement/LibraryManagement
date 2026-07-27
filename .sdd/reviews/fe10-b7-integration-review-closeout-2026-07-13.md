@@ -1,52 +1,52 @@
-# FE10 B7 Integration And Review Closeout
+# Tổng kết tích hợp và đánh giá B7 của FE10
 
-Date: 2026-07-13
+Ngày: 2026-07-13
 
-Feature: FE10 Notification Management
+Tính năng: FE10 Quản lý thông báo
 
-Status: B7 COMPLETE - HUMAN REVIEW CONFIRMED, MERGED, CI PASS
+Trạng thái: B7 HOÀN THÀNH - ĐÃ XÁC NHẬN ĐÁNH GIÁ CỦA CON NGƯỜI, ĐÃ HỢP NHẤT, CI ĐẠT
 
-## Purpose And Boundary
+## Mục đích và ranh giới
 
-Record the B7 integration/review evidence for the FE10 hardening branch after
-it reached `main`. This closeout records verification evidence only; it does
-not add FE10 requirements, widen the approved Phase 1 scope, or implement the
-deferred FE02 and FE09 integrations.
+Ghi nhận bằng chứng tích hợp/đánh giá B7 cho nhánh gia cố FE10 sau khi
+nhánh tới `main`. Bản tổng kết này chỉ ghi bằng chứng xác minh; nó không
+thêm yêu cầu FE10, mở rộng phạm vi Giai đoạn 1 đã phê duyệt hoặc triển khai
+các tích hợp FE02 và FE09 bị hoãn.
 
-## Merge And CI Evidence
+## Bằng chứng hợp nhất và CI
 
-| Check | Result | Evidence |
+| Kiểm tra | Kết quả | Bằng chứng |
 | --- | --- | --- |
-| Merged implementation | PASS | Commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` (`docs(fe10): complete H09 validation gate`) is contained in `main` and was pushed to `origin/main`. |
-| Required CI | PASS | GitHub Actions CI run `29236572558` completed successfully for the same commit on `main`: https://github.com/doantd11/LibraryManagement/actions/runs/29236572558 |
-| Human review gate | PASS | Nhat explicitly selected local merge after the final branch review, then authorized the ordered push, CI verification, and B7 closeout steps in this task conversation. No PR or separate reviewer identity is inferred. |
-| Automated coverage | PASS | The successful CI workflow includes traceability enforcement, backend tests, frontend lint/tests/build, and the backend health import check from `.github/workflows/ci.yml`. |
+| Phần triển khai đã hợp nhất | PASS | Commit `9185a9a91f41e444e0c4e6bd8c0605a281272ee9` (`docs(fe10): complete H09 validation gate`) có trong `main` và đã được đẩy lên `origin/main`. |
+| CI bắt buộc | PASS | Lần chạy GitHub Actions CI `29236572558` hoàn tất thành công cho cùng commit trên `main`: https://github.com/doantd11/LibraryManagement/actions/runs/29236572558 |
+| Cổng đánh giá của con người | PASS | Nhat đã chọn rõ việc hợp nhất cục bộ sau lần đánh giá nhánh cuối, rồi cho phép các bước đẩy theo thứ tự, xác minh CI và tổng kết B7 trong cuộc trò chuyện tác vụ này. Không suy diễn có PR hoặc danh tính người đánh giá riêng. |
+| Độ bao phủ tự động | PASS | Quy trình CI thành công gồm thực thi truy vết, kiểm thử backend, lint/kiểm thử/bản dựng frontend và kiểm tra nhập tình trạng backend từ `.github/workflows/ci.yml`. |
 
-## Integration Review
+## Đánh giá tích hợp
 
-| Boundary | Review Result | Evidence / Scope Control |
+| Ranh giới | Kết quả đánh giá | Bằng chứng / Kiểm soát phạm vi |
 | --- | --- | --- |
-| FE10 delivery boundary | PASS | Sensitive authentication messages use synchronous mock delivery without persisted rendered secrets; non-sensitive messages remain queued with the approved retry and idempotency behavior. |
-| FE07 and FE08 source callers | PASS | Borrowing and reservation use the construction-bound FE10 requester and preserve their source business flows when notification delivery fails. |
-| FE02 authentication | DEFERRED | OTP versus token-link behavior and `EMAIL_VERIFY` versus canonical template keys remain owned by FE02; this closeout does not claim that migration. |
-| FE09 fine notifications | DEFERRED | The FE10 event is approved, but no current FE09 caller exists; no FE09 implementation is claimed. |
-| Architectural integrity | PASS | Source services call the FE10 service boundary rather than accessing notification persistence directly; no new cross-feature database access is introduced. |
-| Database and API contract | PASS | The notification schema, canonical templates, integer source IDs, minimal response DTOs, replay, process, and retry contracts are aligned with the approved FE10 specification and OpenAPI documentation. |
-| Operational checks | PASS | Same-commit CI completed successfully on `main`; the pre-merge B6 evidence remains recorded in `TASKS.md`. |
+| Ranh giới gửi FE10 | PASS | Thông báo xác thực nhạy cảm dùng cách gửi mô phỏng đồng bộ mà không lưu bí mật đã kết xuất; thông báo không nhạy cảm vẫn nằm trong hàng đợi với hành vi thử lại và lũy đẳng đã phê duyệt. |
+| Bên gọi nguồn FE07 và FE08 | PASS | Mượn và đặt trước dùng bên yêu cầu FE10 được ràng buộc khi khởi tạo, đồng thời giữ nguyên luồng nghiệp vụ nguồn khi gửi thông báo thất bại. |
+| Xác thực FE02 | BỊ HOÃN | Hành vi OTP so với liên kết token và `EMAIL_VERIFY` so với khóa mẫu chuẩn vẫn thuộc sở hữu FE02; bản tổng kết này không tuyên bố việc di chuyển đó. |
+| Thông báo tiền phạt FE09 | BỊ HOÃN | Sự kiện FE10 được phê duyệt nhưng hiện không có bên gọi FE09; không tuyên bố phần triển khai FE09 nào. |
+| Tính toàn vẹn kiến trúc | PASS | Dịch vụ nguồn gọi ranh giới dịch vụ FE10 thay vì truy cập trực tiếp nơi lưu thông báo; không đưa vào truy cập cơ sở dữ liệu xuyên tính năng mới. |
+| Cơ sở dữ liệu và hợp đồng API | PASS | Lược đồ thông báo, mẫu chuẩn, ID nguồn số nguyên, DTO phản hồi tối thiểu cùng hợp đồng phát lại, xử lý và thử lại nhất quán với đặc tả FE10 và tài liệu OpenAPI đã phê duyệt. |
+| Kiểm tra vận hành | PASS | CI trên cùng commit hoàn tất thành công trên `main`; bằng chứng B6 trước hợp nhất vẫn được ghi trong `TASKS.md`. |
 
-## Documentation State
+## Trạng thái tài liệu
 
-- `SPEC.md` remains the approved source of truth and is intentionally unchanged
-  by this closeout.
-- `PLAN.md`, `TASKS.md`, and `CHANGELOG.md` record B7 completion and point to
-  this dated evidence file.
-- `.agents/CLAUDE.md` records the current project status so future agents do not
-  repeat FE10 implementation or validation work.
+- `SPEC.md` vẫn là nguồn chân lý đã phê duyệt và được chủ ý giữ nguyên
+  bởi bản tổng kết này.
+- `PLAN.md`, `TASKS.md` và `CHANGELOG.md` ghi nhận việc hoàn thành B7 và trỏ tới
+  tệp bằng chứng theo ngày này.
+- `.agents/CLAUDE.md` ghi nhận trạng thái dự án hiện tại để các tác nhân tương lai không
+  lặp lại công việc triển khai hoặc xác thực FE10.
 
-## Remaining Follow-Up
+## Công việc tiếp nối còn lại
 
-- FE02 reconciliation and migration remain owner-deferred.
-- FE09 caller integration remains deferred until an actual source event and
-  integration point exist.
-- Real email-provider credentials, frontend retry/admin screens, and other
-  future-scope notification work remain outside the approved Phase 1 slice.
+- Việc đối soát và di chuyển FE02 vẫn bị chủ sở hữu hoãn.
+- Tích hợp bên gọi FE09 vẫn bị hoãn đến khi có sự kiện nguồn và
+  điểm tích hợp thực tế.
+- Thông tin xác thực nhà cung cấp email thật, màn hình thử lại/quản trị frontend và công việc
+  thông báo thuộc phạm vi tương lai khác vẫn nằm ngoài lát cắt Giai đoạn 1 đã phê duyệt.

@@ -1,88 +1,88 @@
-# Auth Account Setup Boundary Validation Review - 2026-07-15
+# Đánh giá xác thực ranh giới Thiết lập tài khoản Xác thực - 2026-07-15
 
-Status: B7 INTEGRATION COMPLETE
+Trạng thái: TÍCH HỢP B7 HOÀN THÀNH
 
-Branch: `fix/auth-account-setup-boundary`
+Nhánh: `fix/auth-account-setup-boundary`
 
-## Scope
+## Phạm vi
 
-Record the Task 7 validation gate for the ADR-005 account-setup lifecycle shared by FE02 Authentication, FE10 Notification Management, and FE11 User & Role Management.
+Ghi nhận cổng xác thực Nhiệm vụ 7 cho vòng đời thiết lập tài khoản ADR-005 dùng chung bởi Xác thực FE02, Quản lý thông báo FE10 và Quản lý người dùng & vai trò FE11.
 
-Implementation commits:
+Các commit triển khai:
 
-- `547f986` - sensitive notification source ownership.
-- `3e25875` - configured FE10 provider adapter.
-- `ff885b7` - transactional inactive account creation.
-- `57068d2` - atomic FE02 setup completion.
-- `d80b8f2` - Admin setup resend.
-- `fa63acc` - frontend setup-link recovery flow.
+- `547f986` - quyền sở hữu nguồn thông báo nhạy cảm.
+- `3e25875` - bộ điều hợp nhà cung cấp FE10 đã cấu hình.
+- `ff885b7` - tạo tài khoản không hoạt động có giao dịch.
+- `57068d2` - hoàn tất thiết lập FE02 nguyên tử.
+- `d80b8f2` - gửi lại thiết lập của Quản trị viên.
+- `fa63acc` - luồng khôi phục liên kết thiết lập frontend.
 
-## Validated Behavior
+## Hành vi đã xác thực
 
-- Admin-created accounts remain `INACTIVE` until one valid FE11 `ACCOUNT_SETUP` token is consumed by FE02.
-- User/profile/role/setup-token/audit creation commits or rolls back together.
-- FE10 accepts `ACCOUNT_SETUP` only from the requester bound to `FE11`, uses `AuthToken` token-ID traceability, and persists no raw setup credential or rendered sensitive content.
-- FE02 setup completion atomically updates password, email verification, lock fields, account status, token usage/revocation, and audit state.
-- Password-reset credentials cannot activate an inactive account.
-- Admin resend rejects missing, active, locked, deleted, self-registered, completed, and cooldown-limited targets without issuing a credential.
-- Eligible resend revokes prior active setup tokens, creates a new 24-hour token/event/key, audits transactionally, and treats provider failure as non-blocking.
-- The frontend token-query flow renders only password and confirmation controls, submits `{ token, newPassword }`, and shows a safe invalid/expired-link message.
+- Tài khoản do Quản trị viên tạo vẫn là `INACTIVE` đến khi FE02 tiêu thụ một token `ACCOUNT_SETUP` FE11 hợp lệ.
+- Việc tạo người dùng/hồ sơ/vai trò/token thiết lập/kiểm toán commit hoặc hoàn tác cùng nhau.
+- FE10 chỉ chấp nhận `ACCOUNT_SETUP` từ bên yêu cầu được ràng buộc với `FE11`, dùng khả năng truy vết ID token `AuthToken` và không lưu thông tin xác thực thiết lập thô hoặc nội dung nhạy cảm đã kết xuất.
+- Việc hoàn tất thiết lập FE02 cập nhật nguyên tử mật khẩu, xác minh email, trường khóa, trạng thái tài khoản, sử dụng/thu hồi token và trạng thái kiểm toán.
+- Thông tin xác thực đặt lại mật khẩu không thể kích hoạt tài khoản không hoạt động.
+- Gửi lại của Quản trị viên từ chối đích bị thiếu, đang hoạt động, bị khóa, bị xóa, tự đăng ký, đã hoàn tất và bị giới hạn thời gian chờ mà không phát thông tin xác thực.
+- Lần gửi lại đủ điều kiện thu hồi các token thiết lập đang hoạt động trước đó, tạo token/sự kiện/khóa 24 giờ mới, kiểm toán trong giao dịch và coi lỗi nhà cung cấp là không chặn.
+- Luồng truy vấn token frontend chỉ hiển thị điều khiển mật khẩu và xác nhận, gửi `{ token, newPassword }` và hiển thị thông báo liên kết không hợp lệ/hết hạn an toàn.
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result |
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Focused FE02/FE10/FE11 plus affected integration tests | PASS - 6 suites, 170/170 tests |
-| Frontend tests | PASS - 75/75 |
-| Frontend touched-file lint | PASS |
-| Frontend production build | PASS; existing 982.35 kB chunk warning only |
-| Traceability enforcement | PASS; no enforced feature below 70% |
-| Changed-line credential/secret scan | PASS; no credential logging/storage or high-confidence secret additions |
-| Placeholder scan | PASS; the only added `ACCOUNT_SETUP_PENDING` match is a negative regression assertion |
-| Branch diff whitespace/conflict check | PASS |
-| Worktree status before evidence edits | CLEAN |
+| Kiểm thử tích hợp trọng tâm FE02/FE10/FE11 cùng phần bị ảnh hưởng | PASS - 6 bộ, 170/170 kiểm thử |
+| Kiểm thử frontend | PASS - 75/75 |
+| Lint tệp frontend đã chạm | PASS |
+| Bản dựng frontend production | PASS; chỉ có cảnh báo khối 982.35 kB hiện hữu |
+| Thực thi truy vết | PASS; không tính năng bị thực thi nào dưới 70% |
+| Quét thông tin xác thực/bí mật trên dòng đã đổi | PASS; không ghi/lưu thông tin xác thực hoặc thêm bí mật độ tin cậy cao |
+| Quét phần giữ chỗ | PASS; kết quả khớp `ACCOUNT_SETUP_PENDING` duy nhất được thêm là xác nhận hồi quy phủ định |
+| Kiểm tra khoảng trắng/xung đột diff nhánh | PASS |
+| Trạng thái worktree trước chỉnh sửa bằng chứng | SẠCH |
 
-Backend command:
+Lệnh backend:
 
 ```text
 npm.cmd test -- authRoutes.test.js notificationRoutes.test.js userManagementService.test.js userManagementRoutes.test.js integration.test.js systemIntegration.test.js --runInBand
 ```
 
-No live SQL suite or unrelated full SQL suite was run, matching the approved Task 7 scope.
+Không chạy bộ SQL trực tiếp hoặc bộ SQL toàn bộ không liên quan, phù hợp với phạm vi Nhiệm vụ 7 đã phê duyệt.
 
-## Security Review
+## Đánh giá bảo mật
 
-- New SQL uses parameterized inputs and locked transactions for setup creation, completion, and resend.
-- Raw setup tokens/links exist only in request memory and FE10 provider input; tests prove they do not persist or return.
-- The frontend derives the token from `useSearchParams` and does not place it in component state, page copy, browser storage, or logs.
-- Invalid, expired, used, revoked, ineligible, and concurrent setup attempts return safe errors without partial activation.
-- Pre-existing FE02 test-mode `debugOtp`/legacy debug fields remain outside the ADR-005 account-setup slice. No `debugSetupToken` exists or was added; ADR-004 OTP closeout remains tracked separately by FE02-T030..T033 and FE10-S02..S05.
+- SQL mới dùng đầu vào tham số hóa và giao dịch có khóa cho việc tạo, hoàn tất và gửi lại thiết lập.
+- Token/liên kết thiết lập thô chỉ tồn tại trong bộ nhớ yêu cầu và đầu vào nhà cung cấp FE10; kiểm thử chứng minh chúng không được lưu hoặc trả về.
+- Frontend suy ra token từ `useSearchParams` và không đặt nó vào trạng thái thành phần, nội dung trang, nơi lưu trình duyệt hoặc nhật ký.
+- Các lần thử thiết lập không hợp lệ, hết hạn, đã dùng, bị thu hồi, không đủ điều kiện và đồng thời trả về lỗi an toàn mà không kích hoạt một phần.
+- Các trường `debugOtp` chế độ kiểm thử/trường gỡ lỗi cũ FE02 có từ trước vẫn nằm ngoài lát cắt thiết lập tài khoản ADR-005. Không có hoặc không thêm `debugSetupToken`; phần tổng kết OTP ADR-004 vẫn được theo dõi riêng bởi FE02-T030..T033 và FE10-S02..S05.
 
-## Human Review History
+## Lịch sử đánh giá của con người
 
-Nhat reviewed the implementation incrementally through Task 6 and explicitly confirmed `đã review` for this Task 7 packet on 2026-07-15. This closes FE02-T037, FE10-S08, and FE11-S07; it does not itself select a merge or push option.
+Nhat đánh giá phần triển khai tăng dần đến Nhiệm vụ 6 và xác nhận rõ `đã review` cho gói Nhiệm vụ 7 này vào 2026-07-15. Việc này đóng FE02-T037, FE10-S08 và FE11-S07; bản thân nó không chọn tùy chọn hợp nhất hoặc đẩy.
 
-## B7 Integration Evidence
+## Bằng chứng tích hợp B7
 
-- The account-setup boundary merged into `main` as `c7f78213a62a83a133e9571c149468a054e48219`.
-- Main commit `e8f467c7f53e75d36c2834429b92beafca819919` contains that merge.
-- GitHub Actions CI run `29392143926` completed successfully on `e8f467c7f53e75d36c2834429b92beafca819919`.
+- Ranh giới thiết lập tài khoản được hợp nhất vào `main` dưới dạng `c7f78213a62a83a133e9571c149468a054e48219`.
+- Commit main `e8f467c7f53e75d36c2834429b92beafca819919` chứa phần hợp nhất đó.
+- Lần chạy GitHub Actions CI `29392143926` hoàn tất thành công trên `e8f467c7f53e75d36c2834429b92beafca819919`.
 
-This completes B7 integration evidence for the bounded account-setup slice. It does not claim whole-feature completion for FE02, FE10, or FE11.
+Việc này hoàn tất bằng chứng tích hợp B7 cho lát cắt thiết lập tài khoản giới hạn. Nó không tuyên bố toàn bộ tính năng FE02, FE10 hoặc FE11 hoàn thành.
 
-## Residual Risks
+## Rủi ro còn lại
 
-- Live Azure SQL behavior was not rerun in Task 7; transaction semantics are covered by focused rollback/concurrency tests and SQL review, but a deployed-database smoke test remains an integration risk.
-- Real SMTP delivery depends on deployment environment variables and provider availability; validation uses the configured adapter contract and injected provider behavior rather than sending a live email.
-- Vite reports the existing 982.35 kB JavaScript chunk advisory; this does not block the setup flow but remains a frontend performance debt.
-- FE11 user-list/update/deactivation/role-management debt remains explicitly deferred outside this account-setup slice.
+- Hành vi Azure SQL trực tiếp không được chạy lại trong Nhiệm vụ 7; ngữ nghĩa giao dịch được bao phủ bởi kiểm thử hoàn tác/đồng thời trọng tâm và đánh giá SQL, nhưng kiểm tra nhanh cơ sở dữ liệu đã triển khai vẫn là rủi ro tích hợp.
+- Việc gửi SMTP thật phụ thuộc biến môi trường triển khai và tính khả dụng của nhà cung cấp; xác thực dùng hợp đồng bộ điều hợp đã cấu hình và hành vi nhà cung cấp được chèn thay vì gửi email thật.
+- Vite báo khuyến cáo khối JavaScript 982.35 kB hiện có; điều này không chặn luồng thiết lập nhưng vẫn là nợ hiệu năng frontend.
+- Nợ danh sách/cập nhật/vô hiệu hóa/quản lý vai trò người dùng FE11 vẫn bị hoãn rõ ràng ngoài lát cắt thiết lập tài khoản này.
 
-## Review Checklist For Nhat
+## Danh sách kiểm tra dành cho Nhat
 
-1. Confirm an Admin-created account remains `INACTIVE` before setup and becomes `ACTIVE` only after a valid setup link is completed.
-2. Confirm create/resend responses and UI never display a password, setup token, setup link, or provider detail.
-3. Confirm resend rejects ineligible accounts and enforces the 60-second cooldown.
-4. Confirm an invalid/expired/used setup link shows the safe frontend error and does not activate the account.
-5. Confirm the existing verification/reset OTP and `CHANGE_PASSWORD_OTP` behaviors were not widened by ADR-005 work.
+1. Xác nhận tài khoản do Quản trị viên tạo vẫn là `INACTIVE` trước thiết lập và chỉ trở thành `ACTIVE` sau khi hoàn tất liên kết thiết lập hợp lệ.
+2. Xác nhận phản hồi tạo/gửi lại và UI không bao giờ hiển thị mật khẩu, token thiết lập, liên kết thiết lập hoặc chi tiết nhà cung cấp.
+3. Xác nhận gửi lại từ chối tài khoản không đủ điều kiện và thực thi thời gian chờ 60 giây.
+4. Xác nhận liên kết thiết lập không hợp lệ/hết hạn/đã dùng hiển thị lỗi frontend an toàn và không kích hoạt tài khoản.
+5. Xác nhận hành vi OTP xác minh/đặt lại và `CHANGE_PASSWORD_OTP` hiện có không bị mở rộng bởi công việc ADR-005.
 
-Verdict: **Task 7 validation, human review, merge, and post-merge CI are complete through B7 for the bounded account-setup slice.**
+Kết luận: **Xác thực Nhiệm vụ 7, đánh giá của con người, hợp nhất và CI sau hợp nhất đã hoàn thành đến B7 cho lát cắt thiết lập tài khoản giới hạn.**

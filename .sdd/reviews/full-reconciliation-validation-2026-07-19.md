@@ -1,139 +1,139 @@
-# FE01-FE12 Full Reconciliation Validation - 2026-07-19
+# Xác thực đối soát đầy đủ FE01-FE12 - 2026-07-19
 
-Status: COMPLETE - ALL VALIDATION LAYERS PASS; PR MERGED; POST-MERGE MAIN CI PASS
+Trạng thái: COMPLETE - MỌI LỚP XÁC THỰC ĐỀU PASS; PR ĐÃ MERGE; CI MAIN SAU MERGE ĐÃ PASS
 
-Branch: `feat/full-reconciliation`
+Nhánh: `feat/full-reconciliation`
 
-Initial baseline: `origin/main@b2ad9b1`
+Đường cơ sở ban đầu: `origin/main@b2ad9b1`
 
-Integrated upstream: `origin/main@3f63a13`
+Upstream đã tích hợp: `origin/main@3f63a13`
 
-## Decision
+## Quyết định
 
-- Delivery method: Hybrid SDD + ADD.
-- Specification depth: Full.
-- Core: business rules, authorization, public and protected API contracts, SQL schema and migrations, concurrency, audit behavior, deterministic reporting, and lifecycle state transitions.
-- Shell: frontend presentation, operational layout, CSV formatting, test harness composition, and evidence documentation.
+- Phương thức bàn giao: Hybrid SDD + ADD.
+- Độ sâu đặc tả: Đầy đủ.
+- Core: quy tắc nghiệp vụ, phân quyền, hợp đồng API công khai và được bảo vệ, lược đồ cùng di chuyển SQL, tương tranh, hành vi kiểm toán, báo cáo xác định và chuyển đổi trạng thái vòng đời.
+- Shell: phần trình bày frontend, bố cục vận hành, định dạng CSV, cấu thành bộ kiểm thử và tài liệu bằng chứng.
 
-This depth is required because the reconciliation spans FE01-FE12 and changes security-sensitive routes, shared contracts, persistent state, and concurrent SQL behavior. Reversible UI and harness work remains bounded by the approved Core contracts.
+Độ sâu này bắt buộc vì hoạt động đối soát trải rộng FE01-FE12 và thay đổi các tuyến nhạy cảm về bảo mật, hợp đồng dùng chung, trạng thái bền vững cùng hành vi SQL tương tranh. Công việc UI và bộ kiểm thử có thể hoàn nguyên vẫn bị giới hạn bởi các hợp đồng Core đã phê duyệt.
 
-## Required Artifacts
+## Sản phẩm bắt buộc
 
-- Constitution, shared context, global/business/safety constraints, ADR-002, and the affected feature SPEC/PLAN/TASKS/TEST_PLAN/CHANGELOG files were reconciled.
-- Feature-specific validation records exist under `.sdd/reviews/` for FE01, FE03-FE06, FE09-FE12, plus FE11 finalization Waves A and B.
-- FE02 debt-closure evidence is recorded in `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`.
-- FE08 candidate-catalog evidence is recorded in `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`.
-- Live SQL evidence is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
-- Remaining accepted boundaries are recorded in `TECH_DEBT.md` rather than being silently represented as complete behavior.
+- Hiến chương, ngữ cảnh dùng chung, ràng buộc toàn cục/nghiệp vụ/an toàn, ADR-002 và các tệp SPEC/PLAN/TASKS/TEST_PLAN/CHANGELOG tính năng bị ảnh hưởng đã được đối soát.
+- Bản ghi xác thực riêng cho tính năng tồn tại trong `.sdd/reviews/` cho FE01, FE03-FE06, FE09-FE12 cùng Đợt hoàn thiện A và B của FE11.
+- Bằng chứng hoàn tất nợ FE02 được ghi trong `.sdd/reviews/fe02-auth-debt-closure-validation-2026-07-19.md`.
+- Bằng chứng danh mục ứng viên FE08 được ghi trong `.sdd/reviews/fe08-reservation-candidate-catalog-validation-2026-07-19.md`.
+- Bằng chứng SQL trực tiếp được ghi trong `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
+- Các ranh giới còn lại được chấp nhận được ghi trong `TECH_DEBT.md` thay vì bị âm thầm thể hiện là hành vi hoàn tất.
 
-## Final Local Validation Evidence
+## Bằng chứng xác thực cục bộ cuối cùng
 
-| Gate | Command boundary | Result |
+| Cổng | Ranh giới lệnh | Kết quả |
 | --- | --- | --- |
-| Backend regression | `backend`: `npm test -- --runInBand` | PASS - 53/53 suites, 905/905 tests |
-| Backend coverage | `backend`: `npm run test:coverage:ci` | PASS - 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
-| Frontend regression | `frontend`: `npm test` | PASS - 149/149 tests |
-| Frontend lint | `frontend`: `npm run lint` | PASS |
-| Frontend build | `frontend`: `npm run build` | PASS; non-blocking chunk-size warning remains |
-| System integration | `backend`: `npm run test:integration:system` | PASS - 10/10 tests |
-| Deployment utilities | root: `npm run test:deployment` | PASS - 7/7 tests |
-| Browser acceptance | Playwright on isolated frontend/backend ports `4185/3101` with both E2E URLs explicit | PASS - FE08, FE09, FE11, and system golden path, 4/4; FE08 focused 1/1 |
-| Traceability | root: `npm run trace:enforce` | PASS - every FE01-FE12 feature is 100% tagged |
-| OpenAPI | parse `backend/src/docs/openapi.yaml` with `yamljs` | `OPENAPI_PARSE_OK` |
-| Backend health import | import `backend/src/app.js` | `BACKEND_IMPORT_OK` |
-| Dependency audit | root/backend/frontend: `npm audit --omit=dev --audit-level=high` | PASS - 0 vulnerabilities in all three scopes |
-| Secret scan | high-confidence token/private-key signatures on added diff lines | PASS - no matches |
-| Scope scan | changed paths restricted to SDD evidence/specs, application, database, and tests | PASS |
-| FE11 drift scan | obsolete request query names, client paging variable, `STRING_AGG`, and Admin mutation aliases | PASS in the FE11 contract boundary |
-| Product drift scan | obsolete shared demo exports and duplicate FE05 mutation adapters | PASS - only documented `DEMO_BORROW_CATALOG` remains; FE08 `DEMO_RESERVABLE` and FE11 book mutation aliases are removed |
-| Diff hygiene | `git diff --check` | PASS |
+| Hồi quy backend | `backend`: `npm test -- --runInBand` | PASS - 53/53 bộ, 905/905 kiểm thử |
+| Độ bao phủ backend | `backend`: `npm run test:coverage:ci` | PASS - 92.68% câu lệnh, 81.66% nhánh, 96.59% hàm, 92.61% dòng |
+| Hồi quy frontend | `frontend`: `npm test` | PASS - 149/149 kiểm thử |
+| Lint frontend | `frontend`: `npm run lint` | PASS |
+| Bản dựng frontend | `frontend`: `npm run build` | PASS; cảnh báo kích thước phân đoạn không gây chặn vẫn còn |
+| Tích hợp hệ thống | `backend`: `npm run test:integration:system` | PASS - 10/10 kiểm thử |
+| Tiện ích triển khai | gốc: `npm run test:deployment` | PASS - 7/7 kiểm thử |
+| Chấp nhận trên trình duyệt | Playwright trên các cổng frontend/backend cô lập `4185/3101` với cả hai URL E2E rõ ràng | PASS - FE08, FE09, FE11 và luồng chuẩn hệ thống, 4/4; FE08 tập trung 1/1 |
+| Truy vết | gốc: `npm run trace:enforce` | PASS - mọi tính năng FE01-FE12 được gắn thẻ 100% |
+| OpenAPI | phân tích `backend/src/docs/openapi.yaml` bằng `yamljs` | `OPENAPI_PARSE_OK` |
+| Nhập sức khỏe backend | nhập `backend/src/app.js` | `BACKEND_IMPORT_OK` |
+| Kiểm toán phần phụ thuộc | gốc/backend/frontend: `npm audit --omit=dev --audit-level=high` | PASS - 0 lỗ hổng trong cả ba phạm vi |
+| Quét bí mật | chữ ký token/khóa riêng độ tin cậy cao trên các dòng phần khác biệt được thêm | PASS - không có kết quả khớp |
+| Quét phạm vi | đường dẫn thay đổi giới hạn trong bằng chứng/đặc tả SDD, ứng dụng, cơ sở dữ liệu và kiểm thử | PASS |
+| Quét sai lệch FE11 | tên truy vấn yêu cầu lỗi thời, biến phân trang máy khách, `STRING_AGG` và bí danh chỉnh sửa Quản trị viên | PASS trong ranh giới hợp đồng FE11 |
+| Quét sai lệch sản phẩm | phần xuất demo dùng chung lỗi thời và bộ chuyển đổi chỉnh sửa FE05 trùng lặp | PASS - chỉ còn `DEMO_BORROW_CATALOG` đã ghi tài liệu; `DEMO_RESERVABLE` FE08 và bí danh chỉnh sửa sách FE11 đã bị xóa |
+| Vệ sinh phần khác biệt | `git diff --check` | PASS |
 
-## Pull Request And CI Evidence
+## Bằng chứng Pull Request và CI
 
-- Draft PR: `#40` (`feat/full-reconciliation` -> `main`).
-- Validated implementation/evidence head: `d820ab75d0c4042bd8a7317b054e72518faaeffd`.
-- GitHub Actions run on that head: `29685337907`.
-- Result: PASS - `foundation-checks` completed traceability, backend tests, system integration, coverage, frontend lint/tests/build, Playwright E2E, and backend health import on the H2-reviewed pushed head.
-- Final H3 evidence head: `24680ffe9052f35298cbef4a2555bcb39e333824`; PR CI `29685838610` - PASS.
-- PR #40 merged as `1555111e895a1850da5daee7ade3453479c3a82b`.
-- Exact post-merge `main` CI `29685953839` - PASS.
+- PR nháp: `#40` (`feat/full-reconciliation` -> `main`).
+- Đầu nhánh triển khai/bằng chứng đã xác thực: `d820ab75d0c4042bd8a7317b054e72518faaeffd`.
+- Lần chạy GitHub Actions trên đầu nhánh đó: `29685337907`.
+- Kết quả: PASS - `foundation-checks` đã hoàn tất truy vết, kiểm thử backend, tích hợp hệ thống, độ bao phủ, lint/kiểm thử/bản dựng frontend, E2E Playwright và nhập sức khỏe backend trên đầu nhánh được push đã qua rà soát H2.
+- Đầu nhánh bằng chứng H3 cuối cùng: `24680ffe9052f35298cbef4a2555bcb39e333824`; CI PR `29685838610` - PASS.
+- PR #40 được merge thành `1555111e895a1850da5daee7ade3453479c3a82b`.
+- CI `main` chính xác sau merge `29685953839` - PASS.
 
-## Upstream Integration
+## Tích hợp upstream
 
-After draft PR #40 was opened, `origin/main` had advanced to `3f63a13`. The feature branch merged that state without force-pushing or discarding the new release/RDS/SDS documents.
+Sau khi PR nháp #40 được mở, `origin/main` đã tiến tới `3f63a13`. Nhánh tính năng merge trạng thái đó mà không force-push hay loại bỏ các tài liệu phát hành/RDS/SDS mới.
 
-- FE01/FE05 conflicts kept the reconciliation's canonical public envelope, no-category-endpoint decision, server-owned management pagination, rowversion `If-Match`, transactional audit, and public-safe availability projection.
-- FE09 integrated the newer v0.4.1 production boundary from main: legacy create/update/delete fine mutations remain unregistered and return `404`, while the reconciliation's timezone, pagination, concurrency, full-payment, and atomic audit implementation remains authoritative.
-- Focused post-merge checks passed: 77/77 backend tests, 17/17 frontend tests, and FE01-FE12 traceability at 100%.
-- Full post-merge checks passed: backend 888/888, frontend 145/145, system integration 10/10, deployment 7/7, Playwright 2/2, coverage/lint/build/traceability, and dependency/security/scope scans.
+- Xung đột FE01/FE05 giữ cấu trúc bao công khai chuẩn của hoạt động đối soát, quyết định không có điểm cuối thể loại, phân trang quản lý do máy chủ sở hữu, rowversion `If-Match`, kiểm toán có giao dịch và phép chiếu khả dụng an toàn công khai.
+- FE09 tích hợp ranh giới production v0.4.1 mới hơn từ main: các chỉnh sửa tạo/cập nhật/xóa tiền phạt cũ vẫn không được đăng ký và trả về `404`, trong khi phần triển khai múi giờ, phân trang, tương tranh, thanh toán toàn bộ và kiểm toán nguyên tử của hoạt động đối soát vẫn có thẩm quyền.
+- Kiểm tra tập trung sau merge đã đạt: 77/77 kiểm thử backend, 17/17 kiểm thử frontend và truy vết FE01-FE12 ở mức 100%.
+- Kiểm tra đầy đủ sau merge đã đạt: backend 888/888, frontend 145/145, tích hợp hệ thống 10/10, triển khai 7/7, Playwright 2/2, độ bao phủ/lint/bản dựng/truy vết cùng quét phần phụ thuộc/bảo mật/phạm vi.
 
-## Live SQL Gate
+## Cổng SQL trực tiếp
 
-The final rerun, repeated after integrating `origin/main@3f63a13`, used a disposable local SQL Server database and SQL login. The credential existed only in process memory and was never written to a file or output.
+Lần chạy lại cuối cùng, được lặp lại sau khi tích hợp `origin/main@3f63a13`, dùng cơ sở dữ liệu SQL Server cục bộ và thông tin đăng nhập SQL dùng một lần. Thông tin xác thực chỉ tồn tại trong bộ nhớ tiến trình và chưa từng được ghi vào tệp hay đầu ra.
 
-- Canonical `database/Librarymanagement.sql`: PASS.
-- Five reconciliation migrations in canonical order: PASS on execution 1/2 and 2/2.
-- SQL-backed Jest suites: PASS - 9/9 suites, 69/69 tests, including FE06 post-precheck race rechecks and FE08 open-reservation/candidate cases.
-- Cleanup: `DB_CLEAN` and `LOGIN_CLEAN`.
-- Application databases and the existing frontend process on port `4173` were not used or mutated.
+- `database/Librarymanagement.sql` chuẩn: PASS.
+- Năm lần di chuyển đối soát theo thứ tự chuẩn: PASS ở lần thực thi 1/2 và 2/2.
+- Các bộ Jest dựa trên SQL: PASS - 9/9 bộ, 69/69 kiểm thử, gồm kiểm tra lại tranh chấp sau bước kiểm tra trước FE06 và trường hợp đặt chỗ mở/ứng viên FE08.
+- Dọn dẹp: `DB_CLEAN` và `LOGIN_CLEAN`.
+- Cơ sở dữ liệu ứng dụng và tiến trình frontend hiện có trên cổng `4173` không bị sử dụng hay chỉnh sửa.
 
-## Product Drift Cleanup
+## Dọn dẹp sai lệch sản phẩm
 
-A RED test identified five unused shared demo exports: `DEMO_MY_RESERVATIONS`, `DEMO_ALL_RESERVATIONS`, `DEMO_BORROW_ROWS`, `DEMO_ADMIN_REQUESTS`, and `DEMO_MEMBERS`. They were removed without changing runtime behavior.
+Một kiểm thử RED xác định năm phần xuất demo dùng chung không được dùng: `DEMO_MY_RESERVATIONS`, `DEMO_ALL_RESERVATIONS`, `DEMO_BORROW_ROWS`, `DEMO_ADMIN_REQUESTS` và `DEMO_MEMBERS`. Chúng đã bị xóa mà không thay đổi hành vi lúc chạy.
 
-- Focused RED: 18 passed, 1 failed.
-- Focused GREEN: 19/19 passed.
-- Full frontend regression after cleanup: 145/145, lint PASS, build PASS.
+- RED tập trung: 18 đạt, 1 thất bại.
+- GREEN tập trung: 19/19 đạt.
+- Hồi quy frontend đầy đủ sau dọn dẹp: 145/145, lint PASS, bản dựng PASS.
 
-`DEMO_BORROW_CATALOG` remains the documented temporary FE07 candidate dependency. FE08 no longer imports or renders `DEMO_RESERVABLE`; TD-028 is resolved for the agent-side implementation and automated validation slice.
+`DEMO_BORROW_CATALOG` vẫn là phần phụ thuộc ứng viên FE07 tạm thời đã ghi tài liệu. FE08 không còn nhập hay kết xuất `DEMO_RESERVABLE`; TD-028 được giải quyết cho lát cắt triển khai phía tác nhân và xác thực tự động.
 
-## FE02 Debt Closure Follow-Up
+## Theo dõi hoàn tất nợ FE02
 
-- `TD-018` is closed with API regressions for duplicate and weak-password no-mutation behavior plus canonical email/OTP verification and reset consumption.
-- `TD-019` is closed by the approved Phase 1 policy: known-account lockout is implemented and IP-wide limiting is explicitly not claimed.
-- `TD-020` is closed by returning the same public `401 INVALID_CREDENTIALS` envelope for inactive and unknown accounts while preserving the internal inactive-login audit event.
-- Focused auth validation passes 30/30 and HTTPS transport passes 3/3; full backend regression passes 905/905; coverage, system integration, traceability, syntax, and diff hygiene pass locally.
+- `TD-018` được hoàn tất bằng hồi quy API cho hành vi không chỉnh sửa khi trùng lặp và mật khẩu yếu cùng việc sử dụng xác minh email/OTP và đặt lại chuẩn.
+- `TD-019` được hoàn tất theo chính sách Giai đoạn 1 đã phê duyệt: khóa tài khoản đã biết được triển khai còn giới hạn toàn IP được tuyên bố rõ là không có.
+- `TD-020` được hoàn tất bằng cách trả cùng cấu trúc bao công khai `401 INVALID_CREDENTIALS` cho tài khoản không hoạt động và không xác định, đồng thời giữ sự kiện kiểm toán đăng nhập tài khoản không hoạt động nội bộ.
+- Xác thực tập trung đạt 30/30 và truyền tải HTTPS đạt 3/3; hồi quy backend đầy đủ đạt 905/905; độ bao phủ, tích hợp hệ thống, truy vết, cú pháp và vệ sinh phần khác biệt đạt cục bộ.
 
-## Post-H2 P1 Corrections
+## Các bản sửa P1 sau H2
 
-- FE04 membership application/status routes now require the `MEMBER` role; focused route tests pass 19/19.
-- FE05 removes duplicate Admin Console book mutation controls/adapters; canonical BookManagement remains version/reason authoritative; frontend passes 149/149.
-- FE06 repository mutations now enforce locked borrow/reservation/parent state after service prechecks; route 35/35 and live SQL 10/10 pass.
-- FE08 open reservations count both `ACTIVE` and `NOTIFIED` for limits/duplicates; route and live SQL regressions pass.
-- FE02 deployed auth requests enforce HTTPS before JSON/auth dispatch; transport tests pass 3/3.
+- Tuyến đơn/trạng thái thành viên FE04 giờ yêu cầu vai trò `MEMBER`; kiểm thử tuyến tập trung đạt 19/19.
+- FE05 xóa điều khiển/bộ chuyển đổi chỉnh sửa sách trùng lặp trong Bảng điều khiển Quản trị viên; BookManagement chuẩn vẫn có thẩm quyền về phiên bản/lý do; frontend đạt 149/149.
+- Chỉnh sửa kho lưu trữ FE06 giờ thực thi trạng thái mượn/đặt chỗ/cha đã khóa sau bước kiểm tra trước của dịch vụ; tuyến 35/35 và SQL trực tiếp 10/10 đạt.
+- Đặt chỗ mở FE08 đếm cả `ACTIVE` và `NOTIFIED` cho giới hạn/trùng lặp; hồi quy tuyến và SQL trực tiếp đạt.
+- Yêu cầu xác thực FE02 đã triển khai thực thi HTTPS trước khi điều phối JSON/xác thực; kiểm thử truyền tải đạt 3/3.
 
-## FE09 L4 Closure Follow-Up
+## Theo dõi hoàn tất L4 FE09
 
-- `TD-004` is closed: Fine Management now delegates search, status filtering, page, limit, ordering, and totals to the canonical server contract.
-- Browser-side filtering/slicing was removed; page-scoped KPIs are labeled explicitly so they do not imply global aggregates.
-- Focused frontend passes 6/6; current full frontend passes 149/149; lint/build pass; FE09 browser acceptance passes 1/1; the full isolated browser suite passes 4/4.
-- The implementation adds no backend route, schema, dependency, mutation behavior, browser storage, or new fine policy.
+- `TD-004` được hoàn tất: Quản lý Tiền phạt giờ giao tìm kiếm, lọc trạng thái, trang, giới hạn, thứ tự và tổng số cho hợp đồng máy chủ chuẩn.
+- Lọc/cắt phía trình duyệt đã bị xóa; KPI theo phạm vi trang được ghi nhãn rõ để không ngụ ý tổng hợp toàn cục.
+- Frontend tập trung đạt 6/6; frontend đầy đủ hiện tại đạt 149/149; lint/bản dựng đạt; chấp nhận FE09 trên trình duyệt đạt 1/1; toàn bộ bộ trình duyệt cô lập đạt 4/4.
+- Phần triển khai không thêm tuyến backend, lược đồ, phần phụ thuộc, hành vi chỉnh sửa, kho lưu trữ trình duyệt hay chính sách tiền phạt mới.
 
-## Validation Layers
+## Các lớp xác thực
 
-| Layer | State | Evidence or remaining boundary |
+| Lớp | Trạng thái | Bằng chứng hoặc ranh giới còn lại |
 | --- | --- | --- |
-| 1. Automated checks | PASS locally | Unit, integration, coverage, lint, build, deployment, E2E, Live SQL, OpenAPI, import, audits, traceability, and diff checks pass |
-| 2. Spec compliance | PASS | FE01-FE12 traceability is 100%; feature specs/tasks/evidence are reconciled; approved deferred boundaries remain explicit |
-| 3. Constitution and safety | PASS locally | Approved stack retained; protected actions remain server-authorized; SQL mutation was isolated; no saved credentials or high-confidence secrets detected |
-| 4. Acceptance verification | PASS | Human requestor approved the FE01-FE12 walkthrough and H3; PR #40 merged as `1555111`, and post-merge `main` CI `29685953839` passed |
+| 1. Kiểm tra tự động | PASS cục bộ | Kiểm thử đơn vị, tích hợp, độ bao phủ, lint, bản dựng, triển khai, E2E, SQL trực tiếp, OpenAPI, nhập, kiểm toán, truy vết và kiểm tra phần khác biệt đều đạt |
+| 2. Tuân thủ đặc tả | PASS | Truy vết FE01-FE12 đạt 100%; đặc tả/tác vụ/bằng chứng tính năng được đối soát; các ranh giới hoãn lại đã phê duyệt vẫn rõ ràng |
+| 3. Hiến chương và an toàn | PASS cục bộ | Ngăn xếp đã phê duyệt được giữ; hành động được bảo vệ vẫn do máy chủ phân quyền; chỉnh sửa SQL được cô lập; không phát hiện thông tin xác thực đã lưu hay bí mật độ tin cậy cao |
+| 4. Xác minh chấp nhận | PASS | Người yêu cầu là con người đã phê duyệt quy trình duyệt FE01-FE12 và H3; PR #40 được merge thành `1555111` và CI `main` sau merge `29685953839` đã đạt |
 
-## Final H2 Diff Review - Current Worktree
+## Rà soát phần khác biệt H2 cuối cùng - Worktree hiện tại
 
-Status: PASS after remediation; the reviewed implementation diff is committed and pushed on `feat/full-reconciliation`.
+Trạng thái: PASS sau khắc phục; phần khác biệt triển khai đã rà soát được commit và push trên `feat/full-reconciliation`.
 
-- Reviewed the full `origin/main` to worktree diff across application code, migrations, tests, specs, evidence, release documents, and agent memory.
-- JavaScript syntax check: `146` changed `.js/.mjs/.cjs` files passed `node --check`.
-- Focused FE02 transport regression: `3/3` passed after redirect hardening; full backend regression and coverage remain `905/905` and `92.68% / 81.66% / 96.59% / 92.61%`.
-- Secret-signature scan, scope scan, generated-artifact check, OpenAPI parse/import, traceability enforcement, and `git diff --check` passed.
-- H2-001 (fixed): `HTTPS_REDIRECT=true` previously trusted the request `Host`; redirects now require a validated `HTTPS_CANONICAL_HOST`, otherwise the middleware rejects with `HTTPS_REQUIRED`.
-- Latest recorded disposable SQL evidence remains `9/9` suites and `69/69` tests with `DB_CLEAN`/`LOGIN_CLEAN`; this worktree has no mutable SQL configuration for a new rerun, and no SQL code changed after that recorded run.
+- Đã rà soát toàn bộ phần khác biệt từ `origin/main` tới worktree trên mã ứng dụng, di chuyển, kiểm thử, đặc tả, bằng chứng, tài liệu phát hành và bộ nhớ tác nhân.
+- Kiểm tra cú pháp JavaScript: `146` tệp `.js/.mjs/.cjs` đã thay đổi đều đạt `node --check`.
+- Hồi quy truyền tải FE02 tập trung: `3/3` đạt sau khi tăng cường chuyển hướng; hồi quy và độ bao phủ backend đầy đủ vẫn là `905/905` và `92.68% / 81.66% / 96.59% / 92.61%`.
+- Quét chữ ký bí mật, quét phạm vi, kiểm tra sản phẩm được tạo, phân tích/nhập OpenAPI, thực thi truy vết và `git diff --check` đã đạt.
+- H2-001 (đã sửa): `HTTPS_REDIRECT=true` trước đây tin tưởng `Host` của yêu cầu; chuyển hướng giờ yêu cầu `HTTPS_CANONICAL_HOST` đã xác thực, nếu không middleware từ chối với `HTTPS_REQUIRED`.
+- Bằng chứng SQL dùng một lần mới nhất đã ghi vẫn là `9/9` bộ và `69/69` kiểm thử cùng `DB_CLEAN`/`LOGIN_CLEAN`; worktree này không có cấu hình SQL có thể chỉnh sửa để chạy lại và không có mã SQL nào thay đổi sau lần chạy đã ghi đó.
 
-## Residual Risks And Decisions
+## Rủi ro và quyết định còn lại
 
-- Frontend production output contains a Vite warning for a minified JavaScript chunk above 500 kB; the build passes, but code splitting remains a performance improvement.
-- The merged diff is large because it reconciles all twelve features; final H3, merge, and post-merge CI evidence are complete.
+- Đầu ra production frontend chứa cảnh báo Vite cho một phân đoạn JavaScript đã rút gọn trên 500 kB; bản dựng đạt nhưng chia tách mã vẫn là một cải tiến hiệu năng.
+- Phần khác biệt đã merge lớn vì đối soát cả mười hai tính năng; bằng chứng H3 cuối cùng, merge và CI sau merge đã hoàn tất.
 
-## Execution Boundary
+## Ranh giới thực thi
 
-PR #40 merged to `main` as `1555111`; post-merge CI `29685953839` passed. No validation or integration boundary remains for the approved FE01-FE12 reconciliation scope.
+PR #40 được merge vào `main` thành `1555111`; CI sau merge `29685953839` đã đạt. Không còn ranh giới xác thực hay tích hợp nào cho phạm vi đối soát FE01-FE12 đã phê duyệt.

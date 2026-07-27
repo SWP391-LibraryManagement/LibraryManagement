@@ -1,100 +1,100 @@
-# Phase 3 Final Validation - 2026-07-19
+# Xác thực cuối cùng Giai đoạn 3 - 2026-07-19
 
-Validation commit: `80d81e4`
+Commit xác thực: `80d81e4`
 
-## Decision
+## Quyết định
 
-Phase 3 is **integrated and validated** on `main` at merge commit `4d02fc4`.
-The package satisfies the four Hybrid SDD validation layers for the observed
-scope. Authenticated Azure acceptance and real SMTP inbox delivery were later
-verified in live run `c6e0c46421f0`. Durable avatar storage, shared SQL CI, and
-production SLA remain explicit residual boundaries; none is marked as passed
-by inference.
+Giai đoạn 3 đã được **tích hợp và xác thực** trên `main` tại commit merge `4d02fc4`.
+Gói này đáp ứng bốn lớp xác thực Hybrid SDD cho phạm vi
+được quan sát. Chấp nhận Azure có xác thực và gửi đến hộp thư SMTP thật sau đó
+được xác minh trong lần chạy trực tiếp `c6e0c46421f0`. Lưu trữ ảnh đại diện bền vững, CI SQL dùng chung và
+SLA production vẫn là các ranh giới còn lại rõ ràng; không hạng mục nào được đánh dấu đạt
+bằng suy luận.
 
-## L1 - Automated checks
+## L1 - Kiểm tra tự động
 
-All commands below were run in the isolated Phase 3 worktree.
+Tất cả lệnh bên dưới đã được chạy trong worktree Giai đoạn 3 cô lập.
 
-| Command | Result |
+| Lệnh | Kết quả |
 | --- | --- |
-| `npm.cmd run trace:enforce` | PASS; 12/12 features, 100% FR coverage, zero below threshold. |
-| `npm.cmd run test:deployment` | PASS; 8/8 deployment utility tests. |
-| `npm.cmd --prefix backend run test:coverage:ci` | PASS; 916 tests, 53 suites; statements 92.68%, branches 81.66%, functions 96.59%, lines 92.61%. |
-| `npm.cmd --prefix backend run test:integration:system` | PASS; 10/10 system integration tests. |
-| `npm.cmd --prefix frontend test` | PASS; 151/151 tests. |
+| `npm.cmd run trace:enforce` | PASS; 12/12 tính năng, độ bao phủ FR 100%, không có mục dưới ngưỡng. |
+| `npm.cmd run test:deployment` | PASS; 8/8 kiểm thử tiện ích triển khai. |
+| `npm.cmd --prefix backend run test:coverage:ci` | PASS; 916 kiểm thử, 53 bộ; câu lệnh 92.68%, nhánh 81.66%, hàm 96.59%, dòng 92.61%. |
+| `npm.cmd --prefix backend run test:integration:system` | PASS; 10/10 kiểm thử tích hợp hệ thống. |
+| `npm.cmd --prefix frontend test` | PASS; 151/151 kiểm thử. |
 | `npm.cmd --prefix frontend run lint` | PASS. |
-| `npm.cmd --prefix frontend run build` | PASS; 57 JS assets, 320,688-byte entry, no entry-chunk warning. |
-| `E2E_FRONTEND_PORT=4273 E2E_BACKEND_PORT=3200 E2E_FRONTEND_URL=http://127.0.0.1:4273 E2E_BACKEND_URL=http://127.0.0.1:3200 npm.cmd run test:e2e` | PASS; 4/4 Playwright tests in 24.4 seconds. |
-| `npm.cmd run phase3:performance` | PASS; login p95 66.95 ms, `/auth/me` p95 1.45 ms, bcrypt cost 10. |
-| `npm.cmd run smoke:staging` with observed staging URLs | PASS; frontend, health, SQL catalog, allowed CORS, blocked CORS, protected route. |
-| `git diff --check` | PASS; no whitespace errors. |
+| `npm.cmd --prefix frontend run build` | PASS; 57 tài nguyên JS, tệp đầu vào 320,688 byte, không có cảnh báo phân đoạn đầu vào. |
+| `E2E_FRONTEND_PORT=4273 E2E_BACKEND_PORT=3200 E2E_FRONTEND_URL=http://127.0.0.1:4273 E2E_BACKEND_URL=http://127.0.0.1:3200 npm.cmd run test:e2e` | PASS; 4/4 kiểm thử Playwright trong 24.4 giây. |
+| `npm.cmd run phase3:performance` | PASS; p95 đăng nhập 66.95 ms, p95 `/auth/me` 1.45 ms, chi phí bcrypt 10. |
+| `npm.cmd run smoke:staging` với các URL staging quan sát được | PASS; frontend, sức khỏe, danh mục SQL, CORS được phép, CORS bị chặn, tuyến được bảo vệ. |
+| `git diff --check` | PASS; không có lỗi khoảng trắng. |
 
-The placeholder/secret scan returned only the scan command itself and
-historical setup-plan examples such as `JWT_SECRET=<App Service secret>`;
-there are no committed secret values or untracked release URL placeholders in
-the Phase 3 deliverables.
+Quét phần giữ chỗ/bí mật chỉ trả về chính lệnh quét và
+các ví dụ kế hoạch thiết lập trong lịch sử như `JWT_SECRET=<App Service secret>`;
+không có giá trị bí mật đã commit hay phần giữ chỗ URL phát hành chưa được theo dõi trong
+các sản phẩm bàn giao Giai đoạn 3.
 
-## L2 - Spec and traceability
+## L2 - Đặc tả và truy vết
 
-- Phase 3 preserves the accepted FE01-FE12 contracts; no new business rule or
-  role permission was introduced.
-- The FE05 migration correction is covered by RED-GREEN tests and is documented
-  in `docs/release/phase3-staging-evidence-2026-07-19.md`.
-- Route-level lazy loading is covered by frontend contract tests and leaves
-  route guards, API clients, and authorization boundaries in the entry module.
-- Deliverables map to the Phase 3 design/plan, performance report, user-testing
-  record, defense deck/source record, and this validation packet.
+- Giai đoạn 3 giữ nguyên các hợp đồng FE01-FE12 đã chấp nhận; không có quy tắc nghiệp vụ hay
+  quyền vai trò mới nào được đưa vào.
+- Bản sửa di chuyển FE05 được bao phủ bằng kiểm thử RED-GREEN và được ghi tài liệu
+  trong `docs/release/phase3-staging-evidence-2026-07-19.md`.
+- Tải lười cấp tuyến được bao phủ bằng kiểm thử hợp đồng frontend và giữ
+  chốt bảo vệ tuyến, máy khách API cùng ranh giới phân quyền trong mô-đun đầu vào.
+- Các sản phẩm bàn giao ánh xạ tới thiết kế/kế hoạch Giai đoạn 3, báo cáo hiệu năng, bản ghi
+  kiểm thử người dùng, bản trình bày bảo vệ/bản ghi nguồn và gói xác thực này.
 
-## L3 - Constitution and safety
+## L3 - Hiến chương và an toàn
 
-- Approved stack remains Node.js + Express.js, React + Bootstrap, SQL Server,
-  and REST APIs.
-- No secrets, tokens, raw OTPs, database passwords, SMTP bodies, or real PII
-  are present in tracked Phase 3 evidence.
-- Temporary Azure SQL operator firewall access was removed and the connection
-  policy was restored to `Default` after diagnosis.
-- Public staging smoke verifies exact allowed CORS and rejection of an
-  untrusted origin; anonymous protected access returns a safe `401` envelope.
-- App Service `TRUST_PROXY=true` is documented as non-secret configuration for
-  correct HTTPS enforcement behind Azure's proxy.
-- The live SMTP issue was configuration shape, not an application code change:
-  malformed `SMTP_USER` input was corrected to the valid `MAIL_FROM` address;
-  no secret value is present in the evidence.
+- Ngăn xếp đã phê duyệt vẫn là Node.js + Express.js, React + Bootstrap, SQL Server
+  và các API REST.
+- Không có bí mật, token, OTP thô, mật khẩu cơ sở dữ liệu, nội dung SMTP hay PII thật
+  trong bằng chứng Giai đoạn 3 được theo dõi.
+- Quyền truy cập tường lửa tạm thời của người vận hành Azure SQL đã bị xóa và chính sách
+  kết nối được khôi phục thành `Default` sau khi chẩn đoán.
+- Smoke staging công khai xác minh chính xác CORS được phép và việc từ chối một
+  nguồn không đáng tin; truy cập ẩn danh vào tài nguyên được bảo vệ trả về cấu trúc bao `401` an toàn.
+- App Service `TRUST_PROXY=true` được ghi tài liệu là cấu hình không bí mật để
+  thực thi HTTPS chính xác phía sau proxy của Azure.
+- Sự cố SMTP trực tiếp nằm ở hình dạng cấu hình, không phải thay đổi mã ứng dụng:
+  đầu vào `SMTP_USER` sai định dạng đã được sửa thành địa chỉ `MAIL_FROM` hợp lệ;
+  không có giá trị bí mật nào trong bằng chứng.
 
-## L4 - Acceptance verification
+## L4 - Xác minh chấp nhận
 
-Observed acceptance is intentionally split by evidence boundary:
+Kết quả chấp nhận quan sát được được chủ ý tách theo ranh giới bằng chứng:
 
-| Acceptance item | Status | Evidence |
+| Hạng mục chấp nhận | Trạng thái | Bằng chứng |
 | --- | --- | --- |
-| Public frontend and backend | PASS | Independent six-check staging smoke. |
-| SQL-backed public catalog | PASS | `/api/books?page=1&limit=1` returned the canonical envelope after five migrations ran twice. |
-| Strict CORS | PASS | Exact staging origin allowed; untrusted origin blocked. |
-| Anonymous protected route | PASS | `/api/auth/me` returned `401`. |
-| Synthetic local authenticated golden path | PASS | 4/4 Playwright suites; login -> borrow -> approve -> return -> fine -> report. |
-| Responsive layout evidence | PASS | Desktop/mobile screenshots and no horizontal overflow assertion. |
-| Authenticated Azure Member/Librarian flow | PASS | Live run `c6e0c46421f0` verified three role logins, protected reads, borrow request, approval, and return. |
-| Real SMTP inbox delivery | PASS | Notification `8` was `SENT` in one attempt; provider acceptance and Gmail IMAP search were observed. |
-| Durable avatar storage | LIMITATION | App Service filesystem is not production-durable storage. |
-| Shared SQL CI | LIMITATION | CI does not provide a disposable SQL Server service. |
-| Production SLA | OUT OF SCOPE | Student-credit staging environment only. |
+| Frontend và backend công khai | PASS | Sáu kiểm tra smoke staging độc lập. |
+| Danh mục công khai dựa trên SQL | PASS | `/api/books?page=1&limit=1` trả về cấu trúc bao chuẩn sau khi năm lần di chuyển được chạy hai lần. |
+| CORS nghiêm ngặt | PASS | Cho phép chính xác nguồn staging; chặn nguồn không đáng tin. |
+| Tuyến bảo vệ truy cập ẩn danh | PASS | `/api/auth/me` trả về `401`. |
+| Luồng chuẩn cục bộ tổng hợp có xác thực | PASS | 4/4 bộ Playwright; đăng nhập -> mượn -> phê duyệt -> trả -> phạt -> báo cáo. |
+| Bằng chứng bố cục đáp ứng | PASS | Ảnh chụp màn hình máy tính/di động và khẳng định không tràn ngang. |
+| Luồng Thành viên/Thủ thư Azure có xác thực | PASS | Lần chạy trực tiếp `c6e0c46421f0` xác minh đăng nhập ba vai trò, lượt đọc được bảo vệ, yêu cầu mượn, phê duyệt và trả. |
+| Gửi đến hộp thư SMTP thật | PASS | Thông báo `8` ở trạng thái `SENT` trong một lần thử; đã quan sát việc nhà cung cấp chấp nhận và tìm kiếm IMAP Gmail. |
+| Lưu trữ ảnh đại diện bền vững | LIMITATION | Hệ thống tệp App Service không phải kho lưu trữ bền vững cho production. |
+| CI SQL dùng chung | LIMITATION | CI không cung cấp dịch vụ SQL Server dùng một lần. |
+| SLA production | OUT OF SCOPE | Chỉ dành cho môi trường staging bằng tín dụng sinh viên. |
 
-## Reproducibility and artifacts
+## Khả năng tái lập và sản phẩm
 
-- Staging endpoints and SQL diagnosis: `docs/release/phase3-staging-evidence-2026-07-19.md`.
-- Performance measurements: `docs/performance/phase3-performance-report-2026-07-19.md`.
-- User testing and rehearsal: `docs/release/phase3-user-testing-record-2026-07-19.md` and `docs/testing/system-integration-demo-runbook.md`.
-- Final narrative and timed path: `docs/release/phase3-final-report.md` and `docs/release/phase3-rehearsal-record.md`.
-- Presentation and claim sources: `docs/presentation/phase3-defense-deck.pptx` and `docs/presentation/phase3-defense-deck-source.md`.
-- Render QA: 10 slides rendered; `slides_test.py` reported `Test passed. No overflow detected.`
+- Điểm cuối staging và chẩn đoán SQL: `docs/release/phase3-staging-evidence-2026-07-19.md`.
+- Đo lường hiệu năng: `docs/performance/phase3-performance-report-2026-07-19.md`.
+- Kiểm thử người dùng và diễn tập: `docs/release/phase3-user-testing-record-2026-07-19.md` và `docs/testing/system-integration-demo-runbook.md`.
+- Nội dung tường thuật cuối cùng và luồng có định thời: `docs/release/phase3-final-report.md` và `docs/release/phase3-rehearsal-record.md`.
+- Nguồn bản trình bày và tuyên bố: `docs/presentation/phase3-defense-deck.pptx` và `docs/presentation/phase3-defense-deck-source.md`.
+- QA kết xuất: đã kết xuất 10 trang chiếu; `slides_test.py` báo cáo `Test passed. No overflow detected.`
 
-## Integration gate
+## Cổng tích hợp
 
-The branch was merged as PR #48. Post-merge `main` CI run `29696519912` passed,
-and fresh staging workflow `29696612260` passed the quality gate, both deploys,
-and the current six-check SQL-aware smoke. Historical run `29694280002` remains
-context only because it predates the SQL-aware smoke assertion.
+Nhánh đã được merge dưới dạng PR #48. Lần chạy CI `main` sau merge `29696519912` đã đạt
+và quy trình staging mới `29696612260` đã đạt cổng chất lượng, cả hai lần triển khai
+cùng sáu kiểm tra smoke hiện tại có nhận biết SQL. Lần chạy lịch sử `29694280002` chỉ còn là
+ngữ cảnh vì diễn ra trước khẳng định smoke có nhận biết SQL.
 
-The authenticated/SMTP observation used ephemeral fixtures and completed
-cleanup with zero remaining auth, book, or notification fixtures and no
-temporary `phase3-live-observation*` firewall rules.
+Quan sát có xác thực/SMTP đã dùng các fixture tạm thời và hoàn tất
+dọn dẹp mà không còn fixture xác thực, sách hay thông báo nào, đồng thời không còn
+quy tắc tường lửa `phase3-live-observation*` tạm thời.
