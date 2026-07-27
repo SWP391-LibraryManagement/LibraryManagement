@@ -13,9 +13,12 @@ const guide = fs.readFileSync(
   'utf8'
 );
 
-test('staging deployment is manual-only and packages the reviewed startup migration', () => {
-  assert.match(workflow, /on:\s+workflow_dispatch:/);
-  assert.doesNotMatch(workflow, /\b(workflow_run|push|schedule):/);
+test('staging deployment follows successful main CI and packages the reviewed startup migration', () => {
+  assert.match(workflow, /workflow_run:\s+workflows: \[CI\]\s+types: \[completed\]\s+branches: \[main\]/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(workflow, /ref: \$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}/);
+  assert.doesNotMatch(workflow, /\b(push|schedule):/);
   assert.doesNotMatch(workflow, /apply_library_metadata_migration/);
   assert.doesNotMatch(workflow, /migrateLibraryMetadata|migration-runtime|invoke-appservice/);
   assert.match(
@@ -24,13 +27,13 @@ test('staging deployment is manual-only and packages the reviewed startup migrat
   );
 });
 
-test('manual staging deployment still requires the fail-closed smoke check', () => {
+test('automatic and manual staging deployment require the fail-closed smoke check', () => {
   assert.match(workflow, /name: Verify staging endpoints[\s\S]*?run: npm run smoke:staging/);
 });
 
-test('operator guide matches the manual-only workflow and canonical schema size', () => {
-  assert.match(guide, /## Manual Deployment With Startup Reconciliation/);
-  assert.doesNotMatch(guide, /runs automatically for every push to `main`/);
+test('operator guide matches CI-gated continuous deployment and canonical schema size', () => {
+  assert.match(guide, /## CI-Gated Continuous Deployment/);
+  assert.match(guide, /successful `main` CI run/);
   assert.match(guide, /table count `21`/);
 
   const operatorMigrationList = guide.match(/```text\s+([\s\S]*?)```/)?.[1] || '';

@@ -215,9 +215,10 @@ alter `Authors`, `Publishers`, and `Categories`; the startup gate must add only 
 GitHub-hosted runner IP ranges or widen the firewall.
 
 After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
-`checks.catalogMetadata = "ok"`. The staging workflow remains `workflow_dispatch` only: pushes run
-CI but do not automatically deploy staging. The workflow itself does not connect to SQL or execute
-SQL; schema reconciliation runs inside the configured backend application identity before listen.
+`checks.catalogMetadata = "ok"`. A successful `main` CI run automatically starts the staging
+workflow for that exact commit; `workflow_dispatch` remains available for an operator rerun. The
+workflow itself does not connect to SQL or execute SQL; schema reconciliation runs inside the
+configured backend application identity before listen.
 
 ## Configure App Service Runtime Settings
 
@@ -316,21 +317,19 @@ Download the backend publish profile from App Service and paste it directly into
 Paste the Static Web Apps deployment token directly into the second. Enable required reviewer
 approval for the environment when the repository plan supports it.
 
-## Manual Deployment With Startup Reconciliation
+## CI-Gated Continuous Deployment
 
-The staging workflow is manual-only:
+The staging workflow deploys only after the exact `main` CI run succeeds:
 
 1. Merge the approved change into `main`.
-2. Wait for the exact `main` CI run to pass.
-3. Apply any required operator-owned migrations other than the packaged metadata compatibility
-   migration.
-4. Open `Deploy staging` in GitHub Actions and select **Run workflow** for `main`.
-5. Approve the `staging` Environment when prompted, if environment approval is enabled.
-6. Confirm backend startup applied the packaged metadata migration and `/health/ready` returns `200`.
-7. Confirm backend deploy, frontend deploy, and the fail-closed smoke job all pass.
+2. GitHub Actions completes `CI` for that commit.
+3. `Deploy staging` checks out the same CI commit and deploys the backend and frontend.
+4. Approve the `staging` Environment when prompted, if environment approval is enabled.
+5. Confirm backend startup applied the packaged metadata migration and `/health/ready` returns `200`.
+6. Confirm backend deploy, frontend deploy, and the fail-closed smoke job all pass.
 
-A push or merge must not start a staging deployment. Do not run the manual workflow while CI is
-failing or known operator-owned migrations remain unapplied.
+Failed CI runs do not deploy. `workflow_dispatch` remains available for an operator rerun after any
+required operator-owned migration is applied.
 
 After changing App Service settings, allow the F1 instance to warm up before
 judging the smoke result. A first request may return `503` while the application

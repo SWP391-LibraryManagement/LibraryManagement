@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-28 - Enable CI-gated continuous staging deployment
+
+- Triggered `Deploy staging` automatically only after a successful `main` CI run and checked out the exact tested commit.
+- Retained manual reruns, the packaged startup migration, environment approval support, and fail-closed staging smoke.
+- Aligned SPEC v0.6.8, PLAN, TASKS, deployment guidance, and workflow policy regression.
+
 ## 2026-07-27 - Run compile-safe metadata compatibility migration at backend startup
 
 - Packaged the reviewed transactional metadata migration with the backend deployment.

@@ -174,3 +174,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
     specifically named disposable local SQL Server database before deployment.
   - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke
     behavior, and existing Admin/Librarian role boundaries.
+
+## 2026-07-28 CI/CD activation
+
+- [x] **FE05-T016 - Deploy staging automatically after successful main CI.**
+  - Maps to: NFR-FE05-DEP-001.
+  - Trigger `Deploy staging` only after the exact `main` CI run succeeds, while retaining manual reruns.
+  - Check out the CI-tested commit, retain the packaged startup migration and fail-closed smoke test, and prevent failed CI runs from deploying.
+  - Evidence: the workflow policy and staging smoke regressions pass locally; the pushed workflow run provides live deployment evidence.
