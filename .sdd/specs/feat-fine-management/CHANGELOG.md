@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE09 Fine Management
 
+## 2026-07-28 - Hide internal borrowing ID from Member fines (v0.4.4)
+
+- Removed the `Mã mượn` column and identifier-based title fallback from the
+  Member fine table.
+- Preserved `borrowDetailId` in the canonical API/database relationship for
+  duplicate prevention, calculation, staff reconciliation, and audit.
+
 ## 2026-07-27 - Connect Member fines to borrowing and role ownership
 
 - Restricted `/api/fines/me` to the single `MEMBER` role; Librarian/Admin continue through the staff fine workspace.

@@ -119,6 +119,12 @@ The checked tasks below are historical TD-001/002/003 implementation evidence. T
   - Explain the unpaid-fine borrowing/renewal blocker and link the Member to canonical borrowing history.
   - Preserve Librarian/Admin collection ownership and Admin-only waive/cancel.
 
+- [~] **FE09-T025 - Hide the internal borrowing-detail identifier from Member fines.**
+  - Maps to: FR-FE09-019, AC-FE09-017.
+  - Remove the `Mã mượn` header, row cell, and identifier-based book fallback from the Member fine table.
+  - Preserve `borrowDetailId` in the canonical API/database DTO and all Librarian/Admin calculation, reconciliation, and audit workflows.
+  - Verify the focused Member fine test, full frontend tests, lint/build, traceability, and diff hygiene; human review remains required.
+
 ## Validation Status
 
 - Historical TD-001/002/003 evidence remains in the changelog and does not close FE09-T013 through FE09-T020.

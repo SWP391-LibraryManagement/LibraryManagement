@@ -1,12 +1,12 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.4.3
+# Version: 0.4.4
 
-# Status: APPROVED BASELINE 2026-07-17 - PHASE 2 EXIT COMPLETE
+# Status: REVISION IMPLEMENTED - HUMAN REVIEW PENDING 2026-07-28
 
 # Owner: Dung
 
-# Last Updated: 2026-07-21
+# Last Updated: 2026-07-28
 
 # Feature ID: FE09
 
@@ -213,7 +213,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE09-016: IF a supplied fine-list page, limit, status, or user ID is invalid, the system shall reject the request without normalizing the value or querying fines.
 - FR-FE09-017: When calculating a fine, the system shall derive overdue days from the `Asia/Ho_Chi_Minh` business date and stored due/return dates.
 - FR-FE09-018: The Librarian/Admin fine workspace shall preserve the selected fine across list, calculation, collection, and paid-reconciliation steps. A newly calculated overdue fine shall become the selected `UNPAID` fine for collection, and payment steps shall reject entry unless an `UNPAID` fine is selected, including when that selected fine is outside the currently rendered server page.
-- FR-FE09-019: WHEN a single-role Member views “Tiền phạt của tôi”, the system shall return only that Member's fines with the related book, `borrowDetailId`, due date, return date, amount, reason, status, and paid timestamp; the frontend shall explain that positive `UNPAID` fines block FE07 borrowing/renewal, link to borrowing history for reconciliation, and remain read-only.
+- FR-FE09-019: WHEN a single-role Member views “Tiền phạt của tôi”, the system shall return only that Member's fines with the related book, `borrowDetailId`, due date, return date, amount, reason, status, and paid timestamp; the frontend shall explain that positive `UNPAID` fines block FE07 borrowing/renewal, link to borrowing history for reconciliation, remain read-only, and keep the internal `borrowDetailId` out of the Member table presentation.
 
 ---
 
@@ -235,7 +235,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-014: Given an unpaid fine and a valid admin reason, when the admin cancels the fine, then status becomes `CANCELLED`, the fine remains visible, and an audit record is written atomically.
 - AC-FE09-015: Given a fine calculation at a timezone boundary, when the server business date is evaluated, then overdue days use `Asia/Ho_Chi_Minh` consistently.
 - AC-FE09-016: Given a Librarian/Admin calculates or selects an unpaid fine, when moving to collection or paid reconciliation, then the same fine ID, member, borrowing context, and amount remain selected; after success, the returned canonical `PAID` fine is shown and FE07/FE12 consume the resolved state.
-- AC-FE09-017: Given Guest, Librarian, Admin, and Member actors, when they access `/api/fines/me`, then Guest receives `401`, Librarian/Admin receive `403 ROLE_REQUIRED`, and only Member receives their own borrowing-linked fine records; Member sees no calculate, collect, paid, waive, or cancel action.
+- AC-FE09-017: Given Guest, Librarian, Admin, and Member actors, when they access `/api/fines/me`, then Guest receives `401`, Librarian/Admin receive `403 ROLE_REQUIRED`, and only Member receives their own borrowing-linked fine records; Member sees no calculate, collect, paid, waive, cancel action, or visible `Mã mượn` field.
 
 ---
 

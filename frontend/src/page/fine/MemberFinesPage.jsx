@@ -104,7 +104,7 @@ export default function MemberFinesPage() {
       <div className="lib-card">
         <DataTable
           caption="Danh sách tiền phạt của tôi"
-          headers={['Sách', 'Hạn trả', 'Ngày trả', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái', 'Mã mượn']}
+          headers={['Sách', 'Hạn trả', 'Ngày trả', 'Lý do', 'Quá hạn', 'Số tiền', 'Trạng thái']}
           loading={loading}
           loadingRows={4}
           isEmpty={fines.length === 0}
@@ -112,7 +112,7 @@ export default function MemberFinesPage() {
         >
           {fines.map((fine) => (
             <tr key={fine.fineId}>
-              <td data-label="Sách"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></td>
+              <td data-label="Sách"><strong>{fine.bookTitle || 'Sách chưa xác định'}</strong></td>
               <td data-label="Hạn trả">{formatDate(fine.dueDate)}</td>
               <td data-label="Ngày trả">{formatDate(fine.returnDate)}</td>
               <td data-label="Lý do">{FINE_REASON_LABELS[fine.reason] || fine.reason || 'Quá hạn trả sách'}</td>
@@ -124,7 +124,6 @@ export default function MemberFinesPage() {
                   <div className="field-hint">Đã ghi nhận ngày {formatDateTime(fine.paidAt)}</div>
                 )}
               </td>
-              <td data-label="Mã mượn">#{fine.borrowDetailId}</td>
             </tr>
           ))}
         </DataTable>
