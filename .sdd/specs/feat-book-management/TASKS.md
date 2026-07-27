@@ -156,14 +156,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [x] **FE05-T013 - Fail deployment readiness on metadata schema drift.**
   - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
   - Add a read-only `/health/ready` check for the canonical `Authors`, `Publishers`, and `Categories` tables plus their persisted `Status`/`CreatedAt` columns.
-  - Add a bounded operator command that executes only the already reviewed `2026-07-22-library-metadata-compatibility.sql` migration and verifies the result.
+  - Keep the reviewed `2026-07-22-library-metadata-compatibility.sql` migration available for direct execution by an authorized database operator.
   - Extend staging smoke so a code-only deploy cannot pass while the Admin metadata tabs remain broken.
   - Preserve the migration policy: liveness never mutates schema, and CI does not apply SQL automatically.
-- [x] **FE05-T014 - Add an explicit staging repair gate for the reviewed metadata migration.**
+- [x] **FE05-T014 - Remove the failed Kudu repair path and keep deployment fail-closed.**
   - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
-  - Package only the bounded migration runner and the reviewed metadata SQL with the backend.
-  - Permit execution only from a default-off `workflow_dispatch` boolean; automatic post-CI deploys remain read-only with respect to schema.
-  - Provide a clearly named manual-only repair workflow so operators do not mistake `Re-run jobs` for a migration-enabled run.
-  - Install locked production dependencies into a dedicated deployed migration runtime and set `NODE_PATH` explicitly so the Kudu execution context can load `dotenv`, `mssql`, and the readiness service independently of Azure Oryx layout.
-  - Prefix the bounded Kudu command with `env` because `/api/command` executes its first token directly and does not interpret POSIX assignment-prefix syntax.
-  - Invoke the command inside the Linux App Service so it uses the target runtime settings/network path, then require the existing readiness and smoke checks to pass.
+  - Remove the `Repair staging metadata schema` workflow, Kudu runner, bundled migration runtime, operator npm command, and their dedicated tests/review evidence.
+  - Make `Deploy staging` manual-only so normal pushes run CI without automatically producing a known-failing staging deployment.
+  - Preserve the reviewed SQL migration, read-only readiness endpoint, Admin/Librarian role boundaries, and fail-closed staging smoke.

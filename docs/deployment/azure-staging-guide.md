@@ -202,45 +202,17 @@ automatically.
 7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
    read-only checks. Staging must not be used to prove migration idempotence.
 
-For the bounded FE05 metadata repair, an authorized operator may load the target database settings
-through environment variables and run the reviewed script plus its post-check with:
-
-```powershell
-npm.cmd --prefix backend run migrate:library-metadata
-```
-
-The command executes only
-`database/migrations/2026-07-22-library-metadata-compatibility.sql`; it prints no connection values.
-Afterward, `GET /health/ready` must return HTTP `200` with
-`checks.catalogMetadata = "ok"`. Before the migration, it returns HTTP `503`, and staging smoke
-must fail rather than accepting a deployment whose metadata tabs cannot load.
-
 If the deploy workflow reports `API schema readiness check failed with HTTP 503`, do not remove or
-skip the readiness check. The preferred repair path is:
+skip the readiness check. An authorized operator must connect through Azure SQL Query Editor, SSMS,
+or an operator machine whose exact temporary IP is allowlisted and apply
+`database/migrations/2026-07-22-library-metadata-compatibility.sql` directly to
+`LibraryManagementStaging`. Remove any temporary firewall rule immediately afterward.
 
-1. Open GitHub Actions -> `Repair staging metadata schema`.
-2. Select `Run workflow`; do not use `Re-run jobs` on the failed deployment.
-3. Confirm `Apply reviewed library metadata migration` and the subsequent smoke test both pass.
-
-The repair workflow has only a manual `workflow_dispatch` trigger. It builds and deploys a backend
-package containing a dedicated, locked migration runtime, the bounded runner, and the one reviewed
-SQL file before invoking `scripts/migrateLibraryMetadata.js` inside the Linux App Service through
-its Kudu command endpoint. The command sets `NODE_PATH` to that dedicated runtime so it does not
-depend on where Azure Oryx places the application runtime dependencies. Kudu executes the first
-command token directly rather than interpreting POSIX assignment-prefix syntax, so the runner uses
-`env NODE_PATH=... node ...`; omitting `env` makes Kudu try to execute `NODE_PATH=...` as a program.
-The command therefore uses the App Service database settings and network path; the publish-profile
-secret is kept in the workflow environment and is not printed. If the remote command fails, the
-workflow reports its exit code and a length-limited diagnostic with publish credentials and common
-connection-string password forms redacted.
-
-The regular `Deploy staging` workflow also retains its default-off
-`apply_library_metadata_migration` manual input. Normal post-CI staging deployments never apply SQL.
-As a fallback, an authorized operator may
-connect through Azure Query Editor, SSMS, or an operator machine whose exact temporary IP is
-allowlisted, apply the metadata compatibility migration, remove the temporary firewall rule, and
-rerun the staging workflow. Do not expose Azure SQL to GitHub-hosted runner IP ranges or widen the
-firewall to make the check pass.
+Then verify `GET /health/ready` returns HTTP `200` with
+`checks.catalogMetadata = "ok"` and manually run the `Deploy staging` workflow. The staging
+workflow is `workflow_dispatch` only: pushes run CI but do not automatically deploy staging or
+execute SQL. Do not expose Azure SQL to GitHub-hosted runner IP ranges or widen the firewall to
+make the check pass.
 
 ## Configure App Service Runtime Settings
 

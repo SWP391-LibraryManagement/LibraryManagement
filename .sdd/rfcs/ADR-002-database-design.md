@@ -54,9 +54,9 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Do not silently change database schema.
 - Any schema change affecting behavior must update the related `SPEC.md` or ADR before implementation.
 - For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
-- Automatic CI and post-CI deployment events must not execute schema changes. An authorized
-  operator may explicitly enable a default-off manual deployment input that invokes one named,
-  reviewed, bounded migration from inside the target App Service and verifies its postcondition.
+- CI and staging deployment workflows must not execute schema changes. An authorized operator
+  applies each reviewed SQL migration directly through an approved database administration path
+  and verifies its postcondition before manually deploying staging.
 - Seed data must not include real personal data, passwords, tokens, or secrets.
 
 ## FE11 Single-Role Account Decision

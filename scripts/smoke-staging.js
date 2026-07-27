@@ -95,10 +95,9 @@ async function runStagingSmoke({
   ) {
     throw new Error(
       `API schema readiness check failed with HTTP ${readinessResponse.status}. `
-      + 'Run the Repair staging metadata schema workflow manually, or run '
-      + 'Deploy staging with apply_library_metadata_migration enabled. Alternatively, apply '
       + 'database/migrations/2026-07-22-library-metadata-compatibility.sql '
-      + 'as an authorized database operator, then rerun the smoke check.'
+      + 'must be applied directly by an authorized database operator through Azure SQL Query Editor '
+      + 'or SSMS before running Deploy staging manually.'
     );
   }
   checks.push('schema-readiness');

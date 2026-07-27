@@ -1,6 +1,6 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.5
+# Version: 0.6.6
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -393,7 +393,7 @@ Use these stable IDs for tasks and tests.
 
 ### 12.4 Deployment Readiness
 
-- NFR-FE05-DEP-001: The reviewed idempotent `database/migrations/2026-07-22-library-metadata-compatibility.sql` must be applied by an authorized operator before repository code depending on the canonical metadata columns is accepted as ready. The staging workflow may expose a default-off, manual-only input that runs this one bounded migration inside the target App Service and verifies its postcondition; automatic CI/post-CI events must never apply it. Liveness remains separate from readiness, and CI/staging smoke must fail closed on a `503` readiness result.
+- NFR-FE05-DEP-001: The reviewed idempotent `database/migrations/2026-07-22-library-metadata-compatibility.sql` must be applied directly by an authorized database operator before repository code depending on the canonical metadata columns is accepted as ready. CI and staging deployment workflows must never apply SQL; staging deployment is manual-only. Liveness remains separate from readiness, and staging smoke must fail closed on a `503` readiness result.
 
 ### 12.5 Logging and Audit
 
@@ -479,19 +479,19 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | BR-FE05-011..018 | UC17-UC24, UC25-UC39 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
 | BR-FE05-019..020 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | BR-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
-| BR-FE05-022 | Deployment readiness | `schemaReadinessService.test.js`; `smokeStaging.test.js`; `stagingMigrationWorkflow.test.js` | Complete |
+| BR-FE05-022 | Deployment readiness | `schemaReadinessService.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 | FR-FE05-001..017 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js` | Complete |
 | FR-FE05-018..026 | UC17-UC24, UC29, UC32 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js`; FE07 inactive-parent regression | Complete |
 | FR-FE05-027..028 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | FR-FE05-029 | UC23 | `bookManagementFrontend.test.js` status-filter reconciliation | Complete |
 | FR-FE05-030 | UC22, UC23 | `bookRoutes.test.js` Guest/Member denial and Librarian/Admin active choices | Complete |
-| FR-FE05-031 | Deployment readiness | `app.test.js`; `schemaReadinessService.test.js`; `smokeStaging.test.js`; `stagingMigrationWorkflow.test.js` | Complete |
+| FR-FE05-031 | Deployment readiness | `app.test.js`; `schemaReadinessService.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 | AC-FE05-001..010 | UC17-UC24 | `bookRoutes.test.js`; `publicBrowseRoutes.test.js`; `bookConcurrency.sqltest.js` | Complete |
 | AC-FE05-011..017 | UC17-UC24 | `bookRoutes.test.js`; `bookAvailabilityRepository.test.js`; `bookConcurrency.sqltest.js` | Complete |
 | AC-FE05-018..019 | UC22, UC23 | `bookRoutes.test.js`; `bookCoverStorage.test.js`; `bookManagementFrontend.test.js` | Complete |
 | AC-FE05-020 | UC23 | `bookManagementFrontend.test.js` | Complete |
 | AC-FE05-021 | UC22, UC23 | `bookRoutes.test.js` active-reference role boundary | Complete |
-| AC-FE05-022 | Deployment readiness | `migrateLibraryMetadataScript.test.js`; `smokeStaging.test.js`; `stagingMigrationWorkflow.test.js` | Complete |
+| AC-FE05-022 | Deployment readiness | `libraryMetadataMigration.test.js`; `smokeStaging.test.js`; `stagingWorkflowPolicy.test.js` | Complete |
 
 Coverage: 22/22 BR, 31/31 FR, and 22/22 AC have current automated evidence mappings.
 

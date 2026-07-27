@@ -14,7 +14,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Maintain the reconciled FE05 catalog against the approved v0.6.5 contract: deterministic public/staff queries, active reference-data reads, schema-aware deployment readiness, a default-off manual repair path for the reviewed metadata migration, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.6 contract: deterministic public/staff queries, active reference-data reads, schema-aware deployment readiness, an operator-applied reviewed SQL migration, manual-only staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 
@@ -142,7 +142,7 @@ FE05 read contracts must be stable before FE06/FE07 consume parent-book status a
 | FE05 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js` | Public/staff, validation, ownership, and derived-availability tests pass. |
 | FE05 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/bookConcurrency.sqltest.js` | Stale mutation and audit rollback cases pass when SQL test configuration is available. |
 | FE05 frontend | `node --test frontend/test/bookManagementFrontend.test.js` | No copy mutation, correct unavailable label, version, and status-command checks pass. |
-| Deployment readiness | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingMigrationWorkflow.test.js` | Staging smoke rejects a legacy metadata schema; only an explicit manual workflow choice may run the bounded repair. |
+| Deployment readiness | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingWorkflowPolicy.test.js` | Staging smoke rejects a legacy metadata schema; staging deploy remains manual-only and never applies SQL. |
 | Traceability | `npm.cmd run trace:enforce` | FE05 changed implementation files satisfy the repository threshold. |
 | Diff hygiene | `git diff --check` | No whitespace errors. |
 

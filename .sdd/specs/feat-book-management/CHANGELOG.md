@@ -1,19 +1,18 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-27 - Remove failed Kudu staging repair workflow
+
+- Removed `Repair staging metadata schema`, its Kudu/Node runner, bundled runtime, npm command,
+  workflow input, dedicated tests, and addendum evidence.
+- Changed `Deploy staging` to manual-only so pushes run CI without automatically creating a known
+  failing staging deployment while the database still requires operator migration.
+- Retained the reviewed SQL migration, read-only readiness endpoint, fail-closed smoke check, and
+  FE05/FE11 Admin/Librarian role boundaries.
+
 ## 2026-07-27 - Detect and repair deployed metadata schema drift
 
 - Added read-only catalog schema readiness for persisted author/publisher/category `Status` and `CreatedAt`.
-- Added a bounded operator migration command for the existing reviewed metadata compatibility script.
-- Added a default-off manual staging workflow option that runs only that bounded migration inside
-  App Service; automatic post-CI deployments still never mutate schema.
-- Added a dedicated `Repair staging metadata schema` manual workflow to prevent failed-job reruns
-  from silently retaining the default `false` migration input.
-- Made the App Service runner call the bounded Node script directly and surface a length-limited,
-  credential-redacted diagnostic when the remote command fails.
-- Included locked production dependencies in backend deployment packages and made the repair
-  workflow deploy that complete package before invoking the migration runner.
-- Invoked the Kudu migration through `env NODE_PATH=...` because the command endpoint executes
-  the first token directly instead of interpreting POSIX assignment-prefix syntax.
+- Added the reviewed metadata compatibility SQL migration for authorized operator execution.
 - Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
 - Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
 
