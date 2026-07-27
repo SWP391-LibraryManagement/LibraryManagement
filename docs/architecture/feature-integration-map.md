@@ -1,10 +1,10 @@
 # Feature Integration Map - Library Management System
 
-Version: 1.1.0
+Version: 1.2.0
 
 Status: APPROVED
 
-Last Updated: 2026-06-30
+Last Updated: 2026-07-27
 
 > This is the Layer 1 (system-level) "big picture" that links the 12 separately-owned feature specs. Approved on 2026-06-25 together with the system ERD (Section 4.1).
 
@@ -95,7 +95,7 @@ flowchart TD
   FE02 -->|"staff/admin auth"| FE12
 
   FE11 -->|"single-role replacement / permission source"| FE02
-  FE11 -->|"role checks"| FE05
+  FE11 -->|"Admin metadata boundary / staff role checks"| FE05
   FE11 -->|"role checks"| FE06
   FE11 -->|"role checks"| FE07
   FE11 -->|"role checks"| FE08
@@ -108,7 +108,6 @@ flowchart TD
   FE04 -->|"member stats source"| FE12
 
   FE05 -->|"book metadata"| FE01
-  FE05 -->|"availability update command"| FE06
   FE05 -->|"book metadata"| FE06
   FE05 -->|"book metadata"| FE07
   FE05 -->|"book metadata"| FE08
@@ -197,7 +196,7 @@ integration points in Section 5, never by directly mutating another feature's ta
 | FE02 Authentication | FE11 role data / user-role tables | Identity, tokens, sessions, account events, protected request user context | Auth / role foundation |
 | FE03 User Profile | FE02 authenticated identity, FE04 membership status read-only, FE11 role/status read-only | Safe personal profile data for workflows | Data read, safety/privacy boundary |
 | FE04 Membership Management | FE02 authenticated user, FE11 staff/admin roles | Approved membership status for FE07/FE08 and member stats for FE12 | Eligibility dependency |
-| FE05 Book Management | FE02 auth, FE11 staff/admin roles, FE06 copy-status rules | Book metadata for FE01/FE06/FE07/FE08/FE12; staff availability update command for public display | Data owner dependency, documented availability integration |
+| FE05 Book Management | FE02 auth, FE11 Admin metadata boundary/staff roles, FE06 copy-status rules | Book metadata for FE01/FE06/FE07/FE08/FE12; active category/author/publisher choices for Librarian/Admin forms | Data owner dependency, role-protected reference integration |
 | FE06 Inventory / Book Copy | FE02 auth, FE05 book metadata, FE11 staff/admin roles, FE07/FE08 conflict records | Copy availability and copy status for FE01/FE07/FE08/FE12 | Data owner dependency, conflict check |
 | FE07 Borrowing Management | FE02 auth, FE04 membership, FE06 copy availability, FE08 reservation conflict, FE09 unpaid fine blocker, FE11 roles | Borrow records, due dates, return data, notification requests, report data | Core workflow, trigger, reporting source |
 | FE08 Reservation Management | FE02 auth, FE04 membership, FE06 copy status, FE11 roles | Reservation queue/status, reservation-ready notification requests, renewal conflict data | Core workflow, trigger, conflict check |
@@ -216,7 +215,7 @@ integration points in Section 5, never by directly mutating another feature's ta
 FE01 Public / Browse
   -> reads FE05 book metadata
   -> optionally reads FE06 public availability
-  -> displays latest availability from BookCopies after FE05/FE06 staff updates
+  -> displays derived availability from the latest FE06/FE07/FE08-owned BookCopies state
   -> links user to FE02 login/register
   -> after registration, user may apply via FE04 Membership
 ```
@@ -228,22 +227,45 @@ Evidence in specs:
 - FE01 depends on FE02 for login/register navigation.
 - FE01 depends on FE04 for membership application after discovery.
 
-### 6.1.1 Catalog Availability Sync
+### 6.1.1 Catalog Availability Ownership
 
 ```text
 FE05 Book Management staff UI
   -> validates librarian/admin role through FE02/FE11
-  -> sends availability command (`AVAILABLE` / `BORROWED`)
-  -> updates or delegates update of FE06 `BookCopies.Status`
-  -> FE01 `/home`, search, and detail read the latest active-book availability summary
+  -> changes only book metadata or `Books.Status`
+  -> reads FE06-owned `BookCopies.Status` without mutating it
+  -> derives `AVAILABLE` only when an ACTIVE book has an AVAILABLE copy
+  -> FE01 `/home`, search, and detail read the same derived summary
 ```
 
 Integration notes:
 
 - `Books.Status` is catalog visibility (`ACTIVE` / `INACTIVE`).
-- `BookCopies.Status` is public availability (`AVAILABLE` / `BORROWED` summary).
+- `BookCopies.Status` lifecycle is owned by FE06/FE07/FE08.
 - Public browse must hide inactive books even when copies are available.
-- The current prototype endpoint is `/api/books/{bookId}/availability`; final ownership may route this through a FE06 service boundary, but the integration contract remains the same.
+- FE05 has no `/api/books/{bookId}/availability` mutation and must not write copy state.
+- Public/staff availability is a read-only `AVAILABLE` / `UNAVAILABLE` summary, not a manual
+  `BORROWED` command.
+
+### 6.1.2 Admin Library Reference Data
+
+```text
+FE11 Admin Library
+  -> authorizes the account's single current role
+  -> ADMIN may list/create/update/soft-deactivate Authors, Publishers, Categories
+     through `/api/admin/library/{resource}`
+  -> LIBRARIAN may only read ACTIVE choices through FE05 `/api/books/metadata`
+  -> MEMBER and Guest are denied both protected boundaries
+  -> FE05 book create/update stores the selected reference IDs
+  -> soft-deactivation preserves existing Books relationships
+```
+
+Contract sources:
+
+- FE05: `BR-FE05-021`, `FR-FE05-030`, `AC-FE05-021`, `Q-FE05-012`.
+- FE11: `BR-FE11-033`, `FR-FE11-043`, `AC-FE11-026`.
+- Automated boundary evidence:
+  `backend/tests/adminLibraryRoleBoundary.test.js` and `backend/tests/bookRoutes.test.js`.
 
 ### 6.2 Authentication And Protected Feature Access
 
@@ -379,15 +401,16 @@ Integration notes:
 | FE07 -> FE09 -> FE07 eligibility | `backend/tests/systemIntegration.test.js` (`SIT-005`, `SIT-006`) | A 14-day overdue return produces a 70,000 VND fine; unpaid blocks borrowing and paid removes the blocker. |
 | FE12 read-only aggregation | `backend/tests/systemIntegration.test.js` (`SIT-008`) | Reports exclude `REQUESTED` details from actual loan activity and do not mutate source state. |
 | FE07 -> FE10 -> FE09 -> FE12 shared SQL state | `backend/tests/sql/systemIntegration.sqltest.js` (`SIT-SQL-001`) | Production services share SQL state from approval through notification, return, fine calculation, and reporting; cleanup is asserted. |
-| FE05 -> FE01 availability sync | `frontend/src/page/BookManagement.jsx`, `backend/src/routes/bookRoutes.js` | Prototype supports `/api/books/{bookId}/availability`; public browse reads current active-book availability summary. Dedicated automated integration test still needed. |
+| FE05/FE06 -> FE01 derived availability | `backend/tests/bookAvailabilityRepository.test.js`, `backend/tests/publicBrowseRoutes.test.js`, `frontend/test/bookManagementFrontend.test.js` | FE05 never mutates copy status; public/staff reads derive availability from active book state plus the latest FE06-owned copies. |
+| FE11 -> FE05 Admin metadata role boundary | `backend/tests/adminLibraryRoleBoundary.test.js`, `backend/tests/bookRoutes.test.js` | Only Admin reaches author/publisher/category mutations; Librarian/Admin read active FE05 choices; Member/Guest are denied. |
 | FE11 admin console / request view | `frontend/src/page/UserManagement.jsx`, `backend/src/routes/adminRoutes.js` | Prototype includes admin sidebar, dashboard, permissions, audit logs, library, borrowings, and request views. Dedicated automated UI/API coverage still needed. |
 
 Known test gaps:
 
 - `tests/e2e/system-golden-path.spec.js` now proves the FE02 -> FE07 -> FE09 -> FE12 hybrid journey in Chromium; FE09 remains API-context evidence until its legacy frontend is aligned.
 - SQL Server shared-state coverage now proves the FE07 -> FE10 -> FE09 -> FE12 golden path; broader SQL coverage remains mutation-gated and local-only.
-- FE01/FE04/FE05/FE06 backend coverage should be reviewed and expanded if code is implemented.
-- FE05 availability update -> FE01 `/home` refresh should receive a dedicated regression test.
+- Browser-level acceptance should continue to verify that FE01 refresh reflects committed
+  FE06/FE07/FE08 copy-state changes without adding an FE05 copy mutation.
 - FE11 request-management completed-state behavior should receive a dedicated regression test.
 
 ---

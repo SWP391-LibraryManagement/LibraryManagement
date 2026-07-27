@@ -128,6 +128,18 @@ test('Admin requests preserve server pagination, FE07 actions and labeled date f
   assert.match(page, /<AdminRequestsSection/);
 });
 
+test('Admin circulation fits nine operational columns without request ID or barcode directory columns', async () => {
+  const circulation = await readFile(new URL('circulation/AdminCirculationSection.jsx', root), 'utf8');
+  const css = await readFile(new URL('admin-console.css', root), 'utf8');
+  const table = circulation.match(/<table className="admin-data-table admin-circulation-table"[^]*?<\/table>/)?.[0] || '';
+
+  assert.match(table, /<th>Mã lượt<\/th><th>Thành viên<\/th><th>Sách<\/th><th>Ngày mượn<\/th><th>Ngày hạn<\/th><th>Ngày trả<\/th><th>Gia hạn<\/th><th>Trạng thái<\/th><th>Thao tác<\/th>/);
+  assert.doesNotMatch(table, /Mã yêu cầu|Barcode|row\.requestId|row\.barcode/);
+  assert.equal(table.match(/<th>/g)?.length, 9);
+  assert.match(css, /\.admin-circulation-table\s*\{[^}]*min-width: 0;[^}]*table-layout: fixed;/s);
+  assert.match(css, /\.admin-circulation-table th,\s*\.admin-circulation-table td\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
+});
+
 test('Admin membership section consumes canonical FE04 inside the Admin shell', async () => {
   const section = await readFile(new URL('membership/AdminMembershipSection.jsx', root), 'utf8');
   const modal = await readFile(new URL('membership/AdminMembershipReviewModal.jsx', root), 'utf8');

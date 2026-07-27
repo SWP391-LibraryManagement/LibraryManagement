@@ -347,3 +347,9 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - Legacy invalid requests remain rejectable and now expose distinct owner,
     account, copy, and same-title approval conflicts.
   - Automated backend/frontend regression is required; human review remains.
+
+- [~] **FE07-T055 - Fit the Admin circulation directory to the desktop viewport.**
+  - Maps to: FR-FE07-038, AC-FE07-031.
+  - Remove the separate request-ID and barcode columns from the Admin circulation directory and DOCX directory projection without deleting either canonical API/database field.
+  - Keep the borrow-detail ID as the visible operational identifier, align every remaining header with its row value, and wrap long member/book content inside fixed-layout cells.
+  - Verify the focused Admin frontend tests, lint/build, and diff hygiene; human review remains required.

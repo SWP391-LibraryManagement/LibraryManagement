@@ -131,7 +131,7 @@ export default function AuthCard({
                 <>
                   <Alert severity="info">
                     Mã OTP đã được gửi tới <strong>{maskedEmail || registeredEmail || formData.email}</strong>.
-                    Mã có hiệu lực trong 24 giờ.
+                    Mã có hiệu lực trong 15 phút.
                   </Alert>
                   <FormInput
                     label="Mã OTP 6 chữ số"
