@@ -229,6 +229,11 @@ its Kudu command endpoint. The command sets `NODE_PATH` to that dedicated runtim
 depend on where Azure Oryx places the application runtime dependencies. Kudu executes the first
 command token directly rather than interpreting POSIX assignment-prefix syntax, so the runner uses
 `env NODE_PATH=... node ...`; omitting `env` makes Kudu try to execute `NODE_PATH=...` as a program.
+The Kudu sidecar currently exposes Node 18.17, while the Node 22 application uses a newer `mssql`
+release whose engine floor is Node 18.19. The deployment therefore installs the two migration-only
+dependencies from `scripts/library-metadata-migration-runtime/package-lock.json`: `dotenv` 17.4.2
+and Node-18-compatible `mssql` 11.0.1. This isolated lockfile does not downgrade the application
+dependency or expand the migration's SQL authority.
 The command therefore uses the App Service database settings and network path; the publish-profile
 secret is kept in the workflow environment and is not printed. If the remote command fails, the
 workflow reports its exit code and a length-limited diagnostic with publish credentials and common

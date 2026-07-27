@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: scripts/library-metadata-migration-runtime/package-lock.json
 
       - name: Prepare backend repair package
         shell: pwsh
@@ -36,7 +36,7 @@ jobs:
           New-Item -ItemType Directory -Force deploy/backend/database/migrations | Out-Null
           Copy-Item database/migrations/2026-07-22-library-metadata-compatibility.sql deploy/backend/database/migrations/
           New-Item -ItemType Directory -Force deploy/backend/migration-runtime | Out-Null
-          Copy-Item backend/package.json,backend/package-lock.json deploy/backend/migration-runtime/
+          Copy-Item scripts/library-metadata-migration-runtime/package.json,scripts/library-metadata-migration-runtime/package-lock.json deploy/backend/migration-runtime/
 
       - name: Install migration runtime dependencies
         run: npm ci --omit=dev

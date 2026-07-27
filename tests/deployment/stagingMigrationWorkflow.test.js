@@ -16,6 +16,18 @@ const operatorScript = fs.readFileSync(
   path.join(root, 'scripts/invoke-appservice-library-metadata-migration.ps1'),
   'utf8'
 );
+const migrationRuntimePackage = JSON.parse(
+  fs.readFileSync(
+    path.join(root, 'scripts/library-metadata-migration-runtime/package.json'),
+    'utf8'
+  )
+);
+const migrationRuntimeLock = JSON.parse(
+  fs.readFileSync(
+    path.join(root, 'scripts/library-metadata-migration-runtime/package-lock.json'),
+    'utf8'
+  )
+);
 
 test('packages only the reviewed metadata migration with its bounded runner', () => {
   assert.match(
@@ -28,11 +40,41 @@ test('packages only the reviewed metadata migration with its bounded runner', ()
   );
   assert.match(
     workflow,
+    /Copy-Item scripts\/library-metadata-migration-runtime\/package\.json,scripts\/library-metadata-migration-runtime\/package-lock\.json deploy\/backend\/migration-runtime\//
+  );
+  assert.doesNotMatch(
+    workflow,
     /Copy-Item backend\/package\.json,backend\/package-lock\.json deploy\/backend\/migration-runtime\//
   );
   assert.match(
     workflow,
     /name: Install migration runtime dependencies[\s\S]*?run: npm ci --omit=dev[\s\S]*?working-directory: deploy\/backend\/migration-runtime/
+  );
+});
+
+test('locks the isolated migration runtime to the Kudu Node 18 dependency boundary', () => {
+  assert.deepEqual(migrationRuntimePackage.engines, {
+    node: '>=18.17.0',
+  });
+  assert.deepEqual(migrationRuntimePackage.dependencies, {
+    dotenv: '17.4.2',
+    mssql: '11.0.1',
+  });
+  assert.equal(
+    migrationRuntimeLock.packages['node_modules/mssql'].version,
+    '11.0.1'
+  );
+  assert.equal(
+    migrationRuntimeLock.packages['node_modules/mssql'].engines.node,
+    '>=18'
+  );
+  assert.match(
+    repairWorkflow,
+    /Copy-Item scripts\/library-metadata-migration-runtime\/package\.json,scripts\/library-metadata-migration-runtime\/package-lock\.json deploy\/backend\/migration-runtime\//
+  );
+  assert.doesNotMatch(
+    repairWorkflow,
+    /Copy-Item backend\/package\.json,backend\/package-lock\.json deploy\/backend\/migration-runtime\//
   );
 });
 
