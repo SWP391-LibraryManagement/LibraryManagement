@@ -620,7 +620,17 @@ WHERE bd.RequestId = 2
 
 INSERT INTO NotificationTemplates (TemplateCode, Subject, Body)
 VALUES
-('ACCOUNT_VERIFICATION','Verify your account','Your library verification code is {{otp}}. It expires in {{expiresInMinutes}} minutes.'),
+('ACCOUNT_VERIFICATION',N'Mã xác thực tài khoản - Hệ thống Thư viện',N'Xin chào,
+
+Mã xác thực tài khoản của bạn:
+
+{{otp}}
+
+Mã có hiệu lực trong {{expiresInMinutes}} phút.
+Không chia sẻ mã này với bất kỳ ai.
+Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.
+
+Hệ thống Quản lý Thư viện'),
 ('PASSWORD_RESET','Reset your password','Your library password reset code is {{otp}}. It expires in {{expiresInMinutes}} minutes.'),
 ('ACCOUNT_SETUP','Set up your library account','Complete your library account setup: {{setupLink}}. This link expires in {{expiresInHours}} hours.'),
 ('RESERVATION_READY','Book reservation ready','Your reserved book is ready.'),
