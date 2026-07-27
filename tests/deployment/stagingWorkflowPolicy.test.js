@@ -23,7 +23,11 @@ test('staging deployment follows successful main CI and packages the reviewed st
   assert.doesNotMatch(workflow, /migrateLibraryMetadata|migration-runtime|invoke-appservice/);
   assert.match(
     workflow,
-    /Copy-Item database\/migrations\/2026-07-22-library-metadata-compatibility\.sql deploy\/backend\/database\/migrations\//
+    /Copy-Item database\/migrations\/2026-07-22-library-metadata-compatibility\.sql[^\r\n]*deploy\/backend\/database\/migrations\//
+  );
+  assert.match(
+    workflow,
+    /Copy-Item [^\r\n]*database\/migrations\/add_change_password_otp_token_type\.sql[^\r\n]*deploy\/backend\/database\/migrations\//
   );
 });
 

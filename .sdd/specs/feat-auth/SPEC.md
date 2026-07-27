@@ -1,12 +1,12 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.16
+# Version: 0.6.17
 
 # Status: APPROVED BASELINE 2026-07-17 - CONTRACT RECONCILIATION PENDING HUMAN REVIEW
 
 # Owner: Dat
 
-# Last Updated: 2026-07-27
+# Last Updated: 2026-07-28
 
 # Feature ID: FE02
 
@@ -518,7 +518,11 @@ stateDiagram-v2
 - NFR-FE02-PERF-003: Password hashing must retain bcrypt cost >= 10; performance tuning must not reduce the approved hashing cost.
 - NFR-FE02-PERF-004: Server-side session/token validation, excluding the downstream business handler, must complete in less than 50 ms at p95 in the project's documented local/staging performance environment.
 
-### 12.4 Logging and Audit
+### 12.4 Deployment Readiness
+
+- NFR-FE02-DEP-001: Before serving staging traffic, startup must verify that `CK_AuthTokens_TokenType` permits `CHANGE_PASSWORD_OTP`; when the deployed constraint is stale, it applies the reviewed idempotent compatibility migration and fails closed if the postcondition remains unsatisfied.
+
+### 12.5 Logging and Audit
 
 - NFR-FE02-LOG-001: Every login attempt (success and failure) must be logged with timestamp, email/username, IP address, and reason.
 - NFR-FE02-LOG-002: Every logout must be logged.
@@ -527,7 +531,7 @@ stateDiagram-v2
 - NFR-FE02-LOG-005: Account lockout events must be logged.
 - NFR-FE02-LOG-006: Failed token validations on protected endpoints must be logged (in debug mode only, not production).
 
-### 12.5 Usability
+### 12.6 Usability
 
 - NFR-FE02-UX-001: Error messages must be clear but not reveal sensitive details (e.g., "Invalid email or password", not "Email not found").
 - NFR-FE02-UX-002: Registration, account-setup, password-change, and password-reset forms must provide the approved password-requirement guidance when a user creates a new password. Login must not reject an existing password based on creation-time complexity rules.

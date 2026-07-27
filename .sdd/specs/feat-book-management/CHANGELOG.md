@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-28 - Allow approved feature compatibility migrations at startup
+
+- Preserved FE05 catalog readiness while allowing the startup gate to apply the separately approved FE02 auth-token constraint migration.
+- Updated the deployment contract to require packaged migrations and verified postconditions before listen.
+- Aligned SPEC v0.6.9, PLAN, TASKS, deployment guidance, and workflow policy coverage.
+
 ## 2026-07-28 - Enable CI-gated continuous staging deployment
 
 - Triggered `Deploy staging` automatically only after a successful `main` CI run and checked out the exact tested commit.

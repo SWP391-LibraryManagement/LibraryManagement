@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-28 - Reconcile staging change-password OTP token constraint
+
+- Added fail-closed startup readiness for deployed `CK_AuthTokens_TokenType` compatibility with `CHANGE_PASSWORD_OTP`.
+- Packaged and applied the reviewed idempotent constraint migration only when the deployed schema is stale.
+- Aligned SPEC v0.6.17, PLAN, TASKS, TEST_PLAN v0.3.15, deployment guidance, and focused regressions.
+
 ## 2026-07-28 - Fail safely when change-password OTP delivery fails
 
 - Stopped `/change-password/request-otp` from claiming success when SMTP is unavailable or the email provider fails.

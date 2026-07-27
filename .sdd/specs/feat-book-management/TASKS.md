@@ -182,3 +182,8 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Trigger `Deploy staging` only after the exact `main` CI run succeeds, while retaining manual reruns.
   - Check out the CI-tested commit, retain the packaged startup migration and fail-closed smoke test, and prevent failed CI runs from deploying.
   - Evidence: the workflow policy and staging smoke regressions pass locally; the pushed workflow run provides live deployment evidence.
+
+- [x] **FE05-T017 - Permit separately approved feature compatibility migrations in the startup gate.**
+  - Maps to: NFR-FE05-DEP-001.
+  - Keep FE05 catalog readiness read-only while allowing the startup gate to package, apply, and verify the FE02-owned `CHANGE_PASSWORD_OTP` constraint migration before listen.
+  - Evidence: deployment policy and focused startup/schema regressions verify both reviewed migrations remain packaged and fail closed.

@@ -5,7 +5,8 @@ async function startApplication({
   logger = console,
 } = {}) {
   await schemaReadinessService.ensureCatalogMetadataSchema();
-  logger.info('Catalog metadata schema is ready.');
+  await schemaReadinessService.ensureChangePasswordOtpTokenType();
+  logger.info('Deployment schema is ready.');
   return runtime.start();
 }
 

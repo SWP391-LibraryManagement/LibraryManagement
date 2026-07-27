@@ -6,8 +6,11 @@ jest.mock('../src/config/db', () => ({
 }));
 
 const {
+  checkChangePasswordOtpTokenType,
   checkCatalogMetadataSchema,
+  ensureChangePasswordOtpTokenType,
   ensureCatalogMetadataSchema,
+  loadChangePasswordOtpTokenTypeMigration,
   loadCatalogMetadataMigration,
 } = require('../src/services/schemaReadinessService');
 
@@ -65,5 +68,29 @@ describe('catalog metadata schema readiness', () => {
     await expect(ensureCatalogMetadataSchema({
       migrationSql: '-- reviewed migration',
     })).rejects.toThrow(/not ready after compatibility migration/i);
+  });
+
+  test('loads and applies the change-password OTP token-type migration when staging is stale', async () => {
+    const migration = loadChangePasswordOtpTokenTypeMigration();
+    expect(migration).toContain('CHANGE_PASSWORD_OTP');
+    expect(migration).toContain('SET XACT_ABORT ON');
+
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ isReady: 0 }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ isReady: 1 }] });
+
+    await expect(ensureChangePasswordOtpTokenType({
+      migrationSql: '-- reviewed auth-token migration',
+    })).resolves.toBe(true);
+
+    expect(mockQuery.mock.calls[1][0]).toBe('-- reviewed auth-token migration');
+    expect(mockQuery.mock.calls[2][0]).toContain('CHANGE_PASSWORD_OTP');
+  });
+
+  test('recognizes a change-password OTP compatible token constraint', async () => {
+    mockQuery.mockResolvedValueOnce({ recordset: [{ isReady: 1 }] });
+
+    await expect(checkChangePasswordOtpTokenType()).resolves.toBe(true);
   });
 });

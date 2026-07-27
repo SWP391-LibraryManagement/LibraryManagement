@@ -218,7 +218,9 @@ After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
 `checks.catalogMetadata = "ok"`. A successful `main` CI run automatically starts the staging
 workflow for that exact commit; `workflow_dispatch` remains available for an operator rerun. The
 workflow itself does not connect to SQL or execute SQL; schema reconciliation runs inside the
-configured backend application identity before listen.
+configured backend application identity before listen. The deployment package includes both the
+catalog metadata compatibility migration and the `CHANGE_PASSWORD_OTP` token-type compatibility
+migration; startup verifies both postconditions before serving requests.
 
 ## Configure App Service Runtime Settings
 
@@ -325,7 +327,7 @@ The staging workflow deploys only after the exact `main` CI run succeeds:
 2. GitHub Actions completes `CI` for that commit.
 3. `Deploy staging` checks out the same CI commit and deploys the backend and frontend.
 4. Approve the `staging` Environment when prompted, if environment approval is enabled.
-5. Confirm backend startup applied the packaged metadata migration and `/health/ready` returns `200`.
+5. Confirm backend startup reconciled the packaged catalog and auth-token migrations and `/health/ready` returns `200`.
 6. Confirm backend deploy, frontend deploy, and the fail-closed smoke job all pass.
 
 Failed CI runs do not deploy. `workflow_dispatch` remains available for an operator rerun after any

@@ -14,11 +14,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Maintain the reconciled FE05 catalog against the approved v0.6.8 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for the reviewed metadata compatibility migration, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.9 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-book-management/SPEC.md` v0.6.8.
+- `.sdd/specs/feat-book-management/SPEC.md` v0.6.9.
 - `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
@@ -69,7 +69,7 @@ Maintain the reconciled FE05 catalog against the approved v0.6.8 contract: deter
 | HTTP boundary | `backend/src/app.js`, `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, create `backend/src/validators/bookValidators.js` | Public/protected routes, `If-Match`, query/body validation, and safe errors. |
 | Business rules | `backend/src/services/bookService.js` | Deterministic filters, metadata validation, status commands, and derived availability contract. |
 | Persistence | `backend/src/repositories/bookRepository.js`, `backend/src/repositories/auditLogRepository.js` | Parameterized queries, copy-state aggregation, rowversion comparison, and atomic audited writes. |
-| Deployment compatibility | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, `database/migrations/2026-07-22-library-metadata-compatibility.sql` | Package and apply the reviewed metadata migration before listen, verify the postcondition, and keep readiness read-only. |
+| Deployment compatibility | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, approved `database/migrations/*.sql` files | Package and apply only reviewed compatibility migrations before listen, verify their postconditions, and keep readiness read-only. |
 | Models/docs | `backend/src/models/Book.js`, `backend/src/docs/openapi.yaml` | Rowversion metadata and approved API request/response/error schemas. |
 | Backend tests | create `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`, create `backend/tests/sql/bookConcurrency.sqltest.js`, create `backend/tests/helpers/inMemoryBookRepositories.js` | Public/staff behavior, validation, ownership, rollback, and stale-write evidence. |
 | Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Approved endpoint shapes, version propagation, confirmation reasons, and read-only availability. |

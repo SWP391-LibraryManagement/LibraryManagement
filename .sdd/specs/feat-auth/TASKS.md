@@ -302,3 +302,10 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Maps to: MF-FE02-006, FR-FE02-010, API `/change-password/request-otp` (`partial`).
   - DoD: the request endpoint returns success only when the direct FE02 email adapter confirms delivery; missing SMTP or provider failure returns a safe error without claiming the OTP was sent or logging provider details; focused regression passes.
   - Evidence: the direct change-password OTP path now requires `sent: true`, maps unavailable SMTP/provider failure to safe `EMAIL_DELIVERY_FAILED`, and records the request audit only after confirmed delivery; focused auth routes pass 50/50, profile frontend passes 6/6, and FE02 traceability passes 27/27.
+
+## Phase 7: Staging schema convergence
+
+- [x] **FE02-T065 - Reconcile the deployed change-password OTP token constraint before startup.**
+  - Maps to: MF-FE02-006, FR-FE02-010, NFR-FE02-DEP-001.
+  - DoD: the staging package includes the reviewed `CHANGE_PASSWORD_OTP` constraint migration; startup skips it when compatible, applies it when stale, verifies the postcondition, and fails closed before listening on failure.
+  - Evidence: schema readiness and startup regressions pass 9/9; deployment policy proves the migration is packaged with the backend.

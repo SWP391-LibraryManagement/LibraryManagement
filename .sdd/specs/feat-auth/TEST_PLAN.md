@@ -1,8 +1,8 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.14
+Version: 0.3.15
 Status: RECONCILIATION IN PROGRESS - BASELINE EVIDENCE RECORDED; GAPS OPEN
-Last Updated: 2026-07-27
+Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-auth/SPEC.md`
 Feature IDs: `BR-FE02-*`, `FR-FE02-*`, `AC-FE02-*`
@@ -18,6 +18,7 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - Password hashing and password comparison.
 - Token creation, verification, and expiry handling.
+- Staging startup reconciliation for the `CHANGE_PASSWORD_OTP` token-type constraint.
 - Exact 30-second JWT clock-skew tolerance.
 - OTP/reset token validation.
 - FE11 account-setup token validation and atomic activation.

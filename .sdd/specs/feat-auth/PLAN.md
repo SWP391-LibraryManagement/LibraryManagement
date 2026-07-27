@@ -1,7 +1,7 @@
 ﻿# PLAN.md - FE02 Authentication
 
 Status: RECONCILIATION IN PROGRESS - CONTEXT ALIGNED; HUMAN REVIEW PENDING
-Date: 2026-07-27
+Date: 2026-07-28
 Owner: Dat
 
 ## 1. Purpose
@@ -73,7 +73,7 @@ Required tables/fields exist in `database/Librarymanagement.sql` and passed loca
 
 - `Users`: `PasswordHash`, `Status`, `EmailVerifiedAt`, `FailedLoginCount`, `LockedUntil`, `LastLoginAt`.
 - `Roles`, `UserRoles`.
-- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`.
+- `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`; staging startup verifies that `CK_AuthTokens_TokenType` permits `CHANGE_PASSWORD_OTP` and applies the reviewed compatibility migration when stale.
 - `LoginFailureAttempts`: timestamped known-account failures for the rolling 15-minute window.
 - `AuditLogs`.
 - `NotificationTemplates`, `Notifications`, `NotificationAttempts` are FE10-owned delivery records; FE02 references its persisted `AuthTokens.TokenId` but does not write notification records directly.

@@ -1,6 +1,6 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.8
+# Version: 0.6.9
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -393,7 +393,7 @@ Use these stable IDs for tasks and tests.
 
 ### 12.4 Deployment Readiness
 
-- NFR-FE05-DEP-001: The staging backend package must include the reviewed idempotent `database/migrations/2026-07-22-library-metadata-compatibility.sql`. The application startup gate applies only this narrowly scoped migration before listening and verifies its postcondition. CI does not connect to the database or mutate schema. After the exact `main` CI run succeeds, staging deploys that commit automatically; failed CI does not deploy, manual rerun remains available, liveness remains separate from readiness, and staging smoke fails closed when startup or the read-only readiness check is unsuccessful.
+- NFR-FE05-DEP-001: The staging backend package must include the reviewed idempotent catalog metadata migration and may include separately approved feature-owned compatibility migrations. The application startup gate applies only those packaged migrations before listening and verifies their postconditions. CI does not connect to the database or mutate schema. After the exact `main` CI run succeeds, staging deploys that commit automatically; failed CI does not deploy, manual rerun remains available, liveness remains separate from readiness, and staging smoke fails closed when startup or the read-only readiness check is unsuccessful.
 
 ### 12.5 Logging and Audit
 
