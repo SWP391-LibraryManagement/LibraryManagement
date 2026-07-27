@@ -18,6 +18,15 @@ import { getStatusLabel } from '../../utils/uiLabels';
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
 const STOCK_BADGE = { ok: { s: 'available', t: 'Đủ' }, low: { s: 'pending', t: 'Sắp hết' }, out: { s: 'overdue', t: 'Hết hàng' } };
 const REPORT_PAGE_SIZE = 20;
+const COPY_STATUS_OPTIONS = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'AVAILABLE', label: getStatusLabel('AVAILABLE') },
+  { value: 'BORROWED', label: getStatusLabel('BORROWED') },
+  { value: 'RESERVED', label: getStatusLabel('RESERVED') },
+  { value: 'DAMAGED', label: getStatusLabel('DAMAGED') },
+  { value: 'LOST', label: getStatusLabel('LOST') },
+  { value: 'INACTIVE', label: getStatusLabel('INACTIVE') },
+];
 
 export default function InventoryReportPage() {
   const [categoryId, setCategoryId] = useState('');
@@ -28,6 +37,7 @@ export default function InventoryReportPage() {
   const [activeFilters, setActiveFilters] = useState({});
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState([]);
+  const [categoriesNotice, setCategoriesNotice] = useState('');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
@@ -39,8 +49,10 @@ export default function InventoryReportPage() {
         'Không thể tải danh sách thể loại.'
       );
       setCategories(response?.data?.categories || []);
-    } catch {
+      setCategoriesNotice('');
+    } catch (error) {
       setCategories([]);
+      setCategoriesNotice(error?.message || 'Không thể tải danh sách thể loại để lọc.');
     }
   }, []);
 
@@ -131,6 +143,7 @@ export default function InventoryReportPage() {
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
       {loading && !notice && report && <DataNotice type="info" title="Đang làm mới báo cáo">Vui lòng chờ trong giây lát.</DataNotice>}
+      {categoriesNotice && <DataNotice type="warning" title="Không thể tải thể loại">{categoriesNotice} Bạn vẫn có thể lọc theo các trường khác.</DataNotice>}
       <form onSubmit={applyCategoryFilter}>
         <DataToolbar
           search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, vị trí..." aria-label="Tìm trong báo cáo tồn kho" /></>}
@@ -148,7 +161,7 @@ export default function InventoryReportPage() {
                   <option key={category.id} value={category.id}>{category.name}</option>
                 ))}
               </select>
-              <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái bản sao"><option value="">Tất cả trạng thái</option><option value="AVAILABLE">Có sẵn</option><option value="BORROWED">Đang mượn</option><option value="RESERVED">Đang giữ chỗ</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Thất lạc</option><option value="INACTIVE">Ngừng sử dụng</option></select>
+              <select className="select" value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Trạng thái bản sao">{COPY_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
               <input className="input" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Vị trí" aria-label="Vị trí" />
               <input type="number" min="1" className="input" value={bookId} onChange={(event) => setBookId(event.target.value)} placeholder="Mã sách" aria-label="Mã sách" />
             </div>
@@ -246,11 +259,11 @@ export default function InventoryReportPage() {
                 </tr>
               ))}
             </DataTable>
-            <div className="pagination report-pagination">
+            <nav className="pagination report-pagination" aria-label="Phân trang báo cáo tồn kho">
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(activeFilters, page - 1)} disabled={loading || page <= 1}>Trang trước</button>
-              <span className="muted">Trang {page}/{totalPages}</span>
+              <span className="muted" aria-current="page">Trang {page}/{totalPages}</span>
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(activeFilters, page + 1)} disabled={loading || page >= totalPages}>Trang sau</button>
-            </div>
+            </nav>
           </div>
         </>
       )}

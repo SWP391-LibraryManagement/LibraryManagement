@@ -229,7 +229,7 @@ export default function ProcessReturnsPage() {
                 <span className={selectedDueStatus.state === 'OVERDUE' ? 'is-overdue' : ''}><AlertTriangle size={16} /><small>Tình trạng hạn trả</small><strong>{selectedDueStatus.label}</strong></span>
                 <span><RefreshCw size={16} /><small>Gia hạn</small><strong>{selected.renewalCount > 0 ? `Đã gia hạn ${selected.renewalCount} lần` : 'Chưa gia hạn'}</strong></span>
               </div>
-              <div className="field return-condition"><label htmlFor="return-condition">Tình trạng sách khi trả</label><select id="return-condition" className="select" value={condition} onChange={(event) => setCondition(event.target.value)}><option value="NORMAL">Tốt • không hư hỏng</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Mất sách</option></select></div>
+              <div className="field return-condition"><label htmlFor="return-condition">Tình trạng sách khi trả</label><select id="return-condition" className="select" value={condition} onChange={(event) => setCondition(event.target.value)}><option value="NORMAL">Tốt • không hư hỏng</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Thất lạc</option></select></div>
               {needsFineReview && <div className="alert-box warn"><span>{`Cần xem xét tiền phạt: ${overdueDays} ngày quá hạn, tình trạng ${CONDITION_LABELS[condition]}.`}</span></div>}
               <button className="btn btn-primary return-submit" onClick={() => setReturnTarget(selected)}><CheckCircle2 size={18} /> Xác nhận trả sách</button>
             </>

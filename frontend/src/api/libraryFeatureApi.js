@@ -176,7 +176,7 @@ export const reservationApi = {
   listMine(params = {}) {
     return authorizedReservationRequest({ method: 'get', url: '/reservations/me', params }, 'Không thể tải đặt chỗ của bạn.');
   },
-  cancel(reservationId, reason = 'Cancelled by member') {
+  cancel(reservationId, reason = 'Thành viên hủy đặt chỗ từ giao diện.') {
     return authorizedReservationRequest({ method: 'patch', url: `/reservations/${reservationId}/cancel`, data: { reason } }, 'Không thể hủy đặt chỗ.');
   },
   listAll(params = {}) {

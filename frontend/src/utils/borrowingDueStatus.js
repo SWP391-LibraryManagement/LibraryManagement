@@ -45,8 +45,8 @@ export function getBorrowDueStatus(dueDate, now = new Date()) {
   return { state: 'UPCOMING', days: difference, label: `Còn ${difference} ngày` };
 }
 
-// @spec NFR-FE07-TIME-001, EC-FE07-019 - cộng ngày hạn trả bằng business date +7,
-// tránh lệch host local setDate trên máy khác timezone.
+// @spec NFR-FE07-TIME-001, EC-FE07-019 - cộng ngày hạn trả theo business date,
+// tránh lệch host local setDate trên máy khác timezone. Server dùng LOAN_DAYS.
 // Trả về chuỗi `YYYY-MM-DD` để khớp với định dạng API.
 export function addBusinessDays(dateValue, days) {
   if (!dateValue) return '';
