@@ -1,12 +1,12 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
+Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
 Implementation State: PARTIAL
 
-Current v0.5.0 detail: FE10-I01..I08 are implemented on `main@f3ebe95` after
-the approved `main@db97f17` Core-drift addendum and a non-overlapping
-regression-test-only sync; fresh post-drift local/SQL/browser validation is
-green and fresh H2 is pending.
+Current v0.5.0 detail: FE10-I01..I08 are H2-approved in commit `b11b59e`; PR
+#75 exact-head CI passed and the Azure migration passed twice. The first manual
+deploy failed closed on platform-specific LF/CRLF hashing. The focused local
+TDD remediation is green and requires an H2 addendum before publication.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -18,8 +18,9 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
 Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
-implemented on `main@f3ebe95`; fresh post-drift validation is green, while
-fresh H2 and release gates remain open.
+published on PR #75 as `b11b59e`; PR CI and the two-run Azure migration pass.
+Staging remediation H2, redeploy/live verification, H3, merge, and post-merge
+gates remain open.
 
 ---
 
@@ -486,7 +487,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
 
-- [ ] Status: IN_PROGRESS - POST-DRIFT VALIDATION GREEN; FRESH H2 PENDING
+- [ ] Status: IN_PROGRESS - H2/PR CI/MIGRATION PASS; STAGING REMEDIATION H2 PENDING
 - Depends on: FE10-I01..I07.
 - Maps to: all v0.5.0 BR/FR/AC entries.
 - Files: OpenAPI, architecture/integration map, user manual, Azure staging
@@ -509,6 +510,16 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
   and in-memory selector did. A RED repository regression reproduced the
   mismatch; both SQL pending selectors now share the complete four-type
   exclusion and focused GREEN passed 161/161 before the full backend rerun.
+- H2 approved fingerprint `2b53d7e`; commit `b11b59e` and PR #75 CI run
+  `30304661463` passed. Azure staging migrated from zero to one `ReadAt` column
+  and supporting index; 17 eligible historical rows were backfilled, 25
+  excluded rows stayed unread, a post-run-one probe stayed unread after run
+  two, protected aggregates were unchanged, and probe/firewall cleanup passed.
+- Manual deploy run `30305596861` failed closed before deployment because
+  Windows applied the CRLF migration bytes (`6e8b6b4...`) while the Linux
+  runner hashed the equivalent LF checkout (`143cd8e...`). RED/GREEN
+  deployment policy coverage now permits only those exact LF/CRLF renderings
+  of unchanged UTF-8 content; publication requires a fresh H2 addendum.
 
 ### V0.5.0 Traceability
 

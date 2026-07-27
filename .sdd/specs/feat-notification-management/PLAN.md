@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
+Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
 
 Owner: Nhat
 
@@ -12,11 +12,13 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
-implemented on `main@f3ebe95` after the approved `main@db97f17` Core-drift
-addendum and a non-overlapping regression-test-only sync; fresh post-drift
-local/SQL/browser validation is green, while fresh H2, Azure staging, H3,
-merge, and exact post-merge CI remain pending.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 were
+H2-approved and published as commit `b11b59e`; PR #75 CI run `30304661463`
+passed. The exact migration was applied twice and verified on Azure staging.
+Manual deploy run `30305596861` failed closed because the Windows-applied CRLF
+hash differed from the Linux checkout's LF byte hash. A focused local TDD
+remediation accepts only the exact LF/CRLF renderings of unchanged UTF-8
+content; its H2 addendum, redeploy, H3, merge, and post-merge CI remain pending.
 
 ---
 

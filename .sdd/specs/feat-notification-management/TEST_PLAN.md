@@ -1,7 +1,7 @@
 # FE10 Test Plan - Notification Management
 
 Version: 0.5.0
-Status: V0.5.0 POST-DRIFT VALIDATION GREEN - FRESH H2 PENDING
+Status: V0.5.0 H2/PR CI/MIGRATION PASS - STAGING REMEDIATION H2 PENDING
 Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-notification-management/SPEC.md`
@@ -140,6 +140,13 @@ npm.cmd run trace:enforce
 - Local migration, focused API/repository/frontend, fan-in, privacy, full
   backend/frontend, deployment, system, traceability, diff/security scans, and
   complete Chromium E2E evidence are complete.
-- H2 review remains the next gate. Commit, push, CI, Azure staging migration,
-  backend-first deploy, three-role live browser verification, H3, merge, and
-  exact post-merge CI are not claimed by this local record.
+- H2 approved commit `b11b59e`; PR #75 CI run `30304661463` and the exact
+  two-run Azure migration passed. Manual deploy `30305596861` failed closed at
+  preflight because Windows CRLF and Linux LF produced different raw hashes.
+- A RED deployment-policy test reproduced the missing cross-platform boundary.
+  GREEN now derives exact LF and CRLF byte hashes from unchanged UTF-8 content,
+  accepts the stored operator hash only when it equals one, and rejects a
+  content mutation. Deployment policy passes 16/16.
+- The staging remediation H2 addendum, updated PR CI, backend-first redeploy,
+  three-role live browser verification, H3, merge, and exact post-merge CI are
+  not yet claimed.

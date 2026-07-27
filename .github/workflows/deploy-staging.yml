@@ -52,16 +52,23 @@ jobs:
             exit 1
           }
 
-          $actualHash = (
-            Get-FileHash -Algorithm SHA256 `
-              'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
-          ).Hash.ToLowerInvariant()
-          if ($actualHash -ne $expectedHash) {
+          $migrationPath = 'database/migrations/2026-07-27-fe10-personal-inbox-read-state.sql'
+          $utf8NoBom = [Text.UTF8Encoding]::new($false, $true)
+          $migrationText = [IO.File]::ReadAllText($migrationPath, $utf8NoBom)
+          $lfText = $migrationText.Replace("`r`n", "`n").Replace("`r", "`n")
+          $crlfText = $lfText.Replace("`n", "`r`n")
+          $lfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($utf8NoBom.GetBytes($lfText))
+          ).ToLowerInvariant()
+          $crlfHash = [Convert]::ToHexString(
+            [Security.Cryptography.SHA256]::HashData($utf8NoBom.GetBytes($crlfText))
+          ).ToLowerInvariant()
+          if ($expectedHash -notin @($lfHash, $crlfHash)) {
             Write-Error 'The reviewed FE10 migration does not match the staging migration proof.'
             exit 1
           }
 
-          Write-Output 'FE10 migration proof accepted for the exact deployment head.'
+          Write-Output 'FE10 migration proof accepted for the exact deployment head and LF/CRLF rendering.'
 
   deploy-backend:
     needs: preflight

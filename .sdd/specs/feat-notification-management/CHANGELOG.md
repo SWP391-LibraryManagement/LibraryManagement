@@ -1,5 +1,23 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Remediate cross-platform staging migration hash gate
+
+- H2 approved fingerprint `2b53d7e`; FE10 was published as commit `b11b59e`
+  on PR #75 and exact-head CI run `30304661463` passed.
+- Azure staging received the reviewed migration twice. It created one nullable
+  `ReadAt` column and one supporting index, backfilled 17 eligible historical
+  rows, kept 25 excluded rows unread, kept a post-run-one probe unread on run
+  two, preserved delivery/attempt/idempotency aggregates, and removed the
+  probe and every temporary FE10 firewall rule.
+- Manual deployment run `30305596861` failed closed before deployment because
+  the operator-applied Windows CRLF bytes hash to `6e8b6b4...`, while the
+  unchanged Linux checkout's LF bytes hash to `143cd8e...`.
+- RED/GREEN deployment-policy coverage now requires preflight to derive both
+  exact LF and CRLF byte renderings of the same strict UTF-8 content. The
+  stored hash must match one of them; any content change still fails closed.
+- Deployment policy passes 16/16. This post-H2 remediation remains local until
+  a new H2 addendum authorizes commit/push and exact-head redeployment.
+
 ## 2026-07-28 - Synchronize non-overlapping upstream regression tests
 
 - Upstream advanced from `main@db97f17` to `main@f3ebe95` with one test-only

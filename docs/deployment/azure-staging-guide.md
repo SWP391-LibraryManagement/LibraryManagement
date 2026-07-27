@@ -255,6 +255,11 @@ sqlcmd -S $env:FE10_SQL_SERVER -d $env:FE10_SQL_DATABASE `
    Environment variable `FE10_INBOX_MIGRATION_SHA256`. This value proves the exact migration file
    hash that was applied; never set or update it before steps 1-6 pass:
 
+   Record the hash of the bytes actually applied by the operator. Git may render the same UTF-8
+   text with LF on the Linux deployment runner and CRLF on Windows. The preflight derives the exact
+   LF and CRLF byte renderings of the checked-out text and accepts the stored hash only when it
+   matches one of those two renderings. It does not accept any migration-content change.
+
 ```powershell
 $fe10MigrationHash = (Get-FileHash -Algorithm SHA256 $fe10Migration).Hash.ToLowerInvariant()
 gh variable set FE10_INBOX_MIGRATION_SHA256 `

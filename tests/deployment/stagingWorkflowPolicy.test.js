@@ -42,11 +42,22 @@ test('FE10 staging deploy is ordered behind exact-head migration proof for autom
   assert.match(workflow, /preflight:[\s\S]*?environment:\s*[\s\S]*?name:\s*staging/);
   assert.match(workflow, /preflight:[\s\S]*?ref:\s*\$\{\{ github\.event\.workflow_run\.head_sha \|\| github\.sha \}\}/);
   assert.match(workflow, /FE10_INBOX_MIGRATION_SHA256/);
-  assert.match(workflow, /Get-FileHash[\s\S]*?2026-07-27-fe10-personal-inbox-read-state\.sql/);
+  assert.match(workflow, /\$migrationPath[\s\S]*?2026-07-27-fe10-personal-inbox-read-state\.sql/);
   assert.match(workflow, /MANUAL_CONFIRMATION[\s\S]*?fe10_inbox_migration_confirmed/);
   assert.match(workflow, /deploy-backend:[\s\S]*?needs:\s*preflight/);
   assert.match(workflow, /deploy-frontend:[\s\S]*?needs:\s*deploy-backend/);
   assert.match(workflow, /smoke-test:[\s\S]*?needs:\s*\[deploy-backend, deploy-frontend\]/);
+});
+
+test('FE10 migration proof is stable across exact LF and CRLF byte renderings only', () => {
+  assert.match(workflow, /\$migrationText[\s\S]*?ReadAllText/);
+  assert.match(workflow, /\$lfText[\s\S]*?Replace\("`r`n",\s*"`n"\)/);
+  assert.match(workflow, /\$crlfText[\s\S]*?Replace\("`n",\s*"`r`n"\)/);
+  assert.match(workflow, /\$lfHash[\s\S]*?SHA256[\s\S]*?HashData/);
+  assert.match(workflow, /\$crlfHash[\s\S]*?SHA256[\s\S]*?HashData/);
+  assert.match(workflow, /\$expectedHash -notin @\(\$lfHash,\s*\$crlfHash\)/);
+  assert.match(guide, /LF and CRLF byte renderings/i);
+  assert.match(guide, /hash of the bytes actually applied/i);
 });
 
 test('operator guide matches migration-gated CI deployment and canonical schema size', () => {
