@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Reconcile FE09 Member fines with rule alignment (v0.7.9)
+
+- Combined the parallel v0.7.8 changes for FE08 same-book eligibility and
+  FE09 positive-`UNPAID` borrow/renew blockers.
+- Preserved the exact held-copy handoff, one-account/one-role contract,
+  transaction-locked return evidence, and timezone-independent renewal.
+- Exposed FE07 due/return dates only through FE09's read-only Member fine view;
+  Librarian/Admin retain collection ownership.
+- Fresh integrated evidence and H2 review remain required before commit/push.
+
 ## 2026-07-27 - Integrate same-book reservation eligibility (v0.7.8)
 
 - Integrated the upstream FE07 current-loan signal used by FE08 while
@@ -19,6 +29,12 @@
   and timezone-independent renewal behavior.
 - Kept upstream `FE07-T048` authoritative and renumbered the rule-alignment
   tasks to `FE07-T049` through `FE07-T052`.
+
+## 2026-07-27 - Connect unpaid-fine blockers to Member reconciliation (parallel v0.7.8)
+
+- Linked the existing FE07 borrow/renew blocker to FE09's canonical positive `UNPAID` state.
+- Exposed FE07 due and return dates through the read-only Member fine view for reconciliation.
+- Preserved Librarian/Admin collection ownership; Member cannot self-mark a fine paid.
 
 ## 2026-07-27 - Expose current loans as FE08 reservation eligibility
 

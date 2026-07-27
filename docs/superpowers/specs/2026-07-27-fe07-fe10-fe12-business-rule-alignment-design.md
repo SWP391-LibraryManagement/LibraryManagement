@@ -47,6 +47,7 @@ frontend workflow is added.
 | S-006 | User confirmation in the active task | 2026-07-27 | Every account has exactly one role; multiple roles per account are not supported | Highest for the reconciliation addendum | Nhat | Resolves the `main`/branch role-model conflict |
 | S-007 | Latest upstream FE07/FE08 SPEC/PLAN/TASKS and implementation | `origin/main` at `e20fdc3` | FE08 selected-book/current-history/pickup handoffs, FE07 exact-copy preselection, task IDs `FE07-T048` and `FE08-T042..T044`, and lifecycle labels | Approved merged baseline | Team | Overlaps branch-local task IDs and the intermediate stale E2E label |
 | S-008 | Latest upstream FE07/FE08 SPEC/PLAN/TASKS and implementation | `origin/main` at `e99daf5` | FE07 current-loan signal, FE08 same-book candidate/create/queue exclusion, shared Member circulation lock, and upstream `FE08-T045` | Approved merged baseline | Team | Overlaps the branch-local regression task ID |
+| S-009 | Latest upstream FE07/FE08/FE09/FE11 contracts and implementation | `origin/main` at `8d0059b` | FE08 copy-scoped queue positions, FE09 Member-only own-fine context, FE11 audience wording, and upstream task IDs `FE08-T046`/`FE09-T024` | Approved merged baseline | Team | Parallel version and `FE08-T046` collisions; null UI gap |
 
 ## 3. Evidence And Conflict Classification
 
@@ -57,8 +58,9 @@ frontend workflow is added.
 | E-003 | `observed-behavior` | Renewal date extension differs by host timezone because host-local `Date.setDate()` is used. | Use shared business-date helpers exclusively. |
 | E-004 | `unresolved-conflict` resolved by S-001 | FE10 EC-FE10-010 requires rejection, while NFR-FE10-SEC-005 permits sanitizing an unsafe stored definition. | Reject the stored definition; escape/sanitize runtime values. |
 | E-005 | `observed-behavior` | FE12 accepts an unknown query key, returns `200`, and forwards it to the report layer. | Return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report execution. |
-| E-006 | `integration-conflict` resolved by S-006/S-007 | Prior `main` owns `FE07-T048` and `FE08-T042..T044`, and uses `Đang đặt chỗ`/`Đến lượt bạn`; the branch used overlapping task IDs and its intermediate E2E expected `Đã đặt chỗ`. | Preserve upstream held-copy behavior, renumber rule-alignment tasks to `FE07-T049..T052` and `FE08-T046`, retain single-role wording, and add no duplicate FE08 production change. |
-| E-007 | `integration-conflict` resolved by S-008 | Latest `main` assigns `FE08-T045` to the approved same-book current-loan rule, while the branch previously used that ID for regression-only verification. | Keep upstream `FE08-T045`, move the branch regression boundary to `FE08-T046`, integrate the upstream code unchanged, and treat its existing tests as upstream evidence rather than a new branch RED claim. |
+| E-006 | `integration-conflict` resolved by S-006/S-007 | Prior `main` owns `FE07-T048` and `FE08-T042..T044`, and uses `Đang đặt chỗ`/`Đến lượt bạn`; the branch used overlapping task IDs and its intermediate E2E expected `Đã đặt chỗ`. | Preserve upstream held-copy behavior, renumber rule-alignment tasks to `FE07-T049..T052` and `FE08-T047`, retain single-role wording, and add no duplicate FE08 production change. |
+| E-007 | `integration-conflict` resolved by S-008 | Latest `main` assigns `FE08-T045` to the approved same-book current-loan rule, while the branch previously used that ID for regression-only verification. | Keep upstream `FE08-T045`, move the branch regression boundary to `FE08-T047`, integrate the upstream code unchanged, and treat its existing tests as upstream evidence rather than a new branch RED claim. |
+| E-008 | `integration-conflict` resolved by S-009 | `main` assigns `FE08-T046` to copy-scoped queue positions while the branch used the same ID for regression evidence; the incoming UI maps a missing position to null but renders `#null`. | Keep upstream `FE08-T046`, move branch regression evidence to `FE08-T047`, bump FE08 to v0.5.10, require `Chưa xác định` for null, and prove the bounded presentation fix RED-GREEN before full validation. |
 
 Implementation is evidence of current behavior, not the source of the approved
 business policy.
@@ -145,6 +147,7 @@ contracts. BD-001 is historical and superseded.
 | AT-004 | BD-004 | BR-FE10-010, FR-FE10-005/009, AC-FE10-006 | Unsafe stored definition is accepted and sanitized | Safe 4xx, zero persistence, zero provider call; runtime values remain escaped |
 | AT-005 | BD-005 | BR-FE12-008, FR-FE12-005, AC-FE12-005, EC-FE12-011 | `?bogus=1` reaches the service and returns `200` | All three endpoints return safe `400`; service/repository spies remain untouched |
 | AT-006 | BD-006 | Existing FE08 integration requirements | Existing focused integration baseline | FE08 reservation and notification regressions remain green |
+| AT-007 | E-008/S-009 | BR-FE08-020, FR-FE08-035, AC-FE08-022 | Mapper preserves null but pages render `#null` | Null renders `Chưa xác định`, real per-copy positions remain unchanged, and focused/full/runtime gates pass |
 
 Traceability must continue after written-spec approval:
 
@@ -162,20 +165,22 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 | 4 | SL-004 | Fail-closed stored template validation | Existing FE10 rendering boundary | Stored executable content | Codex / Integration Lead | Nhat | G3 passed | AT-004 security regression |
 | 5 | SL-005 | Exact report query boundaries | Existing report validators/routes | Silent API expansion and unvalidated input | Codex / Integration Lead | Nhat | G3 passed | AT-005 endpoint matrix |
 | 6 | SL-006 | Preserved FE08 handoffs and upstream same-book rule | SL-001 to SL-005 implementation plus S-008 | Cross-feature regression | Codex / Integration Lead | Nhat | G6 passed | AT-006 plus FE08-T045 regression evidence |
+| 7 | SL-007 | Reconciled copy-scoped queues and Member fine boundary | SL-001 to SL-006 plus S-009 | Misleading queue UI or role-boundary regression | Codex / Integration Lead | Nhat | `8d0059b` integration authorized | AT-007, FE09-T024 security review, and fresh L1-L4 evidence |
 
 ## 10. Quality Gates
 
 Nhat confirmed the single-role decision and authorized SPEC/PLAN/TASKS
 reconciliation on 2026-07-27. The open merge now includes `origin/main` at
-`e99daf5`; fresh automated, compliance, safety, and runtime evidence now
+`8d0059b`; fresh automated, compliance, safety, and runtime evidence now
 completes G4-G6, while G7 waits for the next H2 addendum.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-006 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted `e99daf5` merge and evidence |
+| SL-001 to SL-007 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted `8d0059b` merge and evidence |
 
-Historical green results against `origin/main` at `e20fdc3` remain baseline
-evidence only. G4-G6 were repeated against `e99daf5`; G7 remains pending.
+Historical green results against `origin/main` at `e20fdc3` and `e99daf5`
+remain baseline evidence only. G4-G6 were repeated against `8d0059b`; G7
+remains pending.
 
 ## 11. Security And Safety Boundary
 
@@ -195,8 +200,8 @@ Authorized by Nhat's single-role confirmation:
 
 - Reconcile SPEC, PLAN/TASKS, task IDs, tests, and the merged implementation.
 - Remove the superseded multi-role renewal scenario.
-- Preserve upstream `FE08-T045` and its same-book rule while moving this
-  branch's regression-only boundary to `FE08-T046`.
+- Preserve upstream `FE08-T045`/`FE08-T046` and their same-book/queue-position
+  rules while moving this branch's regression-only boundary to `FE08-T047`.
 - Run focused, full, traceability, and local runtime validation.
 
 Blocked until H2 addendum:

@@ -1,5 +1,10 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Extend the single-role audience boundary to FE09
+
+- Restricted Member own-fine self-service to the single `MEMBER` role.
+- Kept Librarian/Admin on the staff fine workspace and preserved Admin-only waive/cancel authority.
+
 ## 2026-07-27 - Enforce exactly one role per account
 
 - Replaced separate role assignment/revocation with atomic `PUT /api/users/{userId}/role`.

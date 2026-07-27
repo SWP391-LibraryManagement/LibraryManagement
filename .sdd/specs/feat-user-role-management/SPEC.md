@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.2
+# Version: 0.6.3
 
 # Status: APPROVED - PERSONAL DATA OWNERSHIP REVISION 2026-07-22
 
@@ -294,7 +294,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-025: Admin resend is allowed only after the source transaction locks and revalidates the active acting Admin and confirms an `INACTIVE` admin-created account with incomplete setup token history; each resend revokes prior active setup tokens and creates a new token/event/key after a 60-second cooldown.
 - BR-FE11-026: User list/detail/Librarian-work-update responses must use the approved `UserManagementView` DTO and must never expose password hashes, raw or hashed auth credentials, session identifiers, setup/reset links, or secret audit metadata.
 - BR-FE11-027: Every managed-profile update and deactivation must use the loaded non-null `updatedAt`, defined as the latest effective timestamp across `Users` and `UserProfiles`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. A no-op returns the current safe DTO without advancing the version or writing a success audit.
-- BR-FE11-028: The account's single role determines its audience across FE01, FE07, FE08, and shared navigation. Only `MEMBER` receives member self-service borrowing/reservation access; `LIBRARIAN` and `ADMIN` use their staff-owned routes.
+- BR-FE11-028: The account's single role determines its audience across FE01, FE07, FE08, FE09, and shared navigation. Only `MEMBER` receives member self-service borrowing/reservation/own-fine access; `LIBRARIAN` and `ADMIN` use their staff-owned routes.
 
 ---
 

@@ -1,5 +1,22 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Reconcile parallel v0.5.9 changes (v0.5.10)
+
+- Combined same-book current-loan exclusion with copy-scoped queue-position
+  presentation from `main@8d0059b`.
+- Kept upstream `FE08-T046` authoritative for queue-position clarity and
+  renumbered this branch's regression-only handoff verification to
+  `FE08-T047`.
+- Clarified that a null canonical queue position renders `Chưa xác định`
+  instead of the invalid `#null`/`#undefined` presentation.
+- Fresh integrated evidence and H2 review remain required before commit/push.
+
+## 2026-07-27 - Clarify copy-scoped queue positions (parallel v0.5.9)
+
+- Kept queue position canonical per physical `CopyId`; `#2` for two different books is valid because they are separate queues.
+- Reworded Member and Librarian table labels to identify the position as belonging to that book copy.
+- Removed the frontend fallback that invented `#1` when the server returned no queue position.
+
 ## 2026-07-27 - Integrate same-book exclusion with rule alignment (v0.5.9)
 
 - Integrated the upstream same-book current-loan exclusion with the existing

@@ -677,6 +677,9 @@ components:
         member: { type: object, nullable: true }
         bookTitle: { type: string, nullable: true }
         barcode: { type: string, nullable: true }
+        dueDate: { type: string, format: date, nullable: true }
+        returnDate: { type: string, format: date, nullable: true }
+        borrowStatus: { type: string, enum: [REQUESTED, BORROWED, RETURNED, LOST, DAMAGED], nullable: true }
     FineListPayload:
       type: object
       additionalProperties: false
@@ -1492,7 +1495,8 @@ paths:
   /api/fines/me:
     get:
       tags: [Fine Management]
-      summary: List the authenticated member's fines (FE09)
+      summary: List the authenticated single-role Member's fines (FR-FE09-001/019)
+      description: Member self-service only. Librarian/Admin accounts use the staff fine list and cannot call this endpoint as a Member.
       parameters:
         - { name: status, in: query, required: false, schema: { type: string, enum: [UNPAID, PAID, WAIVED, CANCELLED] } }
         - { name: page, in: query, required: false, schema: { type: integer, minimum: 1 } }
@@ -1505,6 +1509,7 @@ paths:
               schema: { $ref: '#/components/schemas/FineListPayload' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/fines:
     get:
       tags: [Fine Management]

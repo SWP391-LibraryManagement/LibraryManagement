@@ -1,6 +1,6 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: IN PROGRESS - V0.7.6 MAIN INTEGRATION
+Status: IN PROGRESS - V0.7.9 H2 ADDENDUM PENDING
 Implementation State: PARTIAL
 
 Owner: Nhat
@@ -9,9 +9,9 @@ Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. The v0.7.5 batch passed
 local verification and H2, then `main` introduced the approved single-role
-account contract using `FE07-T047`. Nhat authorized v0.7.6 reconciliation on
-2026-07-27. The integrated result remains uncommitted pending fresh validation
-and an H2 addendum; H3 remains required before merge.
+account contract and later FE09-T024 Member-fine reconciliation. Fresh
+`8d0059b` validation passes. The integrated result remains uncommitted pending
+the v0.7.9 H2 addendum; H3 remains required before merge.
 
 ---
 

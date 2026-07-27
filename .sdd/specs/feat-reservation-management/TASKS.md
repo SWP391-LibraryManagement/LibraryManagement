@@ -1,6 +1,6 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: IN PROGRESS - LATEST-MAIN INTEGRATION VALIDATION
+Status: IN PROGRESS - 8D0059B H2 ADDENDUM PENDING
 Implementation State: PARTIAL
 
 Owner: Nhat
@@ -8,11 +8,11 @@ Owner: Nhat
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
-`FE08-T041` through `FE08-T045`; the rule-alignment regression-only task is
-`FE08-T046`. Nhat authorized integration on 2026-07-27. The upstream same-book
-rule is preserved without introducing another FE08 product change in this
-slice. Fresh validation is recorded, and the merged result remains uncommitted
-pending an H2 addendum.
+`FE08-T041` through `FE08-T046`; the rule-alignment regression-only task is
+`FE08-T047`. Nhat authorized integration on 2026-07-27. The upstream same-book
+and copy-scoped queue rules are preserved. Null-safe queue presentation and
+fresh validation pass; the merged result stays uncommitted pending an H2
+addendum.
 
 ---
 
@@ -257,16 +257,28 @@ pending an H2 addendum.
   - Source: upstream-approved and implemented on `main` at `e99daf5`; this is
     not a new RED claim from the rule-alignment branch.
 
+- [x] **FE08-T046 - Clarify copy-scoped queue positions.**
+  - Maps to: BR-FE08-020, FR-FE08-035, AC-FE08-022.
+  - Preserve per-`CopyId` positions, label Member/Librarian tables with the
+    copy scope, and remove the view-model fallback that invented `#1`.
+  - Render `Chưa xác định` for null canonical positions instead of `#null` or
+    `#undefined`.
+  - Verify equal positions across different books and null positions in both
+    Member and staff presentation contracts.
+
 ## 10. 2026-07-27 FE07/FE10 integration regression boundary
 
-- [x] **FE08-T046 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
+- [x] **FE08-T047 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
   - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
-  - Scope: regression evidence only; no additional FE08 production or contract change from the rule-alignment slice.
+  - Scope: regression evidence only after the bounded FE08-T046 null-safe
+    presentation remediation.
   - Historical evidence against the prior `e20fdc3` merge remains baseline
     only.
-  - Fresh evidence against the open `e99daf5` merge: requester `1/1`,
-    SIT-003/SIT-004 `2/2`, 7-suite cross-feature gate `284/284`, full backend
-    and coverage `1,051/1,051`, frontend `231/231`, and Chromium acceptance
+  - Fresh evidence against the open `8d0059b` merge: queue-position RED/GREEN
+    `1/1`, FE09 backend `22/22`, FE08/FE09 frontend `17/17`, requester and
+    SIT coverage inside the 7-suite cross-feature gate `295/295`, full backend
+    and coverage `1,052/1,052`, frontend `232/232`, and Chromium acceptance
     `2/2`.
-  - Integration gate: fresh H2 addendum remains required before committing the open merge.
+  - Integration gate: fresh H2 addendum remains required before committing the
+    open merge.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

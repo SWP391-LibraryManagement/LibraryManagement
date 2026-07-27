@@ -19,7 +19,11 @@ import { reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Badge, ConfirmAction, DataNotice, EmptyState, Toast, useToast } from '../../component/shared/Feedback';
 import { DataTable } from '../../component/shared/OperationalPatterns';
-import { fmtDate, mapReservation } from '../../utils/libraryFeatureViewModels';
+import {
+  fmtDate,
+  formatReservationQueuePosition,
+  mapReservation,
+} from '../../utils/libraryFeatureViewModels';
 import {
   getExpireHoldsSuccessMessage,
   isActiveReservationQueueStatus,
@@ -52,6 +56,7 @@ function getQueueSortValue(item) {
   return Number.isNaN(reservedAt) ? Number.MAX_SAFE_INTEGER : reservedAt;
 }
 
+// @spec FR-FE08-035, AC-FE08-022
 export default function ReservationsLibrarianPage() {
   const [view, setView] = useState('list');
   const [rows, setRows] = useState([]);
@@ -254,7 +259,7 @@ export default function ReservationsLibrarianPage() {
               </div>
               <DataTable
                 caption="Danh sách đặt chỗ"
-                headers={['Mã', 'Thành viên', 'Sách / bản sao', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', 'Thao tác']}
+                headers={['Mã', 'Thành viên', 'Sách / bản sao', 'Ngày đặt', 'Vị trí của bản sách', 'Trạng thái', 'Thao tác']}
                 loading={loading}
                 isEmpty={!loading && pageRows.length === 0}
                 emptyState={<EmptyState icon={CalendarClock} title="Không có đặt chỗ phù hợp" />}
@@ -269,7 +274,7 @@ export default function ReservationsLibrarianPage() {
                       <div className="stack-sm"><strong>{item.title}</strong><span className="muted">{item.barcode} • {item.location}</span></div>
                     </td>
                     <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
-                    <td data-label="Vị trí hàng đợi">#{item.queue}</td>
+                    <td data-label="Vị trí của bản sách">{formatReservationQueuePosition(item.queue, 'bản này')}</td>
                     <td data-label="Trạng thái"><Badge status={item.status}>{STATUS_LABELS[item.status] || item.status}</Badge></td>
                     <td data-label="Thao tác">
                       {item.status === 'Waiting' ? (

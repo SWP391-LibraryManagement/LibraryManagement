@@ -878,7 +878,7 @@ three validator arrays. Do not stage or commit.
 
 ### Task 6: FE08 Regression-Only Handoff Verification
 
-**Task ID:** `FE08-T046`
+**Task ID:** `FE08-T047`
 
 **Files:**
 - No FE08 production file changes.
@@ -918,7 +918,7 @@ a product-rule change.
 
 ### Task 7: Cross-Feature Validation And Real Runtime Evidence
 
-**Task IDs:** `FE07-T051`, `FE08-T046`, `FE10-S11`, `FE12-N11`
+**Task IDs:** `FE07-T051`, `FE08-T047`, `FE10-S11`, `FE12-N11`
 
 **Files:**
 - Modify: `tests/e2e/system-golden-path.spec.js`
@@ -1010,7 +1010,7 @@ L2 Spec:
 - BD-003/AT-003 -> FE07-T050 -> two-timezone RED/GREEN -> shared helpers
 - BD-004/AT-004 -> FE10-S11 -> zero-side-effect security regression
 - BD-005/AT-005 -> FE12-N11 -> all three endpoints and zero repository calls
-- BD-006/AT-006 -> FE08-T046 -> requester plus SIT-003/SIT-004
+- BD-006/AT-006 -> FE08-T047 -> requester plus SIT-003/SIT-004
 
 L3 Constitution/Safety:
 - server-side authorization remains role-order independent
@@ -1081,7 +1081,7 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 Preserve `FE07-T047`, `FE07-T048`, and `FE08-T041` through `FE08-T045` from
 `main`. Record this cleanup as `FE07-T052` and renumber the regression-only
-FE08 task to `FE08-T046`.
+FE08 task to `FE08-T047`.
 Classify original BD-001 as superseded and record the approved single-role
 decision as BD-007.
 
@@ -1139,7 +1139,7 @@ approves the H2 addendum.
 
 ### Task 9: Reconcile Prior Main Without Expanding FE08
 
-**Task ID:** `FE08-T046`
+**Task ID:** `FE08-T047`
 
 - [x] **Step 1: Merge `origin/main` through `e20fdc3` without committing**
 
@@ -1148,7 +1148,7 @@ Keep PR #63 on its existing branch and preserve the open merge for H2 review.
 - [x] **Step 2: Resolve the FE08 documentation conflicts**
 
 Preserve upstream `FE07-T047/T048` and `FE08-T041` through `FE08-T044`;
-renumber this slice's tasks to `FE07-T049..T052` and `FE08-T046`, retain the
+renumber this slice's tasks to `FE07-T049..T052` and `FE08-T047`, retain the
 one-account/one-role wording, and accept the upstream held-copy handoff without
 adding another FE08 behavior.
 
@@ -1175,7 +1175,7 @@ uncommitted and unpushed.
 
 ### Task 10: Integrate The Upstream Same-Book Reservation Rule
 
-**Task IDs:** upstream `FE08-T045`; branch regression `FE08-T046`
+**Task IDs:** upstream `FE08-T045`; branch regression `FE08-T047`
 
 - [x] **Step 1: Merge `origin/main` through `e99daf5` without committing**
 
@@ -1185,7 +1185,7 @@ Keep the existing PR branch and preserve the open merge for a new H2 addendum.
 
 Integrate FE07 v0.7.8 and FE08 v0.5.9. Keep upstream `FE08-T045` for the
 same-book current-loan rule and move the branch regression-only handoff task to
-`FE08-T046`. Preserve the one-account/one-role and exact held-copy contracts.
+`FE08-T047`. Preserve the one-account/one-role and exact held-copy contracts.
 
 - [x] **Step 3: Review the upstream production implementation**
 
@@ -1211,12 +1211,63 @@ approves the addendum.
 
 ---
 
+### Task 11: Integrate Copy-Scoped Queues And Member Fine Permissions
+
+**Task IDs:** upstream `FE08-T046`, upstream `FE09-T024`; branch regression
+`FE08-T047`
+
+- [x] **Step 1: Merge `origin/main` through `8d0059b` without committing**
+
+Keep PR #63 on the existing branch and preserve the merge result for a new H2
+addendum.
+
+- [x] **Step 2: Reconcile SPEC, PLAN, TASKS, and version collisions**
+
+Combine the parallel FE07 v0.7.8 changes as v0.7.9 and the parallel FE08
+v0.5.9 changes as v0.5.10. Keep upstream `FE08-T046` for copy-scoped queue
+positions and move branch regression evidence to `FE08-T047`.
+
+- [x] **Step 3: Capture the queue-position RED**
+
+Prove that the upstream mapper returns null while Member/staff presentation
+still stringifies it. The focused frontend test must fail because no null-safe
+formatter exists.
+
+- [x] **Step 4: Apply the bounded GREEN presentation fix**
+
+Render null as `Chưa xác định`; preserve real `#N` positions and their
+per-`CopyId` scope in Member/staff tables, creation feedback, and cancellation
+feedback.
+
+- [x] **Step 5: Review FE09 authorization and data contracts**
+
+Verify `/api/fines/me` is Member-only under the exactly-one-role model,
+staff mutation ownership is unchanged, SQL remains parameterized, the OpenAPI
+DTO matches repository output, and Member UI remains read-only.
+
+- [x] **Step 6: Repeat focused, cross-feature, full, and runtime evidence**
+
+Run FE08/FE09 focused tests, single-role checks, the seven-suite cross-feature
+gate, timezone matrix, full backend and coverage, full frontend/lint/build,
+traceability, conflict/diff checks, and both Chromium acceptance scenarios.
+Mutable SQL remains prohibited without the approved disposable-database flags.
+
+- [x] **Step 7: Prepare the `8d0059b` H2 addendum**
+
+Update the validation record with exact counts, the queue-position RED/GREEN,
+FE09 security review, changed-file parity, runtime evidence, and residual
+SQL/staging limits. Do not commit, push, or update draft PR #63 before explicit
+H2 approval.
+
+---
+
 ## Plan Approval Gate
 
-- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T046,
+- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T047,
   FE10-S11, and FE12-N11.
 - [x] Only after approval, begin Task 1 with RED tests.
 - [x] Do not infer plan approval from the earlier SPEC approval.
 - [x] Nhat confirms one account has exactly one role and authorizes Task 8
   reconciliation on 2026-07-27.
 - [x] Nhat authorizes Task 10 integration of upstream `e99daf5` on 2026-07-27.
+- [x] Nhat authorizes Task 11 integration of upstream `8d0059b` on 2026-07-27.

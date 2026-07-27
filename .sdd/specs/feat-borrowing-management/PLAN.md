@@ -1,15 +1,16 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: IN PROGRESS - V0.7.6 MAIN INTEGRATION
+Status: IN PROGRESS - V0.7.9 H2 ADDENDUM PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. Nhat confirmed the
-single-role account rule and authorized v0.7.6 reconciliation on 2026-07-27.
-The integrated implementation and evidence remain uncommitted until fresh
-validation and an H2 addendum.
+single-role account rule and authorized latest-main reconciliation on
+2026-07-27. FE09-T024 now supplies the read-only Member fine context for the
+existing FE07 blocker. Fresh validation passes; the integrated result remains
+uncommitted until the v0.7.9 H2 addendum.
 
 ---
 
@@ -252,3 +253,15 @@ The detailed executable plan is
    the merged `main` implementation before full verification.
 5. Do not commit the merge until the reconciled SPEC, PLAN/TASKS, code, tests,
    and evidence receive H2 addendum approval.
+
+## 12. V0.7.9 FE09 Member-Fine Integration Addendum
+
+1. Keep FE07's positive-`UNPAID` borrow/renew blocker unchanged and identify
+   FE09 as the canonical fine-state owner.
+2. Let FE09-T024 project FE07 due/return/borrow status through the Member-only
+   read path; do not add an FE07 fine mutation.
+3. Preserve exactly-one-role access: Member reconciles own fines, while
+   Librarian/Admin record collection through staff routes.
+4. Re-run focused fine/borrowing, one-role, timezone, cross-feature, full, and
+   browser gates against `main@8d0059b`.
+5. Keep the merge uncommitted and unpushed until the H2 addendum is approved.

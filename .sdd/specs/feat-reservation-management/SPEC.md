@@ -1,6 +1,6 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.9
+# Version: 0.5.10
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -38,6 +38,11 @@
 > Revision v0.5.9 integrates the upstream v0.5.8 same-book current-loan
 > exclusion with the pickup-window, exact FE07 handoff, and single-role
 > compatibility contracts.
+>
+> Revision v0.5.10 reconciles the parallel v0.5.9 queue-position contract from
+> `main@8d0059b`, keeps `FE08-T046` for that upstream behavior, moves this
+> branch's regression-only task to `FE08-T047`, and requires null positions to
+> render as `Chưa xác định`.
 
 ---
 
@@ -195,6 +200,7 @@ The feature can only start when:
 - BR-FE08-017: Once a reservation reaches `NOTIFIED`, its `NotifiedAt` and `ExpiresAt` are immutable historical facts and must remain populated after transition to `FULFILLED`, `EXPIRED`, or `CANCELLED`; they are null only for reservations that never reached `NOTIFIED`. `CancelledAt` is populated only for `CANCELLED`.
 - BR-FE08-018: Reservation candidate, create, own-list, and owner-cancel endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot reserve books for themselves.
 - BR-FE08-019: A Member who currently has any `BorrowDetails.Status = BORROWED` copy of a book cannot create a reservation for another physical copy of that same `BookId`. Returned, lost, damaged, rejected, and terminal reservation history do not trigger this rule; another Member remains independently eligible.
+- BR-FE08-020: Queue position is scoped to one physical reservation target (`CopyId`) and is derived only from `ACTIVE` rows for that copy. Equal positions on different books/copies are valid and must not be presented as one global Member sequence.
 
 ---
 
@@ -239,6 +245,7 @@ The feature can only start when:
 - FR-FE08-032: WHEN a Member views their reservations after create, cancel, FE07 fulfillment, or staff queue processing, the frontend shall render canonical `ACTIVE` and `NOTIFIED` records separately from terminal `FULFILLED`, `CANCELLED`, and `EXPIRED` history, label the raw lifecycle state visibly, and keep terminal history without presenting it as the current reservation.
 - FR-FE08-033: WHEN Librarian/Admin queue processing changes a Member reservation to `NOTIFIED`, the Member frontend shall show the canonical pickup window from `NotifiedAt` through `ExpiresAt` and provide an FE07 handoff containing that reservation's `bookId` and `copyId`; FE07 remains responsible for request creation and Librarian/Admin approval.
 - FR-FE08-034: WHERE FE07 records that a Member currently borrows a copy of a book, FE08 shall exclude every copy of that `BookId` from that Member's candidate catalog, reject direct reservation creation with `409 BOOK_ALREADY_BORROWED`, and skip any stale `ACTIVE` queue entry for that Member during Librarian/Admin processing while leaving the entry `ACTIVE` and the copy unchanged.
+- FR-FE08-035: WHEN Member or staff views an `ACTIVE` reservation, the frontend shall label its queue position as the position for that specific book copy; when the canonical value is null, the frontend shall display `Chưa xác định` and shall not invent or stringify a position.
 
 ---
 
@@ -265,6 +272,7 @@ The feature can only start when:
 - AC-FE08-019: Given the Member has an old cancelled reservation and a new `ACTIVE` or `NOTIFIED` reservation for the same book/copy, when the page reloads canonical state, then the open reservation appears under active reservations with `Đang chờ` or `Sẵn sàng nhận`, the cancelled record remains only in history, and the matching candidate action reads `Đang đặt chỗ` or `Đến lượt bạn`.
 - AC-FE08-020: Given a reservation is `NOTIFIED`, when the Member views it, then the page states the start and deadline dates for pickup and offers `Tạo yêu cầu mượn` for the exact held `bookId`/`copyId`; Guest and staff accounts do not receive this Member action.
 - AC-FE08-021: Given a Member currently borrows one copy of a book, when candidates are listed or another copy of the same book is submitted, then no same-book candidate is returned and creation fails with `BOOK_ALREADY_BORROWED`; if the loan begins after an `ACTIVE` reservation was created, staff queue processing skips that reservation without changing its state or the copy.
+- AC-FE08-022: Given two reservations for different copies both have canonical `queuePosition = 2`, when Member or staff views them, then both remain `#2` and each is explicitly described as belonging to that copy's queue rather than being renumbered globally; given a null canonical position, the UI displays `Chưa xác định` instead of `#1`, `#null`, or `#undefined`.
 
 ---
 
@@ -499,6 +507,7 @@ This feature does not include:
 | BR-FE08-016 | UC36, UC39 | FE08-T025 and FE07-T029 priority tests | Automated pass; human review pending |
 | BR-FE08-017 | UC37, UC39, UC40 | FE08-T030 timestamp-retention model/transition tests | Automated pass; human review pending |
 | BR-FE08-019 | UC36, UC39 | FE08-T045 same-book current-loan route and queue tests | Automated pass; human review pending |
+| BR-FE08-020 | UC36, UC38, UC39 | FE08-T046 copy-scoped queue presentation tests | Automated pass; human review pending |
 | FR-FE08-001 | UC36 | FT37 | Ready for review |
 | FR-FE08-002 | UC36 | FT37 | Ready for review |
 | FR-FE08-003 | UC36 | FT37 | Ready for review |
@@ -533,6 +542,7 @@ This feature does not include:
 | FR-FE08-032 | UC36-UC38 | FE08-T043 member current/history lifecycle rendering test | Automated pass; human review pending |
 | FR-FE08-033 | UC36, UC38 | FE08-T044 pickup-window and exact FE07 handoff frontend test | Automated pass; human review pending |
 | FR-FE08-034 | UC36, UC39 | FE08-T045 candidate/create/queue current-loan tests | Automated pass; human review pending |
+| FR-FE08-035 | UC36, UC38, UC39 | FE08-T046 null-safe copy-scoped queue UI test | Automated pass; human review pending |
 | AC-FE08-001 | UC36 | FT37 eligible unavailable-copy reservation test | Ready for review |
 | AC-FE08-002 | UC36 | FT37 duplicate open reservation rejection, including `NOTIFIED` | Automated pass; human review pending |
 | AC-FE08-003 | UC36 | FT37 available-copy reservation rejection test | Ready for review |
@@ -554,6 +564,7 @@ This feature does not include:
 | AC-FE08-019 | UC36-UC38 | FE08-T043 current-versus-history and status-label frontend test | Automated pass; human review pending |
 | AC-FE08-020 | UC36, UC38 | FE08-T044 notified pickup-window and exact-copy handoff test | Automated pass; human review pending |
 | AC-FE08-021 | UC36, UC39 | FE08-T045 same-book exclusion, conflict, and stale-queue tests | Automated pass; human review pending |
+| AC-FE08-022 | UC36, UC38, UC39 | FE08-T046 equal/null position presentation tests | Automated pass; human review pending |
 | NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Automated pass; design approved; human walkthrough/H3 pending |
 | NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Automated pass; design approved; human walkthrough/H3 pending |
 

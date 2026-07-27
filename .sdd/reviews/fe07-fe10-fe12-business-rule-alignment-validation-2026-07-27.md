@@ -5,16 +5,20 @@ Date: 2026-07-27
 ## 1. Review State
 
 - Branch: `codex/fe07-fe10-fe12-rule-alignment`
-- Branch head before the open merge: `4dedddbf7ecb4321317cf62bc2ed7b7aa8f94aa3`
-- Integrated `origin/main`: `e99daf5ea98c57de1fa65e50a1d0bdff682562a9`
+- Branch head before the open merge: `2a478ba1ac025d319c6e09ef0eff73ae650a09d3`
+- Integrated `origin/main`: `8d0059bd28b6a7fc8e4ccbdf767ce4120a86aee7`
 - Approved delivery order: SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN -> L1-L4/runtime evidence
 - Approved account model: every persisted account has exactly one mutually
   exclusive role under `DEC-GEN-005`; Member and staff renewal use separate
   single-role accounts.
-- Reconciliation state: the latest-main merge remains open and uncommitted.
+- Reconciliation state: conflicts are reconciled and the latest-main merge
+  remains open and uncommitted.
 - H2 addendum: pending Nhat review of this latest integrated diff and evidence.
-- Publication authority: not granted for this new merge result. Do not commit,
-  push, or update draft PR #63 until the latest H2 addendum is approved.
+- Publication authority: not granted for this `8d0059b` merge result. Do not
+  commit, push, or update draft PR #63 until the latest H2 addendum is approved.
+
+Sections 3-9 retain the prior `e99daf5` evidence as historical baseline.
+Section 11 is the authoritative addendum for the current `8d0059b` gate.
 
 ## 2. Changed Files
 
@@ -54,10 +58,16 @@ Date: 2026-07-27
 - `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
 - `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
 - `frontend/test/homeBookActions.test.js`
+- `frontend/src/page/reservation/MyReservationsPage.jsx`
+- `frontend/src/page/reservation/ReservationsLibrarianPage.jsx`
+- `frontend/src/utils/libraryFeatureViewModels.js`
+- `frontend/test/reservationFrontend.test.js`
 
-The integrated working tree contains 36 changed files against `origin/main`.
-No additional FE08 production file, schema, public route, dependency, role,
-frontend workflow, or architecture changed in this branch.
+The integrated working tree contains 40 changed files against `origin/main`.
+The only additional FE08 production delta against `origin/main` is the bounded
+null-safe queue-position presentation in the two reservation pages and shared
+view-model formatter. No schema, public route, dependency, role, lifecycle,
+queue algorithm, or architecture changed in this branch.
 
 ## 3. RED Evidence
 
@@ -68,7 +78,7 @@ frontend workflow, or architecture changed in this branch.
 | AT-003 / FE07-T050 | Run the business-date test once with `TZ=UTC` and once with `TZ=America/New_York`. | UTC passed; New York returned `2026-03-21` instead of `2026-03-22`. |
 | AT-004 / FE10-S11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"` | All three unsafe stored definitions resolved as `{ notificationId: 1, status: "SENT" }` instead of rejecting. |
 | AT-005 / FE12-N11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"` | Borrowing, inventory, and users endpoints each returned `200` instead of safe `400`. |
-| Prior-main FE08 integration / FE08-T046 | First Chromium run against the historical intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contained the correction and held-copy handoff, so the branch retained that behavior without a duplicate FE08 production change. |
+| Prior-main FE08 integration / FE08-T047 | First Chromium run against the historical intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contained the correction and held-copy handoff, so the branch retained that behavior without a duplicate FE08 production change. |
 | Latest-main FE08 same-book rule / FE08-T045 | No new branch RED claim. | `e99daf5` already contains the approved SPEC, implementation, and tests. This integration preserves that upstream change exactly and reruns its focused, cross-feature, and runtime gates. |
 
 ## 4. GREEN And L1 Evidence
@@ -147,7 +157,7 @@ Observed:
 | BD-003 / AT-003 | FE07-T050 | UTC/New York RED/GREEN matrix | Renewal extension and authoritative comparisons use `libraryBusinessTime` |
 | BD-004 / AT-004 | FE10-S11 | Three unsafe-definition cases plus runtime-value preservation | Stored definitions fail closed before recipient lookup, render, persistence, or provider I/O |
 | BD-005 / AT-005 | FE12-N11 | Three endpoint allowlist cases plus local HTTP acceptance | Exact-key middleware is first in each endpoint validator array |
-| BD-006 / AT-006 | FE08-T046 | Requester 1/1, SIT-003/SIT-004 2/2, and browser acceptance 2/2 | No additional FE08 production or contract change from the rule-alignment slice |
+| BD-006 / AT-006 | FE08-T047 | Requester 1/1, SIT-003/SIT-004 2/2, and browser acceptance 2/2 | No additional FE08 production or contract change from the rule-alignment slice |
 | BR-FE08-019 / FR-FE08-034 / AC-FE08-021 | FE08-T045 | Repository/service/route 63/63, frontend error mapping 7/7, cross-feature 284/284 | Upstream `e99daf5` candidate exclusion, transactional `BOOK_ALREADY_BORROWED`, stale-queue skip, and shared FE07 Member circulation lock preserved exactly |
 
 L2 result: PASS. No behavior outside the approved rule-alignment scope and the
@@ -188,12 +198,111 @@ L3 result: PASS.
   batch.
 - Normal LF-to-CRLF working-copy warnings remain; `git diff --check` passed.
 
-## 10. H2 Gate
+## 10. Prior H2 Gate
 
-The branch previously received H2 and was pushed through
-`4dedddbf7ecb4321317cf62bc2ed7b7aa8f94aa3`, but that approval does not cover
-the new merge with `origin/main` at `e99daf5`. The
-latest integrated diff and refreshed L1-L4/runtime evidence remain uncommitted
-pending Nhat's explicit H2 addendum. Only that approval may authorize
-concluding this merge, pushing the branch, and updating draft PR #63. H3
-remains mandatory before merge to `main`.
+The `e99daf5` integration received H2 approval and was committed/pushed as
+`2a478ba1ac025d319c6e09ef0eff73ae650a09d3`. That approval does not cover the
+new merge with `origin/main` at `8d0059b`.
+
+## 11. H2 Addendum - `main@8d0059b`
+
+### 11.1 Incoming scope and reconciliation
+
+- Incoming commit: `8d0059b fix: sync reservation queue and fine permissions`.
+- FE07: combined the parallel v0.7.8 branches as v0.7.9; positive FE09
+  `UNPAID` fines remain the canonical borrow/renew blocker and Member
+  reconciliation stays read-only.
+- FE08: combined the parallel v0.5.9 branches as v0.5.10. Upstream
+  `FE08-T046` owns copy-scoped queue positions; the branch regression task is
+  now `FE08-T047`.
+- FE09: upstream `FE09-T024` makes `/api/fines/me` single-role Member-only,
+  adds FE07 due/return/borrow context, and leaves Member presentation
+  read-only.
+- FE11: `BR-FE11-028` now explicitly includes FE09 own-fine access while
+  preserving exactly one mutually exclusive account role.
+
+### 11.2 RED-GREEN evidence
+
+| Scope | Observed result |
+| --- | --- |
+| FE08-T046 RED | Focused frontend test failed because `formatReservationQueuePosition` was `undefined`; the mapper returned null while the incoming pages still interpolated `#${item.queue}`. |
+| FE08-T046 GREEN | Shared formatter returns `Chưa xác định` for null/undefined and preserves `#2 trong hàng đợi cuốn này`; Member/staff source contracts use it and direct `#${...queue}` interpolation is absent. Focused result: 1/1 passed. |
+| FE09 focused backend | 1 suite, 22/22 passed, including Guest 401, Librarian/Admin 403, Member-only own rows, and FE07 borrowing context. |
+| FE08/FE09 focused frontend | 17/17 passed; Member fine UI remains read-only and queue-position presentation is null-safe. |
+| Cross-feature | 7 suites, 295/295 passed across borrowing, reservation, fine, notification, reporting, and system integration. |
+| One-role invariant | 2 suites, 3/3 selected cases passed for single-role renewal, exactly-one-role enforcement, and legacy multiple-mapping repair. |
+| Timezone matrix | UTC 3/3 and America/New_York 3/3 passed with identical outcomes. |
+
+### 11.3 Fresh full L1 evidence
+
+| Command | Observed result |
+| --- | --- |
+| `npm.cmd --prefix backend test` | 61 suites, 1,052/1,052 passed. |
+| `npm.cmd --prefix backend run test:coverage:ci` | 61 suites, 1,052/1,052 passed; statements 92.08%, branches 81.46%, functions 97.38%, lines 92.00%. |
+| `npm.cmd --prefix frontend test` | 232/232 passed. |
+| `npm.cmd --prefix frontend run lint` | Exit 0. |
+| `npm.cmd --prefix frontend run build` | Vite production build passed. |
+| `npm.cmd run test:traceability-state` | 3/3 passed. |
+| `npm.cmd run trace:enforce` | PASS; FE07/FE09/FE10/FE12 remain 100%, FE08 remains 97%, and all active features exceed 70%. |
+
+Generated coverage, build, Playwright report/output, and test-result folders
+remain ignored and are not part of the H2 diff.
+
+### 11.4 L2 spec traceability
+
+| Requirement | Task | Code/test evidence |
+| --- | --- | --- |
+| BR-FE08-020, FR-FE08-035, AC-FE08-022 | FE08-T046 | `mapReservation` preserves null; shared formatter and both pages render null as `Chưa xác định`; focused/frontend/full/browser gates pass. |
+| BR-FE09-020, FR-FE09-019, AC-FE09-017 | FE09-T024 | Route and service enforce Member-only access; repository/OpenAPI expose FE07 context; backend 22/22 and frontend read-only checks pass. |
+| BD-006, SL-006, AT-006 | FE08-T047 | Requester/SIT coverage is included in cross-feature 295/295; full and Chromium gates pass. |
+| DEC-GEN-005, BR-G-009, BR-FE11-028 | Existing FE11 one-role invariant | Exactly-one-role and repair cases pass; FE09 Member/staff tests use separate single-role accounts. |
+
+L2 result: PASS. No task ID collision, duplicate feature version, or
+untraced business behavior remains in the current merge result.
+
+### 11.5 L3 Constitution and security
+
+- `/api/fines/me` authenticates and applies `requireMemberOnly` before the
+  controller; the service repeats the Member/non-staff check.
+- Member scope is forced from authenticated `actor.userId`; query input cannot
+  select another user.
+- Librarian/Admin mutation ownership and Admin-only waive/cancel remain
+  unchanged.
+- Fine-list search, user, status, offset, and limit values use typed SQL
+  parameters. Dynamic `WHERE` fragments come only from fixed allowlisted
+  clauses.
+- React renders text normally; no new raw HTML path exists.
+- Diff secret scan found no credential/private-key pattern. Safe error tests
+  and existing redaction behavior remain green.
+- No dependency, schema, public route, role, state-machine, or architecture
+  expansion was introduced.
+
+L3 result: PASS.
+
+### 11.6 L4 runtime acceptance
+
+Command:
+
+`npx.cmd playwright test tests/e2e/system-golden-path.spec.js tests/e2e/fe08-reservation-candidate-catalog.spec.js --project=chromium`
+
+Observed: Chromium 2/2 passed. `E2E-FE08-ACC01` completed real candidate search
+and reservation creation; `E2E-SYS-001` completed login -> borrow -> approve ->
+return -> fine -> report and retained the safe unknown-report-query rejection.
+
+### 11.7 Diff hygiene and residual risks
+
+- Working-tree diff against `origin/main`: 40 files; only the four FE08
+  presentation/test files are new branch deltas from this integration.
+- `git diff --check`, cached/HEAD/origin variants: exit 0.
+- Conflict-marker scan: 0.
+- `DB_NAME` and `FE07_SQL_TEST_ALLOW_MUTATION` are unset; mutable SQL was not
+  run and no new real-SQL mutation claim is made.
+- Local browser acceptance passed; staging was not exercised.
+- Normal LF-to-CRLF warnings remain non-blocking.
+
+### 11.8 Current gate
+
+The complete `8d0059b` merge, reconciliation, bounded FE08 remediation, and
+fresh L1-L4 evidence remain uncommitted and unpushed pending Nhat's explicit H2
+addendum approval. H2 may authorize the reviewed merge commit, push, and draft
+PR #63 update; H3 remains mandatory before merge to `main`.

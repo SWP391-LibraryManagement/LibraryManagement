@@ -41,6 +41,7 @@ function requireAnyRole(...allowedRoles) {
 
 // @spec FR-FE07-032
 // @spec FR-FE08-030
+// @spec FR-FE09-019
 function requireMemberOnly(req, res, next) {
   const roles = Array.isArray(req.user?.roles)
     ? req.user.roles.map((role) => String(role).toUpperCase())

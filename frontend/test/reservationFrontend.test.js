@@ -57,6 +57,32 @@ test('reservation mapping preserves the normalized backend lifecycle state', asy
   assert.equal(notified.deadline, '2026-07-29T00:00:00.000Z');
 });
 
+test('reservation queue position is copy-scoped and never invented when absent', async () => {
+  const { formatReservationQueuePosition, mapReservation } = await loadViewModels();
+  const memberPage = await readFile(
+    new URL('../src/page/reservation/MyReservationsPage.jsx', import.meta.url),
+    'utf8',
+  );
+  const staffPage = await readFile(
+    new URL('../src/page/reservation/ReservationsLibrarianPage.jsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.equal(mapReservation({ reservationId: 9, status: 'NOTIFIED' }).queue, null);
+  assert.equal(typeof formatReservationQueuePosition, 'function');
+  assert.equal(formatReservationQueuePosition(null), 'Chưa xác định');
+  assert.equal(formatReservationQueuePosition(undefined), 'Chưa xác định');
+  assert.equal(
+    formatReservationQueuePosition(2, 'cuốn này'),
+    '#2 trong hàng đợi cuốn này',
+  );
+  assert.match(memberPage, /Vị trí của bản sách/);
+  assert.match(memberPage, /formatReservationQueuePosition\(item\.queue, 'cuốn này'\)/);
+  assert.match(staffPage, /formatReservationQueuePosition\(item\.queue, 'bản này'\)/);
+  assert.doesNotMatch(memberPage, /#\{(?:item|next|cancelTarget)\.queue\}/);
+  assert.doesNotMatch(staffPage, /#\{item\.queue\}/);
+});
+
 test('member reservation view separates current state from terminal history and uses visible badge tones', async () => {
   const { memberReservationBadgeStatus, splitMemberReservations } = await loadViewModels();
   const rows = [

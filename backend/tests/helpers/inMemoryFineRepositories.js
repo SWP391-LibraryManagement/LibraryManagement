@@ -180,6 +180,10 @@ function makeInMemoryFineDependencies(initialState = {}, options = {}) {
         createdAt: calculatedAt,
         updatedAt: null,
         member: { userId: Number(userId), username: null, email: null },
+        bookTitle: getDetail(borrowDetailId)?.bookTitle || null,
+        dueDate: getDetail(borrowDetailId)?.dueDate || null,
+        returnDate: getDetail(borrowDetailId)?.returnDate || null,
+        borrowStatus: getDetail(borrowDetailId)?.detailStatus || null,
       };
       fines.push(fine);
       const previousNextFineId = nextFineId - 1;

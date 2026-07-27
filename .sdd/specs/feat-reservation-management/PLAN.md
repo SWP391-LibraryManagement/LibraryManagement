@@ -1,16 +1,16 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: IN PROGRESS - LATEST-MAIN INTEGRATION VALIDATION
+Status: IN PROGRESS - 8D0059B H2 ADDENDUM PENDING
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
 Workflow State: The Phase 2 baseline remains complete. `main` owns
-`FE08-T041` through `FE08-T045`; the rule-alignment regression boundary is
-`FE08-T046`. Nhat authorized integration on 2026-07-27. The upstream same-book
-rule is preserved without introducing another FE08 product change in the
-rule-alignment slice. Fresh integrated evidence is recorded; the H2 addendum
+`FE08-T041` through `FE08-T046`; the rule-alignment regression boundary is
+`FE08-T047`. Nhat authorized integration on 2026-07-27. The upstream same-book
+and copy-scoped queue rules are preserved. The bounded null-position
+presentation remediation and fresh `8d0059b` evidence pass; the H2 addendum
 remains pending.
 
 ---
@@ -221,15 +221,28 @@ Not included:
 5. Share the FE07 member circulation lock before FE08 mutation locks so borrow
    approval and reservation creation/holding cannot race for the same Member.
 
-## 13. 2026-07-27 Regression-Only Boundary
+## 13. V0.5.9 Copy-Scoped Queue Position Clarity
+
+1. Preserve canonical FE08 queue calculation per `CopyId`; do not introduce a
+   global Member reservation sequence.
+2. Replace ambiguous “Vị trí hàng đợi” copy with “Vị trí của bản sách” for
+   Member and staff.
+3. Render the position as belonging to the current book/copy and preserve
+   equal values across different queues.
+4. Keep a missing canonical position as null and render `Chưa xác định`;
+   never invent `#1` or stringify the null value.
+
+## 14. V0.5.10 Latest-Main Integration Boundary
 
 1. Do not add FE08 production code, schema, API, lifecycle, or queue-policy
-   changes in the rule-alignment slice.
-2. Preserve `FE08-T041` through `FE08-T045` from `main` and use `FE08-T046`
+   changes beyond the null-safe presentation required by FR-FE08-035.
+2. Preserve `FE08-T041` through `FE08-T046` from `main` and use `FE08-T047`
    for this batch's regression-only verification.
-3. Re-run the focused reservation requester test proving FE08 constructs the
+3. Add a failing frontend contract test for null Member/staff queue positions,
+   then make the smallest presentation fix.
+4. Re-run the focused reservation requester test proving FE08 constructs the
    canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.
-4. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
+5. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
    proving FE08 priority still blocks FE07 renewal without mutation.
-5. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
+6. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
    do not broaden this batch silently.
