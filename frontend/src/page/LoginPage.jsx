@@ -44,6 +44,11 @@ export default function LoginPage() {
       setFeedback({ severity: 'success', message: 'Đăng nhập thành công.' });
       navigate(getPostLoginPath(result.roles));
     } catch (error) {
+      const loginError = error.cause?.response?.data?.error;
+      if (loginError?.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        navigate('/verify-email', { state: { email: loginError.details?.email || email.trim() } });
+        return;
+      }
       setFeedback({ severity: 'error', message: error.message });
     } finally {
       setIsSubmitting(false);

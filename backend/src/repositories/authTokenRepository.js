@@ -18,10 +18,9 @@ function mapToken(row) {
   };
 }
 
-async function createToken({ userId, tokenType, tokenHash, expiresAt, createdByIp }) {
-  const pool = await getPool();
-  const result = await pool
-    .request()
+async function createToken({ userId, tokenType, tokenHash, expiresAt, createdByIp }, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  const result = await request
     .input('UserId', sql.Int, userId)
     .input('TokenType', sql.NVarChar(30), tokenType)
     .input('TokenHash', sql.NVarChar(255), tokenHash)
@@ -73,10 +72,24 @@ async function findActiveTokenById(tokenId, tokenType) {
   return mapToken(result.recordset[0]);
 }
 
-async function markTokenUsed(tokenId) {
-  const pool = await getPool();
-  await pool
+async function hasTokenForUserType(userId, tokenType) {
+  const result = await (await getPool())
     .request()
+    .input('UserId', sql.Int, userId)
+    .input('TokenType', sql.NVarChar(30), tokenType)
+    .query(`
+      SELECT CASE WHEN EXISTS (
+        SELECT 1 FROM AuthTokens
+        WHERE UserId = @UserId AND TokenType = @TokenType
+      ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasToken
+    `);
+
+  return Boolean(result.recordset[0]?.HasToken);
+}
+
+async function markTokenUsed(tokenId, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  await request
     .input('TokenId', sql.Int, tokenId)
     .query(`
       UPDATE AuthTokens
@@ -97,10 +110,9 @@ async function revokeToken(tokenId) {
     `);
 }
 
-async function revokeActiveTokensForUserType(userId, tokenType) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function revokeActiveTokensForUserType(userId, tokenType, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  await request
     .input('UserId', sql.Int, userId)
     .input('TokenType', sql.NVarChar(30), tokenType)
     .query(`
@@ -131,6 +143,7 @@ module.exports = {
   createToken,
   findActiveTokenByHash,
   findActiveTokenById,
+  hasTokenForUserType,
   markTokenUsed,
   revokeToken,
   revokeActiveTokensForUserType,

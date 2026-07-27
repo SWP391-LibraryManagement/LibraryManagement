@@ -289,10 +289,13 @@ async function lockCopyForMutation(copyId, expectedVersion, transaction) {
 async function updateCopy(copyId, patch = {}, expectedVersion, transaction) {
   const locked = await lockCopyForMutation(copyId, expectedVersion, transaction);
   const request = await requestFor(transaction);
+  const location = Object.prototype.hasOwnProperty.call(patch, 'location')
+    ? patch.location
+    : locked.row.Location;
   await request
     .input('CopyId', sql.Int, copyId)
     .input('Barcode', sql.NVarChar(100), patch.barcode ?? locked.row.Barcode)
-    .input('Location', sql.NVarChar(100), patch.location ?? locked.row.Location)
+    .input('Location', sql.NVarChar(100), location)
     .query(`
       UPDATE BookCopies
       SET Barcode = @Barcode, Location = @Location, UpdatedAt = GETDATE()

@@ -30,6 +30,24 @@ function useRecordset(recordset) {
 
 beforeEach(() => getPool.mockReset());
 
+test('authentication lookup maps the FE11 deactivation marker', async () => {
+  const deactivatedAt = new Date('2026-07-27T08:00:00.000Z');
+  useRecordset([{
+    UserId: 9,
+    Username: 'deactivated.user',
+    Email: 'deactivated@example.test',
+    PasswordHash: 'hash',
+    Status: 'INACTIVE',
+    EmailVerifiedAt: null,
+    DeactivatedAt: deactivatedAt,
+  }]);
+
+  await expect(userRepository.findByEmailOrUsername('deactivated@example.test')).resolves.toMatchObject({
+    userId: 9,
+    deactivatedAt,
+  });
+});
+
 test('listManagedUsers returns only the approved base DTO', async () => {
   useRecordset([{
     UserId: 7,

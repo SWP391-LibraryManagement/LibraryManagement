@@ -1,12 +1,12 @@
 # CONTEXT.md - FE02 Authentication
 
-# Version: 0.2.5
+# Version: 0.2.6
 
 # Status: APPROVED BASELINE 2026-07-17 - RECONCILIATION OPEN
 
 # Owner: Dat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature folder: `.sdd/specs/feat-auth/`
 
@@ -34,7 +34,7 @@ These are target outcomes, not evidence that the current implementation already 
 - Every protected request validates the access token, current user status, linked refresh/session credential, expiry, and required role before business processing.
 - Logout revokes the submitted current refresh/session credential immediately. Multiple concurrent sessions remain allowed in Phase 1; handling of other sessions after password change or reset must follow the explicit `SPEC.md` contract.
 - A known account is locked after 5 consecutive failed password attempts within a rolling 15-minute window and remains locked for exactly 30 minutes. IP-wide request limiting is not part of the current Phase 1 baseline unless separately approved.
-- Public login, verification resend, and forgot-password responses must avoid revealing whether an account exists or is inactive. Duplicate-registration behavior and its acknowledged enumeration risk follow the approved `SPEC.md`.
+- Unknown identifiers, incorrect passwords, verification resend, and forgot-password responses must avoid revealing whether an account exists or is inactive. After correct password proof, an eligible self-registration account may receive the verification-required recovery response defined by `SPEC.md`. Duplicate-registration behavior and its acknowledged enumeration risk follow the approved `SPEC.md`.
 - User state, credential state, and required audit state must not be left partially updated. Login/session creation, verification/token consumption, password reset/token consumption, and password change/audit must use the transaction boundaries defined by `SPEC.md`; `ACCOUNT_SETUP` completion is atomic.
 - Authentication audit records cover login attempts, successes and failures, lock/unlock events, logout, password-change attempts, password-reset requests and outcomes, verification, and account-setup completion. Audit failure handling must be explicit rather than silently claiming the event was recorded.
 - Authentication requests use HTTPS outside local development, validate input on the server, use parameterized SQL, and return safe errors without credentials, raw tokens, stack traces, or provider details.
@@ -51,16 +51,17 @@ The typical small/medium library authentication workflow:
 2. The system presents a login form.
 3. The user enters credentials (email/username and password).
 4. The system verifies credentials against the user database.
-5. If invalid, the system rejects the login and shows error message.
-6. If valid, the system creates a session/token and returns it to the client.
-7. The client stores access and refresh tokens in `localStorage` or `sessionStorage` according to the selected login persistence; session cookies are out of scope for Phase 1.
-8. For subsequent requests, the client includes the session/token in the request header.
-9. The system validates the token and allows or denies access based on role.
-10. When the user logs out, the system invalidates the session/token.
-11. If the user forgets their password, they can request a six-digit reset OTP by email.
-12. FE02 generates the time-limited OTP, stores only its hash, and asks FE10 to deliver it through the requester bound to `FE02`.
-13. The user enters the reset OTP and sets a new password; legacy password-reset links remain compatible, while canonical FE11 setup links use `ACCOUNT_SETUP`.
-14. The system updates the password and invalidates the OTP/token.
+5. If invalid, the system rejects the login and shows a generic error message.
+6. If the password is correct but a self-registered account still awaits email verification, the system issues no session and the client opens `/verify-email` with the registered email.
+7. If valid and active, the system creates a session/token and returns it to the client.
+8. The client stores access and refresh tokens in `localStorage` or `sessionStorage` according to the selected login persistence; session cookies are out of scope for Phase 1.
+9. For subsequent requests, the client includes the session/token in the request header.
+10. The system validates the token and allows or denies access based on role.
+11. When the user logs out, the system invalidates the session/token.
+12. If the user forgets their password, they can request a six-digit reset OTP by email.
+13. FE02 generates the time-limited OTP, stores only its hash, and asks FE10 to deliver it through the requester bound to `FE02`.
+14. The user enters the reset OTP and sets a new password; legacy password-reset links remain compatible, while canonical FE11 setup links use `ACCOUNT_SETUP`.
+15. The system updates the password and invalidates the OTP/token.
 
 ---
 
@@ -96,6 +97,7 @@ The current SQL script includes:
 - `Roles(RoleId, RoleName)`
 - `UserRoles(UserId, RoleId, CreatedAt)`
 - `AuthTokens(TokenId, UserId, TokenType, TokenHash, ExpiresAt, UsedAt, RevokedAt, CreatedAt, CreatedByIp)`
+- `LoginFailureAttempts(AttemptId, UserId, AttemptedAt)`
 - `AuditLogs(LogId, UserId, Action, TargetType, TargetId, Metadata, IpAddress, UserAgent, CreatedAt)`
 - `UserProfiles(ProfileId, UserId, FullName, Address, DateOfBirth, AvatarUrl, Department, Specialization, CreatedAt, UpdatedAt)` for profile data owned by FE03.
 

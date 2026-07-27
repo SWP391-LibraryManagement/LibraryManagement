@@ -251,7 +251,6 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
     ['missing parent book', '/api/books/999/copies', { barcode: 'BC-MISSING-BOOK' }, 404],
     ['empty barcode', '/api/books/1/copies', { barcode: '   ' }, 400],
     ['duplicate barcode', '/api/books/1/copies', { barcode: 'BC-001' }, 409],
-    ['blank location', '/api/books/1/copies', { barcode: 'BC-BLANK-LOCATION', location: '   ' }, 400],
     ['control character in location', '/api/books/1/copies', { barcode: 'BC-CONTROL', location: 'A1\nB2' }, 400],
     ['overlength location', '/api/books/1/copies', { barcode: 'BC-LONG', location: 'L'.repeat(101) }, 400],
   ])('create rejects %s without mutation', async (_label, endpoint, body, status) => {
@@ -265,6 +264,35 @@ describe('FE06 inventory book copy management v0.4.0 RED contract', () => {
       .expect(status);
 
     expectStateUnchanged(inventoryDependencies, before);
+  });
+
+  // @spec FR-FE06-021
+  test('stores a blank location as null', async () => {
+    const { app, staff, inventoryDependencies } = await makeStaffSetup();
+
+    const response = await request(app)
+      .post('/api/books/1/copies')
+      .set('Authorization', authHeader(staff.accessToken))
+      .send({ barcode: 'BC-BLANK-LOCATION', location: '   ' })
+      .expect(201);
+
+    expect(response.body.copy.location).toBeNull();
+    expect(inventoryDependencies.state.copies.at(-1).location).toBeNull();
+  });
+
+  // @spec FR-FE06-021
+  test('clears an existing location when updated with a blank value', async () => {
+    const { app, staff, inventoryDependencies } = await makeStaffSetup();
+
+    const response = await request(app)
+      .put('/api/book-copies/1')
+      .set('Authorization', authHeader(staff.accessToken))
+      .set('If-Match', 'copy-v1')
+      .send({ location: '   ' })
+      .expect(200);
+
+    expect(response.body.copy.location).toBeNull();
+    expect(inventoryDependencies.state.copies.find((copy) => copy.copyId === 1).location).toBeNull();
   });
 
   // @spec AC-FE06-011, BR-FE06-015, FR-FE06-022

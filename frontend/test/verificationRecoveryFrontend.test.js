@@ -15,6 +15,13 @@ test('verification recovery has a standalone route and page after registration s
   assert.match(registerSource, /navigate\('\/verify-email'/);
 });
 
+test('login resumes verified credentials for an inactive self-registration on the verification page', async () => {
+  const source = await readFile(sourceUrl('../src/page/LoginPage.jsx'), 'utf8');
+
+  assert.match(source, /EMAIL_VERIFICATION_REQUIRED/);
+  assert.match(source, /navigate\('\/verify-email',\s*\{\s*state:\s*\{\s*email:/);
+});
+
 test('standalone verification page supports OTP verification and resend cooldown', async () => {
   const source = await readFile(sourceUrl('../src/page/VerifyEmailPage.jsx'), 'utf8');
 

@@ -23,6 +23,25 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function postJson(pathname, payload, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const req = http.request({
+      host: HOST,
+      port: PORT,
+      path: pathname,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), ...headers },
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => resolve({ statusCode: res.statusCode, body: JSON.parse(Buffer.concat(chunks).toString('utf8')) }));
+    });
+    req.on('error', reject);
+    req.end(body);
+  });
+}
+
 async function readJson(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -139,6 +158,24 @@ async function handleControl(req, res, pathname) {
           approveMember: false,
         })
       : null;
+    const profiles = setup.dependencies.authDependencies.state.profiles;
+    const memberProfile = profiles.find((profile) => profile.userId === member.userId)
+      || { userId: member.userId };
+    Object.assign(memberProfile, {
+      fullName: 'FE04 Browser Applicant',
+      phone: '0900000004',
+      dateOfBirth: '2000-04-04',
+      address: 'FE04 Test Address',
+    });
+    const memberUser = setup.dependencies.authDependencies.state.users.find(
+      (user) => user.userId === member.userId
+    );
+    memberUser.phone = memberProfile.phone;
+    if (!profiles.includes(memberProfile)) profiles.push(memberProfile);
+    const application = await postJson('/api/membership/applications', {}, {
+      Authorization: `Bearer ${member.accessToken}`,
+    });
+    if (application.statusCode !== 201) throw new Error('E2E membership seed failed.');
     sendJson(res, 201, {
       memberUserId: member.userId,
       librarianUserId: librarian.userId,

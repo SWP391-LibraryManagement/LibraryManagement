@@ -1,11 +1,18 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-24 - Avatar Browser Verification
+
+- Added `tests/e2e/fe03-profile-avatar.spec.js` covering valid PNG upload, unsupported file type rejection, and oversized file rejection from the profile screen.
+- Playwright browser checks pass 3/3; the runner timed out only while cleaning up its webserver process after the tests completed.
+
 ## 2026-07-24 - Convergence hardening
 
 - Rejected non-string profile field values before persistence.
 - Prevented no-op date submissions from producing false changed-field audit metadata.
 - Restored readable Vietnamese FE03 API feedback and surfaced field-level/avatar validation errors.
-- Added focused regressions; backend 53/53, frontend 5/5, lint, build, and traceability pass.
+- Validated profile and avatar requests before missing-profile auto-creation so invalid requests cannot mutate profile state.
+- Removed the out-of-scope FE04 membership badge from the FE03 profile header.
+- Added focused regressions; backend 55/55, frontend profile 6/6, full frontend 219/219, lint, build, and traceability pass.
 
 ## 2026-07-20 - Vietnamese UI localization and typography
 

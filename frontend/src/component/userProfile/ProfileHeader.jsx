@@ -1,6 +1,3 @@
-import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-
 const statusConfig = {
   ACTIVE:   { label: "Hoạt động",       cls: "ph-badge-active"   },
   INACTIVE: { label: "Ngừng hoạt động", cls: "ph-badge-inactive" },
@@ -13,10 +10,8 @@ export default function ProfileHeader({
   username,
   avatarUrl,
   status,
-  membershipStatus,
 }) {
   const { label: statusLabel, cls: statusCls } = statusConfig[status] ?? statusConfig.INACTIVE;
-  const isMember = membershipStatus === "APPROVED";
   const initial = String(fullName || username || "U").charAt(0).toUpperCase();
 
   return (
@@ -49,14 +44,6 @@ export default function ProfileHeader({
               <span className={`ph-badge ${statusCls}`}>
                 <span className="ph-badge-dot" />
                 {statusLabel}
-              </span>
-
-              {/* Trạng thái hội viên */}
-              <span className={`ph-badge ${isMember ? "ph-badge-active" : "ph-badge-inactive"}`}>
-                {isMember
-                  ? <VerifiedUserIcon style={{ fontSize: 13 }} />
-                  : <HourglassEmptyIcon style={{ fontSize: 13 }} />}
-                {isMember ? "Hội viên" : "Chờ duyệt"}
               </span>
             </div>
           </div>

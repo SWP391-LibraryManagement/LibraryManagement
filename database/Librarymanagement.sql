@@ -33,6 +33,16 @@ CREATE TABLE Users (
 
 CREATE UNIQUE INDEX UX_Users_Email ON Users(Email);
 
+CREATE TABLE LoginFailureAttempts (
+    AttemptId BIGINT IDENTITY PRIMARY KEY,
+    UserId INT NOT NULL,
+    AttemptedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId)
+);
+
+CREATE INDEX IX_LoginFailureAttempts_User_AttemptedAt
+ON LoginFailureAttempts(UserId, AttemptedAt);
+
 CREATE TABLE UserRoles (
     UserId INT NOT NULL,
     RoleId INT NOT NULL,

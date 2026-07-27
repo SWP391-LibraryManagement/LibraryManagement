@@ -223,6 +223,18 @@ describe('FE03 profile service', () => {
   });
 
   test.each([
+    ['profile update', (service) => service.updateMyProfile(1, { email: 'changed@example.test' })],
+    ['avatar update', (service) => service.updateMyAvatar(1, validPngFile({ originalName: 'avatar.txt', mimeType: 'text/plain' }))],
+  ])('invalid %s does not auto-create a missing profile', async (_label, run) => {
+    const { repository } = makeRepository(makeProfile({ profileId: null }));
+    const service = createProfileService({ profileRepository: repository });
+
+    await expect(run(service)).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(repository.createBlankProfile).not.toHaveBeenCalled();
+  });
+
+  test.each([
     ['read-only avatarUrl', { avatarUrl: '/uploads/avatars/forbidden.png' }],
     ['unknown field', { nickname: 'not-approved' }],
   ])('%s rejects the entire PUT payload before repository update', async (_label, field) => {

@@ -971,8 +971,8 @@ describe('FE08 reservation management', () => {
       .set('Authorization', authHeader(member.accessToken))
       .send({ copyId: 1 });
 
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe('MEMBER_ACCOUNT_INACTIVE');
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('INVALID_TOKEN');
   });
 
   test('allows an active MEMBER to reserve without FE04 approval (FR-FE08-013)', async () => {

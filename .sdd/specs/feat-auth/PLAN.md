@@ -1,7 +1,7 @@
 ﻿# PLAN.md - FE02 Authentication
 
 Status: RECONCILIATION IN PROGRESS - CONTEXT ALIGNED; HUMAN REVIEW PENDING
-Date: 2026-07-23
+Date: 2026-07-27
 Owner: Dat
 
 ## 1. Purpose
@@ -65,7 +65,7 @@ FE02 is a Core feature. Implementation must be small, testable, and reviewed bef
 | Roles | Flat roles from `Roles`/`UserRoles`. |
 | Verification/reset email delivery | FE02 creates/validates OTPs and calls the FE10 requester bound to `FE02`; FE10 exclusively renders, sends, and records status/attempts. |
 | Change-password OTP delivery | Remains a direct FE02 email flow until a separate FE10 notification type/use case is approved. |
-| Account lockout | Known-account failed-login counter using `Users.FailedLoginCount` and `Users.LockedUntil`; no IP-wide limiting is claimed. |
+| Account lockout | Timestamped known-account failures in `LoginFailureAttempts` drive the rolling 15-minute count; `Users.FailedLoginCount` and `Users.LockedUntil` retain current lock state. No IP-wide limiting is claimed. |
 
 ## 5. Database Dependencies
 
@@ -74,6 +74,7 @@ Required tables/fields exist in `database/Librarymanagement.sql` and passed loca
 - `Users`: `PasswordHash`, `Status`, `EmailVerifiedAt`, `FailedLoginCount`, `LockedUntil`, `LastLoginAt`.
 - `Roles`, `UserRoles`.
 - `AuthTokens`: `TokenType`, `TokenHash`, `ExpiresAt`, `UsedAt`, `RevokedAt`.
+- `LoginFailureAttempts`: timestamped known-account failures for the rolling 15-minute window.
 - `AuditLogs`.
 - `NotificationTemplates`, `Notifications`, `NotificationAttempts` are FE10-owned delivery records; FE02 references its persisted `AuthTokens.TokenId` but does not write notification records directly.
 
@@ -86,7 +87,7 @@ Implement the canonical FE02 endpoints from `SPEC.md` Section 11:
 | POST | `/api/auth/register` | Register account and create verification OTP. |
 | POST | `/api/auth/verify-email` | Verify email with OTP/email or legacy token. |
 | POST | `/api/auth/resend-verification` | Resend verification OTP safely. |
-| POST | `/api/auth/login` | Login and return access/refresh tokens. |
+| POST | `/api/auth/login` | Return access/refresh tokens for active users or the password-proven pending-verification recovery signal. |
 | POST | `/api/auth/refresh-token` | Exchange a valid refresh token for a new access token without requiring a valid access token. |
 | POST | `/api/auth/logout` | Revoke refresh token. |
 | POST | `/api/auth/change-password` | Change password for authenticated user. |
@@ -129,6 +130,8 @@ Expected frontend integration files:
 frontend/src/api/authApi.js
 frontend/src/api/profileApi.js
 frontend/src/component/userProfile/ProfileActions.jsx
+frontend/src/page/LoginPage.jsx
+frontend/src/page/VerifyEmailPage.jsx
 ```
 
 Existing login/register/forgot-password pages may be connected after backend endpoints are implemented. UI behavior must not be trusted as security enforcement.
@@ -181,7 +184,7 @@ Before FE02 is considered complete:
 - Frontend build passes if frontend integration is included.
 - No raw passwords/tokens/secrets are committed.
 - API responses match the canonical FE02 contract in `SPEC.md` Section 11.
-- `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-025 remains satisfied, with every documented conformance gap explicitly closed or approved for deferral.
+- `SPEC.md` traceability matrix AC-FE02-001 to AC-FE02-026 remains satisfied, with every documented conformance gap explicitly closed or approved for deferral.
 - Reviewer signoff completed for security-sensitive auth code.
 
 ## 12. Authentication/OTP UX B7 Status
@@ -220,12 +223,10 @@ ADR-004 and Nhat's 2026-07-15 approval authorize the following ordered implement
 
 ## 16. Context Consistency Reconciliation
 
-The approved implementation baseline remains recorded, but reconciliation is
-open until the following `CONTEXT.md`-derived gaps are closed:
+The approved implementation baseline remains recorded. Current-role enforcement,
+change-password OTP coverage, current account-state checks, exact rolling-window
+lockout behavior, secure OTP generation, and transaction rollback evidence are
+closed. Reconciliation remains open until:
 
-1. Add a regression proving current server-side `UserRoles` override client role claims.
-2. Add dedicated integration coverage for `change-password/request-otp` and `change-password/confirm`.
-3. Record evidence for the valid-login and token-validation performance targets.
-4. Reject protected requests for a persisted user that is no longer `ACTIVE`.
-5. Close or explicitly approve the remaining authentication transaction/audit atomicity gaps.
-6. Link the FE02-T043 H3 closeout and complete human review of SPEC v0.6.11.
+1. Record evidence for the valid-login and token-validation performance targets.
+2. Link the FE02-T043 H3 closeout and complete human review of SPEC v0.6.14.

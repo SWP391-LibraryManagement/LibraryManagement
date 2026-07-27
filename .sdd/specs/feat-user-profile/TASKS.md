@@ -178,8 +178,8 @@ Traceability: MF-FE03-003, NFR-FE03-UX-003
 
 - [x] Run backend tests.
 - [x] Run frontend lint/build.
-- [ ] Manually verify upload from the profile screen with a valid image.
-- [ ] Manually verify invalid file type and oversized file errors.
+- [x] Verify upload from the profile screen with a valid image using Playwright browser automation.
+- [x] Verify invalid file type and oversized file errors from the profile screen using Playwright browser automation.
 
 Traceability: Definition of Done, `.agents/AGENTS.md` Testing Rules
 
@@ -214,3 +214,10 @@ Evidence: `.sdd/reviews/fe03-deterministic-profile-validation-2026-07-19.md`.
 - [x] T019 Surface readable field-level profile/avatar API errors in the frontend per NFR-FE03-UX-001 and NFR-FE03-UX-003 (partial)
 
 Evidence: FE03 backend focused tests pass 53/53; full backend tests pass 1025/1025; frontend focused tests pass 5/5; full frontend tests pass 218/218; frontend lint/build and traceability pass on 2026-07-24.
+
+## Phase 2: Convergence
+
+- [x] T020 Validate profile-field and avatar requests before missing-profile auto-creation so invalid requests cannot mutate profile state per BR-FE03-008, FR-FE03-005, FR-FE03-006, and FR-FE03-009 (contradicts)
+- [x] T021 Remove the FE04 membership-status badge and unused membership prop from the FE03 profile header per SPEC §10/§14 FE04 boundary (contradicts)
+
+Evidence: FE03 backend focused tests pass 55/55; frontend profile tests pass 6/6 and full frontend tests pass 219/219; frontend lint/build and traceability pass on 2026-07-24. The FE03 Playwright browser check passes 3/3 for valid, unsupported-type, and oversized avatar flows. The full backend run passes 1025/1027; only the unrelated pre-existing `dbConfig.test.js` mock-resolution cases fail by attempting DNS resolution for `sql.example.test`.

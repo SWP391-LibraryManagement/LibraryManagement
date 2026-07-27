@@ -46,7 +46,7 @@ function maskEmail(email) {
 
 /** Tạo mã OTP 6 chữ số ngẫu nhiên */
 function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
 }
 
 // --- Factory ---
@@ -58,8 +58,12 @@ function createAuthService({
   notificationRequester,
   emailService,
   accountSetupRepository,
+  authTransactionRepository,
   clock = () => new Date(),
   otpGenerator = generateOtp,
+  debugLogger = process.env.NODE_ENV !== 'production' && process.env.AUTH_DEBUG_LOGGING === 'true'
+    ? console.debug
+    : null,
   exposeDebugTokens = process.env.AUTH_EXPOSE_TEST_TOKENS === 'true' || process.env.NODE_ENV === 'test',
 } = {}) {
   if (!userRepository) {
@@ -87,6 +91,10 @@ function createAuthService({
     accountSetupRepository = require('../repositories/accountSetupRepository');
   }
 
+  if (!authTransactionRepository) {
+    authTransactionRepository = require('../repositories/authTransactionRepository');
+  }
+
   // --- Internal helpers ---
 
   /** Ghi audit log, bỏ qua lỗi để không ảnh hưởng luồng chính */
@@ -104,8 +112,12 @@ function createAuthService({
         metadata: extra.metadata || null,
         ipAddress: context?.ip || null,
         userAgent: context?.userAgent || null,
+        transaction: extra.transaction || null,
       });
     } catch (error) {
+      if (extra.required) {
+        throw error;
+      }
       console.error(`[auth audit] Failed to write ${action}:`, error.message);
     }
   }
@@ -130,18 +142,18 @@ function createAuthService({
   }
 
   /** Tạo OTP token mới (thu hồi token cũ cùng loại trước) */
-  async function createOtpToken(userId, tokenType, ttlMinutes, ip = null) {
+  async function createOtpToken(userId, tokenType, ttlMinutes, ip = null, transaction = null) {
     const otp = String(otpGenerator());
     const expiresAt = addMinutes(clock(), ttlMinutes);
 
-    await authTokenRepository.revokeActiveTokensForUserType(userId, tokenType);
+    await authTokenRepository.revokeActiveTokensForUserType(userId, tokenType, transaction);
     const record = await authTokenRepository.createToken({
       userId,
       tokenType,
       tokenHash: hashToken(otp),
       expiresAt,
       createdByIp: ip,
-    });
+    }, transaction);
 
     return { otp, expiresAt, record };
   }
@@ -217,6 +229,18 @@ function createAuthService({
     return user;
   }
 
+  async function isPendingSelfRegistration(user) {
+    if (user.status !== 'INACTIVE' || user.emailVerifiedAt || user.deactivatedAt) {
+      return false;
+    }
+
+    const [hasVerificationToken, hasSetupToken] = await Promise.all([
+      authTokenRepository.hasTokenForUserType(user.userId, 'EMAIL_VERIFY'),
+      authTokenRepository.hasTokenForUserType(user.userId, 'ACCOUNT_SETUP'),
+    ]);
+    return hasVerificationToken && !hasSetupToken;
+  }
+
   /** Xác minh mật khẩu hiện tại, ghi audit và ném lỗi nếu sai */
   async function verifyCurrentPassword(user, password, context) {
     const valid = await verifyPassword(password || '', user.passwordHash);
@@ -270,7 +294,7 @@ function createAuthService({
   }
 
   /** Tạo refresh token ngẫu nhiên và lưu vào DB */
-  async function createStoredToken(userId, tokenType, expiresAt, context = {}) {
+  async function createStoredToken(userId, tokenType, expiresAt, context = {}, transaction = null) {
     const token = generateRandomToken();
 
     const record = await authTokenRepository.createToken({
@@ -279,7 +303,7 @@ function createAuthService({
       tokenHash: hashToken(token),
       expiresAt,
       createdByIp: context.ip || null,
-    });
+    }, transaction);
 
     return { token, record };
   }
@@ -317,14 +341,22 @@ function createAuthService({
     }
 
     const passwordHash = await hashPassword(password);
-    const createdUser = await userRepository.createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName });
-
     const expiresInMinutes = env.emailVerificationTtlMinutes;
-    const { otp, record } = await createOtpToken(
-      createdUser.userId,
-      'EMAIL_VERIFY',
-      expiresInMinutes,
-      context.ip
+    const { createdUser, otp, record } = await authTransactionRepository.withTransaction(
+      async (transaction) => {
+        const user = await userRepository.createRegisteredUser(
+          { username, email, passwordHash, phoneNumber, fullName },
+          transaction
+        );
+        const token = await createOtpToken(
+          user.userId,
+          'EMAIL_VERIFY',
+          expiresInMinutes,
+          context.ip,
+          transaction
+        );
+        return { createdUser: user, ...token };
+      }
     );
     await requestOtpDelivery({
       type: 'ACCOUNT_VERIFICATION',
@@ -397,7 +429,7 @@ function createAuthService({
     const user = await userRepository.findByEmail(email);
     let otp = null;
 
-    if (user && user.status !== 'ACTIVE') {
+    if (user && await isPendingSelfRegistration(user)) {
       const expiresInMinutes = env.emailVerificationTtlMinutes;
       const result = await createOtpToken(
         user.userId,
@@ -437,6 +469,9 @@ function createAuthService({
     });
 
     if (!user) {
+      await writeAudit(context, 'AUTH_LOGIN_FAILURE', {
+        metadata: { identifier, reason: 'INVALID_CREDENTIALS' },
+      });
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
@@ -444,7 +479,11 @@ function createAuthService({
     const isLockedByTime = lockExpiry !== null && lockExpiry > clock().getTime();
 
     if (isLockedByTime) {
-      await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
+      await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
+        userId: user.userId,
+        targetId: user.userId,
+        metadata: { identifier, reason: 'ACCOUNT_LOCKED' },
+      });
       throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
     }
 
@@ -460,31 +499,77 @@ function createAuthService({
     // @spec FR-FE02-017 — reject login to a LOCKED account and return the account-lock message (AF-FE02-003, BR-FE02-009)
     // Khóa không có thời hạn (ví dụ admin khóa thủ công) vẫn bị chặn
     if (user.status === 'LOCKED') {
-      await writeAudit(context, 'AUTH_LOGIN_LOCKED', { userId: user.userId, targetId: user.userId });
+      await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
+        userId: user.userId,
+        targetId: user.userId,
+        metadata: { identifier, reason: 'ACCOUNT_LOCKED' },
+      });
       throw errors.tooManyRequests('ACCOUNT_LOCKED', 'Account is locked due to too many failed attempts. Please reset your password or contact support.');
     }
 
-    if (user.status !== 'ACTIVE') {
-      await writeAudit(context, 'AUTH_LOGIN_INACTIVE', { userId: user.userId, targetId: user.userId });
-      // @spec BR-FE02-007 NFR-FE02-SEC-010 - keep inactive and unknown accounts indistinguishable publicly.
-      throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
-    }
-
     const passwordValid = await verifyPassword(password, user.passwordHash);
-    if (!passwordValid) {
-      const failedCount = (user.failedLoginCount || 0) + 1;
-      const shouldLock = failedCount >= env.maxFailedLoginAttempts;
-      const lockedUntil = shouldLock ? addMinutes(clock(), env.lockoutMinutes) : null;
-      await userRepository.updateFailedLogin(user.userId, failedCount, lockedUntil);
-      await writeAudit(context, 'AUTH_LOGIN_FAILURE', { userId: user.userId, targetId: user.userId });
+
+    if (user.status !== 'ACTIVE') {
+      // @spec FR-FE02-027 - reveal verification recovery only after credential proof for self-registration.
+      const verificationRequired = passwordValid && await isPendingSelfRegistration(user);
+      await writeAudit(context, 'AUTH_LOGIN_INACTIVE', {
+        userId: user.userId,
+        targetId: user.userId,
+        metadata: {
+          identifier,
+          reason: verificationRequired ? 'EMAIL_VERIFICATION_REQUIRED' : 'INVALID_CREDENTIALS',
+        },
+      });
+      if (verificationRequired) {
+        throw errors.forbidden(
+          'EMAIL_VERIFICATION_REQUIRED',
+          'Email verification is required before login.',
+          { email: user.email }
+        );
+      }
       throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
     }
 
-    await userRepository.resetFailedLoginsAndSetLastLogin(user.userId);
-    const storedRefreshToken = await createStoredToken(user.userId, 'REFRESH', addDays(clock(), env.refreshTokenTtlDays), context);
+    if (!passwordValid) {
+      const failure = await userRepository.recordFailedLogin(
+        user.userId,
+        clock(),
+        env.maxFailedLoginAttempts,
+        15,
+        env.lockoutMinutes
+      );
+      await writeAudit(context, 'AUTH_LOGIN_FAILURE', {
+        userId: user.userId,
+        targetId: user.userId,
+        metadata: { identifier, reason: 'INVALID_CREDENTIALS' },
+      });
+      if (failure.lockedUntil) {
+        await writeAudit(context, 'AUTH_ACCOUNT_LOCKED', {
+          userId: user.userId,
+          targetId: user.userId,
+          metadata: { identifier, reason: 'FAILED_ATTEMPT_THRESHOLD' },
+        });
+      }
+      throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
+    }
+
+    const storedRefreshToken = await authTransactionRepository.withTransaction(async (transaction) => {
+      await userRepository.resetFailedLoginsAndSetLastLogin(user.userId, transaction);
+      return createStoredToken(
+        user.userId,
+        'REFRESH',
+        addDays(clock(), env.refreshTokenTtlDays),
+        context,
+        transaction
+      );
+    });
     const { roles, accessToken, expiresIn } = await issueAccessTokenForUser(user, storedRefreshToken.record.tokenId);
 
-    await writeAudit(context, 'AUTH_LOGIN_SUCCESS', { userId: user.userId, targetId: user.userId });
+    await writeAudit(context, 'AUTH_LOGIN_SUCCESS', {
+      userId: user.userId,
+      targetId: user.userId,
+      metadata: { identifier, reason: 'AUTHENTICATED' },
+    });
 
     return {
       userId: user.userId,
@@ -541,8 +626,15 @@ function createAuthService({
     validateNewPassword(input.newPassword);
     await ensureNewPasswordDiffers(user, input.newPassword, context);
 
-    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
-    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', { userId: user.userId, targetId: user.userId });
+    await authTransactionRepository.withTransaction(async (transaction) => {
+      await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword), transaction);
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', {
+        userId: user.userId,
+        targetId: user.userId,
+        transaction,
+        required: true,
+      });
+    });
 
     return { message: 'Password changed' };
   }
@@ -575,9 +667,16 @@ function createAuthService({
     validateNewPassword(input.newPassword);
     await ensureNewPasswordDiffers(user, input.newPassword, context);
 
-    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
-    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-    await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', { userId: user.userId, targetId: user.userId });
+    await authTransactionRepository.withTransaction(async (transaction) => {
+      await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword), transaction);
+      await authTokenRepository.markTokenUsed(tokenRecord.tokenId, transaction);
+      await writeAudit(context, 'AUTH_PASSWORD_CHANGE_SUCCESS', {
+        userId: user.userId,
+        targetId: user.userId,
+        transaction,
+        required: true,
+      });
+    });
 
     return { message: 'Đổi mật khẩu thành công.' };
   }
@@ -655,9 +754,16 @@ function createAuthService({
         throw errors.badRequest('INVALID_RESET_TOKEN', 'Invalid or expired reset token.');
       }
 
-      await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
-      await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-      await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', { userId: user.userId, targetId: user.userId });
+      await authTransactionRepository.withTransaction(async (transaction) => {
+        await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword), transaction);
+        await authTokenRepository.markTokenUsed(tokenRecord.tokenId, transaction);
+        await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', {
+          userId: user.userId,
+          targetId: user.userId,
+          transaction,
+          required: true,
+        });
+      });
 
       return { message: 'Password reset successful' };
     }
@@ -671,9 +777,16 @@ function createAuthService({
 
     const tokenRecord = await validateOtpToken('PASSWORD_RESET', input.otp, user.userId);
 
-    await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword));
-    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-    await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', { userId: user.userId, targetId: user.userId });
+    await authTransactionRepository.withTransaction(async (transaction) => {
+      await userRepository.updatePassword(user.userId, await hashPassword(input.newPassword), transaction);
+      await authTokenRepository.markTokenUsed(tokenRecord.tokenId, transaction);
+      await writeAudit(context, 'AUTH_PASSWORD_RESET_SUCCESS', {
+        userId: user.userId,
+        targetId: user.userId,
+        transaction,
+        required: true,
+      });
+    });
 
     return { message: 'Password reset successful' };
   }
@@ -681,7 +794,7 @@ function createAuthService({
   async function me(userId) {
     const user = await userRepository.getSafeUserById(userId);
 
-    if (!user) {
+    if (!user || user.status !== 'ACTIVE') {
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
@@ -696,16 +809,24 @@ function createAuthService({
 
   // @spec FR-FE02-021 — reject a protected request whose token is malformed, has an invalid signature, or is expired (401) (AF-FE02-004, EC-FE02-014, BR-FE02-012)
   async function authenticateToken(token) {
-    const payload = verifyAccessToken(token);
+    let payload;
+    try {
+      payload = verifyAccessToken(token);
+    } catch (error) {
+      if (debugLogger) debugLogger('[auth token validation failed]', { code: error.code || 'INVALID_TOKEN' });
+      throw error;
+    }
     const userId = Number(payload.sub);
     const user = await userRepository.getSafeUserById(userId);
 
-    if (!user) {
+    if (!user || user.status !== 'ACTIVE') {
+      if (debugLogger) debugLogger('[auth token validation failed]', { code: 'INVALID_TOKEN' });
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
     const sessionId = Number(payload.sid);
     if (!Number.isFinite(sessionId)) {
+      if (debugLogger) debugLogger('[auth token validation failed]', { code: 'INVALID_TOKEN' });
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
@@ -715,6 +836,7 @@ function createAuthService({
       sessionRecord.userId !== userId ||
       new Date(sessionRecord.expiresAt).getTime() <= clock().getTime()
     ) {
+      if (debugLogger) debugLogger('[auth token validation failed]', { code: 'INVALID_TOKEN' });
       throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
     }
 
@@ -748,4 +870,5 @@ const defaultAuthService = createAuthService();
 module.exports = {
   createAuthService,
   defaultAuthService,
+  generateOtp,
 };

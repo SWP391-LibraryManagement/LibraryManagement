@@ -263,8 +263,8 @@ function createProfileService({
 
   // @spec FR-FE03-004 BR-FE03-017 FR-FE03-010
   async function updateMyProfile(userId, input, context = {}) {
-    const existing = await getExistingProfile(userId);
     const updates = validateProfileUpdate(input, clock);
+    const existing = await getExistingProfile(userId);
     const fields = changedFields(existing, updates);
     if (fields.length === 0) return toSafeProfileDto(existing);
 
@@ -279,8 +279,8 @@ function createProfileService({
 
   // @spec FR-FE03-008 BR-FE03-017 FR-FE03-010 AC-FE03-014
   async function updateMyAvatar(userId, file, context = {}) {
-    const existing = await getExistingProfile(userId);
     validateAvatarUpload(file);
+    const existing = await getExistingProfile(userId);
     requireAuditRepository();
 
     const avatarUrl = await avatarStorage.saveAvatarFile({

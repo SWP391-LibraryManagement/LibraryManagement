@@ -1,12 +1,12 @@
 # SPEC.md - FE04 Membership Management
 
-# Version: 0.3.3
+# Version: 0.3.4
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-25
 
 # Feature ID: FE04
 
@@ -22,9 +22,11 @@
 
 > Approved 2026-07-22 presentation overlay: authenticated Admins receive an embedded FE04 review section inside the Admin Console. The existing `/membership` Member/Librarian workspace, FE04 API, state machine, schema, authorization, audit, and notification contracts remain unchanged. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 >
-> Core Phase 2 is complete. The approved Admin Console overlay is a separate
-> extension: `FR-FE04-014` and `AC-FE04-013` remain implementation-pending, so
-> current source traceability is `13/14 FR` until `FE04-ADM01..FE04-ADM05` close.
+> Core Phase 2 is complete. The approved Admin Console overlay is implemented
+> locally for `FR-FE04-014` and `AC-FE04-013`, with focused source tests and an
+> authenticated browser scenario present. Clean browser-process exit, Azure
+> Staging, H2, and human acceptance remain release gates rather than missing
+> FE04 product behavior. Current source traceability is `14/14 FR`.
 
 ---
 

@@ -1,7 +1,7 @@
 # TASKS.md - FE04 Membership Management
 
 Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
-Implementation State: COMPLETE
+Implementation State: PARTIAL
 
 Owner: Dat
 
@@ -9,7 +9,7 @@ Updated: 2026-07-23
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
-Extension State: `FE04-ADM01..ADM03` are implemented with local automated evidence; `FE04-ADM04..ADM05` remain open for responsive browser, Azure Staging, and human acceptance.
+Extension State: `FE04-ADM01..ADM04` are implemented with local source/test evidence; `FE04-ADM04` remains open for a clean Windows browser-process exit, and `FE04-ADM05` remains open for Azure Staging, H2, and human acceptance.
 
 ---
 
@@ -158,9 +158,22 @@ Extension State: `FE04-ADM01..ADM03` are implemented with local automated eviden
 - [x] **FE04-ADM03 - Add approval, rejection, conflict reload, and FE10 feedback.**
   - Depends on: FE04-ADM02.
   - DoD: only `PENDING` rows expose decisions; rejection is 1..500 characters; success/failure reloads server truth; `FAILED` delivery is a warning after a committed decision.
-- [ ] **FE04-ADM04 - Pass authenticated responsive browser acceptance.**
+- [~] **FE04-ADM04 - Pass authenticated responsive browser acceptance.**
   - Depends on: FE04-ADM03.
-  - DoD: real FE04 rejection, re-application, and approval pass in the Admin shell; table/cards and no-overflow evidence pass at 1600/1440/1366/1280/390; existing FE11 and `/membership` regressions stay green.
+  - Evidence: `tests/e2e/fe04-admin-membership-review.spec.js` covers real FE04 rejection, re-application, approval, and no-overflow checks at 1440/1366/1280/390; Windows webServer teardown still prevents a clean command exit.
+  - DoD: real FE04 rejection, re-application, and approval pass in the Admin shell; table/cards and no-overflow evidence pass; the focused command exits cleanly.
 - [ ] **FE04-ADM05 - Pass L1-L4, H2, Azure Staging, and human acceptance.**
   - Depends on: FE04-ADM01..FE04-ADM04.
   - DoD: focused/full tests, lint/build/trace/browser, reviewed commits, deployment run, HTTP checks, and explicit authenticated human desktop/mobile approval are recorded.
+
+## Phase 3: Convergence
+
+- [ ] **FE04-CONV-001 - Record a clean Windows browser acceptance exit.**
+  - Maps to: FR-FE04-014, AC-FE04-013, FE04-ADM04.
+  - Evidence: `tests/e2e/fe04-admin-membership-review.spec.js` now covers rejection, re-application, approval, and 1440/1366/1280/390 responsive checks; Playwright assertions reached the test without an assertion error, but the configured Windows `webServer` teardown timed out before a clean process exit.
+  - DoD: rerun the focused FE04 and FE11 browser specs with a clean exit and retain screenshot/overflow evidence.
+
+- [ ] **FE04-CONV-002 - Complete external FE04 acceptance and release evidence.**
+  - Maps to: all FE04 acceptance criteria, FE04-ADM05, and the Definition of Done.
+  - Evidence: local backend/frontend/lint/build/trace gates pass; Azure Staging deployment, L1-L4/H2 review, cross-feature owner confirmation, and authenticated human desktop/mobile approval are not available in this workspace.
+  - DoD: record the deployed SHA, HTTP checks, reviewer decision, and explicit approval before marking FE04 complete.
