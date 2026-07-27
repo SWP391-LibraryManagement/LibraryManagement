@@ -1,8 +1,8 @@
 # SPEC.md - FE10 Notification Management
 
-# Version: 0.4.5
+# Version: 0.5.0
 
-# Status: APPROVED - STAGING EMAIL DELIVERY REMEDIATION 2026-07-27
+# Status: DRAFT - NOTIFICATION INBOX WRITTEN REVIEW REQUIRED 2026-07-27
 
 # Owner: Nhat
 
@@ -43,6 +43,15 @@
 > manual endpoint and manual-only retry policy remain unchanged. On the staging
 > F1 plan this schedule is explicitly best-effort because Always On is disabled.
 > The user approved the design and written contract on 2026-07-27.
+>
+> Revision v0.5.0 proposes the user-approved personal notification inbox
+> expansion documented in
+> `docs/superpowers/specs/2026-07-27-fe10-notification-inbox-expansion-design.md`.
+> Every authenticated account may list and mark read only its own non-sensitive
+> notifications. Email delivery state remains independent, sensitive
+> authentication/setup records remain excluded, and navigation is derived from
+> a server allowlist. The design is approved; this written SPEC requires a fresh
+> human review before PLAN/TASKS or implementation may proceed.
 
 ---
 
@@ -68,11 +77,15 @@ The system shall:
 - Track Phase 1 delivery with `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; compatibility values `DELIVERED`, `SKIPPED`, and `CANCELLED` have no Phase 1 transition.
 - Keep non-sensitive content and all delivery attempts traceable without persisting, logging, auditing, or returning secrets or rendered sensitive authentication content.
 - Support the eight canonical Phase 1 type/template pairs for verification, password reset, account setup, reservation readiness, due-date reminders, overdue notices, fine notices, and membership results.
+- Present each eligible non-sensitive notification in a personal authenticated
+  web inbox without creating another notification or delivery channel.
+- Track personal read state independently from email delivery state and provide
+  safe allowlisted navigation to the related business screen.
 
 ### 1.4 Scope Level
 
-- [ ] Full Spec - core business logic, high risk, must be correct from the beginning
-- [x] Standard Spec - normal feature with business rules and validations
+- [x] Full Spec - core business logic, high risk, must be correct from the beginning
+- [ ] Standard Spec - normal feature with business rules and validations
 - [ ] Light Spec - simple UI, documentation, or low-risk feature
 
 ---
@@ -81,14 +94,14 @@ The system shall:
 
 | Actor | Description | Permission / Responsibility |
 | ----- | ----------- | --------------------------- |
-| Member | Registered library user | Receive email notifications related to reservations, due dates, overdue items, and fines. |
-| Librarian | Library staff | May receive operational notifications if source features request them. |
-| Admin | System administrator | May receive account or operational notifications if source features request them. |
+| Member | Registered library user | Receive email notifications and list/count/mark read only the member's own eligible non-sensitive inbox records. |
+| Librarian | Library staff | May receive operational notifications and list/count/mark read only the librarian's own eligible non-sensitive inbox records. |
+| Admin | System administrator | May receive account or operational notifications and list/count/mark read only the admin's own eligible non-sensitive inbox records; no global notification-log permission is added. |
 | Source Feature | Internal system feature | Creates requests through a requester bound to `FE02`, `FE07`, `FE08`, `FE09`, `FE11`, or `SYSTEM`. FE02 owns verification/reset; FE11 owns account setup. |
 | Internal Source Requester | In-process FE10 boundary | Binds an allowlisted source at construction, rejects source override, applies source/type ownership policy, and is not a login role. |
 | Notification Worker | System component | Sends queued non-sensitive notifications and records attempts. |
 | Email Provider | Configured adapter or injected mock | Delivers email messages in deployed environments and deterministic tests. |
-| Guest | Unauthenticated visitor | No notification management permission, but may receive account verification/reset emails. |
+| Guest | Unauthenticated visitor | No inbox permission, but may receive account verification/reset emails. |
 
 ---
 
@@ -99,9 +112,14 @@ The feature can only start when:
 - PRE-FE10-001: The source feature has determined that a notification is required and submits a request through an approved FE10 boundary.
 - PRE-FE10-002: The recipient user exists, or the source feature provides a safe guest email for account-related flows.
 - PRE-FE10-003: The notification type and template key form an approved canonical pair.
-- PRE-FE10-004: The requested Phase 1 channel is `EMAIL`; in-app delivery remains future work.
+- PRE-FE10-004: The requested Phase 1 delivery channel is `EMAIL`. The web
+  inbox is a presentation surface for the same eligible non-sensitive record,
+  not an `IN_APP` channel or a duplicate delivery record.
 - PRE-FE10-005: Configured email-provider settings are available outside source code, or an injected mock provider is supplied for tests.
 - PRE-FE10-006: Protected notification HTTP APIs are called by authenticated `LIBRARIAN` or `ADMIN` users for non-sensitive notification types, or an internal caller uses a construction-bound source requester. Verification/reset require FE02 ownership; account setup requires FE11 ownership.
+- PRE-FE10-007: Personal inbox APIs are called by an authenticated `MEMBER`,
+  `LIBRARIAN`, or `ADMIN` and derive ownership only from the access token's
+  `UserId`.
 
 ---
 
@@ -161,6 +179,29 @@ The feature can only start when:
 3. FE10 creates exactly one `PENDING` notification for a new idempotency key and returns `{ notificationId, status }`.
 4. The worker later commits `PROCESSING` before provider I/O, then records `SENT` or `FAILED` and a safe delivery attempt; delivery failure never changes the committed FE04 decision.
 
+### MF-FE10-007: View Personal Notification Inbox
+
+1. An authenticated `MEMBER`, `LIBRARIAN`, or `ADMIN` opens the header bell or
+   `/notifications`.
+2. FE10 derives the current `UserId` from the authenticated actor and validates
+   pagination, read-state, and optional eligible-type filters.
+3. The repository applies ownership, the non-sensitive eligibility allowlist,
+   filters, newest-first ordering, and pagination in SQL.
+4. FE10 returns only the safe inbox DTO and a backend-derived allowlisted
+   `actionPath`; it returns no recipient email, safe payload, source metadata,
+   idempotency key, provider detail, attempt, or sensitive content.
+
+### MF-FE10-008: Mark Personal Notifications Read
+
+1. The authenticated actor selects one inbox item or chooses to mark all as
+   read.
+2. FE10 updates only unread, eligible records whose `UserId` equals the current
+   actor's `UserId`, using a server timestamp.
+3. Mark-one returns the safe item summary; mark-all returns the number of rows
+   changed.
+4. Repeating either operation is idempotent and never changes email delivery
+   status, attempts, source state, or idempotency metadata.
+
 ---
 
 ## 5. Alternative Flows
@@ -204,6 +245,23 @@ The feature can only start when:
 2. FE10 returns `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` with message `Sensitive authentication notifications must be requested internally.` before template rendering, persistence, or provider delivery.
 3. No notification record or delivery attempt is created.
 
+### AF-FE10-007: Inbox Ownership Or Sensitivity Violation
+
+1. An authenticated actor requests a missing notification, another user's
+   notification, or a sensitive authentication/setup notification.
+2. FE10 returns the same safe `404` response for every case and reveals no
+   existence, recipient, type, content, or source metadata.
+3. No read state or delivery state changes.
+
+### AF-FE10-008: Read Update Unavailable During Navigation
+
+1. The frontend cannot persist a read update because the API or network is
+   unavailable.
+2. The notification remains unread and the shell shows a safe non-blocking
+   warning.
+3. The user may still navigate to the already allowlisted business screen; the
+   failed read update never blocks the source feature.
+
 ---
 
 ## 6. Business Rules
@@ -229,6 +287,32 @@ Use these stable IDs for tasks and tests.
   copied into audit, logs, HTTP, or notification content.
 - Automatic SYSTEM processing is construction-bound and writes aggregate audit
   metadata with `UserId = NULL`; it never fabricates an Admin or Librarian.
+- BR-FE10-014: Every authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` may list,
+  count, and mark read only eligible notifications whose `UserId` matches the
+  authenticated actor. Guests have no inbox access and Admin/Librarian receive
+  no global log permission from this revision.
+- BR-FE10-015: Inbox eligibility requires a persisted non-null `UserId` and a
+  non-sensitive canonical type. `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, and
+  `ACCOUNT_SETUP` must be excluded at the database query boundary from inbox
+  list, unread count, preview, mark-one, and mark-all operations regardless of
+  stored status or `ReadAt`. Email-only rows without `UserId` have no personal
+  inbox owner and are also excluded.
+- BR-FE10-016: Inbox read state is `ReadAt IS NULL` for unread and a server
+  timestamp for read. Updating `ReadAt` must not alter delivery `Status`,
+  `SentAt`, attempts, source state, or idempotency data and must be idempotent.
+- BR-FE10-017: FE10 shall derive `actionPath` only from the canonical persisted
+  type/template/source combination and a fixed relative-path allowlist. No
+  source caller, template, payload, database content field, or frontend input
+  may supply or override a navigation URL.
+- BR-FE10-018: Personal notification history is retained and paginated. This
+  revision exposes no user delete, archive, retention-cleanup, or global
+  staff-log operation.
+- BR-FE10-019: The additive migration shall mark inbox-eligible rows that
+  existed before deployment as read with `ReadAt = CreatedAt`; only eligible
+  notifications created after the migration start unread.
+- BR-FE10-020: Personal list and unread-count queries shall apply `UserId`,
+  sensitivity eligibility, filters, deterministic newest-first ordering, and
+  pagination/counting in SQL before materializing rows.
 
 ---
 
@@ -244,6 +328,29 @@ Use these stable IDs for tasks and tests.
 - FR-FE10-008: When a duplicate source event is submitted with the same idempotency key, FE10 shall return `200 { notificationId, status }` for the existing record across any status and shall not create or send a duplicate.
 - FR-FE10-009: FE10 shall recognize all eight canonical pairs, including `ACCOUNT_SETUP -> ACCOUNT_SETUP` and `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`. A missing/inactive template, unsafe stored template definition, missing required sensitive variable, mismatched pair, unauthorized sensitive source, HTTP source override, or recursively detected secret-like queued key shall return a safe 4xx before rendering or persistence without leaking the submitted value.
 - FR-FE10-010: When the requester bound to `FE11` submits canonical account-setup data with `setupLink`, `expiresInHours`, and an `AuthToken` source reference, FE10 shall persist safe source metadata as `PROCESSING` before provider I/O, synchronously render/send, record safe terminal status/attempt metadata when the transition commits, and return `{ notificationId, status }` without exposing raw or rendered setup content.
+- FR-FE10-011: When an authenticated `MEMBER`, `LIBRARIAN`, or `ADMIN` requests
+  personal notifications, FE10 shall return only that actor's eligible
+  non-sensitive rows using validated `page`, `limit`, `readState`, and optional
+  type filters, deterministic newest-first ordering, and the approved safe DTO.
+- FR-FE10-012: When an authenticated actor requests the unread count, FE10 shall
+  count only that actor's eligible rows with `ReadAt IS NULL` and return
+  `{ unreadCount }`.
+- FR-FE10-013: When an authenticated actor marks one owned eligible
+  notification read, FE10 shall set `ReadAt` once and return its safe summary;
+  a missing, sensitive, or unowned ID shall return an indistinguishable `404`,
+  and replay shall be idempotent.
+- FR-FE10-014: When an authenticated actor marks all personal notifications
+  read, FE10 shall set one server timestamp only on that actor's eligible unread
+  rows and return `{ updated }`; replay shall return `updated: 0`.
+- FR-FE10-015: When FE10 projects an eligible notification, it shall derive a
+  relative `actionPath` from the fixed canonical allowlist or return null; no
+  caller-controlled or persisted content URL is accepted.
+- FR-FE10-016: The authenticated application shell shall show a bell with a
+  `99+`-capped unread badge, five-item unread preview, and `/notifications`
+  link. The page shall provide all/unread/read filters, 20-item pagination,
+  mark-all, loading/empty/error states, and non-blocking navigation when a read
+  mutation fails. The count refreshes after authentication, window focus, read
+  mutations, and every 60 seconds while the shell is mounted.
 
 ---
 
@@ -259,6 +366,28 @@ Use these stable IDs for tasks and tests.
 - AC-FE10-008: Given an idempotency key already exists in any status, when FE10 receives the duplicate request, then it returns `200 { notificationId, status }` for that record and performs no duplicate send.
 - AC-FE10-009: Given provider delivery failure, when FE10 records it, then the source flow remains completed; a failed non-sensitive queued record may retry on the same history, while sensitive retry returns safe `409 REISSUE_REQUIRED`. Given provider I/O finishes but terminal persistence fails, the row remains `PROCESSING`, duplicate replay performs no send, and retry returns safe `409 DELIVERY_STATE_UNCERTAIN`.
 - AC-FE10-010: Given the requester bound to `FE11` submits canonical account-setup data, when FE10 sends synchronously, then it returns safe `SENT`/`FAILED` summary, persists safe `AuthToken` metadata, and persists or returns no setup token/link/rendered content.
+- AC-FE10-011: Given any authenticated login role has eligible notifications,
+  when it lists its inbox with valid filters, then only its own non-sensitive
+  rows are returned newest first with safe fields and correct pagination; Guest
+  receives `401`.
+- AC-FE10-012: Given unread eligible rows for multiple users plus sensitive
+  rows, when one user requests the unread count, then only that user's eligible
+  unread rows are counted.
+- AC-FE10-013: Given an owned eligible notification, when the user marks it
+  read twice, then the same notification remains read with no email/status/
+  attempt mutation. Missing, sensitive, and cross-user IDs all return the same
+  safe `404` and create no side effect.
+- AC-FE10-014: Given multiple eligible unread rows for one user and rows for
+  another user, when mark-all runs, then only the current user's eligible rows
+  receive one server read timestamp; replay returns `updated: 0`.
+- AC-FE10-015: Given every eligible canonical type, when FE10 returns an inbox
+  item, then `actionPath` equals the approved relative route. Unknown or
+  incompatible metadata returns null, and no submitted URL can override it.
+- AC-FE10-016: Given the authenticated shell and inbox page, when notifications
+  load and read actions occur, then badge, preview, filters, pagination,
+  mark-all, empty/error states, and navigation match the API. A read-update
+  failure leaves the item unread, shows safe feedback, and does not block the
+  business route.
 
 ---
 
@@ -283,6 +412,13 @@ Use these stable IDs for tasks and tests.
 | EC-FE10-015 | HTTP caller supplies `sourceFeature` | Return `400 SOURCE_FEATURE_HTTP_FORBIDDEN` with message `Notification source cannot be supplied through HTTP.`; create no notification or attempt. |
 | EC-FE10-016 | FE11 resend creates a new setup token | Use the new `AuthTokens.TokenId` and `FE11:ACCOUNT_SETUP:<tokenId>` key; never replay the prior setup link. |
 | EC-FE10-017 | Provider outcome exists but terminal status/attempt persistence fails | Keep the committed row `PROCESSING`; do not auto-reclaim or resend it; duplicate replay returns the same summary and manual retry returns `409 DELIVERY_STATE_UNCERTAIN`. |
+| EC-FE10-018 | Guest calls a personal inbox endpoint | Return safe `401`; expose no count or item metadata. |
+| EC-FE10-019 | Authenticated user requests another user's notification ID | Return the same safe `404` used for a missing ID; do not reveal ownership or mutate `ReadAt`. |
+| EC-FE10-020 | Authenticated user requests a sensitive authentication/setup notification ID | Return the same safe `404`; sensitive content and existence remain undisclosed. |
+| EC-FE10-021 | Invalid page, limit, read-state, or inbox-ineligible type filter | Return safe `400`; execute no unbounded fallback query. |
+| EC-FE10-022 | Mark-one or mark-all is replayed | Preserve the first read timestamp; return the same safe read item or `updated: 0`; create no delivery attempt. |
+| EC-FE10-023 | Persisted metadata has no approved navigation mapping | Return `actionPath: null`; never construct a path from title, body, payload, or arbitrary input. |
+| EC-FE10-024 | Read mutation fails while the user opens the related workflow | Keep the record unread, show safe non-blocking feedback, and allow navigation to the already allowlisted route. |
 
 ---
 
@@ -294,9 +430,9 @@ Use these stable IDs for tasks and tests.
 | ------ | ----------------------- |
 | Users | Stores recipient identity and email address. |
 | NotificationTemplates | Stores approved email templates and required variables. A stored title/body must pass template-definition safety validation before every render. |
-| Notifications | Stores source references, status, safe payload, non-sensitive rendered content, and redacted sensitive summaries. |
+| Notifications | Stores source references, delivery status, safe payload, non-sensitive rendered content, redacted sensitive summaries, and nullable personal read state. |
 | NotificationAttempts | Stores delivery attempts and safe failure details. |
-| UserNotificationPreferences | Reserved for future optional/in-app preference work; not used by the hardening slice. |
+| UserNotificationPreferences | Reserved for future preference work; not used by the inbox expansion. |
 
 ### 10.2 Data Fields
 
@@ -306,7 +442,7 @@ Use these stable IDs for tasks and tests.
 | userId | integer | No | Required for in-app and member-specific notifications. |
 | recipientEmail | string | Conditional | Required for email delivery and persisted as `Notifications.RecipientEmail NVARCHAR(255) NOT NULL` to match FE02/FE11 email width. |
 | type | enum | Yes | Values: `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, `ACCOUNT_SETUP`, `RESERVATION_AVAILABLE`, `DUE_DATE_REMINDER`, `OVERDUE_NOTICE`, `FINE_NOTICE`, `GENERAL_SYSTEM`. |
-| channel | enum | Yes | Phase 1 hardening accepts `EMAIL`; `IN_APP` remains future work. |
+| channel | enum | Yes | Delivery remains `EMAIL`. The web inbox projects the same eligible record and does not add an `IN_APP` channel. |
 | templateKey | string | Yes | Must be active and match the canonical type/template map. |
 | title | string | No | Rendered title for non-sensitive queued notifications only; sensitive auth title is not persisted. |
 | body | string | No | Rendered body for non-sensitive queued notifications only; sensitive auth body is not persisted. Must not contain unsafe script. |
@@ -318,6 +454,7 @@ Use these stable IDs for tasks and tests.
 | idempotencyKey | string | No | Maps one source event to one notification record across all statuses. FE02 derives sensitive keys from type plus `AuthTokens.TokenId`, never from the OTP. Retry reuses the same key. |
 | createdAt | datetime | Yes | Notification creation timestamp. |
 | sentAt | datetime | No | Server timestamp set when the Phase 1 email provider accepts the send and the guarded terminal transition commits; null while `PENDING`/`PROCESSING` and after a failed attempt. |
+| readAt | datetime | No | Nullable personal inbox state for rows with non-null `userId` and an eligible non-sensitive type. New eligible notifications start null; the first successful read mutation sets one server timestamp. Existing eligible rows are backfilled to `createdAt`; sensitive and email-only userless rows are never inbox-visible. |
 | attemptNo | integer | No | Delivery attempt count. |
 | errorMessage | string | No | Sanitized failure reason only; no provider detail or submitted sensitive value. |
 
@@ -356,10 +493,20 @@ Every other pair is rejected. `EMAIL_VERIFY` and `DUE_OR_FINE_NOTICE` are not al
 | POST | `/api/notifications/process-pending` | `LIBRARIAN`, `ADMIN` | `{ limit?: number }` | `200 { processed, failed }` | Processes only non-sensitive `PENDING` records; not public. |
 | POST | `/api/notifications/{id}/retry` | `LIBRARIAN`, `ADMIN` | None | Success: `200 { notificationId, status }`; conflict: safe `409` | Only failed non-sensitive queued records return to `PENDING`. Sensitive auth returns `409 { code: "REISSUE_REQUIRED", message: "Create a new notification from the source event." }`. |
 | In-process | `createSourceNotificationRequester(sourceFeature)` | `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM` | Same notification request without caller-controlled `sourceFeature` | Same minimal summary semantics | Construction-bound ownership: FE02 verification/reset, FE04 membership result, FE11 account setup. Source audit uses `userId: null`. |
+| GET | `/api/notifications/mine` | Authenticated `MEMBER`, `LIBRARIAN`, `ADMIN` | Query: `page?`, `limit?`, `readState?=all|unread|read`, eligible `type?` | `200 { notifications: SafeInboxItem[], pagination }` | Own eligible non-sensitive rows only; default page 1/limit 20, maximum 100; newest first. |
+| GET | `/api/notifications/mine/unread-count` | Authenticated `MEMBER`, `LIBRARIAN`, `ADMIN` | None | `200 { unreadCount }` | Counts only own eligible rows with `ReadAt IS NULL`. |
+| PATCH | `/api/notifications/{id}/read` | Authenticated `MEMBER`, `LIBRARIAN`, `ADMIN` | None | `200 SafeInboxItem`; missing/sensitive/unowned: safe `404` | Idempotent; cannot change delivery state or attempts. |
+| PATCH | `/api/notifications/mine/read-all` | Authenticated `MEMBER`, `LIBRARIAN`, `ADMIN` | None | `200 { updated }` | One server timestamp for own eligible unread rows; replay returns zero. |
 
 Validation and template errors use safe 4xx bodies. Invalid retry states use safe `409` bodies. No response includes rendered content, raw input secrets, provider details, or internal stack traces.
 
 The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_INTERNAL_ONLY", message: "Sensitive authentication notifications must be requested internally." } }`. HTTP `sourceFeature` override is `400 { error: { code: "SOURCE_FEATURE_HTTP_FORBIDDEN", message: "Notification source cannot be supplied through HTTP." } }`.
+
+`SafeInboxItem` contains only `notificationId`, canonical `type`, non-sensitive
+`title`, non-sensitive `message`, `createdAt`, `readAt`, and a backend-derived
+relative `actionPath`. It excludes recipient email, `SafePayload`, template
+data, idempotency key, source metadata, provider identifiers/errors, and
+attempt history.
 
 ---
 
@@ -373,17 +520,31 @@ The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_IN
 - NFR-FE10-SEC-004: FE10 must not persist, log, audit, or return raw tokens, OTPs, passwords, reset/verification/setup links, rendered sensitive authentication content, provider credentials/details, or internal stack traces.
 - NFR-FE10-SEC-005: Template-definition validation and runtime-value rendering are separate security gates. FE10 must reject raw HTML tag syntax, inline event-handler attributes, and `javascript:` URLs in a stored template title/body before rendering, persistence, or delivery; it must escape or sanitize runtime values inserted into an otherwise safe plain-text-plus-variables definition.
 - NFR-FE10-SEC-006: HTTP notification endpoints must require `LIBRARIAN`/`ADMIN`, reject caller-controlled `sourceFeature`, and reject sensitive authentication types with safe `403`; in-process requests must use the fixed bound-source allowlist, reject source override, enforce FE02 ownership for verification/reset, and enforce FE11 ownership for account setup.
+- NFR-FE10-SEC-007: Personal inbox authorization must be enforced in the
+  backend repository/service query using the authenticated `UserId`; client
+  role guards and hidden controls are not authorization boundaries.
+- NFR-FE10-SEC-008: List, count, and read queries must exclude all sensitive
+  types before materialization and use an indistinguishable `404` for missing,
+  sensitive, and unowned IDs. Action paths must be relative and allowlisted.
 
 ### 12.2 Reliability
 
 - NFR-FE10-REL-001: Failed sends must record attempt number, timestamp, and safe failure reason.
 - NFR-FE10-REL-002: Source business transactions must not be rolled back only because notification delivery failed.
 - NFR-FE10-REL-003: Duplicate source events must replay one record across all statuses. Manual non-sensitive retry must preserve notification ID, idempotency key, and attempt history. Provider I/O must occur only after a durable `PROCESSING` claim, and uncertain `PROCESSING` rows must never be automatically reclaimed.
+- NFR-FE10-REL-004: Read mutations must be idempotent, preserve the first
+  successful `ReadAt`, and remain independent of provider delivery and source
+  transactions. A read failure must not block navigation to an approved source
+  workflow.
 
 ### 12.3 Performance
 
 - NFR-FE10-PERF-001: Creating a queued non-sensitive notification must return within 500 ms at p95 in the project's documented local/dev performance environment. Synchronous sensitive authentication delivery is exempt from this queue-only target and is bounded by configured-provider latency.
 - NFR-FE10-PERF-002: Notification lookup must apply status, type, source-feature, and created-date filters in the database query before materializing rows; application-layer full-history filtering is not permitted.
+- NFR-FE10-PERF-003: Personal list and unread-count requests shall complete
+  within 500 ms at p95 in the documented local/dev performance environment
+  with the approved ownership/read/date index, a default list limit of 20, and
+  a maximum limit of 100.
 
 ### 12.4 Logging and Audit
 
@@ -394,6 +555,9 @@ The sensitive-boundary error is `403 { error: { code: "SENSITIVE_NOTIFICATION_IN
 
 - NFR-FE10-UX-001: Notification messages must be clear, concise, and action-oriented.
 - NFR-FE10-UX-002: Failure messages shown to users must be understandable and not expose technical internals.
+- NFR-FE10-UX-003: The authenticated shell shall expose a keyboard-accessible
+  bell, `99+` badge cap, five-item preview, explicit loading/empty/error states,
+  and a full Vietnamese inbox page. Read state must not rely on color alone.
 
 ---
 
@@ -409,9 +573,11 @@ This feature does not include:
 - Fine calculation.
 - Reservation queue decisions.
 - Borrowing/return approval decisions.
-- User notification inbox/list UI.
-- Marking in-app notifications as read.
 - Admin/librarian notification log screens.
+- User deletion, archive, or retention cleanup for notification history.
+- WebSocket, Server-Sent Events, service-worker push, or a separate `IN_APP`
+  delivery channel.
+- Caller-supplied or persisted-content-derived notification navigation URLs.
 - Manual retry management screens.
 - Template editor UI.
 - Building a full email design editor.
@@ -436,6 +602,8 @@ This feature does not include:
 | SQL Server database | Technical | Stores notification records, templates, attempts, and preferences. |
 | Configured email provider adapter or injected mock provider | Technical | Sends email notifications; deployed environments use configured provider settings while tests inject a deterministic mock. |
 | Scheduler/worker | Technical | Uses the `SYSTEM` internal source boundary and processes only non-sensitive `PENDING` notifications. |
+| Authenticated application shell | Technical | Hosts the personal bell, preview, unread polling, and `/notifications` route for every login role. |
+| FE04/FE07/FE08/FE09 application routes | Internal | Receive only backend-allowlisted relative navigation from eligible personal inbox items. |
 
 ---
 
@@ -444,7 +612,7 @@ This feature does not include:
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-002 | The original Phase 1 inbox deferral is superseded by v0.5.0: every authenticated role receives a personal view of existing non-sensitive notification records; delivery remains `EMAIL` and no second channel/record is created. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
 | Q-FE10-003 | Required templates: verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, membership result. | Review packet 2026-06-10; G1/G7 approval 2026-07-13; ADR-005 2026-07-15 | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-005 | Retry manually only for failed non-sensitive queued records on the same record/history; sensitive auth requires source reissue and returns `REISSUE_REQUIRED`. | G5/G6 approval 2026-07-13 | APPROVED |
@@ -456,6 +624,11 @@ This feature does not include:
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
 | Q-FE10-012 | Does FE10 sanitize an unsafe stored template definition or reject it? | Nhat, 2026-07-27 | APPROVED: reject the stored definition before rendering/persistence/delivery; continue escaping or sanitizing runtime values. |
 | Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
+| Q-FE10-014 | All authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` accounts may use the same personal inbox and may see only rows for their own `UserId`; no global staff log is added. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-015 | Every eligible non-sensitive notification appears through current email processing and the web inbox; source features do not choose channels. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-016 | Clicking an item marks it read and navigates to a backend-derived allowlisted route; read failure remains non-blocking. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-017 | Notification history is retained and paginated with no delete/archive operation. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-018 | Existing eligible rows are backfilled as read, while only new eligible rows after migration begin unread. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
 
 ---
 
@@ -466,7 +639,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Decision | Approved Answer | Status |
 | -------- | --------------- | ------ |
 | Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | APPROVED |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | APPROVED |
+| Q-FE10-002 | v0.5.0 supersedes the inbox deferral with a personal projection of existing eligible non-sensitive records; delivery remains email-only. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
 | Q-FE10-003 | Required templates include verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, and membership result. | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | APPROVED |
 | Q-FE10-005 | Retry only failed non-sensitive queued records; sensitive auth requires source reissue. | APPROVED |
@@ -489,6 +662,11 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Q-FE10-010 | Phase 1 statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; `PROCESSING` is durable before provider I/O and is never automatically reclaimed. | APPROVED; revised 2026-07-23 |
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
 | Q-FE10-012 | Unsafe stored template definitions are rejected before rendering/persistence/delivery; runtime values remain escaped/sanitized. | APPROVED 2026-07-27 |
+| Q-FE10-014 | Every authenticated login role has the same own-record-only inbox boundary; no global staff log. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-015 | Eligible non-sensitive events appear in email processing and the web inbox without duplicate records or caller-selected channels. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-016 | Click marks read and follows a backend allowlisted route; read failure does not block navigation. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-017 | History is retained and paginated; delete/archive remains out of scope. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-018 | Migration backfills historical eligible rows as read. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
 
 ---
 
@@ -506,12 +684,18 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | AC-FE10-008 | Duplicate key replays the same record across all statuses with minimal `200` DTO | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 to FT49 | FE10-H08 | Approved for implementation |
 | AC-FE10-009 | Failure is safe/non-blocking; FE02 reissues a new OTP/token event, non-sensitive `FAILED` retry reuses history, and uncertain `PROCESSING` is never resent | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | `backend/tests/notificationRoutes.test.js` provider/transition/retry cases | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Automated evidence; H2 review pending |
 | AC-FE10-010 | FE11-bound account setup sends synchronously with safe source metadata and no persisted setup credential/content | FR-FE10-010 | BR-FE10-002, BR-FE10-004 to BR-FE10-008, BR-FE10-010 to BR-FE10-013 | FT52, FT55 | FE10-S06 to FE10-S08 | Approved for implementation |
+| AC-FE10-011 | Authenticated personal list returns only owned eligible non-sensitive safe DTOs with SQL filters, newest-first ordering, and pagination | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | New inbox route/service/repository and browser cases | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-012 | Unread count includes only the authenticated user's eligible unread records | FR-FE10-012 | BR-FE10-014 to BR-FE10-016, BR-FE10-020 | New count ownership/sensitivity cases | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-013 | Mark-one is own-record-only, sensitive-safe, idempotent, and independent of email delivery | FR-FE10-013 | BR-FE10-014 to BR-FE10-016 | New IDOR/read-state route and SQL cases | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-014 | Mark-all changes only current-user eligible unread rows with one timestamp and replay returns zero | FR-FE10-014 | BR-FE10-014 to BR-FE10-016 | New bulk-read concurrency/ownership cases | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-015 | Eligible items receive only the canonical backend allowlisted relative action path | FR-FE10-015 | BR-FE10-017 | New action-map allowlist/open-redirect cases | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-016 | Bell, preview, inbox filters/pagination, read actions, safe states, and non-blocking navigation match the API contract | FR-FE10-016 | BR-FE10-014 to BR-FE10-018 | Frontend component plus three-role browser E2E | Planning required after written review | Draft v0.5.0 |
 
 ### Coverage Summary
 
-- Total AC: 10 (AC-FE10-001 to AC-FE10-010) - all mapped.
-- Total FR: 10 (FR-FE10-001 to FR-FE10-010) - all mapped.
-- Total BR: 13 (BR-FE10-001 to BR-FE10-013) - all mapped.
+- Total AC: 16 (AC-FE10-001 to AC-FE10-016) - all mapped; AC-FE10-011 to AC-FE10-016 await written review and implementation planning.
+- Total FR: 16 (FR-FE10-001 to FR-FE10-016) - all mapped.
+- Total BR: 20 (BR-FE10-001 to BR-FE10-020) - all mapped.
 - Assignment tests remain FT46 to FT49. Hardening implementation is traced to FE10-H02 through FE10-H08 and validated by FE10-H09.
 
 ### Supplemental BR/FR Traceability
@@ -523,6 +707,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | FR-FE10-006 | Provider acceptance sets `SENT`, `sentAt`, and a successful attempt | Planned |
 | BR-FE10-011 / Q-FE10-009 | FE04-bound membership-result ownership and protected HTTP boundary | Planned |
 | BR-FE10-010 / FR-FE10-005 / FR-FE10-009 | `notificationRoutes.test.js` rejects three unsafe stored-definition classes with zero render/persistence/provider calls while preserving runtime-value sanitization | Complete |
+| BR-FE10-014 to BR-FE10-020 / FR-FE10-011 to FR-FE10-016 | Personal inbox ownership, sensitivity exclusion, safe projection, read state, action allowlist, migration/backfill, and UI acceptance | Planned only after written v0.5.0 review |
 
 
 ### External Assignment Traceability (Excel UC IDs)
@@ -571,3 +756,22 @@ Hardening contract checklist (approved by Nhat on 2026-07-13):
 - [x] Preserve canonical pair, secret-like key, safe-payload, minimal DTO, and source-ownership rules.
 - [x] Require safe rejection before rendering, notification/attempt persistence, or provider delivery.
 - [x] Nhat human-reviewed and approved the written v0.4.4 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.
+
+### Revision v0.5.0 Personal Notification Inbox
+
+- [x] User approved one personal inbox for every authenticated login role, with
+  strict own-`UserId` ownership and no global staff log.
+- [x] User approved dual presentation of each eligible non-sensitive record in
+  email processing and the web inbox without a new channel or duplicate row.
+- [x] User approved mark-read plus backend-allowlisted navigation, retained
+  paginated history, and no user delete/archive operation.
+- [x] User approved nullable `ReadAt` on `Notifications` and historical eligible
+  backfill to `ReadAt = CreatedAt`.
+- [x] Sensitive authentication/setup types are excluded from list, count,
+  preview, mark-one, and mark-all at the query boundary.
+- [x] Safe DTO fields, `401`/`400`/indistinguishable `404`, idempotent mutations,
+  polling, error fallback, migration, rollout, and test obligations are explicit.
+- [ ] Human has reviewed and approved the written v0.5.0 SPEC and design file.
+- [ ] PLAN.md and TASKS.md have been revised from this approved written contract.
+- [ ] No inbox product-code, schema, public API, or deployment completion is
+  claimed by this documentation revision.

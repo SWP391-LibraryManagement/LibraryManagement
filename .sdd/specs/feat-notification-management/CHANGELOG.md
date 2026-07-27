@@ -1,5 +1,25 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-27 - Draft personal notification inbox expansion (v0.5.0)
+
+- Proposed one personal inbox for every authenticated `MEMBER`, `LIBRARIAN`,
+  and `ADMIN`, restricted to the actor's own non-sensitive records.
+- Reused each existing eligible email notification as the web inbox record;
+  no `IN_APP` delivery channel or duplicate notification is introduced.
+- Specified nullable `ReadAt`, historical eligible-row backfill, personal list
+  and unread-count APIs, idempotent mark-one/mark-all operations, safe DTOs, and
+  backend-derived allowlisted navigation.
+- Added the authenticated bell, five-item preview, `/notifications` page,
+  all/unread/read filters, pagination, polling, and non-blocking read-failure
+  behavior to the proposed contract.
+- Kept sensitive authentication/setup records, global staff logs, delete/
+  archive, WebSocket/push, retry UI, and caller-supplied URLs out of scope.
+- User approved the interactive design decisions on 2026-07-27. Written design
+  and SPEC review remain required before PLAN/TASKS or implementation.
+- Marked the active v0.5.0 implementation state `NOT_STARTED` while retaining
+  the completed v0.4.5 task history, so traceability remains report-only until
+  the written contract is approved and new tasks are activated.
+
 ## 2026-07-27 - Implement staging email delivery remediation locally
 
 - Added the transactional, repeatable `ACCOUNT_SETUP` template update-or-insert

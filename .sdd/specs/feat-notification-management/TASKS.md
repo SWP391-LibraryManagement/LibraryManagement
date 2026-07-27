@@ -1,19 +1,18 @@
 # TASKS.md - FE10 Notification Management
 
-Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
-Implementation State: COMPLETE
+Status: V0.5.0 NOTIFICATION INBOX SPEC REVIEW PENDING
+Implementation State: NOT_STARTED
+
+Prior v0.4.5 Implementation State: COMPLETE
 
 Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
-approved FE10-S11 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
-2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
-PR #63, and CI run `30244750250` passed. The first H3 review confirmed
-idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
-code or business-rule defect. The documentation-only governance remediation
-remains uncommitted pending fresh H2 and repeated H3.
+Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
+remains complete. Draft SPEC v0.5.0 adds a personal notification inbox whose
+implementation has not started. New PLAN/TASKS decomposition is intentionally
+blocked until the written v0.5.0 SPEC and design file receive human review.
 
 ---
 
@@ -58,11 +57,15 @@ remains uncommitted pending fresh H2 and repeated H3.
 | AC-FE10-008 | FE10-T06, FE10-T13 |
 | AC-FE10-009 | FE10-T07, FE10-T08, FE10-T16 |
 
-## 5. Still Outside This Slice
+## 5. Still Outside The Historical v0.4.5 Slice
 
 - Real SMTP/provider integration.
 - In-app notification screens.
 - Retry management UI.
+
+Draft v0.5.0 proposes moving the personal inbox/read-state item into a new
+reviewed slice. This historical checklist does not authorize or claim that
+implementation.
 
 ## 6. FE10 Hardening Tasks - B4 Decomposition
 
