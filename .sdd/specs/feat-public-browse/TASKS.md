@@ -177,5 +177,5 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
 ## 2026-07-23 role-integration correction
 
 - [x] Align FE01 actor/API wording for Guest, Member, Librarian, and Admin reads.
-- [x] Apply staff-first public-book action precedence for FE11 multi-role accounts.
+- [x] Connect public-book actions to FE11's single account role; keep defensive handling for stale legacy role arrays.
 - [x] Add frontend regression coverage for `MEMBER + LIBRARIAN` and `MEMBER + ADMIN`.

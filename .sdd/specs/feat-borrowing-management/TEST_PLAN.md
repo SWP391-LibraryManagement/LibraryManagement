@@ -31,6 +31,7 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 
 - `POST /api/borrow-requests`: happy, duplicate/unavailable copy, over limit, inactive/unapproved member.
 - `GET /api/borrow-requests/me`: own history only.
+- `GET /api/borrow-requests/candidates`, create, and own-history reject `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` with `403 ROLE_REQUIRED`.
 - `GET /api/borrow-requests`: staff list, unauthorized member forbidden.
 - `GET /api/members/:memberId/borrowings`: staff selected-member history, derived overdue/status/date filters, and unknown member IDs returning `404 MEMBER_NOT_FOUND`.
 - `PATCH /api/borrow-requests/:requestId/approve`: happy, unavailable copy, concurrent double-borrow, forbidden.
@@ -41,6 +42,7 @@ History-contract follow-up: validate `status?`, `fromDate?`, `toDate?`, `page?`,
 ## 4. E2E / Manual Acceptance Flow
 
 - Member requests borrow → librarian approves → member sees history → librarian records return.
+- Mixed Member/staff actor is redirected away from member routes and remains able to use only the matching staff operational routes.
 - Overdue/renewal behavior verified with deterministic dates.
 
 ## 5. Current Evidence

@@ -21,8 +21,7 @@ function makeApp({ roles = ['ADMIN'], userManagementService } = {}) {
       resendSetup: jest.fn(),
       updateUser: jest.fn(),
       updateStatus: jest.fn(),
-      assignRole: jest.fn(),
-      revokeRole: jest.fn(),
+      replaceRole: jest.fn(),
     },
   });
 }
@@ -559,51 +558,33 @@ describe('FE11 user management routes', () => {
     expect(userManagementService.updateStatus).not.toHaveBeenCalled();
   });
 
-  test('POST /api/users/:userId/roles passes normalized IDs and Admin context', async () => {
-    const updatedUser = { userId: 7, roles: ['LIBRARIAN', 'MEMBER'] };
-    const userManagementService = { assignRole: jest.fn(async () => updatedUser) };
+  test('PUT /api/users/:userId/role passes normalized IDs and Admin context', async () => {
+    const updatedUser = { userId: 7, roles: ['LIBRARIAN'] };
+    const userManagementService = { replaceRole: jest.fn(async () => updatedUser) };
     const app = makeApp({ userManagementService });
 
     const response = await request(app)
-      .post('/api/users/7/roles')
+      .put('/api/users/7/role')
       .set('Authorization', 'Bearer token')
       .send({ roleId: 3 });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(updatedUser);
-    expect(userManagementService.assignRole).toHaveBeenCalledWith(
+    expect(userManagementService.replaceRole).toHaveBeenCalledWith(
       7,
       { roleId: 3 },
       expect.objectContaining({ adminUserId: 99 })
     );
   });
 
-  test('DELETE /api/users/:userId/roles/:roleId passes normalized IDs and Admin context', async () => {
-    const updatedUser = { userId: 7, roles: ['MEMBER'] };
-    const userManagementService = { revokeRole: jest.fn(async () => updatedUser) };
-    const app = makeApp({ userManagementService });
-
-    const response = await request(app)
-      .delete('/api/users/7/roles/3')
-      .set('Authorization', 'Bearer token');
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(updatedUser);
-    expect(userManagementService.revokeRole).toHaveBeenCalledWith(
-      7,
-      3,
-      expect.objectContaining({ adminUserId: 99 })
-    );
-  });
-
   test.each(['0', '-1', 'not-a-user'])(
-    'rejects invalid role-assignment target %s',
+    'rejects invalid role-replacement target %s',
     async (userId) => {
-      const userManagementService = { assignRole: jest.fn() };
+      const userManagementService = { replaceRole: jest.fn() };
       const app = makeApp({ userManagementService });
 
       const response = await request(app)
-        .post(`/api/users/${userId}/roles`)
+        .put(`/api/users/${userId}/role`)
         .set('Authorization', 'Bearer token')
         .send({ roleId: 3 });
 
@@ -617,7 +598,7 @@ describe('FE11 user management routes', () => {
           }),
         ])
       );
-      expect(userManagementService.assignRole).not.toHaveBeenCalled();
+      expect(userManagementService.replaceRole).not.toHaveBeenCalled();
     }
   );
 
@@ -625,12 +606,12 @@ describe('FE11 user management routes', () => {
     ['zero', { roleId: 0 }, 'Role ID must be a positive integer.'],
     ['negative', { roleId: -1 }, 'Role ID must be a positive integer.'],
     ['missing', {}, 'Role ID is required.'],
-  ])('rejects %s assignment role ID', async (_, body, message) => {
-    const userManagementService = { assignRole: jest.fn() };
+  ])('rejects %s replacement role ID', async (_, body, message) => {
+    const userManagementService = { replaceRole: jest.fn() };
     const app = makeApp({ userManagementService });
 
     const response = await request(app)
-      .post('/api/users/7/roles')
+      .put('/api/users/7/role')
       .set('Authorization', 'Bearer token')
       .send(body);
 
@@ -644,44 +625,20 @@ describe('FE11 user management routes', () => {
         }),
       ])
     );
-    expect(userManagementService.assignRole).not.toHaveBeenCalled();
+    expect(userManagementService.replaceRole).not.toHaveBeenCalled();
   });
 
-  test.each(['0', '-1', 'not-a-role'])(
-    'rejects invalid revocation role %s',
-    async (roleId) => {
-      const userManagementService = { revokeRole: jest.fn() };
-      const app = makeApp({ userManagementService });
-
-      const response = await request(app)
-        .delete(`/api/users/7/roles/${roleId}`)
-        .set('Authorization', 'Bearer token');
-
-      expect(response.status).toBe(400);
-      expect(response.body.error.code).toBe('VALIDATION_ERROR');
-      expect(response.body.error.details).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'roleId',
-            message: 'Role ID must be a positive integer.',
-          }),
-        ])
-      );
-      expect(userManagementService.revokeRole).not.toHaveBeenCalled();
-    }
-  );
-
   test('keeps Admin authorization ahead of role body validation', async () => {
-    const userManagementService = { assignRole: jest.fn() };
+    const userManagementService = { replaceRole: jest.fn() };
     const app = makeApp({ roles: ['MEMBER'], userManagementService });
 
     const response = await request(app)
-      .post('/api/users/7/roles')
+      .put('/api/users/7/role')
       .set('Authorization', 'Bearer token')
       .send({});
 
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('ADMIN_REQUIRED');
-    expect(userManagementService.assignRole).not.toHaveBeenCalled();
+    expect(userManagementService.replaceRole).not.toHaveBeenCalled();
   });
 });

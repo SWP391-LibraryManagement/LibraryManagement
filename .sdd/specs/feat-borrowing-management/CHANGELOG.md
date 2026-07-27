@@ -1,5 +1,13 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Enforce non-staff member self-service
+
+- Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use member borrowing self-service.
+- `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` can no longer open or call member borrow candidates, create-request, or own-history flows.
+- Preserved Librarian/Admin approval, rejection, return, selected-member history, and staff renewal operations.
+- Connected frontend direct-route redirects with the same backend authorization boundary.
+- Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.
+
 ## 2026-07-23 - Reconcile approval and return transaction invariants
 
 - Revalidated the request owner's current `MEMBER` role and FE04-derived 3/5 daily tier inside the approval transaction.

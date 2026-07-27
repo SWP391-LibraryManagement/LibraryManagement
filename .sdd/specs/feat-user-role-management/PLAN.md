@@ -133,15 +133,15 @@ database/Librarymanagement.sql
 
 - Validate positive-integer target and role IDs.
 - Revalidate the acting active Admin under the SQL transaction.
-- Assign/revoke role mappings with deterministic duplicate/missing errors.
-- Protect the final user role and last active Admin under `UPDLOCK, HOLDLOCK`.
-- Commit role mutation and audit together.
+- Replace all current mappings with exactly one selected role.
+- Protect the last active Admin under `UPDLOCK, HOLDLOCK`.
+- Commit delete/insert and audit together; current-role selection is a no-op.
 - Add route, service, and repository tests.
 
 ### Out Of Scope
 
 - User update/deactivation, librarian fields, safe detail DTO reconciliation, and Admin UI.
-- Schema changes, role creation/editing, permission editing, and role hierarchy.
+- Role creation/editing, permission editing, and role hierarchy.
 
 ### Validation Gate
 
@@ -180,20 +180,20 @@ database/Librarymanagement.sql
 ### In Scope
 
 - Load `{ roleId, roleName }` from the authenticated FE11 role catalog.
-- Keep checkbox state by role name while mapping every mutation to a positive numeric role ID.
-- Send canonical assignment/revocation requests, with assignments before revocations.
-- Block invalid catalogs before mutation and reconcile authoritative user roles after partial failure.
+- Keep one radio selection by role name while mapping the replacement to a positive numeric role ID.
+- Send one canonical `PUT /users/{userId}/role` request.
+- Block invalid catalogs before mutation and reconcile authoritative user state after failure.
 - Add focused frontend RED-GREEN tests and affected regression checks.
 
 ### Out Of Scope
 
-- Backend role transaction/validators, schema changes, role creation/editing, and permission editing.
+- Role creation/editing and permission editing.
 - Navigation, Permissions, Audit Logs, Request Management, update, deactivation, and all other FE11 debt.
 
 ### Validation Gate
 
 - API adapter tests prove no role name enters a mutation request.
-- UI contract tests prove catalog validation, assignment-before-revocation, no-op behavior, and partial-failure reconciliation.
+- UI contract tests prove catalog validation, one-request replacement, no-op behavior, and failure reconciliation.
 - Full frontend tests/lint/build, focused backend role regression, traceability, and diff hygiene pass.
 - Human review, PR #30, and post-merge CI `29644292781` passed; remaining FE11 work stays deferred.
 

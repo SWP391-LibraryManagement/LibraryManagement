@@ -74,7 +74,7 @@ The system shall:
 
 ### 2.1 Homepage Role Continuation Matrix
 
-The header contains library branding and account actions only. It does not render the former `Khám phá sách`, `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện`, or `Hỗ trợ` navigation groups. Role-owned destinations remain available through the page's role continuation panel and other owning controls, with staff-first precedence when an account has multiple roles.
+The header contains library branding and account actions only. It does not render the former `Khám phá sách`, `Hội viên`/`Thư viện của tôi`/`Nghiệp vụ`, `Về thư viện`, or `Hỗ trợ` navigation groups. Role-owned destinations remain available through the page's role continuation panel and other owning controls, derived from the account's single FE11 role.
 
 | Audience | Connected destinations |
 | -------- | ---------------------- |
@@ -143,7 +143,7 @@ The feature can only start when:
 ### MF-FE01-006: Continue To A Role-Owned Workflow
 
 1. The actor opens a role continuation action or book action.
-2. The system derives the audience using staff-first precedence: `ADMIN`, then `LIBRARIAN`, then `MEMBER`; an unauthenticated actor is Guest.
+2. The system derives the audience from the account's single `ADMIN`, `LIBRARIAN`, or `MEMBER` role; an unauthenticated actor is Guest.
 3. The system shows the audience label and destinations defined in the Homepage Role Continuation Matrix.
 4. A public-section action scrolls or filters within Homepage; a protected action navigates to the registered owning route.
 5. The owning feature and its route guard enforce authorization. FE01 does not simulate completion or perform the protected mutation.
@@ -196,7 +196,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-012: Public browse must hide `Books.Status = INACTIVE` even if one or more copies are marked `AVAILABLE`.
 - BR-FE01-013: Public browse defaults to `page=1`, `limit=20`, and stable ordering `Title ASC, BookId ASC`; `page` must be an integer at least 1 and `limit` must be an integer from 1 through 100.
 - BR-FE01-014: Missing optional catalog metadata must not remove an otherwise public-visible book; the response returns `null` and the UI uses a safe fallback label/image.
-- BR-FE01-015: FE11 accounts may hold multiple roles. Public-book actions use staff-first precedence (`ADMIN`/`LIBRARIAN` before `MEMBER`) so a staff account is never routed into a member-only borrow or reservation workflow.
+- BR-FE01-015: FE11 accounts hold exactly one role. Public-book actions route `MEMBER` to member-owned borrowing/reservation workflows and route `ADMIN`/`LIBRARIAN` to staff-owned management workflows.
 - BR-FE01-016: HomePage must not render `Còn sách`, `Không khả dụng`, or equivalent availability-revealing action labels to Guest or Member; Librarian/Admin may see the high-level status, and internal status may still select the correct owning route.
 - BR-FE01-017: The HomePage header must not render the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups on desktop or mobile.
 
@@ -219,9 +219,9 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-013: When optional author, category, publisher, cover, or ISBN data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
 - FR-FE01-014: When an authenticated account has both a staff role and `MEMBER`, the public home page shall expose FE05/FE06 staff actions rather than FE07/FE08 member-only actions.
 - FR-FE01-015: The public footer shall present compact responsive contact information, keep phone/email readable without avoidable desktop wrapping, and open readable, dismissible information for Privacy, Terms, and browser storage controls without navigating to an empty link.
-- FR-FE01-016: The public home header shall show library branding and account actions without the former `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups; role continuation actions shall remain connected to registered owning routes with staff-first precedence.
+- FR-FE01-016: The public home header shall show library branding and account actions without the former `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups; role continuation actions shall remain connected to registered owning routes through the account's single role.
 - FR-FE01-017: The home page shall provide additional catalog-topic, library-journey, and role-aware continuation sections whose actions reuse current public filters and owning feature routes.
-- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; staff-first Librarian/Admin accounts retain the high-level status display.
+- FR-FE01-018: Guest and Member shall not see availability badges or availability-revealing action labels in HomePage list, search, information-panel, or detail-modal presentations; Librarian/Admin accounts retain the high-level status display.
 
 ---
 
@@ -263,7 +263,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-009 | Optional category/author/publisher/cover/ISBN metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
 | EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
-| EC-FE01-012 | Account has both Member and staff roles | Apply staff-first action precedence; do not route the account to a Member-only mutation screen. |
+| EC-FE01-012 | Account role is Admin or Librarian | Do not route the account to a Member-only mutation screen. |
 
 ---
 
@@ -360,7 +360,7 @@ This feature does not include:
 | FE06 Inventory / Book Copy Management | Internal | Provides the public availability status without exposing exact copy counts. |
 | FE02 Authentication | Internal | Provides login/register routes for member-only actions. |
 | FE04 Membership Management | Internal | Handles membership application after public discovery. |
-| FE11 User & Role Management | Internal | Supplies the current role set used for public-account actions; multi-role accounts follow staff-first precedence. |
+| FE11 User & Role Management | Internal | Supplies the account's current single role used for public-account actions. |
 | SQL Server database | Technical | Stores public book catalog data. |
 
 ---
@@ -390,7 +390,7 @@ This feature does not include:
 | BR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
 | BR-FE01-008..012 | UC01-UC04 | `bookAvailabilityRepository.test.js`; `publicBrowseAvailability.sqltest.js`; `bookRoutes.test.js` | Complete |
 | BR-FE01-013..014 | UC02-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |
-| BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` multi-role staff-precedence case | Complete |
+| BR-FE01-015 | UC01-UC04 | `homeBookActions.test.js` single-role Member/staff cases plus defensive legacy case | Complete |
 | BR-FE01-016 | UC01-UC04 | `publicBrowseFrontend.test.js` availability-visibility boundary | Complete |
 | BR-FE01-017 | UC01 | `publicBrowseFrontend.test.js` removed desktop/mobile header groups | Complete |
 | FR-FE01-001..007 | UC01-UC04 | `publicBrowseRoutes.test.js`; `publicBrowseFrontend.test.js` | Complete |

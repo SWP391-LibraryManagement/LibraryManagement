@@ -12,11 +12,11 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 
 ## 1. Test Scope
 
-User administration, Admin editing of the approved shared profile fields, role listing/assignment/revocation, account status management, and audit logs. FE03 self-service and FE11 Admin editing must remain consistent over the same canonical profile records.
+User administration, Admin editing of the approved shared profile fields, exactly-one role replacement, account status management, and audit logs. FE03 self-service and FE11 Admin editing must remain consistent over the same canonical profile records.
 
 ## 2. Unit Test Targets
 
-- Role assignment/revocation rules.
+- Exactly-one role cardinality and atomic replacement rules.
 - Admin role API helpers send only numeric `roleId` values from the authenticated role catalog.
 - The role modal validates a complete editable catalog before mutation, assigns before revoking, and preserves non-editable roles.
 - Partial mutation failure stops later requests and reloads the target user's authoritative roles into the open modal.
@@ -39,8 +39,7 @@ User administration, Admin editing of the approved shared profile fields, role l
 - `GET /users` and `GET /users/:userId`: only `UserManagementView` fields and approved related summaries are returned; credential/token/session/link fields are absent.
 - `PUT /users/:userId`: Admin may update `fullName`, `phone`, and `address` for every managed role with matching `expectedUpdatedAt`; email/department/specialization/unknown/mixed payloads return atomic `403 MANAGED_USER_UPDATE_FORBIDDEN`; stale allowed state returns `409 STALE_USER_STATE`.
 - `PATCH /users/:userId/status`: valid transition, invalid transition.
-- `POST /users/:userId/roles`: assign role, invalid role, duplicate, forbidden.
-- `DELETE /users/:userId/roles/:roleId`: revoke role, invalid role, forbidden.
+- `PUT /users/:userId/role`: replace role, invalid role, no-op, final-active-Admin protection, forbidden.
 
 ## 3.1 Fast-Track Batch 1 Current Targets
 
@@ -148,8 +147,8 @@ below. Current targets are:
 - Automated safe-read evidence: 105/105 focused backend, 434/434 full backend, 81/81 frontend, coverage/lint/build/traceability PASS.
 - Approved Admin role UI design: `docs/superpowers/specs/2026-07-18-fe11-admin-role-ui-contract-design.md`.
 - Approved Admin role UI plan: `docs/superpowers/plans/2026-07-18-fe11-admin-role-ui-contract.md`.
-- `frontend/test/userManagementApi.test.js` proves numeric assignment bodies and revocation paths with no role-name mutation contract.
-- `frontend/test/userManagementFrontend.test.js` proves catalog validation, numeric mutation planning, assignment-before-revocation order, no-op behavior, reconciliation, and Save lock.
+- `frontend/test/userManagementApi.test.js` proves the numeric replacement body and singular endpoint with no role-name mutation contract.
+- `frontend/test/userManagementFrontend.test.js` proves catalog validation, radio selection, one-request replacement, no-op behavior, reconciliation, and Save lock.
 - Automated Admin role UI evidence: 12/12 focused frontend, 101/101 full frontend, 105/105 focused backend role regression, lint/build/traceability/diff/security PASS.
 - Approved Audit Log design: `docs/superpowers/specs/2026-07-18-fe11-audit-log-contract-design.md`.
 - Approved Audit Log plan: `docs/superpowers/plans/2026-07-18-fe11-audit-log-contract.md`.
@@ -195,9 +194,9 @@ below. Current targets are:
 
 ## 9. Admin Role UI Contract Slice
 
-- The API adapter accepts only numeric `roleId` for assignment and revocation.
+- The API adapter accepts only numeric `roleId` for atomic replacement.
 - The page accepts IDs only from the authenticated catalog and rejects missing, duplicate, zero, or invalid editable entries before mutation.
-- The complete diff is planned before the first request; assignments run before revocations and no-op saves send no mutation.
+- A save sends at most one replacement request; no-op saves send no mutation.
 - The first mutation failure stops the sequence and reloads the authoritative target into the open modal; failed reconciliation disables Save.
 - Role-specific browser interaction remains a residual acceptance check; existing browser E2E stays the CI regression boundary.
 - Real SQL Server concurrent last-Admin execution remains environment-dependent and is covered locally by the unchanged focused backend contract tests.

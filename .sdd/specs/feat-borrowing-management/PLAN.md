@@ -51,7 +51,7 @@ Not included:
 | Notified owner may borrow the held copy | FE07 accepts the normal request and revalidates reservation ownership during approval. |
 | FE07 approval fulfills the hold | Request, details, copy, matching reservation, and audits commit atomically. |
 | FE07 does not create fines | Return response exposes `fineCandidate`; no `Fines` insert is performed. |
-| Canonical eligibility is active MEMBER identity | Create, approval, and renewal require the `MEMBER` role and `Users.Status = ACTIVE`; FE04 does not gate FE07. |
+| Canonical eligibility is active non-staff MEMBER identity | Member-self-service create/candidate/history requires `MEMBER` without `LIBRARIAN`/`ADMIN`; approval still revalidates the request owner's active `MEMBER` identity, and FE04 does not gate FE07. |
 | Parent book must remain active | Create and approval reject inactive parent books with `BOOK_INACTIVE`. |
 | Approval uses a member-scoped five-copy lock | Lock order is `member -> BookCopies -> BorrowRequests/BorrowDetails -> Reservations`; count occurs after locks. |
 | Approval metadata is transaction history | Store `CreatedBy`, `ApprovedAt`, `ApprovedBy`, and per-detail `BorrowDate`; due date is borrow date +14 calendar days. |
@@ -72,7 +72,7 @@ Not included:
 ### 3.2 Borrow Request
 
 - Validate `copyIds` and reject duplicates.
-- Check active account and `MEMBER` role authorization.
+- Check active account and non-staff `MEMBER` authorization at member-self-service routes.
 - Apply the reservation-aware borrowability contract to every copy.
 - Reject users blocked by overdue active loans or unpaid fines.
 - Create `PENDING` request and `REQUESTED` details.
@@ -92,7 +92,7 @@ Not included:
 ### 3.5 Tests
 
 - Add route tests with in-memory repositories.
-- Cover create, duplicate copy, unavailable copy, approve, history, return, fine candidate, completion, renewal, reservation conflict, and role guards.
+- Cover create, duplicate copy, unavailable copy, approve, history, return, fine candidate, completion, renewal, reservation conflict, and single-role guards.
 - Add focused frontend Node tests for borrowing API error messages and generic fallback behavior.
 
 ### 3.6 Frontend Error Handling

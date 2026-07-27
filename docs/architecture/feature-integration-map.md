@@ -94,7 +94,7 @@ flowchart TD
   FE02 -->|"source account events"| FE10
   FE02 -->|"staff/admin auth"| FE12
 
-  FE11 -->|"role assignment / permission source"| FE02
+  FE11 -->|"single-role replacement / permission source"| FE02
   FE11 -->|"role checks"| FE05
   FE11 -->|"role checks"| FE06
   FE11 -->|"role checks"| FE07
@@ -146,7 +146,7 @@ live in each feature `SPEC.md` (Section 10) and in `ADR-002-database-design.md`.
 ```mermaid
 erDiagram
   Roles ||--o{ UserRoles : "assigned in"
-  Users ||--o{ UserRoles : "has"
+  Users ||--|| UserRoles : "has exactly one"
   Users ||--o| UserProfiles : "has"
   Users ||--o| Members : "may be"
   Users ||--o{ MembershipApplications : "submits"

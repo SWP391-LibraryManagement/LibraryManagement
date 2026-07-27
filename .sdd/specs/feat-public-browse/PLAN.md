@@ -94,7 +94,7 @@ The response envelope must follow the approved shared API convention used by the
 | API documentation | `backend/src/docs/openapi.yaml` | Document canonical public list/detail parameters, fields, pagination, safe errors, and no authentication requirement. |
 | Backend tests | Create `backend/tests/publicBrowseRoutes.test.js`, `backend/tests/publicBrowseRepository.test.js`, and `backend/tests/sql/publicBrowseAvailability.sqltest.js` | Cover route contract, public redaction, query validation, SQL filtering/order, and latest committed availability. |
 | Frontend API | `frontend/src/api/libraryFeatureApi.js` | Add a small public browse API wrapper for list/detail requests without requiring an access token. |
-| Frontend page | `frontend/src/page/HomePage.jsx` | Use canonical server data, hide availability from Guest/Member, preserve staff-first routing, and render the connected responsive Homepage/navigation/footer experience. |
+| Frontend page | `frontend/src/page/HomePage.jsx` | Use canonical server data, hide availability from Guest/Member, route from the account's single role, and render the connected responsive Homepage/navigation/footer experience. |
 | Frontend tests | `frontend/test/publicBrowseFrontend.test.js`, `frontend/test/appShellFrontend.test.js`, `frontend/test/homeBookActions.test.js` | Lock endpoint/query usage, role-safe rendering/routing, navigation/footer behavior, responsive contracts, null fallbacks, and no fake FE01 mutation. |
 | Test strategy/history | `.sdd/specs/feat-public-browse/TEST_PLAN.md`, `.sdd/specs/feat-public-browse/CHANGELOG.md` | Record focused commands, evidence, and implementation status. |
 

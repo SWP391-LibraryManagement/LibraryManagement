@@ -255,7 +255,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-012: Every protected request must validate the session/token before processing.
 - BR-FE02-013: Password reset and account setup must prove email ownership through the purpose-specific credential.
 - BR-FE02-014: Password reset tokens expire after 15 minutes. Admin-created account setup tokens expire exactly 24 hours after issuance.
-- BR-FE02-015: A user's role(s) are determined by `UserRoles` table and may be cached but must be verified on sensitive operations.
+- BR-FE02-015: A user's single role is determined by the exactly-one `UserRoles` mapping and may be cached in the compatibility `roles` array, but must be verified on sensitive operations.
 - BR-FE02-016: Every authentication event (login attempt, success, failure, logout, password change/reset) must be auditable.
 - BR-FE02-017: HTTPS must be enforced for login/password/token transmission; plain HTTP is forbidden.
 - BR-FE02-018: A user may change their password only if authenticated.
@@ -286,7 +286,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE02-011: When a guest submits forgot password for an account with verified email ownership and status `ACTIVE`, FE02 shall create a six-digit password-reset OTP with a 15-minute expiry, store only its hash, and submit one FE02-bound `PASSWORD_RESET` notification request containing the token ID and required template data; every ineligible or unknown email receives the same generic public response without token creation.
 - FR-FE02-012: When a user submits a valid reset OTP and email, or a valid legacy password-reset token, with a new password, the system shall update the password for an eligible `ACTIVE` account and invalidate the reset credential without activating an `INACTIVE` account or unlocking a `LOCKED` account.
 - FR-FE02-013: When a guest completes self-registration, the system shall assign exactly the `Member` role through `UserRoles`; Librarian and Admin accounts are created only by FE11.
-- FR-FE02-014: When checking user permissions, the system shall retrieve the user's current roles from `UserRoles` and enforce them server-side for protected operations.
+- FR-FE02-014: When checking user permissions, the system shall retrieve the user's current single role from `UserRoles` and enforce it server-side for protected operations; the compatibility `roles` array contains exactly one item.
 - FR-FE02-022: When FE02 requests verification/reset OTP delivery, it shall submit only the canonical FE02-bound request, avoid logging raw OTPs, and preserve safe public response semantics. FE10 owns provider delivery; public routes do not expose debug verification/reset OTP fields, including in tests.
 
 ### 7.1 Unwanted Behavior Requirements (EARS)
@@ -369,7 +369,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | ------ | ----------------------- |
 | Users | Stores user account, email, password hash, status, and metadata. |
 | Roles | Defines role names (Member, Librarian, Admin) and descriptions. |
-| UserRoles | Maps users to roles. |
+| UserRoles | Stores exactly one role mapping per user; `UX_UserRoles_UserId` prevents multiple account roles. |
 | AuthTokens | Stores hashes and lifecycle metadata for verification OTPs, password-reset credentials, account-setup credentials, refresh tokens, and compatibility-only change-password OTPs. |
 | AuditLogs | Records all authentication events. |
 

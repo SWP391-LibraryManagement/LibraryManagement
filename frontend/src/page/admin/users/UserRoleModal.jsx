@@ -4,25 +4,17 @@ import { useEffect, useState } from 'react';
 import { RoleBadge } from './UserBadges';
 
 export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
-  const [selectedRoles, setSelectedRoles] = useState(() => new Set(user.roles || []));
+  const [selectedRole, setSelectedRole] = useState(() => user.roles?.[0] || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setSelectedRoles(new Set(user.roles || []));
+      setSelectedRole(user.roles?.[0] || '');
       setError('');
     }, 0);
     return () => window.clearTimeout(timer);
   }, [user]);
-
-  function toggleRole(roleName) {
-    const nextRoles = new Set(selectedRoles);
-    if (nextRoles.has(roleName)) nextRoles.delete(roleName);
-    else nextRoles.add(roleName);
-    setSelectedRoles(nextRoles);
-    setError('');
-  }
 
   async function handleSave(event) {
     event.preventDefault();
@@ -30,15 +22,15 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
       setError('Không thể lưu cho đến khi trạng thái vai trò được tải lại.');
       return;
     }
-    if (selectedRoles.size === 0) {
-      setError('Mỗi người dùng phải giữ ít nhất một vai trò.');
+    if (!selectedRole) {
+      setError('Mỗi tài khoản phải có đúng một vai trò.');
       return;
     }
 
     setSaving(true);
     setError('');
     try {
-      await onSave(Array.from(selectedRoles));
+      await onSave(selectedRole);
     } catch (saveError) {
       setError(saveError.message);
     } finally {
@@ -65,7 +57,13 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
           <div className="admin-role-options">
             {roles.filter((role) => role.roleName !== 'GUEST').map((role) => (
               <label key={role.roleName}>
-                <input type="checkbox" checked={selectedRoles.has(role.roleName)} onChange={() => toggleRole(role.roleName)} />
+                <input
+                  type="radio"
+                  name="user-role"
+                  value={role.roleName}
+                  checked={selectedRole === role.roleName}
+                  onChange={() => { setSelectedRole(role.roleName); setError(''); }}
+                />
                 <RoleBadge role={role.roleName} />
               </label>
             ))}

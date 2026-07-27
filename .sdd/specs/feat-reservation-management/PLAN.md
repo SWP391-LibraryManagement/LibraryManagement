@@ -59,7 +59,7 @@ Not included:
 ### 3.2 Create Reservation
 
 - Validate `copyId`.
-- Confirm the actor is an active user with the `MEMBER` role; FE04 approval is not required.
+- Confirm member-self-service actor is active, has `MEMBER`, and has neither `LIBRARIAN` nor `ADMIN`; FE04 approval is not required.
 - Reject available, damaged, lost, or inactive copies.
 - Reject duplicate active reservations for the same copy.
 - Reject when the member already has 3 active reservations.
@@ -82,7 +82,7 @@ Not included:
 ### 3.5 Tests
 
 - Add route-level tests using in-memory repositories.
-- Cover create, duplicate, available-copy rejection, active limit, owner-only cancellation, staff list, queue order, notification request, and role guards.
+- Cover create, duplicate, available-copy rejection, active limit, owner-only cancellation, staff list, queue order, notification request, and single-role guards.
 - Run backend Jest suite before handoff.
 
 ### 3.6 Frontend Correctness

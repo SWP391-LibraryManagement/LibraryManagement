@@ -18,5 +18,6 @@
 - BR-G-006: The default loan duration is 14 calendar days from the borrow approval date.
 - BR-G-007: Overdue fine is 5,000 VND per overdue day per copy, starting the day after the due date.
 - BR-G-008: Phase 1 user roles are Guest, Member, Librarian, and Admin. System/Scheduler is an internal actor, not a login role.
+- BR-G-009: Every persisted account has exactly one login role. `MEMBER`, `LIBRARIAN`, and `ADMIN` are mutually exclusive account roles; changing role replaces the current role atomically.
 
 > These Phase 1 baseline decisions come from `.sdd/shared_context.md`. If the teacher or team lead changes them, update shared context, this file, and all affected feature specs together.

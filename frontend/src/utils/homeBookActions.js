@@ -12,8 +12,8 @@ export function getHomeBookAction({ book, isLoggedIn, roles = [] }) {
     };
   }
 
-  // FE11 accounts may hold multiple roles. Keep the same staff-first precedence
-  // used by the dashboard and navigation so staff never enter Member-only flows.
+  // FE11 persists exactly one role. Staff-first evaluation remains defensive for
+  // stale legacy clients so staff never enter Member-only flows.
   if (roles.includes('ADMIN') || roles.includes('LIBRARIAN')) {
     return isAvailable
       ? { label: 'Mở quản lý sách', path: `/librarian/books${query}`, kind: 'manage' }

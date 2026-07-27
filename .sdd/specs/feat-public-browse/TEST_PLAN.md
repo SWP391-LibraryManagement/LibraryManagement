@@ -21,7 +21,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 - Empty search/default pagination and no-result handling.
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
 - Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
-- FE11 multi-role accounts use staff-first book actions and never enter Member-only borrow/reservation routes.
+- FE11 Admin/Librarian accounts use staff book actions and never enter Member-only borrow/reservation routes.
 - Guest/Member HomePage presentations omit availability badges, unavailable notices, and revealing action labels.
 - Librarian/Admin HomePage presentations retain the approved high-level status.
 - Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.

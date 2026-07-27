@@ -13,13 +13,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { reportApi } from '../../../api/libraryFeatureApi';
 import {
-  assignManagedUserRole,
   createManagedUser,
   deactivateManagedUser,
   fetchManagedUser,
   fetchRoles,
   fetchUsers,
-  revokeManagedUserRole,
+  replaceManagedUserRole,
   updateManagedUser,
 } from '../../../api/userManagementApi';
 import { normalizeAdminUserStatistics } from '../../../utils/adminStatistics';
@@ -36,7 +35,7 @@ import { UserDetailDrawer } from './UserDetailDrawer';
 import { UserEditorModal } from './UserEditorModal';
 import { UserRoleModal } from './UserRoleModal';
 import {
-  buildRoleMutationPlan,
+  buildRoleReplacement,
   formatAdminDate,
   getPrimaryRole,
   normalizeEditableRoleCatalog,
@@ -188,7 +187,7 @@ export function AdminUsersSection({ onToast }) {
       const catalog = rolesError || roles.length === 0
         ? await loadRoles()
         : normalizeEditableRoleCatalog(roles);
-      buildRoleMutationPlan(user.roles || [], user.roles || [], catalog);
+      buildRoleReplacement(user.roles || [], user.roles?.[0], catalog);
       setRoleSyncBlocked(false);
       setRoleUser(user);
     } catch (error) {
@@ -266,24 +265,19 @@ export function AdminUsersSection({ onToast }) {
     }
   }
 
-  async function saveRoles(nextRoles) {
+  async function saveRole(nextRole) {
     if (!roleUser) return;
     if (!requireAdminSession()) throw new Error('Cần đăng nhập bằng tài khoản quản trị viên.');
 
-    const { assignments, revocations } = buildRoleMutationPlan(roleUser.roles || [], nextRoles, roles);
-    if (assignments.length === 0 && revocations.length === 0) {
+    const replacement = buildRoleReplacement(roleUser.roles || [], nextRole, roles);
+    if (!replacement) {
       setRoleUser(null);
       setRoleSyncBlocked(false);
       return;
     }
 
     try {
-      for (const { roleId } of assignments) {
-        await assignManagedUserRole(roleUser.userId, roleId);
-      }
-      for (const { roleId } of revocations) {
-        await revokeManagedUserRole(roleUser.userId, roleId);
-      }
+      await replaceManagedUserRole(roleUser.userId, replacement.roleId);
       notify('success', 'Đã cập nhật vai trò người dùng.');
       setRoleUser(null);
       setRoleSyncBlocked(false);
@@ -440,7 +434,7 @@ export function AdminUsersSection({ onToast }) {
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
       {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} /> : null}
       {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
-      {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRoles} /> : null}
+      {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRole} /> : null}
     </section>
   );
 }

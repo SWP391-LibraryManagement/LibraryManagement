@@ -33,7 +33,7 @@
 ## 2026-07-23 - Cross-role public-book actions
 
 - Clarified that all roles may consume the public catalog while FE01 remains read-only.
-- Added staff-first action precedence for FE11 multi-role accounts so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
+- Connected Homepage actions to FE11's exactly-one-role account model so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
 - Added focused frontend regression coverage for mixed Member/staff roles.
 
 ## 2026-07-20 - Vietnamese UI localization and typography

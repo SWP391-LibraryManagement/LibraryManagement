@@ -131,7 +131,7 @@ Owner: Dung
 
 - [x] **FE11-UIR01 - Send numeric role IDs from the frontend API adapter.**
   - Maps to: FR-FE11-012..013; AC-FE11-013..014; FE11 API §11.
-  - DoD: assignment sends `{ roleId }`, revocation uses `/{roleId}`, and focused RED-GREEN tests exclude role-name mutation requests.
+  - Superseded contract: `PUT /users/{userId}/role` sends one numeric `{ roleId }`; standalone assignment/revocation endpoints are removed.
   - Evidence: RED failed on the legacy `roleName` body/path; GREEN passes 6/6 focused API tests with numeric `roleId` helpers.
 
 - [x] **FE11-UIR02 - Validate and consume the authoritative role catalog.**
@@ -143,8 +143,7 @@ Owner: Dung
 - [x] **FE11-UIR03 - Execute deterministic role diffs and no-op saves.**
   - Maps to: BR-FE11-007..009; FR-FE11-012..014, FR-FE11-027; AC-FE11-013..015.
   - Depends on: FE11-UIR02.
-  - DoD: the complete diff is validated before requests, assignments precede revocations, non-editable roles are preserved, and no-op saves send no mutation.
-  - Evidence: RED exposed direct role-name loops with no preflight/no-op branch; GREEN passes 5/5 focused frontend tests with numeric assignments before numeric revocations.
+  - Superseded contract: one radio selection produces at most one atomic replacement request; current-role saves send no mutation.
 
 - [x] **FE11-UIR04 - Reconcile partial failures to server state.**
   - Maps to: BR-FE11-010; FR-FE11-024..027; NFR-FE11-UX-001.
@@ -365,3 +364,16 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
     absent from the UI; FE03 and FE11 share canonical persistence and concurrency.
   - Validation: focused frontend/backend contracts passed on 2026-07-25; full
     regression and browser/human acceptance are recorded separately.
+
+- [x] **FE11-RBP01 - Connect the single account role across feature audiences.**
+  - Maps to: BR-FE11-028; FR-FE07-032, FR-FE08-030.
+  - Treat the account's sole `ADMIN`, `LIBRARIAN`, or `MEMBER` mapping as the effective cross-feature audience.
+  - Connect Homepage actions, App navigation, direct member-route guards, and backend FE07/FE08 authorization to that same role.
+  - Preserve FE07/FE08 staff operational routes and allow member self-service only for `MEMBER`.
+
+- [x] **FE11-SR01 - Enforce exactly one role per account.**
+  - Maps to: BR-FE11-007..009/028; FR-FE11-012..014/024..027; AC-FE11-013..015; ADR-002.
+  - Replace assign/revoke with one locked and audited role-replacement transaction; protect the last active Admin.
+  - Add `UX_UserRoles_UserId` to the baseline and an idempotent fail-safe migration for existing environments.
+  - Replace Admin checkboxes with one radio selection and keep the compatibility `roles` array at exactly one item.
+  - Validation: focused backend/frontend tests, full regression, lint/build, traceability, schema static checks, and human review.

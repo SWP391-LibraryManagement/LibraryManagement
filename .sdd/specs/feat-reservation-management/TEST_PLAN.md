@@ -51,6 +51,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 - Two members queue for one copy -> the earliest eligible member is held first -> an ineligible entry is skipped without state loss -> an expired hold promotes the next eligible member.
 - Staff lists reservations with omitted pagination -> the first 20 records appear in stable order; invalid bounds return validation errors.
 - Member searches the candidate catalog -> the server returns safe rows, including books already reserved by that member; the member creates a real reservation by numeric `copyId`, duplicate actions become disabled, and the canonical reservation list reloads.
+- Mixed `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` actors are redirected away from member reservation screens and receive `403 ROLE_REQUIRED` from candidate/create/own-list/cancel endpoints; staff queue operations remain available.
 
 ## 5. Current Evidence
 
@@ -84,7 +85,7 @@ proves FE08-T028 through FE08-T039; human integration remains a separate gate.
 | NFR-FE08-LOG-001 | Audit coverage for create, cancel, process, notify failure, fulfill, and expire. | FE08-T029/T031 lifecycle audit matrix and regression evidence pass. |
 | NFR-FE08-UX-001 | Canonical member labels for every reservation state. | FE08-T032 frontend evidence passes. |
 | NFR-FE08-UX-002 | Librarian queue displays stable order and actionable state clearly. | FE08-T032 deterministic pagination/order evidence passes. |
-| NFR-FE08-SEC-004 | Candidate reads are member-only and expose no staff-only copy or owner metadata. | FE08-T035/T036 contract and browser redaction evidence pass. |
+| NFR-FE08-SEC-004 | Candidate reads require the single `MEMBER` role, reject Admin/Librarian accounts, and expose no staff-only copy or owner metadata. | FE08-T035/T036 plus FE08-T041 route/frontend role coverage pass. |
 | NFR-FE08-PERF-003 | Candidate reads use bounded server pagination and deterministic title/book/copy ordering. | FE08-T035/T036/T037 SQL, backend, and frontend evidence pass. |
 
 ## 8. Required Commands / Evidence Before Merge

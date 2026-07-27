@@ -192,7 +192,7 @@ Tác nhân gồm Quản trị viên, Thủ thư, Thành viên, Khách và Audit 
 
 Luồng chính gồm view user list, view user information, create/update/deactivate user account, create/update/deactivate librarian account và manage roles.
 
-Quy tắc quan trọng: chỉ authenticated Admin truy cập user management; user không bị xóa vĩnh viễn mà set `INACTIVE`; email phải unique; account do Admin tạo bắt đầu `ACTIVE` nhưng login bằng password chỉ khả dụng sau setup qua FE02; deactivate user phải vô hiệu hóa session/token active; mỗi user cần ít nhất một role; hỗ trợ multiple roles; không được xóa toàn bộ Admin role nếu chỉ còn một Admin; Admin không nhập/xem/tạo password trực tiếp; mọi role/user change phải auditable.
+Quy tắc quan trọng: chỉ authenticated Admin truy cập user management; user không bị xóa vĩnh viễn mà set `INACTIVE`; email phải unique; account do Admin tạo bắt đầu `INACTIVE` và login bằng password chỉ khả dụng sau setup qua FE02; deactivate user phải vô hiệu hóa session/token active; mỗi account có đúng một role; đổi role là thao tác thay thế nguyên tử; không được thay role của Admin đang hoạt động cuối cùng; Admin không nhập/xem/tạo password trực tiếp; mọi role/user change phải auditable.
 
 Ngoài phạm vi: user tự sửa profile, user tự reset password, admin reset password nếu chưa bổ sung, unlock sau lockout, reactivate account nếu chưa duyệt, xóa vĩnh viễn, bulk CSV import, báo cáo theo role, self-registration, LDAP/Active Directory và SSO.
 

@@ -88,22 +88,9 @@ function createUserManagementController(userManagementService = defaultUserManag
       }
     },
 
-    assignRole: async (req, res, next) => {
+    replaceRole: async (req, res, next) => {
       try {
-        const result = await userManagementService.assignRole(req.params.userId, req.body, requestContext(req));
-        return res.status(200).json(result);
-      } catch (error) {
-        return next(error);
-      }
-    },
-
-    revokeRole: async (req, res, next) => {
-      try {
-        const result = await userManagementService.revokeRole(
-          req.params.userId,
-          req.params.roleId,
-          requestContext(req)
-        );
+        const result = await userManagementService.replaceRole(req.params.userId, req.body, requestContext(req));
         return res.status(200).json(result);
       } catch (error) {
         return next(error);

@@ -1,12 +1,12 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.4
+# Version: 0.7.5
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE07
 
@@ -62,7 +62,7 @@ The system shall:
 
 | Actor     | Description                  | Permission / Responsibility |
 | --------- | ---------------------------- | --------------------------- |
-| Member    | Registered library user      | Create borrow request, view own borrowing history, request renewal if allowed. |
+| Member    | Registered non-staff library user | Create borrow request, view own borrowing history, request renewal if allowed. An account that also has `LIBRARIAN` or `ADMIN` acts as staff and cannot use these member-self-service actions. |
 | Librarian | Library staff                | View member borrowing information, approve/reject borrow requests, process borrow handover, process returns. |
 | Admin     | System administrator         | Has librarian permissions and can view all borrowing records. |
 | Guest     | Unauthenticated visitor      | No borrowing permissions. |
@@ -75,7 +75,7 @@ The system shall:
 The feature can only start when:
 
 - PRE-FE07-001: The user account exists and has an active status.
-- PRE-FE07-002: The actor has the `MEMBER` role and `Users.Status = ACTIVE`; FE04 membership approval is not required.
+- PRE-FE07-002: The actor has the `MEMBER` role, has neither `LIBRARIAN` nor `ADMIN`, and `Users.Status = ACTIVE`; FE04 membership approval is not required.
 - PRE-FE07-003: The requested book copy exists in `BookCopies`.
 - PRE-FE07-004: Protected actions are performed by an authenticated actor with the correct role.
 - PRE-FE07-005: Loan policy values are approved: maximum active borrowed copies is 5; daily limit is 5 copies for canonical `Members.Status = APPROVED` and 3 copies otherwise; default loan duration is 14 calendar days; renewal limit is 1 renewal per borrowed copy.
@@ -212,6 +212,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE07-028: Borrowing-history endpoints accept only `status?`, `fromDate?`, `toDate?`, `page?`, and `limit?`; defaults are `page=1`, `limit=20`, bounds are `page>=1`, `limit=1..100`, the date range is inclusive, and rows use stable `BorrowDate DESC (nulls last), BorrowDetailId DESC` ordering.
 - BR-FE07-029: Borrowing-history detail rows must expose the owning request status separately from the persisted detail status. When the owning request is `REJECTED`, the member-visible status is rejected while the persisted detail remains `REQUESTED`.
 - BR-FE07-030: Before an authorized Librarian/Admin approves or rejects a pending request, the decision dialog must identify the exact request, member, request date, and every requested physical copy using the canonical read response. Rejection input must remain editable continuously, require a trimmed reason of 1..500 characters, and must not lose focus because the dialog rerenders.
+- BR-FE07-031: Member-self-service borrow candidate, create-request, and own-history endpoints require the account's single role to be `MEMBER`; `LIBRARIAN` and `ADMIN` accounts cannot place or borrow books for themselves.
 
 ---
 
@@ -234,6 +235,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-029: When a member views a borrow detail whose owning request is `REJECTED`, the system shall return `requestStatus = REJECTED` and the frontend shall display `Đã từ chối` instead of `Chờ xử lý` without changing `BorrowDetails.Status`.
 - FR-FE07-030: When Librarian/Admin opens an approval or rejection decision, the frontend shall show request/member/contact data and all requested copy titles, authors, identifiers, barcodes, locations, and current statuses already present in the canonical staff response without repeating those statuses in a generic availability banner; typing a rejection reason shall preserve focus and the complete controlled value across rerenders.
 - FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
+- FR-FE07-032: IF an authenticated account has `LIBRARIAN` or `ADMIN`, including together with `MEMBER`, the system shall reject member-self-service candidate, create-request, and own-history access with `403 ROLE_REQUIRED`; staff operational FE07 routes remain available according to their existing role guards.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -285,6 +287,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-023: Given a member's pending borrow request, when staff rejects it and the member reloads borrowing history, then every detail belonging to that request displays `Đã từ chối`; the request remains `REJECTED` and each persisted detail remains `REQUESTED`.
 - AC-FE07-024: Given a pending request with one or more copies, when Librarian/Admin opens approve or reject, then the dialog identifies the request/member and lists every copy with circulation-relevant fields without a redundant generic availability banner; when the actor types a multi-character rejection reason, the textarea retains focus/value and the canonical reject command receives the trimmed reason.
 - AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
+- AC-FE07-026: Given `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member borrow candidates, request creation, or own history, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without creating or exposing member-self-service state.
 
 ---
 
