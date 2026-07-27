@@ -52,7 +52,7 @@ FE01 giúp người chưa đăng nhập tìm hiểu thư viện trước khi đ�
 
 Tác nhân chính là Khách và Thành viên. Khách được xem dữ liệu công khai; Thủ thư và Quản trị viên không có quyền ghi đặc biệt trong FE01 vì quản lý sách thuộc FE05, quản lý bản sao sách thuộc FE06. Luồng chính gồm xem trang chủ, tìm kiếm sách, xem thông tin tóm tắt và xem chi tiết sách.
 
-Quy tắc quan trọng: FE01 là read-only; chỉ hiển thị sách public-visible; input tìm kiếm phải được validate; kết quả cần hỗ trợ pagination; phản hồi công khai không được lộ dữ liệu người dùng, bản ghi mượn, hàng đợi đặt chỗ, phí phạt, audit log hay trường nội bộ. Nếu hiển thị availability, dữ liệu phải lấy từ FE06.
+Quy tắc quan trọng: FE01 là read-only; Guest/Member chỉ tìm theo tên sách hoặc tác giả và phản hồi danh sách/chi tiết công khai không chứa ISBN; chỉ hiển thị sách public-visible; input tìm kiếm phải được validate; kết quả cần hỗ trợ pagination; phản hồi công khai không được lộ dữ liệu người dùng, bản ghi mượn, hàng đợi đặt chỗ, phí phạt, audit log hay trường nội bộ. Nếu hiển thị availability, dữ liệu phải lấy từ FE06. ISBN thuộc FE05 và chỉ Librarian/Admin đã được FE11 xác thực role mới được xem/tìm trong giao diện quản lý.
 
 Ngoài phạm vi: tạo/sửa/xóa sách, quản lý bản sao sách, tạo yêu cầu mượn, đặt chỗ, xác thực, duyệt thành viên, phí phạt và dashboard quản trị.
 
@@ -104,11 +104,11 @@ Spec gốc (nguồn sự thật): `.sdd/specs/feat-membership-management/SPEC.md
 
 FE05 quản lý metadata sách: tên sách, ISBN, danh mục và thông tin mô tả phục vụ tra cứu, kho sách, mượn sách, đặt chỗ và báo cáo. Nếu dữ liệu sách sai, các nghiệp vụ như tìm kiếm, inventory, borrowing, reservation và reporting đều có thể bị ảnh hưởng.
 
-Tác nhân gồm Khách, Thành viên, Thủ thư và Quản trị viên. Khách và Thành viên chỉ được tìm kiếm và xem chi tiết sách. Thủ thư và Quản trị viên được xem danh sách quản trị, thêm sách, cập nhật thông tin sách và deactivate sách khi cần. FE05 không quản lý từng bản sao vật lý; phần đó thuộc FE06.
+Tác nhân gồm Khách, Thành viên, Thủ thư và Quản trị viên. Khách và Thành viên chỉ tìm theo tên sách/tác giả và xem chi tiết công khai không có ISBN. Thủ thư và Quản trị viên được xem/tìm ISBN trong danh sách quản trị, thêm sách, cập nhật thông tin sách và deactivate sách khi cần. FE05 không quản lý từng bản sao vật lý; phần đó thuộc FE06.
 
 Luồng chính gồm search books, view book details, view book list, add book, update book information và deactivate book. Các hành động ghi dữ liệu cần được kiểm soát bằng vai trò và ghi audit.
 
-Quy tắc quan trọng: Guest/Member chỉ được đọc; chỉ Librarian/Admin được thêm, sửa hoặc deactivate sách; ISBN phải unique; title là bắt buộc; Phase 1 mỗi sách thuộc đúng một category; sách bị deactivate không được mượn và không nên xuất hiện trong public search; mọi create/update/deactivate phải auditable.
+Quy tắc quan trọng: Guest/Member chỉ được đọc dữ liệu công khai không có ISBN; chỉ Librarian/Admin được xem/tìm ISBN và thêm, sửa hoặc deactivate sách; ISBN phải unique; title là bắt buộc; Phase 1 mỗi sách thuộc đúng một category; sách bị deactivate không được mượn và không nên xuất hiện trong public search; mọi create/update/deactivate phải auditable.
 
 Ngoài phạm vi: quản lý barcode/vị trí/bản sao vật lý, mượn/trả/gia hạn, hàng đợi đặt chỗ, tính phí hoặc thanh toán, thiết kế trang chủ công khai, quản lý user/role/membership, bulk import/export nếu chưa được duyệt.
 

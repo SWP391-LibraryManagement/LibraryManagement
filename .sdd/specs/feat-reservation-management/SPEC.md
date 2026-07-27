@@ -1,6 +1,6 @@
 # SPEC.md - FE08 Reservation Management
 
-# Version: 0.5.4
+# Version: 0.5.8
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -27,6 +27,13 @@
 > Revision v0.5.3 preserves safe post-commit notification-audit warnings when
 > expiration promotes one or more reservations without changing promoted
 > reservation DTOs.
+>
+> Revision v0.5.7 preserves the v0.5.6 selected-book and current/history
+> presentation contracts while clarifying that invalid legacy Member/staff
+> role arrays are compatibility data, not supported persisted accounts.
+>
+> Revision v0.5.8 integrates the upstream notified pickup window and exact
+> FE07 held-copy handoff while preserving the single-role compatibility rule.
 
 ---
 
@@ -65,7 +72,7 @@ The system shall:
 
 | Actor | Description | Permission / Responsibility |
 | ----- | ----------- | --------------------------- |
-| Member | Registered non-staff library user | View safe reservation candidates, create reservation, cancel own reservation, view own reservation status. An account that also has `LIBRARIAN` or `ADMIN` acts as staff and cannot use these member-self-service actions. |
+| Member | Registered non-staff library user with the single `MEMBER` role | View safe reservation candidates, create reservation, cancel own reservation, and view own reservation status. Invalid legacy compatibility arrays that also contain `LIBRARIAN` or `ADMIN` are rejected from member self-service. |
 | Librarian | Library staff | View reservation list, process reservation queue, release/expire reservations when allowed. |
 | Admin | System administrator | Has librarian permissions and can view reservation reports/audit. |
 | Guest | Unauthenticated visitor | No reservation permissions. |
@@ -223,6 +230,9 @@ The feature can only start when:
 - FR-FE08-028: WHEN a `NOTIFIED` reservation becomes `FULFILLED`, `EXPIRED`, or `CANCELLED`, the system shall preserve its original `NotifiedAt` and `ExpiresAt`; cancellation shall additionally set `CancelledAt`, while non-cancelled states keep `CancelledAt = null`.
 - FR-FE08-029: WHEN an authenticated member requests `GET /api/reservations/candidates`, the system shall return a paginated, server-owned catalog of active-book physical copies whose status is `BORROWED` or `RESERVED`, expose only the approved safe projection, and leave `POST /api/reservations { copyId }` authoritative for all mutation-time checks.
 - FR-FE08-030: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject reservation candidate, create, own-list, and owner-cancel access with `403 ROLE_REQUIRED`; staff queue/list/process routes remain available according to their existing role guards. This is not a supported multi-role account model.
+- FR-FE08-031: WHEN a single-role `MEMBER` enters `/reservations/mine?bookId={bookId}` from FE01, the frontend shall resolve that public book, initialize the protected FE08 candidate search with its title, and present matching unavailable physical-copy candidates without exposing copy identifiers through FE01.
+- FR-FE08-032: WHEN a Member views their reservations after create, cancel, FE07 fulfillment, or staff queue processing, the frontend shall render canonical `ACTIVE` and `NOTIFIED` records separately from terminal `FULFILLED`, `CANCELLED`, and `EXPIRED` history, label the raw lifecycle state visibly, and keep terminal history without presenting it as the current reservation.
+- FR-FE08-033: WHEN Librarian/Admin queue processing changes a Member reservation to `NOTIFIED`, the Member frontend shall show the canonical pickup window from `NotifiedAt` through `ExpiresAt` and provide an FE07 handoff containing that reservation's `bookId` and `copyId`; FE07 remains responsible for request creation and Librarian/Admin approval.
 
 ---
 
@@ -245,6 +255,9 @@ The feature can only start when:
 - AC-FE08-015: Given a member reads reservation candidates, each row contains only `copyId`, `bookId`, `title`, `authorName`, `copyStatus`, `activeReservationCount`, and the member-scoped boolean `hasActiveReservation`; barcode, location, owner, email, timestamps, and version are absent.
 - AC-FE08-016: Given the member reservation page loads or searches candidates, it uses `GET /api/reservations/candidates` and does not import, render, or fall back to `DEMO_RESERVABLE`.
 - AC-FE08-017: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member reservation candidates, create, own-list, or cancel, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without mutating reservation state; persisted accounts still have exactly one role.
+- AC-FE08-018: Given a Member selects `Đặt chỗ sách này` on HomePage, when the FE08 page opens with a valid `bookId`, then its candidate catalog is filtered to the selected public book title and the Member chooses an authoritative candidate `copyId` before creating the reservation.
+- AC-FE08-019: Given the Member has an old cancelled reservation and a new `ACTIVE` or `NOTIFIED` reservation for the same book/copy, when the page reloads canonical state, then the open reservation appears under active reservations with `Đang chờ` or `Sẵn sàng nhận`, the cancelled record remains only in history, and the matching candidate action reads `Đang đặt chỗ` or `Đến lượt bạn`.
+- AC-FE08-020: Given a reservation is `NOTIFIED`, when the Member views it, then the page states the start and deadline dates for pickup and offers `Tạo yêu cầu mượn` for the exact held `bookId`/`copyId`; Guest and staff accounts do not receive this Member action.
 
 ---
 
@@ -386,7 +399,7 @@ stateDiagram-v2
 - NFR-FE08-SEC-002: Members must not view or cancel other members' reservations.
 - NFR-FE08-SEC-003: Librarian/admin permissions must be checked on the server.
 - NFR-FE08-SEC-004: Candidate reads must require the `MEMBER` role and must not expose barcode, location, reservation owner, member email, reservation timestamps, rowversion, or other staff-only metadata.
-- NFR-FE08-UX-003: The member candidate list shall keep every eligible `BORROWED` or `RESERVED` copy visible, mark a member-owned `ACTIVE` or `NOTIFIED` reservation as `Đã đặt chỗ`, disable duplicate creation for that copy, and not show routine synchronization-success banners.
+- NFR-FE08-UX-003: The member candidate list shall keep every eligible `BORROWED` or `RESERVED` copy visible, mark a member-owned `ACTIVE` reservation as `Đang đặt chỗ` and a member-owned `NOTIFIED` reservation as `Đến lượt bạn`, disable duplicate creation for that copy, and not show routine synchronization-success banners.
 
 ### 12.2 Transaction Integrity
 
@@ -506,6 +519,10 @@ This feature does not include:
 | FR-FE08-027 | UC38 | FE08-T028 pagination validation test | Automated pass; human review pending |
 | FR-FE08-028 | UC37, UC39, UC40 | FE08-T030 terminal timestamp-retention tests | Automated pass; human review pending |
 | FR-FE08-029 | UC36 | FE08-T035 route/service/redaction tests; FE08-T036 SQL projection tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
+| FR-FE08-030 | UC36-UC38 | FE08-T041 backend/frontend single-role access tests | Automated pass; human review pending |
+| FR-FE08-031 | UC36 | FE08-T042 FE01 selected-book handoff frontend test | Automated pass; human review pending |
+| FR-FE08-032 | UC36-UC38 | FE08-T043 member current/history lifecycle rendering test | Automated pass; human review pending |
+| FR-FE08-033 | UC36, UC38 | FE08-T044 pickup-window and exact FE07 handoff frontend test | Automated pass; human review pending |
 | AC-FE08-001 | UC36 | FT37 eligible unavailable-copy reservation test | Ready for review |
 | AC-FE08-002 | UC36 | FT37 duplicate open reservation rejection, including `NOTIFIED` | Automated pass; human review pending |
 | AC-FE08-003 | UC36 | FT37 available-copy reservation rejection test | Ready for review |
@@ -522,6 +539,10 @@ This feature does not include:
 | AC-FE08-014 | UC37, UC39, UC40 | FE08-T030 fulfilled/expired/cancelled timestamp-retention cases | Automated pass; human review pending |
 | AC-FE08-015 | UC36 | FE08-T035 safe-key route tests; FE08-T036 SQL redaction tests | Automated pass; design approved; human walkthrough/H3 pending |
 | AC-FE08-016 | UC36 | FE08-T037 frontend source/API tests; FE08-T038 browser acceptance | Automated pass; design approved; human walkthrough/H3 pending |
+| AC-FE08-017 | UC36-UC38 | FE08-T041 invalid legacy-array denial tests | Automated pass; human review pending |
+| AC-FE08-018 | UC36 | FE08-T042 selected-book candidate initialization test | Automated pass; human review pending |
+| AC-FE08-019 | UC36-UC38 | FE08-T043 current-versus-history and status-label frontend test | Automated pass; human review pending |
+| AC-FE08-020 | UC36, UC38 | FE08-T044 notified pickup-window and exact-copy handoff test | Automated pass; human review pending |
 | NFR-FE08-SEC-004 | UC36 | FE08-T035 role/redaction/no-mutation tests; FE08-T036 SQL safe projection | Automated pass; design approved; human walkthrough/H3 pending |
 | NFR-FE08-PERF-003 | UC36 | FE08-T035 validation/pagination/order tests; FE08-T036 SQL search/order/page tests | Automated pass; design approved; human walkthrough/H3 pending |
 

@@ -1,8 +1,8 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.3.7
+Version: 0.3.8
 Status: COMPLETE - BASELINE EVIDENCE RECORDED; LOCAL HOMEPAGE POLISH VALIDATED
-Last Updated: 2026-07-26
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
@@ -17,21 +17,25 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 ## 2. Unit Test Targets
 
 - Search q and positive-ID filter validation.
+- Public q matches title/author only; searching by ISBN does not return a match.
+- Guest/Member list, detail, and HomePage never expose ISBN.
 - Public visibility rule: users see only active/public catalog data.
 - Empty search/default pagination and no-result handling.
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
 - Null optional metadata and `AVAILABLE`/`UNAVAILABLE` projection.
 - FE11 Admin/Librarian accounts use staff book actions and never enter Member-only borrow/reservation routes.
-- Guest/Member HomePage presentations omit availability badges, unavailable notices, and revealing action labels.
+- Guest/Member HomePage presentations omit availability badges; Guest sees a generic login continuation, while Member sees explicit FE07 borrow or FE08 reservation actions.
 - Librarian/Admin HomePage presentations retain the approved high-level status.
 - Navigation group labels and destinations match Guest, Member, Librarian, and Admin audiences.
 - Every Homepage destination is registered by `App.jsx`; protected routes retain their owning guards.
 - Footer contacts, policy dialogs, responsive sections, and reduced-motion behavior remain usable.
+- The four membership benefit cards use an equal-width, row-aligned 2x2 desktop grid and a non-staggered single column on mobile.
 
 ## 3. API / Integration Test Targets
 
 - `GET /api/books` with canonical q/ID filters and pagination.
 - `GET /api/books/{bookId}` with public-safe active detail.
+- Guest/Member responses omit ISBN while an authorized Librarian/Admin detail retains the FE05 ISBN field.
 - Invalid book ID, invalid filters, invalid page/limit, and overlong q.
 - Missing book and inactive/deactivated book hidden from public response.
 - Null optional metadata preserved in list/detail responses.
@@ -42,9 +46,10 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 
 - Guest opens the home/catalog view.
 - Guest searches with empty, valid, invalid, and no-result criteria.
-- Guest opens an active book detail and sees public-safe metadata without an availability label.
+- Guest opens an active book detail and sees public-safe metadata without ISBN or an availability label.
 - Guest opens a missing or inactive detail and sees a safe not-found state.
-- Guest and Member see safe null/no-cover fallbacks without availability disclosure.
+- Guest and Member see safe null/no-cover fallbacks without an availability badge; Member actions still identify the correct owning workflow.
+- Member selects an available book and reaches `/borrowing/new?bookId=...`; an unavailable book reaches `/reservations/mine?bookId=...`.
 - Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.
 - Guest opens `/home`; authenticated actors open the public library at `/homepage`.
 - No actor sees the removed `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` header groups on desktop or mobile; branding, account actions, and role continuation controls remain usable.

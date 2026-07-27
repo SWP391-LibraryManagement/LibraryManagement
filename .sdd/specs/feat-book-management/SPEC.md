@@ -1,12 +1,12 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.2
+# Version: 0.6.3
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE05
 
@@ -195,7 +195,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE05-014: `Books.Status` has exactly two states, `ACTIVE` and `INACTIVE`; valid transitions are create -> `ACTIVE`, `ACTIVE -> INACTIVE`, and `INACTIVE -> ACTIVE`. Physical deletion is forbidden in Phase 1.
 - BR-FE05-015: Deactivation/reactivation changes only `Books.Status`; FE05 never rewrites related copy, borrowing, reservation, or history rows.
 - BR-FE05-016: Every update/deactivate/reactivate of an existing book requires the caller's last-seen SQL `rowversion` through `If-Match`; stale/missing versions return `409 STALE_BOOK_STATE` with no mutation.
-- BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100. Public `/api/books` accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit` and always orders by `Title ASC, BookId ASC`; staff `/api/admin/books` additionally accepts sort fields `title`, `publishYear`, or `createdAt` and order `asc` or `desc`.
+- BR-FE05-017: Book queries use deterministic controls: keyword length 1..200 when provided; `page` defaults to 1; `limit` defaults to 20 and must be 1..100. Public `/api/books` accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; public `q` matches only title/author and results exclude ISBN. Staff `/api/admin/books` may match title, ISBN, author, category, or publisher and additionally accepts sort fields `title`, `publishYear`, or `createdAt` and order `asc` or `desc`.
 - BR-FE05-018: Deactivation/reactivation requires a trimmed non-empty reason of at most 500 characters, stored in audit metadata.
 - BR-FE05-019: Librarian/Admin cover selection uses one optional managed image file named `cover`. The backend accepts only JPG/JPEG, PNG, or WebP whose extension, declared MIME type, and byte signature agree, with a maximum size of 2 MB; it generates the filename and stores the public path under `/uploads/book-covers/`.
 - BR-FE05-020: A failed create/update after a new cover file is stored must remove that uncommitted file. A successful replacement preserves the committed new path and removes the previous file only when the previous path is FE05-managed; external and unmanaged paths are never deleted.
@@ -206,10 +206,10 @@ Use these stable IDs for tasks and tests.
 
 ## 7. Functional Requirements
 
-- FR-FE05-001: The system shall allow guests to search books.
-- FR-FE05-002: The system shall allow members to search books.
-- FR-FE05-003: The system shall allow users to view book details.
-- FR-FE05-004: The system shall allow librarians/admins to view book lists.
+- FR-FE05-001: The system shall allow Guests to search active books by title or author without exposing or matching ISBN.
+- FR-FE05-002: The system shall allow Members to search active books by title or author without exposing or matching ISBN.
+- FR-FE05-003: The system shall return public book details without ISBN to Guest/Member and may return ISBN only to a server-authorized Librarian/Admin management projection.
+- FR-FE05-004: The system shall allow Librarian/Admin users to view management book lists and search/view ISBN.
 - FR-FE05-005: The system shall validate ISBN uniqueness before creating a book.
 - FR-FE05-006: The system shall create a new book when provided valid data.
 - FR-FE05-007: The system shall allow updating existing books.
@@ -244,10 +244,10 @@ Use these stable IDs for tasks and tests.
 
 ## 8. Acceptance Criteria
 
-- AC-FE05-001: Given public-visible books exist, when a guest searches books, then matching active books are returned.
-- AC-FE05-002: Given public-visible books exist, when a member searches books, then matching active books are returned.
-- AC-FE05-003: Given a valid active book, when a guest or member opens book details, then book metadata and safe availability information are displayed.
-- AC-FE05-004: Given a librarian/admin opens the book list, when filters are applied, then the system returns a paginated list of books.
+- AC-FE05-001: Given public-visible books exist, when a Guest searches by title/author, then matching active books are returned without ISBN; an ISBN-only keyword does not match.
+- AC-FE05-002: Given public-visible books exist, when a Member searches by title/author, then matching active books are returned without ISBN; an ISBN-only keyword does not match.
+- AC-FE05-003: Given a valid active book, when a Guest or Member opens book details, then public metadata is displayed without ISBN.
+- AC-FE05-004: Given a Librarian/Admin opens the book list, when filters or an ISBN keyword are applied, then the system returns a paginated management list that includes ISBN.
 - AC-FE05-005: Given valid required book data and a unique ISBN when provided, when a librarian/admin adds a book, then the system creates the book record.
 - AC-FE05-006: Given a duplicate ISBN, when a librarian/admin adds or updates a book, then the system rejects the request.
 - AC-FE05-007: Given an existing book and valid updates, when a librarian/admin updates book information, then the system saves the changes.
@@ -314,7 +314,7 @@ Use these stable IDs for tasks and tests.
 | ----- | ---- | -------- | ------------------ |
 | bookId | integer | Yes for updates | Must exist in `Books`. |
 | title | string | Yes | Required, trimmed, 1..255 characters. |
-| isbn | string | No | Trimmed, max 20 characters, unique when provided. |
+| isbn | string | No | FE05 staff-management field only; trimmed, max 20 characters, unique when provided. Excluded from Guest/Member public projection and public q matching. |
 | categoryId | integer | Yes | Must reference `Categories`. |
 | authorId | integer | Yes | Must reference `Authors` in current SQL. |
 | publisherId | integer | No | Must reference `Publishers` when provided. |
@@ -347,9 +347,9 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; public results are active/public-safe and ordered by `Title ASC, BookId ASC`; BR-FE05-017 applies. |
-| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Public callers receive public-safe `ACTIVE` detail or `404`; staff may receive management fields for both `ACTIVE` and `INACTIVE` books. |
-| GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; BR-FE05-017 applies. |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Public `q` matches title/author only and results exclude ISBN. Authentication does not widen this list projection; BR-FE05-017 applies. |
+| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Book detail | Guest/Member receive public-safe `ACTIVE` detail without ISBN or `404`; authenticated Librarian/Admin may receive management fields including ISBN for both `ACTIVE` and `INACTIVE` books. |
+| GET | `/api/admin/books` | Librarian/Admin | Query: `q?, status?, categoryId?, page?, limit?, sort?, order?` | Paginated management list | Protected endpoint; `q` may match ISBN and the response includes ISBN; BR-FE05-017 applies. |
 | GET | `/api/books/metadata` | Librarian/Admin | - | `{ categories, authors, publishers }` active reference choices | Protected read used by the canonical FE05 forms. It does not grant Librarians FE11 Admin-only reference-data mutation permission. |
 | POST | `/api/books` | Librarian/Admin | JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Created `ACTIVE` book + version | Validates required fields, unique ISBN, and managed cover policy. |
 | PUT | `/api/books/{bookId}` | Librarian/Admin | Header `If-Match`; JSON compatibility body, or `multipart/form-data` with JSON string field `metadata` and optional image field `cover` | Updated book + new version | Metadata/cover only; never changes book status or copies; failed replacement is compensated. |
@@ -370,7 +370,7 @@ Use these stable IDs for tasks and tests.
 ### 12.1 Security
 
 - NFR-FE05-SEC-001: Book management endpoints must require authentication and Librarian/Admin role.
-- NFR-FE05-SEC-002: Public book endpoints must return only public-safe fields.
+- NFR-FE05-SEC-002: Guest/Member public book projections must exclude ISBN and all other staff-only fields; Librarian/Admin ISBN access requires server-side role authorization.
 - NFR-FE05-SEC-003: `title`, `ISBN`, category/author/publisher IDs, publish year, pages, rating, description, cover URL, and query inputs must be validated server-side.
 - NFR-FE05-SEC-004: SQL injection must be prevented using parameterized queries or approved ORM patterns.
 - NFR-FE05-SEC-005: Description and cover URL must be sanitized or escaped before display.

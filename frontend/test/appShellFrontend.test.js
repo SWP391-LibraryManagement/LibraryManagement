@@ -15,7 +15,7 @@ test('navigation visibility follows stored roles', () => {
   assert.equal(getVisibleNavigation(['ADMIN'])[0].label, 'Thư viện');
   assert.deepEqual(
     getVisibleNavigation(['MEMBER']).map((item) => item.key),
-    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations', 'my-fines', 'profile'],
+    ['library-home', 'home', 'membership', 'borrow-request', 'borrowing-history', 'my-reservations', 'my-fines'],
   );
   assert.deepEqual(
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
@@ -26,6 +26,7 @@ test('navigation visibility follows stored roles', () => {
     getVisibleNavigation(['LIBRARIAN']).map((item) => item.key),
   );
   assert.ok(getVisibleNavigation(['ADMIN']).some((item) => item.key === 'profile'));
+  assert.ok(!getVisibleNavigation(['MEMBER']).some((item) => item.key === 'profile'));
 });
 
 test('active navigation is derived from the current URL', () => {
@@ -76,12 +77,16 @@ test('app layout composes the shared profile header', async () => {
 });
 
 test('shared profile menu remains compatible with the header contract', async () => {
-  const source = await readFile(new URL('../src/component/layout/UserMenuPopup.jsx', import.meta.url), 'utf8');
+  const [source, header] = await Promise.all([
+    readFile(new URL('../src/component/layout/UserMenuPopup.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/component/layout/Header.jsx', import.meta.url), 'utf8'),
+  ]);
   assert.match(source, /export default function UserMenuPopup/);
   assert.match(source, /onAccountInfo/);
   assert.match(source, /onLogout/);
   assert.match(source, /showMemberActions && <MenuItem/);
   assert.doesNotMatch(source, /function BookCopies/);
+  assert.match(header, /onAccountInfo=\{\(\) => navigate\('\/profile'\)\}/);
 });
 
 test('authenticated sidebar renders role-aware library Home above the dashboard overview', async () => {

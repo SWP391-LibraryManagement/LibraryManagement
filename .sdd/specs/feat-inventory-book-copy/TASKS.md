@@ -100,9 +100,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE06-011 through FR-FE06-014 | FE06-T003, FE06-T005, FE06-T006 |
 | FR-FE06-015 through FR-FE06-020 | FE06-T002, FE06-T006 |
 | FR-FE06-021 through FR-FE06-024 | FE06-T003, FE06-T005, FE06-T006 |
+| FR-FE06-025 | FE06-T009 |
 | AC-FE06-001 through AC-FE06-005 | FE06-T004, FE06-T005 |
 | AC-FE06-006 through AC-FE06-010 | FE06-T003, FE06-T006 |
 | AC-FE06-011 through AC-FE06-014 | FE06-T003, FE06-T005, FE06-T006, FE06-T007 |
+| AC-FE06-015 | FE06-T009 |
 
 ## Completion Gate
 
@@ -120,3 +122,15 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 - [x] Sort by copy ID ascending and connect apply/reset/reload/pagination to the canonical filtered list.
 - [x] Join publisher metadata consistently in inventory rows, pagination totals, and status counts so publisher search cannot fail either aggregate query.
 - [x] Resolve canonical `BookCopies.Version` and legacy `BookCopies.RowVersion` safely for inventory reads and mutations; return an actionable 503 only when neither exists.
+
+## Phase 3: Convergence
+
+- [x] FE06-T010 - Normalize blank copy locations to `null` across create/update validation, persistence, and focused tests per FR-FE06-021 and EC-FE06-005 (contradicts).
+
+## Phase 4: Convergence
+
+- [x] FE06-T011 - Add FR-FE06-025 and AC-FE06-015 to the SPEC traceability matrix and Requirement-To-Task coverage for the implemented server-filter/error-state contract (partial).
+
+## Phase 5: Convergence
+
+- [x] FE06-T012 - Align the SQL concurrency static assertion with the dynamic `Version`/`RowVersion` projection required by the FE06 corrective batch (contradicts).

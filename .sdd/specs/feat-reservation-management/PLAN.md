@@ -6,9 +6,10 @@ Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. `main` owns single-role
-task `FE08-T041`; the rule-alignment regression boundary is `FE08-T042`. Nhat
-authorized integration on 2026-07-27. No new FE08 product behavior is planned.
+Workflow State: The Phase 2 baseline remains complete. `main` owns
+`FE08-T041` through `FE08-T044`; the rule-alignment regression boundary is
+`FE08-T045`. Nhat authorized integration on 2026-07-27. No additional FE08
+product behavior is introduced by the rule-alignment slice.
 
 ---
 
@@ -46,6 +47,7 @@ Not included:
 | Hold window is 2 calendar days | Queue processing sets `ExpiresAt` to now + 2 days. |
 | Queue processing is manual in Phase 1 | Staff triggers `/api/reservations/process-queue`. |
 | Member candidate source is FE08 protected API | `GET /api/reservations/candidates` returns one redacted row per active-book `BORROWED`/`RESERVED` copy; FE01 and FE06 contracts remain unchanged. |
+| FE01 selected-book handoff remains copy-safe | `/reservations/mine?bookId=...` resolves the public title and initializes FE08 candidate search; the Member still selects an authoritative protected `copyId` before mutation. |
 
 ---
 
@@ -183,11 +185,32 @@ Not included:
 6. Verify repository transaction ordering, service/route behavior, frontend
    confirmation content, and full regression before H2.
 
-## 10. 2026-07-27 Regression-Only Boundary
+## 10. V0.5.6 Member Current State And History Presentation
 
-1. Do not change FE08 production code, schema, API, lifecycle, or queue policy.
-2. Preserve `FE08-T041` from `main` for the single-role member-reservation
-   boundary and use `FE08-T042` for this batch's regression-only verification.
+1. Keep `GET /api/reservations/me` as the canonical source and preserve all lifecycle records.
+2. Present `ACTIVE` and `NOTIFIED` as current reservations; present `FULFILLED`, `CANCELLED`, and `EXPIRED` in a separate history section.
+3. Derive visible Vietnamese labels and supported badge tones from the raw FE08 lifecycle status.
+4. Reflect the matching current reservation in the candidate action as `Đang đặt chỗ` or `Đến lượt bạn`.
+5. Reload canonical member reservations and candidates after create/cancel without changing the Librarian/Admin queue contract or FE07 fulfillment ownership.
+
+## 11. V0.5.7 Notified Pickup Window And FE07 Handoff
+
+1. Use FE08's canonical `NotifiedAt` and `ExpiresAt` values as the Member
+   pickup window; do not add a second manually entered date.
+2. Show a clear ready-for-pickup notice only for `NOTIFIED` reservations.
+3. Pass the exact held `bookId` and `copyId` to FE07 so the Member creates the
+   normal pending borrow request for that physical copy.
+4. Keep Librarian/Admin queue processing in FE08 and borrow approval/atomic
+   reservation fulfillment in FE07.
+5. Keep the Chromium FE08 acceptance assertion on the current
+   `Đang đặt chỗ` label.
+
+## 12. 2026-07-27 Regression-Only Boundary
+
+1. Do not add FE08 production code, schema, API, lifecycle, or queue-policy
+   changes in the rule-alignment slice.
+2. Preserve `FE08-T041` through `FE08-T044` from `main` and use `FE08-T045`
+   for this batch's regression-only verification.
 3. Re-run the focused reservation requester test proving FE08 constructs the
    canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.
 4. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`

@@ -1,9 +1,50 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Reconcile pickup handoff with rule alignment (v0.5.8)
+
+- Preserved upstream FE08 pickup-window and exact FE07 `bookId`/`copyId`
+  handoff behavior.
+- Preserved the one-account/one-role contract and invalid legacy-array
+  defensive boundary.
+- Kept upstream `FE08-T044` authoritative and renumbered this slice's
+  regression-only task to `FE08-T045`.
+
+## 2026-07-27 - Connect notified pickup window to FE07
+
+- Added a Member-facing pickup notice derived from canonical `NotifiedAt` and `ExpiresAt` instead of introducing a separate manual note date.
+- Added `Tạo yêu cầu mượn` for `NOTIFIED` rows and handed the exact held `bookId`/`copyId` to FE07.
+- Preserved FE08 Librarian/Admin queue ownership, FE07 pending-request approval and atomic reservation fulfillment, and FE10's existing reservation-ready request.
+- Updated the Chromium candidate acceptance assertion to the current `Đang đặt chỗ` label.
+
+## 2026-07-27 - Reconcile v0.5.7 single-role wording with latest Member flows
+
+- Preserved the selected-book handoff and current-versus-history presentation
+  introduced by v0.5.6.
+- Clarified that `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays are
+  deliberately corrupted legacy compatibility data, not supported accounts.
+- Renumbered the rule-alignment regression-only task so upstream
+  `FE08-T042` through `FE08-T044` remain authoritative.
+- Aligned NFR-FE08-UX-003 and browser acceptance with the v0.5.6
+  `Đang đặt chỗ`/`Đến lượt bạn` lifecycle labels.
+- Added no FE08 schema, API, lifecycle, queue-policy, or production behavior.
+
+## 2026-07-27 - Clarify current Member reservations versus history
+
+- Separated canonical `ACTIVE`/`NOTIFIED` reservations from terminal reservation history so an older cancelled row cannot be mistaken for a newly created reservation.
+- Rendered every Member lifecycle badge from the raw FE08 status with supported visual tones, including a visible ready-for-pickup state and deadline.
+- Connected each candidate action to the matching current reservation: `Đang đặt chỗ` while waiting and `Đến lượt bạn` while held.
+- Preserved cancelled/fulfilled/expired history, Librarian/Admin queue ordering, and FE07-owned fulfillment transitions.
+
+## 2026-07-27 - FE01 selected-book handoff
+
+- Connected the FE01 Member `Đặt chỗ sách này` deep link to FE08 through `bookId`.
+- FE08 resolves the public book title and initializes its protected candidate search while keeping physical `copyId` selection and reservation mutation inside FE08.
+- Added frontend regression coverage without widening the public DTO or exposing copy metadata on HomePage.
+
 ## 2026-07-27 - Enforce non-staff member self-service
 
 - Added member-only authorization for the exactly-one-role account model; Admin/Librarian cannot use reservation self-service.
-- `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` can no longer open or call member candidate, create, own-list, or cancellation flows.
+- Invalid legacy `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` arrays can no longer open or call member candidate, create, own-list, or cancellation flows.
 - Preserved Librarian/Admin reservation list, queue processing, and hold-expiration operations.
 - Connected frontend direct-route redirects with the same backend authorization boundary.
 - Validation: focused FE07/FE08 backend routes pass 94/94, focused role/navigation frontend passes 61/61, full backend passes 1018/1018, full frontend passes 227/227, and frontend lint/build plus traceability pass.

@@ -64,7 +64,7 @@ Server through `mssql`, React/Vite, and Playwright.
 
 ### Task 1: Historical FE07 Multi-Role Renewal Attempt (Superseded)
 
-**Task ID:** `FE07-T051` (superseded multi-role scenario; reconciled in Task 8)
+**Task ID:** `FE07-T052` (superseded multi-role scenario; reconciled in Task 8)
 
 This section records the original RED/GREEN evidence only. Nhat's later
 single-role confirmation supersedes its actor premise. Do not retain the
@@ -195,7 +195,7 @@ backend/tests/borrowingRoutes.test.js`. Do not stage or commit.
 
 ### Task 2: FE07 Authoritative Return Snapshot
 
-**Task ID:** `FE07-T048`
+**Task ID:** `FE07-T049`
 
 **Files:**
 - Modify: `backend/tests/borrowingRoutes.test.js`
@@ -493,7 +493,7 @@ Inspect the five-file FE07 diff. Do not stage or commit.
 
 ### Task 3: FE07 Shared Renewal Calendar Arithmetic
 
-**Task ID:** `FE07-T049`
+**Task ID:** `FE07-T050`
 
 **Files:**
 - Modify: `backend/tests/borrowingRoutes.test.js`
@@ -878,7 +878,7 @@ three validator arrays. Do not stage or commit.
 
 ### Task 6: FE08 Regression-Only Handoff Verification
 
-**Task ID:** `FE08-T042`
+**Task ID:** `FE08-T045`
 
 **Files:**
 - No FE08 production file changes.
@@ -918,7 +918,7 @@ a product-rule change.
 
 ### Task 7: Cross-Feature Validation And Real Runtime Evidence
 
-**Task IDs:** `FE07-T050`, `FE08-T042`, `FE10-S11`, `FE12-N11`
+**Task IDs:** `FE07-T051`, `FE08-T045`, `FE10-S11`, `FE12-N11`
 
 **Files:**
 - Modify: `tests/e2e/system-golden-path.spec.js`
@@ -1005,12 +1005,12 @@ Check:
 
 ```text
 L2 Spec:
-- BD-007/AT-001 -> FE07-T051 -> single-role reconciliation -> existing role guards
-- BD-002/AT-002 -> FE07-T048 -> route/repository RED/GREEN -> locked evidence
-- BD-003/AT-003 -> FE07-T049 -> two-timezone RED/GREEN -> shared helpers
+- BD-007/AT-001 -> FE07-T052 -> single-role reconciliation -> existing role guards
+- BD-002/AT-002 -> FE07-T049 -> route/repository RED/GREEN -> locked evidence
+- BD-003/AT-003 -> FE07-T050 -> two-timezone RED/GREEN -> shared helpers
 - BD-004/AT-004 -> FE10-S11 -> zero-side-effect security regression
 - BD-005/AT-005 -> FE12-N11 -> all three endpoints and zero repository calls
-- BD-006/AT-006 -> FE08-T042 -> requester plus SIT-003/SIT-004
+- BD-006/AT-006 -> FE08-T045 -> requester plus SIT-003/SIT-004
 
 L3 Constitution/Safety:
 - server-side authorization remains role-order independent
@@ -1058,7 +1058,7 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 ### Task 8: Reconcile The Single-Role Main Contract
 
-**Task ID:** `FE07-T051`
+**Task ID:** `FE07-T052`
 
 **Files:**
 - Modify: `.sdd/specs/feat-borrowing-management/SPEC.md`
@@ -1079,8 +1079,9 @@ approval authorizes staging, committing, pushing, or PR publication.
 
 - [x] **Step 1: Reconcile the written contracts**
 
-Preserve `FE07-T047` and `FE08-T041` from `main`. Record this cleanup as
-`FE07-T051` and renumber the regression-only FE08 task to `FE08-T042`.
+Preserve `FE07-T047`, `FE07-T048`, and `FE08-T041` through `FE08-T044` from
+`main`. Record this cleanup as `FE07-T052` and renumber the regression-only
+FE08 task to `FE08-T045`.
 Classify original BD-001 as superseded and record the approved single-role
 decision as BD-007.
 
@@ -1136,9 +1137,45 @@ approves the H2 addendum.
 
 ---
 
+### Task 9: Reconcile Latest Main Without Expanding FE08
+
+**Task ID:** `FE08-T045`
+
+- [x] **Step 1: Merge `origin/main` through `e20fdc3` without committing**
+
+Keep PR #63 on its existing branch and preserve the open merge for H2 review.
+
+- [x] **Step 2: Resolve the FE08 documentation conflicts**
+
+Preserve upstream `FE07-T047/T048` and `FE08-T041` through `FE08-T044`;
+renumber this slice's tasks to `FE07-T049..T052` and `FE08-T045`, retain the
+one-account/one-role wording, and accept the upstream held-copy handoff without
+adding another FE08 behavior.
+
+- [x] **Step 3: Reconcile the lifecycle-label contract**
+
+The first Chromium run is RED because the branch E2E expects `Đã đặt chỗ`
+while upstream v0.5.6 renders `Đang đặt chỗ` for `ACTIVE`. Align
+NFR-FE08-UX-003 and the E2E expectation with `Đang đặt chỗ`/`Đến lượt bạn`;
+do not change production code.
+
+- [x] **Step 4: Repeat the latest-main evidence**
+
+Run the single-role check, 7-suite cross-feature gate, timezone matrix, full
+backend and coverage, full frontend/lint/build, traceability, and both Chromium
+acceptance scenarios.
+
+- [x] **Step 5: Prepare the latest H2 addendum**
+
+Update the validation record with the exact base, observed counts, initial
+browser RED, final GREEN, residual SQL/staging limits, and keep the merge
+uncommitted and unpushed.
+
+---
+
 ## Plan Approval Gate
 
-- [x] Nhat approves the original consolidated plan and FE07-T048..T051, FE08-T042,
+- [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T045,
   FE10-S11, and FE12-N11.
 - [x] Only after approval, begin Task 1 with RED tests.
 - [x] Do not infer plan approval from the earlier SPEC approval.

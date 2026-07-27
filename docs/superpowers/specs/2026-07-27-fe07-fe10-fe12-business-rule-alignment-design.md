@@ -44,6 +44,7 @@ frontend workflow is added.
 | S-004 | Current FE07/FE10/FE12 implementation and tests | Product baseline before `3220f10` | Observed behavior and reproducible defects only | Observational, not normative | Engineering team | Conflicts with approved decisions |
 | S-005 | `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md` | Approved 2026-07-23 | Existing transaction, timezone, notification, and report parity boundaries | Approved prior design | Nhat | Does not resolve the five new gaps |
 | S-006 | User confirmation in the active task | 2026-07-27 | Every account has exactly one role; multiple roles per account are not supported | Highest for the reconciliation addendum | Nhat | Resolves the `main`/branch role-model conflict |
+| S-007 | Latest upstream FE07/FE08 SPEC/PLAN/TASKS and implementation | `origin/main` at `e20fdc3` | FE08 selected-book/current-history/pickup handoffs, FE07 exact-copy preselection, task IDs `FE07-T048` and `FE08-T042..T044`, and lifecycle labels | Approved merged baseline | Team | Overlaps branch-local task IDs and the intermediate stale E2E label |
 
 ## 3. Evidence And Conflict Classification
 
@@ -54,6 +55,7 @@ frontend workflow is added.
 | E-003 | `observed-behavior` | Renewal date extension differs by host timezone because host-local `Date.setDate()` is used. | Use shared business-date helpers exclusively. |
 | E-004 | `unresolved-conflict` resolved by S-001 | FE10 EC-FE10-010 requires rejection, while NFR-FE10-SEC-005 permits sanitizing an unsafe stored definition. | Reject the stored definition; escape/sanitize runtime values. |
 | E-005 | `observed-behavior` | FE12 accepts an unknown query key, returns `200`, and forwards it to the report layer. | Return safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before report execution. |
+| E-006 | `integration-conflict` resolved by S-006/S-007 | Latest `main` owns `FE07-T048` and `FE08-T042..T044`, and uses `Đang đặt chỗ`/`Đến lượt bạn`; the branch used overlapping task IDs and its intermediate E2E expected `Đã đặt chỗ`. | Preserve upstream held-copy behavior, renumber rule-alignment tasks to `FE07-T049..T052` and `FE08-T045`, retain single-role wording, and add no duplicate FE08 production change. |
 
 Implementation is evidence of current behavior, not the source of the approved
 business policy.
@@ -67,7 +69,7 @@ business policy.
 | BD-003 | SL-003 | Which calendar arithmetic governs renewal? | Host-local `Date`; UTC; shared library business date | Shared `Asia/Ho_Chi_Minh` helpers govern eligibility and `dueDate + 14` | The policy is calendar-day based and host-independent | Nhat | 2026-07-27 | BR-FE07-015, FR-FE07-009/020, NFR-FE07-TIME-001 |
 | BD-004 | SL-004 | How should unsafe stored template markup be handled? | Sanitize and accept; reject; allow raw HTML | Reject before rendering/persistence/delivery; continue escaping/sanitizing runtime values | A stored definition is trusted configuration and must fail closed | Nhat | 2026-07-27 | BR-FE10-010, FR-FE10-005/009, AC-FE10-006, NFR-FE10-SEC-005 |
 | BD-005 | SL-005 | What happens to unknown FE12 query keys? | Ignore; forward; reject | Reject with safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution | Prevents silent API drift and unreviewed query behavior | Nhat | 2026-07-27 | BR-FE12-008, FR-FE12-005, AC-FE12-005 |
-| BD-006 | SL-006 | Does FE08 require a product-rule change? | Modify FE08; regression-only | No FE08 behavior change; verify its FE07 and FE10 handoffs | No independent FE08 defect was established | Nhat | 2026-07-27 | Existing FE08 integration contracts |
+| BD-006 | SL-006 | Does the rule-alignment slice require a product-rule change in FE08? | Modify FE08; regression-only | No independent FE08 behavior change in this slice; preserve and verify the upstream FE07/FE10 handoffs | No independent FE08 defect was established by this audit | Nhat | 2026-07-27 | Existing and upstream FE08 integration contracts |
 | BD-007 | SL-001 | How does renewal authorization work after the single-role decision? | Preserve multi-role compatibility; one role per account | Every account has exactly one role. Member renews only an own detail; Librarian/Admin may renew any member's detail while loan-owner blockers remain enforced | Matches `DEC-GEN-005` and removes an impossible actor model | Nhat | 2026-07-27 | BR-FE07-003/031, FR-FE07-009/032, AC-FE07-009/026 |
 
 ## 5. Actor Responsibility Matrix
@@ -160,17 +162,17 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 
 ## 10. Quality Gates
 
-The highest passed gate for the reconciliation addendum is G3. Nhat confirmed
-the single-role decision and authorized SPEC/PLAN/TASKS reconciliation on
-2026-07-27. Fresh G4-G6 evidence remains required on the merged result before
-the H2 addendum.
+The latest-main reconciliation has passed G0-G6. Nhat confirmed the
+single-role decision and authorized SPEC/PLAN/TASKS reconciliation on
+2026-07-27. The complete uncommitted merge and refreshed evidence now wait for
+the latest H2 addendum.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-006 | passed | passed | passed | passed | ready | ready | not-started | not-started | Fresh merged-result evidence | Nhat | Run focused, full, and runtime validation for H2 addendum |
+| SL-001 to SL-006 | passed | passed | passed | passed | passed | passed | passed | not-started | Latest H2 addendum | Nhat | Review the complete uncommitted merge and evidence |
 
-Historical green results are baseline evidence only. G4/G5 from the original
-batch must be repeated after single-role integration; G6/G7 remain pending.
+Historical green results remain baseline evidence only. G4-G6 were repeated
+against the merge with `origin/main` at `e20fdc3`; G7 remains pending.
 
 ## 11. Security And Safety Boundary
 

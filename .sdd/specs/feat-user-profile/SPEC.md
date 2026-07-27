@@ -1,12 +1,12 @@
 # SPEC.md - FE03 User Profile
 
-# Version: 0.3.5
+# Version: 0.3.6
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dat
 
-# Last Updated: 2026-07-19
+# Last Updated: 2026-07-27
 
 # Feature ID: FE03
 
@@ -300,6 +300,7 @@ Use these stable IDs for tasks and tests.
 - NFR-FE03-UX-001: Validation errors must identify the invalid field clearly.
 - NFR-FE03-UX-002: Profile view must clearly separate editable profile fields from account fields managed elsewhere.
 - NFR-FE03-UX-003: Avatar upload errors must identify whether file size or file type validation failed.
+- NFR-FE03-UX-004: Member access to `/profile` must remain available through the shared avatar/account menu, while the Member sidebar must not duplicate that destination as a separate `Thông tin cá nhân` item or empty `Tài khoản` group.
 
 ---
 

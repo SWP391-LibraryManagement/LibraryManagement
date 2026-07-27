@@ -1,5 +1,49 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-27 - Link repeatable FE02 performance evidence
+
+- Closed FE02-T048 using the existing deterministic performance harness: valid login p95 `61.46 ms` against `< 1,000 ms`, and `/api/auth/me` p95 `1.52 ms` against `< 50 ms`, with bcrypt cost 10.
+- Recorded the 30/50-sample environment, 3/3 harness test result, and explicit SQL/network limitations in SPEC, PLAN, TASKS, TEST_PLAN v0.3.14, and the performance report.
+- FE02 remains `PARTIAL` only for FE02-T049: dedicated FE02-T043 H3 linkage and human reconciliation approval.
+
+## 2026-07-27 - Close concurrent registration and login-state races
+
+- Mapped concurrent unique-email registration conflicts to the approved `409 EMAIL_ALREADY_REGISTERED` response.
+- Guarded failed-login, successful-login/session, and expired-lock writes against newer persisted account states.
+- Added route/repository regressions and aligned SPEC v0.6.16, PLAN, TASKS, TEST_PLAN v0.3.13, and the shared API contract; focused FE02 tests pass 66/66, traceability passes 27/27, and full backend passes 60/61 suites (1048/1050 tests) with only the known `dbConfig.test.js` DNS/mock-isolation failures.
+
+## 2026-07-27 - Preserve deactivation during email verification
+
+- Prevented OTP and legacy verification credentials from reactivating FE11-deactivated or otherwise ineligible accounts.
+- Guarded the persisted activation update against a concurrent deactivation and made activation, credential consumption, and required verification audit atomic.
+- Added focused route/repository regressions and aligned SPEC v0.6.15, PLAN, TASKS, and TEST_PLAN v0.3.12.
+- Focused FE02 tests pass 61/61 and traceability remains 27/27; the full backend rerun remains blocked only by the two known `dbConfig.test.js` DNS/mock-isolation assertions.
+
+## 2026-07-27 - Complete FE02 code/spec convergence pass
+
+- Excluded FE11-deactivated pending self-registration accounts from login/resend verification recovery by mapping and enforcing `DeactivatedAt`.
+- Applied the approved 30-second JWT clock tolerance and completed safe login/lock/token-validation logging without recording credentials or raw tokens.
+- Aligned FE04/FE07/FE08 inactive-account integration expectations with FE02's pre-handler `401 INVALID_TOKEN` contract.
+- Reconciled SPEC v0.6.14, CONTEXT v0.2.6, PLAN, TASKS, TEST_PLAN v0.3.11, and the shared API contract with current code and evidence.
+- Validation passes 58/58 focused FE02 tests, 114/114 affected cross-feature tests, 220/220 frontend tests, frontend lint/build, and FE02 traceability 27/27. Full backend passes 60/61 suites and 1040/1042 tests; only the recorded `dbConfig.test.js` DNS/mock-isolation failure remains.
+
+## 2026-07-27 - Recover interrupted registration verification at login
+
+- Added a password-proven `EMAIL_VERIFICATION_REQUIRED` login response for self-registered accounts that remain unverified and route the frontend to `/verify-email` without issuing a session.
+- Kept unknown identifiers, wrong passwords, deactivated accounts, and admin-created `ACCOUNT_SETUP` accounts out of the recovery branch; verification resend now uses the same eligibility boundary.
+- Added focused backend and frontend regressions and synchronized SPEC v0.6.13, PLAN, TASKS, TEST_PLAN, and the shared API contract.
+- Validation passes 48/48 focused backend tests, 220/220 frontend tests, frontend lint/build, and FE02 traceability 27/27; the full backend result and unrelated remaining failures are recorded in `TEST_PLAN.md`.
+
+## 2026-07-27 - Converge authentication contract and implementation
+
+- Closed CG-FE02-002, CG-FE02-004, CG-FE02-006, and CG-FE02-008 with focused regressions and production enforcement.
+- Enforced current persisted account state and current server-side roles on protected authentication.
+- Added exact rolling 15-minute login-failure tracking with a SQL migration while preserving the approved 30-minute lock.
+- Replaced `Math.random()` OTP generation with `crypto.randomInt()` and preserved six digits including leading zeroes.
+- Made registration token creation, login/session creation, password change/OTP consumption/audit, and password reset/token invalidation atomic.
+- Focused FE02 auth tests pass 47/47; full backend reached 60/61 suites and 1036/1038 tests, with only the pre-existing `dbConfig.test.js` DNS/mock-isolation failure against `sql.example.test`.
+- FE02 remains `PARTIAL`: FE02-T048 performance evidence and FE02-T049 human/H3 closeout are still open.
+
 ## 2026-07-23 - Close CG007 profile session recovery
 
 - Added one-refresh recovery, selected-storage token persistence, full auth cleanup, and login redirect to `profileApi` protected requests.

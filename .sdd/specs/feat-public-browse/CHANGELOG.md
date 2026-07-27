@@ -1,5 +1,23 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Explicit Member book actions
+
+- Replaced the ambiguous Member `Tiếp tục` label with `Mượn sách này` for available books and `Đặt chỗ sách này` for unavailable books in search cards, information panel, and detail modal.
+- Preserved hidden availability badges for Guest/Member; Guest uses a generic login continuation, while Librarian/Admin retain FE05/FE06 status and management actions.
+- Kept selected `bookId` deep links connected to FE07 borrowing and FE08 reservation candidate selection.
+
+## 2026-07-27 - Membership benefit card alignment
+
+- Removed the permanent vertical stagger from even membership cards so both columns share the same row baselines.
+- Preserved equal-width responsive columns, card hover feedback, and the mobile single-column layout.
+- Added focused frontend regression coverage for the non-staggered grid contract.
+
+## 2026-07-27 - Public ISBN boundary
+
+- Removed ISBN from Guest/Member HomePage search copy, book cards, detail UI, public API DTO, and OpenAPI schema.
+- Confirmed public `q` searches title/author only, while authenticated Librarian/Admin FE05 management reads and search retain ISBN.
+- Updated FE01 requirements, acceptance criteria, tasks, and test strategy to connect the public boundary to FE05 and FE11 single-role authorization.
+
 ## 2026-07-27 - Homepage header simplification
 
 - Removed the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from the desktop header and mobile header menu at the request of the product owner.
@@ -34,7 +52,7 @@
 
 - Clarified that all roles may consume the public catalog while FE01 remains read-only.
 - Connected Homepage actions to FE11's exactly-one-role account model so Librarian/Admin users are not routed into Member-only FE07/FE08 screens.
-- Added focused frontend regression coverage for mixed Member/staff roles.
+- Added focused frontend regression coverage for invalid legacy Member/staff compatibility arrays.
 
 ## 2026-07-20 - Vietnamese UI localization and typography
 

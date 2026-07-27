@@ -7,11 +7,11 @@ Owner: Nhat
 
 Updated: 2026-07-27
 
-Workflow State: The Phase 2 baseline remains complete. `main` owns the
-single-role access task `FE08-T041`; the rule-alignment regression-only task is
-renumbered `FE08-T042`. Nhat authorized integration on 2026-07-27. No new FE08
-product behavior is introduced, and the merged result remains uncommitted
-pending fresh validation and H2 addendum.
+Workflow State: The Phase 2 baseline remains complete. `main` owns
+`FE08-T041` through `FE08-T044`; the rule-alignment regression-only task is
+`FE08-T045`. Nhat authorized integration on 2026-07-27. No additional FE08
+product behavior is introduced by the rule-alignment slice, and the merged
+result remains uncommitted pending fresh validation and H2 addendum.
 
 ---
 
@@ -195,8 +195,16 @@ pending fresh validation and H2 addendum.
 | FR-FE08-018/020/021/027 | FE08-T028, FE08-T029 |
 | AC-FE08-013 | FE08-T028, FE08-T032 |
 | FR-FE08-029 | FE08-T035, FE08-T036, FE08-T037, FE08-T038, FE08-T039 |
+| FR-FE08-030 | FE08-T041 |
+| FR-FE08-031 | FE08-T042 |
+| FR-FE08-032 | FE08-T043 |
+| FR-FE08-033 | FE08-T044 |
 | AC-FE08-015 | FE08-T035, FE08-T036, FE08-T037, FE08-T038 |
 | AC-FE08-016 | FE08-T035, FE08-T037, FE08-T038 |
+| AC-FE08-017 | FE08-T041 |
+| AC-FE08-018 | FE08-T042 |
+| AC-FE08-019 | FE08-T043 |
+| AC-FE08-020 | FE08-T044 |
 | NFR-FE08-SEC-004 | FE08-T035, FE08-T036, FE08-T039 |
 | NFR-FE08-PERF-003 | FE08-T035, FE08-T036, FE08-T037, FE08-T039 |
 
@@ -214,7 +222,7 @@ pending fresh validation and H2 addendum.
   - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
   - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
 
-## 9. 2026-07-27 single-role member reservation baseline
+## 9. 2026-07-27 single-role and member presentation baseline
 
 - [x] **FE08-T041 - Enforce single-role access to member reservation flows.**
   - Maps to: BR-FE08-018, FR-FE08-030, AC-FE08-017; BR-FE11-028.
@@ -222,11 +230,32 @@ pending fresh validation and H2 addendum.
   - Redirect invalid stale/legacy role arrays containing both Member and staff away from frontend member routes while preserving staff list/queue operations.
   - Verify defensive `MEMBER + LIBRARIAN` and `MEMBER + ADMIN` compatibility-array cases without treating them as supported persisted accounts.
 
+- [x] **FE08-T042 - Connect FE01 selected-book reservation handoff.**
+  - Maps to: FR-FE08-031, AC-FE08-018; BR-FE01-015/016, FR-FE01-014/018.
+  - Read the FE01 `bookId` deep link, resolve its public title, and initialize the protected FE08 candidate search.
+  - Keep candidate `copyId` selection and `POST /api/reservations` authoritative inside FE08; do not widen FE01 public data.
+  - Verify focused FE01 action labels/routes and FE08 selected-book candidate initialization.
+
+- [x] **FE08-T043 - Separate current Member reservations from history.**
+  - Maps to: FR-FE08-010/032, AC-FE08-010/019, NFR-FE08-UX-001.
+  - Keep canonical own-list records, group `ACTIVE`/`NOTIFIED` separately from terminal history, and render every raw lifecycle state with a visible supported badge.
+  - Connect the candidate action to the matching current reservation so a held copy says `Đến lượt bạn` instead of looking cancelled or stale.
+  - Preserve Librarian/Admin queue ordering and FE07 state-transition ownership.
+
+- [x] **FE08-T044 - Show the pickup window and connect the held copy to FE07.**
+  - Maps to: FR-FE08-033, AC-FE08-020; FR-FE07-024/033, AC-FE07-016/027.
+  - Render `NotifiedAt` through `ExpiresAt` for the canonical `NOTIFIED` record and explain that the hold expires after the deadline.
+  - Link the exact held `bookId`/`copyId` to the Member FE07 request page; retain Librarian/Admin approval and FE07 fulfillment ownership.
+  - Keep the FE08 Chromium expectation on the current `Đang đặt chỗ` label.
+
 ## 10. 2026-07-27 FE07/FE10 integration regression boundary
 
-- [x] **FE08-T042 - Verify unchanged FE07 and FE10 handoffs.**
+- [x] **FE08-T045 - Verify unchanged FE07 and FE10 handoffs after latest-main integration.**
   - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
-  - Scope: regression evidence only; no FE08 production or contract change.
-  - Integrated evidence: requester 1/1, SIT-003/SIT-004 2/2, cross-feature focused gate 281/281, and FE08 Chromium candidate acceptance passed after `main` integration.
-  - Integration gate: H2 addendum remains required before committing the open merge.
+  - Scope: regression evidence only; no additional FE08 production or contract change from the rule-alignment slice.
+  - Final evidence against the open `e20fdc3` merge: requester and
+    SIT-003/SIT-004 remain covered by the 7-suite 281/281 gate; full backend
+    passed 1,047/1,047; Chromium acceptance passed 2/2 with the integrated
+    v0.5.8 lifecycle-label and held-copy contract.
+  - Integration gate: fresh H2 addendum remains required before committing the open merge.
   - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

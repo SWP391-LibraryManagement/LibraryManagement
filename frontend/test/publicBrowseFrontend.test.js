@@ -16,6 +16,8 @@ test('FE01 search uses the canonical public envelope and approved query', async 
   assert.match(source, /publicBrowseApi\.list\(\{ q: keyword \}\)/);
   assert.match(source, /Array\.isArray\(result\.data\)/);
   assert.match(source, /keyword\.length > 200/);
+  assert.match(source, /Tìm theo tên sách hoặc tác giả/);
+  assert.doesNotMatch(source, /ISBN|book\.isbn/);
 });
 
 test('FE01 blank search reloads the default catalog without an error toast', async () => {
@@ -44,6 +46,7 @@ test('FE01 renders canonical public fields and removes fake local borrowing', as
   assert.match(source, /book\.authorName \|\| 'Không rõ tác giả'/);
   assert.match(source, /book\.categoryName \|\| 'Chưa phân loại'/);
   assert.match(source, /book\.availabilityStatus === 'AVAILABLE'/);
+  assert.doesNotMatch(source, /ISBN|book\.isbn/);
   assert.match(source, /Không khả dụng/);
   assert.doesNotMatch(source, /ĐÃ MƯỢN/);
   assert.doesNotMatch(source, /BorrowModal/);
@@ -51,15 +54,18 @@ test('FE01 renders canonical public fields and removes fake local borrowing', as
   assert.doesNotMatch(source, /Mượn "\$\{selectedBook\.title\}" thành công/);
 });
 
-test('FE01 keeps Homepage availability private from Guest and Member roles', async () => {
+test('FE01 hides availability badges but exposes the owning action to Member', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
 
   assert.match(source, /const canViewAvailability = \['ADMIN', 'LIBRARIAN'\]\.includes\(primaryRole\)/);
+  assert.match(source, /const showRoleBookAction = canViewAvailability \|\| primaryRole === 'MEMBER'/);
   assert.match(source, /@spec FR-FE01-018/);
   assert.match(source, /canViewAvailability && book\.availabilityStatus !== 'AVAILABLE'/);
-  assert.match(source, /canViewAvailability \? action\.label : 'Tiếp tục'/);
-  assert.match(source, /canViewAvailability \? getHomeBookAction\(\{ book, isLoggedIn, roles: authUser\?\.roles \|\| \[\] \}\)\.label : 'Tiếp tục'/);
+  assert.match(source, /showRoleAction \? action\.label : 'Đăng nhập để tiếp tục'/);
+  assert.match(source, /showRoleBookAction \? getHomeBookAction\(\{ book, isLoggedIn, roles: authUser\?\.roles \|\| \[\] \}\)\.label : 'Đăng nhập để tiếp tục'/);
   assert.match(source, /canViewAvailability=\{canViewAvailability\}/);
+  assert.match(source, /showRoleAction=\{showRoleBookAction\}/);
+  assert.doesNotMatch(source, />Tiếp tục</);
 });
 
 test('FE01 footer presents responsive library contact information without legacy link columns', async () => {
@@ -109,6 +115,8 @@ test('FE01 membership benefits use distinct icons and responsive editorial cards
   assert.match(source, /<article key=\{title\} className="home-benefit-card">/);
   assert.match(source, /\.home-benefit-card::before \{[\s\S]*?linear-gradient/);
   assert.match(source, /\.home-benefit-card:hover \{[\s\S]*?translateY\(-4px\)/);
+  assert.match(source, /\.home-benefit-grid \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*?gap: 16px/);
+  assert.doesNotMatch(source, /\.home-cta-section \.home-benefit-card:nth-child\(even\)/);
   assert.match(source, /@media \(max-width: 768px\)[\s\S]*?\.home-cta-grid, \.home-benefit-grid \{ grid-template-columns: 1fr !important; \}/);
 });
 

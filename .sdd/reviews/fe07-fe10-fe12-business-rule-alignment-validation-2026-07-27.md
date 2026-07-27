@@ -5,18 +5,16 @@ Date: 2026-07-27
 ## 1. Review State
 
 - Branch: `codex/fe07-fe10-fe12-rule-alignment`
-- Pre-H2 branch head: `31dd0b2f874a459aec758c91e5ab8b9eabf1ab99`
-- Integrated `origin/main`: `359fb25f082536e1e1b2529876f7e31a0c8e322c`
+- Pre-H2 branch head: `89d0bf23418045788d2823c5654d093d2edebf40`
+- Integrated `origin/main`: `e20fdc3691073430e620b6d9ac1b886ace1c3794`
 - Approved delivery order: SPEC -> PLAN/TASKS -> RED -> minimal code -> GREEN -> L1-L4/runtime evidence
 - Approved account model: every persisted account has exactly one mutually
   exclusive role under `DEC-GEN-005`; Member and staff renewal use separate
   single-role accounts.
-- Reconciliation state: the integrated merge is ready to be concluded under
-  the approved H2 addendum.
-- H2 addendum: approved by Nhat on 2026-07-27 for this integrated diff and
-  evidence package.
-- Publication authority: granted to conclude the merge, push the reconciled
-  branch, and update draft PR #63. H3 remains required before merge to `main`.
+- Reconciliation state: the latest-main merge remains open and uncommitted.
+- H2 addendum: pending Nhat review of this latest integrated diff and evidence.
+- Publication authority: not granted for this new merge result. Do not commit,
+  push, or update draft PR #63 until the latest H2 addendum is approved.
 
 ## 2. Changed Files
 
@@ -26,6 +24,11 @@ Date: 2026-07-27
 - `.sdd/specs/feat-borrowing-management/SPEC.md`
 - `.sdd/specs/feat-borrowing-management/TASKS.md`
 - `.sdd/specs/feat-borrowing-management/TEST_PLAN.md`
+- `.sdd/specs/feat-membership-management/SPEC.md`
+- `.sdd/specs/feat-public-browse/CHANGELOG.md`
+- `.sdd/specs/feat-public-browse/SPEC.md`
+- `.sdd/specs/feat-public-browse/TASKS.md`
+- `.sdd/specs/feat-reservation-management/CHANGELOG.md`
 - `.sdd/specs/feat-reservation-management/PLAN.md`
 - `.sdd/specs/feat-reservation-management/SPEC.md`
 - `.sdd/specs/feat-reservation-management/TASKS.md`
@@ -52,27 +55,28 @@ Date: 2026-07-27
 - `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
 - `frontend/test/homeBookActions.test.js`
 
-The integrated working tree contains 31 changed files against `origin/main`.
-No FE08 production file, schema, public route, dependency, role, frontend
-workflow, or architecture changed in this branch.
+The integrated working tree contains 36 changed files against `origin/main`.
+No additional FE08 production file, schema, public route, dependency, role,
+frontend workflow, or architecture changed in this branch.
 
 ## 3. RED Evidence
 
 | Acceptance | Command | Observed failure before production change |
 | --- | --- | --- |
-| AT-001 / FE07-T051 | Historical only: the original branch test used a multi-role actor. | `DEC-GEN-005` and Nhat's single-role confirmation superseded that actor premise. The obsolete test and authorization delta were removed; reconciliation uses the existing single-role contract as a GREEN baseline, not a new RED behavior claim. |
-| AT-002 / FE07-T048 | `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js --testNamePattern "due date locked|return serializes"` | Route returned stale `overdueDays = 12` instead of `2`; repository source contract did not contain the locked due date/user, committed return date, or evidence callback. |
-| AT-003 / FE07-T049 | Run the business-date test once with `TZ=UTC` and once with `TZ=America/New_York`. | UTC passed; New York returned `2026-03-21` instead of `2026-03-22`. |
+| AT-001 / FE07-T052 | Historical only: the original branch test used a multi-role actor. | `DEC-GEN-005` and Nhat's single-role confirmation superseded that actor premise. The obsolete test and authorization delta were removed; reconciliation uses the existing single-role contract as a GREEN baseline, not a new RED behavior claim. |
+| AT-002 / FE07-T049 | `npm.cmd --prefix backend test -- --runTestsByPath tests/borrowingRoutes.test.js tests/borrowingRepository.test.js --testNamePattern "due date locked|return serializes"` | Route returned stale `overdueDays = 12` instead of `2`; repository source contract did not contain the locked due date/user, committed return date, or evidence callback. |
+| AT-003 / FE07-T050 | Run the business-date test once with `TZ=UTC` and once with `TZ=America/New_York`. | UTC passed; New York returned `2026-03-21` instead of `2026-03-22`. |
 | AT-004 / FE10-S11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/notificationRoutes.test.js --testNamePattern "unsafe stored template"` | All three unsafe stored definitions resolved as `{ notificationId: 1, status: "SENT" }` instead of rejecting. |
 | AT-005 / FE12-N11 | `npm.cmd --prefix backend test -- --runTestsByPath tests/reportRoutes.test.js --testNamePattern "unsupported query keys"` | Borrowing, inventory, and users endpoints each returned `200` instead of safe `400`. |
+| Latest-main FE08 integration / FE08-T045 | First Chromium run against the intermediate `8f231d7` merge. | Reservation creation succeeded, but the branch E2E looked for obsolete `Đã đặt chỗ`; runtime correctly rendered `Đang đặt chỗ`. Upstream `e20fdc3` independently contains the same E2E correction plus the approved held-copy handoff, so the final reconciliation keeps that upstream behavior and changes no FE08 production file relative to `main`. |
 
 ## 4. GREEN And L1 Evidence
 
 | Scope | Observed result |
 | --- | --- |
-| FE07-T051 single-role reconciliation | 3/3 passed before cleanup and 3/3 passed after cleanup. A single-role Librarian may renew another member's eligible loan; a separate Member remains owner-scoped; FE11 database repair/invariant cases remain green. |
-| FE07-T048 focused | 2/2 passed. Response and audit use the locked due date and the public DTO excludes `authoritativeReturn`. |
-| FE07-T049 timezone matrix | UTC 3/3 and America/New_York 3/3 passed with identical business dates and role outcomes. |
+| FE07-T052 single-role reconciliation | 3/3 passed before cleanup and 3/3 passed after cleanup. A single-role Librarian may renew another member's eligible loan; a separate Member remains owner-scoped; FE11 database repair/invariant cases remain green. |
+| FE07-T049 focused | 2/2 passed. Response and audit use the locked due date and the public DTO excludes `authoritativeReturn`. |
+| FE07-T050 timezone matrix | UTC 3/3 and America/New_York 3/3 passed with identical business dates and role outcomes. |
 | FE07 full route/repository | 79/79 passed. |
 | FE10 focused | 4/4 passed, including preservation of runtime template-data sanitization. |
 | FE10 full | 139/139 passed. |
@@ -80,20 +84,20 @@ workflow, or architecture changed in this branch.
 | FE12 full | 14/14 passed. |
 | FE08 requester | 1/1 passed. |
 | FE08 SIT-003/SIT-004 | 2/2 passed using equivalent Windows-safe pattern `SIT-00[34]`. The original pipe pattern was interpreted by the Windows command shell before Jest and did not run the suite. |
-| Cross-feature L1 | 7 suites, 281/281 tests passed after single-role reconciliation. |
+| Cross-feature L1 | Fresh final run against the open `e20fdc3` merge: 7 suites, 281/281 tests passed after single-role reconciliation and held-copy integration. |
 
 ## 5. Full Automated Evidence
 
 | Command | Observed result |
 | --- | --- |
-| `npm.cmd --prefix backend test` | 61 suites, 1,017/1,017 tests passed. |
-| `npm.cmd --prefix backend run test:coverage:ci` | Fresh integrated run: 61 suites, 1,017/1,017 tests passed. Statements 92.17%, branches 81.55%, functions 97.38%, lines 92.09%. |
-| `npm.cmd --prefix frontend test` | 227/227 tests passed. |
+| `npm.cmd --prefix backend test` | Fresh final integrated run: 61 suites, 1,047/1,047 tests passed. |
+| `npm.cmd --prefix backend run test:coverage:ci` | Fresh final integrated run: 61 suites, 1,047/1,047 tests passed. Statements 92.07%, branches 81.44%, functions 97.38%, lines 91.99%. |
+| `npm.cmd --prefix frontend test` | Fresh final integrated run: 231/231 tests passed. |
 | `npm.cmd --prefix frontend run lint` | Passed with exit code 0. |
 | `npm.cmd --prefix frontend run build` | Vite production build passed. |
 | `npm.cmd run test:traceability-state` | 3/3 passed. |
 | `npm.cmd run trace:enforce` | Passed; all active features remain above 70%, with FE07/FE10/FE12 at 100% and FE08 at 97%. |
-| `git diff --check`, `git diff --cached --check`, `git diff --check origin/main` | Passed. Only LF-to-CRLF working-copy warnings were reported for the three reconciliation files. |
+| `git diff --check`, `git diff --cached --check`, `git diff HEAD --check`, `git diff origin/main --check` | Passed. Only normal LF-to-CRLF working-copy warnings were reported. |
 
 Generated `backend/coverage`, `frontend/dist`, Playwright report/output, and test
 result directories remain ignored and are not part of the H2 diff.
@@ -115,7 +119,11 @@ Command:
 
 Observed:
 
-- 2/2 Chromium scenarios passed against the local HTTP servers.
+- The first FE08 run failed only on the stale `Đã đặt chỗ` locator after the
+  successful create response; the runtime snapshot showed the upstream
+  `Đang đặt chỗ` label required by FE08 v0.5.6.
+- The focused FE08 rerun passed 1/1 after the SPEC/E2E-only reconciliation.
+- The final combined Chromium run passed 2/2 against the local HTTP servers.
 - `E2E-SYS-001` passed login -> borrow -> approve -> return -> fine -> report.
 - The same golden path observed
   `/api/reports/borrowing?bogus=runtime-secret-value` return
@@ -127,15 +135,15 @@ Observed:
 
 | Decision | Task | Test/evidence | Implementation |
 | --- | --- | --- | --- |
-| BD-007 / AT-001 | FE07-T051 | Single-role reconciliation baseline before/after cleanup plus FE11 one-role invariant/legacy-repair coverage | Existing one-role renewal guard: Member owner-only; Librarian/Admin cross-member; all blockers remain loan-owner scoped |
-| BD-002 / AT-002 | FE07-T048 | Stale-preflight route RED/GREEN plus repository source contract | Locked due/user/return snapshot builds one audit/fine evidence object inside the return transaction |
-| BD-003 / AT-003 | FE07-T049 | UTC/New York RED/GREEN matrix | Renewal extension and authoritative comparisons use `libraryBusinessTime` |
+| BD-007 / AT-001 | FE07-T052 | Single-role reconciliation baseline before/after cleanup plus FE11 one-role invariant/legacy-repair coverage | Existing one-role renewal guard: Member owner-only; Librarian/Admin cross-member; all blockers remain loan-owner scoped |
+| BD-002 / AT-002 | FE07-T049 | Stale-preflight route RED/GREEN plus repository source contract | Locked due/user/return snapshot builds one audit/fine evidence object inside the return transaction |
+| BD-003 / AT-003 | FE07-T050 | UTC/New York RED/GREEN matrix | Renewal extension and authoritative comparisons use `libraryBusinessTime` |
 | BD-004 / AT-004 | FE10-S11 | Three unsafe-definition cases plus runtime-value preservation | Stored definitions fail closed before recipient lookup, render, persistence, or provider I/O |
 | BD-005 / AT-005 | FE12-N11 | Three endpoint allowlist cases plus local HTTP acceptance | Exact-key middleware is first in each endpoint validator array |
-| BD-006 / AT-006 | FE08-T042 | Requester, SIT-003, SIT-004, and browser acceptance | No FE08 production or contract change |
+| BD-006 / AT-006 | FE08-T045 | Requester, SIT-003, SIT-004, and browser acceptance | No additional FE08 production or contract change from the rule-alignment slice |
 
-L2 result: PASS. No behavior outside the approved SPEC/PLAN/TASKS scope was
-identified.
+L2 result: PASS. No behavior outside the approved rule-alignment scope and the
+already-merged upstream FE08 v0.5.6 contracts was identified.
 
 ## 8. L3 Constitution And Safety Review
 
@@ -171,8 +179,9 @@ L3 result: PASS.
 
 ## 10. H2 Gate
 
-The pre-integration branch previously received H2, but that approval did not
-cover the merged `origin/main` result. Nhat explicitly approved this H2
-addendum on 2026-07-27 after reviewing the integrated diff and refreshed L1-L4
-evidence. The approval authorizes concluding the merge, pushing the branch,
-and updating draft PR #63. H3 remains mandatory before merge to `main`.
+The branch previously received H2 for integration through `359fb25`, but that
+approval does not cover the new merge with `origin/main` at `e20fdc3`. The
+latest integrated diff and refreshed L1-L4/runtime evidence remain uncommitted
+pending Nhat's explicit H2 addendum. Only that approval may authorize
+concluding this merge, pushing the branch, and updating draft PR #63. H3
+remains mandatory before merge to `main`.

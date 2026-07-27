@@ -167,11 +167,29 @@ export function isOpenMemberReservationStatus(status) {
   return ['ACTIVE', 'NOTIFIED'].includes(String(status || '').toUpperCase());
 }
 
+export function splitMemberReservations(reservations = []) {
+  return {
+    current: reservations.filter((item) => isOpenMemberReservationStatus(item.rawStatus)),
+    history: reservations.filter((item) => !isOpenMemberReservationStatus(item.rawStatus)),
+  };
+}
+
+export function memberReservationBadgeStatus(status) {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'NOTIFIED') return 'ready';
+  if (normalized === 'ACTIVE') return 'waiting';
+  if (normalized === 'FULFILLED') return 'completed';
+  if (normalized === 'CANCELLED') return 'cancelled';
+  if (normalized === 'EXPIRED') return 'expired';
+  return 'default';
+}
+
 export function mapReservation(reservation) {
   return {
     id: `RS-${reservation.reservationId}`,
     reservationId: reservation.reservationId,
     copyId: reservation.copyId,
+    bookId: reservation.copy?.bookId || null,
     title: reservation.copy?.title || `Bản sao #${reservation.copyId}`,
     author: reservation.copy?.author || '-',
     barcode: reservation.copy?.barcode || '-',
@@ -184,6 +202,7 @@ export function mapReservation(reservation) {
     queue: reservation.queuePosition || 1,
     rawStatus: String(reservation.status || '').toUpperCase(),
     status: statusToUi(reservation.status, reservation),
+    pickupStart: reservation.notifiedAt,
     deadline: reservation.expiresAt,
   };
 }

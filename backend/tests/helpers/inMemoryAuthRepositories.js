@@ -16,6 +16,7 @@ function makeInMemoryAuthDependencies(options = {}) {
   const notificationRequests = [];
   const directEmails = [];
   const generatedOtps = [];
+  const loginFailureAttempts = [];
   const otpSequence = options.otpSequence || ['123456', '234567', '345678', '456789'];
   const notificationRequesterControl = {
     status: options.notificationStatus || 'SENT',
@@ -25,6 +26,39 @@ function makeInMemoryAuthDependencies(options = {}) {
     failureStage: null,
     completionFailureStage: null,
     resendFailureStage: null,
+  };
+  const authTransactionRepository = {
+    async withTransaction(work) {
+      const snapshot = {
+        users: structuredClone(users),
+        profiles: structuredClone(profiles),
+        tokens: structuredClone(tokens),
+        auditLogs: structuredClone(auditLogs),
+        generatedOtps: structuredClone(generatedOtps),
+        loginFailureAttempts: structuredClone(loginFailureAttempts),
+        roles: structuredClone([...rolesByUserId]),
+        nextUserId,
+        nextTokenId,
+        nextOtpIndex,
+      };
+
+      try {
+        return await work({ inMemory: true });
+      } catch (error) {
+        users.splice(0, users.length, ...snapshot.users);
+        profiles.splice(0, profiles.length, ...snapshot.profiles);
+        tokens.splice(0, tokens.length, ...snapshot.tokens);
+        auditLogs.splice(0, auditLogs.length, ...snapshot.auditLogs);
+        generatedOtps.splice(0, generatedOtps.length, ...snapshot.generatedOtps);
+        loginFailureAttempts.splice(0, loginFailureAttempts.length, ...snapshot.loginFailureAttempts);
+        rolesByUserId.clear();
+        snapshot.roles.forEach(([userId, roles]) => rolesByUserId.set(userId, roles));
+        nextUserId = snapshot.nextUserId;
+        nextTokenId = snapshot.nextTokenId;
+        nextOtpIndex = snapshot.nextOtpIndex;
+        throw error;
+      }
+    },
   };
 
   const userRepository = {
@@ -104,6 +138,7 @@ function makeInMemoryAuthDependencies(options = {}) {
         lastLoginAt: null,
         createdAt: now,
         updatedAt: null,
+        deactivatedAt: null,
         fullName: fullName || null,
       };
 
@@ -116,46 +151,91 @@ function makeInMemoryAuthDependencies(options = {}) {
 
     async markEmailVerified(userId) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (
+        !user ||
+        user.status !== 'INACTIVE' ||
+        user.emailVerifiedAt ||
+        user.deactivatedAt
+      ) {
+        return false;
+      }
       user.status = 'ACTIVE';
       user.emailVerifiedAt = new Date();
       user.updatedAt = new Date();
+      return true;
     },
 
-    async updateFailedLogin(userId, failedLoginCount, lockedUntil) {
+    async recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, lockoutMinutes) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (!user || user.status !== 'ACTIVE' || user.deactivatedAt) {
+        return { applied: false, failedLoginCount: 0, lockedUntil: null };
+      }
+      loginFailureAttempts.push({ userId: Number(userId), attemptedAt: failedAt });
+      const cutoff = failedAt.getTime() - windowMinutes * 60 * 1000;
+      const activeAttempts = loginFailureAttempts.filter(
+        (attempt) => attempt.userId === Number(userId) && attempt.attemptedAt.getTime() >= cutoff
+      );
+      const failedLoginCount = activeAttempts.length;
+      const lockedUntil = failedLoginCount >= maxAttempts
+        ? new Date(failedAt.getTime() + lockoutMinutes * 60 * 1000)
+        : null;
       user.failedLoginCount = failedLoginCount;
       user.lockedUntil = lockedUntil;
       if (lockedUntil) {
         user.status = 'LOCKED';
       }
       user.updatedAt = new Date();
+      return { applied: true, failedLoginCount, lockedUntil };
     },
 
     async resetFailedLoginsAndSetLastLogin(userId) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (!user || user.status !== 'ACTIVE' || user.deactivatedAt) {
+        return false;
+      }
       user.failedLoginCount = 0;
+      loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
+        (attempt) => attempt.userId !== Number(userId)
+      ));
       user.lockedUntil = null;
       if (user.status === 'LOCKED') {
         user.status = 'ACTIVE';
       }
       user.lastLoginAt = new Date();
       user.updatedAt = new Date();
+      return true;
     },
 
-    async unlockExpiredAccount(userId) {
+    async unlockExpiredAccount(userId, now = new Date()) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (
+        !user ||
+        user.status !== 'LOCKED' ||
+        user.deactivatedAt ||
+        !user.lockedUntil ||
+        new Date(user.lockedUntil).getTime() > now.getTime()
+      ) {
+        return false;
+      }
       user.failedLoginCount = 0;
+      loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
+        (attempt) => attempt.userId !== Number(userId)
+      ));
       user.lockedUntil = null;
       if (user.status === 'LOCKED') {
         user.status = 'ACTIVE';
       }
       user.updatedAt = new Date();
+      return true;
     },
 
     async updatePassword(userId, passwordHash) {
       const user = users.find((item) => item.userId === Number(userId));
       user.passwordHash = passwordHash;
       user.failedLoginCount = 0;
+      loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
+        (attempt) => attempt.userId !== Number(userId)
+      ));
       user.lockedUntil = null;
       if (user.status === 'LOCKED') {
         user.status = 'ACTIVE';
@@ -169,6 +249,9 @@ function makeInMemoryAuthDependencies(options = {}) {
       user.status = 'ACTIVE';
       user.emailVerifiedAt = user.emailVerifiedAt || new Date();
       user.failedLoginCount = 0;
+      loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
+        (attempt) => attempt.userId !== Number(userId)
+      ));
       user.lockedUntil = null;
       user.updatedAt = new Date();
     },
@@ -217,6 +300,12 @@ function makeInMemoryAuthDependencies(options = {}) {
       );
     },
 
+    async hasTokenForUserType(userId, tokenType) {
+      return tokens.some(
+        (token) => token.userId === Number(userId) && token.tokenType === tokenType
+      );
+    },
+
     async markTokenUsed(tokenId) {
       const token = tokens.find((item) => item.tokenId === Number(tokenId));
       token.usedAt = new Date();
@@ -243,7 +332,7 @@ function makeInMemoryAuthDependencies(options = {}) {
   };
 
   const auditLogRepository = {
-    async create(entry) {
+    async create({ transaction: _transaction, ...entry }) {
       auditLogs.push(clone({ ...entry, createdAt: new Date() }));
     },
   };
@@ -532,6 +621,7 @@ function makeInMemoryAuthDependencies(options = {}) {
     otpGenerator,
     emailService,
     accountSetupRepository,
+    authTransactionRepository,
     state: {
       users,
       profiles,
@@ -541,6 +631,7 @@ function makeInMemoryAuthDependencies(options = {}) {
       notificationRequests,
       directEmails,
       generatedOtps,
+      loginFailureAttempts,
       notificationRequesterControl,
       rolesByUserId,
       accountSetupControl,

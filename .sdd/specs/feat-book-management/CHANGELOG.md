@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-27 - Public/staff ISBN boundary
+
+- Classified ISBN as FE05 staff-management metadata: searchable and visible to authenticated Librarian/Admin users.
+- Removed ISBN from Guest/Member public search matching, list DTOs, and detail DTOs while preserving public title/author search.
+- Synchronized FE05 requirements, interfaces, tasks, and test strategy with FE01 public browse and FE11 single-role authorization.
+
 ## 2026-07-23 - FE01/FE11 role and interface reconciliation
 
 - Added the implemented protected `/api/books/metadata` endpoint to the FE05 API contract and test strategy.

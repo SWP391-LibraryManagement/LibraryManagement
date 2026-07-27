@@ -34,7 +34,6 @@ const listInventoryValidators = [
   query('location')
     .optional({ nullable: true })
     .trim()
-    .notEmpty()
     .isLength({ max: 100 })
     .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),
@@ -80,7 +79,6 @@ const createCopyValidators = [
     .optional({ nullable: true })
     .isString()
     .trim()
-    .notEmpty()
     .isLength({ max: 100 })
     .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),
@@ -104,7 +102,6 @@ const updateCopyValidators = [
     .optional({ nullable: true })
     .isString()
     .trim()
-    .notEmpty()
     .isLength({ max: 100 })
     .matches(/^[^\u0000-\u001F\u007F]*$/)
     .withMessage('Location must be at most 100 characters.'),

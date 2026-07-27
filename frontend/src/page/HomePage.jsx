@@ -8,7 +8,6 @@ import {
   X,
   Calendar,
   User,
-  Tag,
   ChevronLeft,
   Phone,
   Mail,
@@ -154,7 +153,7 @@ const FooterPolicyDialog = ({ policy, onClose }) => {
 };
 
 // -- Book Information Panel (sidebar-style) --
-const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClose, onViewDetails, onAction }) => (
+const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, detailLoading, onClose, onViewDetails, onAction }) => (
   <div style={{
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, zIndex: 300,
     background: '#FFF', boxShadow: '-8px 0 40px rgba(78,52,46,0.12)',
@@ -201,7 +200,6 @@ const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClo
       {/* Info rows */}
       {[
         { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
-        { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
       ].map(({ icon: Icon, label, value }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0E8D8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -245,14 +243,14 @@ const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClo
         onMouseEnter={e => { e.currentTarget.style.background = '#8B6B4A'; e.currentTarget.style.color = '#FAF7F2'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8B6B4A'; }}
       >
-        {canViewAvailability ? action.label : 'Tiếp tục'}
+        {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
       </button>
     </div>
   </div>
 );
 
 // -- Modal chi tiết sách --
-const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, onAction }) => (
+const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, onClose, onBack, onAction }) => (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 400,
     background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -304,7 +302,7 @@ const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, 
               onMouseEnter={e => { e.currentTarget.style.background = '#EDE0CE'; e.currentTarget.style.borderColor = '#8B6B4A'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(78,52,46,0.25)'; }}
             >
-              {canViewAvailability ? action.label : 'Tiếp tục'}
+              {showRoleAction ? action.label : 'Đăng nhập để tiếp tục'}
             </button>
           </div>
         </div>
@@ -343,7 +341,6 @@ const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
-              { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
               { icon: User, label: 'Tác giả', value: book.authorName || 'Không rõ tác giả' },
               { icon: BookOpen, label: 'Thể loại', value: getCategoryLabel(book.categoryName || 'Chưa phân loại') },
             ].map(({ icon: Icon, label, value }) => (
@@ -397,6 +394,7 @@ const HomePage = () => {
   const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
   // @spec FR-FE01-018
   const canViewAvailability = ['ADMIN', 'LIBRARIAN'].includes(primaryRole);
+  const showRoleBookAction = canViewAvailability || primaryRole === 'MEMBER';
   const roleLabel = getRoleLabel(primaryRole);
   const showMemberAccountActions = roleLabel === 'Thành viên';
   const showAdminConsoleAction = roleLabel === 'Quản trị viên';
@@ -909,7 +907,7 @@ const HomePage = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Tìm theo tên sách, tác giả hoặc ISBN..."
+              placeholder="Tìm theo tên sách hoặc tác giả..."
               style={{
                 flex: 1, padding: '13px 0', border: 'none', outline: 'none',
                 fontSize: 14, color: '#2C1A0E', background: 'transparent', fontFamily: 'var(--sans)',
@@ -1034,7 +1032,7 @@ const HomePage = () => {
                     <p style={{ fontSize: 12, color: '#7A5C44', margin: '0 0 8px', minHeight: 16, ...textClamp(1) }}>{book.authorName || 'Không rõ tác giả'}</p>
                     <button onClick={e => { e.stopPropagation(); handleBookAction(book); }}
                       style={{ marginTop: 'auto', width: '100%', padding: '7px 0', borderRadius: 6, border: '1.5px solid #C78A3B', background: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#C78A3B' : 'transparent', color: canViewAvailability && book.availabilityStatus === 'AVAILABLE' ? '#FFF' : '#8B6B4A', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'var(--sans)', transition: 'all 0.2s' }}
-                    >{canViewAvailability ? getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label : 'Tiếp tục'}</button>
+                    >{showRoleBookAction ? getHomeBookAction({ book, isLoggedIn, roles: authUser?.roles || [] }).label : 'Đăng nhập để tiếp tục'}</button>
                   </div>
                 </div>
               ))}
@@ -1178,7 +1176,7 @@ const HomePage = () => {
         </div>
         <div className="home-journey-steps">
           {[
-            { number: '01', title: 'Khám phá đầu sách', desc: 'Tìm theo tên, tác giả hoặc ISBN và mở thông tin công khai của đầu sách.' },
+            { number: '01', title: 'Khám phá đầu sách', desc: 'Tìm theo tên sách hoặc tác giả và mở thông tin công khai của đầu sách.' },
             { number: '02', title: 'Chọn luồng phù hợp', desc: 'Đăng nhập để mượn sách; hệ thống tự áp dụng đúng quyền và hạn mức hội viên.' },
             { number: '03', title: 'Theo dõi xuyên suốt', desc: 'Quản lý yêu cầu, lịch sử mượn, đặt trước và các khoản phí tại khu vực cá nhân.' },
           ].map((step) => (
@@ -1382,6 +1380,7 @@ const HomePage = () => {
           book={selectedBook}
           action={selectedBookAction}
           canViewAvailability={canViewAvailability}
+          showRoleAction={showRoleBookAction}
           detailLoading={detailLoading}
           onClose={() => setSelectedBook(null)}
           onViewDetails={handleViewDetails}
@@ -1395,6 +1394,7 @@ const HomePage = () => {
           book={selectedBook}
           action={selectedBookAction}
           canViewAvailability={canViewAvailability}
+          showRoleAction={showRoleBookAction}
           onClose={() => { setSelectedBook(null); setShowDetails(false); }}
           onBack={() => setShowDetails(false)}
           onAction={() => handleBookAction(selectedBook)}
@@ -2169,16 +2169,10 @@ const HomePage = () => {
           backdrop-filter: blur(10px);
           transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .home-cta-section .home-benefit-card:nth-child(even) {
-          transform: translateY(18px);
-        }
         .home-cta-section .home-benefit-card:hover {
           transform: translateY(-7px) rotateX(1.5deg);
           border-color: rgba(168, 97, 29, 0.38);
           box-shadow: 0 23px 46px rgba(92, 52, 26, 0.15);
-        }
-        .home-cta-section .home-benefit-card:nth-child(even):hover {
-          transform: translateY(11px) rotateX(1.5deg);
         }
         .home-cta-section .home-benefit-icon {
           border-radius: 14px;
@@ -2670,10 +2664,6 @@ const HomePage = () => {
           .home-cta-actions {
             align-items: flex-start;
             flex-direction: column;
-          }
-          .home-cta-section .home-benefit-card:nth-child(even),
-          .home-cta-section .home-benefit-card:nth-child(even):hover {
-            transform: none;
           }
           .home-journey-step {
             grid-template-columns: 52px 1fr;

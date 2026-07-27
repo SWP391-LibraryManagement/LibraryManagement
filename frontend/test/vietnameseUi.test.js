@@ -90,7 +90,8 @@ test('public and member pages translate generated copy while preserving source d
   assert.match(history, /aria-label="Trang trước"/);
   assert.match(history, /aria-label="Trang sau"/);
   assert.match(history, /getStatusLabel\(row\.status\)/);
-  assert.match(mine, /caption="Danh sách đặt chỗ của tôi"/);
+  assert.match(mine, /caption="Danh sách đặt chỗ đang hoạt động của tôi"/);
+  assert.match(mine, /caption="Lịch sử đặt chỗ của tôi"/);
   assert.match(mine, /getStatusLabel\(item\.status\)/);
   assert.doesNotMatch(viewModels, /`Copy #|`Member #/);
   assert.match(viewModels, /`Bản sao #/);

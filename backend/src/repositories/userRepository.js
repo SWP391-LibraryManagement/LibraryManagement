@@ -18,6 +18,7 @@ function mapUser(row) {
     lastLoginAt: row.LastLoginAt,
     createdAt: row.CreatedAt,
     updatedAt: row.UpdatedAt,
+    deactivatedAt: row.DeactivatedAt,
   };
 }
 
@@ -393,13 +394,7 @@ async function getSafeUserById(userId) {
   );
 }
 
-async function createRegisteredUser({ username, email, passwordHash, phoneNumber, fullName }) {
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-
-  await transaction.begin();
-
-  try {
+async function insertRegisteredUser({ username, email, passwordHash, phoneNumber, fullName }, transaction) {
     const userResult = await new sql.Request(transaction)
       .input('Username', sql.NVarChar(50), username)
       .input('Email', sql.NVarChar(255), email)
@@ -432,10 +427,23 @@ async function createRegisteredUser({ username, email, passwordHash, phoneNumber
         WHERE RoleName = 'MEMBER'
       `);
 
-    await transaction.commit();
+    return user;
+}
+
+async function createRegisteredUser(input, transaction) {
+  if (transaction) {
+    return insertRegisteredUser(input, transaction);
+  }
+
+  const ownTransaction = new sql.Transaction(await getPool());
+  await ownTransaction.begin();
+
+  try {
+    const user = await insertRegisteredUser(input, ownTransaction);
+    await ownTransaction.commit();
     return user;
   } catch (error) {
-    await transaction.rollback();
+    await ownTransaction.rollback();
     throw error;
   }
 }
@@ -530,10 +538,9 @@ async function countActiveBorrowingsByUserId(userId) {
   return result.recordset[0]?.ActiveBorrowingCount || 0;
 }
 
-async function markEmailVerified(userId) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function markEmailVerified(userId, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  const result = await request
     .input('UserId', sql.Int, userId)
     .query(`
       UPDATE Users
@@ -541,30 +548,82 @@ async function markEmailVerified(userId) {
           EmailVerifiedAt = COALESCE(EmailVerifiedAt, GETDATE()),
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'INACTIVE'
+        AND EmailVerifiedAt IS NULL
+        AND DeactivatedAt IS NULL
     `);
+
+  return result.rowsAffected?.[0] === 1;
 }
 
-async function updateFailedLogin(userId, failedLoginCount, lockedUntil) {
+async function recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, lockoutMinutes) {
   const pool = await getPool();
-  await pool
-    .request()
-    .input('UserId', sql.Int, userId)
-    .input('FailedLoginCount', sql.Int, failedLoginCount)
-    .input('LockedUntil', sql.DateTime, lockedUntil || null)
-    .query(`
-      UPDATE Users
-      SET FailedLoginCount = @FailedLoginCount,
-          LockedUntil = @LockedUntil,
-          Status = CASE WHEN @LockedUntil IS NOT NULL THEN 'LOCKED' ELSE Status END,
-          UpdatedAt = GETDATE()
-      WHERE UserId = @UserId
-    `);
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+
+  try {
+    const result = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('FailedAt', sql.DateTime, failedAt)
+      .input('MaxAttempts', sql.Int, maxAttempts)
+      .input('WindowMinutes', sql.Int, windowMinutes)
+      .input('LockoutMinutes', sql.Int, lockoutMinutes)
+      .query(`
+        IF EXISTS (
+          SELECT 1
+          FROM Users WITH (UPDLOCK, HOLDLOCK)
+          WHERE UserId = @UserId
+            AND Status = 'ACTIVE'
+            AND DeactivatedAt IS NULL
+        )
+        BEGIN
+          INSERT INTO LoginFailureAttempts (UserId, AttemptedAt)
+          VALUES (@UserId, @FailedAt);
+
+          DELETE FROM LoginFailureAttempts
+          WHERE UserId = @UserId
+            AND AttemptedAt < DATEADD(MINUTE, -@WindowMinutes, @FailedAt);
+
+          DECLARE @FailedLoginCount INT = (
+            SELECT COUNT(*)
+            FROM LoginFailureAttempts
+            WHERE UserId = @UserId
+              AND AttemptedAt >= DATEADD(MINUTE, -@WindowMinutes, @FailedAt)
+          );
+          DECLARE @LockedUntil DATETIME = CASE
+            WHEN @FailedLoginCount >= @MaxAttempts
+            THEN DATEADD(MINUTE, @LockoutMinutes, @FailedAt)
+            ELSE NULL
+          END;
+
+          UPDATE Users
+          SET FailedLoginCount = @FailedLoginCount,
+              LockedUntil = @LockedUntil,
+              Status = CASE WHEN @LockedUntil IS NOT NULL THEN 'LOCKED' ELSE Status END,
+              UpdatedAt = @FailedAt
+          WHERE UserId = @UserId;
+
+          SELECT CAST(1 AS BIT) AS Applied, @FailedLoginCount AS FailedLoginCount, @LockedUntil AS LockedUntil;
+        END
+        ELSE
+          SELECT CAST(0 AS BIT) AS Applied, 0 AS FailedLoginCount, CAST(NULL AS DATETIME) AS LockedUntil;
+      `);
+
+    await transaction.commit();
+    return {
+      applied: Boolean(result.recordset[0].Applied),
+      failedLoginCount: result.recordset[0].FailedLoginCount,
+      lockedUntil: result.recordset[0].LockedUntil,
+    };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 }
 
-async function resetFailedLoginsAndSetLastLogin(userId) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function resetFailedLoginsAndSetLastLogin(userId, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  const result = await request
     .input('UserId', sql.Int, userId)
     .query(`
       UPDATE Users
@@ -574,14 +633,24 @@ async function resetFailedLoginsAndSetLastLogin(userId) {
           LastLoginAt = GETDATE(),
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'ACTIVE'
+        AND DeactivatedAt IS NULL
+
+      DECLARE @Applied INT = @@ROWCOUNT;
+      IF @Applied = 1
+        DELETE FROM LoginFailureAttempts WHERE UserId = @UserId;
+
+      SELECT CAST(CASE WHEN @Applied = 1 THEN 1 ELSE 0 END AS BIT) AS Applied;
     `);
+  return Boolean(result.recordset[0].Applied);
 }
 
-async function unlockExpiredAccount(userId) {
+async function unlockExpiredAccount(userId, now) {
   const pool = await getPool();
-  await pool
+  const result = await pool
     .request()
     .input('UserId', sql.Int, userId)
+    .input('Now', sql.DateTime, now)
     .query(`
       UPDATE Users
       SET FailedLoginCount = 0,
@@ -589,13 +658,23 @@ async function unlockExpiredAccount(userId) {
           Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'LOCKED'
+        AND DeactivatedAt IS NULL
+        AND LockedUntil IS NOT NULL
+        AND LockedUntil <= @Now
+
+      DECLARE @Applied INT = @@ROWCOUNT;
+      IF @Applied = 1
+        DELETE FROM LoginFailureAttempts WHERE UserId = @UserId;
+
+      SELECT CAST(CASE WHEN @Applied = 1 THEN 1 ELSE 0 END AS BIT) AS Applied;
     `);
+  return Boolean(result.recordset[0].Applied);
 }
 
-async function updatePassword(userId, passwordHash) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function updatePassword(userId, passwordHash, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  await request
     .input('UserId', sql.Int, userId)
     .input('PasswordHash', sql.NVarChar(255), passwordHash)
     .query(`
@@ -606,6 +685,8 @@ async function updatePassword(userId, passwordHash) {
           Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+
+      DELETE FROM LoginFailureAttempts WHERE UserId = @UserId
     `);
 }
 
@@ -624,6 +705,8 @@ async function updatePasswordAndActivate(userId, passwordHash) {
           LockedUntil = NULL,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+
+      DELETE FROM LoginFailureAttempts WHERE UserId = @UserId
     `);
 }
 
@@ -643,7 +726,7 @@ module.exports = {
   listRoles,
   countActiveBorrowingsByUserId,
   markEmailVerified,
-  updateFailedLogin,
+  recordFailedLogin,
   resetFailedLoginsAndSetLastLogin,
   unlockExpiredAccount,
   updatePassword,

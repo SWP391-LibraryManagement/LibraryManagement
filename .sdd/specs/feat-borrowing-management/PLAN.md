@@ -204,7 +204,17 @@ Not included:
 5. Run focused tests under `TZ=UTC`, then run mutable SQL only on a named
    disposable local database before full verification and H2.
 
-## 9. V0.7.5 Rule-Alignment Plan
+## 9. V0.7.6 FE08 Held-Copy Handoff
+
+1. Accept `bookId` plus `copyId` as frontend-only selection hints from FE08.
+2. Select the exact copy only when it exists in FE07's protected,
+   reservation-aware candidate response for the current Member.
+3. Keep `POST /api/borrow-requests` and its server-side eligibility/reservation
+   checks authoritative.
+4. Preserve the normal `PENDING` request followed by Librarian/Admin approval
+   and atomic FE08 fulfillment.
+
+## 10. V0.7.5 Rule-Alignment Plan
 
 The detailed executable plan is
 `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
@@ -230,11 +240,12 @@ The detailed executable plan is
 7. Keep the implementation diff uncommitted until L1-L4 evidence is complete
    and Nhat grants the H2 addendum.
 
-## 10. V0.7.6 Main-Integration Addendum
+## 11. V0.7.7 Main-Integration Addendum
 
-1. Preserve `FE07-T047` from `main` for single-role member-self-service access.
-2. Use `FE07-T051` only to record retirement of the superseded multi-role
-   renewal scenario; do not reuse or overwrite `FE07-T047`.
+1. Preserve `FE07-T047` and `FE07-T048` from `main` for single-role
+   member-self-service and the exact held-copy handoff.
+2. Use `FE07-T049` through `FE07-T052` for the rule-alignment tasks; do not
+   reuse or overwrite the upstream task IDs.
 3. Keep the authoritative return snapshot and shared business-date changes from
    v0.7.5 because they are independent of account cardinality.
 4. Run the FE07 role/renewal, return snapshot, and timezone regressions against

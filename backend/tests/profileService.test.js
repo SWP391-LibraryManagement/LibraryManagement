@@ -223,6 +223,18 @@ describe('FE03 profile service', () => {
   });
 
   test.each([
+    ['profile update', (service) => service.updateMyProfile(1, { email: 'changed@example.test' })],
+    ['avatar update', (service) => service.updateMyAvatar(1, validPngFile({ originalName: 'avatar.txt', mimeType: 'text/plain' }))],
+  ])('invalid %s does not auto-create a missing profile', async (_label, run) => {
+    const { repository } = makeRepository(makeProfile({ profileId: null }));
+    const service = createProfileService({ profileRepository: repository });
+
+    await expect(run(service)).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(repository.createBlankProfile).not.toHaveBeenCalled();
+  });
+
+  test.each([
     ['read-only avatarUrl', { avatarUrl: '/uploads/avatars/forbidden.png' }],
     ['unknown field', { nickname: 'not-approved' }],
   ])('%s rejects the entire PUT payload before repository update', async (_label, field) => {
@@ -275,6 +287,43 @@ describe('FE03 profile service', () => {
       dateOfBirth: undefined,
       phone: null,
     });
+  });
+
+  test.each([
+    ['fullName', 123],
+    ['address', { value: 'Library' }],
+    ['dateOfBirth', new Date('2000-01-02T00:00:00.000Z')],
+    ['phone', 9012345678],
+  ])('rejects non-string %s before repository update', async (field, value) => {
+    const { repository } = makeRepository();
+    const service = createProfileService({ profileRepository: repository });
+
+    await expect(service.updateMyProfile(1, { [field]: value })).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'INVALID_PROFILE_DATA',
+      details: [expect.objectContaining({ field })],
+    });
+
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  test('does not write or audit when normalized profile values are unchanged', async () => {
+    const { repository } = makeRepository();
+    const auditLogRepository = { create: jest.fn(async () => undefined) };
+    const service = createProfileService({ profileRepository: repository, auditLogRepository });
+
+    await expect(service.updateMyProfile(1, {
+      fullName: 'Demo Member',
+      address: 'Old Address',
+      dateOfBirth: '2000-01-02',
+      phone: '0900000001',
+    })).resolves.toMatchObject({
+      fullName: 'Demo Member',
+      dateOfBirth: '2000-01-02',
+    });
+
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+    expect(auditLogRepository.create).not.toHaveBeenCalled();
   });
 
   test('updateMyAvatar stores generated avatar URL and writes audit', async () => {

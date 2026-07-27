@@ -91,7 +91,7 @@ test('[E2E-FE08-ACC01] member searches safe SQL-shaped candidates and creates a 
   expect((await createResponse).status()).toBe(201);
   await expect(page.getByText(/Đã đặt "Database System"/)).toBeVisible();
   await expect(page.locator('.member-reservation-list').getByText('Database System', { exact: true })).toBeVisible();
-  await expect(page.locator('.queue-list button:disabled').filter({ hasText: 'Đã đặt chỗ' }).first()).toBeVisible();
+  await expect(page.locator('.queue-list button:disabled').filter({ hasText: 'Đang đặt chỗ' }).first()).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();

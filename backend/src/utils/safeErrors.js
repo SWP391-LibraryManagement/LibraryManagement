@@ -8,8 +8,8 @@ function unauthorized(code = 'UNAUTHORIZED', message = 'Authentication is requir
   return new AppException(401, code, message);
 }
 
-function forbidden(code = 'FORBIDDEN', message = 'You are not allowed to perform this action.') {
-  return new AppException(403, code, message);
+function forbidden(code = 'FORBIDDEN', message = 'You are not allowed to perform this action.', details) {
+  return new AppException(403, code, message, details);
 }
 
 function notFound(code = 'NOT_FOUND', message = 'Resource not found.') {

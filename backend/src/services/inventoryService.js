@@ -235,7 +235,7 @@ function createInventoryService({ inventoryRepository, auditLogRepository } = {}
     requireStaff(actor);
     const bookId = toPositiveInteger(bookIdInput, 'Book ID');
     const barcode = normalizeBarcode(input.barcode);
-    const location = normalizeLocation(input.location, { requiredWhenProvided: true });
+    const location = normalizeLocation(input.location);
     const book = await ensureBookExists(bookId);
     if (book.status !== 'ACTIVE') throw errors.conflict('INACTIVE_PARENT_BOOK', 'A copy cannot be made available under an inactive book.');
     await ensureBarcodeUnique(barcode);
@@ -268,7 +268,7 @@ function createInventoryService({ inventoryRepository, auditLogRepository } = {}
       patch.barcode = normalizeBarcode(input.barcode);
       await ensureBarcodeUnique(patch.barcode, copyId);
     }
-    if (input.location !== undefined) patch.location = normalizeLocation(input.location, { requiredWhenProvided: true });
+    if (input.location !== undefined) patch.location = normalizeLocation(input.location);
 
     return runMutation(async (transaction) => {
       const copy = await inventoryRepository.updateCopy(copyId, patch, current.version, transaction);

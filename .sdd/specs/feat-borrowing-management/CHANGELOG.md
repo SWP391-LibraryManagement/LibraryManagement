@@ -1,5 +1,20 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Reconcile held-copy handoff with rule alignment (v0.7.7)
+
+- Preserved upstream FE08-to-FE07 exact `bookId`/`copyId` handoff and normal
+  pending-request/approval ownership.
+- Preserved the one-account/one-role rule, transaction-locked return evidence,
+  and timezone-independent renewal behavior.
+- Kept upstream `FE07-T048` authoritative and renumbered the rule-alignment
+  tasks to `FE07-T049` through `FE07-T052`.
+
+## 2026-07-27 - Accept the exact FE08 held-copy handoff
+
+- FE07 now reads both `bookId` and `copyId` from a Member's `NOTIFIED` FE08 reservation action.
+- The request screen preselects that exact copy only when the protected reservation-aware candidate catalog returns it for the current Member.
+- Preserved normal pending-request creation, Librarian/Admin approval, backend revalidation, and atomic FE08 fulfillment.
+
 ## 2026-07-27 - Reconcile single-role main with rule alignment (v0.7.6)
 
 - Adopted project-wide `DEC-GEN-005`: every persisted account has exactly one
@@ -9,8 +24,8 @@
 - Kept Member owner-only renewal and Librarian/Admin cross-member renewal as
   separate single-role actor paths while preserving every loan-owner
   eligibility check.
-- Renumbered the rule-alignment renewal task to `FE07-T051` because `main`
-  already assigned `FE07-T047` to single-role member-self-service access.
+- Renumbered the rule-alignment tasks because `main` assigned `FE07-T047` and
+  `FE07-T048` to single-role member-self-service and the held-copy handoff.
 - Marked the former multi-role renewal scenario as superseded and removed its
   branch-local test/authorization delta during integration.
 

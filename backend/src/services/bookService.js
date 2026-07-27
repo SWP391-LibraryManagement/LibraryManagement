@@ -162,7 +162,6 @@ function mapPublicBook(book) {
   return {
     bookId: book.id,
     title: book.title,
-    isbn: nullableValue(book.isbn),
     categoryName: nullableValue(book.category),
     authorName: nullableValue(book.author),
     publisherName: nullableValue(book.publisher),

@@ -1,12 +1,12 @@
 # CONTEXT.md - FE01 Public / Browse
 
-# Version: 0.1.1
+# Version: 0.1.2
 
-# Status: APPROVED - BASELINE 2026-07-17; HOMEPAGE ROLE INTEGRATION ALIGNED 2026-07-26
+# Status: APPROVED - BASELINE 2026-07-17; HOMEPAGE ROLE/ISBN BOUNDARY ALIGNED 2026-07-27
 
 # Owner: Dung
 
-# Last Updated: 2026-07-26
+# Last Updated: 2026-07-27
 
 # Feature folder: `.sdd/specs/feat-public-browse/`
 
@@ -19,7 +19,7 @@ Public / Browse exists so guests can discover library books before logging in or
 This feature must keep four things clear:
 
 - Public users can view safe catalog information.
-- Public search and browse use the official book catalog.
+- Guest/Member search the official catalog by title or author; ISBN remains staff-management metadata.
 - Public pages do not expose protected user, borrowing, reservation, or fine data.
 - Public browse remains read-only and does not modify book or inventory records.
 
@@ -34,7 +34,7 @@ The typical public browsing workflow:
 1. A guest opens the library website.
 2. The system displays a home page with available public navigation.
 3. The guest searches or browses books.
-4. The system returns matching public book information.
+4. The system returns matching public book information without ISBN.
 5. The guest opens a book result.
 6. The system displays safe book details without exposing availability labels to Guest/Member.
 7. The system may use the latest availability internally to choose the correct owning Member workflow; Librarian/Admin may see the approved high-level status.
@@ -48,8 +48,8 @@ FE01 includes:
 
 - View home page.
 - Search public book catalog.
-- View public book information.
-- View public book details.
+- Search by title or author; ISBN search belongs to FE05 Librarian/Admin management.
+- View public book information and details without ISBN.
 - Read-only display of categories, authors, publishers, and covers.
 - Role-aware HomePage presentation: Guest/Member do not see availability labels; Librarian/Admin may see the high-level state.
 - Responsive navigation, connected public sections, footer contact details, and readable policy information.
@@ -79,8 +79,8 @@ Potential issues to review:
 
 - The SQL script does not yet define a book active/inactive status field, while public search normally should hide inactive books.
 - Availability is calculated from `BookCopies.Status = AVAILABLE`; it remains in the canonical response for workflow routing and approved staff presentation.
-- Public responses must not expose internal inventory fields such as exact barcode policy if the team decides barcode is staff-only.
-- Search behavior needs approved matching rules: title only, author/category/publisher, ISBN, or all.
+- Public responses must not expose ISBN or internal inventory fields such as exact barcode policy.
+- Public `q` matches title or author only; FE05 staff management search may also match ISBN, category, and publisher.
 - Pagination defaults to `page=1`, `limit=20`, with `page>=1`, `limit=1..100`; invalid values are rejected. Empty search returns the default first page ordered by `Title ASC, BookId ASC`.
 
 These are not blockers for drafting, but they must be resolved before implementation.
@@ -140,9 +140,9 @@ These are not blockers for drafting, but they must be resolved before implementa
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-002 | HomePage availability labels are staff-only. Guest/Member do not see availability badges or revealing action labels; Librarian/Admin may see the high-level state. The canonical response retains availability for workflow routing without exact copy counts. | User correction 2026-07-25, superseding the 2026-06-10 presentation decision | APPROVED |
-| Q-FE01-003 | Phase 1 filters: keyword, title, author, category; pagination required. | Review packet 2026-06-10 | APPROVED |
-| Q-FE01-004 | A non-null ISBN is visible to guests; a missing ISBN is returned as `null`. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
+| Q-FE01-002 | Availability badges are staff-only. Guest uses a generic login continuation; Member sees the explicit FE07 borrow or FE08 reservation action selected from current availability; Librarian/Admin sees high-level status and management actions. No exact copy count is exposed. | Product-owner correction 2026-07-27, superseding the 2026-07-25 action-label decision | APPROVED |
+| Q-FE01-003 | Phase 1 public q matches title or author; approved ID filters and pagination remain required. | Review packet 2026-06-10; product-owner clarification 2026-07-27 | APPROVED |
+| Q-FE01-004 | ISBN is excluded from Guest/Member HomePage search, public list, and public detail; it remains visible/searchable only in authenticated Librarian/Admin FE05 management. | Product-owner correction 2026-07-27 (supersedes review packet 2026-06-10) | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-008 | Missing optional catalog metadata returns `null` without excluding a public-visible book. | Spec normalization 2026-07-17 | APPROVED |
 

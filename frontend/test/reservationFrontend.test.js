@@ -44,6 +44,35 @@ test('reservation mapping preserves the normalized backend lifecycle state', asy
   const { mapReservation } = await loadViewModels();
 
   assert.equal(mapReservation({ reservationId: 7, copyId: 9, status: 'fulfilled' }).rawStatus, 'FULFILLED');
+  const notified = mapReservation({
+    reservationId: 8,
+    copyId: 10,
+    status: 'NOTIFIED',
+    notifiedAt: '2026-07-27T00:00:00.000Z',
+    expiresAt: '2026-07-29T00:00:00.000Z',
+    copy: { bookId: 12 },
+  });
+  assert.equal(notified.bookId, 12);
+  assert.equal(notified.pickupStart, '2026-07-27T00:00:00.000Z');
+  assert.equal(notified.deadline, '2026-07-29T00:00:00.000Z');
+});
+
+test('member reservation view separates current state from terminal history and uses visible badge tones', async () => {
+  const { memberReservationBadgeStatus, splitMemberReservations } = await loadViewModels();
+  const rows = [
+    { reservationId: 1, rawStatus: 'CANCELLED' },
+    { reservationId: 2, rawStatus: 'ACTIVE' },
+    { reservationId: 3, rawStatus: 'NOTIFIED' },
+    { reservationId: 4, rawStatus: 'FULFILLED' },
+  ];
+
+  assert.deepEqual(splitMemberReservations(rows), {
+    current: [rows[1], rows[2]],
+    history: [rows[0], rows[3]],
+  });
+  assert.equal(memberReservationBadgeStatus('ACTIVE'), 'waiting');
+  assert.equal(memberReservationBadgeStatus('NOTIFIED'), 'ready');
+  assert.equal(memberReservationBadgeStatus('CANCELLED'), 'cancelled');
 });
 
 test('keeps only active FE08 states in the librarian queue', async () => {
@@ -232,6 +261,12 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /DEMO_MY_RESERVATIONS|RS-DEMO|Backend chưa nhận yêu cầu/);
   assert.doesNotMatch(mine, /DEMO_RESERVABLE|useMemo/);
   assert.match(mine, /reservationApi\.listCandidates/);
+  assert.match(mine, /searchParams\.get\('bookId'\)/);
+  assert.match(mine, /publicBrowseApi\.detail\(requestedBookId\)/);
+  assert.match(mine, /setSearch\(selectedTitle\)/);
+  assert.match(mine, /@spec FR-FE08-031/);
+  assert.match(mine, /@spec FR-FE08-032/);
+  assert.match(mine, /@spec FR-FE08-033/);
   assert.match(mine, /candidate\.copyId/);
   assert.match(mine, /activeReservedCopyIds/);
   assert.match(mine, /isOpenMemberReservationStatus/);
@@ -240,7 +275,13 @@ test('FE08 pages adopt shared operational patterns and staff page uses canonical
   assert.doesNotMatch(mine, /visibleCandidates/);
   assert.match(mine, /candidate\.hasActiveReservation/);
   assert.match(mine, /hasActiveReservation: true/);
-  assert.match(mine, /Đã đặt chỗ/);
+  assert.match(mine, /Đang đặt chỗ/);
+  assert.match(mine, /Đến lượt bạn/);
+  assert.match(mine, /splitMemberReservations/);
+  assert.match(mine, /getStatusLabel\(item\.status\)/);
+  assert.match(mine, /memberReservationBadgeStatus\(item\.rawStatus\)/);
+  assert.match(mine, /Sách "\$\{item\.title\}" đã sẵn sàng nhận/);
+  assert.match(mine, /\/borrowing\/new\?bookId=\$\{item\.bookId\}&copyId=\$\{item\.copyId\}/);
   assert.doesNotMatch(mine, /Danh sách đang được đồng bộ từ thư viện|Đã cập nhật dữ liệu/);
   assert.doesNotMatch(mine, /candidate\.availableCopies|candidate\.eta|book\.availableCopies|book\.eta/);
   assert.match(mine, /setReservations\(\[\]\)/);

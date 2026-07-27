@@ -34,8 +34,8 @@ The following table records the original Phase 2 drift. FE01-T001 through FE01-T
 
 | Approved contract | Current drift to reconcile |
 | --- | --- |
-| Public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`. | `getHomeBooks` currently accepts a text `category` filter and searches ISBN/category/publisher fields that are outside the FE01 query contract. |
-| `q` matches title or author name case-insensitively and is limited to 1..200 characters when supplied. | The current search validation allows an empty value but caps it at 100 characters and the SQL predicate includes extra fields. |
+| Public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`. | Reconciled: public repository accepts the approved fields; staff-only search fields remain isolated in FE05. |
+| `q` matches title or author name case-insensitively and is limited to 1..200 characters when supplied. | Reconciled: public SQL matches title/author only and does not match ISBN/category/publisher text. |
 | Public results use `page=1`, `limit=20`, bounds `page>=1`, `limit=1..100`, and `Title ASC, BookId ASC`. | The current home query returns an unpaginated list ordered by `BookId DESC`. |
 | Public detail hides inactive books and returns only public-safe fields. | `getBookById` currently returns inactive rows and maps internal status/copy-count fields into the shared book DTO. |
 | Availability is `AVAILABLE` when at least one current `BookCopies.Status = AVAILABLE`, otherwise `UNAVAILABLE`. | The current response exposes exact copy counts and the UI displays a legacy `ĐÃ MƯỢN` label instead of `Không khả dụng`. |
@@ -45,8 +45,8 @@ The following table records the original Phase 2 drift. FE01-T001 through FE01-T
 
 ## 4. Ownership And Shared-File Boundary
 
-- FE01 owns public-safe reads, public query validation, public DTO projection, and guest-facing browse states.
-- FE05 owns catalog metadata mutations and staff management views. FE01 must not change FE05 mutation routes or management-only fields.
+- FE01 owns public-safe reads, title/author query validation, a public DTO that excludes ISBN, and guest-facing browse states.
+- FE05 owns ISBN and other catalog metadata mutations plus staff management views. FE01 must not change FE05 mutation routes or management-only fields.
 - FE06 owns physical copy state and availability transitions. FE01 may read the latest committed aggregate but must not write `BookCopies`.
 - FE07 and FE08 own borrowing/reservation transitions. FE01 only reflects the committed availability result on a later read.
 - Shared backend files such as `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, and `backend/src/repositories/bookRepository.js` require coordination with the FE05 owner. Public changes must be isolated from management mutation paths.
@@ -56,10 +56,10 @@ The following table records the original Phase 2 drift. FE01-T001 through FE01-T
 
 | Method | Endpoint | Required behavior |
 | --- | --- | --- |
-| `GET` | `/api/books` | Guest/Member/Librarian/Admin public-safe access; accept only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; return paginated summaries with deterministic order and current availability. |
-| `GET` | `/api/books/{bookId}` | Guest/Member/Librarian/Admin access; validate a positive integer ID; return public-safe active detail or `404` for missing/hidden books. Staff-only management fields require the owning FE05/FE11 authorization boundary. |
+| `GET` | `/api/books` | Guest/Member/Librarian/Admin public-safe access; `q` matches only title/author; return paginated summaries without ISBN, with deterministic order and current availability. |
+| `GET` | `/api/books/{bookId}` | Guest/Member receive public-safe active detail without ISBN; server-authorized Librarian/Admin may receive FE05 management fields including ISBN; validate a positive integer ID and return `404` for missing/hidden public books. |
 
-The response envelope must follow the approved shared API convention used by the FE05 public read contract. It must contain pagination metadata for list responses and must never include barcodes, locations, borrower/member data, reservation rows, fine data, audit data, or staff-only fields. If the shared envelope changes, FE01 and FE05 specs must be reviewed together before implementation continues.
+The response envelope must follow the approved shared API convention used by the FE05 public read contract. It must contain pagination metadata for list responses and must never include ISBN, barcodes, locations, borrower/member data, reservation rows, fine data, audit data, or other staff-only fields. If the shared envelope changes, FE01 and FE05 specs must be reviewed together before implementation continues.
 
 ## 6. Scope
 

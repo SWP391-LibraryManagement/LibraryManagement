@@ -2,7 +2,7 @@
 
 Status: RECONCILIATION IN PROGRESS - CONTEXT GAPS TRACKED
 Implementation State: PARTIAL
-Baseline Note: Approved implementation baseline complete; reconciliation tasks FE02-T045 through FE02-T052 remain open.
+Baseline Note: Approved implementation baseline complete; reconciliation task FE02-T049 remains open for H3 linkage and human approval.
 Date: 2026-07-23
 Owner: Dat
 
@@ -181,15 +181,17 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Files: FE02 context/spec/plan/tasks/test/changelog documents.
   - DoD: direct and OTP-confirmed change-password paths, artifact status, endpoint inventory, password policy, known-account lockout terminology, and open evidence gaps are consistent.
 
-- [ ] **FE02-T045 - Add dedicated change-password OTP integration regressions.**
+- [x] **FE02-T045 - Add dedicated change-password OTP integration regressions.**
   - Maps to: FR-FE02-010; AC-FE02-012, AC-FE02-013; CG-FE02-004.
   - Dependencies: FE02-T044.
   - DoD: backend tests cover request/confirm success plus incorrect current password and invalid, expired, used, and wrong-user OTP rejection without password mutation.
+  - Evidence: `backend/tests/authRoutes.test.js` covers every named rejection and the successful one-time password change; focused FE02 tests pass 47/47 on 2026-07-27.
 
-- [ ] **FE02-T046 - Prove server-side current-role authorization.**
+- [x] **FE02-T046 - Prove server-side current-role authorization.**
   - Maps to: FR-FE02-014; AC-FE02-023; CG-FE02-002.
   - Dependencies: FE02-T044.
   - DoD: an explicit regression proves client role claims cannot override current `UserRoles`.
+  - Evidence: `backend/tests/authRoutes.test.js` changes persisted roles after access-token issuance and proves protected authentication returns the current server-side roles.
 
 - [x] **FE02-T047 - Align and verify the exact account-lock duration.**
   - Maps to: BR-FE02-008, BR-FE02-009; FR-FE02-006; AC-FE02-008; CG-FE02-001.
@@ -197,15 +199,17 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - DoD: repository/deployment defaults use 30 minutes and focused tests prove the exact duration after five qualifying failures in the rolling 15-minute window.
   - Evidence: `backend/.env.example` and `backend/src/config/env.js` default to 30 minutes; `envConfig.test.js` and `authRoutes.test.js` verify the default and exact `lockedUntil` duration.
 
-- [ ] **FE02-T048 - Record performance evidence or an approved exception.**
+- [x] **FE02-T048 - Record performance evidence or an approved exception.**
   - Maps to: NFR-FE02-PERF-001, NFR-FE02-PERF-004; CG-FE02-005.
   - Dependencies: FE02-T044.
   - DoD: repeatable measurements demonstrate valid login under 1 second and token validation under 50 ms at p95, or a reviewer-approved exception updates the contract.
+  - Evidence: `npm.cmd run phase3:performance` uses the documented local deterministic in-memory environment, bcrypt cost 10, 30 warmed valid-login samples, and 50 warmed `/api/auth/me` samples. The 2026-07-27 rerun records login p95 `61.46 ms` and session-validation p95 `1.52 ms`; `node --test tests/performance/phase3-performance.test.js` passes 3/3. Boundaries remain explicit in `docs/performance/phase3-performance-report-2026-07-19.md`.
 
-- [ ] **FE02-T050 - Enforce current account state on protected requests.**
+- [x] **FE02-T050 - Enforce current account state on protected requests.**
   - Maps to: FR-FE02-008, FR-FE02-009; AC-FE02-009, AC-FE02-010; CG-FE02-006.
   - Dependencies: FE02-T044.
   - DoD: authentication rejects a token holder whose persisted user is no longer `ACTIVE`, while retaining linked-session and current-role checks; focused regressions cover deactivation/lock after token issuance.
+  - Evidence: `authenticateToken` now rejects non-`ACTIVE` persisted users; focused regressions cover both `INACTIVE` and `LOCKED` transitions after token issuance.
 
 - [x] **FE02-T051 - Align FE02 frontend session recovery.**
   - Maps to: NFR-FE02-UX-009; CG-FE02-007.
@@ -213,12 +217,81 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - DoD: FE02 protected profile/change-password requests use the selected storage, retry at most once after 401, save the replacement access token, and clear auth state plus redirect to login when recovery fails.
   - Evidence: `frontend/src/api/profileApi.js` now applies the shared one-refresh flow to profile and change-password requests; `frontend/test/profileFrontend.test.js` covers retry, token persistence, cleanup, and redirect behavior.
 
-- [ ] **FE02-T052 - Close authentication transaction and audit atomicity gaps.**
+- [x] **FE02-T052 - Close authentication transaction and audit atomicity gaps.**
   - Maps to: NFR-FE02-TXN-001 to NFR-FE02-TXN-004; CG-FE02-008.
   - Dependencies: FE02-T044.
   - DoD: registration credential creation, login/session creation, password change/OTP consumption, password reset/token consumption, and required audit state commit or roll back according to the approved contract, with focused failure regressions or an explicitly approved bounded exception.
+  - Evidence: FE02 mutations now share SQL transactions for the four NFR-FE02-TXN-001..004 boundaries; focused in-memory failure regressions prove rollback on verification-token creation, refresh-session creation, required password-change audit, and password-reset token invalidation. Focused FE02 tests pass 47/47 on 2026-07-27.
 
 - [ ] **FE02-T049 - Complete reconciliation review and closeout.**
-  - Maps to: Definition of Done; CG-FE02-003; SPEC.md v0.6.11.
+  - Maps to: Definition of Done; CG-FE02-003; SPEC.md v0.6.16.
   - Dependencies: FE02-T045 to FE02-T048, FE02-T050 to FE02-T052.
   - DoD: automated gates pass, the FE02-T043 H3 closeout is linked, all conformance gaps are closed or explicitly deferred, and human review approves the reconciled artifacts.
+
+## Phase 1: Convergence
+
+- [x] **FE02-T053 - Enforce the rolling failed-login window.**
+  - Maps to: BR-FE02-008; FR-FE02-006; NFR-FE02-SEC-005.
+  - Dependencies: FE02-T047.
+  - DoD: only failed attempts occurring within the rolling 15-minute window contribute to the five-attempt lock threshold; an older attempt starts a new count, and focused regressions prove both paths.
+  - Evidence: `LoginFailureAttempts` records known-account failures; the repository counts the exact 15-minute window transactionally, and the focused regression proves an expired failure is excluded before five current failures lock the account for 30 minutes.
+
+- [x] **FE02-T054 - Generate authentication OTPs cryptographically securely.**
+  - Maps to: BR-FE02-010; BR-FE02-014; NFR-FE02-SEC-007.
+  - Dependencies: FE02-T044.
+  - DoD: the default OTP generator uses a cryptographically secure source, preserves the six-digit contract including leading zeroes, and a focused regression guards the implementation.
+  - Evidence: the default generator uses Node.js `crypto.randomInt`; `backend/tests/authUtils.test.js` proves the secure call boundary and `000042` leading-zero result.
+
+## Phase 2: Convergence
+
+- [x] **FE02-T055 - Recover interrupted self-registration from login.**
+  - Maps to: BR-FE02-004, BR-FE02-007, BR-FE02-025; AC-FE02-007; approved interrupted-registration case.
+  - Dependencies: FE02-T011, FE02-T012, FE02-T022.
+  - DoD: when correct credentials belong to a self-registered account still awaiting email verification, login returns a stable verification-required signal and the frontend navigates to `/verify-email` with the registered email; unknown users, wrong passwords, deactivated users, and admin-created `ACCOUNT_SETUP` users retain safe non-verification behavior; resend verification is limited to eligible self-registration accounts; focused backend/frontend regressions pass.
+  - Evidence: login returns `403 EMAIL_VERIFICATION_REQUIRED` only after correct password proof and eligible self-registration provenance, issues no refresh session, and `LoginPage` routes to `/verify-email`; focused backend tests pass 48/48, frontend tests pass 220/220, lint/build pass, and FE02 traceability passes 27/27. Full backend remains 57/61 suites and 1034/1039 tests because of the recorded unrelated DNS/mock-isolation and cross-feature inactive-response expectations.
+
+## Phase 3: Convergence
+
+- [x] **FE02-T056 - Exclude deactivated accounts from self-registration verification recovery.**
+  - Maps to: BR-FE02-028; Q-FE02-017; AC-FE02-026 (`contradicts`).
+  - DoD: repository user mapping exposes `deactivatedAt`; login and resend verification reject a deactivated pending self-registration account without issuing a session or verification token; a focused regression proves the boundary.
+  - Evidence: `userRepository` maps `DeactivatedAt`, the shared recovery predicate rejects it, and focused repository/login/resend regressions pass in the 58/58 FE02 gate.
+
+- [x] **FE02-T057 - Apply the approved JWT clock-skew tolerance.**
+  - Maps to: EC-FE02-015 (`missing`).
+  - DoD: access-token validation uses exactly 30 seconds of clock tolerance and a focused utility regression guards the option.
+  - Evidence: `verifyAccessToken` passes `clockTolerance: 30` to `jsonwebtoken`; the focused utility regression passes.
+
+- [x] **FE02-T058 - Complete safe authentication failure logging.**
+  - Maps to: NFR-FE02-LOG-001, NFR-FE02-LOG-005, NFR-FE02-LOG-006; INV-FE02-006 (`partial`).
+  - DoD: failed logins record the submitted identifier and safe reason, the transition to `LOCKED` records a distinct lock event, and protected-token validation failures emit code-only debug output outside production without logging credentials; focused regressions pass.
+  - Evidence: login outcome audits carry identifier/reason, threshold transition writes `AUTH_ACCOUNT_LOCKED`, and injected debug logging receives only `INVALID_TOKEN`; focused FE02 tests pass 58/58.
+
+- [x] **FE02-T059 - Reconcile FE02 artifacts with implemented contracts and evidence.**
+  - Maps to: SPEC Section 10/11/16/17; PLAN Sections 4/5/16 (`contradicts`).
+  - DoD: artifacts record `LoginFailureAttempts`, the implemented `expiresIn` response shape and refresh-token logout contract, current AC-FE02-009/010/012/013/023 evidence, completed reconciliation checks, and current validation counts without changing approved behavior.
+  - Evidence: SPEC v0.6.14, CONTEXT v0.2.6, PLAN, TEST_PLAN v0.3.11, TASKS, CHANGELOG, and shared API contract now agree with current code and evidence.
+
+- [x] **FE02-T060 - Align cross-feature inactive-account integration expectations with FE02 authentication.**
+  - Maps to: FR-FE02-009; AC-FE02-010 (`contradicts`).
+  - DoD: FE04/FE07/FE08 integration regressions expect FE02's `401 INVALID_TOKEN` before their business handlers for a user deactivated after token issuance; feature rejection behavior remains intact and focused suites pass.
+  - Evidence: the three expectations now follow FR-FE02-009 and the affected membership/borrowing/reservation suites pass 114/114; full backend improves to 60/61 suites and 1040/1042 tests with only `dbConfig.test.js` failing.
+
+## Phase 4: Convergence
+
+- [x] **FE02-T061 - Preserve the terminal deactivated state during email verification.**
+  - Maps to: BR-FE02-004; FR-FE02-003; AC-FE02-002; INV-FE02-004; INV-FE02-006 (`contradicts`, `partial`).
+  - DoD: OTP and legacy-token verification reject deactivated or otherwise ineligible accounts without activating the user or consuming the credential; the persisted activation update cannot win a concurrent deactivation race; successful eligible verification still activates the account, consumes the credential, and records the audit event with focused regressions.
+  - Evidence: the shared verification completion path requires eligible self-registration, uses a guarded `INACTIVE`/`DeactivatedAt IS NULL` update, and commits activation, credential consumption, and required audit in one transaction; focused FE02 tests pass 61/61, including required-audit rollback.
+
+## Phase 5: Convergence
+
+- [x] **FE02-T062 - Map concurrent duplicate registration to the approved conflict.**
+  - Maps to: FR-FE02-015; EC-FE02-003 (`partial`).
+  - DoD: a deterministic SQL Server unique-email conflict raised after the pre-insert lookup returns `409 EMAIL_ALREADY_REGISTERED` with the approved message and no extra user/token/delivery state; unrelated database errors remain safe 500 responses; focused regression passes.
+  - Evidence: `authService.register` maps only SQL Server `2601`/`2627` conflicts naming `UX_Users_Email`; the route regression proves the approved 409 response and no persisted user/token state.
+
+- [x] **FE02-T063 - Preserve current account state across login writes.**
+  - Maps to: FR-FE02-004, FR-FE02-006, FR-FE02-008, FR-FE02-009; INV-FE02-004, INV-FE02-007; NFR-FE02-TXN-002 (`contradicts`).
+  - DoD: failed-login, expired-lock auto-unlock, and successful-login/session writes apply only to the current eligible persisted state; concurrent deactivation cannot become `LOCKED` or receive a refresh session, and a newer lock cannot be cleared by a stale unlock; repository and route regressions pass.
+  - Evidence: repository writes now guard the current status under the existing transaction boundaries; route regressions cover deactivation during failed/successful login and stale auto-unlock, and focused FE02 tests pass 66/66.

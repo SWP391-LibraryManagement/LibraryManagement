@@ -1,8 +1,8 @@
 ﻿# FE05 Test Plan - Book Management
 
-Version: 0.4.2
+Version: 0.4.3
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-22
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-book-management/SPEC.md`
 Feature IDs: `BR-FE05-*`, `FR-FE05-*`, `AC-FE05-*`
@@ -21,6 +21,8 @@ Book catalog management for authorized staff, including create, update, metadata
 - Category/author/publisher metadata validation.
 - Deactivate rule versus hard delete.
 - Search/filter/sort rules for management view.
+- Guest/Member public q matches title/author only and public DTOs exclude ISBN.
+- Librarian/Admin management list/detail/search retains ISBN.
 - Managed cover validation: JPG/PNG/WebP extension, MIME, byte signature, 2 MB limit, generated name, and safe cleanup.
 
 ## 3. API / Integration Test Targets
@@ -28,6 +30,7 @@ Book catalog management for authorized staff, including create, update, metadata
 - `GET /books/metadata`: authorized manager happy path.
 - `GET /books/metadata`: Guest/Member forbidden; Librarian/Admin receive only active reference choices.
 - `GET /admin/books`: manager list with deterministic filters, pagination, sort, and order.
+- `GET /books` and `/books/:bookId`: Guest/Member receive no ISBN; ISBN-only public q returns no match.
 - `POST /books`: create happy path.
 - `POST /books`: missing fields, duplicate ISBN/identifier, invalid metadata.
 - `PUT /books/:bookId`: update happy path, not found, invalid fields.

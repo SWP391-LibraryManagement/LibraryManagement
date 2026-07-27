@@ -1,6 +1,6 @@
 # SPEC.md - FE07 Borrowing Management
 
-# Version: 0.7.6
+# Version: 0.7.7
 
 # Status: APPROVED - RULE ALIGNMENT 2026-07-27
 
@@ -37,6 +37,9 @@
 > model. Member self-service is available only to `MEMBER`; Librarian/Admin
 > retain staff renewal scope without bypassing loan-owner eligibility. Nhat
 > confirmed this decision and authorized reconciliation on 2026-07-27.
+>
+> Revision v0.7.7 integrates the upstream exact FE08 held-copy handoff while
+> preserving the single-role, authoritative-return, and business-date rules.
 
 ---
 
@@ -250,6 +253,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE07-030: When Librarian/Admin opens an approval or rejection decision, the frontend shall show request/member/contact data and all requested copy titles, authors, identifiers, barcodes, locations, and current statuses already present in the canonical staff response without repeating those statuses in a generic availability banner; typing a rejection reason shall preserve focus and the complete controlled value across rerenders.
 - FR-FE07-031: When Librarian/Admin reviews an active loan for return, the frontend shall preserve the canonical `BorrowDetails` borrow date, due date, and renewal count, derive the due state against the current `Asia/Ho_Chi_Minh` business date, and label it explicitly as `Còn N ngày`, `Đến hạn hôm nay`, or `Quá hạn N ngày` instead of placing `Đúng hạn` under a `Quá hạn` heading.
 - FR-FE07-032: IF the compatibility role array is invalid legacy data containing `MEMBER` together with `LIBRARIAN` or `ADMIN` despite `DEC-GEN-005`, the system shall defensively reject member-self-service candidate, create-request, and own-history access with `403 ROLE_REQUIRED`; staff operational FE07 routes remain available according to their existing role guards. This is not a supported multi-role account model.
+- FR-FE07-033: WHEN a Member follows the FE08 handoff for a requester-owned `NOTIFIED` hold, the FE07 frontend shall select the exact canonical `bookId` and `copyId` returned by the protected borrow-candidate catalog and submit that copy through the normal pending-request workflow; server-side reservation-aware checks remain authoritative.
 
 ### 7.1 Unwanted Behaviour Requirements (Error / Abnormal Conditions)
 
@@ -302,6 +306,7 @@ These EARS requirements cover error and abnormal conditions. Each traces back to
 - AC-FE07-024: Given a pending request with one or more copies, when Librarian/Admin opens approve or reject, then the dialog identifies the request/member and lists every copy with circulation-relevant fields without a redundant generic availability banner; when the actor types a multi-character rejection reason, the textarea retains focus/value and the canonical reject command receives the trimmed reason.
 - AC-FE07-025: Given an active loan with canonical borrow/due dates and `renewalCount`, when staff opens Process Returns before, on, or after the due date, then the screen shows the matching remaining/today/overdue label using `Asia/Ho_Chi_Minh` and explains whether the loan has been renewed without changing the stored dates.
 - AC-FE07-026: Given a deliberately corrupted legacy compatibility role array containing `MEMBER + LIBRARIAN` or `MEMBER + ADMIN`, when the actor directly opens or calls member borrow candidates, request creation, or own history, then frontend redirects to the staff home and backend returns `403 ROLE_REQUIRED` without creating or exposing member-self-service state; persisted accounts still have exactly one role.
+- AC-FE07-027: Given FE08 links a Member's held copy to `/borrowing/new?bookId={bookId}&copyId={copyId}`, when the FE07 candidate catalog contains that requester-owned hold, then FE07 preselects the exact copy and creates the usual `PENDING` request for Librarian/Admin approval.
 
 ---
 
@@ -715,6 +720,10 @@ This feature does not include:
 | FR-FE07-029 | UC30 | FE07-T041 | Complete |
 | FR-FE07-030 | UC32, UC35 | FE07-T042 | Complete |
 | FR-FE07-031 | UC33 | FE07-T045 | Complete |
+| FR-FE07-032 | UC29-UC31 | FE07-T047 single-role access tests | Complete |
+| FR-FE07-033 | UC29, UC36 | FE07-T048 exact held-copy handoff frontend test | Complete |
+| AC-FE07-026 | UC29-UC31 | FE07-T047 invalid legacy-array denial tests | Complete |
+| AC-FE07-027 | UC29, UC36 | FE07-T048 exact held-copy preselection test | Complete |
 
 ---
 

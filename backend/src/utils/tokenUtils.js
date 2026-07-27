@@ -38,7 +38,7 @@ function signAccessToken(user) {
 
 function verifyAccessToken(token) {
   try {
-    return jwt.verify(token, getJwtSecret());
+    return jwt.verify(token, getJwtSecret(), { clockTolerance: 30 });
   } catch (error) {
     throw errors.unauthorized('INVALID_TOKEN', 'Invalid or expired authentication token.');
   }
