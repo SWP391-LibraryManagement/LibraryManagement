@@ -1,5 +1,19 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
+
+- Required an idempotent existing-database upsert for the canonical active
+  `ACCOUNT_SETUP` template.
+- Required successful sensitive sends to retain only the SMTP provider message
+  ID in attempt history.
+- Approved an opt-in, lifecycle-managed SYSTEM worker for non-sensitive
+  `PENDING` rows with defaults of 60 seconds and 20 rows.
+- Preserved protected manual processing, manual-only failed retry, sensitive
+  synchronous delivery, minimal DTOs, and provider-memory-only credentials.
+- Recorded that Azure App Service F1 pauses the worker while the app sleeps.
+- User approved the design and written contract on 2026-07-27; implementation
+  remains unclaimed pending RED/GREEN evidence and H2.
+
 ## 2026-07-27 - Specify fail-closed stored template validation (v0.4.4)
 
 - Required raw HTML tag syntax, inline event-handler attributes, and

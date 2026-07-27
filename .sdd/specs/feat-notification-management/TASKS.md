@@ -305,3 +305,51 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 - Gate: the product H2 addendum approved commit `f346ae0` and PR CI run
   `30244750250` passed. The documentation-only H3 remediation requires fresh H2
   and repeated H3 before merge.
+
+## 14. Staging Email Delivery Remediation
+
+### FE10-S12 Activate The Approved Remediation Contract
+
+- [x] Status: DESIGN AND WRITTEN CONTRACT APPROVED 2026-07-27
+- Files: approved design and FE10 SPEC/PLAN/TASKS/CHANGELOG.
+- DoD: v0.4.5 records the migration, safe provider-ID evidence, SYSTEM worker,
+  best-effort F1 limitation, unchanged HTTP authorization, and manual retry.
+
+### FE10-S13 Restore The Existing-Database Account Setup Template
+
+- [ ] Status: NOT STARTED
+- Depends on: FE10-S12.
+- Files: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
+  `backend/tests/notificationRepository.test.js`.
+- DoD: migration is transactional, idempotent, additive, canonical, and passes
+  two executions with exactly one active `ACCOUNT_SETUP` row.
+
+### FE10-S14 Preserve Sensitive Provider Message IDs
+
+- [ ] Status: NOT STARTED
+- Depends on: FE10-S12.
+- Files: `backend/src/services/notificationService.js`,
+  `backend/tests/notificationRoutes.test.js`.
+- DoD: FE02 and FE11 sensitive success attempts store only the adapter message
+  ID while persistence, audit, logs, and responses remain credential-free.
+
+### FE10-S15 Add The Best-Effort SYSTEM Worker
+
+- [ ] Status: NOT STARTED
+- Depends on: FE10-S12.
+- Files: notification service/worker/runtime/config/index, `.env.example`, and
+  focused service/worker/runtime/config tests.
+- DoD: enabled startup and interval passes are non-overlapping; disabled mode
+  has no timer; safe failures recover; stop clears scheduling; only
+  non-sensitive `PENDING` rows are processed; manual HTTP authorization is
+  unchanged.
+
+### FE10-S16 Pass Local H2 And Staging Validation
+
+- [ ] Status: NOT STARTED
+- Depends on: FE10-S13..S15.
+- Files: FE10 TASKS/CHANGELOG and
+  `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
+- DoD: focused and full test gates pass; migration passes twice; diff/security
+  review passes; H2 approves commits; staging template/worker settings/deploy
+  and safe queue/provider-attempt evidence are recorded without secrets or PII.
