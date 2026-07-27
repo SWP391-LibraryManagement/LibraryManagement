@@ -270,7 +270,7 @@ test('admin console keeps its sections while using the warm librarian visual sys
   assert.match(dashboard, /setUpdatedAt\(new Date\(\)\)/);
   assert.doesNotMatch(source, /demoLibraryRows|demoBookMetadata|demoBorrowings|demoRequests/);
   assert.doesNotMatch(source, /setBorrowingModal|createBorrowing|updateBorrowing/);
-  assert.match(page, /setActiveSection\('requests'\)/);
+  assert.match(page, /openDashboardDestination\(\{ section: 'requests', status: 'PENDING' \}\)/);
   assert.match(circulation, /<td><strong>\{row\.memberName\}<\/strong><\/td>/);
   assert.match(circulation, /borrowingApi\.returnDetail\(borrowingAction\.id, \{ condition: returnCondition \}\)/);
   assert.match(circulation, /borrowingApi\.renewDetail\(row\.id\)/);

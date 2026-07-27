@@ -3,6 +3,7 @@ const auditLogRepository = require('../repositories/auditLogRepository');
 const borrowingRepository = require('../repositories/borrowingRepository');
 const { adminPermissionPolicy } = require('../policies/adminPermissionPolicy');
 const errors = require('../utils/safeErrors');
+const { formatBusinessDate } = require('../utils/libraryBusinessTime');
 
 const RESOURCE_NAMES = new Set(['authors', 'publishers', 'categories']);
 const BORROW_STATUSES = new Set(['REQUESTED', 'BORROWED', 'RETURNED', 'OVERDUE', 'LOST', 'DAMAGED']);
@@ -490,7 +491,7 @@ function getPermissions() {
 
 // @spec FR-FE11-031
 async function getDashboard() {
-  return adminRepository.getDashboard();
+  return adminRepository.getDashboard(formatBusinessDate(new Date()));
 }
 
 // @spec FR-FE11-033, BR-FE11-018, BR-FE11-026, AC-FE11-018

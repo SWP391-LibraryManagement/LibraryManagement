@@ -405,3 +405,16 @@ The approved Phase 2 FE11 finalization scope is complete through B7. Future enha
   - Disable only known-invalid approvals, show the blocker, and retain reject.
   - Repository, service, route, and frontend regression evidence required;
     authenticated browser/human review remains.
+
+- [~] **FE11-DASH01 - Connect Admin Dashboard metrics and owning modules.**
+  - Maps to: BR-FE11-020/032; FR-FE11-031; AC-FE11-025.
+  - Count active Members from the canonical single-role mapping and keep
+    authors sourced from the canonical author catalogue.
+  - Make every summary card open its owning module with the applicable
+    status filter and include timestamped returns from the current day.
+  - Count only committed FE07 borrow activity, keep the approved five-card and
+    three-chart presentation, and use the Vietnam business date for returns.
+  - Evidence: DB-backed read confirmed 7 actual historical borrows and 0
+    returns today; backend 1,064/1,064 and frontend 232/232 pass,
+    with lint/build, traceability, and diff hygiene green.
+  - Remaining: authenticated deployed-browser and human review.

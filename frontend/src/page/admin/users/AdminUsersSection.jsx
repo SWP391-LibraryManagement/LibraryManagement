@@ -53,14 +53,18 @@ function UserAvatar({ user }) {
   );
 }
 
-export function AdminUsersSection({ onToast }) {
+export function AdminUsersSection({
+  onToast,
+  initialRole = 'ALL',
+  initialStatus = 'ALL',
+}) {
   const requestGuards = useRef(new Map());
   const [users, setUsers] = useState([]);
   const [statistics, setStatistics] = useState(EMPTY_STATS);
   const [pagination, setPagination] = useState({ page: 1, limit: ADMIN_TABLE_PAGE_SIZE, total: 0, totalPages: 1 });
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState(initialRole || 'ALL');
+  const [statusFilter, setStatusFilter] = useState(initialStatus || 'ALL');
   const [loading, setLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
   const [statisticsLoading, setStatisticsLoading] = useState(false);

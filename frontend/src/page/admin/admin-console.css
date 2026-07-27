@@ -178,6 +178,17 @@
   border: 1px solid var(--admin-line);
   border-radius: 14px;
   background: var(--admin-paper);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.admin-dashboard__stat:hover {
+  border-color: color-mix(in srgb, var(--admin-brass) 55%, var(--admin-line));
+  box-shadow: 0 10px 24px rgb(42 33 24 / 8%);
+  transform: translateY(-2px);
 }
 
 .admin-dashboard__stat > svg {
@@ -1132,12 +1143,11 @@
   table-layout: fixed;
 }
 
-.admin-audit-column--action { width: 15%; }
-.admin-audit-column--actor { width: 21%; }
-.admin-audit-column--target { width: 20%; }
-.admin-audit-column--details { width: 16%; }
-.admin-audit-column--ip { width: 11%; }
-.admin-audit-column--time { width: 17%; }
+.admin-audit-column--action { width: 18%; }
+.admin-audit-column--actor { width: 25%; }
+.admin-audit-column--target { width: 23%; }
+.admin-audit-column--ip { width: 16%; }
+.admin-audit-column--time { width: 18%; }
 
 .admin-audit-table td {
   vertical-align: top;
@@ -1169,6 +1179,13 @@
 .admin-audit-ip,
 .admin-audit-time {
   white-space: nowrap;
+}
+
+.admin-audit-ip code {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-audit-time time {

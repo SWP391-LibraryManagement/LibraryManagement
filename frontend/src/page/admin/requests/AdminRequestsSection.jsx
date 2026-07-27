@@ -110,12 +110,14 @@ function RequestDetailModal({ request, rejectionReason, saving, onReasonChange, 
   );
 }
 
-export function AdminRequestsSection({ onToast }) {
+export function AdminRequestsSection({ onToast, initialStatus = 'ALL' }) {
   // @spec FR-FE11-040
+  const startingStatus = Object.hasOwn(REQUEST_STATUS_LABELS, initialStatus) ? initialStatus : 'ALL';
+  const startingFilters = { ...EMPTY_REQUEST_FILTERS, status: startingStatus };
   const requestGuard = useRef(createLatestRequestGuard());
   const [requests, setRequests] = useState([]);
-  const [requestFilter, setRequestFilter] = useState({ ...EMPTY_REQUEST_FILTERS });
-  const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_REQUEST_FILTERS });
+  const [requestFilter, setRequestFilter] = useState(startingFilters);
+  const [appliedFilters, setAppliedFilters] = useState(startingFilters);
   const [requestPage, setRequestPage] = useState(1);
   const [requestPagination, setRequestPagination] = useState({ page: 1, limit: REQUEST_TABLE_PAGE_SIZE, total: 0, totalPages: 0 });
   const [requestsLoading, setRequestsLoading] = useState(false);

@@ -37,13 +37,18 @@ test('Admin CSS defines mobile cards, focus and reduced motion', async () => {
 
 test('Admin Audit table stays contained with readable action, IP, and time columns', async () => {
   const css = await readFile(new URL('admin-console.css', root), 'utf8');
+  const audit = await readFile(new URL('audit/AdminAuditSection.jsx', root), 'utf8');
   assert.match(css, /\.admin-shell__main\s*\{[^}]*min-width: 0;/s);
   assert.match(css, /\.admin-table-scroll\s*\{[^}]*overflow-x: auto;/s);
   assert.match(css, /\.admin-audit-table\s*\{[^}]*min-width: 980px;[^}]*table-layout: fixed;/s);
-  assert.match(css, /\.admin-audit-column--action\s*\{ width: 15%; \}/);
-  assert.match(css, /\.admin-audit-column--ip\s*\{ width: 11%; \}/);
-  assert.match(css, /\.admin-audit-column--time\s*\{ width: 17%; \}/);
+  assert.match(css, /\.admin-audit-column--action\s*\{ width: 18%; \}/);
+  assert.match(css, /\.admin-audit-column--actor\s*\{ width: 25%; \}/);
+  assert.match(css, /\.admin-audit-column--target\s*\{ width: 23%; \}/);
+  assert.match(css, /\.admin-audit-column--ip\s*\{ width: 16%; \}/);
+  assert.match(css, /\.admin-audit-column--time\s*\{ width: 18%; \}/);
   assert.match(css, /\.admin-audit-ip,\s*\.admin-audit-time\s*\{[^}]*white-space: nowrap;/s);
+  assert.match(css, /\.admin-audit-ip code\s*\{[^}]*display: block;[^}]*max-width: 100%;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;/s);
+  assert.match(audit, /<code title=\{log\.ipAddress \|\| '-'\}>\{log\.ipAddress \|\| '-'\}<\/code>/);
 });
 
 test('Admin shell reuses the shared app shell and responsive navigation contract', async () => {
@@ -76,9 +81,23 @@ test('Admin dashboard keeps API ownership, stale-response guard and operational 
   assert.match(dashboard, /adminApi\.dashboard\(\)/);
   assert.match(dashboard, /createLatestRequestGuard/);
   assert.equal(dashboard.match(/selectOperationalChartRows\(/g)?.length, 3);
+  for (const metric of [
+    'totalBooks',
+    'totalMembers',
+    'totalAuthors',
+    'totalBorrowed',
+    'overdueBorrowed',
+  ]) {
+    assert.match(dashboard, new RegExp(`data\\?\\.summary\\?\\.${metric}`));
+  }
+  assert.match(dashboard, /className="admin-dashboard__stat"[\s\S]*?onClick=\{\(\) => onNavigate\(destination\)\}/);
+  assert.match(page, /<AdminDashboardSection onNavigate=\{openDashboardDestination\} \/>/);
+  assert.match(page, /<AdminUsersSection[\s\S]*?initialRole=\{sectionContext\.role\}[\s\S]*?initialStatus=\{sectionContext\.status\}/);
+  assert.match(page, /<AdminCirculationSection[\s\S]*?initialStatus=\{sectionContext\.status\}/);
+  assert.match(page, /<AdminRequestsSection[\s\S]*?initialStatus=\{sectionContext\.status\}/);
+  assert.match(dashboard, /title="Sách trả trong hôm nay"/);
   assert.match(dashboard, /Dữ liệu sẽ xuất hiện khi có giao dịch phù hợp\./);
   assert.match(page, /activeSection === 'dashboard'/);
-  assert.match(page, /<AdminDashboardSection \/>/);
 });
 
 test('Admin users render one directory as a desktop table and mobile cards with visible actions', async () => {

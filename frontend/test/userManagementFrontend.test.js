@@ -239,7 +239,7 @@ test('FE11 library and circulation preserve canonical ownership boundaries', asy
   assert.match(circulation, /adminApi\.borrowings/);
   assert.match(circulation, /borrowingApi\.renewDetail/);
   assert.match(circulation, /borrowingApi\.returnDetail/);
-  assert.match(page, /onOpenRequests=\{\(\) => setActiveSection\('requests'\)\}/);
+  assert.match(page, /onOpenRequests=\{\(\) => openDashboardDestination\(\{ section: 'requests', status: 'PENDING' \}\)\}/);
 
   const adminSource = library + '\n' + circulation + '\n' + page;
   assert.doesNotMatch(adminSource, /getFineRecords|saveFineRecords/);

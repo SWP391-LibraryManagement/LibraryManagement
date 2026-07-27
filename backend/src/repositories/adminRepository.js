@@ -10,15 +10,49 @@ function bindSearch(request, query) {
   return " LIKE '%' + @search + '%' ESCAPE '\\'";
 }
 
-async function getDashboard() {
+// @spec BR-FE11-020, BR-FE11-032, FR-FE11-031, AC-FE11-025
+async function getDashboard(businessDate) {
   const pool = await getPool();
-  const result = await pool.request().query(`
+  const normalizedBusinessDate = new Date(`${businessDate}T00:00:00.000Z`);
+  const dashboardRequest = () => pool.request()
+    .input('BusinessDate', sql.Date, normalizedBusinessDate);
+  const result = await dashboardRequest().query(`
     SELECT
       (SELECT COUNT(*) FROM Books WHERE Status = 'ACTIVE') AS totalBooks,
-      (SELECT COUNT(*) FROM Members WHERE Status = 'APPROVED') AS totalMembers,
-      (SELECT COUNT(*) FROM Authors) AS totalAuthors,
+      (SELECT COUNT(*) FROM Users WHERE Status = 'ACTIVE') AS activeUsers,
+      (
+        SELECT COUNT(*)
+        FROM Users u
+        INNER JOIN UserRoles ur ON ur.UserId = u.UserId
+        INNER JOIN Roles r ON r.RoleId = ur.RoleId
+        WHERE u.Status = 'ACTIVE' AND r.RoleName = 'MEMBER'
+      ) AS activeMembers,
+      (
+        SELECT COUNT(*)
+        FROM Users u
+        INNER JOIN UserRoles ur ON ur.UserId = u.UserId
+        INNER JOIN Roles r ON r.RoleId = ur.RoleId
+        WHERE u.Status = 'ACTIVE' AND r.RoleName = 'MEMBER'
+      ) AS totalMembers,
+      (
+        SELECT COUNT(*)
+        FROM Users u
+        INNER JOIN UserRoles ur ON ur.UserId = u.UserId
+        INNER JOIN Roles r ON r.RoleId = ur.RoleId
+        WHERE u.Status = 'ACTIVE' AND r.RoleName = 'LIBRARIAN'
+      ) AS activeLibrarians,
+      (
+        SELECT COUNT(*)
+        FROM Users u
+        INNER JOIN UserRoles ur ON ur.UserId = u.UserId
+        INNER JOIN Roles r ON r.RoleId = ur.RoleId
+        WHERE u.Status = 'ACTIVE' AND r.RoleName = 'ADMIN'
+      ) AS activeAdmins,
+      (SELECT COUNT(*) FROM Authors WHERE Status = 'ACTIVE') AS totalAuthors,
+      (SELECT COUNT(*) FROM MembershipApplications WHERE Status = 'PENDING') AS pendingMemberships,
+      (SELECT COUNT(*) FROM BorrowRequests WHERE Status = 'PENDING') AS pendingRequests,
       (SELECT COUNT(*) FROM BorrowDetails WHERE Status = 'BORROWED') AS totalBorrowed,
-      (SELECT COUNT(*) FROM BorrowDetails WHERE Status = 'BORROWED' AND DueDate < CAST(GETDATE() AS DATE)) AS overdueBorrowed;
+      (SELECT COUNT(*) FROM BorrowDetails WHERE Status = 'BORROWED' AND DueDate < @BusinessDate) AS overdueBorrowed;
   `);
 
   const [mostBorrowed, overdue, returnedToday] = await Promise.all([
@@ -27,13 +61,14 @@ async function getDashboard() {
         b.BookId AS id,
         b.Title AS label,
         COUNT(bd.BorrowDetailId) AS value
-      FROM Books b
-      LEFT JOIN BookCopies bc ON b.BookId = bc.BookId
-      LEFT JOIN BorrowDetails bd ON bc.CopyId = bd.CopyId
+      FROM BorrowDetails bd
+      INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
+      INNER JOIN Books b ON bc.BookId = b.BookId
+      WHERE bd.BorrowDate IS NOT NULL
       GROUP BY b.BookId, b.Title
       ORDER BY value DESC, b.Title ASC;
     `),
-    pool.request().query(`
+    dashboardRequest().query(`
       SELECT TOP 10
         b.BookId AS id,
         b.Title AS label,
@@ -41,11 +76,11 @@ async function getDashboard() {
       FROM BorrowDetails bd
       INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
       INNER JOIN Books b ON bc.BookId = b.BookId
-      WHERE bd.Status = 'BORROWED' AND bd.DueDate < CAST(GETDATE() AS DATE)
+      WHERE bd.Status = 'BORROWED' AND bd.DueDate < @BusinessDate
       GROUP BY b.BookId, b.Title
       ORDER BY value DESC, b.Title ASC;
     `),
-    pool.request().query(`
+    dashboardRequest().query(`
       SELECT TOP 10
         b.BookId AS id,
         b.Title AS label,
@@ -53,7 +88,7 @@ async function getDashboard() {
       FROM BorrowDetails bd
       INNER JOIN BookCopies bc ON bd.CopyId = bc.CopyId
       INNER JOIN Books b ON bc.BookId = b.BookId
-      WHERE bd.ReturnDate = CAST(GETDATE() AS DATE)
+      WHERE bd.ReturnDate = @BusinessDate
       GROUP BY b.BookId, b.Title
       ORDER BY value DESC, b.Title ASC;
     `),

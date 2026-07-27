@@ -440,3 +440,22 @@
 ## 2026-07-22 admin console correction
 
 - Removed user edit actions and the Audit safe-details column; contained wide tables inside the content area.
+
+## 2026-07-27 - Admin Dashboard connections
+
+- Bumped FE11 to v0.6.9.
+- Replaced the disconnected approved-membership total with active account
+  metrics sourced from the canonical `Users -> UserRoles -> Roles` mapping.
+- Added separate pending FE04 membership and FE07 borrow-request counts.
+- Connected each Dashboard summary card to its owning Admin module and carried
+  applicable role/status filters into the destination.
+- Corrected the return-today query to use FE07's persisted business date
+  instead of deriving the day from the SQL Server host clock.
+- Bumped FE11 to v0.6.10 and aligned activity aggregation with FE07:
+  unapproved `REQUESTED` details no longer inflate top-borrowed counts,
+  borrow/return-today use the Vietnam business date, and zero daily activity is
+  displayed as a confirmed zero rather than a generic disconnected-data state.
+- Bumped FE11 to v0.6.11 and restored the approved five-card/three-chart
+  Dashboard presentation. Retained canonical active-member counting, actual
+  FE07 borrowing aggregation, Vietnam-business-date returns, and module links;
+  removed the additional daily activity cards/chart.

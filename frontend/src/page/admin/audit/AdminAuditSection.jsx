@@ -101,7 +101,7 @@ export function AdminAuditSection({ onToast }) {
                   <td><span className="admin-audit-action" title={action.raw}>{action.label}</span></td>
                   <td className="admin-audit-actor"><strong>{log.actor?.fullName || log.actor?.email || 'Hệ thống'}</strong>{log.actor?.fullName && log.actor?.email ? <small>{log.actor.email}</small> : null}</td>
                   <td className="admin-audit-target"><strong title={target.label}>{target.label}</strong>{target.type ? <small>{target.type}</small> : null}</td>
-                  <td className="admin-audit-ip"><code>{log.ipAddress || '-'}</code></td>
+                  <td className="admin-audit-ip"><code title={log.ipAddress || '-'}>{log.ipAddress || '-'}</code></td>
                   <td className="admin-audit-time">
                     <time dateTime={log.createdAt || undefined}>
                       <span>{createdAt.toLocaleDateString('vi-VN')}</span>

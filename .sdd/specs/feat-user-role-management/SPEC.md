@@ -1,8 +1,8 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.8
+# Version: 0.6.11
 
-# Status: ADMIN REQUEST REVISION IMPLEMENTED - HUMAN REVIEW PENDING
+# Status: ADMIN DASHBOARD CONNECTION REVISION IMPLEMENTED - HUMAN REVIEW PENDING
 
 # Owner: Dung
 
@@ -212,12 +212,14 @@ The feature can only start when:
 ### MF-FE11-010: View Admin Dashboard And Console Navigation
 
 1. Admin opens the admin console.
-2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user, and fine sources.
-3. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs.
-4. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
-5. The system keeps single-role replacement available from All Users and does not show a separate Permissions sidebar entry.
-6. The admin console uses the same shared application shell, header, responsive sidebar, typography, and cream/brown visual system as Member and Librarian pages.
-7. Admin Library opens catalog management inside the Admin console and does not redirect the Admin to a Librarian route; the embedded workspace continues to use the canonical FE05 APIs and authorization rules.
+2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user-role, and membership sources.
+3. Active-account role counts use the canonical single mapping `Users -> UserRoles -> Roles`; FE04 membership-application state remains a separate workflow metric and is not treated as the `MEMBER` login role.
+4. Each summary card opens its owning Admin module with the matching role or workflow-status filter when one applies.
+5. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs.
+6. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
+7. The system keeps single-role replacement available from All Users and does not show a separate Permissions sidebar entry.
+8. The admin console uses the same shared application shell, header, responsive sidebar, typography, and cream/brown visual system as Member and Librarian pages.
+9. Admin Library opens catalog management inside the Admin console and does not redirect the Admin to a Librarian route; the embedded workspace continues to use the canonical FE05 APIs and authorization rules.
 
 ### MF-FE11-011: View Permissions
 
@@ -304,6 +306,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-029: FE11 Admin Request Management is a composition/read surface over FE07. It must expose the current physical copy status in the safe detail DTO, use only FE07 approve/reject commands, and reload canonical request state after either success or conflict; it must not invent a separate Admin request lifecycle.
 - BR-FE11-030: FE11 must not deactivate an account or replace its `MEMBER` role while FE07 reports a pending borrow request or active borrowed detail. The lifecycle mutation and FE07 create/approval use the same member-scoped transaction lock.
 - BR-FE11-031: For a legacy pending request with a known inactive/non-Member owner or unavailable copy, Admin Request Management disables approval with an actionable blocker but keeps rejection enabled; FE07 remains authoritative at command time.
+- BR-FE11-032: Admin Dashboard member metrics count `ACTIVE` accounts through the canonical single `UserRoles` mapping. Borrowing charts count only FE07 details with a committed `BorrowDate`; the return-today chart uses the `Asia/Ho_Chi_Minh` business date shared with FE07. The approved presentation remains five summary cards and three charts. Dashboard cards navigate to the owning module and preserve the applicable status filter.
 
 ---
 
@@ -324,7 +327,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-013: The role-management API shall expose one atomic replacement operation and shall not expose standalone assign/revoke operations that can create invalid intermediate cardinality.
 - FR-FE11-014: When Admin replaces a role, the system shall lock the affected mapping, evaluate the remaining active Admin count in the same transaction, and reject any mutation that would leave zero active Admin role holders.
 - FR-FE11-030: When admin opens the console, the system shall display the eight approved sidebar sections with Membership Review after All Users, hide removed Permissions / Confirm Payment / Confirm Borrow navigation items, use the shared Member/Librarian application shell, and keep Admin Library actions inside the Admin console without redirecting to Librarian routes.
-- FR-FE11-031: When admin opens Dashboard, the system shall display read-only operational summary and chart data sourced from approved feature owners.
+- FR-FE11-031: When admin opens Dashboard, the system shall display the approved five-card and three-chart read-only operational view sourced from approved feature owners, including the canonical active-member count, author count, actual borrowed books, and returns for the current Vietnam business date; selecting a summary card shall open its owning Admin module with the applicable filter.
 - FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
 - FR-FE11-033: When admin opens Audit Logs, the system shall display paginated read-only audit entries without any visible search or filter controls.
 - FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/DOCX-export controls and view detail; export shall include every server page matching the frozen filters and only the approved request projection.
@@ -385,6 +388,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-022: Given an active, locked, self-registered inactive, completed-setup, or cooldown-limited account, when Admin requests setup resend, then the system rejects it without creating a credential.
 - AC-FE11-023: Given an Admin submits a Librarian work-field update or deactivation with stale effective `expectedUpdatedAt`, when the current user record has changed, then the system returns `409 STALE_USER_STATE` and persists no submitted field, lifecycle change, credential revocation, or success audit.
 - AC-FE11-024: Given Admin opens a pending request, then every requested barcode is paired with its current physical copy status; after an approve conflict, the refreshed state remains truthful and rejection with a valid reason remains available.
+- AC-FE11-025: Given Admin opens Dashboard, the approved five summary cards and three charts remain visible, the active Member count matches `Users -> UserRoles -> Roles`, the author count matches active catalogue authors, top-borrowed excludes unapproved `REQUESTED` details, return-today uses the FE07 date for the current Vietnam business day, and selecting a card opens the corresponding module with its applicable filter.
 
 ---
 
@@ -670,6 +674,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-021 | Eligible Admin resend rotates setup token/event/key after cooldown | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Existing FE11-S01..S07 rotation/delivery evidence plus pending FE11-LIFE02 actor revalidation | PARTIAL |
 | AC-FE11-022 | Ineligible/cooldown-limited resend is rejected without credential creation | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-023 | Stale expectedUpdatedAt for Librarian work-field update/deactivation -> 409 STALE_USER_STATE and no mutation/success audit persists | FR-FE11-023 | BR-FE11-027 | FE11-LIFE03/LIFE04 stale mutation cases | Not Started |
+| AC-FE11-025 | Dashboard preserves five cards/three charts, uses canonical owners, and cards open the matching filtered module | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | LOCAL AUTOMATED; HUMAN REVIEW PENDING |
 
 ### FE11 Unwanted-Behavior Requirements to Sources to Tests
 
@@ -691,7 +696,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FE11-LIFE02/LIFE03 Librarian validation cases | Not Started |
 | FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | FE11-S01..S07 invalid, expired, used, revoked, and ineligible setup-token coverage | COMPLETE (B7) |
 | FR-FE11-030 | Approved eight-entry Admin shell is displayed, removed items are hidden, Membership Review follows All Users, and Admin Library actions stay in Admin | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
-| FR-FE11-031 | Admin dashboard displays read-only operational summaries | BR-FE11-020 | Q-FE11-012 | FE11-ACC01 evidence-only service/route/browser cases; Wave B validation | READY FOR REVIEW |
+| FR-FE11-031 | Admin dashboard displays canonical role/workflow summaries and opens owning filtered modules | BR-FE11-020, BR-FE11-032 | Q-FE11-012, MF-FE11-010 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | LOCAL AUTOMATED; HUMAN REVIEW PENDING |
 | FR-FE11-032 | Permissions role summary and matrix are displayed | BR-FE11-017 | MF-FE11-011 | Planned permissions-view integration case | Not Started |
 | FR-FE11-033 | Audit logs are a paginated read-only list without UI search/filter controls and are redacted | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |
 | FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02; Wave B validation | READY FOR REVIEW |
@@ -701,9 +706,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 ### Coverage Summary (FE11)
 
-- **Total AC**: 24 (AC-FE11-001 to AC-FE11-024).
-- **Total FR**: 40 (FR-FE11-001 to FR-FE11-040).
-- **Total BR**: 31 (BR-FE11-001 to BR-FE11-031).
+- **Total AC**: 25 (AC-FE11-001 to AC-FE11-025).
+- **Total FR**: 42 (FR-FE11-001 to FR-FE11-042).
+- **Total BR**: 32 (BR-FE11-001 to BR-FE11-032).
 - **Assignment tests**: FT50 to FT58 remain the external baseline; focused account-setup service/integration tests are mandatory before implementation can close.
 
 ### External Assignment Traceability (Excel UC IDs)
