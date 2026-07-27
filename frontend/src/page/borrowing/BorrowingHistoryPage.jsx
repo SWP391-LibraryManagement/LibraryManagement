@@ -1,14 +1,15 @@
 /** FE07 - UC30 My Borrowing History + UC31 Gia hạn sách. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, ChevronLeft, ChevronRight, History, AlertTriangle, CalendarClock } from 'lucide-react';
+import { RefreshCw, History, AlertTriangle, CalendarClock, Calendar } from 'lucide-react';
 
 import { borrowingApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
-import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
+import { DataTable, DataToolbar, Pagination } from '../../component/shared/OperationalPatterns';
 import { fmtDate, mapBorrowDetailsToHistoryRows } from '../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../utils/uiLabels';
+import { addBusinessDays } from '../../utils/borrowingDueStatus';
 
 const TABS = [{ key: 'all', label: 'Tất cả' }, { key: 'active', label: 'Đang mượn' }, { key: 'overdue', label: 'Quá hạn' }, { key: 'returned', label: 'Đã trả' }];
 // @spec FR-FE07-028
@@ -21,21 +22,24 @@ const HISTORY_STATUS_BY_TAB = {
 const PAGE_SIZE = 20;
 const canRenew = (row) => row.status === 'Borrowed' && row.renewalsLeft > 0;
 
-function addDays(date, days) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate.toISOString().slice(0, 10);
+function isValidDateRange(from, to) {
+  if (!from || !to) return true;
+  return from <= to;
 }
 
 export default function BorrowingHistoryPage() {
   const [rows, setRows] = useState([]);
   const [tab, setTab] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [activeDateFilter, setActiveDateFilter] = useState({});
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 0 });
   const [renewRow, setRenewRow] = useState(null);
   const [renewing, setRenewing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [dateRangeError, setDateRangeError] = useState('');
   const [toast, showToast, clearToast] = useToast();
 
   const loadHistory = useCallback(async () => {
@@ -43,7 +47,13 @@ export default function BorrowingHistoryPage() {
     setNotice(null);
     const status = HISTORY_STATUS_BY_TAB[tab];
     try {
-      const data = await borrowingApi.listMine({ status, page, limit: PAGE_SIZE });
+      const data = await borrowingApi.listMine({
+        status,
+        fromDate: activeDateFilter.fromDate,
+        toDate: activeDateFilter.toDate,
+        page,
+        limit: PAGE_SIZE,
+      });
       setRows(mapBorrowDetailsToHistoryRows(data.borrowings || []));
       setPagination(data.pagination || { page, limit: PAGE_SIZE, total: 0, totalPages: 0 });
     } catch (error) {
@@ -53,7 +63,7 @@ export default function BorrowingHistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, tab]);
+  }, [page, tab, activeDateFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { loadHistory(); }, 0);
@@ -62,6 +72,25 @@ export default function BorrowingHistoryPage() {
 
   const totalPages = Math.max(1, pagination.totalPages || 0);
   const safePage = Math.min(pagination.page || page, totalPages);
+
+  function applyDateFilters(event) {
+    event?.preventDefault();
+    if (!isValidDateRange(fromDate, toDate)) {
+      setDateRangeError('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.');
+      return;
+    }
+    setDateRangeError('');
+    setActiveDateFilter({ fromDate, toDate });
+    setPage(1);
+  }
+
+  function clearDateFilters() {
+    setDateRangeError('');
+    setFromDate('');
+    setToDate('');
+    setActiveDateFilter({});
+    setPage(1);
+  }
 
   async function confirmRenew() {
     if (!renewRow || renewing) return;
@@ -93,11 +122,15 @@ export default function BorrowingHistoryPage() {
       <section className="lib-card member-history-card">
       <DataToolbar
         primary={(
-          <div className="tabs" style={{ marginBottom: 0 }}>
+          <div className="tabs" style={{ marginBottom: 0 }} role="tablist" aria-label="Lọc theo trạng thái">
             {TABS.map((item) => (
               <button
                 type="button"
                 key={item.key}
+                role="tab"
+                id={`history-tab-${item.key}`}
+                aria-selected={tab === item.key}
+                aria-controls="history-tabpanel"
                 className={`tab${tab === item.key ? ' active' : ''}`}
                 onClick={() => { setTab(item.key); setPage(1); }}
               >
@@ -108,12 +141,29 @@ export default function BorrowingHistoryPage() {
         )}
       />
 
+      <form className="member-history-date-filter" onSubmit={applyDateFilters} aria-label="Lọc theo ngày mượn">
+        <Calendar size={16} className="muted" />
+        <label htmlFor="history-from-date" className="sr-only">Từ ngày</label>
+        <input id="history-from-date" type="date" className="input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} aria-label="Từ ngày" />
+        <span className="muted" aria-hidden="true">-</span>
+        <label htmlFor="history-to-date" className="sr-only">Đến ngày</label>
+        <input id="history-to-date" type="date" className="input" value={toDate} onChange={(e) => setToDate(e.target.value)} aria-label="Đến ngày" />
+        <button type="submit" className="btn btn-primary btn-sm" disabled={loading}>Áp dụng</button>
+        {(fromDate || toDate || activeDateFilter.fromDate || activeDateFilter.toDate) && (
+          <button type="button" className="icon-btn" onClick={clearDateFilters} aria-label="Xóa bộ lọc ngày" disabled={loading}>
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
+        {dateRangeError && <span className="field-hint" role="alert">{dateRangeError}</span>}
+      </form>
+
+      <div id="history-tabpanel" role="tabpanel" aria-labelledby={`history-tab-${tab}`}>
       <DataTable
         caption="Lịch sử mượn sách"
         className="member-history-table"
         headers={['Sách', 'Ngày mượn', 'Hạn trả', 'Ngày trả', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
         loading={loading}
-        isEmpty={rows.length === 0}
+        isEmpty={!notice && rows.length === 0}
         emptyState={<EmptyState icon={History} title="Không có bản ghi nào" />}
       >
         {rows.map((row) => (
@@ -141,18 +191,16 @@ export default function BorrowingHistoryPage() {
           </tr>
         ))}
       </DataTable>
+      </div>
 
       {!loading && (
-        <div className="pagination">
-          <span className="muted">{pagination.total} bản ghi • trang {safePage}/{totalPages}</span>
-          <div className="page-controls">
-            <button className="page-btn" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Trang trước"><ChevronLeft size={16} /></button>
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button key={index} className={`page-btn${safePage === index + 1 ? ' active' : ''}`} onClick={() => setPage(index + 1)}>{index + 1}</button>
-            ))}
-            <button className="page-btn" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Trang sau"><ChevronRight size={16} /></button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          summary={`${pagination.total || 0} bản ghi • trang ${safePage}/${totalPages}`}
+          ariaLabel="Phân trang lịch sử mượn"
+        />
       )}
       </section>
 
@@ -166,7 +214,8 @@ export default function BorrowingHistoryPage() {
 
 function RenewConfirmation({ row, pending, onClose, onConfirm }) {
   const eligible = canRenew(row);
-  const newDue = row.dueDate ? addDays(row.dueDate, 14) : null;
+  // @spec NFR-FE07-TIME-001, EC-FE07-019 - dùng business date +7 tránh lệch host local.
+  const newDue = row.dueDate ? addBusinessDays(row.dueDate, 14) : null;
 
   return (
     <ConfirmAction

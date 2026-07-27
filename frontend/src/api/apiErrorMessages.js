@@ -79,6 +79,16 @@ const INVENTORY_ERROR_MESSAGES = {
   INACTIVE_PARENT_BOOK: 'Đầu sách đang ngừng hoạt động nên không thể đưa bản sao về trạng thái khả dụng.',
 };
 
+// @spec BR-FE12-008, BR-FE12-009, FR-FE12-005 — report validation codes mapped to Vietnamese copy.
+const REPORT_ERROR_MESSAGES = {
+  UNSUPPORTED_REPORT_QUERY_PARAMETER: 'Bộ lọc báo cáo chứa tham số không được hỗ trợ. Vui lòng làm mới trang và thử lại.',
+  INVALID_REPORT_FILTER: 'Giá trị bộ lọc báo cáo không hợp lệ. Hãy kiểm tra ngày, trạng thái và mã số.',
+  INVALID_DATE_RANGE: 'Khoảng ngày không hợp lệ. Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.',
+  INVALID_PAGINATION: 'Phân trang không hợp lệ. Số trang phải lớn hơn 0 và giới hạn dòng nằm trong 1..100.',
+  SEARCH_TOO_LONG: 'Từ khóa tìm kiếm quá dài. Giới hạn 200 ký tự.',
+  REPORT_QUERY_FAILED: 'Không thể tạo báo cáo với bộ lọc hiện tại. Vui lòng thử lại.',
+};
+
 export function getLibraryFeatureErrorMessage(error, fallback = 'Không thể tải dữ liệu từ backend.') {
   if (!error.response) {
     return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
@@ -175,6 +185,14 @@ export function getReportErrorMessage(error, fallback = 'Không thể tải báo
   const code = error.response?.data?.error?.code;
   if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
     return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  }
+
+  if (REPORT_ERROR_MESSAGES[code]) {
+    return REPORT_ERROR_MESSAGES[code];
+  }
+
+  if (error.response?.status === 400) {
+    return REPORT_ERROR_MESSAGES.INVALID_REPORT_FILTER;
   }
 
   if (error.response?.status === 403) {

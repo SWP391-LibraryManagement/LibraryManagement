@@ -45,3 +45,18 @@ export function getBorrowDueStatus(dueDate, now = new Date()) {
   return { state: 'UPCOMING', days: difference, label: `Còn ${difference} ngày` };
 }
 
+// @spec NFR-FE07-TIME-001, EC-FE07-019 - cộng ngày hạn trả bằng business date +7,
+// tránh lệch host local setDate trên máy khác timezone.
+// Trả về chuỗi `YYYY-MM-DD` để khớp với định dạng API.
+export function addBusinessDays(dateValue, days) {
+  if (!dateValue) return '';
+  const epoch = parseDateOnly(dateValue);
+  if (epoch === null) return '';
+  const nextEpoch = epoch + Number(days) * DAY_MS;
+  const next = new Date(nextEpoch);
+  const yyyy = next.getUTCFullYear();
+  const mm = String(next.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(next.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+

@@ -8,21 +8,33 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 
 /* -------- Toast -------- */
+// @spec NFR-FE08-UX-001 — error toast lâu hơn, có nút đóng.
+const TOAST_DURATION = {
+  success: 3200,
+  info: 3200,
+  warning: 6000,
+  error: 7000,
+};
+
 export function Toast({ toast, onClose }) {
   useEffect(() => {
     if (!toast) return undefined;
-    const timer = setTimeout(onClose, 3200);
+    const duration = TOAST_DURATION[toast.type] || TOAST_DURATION.success;
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [toast, onClose]);
 
   if (!toast) return null;
 
-  const Icon = toast.type === 'error' ? AlertTriangle : toast.type === 'info' ? Info : CheckCircle2;
+  const Icon = toast.type === 'error' ? AlertTriangle : toast.type === 'info' || toast.type === 'warning' ? Info : CheckCircle2;
 
   return (
-    <div className={`lib-toast ${toast.type || 'success'}`} role={toast.type === 'error' ? 'alert' : 'status'}>
+    <div className={`lib-toast ${toast.type || 'success'}`} role={toast.type === 'error' || toast.type === 'warning' ? 'alert' : 'status'}>
       <Icon size={18} />
       <span>{toast.message}</span>
+      <button type="button" className="icon-btn toast-close" aria-label="Đóng thông báo" onClick={onClose}>
+        <X size={16} />
+      </button>
     </div>
   );
 }

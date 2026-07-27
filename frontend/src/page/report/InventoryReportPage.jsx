@@ -96,18 +96,28 @@ export default function InventoryReportPage() {
   const pageLimit = report?.limit || REPORT_PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageLimit));
   const statusCounts = metrics.copiesByStatus || {};
-  const statusData = objectToChart(metrics.copiesByStatus);
+  const statusData = objectToChart(metrics.copiesByStatus, getStatusLabel);
+  // @spec NFR-FE12-UX-002 — gộp các trạng thái dị biệt vào "Khác" để donut khớp tổng.
   const availability = [
     { label: 'Khả dụng', value: statusCounts.AVAILABLE || 0, color: '#2f8f5b' },
     { label: 'Đang mượn', value: statusCounts.BORROWED || 0, color: '#a87532' },
-    { label: 'Mất/Hỏng', value: (statusCounts.LOST || 0) + (statusCounts.DAMAGED || 0), color: '#c1452f' },
-  ];
+    { label: 'Đã đặt chỗ', value: statusCounts.RESERVED || 0, color: '#3a6ea5' },
+    { label: 'Mất / Hỏng', value: (statusCounts.LOST || 0) + (statusCounts.DAMAGED || 0), color: '#c1452f' },
+    { label: 'Khác', value: (
+      (statusCounts.INACTIVE || 0)
+      + (statusCounts.UNKNOWN || 0)
+      + Object.entries(statusCounts).reduce((sum, [key, value]) => {
+        if (['AVAILABLE', 'BORROWED', 'RESERVED', 'LOST', 'DAMAGED', 'INACTIVE', 'UNKNOWN'].includes(key)) return sum;
+        return sum + Number(value || 0);
+      }, 0)
+    ), color: '#6b6153' },
+  ].filter((segment) => segment.value > 0);
   const kpis = [
     { label: 'Tổng đầu sách', value: metrics.totalBooks, icon: Library },
     { label: 'Tổng bản sao', value: metrics.totalCopies, icon: Copy },
-    { label: 'Khả dụng', value: availability[0].value, icon: CheckCircle2 },
-    { label: 'Đang mượn', value: availability[1].value, icon: BookMarked },
-    { label: 'Mất / Hỏng', value: availability[2].value, icon: AlertTriangle },
+    { label: 'Khả dụng', value: statusCounts.AVAILABLE || 0, icon: CheckCircle2 },
+    { label: 'Đang mượn', value: statusCounts.BORROWED || 0, icon: BookMarked },
+    { label: 'Mất / Hỏng', value: (statusCounts.LOST || 0) + (statusCounts.DAMAGED || 0), icon: AlertTriangle },
   ];
   const lowBooks = metrics.lowStockBooks || [];
 
@@ -117,9 +127,10 @@ export default function InventoryReportPage() {
       active="inventory-report"
       title="Báo cáo tồn kho"
       subtitle="Tổng hợp tình trạng bản sao và các đầu sách có tồn kho thấp."
-      actions={<button className="btn btn-outline" onClick={() => loadReport(activeFilters, page)} disabled={loading}><RefreshCw size={16} /> Tải lại</button>}
+      actions={<button className="btn btn-outline" onClick={() => loadReport(activeFilters, page)} disabled={loading}><RefreshCw size={16} className={loading ? 'spin' : ''} /> Tải lại</button>}
     >
       {notice && <DataNotice type="error" title="Không thể tải báo cáo">{notice}</DataNotice>}
+      {loading && !notice && report && <DataNotice type="info" title="Đang làm mới báo cáo">Vui lòng chờ trong giây lát.</DataNotice>}
       <form onSubmit={applyCategoryFilter}>
         <DataToolbar
           search={<><Search size={16} /><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm sách, barcode, vị trí..." aria-label="Tìm trong báo cáo tồn kho" /></>}
@@ -161,9 +172,9 @@ export default function InventoryReportPage() {
           )}
         />
       </form>
-      {loading ? <LoadingBlock rows={4} /> : !report ? (
+      {loading && !report ? <LoadingBlock rows={4} /> : !report || notice ? (
         <EmptyState icon={AlertTriangle} title="Không có dữ liệu báo cáo">
-          Hãy kiểm tra phiên đăng nhập hoặc kết nối backend rồi thử tải lại.
+          Hãy kiểm tra phiên đăng nhập, kết nối backend hoặc bộ lọc rồi thử tải lại.
         </EmptyState>
       ) : (
         <>
@@ -185,11 +196,11 @@ export default function InventoryReportPage() {
           <div className="split">
             <div className="lib-card">
               <h3 className="lib-card-title">Bản sao theo trạng thái</h3>
-              {statusData.length ? <BarChart data={statusData} format={fmtNumber} /> : <EmptyState title="Chưa có dữ liệu trạng thái" />}
+              {statusData.length ? <BarChart data={statusData} format={fmtNumber} ariaLabel="Biểu đồ cột bản sao theo trạng thái" /> : <EmptyState title="Chưa có dữ liệu trạng thái" />}
             </div>
             <div className="lib-card">
               <h3 className="lib-card-title">Khả dụng vs Đang mượn</h3>
-              <DonutChart data={availability} centerLabel="bản sao" centerValue={fmtNumber(metrics.totalCopies)} />
+              <DonutChart data={availability} centerLabel="bản sao" centerValue={fmtNumber(metrics.totalCopies)} ariaLabel="Biểu đồ donut phân bổ bản sao" />
             </div>
           </div>
 

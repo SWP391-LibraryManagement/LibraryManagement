@@ -1,3 +1,5 @@
+import { getNotificationFeedback } from '../../../utils/notificationFeedback.js';
+
 export const ADMIN_MEMBERSHIP_PAGE_SIZE = 10;
 export const EMPTY_ADMIN_MEMBERSHIP_FILTERS = Object.freeze({
   q: '',
@@ -54,21 +56,16 @@ export function isPendingMembershipApplication(application) {
   return String(application?.status || '').toUpperCase() === 'PENDING';
 }
 
+// @spec BR-FE10-008, MF-FE10-006 — chung với FE08: dùng helper notify feedback.
 export function getMembershipDecisionFeedback(action, notificationStatus) {
   const approved = action === 'approve';
-  const decision = approved ? 'Đã duyệt đơn' : 'Đã từ chối đơn';
-
-  if (String(notificationStatus || '').toUpperCase() === 'FAILED') {
-    return {
-      type: 'warning',
-      message: `${decision}, nhưng thông báo kết quả chưa gửi được.`,
-    };
-  }
-
-  return {
-    type: 'success',
-    message: approved
+  return getNotificationFeedback({
+    action,
+    notificationStatus,
+    customActionLabel: approved ? 'Đã duyệt đơn' : 'Đã từ chối đơn',
+    successMessage: approved
       ? 'Đã duyệt đơn đăng ký hội viên.'
       : 'Đã từ chối đơn đăng ký hội viên.',
-  };
+    warningMessage: undefined,
+  });
 }
