@@ -83,7 +83,12 @@ test('fails when the deployed catalog metadata schema is outdated', async () => 
   try {
     await assert.rejects(
       runStagingSmoke({ frontendUrl: fixture.baseUrl, apiUrl: fixture.baseUrl }),
-      /schema readiness check failed with HTTP 503/i
+      (error) => {
+        assert.match(error.message, /schema readiness check failed with HTTP 503/i);
+        assert.match(error.message, /2026-07-22-library-metadata-compatibility\.sql/i);
+        assert.match(error.message, /redeploy and rerun the smoke check/i);
+        return true;
+      }
     );
   } finally {
     await fixture.close();

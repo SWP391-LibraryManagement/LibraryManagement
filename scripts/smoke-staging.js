@@ -93,7 +93,11 @@ async function runStagingSmoke({
     || readiness.status !== 'ok'
     || readiness.checks?.catalogMetadata !== 'ok'
   ) {
-    throw new Error(`API schema readiness check failed with HTTP ${readinessResponse.status}.`);
+    throw new Error(
+      `API schema readiness check failed with HTTP ${readinessResponse.status}. `
+      + 'Apply database/migrations/2026-07-22-library-metadata-compatibility.sql '
+      + 'to the staging database, then redeploy and rerun the smoke check.'
+    );
   }
   checks.push('schema-readiness');
 

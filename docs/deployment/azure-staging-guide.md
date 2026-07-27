@@ -215,6 +215,12 @@ Afterward, `GET /health/ready` must return HTTP `200` with
 `checks.catalogMetadata = "ok"`. Before the migration, it returns HTTP `503`, and staging smoke
 must fail rather than accepting a deployment whose metadata tabs cannot load.
 
+If the deploy workflow reports `API schema readiness check failed with HTTP 503`, do not remove or
+skip the readiness check. Connect through Azure Query Editor, SSMS, or an operator machine whose
+exact temporary IP is allowlisted, apply the metadata compatibility migration, remove the temporary
+firewall rule, redeploy the backend, and rerun the staging workflow. Do not expose Azure SQL to
+GitHub-hosted runner IP ranges or widen the firewall to make the check pass.
+
 ## Configure App Service Runtime Settings
 
 Set non-secret values with Azure CLI:
