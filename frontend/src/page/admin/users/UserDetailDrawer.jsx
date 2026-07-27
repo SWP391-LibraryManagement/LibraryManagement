@@ -1,4 +1,4 @@
-import { Banknote, BookCopy, Calendar, ClipboardList, Mail, Pencil, Phone, PowerOff, Send, Shield, X } from 'lucide-react';
+import { Banknote, BookCopy, Calendar, ClipboardList, Mail, Phone, PowerOff, Send, Shield, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 import { AdminActionButton } from '../components/AdminActionButton';
@@ -13,7 +13,7 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeactivate, onResendSetup, resending = false, detailLoading = false, canDeactivate = false, deactivateHint = '' }) {
+export function UserDetailDrawer({ user, onClose, onManageRoles, onDeactivate, onResendSetup, resending = false, detailLoading = false, canDeactivate = false, deactivateHint = '' }) {
   const closeBtnRef = useRef(null);
 
   useEffect(() => {
@@ -63,7 +63,6 @@ export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeact
       </div>
 
       <div className="admin-user-drawer__actions">
-        <AdminActionButton icon={Pencil} label="Chỉnh sửa" onClick={() => onEdit(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => onManageRoles(user)} />
         {canResendSetup ? (
           <AdminActionButton

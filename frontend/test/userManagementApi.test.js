@@ -55,13 +55,11 @@ test('FE11 list params omit UI sentinels and empty search', async () => {
 
 test('FE11 Admin UI reads phoneNumber instead of response phone', async () => {
   const section = await readFile(new URL('../src/page/admin/users/AdminUsersSection.jsx', import.meta.url), 'utf8');
-  const editor = await readFile(new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url), 'utf8');
   const drawer = await readFile(new URL('../src/page/admin/users/UserDetailDrawer.jsx', import.meta.url), 'utf8');
 
-  assert.match(editor, /phone:\s*user\?\.phoneNumber\s*\|\|\s*''/);
   assert.match(section, /user\.phoneNumber\s*\|\|\s*'-'/);
   assert.match(drawer, /user\.phoneNumber\s*\|\|\s*'-'/);
-  assert.doesNotMatch(`${section}\n${editor}\n${drawer}`, /user\?\.phone\s*\|\|/);
+  assert.doesNotMatch(`${section}\n${drawer}`, /user\?\.phone\s*\|\|/);
 });
 
 test('FE11 detail 404 classifier reads the wrapped Axios cause safely', async () => {
@@ -132,21 +130,16 @@ test('FE11 deactivation sends the loaded effective version and maps pending acti
   assert.match(source, /ACCOUNT_PENDING_ACTIVATION:/);
 });
 
-test('FE11 managed-profile update shares canonical profile fields and keeps email read-only', async () => {
+test('FE11 client exposes no managed-user profile update path', async () => {
   const [apiSource, section, editor] = await Promise.all([
     readFile(apiPath, 'utf8'),
     readFile(new URL('../src/page/admin/users/AdminUsersSection.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/page/admin/users/UserEditorModal.jsx', import.meta.url), 'utf8'),
   ]);
 
-  assert.match(apiSource, /MANAGED_USER_UPDATE_FORBIDDEN:/);
-  const updateCall = section.match(/await updateManagedUser\(modal\.user\.userId,[^]*?\n {8}\}\);/)?.[0] || '';
-  assert.match(updateCall, /expectedUpdatedAt:\s*modal\.user\.updatedAt/);
-  assert.match(updateCall, /fullName:\s*form\.fullName\.trim\(\)/);
-  assert.match(updateCall, /phone:\s*form\.phone\.trim\(\) \|\| null/);
-  assert.match(updateCall, /address:\s*form\.address\.trim\(\) \|\| null/);
-  assert.doesNotMatch(updateCall, /email|department|specialization/);
-  assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
+  assert.doesNotMatch(apiSource, /updateManagedUser|MANAGED_USER_UPDATE_FORBIDDEN/);
+  assert.doesNotMatch(section, /updateManagedUser|openUserEditor|mode: 'edit'/);
+  assert.doesNotMatch(editor, /isEdit|onManageRole|Chỉnh sửa/);
 });
 
 test('FE11 user-management errors keep safe Vietnamese fallbacks and wrapped causes', async () => {
@@ -160,7 +153,6 @@ test('FE11 user-management errors keep safe Vietnamese fallbacks and wrapped cau
     'Không thể tải chi tiết người dùng.',
     'Không thể tải danh sách vai trò.',
     'Không thể tạo người dùng.',
-    'Không thể cập nhật người dùng.',
     'Không thể vô hiệu hóa người dùng.',
     'Không thể thay đổi vai trò.',
   ]) {

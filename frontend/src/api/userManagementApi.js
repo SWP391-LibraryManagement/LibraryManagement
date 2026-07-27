@@ -129,7 +129,6 @@ function getErrorMessage(error, fallback = 'Yêu cầu thất bại. Vui lòng t
     INVALID_ROLE_ID: 'Vai trò được chọn không hợp lệ.',
     INVALID_USER_ID: 'Tài khoản người dùng không hợp lệ.',
     STALE_USER_STATE: 'Thông tin người dùng đã thay đổi. Vui lòng tải lại trước khi lưu.',
-    MANAGED_USER_UPDATE_FORBIDDEN: 'Quản trị viên chỉ được cập nhật họ tên, số điện thoại và địa chỉ.',
   };
 
   if (messages[code]) return messages[code];
@@ -184,19 +183,6 @@ export async function createManagedUser(payload) {
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, 'Không thể tạo người dùng.'), { cause: error });
-  }
-}
-
-export async function updateManagedUser(userId, payload) {
-  try {
-    const response = await authorizedRequest({
-      method: 'put',
-      url: `/users/${userId}`,
-      data: payload,
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(getErrorMessage(error, 'Không thể cập nhật người dùng.'), { cause: error });
   }
 }
 

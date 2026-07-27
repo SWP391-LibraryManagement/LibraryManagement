@@ -109,8 +109,7 @@ test('Admin users render one directory as a desktop table and mobile cards with 
   for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
     assert.match(users, new RegExp(`label="${label}"`));
   }
-  assert.match(users, /label="Chỉnh sửa" onClick=\{\(\) => openUserEditor\(user\)\}/);
-  assert.doesNotMatch(users, /openEditModal/);
+  assert.doesNotMatch(users, /label="Chỉnh sửa"|openUserEditor|updateManagedUser|openEditModal/);
   assert.match(users, /Tài khoản này đã ngừng hoạt động\./);
   assert.match(page, /activeSection === 'users'/);
   assert.match(page, /<AdminUsersSection/);

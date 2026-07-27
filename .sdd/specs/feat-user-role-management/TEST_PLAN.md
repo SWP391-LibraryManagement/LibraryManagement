@@ -1,8 +1,8 @@
 ﻿# FE11 Test Plan - User & Role Management
 
-Version: 0.5.1
+Version: 0.5.2
 Status: LOCAL AUTOMATED VALIDATION COMPLETE - BROWSER/HUMAN ACCEPTANCE PENDING
-Last Updated: 2026-07-23
+Last Updated: 2026-07-28
 
 Source Spec: `.sdd/specs/feat-user-role-management/SPEC.md`
 Feature IDs: `BR-FE11-*`, `FR-FE11-*`, `AC-FE11-*`
@@ -12,7 +12,7 @@ Authoritative AC↔test mapping: `SPEC.md` §16 Traceability Matrix (this file i
 
 ## 1. Test Scope
 
-User administration, Admin editing of the approved shared profile fields, exactly-one role replacement, account status management, and audit logs. FE03 self-service and FE11 Admin editing must remain consistent over the same canonical profile records.
+User administration, exactly-one role replacement, account status management, and audit logs. Existing-user profile data is read-only in FE11; FE03 owns approved self-service corrections.
 
 ## 2. Unit Test Targets
 
@@ -37,7 +37,8 @@ User administration, Admin editing of the approved shared profile fields, exactl
 - `POST /users`: inactive state, valid unusable bcrypt hash, atomic rollback, FE10 safe delivery status.
 - `POST /users/:userId/resend-setup`: eligibility, cooldown, rotation, safe provider failure, authorization.
 - `GET /users` and `GET /users/:userId`: only `UserManagementView` fields and approved related summaries are returned; credential/token/session/link fields are absent.
-- `PUT /users/:userId`: Admin may update `fullName`, `phone`, and `address` for every managed role with matching `expectedUpdatedAt`; email/department/specialization/unknown/mixed payloads return atomic `403 MANAGED_USER_UPDATE_FORBIDDEN`; stale allowed state returns `409 STALE_USER_STATE`.
+- `PUT /users/:userId`: retired/not routed; every profile payload returns `404`
+  and reaches no profile write service/repository.
 - `PATCH /users/:userId/status`: valid transition, invalid transition.
 - `PUT /users/:userId/role`: replace role, invalid role, no-op, final-active-Admin protection, forbidden.
 
@@ -96,18 +97,16 @@ These targets record the 2026-07-19 baseline. Broad personal/email update eviden
 
 ## 3.5 FE11-PDO Personal Data Ownership Targets
 
-The 2026-07-25 `Q-FE11-028` revision supersedes the work-field-only assertions
-below. Current targets are:
+The 2026-07-28 `Q-FE11-029` revision supersedes the managed-profile update
+targets below. Current targets are:
 
-- Route/service validation accepts normalized `fullName`, `phone`, and `address`
-  and rejects email, department, specialization, and unknown fields atomically.
-- Repository tests prove transactional writes reach only `Users.Phone`,
-  `UserProfiles.FullName`, and `UserProfiles.Address`, with one safe audit.
-- Member, Librarian, and Admin targets expose the same Edit action.
-- Email is read-only; department/specialization and the obsolete ownership notice
-  are absent from the editor and detail drawer.
-- FE03 and FE11 updates share the latest effective `Users`/`UserProfiles`
-  concurrency version; stale updates, no-ops, rollback, and authoritative readback remain covered.
+- User rows, mobile cards, and detail drawer expose no `Chỉnh sửa` action.
+- `Phân quyền` and eligible `Vô hiệu hóa` remain available.
+- The frontend client exports no existing-user profile update adapter.
+- Backend route/controller/validator/service/repository expose no existing-user
+  profile update command.
+- OpenAPI contains no `PUT /api/users/{userId}` profile operation.
+- A direct request to the retired path returns `404` and performs no write.
 
 - Route validation rejects each of `fullName`, `phone`, `address`, and `email`, including an unchanged current email, with `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` after Admin authorization.
 - A payload mixing `department` or `specialization` with any forbidden/unknown field is rejected as one atomic request; no allowed field is partially applied.
@@ -121,9 +120,10 @@ below. Current targets are:
 ## 4. E2E / Manual Acceptance Flow
 
 - Admin creates user.
-- Admin edits name/phone/address for Member, Librarian, and Admin fixtures and deactivates an `ACTIVE`/`LOCKED` fixture using the loaded effective version.
-- Admin attempts email, department, specialization, and unknown-field updates and receives `403 MANAGED_USER_UPDATE_FORBIDDEN` with no visible or persisted change.
-- The authenticated account owner updates name/phone/address through FE03; an already-open Admin edit becomes stale and must reload before saving.
+- Admin confirms existing-user list/detail actions contain role replacement and
+  eligible deactivation but no profile Edit action.
+- Admin calls the retired profile PUT path and receives `404` with no persisted change.
+- The authenticated account owner updates approved name/phone/address fields through FE03.
 - Admin assigns/removes role.
 - Admin reviews Dashboard operational summaries and canonical Request Management across more than one server page.
 - Pending requests expose FE07-owned actions; terminal requests remain view-only; DOCX contains all filtered pages safely.

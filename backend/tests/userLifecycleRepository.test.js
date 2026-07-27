@@ -69,7 +69,6 @@ const STALE_TARGET = {
 };
 const CURRENT_LIBRARIAN = CURRENT_USER;
 const CURRENT_ROLES = [{ RoleName: 'LIBRARIAN' }];
-const CURRENT_CHANGES = { fullName: 'Current User', phone: '0900000000', address: 'Hà Nội' };
 
 function loadRepository() {
   return require('../src/repositories/userLifecycleRepository');
@@ -92,18 +91,6 @@ function makeLifecycleHarness(results) {
 
   return {
     calls,
-    invokeUpdate(overrides = {}) {
-      return loadRepository().updateManagedUser({
-        adminUserId: 99,
-        userId: 7,
-        expectedUpdatedAt: FIXED_VERSION,
-        changes: { fullName: 'Updated User' },
-        ipAddress: '127.0.0.1',
-        userAgent: 'jest',
-        now: FIXED_NOW,
-        ...overrides,
-      });
-    },
     invokeDeactivate(overrides = {}) {
       return loadRepository().deactivateManagedUser({
         adminUserId: 99,
@@ -124,113 +111,6 @@ function makeLifecycleHarness(results) {
 beforeEach(() => {
   getPool.mockReset();
   sql.Transaction.instances = [];
-});
-
-test.each([
-  ['missing actor', [[]], 'ADMIN_NOT_FOUND'],
-  ['inactive actor', [[{ UserId: 99, Status: 'INACTIVE', IsAdmin: 1 }]], 'ADMIN_REQUIRED'],
-  ['missing target', [ACTIVE_ADMIN, []], 'USER_NOT_FOUND'],
-  ['stale version', [ACTIVE_ADMIN, [STALE_TARGET]], 'STALE_USER_STATE'],
-])('%s rolls back without update or audit', async (_, queuedResults, outcome) => {
-  const harness = makeLifecycleHarness(queuedResults);
-
-  await expect(harness.invokeUpdate()).resolves.toEqual({ outcome });
-
-  expect(harness.calls.some(({ query }) => /UPDATE Users|UPDATE UserProfiles|INSERT INTO AuditLogs/.test(query))).toBe(false);
-  expect(harness.transaction.commitCount).toBe(0);
-  expect(harness.transaction.rollbackCount).toBe(1);
-});
-
-test('no-op writes no field update or audit', async () => {
-  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [CURRENT_USER]]);
-
-  await expect(harness.invokeUpdate({ changes: CURRENT_CHANGES })).resolves.toEqual({
-    outcome: 'NO_CHANGE',
-  });
-
-  expect(harness.calls.some(({ query }) => /UPDATE Users|UPDATE UserProfiles|INSERT INTO AuditLogs/.test(query))).toBe(false);
-  expect(harness.transaction.commitCount).toBe(1);
-  expect(harness.transaction.rollbackCount).toBe(0);
-});
-
-test('rejects an explicit blank full name', async () => {
-  const harness = makeLifecycleHarness([ACTIVE_ADMIN, [CURRENT_USER]]);
-
-  await expect(harness.invokeUpdate({ changes: { fullName: null } })).resolves.toEqual({
-    outcome: 'VALIDATION_ERROR',
-  });
-
-  expect(harness.calls.some(({ query }) => /UPDATE Users|UPDATE UserProfiles|INSERT INTO AuditLogs/.test(query))).toBe(false);
-  expect(harness.transaction.rollbackCount).toBe(1);
-});
-
-test('effective update writes one sorted audit and commits', async () => {
-  const harness = makeLifecycleHarness([
-    ACTIVE_ADMIN,
-    [CURRENT_USER],
-    [],
-  ]);
-
-  await expect(harness.invokeUpdate({
-    changes: { phone: '0911111111', fullName: 'Updated User', address: 'Đà Nẵng' },
-  })).resolves.toEqual({
-    outcome: 'UPDATED',
-    changedFields: ['address', 'fullName', 'phone'],
-  });
-
-  const userUpdate = harness.calls.find(({ query }) => query.includes('UPDATE Users'));
-  expect(userUpdate.inputs).toMatchObject({
-    UserId: 7,
-    Phone: '0911111111',
-    Now: FIXED_NOW,
-  });
-  const profileUpdate = harness.calls.find(({ query }) => query.includes('MERGE UserProfiles'));
-  expect(profileUpdate.inputs).toMatchObject({
-    FullName: 'Updated User',
-    Address: 'Đà Nẵng',
-  });
-  expect(userUpdate.inputs).not.toHaveProperty('Email');
-  const auditCalls = harness.calls.filter(({ query }) => query.includes('INSERT INTO AuditLogs'));
-  expect(auditCalls).toHaveLength(1);
-  expect(JSON.parse(auditCalls[0].inputs.Metadata)).toEqual({
-    changedFields: ['address', 'fullName', 'phone'],
-  });
-  expect(harness.transaction.commitCount).toBe(1);
-  expect(harness.transaction.rollbackCount).toBe(0);
-});
-
-test('uses parameterized locked reads for actor and target', async () => {
-  const harness = makeLifecycleHarness([
-    ACTIVE_ADMIN,
-    [CURRENT_USER],
-  ]);
-
-  await harness.invokeUpdate({ changes: { fullName: 'Updated User' } });
-
-  for (const call of harness.calls.slice(0, 2)) {
-    expect(call.query).toContain('UPDLOCK');
-    expect(call.query).toContain('HOLDLOCK');
-  }
-  expect(harness.calls[0].inputs.AdminUserId).toBe(99);
-  expect(harness.calls[1].inputs).toMatchObject({
-    UserId: 7,
-    ExpectedUpdatedAt: FIXED_VERSION,
-  });
-});
-
-test('rolls back an effective update when audit persistence fails', async () => {
-  const auditError = new Error('audit insert failed');
-  const harness = makeLifecycleHarness([
-    ACTIVE_ADMIN,
-    [CURRENT_USER],
-    auditError,
-  ]);
-
-  await expect(harness.invokeUpdate({ changes: { fullName: 'Updated User' } })).rejects.toBe(auditError);
-
-  expect(harness.calls.some(({ query }) => query.includes('UPDATE Users'))).toBe(true);
-  expect(harness.transaction.commitCount).toBe(0);
-  expect(harness.transaction.rollbackCount).toBe(1);
 });
 
 describe('deactivateManagedUser', () => {

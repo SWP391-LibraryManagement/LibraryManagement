@@ -828,22 +828,6 @@ components:
       required: [reason]
       properties:
         reason: { type: string, minLength: 1, maxLength: 500 }
-    ManagedUserProfileUpdateInput:
-      type: object
-      additionalProperties: false
-      required: [expectedUpdatedAt]
-      anyOf:
-        - required: [fullName]
-        - required: [phone]
-        - required: [address]
-      properties:
-        expectedUpdatedAt:
-          type: string
-          format: date-time
-          description: Latest effective Users/UserProfiles version loaded by Admin.
-        fullName: { type: string, minLength: 1, maxLength: 100 }
-        phone: { type: string, nullable: true, maxLength: 20 }
-        address: { type: string, nullable: true, maxLength: 255 }
     UserManagementView:
       type: object
       additionalProperties: false
@@ -1758,33 +1742,6 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/FineMutationPayload' }
-        '400': { $ref: '#/components/responses/ValidationError' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-  /api/users/{userId}:
-    put:
-      tags: [User Management]
-      summary: Update a managed user's profile fields (FR-FE11-004/007/010/020/023/028)
-      description: >
-        Admin may update fullName, phone, and address for Member, Librarian, or Admin targets.
-        Email remains read-only because it requires a separately verified identity flow.
-        Email, department, specialization, unknown fields, and mixed payloads return
-        403 MANAGED_USER_UPDATE_FORBIDDEN without changing fields, effective version, or audit.
-      parameters:
-        - { name: userId, in: path, required: true, schema: { type: integer, minimum: 1 } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ManagedUserProfileUpdateInput' }
-      responses:
-        '200':
-          description: Authoritative safe user-management DTO; no-op keeps updatedAt unchanged.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/UserManagementView' }
         '400': { $ref: '#/components/responses/ValidationError' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

@@ -1,5 +1,15 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-28 - Limit existing-user Admin actions to role and deactivation (v0.6.13)
+
+- Removed the `Chỉnh sửa` action from user rows, cards, and detail.
+- Retained atomic `Phân quyền` and eligible `Vô hiệu hóa`.
+- Retired `PUT /api/users/{userId}` and its frontend/backend/OpenAPI profile
+  mutation path.
+- Kept FE03 as the owner of authenticated profile correction and FE02 as the
+  owner of any future verified email change.
+- Added regression coverage for the absent Edit UI and retired route.
+
 ## 2026-07-27 - Lock Admin library metadata role boundary (v0.6.12)
 
 - Made the single current role authoritative for catalog reference management.

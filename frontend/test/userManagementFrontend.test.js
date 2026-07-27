@@ -5,7 +5,7 @@ import test from 'node:test';
 import {
   buildRoleReplacement,
   normalizeEditableRoleCatalog,
-  validateUserForm,
+  validateUserCreateForm,
 } from '../src/page/admin/users/userPresentation.js';
 
 const root = new URL('../src/page/admin/', import.meta.url);
@@ -59,10 +59,7 @@ test('FE11 user module keeps detail, lifecycle and independent loading contracts
   assert.match(section, /setSelectedUser\(detail\)/);
   assert.match(section, /isManagedUserNotFound\(error\)[^]*?await loadUsers\(pagination\.page\)/);
   assert.match(section, /deactivateManagedUser\(user\.userId, user\.updatedAt\)/);
-  assert.match(section, /expectedUpdatedAt: modal\.user\.updatedAt/);
-  assert.match(section, /fullName: form\.fullName\.trim\(\)/);
-  assert.match(section, /phone: form\.phone\.trim\(\) \|\| null/);
-  assert.match(section, /address: form\.address\.trim\(\) \|\| null/);
+  assert.doesNotMatch(section, /updateManagedUser|openUserEditor|mode: 'edit'/);
   assert.match(section, /createLatestRequestGuard/);
   assert.match(section, /beginLatestRequest\('users'\)/);
   assert.match(section, /beginLatestRequest\('user-statistics'\)/);
@@ -102,8 +99,8 @@ test('FE11 role save uses one atomic replacement and recovers authoritative deta
   assert.match(saveRole, /setRoleSyncBlocked\(true\)/);
 });
 
-test('FE11 user validation preserves canonical field widths', () => {
-  const valid = validateUserForm({
+test('FE11 create-user validation preserves canonical field widths', () => {
+  const valid = validateUserCreateForm({
     type: 'librarian',
     email: 'a'.repeat(242) + '@example.test',
     fullName: 'x'.repeat(100),
@@ -112,7 +109,7 @@ test('FE11 user validation preserves canonical field widths', () => {
   });
   assert.deepEqual(valid, {});
 
-  const invalid = validateUserForm({
+  const invalid = validateUserCreateForm({
     type: 'librarian',
     email: 'librarian@example.test',
     fullName: '',
@@ -122,17 +119,9 @@ test('FE11 user validation preserves canonical field widths', () => {
   assert.ok(invalid.fullName);
   assert.ok(invalid.phone);
   assert.ok(invalid.address);
-
-  const editOnly = validateUserForm({
-    email: 'not-used-in-edit',
-    fullName: 'Người dùng hợp lệ',
-    phone: '0900000000',
-    address: 'Hà Nội',
-  }, { mode: 'edit' });
-  assert.deepEqual(editOnly, {});
 });
 
-test('FE11 desktop table and mobile cards expose profile editing for every managed role', async () => {
+test('FE11 desktop table and mobile cards expose only role and deactivation actions', async () => {
   const [section, css] = await Promise.all([
     readAdminFile('users/AdminUsersSection.jsx'),
     readAdminFile('admin-console.css'),
@@ -144,7 +133,7 @@ test('FE11 desktop table and mobile cards expose profile editing for every manag
   for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
     assert.match(section, new RegExp('label="' + label + '"'));
   }
-  assert.match(section, /label="Chỉnh sửa" onClick=\{\(\) => openUserEditor\(user\)\}/);
+  assert.doesNotMatch(section, /label="Chỉnh sửa"|openUserEditor|updateManagedUser/);
   assert.doesNotMatch(section, /openLibrarianWorkEditor|department|specialization/);
   assert.doesNotMatch(section, /openEditModal/);
   assert.match(section, /<th>Lần đăng nhập<\/th>/);
@@ -159,7 +148,7 @@ test('FE11 desktop table and mobile cards expose profile editing for every manag
   assert.match(css, /\.admin-user-identity small\s*\{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/s);
 });
 
-test('FE11 create and edit flows share profile fields while email remains read-only on edit', async () => {
+test('FE11 create flow remains separate from role and deactivation actions', async () => {
   const [editor, roleModal, drawer, section] = await Promise.all([
     readAdminFile('users/UserEditorModal.jsx'),
     readAdminFile('users/UserRoleModal.jsx'),
@@ -168,11 +157,7 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   ]);
 
   assert.match(editor, /Tài khoản mới ở trạng thái chưa kích hoạt/);
-  assert.match(editor, /type="email"[^>]*readOnly=\{isEdit\}/);
-  assert.match(editor, /Vai trò hiện tại/);
-  assert.match(editor, /<RoleBadge role=\{currentRole\} \/>/);
-  assert.match(editor, /onClick=\{\(\) => onManageRole\?\.\(user\)\}/);
-  assert.match(editor, /Đổi vai trò/);
+  assert.doesNotMatch(editor, /isEdit|Vai trò hiện tại|RoleBadge|onManageRole|Đổi vai trò|Chỉnh sửa/);
   assert.doesNotMatch(editor, /Phòng ban|Chuyên môn|Thông tin cá nhân do người dùng tự quản lý/);
   assert.match(roleModal, /type="radio"/);
   assert.match(roleModal, /Mỗi tài khoản phải có đúng một vai trò/);
@@ -184,10 +169,11 @@ test('FE11 create and edit flows share profile fields while email remains read-o
   for (const label of ['Đóng chi tiết', 'Chưa có tên', 'Lượt mượn đang hoạt động', 'Tiền phạt chưa thanh toán']) {
     assert.match(drawer, new RegExp(label));
   }
-  assert.match(drawer, /label="Chỉnh sửa"[^]*?onEdit\(user\)/);
-  assert.match(section, /onEdit=\{openUserEditor\}/);
-  assert.match(section, /onManageRole=\{openRoleFromEditor\}/);
-  assert.doesNotMatch(section, /openEditModal|onEdit=\{openEditModal\}/);
+  assert.doesNotMatch(drawer, /label="Chỉnh sửa"|onEdit\(user\)/);
+  assert.doesNotMatch(section, /openUserEditor|openRoleFromEditor|onEdit=/);
+  for (const label of ['Phân quyền', 'Vô hiệu hóa']) {
+    assert.match(drawer + section, new RegExp(label));
+  }
 });
 
 test('FE11 permissions keep policy and statistics independent with explicit decisions', async () => {

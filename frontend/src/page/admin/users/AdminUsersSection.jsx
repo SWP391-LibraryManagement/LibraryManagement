@@ -1,7 +1,6 @@
 import {
   Check,
   FilterX,
-  Pencil,
   Plus,
   PowerOff,
   Search,
@@ -20,7 +19,6 @@ import {
   fetchUsers,
   replaceManagedUserRole,
   resendSetupEmail,
-  updateManagedUser,
 } from '../../../api/userManagementApi';
 import { normalizeAdminUserStatistics } from '../../../utils/adminStatistics';
 import { createLatestRequestGuard } from '../../../utils/latestRequestGuard';
@@ -188,12 +186,12 @@ export function AdminUsersSection({
   function requireAdminSession() {
     const access = readStoredAdminAccess();
     if (access.authenticated && access.isAdmin) return true;
-    notify('error', 'Bạn cần đăng nhập bằng tài khoản quản trị viên để tạo, cập nhật hoặc quản lý người dùng.');
+    notify('error', 'Bạn cần đăng nhập bằng tài khoản quản trị viên để tạo tài khoản, phân quyền hoặc vô hiệu hóa người dùng.');
     return false;
   }
 
   function openCreateModal() {
-    if (requireAdminSession()) setModal({ mode: 'create' });
+    if (requireAdminSession()) setModal({});
   }
 
   async function openRoleModal(user) {
@@ -209,12 +207,6 @@ export function AdminUsersSection({
     } catch (error) {
       notify('error', error.message);
       return false;
-    }
-  }
-
-  async function openRoleFromEditor(user) {
-    if (await openRoleModal(user)) {
-      setModal(null);
     }
   }
 
@@ -235,46 +227,20 @@ export function AdminUsersSection({
     }
   }
 
-  async function openUserEditor(user) {
-    if (!requireAdminSession() || !user?.userId) return;
-    const { guard, token } = beginLatestRequest('user-editor');
-    try {
-      const detail = await fetchManagedUser(user.userId);
-      if (!guard.isLatest(token)) return;
-      setSelectedUser(null);
-      setModal({ mode: 'edit', user: detail });
-    } catch (error) {
-      if (!guard.isLatest(token)) return;
-      notify('error', error.message);
-      if (isManagedUserNotFound(error)) await loadUsers(pagination.page);
-    }
-  }
-
   async function submitModal(form) {
     if (!requireAdminSession()) throw new Error('Cần đăng nhập bằng tài khoản quản trị viên.');
     try {
-      if (modal?.mode === 'edit') {
-        await updateManagedUser(modal.user.userId, {
-          expectedUpdatedAt: modal.user.updatedAt,
-          fullName: form.fullName.trim(),
-          phone: form.phone.trim() || null,
-          address: form.address.trim() || null,
-        });
-        notify('success', 'Đã cập nhật thông tin người dùng.');
-      } else {
-        await createManagedUser({
-          type: form.type,
-          fullName: form.fullName.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim() || null,
-          address: form.address.trim() || null,
-        });
-        notify('success', 'Đã tạo tài khoản chưa kích hoạt và gửi email thiết lập mật khẩu.');
-      }
-      const targetPage = modal?.mode === 'edit' ? pagination.page : 1;
+      await createManagedUser({
+        type: form.type,
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        address: form.address.trim() || null,
+      });
+      notify('success', 'Đã tạo tài khoản chưa kích hoạt và gửi email thiết lập mật khẩu.');
       setModal(null);
       setSelectedUser(null);
-      await refreshUserDirectory(targetPage);
+      await refreshUserDirectory(1);
     } catch (error) {
       notify('error', error.message);
       throw error;
@@ -372,7 +338,6 @@ export function AdminUsersSection({
     const canDeactivate = ['ACTIVE', 'LOCKED'].includes(user.status);
     return (
       <div className="admin-user-actions" onClick={(event) => event.stopPropagation()}>
-        <AdminActionButton icon={Pencil} label="Chỉnh sửa" onClick={() => openUserEditor(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => openRoleModal(user)} />
         <AdminActionButton
           icon={PowerOff}
@@ -501,8 +466,8 @@ export function AdminUsersSection({
       </section>
 
       {detailLoading ? <div className="admin-detail-loading" role="status">Đang tải chi tiết người dùng...</div> : null}
-      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onEdit={openUserEditor} onManageRoles={openRoleModal} onDeactivate={deactivateUser} onResendSetup={resendSetup} resending={detailLoading} detailLoading={detailLoading} canDeactivate={canDeactivateSelected} deactivateHint={deactivateHint} /> : null}
-      {modal ? <UserEditorModal mode={modal.mode} user={modal.user} onClose={() => setModal(null)} onSubmit={submitModal} onManageRole={openRoleFromEditor} /> : null}
+      {selectedUser ? <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} onManageRoles={openRoleModal} onDeactivate={deactivateUser} onResendSetup={resendSetup} resending={detailLoading} detailLoading={detailLoading} canDeactivate={canDeactivateSelected} deactivateHint={deactivateHint} /> : null}
+      {modal ? <UserEditorModal onClose={() => setModal(null)} onSubmit={submitModal} /> : null}
       {roleUser ? <UserRoleModal user={roleUser} roles={roles} savingBlocked={rolesLoading || roleSyncBlocked} onClose={() => { setRoleUser(null); setRoleSyncBlocked(false); }} onSave={saveRole} /> : null}
     </section>
   );

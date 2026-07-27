@@ -2,9 +2,9 @@
 
 Status: IMPLEMENTED - LOCAL AUTOMATED VALIDATION COMPLETE
 
-Date: 2026-07-23
+Date: 2026-07-28
 
-Current Extension: Personal-data ownership correction is implemented and locally regression-tested; authenticated browser/human acceptance remains open under FE11-PDO04.
+Current Extension: Q-FE11-029 removes existing-user profile editing from FE11; Admin retains role replacement and eligible deactivation. Local automated validation and browser/human acceptance are tracked below.
 
 Concurrent Extension: Admin Console Membership Review is implemented with canonical FE04 ownership and locally regression-tested; responsive browser, Azure Staging, and human acceptance remain open.
 
@@ -465,3 +465,18 @@ coverage, full frontend tests/lint/build, OpenAPI parsing, traceability, and dif
    `BorrowDate`, bind the return-today query to the shared Vietnam business
    date instead of the SQL Server host date, and preserve the approved
    five-card/three-chart presentation.
+
+## 2026-07-28 Admin Account-Governance Boundary Revision
+
+1. Remove the existing-user `Chỉnh sửa` action from desktop rows, mobile cards,
+   and the detail drawer while preserving `Phân quyền` and eligible
+   `Vô hiệu hóa`.
+2. Keep account creation as a separate onboarding flow and FE03 as the owner of
+   authenticated self-service profile correction.
+3. Retire `PUT /api/users/{userId}` and remove its route, controller, validator,
+   service, repository, client adapter, and OpenAPI contract.
+4. Preserve the independent atomic role-replacement and deactivation contracts.
+5. Add regression tests proving the UI has no Edit path and the retired direct
+   profile request returns `404` without reaching a write service.
+6. Run focused FE11 backend/frontend tests, OpenAPI parsing, lint/build, and
+   traceability; complete authenticated browser/human review separately.
