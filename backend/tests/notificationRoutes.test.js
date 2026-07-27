@@ -562,6 +562,55 @@ describe('FE10 notification management', () => {
     expect(results.reduce((sum, result) => sum + result.processed, 0)).toBe(1);
   });
 
+  test('processes queued mail through a construction-bound SYSTEM processor', async () => {
+    const {
+      notificationService,
+      notificationDependencies,
+      authDependencies,
+      emailProviderMessages,
+    } = makeTestApp();
+    notificationDependencies.state.notifications.push({
+      notificationId: 996,
+      type: 'DUE_DATE_REMINDER',
+      templateKey: 'DUE_DATE_REMINDER',
+      recipientEmail: 'system-worker@example.test',
+      title: 'Due date reminder',
+      body: 'Due date: 2026-07-30',
+      status: 'PENDING',
+      attemptCount: 0,
+    });
+
+    const processor = notificationService.createSystemNotificationProcessor();
+    const result = await processor.processPendingNotifications({ limit: 1 });
+
+    expect(result).toMatchObject({ processed: 1, failed: 0 });
+    expect(emailProviderMessages).toHaveLength(1);
+    expect(notificationDependencies.state.attempts).toEqual([
+      expect.objectContaining({
+        status: 'SENT',
+        providerMessageId: 'mock-system-worker@example.test',
+      }),
+    ]);
+    expect(authDependencies.state.auditLogs).toEqual([
+      expect.objectContaining({
+        userId: null,
+        action: 'NOTIFICATION_PROCESS_PENDING',
+        metadata: { processed: 1, failed: 0 },
+      }),
+    ]);
+    expect(Object.isFrozen(processor)).toBe(true);
+  });
+
+  test('does not audit empty SYSTEM queue polls', async () => {
+    const { notificationService, authDependencies } = makeTestApp();
+
+    const processor = notificationService.createSystemNotificationProcessor();
+    const result = await processor.processPendingNotifications({ limit: 1 });
+
+    expect(result).toMatchObject({ processed: 0, failed: 0 });
+    expect(authDependencies.state.auditLogs).toEqual([]);
+  });
+
   test('does not reuse a rolled-back claim when persisting a successful delivery fails', async () => {
     const { notificationService, notificationDependencies, emailProviderMessages } = makeTestApp();
     notificationDependencies.state.notifications.push({
@@ -1376,7 +1425,10 @@ describe('FE10 notification management', () => {
       expect(notification.safePayload).toEqual({ redacted: true });
       expect(notification).toMatchObject({ sourceFeature: 'FE02', sourceEntityType: 'AuthToken' });
       expect(notificationDependencies.state.attempts).toEqual([
-        expect.objectContaining({ status: 'SENT', providerMessageId: null }),
+        expect.objectContaining({
+          status: 'SENT',
+          providerMessageId: `mock-${recipientEmail}`,
+        }),
       ]);
 
       const persistedAndExposed = JSON.stringify({
@@ -2436,6 +2488,12 @@ describe('FE10 notification management', () => {
       sourceEntityId: 456,
       idempotencyKey: 'FE11:ACCOUNT_SETUP:456',
     });
+    expect(notificationDependencies.state.attempts).toEqual([
+      expect.objectContaining({
+        status: 'SENT',
+        providerMessageId: 'mock-new.member@example.test',
+      }),
+    ]);
 
     const persisted = JSON.stringify({
       notifications: notificationDependencies.state.notifications,
