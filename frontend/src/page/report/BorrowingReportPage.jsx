@@ -11,21 +11,20 @@ import AppLayout from '../../component/layout/AppLayout';
 import { BarChart, LineChart } from '../../component/shared/Charts';
 import { Badge, DataNotice, EmptyState, LoadingBlock } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { objectToChart } from '../../utils/libraryFeatureViewModels';
+import { fmtDate, objectToChart } from '../../utils/libraryFeatureViewModels';
 import { buildBorrowingReportParams } from '../../utils/reportFilters';
 import { getStatusLabel } from '../../utils/uiLabels';
 
 const fmtNumber = (value) => Number(value || 0).toLocaleString('vi-VN');
-const fmtDate = (value) => value ? String(value).slice(0, 10) : '-';
 const REPORT_PAGE_SIZE = 20;
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'BORROWED', label: 'Đang mượn' },
-  { value: 'OVERDUE', label: 'Quá hạn' },
-  { value: 'RETURNED', label: 'Đã trả' },
-  { value: 'REQUESTED', label: 'Chờ xử lý' },
-  { value: 'LOST', label: 'Thất lạc' },
-  { value: 'DAMAGED', label: 'Hư hỏng' },
+  { value: 'BORROWED', label: getStatusLabel('BORROWED') },
+  { value: 'OVERDUE', label: getStatusLabel('OVERDUE') },
+  { value: 'RETURNED', label: getStatusLabel('RETURNED') },
+  { value: 'REQUESTED', label: getStatusLabel('REQUESTED') },
+  { value: 'LOST', label: getStatusLabel('LOST') },
+  { value: 'DAMAGED', label: getStatusLabel('DAMAGED') },
 ];
 
 function describeActiveFilterChips(filters) {
@@ -220,11 +219,11 @@ export default function BorrowingReportPage() {
                 </tr>
               ))}
             </DataTable>
-            <div className="pagination report-pagination">
+            <nav className="pagination report-pagination" aria-label="Phân trang báo cáo mượn trả">
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page - 1, activeFilters)} disabled={loading || page <= 1}>Trang trước</button>
-              <span className="muted">Trang {page}/{totalPages}</span>
+              <span className="muted" aria-current="page">Trang {page}/{totalPages}</span>
               <button className="btn btn-outline btn-sm" type="button" onClick={() => loadReport(page + 1, activeFilters)} disabled={loading || page >= totalPages}>Trang sau</button>
-            </div>
+            </nav>
           </div>
         </>
       )}

@@ -24,12 +24,12 @@ import { getStatusLabel } from '../../utils/uiLabels';
 const PAGE_SIZE = 8;
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
-  { value: 'REQUESTED', label: 'Chờ duyệt' },
-  { value: 'BORROWED', label: 'Đang mượn' },
-  { value: 'OVERDUE', label: 'Quá hạn' },
-  { value: 'RETURNED', label: 'Đã trả' },
-  { value: 'DAMAGED', label: 'Hư hỏng' },
-  { value: 'LOST', label: 'Thất lạc' },
+  { value: 'REQUESTED', label: getStatusLabel('REQUESTED') },
+  { value: 'BORROWED', label: getStatusLabel('BORROWED') },
+  { value: 'OVERDUE', label: getStatusLabel('OVERDUE') },
+  { value: 'RETURNED', label: getStatusLabel('RETURNED') },
+  { value: 'DAMAGED', label: getStatusLabel('DAMAGED') },
+  { value: 'LOST', label: getStatusLabel('LOST') },
 ];
 
 function normalize(value) {
@@ -158,7 +158,7 @@ export default function MemberBorrowingDetailsPage() {
   const safePage = Math.min(page, totalPages);
   const pageRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const activeCount = rows.filter((row) => ['BORROWED', 'OVERDUE'].includes(row.rawStatus)).length;
-  const pendingCount = rows.filter((row) => row.rawStatus === 'REQUESTED').length;
+  const overdueCount = rows.filter((row) => row.rawStatus === 'OVERDUE').length;
   const returnedCount = rows.filter((row) => row.rawStatus === 'RETURNED').length;
 
   async function selectMember(userId) {
@@ -222,7 +222,7 @@ export default function MemberBorrowingDetailsPage() {
 
               <div className="member-borrow-stats">
                 <div><BookOpen size={18} /><span>Đang mượn<strong>{activeCount}</strong></span></div>
-                <div><CalendarClock size={18} /><span>Chờ duyệt<strong>{pendingCount}</strong></span></div>
+                <div><CalendarClock size={18} /><span>Quá hạn<strong>{overdueCount}</strong></span></div>
                 <div><RefreshCw size={18} /><span>Đã trả<strong>{returnedCount}</strong></span></div>
                 <div><Hash size={18} /><span>Tổng giao dịch<strong>{rows.length}</strong></span></div>
               </div>

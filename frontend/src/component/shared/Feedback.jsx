@@ -40,11 +40,18 @@ export function Toast({ toast, onClose }) {
 }
 
 /** Hook tiện dụng: const [toast, showToast] = useToast(); showToast('msg', 'success') */
+// Hàng đợi FIFO: nhiều showToast liên tiếp sẽ hiển thị lần lượt, không ghi đè mất thông báo trước.
+// @spec NFR-FE08-UX-004 — toast sau không thay thế toast trước đang hiển thị.
 // eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
-  const [toast, setToast] = useState(null);
-  const show = useCallback((message, type = 'success') => setToast({ message, type }), []);
-  const clear = useCallback(() => setToast(null), []);
+  const [queue, setQueue] = useState([]);
+  const show = useCallback((message, type = 'success') => {
+    setQueue((current) => [...current, { message, type }]);
+  }, []);
+  const clear = useCallback(() => {
+    setQueue((current) => current.slice(1));
+  }, []);
+  const toast = queue[0] || null;
   return [toast, show, clear];
 }
 
