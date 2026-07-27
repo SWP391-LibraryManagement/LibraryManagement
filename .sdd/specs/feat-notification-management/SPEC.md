@@ -1,8 +1,8 @@
 # SPEC.md - FE10 Notification Management
 
-# Version: 0.4.4
+# Version: 0.4.5
 
-# Status: APPROVED - TEMPLATE SAFETY 2026-07-27
+# Status: APPROVED - STAGING EMAIL DELIVERY REMEDIATION 2026-07-27
 
 # Owner: Nhat
 
@@ -34,6 +34,15 @@
 > Nhat approved this written revision on 2026-07-27. Approval authorizes
 > PLAN/TASKS preparation only; implementation remains unclaimed until
 > RED-GREEN evidence and acceptance gates are completed.
+>
+> Revision v0.4.5 restores three previously approved delivery obligations:
+> existing databases receive the canonical `ACCOUNT_SETUP` template through an
+> idempotent migration; successful sensitive sends retain only the provider
+> message ID in attempt history; and an opt-in SYSTEM worker processes queued
+> non-sensitive `PENDING` records while the backend is awake. The protected
+> manual endpoint and manual-only retry policy remain unchanged. On the staging
+> F1 plan this schedule is explicitly best-effort because Always On is disabled.
+> The user approved the design and written contract on 2026-07-27.
 
 ---
 
@@ -214,6 +223,12 @@ Use these stable IDs for tasks and tests.
 - BR-FE10-011: Notification HTTP endpoints must remain protected from public/member callers and allow only `LIBRARIAN`/`ADMIN` for non-sensitive types. HTTP callers cannot provide `sourceFeature` and must receive safe `403 SENSITIVE_NOTIFICATION_INTERNAL_ONLY` for `ACCOUNT_VERIFICATION`, `PASSWORD_RESET`, or `ACCOUNT_SETUP`. In-process source requests use `createSourceNotificationRequester(sourceFeature)` with allowlist `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; only FE02 may submit verification/reset, only FE04 may submit `MEMBERSHIP_RESULT`, and only FE11 may submit account setup; `SYSTEM` is not a login role.
 - BR-FE10-012: Notification delivery failure must not automatically roll back the source business transaction.
 - BR-FE10-013: Notification status changes and source-request audits must be traceable with safe metadata. Source audits use `userId: null` plus bound source metadata; retry preserves the same notification ID, idempotency key, and attempt history. Claiming must atomically commit `PENDING -> PROCESSING` before provider I/O, and terminal transitions must be guarded from `PROCESSING`.
+- A successful provider result persists only its normalized
+  `providerMessageId` in `NotificationAttempts`; no full provider response,
+  rendered sensitive content, token, OTP, setup link, or recipient content is
+  copied into audit, logs, HTTP, or notification content.
+- Automatic SYSTEM processing is construction-bound and writes aggregate audit
+  metadata with `UserId = NULL`; it never fabricates an Admin or Librarian.
 
 ---
 
@@ -440,6 +455,7 @@ This feature does not include:
 | Q-FE10-010 | Phase 1 notification statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; claim/sensitive acceptance commits `PROCESSING` before provider I/O, and compatibility statuses have no Phase 1 transitions. | Notification lifecycle normalization 2026-07-17; delivery-safety remediation approved 2026-07-23 | APPROVED |
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
 | Q-FE10-012 | Does FE10 sanitize an unsafe stored template definition or reject it? | Nhat, 2026-07-27 | APPROVED: reject the stored definition before rendering/persistence/delivery; continue escaping or sanitizing runtime values. |
+| Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
 
 ---
 
@@ -457,6 +473,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Q-FE10-006 | Notification failure must not block source business flow. | APPROVED |
 | Q-FE10-007 | System/Scheduler uses the bound internal requester and is not a login role. | APPROVED |
 | Q-FE10-008 | Account setup is synchronous sensitive delivery owned by the FE11-bound requester. | APPROVED |
+| Q-FE10-013 | The opt-in SYSTEM worker runs at startup and every 60 seconds by default, with batch size 20, local overlap prevention, lifecycle stop, unchanged staff HTTP authorization, manual-only failed retry, and an explicit F1 best-effort limitation. | APPROVED 2026-07-27 |
 | G1 | Sensitive auth sends synchronously without persisted rendered content; non-sensitive delivery remains queued with recursive normalized secret-key protection and matching `safePayload` redaction. | APPROVED 2026-07-13 |
 | G2 | Create/replay/process/retry return only the approved minimal DTOs. | APPROVED 2026-07-13 |
 | G3 | `createSourceNotificationRequester(sourceFeature)` binds one source from `FE02`, `FE04`, `FE07`, `FE08`, `FE09`, `FE11`, `SYSTEM`; HTTP remains `LIBRARIAN`/`ADMIN`. | APPROVED 2026-07-13; extended by ADR-005 2026-07-15 and FE04 audit 2026-07-17 |

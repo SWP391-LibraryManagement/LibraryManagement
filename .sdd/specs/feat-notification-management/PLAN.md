@@ -269,3 +269,22 @@ The detailed executable plan is
    template-data sanitization regression and the full FE10 route suite.
 5. Keep implementation changes uncommitted until the cross-feature L1-L4
    evidence passes and Nhat grants H2.
+
+## 14. V0.4.5 Staging Email Delivery Remediation
+
+Approved design:
+`docs/superpowers/specs/2026-07-27-staging-email-delivery-remediation-design.md`.
+
+1. Add and verify an idempotent migration for the canonical active
+   `ACCOUNT_SETUP` template; do not rebuild or delete the existing database.
+2. Capture the sensitive provider result and persist only
+   `providerMessageId` through the existing guarded `markSent` transaction.
+3. Extract the existing queued-delivery loop behind a common private core.
+   Preserve the staff-authorized wrapper and add a construction-bound SYSTEM
+   wrapper with null-user aggregate audit metadata.
+4. Add an opt-in worker with an immediate startup pass, 60-second default
+   interval, batch size 20, overlap guard, safe error code, and stop behavior.
+5. Wire the worker to the backend HTTP lifecycle without changing the direct
+   Express app export or starting timers on module import.
+6. Keep generated implementation uncommitted until focused/full validation,
+   secret scans, staging-safe checks, and H2 review pass.
