@@ -202,6 +202,19 @@ automatically.
 7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
    read-only checks. Staging must not be used to prove migration idempotence.
 
+For the bounded FE05 metadata repair, an authorized operator may load the target database settings
+through environment variables and run the reviewed script plus its post-check with:
+
+```powershell
+npm.cmd --prefix backend run migrate:library-metadata
+```
+
+The command executes only
+`database/migrations/2026-07-22-library-metadata-compatibility.sql`; it prints no connection values.
+Afterward, `GET /health/ready` must return HTTP `200` with
+`checks.catalogMetadata = "ok"`. Before the migration, it returns HTTP `503`, and staging smoke
+must fail rather than accepting a deployment whose metadata tabs cannot load.
+
 ## Configure App Service Runtime Settings
 
 Set non-secret values with Azure CLI:

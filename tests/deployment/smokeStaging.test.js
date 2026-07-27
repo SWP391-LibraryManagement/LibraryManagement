@@ -8,6 +8,7 @@ async function startFixture({
   permissiveCors = false,
   protectedStatus = 401,
   catalogStatus = 200,
+  readinessStatus = 200,
 } = {}) {
   let allowedOrigin = '';
   const server = http.createServer((req, res) => {
@@ -23,6 +24,16 @@ async function startFixture({
     if (req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok' }));
+      return;
+    }
+    if (req.url === '/health/ready') {
+      res.writeHead(readinessStatus, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: readinessStatus === 200 ? 'ok' : 'not_ready',
+        checks: {
+          catalogMetadata: readinessStatus === 200 ? 'ok' : 'not_ready',
+        },
+      }));
       return;
     }
     if (req.url === '/api/books?page=1&limit=1') {
@@ -56,11 +67,24 @@ test('passes for healthy frontend, API, SQL catalog, strict CORS, and protected 
     assert.deepEqual(result.checks, [
       'frontend',
       'health',
+      'schema-readiness',
       'sql-catalog',
       'allowed-cors',
       'blocked-cors',
       'protected-route',
     ]);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test('fails when the deployed catalog metadata schema is outdated', async () => {
+  const fixture = await startFixture({ readinessStatus: 503 });
+  try {
+    await assert.rejects(
+      runStagingSmoke({ frontendUrl: fixture.baseUrl, apiUrl: fixture.baseUrl }),
+      /schema readiness check failed with HTTP 503/i
+    );
   } finally {
     await fixture.close();
   }

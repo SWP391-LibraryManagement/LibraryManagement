@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-27 - Detect and repair deployed metadata schema drift
+
+- Added read-only catalog schema readiness for persisted author/publisher/category `Status` and `CreatedAt`.
+- Added a bounded operator migration command for the existing reviewed metadata compatibility script.
+- Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
+- Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
+
 ## 2026-07-27 - Public/staff ISBN boundary
 
 - Classified ISBN as FE05 staff-management metadata: searchable and visible to authenticated Librarian/Admin users.

@@ -24,6 +24,7 @@ function createAdminRoutes({ authService, adminService } = {}) {
   router.get('/permissions', ...requireAdmin, controller.permissions);
   router.get('/dashboard', requireAdmin, controller.dashboard);
   router.get('/library/books', requireAdmin, controller.listBooks);
+  // @spec BR-FE11-033, FR-FE11-043, AC-FE11-026
   router.get('/library/:resource', requireAdmin, controller.listResource);
   router.post('/library/:resource', requireAdmin, controller.createResource);
   router.put('/library/:resource/:id', requireAdmin, controller.updateResource);

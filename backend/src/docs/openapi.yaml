@@ -30,6 +30,10 @@ tags:
     description: FE11 — Admin-only canonical FE07 request list and detail views
   - name: User Management
     description: FE11 — Admin-only user lifecycle, profile maintenance, and role management
+  - name: Admin Library
+    description: FE11/FE05 - Admin-only author, publisher, and category reference management
+  - name: Deployment
+    description: Read-only liveness and schema-readiness checks
 components:
   securitySchemes:
     bearerAuth:
@@ -862,6 +866,105 @@ components:
 security:
   - bearerAuth: []
 paths:
+  /health/ready:
+    get:
+      tags: [Deployment]
+      summary: Verify deployed catalog metadata schema readiness (FR-FE05-031)
+      security: []
+      responses:
+        '200':
+          description: Canonical catalog metadata schema is ready
+        '503':
+          description: Catalog metadata migration is required or the database check failed
+  /api/admin/library/{resource}:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [authors, publishers, categories]
+    get:
+      tags: [Admin Library]
+      summary: List persisted catalog reference records (FR-FE11-043)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string, maxLength: 100 }
+      responses:
+        '200': { description: Reference records with id, name, status, and createdAt }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Admin Library]
+      summary: Create a catalog reference record (FR-FE11-043)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        '201': { description: Created active reference record }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/library/{resource}/{id}:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [authors, publishers, categories]
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    put:
+      tags: [Admin Library]
+      summary: Update a catalog reference name (FR-FE11-043)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+      responses:
+        '200': { description: Updated reference record }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/admin/library/{resource}/{id}/deactivate:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [authors, publishers, categories]
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    patch:
+      tags: [Admin Library]
+      summary: Soft-deactivate a catalog reference record (FR-FE11-043)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Reference record is inactive }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/books:
     get:
       tags: [Book Management]

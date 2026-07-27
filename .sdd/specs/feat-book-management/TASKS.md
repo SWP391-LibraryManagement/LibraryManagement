@@ -147,3 +147,12 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Add the implemented `/api/books/metadata` boundary to SPEC/PLAN/TEST_PLAN and cover Guest/Member denial plus Librarian/Admin active-only results.
 - [x] Clarify Librarian/Admin FE05 parity and the Admin-only FE11 reference-data mutation boundary.
 - [x] Reconcile the managed-cover scope and current SPEC version in PLAN.
+
+## 2026-07-27 deployed metadata readiness correction
+
+- [x] **FE05-T013 - Fail deployment readiness on metadata schema drift.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Add a read-only `/health/ready` check for the canonical `Authors`, `Publishers`, and `Categories` tables plus their persisted `Status`/`CreatedAt` columns.
+  - Add a bounded operator command that executes only the already reviewed `2026-07-22-library-metadata-compatibility.sql` migration and verifies the result.
+  - Extend staging smoke so a code-only deploy cannot pass while the Admin metadata tabs remain broken.
+  - Preserve the migration policy: liveness never mutates schema, and CI does not apply SQL automatically.

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE11 User & Role Management
 
+## 2026-07-27 - Lock Admin library metadata role boundary (v0.6.12)
+
+- Made the single current role authoritative for catalog reference management.
+- Kept author/publisher/category mutation under Admin `/api/admin/library/*` routes.
+- Kept Librarian access read-only through FE05 active metadata choices and rejected Librarian/Member access before Admin persistence.
+
 ## 2026-07-27 - Connect role/account lifecycle to FE07 (v0.6.8)
 
 - Blocked Member-role replacement and account deactivation while FE07 pending

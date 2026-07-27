@@ -1,6 +1,6 @@
 # SPEC.md - FE11 User & Role Management
 
-# Version: 0.6.11
+# Version: 0.6.12
 
 # Status: ADMIN DASHBOARD CONNECTION REVISION IMPLEMENTED - HUMAN REVIEW PENDING
 
@@ -307,6 +307,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE11-030: FE11 must not deactivate an account or replace its `MEMBER` role while FE07 reports a pending borrow request or active borrowed detail. The lifecycle mutation and FE07 create/approval use the same member-scoped transaction lock.
 - BR-FE11-031: For a legacy pending request with a known inactive/non-Member owner or unavailable copy, Admin Request Management disables approval with an actionable blocker but keeps rejection enabled; FE07 remains authoritative at command time.
 - BR-FE11-032: Admin Dashboard member metrics count `ACTIVE` accounts through the canonical single `UserRoles` mapping. Borrowing charts count only FE07 details with a committed `BorrowDate`; the return-today chart uses the `Asia/Ho_Chi_Minh` business date shared with FE07. The approved presentation remains five summary cards and three charts. Dashboard cards navigate to the owning module and preserve the applicable status filter.
+- BR-FE11-033: The account's single current role controls catalog reference-data access: `ADMIN` may list/create/update/deactivate authors, publishers, and categories through `/api/admin/library/*`; `LIBRARIAN` may only read active choices through FE05 `/api/books/metadata`; `MEMBER` and Guest may do neither.
 
 ---
 
@@ -339,6 +340,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE11-040: When an Admin approve/reject command succeeds or conflicts, Request Management shall reload the canonical list and detail. Rejection shall require a trimmed 1..500-character reason and explain that rejecting a pending request releases its logical copy claim.
 - FR-FE11-041: IF Admin attempts to deactivate a user with pending borrow requests, FE11 shall return `409 PENDING_BORROW_REQUESTS_EXIST`; IF Admin attempts to replace `MEMBER` while pending requests or active loans exist, FE11 shall return `409 MEMBER_BORROWING_WORKFLOW_EXISTS`.
 - FR-FE11-042: WHEN Admin opens a legacy pending request that is known not to be approvable, the detail shall list safe blocker messages, disable approval only, and keep rejection available.
+- FR-FE11-043: IF a Librarian, Member, or Guest calls any `/api/admin/library/{authors|publishers|categories}` endpoint, the server shall reject the request before invoking metadata persistence; an authenticated Admin shall be authorized using the canonical single-role projection.
 
 ### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
 
@@ -389,6 +391,7 @@ These EARS Unwanted-behavior requirements promote existing error/abnormal branch
 - AC-FE11-023: Given an Admin submits a Librarian work-field update or deactivation with stale effective `expectedUpdatedAt`, when the current user record has changed, then the system returns `409 STALE_USER_STATE` and persists no submitted field, lifecycle change, credential revocation, or success audit.
 - AC-FE11-024: Given Admin opens a pending request, then every requested barcode is paired with its current physical copy status; after an approve conflict, the refreshed state remains truthful and rejection with a valid reason remains available.
 - AC-FE11-025: Given Admin opens Dashboard, the approved five summary cards and three charts remain visible, the active Member count matches `Users -> UserRoles -> Roles`, the author count matches active catalogue authors, top-borrowed excludes unapproved `REQUESTED` details, return-today uses the FE07 date for the current Vietnam business day, and selecting a card opens the corresponding module with its applicable filter.
+- AC-FE11-026: Given accounts with Admin, Librarian, and Member roles, when each requests Admin metadata management, then only Admin reaches the metadata service; Librarian retains only the separate FE05 active-choice read.
 
 ---
 
@@ -493,6 +496,10 @@ The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, t
 | GET | `/api/admin/audit-logs` | Admin | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Audit log list | Redacts sensitive fields. |
 | GET | `/api/admin/requests` | Admin | Query: `page?, limit?, q?, status?, from?, to?` | Exactly `{ data, pagination }` | Reads FE07 request data for Admin review UI using the canonical contract below. |
 | GET | `/api/admin/requests/{requestId}` | Admin | - | Request detail | Completed requests are view-only. |
+| GET | `/api/admin/library/{resource}` | Admin | Path `resource`: `authors`, `publishers`, or `categories`; query `q?` | `{ data: MetadataRecord[] }` | Returns persisted `id`, `name`, `status`, and `createdAt`; Librarian uses FE05 `/api/books/metadata` instead. |
+| POST | `/api/admin/library/{resource}` | Admin | `{ name }` | `201 { data: MetadataRecord }` | Creates an active reference record; rejected for every non-Admin role. |
+| PUT | `/api/admin/library/{resource}/{id}` | Admin | `{ name }` | `{ data }` | Updates the reference name without changing role or book ownership. |
+| PATCH | `/api/admin/library/{resource}/{id}/deactivate` | Admin | - | `{ deactivated: true, data: { id, status: "INACTIVE" } }` | Soft-deactivates the reference; existing book relationships are preserved. |
 
 ### 11.1 Canonical Admin Request Read Contract
 
@@ -675,6 +682,7 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE11-022 | Ineligible/cooldown-limited resend is rejected without credential creation | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
 | AC-FE11-023 | Stale expectedUpdatedAt for Librarian work-field update/deactivation -> 409 STALE_USER_STATE and no mutation/success audit persists | FR-FE11-023 | BR-FE11-027 | FE11-LIFE03/LIFE04 stale mutation cases | Not Started |
 | AC-FE11-025 | Dashboard preserves five cards/three charts, uses canonical owners, and cards open the matching filtered module | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | LOCAL AUTOMATED; HUMAN REVIEW PENDING |
+| AC-FE11-026 | Only Admin reaches author/publisher/category management; Librarian keeps FE05 read-only choices | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/bookRoutes.test.js` | COMPLETE (LOCAL AUTOMATED); HUMAN REVIEW PENDING |
 
 ### FE11 Unwanted-Behavior Requirements to Sources to Tests
 
@@ -706,9 +714,9 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 
 ### Coverage Summary (FE11)
 
-- **Total AC**: 25 (AC-FE11-001 to AC-FE11-025).
-- **Total FR**: 42 (FR-FE11-001 to FR-FE11-042).
-- **Total BR**: 32 (BR-FE11-001 to BR-FE11-032).
+- **Total AC**: 26 (AC-FE11-001 to AC-FE11-026).
+- **Total FR**: 43 (FR-FE11-001 to FR-FE11-043).
+- **Total BR**: 33 (BR-FE11-001 to BR-FE11-033).
 - **Assignment tests**: FT50 to FT58 remain the external baseline; focused account-setup service/integration tests are mandatory before implementation can close.
 
 ### External Assignment Traceability (Excel UC IDs)
