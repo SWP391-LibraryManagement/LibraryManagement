@@ -1,52 +1,52 @@
-# FE12 B7 Integration And Review Closeout
+# Tổng kết tích hợp và đánh giá B7 của FE12
 
-Date: 2026-07-13
+Ngày: 2026-07-13
 
-Feature: FE12 Reporting & Statistics
+Tính năng: FE12 Báo cáo và thống kê
 
-Status: B7 COMPLETE - HUMAN REVIEW CONFIRMED, MERGED, CI PASS
+Trạng thái: B7 HOÀN THÀNH - ĐÃ XÁC NHẬN ĐÁNH GIÁ CỦA CON NGƯỜI, ĐÃ HỢP NHẤT, CI ĐẠT
 
-## Purpose And Boundary
+## Mục đích và ranh giới
 
-Record the B7 integration/review evidence for the FE12 validation branch after it reached `main`.
-This closeout records verification evidence only; it does not add FE12 requirements, change the
-database schema, widen report access, or add export and dashboard scope.
+Ghi nhận bằng chứng tích hợp/đánh giá B7 cho nhánh xác thực FE12 sau khi nhánh tới `main`.
+Bản tổng kết này chỉ ghi bằng chứng xác minh; không thêm yêu cầu FE12, thay đổi
+lược đồ cơ sở dữ liệu, mở rộng quyền truy cập báo cáo hoặc thêm phạm vi xuất dữ liệu và bảng điều khiển.
 
-## Merge And CI Evidence
+## Bằng chứng hợp nhất và CI
 
-| Check | Result | Evidence |
+| Kiểm tra | Kết quả | Bằng chứng |
 | --- | --- | --- |
-| Merged implementation | PASS | Commit `58747bc10657ed1accb44950ae0c5edbd178a242` (`feat: complete FE12 reporting validation`) is contained in `main` and was pushed to `origin/main`. |
-| Required CI | PASS | GitHub Actions CI run `29249491818` completed successfully for the same commit on `main`: https://github.com/doantd11/LibraryManagement/actions/runs/29249491818 |
-| Human review gate | PASS | Nhat explicitly confirmed human review, instructed local merge, authorized the push to `main`, and requested the ordered B7 closeout step in this task conversation. No PR or separate reviewer identity is inferred. |
-| Automated coverage | PASS | The successful CI job includes traceability enforcement, backend tests, frontend lint/tests/build, and the backend health import check from `.github/workflows/ci.yml`. |
+| Phần triển khai đã hợp nhất | PASS | Commit `58747bc10657ed1accb44950ae0c5edbd178a242` (`feat: complete FE12 reporting validation`) có trong `main` và đã được đẩy lên `origin/main`. |
+| CI bắt buộc | PASS | Lần chạy GitHub Actions CI `29249491818` hoàn tất thành công cho cùng commit trên `main`: https://github.com/doantd11/LibraryManagement/actions/runs/29249491818 |
+| Cổng đánh giá của con người | PASS | Nhat đã xác nhận rõ đánh giá của con người, chỉ dẫn hợp nhất cục bộ, cho phép đẩy lên `main` và yêu cầu bước tổng kết B7 theo thứ tự trong cuộc trò chuyện tác vụ này. Không suy diễn có PR hoặc danh tính người đánh giá riêng. |
+| Độ bao phủ tự động | PASS | Công việc CI thành công gồm thực thi truy vết, kiểm thử backend, lint/kiểm thử/bản dựng frontend và kiểm tra nhập tình trạng backend từ `.github/workflows/ci.yml`. |
 
-## Integration Review
+## Đánh giá tích hợp
 
-| Boundary | Review Result | Evidence / Scope Control |
+| Ranh giới | Kết quả đánh giá | Bằng chứng / Kiểm soát phạm vi |
 | --- | --- | --- |
-| Borrowing reports | PASS | Request totals are deduplicated, date-only ranges are inclusive, and period/top-book activity counts actual-loan statuses without treating `REQUESTED` as a handed-over loan. |
-| Inventory reports | PASS | Low stock uses full-copy availability at `availableCopies <= 2`, includes zero-copy books, and preserves filtered totals without distorting selected books' availability. |
-| User statistics | PASS | Date filters affect only `newMembersByPeriod` through `Members.ApprovedAt`; global status/role totals remain aggregate and personal details are not exposed. |
-| Authorization and audit | PASS | Server-side staff access remains enforced, successful audits omit raw filter values, and failure audits retain only safe diagnostic fields. |
-| API and test parity | PASS | OpenAPI success/error schemas and runtime enums align with production and in-memory repository semantics. |
-| Architectural integrity | PASS | FE12 remains read-only and aggregates through the approved service/repository boundaries without modifying source records or adding cross-feature ownership. |
-| Operational checks | PASS | The same-commit CI run completed successfully on `main`; pre-merge B6 automation and browser evidence remain recorded in the B6 review. |
+| Báo cáo mượn | PASS | Tổng yêu cầu được loại trùng, khoảng chỉ có ngày bao gồm cả hai đầu và hoạt động theo kỳ/sách hàng đầu đếm trạng thái khoản mượn thực tế mà không coi `REQUESTED` là khoản mượn đã bàn giao. |
+| Báo cáo kho sách | PASS | Tồn kho thấp dùng tính khả dụng của toàn bộ bản sao tại `availableCopies <= 2`, gồm sách không có bản sao và giữ tổng đã lọc mà không làm sai tính khả dụng của sách được chọn. |
+| Thống kê người dùng | PASS | Bộ lọc ngày chỉ ảnh hưởng `newMembersByPeriod` thông qua `Members.ApprovedAt`; tổng trạng thái/vai trò toàn cục vẫn được tổng hợp và không để lộ chi tiết cá nhân. |
+| Phân quyền và kiểm toán | PASS | Quyền truy cập nhân viên phía máy chủ vẫn được thực thi, kiểm toán thành công bỏ giá trị bộ lọc thô và kiểm toán thất bại chỉ giữ trường chẩn đoán an toàn. |
+| Tương đương API và kiểm thử | PASS | Lược đồ thành công/lỗi OpenAPI và enum khi chạy nhất quán với ngữ nghĩa production và kho dữ liệu trong bộ nhớ. |
+| Tính toàn vẹn kiến trúc | PASS | FE12 vẫn chỉ đọc và tổng hợp qua các ranh giới dịch vụ/kho dữ liệu đã phê duyệt mà không sửa bản ghi nguồn hoặc thêm quyền sở hữu xuyên tính năng. |
+| Kiểm tra vận hành | PASS | Lần chạy CI trên cùng commit hoàn tất thành công trên `main`; bằng chứng tự động và trình duyệt B6 trước hợp nhất vẫn được ghi trong đánh giá B6. |
 
-## Documentation State
+## Trạng thái tài liệu
 
-- `SPEC.md` remains the approved source of truth and is intentionally unchanged by this closeout.
-- `PLAN.md`, `TASKS.md`, `TEST_PLAN.md`, and `CHANGELOG.md` record B7 completion and point to
-  this dated evidence file.
-- `.agents/CLAUDE.md` records FE12 as complete through B7 so future agents do not repeat the
-  implementation, validation, or integration work.
-- `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md` remains the detailed pre-merge
-  correctness, browser, and human-review record.
+- `SPEC.md` vẫn là nguồn chân lý đã phê duyệt và được chủ ý giữ nguyên bởi bản tổng kết này.
+- `PLAN.md`, `TASKS.md`, `TEST_PLAN.md` và `CHANGELOG.md` ghi nhận việc hoàn thành B7 và trỏ tới
+  tệp bằng chứng theo ngày này.
+- `.agents/CLAUDE.md` ghi nhận FE12 đã hoàn thành đến B7 để các tác nhân tương lai không lặp lại
+  công việc triển khai, xác thực hoặc tích hợp.
+- `.sdd/reviews/fe12-b6-validation-review-2026-07-13.md` vẫn là bản ghi chi tiết trước hợp nhất về
+  tính đúng đắn, trình duyệt và đánh giá của con người.
 
-## Remaining Follow-Up
+## Công việc tiếp nối còn lại
 
-- CSV/PDF export, dashboards, and BI warehouse integration remain outside the approved FE12 scope.
-- The shared `AppLayout` logout action that does not clear authentication storage remains a
-  pre-existing authentication-shell issue outside FE12.
-- The B6 screenshot command timed out; browser evidence remains based on DOM snapshots, route
-  state, selected controls, and measured responsive layout values rather than image artifacts.
+- Xuất CSV/PDF, bảng điều khiển và tích hợp kho BI vẫn nằm ngoài phạm vi FE12 đã phê duyệt.
+- Thao tác đăng xuất `AppLayout` dùng chung không xóa nơi lưu xác thực vẫn là một
+  vấn đề khung xác thực có từ trước nằm ngoài FE12.
+- Lệnh chụp ảnh màn hình B6 hết thời gian chờ; bằng chứng trình duyệt vẫn dựa trên ảnh chụp DOM, trạng thái
+  tuyến, điều khiển đã chọn và giá trị bố cục đáp ứng đo được thay vì hiện vật hình ảnh.

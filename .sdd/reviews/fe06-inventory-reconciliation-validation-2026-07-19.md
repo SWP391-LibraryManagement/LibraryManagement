@@ -1,53 +1,53 @@
-# FE06 Inventory Reconciliation Validation - 2026-07-19
+# Xác thực đối soát Kho sách FE06 - 2026-07-19
 
-## Decision
+## Quyết định
 
-- Method: Hybrid SDD+ADD, Full depth for inventory state, schema, concurrency, and audit Core; bounded ADD for the frontend Shell.
-- Scope: FE06-T001 through FE06-T008 in `feat/fe06-inventory-reconciliation`.
-- Integration state: ready for human review; no commit, push, PR, or merge performed.
+- Phương pháp: SDD+ADD kết hợp, độ sâu Đầy đủ cho Lõi trạng thái kho sách, lược đồ, đồng thời và kiểm toán; ADD giới hạn cho Khung frontend.
+- Phạm vi: FE06-T001 đến FE06-T008 trong `feat/fe06-inventory-reconciliation`.
+- Trạng thái tích hợp: sẵn sàng để con người đánh giá; chưa thực hiện commit, đẩy, PR hoặc hợp nhất.
 
-## Fresh evidence
+## Bằng chứng mới
 
-| Gate | Command / check | Result |
+| Cổng | Lệnh / kiểm tra | Kết quả |
 | --- | --- | --- |
-| Focused backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/inventoryRoutes.test.js --silent` | 31/31 passed |
-| FE06 SQL contract | `npm.cmd --prefix backend run test:sql:fe06 -- --silent` | 5/5 static passed; 1 live SQL test skipped |
-| FE06 frontend | `node --test frontend/test/inventoryOperationalFrontend.test.js` | 6/6 passed |
-| Full backend | `npm.cmd --prefix backend test -- --silent` | 633/633 passed |
-| Full frontend | `npm.cmd --prefix frontend test` | 124/124 passed |
-| Coverage | `npm.cmd --prefix backend run test:coverage:ci -- --silent` | statements 92.51%, branches 82.46%, functions 97.10%, lines 92.44% |
-| Frontend lint/build | `npm.cmd --prefix frontend run lint` and `npm.cmd --prefix frontend run build` | passed; Vite chunk-size warning only |
-| Traceability | `npm.cmd run trace:enforce` | FE06 24/24 (100%); enforcement passed |
-| OpenAPI | PyYAML load plus FE06 route assertions | passed |
-| Import smoke | backend app/routes/service require smoke | passed |
-| Diff hygiene | `git diff --check` | passed |
+| Backend trọng tâm | `npm.cmd --prefix backend test -- --runTestsByPath tests/inventoryRoutes.test.js --silent` | 31/31 đạt |
+| Hợp đồng SQL FE06 | `npm.cmd --prefix backend run test:sql:fe06 -- --silent` | 5/5 kiểm tra tĩnh đạt; bỏ qua 1 kiểm thử SQL trực tiếp |
+| Frontend FE06 | `node --test frontend/test/inventoryOperationalFrontend.test.js` | 6/6 đạt |
+| Toàn bộ backend | `npm.cmd --prefix backend test -- --silent` | 633/633 đạt |
+| Toàn bộ frontend | `npm.cmd --prefix frontend test` | 124/124 đạt |
+| Độ bao phủ | `npm.cmd --prefix backend run test:coverage:ci -- --silent` | câu lệnh 92.51%, nhánh 82.46%, hàm 97.10%, dòng 92.44% |
+| Lint/bản dựng frontend | `npm.cmd --prefix frontend run lint` và `npm.cmd --prefix frontend run build` | đạt; chỉ có cảnh báo kích thước khối Vite |
+| Truy vết | `npm.cmd run trace:enforce` | FE06 24/24 (100%); thực thi đạt |
+| OpenAPI | Nạp PyYAML cùng các xác nhận tuyến FE06 | đạt |
+| Kiểm tra nhanh nhập mô-đun | yêu cầu nạp ứng dụng/tuyến/dịch vụ backend | đạt |
+| Vệ sinh diff | `git diff --check` | đạt |
 
-## Spec and safety checks
+## Kiểm tra đặc tả và an toàn
 
-- Inventory list returns the exact server-owned page/count envelope and whitelists copy/book summary fields.
-- Create is server-controlled `AVAILABLE`, rejects inactive parent books, and never edits FE05 metadata.
-- Existing-copy mutations require opaque `If-Match`; stale state returns `409 STALE_COPY_STATE` without mutation.
-- Manual state changes reject direct `BORROWED`/`RESERVED`, require a trimmed reason, and direct conflicts to FE07/FE08.
-- Repository lock order is `BookCopies -> BorrowDetails -> Reservations`; mutation and audit share one transaction.
-- Deactivation is soft-only and duplicate current-version deactivation is idempotent without a second transition audit.
-- No secret, borrower identity, reservation-owner identity, fine data, or protected audit metadata is exposed by FE06 responses.
+- Danh sách kho sách trả về chính xác vỏ trang/số lượng do máy chủ sở hữu và chỉ cho phép các trường tóm tắt bản sao/sách trong danh sách trắng.
+- Tạo mới do máy chủ kiểm soát ở `AVAILABLE`, từ chối sách cha không hoạt động và không bao giờ sửa siêu dữ liệu FE05.
+- Thao tác thay đổi bản sao hiện có yêu cầu `If-Match` mờ; trạng thái cũ trả về `409 STALE_COPY_STATE` mà không thay đổi.
+- Thay đổi trạng thái thủ công từ chối trực tiếp `BORROWED`/`RESERVED`, yêu cầu lý do đã cắt khoảng trắng và chuyển xung đột đến FE07/FE08.
+- Thứ tự khóa kho dữ liệu là `BookCopies -> BorrowDetails -> Reservations`; thao tác thay đổi và kiểm toán dùng chung một giao dịch.
+- Vô hiệu hóa chỉ là mềm và việc lặp lại vô hiệu hóa phiên bản hiện tại có tính lũy đẳng mà không tạo kiểm toán chuyển trạng thái lần hai.
+- Phản hồi FE06 không để lộ bí mật, danh tính người mượn, danh tính chủ đặt trước, dữ liệu tiền phạt hoặc siêu dữ liệu kiểm toán được bảo vệ.
 
-## Open gates
+## Các cổng còn mở
 
-- Live SQL rowversion/concurrency execution requires `DB_SERVER`/`DB_NAME` and `FE06_SQL_TEST_ALLOW_MUTATION=true` in an approved mutable SQL Server environment.
-- Browser/L4 acceptance and FE05/FE07/FE08 ownership/lock-order confirmation remain pending.
-- Human B7 integration review remains mandatory before commit, publication, or merge.
+- Thực thi rowversion/đồng thời SQL trực tiếp yêu cầu `DB_SERVER`/`DB_NAME` và `FE06_SQL_TEST_ALLOW_MUTATION=true` trong môi trường SQL Server có thể thay đổi đã phê duyệt.
+- Chấp thuận Trình duyệt/L4 và xác nhận quyền sở hữu/thứ tự khóa FE05/FE07/FE08 vẫn đang chờ.
+- Đánh giá tích hợp B7 của con người vẫn bắt buộc trước khi commit, công bố hoặc hợp nhất.
 
-## Post-Origin Sync Revalidation
+## Xác thực lại sau đồng bộ Origin
 
-- Fast-forwarded the dirty feature worktree from `62ac2d1` to `origin/main@b2ad9b1` without overlap, commit, stash, or loss of local changes.
-- Fresh focused verification after the sync: `inventoryRoutes.test.js` passed 31/31.
+- Tua nhanh worktree tính năng đang có thay đổi từ `62ac2d1` lên `origin/main@b2ad9b1` mà không chồng lấn, commit, cất tạm hoặc mất thay đổi cục bộ.
+- Xác minh trọng tâm mới sau đồng bộ: `inventoryRoutes.test.js` đạt 31/31.
 
-## Post-H2 Transactional Race Correction
+## Sửa tranh chấp giao dịch sau H2
 
-- Root cause: service prechecks ran before the transaction, while `lockCopyForMutation` returned locked borrow/reservation state that `updateCopyStatus` ignored; parent status was also not authoritative inside create/status transactions.
-- RED: four route regressions received `201/200` instead of the required `409` for create-parent, borrow, reservation, and status-parent races.
-- GREEN: `inventoryRoutes.test.js` passes `35/35`; FE06 frontend passes `6/6`; traceability remains `24/24`; diff hygiene passes.
-- Live SQL: `npm.cmd --prefix backend run test:sql:fe06 -- --silent` passes `10/10` after applying the FE06 migration twice to a disposable database.
-- Cleanup: `DB_CLEAN` and `LOGIN_CLEAN`; the generated SQL password existed only in process memory.
-- Human state: FE05/FE07/FE08 ownership confirmation, Dat UX confirmation, final H3, merge, and post-merge `main` CI remain open.
+- Nguyên nhân gốc: kiểm tra trước của dịch vụ chạy trước giao dịch, trong khi `lockCopyForMutation` trả về trạng thái mượn/đặt trước đã khóa mà `updateCopyStatus` bỏ qua; trạng thái cha cũng không có thẩm quyền bên trong giao dịch tạo/trạng thái.
+- ĐỎ: bốn hồi quy tuyến nhận `201/200` thay vì `409` bắt buộc cho tranh chấp tạo-cha, mượn, đặt trước và trạng thái-cha.
+- XANH: `inventoryRoutes.test.js` đạt `35/35`; frontend FE06 đạt `6/6`; truy vết vẫn là `24/24`; vệ sinh diff đạt.
+- SQL trực tiếp: `npm.cmd --prefix backend run test:sql:fe06 -- --silent` đạt `10/10` sau khi áp dụng phần di chuyển FE06 hai lần lên cơ sở dữ liệu dùng một lần.
+- Dọn dẹp: `DB_CLEAN` và `LOGIN_CLEAN`; mật khẩu SQL được tạo chỉ tồn tại trong bộ nhớ tiến trình.
+- Trạng thái con người: xác nhận quyền sở hữu FE05/FE07/FE08, xác nhận UX của Dat, H3 cuối, hợp nhất và CI `main` sau hợp nhất vẫn còn mở.
