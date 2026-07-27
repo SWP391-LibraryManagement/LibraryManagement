@@ -106,6 +106,12 @@ const REPORT_ERROR_MESSAGES = {
   REPORT_QUERY_FAILED: 'Không thể tạo báo cáo với bộ lọc hiện tại. Vui lòng thử lại.',
 };
 
+const NOTIFICATION_INBOX_ERROR_MESSAGES = {
+  VALIDATION_ERROR: 'Bộ lọc hoặc mã thông báo không hợp lệ. Vui lòng tải lại trang và thử lại.',
+  ROLE_REQUIRED: 'Tài khoản hiện tại không có quyền sử dụng hộp thư thông báo.',
+  NOTIFICATION_NOT_FOUND: 'Không tìm thấy thông báo này hoặc thông báo không thuộc tài khoản của bạn.',
+};
+
 export function getLibraryFeatureErrorMessage(error, fallback = 'Không thể tải dữ liệu từ backend.') {
   if (!error.response) {
     return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
@@ -227,4 +233,25 @@ export function getReportErrorMessage(error, fallback = 'Không thể tải báo
   }
 
   return getLibraryFeatureErrorMessage(error, fallback);
+}
+
+export function getNotificationInboxErrorMessage(error, fallback = 'Không thể xử lý hộp thư thông báo.') {
+  if (!error.response) {
+    return 'Không kết nối được backend. Không thể cập nhật hộp thư thông báo.';
+  }
+
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) {
+    return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  }
+
+  if (NOTIFICATION_INBOX_ERROR_MESSAGES[code]) {
+    return NOTIFICATION_INBOX_ERROR_MESSAGES[code];
+  }
+
+  if (error.response?.status === 403) {
+    return NOTIFICATION_INBOX_ERROR_MESSAGES.ROLE_REQUIRED;
+  }
+
+  return fallback;
 }

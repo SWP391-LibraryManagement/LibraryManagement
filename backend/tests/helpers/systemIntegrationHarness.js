@@ -365,6 +365,7 @@ async function createVerifiedActor({
   password = 'Password1!',
   role = 'MEMBER',
   approveMember = true,
+  completeProfile = false,
 }) {
   const registered = await request(setup.app).post('/api/auth/register').send({
     email,
@@ -377,6 +378,18 @@ async function createVerifiedActor({
   }
 
   const userId = registered.body.userId;
+  if (completeProfile) {
+    const user = setup.dependencies.authDependencies.state.users.find(
+      (item) => item.userId === userId
+    );
+    user.phone = '0900000010';
+    setup.dependencies.authDependencies.state.profiles.push({
+      userId,
+      fullName: email.split('@')[0],
+      address: 'System integration address',
+      dateOfBirth: '2000-10-10',
+    });
+  }
   await request(setup.app)
     .post('/api/auth/verify-email')
     .send({

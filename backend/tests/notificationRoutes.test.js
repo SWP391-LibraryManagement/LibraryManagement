@@ -2606,3 +2606,298 @@ describe('FE10 notification management', () => {
     }
   );
 });
+
+describe('FE10 personal notification inbox API', () => {
+  function makeInboxRow(overrides = {}) {
+    return {
+      notificationId: 900,
+      userId: 1,
+      type: 'DUE_DATE_REMINDER',
+      templateKey: 'DUE_DATE_REMINDER',
+      sourceFeature: 'FE07',
+      title: 'Due date reminder',
+      body: 'Please review your borrowing due date.',
+      createdAt: '2026-07-28T02:00:00.000Z',
+      readAt: null,
+      status: 'PENDING',
+      sentAt: null,
+      attemptCount: 0,
+      recipientEmail: 'must-not-leak@example.test',
+      safePayload: { mustNotLeak: true },
+      idempotencyKey: 'must-not-leak',
+      providerMessageId: 'must-not-leak',
+      lastErrorMessage: 'must-not-leak',
+      ...overrides,
+    };
+  }
+
+  const notFoundBody = {
+    error: {
+      code: 'NOTIFICATION_NOT_FOUND',
+      message: 'Notification was not found.',
+    },
+  };
+
+  // @spec BR-FE10-014 BR-FE10-015 FR-FE10-011 FR-FE10-012 AC-FE10-011 AC-FE10-012
+  test.each(['MEMBER', 'LIBRARIAN', 'ADMIN'])(
+    'allows %s to list and count only its own safe eligible notifications',
+    async (role) => {
+      const { app, authDependencies, notificationDependencies } = makeTestApp();
+      const actor = await createVerifiedUser({
+        app,
+        authDependencies,
+        email: `inbox.${role.toLowerCase()}@example.test`,
+        role,
+      });
+
+      notificationDependencies.state.notifications.push(
+        makeInboxRow({ notificationId: 901, userId: actor.userId }),
+        makeInboxRow({ notificationId: 902, userId: actor.userId + 100 }),
+        makeInboxRow({
+          notificationId: 903,
+          userId: actor.userId,
+          type: 'ACCOUNT_SETUP',
+          templateKey: 'ACCOUNT_SETUP',
+          sourceFeature: 'FE11',
+        }),
+        makeInboxRow({ notificationId: 904, userId: null })
+      );
+
+      const list = await request(app)
+        .get('/api/notifications/mine?page=1&limit=20&readState=unread')
+        .set('Authorization', authHeader(actor.accessToken));
+
+      expect(list.status).toBe(200);
+      expect(list.body).toEqual({
+        notifications: [
+          {
+            notificationId: 901,
+            type: 'DUE_DATE_REMINDER',
+            title: 'Due date reminder',
+            message: 'Please review your borrowing due date.',
+            createdAt: '2026-07-28T02:00:00.000Z',
+            readAt: null,
+            actionPath: '/borrowing/history',
+          },
+        ],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      });
+      expect(Object.keys(list.body.notifications[0]).sort()).toEqual([
+        'actionPath',
+        'createdAt',
+        'message',
+        'notificationId',
+        'readAt',
+        'title',
+        'type',
+      ]);
+
+      const count = await request(app)
+        .get('/api/notifications/mine/unread-count')
+        .set('Authorization', authHeader(actor.accessToken));
+      expect(count.status).toBe(200);
+      expect(count.body).toEqual({ unreadCount: 1 });
+    }
+  );
+
+  // @spec BR-FE10-014 FR-FE10-011 AC-FE10-011
+  test('requires authentication and an approved login role at route and service boundaries', async () => {
+    const { app, authDependencies, notificationService } = makeTestApp();
+    await request(app).get('/api/notifications/mine').expect(401);
+
+    const guest = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'inbox.guest@example.test',
+      role: 'GUEST',
+    });
+    await request(app)
+      .get('/api/notifications/mine')
+      .set('Authorization', authHeader(guest.accessToken))
+      .expect(403);
+
+    await expect(
+      notificationService.listMyNotifications({}, { userId: guest.userId, roles: ['GUEST'] })
+    ).rejects.toMatchObject({ statusCode: 403, code: 'ROLE_REQUIRED' });
+
+    for (const actor of [
+      { userId: null, roles: ['MEMBER'] },
+      { userId: 0, roles: ['LIBRARIAN'] },
+      { userId: 'not-an-id', roles: ['ADMIN'] },
+    ]) {
+      await expect(notificationService.listMyNotifications({}, actor)).rejects.toMatchObject({
+        statusCode: 403,
+        code: 'ROLE_REQUIRED',
+      });
+    }
+  });
+
+  // @spec BR-FE10-020 FR-FE10-011 EC-FE10-021
+  test('validates list filters and read IDs without an unbounded fallback', async () => {
+    const { app, authDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'inbox.validation@example.test',
+      role: 'MEMBER',
+    });
+    const authorization = authHeader(member.accessToken);
+
+    for (const queryString of [
+      'page=0',
+      'page=1.5',
+      'limit=0',
+      'limit=101',
+      'readState=pending',
+      'type=ACCOUNT_SETUP',
+      'type=UNKNOWN_TYPE',
+    ]) {
+      const response = await request(app)
+        .get(`/api/notifications/mine?${queryString}`)
+        .set('Authorization', authorization);
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    }
+
+    for (const notificationId of ['abc', '0', '-1', '1.5', '2147483648']) {
+      const response = await request(app)
+        .patch(`/api/notifications/${notificationId}/read`)
+        .set('Authorization', authorization);
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    }
+  });
+
+  // @spec BR-FE10-014 BR-FE10-015 BR-FE10-016 FR-FE10-013 AC-FE10-013
+  test('mark-one is own-record-only, sensitive-safe, idempotent, and delivery-neutral', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'inbox.mark-one@example.test',
+      role: 'MEMBER',
+    });
+    const authorization = authHeader(member.accessToken);
+
+    notificationDependencies.state.notifications.push(
+      makeInboxRow({ notificationId: 911, userId: member.userId }),
+      makeInboxRow({ notificationId: 912, userId: member.userId + 1 }),
+      makeInboxRow({
+        notificationId: 913,
+        userId: member.userId,
+        type: 'PASSWORD_RESET',
+        templateKey: 'PASSWORD_RESET',
+        sourceFeature: 'FE02',
+      })
+    );
+
+    for (const notificationId of [999999, 912, 913]) {
+      const response = await request(app)
+        .patch(`/api/notifications/${notificationId}/read`)
+        .set('Authorization', authorization);
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual(notFoundBody);
+    }
+
+    const first = await request(app)
+      .patch('/api/notifications/911/read')
+      .set('Authorization', authorization);
+    expect(first.status).toBe(200);
+    expect(first.body.readAt).toEqual(expect.any(String));
+    expect(Object.keys(first.body).sort()).toEqual([
+      'actionPath',
+      'createdAt',
+      'message',
+      'notificationId',
+      'readAt',
+      'title',
+      'type',
+    ]);
+
+    const replay = await request(app)
+      .patch('/api/notifications/911/read')
+      .set('Authorization', authorization);
+    expect(replay.status).toBe(200);
+    expect(replay.body.readAt).toBe(first.body.readAt);
+    expect(notificationDependencies.state.notifications[0]).toMatchObject({
+      status: 'PENDING',
+      attemptCount: 0,
+      sentAt: null,
+    });
+    expect(notificationDependencies.state.attempts).toHaveLength(0);
+  });
+
+  // @spec BR-FE10-014 BR-FE10-015 BR-FE10-016 FR-FE10-014 AC-FE10-014
+  test('mark-all updates only own eligible unread rows with one timestamp and replay count zero', async () => {
+    const { app, authDependencies, notificationDependencies } = makeTestApp();
+    const admin = await createVerifiedUser({
+      app,
+      authDependencies,
+      email: 'inbox.mark-all@example.test',
+      role: 'ADMIN',
+    });
+    const authorization = authHeader(admin.accessToken);
+
+    notificationDependencies.state.notifications.push(
+      makeInboxRow({ notificationId: 921, userId: admin.userId }),
+      makeInboxRow({
+        notificationId: 922,
+        userId: admin.userId,
+        type: 'FINE_NOTICE',
+        templateKey: 'FINE_NOTICE',
+        sourceFeature: 'FE09',
+      }),
+      makeInboxRow({ notificationId: 923, userId: admin.userId + 1 }),
+      makeInboxRow({
+        notificationId: 924,
+        userId: admin.userId,
+        type: 'ACCOUNT_VERIFICATION',
+        templateKey: 'ACCOUNT_VERIFICATION',
+        sourceFeature: 'FE02',
+      })
+    );
+
+    const first = await request(app)
+      .patch('/api/notifications/mine/read-all')
+      .set('Authorization', authorization);
+    expect(first.status).toBe(200);
+    expect(first.body).toEqual({ updated: 2 });
+    expect(notificationDependencies.state.notifications[0].readAt).toBe(
+      notificationDependencies.state.notifications[1].readAt
+    );
+    expect(notificationDependencies.state.notifications[2].readAt).toBeNull();
+    expect(notificationDependencies.state.notifications[3].readAt).toBeNull();
+
+    const replay = await request(app)
+      .patch('/api/notifications/mine/read-all')
+      .set('Authorization', authorization);
+    expect(replay.status).toBe(200);
+    expect(replay.body).toEqual({ updated: 0 });
+  });
+
+  // @spec FR-FE10-011 FR-FE10-012 FR-FE10-013 FR-FE10-014
+  test('documents all personal inbox operations with closed safe response schemas', () => {
+    const openapi = fs.readFileSync(path.join(__dirname, '../src/docs/openapi.yaml'), 'utf8');
+
+    for (const pathName of [
+      '/api/notifications/mine:',
+      '/api/notifications/mine/unread-count:',
+      '/api/notifications/{id}/read:',
+      '/api/notifications/mine/read-all:',
+    ]) {
+      expect(openapi).toContain(pathName);
+    }
+    for (const schemaName of [
+      'SafeInboxItem:',
+      'NotificationInboxPage:',
+      'UnreadCount:',
+      'MarkAllReadSummary:',
+    ]) {
+      expect(openapi).toContain(schemaName);
+    }
+    expect(openapi).toMatch(/SafeInboxItem:[\s\S]*additionalProperties:\s*false/);
+    expect(openapi).toMatch(
+      /required:\s*\[notificationId, type, title, message, createdAt, readAt, actionPath\]/
+    );
+  });
+});

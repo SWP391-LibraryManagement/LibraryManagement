@@ -1,7 +1,12 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
-Implementation State: NOT_STARTED
+Status: V0.5.0 LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
+Implementation State: PARTIAL
+
+Current v0.5.0 detail: FE10-I01..I08 are implemented on `main@f3ebe95` after
+the approved `main@db97f17` Core-drift addendum and a non-overlapping
+regression-test-only sync; fresh post-drift local/SQL/browser validation is
+green and fresh H2 is pending.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -12,8 +17,9 @@ Updated: 2026-07-28
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
-Product implementation remains `NOT_STARTED` until the governance activation
-PR reaches `main`.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
+implemented on `main@f3ebe95`; fresh post-drift validation is green, while
+fresh H2 and release gates remain open.
 
 ---
 
@@ -403,7 +409,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I01 Add The Additive Read-State Migration
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Maps to: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 to AC-FE10-014.
 - Files: canonical SQL, Notification model, new idempotent migration, migration
   contract tests.
@@ -413,7 +419,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I02 Add Own-Record Repository And Safe Projection
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I01.
 - Maps to: BR-FE10-014 to BR-FE10-017, BR-FE10-020; AC-FE10-011 to AC-FE10-015.
 - Files: notification repository, inbox projection/action utility, in-memory
@@ -425,7 +431,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I03 Expose The Authenticated Personal Inbox API
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I02.
 - Maps to: FR-FE10-011 to FR-FE10-015; AC-FE10-011 to AC-FE10-015.
 - Files: notification validators, service, controller, routes, OpenAPI, route
@@ -436,7 +442,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I04 Add The Frontend Client And Shared Inbox Context
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I03.
 - Maps to: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
 - Files: shared frontend API, error mapping, notification view model/context,
@@ -447,7 +453,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I05 Add The Authenticated Shell Bell And Preview
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
 - Files: Header, notification bell component, app-shell styles, frontend tests.
@@ -457,7 +463,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I06 Add The Personal Notification Page
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I04.
 - Maps to: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
   AC-FE10-011, AC-FE10-013, AC-FE10-014, AC-FE10-016.
@@ -469,7 +475,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I07 Prove Cross-Feature And Browser Behavior
 
-- [ ] Status: NOT_STARTED
+- [x] Status: IMPLEMENTED_LOCAL - H2 PENDING
 - Depends on: FE10-I03, FE10-I05, FE10-I06.
 - Maps to: AC-FE10-011 to AC-FE10-016.
 - Files: FE04/FE07/FE08 integration tests, FE10 Playwright E2E, test support
@@ -480,15 +486,29 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 
 ### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
 
-- [ ] Status: NOT_STARTED
+- [ ] Status: IN_PROGRESS - POST-DRIFT VALIDATION GREEN; FRESH H2 PENDING
 - Depends on: FE10-I01..I07.
 - Maps to: all v0.5.0 BR/FR/AC entries.
 - Files: OpenAPI, architecture/integration map, user manual, Azure staging
   guide/workflow tests, FE10 PLAN/TASKS/CHANGELOG, review evidence.
 - DoD: focused/full backend and frontend gates, lint/build, deployment/system,
   traceability, security/secret/diff scans, two-run migration, and browser E2E
-  pass; H2 approves the candidate; backend/migration then frontend deploy and
-  staging smoke pass; H3 approves exact head before merge.
+  pass; H2 approves the candidate; exact migration-hash preflight, backend,
+  frontend, staging smoke, and browser checks pass; H3 approves exact head
+  before merge; post-merge CI and automatic staging are monitored.
+- Post-drift evidence through `main@f3ebe95`: backend coverage passed 69/69 suites and
+  1114/1114 tests; frontend passed 258/258 plus lint/build; deployment passed
+  15/15; system passed 10/10; traceability state passed 3/3 and FE10 enforced
+  coverage is 14/16 (88%); Chromium passed 11/11; the exact migration passed
+  twice with protected aggregates unchanged and the disposable database
+  removed. Backend audit found zero vulnerabilities; the repository frontend
+  audit gate accepted only the non-applicable unstable-RSC React Router
+  advisory for the declarative `BrowserRouter` build.
+- Final security-review TDD found the unused SQL `listPending` selector did not
+  explicitly exclude sensitive `ACCOUNT_SETUP` even though the active worker
+  and in-memory selector did. A RED repository regression reproduced the
+  mismatch; both SQL pending selectors now share the complete four-type
+  exclusion and focused GREEN passed 161/161 before the full backend rerun.
 
 ### V0.5.0 Traceability
 

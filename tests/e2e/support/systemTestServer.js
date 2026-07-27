@@ -14,6 +14,7 @@ const {
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.E2E_BACKEND_PORT || 3100);
 let setup = makeSystemIntegrationApp();
+let failNextNotificationRead = false;
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
@@ -131,6 +132,104 @@ function seedPendingBorrowRequests({ userId, copyId, count }) {
   return requestIds;
 }
 
+function seedNotifications({ ownerUserId, crossUserId, eligibleCount = 5 }) {
+  const authState = setup.dependencies.authDependencies.state;
+  const notificationState = setup.dependencies.notificationDependencies.state;
+  const owner = authState.users.find((user) => user.userId === Number(ownerUserId));
+  const crossUser = authState.users.find((user) => user.userId === Number(crossUserId));
+  const count = Number(eligibleCount);
+  if (!owner || !crossUser || !Number.isInteger(count) || count < 1 || count > 100) {
+    return null;
+  }
+
+  const eligibleDefinitions = [
+    { type: 'GENERAL_SYSTEM', templateKey: 'MEMBERSHIP_RESULT', sourceFeature: 'FE04' },
+    { type: 'RESERVATION_AVAILABLE', templateKey: 'RESERVATION_READY', sourceFeature: 'FE08' },
+    { type: 'DUE_DATE_REMINDER', templateKey: 'DUE_DATE_REMINDER', sourceFeature: 'FE07' },
+    { type: 'OVERDUE_NOTICE', templateKey: 'OVERDUE_NOTICE', sourceFeature: 'FE07' },
+    { type: 'FINE_NOTICE', templateKey: 'FINE_NOTICE', sourceFeature: 'FE09' },
+  ];
+  let nextNotificationId = Math.max(
+    0,
+    ...notificationState.notifications.map((item) => item.notificationId),
+  ) + 1;
+
+  function makeRow({ userId, title, definition, createdAt }) {
+    const notificationId = nextNotificationId;
+    nextNotificationId += 1;
+    return {
+      notificationId,
+      type: definition.type,
+      channel: 'EMAIL',
+      userId,
+      recipientEmail: userId == null
+        ? 'userless@example.test'
+        : authState.users.find((user) => user.userId === Number(userId))?.email || null,
+      templateId: null,
+      templateKey: definition.templateKey,
+      title,
+      body: `Nội dung ${title}.`,
+      status: 'PENDING',
+      sourceFeature: definition.sourceFeature,
+      sourceEntityType: 'E2E_NOTIFICATION',
+      sourceEntityId: notificationId,
+      idempotencyKey: `E2E:FE10:${notificationId}`,
+      safePayload: null,
+      attemptCount: 0,
+      lastErrorMessage: null,
+      createdAt,
+      sentAt: null,
+      readAt: null,
+    };
+  }
+
+  const ownedRows = Array.from({ length: count }, (_, index) => makeRow({
+    userId: owner.userId,
+    title: `FE10 owned ${index + 1}`,
+    definition: eligibleDefinitions[index % eligibleDefinitions.length],
+    createdAt: new Date(Date.UTC(2026, 6, 14, 1, 0, index)),
+  }));
+  const sensitiveTitle = 'FE10 sensitive setup';
+  const sensitiveRow = makeRow({
+    userId: owner.userId,
+    title: sensitiveTitle,
+    definition: { type: 'ACCOUNT_SETUP', templateKey: 'ACCOUNT_SETUP', sourceFeature: 'FE11' },
+    createdAt: new Date('2026-07-14T02:00:00.000Z'),
+  });
+  const userlessTitle = 'FE10 userless due reminder';
+  const userlessRow = makeRow({
+    userId: null,
+    title: userlessTitle,
+    definition: eligibleDefinitions[2],
+    createdAt: new Date('2026-07-14T02:01:00.000Z'),
+  });
+  const crossUserTitle = 'FE10 cross-user due reminder';
+  const crossUserRow = makeRow({
+    userId: crossUser.userId,
+    title: crossUserTitle,
+    definition: eligibleDefinitions[2],
+    createdAt: new Date('2026-07-14T02:02:00.000Z'),
+  });
+
+  notificationState.notifications.push(
+    ...ownedRows,
+    sensitiveRow,
+    userlessRow,
+    crossUserRow,
+  );
+
+  return {
+    ownedNotificationIds: ownedRows.map((item) => item.notificationId),
+    ownedTitles: ownedRows.map((item) => item.title),
+    sensitiveTitle,
+    sensitiveNotificationId: sensitiveRow.notificationId,
+    userlessTitle,
+    userlessNotificationId: userlessRow.notificationId,
+    crossUserTitle,
+    crossUserNotificationId: crossUserRow.notificationId,
+  };
+}
+
 async function handleControl(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/__e2e__/setup') {
     const { memberEmail, librarianEmail, adminEmail, password } = await readJson(req);
@@ -140,6 +239,7 @@ async function handleControl(req, res, pathname) {
     }
 
     setup = makeSystemIntegrationApp();
+    failNextNotificationRead = false;
 
     const member = await createVerifiedActor({ setup, email: memberEmail, password });
     const librarian = await createVerifiedActor({
@@ -194,6 +294,22 @@ async function handleControl(req, res, pathname) {
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/__e2e__/seed-notifications') {
+    const result = seedNotifications(await readJson(req));
+    if (!result) {
+      sendJson(res, 400, { error: 'Valid owner, cross-user, and count from 1 to 100 are required.' });
+      return;
+    }
+    sendJson(res, 201, result);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/__e2e__/fail-next-notification-read') {
+    failNextNotificationRead = true;
+    sendJson(res, 200, { armed: true });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/__e2e__/state') {
     sendJson(res, 200, latestBorrowState());
     return;
@@ -227,6 +343,20 @@ const server = http.createServer(async (req, res) => {
     const pathname = new URL(req.url, `http://${HOST}:${PORT}`).pathname;
     if (pathname.startsWith('/__e2e__/')) {
       await handleControl(req, res, pathname);
+      return;
+    }
+    if (
+      failNextNotificationRead
+      && req.method === 'PATCH'
+      && /^\/api\/notifications\/\d+\/read$/.test(pathname)
+    ) {
+      failNextNotificationRead = false;
+      sendJson(res, 503, {
+        error: {
+          code: 'E2E_NOTIFICATION_READ_FAILURE',
+          message: 'Notification read state is temporarily unavailable.',
+        },
+      });
       return;
     }
     setup.app(req, res);

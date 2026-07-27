@@ -5,6 +5,7 @@ import {
   getLibraryFeatureErrorMessage,
   getInventoryErrorMessage,
   getMembershipErrorMessage,
+  getNotificationInboxErrorMessage,
   getReportErrorMessage,
   getReservationErrorMessage,
 } from './apiErrorMessages';
@@ -109,6 +110,10 @@ function authorizedReportRequest(config, fallbackMessage) {
   return authorizedRequest(config, fallbackMessage, getReportErrorMessage);
 }
 
+function authorizedNotificationInboxRequest(config, fallbackMessage) {
+  return authorizedRequest(config, fallbackMessage, getNotificationInboxErrorMessage);
+}
+
 async function publicBrowseRequest(request, fallbackMessage) {
   try {
     const response = await request();
@@ -129,6 +134,33 @@ export const publicBrowseApi = {
     return publicBrowseRequest(
       () => api.get(`/books/${bookId}`),
       'Không thể tải chi tiết sách.',
+    );
+  },
+};
+
+export const notificationInboxApi = {
+  listMine(params = {}) {
+    return authorizedNotificationInboxRequest(
+      { method: 'get', url: '/notifications/mine', params },
+      'Không thể tải hộp thư thông báo.',
+    );
+  },
+  unreadCount() {
+    return authorizedNotificationInboxRequest(
+      { method: 'get', url: '/notifications/mine/unread-count' },
+      'Không thể tải số thông báo chưa đọc.',
+    );
+  },
+  markRead(notificationId) {
+    return authorizedNotificationInboxRequest(
+      { method: 'patch', url: `/notifications/${notificationId}/read` },
+      'Không thể đánh dấu thông báo đã đọc.',
+    );
+  },
+  markAllRead() {
+    return authorizedNotificationInboxRequest(
+      { method: 'patch', url: '/notifications/mine/read-all' },
+      'Không thể đánh dấu tất cả thông báo đã đọc.',
     );
   },
 };

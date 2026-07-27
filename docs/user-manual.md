@@ -8,9 +8,9 @@ không phải tài khoản hoặc dữ liệu cá nhân thật.
 | Vai trò | Chức năng chính trong release candidate |
 | --- | --- |
 | Khách | Xem trang công khai, đăng ký và đăng nhập. |
-| Thành viên | Tạo yêu cầu mượn, xem lịch sử mượn và quản lý đặt chỗ của mình. |
-| Thủ thư | Duyệt yêu cầu mượn, xử lý trả sách, quản lý queue đặt chỗ, ghi nhận phạt qua API và xem báo cáo. |
-| Quản trị viên | Quản lý người dùng/vai trò và có quyền truy cập các chức năng dành cho nhân viên. |
+| Thành viên | Tạo yêu cầu mượn, xem lịch sử mượn, quản lý đặt chỗ và xem thông báo cá nhân của mình. |
+| Thủ thư | Duyệt yêu cầu mượn, xử lý trả sách, quản lý queue đặt chỗ, ghi nhận phạt qua API, xem báo cáo và thông báo cá nhân của mình. |
+| Quản trị viên | Quản lý người dùng/vai trò, có quyền truy cập các chức năng dành cho nhân viên và xem thông báo cá nhân của mình. |
 
 Hệ thống kiểm tra quyền ở backend. Việc nhìn thấy hoặc nhập trực tiếp một URL không đảm bảo người
 dùng có quyền thực hiện thao tác đó.
@@ -137,6 +137,25 @@ Mở `/admin/users` bằng tài khoản Quản trị viên để:
 Backend từ chối người dùng không có vai trò Admin. Không dùng tài khoản giả hoặc bypass xác thực trong
 môi trường development/staging.
 
+## Thành Viên/Thủ Thư/Quản Trị Viên: Thông Báo Cá Nhân
+
+Sau khi đăng nhập, chọn biểu tượng chuông trên thanh điều hướng. Số chưa đọc hiển thị trên badge và
+được rút gọn thành `99+` khi vượt quá 99. Mở chuông để xem tối đa năm thông báo chưa đọc mới nhất;
+chọn **Xem tất cả** hoặc mở `/notifications` để xem toàn bộ hộp thư cá nhân.
+
+Trên trang thông báo:
+
+1. Chọn **Tất cả**, **Chưa đọc** hoặc **Đã đọc**; mỗi trang hiển thị tối đa 20 mục.
+2. Chọn một mục để đánh dấu đã đọc và mở đúng nghiệp vụ: membership, đặt chỗ, lịch sử mượn hoặc phạt.
+3. Chọn **Đánh dấu tất cả đã đọc** để cập nhật các mục chưa đọc của chính tài khoản hiện tại.
+4. Nếu cập nhật trạng thái đọc lỗi, hệ thống hiển thị cảnh báo an toàn nhưng vẫn mở đường dẫn nghiệp
+   vụ đã được backend cho phép. Tải lại trang để đồng bộ trạng thái đọc.
+
+Hộp thư chỉ hiển thị các thông báo nghiệp vụ không nhạy cảm thuộc chính người đang đăng nhập. OTP,
+đặt lại mật khẩu, liên kết thiết lập tài khoản, thông báo legacy, bản ghi hệ thống không có người nhận
+và thông báo của người khác không xuất hiện. Thủ thư/Quản trị viên không có hộp thư toàn hệ thống và
+không thể xóa hay lưu trữ thông báo.
+
 ## Lỗi Thường Gặp Và Cách Khôi Phục
 
 | Hiện tượng | Cách xử lý an toàn |
@@ -146,6 +165,8 @@ môi trường development/staging.
 | Không kết nối được backend | Kiểm tra `/health`, URL API và kết nối mạng; không coi dữ liệu demo là thành công. |
 | Yêu cầu mượn bị từ chối | Kiểm tra membership, giới hạn mượn, sách quá hạn, phạt chưa trả và trạng thái bản sao. |
 | Reservation không thể tạo/hủy | Tải lại trạng thái chuẩn và kiểm tra ownership/state transition FE08. |
+| Chuông/trang thông báo không cập nhật | Chuyển focus lại trình duyệt hoặc tải lại trang; kiểm tra phiên đăng nhập và API. Polling nền chạy mỗi 60 giây và không chồng request. |
+| Chọn thông báo nhưng vẫn còn trạng thái chưa đọc | Hệ thống vẫn cho mở nghiệp vụ an toàn khi thao tác đọc lỗi; tải lại và thử đánh dấu lại sau. |
 | Email không nhận được | Kiểm tra SMTP staging; notification metadata không đồng nghĩa email đã gửi thành công. |
 | Báo cáo rỗng | Xóa bộ lọc không phù hợp, kiểm tra quyền và khoảng ngày, sau đó tải lại. |
 
@@ -156,7 +177,8 @@ string khi báo lỗi.
 
 - Chỉ sử dụng tài khoản synthetic trong staging và thuyết trình.
 - Không lưu mật khẩu/token trong tài liệu, slide, source code hoặc terminal history dùng chung.
-- Không hiển thị notification body, `SafePayload` hoặc biến môi trường trong demo.
+- Chỉ hiển thị nội dung inbox không nhạy cảm bằng chính tài khoản nhận; không hiển thị OTP, link xác
+  thực/thiết lập, `SafePayload`, metadata giao hàng hoặc biến môi trường trong demo.
 - Đăng xuất khỏi trình duyệt dùng chung sau khi hoàn tất.
 - Thủ thư/Quản trị viên chỉ xem dữ liệu cần thiết cho nghiệp vụ.
 - Các hành động quan trọng được ghi audit theo phạm vi feature.
@@ -164,7 +186,6 @@ string khi báo lỗi.
 ## Giới Hạn Đã Biết
 
 - FE09 frontend chưa được căn chỉnh hoàn toàn với server API production-aligned.
-- FE10 chưa có notification inbox UI hoàn chỉnh.
 - SMTP chỉ hoạt động khi staging mail provider được cấu hình.
 - Avatar trên App Service cần storage bền vững trước khi triển khai production quy mô lớn.
 - Frontend build hiện có cảnh báo chunk lớn nhưng không chặn build.

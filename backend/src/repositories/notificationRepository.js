@@ -2,6 +2,16 @@ const { sql, getPool } = require('../config/db');
 
 let notificationColumnsPromise;
 
+const INBOX_ELIGIBILITY_SQL = `
+  (
+    (NotificationType = 'GENERAL_SYSTEM' AND TemplateKey = 'MEMBERSHIP_RESULT')
+    OR (NotificationType = 'RESERVATION_AVAILABLE' AND TemplateKey = 'RESERVATION_READY')
+    OR (NotificationType = 'DUE_DATE_REMINDER' AND TemplateKey = 'DUE_DATE_REMINDER')
+    OR (NotificationType = 'OVERDUE_NOTICE' AND TemplateKey = 'OVERDUE_NOTICE')
+    OR (NotificationType = 'FINE_NOTICE' AND TemplateKey = 'FINE_NOTICE')
+  )
+`;
+
 function mapTemplate(row) {
   if (!row) {
     return null;
@@ -41,7 +51,24 @@ function mapNotification(row) {
     lastErrorMessage: row.LastErrorMessage,
     createdAt: row.CreatedAt,
     sentAt: row.SentAt,
+    readAt: row.ReadAt,
   };
+}
+
+function buildInboxWhere({ readState = 'all', type = null } = {}) {
+  const filters = ['UserId = @UserId', INBOX_ELIGIBILITY_SQL];
+
+  if (readState === 'unread') {
+    filters.push('ReadAt IS NULL');
+  } else if (readState === 'read') {
+    filters.push('ReadAt IS NOT NULL');
+  }
+
+  if (type) {
+    filters.push('NotificationType = @Type');
+  }
+
+  return filters.join('\n        AND ');
 }
 
 async function getNotificationColumns(pool) {
@@ -217,6 +244,109 @@ async function createNotification({
   ]);
 }
 
+async function listInboxForUser({ userId, page = 1, limit = 20, readState = 'all', type = null }) {
+  const pool = await getPool();
+  const offset = (page - 1) * limit;
+  const request = pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .input('Offset', sql.BigInt, offset)
+    .input('Limit', sql.Int, limit);
+
+  if (type) {
+    request.input('Type', sql.NVarChar(50), type);
+  }
+
+  const where = buildInboxWhere({ readState, type });
+  const result = await request.query(`
+    SELECT
+      NotificationId,
+      NotificationType,
+      TemplateKey,
+      SourceFeature,
+      Title,
+      Body,
+      CreatedAt,
+      ReadAt
+    FROM Notifications
+    WHERE ${where}
+    ORDER BY CreatedAt DESC, NotificationId DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @Limit ROWS ONLY;
+
+    SELECT COUNT_BIG(1) AS Total
+    FROM Notifications
+    WHERE ${where};
+  `);
+
+  return {
+    notifications: (result.recordsets?.[0] || []).map(mapNotification),
+    total: Number(result.recordsets?.[1]?.[0]?.Total || 0),
+  };
+}
+
+async function countUnreadForUser(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      SELECT COUNT_BIG(1) AS UnreadCount
+      FROM Notifications
+      WHERE UserId = @UserId
+        AND ${INBOX_ELIGIBILITY_SQL}
+        AND ReadAt IS NULL
+    `);
+
+  return Number(result.recordset[0]?.UnreadCount || 0);
+}
+
+async function markInboxReadForUser({ notificationId, userId }) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('NotificationId', sql.Int, notificationId)
+    .input('UserId', sql.Int, userId)
+    .query(`
+      UPDATE Notifications
+      SET ReadAt = COALESCE(ReadAt, SYSUTCDATETIME())
+      OUTPUT
+        INSERTED.NotificationId,
+        INSERTED.NotificationType,
+        INSERTED.TemplateKey,
+        INSERTED.SourceFeature,
+        INSERTED.Title,
+        INSERTED.Body,
+        INSERTED.CreatedAt,
+        INSERTED.ReadAt
+      WHERE NotificationId = @NotificationId
+        AND UserId = @UserId
+        AND ${INBOX_ELIGIBILITY_SQL}
+    `);
+
+  return mapNotification(result.recordset[0]);
+}
+
+async function markAllInboxReadForUser(userId) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('UserId', sql.Int, userId)
+    .query(`
+      DECLARE @ReadAt DATETIME2 = SYSUTCDATETIME();
+
+      UPDATE Notifications
+      SET ReadAt = @ReadAt
+      WHERE UserId = @UserId
+        AND ${INBOX_ELIGIBILITY_SQL}
+        AND ReadAt IS NULL;
+
+      SELECT @@ROWCOUNT AS Updated;
+    `);
+
+  return { updated: Number(result.recordset[0]?.Updated || 0) };
+}
+
 async function listPending(limit = 20) {
   const pool = await getPool();
   const result = await pool
@@ -226,8 +356,8 @@ async function listPending(limit = 20) {
       SELECT TOP (@Limit) *
       FROM Notifications
       WHERE Status = 'PENDING'
-        AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_VERIFY'))
-        AND (TemplateKey IS NULL OR TemplateKey NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_VERIFY'))
+        AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))
+        AND (TemplateKey IS NULL OR TemplateKey NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))
       ORDER BY CreatedAt ASC, NotificationId ASC
     `);
 
@@ -451,6 +581,10 @@ module.exports = {
   transitionFailedToPending,
   createRequest,
   createNotification,
+  listInboxForUser,
+  countUnreadForUser,
+  markInboxReadForUser,
+  markAllInboxReadForUser,
   listPending,
   claimNextPending,
   markClaimSent,

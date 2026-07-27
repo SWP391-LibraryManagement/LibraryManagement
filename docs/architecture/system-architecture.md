@@ -24,7 +24,7 @@ authentication, authorization, input validation, business rules, audit records, 
 | API -> database | Values use `mssql.Request.input`; dynamic identifiers are selected from code-owned allowlists. |
 | API -> notification provider | Sensitive verification/reset content is not persisted in normal notification fields or returned by HTTP responses. |
 | Runtime -> configuration | Secrets come from local ignored environments or Azure App Service settings. |
-| CI -> staging | Deployment credentials are scoped to the GitHub `staging` Environment. CI never mutates database schema. |
+| CI -> staging | Deployment credentials are scoped to the GitHub `staging` Environment. CI never mutates database schema; the reviewed FE10 migration is operator-applied and verified before deployment. |
 
 ## Module Ownership
 
@@ -34,11 +34,28 @@ authentication, authorization, input validation, business rules, audit records, 
 | FE07 Borrowing | Eligibility, requests, approval, return, renewal | Member/staff borrowing workflows | [FE07 spec](../../.sdd/specs/feat-borrowing-management/SPEC.md) |
 | FE08 Reservation | Queue, holds, cancellation, promotion | Member reservation and staff queue views | [FE08 spec](../../.sdd/specs/feat-reservation-management/SPEC.md) |
 | FE09 Fine | Calculation, collection, payment state, authorization | Legacy UI is limited; server API is release evidence | [FE09 spec](../../.sdd/specs/feat-fine-management/SPEC.md) |
-| FE10 Notification | Templates, safe payloads, queue, retry, provider result | No completed inbox UI in the release scope | [FE10 spec](../../.sdd/specs/feat-notification-management/SPEC.md) |
+| FE10 Notification | Templates, safe payloads, queue, retry, provider result, own-user inbox projection and `ReadAt` | Bell preview and `/notifications` for authenticated Member/Librarian/Admin users | [FE10 spec](../../.sdd/specs/feat-notification-management/SPEC.md) |
 | FE12 Reporting | Read-only aggregate queries and audit | Staff report filters, tables, and KPI views | [FE12 spec](../../.sdd/specs/feat-reporting-statistics/SPEC.md) |
 
 The detailed cross-feature state flow, table ownership, and presentation answers live in the
 [feature integration map](feature-integration-map.md).
+
+### Personal Notification Inbox Projection
+
+```mermaid
+flowchart LR
+  S["FE04 / FE07 / FE08 source event"] --> E["One eligible email-backed Notifications row"]
+  E --> P["Own-user safe inbox projection"]
+  P --> R["Nullable ReadAt"]
+  E --> Q["Independent email delivery status and attempts"]
+```
+
+The inbox does not create an `IN_APP` channel or duplicate record. SQL filters by the authenticated
+`UserId` and the fixed eligible type/template allowlist before materialization. Verification,
+password-reset, account-setup, legacy `EMAIL_VERIFY`, userless, and other-user records are excluded.
+The API exposes only list, unread-count, mark-one, and mark-all operations; there is no global log,
+delete, or archive endpoint. Action paths are selected by backend-owned constants rather than data
+stored in a notification or supplied by the browser.
 
 ## Primary Integrated Flow
 
@@ -113,6 +130,8 @@ Staging deployment keeps frontend and backend separate:
 - Fine calculation reads stored due/return data; the client cannot submit the calculated amount.
 - Reports use read-only aggregate queries and cannot mutate circulation state.
 - Audit records capture important auth, circulation, fine, notification, report, and admin actions.
+- FE10 personal read state is independent from delivery state: marking an item read changes only
+  `Notifications.ReadAt` and never changes email status, attempts, source metadata, or idempotency.
 - The canonical schema is [`database/Librarymanagement.sql`](../../database/Librarymanagement.sql).
 
 ## Reliability And Security Boundaries
@@ -125,6 +144,8 @@ Staging deployment keeps frontend and backend separate:
 - Dependency, secret, RBAC, validation, and error-boundary findings are recorded in the
   [Week 12 security audit](../../.sdd/reviews/week12-security-audit-2026-07-14.md).
 - Staging smoke tests are read-only and verify health, CORS, and anonymous rejection.
+- FE10 rollback is additive and non-destructive: retain `ReadAt` and its supporting index, and disable
+  or redeploy only the inbox API/frontend if needed. Never erase read history or email-delivery rows.
 
 ## Operational Limitations
 

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { logoutAccount } from '../../api/authApi';
 import { fetchHeaderProfile } from '../../api/profileApi';
 import { getRoleLabel } from '../../utils/uiLabels';
+import NotificationBell from '../notification/NotificationBell';
 import UserMenuPopup from './UserMenuPopup';
 
 function getStoredAuthUser() {
@@ -98,6 +99,7 @@ export default function Header({ onOpenNavigation, navigationOpen = false }) {
       )}
 
       <div className="app-topbar-actions">
+        <NotificationBell />
         <button
           type="button"
           className="app-user-trigger"

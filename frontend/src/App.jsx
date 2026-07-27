@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import ReportRouteGuard from './component/report/ReportRouteGuard';
 import BorrowingRouteGuard from './component/borrowing/BorrowingRouteGuard';
+import AuthenticatedRouteGuard from './component/auth/AuthenticatedRouteGuard';
+import { NotificationInboxProvider } from './context/NotificationInboxContext';
 
 const LoginPage = lazy(() => import('./page/LoginPage'));
 const RegisterPage = lazy(() => import('./page/RegisterPage'));
@@ -18,6 +20,7 @@ const BookManagementPage = lazy(() => import('./page/BookManagementPage'));
 const MembershipPage = lazy(() => import('./page/MembershipPage'));
 const HomePage = lazy(() => import('./page/HomePage'));
 const ForbiddenPage = lazy(() => import('./page/error/ForbiddenPage'));
+const NotificationsPage = lazy(() => import('./page/notification/NotificationsPage'));
 
 // FE07 · Borrowing Management
 const BorrowRequestPage = lazy(() => import('./page/borrowing/BorrowRequestPage'));
@@ -48,8 +51,9 @@ function RouteLoadingFallback() {
 
 function App() {
   return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <Routes>
+    <NotificationInboxProvider>
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
 
       <Route path="/login" element={<LoginPage />} />
@@ -84,10 +88,12 @@ function App() {
       <Route path="/reports/users" element={<ReportRouteGuard><UserStatisticsPage /></ReportRouteGuard>} />
       <Route path="/profile" element={<UserProfilePage />} />
       <Route path="/membership" element={<MembershipPage />} />
+      <Route path="/notifications" element={<AuthenticatedRouteGuard><NotificationsPage /></AuthenticatedRouteGuard>} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </NotificationInboxProvider>
   );
 }
 

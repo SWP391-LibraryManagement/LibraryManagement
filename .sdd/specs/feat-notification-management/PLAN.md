@@ -1,6 +1,6 @@
 # PLAN.md - FE10 Notification Management
 
-Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
+Status: V0.5.0 LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
 
 Owner: Nhat
 
@@ -12,8 +12,11 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Product implementation remains `NOT_STARTED` until the governance activation
-PR reaches `main` as required by Fast-Track Hybrid.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
+implemented on `main@f3ebe95` after the approved `main@db97f17` Core-drift
+addendum and a non-overlapping regression-test-only sync; fresh post-drift
+local/SQL/browser validation is green, while fresh H2, Azure staging, H3,
+merge, and exact post-merge CI remain pending.
 
 ---
 
@@ -337,3 +340,47 @@ The implementation sequence is additive and backend-first:
 - H2 reviews the complete local candidate. H3 rechecks specification,
   ownership, sensitive exclusion, migration safety, and staging evidence before
   merge.
+
+### 15.4 Current Candidate State
+
+- FE10-I01 through FE10-I08 are implemented and locally validated in one
+  uncommitted H2 candidate.
+- Backend schema/repository/API, frontend context/bell/page, FE04/FE07/FE08
+  fan-in, privacy negatives, and three-role Chromium E2E are focused-green.
+- FE10-I08 disposable SQL rehearsal and complete local gates are green after
+  the approved `main@db97f17` rebase and non-overlapping `main@f3ebe95`
+  test-only sync. A fresh H2 evidence/fingerprint,
+  publication, backend-first Azure staging, H3, merge, and exact post-merge CI
+  remain; none is claimed early.
+
+### 15.5 H1 Deployment Addendum
+
+The user approved this addendum on 2026-07-28 after upstream `main@41282b4`
+introduced CI-gated automatic staging deployment:
+
+- preserve automatic deployment after successful exact-commit `main` CI and
+  preserve `workflow_dispatch` for an operator rerun;
+- require both paths to match the checked-out migration SHA-256 with the
+  non-secret GitHub `staging` Environment variable
+  `FE10_INBOX_MIGRATION_SHA256`;
+- additionally require `fe10_inbox_migration_confirmed=true` for manual runs;
+- keep preflight -> backend -> frontend -> smoke ordering;
+- apply/verify the migration, remove temporary firewall access, store the
+  migration hash, and manually verify the exact PR head before H3/merge;
+- after merge, monitor exact post-merge CI and the resulting automatic staging
+  run for the same migration proof.
+
+The user then approved the H1 Core-drift addendum for `main@5a3c84b` on
+2026-07-28. Reconciliation must preserve the upstream packaged
+`add_change_password_otp_token_type.sql` startup migration, its readiness
+documentation/tests, and the Vietnamese account-verification seed while
+retaining the FE10 preflight and ordered deployment. Complete post-drift gates
+and a new fingerprint/H2 are mandatory before publication.
+
+After that rebase, upstream advanced again by three commits through
+`main@db97f17`. The user approved a second H1 Core-drift addendum on
+2026-07-28. Reconciliation preserves the upstream Vietnamese default
+reservation-cancellation reason and responsive return/reservation tab styles,
+plus every other upstream FE07/FE08/FE10/FE12 round-two correction, while
+retaining the FE10 inbox client and scoped notification styles. Complete
+post-drift gates and a new fingerprint/H2 remain mandatory before publication.

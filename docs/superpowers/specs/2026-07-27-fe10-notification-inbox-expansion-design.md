@@ -1,6 +1,6 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** DESIGN, WRITTEN SPEC, AND H1 PLAN APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
+**Status:** LOCAL IMPLEMENTATION CANDIDATE - H2 PENDING
 
 **Design approved:** 2026-07-27
 
@@ -14,11 +14,35 @@
 authorization, and migration; bounded ADD may later implement the approved UI
 shell.
 
-**Design baseline:** `origin/main` at
-`2b4f91477fbf7083165f0c1a8a8430d0708979fc`. The governance activation branch
-was last rebased onto non-overlapping `origin/main` drift at
-`7bf76b5cbe46119272e8564ae659f66afe25810b`; product implementation must start
-from the then-current `main` after this activation merges.
+**Implementation baseline:** governance PR #70 merged to `main` as
+`25c09ec5f90d21e4ab0228cccd838b3548d4d90d`; the local candidate was then
+rebased onto approved upstream `main@db97f1760d4dd37bd37fa979fb46c4e600f82e3f`
+and mechanically synchronized with non-overlapping regression-test-only
+`main@f3ebe95ed00cef5119d2b6788ebccd72c5cda190`.
+FE10-I01 through FE10-I08 are implemented and fresh post-drift
+local/SQL/browser validation is green; fresh H2, Azure staging, H3, merge, and
+post-merge CI remain unclaimed.
+
+**H1 deployment addendum approved 2026-07-28:** preserve upstream CI-gated
+automatic staging deployment plus manual reruns. Both paths fail closed unless
+the exact checked-out FE10 migration SHA-256 matches
+`FE10_INBOX_MIGRATION_SHA256` in the GitHub `staging` Environment; manual runs
+also require `fe10_inbox_migration_confirmed=true`. Backend still precedes
+frontend and smoke, and the migration proof must exist before H3/merge.
+
+**H1 Core-drift addendum approved 2026-07-28:** reconcile with
+`main@5a3c84b` while preserving the newly packaged
+`add_change_password_otp_token_type.sql` startup migration, its readiness
+guide/tests, and the canonical Vietnamese account-verification seed. Reapply
+the FE10 migration preflight/order without weakening either upstream contract,
+then run complete validation and obtain a new H2 fingerprint.
+
+**Second H1 Core-drift addendum approved 2026-07-28:** reconcile with
+`main@db97f17` while preserving its Vietnamese default reservation-cancellation
+reason, responsive return/reservation controls, and all other round-two
+FE07/FE08/FE10/FE12 corrections. Retain the FE10 inbox client and scoped
+notification styles, then run complete validation and obtain a new H2
+fingerprint.
 
 ## 1. Outcome And Scope
 

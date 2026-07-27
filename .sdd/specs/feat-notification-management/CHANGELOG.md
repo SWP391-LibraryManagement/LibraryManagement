@@ -1,5 +1,95 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - Synchronize non-overlapping upstream regression tests
+
+- Upstream advanced from `main@db97f17` to `main@f3ebe95` with one test-only
+  commit adding FE07/FE08 ARIA-tablist and toast-FIFO regression guards.
+- None of its three changed files overlapped the 48-entry FE10 candidate, so
+  the branch fast-forwarded mechanically with no new Core contract decision,
+  conflict, staged file, or product-code change.
+- The full frontend test suite passed 258/258 on the exact synchronized
+  baseline before the new H2 fingerprint is generated.
+
+## 2026-07-28 - Approve second Core-drift reconciliation addendum
+
+- Immediately after the approved `main@5a3c84b` reconciliation, upstream
+  advanced by three commits through `main@db97f17`.
+- The overlap was limited to `frontend/src/api/libraryFeatureApi.js` and
+  `frontend/src/styles/app-shell.css`; no candidate file was staged or
+  committed.
+- The user approved `H1 drift addendum main@db97f17`. The candidate now
+  preserves the upstream Vietnamese member-cancellation reason, responsive
+  return/reservation controls, and all other round-two upstream corrections
+  together with the FE10 inbox API and scoped notification styles.
+- Complete post-drift validation and a fresh H2 fingerprint remain required
+  before publication.
+- Fresh post-drift evidence passed: backend coverage 69/69 suites and
+  1114/1114 tests, frontend 258/258 plus lint/build, deployment 15/15, system
+  10/10, trace state 3/3, FE10 trace 14/16 (88%), and Chromium 11/11.
+- The exact migration passed twice with one `ReadAt` column, one supporting
+  index, historical-only backfill, protected aggregates unchanged, and zero
+  disposable databases remaining. Backend dependency audit reported zero
+  vulnerabilities; the repository frontend audit gate accepted only the
+  non-applicable unstable-RSC React Router advisory for this declarative
+  `BrowserRouter` application.
+- Final security-review TDD added a repository regression for the complete
+  sensitive pending-selector allowlist. RED proved legacy `listPending`
+  omitted `ACCOUNT_SETUP`; the minimal SQL predicate fix aligned it with the
+  active worker and in-memory selector, focused GREEN passed 161/161, and full
+  backend coverage passed 1114/1114.
+
+## 2026-07-28 - Approve Core-drift reconciliation addendum
+
+- A required post-H2 fetch found four new upstream commits ending at
+  `main@5a3c84b` with overlapping deployment workflow, schema, operator guide,
+  and deployment-test changes; no reviewed file had been staged or committed.
+- The user approved a new H1 drift addendum to preserve the packaged
+  `add_change_password_otp_token_type.sql` startup/readiness contract and
+  Vietnamese account-verification seed together with the FE10 migration
+  preflight and ordered deployment.
+- The candidate was rebased onto `main@5a3c84b`; complete post-drift validation
+  and a fresh H2 fingerprint are required before publication.
+
+## 2026-07-28 - Approve CI-gated deployment addendum
+
+- Reconciled the candidate with upstream `main@41282b4`, which introduced
+  automatic staging deployment after successful `main` CI.
+- Preserved automatic and manual deployment while making both fail closed on
+  the exact `FE10_INBOX_MIGRATION_SHA256` proof in the GitHub `staging`
+  Environment; manual runs also require the approved boolean confirmation.
+- Preserved preflight -> backend -> frontend -> smoke ordering and required
+  migration proof plus exact-head manual staging before H3/merge.
+- The user explicitly approved this H1 addendum on 2026-07-28. It changes
+  deployment orchestration only, not FE10 inbox behavior or authorization.
+
+## 2026-07-28 - Implement personal notification inbox candidate (v0.5.0)
+
+- Added the repeatable nullable `Notifications.ReadAt` migration, historical
+  eligible-row backfill, supporting own-user index, canonical schema/model,
+  and migration/repository contract tests.
+- Added SQL-filtered own-user list, unread count, mark-one, and mark-all API
+  operations with fixed eligible type/template pairs, exact safe DTOs,
+  backend-owned action paths, idempotent reads, and IDOR-safe `404` behavior.
+- Added the shared authenticated inbox context, non-overlapping 60-second
+  refresh, bell with `99+` badge and five-unread preview, `/notifications`
+  filters/pagination, and safe non-blocking navigation after read failure.
+- Added FE04/FE07/FE08 fan-in evidence plus MEMBER/LIBRARIAN/ADMIN Chromium
+  E2E covering privacy negatives, read behavior, responsive layout, and error
+  semantics. Sensitive FE02/FE11 and legacy/userless records remain excluded.
+- Added a fail-closed staging workflow gate requiring the two-run operator SQL
+  migration before ordered backend, frontend, smoke, and browser verification.
+- The first real SQL rehearsal exposed same-batch name resolution for the new
+  `ReadAt` references. A RED regression test now requires deferred compilation;
+  `sys.sp_executesql` fixed the migration, and the strict two-run rehearsal
+  passed with protected aggregates unchanged and the disposable database removed.
+- FE10-I01 through FE10-I07 and the FE10-I08 local validation matrix are green.
+  H2, publication, Azure staging, H3, merge, and post-merge CI remain pending
+  and unclaimed.
+- Final H2 audit closed an SQL pagination overflow boundary by binding the
+  validated page offset as `BIGINT`, and isolated the FE09 synthetic-auth E2E
+  fixture from the new background unread-count request; focused and full gates
+  passed after both corrections.
+
 ## 2026-07-28 - H1 plan approval and governance activation
 
 - Recorded the user's approval of the detailed FE10-I01..I08 implementation
@@ -113,7 +203,11 @@
 ## 2026-07-19 - OTP Integration B7 Closeout
 
 - FE10-S05 is complete through B7: PR #42 merged as `34d9180`, PR CI `29688102867` passed, and exact post-merge `main` CI `29688222757` passed.
-- FE02/FE10 ownership, source rejection, secret-boundary, failure, idempotency, and reset-event evidence is complete. Real provider delivery, inbox UI, and FE09 caller integration remain deferred.
+- FE02/FE10 ownership, source rejection, secret-boundary, failure,
+  idempotency, and reset-event evidence was complete at that historical
+  checkpoint. Real provider delivery, the then-future personal inbox, and FE09
+  caller integration were deferred; the v0.5.0 entry above supersedes only the
+  personal-inbox part of that boundary.
 
 ## 2026-07-19 - OTP Integration Human Acceptance And Evidence Expansion
 

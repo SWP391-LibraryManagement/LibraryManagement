@@ -15,6 +15,9 @@ const { makeInMemoryReservationDependencies } = require('./helpers/inMemoryReser
 const { makeInMemoryNotificationDependencies } = require('./helpers/inMemoryNotificationRepositories');
 const { makeInMemoryReportDependencies } = require('./helpers/inMemoryReportRepositories');
 const {
+  authHeader,
+  createVerifiedActor,
+  makeSystemIntegrationApp,
   syncCopyStatus,
   syncReservationClaims,
 } = require('./helpers/systemIntegrationHarness');
@@ -555,6 +558,139 @@ describe('Integration: End-to-End Flows', () => {
           n.sourceFeature === 'FE08'
       );
       expect(readyForSecond.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Cross-Feature: FE04/FE07/FE08 -> FE10 personal inbox', () => {
+    test('source outcomes fan into one own-user inbox without changing delivery state', async () => {
+      const setup = makeSystemIntegrationApp();
+      const member = await createVerifiedActor({
+        setup,
+        email: 'inbox.fan-in.member@example.test',
+        completeProfile: true,
+      });
+      const otherMember = await createVerifiedActor({
+        setup,
+        email: 'inbox.fan-in.other@example.test',
+      });
+      const librarian = await createVerifiedActor({
+        setup,
+        email: 'inbox.fan-in.librarian@example.test',
+        role: 'LIBRARIAN',
+        approveMember: false,
+      });
+      const { borrowingDependencies, reservationDependencies, notificationDependencies } =
+        setup.dependencies;
+
+      const application = await request(setup.app)
+        .post('/api/membership/applications')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({})
+        .expect(201);
+      const applicationId = application.body.currentApplication.applicationId;
+      await request(setup.app)
+        .patch(`/api/membership/applications/${applicationId}/approve`)
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({})
+        .expect(200);
+
+      const borrow = await request(setup.app)
+        .post('/api/borrow-requests')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyIds: [2] })
+        .expect(201);
+      await request(setup.app)
+        .patch(`/api/borrow-requests/${borrow.body.borrowRequest.requestId}/approve`)
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({})
+        .expect(200);
+
+      await request(setup.app)
+        .post('/api/reservations')
+        .set('Authorization', authHeader(member.accessToken))
+        .send({ copyId: 1 })
+        .expect(201);
+      reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+      await request(setup.app)
+        .post('/api/reservations/process-queue')
+        .set('Authorization', authHeader(librarian.accessToken))
+        .send({ copyId: 1 })
+        .expect(200);
+
+      const expectedPairs = [
+        ['FE04', 'GENERAL_SYSTEM', 'MEMBERSHIP_RESULT'],
+        ['FE07', 'DUE_DATE_REMINDER', 'DUE_DATE_REMINDER'],
+        ['FE08', 'RESERVATION_AVAILABLE', 'RESERVATION_READY'],
+      ];
+      const ownedNotifications = expectedPairs.map(([sourceFeature, type, templateKey]) => {
+        const matches = notificationDependencies.state.notifications.filter(
+          (item) => item.userId === member.userId
+            && item.channel === 'EMAIL'
+            && item.sourceFeature === sourceFeature
+            && item.type === type
+            && item.templateKey === templateKey
+        );
+        expect(matches).toHaveLength(1);
+        return matches[0];
+      });
+
+      const memberInbox = await request(setup.app)
+        .get('/api/notifications/mine?page=1&limit=20&readState=all')
+        .set('Authorization', authHeader(member.accessToken))
+        .expect(200);
+      const memberInboxIds = memberInbox.body.notifications.map((item) => item.notificationId);
+      for (const notification of ownedNotifications) {
+        expect(memberInboxIds.filter((id) => id === notification.notificationId)).toHaveLength(1);
+      }
+
+      const otherInbox = await request(setup.app)
+        .get('/api/notifications/mine?page=1&limit=20&readState=all')
+        .set('Authorization', authHeader(otherMember.accessToken))
+        .expect(200);
+      expect(otherInbox.body.notifications).toEqual([]);
+
+      const missingRead = await request(setup.app)
+        .patch('/api/notifications/999999/read')
+        .set('Authorization', authHeader(otherMember.accessToken));
+      const crossUserRead = await request(setup.app)
+        .patch(`/api/notifications/${ownedNotifications[0].notificationId}/read`)
+        .set('Authorization', authHeader(otherMember.accessToken));
+      expect(crossUserRead.status).toBe(404);
+      expect(crossUserRead.body).toEqual(missingRead.body);
+
+      const deliveryBeforeRead = ownedNotifications.map((item) => ({
+        notificationId: item.notificationId,
+        status: item.status,
+        attemptCount: item.attemptCount,
+        sentAt: item.sentAt,
+      }));
+      await request(setup.app)
+        .patch(`/api/notifications/${ownedNotifications[0].notificationId}/read`)
+        .set('Authorization', authHeader(member.accessToken))
+        .expect(200);
+      await request(setup.app)
+        .patch('/api/notifications/mine/read-all')
+        .set('Authorization', authHeader(member.accessToken))
+        .expect(200, { updated: 2 });
+      await request(setup.app)
+        .patch('/api/notifications/mine/read-all')
+        .set('Authorization', authHeader(member.accessToken))
+        .expect(200, { updated: 0 });
+
+      const deliveryAfterRead = ownedNotifications.map(({ notificationId }) => {
+        const item = notificationDependencies.state.notifications.find(
+          (candidate) => candidate.notificationId === notificationId
+        );
+        return {
+          notificationId: item.notificationId,
+          status: item.status,
+          attemptCount: item.attemptCount,
+          sentAt: item.sentAt,
+        };
+      });
+      expect(deliveryAfterRead).toEqual(deliveryBeforeRead);
+      expect(borrowingDependencies.state.borrowRequests[0].status).toBe('APPROVED');
+      expect(reservationDependencies.state.reservations[0].status).toBe('NOTIFIED');
     });
   });
 
