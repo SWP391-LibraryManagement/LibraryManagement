@@ -102,3 +102,32 @@ test('canonical FE10 schema, model, migration, and API include PROCESSING safely
   expect(migration).toMatch(/THROW/i);
   expect(migration).not.toMatch(/\b(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+|FROM\s+)?dbo\.Notifications/i);
 });
+
+test('account setup template migration is canonical, transactional, and repeatable', () => {
+  const root = path.join(__dirname, '..', '..');
+  const baseline = fs.readFileSync(path.join(root, 'database', 'Librarymanagement.sql'), 'utf8');
+  const migration = fs.readFileSync(
+    path.join(
+      root,
+      'database',
+      'migrations',
+      '2026-07-27-fe10-account-setup-template.sql'
+    ),
+    'utf8'
+  );
+
+  for (const sqlText of [baseline, migration]) {
+    expect(sqlText).toMatch(/ACCOUNT_SETUP/i);
+    expect(sqlText).toMatch(/\{\{setupLink\}\}/);
+    expect(sqlText).toMatch(/\{\{expiresInHours\}\}/);
+  }
+  expect(migration).toMatch(/SET XACT_ABORT ON/i);
+  expect(migration).toMatch(/BEGIN TRANSACTION/i);
+  expect(migration).toMatch(/IF EXISTS[\s\S]*TemplateCode = 'ACCOUNT_SETUP'/i);
+  expect(migration).toMatch(/UPDATE NotificationTemplates[\s\S]*Status = 'ACTIVE'/i);
+  expect(migration).toMatch(/INSERT INTO NotificationTemplates/i);
+  expect(migration).toMatch(/COMMIT TRANSACTION/i);
+  expect(migration).toMatch(/ROLLBACK TRANSACTION/i);
+  expect(migration).toMatch(/THROW/i);
+  expect(migration).not.toMatch(/\bDELETE\b/i);
+});
