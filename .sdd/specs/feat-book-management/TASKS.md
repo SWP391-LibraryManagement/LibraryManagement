@@ -165,4 +165,5 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Permit execution only from a default-off `workflow_dispatch` boolean; automatic post-CI deploys remain read-only with respect to schema.
   - Provide a clearly named manual-only repair workflow so operators do not mistake `Re-run jobs` for a migration-enabled run.
   - Install locked production dependencies into a dedicated deployed migration runtime and set `NODE_PATH` explicitly so the Kudu execution context can load `dotenv`, `mssql`, and the readiness service independently of Azure Oryx layout.
+  - Prefix the bounded Kudu command with `env` because `/api/command` executes its first token directly and does not interpret POSIX assignment-prefix syntax.
   - Invoke the command inside the Linux App Service so it uses the target runtime settings/network path, then require the existing readiness and smoke checks to pass.

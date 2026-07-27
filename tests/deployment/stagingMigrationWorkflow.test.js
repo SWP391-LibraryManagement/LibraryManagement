@@ -49,8 +49,9 @@ test('applies the migration only after an explicit manual workflow choice', () =
 test('runs the bounded command in the deployed Linux App Service directory without logging credentials', () => {
   assert.match(
     operatorScript,
-    /command = 'NODE_PATH=\/home\/site\/wwwroot\/migration-runtime\/node_modules node scripts\/migrateLibraryMetadata\.js'/
+    /command = 'env NODE_PATH=\/home\/site\/wwwroot\/migration-runtime\/node_modules node scripts\/migrateLibraryMetadata\.js'/
   );
+  assert.doesNotMatch(operatorScript, /command = 'NODE_PATH=/);
   assert.match(operatorScript, /dir = '\/home\/site\/wwwroot'/);
   assert.match(operatorScript, /\/api\/command/);
   assert.match(operatorScript, /Protect-CommandDiagnostic/);

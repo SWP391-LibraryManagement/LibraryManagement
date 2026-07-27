@@ -226,7 +226,9 @@ The repair workflow has only a manual `workflow_dispatch` trigger. It builds and
 package containing a dedicated, locked migration runtime, the bounded runner, and the one reviewed
 SQL file before invoking `scripts/migrateLibraryMetadata.js` inside the Linux App Service through
 its Kudu command endpoint. The command sets `NODE_PATH` to that dedicated runtime so it does not
-depend on where Azure Oryx places the application runtime dependencies.
+depend on where Azure Oryx places the application runtime dependencies. Kudu executes the first
+command token directly rather than interpreting POSIX assignment-prefix syntax, so the runner uses
+`env NODE_PATH=... node ...`; omitting `env` makes Kudu try to execute `NODE_PATH=...` as a program.
 The command therefore uses the App Service database settings and network path; the publish-profile
 secret is kept in the workflow environment and is not printed. If the remote command fails, the
 workflow reports its exit code and a length-limited diagnostic with publish credentials and common
