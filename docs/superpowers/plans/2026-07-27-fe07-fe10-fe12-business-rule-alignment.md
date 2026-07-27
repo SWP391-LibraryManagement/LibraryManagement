@@ -1336,6 +1336,52 @@ explicitly approves this remediation H2 addendum.
 
 ---
 
+### Task 13: Freeze H2 Evidence Without Self-Reference
+
+**Task ID:** `GOV-H3-002`
+
+**Files:**
+- Modify:
+  `.sdd/reviews/fe07-fe10-fe12-business-rule-alignment-validation-2026-07-27.md`
+- Modify:
+  `docs/superpowers/specs/2026-07-27-fe07-fe10-fe12-business-rule-alignment-design.md`
+- Modify:
+  `docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`
+- Do not modify feature behavior, SPEC requirements, production code, tests,
+  schema, dependencies, or API contracts.
+
+**Interfaces:**
+- Consumes: Task 12 H2 approval, commit `2d0ef78`, CI run `30246892241`, and
+  the repeated H3 Standards P2 finding.
+- Produces: immutable checked-in H2 snapshots plus a non-self-referential
+  publication-evidence boundary.
+
+- [x] **Step 1: Record the repeated H3 result**
+
+Record that Spec/business review passed and Standards found only the
+self-referential current-state wording.
+
+- [x] **Step 2: Define the frozen-evidence invariant**
+
+Checked-in H2 evidence records review-time facts. PR #63 records later H2,
+commit, updated CI, and repeated H3 facts; final closeout records merge and
+post-merge CI. Do not place a future commit SHA inside its own pre-commit
+snapshot.
+
+- [x] **Step 3: Apply the bounded three-file remediation**
+
+Relabel current-state wording as frozen H2 package evidence. Preserve all
+historical process instructions and product evidence.
+
+- [x] **Step 4: Run bounded validation and freeze H2**
+
+Confirm exactly three Markdown files changed, no stale live-state label remains,
+traceability/deployment checks pass, and diff hygiene passes. Present the
+uncommitted snapshot for H2. Record later approval and publication facts in PR
+#63 rather than adding another self-referential checked-in status field.
+
+---
+
 ## Plan Approval Gate
 
 - [x] Nhat approves the original consolidated plan and FE07-T049..T052, FE08-T047,
@@ -1347,4 +1393,8 @@ explicitly approves this remediation H2 addendum.
 - [x] Nhat authorizes Task 10 integration of upstream `e99daf5` on 2026-07-27.
 - [x] Nhat authorizes Task 11 integration of upstream `8d0059b` on 2026-07-27.
 - [x] Nhat authorizes Task 12 documentation-only H3 remediation on 2026-07-27.
-- [ ] Nhat approves the Task 12 H2 addendum before commit or push.
+- [x] Nhat approved the Task 12 H2 addendum on 2026-07-27; commit `2d0ef78`
+  and CI run `30246892241` are recorded in PR #63.
+- Task 13 H2 approval must be recorded in PR #63 before publication; this file
+  intentionally does not contain a self-referential future-commit checkbox or
+  SHA.

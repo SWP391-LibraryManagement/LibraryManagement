@@ -18,13 +18,14 @@ Date: 2026-07-27
 - Required PR checks: CI run `30244750250` passed for exact head `f346ae0`.
 - First H3 result: no product-code or business-spec defect; one valid P2
   finding identified stale current-state H2 wording in governance documents.
-- Current publication authority: the documentation-only H3 remediation may be
-  prepared uncommitted. Fresh H2 remains required before committing or pushing
-  it, and repeated H3 remains required before merge.
+- Frozen Task 12 H2 boundary: at package freeze, the documentation-only H3
+  remediation was uncommitted and required fresh H2 before publication. Nhat
+  later approved that H2; post-publication facts are recorded in PR #63.
 
 Sections 3-9 retain the prior `e99daf5` evidence as historical baseline.
 Section 11 is the authoritative product addendum for `8d0059b`; Section 12 is
-the authoritative current gate for the H3 governance-evidence remediation.
+the frozen Task 12 H2 package. Post-publication current state belongs to PR #63
+and the final post-merge closeout, not to a self-referential checked-in field.
 
 ## 2. Changed Files
 
@@ -306,7 +307,7 @@ return -> fine -> report and retained the safe unknown-report-query rejection.
 - Local browser acceptance passed; staging was not exercised.
 - Normal LF-to-CRLF warnings remain non-blocking.
 
-### 11.8 Current gate
+### 11.8 Published Product H2 Evidence
 
 Nhat approved the complete `8d0059b` merge, reconciliation, bounded FE08
 remediation, and fresh L1-L4 evidence at H2 on 2026-07-27. The reviewed merge
@@ -372,9 +373,43 @@ pre-H2 process instruction changes in this remediation.
 | Current-state stale wording scan | 0 stale original-H2 matches; fresh-H2 wording refers only to this uncommitted documentation remediation. |
 | `git diff --check`; `git diff --cached --check` | Both passed with zero error lines; only normal LF-to-CRLF working-copy warnings were emitted. |
 
-### 12.4 Current gate
+### 12.4 Frozen H2 Package Boundary
 
-The documentation-only remediation is uncommitted and unpushed. Fresh H2 must
-review the complete 12-file diff and final diff-hygiene evidence before commit
-or push. PR #63 remains Draft; updated PR CI and repeated H3 remain mandatory
-before merge to `main`.
+At the moment this Task 12 package was frozen for H2, the documentation-only
+remediation was uncommitted and unpushed. Fresh H2 was required before commit
+or push. This subsection intentionally preserves that review-time fact and
+does not claim to describe branch state after publication. Nhat's later H2
+approval, commit `2d0ef78`, CI run `30246892241`, and subsequent H3 state are
+recorded in PR #63 until the final post-merge closeout.
+
+## 13. Repeated H3 Frozen-Evidence Remediation
+
+The repeated H3 review used exact head
+`2d0ef78bc71f9b2f941ac8965e589606cad5f060` after CI run `30246892241`
+completed successfully.
+
+- Spec/business review: PASS with no findings.
+- Standards review: one P2 finding. Task 12 corrected the stale `f346ae0`
+  wording, but labels such as "current gate" made the newly committed Task 12
+  snapshot appear stale immediately after publication.
+- Root cause: a checked-in file cannot truthfully contain its own future commit
+  SHA or remain a live current-state ledger without creating an infinite
+  evidence-only commit loop.
+- Remediation: relabel checked-in H2 evidence as an immutable package snapshot;
+  record H2 approval, commit SHA, updated CI, repeated H3, merge SHA, and
+  post-merge CI in PR #63 and the final closeout record.
+
+This three-file Task 13 package changes only this validation record, the
+rule-alignment design, and the implementation plan. At package freeze it is
+uncommitted and unpushed pending H2. That sentence is explicitly a frozen
+pre-publication fact, not a claim about state after later publication.
+
+Bounded Task 13 validation:
+
+| Command/check | Observed result |
+| --- | --- |
+| `npm.cmd run test:traceability-state` | 3/3 passed. |
+| `npm.cmd run trace:enforce` | PASS; FE07/FE10/FE12 remain 100%, FE08 remains 97%, and every active feature exceeds 70%. |
+| `npm.cmd run test:deployment` | 9/9 passed. |
+| Scope and live-state scan | 3 changed Markdown files, 0 non-Markdown files, 0 staged files, and 0 self-referential live-state labels. |
+| `git diff --check` | Passed with zero error lines; only normal LF-to-CRLF working-copy warnings were emitted. |

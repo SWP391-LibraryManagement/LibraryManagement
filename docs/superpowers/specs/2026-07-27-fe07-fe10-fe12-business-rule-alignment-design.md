@@ -169,21 +169,21 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 
 ## 10. Quality Gates
 
-Nhat approved the latest `8d0059b` H2 addendum on 2026-07-27. The reviewed
-merge was committed as `f346ae0`, pushed to draft PR #63, and CI run
-`30244750250` passed. The first H3 review found no code or business-spec
-defect, but it did find stale current-state H2 wording in the checked-in
-governance evidence. Product gates G4-G7 remain passed; the documentation-only
-H3 remediation requires fresh H2 before publication and repeated H3.
+Nhat approved the latest `8d0059b` product H2 addendum and the first H3
+documentation remediation on 2026-07-27. The reviewed heads were published as
+`f346ae0` and `2d0ef78`; CI runs `30244750250` and `30246892241` passed. The
+repeated H3 Spec review found no issue. Standards found one remaining P2:
+checked-in fields labelled as "current" become stale as soon as their own H2
+package is committed. Task 13 replaces that self-referential model with frozen
+H2 snapshots plus PR/final-closeout publication evidence.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-007 | passed | passed | passed | passed | passed | passed | passed | passed | H3 governance-evidence remediation | Codex / Nhat | Fresh H2 for the documentation-only diff, updated PR CI, and repeated H3 |
+| SL-001 to SL-007 | passed | passed | passed | passed | passed | passed | passed | passed | Repeated H3 frozen-evidence finding at `2d0ef78` | Codex / Nhat | Task 13 frozen-snapshot package, external H2 record, updated PR CI, and repeated H3 |
 
 Historical green results against `origin/main` at `e20fdc3` and `e99daf5`
-remain baseline evidence only. G4-G7 are associated with the reviewed
-`f346ae0` head and CI run `30244750250`; they do not authorize the new
-uncommitted documentation remediation.
+remain baseline evidence only. The table records the repeated H3 observation
+at `2d0ef78`; it is not a live branch-status field after later publication.
 
 ## 11. Security And Safety Boundary
 
@@ -199,7 +199,7 @@ uncommitted documentation remediation.
 
 ## 12. Execution Boundary
 
-Completed under Nhat's approved H2:
+Completed under Nhat's approved H2 packages:
 
 - Reconcile SPEC, PLAN/TASKS, task IDs, tests, and the merged implementation.
 - Remove the superseded multi-role renewal scenario.
@@ -208,18 +208,21 @@ Completed under Nhat's approved H2:
 - Run focused, full, traceability, and local runtime validation.
 - Commit the reviewed merge as `f346ae0`, push draft PR #63, and run required
   PR checks.
+- Commit the first H3 documentation remediation as `2d0ef78`, push it to PR
+  #63, and pass CI run `30246892241`.
 
-Authorized for uncommitted H3 remediation:
+Authorized for uncommitted Task 13 remediation:
 
-- Synchronize only current-state governance wording with the observed H2,
-  commit, PR, and CI evidence.
+- Replace self-referential current-state wording with frozen H2 snapshot
+  wording.
 - Preserve historical pre-H2 instructions and all product behavior.
 - Run documentation, traceability, deployment, and diff checks.
 
-Blocked until fresh H2:
+Task 13 publication rule:
 
-- Committing or pushing the H3 remediation diff.
-- Repeating H3 or merging PR #63.
+- The three-file frozen snapshot must receive H2 recorded in PR #63 before it
+  is committed or pushed.
+- Updated PR CI and repeated H3 remain mandatory before merge.
 - Running mutable SQL without a named disposable database and explicit mutation
   flag.
 
@@ -252,3 +255,20 @@ Remediation decision:
 - Record the remediation as Task 12 and prepare a fresh uncommitted H2 package.
 - After fresh H2, commit and push the exact reviewed documentation diff, wait
   for updated PR CI, and repeat H3 before merge.
+
+## 14. Frozen Evidence Invariant
+
+Checked-in validation evidence is an immutable snapshot of the package reviewed
+at H2. It may truthfully say that the package was uncommitted at snapshot time,
+but it must not label that statement as the branch's live "current state."
+
+Publication facts that cannot exist inside their own pre-commit snapshot are
+recorded externally:
+
+- H2 approval and the resulting commit SHA: PR #63 review-gate section.
+- Required CI run and repeated H3 result: PR #63.
+- Merge SHA and exact post-merge `main` CI: final closeout evidence.
+
+This separation terminates the self-referential evidence loop without weakening
+H2 or H3. Historical instructions remain unchanged, and every new generated
+diff still requires H2 before publication plus H3 before merge.
