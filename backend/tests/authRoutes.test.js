@@ -422,6 +422,30 @@ describe('FE02 auth vertical slice', () => {
     }).toEqual(stateBeforeDuplicate);
   });
 
+  test('concurrent duplicate registration maps the SQL email conflict to 409', async () => {
+    const { app, dependencies } = makeTestApp();
+    const conflict = Object.assign(new Error("Violation of UNIQUE INDEX 'UX_Users_Email'."), {
+      number: 2601,
+    });
+    jest.spyOn(dependencies.userRepository, 'createRegisteredUser').mockRejectedValueOnce(conflict);
+
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'concurrent-duplicate@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toMatchObject({
+      code: 'EMAIL_ALREADY_REGISTERED',
+      message: 'Email is already registered. Please login or use forgot password.',
+    });
+    expect(dependencies.state.users).toHaveLength(0);
+    expect(dependencies.state.tokens).toHaveLength(0);
+  });
+
   // @spec FR-FE02-019 AC-FE02-001
   test('weak registration password is rejected without persisting auth state', async () => {
     const { app, dependencies } = makeTestApp();
@@ -474,6 +498,69 @@ describe('FE02 auth vertical slice', () => {
       dependencies.state.tokens.find((token) => token.tokenId === verificationToken.tokenId)
         .usedAt
     ).toEqual(expect.any(Date));
+  });
+
+  // @spec FR-FE02-003 AC-FE02-002 INV-FE02-004 INV-FE02-006
+  test('email verification cannot reactivate a deactivated account', async () => {
+    const { app, dependencies } = makeTestApp();
+
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'deactivated-verification@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      })
+      .expect(201);
+    const verificationOtp = capturedOtp(app);
+    const verificationToken = dependencies.state.tokens[0];
+    dependencies.state.users[0].deactivatedAt = new Date();
+
+    await request(app)
+      .post('/api/auth/verify-email')
+      .send({ email: 'deactivated-verification@example.test', otp: verificationOtp })
+      .expect(400);
+    await request(app)
+      .post('/api/auth/verify-email')
+      .send({ token: verificationOtp })
+      .expect(400);
+
+    expect(dependencies.state.users[0]).toMatchObject({
+      status: 'INACTIVE',
+      emailVerifiedAt: null,
+      deactivatedAt: expect.any(Date),
+    });
+    expect(verificationToken.usedAt).toBeNull();
+    expect(dependencies.state.auditLogs).not.toContainEqual(
+      expect.objectContaining({ action: 'AUTH_VERIFY_EMAIL' })
+    );
+  });
+
+  test('email verification rolls back activation and token use when required audit fails', async () => {
+    const { app, dependencies } = makeTestApp();
+
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'verification-audit-failure@example.test',
+        password: 'Password1!',
+        confirmPassword: 'Password1!',
+      })
+      .expect(201);
+    const verificationOtp = capturedOtp(app);
+    const originalCreateAudit = dependencies.auditLogRepository.create;
+    dependencies.auditLogRepository.create = async (entry) => {
+      if (entry.action === 'AUTH_VERIFY_EMAIL') throw new Error('verification audit failed');
+      return originalCreateAudit(entry);
+    };
+
+    await request(app)
+      .post('/api/auth/verify-email')
+      .send({ email: 'verification-audit-failure@example.test', otp: verificationOtp })
+      .expect(500);
+
+    expect(dependencies.state.users[0]).toMatchObject({ status: 'INACTIVE', emailVerifiedAt: null });
+    expect(dependencies.state.tokens[0].usedAt).toBeNull();
   });
 
   test('login rejects invalid password and increments failed counter', async () => {
@@ -1344,6 +1431,56 @@ describe('FE02 auth vertical slice', () => {
       failedLoginCount: 0,
       lastLoginAt: null,
     });
+    expect(dependencies.state.tokens.filter((token) => token.tokenType === 'REFRESH')).toHaveLength(0);
+  });
+
+  test('concurrent deactivation cannot accrue a failed login or create a session', async () => {
+    const { app, dependencies } = makeTestApp();
+    await registerAndVerify(app, 'concurrent-deactivation@example.test');
+    const originalRecordFailure = dependencies.userRepository.recordFailedLogin;
+    dependencies.userRepository.recordFailedLogin = (...args) => {
+      dependencies.state.users[0].status = 'INACTIVE';
+      dependencies.state.users[0].deactivatedAt = new Date();
+      return originalRecordFailure(...args);
+    };
+
+    await login(app, 'concurrent-deactivation@example.test', 'WrongPassword1!').then((response) => {
+      expect(response.status).toBe(401);
+    });
+    expect(dependencies.state.users[0]).toMatchObject({
+      status: 'INACTIVE',
+      failedLoginCount: 0,
+      lockedUntil: null,
+    });
+    expect(dependencies.state.loginFailureAttempts).toHaveLength(0);
+
+    const originalPrepareLogin = dependencies.userRepository.resetFailedLoginsAndSetLastLogin;
+    dependencies.userRepository.resetFailedLoginsAndSetLastLogin = (...args) => {
+      dependencies.state.users[0].status = 'INACTIVE';
+      dependencies.state.users[0].deactivatedAt = new Date();
+      return originalPrepareLogin(...args);
+    };
+    const successRace = await login(app, 'concurrent-deactivation@example.test');
+
+    expect(successRace.status).toBe(401);
+    expect(dependencies.state.tokens.filter((token) => token.tokenType === 'REFRESH')).toHaveLength(0);
+  });
+
+  test('stale auto-unlock cannot clear a newer lock', async () => {
+    const now = new Date(FIXED_NOW);
+    const { app, dependencies } = makeTestApp({ clock: () => now });
+    await registerAndVerify(app, 'concurrent-relock@example.test');
+    dependencies.state.users[0].status = 'LOCKED';
+    dependencies.state.users[0].lockedUntil = new Date(now.getTime() - 1000);
+    dependencies.userRepository.unlockExpiredAccount = async () => {
+      dependencies.state.users[0].lockedUntil = new Date(now.getTime() + 30 * 60 * 1000);
+      return false;
+    };
+
+    const response = await login(app, 'concurrent-relock@example.test');
+
+    expect(response.status).toBe(429);
+    expect(response.body.error.code).toBe('ACCOUNT_LOCKED');
     expect(dependencies.state.tokens.filter((token) => token.tokenType === 'REFRESH')).toHaveLength(0);
   });
 

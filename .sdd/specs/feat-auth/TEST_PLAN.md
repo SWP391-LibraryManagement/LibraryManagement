@@ -1,6 +1,6 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.11
+Version: 0.3.13
 Status: RECONCILIATION IN PROGRESS - BASELINE EVIDENCE RECORDED; GAPS OPEN
 Last Updated: 2026-07-27
 
@@ -26,11 +26,11 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 ## 3. API / Integration Test Targets
 
-- `POST /auth/register`: happy path, duplicate email with no additional persistence/delivery, weak password with no persistence, invalid input.
+- `POST /auth/register`: happy path, duplicate email including a concurrent unique-index race with no additional persistence/delivery, weak password with no persistence, invalid input.
 - FE02/FE10 OTP boundary: registration and password-reset flows submit exactly one FE02-bound requester call with `AuthToken` source ID and token-ID idempotency; direct duplicate delivery is rejected while `CHANGE_PASSWORD_OTP` remains FE02-owned.
-- `POST /auth/verify-email`: canonical email/OTP and legacy-token happy paths, invalid OTP, expired OTP, and credential consumption.
+- `POST /auth/verify-email`: canonical email/OTP and legacy-token happy paths, invalid/expired credentials, atomic activation/token/audit completion, and rejection of terminally deactivated accounts without credential consumption.
 - `POST /auth/resend-verification`: eligible pending self-registration, unknown user, deactivated account, and admin-created setup account.
-- `POST /auth/login`: happy path, wrong password, exact rolling 15-minute failure window, password-proven pending-verification recovery, generic handling for unknown/deactivated/admin-created setup accounts including deactivated pending self-registration, locked account, automatic unlock, and safe reason/lock audit events.
+- `POST /auth/login`: happy path, wrong password, exact rolling 15-minute failure window, password-proven pending-verification recovery, generic handling for unknown/deactivated/admin-created setup accounts including deactivated pending self-registration, locked account, guarded automatic unlock, concurrent deactivation during failed/successful login, and safe reason/lock audit events.
 - `POST /auth/refresh-token`: happy path, expired token, invalid token.
 - Registration role assignment: self-registration creates exactly one `Member` assignment and cannot create Librarian/Admin roles.
 - Authorization and transport: protected actions use current `UserRoles`; deployed HTTP auth requests are redirected or rejected before credential processing.
@@ -54,10 +54,10 @@ Registration, email verification, login, token refresh/logout, current-user look
 
 - `backend/tests/authRoutes.test.js`
 - `backend/tests/authUtils.test.js`
-- Focused FE02 evidence: 58/58 auth route/utility/repository tests pass on 2026-07-27, including deactivation-aware verification recovery, safe auth logging, 30-second JWT tolerance, change-password OTP ownership/state, current roles/account state, exact rolling lockout, secure OTP generation, and transaction rollback failures.
+- Focused FE02 evidence: 66/66 auth route/utility/repository tests pass on 2026-07-27, including concurrent duplicate registration, current-state login writes, stale auto-unlock rejection, terminal-deactivation verification guards, required-audit rollback, safe auth logging, 30-second JWT tolerance, exact rolling lockout, secure OTP generation, and transaction rollback failures.
 - Frontend evidence: 220/220 tests, lint, and production build pass on 2026-07-27; the login regression verifies navigation to `/verify-email` on `EMAIL_VERIFICATION_REQUIRED`.
 - Cross-feature inactive-account evidence: FE04/FE07/FE08 focused suites pass 114/114 with FE02's pre-handler `401 INVALID_TOKEN` contract.
-- Full backend evidence: 60/61 suites and 1040/1042 tests pass. Only the pre-existing `dbConfig.test.js` DNS/mock-isolation issue against `sql.example.test` remains; all FE02 and affected cross-feature suites pass.
+- Full backend rerun: 60/61 suites and 1048/1050 tests pass; all FE02 suites pass, and only the two pre-existing `dbConfig.test.js` DNS/mock-isolation assertions against `sql.example.test` fail.
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
 - FE02-T043 records a historical snapshot of 924/924 full backend tests and 209/209 full frontend tests; the historical FE02/FE10 focused slice passed 170/170 before later auth regressions were added. These counts are not current verification results for the open reconciliation.
 - Traceability: all 27 FE02 FR IDs have `@spec` coverage (**100%**) under `npm run trace:enforce`.

@@ -94,6 +94,7 @@ Notes:
 
 - Creates inactive/unverified user according to FE02.
 - Sends or records mock verification email through FE10 integration when available.
+- Duplicate email requests, including concurrent unique-index races, return `409 EMAIL_ALREADY_REGISTERED` with no additional user or verification-token state.
 
 ### POST `/api/auth/verify-email`
 
@@ -123,6 +124,8 @@ Response `200`:
   "message": "Account verified. You can now login."
 }
 ```
+
+Only an eligible pending self-registration account can be activated. OTP and legacy-token requests for a deactivated or otherwise ineligible account fail without consuming the credential.
 
 ### POST `/api/auth/resend-verification`
 

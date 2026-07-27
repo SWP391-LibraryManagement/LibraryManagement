@@ -537,10 +537,9 @@ async function countActiveBorrowingsByUserId(userId) {
   return result.recordset[0]?.ActiveBorrowingCount || 0;
 }
 
-async function markEmailVerified(userId) {
-  const pool = await getPool();
-  await pool
-    .request()
+async function markEmailVerified(userId, transaction) {
+  const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
+  const result = await request
     .input('UserId', sql.Int, userId)
     .query(`
       UPDATE Users
@@ -548,7 +547,12 @@ async function markEmailVerified(userId) {
           EmailVerifiedAt = COALESCE(EmailVerifiedAt, GETDATE()),
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'INACTIVE'
+        AND EmailVerifiedAt IS NULL
+        AND DeactivatedAt IS NULL
     `);
+
+  return result.rowsAffected?.[0] === 1;
 }
 
 async function recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, lockoutMinutes) {
@@ -564,37 +568,49 @@ async function recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, l
       .input('WindowMinutes', sql.Int, windowMinutes)
       .input('LockoutMinutes', sql.Int, lockoutMinutes)
       .query(`
-        INSERT INTO LoginFailureAttempts (UserId, AttemptedAt)
-        VALUES (@UserId, @FailedAt);
-
-        DELETE FROM LoginFailureAttempts
-        WHERE UserId = @UserId
-          AND AttemptedAt < DATEADD(MINUTE, -@WindowMinutes, @FailedAt);
-
-        DECLARE @FailedLoginCount INT = (
-          SELECT COUNT(*)
-          FROM LoginFailureAttempts
+        IF EXISTS (
+          SELECT 1
+          FROM Users WITH (UPDLOCK, HOLDLOCK)
           WHERE UserId = @UserId
-            AND AttemptedAt >= DATEADD(MINUTE, -@WindowMinutes, @FailedAt)
-        );
-        DECLARE @LockedUntil DATETIME = CASE
-          WHEN @FailedLoginCount >= @MaxAttempts
-          THEN DATEADD(MINUTE, @LockoutMinutes, @FailedAt)
-          ELSE NULL
-        END;
+            AND Status = 'ACTIVE'
+            AND DeactivatedAt IS NULL
+        )
+        BEGIN
+          INSERT INTO LoginFailureAttempts (UserId, AttemptedAt)
+          VALUES (@UserId, @FailedAt);
 
-        UPDATE Users
-        SET FailedLoginCount = @FailedLoginCount,
-            LockedUntil = @LockedUntil,
-            Status = CASE WHEN @LockedUntil IS NOT NULL THEN 'LOCKED' ELSE Status END,
-            UpdatedAt = @FailedAt
-        WHERE UserId = @UserId;
+          DELETE FROM LoginFailureAttempts
+          WHERE UserId = @UserId
+            AND AttemptedAt < DATEADD(MINUTE, -@WindowMinutes, @FailedAt);
 
-        SELECT @FailedLoginCount AS FailedLoginCount, @LockedUntil AS LockedUntil;
+          DECLARE @FailedLoginCount INT = (
+            SELECT COUNT(*)
+            FROM LoginFailureAttempts
+            WHERE UserId = @UserId
+              AND AttemptedAt >= DATEADD(MINUTE, -@WindowMinutes, @FailedAt)
+          );
+          DECLARE @LockedUntil DATETIME = CASE
+            WHEN @FailedLoginCount >= @MaxAttempts
+            THEN DATEADD(MINUTE, @LockoutMinutes, @FailedAt)
+            ELSE NULL
+          END;
+
+          UPDATE Users
+          SET FailedLoginCount = @FailedLoginCount,
+              LockedUntil = @LockedUntil,
+              Status = CASE WHEN @LockedUntil IS NOT NULL THEN 'LOCKED' ELSE Status END,
+              UpdatedAt = @FailedAt
+          WHERE UserId = @UserId;
+
+          SELECT CAST(1 AS BIT) AS Applied, @FailedLoginCount AS FailedLoginCount, @LockedUntil AS LockedUntil;
+        END
+        ELSE
+          SELECT CAST(0 AS BIT) AS Applied, 0 AS FailedLoginCount, CAST(NULL AS DATETIME) AS LockedUntil;
       `);
 
     await transaction.commit();
     return {
+      applied: Boolean(result.recordset[0].Applied),
       failedLoginCount: result.recordset[0].FailedLoginCount,
       lockedUntil: result.recordset[0].LockedUntil,
     };
@@ -606,7 +622,7 @@ async function recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, l
 
 async function resetFailedLoginsAndSetLastLogin(userId, transaction) {
   const request = transaction ? new sql.Request(transaction) : (await getPool()).request();
-  await request
+  const result = await request
     .input('UserId', sql.Int, userId)
     .query(`
       UPDATE Users
@@ -616,16 +632,24 @@ async function resetFailedLoginsAndSetLastLogin(userId, transaction) {
           LastLoginAt = GETDATE(),
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'ACTIVE'
+        AND DeactivatedAt IS NULL
 
-      DELETE FROM LoginFailureAttempts WHERE UserId = @UserId
+      DECLARE @Applied INT = @@ROWCOUNT;
+      IF @Applied = 1
+        DELETE FROM LoginFailureAttempts WHERE UserId = @UserId;
+
+      SELECT CAST(CASE WHEN @Applied = 1 THEN 1 ELSE 0 END AS BIT) AS Applied;
     `);
+  return Boolean(result.recordset[0].Applied);
 }
 
-async function unlockExpiredAccount(userId) {
+async function unlockExpiredAccount(userId, now) {
   const pool = await getPool();
-  await pool
+  const result = await pool
     .request()
     .input('UserId', sql.Int, userId)
+    .input('Now', sql.DateTime, now)
     .query(`
       UPDATE Users
       SET FailedLoginCount = 0,
@@ -633,9 +657,18 @@ async function unlockExpiredAccount(userId) {
           Status = CASE WHEN Status = 'LOCKED' THEN 'ACTIVE' ELSE Status END,
           UpdatedAt = GETDATE()
       WHERE UserId = @UserId
+        AND Status = 'LOCKED'
+        AND DeactivatedAt IS NULL
+        AND LockedUntil IS NOT NULL
+        AND LockedUntil <= @Now
 
-      DELETE FROM LoginFailureAttempts WHERE UserId = @UserId
+      DECLARE @Applied INT = @@ROWCOUNT;
+      IF @Applied = 1
+        DELETE FROM LoginFailureAttempts WHERE UserId = @UserId;
+
+      SELECT CAST(CASE WHEN @Applied = 1 THEN 1 ELSE 0 END AS BIT) AS Applied;
     `);
+  return Boolean(result.recordset[0].Applied);
 }
 
 async function updatePassword(userId, passwordHash, transaction) {

@@ -1,5 +1,18 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-27 - Close concurrent registration and login-state races
+
+- Mapped concurrent unique-email registration conflicts to the approved `409 EMAIL_ALREADY_REGISTERED` response.
+- Guarded failed-login, successful-login/session, and expired-lock writes against newer persisted account states.
+- Added route/repository regressions and aligned SPEC v0.6.16, PLAN, TASKS, TEST_PLAN v0.3.13, and the shared API contract; focused FE02 tests pass 66/66, traceability passes 27/27, and full backend passes 60/61 suites (1048/1050 tests) with only the known `dbConfig.test.js` DNS/mock-isolation failures.
+
+## 2026-07-27 - Preserve deactivation during email verification
+
+- Prevented OTP and legacy verification credentials from reactivating FE11-deactivated or otherwise ineligible accounts.
+- Guarded the persisted activation update against a concurrent deactivation and made activation, credential consumption, and required verification audit atomic.
+- Added focused route/repository regressions and aligned SPEC v0.6.15, PLAN, TASKS, and TEST_PLAN v0.3.12.
+- Focused FE02 tests pass 61/61 and traceability remains 27/27; the full backend rerun remains blocked only by the two known `dbConfig.test.js` DNS/mock-isolation assertions.
+
 ## 2026-07-27 - Complete FE02 code/spec convergence pass
 
 - Excluded FE11-deactivated pending self-registration accounts from login/resend verification recovery by mapping and enforcing `DeactivatedAt`.

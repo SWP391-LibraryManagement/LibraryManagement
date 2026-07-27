@@ -151,13 +151,25 @@ function makeInMemoryAuthDependencies(options = {}) {
 
     async markEmailVerified(userId) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (
+        !user ||
+        user.status !== 'INACTIVE' ||
+        user.emailVerifiedAt ||
+        user.deactivatedAt
+      ) {
+        return false;
+      }
       user.status = 'ACTIVE';
       user.emailVerifiedAt = new Date();
       user.updatedAt = new Date();
+      return true;
     },
 
     async recordFailedLogin(userId, failedAt, maxAttempts, windowMinutes, lockoutMinutes) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (!user || user.status !== 'ACTIVE' || user.deactivatedAt) {
+        return { applied: false, failedLoginCount: 0, lockedUntil: null };
+      }
       loginFailureAttempts.push({ userId: Number(userId), attemptedAt: failedAt });
       const cutoff = failedAt.getTime() - windowMinutes * 60 * 1000;
       const activeAttempts = loginFailureAttempts.filter(
@@ -173,11 +185,14 @@ function makeInMemoryAuthDependencies(options = {}) {
         user.status = 'LOCKED';
       }
       user.updatedAt = new Date();
-      return { failedLoginCount, lockedUntil };
+      return { applied: true, failedLoginCount, lockedUntil };
     },
 
     async resetFailedLoginsAndSetLastLogin(userId) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (!user || user.status !== 'ACTIVE' || user.deactivatedAt) {
+        return false;
+      }
       user.failedLoginCount = 0;
       loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
         (attempt) => attempt.userId !== Number(userId)
@@ -188,10 +203,20 @@ function makeInMemoryAuthDependencies(options = {}) {
       }
       user.lastLoginAt = new Date();
       user.updatedAt = new Date();
+      return true;
     },
 
-    async unlockExpiredAccount(userId) {
+    async unlockExpiredAccount(userId, now = new Date()) {
       const user = users.find((item) => item.userId === Number(userId));
+      if (
+        !user ||
+        user.status !== 'LOCKED' ||
+        user.deactivatedAt ||
+        !user.lockedUntil ||
+        new Date(user.lockedUntil).getTime() > now.getTime()
+      ) {
+        return false;
+      }
       user.failedLoginCount = 0;
       loginFailureAttempts.splice(0, loginFailureAttempts.length, ...loginFailureAttempts.filter(
         (attempt) => attempt.userId !== Number(userId)
@@ -201,6 +226,7 @@ function makeInMemoryAuthDependencies(options = {}) {
         user.status = 'ACTIVE';
       }
       user.updatedAt = new Date();
+      return true;
     },
 
     async updatePassword(userId, passwordHash) {

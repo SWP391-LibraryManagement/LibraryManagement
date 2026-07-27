@@ -241,6 +241,26 @@ function createAuthService({
     return hasVerificationToken && !hasSetupToken;
   }
 
+  async function completeEmailVerification(user, tokenRecord, context) {
+    if (!await isPendingSelfRegistration(user)) {
+      throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Invalid or expired verification token.');
+    }
+
+    await authTransactionRepository.withTransaction(async (transaction) => {
+      const activated = await userRepository.markEmailVerified(user.userId, transaction);
+      if (!activated) {
+        throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Invalid or expired verification token.');
+      }
+      await authTokenRepository.markTokenUsed(tokenRecord.tokenId, transaction);
+      await writeAudit(context, 'AUTH_VERIFY_EMAIL', {
+        userId: user.userId,
+        targetId: user.userId,
+        transaction,
+        required: true,
+      });
+    });
+  }
+
   /** Xác minh mật khẩu hiện tại, ghi audit và ném lỗi nếu sai */
   async function verifyCurrentPassword(user, password, context) {
     const valid = await verifyPassword(password || '', user.passwordHash);
@@ -342,8 +362,9 @@ function createAuthService({
 
     const passwordHash = await hashPassword(password);
     const expiresInMinutes = env.emailVerificationTtlMinutes;
-    const { createdUser, otp, record } = await authTransactionRepository.withTransaction(
-      async (transaction) => {
+    let registration;
+    try {
+      registration = await authTransactionRepository.withTransaction(async (transaction) => {
         const user = await userRepository.createRegisteredUser(
           { username, email, passwordHash, phoneNumber, fullName },
           transaction
@@ -356,8 +377,16 @@ function createAuthService({
           transaction
         );
         return { createdUser: user, ...token };
+      });
+    } catch (error) {
+      const number = error?.number ?? error?.originalError?.info?.number;
+      const message = String(error?.message || error?.originalError?.message || '');
+      if ([2601, 2627].includes(number) && /UX_Users_Email/i.test(message)) {
+        throw errors.conflict('EMAIL_ALREADY_REGISTERED', 'Email is already registered. Please login or use forgot password.');
       }
-    );
+      throw error;
+    }
+    const { createdUser, otp, record } = registration;
     await requestOtpDelivery({
       type: 'ACCOUNT_VERIFICATION',
       userId: createdUser.userId,
@@ -391,12 +420,7 @@ function createAuthService({
         throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Invalid or expired verification token.');
       }
 
-      await userRepository.markEmailVerified(tokenRecord.userId);
-      await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-      await writeAudit(context, 'AUTH_VERIFY_EMAIL', {
-        userId: tokenRecord.userId,
-        targetId: tokenRecord.userId,
-      });
+      await completeEmailVerification(user, tokenRecord, context);
 
       return { message: 'Account verified. You can now login.' };
     }
@@ -408,18 +432,8 @@ function createAuthService({
       throw errors.badRequest('INVALID_VERIFICATION_TOKEN', 'Email hoặc mã OTP không hợp lệ.');
     }
 
-    if (user.status === 'ACTIVE' && user.emailVerifiedAt) {
-      return { message: 'Tài khoản đã được xác thực trước đó.' };
-    }
-
     const tokenRecord = await validateOtpToken('EMAIL_VERIFY', input.otp, user.userId);
-
-    await userRepository.markEmailVerified(tokenRecord.userId);
-    await authTokenRepository.markTokenUsed(tokenRecord.tokenId);
-    await writeAudit(context, 'AUTH_VERIFY_EMAIL', {
-      userId: tokenRecord.userId,
-      targetId: tokenRecord.userId,
-    });
+    await completeEmailVerification(user, tokenRecord, context);
 
     return { message: 'Account verified. You can now login.' };
   }
@@ -460,7 +474,7 @@ function createAuthService({
   async function login(input, context = {}) {
     const identifier = normalizeEmail(input.email || input.identifier || input.username);
     const password = input.password || '';
-    const user = await userRepository.findByEmailOrUsername(identifier);
+    let user = await userRepository.findByEmailOrUsername(identifier);
 
     await writeAudit(context, 'AUTH_LOGIN_ATTEMPT', {
       userId: user?.userId || null,
@@ -489,15 +503,23 @@ function createAuthService({
 
     // AF-FE02-003: tự động mở khóa khi cửa sổ khóa do đăng nhập sai đã hết hạn
     if (user.status === 'LOCKED' && lockExpiry !== null) {
-      await userRepository.unlockExpiredAccount(user.userId);
-      user.status = 'ACTIVE';
-      user.failedLoginCount = 0;
-      user.lockedUntil = null;
-      await writeAudit(context, 'AUTH_ACCOUNT_AUTO_UNLOCKED', { userId: user.userId, targetId: user.userId });
+      const unlocked = await userRepository.unlockExpiredAccount(user.userId, clock());
+      if (unlocked) {
+        user.status = 'ACTIVE';
+        user.failedLoginCount = 0;
+        user.lockedUntil = null;
+        await writeAudit(context, 'AUTH_ACCOUNT_AUTO_UNLOCKED', { userId: user.userId, targetId: user.userId });
+      } else {
+        user = await userRepository.findById(user.userId);
+      }
     }
 
     // @spec FR-FE02-017 — reject login to a LOCKED account and return the account-lock message (AF-FE02-003, BR-FE02-009)
     // Khóa không có thời hạn (ví dụ admin khóa thủ công) vẫn bị chặn
+    if (!user) {
+      throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
+    }
+
     if (user.status === 'LOCKED') {
       await writeAudit(context, 'AUTH_LOGIN_LOCKED', {
         userId: user.userId,
@@ -554,7 +576,10 @@ function createAuthService({
     }
 
     const storedRefreshToken = await authTransactionRepository.withTransaction(async (transaction) => {
-      await userRepository.resetFailedLoginsAndSetLastLogin(user.userId, transaction);
+      const prepared = await userRepository.resetFailedLoginsAndSetLastLogin(user.userId, transaction);
+      if (!prepared) {
+        throw errors.unauthorized('INVALID_CREDENTIALS', 'Invalid email or password.');
+      }
       return createStoredToken(
         user.userId,
         'REFRESH',

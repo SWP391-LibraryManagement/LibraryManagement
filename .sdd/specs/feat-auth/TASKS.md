@@ -223,7 +223,7 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Evidence: FE02 mutations now share SQL transactions for the four NFR-FE02-TXN-001..004 boundaries; focused in-memory failure regressions prove rollback on verification-token creation, refresh-session creation, required password-change audit, and password-reset token invalidation. Focused FE02 tests pass 47/47 on 2026-07-27.
 
 - [ ] **FE02-T049 - Complete reconciliation review and closeout.**
-  - Maps to: Definition of Done; CG-FE02-003; SPEC.md v0.6.14.
+  - Maps to: Definition of Done; CG-FE02-003; SPEC.md v0.6.16.
   - Dependencies: FE02-T045 to FE02-T048, FE02-T050 to FE02-T052.
   - DoD: automated gates pass, the FE02-T043 H3 closeout is linked, all conformance gaps are closed or explicitly deferred, and human review approves the reconciled artifacts.
 
@@ -275,3 +275,22 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - Maps to: FR-FE02-009; AC-FE02-010 (`contradicts`).
   - DoD: FE04/FE07/FE08 integration regressions expect FE02's `401 INVALID_TOKEN` before their business handlers for a user deactivated after token issuance; feature rejection behavior remains intact and focused suites pass.
   - Evidence: the three expectations now follow FR-FE02-009 and the affected membership/borrowing/reservation suites pass 114/114; full backend improves to 60/61 suites and 1040/1042 tests with only `dbConfig.test.js` failing.
+
+## Phase 4: Convergence
+
+- [x] **FE02-T061 - Preserve the terminal deactivated state during email verification.**
+  - Maps to: BR-FE02-004; FR-FE02-003; AC-FE02-002; INV-FE02-004; INV-FE02-006 (`contradicts`, `partial`).
+  - DoD: OTP and legacy-token verification reject deactivated or otherwise ineligible accounts without activating the user or consuming the credential; the persisted activation update cannot win a concurrent deactivation race; successful eligible verification still activates the account, consumes the credential, and records the audit event with focused regressions.
+  - Evidence: the shared verification completion path requires eligible self-registration, uses a guarded `INACTIVE`/`DeactivatedAt IS NULL` update, and commits activation, credential consumption, and required audit in one transaction; focused FE02 tests pass 61/61, including required-audit rollback.
+
+## Phase 5: Convergence
+
+- [x] **FE02-T062 - Map concurrent duplicate registration to the approved conflict.**
+  - Maps to: FR-FE02-015; EC-FE02-003 (`partial`).
+  - DoD: a deterministic SQL Server unique-email conflict raised after the pre-insert lookup returns `409 EMAIL_ALREADY_REGISTERED` with the approved message and no extra user/token/delivery state; unrelated database errors remain safe 500 responses; focused regression passes.
+  - Evidence: `authService.register` maps only SQL Server `2601`/`2627` conflicts naming `UX_Users_Email`; the route regression proves the approved 409 response and no persisted user/token state.
+
+- [x] **FE02-T063 - Preserve current account state across login writes.**
+  - Maps to: FR-FE02-004, FR-FE02-006, FR-FE02-008, FR-FE02-009; INV-FE02-004, INV-FE02-007; NFR-FE02-TXN-002 (`contradicts`).
+  - DoD: failed-login, expired-lock auto-unlock, and successful-login/session writes apply only to the current eligible persisted state; concurrent deactivation cannot become `LOCKED` or receive a refresh session, and a newer lock cannot be cleared by a stale unlock; repository and route regressions pass.
+  - Evidence: repository writes now guard the current status under the existing transaction boundaries; route regressions cover deactivation during failed/successful login and stale auto-unlock, and focused FE02 tests pass 66/66.
