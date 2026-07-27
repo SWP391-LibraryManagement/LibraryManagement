@@ -1,6 +1,6 @@
 # Staging Email Delivery Remediation Validation - 2026-07-27
 
-Status: H2 ADDENDUM PASS; UPDATED CI, REDEPLOY, AND H3 PENDING
+Status: STAGING VALIDATION PASS; H3 AND MERGE PENDING
 
 Baseline: `a408bf0808ed79eeb9dd4f2a6f9253f587dffa4b`
 
@@ -60,7 +60,7 @@ audited.
 | Review item | Result |
 | --- | --- |
 | Migration is additive and transactional | PASS locally: update-or-insert, `XACT_ABORT`, transaction, rollback/rethrow, no delete |
-| Migration executes twice with one canonical active row | PENDING H2-authorized staging execution |
+| Migration executes twice with one canonical active row | PASS - both staging executions and the `1|1|1|1|1` aggregate are recorded below |
 | SYSTEM is construction-bound, not a login role | PASS |
 | Human HTTP authorization and response DTOs are unchanged | PASS |
 | Sensitive success evidence stores only the adapter message ID | PASS |
@@ -83,8 +83,8 @@ value or unsafe new production log was found.
 | Layer | Status | Evidence / remaining boundary |
 | --- | --- | --- |
 | L1 Automated | PASS | Focused and full local gates above are fresh after the final regression correction |
-| L2 Spec compliance | PASS LOCALLY | FE10-S13 through FE10-S15 map to implementation/tests; live two-pass migration remains pending |
-| L3 Constitution and security | PASS LOCALLY | No role widening, public DTO/schema/dependency change, sensitive-content leak, or unsafe new log |
+| L2 Spec compliance | PASS | FE10-S13 through FE10-S15 map to implementation/tests and corrected staging evidence |
+| L3 Constitution and security | PASS | No role widening, public DTO/schema/dependency change, sensitive-content leak, unsafe new log, or leftover firewall rule |
 | L4 Human acceptance | H2 PASS | H1 approved the design; the user approved this complete candidate on 2026-07-27; H3 remains pending before merge |
 
 ## H2 Decision
@@ -175,5 +175,38 @@ Fresh addendum evidence:
 
 The user approved the H2 addendum on 2026-07-27 after review of the bounded
 two-file product diff and the fresh evidence above. The correction is committed
-as `a98f459`. Push, exact-head CI, worker re-enable, redeploy, and repeated
-masked staging verification remain required.
+as `a98f459`.
+
+## Corrected Redeploy And Final Staging Evidence
+
+- Updated PR head `9240525129a8e0d5badf753ef5ef89d105caa232` passed CI run
+  `30274110435`.
+- Redeploy run `30274367534` passed backend, frontend, and staging smoke while
+  the worker remained safely disabled.
+- The corrected worker was then enabled at `2026-07-27T14:19:30Z`; the API
+  returned health 200 after the settings restart.
+- The mid-batch snapshot showed 8 SENT attempts and 8 provider IDs, proving
+  active progress rather than a no-op.
+- The final non-sensitive queue aggregate was `0|0|15|0`: zero PENDING, zero
+  PROCESSING, 15 SENT, and zero FAILED.
+- The final attempt aggregate was `15|15`: all 15 new attempts retained a
+  provider message ID.
+- The sensitive persistence aggregate was `21|0`: 21 sensitive rows checked
+  and zero rows contained a persisted title/body or non-redacted safe payload.
+- The SYSTEM audit aggregate was `1|0`: one actual batch audit and zero empty
+  poll audits.
+- API health and frontend `/home` returned 200. Anonymous access to the
+  protected manual processing endpoint returned 401; the MEMBER denial remains
+  covered by the exact-head CI authorization tests.
+- Every exact-IP temporary SQL firewall rule was removed; task-created rules
+  remaining were zero.
+- No expired setup token was reused. Live sensitive inbox validation remains an
+  explicit Admin-resend action that must create a fresh token/event.
+
+## Remaining H3 Boundary
+
+- App Service F1 remains best-effort: automatic processing pauses while the
+  process sleeps.
+- Rollback remains `NOTIFICATION_WORKER_ENABLED=false`.
+- PR #65 must receive explicit H3 approval before merge.
+- The documentation evidence commit must pass exact-head CI before merge.

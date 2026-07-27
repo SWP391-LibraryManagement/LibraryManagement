@@ -317,7 +317,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S13 Restore The Existing-Database Account Setup Template
 
-- [~] Status: H2 APPROVED; PUBLICATION AND STAGING REPEATABILITY PENDING
+- [x] Status: H2/CI/STAGING REPEATABILITY PASS
 - Depends on: FE10-S12.
 - Files: `database/migrations/2026-07-27-fe10-account-setup-template.sql`,
   `backend/tests/notificationRepository.test.js`.
@@ -326,10 +326,12 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 - Evidence: the migration uses `XACT_ABORT`, one transaction, canonical
   update-or-insert behavior, rollback/rethrow, and no delete. The static
   migration contract test is green; two staging executions remain gated by H2.
+- Staging: both executions passed and the final template aggregate was
+  `1|1|1|1|1`; the exact-IP temporary firewall rule was removed.
 
 ### FE10-S14 Preserve Sensitive Provider Message IDs
 
-- [~] Status: H2 APPROVED; PUBLICATION AND STAGING VALIDATION PENDING
+- [~] Status: H2/CI/STAGING EVIDENCE PASS; H3 PENDING
 - Depends on: FE10-S12.
 - Files: `backend/src/services/notificationService.js`,
   `backend/tests/notificationRoutes.test.js`.
@@ -341,7 +343,7 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 
 ### FE10-S15 Add The Best-Effort SYSTEM Worker
 
-- [~] Status: H2 ADDENDUM APPROVED; PUBLICATION, CI, AND REDEPLOY PENDING
+- [~] Status: H2 ADDENDUM/CI/REDEPLOY PASS; H3 PENDING
 - Depends on: FE10-S12.
 - Files: notification service/worker/runtime/config/index, `.env.example`, and
   focused service/worker/runtime/config tests.
@@ -357,10 +359,13 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   because `READPAST` was combined with serializable `HOLDLOCK`. The worker was
   rolled back to disabled. The candidate replaces `HOLDLOCK` with
   `READCOMMITTEDLOCK`; an Azure SQL rollback probe and local tests pass.
+- Corrected staging: exact-head CI `30274110435` and deploy `30274367534`
+  passed. With the worker re-enabled, the queue reached 0 pending/processing,
+  15 sent, and 0 failed; all 15 attempts retained a provider message ID.
 
 ### FE10-S16 Pass Local H2 And Staging Validation
 
-- [~] Status: H2 ADDENDUM PASS; UPDATED CI AND REDEPLOY PENDING
+- [~] Status: STAGING VALIDATION PASS; H3 PENDING
 - Depends on: FE10-S13..S15.
 - Files: FE10 TASKS/CHANGELOG and
   `.sdd/reviews/staging-email-delivery-remediation-validation-2026-07-27.md`.
@@ -377,6 +382,12 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   passed twice and the template aggregate was `1|1|1|1|1`.
 - Staging worker verification found 15 non-sensitive rows still pending and
   fixed-code worker failures. Error 650 was reproduced without mutation and the
-  worker setting was returned to `false`; addendum H2/CI/redeploy remain open.
+  worker setting was returned to `false`; this initial failed checkpoint is
+  superseded by the corrected validation below.
 - H2 addendum: user approved the Azure-compatible claim correction on
-  2026-07-27; product commit is `a98f459`. Updated CI and redeploy remain open.
+  2026-07-27; product commit is `a98f459`.
+- Corrected validation: CI `30274110435` and deploy `30274367534` passed for
+  head `9240525`; API/frontend were 200, anonymous manual processing was 401,
+  queue aggregate was `0|0|15|0`, attempt/provider aggregate was `15|15`,
+  sensitive/unsafe aggregate was `21|0`, SYSTEM/no-op audit aggregate was
+  `1|0`, and task-created firewall rules remaining were zero.

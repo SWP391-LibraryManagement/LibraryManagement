@@ -21,7 +21,12 @@
   passed twice. Live queue evidence then exposed SQL Server error 650 from the
   `READPAST` plus `HOLDLOCK` claim hints; the worker was disabled and an
   Azure-probed `READCOMMITTEDLOCK` correction was approved in the H2 addendum
-  and committed as `a98f459`. Updated CI and redeploy remain pending.
+  and committed as `a98f459`.
+- Updated CI `30274110435` and deploy `30274367534` passed. After re-enabling
+  the corrected worker, all 15 non-sensitive pending rows reached SENT with 15
+  provider IDs, no sensitive persistence violation or empty SYSTEM audit was
+  found, and every task-created firewall rule was removed. H3 and merge remain
+  pending.
 
 ## 2026-07-27 - Approve staging email delivery remediation (v0.4.5)
 
