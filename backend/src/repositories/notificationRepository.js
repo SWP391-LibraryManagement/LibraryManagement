@@ -243,7 +243,7 @@ async function claimNextPending() {
   try {
     const pendingResult = await new sql.Request(transaction).query(`
       SELECT TOP 1 *
-      FROM Notifications WITH (UPDLOCK, READPAST, HOLDLOCK, ROWLOCK)
+      FROM Notifications WITH (UPDLOCK, READPAST, ROWLOCK, READCOMMITTEDLOCK)
       WHERE Status = 'PENDING'
         AND (NotificationType IS NULL OR NotificationType NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))
         AND (TemplateKey IS NULL OR TemplateKey NOT IN ('ACCOUNT_VERIFICATION', 'PASSWORD_RESET', 'ACCOUNT_SETUP', 'EMAIL_VERIFY'))

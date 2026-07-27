@@ -9,10 +9,13 @@ const repositorySource = fs.readFileSync(
   'utf8'
 );
 
-test('pending worker atomically commits one row into PROCESSING before provider I/O', () => {
+test('pending worker atomically claims one row with Azure SQL compatible locking', () => {
   expect(repositorySource).toMatch(/async function claimNextPending/);
   expect(repositorySource).toMatch(
-    /FROM Notifications WITH \(UPDLOCK, READPAST, HOLDLOCK, ROWLOCK\)/i
+    /FROM Notifications WITH \(UPDLOCK, READPAST, ROWLOCK, READCOMMITTEDLOCK\)/i
+  );
+  expect(repositorySource).not.toMatch(
+    /FROM Notifications WITH \([^)]*READPAST[^)]*HOLDLOCK[^)]*\)/i
   );
   expect(repositorySource).toMatch(/WHERE Status = 'PENDING'/i);
   expect(repositorySource).toMatch(/ORDER BY CreatedAt ASC, NotificationId ASC/i);
