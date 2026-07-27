@@ -1,34 +1,34 @@
-# FE01 Public Book Envelope Decision
+# Quyết định vỏ Sách công khai FE01
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Status: APPROVED BY USER ON 2026-07-19
+Trạng thái: ĐƯỢC NGƯỜI DÙNG PHÊ DUYỆT VÀO 2026-07-19
 
-## Decision Scope
+## Phạm vi quyết định
 
-FE01-T001 and FE01-T005 require an approved response envelope for the shared
-FE01/FE05 public book list. The approved specs require paginated public-safe
-book summaries, but they do not currently name the top-level JSON fields.
+FE01-T001 và FE01-T005 yêu cầu một vỏ phản hồi đã phê duyệt cho danh sách sách công khai dùng chung
+FE01/FE05. Các đặc tả đã phê duyệt yêu cầu tóm tắt sách công khai an toàn có phân trang,
+nhưng hiện chưa đặt tên cho các trường JSON cấp cao nhất.
 
-This decision is limited to `GET /api/books`. It does not change public fields,
-availability rules, query fields, pagination bounds, or FE05/FE06 ownership.
+Quyết định này được giới hạn ở `GET /api/books`. Nó không thay đổi trường công khai,
+quy tắc tính khả dụng, trường truy vấn, giới hạn phân trang hoặc quyền sở hữu FE05/FE06.
 
-## Evidence
+## Bằng chứng
 
-- FE01 PLAN section 5 requires a shared FE05 public-read envelope with
-  pagination metadata.
-- FE01 TASKS marks FE05 owner confirmation as a dependency of FE01-T001 and
+- Phần 5 trong PLAN FE01 yêu cầu vỏ đọc công khai FE05 dùng chung kèm
+  siêu dữ liệu phân trang.
+- TASKS FE01 đánh dấu xác nhận của chủ sở hữu FE05 là phụ thuộc của FE01-T001 và
   FE01-T005.
-- FE05 SPEC describes `GET /api/books` as paginated book summaries but does not
-  define the top-level JSON keys.
-- The shared API contract permits resource-specific successful JSON and does
-  not define a universal success wrapper.
-- The approved FE11 paginated list convention uses exact top-level keys
-  `data` and `pagination`.
+- SPEC FE05 mô tả `GET /api/books` là tóm tắt sách có phân trang nhưng không
+  định nghĩa khóa JSON cấp cao nhất.
+- Hợp đồng API dùng chung cho phép JSON thành công riêng theo tài nguyên và
+  không định nghĩa vỏ thành công toàn cục.
+- Quy ước danh sách phân trang FE11 đã phê duyệt dùng chính xác các khóa cấp cao nhất
+  `data` và `pagination`.
 
-## Recommended Contract
+## Hợp đồng được khuyến nghị
 
-Approve the following exact list envelope:
+Phê duyệt vỏ danh sách chính xác sau:
 
 ```json
 {
@@ -42,37 +42,37 @@ Approve the following exact list envelope:
 }
 ```
 
-Rules:
+Quy tắc:
 
-- The top level contains exactly `data` and `pagination`.
-- `data` contains only the FE01 public-safe summary DTO.
-- `pagination.page` and `pagination.limit` are the validated request values.
-- `pagination.total` is the total number of matching active public books.
-- `pagination.totalPages` is `0` when `total` is `0`; otherwise it is
+- Cấp cao nhất chứa chính xác `data` và `pagination`.
+- `data` chỉ chứa DTO tóm tắt công khai an toàn FE01.
+- `pagination.page` và `pagination.limit` là các giá trị yêu cầu đã xác thực.
+- `pagination.total` là tổng số sách công khai đang hoạt động khớp.
+- `pagination.totalPages` là `0` khi `total` là `0`; nếu không thì là
   `ceil(total / limit)`.
-- Legacy `success` and `message` fields are not part of this public contract.
-- Exact copy counts, copy metadata, staff fields, and protected records remain
-  forbidden.
+- Các trường cũ `success` và `message` không thuộc hợp đồng công khai này.
+- Số lượng bản sao chính xác, siêu dữ liệu bản sao, trường nhân viên và bản ghi được bảo vệ vẫn
+  bị cấm.
 
-## Rationale
+## Lý do
 
-The recommendation reuses an already approved paginated-list convention,
-provides the metadata required by FE01/FE05, and avoids preserving a prototype
-wrapper that is not part of the approved shared API rules.
+Khuyến nghị tái sử dụng quy ước danh sách phân trang đã được phê duyệt,
+cung cấp siêu dữ liệu FE01/FE05 yêu cầu và tránh duy trì một vỏ nguyên mẫu
+không thuộc các quy tắc API dùng chung đã phê duyệt.
 
-## Approval Gate
+## Cổng phê duyệt
 
-- [x] User approved the recommended exact envelope on 2026-07-19 (`duyệt hết`).
-- [x] FE01 and FE05 source-of-truth documents are clarified together before
-  production implementation.
-- [x] FE01-T001 RED tests lock the approved envelope after that clarification.
+- [x] Người dùng phê duyệt vỏ chính xác được khuyến nghị vào 2026-07-19 (`duyệt hết`).
+- [x] Tài liệu nguồn chân lý FE01 và FE05 được làm rõ cùng nhau trước khi
+  triển khai production.
+- [x] Kiểm thử ĐỎ FE01-T001 khóa vỏ đã phê duyệt sau khi làm rõ.
 
-Implementation evidence:
+Bằng chứng triển khai:
 
-- `backend/tests/publicBrowseRoutes.test.js` locks the exact query allowlist,
-  `data` + `pagination` envelope, public-safe list/detail schemas, and empty-q
-  browsing contract.
-- `backend/tests/bookRoutes.test.js` locks exact runtime public DTO fields,
-  null optional metadata, and absence of copy counts.
-- `frontend/test/publicBrowseFrontend.test.js` locks canonical list/detail API
-  use and removal of the local fake borrowing flow.
+- `backend/tests/publicBrowseRoutes.test.js` khóa danh sách trắng truy vấn chính xác,
+  vỏ `data` + `pagination`, lược đồ danh sách/chi tiết công khai an toàn và hợp đồng duyệt
+  với q trống.
+- `backend/tests/bookRoutes.test.js` khóa chính xác trường DTO công khai khi chạy,
+  siêu dữ liệu tùy chọn null và việc không có số lượng bản sao.
+- `frontend/test/publicBrowseFrontend.test.js` khóa việc dùng API danh sách/chi tiết chuẩn
+  và loại bỏ luồng mượn giả cục bộ.
