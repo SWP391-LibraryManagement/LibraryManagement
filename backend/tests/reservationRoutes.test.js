@@ -215,6 +215,71 @@ describe('FE08 reservation management', () => {
     expect(response.body.pagination).toEqual({ page: 1, limit: 20, total: 2, totalPages: 1 });
   });
 
+  // @spec FR-FE08-034, AC-FE08-021
+  test('current borrower cannot list or reserve another copy of the same book', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'same-book.current-borrower@example.test',
+    });
+
+    reservationDependencies.state.borrowDetails.push({
+      borrowDetailId: 90,
+      userId: member.userId,
+      copyId: 1,
+      status: 'BORROWED',
+    });
+
+    const candidates = await request(app)
+      .get('/api/reservations/candidates')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(candidates.body.data.some((candidate) => candidate.bookId === 1)).toBe(false);
+    expect(candidates.body.data.some((candidate) => candidate.bookId === 2)).toBe(true);
+
+    const createResponse = await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 3 });
+
+    expect(createResponse.status).toBe(409);
+    expect(createResponse.body.error.code).toBe('BOOK_ALREADY_BORROWED');
+    expect(reservationDependencies.state.reservations).toHaveLength(0);
+  });
+
+  // @spec BR-FE08-019, AC-FE08-021
+  test('terminal loan history does not block a later reservation for the same book', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'same-book.returned-history@example.test',
+    });
+
+    reservationDependencies.state.borrowDetails.push({
+      borrowDetailId: 92,
+      userId: member.userId,
+      copyId: 1,
+      status: 'RETURNED',
+    });
+
+    const candidates = await request(app)
+      .get('/api/reservations/candidates')
+      .set('Authorization', authHeader(member.accessToken))
+      .expect(200);
+
+    expect(candidates.body.data.some((candidate) => candidate.bookId === 1)).toBe(true);
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 3 })
+      .expect(201);
+  });
+
   // @spec NFR-FE08-SEC-004
   test('candidate catalog enforces member role and query bounds', async () => {
     const { app, authDependencies, reservationDependencies } = makeTestApp();
@@ -1083,6 +1148,51 @@ describe('FE08 reservation management', () => {
         (r) => r.userId === member.userId && r.copyId === 1
       ).status
     ).toBe('ACTIVE');
+    expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
+      'AVAILABLE'
+    );
+  });
+
+  // @spec FR-FE08-034, AC-FE08-021
+  test('process-queue skips a stale reservation when the member now borrows the same book', async () => {
+    const { app, authDependencies, reservationDependencies } = makeTestApp();
+    const member = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.same-book-borrower@example.test',
+    });
+    const librarian = await createVerifiedUser({
+      app,
+      authDependencies,
+      reservationDependencies,
+      email: 'queue.same-book.lib@example.test',
+      role: 'LIBRARIAN',
+      approveMember: false,
+    });
+
+    await request(app)
+      .post('/api/reservations')
+      .set('Authorization', authHeader(member.accessToken))
+      .send({ copyId: 1 })
+      .expect(201);
+
+    reservationDependencies.state.borrowDetails.push({
+      borrowDetailId: 91,
+      userId: member.userId,
+      copyId: 3,
+      status: 'BORROWED',
+    });
+    reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status = 'AVAILABLE';
+
+    const response = await request(app)
+      .post('/api/reservations/process-queue')
+      .set('Authorization', authHeader(librarian.accessToken))
+      .send({ copyId: 1 })
+      .expect(200);
+
+    expect(response.body.selectedReservation).toBeNull();
+    expect(reservationDependencies.state.reservations[0].status).toBe('ACTIVE');
     expect(reservationDependencies.state.copies.find((copy) => copy.copyId === 1).status).toBe(
       'AVAILABLE'
     );

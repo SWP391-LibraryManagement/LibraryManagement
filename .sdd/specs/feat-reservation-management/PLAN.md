@@ -197,3 +197,11 @@ Not included:
 3. Pass the exact held `bookId` and `copyId` to FE07 so the Member creates the normal pending borrow request for that physical copy.
 4. Keep Librarian/Admin queue processing in FE08 and borrow approval/atomic reservation fulfillment in FE07.
 5. Reconcile the Chromium FE08 acceptance assertion with the current `Đang đặt chỗ` label.
+
+## 12. V0.5.8 Current Same-Book Loan Exclusion
+
+1. Treat FE07 `BorrowDetails.Status = BORROWED` joined through the physical copy's `BookId` as the authoritative current-loan signal.
+2. Exclude every same-book copy from the requesting Member's FE08 candidate catalog.
+3. Revalidate inside the create transaction and return `409 BOOK_ALREADY_BORROWED` so direct API calls cannot bypass the catalog.
+4. Revalidate queue eligibility when Librarian/Admin processes a returned copy; keep a stale reservation `ACTIVE` and the copy unchanged while continuing to the next eligible Member.
+5. Share the FE07 member circulation lock before FE08 mutation locks so borrow approval and reservation creation/holding cannot race for the same Member.

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE07 Borrowing Management
 
+## 2026-07-27 - Expose current loans as FE08 reservation eligibility
+
+- Defined current `BorrowDetails.Status = BORROWED` plus the copy's `BookId` as the authoritative cross-feature signal for FE08 same-book reservation exclusion.
+- Kept returned/lost/damaged details and terminal reservation history outside this blocker.
+- Connected FE07 Member circulation locking to FE08 reservation create/hold revalidation.
+
 ## 2026-07-27 - Accept the exact FE08 held-copy handoff
 
 - FE07 now reads both `bookId` and `copyId` from a Member's `NOTIFIED` FE08 reservation action.

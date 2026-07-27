@@ -1,5 +1,12 @@
 # CHANGELOG.md - FE08 Reservation Management
 
+## 2026-07-27 - Block same-book reservations during an active loan
+
+- Connected FE08 eligibility to FE07's canonical `BorrowDetails.Status = BORROWED` state at the `BookId` level.
+- Removed same-book candidates for the current Member and added the stable `409 BOOK_ALREADY_BORROWED` API conflict for direct requests.
+- Revalidated Librarian/Admin queue processing so a stale reservation is skipped without changing its `ACTIVE` state or the available copy.
+- Shared the FE07 Member circulation lock with FE08 create/hold mutations and added backend plus frontend error-message regressions.
+
 ## 2026-07-27 - Connect notified pickup window to FE07
 
 - Added a Member-facing pickup notice derived from canonical `NotifiedAt` and `ExpiresAt` instead of introducing a separate manual note date.

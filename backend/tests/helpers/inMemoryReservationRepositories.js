@@ -19,7 +19,8 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       { copyId: 5, bookId: 2, barcode: 'BC5', status: 'BORROWED', location: 'B2' },
     ]
   );
-  const reservations = [];
+  const reservations = clone(initialState.reservations || []);
+  const borrowDetails = clone(initialState.borrowDetails || []);
   const memberStatuses = new Map();
 
   function snapshotMutationState() {
@@ -46,6 +47,17 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
   function getBook(bookId) {
     return books.find((book) => book.bookId === Number(bookId)) || null;
+  }
+
+  function memberBorrowsBook(userId, bookId) {
+    return borrowDetails.some((detail) => {
+      const borrowedCopy = getCopy(detail.copyId);
+      return (
+        Number(detail.userId) === Number(userId)
+        && detail.status === 'BORROWED'
+        && borrowedCopy?.bookId === Number(bookId)
+      );
+    });
   }
 
   function mapCopy(copy) {
@@ -162,6 +174,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
         .filter(({ copy, book }) => (
           book?.status === 'ACTIVE'
           && (copy.status === 'BORROWED' || copy.status === 'RESERVED')
+          && !memberBorrowsBook(userId, copy.bookId)
         ))
         .filter(({ book }) => (
           !normalizedQuery
@@ -226,6 +239,10 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
       if (copy.status !== 'BORROWED' && copy.status !== 'RESERVED') {
         return { outcome: 'RESERVATION_NOT_ALLOWED' };
+      }
+
+      if (memberBorrowsBook(normalizedUserId, copy.bookId)) {
+        return { outcome: 'BOOK_ALREADY_BORROWED' };
       }
 
       const openReservations = reservations.filter(
@@ -378,6 +395,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
             reservation.status === 'ACTIVE' &&
             user?.status === 'ACTIVE' &&
             roles.includes('MEMBER') &&
+            !memberBorrowsBook(reservation.userId, copy.bookId) &&
             !excluded.has(reservation.reservationId)
           );
         })
@@ -415,7 +433,11 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
 
       const user = getUser(reservation.userId);
       const roles = authState.rolesByUserId.get(reservation.userId) || [];
-      if (user?.status !== 'ACTIVE' || !roles.includes('MEMBER')) {
+      if (
+        user?.status !== 'ACTIVE'
+        || !roles.includes('MEMBER')
+        || memberBorrowsBook(reservation.userId, copy.bookId)
+      ) {
         return {
           outcome: 'MEMBER_INELIGIBLE',
           reservationId: reservation.reservationId,
@@ -500,6 +522,7 @@ function makeInMemoryReservationDependencies(authState, initialState = {}) {
       books,
       copies,
       reservations,
+      borrowDetails,
       memberStatuses,
     },
   };

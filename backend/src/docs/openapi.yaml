@@ -1196,7 +1196,8 @@ paths:
   /api/reservations:
     post:
       tags: [Reservation]
-      summary: Member reserves a copy (FR-FE08-001/002/003)
+      summary: Member reserves a copy (FR-FE08-001/002/003/034)
+      description: Rejects with `BOOK_ALREADY_BORROWED` when the Member currently borrows any copy of the same book.
       requestBody:
         required: true
         content:
@@ -1227,8 +1228,8 @@ paths:
   /api/reservations/candidates:
     get:
       tags: [Reservation]
-      summary: Member lists safe physical-copy reservation candidates (FR-FE08-029)
-      description: Member-only read path. Returns active-book BORROWED/RESERVED copies without barcode, location, owner, email, timestamps, or version metadata.
+      summary: Member lists safe physical-copy reservation candidates (FR-FE08-029/034)
+      description: Member-only read path. Returns active-book BORROWED/RESERVED copies except books the current Member already borrows, without barcode, location, owner, email, timestamps, or version metadata.
       security: [{ bearerAuth: [] }]
       parameters:
         - { name: q, in: query, required: false, schema: { type: string, maxLength: 200 } }

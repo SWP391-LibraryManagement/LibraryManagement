@@ -217,7 +217,7 @@ async function findReservationById(reservationId) {
   return mapReservation(result.recordset[0]);
 }
 
-// @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+// @spec FR-FE08-029, FR-FE08-034, AC-FE08-015, AC-FE08-021, NFR-FE08-SEC-004, NFR-FE08-PERF-003
 async function listReservationCandidates({ q = '', page = 1, limit = 20, userId } = {}) {
   const pool = await getPool();
   const request = pool.request();
@@ -260,6 +260,17 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20, userId 
     LEFT JOIN Authors a ON a.AuthorId = b.AuthorId
     WHERE b.Status = 'ACTIVE'
       AND bc.Status IN ('BORROWED', 'RESERVED')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM BorrowDetails currentLoan
+        INNER JOIN BorrowRequests currentRequest
+          ON currentRequest.RequestId = currentLoan.RequestId
+        INNER JOIN BookCopies currentCopy
+          ON currentCopy.CopyId = currentLoan.CopyId
+        WHERE currentRequest.UserId = @UserId
+          AND currentLoan.Status = 'BORROWED'
+          AND currentCopy.BookId = bc.BookId
+      )
       AND (
         @Search IS NULL
         OR b.Title LIKE @Search ESCAPE '\\'
@@ -275,7 +286,7 @@ async function listReservationCandidates({ q = '', page = 1, limit = 20, userId 
   };
 }
 
-// @spec FR-FE08-011, FR-FE08-012, FR-FE08-013, FR-FE08-014, FR-FE08-015
+// @spec FR-FE08-011, FR-FE08-012, FR-FE08-013, FR-FE08-014, FR-FE08-015, FR-FE08-034
 async function createReservation({ userId, copyId, auditLogRepository, auditEntry }) {
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
@@ -284,6 +295,22 @@ async function createReservation({ userId, copyId, auditLogRepository, auditEntr
   await transaction.begin();
 
   try {
+    const circulationLockResult = await new sql.Request(transaction)
+      .input('CirculationLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${userId}`)
+      .query(`
+        DECLARE @CirculationLockResult INT;
+        EXEC @CirculationLockResult = sp_getapplock
+          @Resource = @CirculationLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        SELECT @CirculationLockResult AS LockResult;
+      `);
+
+    if (Number(circulationLockResult.recordset[0]?.LockResult) < 0) {
+      throw new Error('Unable to acquire the member circulation lock.');
+    }
+
     const memberLockResult = await new sql.Request(transaction)
       .input('MemberLockResource', sql.NVarChar(255), `FE08-RESERVATION-MEMBER-${userId}`)
       .query(`
@@ -329,6 +356,7 @@ async function createReservation({ userId, copyId, auditLogRepository, auditEntr
       .query(`
         SELECT
           bc.CopyId,
+          bc.BookId,
           bc.Status AS CopyStatus,
           b.Status AS BookStatus
         FROM BookCopies bc WITH (UPDLOCK, HOLDLOCK)
@@ -355,6 +383,26 @@ async function createReservation({ userId, copyId, auditLogRepository, auditEntr
     if (!['BORROWED', 'RESERVED'].includes(copy.CopyStatus)) {
       await transaction.rollback();
       return { outcome: 'RESERVATION_NOT_ALLOWED' };
+    }
+
+    const currentLoanResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('BookId', sql.Int, copy.BookId)
+      .query(`
+        SELECT TOP 1 currentLoan.BorrowDetailId
+        FROM BorrowDetails currentLoan WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN BorrowRequests currentRequest WITH (HOLDLOCK)
+          ON currentRequest.RequestId = currentLoan.RequestId
+        INNER JOIN BookCopies currentCopy WITH (HOLDLOCK)
+          ON currentCopy.CopyId = currentLoan.CopyId
+        WHERE currentRequest.UserId = @UserId
+          AND currentLoan.Status = 'BORROWED'
+          AND currentCopy.BookId = @BookId;
+      `);
+
+    if (currentLoanResult.recordset.length) {
+      await transaction.rollback();
+      return { outcome: 'BOOK_ALREADY_BORROWED' };
     }
 
     const openReservationsResult = await new sql.Request(transaction)
@@ -552,6 +600,7 @@ async function cancelReservation(reservationId, { auditLogRepository, auditEntry
 // @spec FR-FE08-018 — the queue only returns the earliest ACTIVE reservation whose member is still
 // active and approved, so an ineligible member is skipped (not held) at processing time (AF-FE08-003).
 async function findNextActiveReservationForCopy(copyId, excludedReservationIds = []) {
+  // @spec FR-FE08-034, AC-FE08-021
   const pool = await getPool();
   const request = pool.request().input('CopyId', sql.Int, copyId);
   const exclusions = [...new Set(excludedReservationIds)]
@@ -578,6 +627,17 @@ async function findNextActiveReservationForCopy(copyId, excludedReservationIds =
           WHERE queueUr.UserId = r.UserId
             AND role.RoleName = 'MEMBER'
         )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM BorrowDetails currentLoan
+          INNER JOIN BorrowRequests currentRequest
+            ON currentRequest.RequestId = currentLoan.RequestId
+          INNER JOIN BookCopies currentCopy
+            ON currentCopy.CopyId = currentLoan.CopyId
+          WHERE currentRequest.UserId = r.UserId
+            AND currentLoan.Status = 'BORROWED'
+            AND currentCopy.BookId = bc.BookId
+        )
         ${exclusionClause}
       ORDER BY r.ReservedAt ASC, r.ReservationId ASC
     `);
@@ -598,12 +658,29 @@ async function holdReservation({
   auditLogRepository,
   auditEntry,
 }) {
+  // @spec FR-FE08-034, AC-FE08-021
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
   await transaction.begin();
 
   try {
+    const circulationLockResult = await new sql.Request(transaction)
+      .input('CirculationLockResource', sql.NVarChar(255), `FE07-BORROW-MEMBER-${userId}`)
+      .query(`
+        DECLARE @CirculationLockResult INT;
+        EXEC @CirculationLockResult = sp_getapplock
+          @Resource = @CirculationLockResource,
+          @LockMode = 'Exclusive',
+          @LockOwner = 'Transaction',
+          @LockTimeout = 10000;
+        SELECT @CirculationLockResult AS LockResult;
+      `);
+
+    if (Number(circulationLockResult.recordset[0]?.LockResult) < 0) {
+      throw new Error('Unable to acquire the member circulation lock.');
+    }
+
     const memberLockResult = await new sql.Request(transaction)
       .input('MemberLockResource', sql.NVarChar(255), `FE08-RESERVATION-MEMBER-${userId}`)
       .query(`
@@ -654,14 +731,39 @@ async function holdReservation({
     const copyResult = await new sql.Request(transaction)
       .input('CopyId', sql.Int, copyId)
       .query(`
-        SELECT TOP 1 Status
+        SELECT TOP 1 CopyId, BookId, Status
         FROM BookCopies WITH (UPDLOCK, HOLDLOCK)
         WHERE CopyId = @CopyId
       `);
 
-    if (copyResult.recordset[0]?.Status !== 'AVAILABLE') {
+    const copy = copyResult.recordset[0];
+    if (copy?.Status !== 'AVAILABLE') {
       await transaction.rollback();
       return null;
+    }
+
+    const currentLoanResult = await new sql.Request(transaction)
+      .input('UserId', sql.Int, userId)
+      .input('BookId', sql.Int, copy.BookId)
+      .query(`
+        SELECT TOP 1 currentLoan.BorrowDetailId
+        FROM BorrowDetails currentLoan WITH (UPDLOCK, HOLDLOCK)
+        INNER JOIN BorrowRequests currentRequest WITH (HOLDLOCK)
+          ON currentRequest.RequestId = currentLoan.RequestId
+        INNER JOIN BookCopies currentCopy WITH (HOLDLOCK)
+          ON currentCopy.CopyId = currentLoan.CopyId
+        WHERE currentRequest.UserId = @UserId
+          AND currentLoan.Status = 'BORROWED'
+          AND currentCopy.BookId = @BookId;
+      `);
+
+    if (currentLoanResult.recordset.length) {
+      await transaction.rollback();
+      return {
+        outcome: 'MEMBER_INELIGIBLE',
+        reservationId,
+        copyId,
+      };
     }
 
     const reservationLockResult = await new sql.Request(transaction)

@@ -98,6 +98,7 @@ function createReservationService({
     }
   }
 
+  // @spec FR-FE08-034, AC-FE08-021
   async function createReservation(input, actor, context = {}) {
     requireMember(actor);
 
@@ -129,6 +130,8 @@ function createReservationService({
           throw errors.conflict('RESERVATION_NOT_ALLOWED', 'Reservation is not allowed for this copy status.');
         case 'DUPLICATE_ACTIVE_RESERVATION':
           throw errors.conflict('DUPLICATE_ACTIVE_RESERVATION', 'You already have an active reservation for this copy.');
+        case 'BOOK_ALREADY_BORROWED':
+          throw errors.conflict('BOOK_ALREADY_BORROWED', 'You are already borrowing a copy of this book.');
         case 'ACTIVE_RESERVATION_LIMIT':
           throw errors.conflict('ACTIVE_RESERVATION_LIMIT', 'A member can have at most 3 open reservations.');
         default:
@@ -143,7 +146,7 @@ function createReservationService({
     };
   }
 
-  // @spec FR-FE08-029, AC-FE08-015, NFR-FE08-SEC-004, NFR-FE08-PERF-003
+  // @spec FR-FE08-029, FR-FE08-034, AC-FE08-015, AC-FE08-021, NFR-FE08-SEC-004, NFR-FE08-PERF-003
   async function listReservationCandidates(filters = {}, actor) {
     requireMember(actor);
 

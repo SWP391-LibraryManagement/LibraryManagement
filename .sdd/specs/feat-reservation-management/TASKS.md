@@ -241,3 +241,9 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Render `NotifiedAt` through `ExpiresAt` for the canonical `NOTIFIED` record and explain that the hold expires after the deadline.
   - Link the exact held `bookId`/`copyId` to the Member FE07 request page; retain Librarian/Admin approval and FE07 fulfillment ownership.
   - Update the FE08 Chromium expectation from the superseded `Đã đặt chỗ` label to `Đang đặt chỗ`.
+
+- [x] **FE08-T045 - Prevent reservation while the Member currently borrows the same book.**
+  - Maps to: BR-FE08-019, FR-FE08-034, AC-FE08-021; BR-FE07-032.
+  - Exclude same-`BookId` candidates, reject direct create with `BOOK_ALREADY_BORROWED`, and revalidate stale queue entries during Librarian/Admin processing.
+  - Coordinate FE07 borrow approval and FE08 create/hold through the Member circulation lock.
+  - Verify repository source, service mapping, route behavior, queue behavior, and Vietnamese error mapping.
