@@ -1,764 +1,764 @@
-# SPEC.md - FE11 User & Role Management
+# SPEC.md - FE11 Quản lý vai trò và người dùng
 
-# Version: 0.6.12
+# Phiên bản: 0.6.12
 
-# Status: ADMIN DASHBOARD CONNECTION REVISION IMPLEMENTED - HUMAN REVIEW PENDING
+# Trạng thái: ĐÃ TRIỂN KHAI BẢN SỬA ĐỔI KẾT NỐI BẢNG ĐIỀU KHIỂN QUẢN TRỊ - ĐANG CHỜ RÀ SOÁT CỦA CON NGƯỜI
 
-# Owner: Dung
+# Chủ sở hữu: Dung
 
-# Last Updated: 2026-07-27
+# Cập nhật lần cuối: 2026-07-27
 
-# Feature ID: FE11
+# ID tính năng: FE11
 
-# Feature folder: `.sdd/specs/feat-user-role-management/`
+# Thư mục tính năng: `.sdd/specs/feat-user-role-management/`
 
-> Delivery status: local automated implementation is current through the
-> 2026-07-25 managed-profile editing revision. Browser/human acceptance remains
-> pending where recorded in `TASKS.md`.
+> Trạng thái bàn giao: phần triển khai tự động cục bộ hiện đã cập nhật đến
+> bản sửa đổi chỉnh sửa hồ sơ được quản lý ngày 2026-07-25. Nghiệm thu trên trình duyệt/của con người vẫn
+> đang chờ tại những vị trí được ghi trong `TASKS.md`.
 
-> Source of truth for FE11 User & Role Management. This spec is approved for Phase 2 planning. It is intentionally detailed because FE11 is critical to system access control and administration.
+> Nguồn chuẩn cho Quản lý người dùng và vai trò FE11. Đặc tả này được phê duyệt để lập kế hoạch Giai đoạn 2. Tài liệu được viết chi tiết có chủ đích vì FE11 rất quan trọng đối với quản trị và kiểm soát quyền truy cập hệ thống.
 >
-> Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
+> Các quyết định trong đặc tả này đã được rà soát và phê duyệt ngày 2026-06-10. Xem `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
-> The admin-created account setup revision is approved through `ADR-005-admin-created-account-setup-boundary.md`. The FE11 Finalization Batch governance contract was approved on 2026-07-19; Wave A/Wave B product implementation was reviewed through PR #59 H2/H3 and merged as `eed2688`. Current-main release acceptance remains separately tracked.
+> Bản sửa đổi thiết lập tài khoản do Quản trị viên tạo được phê duyệt qua `ADR-005-admin-created-account-setup-boundary.md`. Hợp đồng quản trị Lô hoàn thiện FE11 được phê duyệt ngày 2026-07-19; phần triển khai sản phẩm Đợt A/Đợt B đã được rà soát qua PR #59 H2/H3 và hợp nhất thành `eed2688`. Nghiệm thu bản phát hành trên nhánh chính hiện tại vẫn được theo dõi riêng.
 >
-> Approved 2026-07-22 navigation overlay: the Admin sidebar adds FE04 Membership Review after All Users. FE11 owns only the shell/navigation entry; FE04 retains list/review API and business ownership. See `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
+> Lớp điều hướng bổ sung ngày 2026-07-22 đã được phê duyệt: thanh bên Quản trị thêm mục Rà soát tư cách thành viên FE04 sau Tất cả người dùng. FE11 chỉ sở hữu mục khung/điều hướng; FE04 giữ quyền sở hữu API danh sách/rà soát và nghiệp vụ. Xem `docs/superpowers/specs/2026-07-22-admin-membership-review-integration-design.md`.
 >
-> Approved 2026-07-22 personal-data ownership revision: FE03 owns self-service changes to `fullName`, `phone`, and `address`; verified email change belongs to FE02 and remains outside Phase 1 until an explicit flow is approved. FE11 Admin may view those fields but may update only Librarian work fields (`department`, `specialization`). The previous broad Admin-update implementation is no longer acceptance evidence and must be restricted under `FE11-PDO01..PDO04` before this revision is complete.
+> Bản sửa đổi quyền sở hữu dữ liệu cá nhân ngày 2026-07-22 đã được phê duyệt: FE03 sở hữu thay đổi tự phục vụ đối với `fullName`, `phone` và `address`; thay đổi email đã xác minh thuộc FE02 và vẫn nằm ngoài Giai đoạn 1 cho đến khi một luồng rõ ràng được phê duyệt. Quản trị viên FE11 có thể xem các trường đó nhưng chỉ được cập nhật trường công việc của Thủ thư (`department`, `specialization`). Phần triển khai cập nhật rộng của Quản trị viên trước đây không còn là bằng chứng nghiệm thu và phải được giới hạn theo `FE11-PDO01..PDO04` trước khi bản sửa đổi này hoàn tất.
 >
-> Approved 2026-07-25 superseding revision (`Q-FE11-028`): FE11 Admin may update
-> `fullName`, `phone`, and `address` for any managed Member, Librarian, or Admin
-> account. FE03 retains self-service access to the same persisted profile fields,
-> and both flows share the latest `Users`/`UserProfiles` optimistic-concurrency
-> version. Existing-account email remains read-only under FE02 verification
-> ownership. `department` and `specialization` are removed from the FE11 Admin UI
-> and existing-user update contract. This paragraph supersedes every conflicting
-> 2026-07-22 ownership/work-field statement retained below as historical evidence.
+> Bản sửa đổi thay thế ngày 2026-07-25 đã được phê duyệt (`Q-FE11-028`): Quản trị viên FE11 có thể cập nhật
+> `fullName`, `phone` và `address` cho mọi tài khoản Thành viên, Thủ thư hoặc Quản trị viên
+> được quản lý. FE03 giữ quyền tự phục vụ đối với cùng các trường hồ sơ được lưu bền,
+> và cả hai luồng dùng chung phiên bản đồng thời lạc quan hiệu lực mới nhất của `Users`/`UserProfiles`.
+> Email của tài khoản hiện có vẫn chỉ đọc theo quyền sở hữu xác minh của FE02.
+> `department` và `specialization` bị loại khỏi giao diện Quản trị viên FE11
+> và hợp đồng cập nhật người dùng hiện có. Đoạn này thay thế mọi tuyên bố xung đột
+> ngày 2026-07-22 về quyền sở hữu/trường công việc được giữ bên dưới làm bằng chứng lịch sử.
 >
-> Revision v0.6.8 connects account lifecycle to FE07: removing `MEMBER` or
-> deactivating an account is blocked while pending requests or active loans
-> exist. Admin Request detail exposes known approval blockers and disables only
-> approval; rejection remains available for legacy invalid requests.
+> Bản sửa đổi v0.6.8 kết nối vòng đời tài khoản với FE07: việc xóa `MEMBER` hoặc
+> vô hiệu hóa tài khoản bị chặn khi còn yêu cầu đang chờ hoặc lượt mượn đang hoạt động.
+> Chi tiết Yêu cầu của Quản trị viên hiển thị các điều kiện chặn phê duyệt đã biết và chỉ vô hiệu hóa
+> thao tác phê duyệt; thao tác từ chối vẫn khả dụng cho yêu cầu cũ không hợp lệ.
 
 ---
 
-## 1. Feature Overview
+## 1. Tổng quan về tính năng
 
-### 1.1 Feature Name
+### 1.1 Tên tính năng
 
-User & Role Management
+Quản lý người dùng và vai trò
 
-### 1.2 Business Context
+### 1.2 Bối cảnh nghiệp vụ
 
-User & Role Management allows administrators to create, view, and deactivate user accounts (members, librarians, admins), manage role assignments, and maintain Librarian work fields. Personal profile data remains user-owned after account creation. This feature ensures that only authorized personnel have access to system functions and that users are managed consistently throughout their lifecycle.
+Quản lý người dùng và vai trò cho phép Quản trị viên tạo, xem và vô hiệu hóa tài khoản người dùng (Thành viên, Thủ thư, Quản trị viên), quản lý việc gán vai trò và duy trì các trường công việc của Thủ thư. Dữ liệu hồ sơ cá nhân vẫn thuộc người dùng sau khi tạo tài khoản. Tính năng này bảo đảm chỉ nhân sự được cấp quyền mới truy cập được chức năng hệ thống và người dùng được quản lý nhất quán trong suốt vòng đời tài khoản.
 
-This feature is core because incorrect user/role data can break access control, allow unauthorized actions, expose sensitive data, and create audit liability.
+Đây là tính năng cốt lõi vì dữ liệu người dùng/vai trò không chính xác có thể phá vỡ kiểm soát truy cập, cho phép hành động trái phép, làm lộ dữ liệu nhạy cảm và tạo trách nhiệm kiểm toán.
 
-### 1.3 Goal / Outcome
+### 1.3 Mục tiêu / Kết quả
 
-The system shall:
+Hệ thống sẽ:
 
-- Allow admins to view a list of all users with filtering and search.
-- Allow admins to view detailed user information.
-- Allow admins to create new member accounts.
-- Allow admins to create new librarian accounts.
-- Keep personal profile changes (`fullName`, `phone`, `address`) in FE03 self-service and keep verified email change under FE02 ownership.
-- Allow admins to update a managed user's `fullName`, `phone`, and `address` without changing email or role ownership.
-- Allow admins to deactivate user accounts.
-- Allow admins to deactivate librarian accounts.
-- Allow admins to replace a user's single role atomically.
-- Provide admin console navigation for Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs; keep atomic role replacement inside All Users rather than exposing a separate Permissions sidebar item.
-- Provide read-only permission/reporting views that summarize users, roles, access rules, and audit activity without duplicating FE12 reporting scope.
-- Keep every user management action traceable for audit.
+- Cho phép Quản trị viên xem danh sách tất cả người dùng với chức năng lọc và tìm kiếm.
+- Cho phép Quản trị viên xem thông tin chi tiết của người dùng.
+- Cho phép Quản trị viên tạo tài khoản Thành viên mới.
+- Cho phép Quản trị viên tạo tài khoản Thủ thư mới.
+- Giữ các thay đổi hồ sơ cá nhân (`fullName`, `phone`, `address`) trong chế độ tự phục vụ FE03 và giữ thay đổi email đã xác minh thuộc quyền sở hữu của FE02.
+- Cho phép Quản trị viên cập nhật `fullName`, `phone` và `address` của người dùng được quản lý mà không thay đổi quyền sở hữu email hay vai trò.
+- Cho phép Quản trị viên vô hiệu hóa tài khoản người dùng.
+- Cho phép Quản trị viên vô hiệu hóa tài khoản Thủ thư.
+- Cho phép Quản trị viên thay thế nguyên tử vai trò duy nhất của người dùng.
+- Cung cấp điều hướng bảng điều khiển Quản trị gồm Trang chủ, Bảng điều khiển, Thư viện, Quản lý mượn sách, Quản lý yêu cầu, Tất cả người dùng, Rà soát tư cách thành viên và Nhật ký kiểm toán; giữ thao tác thay thế nguyên tử vai trò trong Tất cả người dùng thay vì hiển thị mục Quyền riêng trên thanh bên.
+- Cung cấp các chế độ xem chỉ đọc về quyền/báo cáo để tóm tắt người dùng, vai trò, quy tắc truy cập và hoạt động kiểm toán mà không trùng phạm vi báo cáo FE12.
+- Giữ mọi hành động quản lý người dùng ở trạng thái có thể truy vết để kiểm toán.
 
-### 1.4 Scope Level
+### 1.4 Mức đặc tả
 
-- [x] Full Spec - core business logic, high risk, must be correct from the beginning
-- [ ] Standard Spec - normal feature with business rules and validations
-- [ ] Light Spec - simple UI, documentation, or low-risk feature
+- [x] Đặc tả đầy đủ - logic nghiệp vụ cốt lõi, rủi ro cao, phải đúng ngay từ đầu
+- [ ] Đặc tả tiêu chuẩn - chức năng thông thường có quy tắc nghiệp vụ và kiểm tra hợp lệ
+- [ ] Đặc tả rút gọn - giao diện đơn giản, tài liệu hoặc chức năng ít rủi ro
 
 ---
 
-## 2. Actors and Permissions
+## 2. Tác nhân và quyền
 
-| Actor | Description | Permission / Responsibility |
+| Tác nhân | Mô tả | Quyền / Trách nhiệm |
 | ----- | ----------- | --------------------------- |
-| Admin | System administrator | Can view, create, deactivate, and update the approved `fullName`, `phone`, and `address` fields for managed users; can manage account setup and role assignments; cannot change an existing email without a verified FE02 flow. |
-| Librarian | Library staff (non-admin) | Cannot manage users. Can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
-| Member | Library user (non-staff) | Cannot manage users. Can use member-self-service borrowing/reservation only when the account has neither `LIBRARIAN` nor `ADMIN`; can view and update own allowed FE03 profile fields; email change requires a separately approved FE02 verification flow. |
-| Guest | Unauthenticated visitor | Cannot access user management. |
-| Audit Logger | System component | Records all user management actions (create, update, deactivate, role assignment). |
+| Quản trị viên | Quản trị viên hệ thống | Có thể xem, tạo, hủy kích hoạt và cập nhật các trường `fullName`, `phone` và `address` đã được phê duyệt cho người dùng được quản lý; có thể quản lý việc thiết lập tài khoản và phân công vai trò; không thể thay đổi email hiện có nếu không có luồng FE02 được xác minh. |
+| Thủ thư | Nhân viên thư viện (không phải quản trị viên) | Không thể quản lý người dùng. Có thể xem và cập nhật các trường hồ sơ FE03 được phép của riêng mình; thay đổi email yêu cầu luồng xác minh FE02 được phê duyệt riêng. |
+| Thành viên | Người dùng thư viện (không phải nhân viên) | Không thể quản lý người dùng. Chỉ có thể tự phục vụ việc mượn/đặt chỗ khi tài khoản không có `LIBRARIAN` hay `ADMIN`; có thể xem và cập nhật các trường hồ sơ FE03 được phép của riêng mình; thay đổi email yêu cầu luồng xác minh FE02 được phê duyệt riêng. |
+| Khách | Khách truy cập không được xác thực | Không thể truy cập quản lý người dùng. |
+| Bộ ghi nhật ký kiểm toán | Thành phần hệ thống | Ghi mọi hành động quản lý người dùng (tạo, cập nhật, vô hiệu hóa, gán vai trò). |
 
 ---
 
-## 3. Preconditions
+## 3. Điều kiện tiên quyết
 
-The feature can only start when:
+Tính năng này chỉ có thể bắt đầu khi:
 
-- PRE-FE11-001: The user performing user management actions is authenticated as an Admin.
-- PRE-FE11-002: The Users, Roles, and UserRoles tables exist in the database.
-- PRE-FE11-003: A newly created user has a unique email address. FE11 does not change an existing user's email.
-- PRE-FE11-004: Role definitions (Member, Librarian, Admin) are pre-configured in the Roles table.
-- PRE-FE11-005: AuditLogs table exists for recording user management actions.
-
----
-
-## 4. Main Flows
-
-### MF-FE11-001: View User List
-
-1. Admin navigates to user management section.
-2. The system displays a list of all users with basic information (ID, email, name, status, roles).
-3. The system returns users in stable order `CreatedAt DESC, UserId DESC` and applies the canonical pagination contract.
-4. The system supports filtering by `status` (`ACTIVE`, `INACTIVE`, or `LOCKED`) and `role` (`member`, `librarian`, or `admin`).
-5. The system supports a trimmed `search` value against email, name, or user ID.
-6. Admin can click on a user to view detailed information.
-
-### MF-FE11-002: View User Information
-
-1. Admin opens the user list or searches for a specific user.
-2. Admin clicks on a user record to view detailed information.
-3. The system returns the safe `UserManagementView` DTO defined in Section 10.3: ID, email, username, full name, phone, address, status, roles, created date, last updated date, last login date, and approved librarian fields when applicable.
-4. The detail response includes `relatedSummary` with `activeBorrowingCount`, `unpaidFineTotal`, and `openReservationCount`; missing source records produce zero values. Credential hashes, raw tokens, token hashes, session identifiers, reset/setup links, and secret audit metadata are never returned.
-
-### MF-FE11-003: Create User Account
-
-1. Admin navigates to create new user form.
-2. Admin selects exactly one supported user type: `member` or `librarian`.
-3. Admin enters required fields: email, full name, phone (optional), address (optional).
-4. The system validates and normalizes the request at the route boundary.
-5. In one transaction, the system locks and revalidates the active acting Admin, checks normalized email/username uniqueness, creates a new user record with status `INACTIVE`, assigns the Member role, stores an unusable bcrypt hash of a discarded server-generated value, creates a hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the FE11 audit entry.
-6. After the source transaction commits, FE11 requests `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using `AuthToken` source metadata and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
-7. FE10 renders and sends the setup link without persisting or returning the raw token, link, or rendered sensitive content.
-8. Password-based login remains unavailable while the account is `INACTIVE`.
-9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
-10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
-
-### MF-FE11-004: Maintain Managed Profile Information
-
-1. Admin opens user detail for operational review.
-2. The Admin UI allows `fullName`, `phone`, and `address` editing for every managed role while keeping `email` read-only.
-3. An authenticated user may update the same profile fields through FE03 `/api/profile/me`.
-4. Both flows persist to the canonical `Users`/`UserProfiles` records and participate in one effective optimistic-concurrency version.
-5. FE11 rejects email, department, specialization, mixed, or unknown-field updates atomically with `403 MANAGED_USER_UPDATE_FORBIDDEN`.
-6. Email remains read-only in Phase 1; any future email change must use an explicitly approved FE02 verification flow.
-
-### MF-FE11-005: Deactivate User Account
-
-1. Admin opens the role action from the user row, user detail, or the managed-user edit dialog.
-2. Admin clicks "Deactivate Account" button and submits the loaded `expectedUpdatedAt` effective version.
-3. The system rejects an `INACTIVE` pending-activation account with `409 ACCOUNT_PENDING_ACTIVATION`; only an already-deactivated account with non-null `deactivatedAt` is an idempotent no-op.
-4. The system checks active borrowings and blocks deactivation when active borrowings exist.
-5. Admin confirms deactivation of an `ACTIVE` or `LOCKED` account.
-6. The system sets user status to `INACTIVE` and records server timestamp `deactivatedAt`.
-7. The system keeps user data intact (does not delete).
-8. In the same transaction, the system invalidates all active refresh/session credentials for that user.
-9. The system writes the audit log entry in the same transaction; if credential invalidation or audit persistence fails, the deactivation rolls back.
-10. The system shows success message.
-
-### MF-FE11-006: Create Librarian Account
-
-1. Admin navigates to create new user form.
-2. Admin selects user type: Librarian.
-3. Admin enters required fields: email, full name, department (optional), specialization (optional).
-4. The system validates and normalizes the request at the route boundary.
-5. In one transaction, the system locks and revalidates the active acting Admin, checks normalized email/username uniqueness, creates a new user record with status `INACTIVE`, persists trimmed nullable `department`/`specialization`, assigns the Librarian role, stores an unusable bcrypt hash of a discarded server-generated value, creates a hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the FE11 audit entry.
-6. After the source transaction commits, FE11 requests `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using `AuthToken` source metadata and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
-7. FE10 renders and sends the setup link without persisting or returning the raw token, link, or rendered sensitive content.
-8. Password-based login remains unavailable while the account is `INACTIVE`.
-9. If delivery fails, the account remains `INACTIVE` and the response reports only safe delivery status; the Admin can use the approved resend flow.
-10. The system shows the new user ID, assigned role, account status, and safe setup-delivery status.
-
-### MF-FE11-007: Update Managed User Profile
-
-1. Admin opens an existing Member, Librarian, or Admin account.
-2. Admin edits `fullName`, `phone`, and/or `address` and submits the loaded effective `expectedUpdatedAt`.
-3. The system keeps email read-only and rejects `email`, `department`, `specialization`, or any unknown field.
-4. The system compares the latest effective `Users`/`UserProfiles` version and rejects stale state without mutation.
-5. The system saves only effective changes; a no-op keeps the effective version and writes no success audit.
-6. The system advances storage `UpdatedAt` and writes one safe audit for an effective change.
-7. The system shows the authoritative safe DTO.
-
-### MF-FE11-008: Deactivate Librarian Account
-
-1. Admin opens an existing librarian account.
-2. Admin confirms deactivation and submits the loaded effective `expectedUpdatedAt`.
-3. The system rejects pending activation, stale state, self-target, pending-borrow-request, or active-borrowing conflicts without mutation.
-4. For an `ACTIVE` or `LOCKED` librarian, the system sets status to `INACTIVE` and records server timestamp `deactivatedAt`.
-5. In the same transaction, the system invalidates all active refresh/session credentials for that librarian.
-6. The system writes the audit log entry in the same transaction; failure rolls back the deactivation.
-7. The system shows the authoritative safe DTO.
-
-### MF-FE11-009: Manage Roles
-
-1. Admin opens user detail page.
-2. Admin views current roles assigned to the user.
-3. Admin selects exactly one replacement role.
-4. The system locks the affected role mapping, counts active Admin role holders in the same transaction, and rejects a replacement that would leave zero active Admin role holders.
-5. If replacing `MEMBER` with another role, the system serializes with FE07 and rejects while pending requests or active loans exist.
-6. The system atomically deletes the current mapping, inserts the selected mapping, and writes one audit log entry with the previous and new role.
-7. Selecting the current role is an idempotent no-op with no success audit.
-8. The system returns the authoritative safe user DTO whose `roles` array contains exactly one item.
-
-### MF-FE11-014: Resend Password Setup Email
-
-1. Admin opens an admin-created account whose password setup is incomplete.
-2. Admin requests a new setup email.
-3. In one transaction, the system first locks and revalidates the active acting Admin, then confirms that the target account is `INACTIVE`, has `ACCOUNT_SETUP` token history, has not completed setup, and is outside the 60-second issuance cooldown.
-4. In that transaction, FE11 revokes prior active setup tokens, creates a new hashed `ACCOUNT_SETUP` token with a 24-hour expiry, and writes the resend audit entry.
-5. FE11 requests a new `ACCOUNT_SETUP` delivery through the requester bound to `FE11`, using the new token ID and idempotency key.
-6. The system returns safe `SENT` or `FAILED` delivery status without returning the token or setup link.
-
-### MF-FE11-010: View Admin Dashboard And Console Navigation
-
-1. Admin opens the admin console.
-2. The system displays dashboard summary cards and operational charts using read-only data from book, borrowing, request, user-role, and membership sources.
-3. Active-account role counts use the canonical single mapping `Users -> UserRoles -> Roles`; FE04 membership-application state remains a separate workflow metric and is not treated as the `MEMBER` login role.
-4. Each summary card opens its owning Admin module with the matching role or workflow-status filter when one applies.
-5. The sidebar shows approved admin sections: Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs.
-6. The system does not show the removed `Permissions`, `Confirm Payment`, or `Confirm Borrow` sidebar entries.
-7. The system keeps single-role replacement available from All Users and does not show a separate Permissions sidebar entry.
-8. The admin console uses the same shared application shell, header, responsive sidebar, typography, and cream/brown visual system as Member and Librarian pages.
-9. Admin Library opens catalog management inside the Admin console and does not redirect the Admin to a Librarian route; the embedded workspace continues to use the canonical FE05 APIs and authorization rules.
-
-### MF-FE11-011: View Permissions
-
-1. Admin opens Permissions.
-2. The system displays role summary and permission matrix for Admin, Librarian, and Member.
-3. The system uses FE11 roles as the source of truth and does not allow non-admin users to edit permissions.
-
-### MF-FE11-012: View Audit Logs
-
-1. Admin opens Audit Logs.
-2. The system lists important administrative/system actions with actor, action, target, timestamp, and safe details.
-3. The Admin UI displays the paginated activity list directly without search or filter controls.
-4. Audit logs are read-only from the UI.
-
-### MF-FE11-013: Manage Admin Request Review View
-
-1. Admin opens Request Management.
-2. The system lists borrow/request records using FE07 request data with search/filter/export controls.
-3. Admin may view request detail.
-4. Requests with status `PENDING` / `Chờ xác nhận` can be acted on by the approved borrowing workflow.
-5. Requests with status `COMPLETED` / `Hoàn thành` are read-only and cannot be edited from this view.
+- PRE-FE11-001: Người dùng thực hiện hành động quản lý người dùng được xác thực là Quản trị viên.
+- PRE-FE11-002: Các bảng Users, Roles và UserRoles tồn tại trong cơ sở dữ liệu.
+- PRE-FE11-003: Người dùng mới được tạo có một địa chỉ email duy nhất. FE11 không thay đổi email của người dùng hiện tại.
+- PRE-FE11-004: Định nghĩa vai trò (Thành viên, Thủ thư, Quản trị viên) được cấu hình sẵn trong bảng Roles.
+- PRE-FE11-005: Bảng AuditLogs tồn tại để ghi lại các thao tác quản lý người dùng.
 
 ---
 
-## 5. Alternative Flows
+## 4. Luồng chính
 
-### AF-FE11-001: Email Already Exists
+### MF-FE11-001: Xem danh sách người dùng
 
-1. Admin attempts to create a new user with an email already in use.
-2. The system detects duplicate email.
-3. The system returns error: "Email is already registered. Use a different email or contact the account owner; Admin cannot change an existing user's email."
+1. Quản trị viên điều hướng đến phần quản lý người dùng.
+2. Hệ thống hiển thị danh sách tất cả người dùng với thông tin cơ bản (ID, email, tên, trạng thái, vai trò).
+3. Hệ thống trả về người dùng theo thứ tự ổn định `CreatedAt DESC, UserId DESC` và áp dụng hợp đồng phân trang chuẩn.
+4. Hệ thống hỗ trợ lọc theo `status` (`ACTIVE`, `INACTIVE` hoặc `LOCKED`) và `role` (`member`, `librarian` hoặc `admin`).
+5. Hệ thống hỗ trợ giá trị `search` đã loại khoảng trắng đầu/cuối để tìm theo email, tên hoặc ID người dùng.
+6. Quản trị viên có thể nhấp vào người dùng để xem thông tin chi tiết.
 
-### AF-FE11-002: User Has Active Borrowings
+### MF-FE11-002: Xem thông tin người dùng
 
-1. Admin attempts to deactivate a user who has active borrowed books.
-2. The system detects active borrowings.
-3. The system rejects deactivation and reports: "This user has [N] active borrowed items."
-4. Admin must resolve the active borrowing lifecycle before retrying deactivation.
+1. Quản trị viên mở danh sách người dùng hoặc tìm kiếm một người dùng cụ thể.
+2. Quản trị viên nhấp vào hồ sơ người dùng để xem thông tin chi tiết.
+3. Hệ thống trả về DTO `UserManagementView` an toàn được định nghĩa trong Mục 10.3: ID, email, tên người dùng, họ tên, số điện thoại, địa chỉ, trạng thái, vai trò, ngày tạo, ngày cập nhật gần nhất, ngày đăng nhập gần nhất và các trường Thủ thư đã phê duyệt khi áp dụng.
+4. Phản hồi chi tiết gồm `relatedSummary` với `activeBorrowingCount`, `unpaidFineTotal` và `openReservationCount`; bản ghi nguồn bị thiếu cho giá trị bằng không. Tuyệt đối không trả về hàm băm thông tin xác thực, mã thông báo thô, hàm băm mã thông báo, mã định danh phiên, liên kết đặt lại/thiết lập hay siêu dữ liệu kiểm toán bí mật.
 
-### AF-FE11-003: Cannot Remove Last Admin
+### MF-FE11-003: Tạo tài khoản người dùng
 
-1. Admin attempts to remove the Admin role from the last remaining admin user.
-2. The system detects this is the last admin.
-3. The system rejects the action: "Cannot remove admin role from the last admin user."
+1. Quản trị viên mở biểu mẫu tạo người dùng mới.
+2. Quản trị viên chọn chính xác một loại người dùng được hỗ trợ: `member` hoặc `librarian`.
+3. Quản trị viên nhập các trường bắt buộc: email, họ tên, điện thoại (tùy chọn), địa chỉ (tùy chọn).
+4. Hệ thống kiểm tra và chuẩn hóa yêu cầu tại ranh giới tuyến.
+5. Trong một giao dịch, hệ thống khóa và kiểm tra lại Quản trị viên thực hiện đang hoạt động, kiểm tra tính duy nhất của email/tên người dùng đã chuẩn hóa, tạo bản ghi người dùng mới với trạng thái `INACTIVE`, gán vai trò Thành viên, lưu hàm băm bcrypt không thể sử dụng của một giá trị do máy chủ tạo rồi loại bỏ, tạo mã thông báo `ACCOUNT_SETUP` đã băm có thời hạn 24 giờ và ghi mục kiểm toán FE11.
+6. Sau khi giao dịch nguồn được cam kết, FE11 yêu cầu gửi `ACCOUNT_SETUP` qua trình yêu cầu được ràng buộc với `FE11`, dùng siêu dữ liệu nguồn `AuthToken` và khóa lũy đẳng `FE11:ACCOUNT_SETUP:<tokenId>`.
+7. FE10 kết xuất và gửi liên kết thiết lập mà không lưu bền hay trả về mã thông báo thô, liên kết hoặc nội dung nhạy cảm đã kết xuất.
+8. Đăng nhập dựa trên mật khẩu vẫn không khả dụng khi tài khoản là `INACTIVE`.
+9. Nếu gửi thất bại, tài khoản vẫn ở `INACTIVE` và phản hồi chỉ báo cáo trạng thái gửi an toàn; Quản trị viên có thể dùng luồng gửi lại đã phê duyệt.
+10. Hệ thống hiển thị ID người dùng mới, vai trò đã gán, trạng thái tài khoản và trạng thái gửi thiết lập an toàn.
 
-### AF-FE11-004: Admin Attempts to Change Personal Information
+### MF-FE11-004: Duy trì thông tin hồ sơ được quản lý
 
-1. Admin submits an existing-user update containing `fullName`, `phone`, `address`, or `email`.
-2. The system recognizes that the submitted field belongs to FE03 self-service or the future FE02 verified-email flow.
-3. The system returns `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` and persists no submitted field, version change, or success audit.
+1. Quản trị viên mở chi tiết người dùng để rà soát vận hành.
+2. Giao diện Quản trị viên cho phép chỉnh sửa `fullName`, `phone` và `address` cho mọi vai trò được quản lý, đồng thời giữ `email` ở chế độ chỉ đọc.
+3. Người dùng được xác thực có thể cập nhật các trường hồ sơ tương tự thông qua FE03 `/api/profile/me`.
+4. Cả hai luồng đều lưu bền vào bản ghi `Users`/`UserProfiles` chuẩn và cùng tham gia một phiên bản đồng thời lạc quan hiệu lực.
+5. FE11 từ chối các bản cập nhật email, bộ phận, chuyên môn, hỗn hợp hoặc trường không xác định một cách nguyên tử với `403 MANAGED_USER_UPDATE_FORBIDDEN`.
+6. Email vẫn ở chế độ chỉ đọc trong Giai đoạn 1; mọi thay đổi email trong tương lai đều phải sử dụng quy trình xác minh FE02 được phê duyệt rõ ràng.
 
-## 6. Business Rules
+### MF-FE11-005: Vô hiệu hóa tài khoản người dùng
 
-Use these stable IDs for tasks and tests.
+1. Quản trị viên mở thao tác vai trò từ hàng người dùng, chi tiết người dùng hoặc hộp thoại chỉnh sửa người dùng được quản lý.
+2. Quản trị viên nhấp nút "Vô hiệu hóa tài khoản" và gửi phiên bản hiệu lực `expectedUpdatedAt` đã tải.
+3. Hệ thống từ chối tài khoản `INACTIVE` đang chờ kích hoạt bằng `409 ACCOUNT_PENDING_ACTIVATION`; chỉ tài khoản đã vô hiệu hóa có `deactivatedAt` khác null mới là thao tác không thay đổi có tính lũy đẳng.
+4. Hệ thống kiểm tra lượt mượn đang hoạt động và chặn vô hiệu hóa khi còn lượt mượn đang hoạt động.
+5. Quản trị viên xác nhận vô hiệu hóa tài khoản `ACTIVE` hoặc `LOCKED`.
+6. Hệ thống đặt trạng thái người dùng thành `INACTIVE` và ghi lại dấu thời gian của máy chủ `deactivatedAt`.
+7. Hệ thống giữ nguyên dữ liệu người dùng (không xóa).
+8. Trong cùng giao dịch, hệ thống vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động của người dùng đó.
+9. Hệ thống ghi mục nhật ký kiểm toán trong cùng giao dịch; nếu vô hiệu hóa thông tin xác thực hoặc lưu bền bản ghi kiểm toán thất bại thì toàn bộ thao tác vô hiệu hóa được hoàn tác.
+10. Hệ thống hiển thị thông báo thành công.
 
-- BR-FE11-001: Only authenticated Admin users can access user management features.
-- BR-FE11-002: Only authenticated Admin users can create new users.
-- BR-FE11-003: Users cannot be permanently deleted; only deactivated (set to `INACTIVE` with server `deactivatedAt`). A deactivated account cannot be reactivated in Phase 1.
-- BR-FE11-004: Each user must have a unique email address in the system.
-- BR-FE11-005: When an Admin creates a user, the account must start with `INACTIVE` status and remain unable to authenticate until FE02 completes password setup and atomically activates it.
-- BR-FE11-006: When a user account is deactivated, status change, `deactivatedAt`, invalidation of all active refresh/session credentials, and the audit log must commit atomically.
-- BR-FE11-007: Every persisted account must have exactly one role assigned: Member, Librarian, or Admin.
-- BR-FE11-008: Account roles are mutually exclusive. A role change replaces the current mapping and revokes the target account's active refresh/session credentials atomically; it must never create a second mapping or leave the account without a role. The user must authenticate again before using the replacement role.
-- BR-FE11-009: The system must never allow replacement of the last active Admin role. The remaining-Admin count and role replacement must be checked under a transaction lock so concurrent changes cannot bypass this rule.
-- BR-FE11-010: Every FE11-owned user management action (create, Librarian work-field update, deactivate, role change) must be auditable.
-- BR-FE11-011: A member user cannot create or manage other users.
-- BR-FE11-012: A librarian user cannot create or manage users.
-- BR-FE11-013: Admin never enters, sees, or creates passwords directly. Password setup generates a one-time token link sent via email, and the user sets their own password through FE02.
-- BR-FE11-014: After account creation, both the account owner through FE03 and Admin through FE11 may update `fullName`, `phone`, and `address` in the same canonical profile. Existing-account email change belongs to a verified FE02 flow and remains outside Phase 1.
-- BR-FE11-015: Member, Librarian, and Admin accounts follow the same managed-profile validation, concurrency, audit, and deactivation rules. `department` and `specialization` are not part of the FE11 Admin editing experience.
-- BR-FE11-016: The admin sidebar is an FE11-controlled access surface; it must show only the eight approved sections, including FE04 Membership Review after All Users, and must not include `Permissions`, `Confirm Payment`, or `Confirm Borrow`. Manage Roles remains available from All Users.
-- BR-FE11-017: Permissions UI is a read-only role summary/matrix unless a separate role-editing action is explicitly performed under Manage Roles.
-- BR-FE11-018: Audit Logs are read-only to admins and must not expose password hashes, tokens, or unnecessary personal data.
-- BR-FE11-019: Admin Request Management may show FE07 request data, but completed requests are read-only; only pending requests may expose action controls.
-- BR-FE11-020: Admin Dashboard may aggregate operational counts/charts, but detailed report generation remains owned by FE12 Reporting & Statistics.
-- BR-FE11-021: FE11 owns issuance and revocation of admin-created `ACCOUNT_SETUP` tokens; FE02 owns token consumption, password hashing, and activation; FE10 owns setup-link rendering and delivery.
-- BR-FE11-022: FE11 must request setup delivery only through `createSourceNotificationRequester('FE11')` using canonical pair `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `sourceEntityType: AuthToken`, persisted token ID, and idempotency key `FE11:ACCOUNT_SETUP:<tokenId>`.
-- BR-FE11-023: Raw setup tokens and links may exist only in process memory for the active request and must never appear in persistence, logs, audits, Admin responses, or test-only HTTP fields.
-- BR-FE11-024: User, profile, initial role, setup token, and FE11 audit creation must commit or roll back together after the transaction locks and revalidates the active acting Admin and performs authoritative normalized email/username uniqueness checks; FE10 provider delivery occurs only after this source transaction and remains non-blocking.
-- BR-FE11-025: Admin resend is allowed only after the source transaction locks and revalidates the active acting Admin and confirms an `INACTIVE` admin-created account with incomplete setup token history; each resend revokes prior active setup tokens and creates a new token/event/key after a 60-second cooldown.
-- BR-FE11-026: User list/detail/Librarian-work-update responses must use the approved `UserManagementView` DTO and must never expose password hashes, raw or hashed auth credentials, session identifiers, setup/reset links, or secret audit metadata.
-- BR-FE11-027: Every managed-profile update and deactivation must use the loaded non-null `updatedAt`, defined as the latest effective timestamp across `Users` and `UserProfiles`; a stale mutation returns HTTP `409` with code `STALE_USER_STATE` and persists no field or audit-success change. A no-op returns the current safe DTO without advancing the version or writing a success audit.
-- BR-FE11-028: The account's single role determines its audience across FE01, FE07, FE08, FE09, and shared navigation. Only `MEMBER` receives member self-service borrowing/reservation/own-fine access; `LIBRARIAN` and `ADMIN` use their staff-owned routes.
-- BR-FE11-029: FE11 Admin Request Management is a composition/read surface over FE07. It must expose the current physical copy status in the safe detail DTO, use only FE07 approve/reject commands, and reload canonical request state after either success or conflict; it must not invent a separate Admin request lifecycle.
-- BR-FE11-030: FE11 must not deactivate an account or replace its `MEMBER` role while FE07 reports a pending borrow request or active borrowed detail. The lifecycle mutation and FE07 create/approval use the same member-scoped transaction lock.
-- BR-FE11-031: For a legacy pending request with a known inactive/non-Member owner or unavailable copy, Admin Request Management disables approval with an actionable blocker but keeps rejection enabled; FE07 remains authoritative at command time.
-- BR-FE11-032: Admin Dashboard member metrics count `ACTIVE` accounts through the canonical single `UserRoles` mapping. Borrowing charts count only FE07 details with a committed `BorrowDate`; the return-today chart uses the `Asia/Ho_Chi_Minh` business date shared with FE07. The approved presentation remains five summary cards and three charts. Dashboard cards navigate to the owning module and preserve the applicable status filter.
-- BR-FE11-033: The account's single current role controls catalog reference-data access: `ADMIN` may list/create/update/deactivate authors, publishers, and categories through `/api/admin/library/*`; `LIBRARIAN` may only read active choices through FE05 `/api/books/metadata`; `MEMBER` and Guest may do neither.
+### MF-FE11-006: Tạo tài khoản thủ thư
 
----
+1. Quản trị viên mở biểu mẫu tạo người dùng mới.
+2. Quản trị viên chọn loại người dùng: Thủ thư.
+3. Quản trị viên nhập các trường bắt buộc: email, họ tên, bộ phận (tùy chọn), chuyên môn (tùy chọn).
+4. Hệ thống kiểm tra và chuẩn hóa yêu cầu tại ranh giới tuyến.
+5. Trong một giao dịch, hệ thống khóa và kiểm tra lại Quản trị viên thực hiện đang hoạt động, kiểm tra tính duy nhất của email/tên người dùng đã chuẩn hóa, tạo bản ghi người dùng mới với trạng thái `INACTIVE`, lưu bền `department`/`specialization` có thể null sau khi loại khoảng trắng đầu/cuối, gán vai trò Thủ thư, lưu hàm băm bcrypt không thể sử dụng của một giá trị do máy chủ tạo rồi loại bỏ, tạo mã thông báo `ACCOUNT_SETUP` đã băm có thời hạn 24 giờ và ghi mục kiểm toán FE11.
+6. Sau khi giao dịch nguồn được cam kết, FE11 yêu cầu gửi `ACCOUNT_SETUP` qua trình yêu cầu được ràng buộc với `FE11`, dùng siêu dữ liệu nguồn `AuthToken` và khóa lũy đẳng `FE11:ACCOUNT_SETUP:<tokenId>`.
+7. FE10 kết xuất và gửi liên kết thiết lập mà không lưu bền hay trả về mã thông báo thô, liên kết hoặc nội dung nhạy cảm đã kết xuất.
+8. Đăng nhập dựa trên mật khẩu vẫn không khả dụng khi tài khoản là `INACTIVE`.
+9. Nếu gửi thất bại, tài khoản vẫn ở `INACTIVE` và phản hồi chỉ báo cáo trạng thái gửi an toàn; Quản trị viên có thể dùng luồng gửi lại đã phê duyệt.
+10. Hệ thống hiển thị ID người dùng mới, vai trò đã gán, trạng thái tài khoản và trạng thái gửi thiết lập an toàn.
 
-## 7. Functional Requirements
+### MF-FE11-007: Cập nhật hồ sơ người dùng được quản lý
 
-- FR-FE11-001: When admin opens user list, the system shall display the paginated `UserManagementView` list using `page = 1`/`limit = 20` defaults, `limit = 1..100` bounds, stable order `CreatedAt DESC, UserId DESC`, and the approved status/role/search filters.
-- FR-FE11-002: When admin views user details, the system shall return the safe `UserManagementView` DTO with the required three-field `relatedSummary` and deterministic zero defaults, excluding every credential, token, session, link, and secret audit field listed in Section 10.3.
-- FR-FE11-003: When Admin creates a new user account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile, approved role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
-- FR-FE11-004: When Admin submits a valid existing-user update containing `fullName`, `phone`, and/or `address`, the system shall persist effective changes atomically and return the authoritative safe DTO. Email, department, specialization, and unknown fields shall be rejected atomically with HTTP `403 MANAGED_USER_UPDATE_FORBIDDEN`.
-- FR-FE11-005: When admin submits a create user form with duplicate normalized email, including a concurrent conflict enforced by deterministic index `UX_Users_Email`, the system shall return `409 EMAIL_ALREADY_EXISTS`, persist no partial account/setup/audit state, and request no FE10 delivery.
-- FR-FE11-006: The system shall never require admin to enter a password when creating users; password setup must happen through a one-time FE02 token flow.
-- FR-FE11-007: The Admin UI shall expose one Edit action for every managed role, allow `fullName`, `phone`, and `address`, keep email read-only, and omit department/specialization. FE03 self-service shall continue to read and write the same canonical profile fields.
-- FR-FE11-008: When admin deactivates an `ACTIVE` or `LOCKED` user account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
-- FR-FE11-009: When Admin creates a new librarian account with valid data, the system shall revalidate the active acting Admin and normalized uniqueness inside the source transaction, atomically create an `INACTIVE` user, profile with trimmed nullable `department`/`specialization`, Librarian role, hashed setup token, and audit entry, then request one FE10 setup delivery and return safe delivery status.
-- FR-FE11-010: When Admin updates a managed account, the system shall accept trimmed `fullName` (1..100), nullable validated `phone` (maximum 20), and nullable `address` (maximum 255), advance storage timestamps only for effective changes, and audit only a successful effective change.
-- FR-FE11-011: When admin deactivates an `ACTIVE` or `LOCKED` librarian account with matching effective `expectedUpdatedAt`, the system shall atomically set status to `INACTIVE`, set `deactivatedAt`, invalidate all active refresh/session credentials, and write the audit record; pending activation returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
-- FR-FE11-012: When Admin changes a user's role, the system shall replace all current UserRoles mappings with exactly one selected valid role, revoke the target's active refresh/session credentials, and write the audit entry in one transaction.
-- FR-FE11-013: The role-management API shall expose one atomic replacement operation and shall not expose standalone assign/revoke operations that can create invalid intermediate cardinality.
-- FR-FE11-014: When Admin replaces a role, the system shall lock the affected mapping, evaluate the remaining active Admin count in the same transaction, and reject any mutation that would leave zero active Admin role holders.
-- FR-FE11-030: When admin opens the console, the system shall display the eight approved sidebar sections with Membership Review after All Users, hide removed Permissions / Confirm Payment / Confirm Borrow navigation items, use the shared Member/Librarian application shell, and keep Admin Library actions inside the Admin console without redirecting to Librarian routes.
-- FR-FE11-031: When admin opens Dashboard, the system shall display the approved five-card and three-chart read-only operational view sourced from approved feature owners, including the canonical active-member count, author count, actual borrowed books, and returns for the current Vietnam business date; selecting a summary card shall open its owning Admin module with the applicable filter.
-- FR-FE11-032: When admin opens Permissions, the system shall display role summary and permission matrix for Admin, Librarian, and Member.
-- FR-FE11-033: When admin opens Audit Logs, the system shall display paginated read-only audit entries without any visible search or filter controls.
-- FR-FE11-034: When admin opens Request Management, the system shall list request records with search/filter/DOCX-export controls and view detail; export shall include every server page matching the frozen filters and only the approved request projection.
-- FR-FE11-035: IF a request is already `COMPLETED`, the system shall disable edit/action controls and allow view-only access.
-- FR-FE11-036: When Admin requests setup resend for an eligible incomplete account after cooldown, FE11 shall revalidate the active acting Admin inside the source transaction, revoke prior active setup tokens, create a new token ID, write an audit entry, and request one new FE10 `ACCOUNT_SETUP` delivery only after commit.
-- FR-FE11-037: IF FE10 setup delivery fails during create or resend, FE11 shall preserve the committed `INACTIVE` account/token state and return only safe `FAILED` delivery status.
-- FR-FE11-038: IF setup resend targets an ineligible account or occurs within 60 seconds of the latest setup-token issuance, FE11 shall reject the request without issuing or exposing a new credential.
-- FR-FE11-039: When Admin opens a borrow-request detail, the safe FE11 projection shall include each item's canonical FE07 detail status and current FE06 physical copy status without exposing internal inventory or credential fields.
-- FR-FE11-040: When an Admin approve/reject command succeeds or conflicts, Request Management shall reload the canonical list and detail. Rejection shall require a trimmed 1..500-character reason and explain that rejecting a pending request releases its logical copy claim.
-- FR-FE11-041: IF Admin attempts to deactivate a user with pending borrow requests, FE11 shall return `409 PENDING_BORROW_REQUESTS_EXIST`; IF Admin attempts to replace `MEMBER` while pending requests or active loans exist, FE11 shall return `409 MEMBER_BORROWING_WORKFLOW_EXISTS`.
-- FR-FE11-042: WHEN Admin opens a legacy pending request that is known not to be approvable, the detail shall list safe blocker messages, disable approval only, and keep rejection available.
-- FR-FE11-043: IF a Librarian, Member, or Guest calls any `/api/admin/library/{authors|publishers|categories}` endpoint, the server shall reject the request before invoking metadata persistence; an authenticated Admin shall be authorized using the canonical single-role projection.
+1. Quản trị viên mở tài khoản Thành viên, Thủ thư hoặc Quản trị viên hiện có.
+2. Quản trị viên chỉnh sửa `fullName`, `phone` và/hoặc `address` rồi gửi phiên bản hiệu lực `expectedUpdatedAt` đã tải.
+3. Hệ thống giữ email ở chế độ chỉ đọc và từ chối `email`, `department`, `specialization` hoặc bất kỳ trường không xác định nào.
+4. Hệ thống so sánh phiên bản hiệu lực mới nhất của `Users`/`UserProfiles` và từ chối trạng thái cũ mà không thay đổi dữ liệu.
+5. Hệ thống chỉ lưu thay đổi có hiệu lực; thao tác không thay đổi giữ nguyên phiên bản hiệu lực và không ghi bản kiểm toán thành công.
+6. Hệ thống tăng `UpdatedAt` trong kho dữ liệu và ghi một bản kiểm toán an toàn cho thay đổi có hiệu lực.
+7. Hệ thống hiển thị DTO an toàn có tính chuẩn.
 
-### 7.1 Unwanted Behavior Requirements (Error / Abnormal Conditions)
+### MF-FE11-008: Vô hiệu hóa tài khoản thủ thư
 
-These EARS Unwanted-behavior requirements promote existing error/abnormal branches (Alternative Flows, Business Rules, Edge Cases, Resolved Questions) into traceable functional requirements.
+1. Quản trị viên mở tài khoản thủ thư hiện có.
+2. Quản trị viên xác nhận vô hiệu hóa và gửi phiên bản hiệu lực `expectedUpdatedAt` đã tải.
+3. Hệ thống từ chối trường hợp đang chờ kích hoạt, trạng thái cũ, tự nhắm mục tiêu, còn yêu cầu mượn đang chờ hoặc lượt mượn đang hoạt động mà không thay đổi dữ liệu.
+4. Đối với thủ thư `ACTIVE` hoặc `LOCKED`, hệ thống đặt trạng thái thành `INACTIVE` và ghi lại dấu thời gian của máy chủ `deactivatedAt`.
+5. Trong cùng giao dịch, hệ thống vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động của Thủ thư đó.
+6. Hệ thống ghi mục nhật ký kiểm toán trong cùng giao dịch; nếu thất bại thì hoàn tác thao tác vô hiệu hóa.
+7. Hệ thống hiển thị DTO an toàn có tính chuẩn.
 
-- FR-FE11-015: IF a non-admin user (Member, Librarian, or Guest) attempts to access any user management feature, the system shall reject the request with an authorization error. (Source: BR-FE11-001, BR-FE11-011, BR-FE11-012)
-- FR-FE11-016: IF Admin requests details, Librarian work-field update, deactivation, or role change for a user ID that does not exist, the system shall return a not-found error. (Source: EC-FE11-002)
-- FR-FE11-017: IF the acting Admin user is missing during create, setup resend, Librarian work-field update, deactivation, or role mutation, the system shall return `404 ADMIN_NOT_FOUND` and shall not perform a source mutation or success audit; an inactive or non-Admin actor returns `403 ADMIN_REQUIRED`. (Source: EC-FE11-001)
-- FR-FE11-018: IF admin attempts to deactivate their own account, the system shall reject the action. (Source: Q-FE11-001, EC-FE11-006)
-- FR-FE11-019: IF admin attempts to deactivate a user who has active borrowings, the system shall block the deactivation and report the number of active borrowed items. (Source: AF-FE11-002, Q-FE11-002, MF-FE11-005 step 3)
-- FR-FE11-020: IF Admin attempts to change an existing user's email, regardless of uniqueness, the system shall reject the request with HTTP `403` and code `MANAGED_USER_UPDATE_FORBIDDEN`; any future email-change capability must use an explicitly approved FE02 verification flow. (Source: AF-FE11-004, BR-FE11-014)
-- FR-FE11-021: IF an email submitted during FE11 account creation is malformed, contains an SQL injection payload, or exceeds 255 characters, the system shall sanitize the input, reject the request, and return a validation error. (Source: EC-FE11-003, EC-FE11-004)
-- FR-FE11-022: IF a database error occurs during user creation, the system shall roll back the transaction and return an error without creating a partial user record. (Source: EC-FE11-008, NFR-FE11-TXN-001)
-- FR-FE11-023: WHERE a managed-profile update or deactivation `expectedUpdatedAt` does not equal the latest effective `Users`/`UserProfiles` version, the system shall reject the mutation with HTTP `409` and code `STALE_USER_STATE`, preserving the existing record and writing no success audit. (Source: EC-FE11-007, BR-FE11-027)
-- FR-FE11-024: IF Admin selects a role that does not exist or is not one of `MEMBER`, `LIBRARIAN`, `ADMIN`, the system shall return a not-found error and shall not modify the UserRoles mapping. (Source: EC-FE11-010)
-- FR-FE11-025: IF Admin selects the user's current sole role, the system shall return the authoritative safe DTO as an idempotent no-op and write no role-change audit. (Source: EC-FE11-011)
-- FR-FE11-026: IF legacy data contains zero or multiple current mappings, an explicit valid replacement shall normalize it to exactly one mapping in the transaction, subject to last-active-Admin protection. (Source: EC-FE11-012)
-- FR-FE11-027: The database shall enforce at most one UserRoles row per UserId through `UX_UserRoles_UserId`; account creation and role replacement shall guarantee at least one mapping. (Source: EC-FE11-013, BR-FE11-007)
-- FR-FE11-028: IF Admin submits an invalid managed-profile field, the system shall reject the update with a validation error; forbidden email, department, specialization, and unknown fields use `MANAGED_USER_UPDATE_FORBIDDEN`.
-- FR-FE11-029: IF a user attempts to complete password setup with a token that is expired or already used, the system shall reject the request and shall not activate password-based login. (Source: data field `passwordSetupToken` / `passwordSetupTokenExpiresAt` in section 10.2, BR-FE11-013)
+### MF-FE11-009: Quản lý vai trò
 
----
+1. Quản trị viên mở trang chi tiết người dùng.
+2. Quản trị viên xem các vai trò hiện tại được gán cho người dùng.
+3. Quản trị viên chọn chính xác một vai trò thay thế.
+4. Hệ thống khóa ánh xạ vai trò bị ảnh hưởng, đếm người giữ vai trò Quản trị viên đang hoạt động trong cùng giao dịch và từ chối thay thế nếu thao tác đó khiến không còn người giữ vai trò Quản trị viên đang hoạt động.
+5. Nếu thay `MEMBER` bằng vai trò khác, hệ thống tuần tự hóa với FE07 và từ chối khi còn yêu cầu đang chờ hoặc lượt mượn đang hoạt động.
+6. Hệ thống xóa nguyên tử ánh xạ hiện tại, chèn ánh xạ đã chọn và ghi một mục nhật ký kiểm toán chứa vai trò trước và vai trò mới.
+7. Chọn vai trò hiện tại là thao tác không thay đổi có tính lũy đẳng và không ghi bản kiểm toán thành công.
+8. Hệ thống trả về DTO người dùng an toàn có tính chuẩn, với mảng `roles` chứa đúng một mục.
 
-## 8. Acceptance Criteria
+### MF-FE11-014: Gửi lại email thiết lập mật khẩu
 
-- AC-FE11-001: Given admin access, when viewing user list, then the system displays the safe paginated list with defaults/bounds, stable order, status/role filters, trimmed email/name/user-ID search, and readable non-overlapping email and username values.
-- AC-FE11-002: Given admin access, when viewing a user detail page, then the safe `UserManagementView` DTO and approved related summaries are displayed without credentials, token/session data, setup/reset links, or secret audit metadata.
-- AC-FE11-003: Given valid user data, when Admin creates a new user account, then an inactive user, approved role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
-- AC-FE11-004: Given an existing account, when Admin submits `fullName`, `phone`, `address`, or `email`, then the system returns `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`, keeps every field and `UpdatedAt` unchanged, and writes no success audit; the Admin UI exposes those fields as read-only.
-- AC-FE11-005: Given duplicate normalized email, when admin creates a new user, then the system returns `409 EMAIL_ALREADY_EXISTS`, persists no partial source state, and requests no setup delivery.
-- AC-FE11-006: Given Admin creates a new member or librarian, then no password/token/link field is required or shown, the account stays `INACTIVE`, and login remains unavailable until FE02 setup completion.
-- AC-FE11-007: Given an `ACTIVE` or `LOCKED` user and matching effective `expectedUpdatedAt`, when admin deactivates the account, then status changes to `INACTIVE`; a pending-activation account returns `409 ACCOUNT_PENDING_ACTIVATION` without mutation.
-- AC-FE11-008: Given any existing account, when Admin attempts to change its email, then the system rejects the request regardless of whether the submitted email is unique.
-- AC-FE11-009: Given user with active session, when admin deactivates account, then session is invalidated.
-- AC-FE11-010: Given valid librarian data, when Admin creates a new librarian account, then an inactive user, Librarian role, hashed setup token, and audit entry commit together and one FE10 setup delivery is requested.
-- AC-FE11-011: Given an existing current Librarian account, when Admin submits only valid `department` and/or `specialization` with matching effective `expectedUpdatedAt`, then effective work-field changes are saved and storage `UpdatedAt` advances; personal or unknown fields are rejected.
-- AC-FE11-012: Given an `ACTIVE` or `LOCKED` librarian account and matching effective `expectedUpdatedAt`, when admin deactivates it, then status changes to `INACTIVE` and active sessions are invalidated.
-- AC-FE11-013: Given a Member account with an active session, when Admin opens role management directly or through the managed-user edit dialog and replaces its role with Librarian, then exactly one Librarian mapping remains, its active refresh/session credentials are revoked, one replacement audit is committed, and the next protected request requires authentication under the new role.
-- AC-FE11-014: Given an Admin account that is not the last active Admin, when Admin replaces its role with Member, then exactly one Member mapping remains.
-- AC-FE11-015: Given the last active Admin account, when Admin attempts to replace its Admin role, then the system rejects the action without mapping or audit mutation.
-- AC-FE11-016: Given admin opens the console, then the eight approved sections are visible in order with Membership Review after All Users, removed workflows are hidden, and catalog management opens inside Admin Library without a Librarian-route redirect.
-- AC-FE11-017: Given admin opens Permissions, then role counts and permission matrix are displayed using FE11 role data.
-- AC-FE11-018: Given admin opens Audit Logs, then log rows can be reviewed without exposing sensitive credential/token fields.
-- AC-FE11-019: Given admin opens Request Management, then pending requests can expose approved action controls and completed requests are view-only.
-- AC-FE11-020: Given setup delivery fails after account creation commits, then the account remains `INACTIVE`, no credential is exposed, and the response reports safe `FAILED` status.
-- AC-FE11-021: Given an eligible incomplete setup account outside cooldown, when Admin resends setup, then prior active tokens are revoked and a new FE10 event uses a new token ID/idempotency key.
-- AC-FE11-022: Given an active, locked, self-registered inactive, completed-setup, or cooldown-limited account, when Admin requests setup resend, then the system rejects it without creating a credential.
-- AC-FE11-023: Given an Admin submits a Librarian work-field update or deactivation with stale effective `expectedUpdatedAt`, when the current user record has changed, then the system returns `409 STALE_USER_STATE` and persists no submitted field, lifecycle change, credential revocation, or success audit.
-- AC-FE11-024: Given Admin opens a pending request, then every requested barcode is paired with its current physical copy status; after an approve conflict, the refreshed state remains truthful and rejection with a valid reason remains available.
-- AC-FE11-025: Given Admin opens Dashboard, the approved five summary cards and three charts remain visible, the active Member count matches `Users -> UserRoles -> Roles`, the author count matches active catalogue authors, top-borrowed excludes unapproved `REQUESTED` details, return-today uses the FE07 date for the current Vietnam business day, and selecting a card opens the corresponding module with its applicable filter.
-- AC-FE11-026: Given accounts with Admin, Librarian, and Member roles, when each requests Admin metadata management, then only Admin reaches the metadata service; Librarian retains only the separate FE05 active-choice read.
+1. Quản trị viên mở tài khoản do quản trị viên tạo mà thiết lập mật khẩu chưa hoàn tất.
+2. Quản trị viên yêu cầu email thiết lập mới.
+3. Trong một giao dịch, trước tiên hệ thống khóa và kiểm tra lại Quản trị viên thực hiện đang hoạt động, sau đó xác nhận tài khoản đích là `INACTIVE`, có lịch sử mã thông báo `ACCOUNT_SETUP`, chưa hoàn tất thiết lập và đã qua khoảng chờ phát hành 60 giây.
+4. Trong giao dịch đó, FE11 thu hồi các mã thông báo thiết lập đang hoạt động trước đó, tạo mã thông báo `ACCOUNT_SETUP` mới đã băm có thời hạn 24 giờ và ghi mục kiểm toán gửi lại.
+5. FE11 yêu cầu gửi `ACCOUNT_SETUP` mới qua trình yêu cầu được ràng buộc với `FE11`, dùng ID mã thông báo mới và khóa lũy đẳng.
+6. Hệ thống trả về trạng thái gửi an toàn `SENT` hoặc `FAILED` mà không trả về mã thông báo hay liên kết thiết lập.
+
+### MF-FE11-010: Xem bảng điều khiển Quản trị và điều hướng
+
+1. Quản trị viên mở bảng điều khiển Quản trị.
+2. Hệ thống hiển thị các thẻ tóm tắt và biểu đồ vận hành bằng dữ liệu chỉ đọc từ nguồn sách, mượn sách, yêu cầu, người dùng-vai trò và tư cách thành viên.
+3. Số lượng vai trò của tài khoản đang hoạt động dùng ánh xạ đơn chuẩn `Users -> UserRoles -> Roles`; trạng thái hồ sơ đăng ký tư cách thành viên FE04 vẫn là chỉ số quy trình riêng và không được xem là vai trò đăng nhập `MEMBER`.
+4. Mỗi thẻ tóm tắt mở mô-đun Quản trị viên sở hữu thẻ với bộ lọc vai trò hoặc trạng thái quy trình tương ứng khi áp dụng.
+5. Thanh bên hiển thị các mục Quản trị đã phê duyệt: Trang chủ, Bảng điều khiển, Thư viện, Quản lý mượn sách, Quản lý yêu cầu, Tất cả người dùng, Rà soát tư cách thành viên và Nhật ký kiểm toán.
+6. Hệ thống không hiển thị các mục nhập thanh bên `Permissions`, `Confirm Payment` hoặc `Confirm Borrow` đã bị xóa.
+7. Hệ thống giữ thao tác thay thế vai trò duy nhất trong Tất cả người dùng và không hiển thị mục Quyền riêng trên thanh bên.
+8. Bảng điều khiển Quản trị dùng chung khung ứng dụng, đầu trang, thanh bên thích ứng, kiểu chữ và hệ màu kem/nâu với các trang Thành viên và Thủ thư.
+9. Thư viện Quản trị mở chức năng quản lý danh mục bên trong bảng điều khiển Quản trị và không chuyển Quản trị viên tới tuyến Thủ thư; không gian làm việc nhúng tiếp tục dùng API FE05 chuẩn và quy tắc phân quyền.
+
+### MF-FE11-011: Xem quyền
+
+1. Quản trị viên mở Quyền.
+2. Hệ thống hiển thị tóm tắt vai trò và ma trận phân quyền cho Quản trị viên, Thủ thư và Thành viên.
+3. Hệ thống dùng vai trò FE11 làm nguồn chuẩn và không cho phép người dùng không phải Quản trị viên chỉnh sửa quyền.
+
+### MF-FE11-012: Xem nhật ký kiểm toán
+
+1. Quản trị viên mở Nhật ký kiểm toán.
+2. Hệ thống liệt kê các hành động quản trị/hệ thống quan trọng cùng tác nhân, hành động, đối tượng đích, dấu thời gian và chi tiết an toàn.
+3. Giao diện Quản trị viên hiển thị trực tiếp danh sách hoạt động được phân trang mà không có điều khiển tìm kiếm hay lọc.
+4. Nhật ký kiểm toán ở chế độ chỉ đọc trên giao diện.
+
+### MF-FE11-013: Quản lý chế độ rà soát yêu cầu của Quản trị viên
+
+1. Quản trị viên mở Quản lý yêu cầu.
+2. Hệ thống liệt kê bản ghi mượn/yêu cầu bằng dữ liệu yêu cầu FE07 cùng các điều khiển tìm kiếm/lọc/xuất.
+3. Quản trị viên có thể xem chi tiết yêu cầu.
+4. Các yêu cầu có trạng thái `PENDING` / `Chờ xác nhận` có thể được xử lý theo quy trình mượn đã được phê duyệt.
+5. Các yêu cầu có trạng thái `COMPLETED` / `Hoàn thành` ở dạng chỉ đọc và không thể chỉnh sửa từ chế độ xem này.
 
 ---
 
-## 9. Edge Cases and Error Handling
+## 5. Luồng thay thế
 
-| ID | Edge Case / Error | Expected System Behavior |
+### AF-FE11-001: Email đã tồn tại
+
+1. Quản trị viên cố gắng tạo người dùng mới bằng email đã được sử dụng.
+2. Hệ thống phát hiện email trùng lặp.
+3. Hệ thống trả về lỗi: "Email đã được đăng ký. Sử dụng email khác hoặc liên hệ với chủ tài khoản; Quản trị viên không thể thay đổi email của người dùng hiện tại."
+
+### AF-FE11-002: Người dùng có khoản vay đang hoạt động
+
+1. Quản trị viên cố gắng vô hiệu hóa người dùng đang mượn sách.
+2. Hệ thống phát hiện các khoản vay đang hoạt động.
+3. Hệ thống từ chối vô hiệu hóa và báo cáo: "Người dùng này có [N] mục đang được mượn."
+4. Quản trị viên phải xử lý xong vòng đời mượn đang hoạt động trước khi thử vô hiệu hóa lại.
+
+### AF-FE11-003: Không thể xóa quản trị viên cuối cùng
+
+1. Quản trị viên cố gắng xóa vai trò Quản trị viên khỏi người dùng quản trị viên cuối cùng còn lại.
+2. Hệ thống phát hiện đây là quản trị viên cuối cùng.
+3. Hệ thống từ chối hành động: "Không thể xóa vai trò quản trị viên khỏi người dùng quản trị viên cuối cùng."
+
+### AF-FE11-004: Quản trị viên cố gắng thay đổi thông tin cá nhân
+
+1. Quản trị viên gửi bản cập nhật của người dùng hiện tại có chứa `fullName`, `phone`, `address` hoặc `email`.
+2. Hệ thống nhận ra rằng trường đã gửi thuộc về FE03 tự phục vụ hoặc luồng email được xác minh FE02 trong tương lai.
+3. Hệ thống trả về `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` và không lưu trường đã gửi, thay đổi phiên bản hay bản kiểm toán thành công.
+
+## 6. Quy tắc nghiệp vụ
+
+Dùng các ID ổn định này cho nhiệm vụ và kiểm thử.
+
+- BR-FE11-001: Chỉ người dùng Quản trị viên được xác thực mới có thể truy cập các tính năng quản lý người dùng.
+- BR-FE11-002: Chỉ người dùng Quản trị viên được xác thực mới có thể tạo người dùng mới.
+- BR-FE11-003: Không thể xóa vĩnh viễn người dùng; chỉ được vô hiệu hóa (đặt thành `INACTIVE` cùng `deactivatedAt` do máy chủ ghi). Tài khoản đã vô hiệu hóa không thể được kích hoạt lại trong Giai đoạn 1.
+- BR-FE11-004: Mỗi người dùng phải có một địa chỉ email duy nhất trong hệ thống.
+- BR-FE11-005: Khi Quản trị viên tạo người dùng, tài khoản phải bắt đầu với trạng thái `INACTIVE` và không thể xác thực cho đến khi FE02 hoàn tất thiết lập mật khẩu và kích hoạt nó một cách nguyên tử.
+- BR-FE11-006: Khi tài khoản người dùng bị vô hiệu hóa, thay đổi trạng thái, `deactivatedAt`, việc vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động và nhật ký kiểm toán phải được cam kết nguyên tử.
+- BR-FE11-007: Mỗi tài khoản được lưu bền phải được gán đúng một vai trò: Thành viên, Thủ thư hoặc Quản trị viên.
+- BR-FE11-008: Các vai trò tài khoản loại trừ lẫn nhau. Thay đổi vai trò phải thay thế ánh xạ hiện tại và thu hồi nguyên tử thông tin xác thực làm mới/phiên đang hoạt động của tài khoản đích; tuyệt đối không được tạo ánh xạ thứ hai hoặc để tài khoản không có vai trò. Người dùng phải xác thực lại trước khi dùng vai trò thay thế.
+- BR-FE11-009: Hệ thống tuyệt đối không được cho phép thay thế vai trò của Quản trị viên đang hoạt động cuối cùng. Việc đếm Quản trị viên còn lại và thay thế vai trò phải được kiểm tra dưới khóa giao dịch để thay đổi đồng thời không thể vượt qua quy tắc này.
+- BR-FE11-010: Mọi hành động quản lý người dùng thuộc FE11 (tạo, cập nhật trường công việc của Thủ thư, vô hiệu hóa, thay đổi vai trò) phải có khả năng kiểm toán.
+- BR-FE11-011: Người dùng thành viên không thể tạo hoặc quản lý người dùng khác.
+- BR-FE11-012: Người dùng thủ thư không thể tạo hoặc quản lý người dùng.
+- BR-FE11-013: Quản trị viên không bao giờ trực tiếp nhập, xem hoặc tạo mật khẩu. Thiết lập mật khẩu sẽ tạo liên kết mã thông báo một lần được gửi qua email và người dùng đặt mật khẩu của riêng họ thông qua FE02.
+- BR-FE11-014: Sau khi tạo tài khoản, cả chủ sở hữu tài khoản thông qua FE03 và Quản trị viên thông qua FE11 đều có thể cập nhật `fullName`, `phone` và `address` trong cùng một hồ sơ chuẩn. Thay đổi email tài khoản hiện tại thuộc về luồng FE02 đã được xác minh và vẫn nằm ngoài Giai đoạn 1.
+- BR-FE11-015: Tài khoản Thành viên, Thủ thư và Quản trị viên tuân theo cùng quy tắc kiểm tra hợp lệ, đồng thời, kiểm toán và vô hiệu hóa hồ sơ được quản lý. `department` và `specialization` không thuộc trải nghiệm chỉnh sửa của Quản trị viên FE11.
+- BR-FE11-016: Thanh bên Quản trị là bề mặt truy cập do FE11 kiểm soát; chỉ được hiển thị tám mục đã phê duyệt, gồm Rà soát tư cách thành viên FE04 sau Tất cả người dùng, và không được chứa `Permissions`, `Confirm Payment` hay `Confirm Borrow`. Quản lý vai trò vẫn khả dụng từ Tất cả người dùng.
+- BR-FE11-017: Giao diện Quyền là bản tóm tắt/ma trận vai trò chỉ đọc, trừ khi một thao tác sửa vai trò riêng được thực hiện rõ ràng trong Quản lý vai trò.
+- BR-FE11-018: Nhật ký kiểm toán chỉ đọc đối với Quản trị viên và không được làm lộ hàm băm mật khẩu, mã thông báo hay dữ liệu cá nhân không cần thiết.
+- BR-FE11-019: Quản lý yêu cầu quản trị viên có thể hiển thị dữ liệu yêu cầu FE07 nhưng các yêu cầu đã hoàn thành ở dạng chỉ đọc; chỉ những yêu cầu đang chờ xử lý mới có thể hiển thị các điều khiển hành động.
+- BR-FE11-020: Bảng điều khiển Quản trị có thể tổng hợp số liệu/biểu đồ vận hành, nhưng tạo báo cáo chi tiết vẫn thuộc Báo cáo và thống kê FE12.
+- BR-FE11-021: FE11 sở hữu việc phát hành và thu hồi mã thông báo `ACCOUNT_SETUP` do Quản trị viên tạo; FE02 sở hữu việc sử dụng mã thông báo, băm mật khẩu và kích hoạt; FE10 sở hữu kết xuất và gửi liên kết thiết lập.
+- BR-FE11-022: FE11 chỉ được yêu cầu gửi thiết lập qua `createSourceNotificationRequester('FE11')`, dùng cặp chuẩn `ACCOUNT_SETUP -> ACCOUNT_SETUP`, `sourceEntityType: AuthToken`, ID mã thông báo đã lưu bền và khóa lũy đẳng `FE11:ACCOUNT_SETUP:<tokenId>`.
+- BR-FE11-023: Mã thông báo và liên kết thiết lập thô chỉ được tồn tại trong bộ nhớ tiến trình của yêu cầu đang hoạt động và tuyệt đối không xuất hiện trong dữ liệu lưu bền, nhật ký, bản ghi kiểm toán, phản hồi Quản trị viên hoặc trường HTTP chỉ dành cho kiểm thử.
+- BR-FE11-024: Việc tạo người dùng, hồ sơ, vai trò ban đầu, mã thông báo thiết lập và bản ghi kiểm toán FE11 phải cùng được cam kết hoặc hoàn tác sau khi giao dịch khóa, kiểm tra lại Quản trị viên thực hiện đang hoạt động và kiểm tra chuẩn tính duy nhất của email/tên người dùng đã chuẩn hóa; việc gửi qua nhà cung cấp FE10 chỉ diễn ra sau giao dịch nguồn này và vẫn không chặn luồng.
+- BR-FE11-025: Chỉ cho phép Quản trị viên gửi lại sau khi giao dịch nguồn khóa, kiểm tra lại Quản trị viên thực hiện đang hoạt động và xác nhận một tài khoản `INACTIVE` do Quản trị viên tạo có lịch sử mã thông báo thiết lập chưa hoàn tất; mỗi lần gửi lại thu hồi mã thông báo thiết lập đang hoạt động trước đó và tạo mã thông báo/sự kiện/khóa mới sau khoảng chờ 60 giây.
+- BR-FE11-026: Phản hồi danh sách/chi tiết/cập nhật trường công việc Thủ thư phải dùng DTO `UserManagementView` đã phê duyệt và tuyệt đối không làm lộ hàm băm mật khẩu, thông tin xác thực thô hay đã băm, mã định danh phiên, liên kết thiết lập/đặt lại hoặc siêu dữ liệu kiểm toán bí mật.
+- BR-FE11-027: Mọi cập nhật và vô hiệu hóa hồ sơ được quản lý phải dùng `updatedAt` khác null đã tải, được định nghĩa là dấu thời gian hiệu lực mới nhất giữa `Users` và `UserProfiles`; thao tác thay đổi dùng trạng thái cũ trả về HTTP `409` với mã `STALE_USER_STATE`, không thay đổi trường hay ghi bản kiểm toán thành công. Thao tác không thay đổi trả về DTO an toàn hiện tại mà không tăng phiên bản hay ghi bản kiểm toán thành công.
+- BR-FE11-028: Vai trò duy nhất của tài khoản xác định nhóm người dùng của tài khoản trên FE01, FE07, FE08, FE09 và điều hướng chung. Chỉ `MEMBER` có quyền tự phục vụ của Thành viên về mượn/đặt chỗ/xem tiền phạt của mình; `LIBRARIAN` và `ADMIN` dùng các tuyến dành cho nhân viên.
+- BR-FE11-029: Quản lý yêu cầu Quản trị viên FE11 là bề mặt kết hợp/đọc trên FE07. Nó phải hiển thị trạng thái bản sao vật lý hiện tại trong DTO chi tiết an toàn, chỉ dùng lệnh phê duyệt/từ chối FE07 và tải lại trạng thái yêu cầu chuẩn sau cả thành công lẫn xung đột; không được tạo vòng đời yêu cầu Quản trị viên riêng.
+- BR-FE11-030: FE11 không được vô hiệu hóa tài khoản hay thay thế vai trò `MEMBER` khi FE07 báo còn yêu cầu mượn đang chờ hoặc chi tiết mượn đang hoạt động. Thao tác vòng đời và thao tác tạo/phê duyệt FE07 dùng cùng khóa giao dịch theo Thành viên.
+- BR-FE11-031: Với yêu cầu cũ đang chờ có chủ sở hữu đã biết là không hoạt động/không phải Thành viên hoặc bản sao không sẵn có, Quản lý yêu cầu Quản trị viên vô hiệu hóa thao tác phê duyệt kèm điều kiện chặn có hướng xử lý nhưng vẫn cho phép từ chối; FE07 vẫn là nguồn chuẩn tại thời điểm thực thi lệnh.
+- BR-FE11-032: Số liệu Thành viên trên Bảng điều khiển Quản trị đếm tài khoản `ACTIVE` qua ánh xạ đơn chuẩn `UserRoles`. Biểu đồ mượn chỉ đếm chi tiết FE07 đã cam kết `BorrowDate`; biểu đồ trả trong ngày dùng ngày nghiệp vụ `Asia/Ho_Chi_Minh` dùng chung với FE07. Phần trình bày đã phê duyệt vẫn gồm năm thẻ tóm tắt và ba biểu đồ. Thẻ bảng điều khiển chuyển tới mô-đun sở hữu và giữ bộ lọc trạng thái tương ứng.
+- BR-FE11-033: Vai trò hiện tại duy nhất của tài khoản kiểm soát quyền truy cập dữ liệu tham chiếu danh mục: `ADMIN` có thể liệt kê/tạo/cập nhật/vô hiệu hóa tác giả, nhà xuất bản và danh mục qua `/api/admin/library/*`; `LIBRARIAN` chỉ được đọc lựa chọn đang hoạt động qua FE05 `/api/books/metadata`; `MEMBER` và Khách không được thực hiện hai nhóm thao tác này.
+
+---
+
+## 7. Yêu cầu chức năng
+
+- FR-FE11-001: Khi Quản trị viên mở danh sách người dùng, hệ thống phải hiển thị danh sách `UserManagementView` được phân trang với giá trị mặc định `page = 1`/`limit = 20`, giới hạn `limit = 1..100`, thứ tự ổn định `CreatedAt DESC, UserId DESC` và các bộ lọc trạng thái/vai trò/tìm kiếm đã phê duyệt.
+- FR-FE11-002: Khi Quản trị viên xem chi tiết người dùng, hệ thống phải trả về DTO `UserManagementView` an toàn với `relatedSummary` bắt buộc gồm ba trường và giá trị mặc định bằng không có tính xác định, đồng thời loại trừ mọi trường thông tin xác thực, mã thông báo, phiên, liên kết và kiểm toán bí mật được liệt kê trong Mục 10.3.
+- FR-FE11-003: Khi Quản trị viên tạo tài khoản người dùng mới bằng dữ liệu hợp lệ, hệ thống phải kiểm tra lại Quản trị viên thực hiện đang hoạt động và tính duy nhất đã chuẩn hóa trong giao dịch nguồn; tạo nguyên tử người dùng `INACTIVE`, hồ sơ, vai trò đã phê duyệt, mã thông báo thiết lập đã băm và mục kiểm toán; sau đó yêu cầu một lần gửi thiết lập FE10 và trả về trạng thái gửi an toàn.
+- FR-FE11-004: Khi Quản trị viên gửi bản cập nhật hợp lệ cho người dùng hiện có, chứa `fullName`, `phone` và/hoặc `address`, hệ thống phải lưu bền nguyên tử các thay đổi có hiệu lực và trả về DTO an toàn có tính chuẩn. Email, bộ phận, chuyên môn và trường không rõ phải bị từ chối nguyên tử bằng HTTP `403 MANAGED_USER_UPDATE_FORBIDDEN`.
+- FR-FE11-005: Khi Quản trị viên gửi biểu mẫu tạo người dùng có email đã chuẩn hóa bị trùng, gồm cả xung đột đồng thời được chỉ mục tất định `UX_Users_Email` thực thi, hệ thống phải trả về `409 EMAIL_ALREADY_EXISTS`, không lưu bền trạng thái tài khoản/thiết lập/kiểm toán một phần và không yêu cầu FE10 gửi.
+- FR-FE11-006: Hệ thống không bao giờ yêu cầu quản trị viên nhập mật khẩu khi tạo người dùng; thiết lập mật khẩu phải diễn ra thông qua luồng mã thông báo FE02 một lần.
+- FR-FE11-007: Giao diện Quản trị viên phải hiển thị một thao tác Chỉnh sửa cho mọi vai trò được quản lý, cho phép `fullName`, `phone` và `address`, giữ email ở chế độ chỉ đọc và không hiển thị department/specialization. Chức năng tự phục vụ FE03 phải tiếp tục đọc và ghi cùng các trường hồ sơ chuẩn.
+- FR-FE11-008: Khi Quản trị viên vô hiệu hóa tài khoản người dùng `ACTIVE` hoặc `LOCKED` có phiên bản hiệu lực `expectedUpdatedAt` khớp, hệ thống phải nguyên tử đặt trạng thái thành `INACTIVE`, đặt `deactivatedAt`, vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động và ghi bản kiểm toán; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
+- FR-FE11-009: Khi Quản trị viên tạo tài khoản Thủ thư mới bằng dữ liệu hợp lệ, hệ thống phải kiểm tra lại Quản trị viên thực hiện đang hoạt động và tính duy nhất đã chuẩn hóa trong giao dịch nguồn; tạo nguyên tử người dùng `INACTIVE`, hồ sơ có `department`/`specialization` đã loại khoảng trắng đầu/cuối và có thể null, vai trò Thủ thư, mã thông báo thiết lập đã băm cùng mục kiểm toán; sau đó yêu cầu một lần gửi thiết lập FE10 và trả về trạng thái gửi an toàn.
+- FR-FE11-010: Khi Quản trị viên cập nhật tài khoản được quản lý, hệ thống phải chấp nhận `fullName` đã loại khoảng trắng đầu/cuối (1..100), `phone` đã kiểm tra hợp lệ có thể null (tối đa 20) và `address` có thể null (tối đa 255), chỉ tăng dấu thời gian lưu trữ khi có thay đổi hiệu lực và chỉ ghi kiểm toán cho thay đổi hiệu lực thành công.
+- FR-FE11-011: Khi Quản trị viên vô hiệu hóa tài khoản Thủ thư `ACTIVE` hoặc `LOCKED` có phiên bản hiệu lực `expectedUpdatedAt` khớp, hệ thống phải nguyên tử đặt trạng thái thành `INACTIVE`, đặt `deactivatedAt`, vô hiệu hóa mọi thông tin xác thực làm mới/phiên đang hoạt động và ghi bản kiểm toán; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
+- FR-FE11-012: Khi Quản trị viên thay đổi vai trò người dùng, hệ thống phải thay mọi ánh xạ UserRoles hiện tại bằng đúng một vai trò hợp lệ đã chọn, thu hồi thông tin xác thực làm mới/phiên đang hoạt động của tài khoản đích và ghi mục kiểm toán trong một giao dịch.
+- FR-FE11-013: API quản lý vai trò phải cung cấp một thao tác thay thế nguyên tử và không được cung cấp thao tác gán/thu hồi độc lập có thể tạo số lượng ánh xạ trung gian không hợp lệ.
+- FR-FE11-014: Khi Quản trị viên thay thế vai trò, hệ thống phải khóa ánh xạ bị ảnh hưởng, đánh giá số Quản trị viên đang hoạt động còn lại trong cùng giao dịch và từ chối mọi thay đổi khiến không còn người giữ vai trò Quản trị viên đang hoạt động.
+- FR-FE11-030: Khi Quản trị viên mở bảng điều khiển, hệ thống phải hiển thị tám mục thanh bên đã phê duyệt với Rà soát tư cách thành viên sau Tất cả người dùng; ẩn các mục điều hướng Quyền / Xác nhận thanh toán / Xác nhận mượn đã bị loại; dùng khung ứng dụng chung của Thành viên/Thủ thư; và giữ thao tác Thư viện Quản trị trong bảng điều khiển Quản trị mà không chuyển tới tuyến Thủ thư.
+- FR-FE11-031: Khi Quản trị viên mở Bảng điều khiển, hệ thống phải hiển thị chế độ xem vận hành chỉ đọc gồm năm thẻ và ba biểu đồ đã phê duyệt từ các chủ sở hữu tính năng đã phê duyệt, gồm số Thành viên đang hoạt động chuẩn, số tác giả, sách thực tế đã mượn và lượt trả trong ngày nghiệp vụ hiện tại của Việt Nam; chọn thẻ tóm tắt phải mở mô-đun Quản trị viên sở hữu thẻ với bộ lọc tương ứng.
+- FR-FE11-032: Khi quản trị viên mở Quyền, hệ thống sẽ hiển thị tóm tắt vai trò và ma trận quyền cho Quản trị viên, Thủ thư và Thành viên.
+- FR-FE11-033: Khi Quản trị viên mở Nhật ký kiểm toán, hệ thống phải hiển thị các mục kiểm toán chỉ đọc được phân trang mà không có điều khiển tìm kiếm hay lọc hiển thị.
+- FR-FE11-034: Khi Quản trị viên mở Quản lý yêu cầu, hệ thống phải liệt kê bản ghi yêu cầu với điều khiển tìm kiếm/lọc/xuất DOCX và xem chi tiết; tệp xuất phải gồm mọi trang máy chủ khớp các bộ lọc đã cố định và chỉ chứa phép chiếu yêu cầu đã phê duyệt.
+- FR-FE11-035: NẾU yêu cầu đã ở `COMPLETED`, hệ thống phải tắt điều khiển chỉnh sửa/thao tác và chỉ cho phép xem.
+- FR-FE11-036: Khi Quản trị viên yêu cầu gửi lại thiết lập cho tài khoản chưa hoàn tất đủ điều kiện sau khoảng chờ, FE11 phải kiểm tra lại Quản trị viên thực hiện đang hoạt động trong giao dịch nguồn, thu hồi các mã thông báo thiết lập đang hoạt động trước đó, tạo ID mã thông báo mới, ghi mục kiểm toán và chỉ yêu cầu một lần gửi `ACCOUNT_SETUP` FE10 mới sau khi cam kết.
+- FR-FE11-037: NẾU gửi thiết lập FE10 thất bại khi tạo hoặc gửi lại, FE11 phải giữ trạng thái tài khoản/mã thông báo `INACTIVE` đã cam kết và chỉ trả về trạng thái gửi an toàn `FAILED`.
+- FR-FE11-038: NẾU quá trình gửi lại thiết lập nhắm mục tiêu tài khoản không đủ điều kiện hoặc xảy ra trong vòng 60 giây kể từ lần phát hành mã thông báo thiết lập mới nhất, FE11 sẽ từ chối yêu cầu mà không cấp hoặc tiết lộ thông tin xác thực mới.
+- FR-FE11-039: Khi Quản trị viên mở chi tiết yêu cầu mượn, phép chiếu FE11 an toàn phải gồm trạng thái chi tiết FE07 chuẩn của từng mục và trạng thái bản sao vật lý FE06 hiện tại mà không làm lộ trường kho hay thông tin xác thực nội bộ.
+- FR-FE11-040: Khi lệnh phê duyệt/từ chối của Quản trị viên thành công hoặc xung đột, Quản lý yêu cầu phải tải lại danh sách và chi tiết chuẩn. Từ chối phải yêu cầu lý do đã loại khoảng trắng đầu/cuối dài 1..500 ký tự và giải thích rằng từ chối yêu cầu đang chờ sẽ giải phóng quyền giữ bản sao logic của yêu cầu.
+- FR-FE11-041: NẾU Quản trị viên cố gắng vô hiệu hóa người dùng có yêu cầu mượn đang chờ xử lý, FE11 sẽ trả về `409 PENDING_BORROW_REQUESTS_EXIST`; NẾU Quản trị viên cố gắng thay thế `MEMBER` trong khi tồn tại các yêu cầu đang chờ xử lý hoặc khoản vay đang hoạt động, FE11 sẽ trả lại `409 MEMBER_BORROWING_WORKFLOW_EXISTS`.
+- FR-FE11-042: KHI Quản trị viên mở yêu cầu cũ đang chờ được xác định là không thể phê duyệt, chi tiết phải liệt kê thông báo điều kiện chặn an toàn, chỉ vô hiệu hóa phê duyệt và vẫn cho phép từ chối.
+- FR-FE11-043: NẾU Thủ thư, Thành viên hoặc Khách gọi bất kỳ điểm cuối `/api/admin/library/{authors|publishers|categories}` nào, máy chủ phải từ chối yêu cầu trước khi gọi tầng lưu bền siêu dữ liệu; Quản trị viên đã xác thực được cấp quyền bằng phép chiếu vai trò đơn chuẩn.
+
+### 7.1 Yêu cầu hành vi không mong muốn (Lỗi / Điều kiện bất thường)
+
+Các yêu cầu EARS về hành vi không mong muốn này nâng các nhánh lỗi/bất thường hiện có (Luồng thay thế, Quy tắc nghiệp vụ, Trường hợp biên, Câu hỏi đã giải quyết) thành yêu cầu chức năng có thể truy vết.
+
+- FR-FE11-015: NẾU người dùng không phải quản trị viên (Thành viên, Thủ thư hoặc Khách) cố gắng truy cập bất kỳ tính năng quản lý người dùng nào, hệ thống sẽ từ chối yêu cầu kèm theo lỗi ủy quyền. (Nguồn: BR-FE11-001, BR-FE11-011, BR-FE11-012)
+- FR-FE11-016: NẾU Quản trị viên yêu cầu chi tiết, cập nhật trường công việc Thủ thư, vô hiệu hóa hoặc thay đổi vai trò cho ID người dùng không tồn tại, hệ thống phải trả về lỗi không tìm thấy. (Nguồn: EC-FE11-002)
+- FR-FE11-017: NẾU thiếu người dùng Quản trị viên thực hiện khi tạo, gửi lại thiết lập, cập nhật trường công việc Thủ thư, vô hiệu hóa hoặc thay đổi vai trò, hệ thống phải trả về `404 ADMIN_NOT_FOUND` và không được thay đổi nguồn hay ghi bản kiểm toán thành công; tác nhân không hoạt động hoặc không phải Quản trị viên nhận `403 ADMIN_REQUIRED`. (Nguồn: EC-FE11-001)
+- FR-FE11-018: NẾU quản trị viên cố gắng vô hiệu hóa tài khoản của chính họ, hệ thống sẽ từ chối hành động đó. (Nguồn: Q-FE11-001, EC-FE11-006)
+- FR-FE11-019: NẾU quản trị viên cố gắng vô hiệu hóa người dùng đang có khoản vay đang hoạt động, hệ thống sẽ chặn việc hủy kích hoạt và báo cáo số lượng mục đã mượn đang hoạt động. (Nguồn: AF-FE11-002, Q-FE11-002, MF-FE11-005 bước 3)
+- FR-FE11-020: NẾU Quản trị viên cố gắng thay đổi email của người dùng hiện tại, bất kể tính duy nhất, hệ thống sẽ từ chối yêu cầu bằng HTTP `403` và mã `MANAGED_USER_UPDATE_FORBIDDEN`; mọi khả năng thay đổi email trong tương lai đều phải sử dụng quy trình xác minh FE02 được phê duyệt rõ ràng. (Nguồn: AF-FE11-004, BR-FE11-014)
+- FR-FE11-021: NẾU email gửi khi tạo tài khoản FE11 sai định dạng, chứa dữ liệu tấn công chèn SQL hoặc dài hơn 255 ký tự, hệ thống phải làm sạch đầu vào, từ chối yêu cầu và trả về lỗi kiểm tra hợp lệ. (Nguồn: EC-FE11-003, EC-FE11-004)
+- FR-FE11-022: NẾU lỗi cơ sở dữ liệu xảy ra khi tạo người dùng, hệ thống phải hoàn tác giao dịch và trả về lỗi mà không tạo bản ghi người dùng một phần. (Nguồn: EC-FE11-008, NFR-FE11-TXN-001)
+- FR-FE11-023: KHI `expectedUpdatedAt` của cập nhật hoặc vô hiệu hóa hồ sơ được quản lý không bằng phiên bản hiệu lực mới nhất của `Users`/`UserProfiles`, hệ thống phải từ chối thay đổi bằng HTTP `409` và mã `STALE_USER_STATE`, giữ nguyên bản ghi hiện có và không ghi bản kiểm toán thành công. (Nguồn: EC-FE11-007, BR-FE11-027)
+- FR-FE11-024: NẾU Quản trị viên chọn một vai trò không tồn tại hoặc không phải là một trong `MEMBER`, `LIBRARIAN`, `ADMIN`, hệ thống sẽ trả về lỗi không tìm thấy và sẽ không sửa đổi ánh xạ UserRoles. (Nguồn: EC-FE11-010)
+- FR-FE11-025: NẾU Quản trị viên chọn vai trò duy nhất hiện tại của người dùng, hệ thống phải trả về DTO an toàn có tính chuẩn như một thao tác không thay đổi có tính lũy đẳng và không ghi bản kiểm toán thay đổi vai trò. (Nguồn: EC-FE11-011)
+- FR-FE11-026: NẾU dữ liệu kiểu cũ không có hoặc có nhiều ánh xạ hiện tại, một thao tác thay thế hợp lệ rõ ràng phải chuẩn hóa dữ liệu thành đúng một ánh xạ trong giao dịch, có áp dụng bảo vệ Quản trị viên đang hoạt động cuối cùng. (Nguồn: EC-FE11-012)
+- FR-FE11-027: Cơ sở dữ liệu phải thực thi tối đa một hàng UserRoles cho mỗi UserId qua `UX_UserRoles_UserId`; tạo tài khoản và thay thế vai trò phải bảo đảm có ít nhất một ánh xạ. (Nguồn: EC-FE11-013, BR-FE11-007)
+- FR-FE11-028: NẾU Quản trị viên gửi trường hồ sơ được quản lý không hợp lệ, hệ thống phải từ chối cập nhật bằng lỗi kiểm tra hợp lệ; các trường email, bộ phận, chuyên môn và trường không rõ bị cấm dùng `MANAGED_USER_UPDATE_FORBIDDEN`.
+- FR-FE11-029: NẾU người dùng cố gắng hoàn tất thiết lập mật khẩu bằng mã thông báo đã hết hạn hoặc đã được sử dụng, hệ thống sẽ từ chối yêu cầu và sẽ không kích hoạt đăng nhập dựa trên mật khẩu. (Nguồn: trường dữ liệu `passwordSetupToken`/`passwordSetupTokenExpiresAt` trong phần 10.2, BR-FE11-013)
+
+---
+
+## 8. Tiêu chí chấp nhận
+
+- AC-FE11-001: Với quyền truy cập Quản trị viên, khi xem danh sách người dùng thì hệ thống hiển thị danh sách phân trang an toàn với giá trị mặc định/giới hạn, thứ tự ổn định, bộ lọc trạng thái/vai trò, tìm kiếm email/tên/ID người dùng đã loại khoảng trắng đầu/cuối và các giá trị email, tên người dùng dễ đọc, không chồng lấp.
+- AC-FE11-002: Với quyền truy cập Quản trị viên, khi xem trang chi tiết người dùng thì DTO `UserManagementView` an toàn và các tóm tắt liên quan đã phê duyệt được hiển thị mà không chứa thông tin xác thực, dữ liệu mã thông báo/phiên, liên kết thiết lập/đặt lại hay siêu dữ liệu kiểm toán bí mật.
+- AC-FE11-003: Với dữ liệu người dùng hợp lệ, khi Quản trị viên tạo tài khoản người dùng mới thì người dùng không hoạt động, vai trò đã phê duyệt, mã thông báo thiết lập đã băm và mục kiểm toán được cam kết cùng nhau, đồng thời một lần gửi thiết lập FE10 được yêu cầu.
+- AC-FE11-004: Với tài khoản hiện có, khi Quản trị viên gửi `fullName`, `phone`, `address` hoặc `email` thì hệ thống trả về `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`, giữ nguyên mọi trường cùng `UpdatedAt` và không ghi bản kiểm toán thành công; giao diện Quản trị viên hiển thị các trường đó ở chế độ chỉ đọc.
+- AC-FE11-005: Với email đã chuẩn hóa bị trùng, khi Quản trị viên tạo người dùng mới thì hệ thống trả về `409 EMAIL_ALREADY_EXISTS`, không lưu bền trạng thái nguồn một phần và không yêu cầu gửi thiết lập.
+- AC-FE11-006: Với việc Quản trị viên tạo Thành viên hoặc Thủ thư mới, không trường mật khẩu/mã thông báo/liên kết nào được yêu cầu hay hiển thị, tài khoản vẫn ở `INACTIVE` và không thể đăng nhập cho đến khi hoàn tất thiết lập FE02.
+- AC-FE11-007: Với người dùng `ACTIVE` hoặc `LOCKED` và phiên bản hiệu lực `expectedUpdatedAt` khớp, khi Quản trị viên vô hiệu hóa tài khoản thì trạng thái chuyển thành `INACTIVE`; tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION` mà không thay đổi dữ liệu.
+- AC-FE11-008: Với bất kỳ tài khoản hiện có nào, khi Quản trị viên cố gắng thay đổi email thì hệ thống sẽ từ chối yêu cầu bất kể email được gửi có phải là duy nhất hay không.
+- AC-FE11-009: Với người dùng có phiên đang hoạt động, khi Quản trị viên vô hiệu hóa tài khoản thì phiên bị vô hiệu.
+- AC-FE11-010: Với dữ liệu Thủ thư hợp lệ, khi Quản trị viên tạo tài khoản Thủ thư mới thì người dùng không hoạt động, vai trò Thủ thư, mã thông báo thiết lập đã băm và mục kiểm toán được cam kết cùng nhau, đồng thời một lần gửi thiết lập FE10 được yêu cầu.
+- AC-FE11-011: Với tài khoản Thủ thư hiện tại, khi Quản trị viên chỉ gửi `department` và/hoặc `specialization` hợp lệ cùng phiên bản hiệu lực `expectedUpdatedAt` khớp, các thay đổi trường công việc có hiệu lực được lưu và `UpdatedAt` trong kho dữ liệu tăng; trường cá nhân hoặc trường không rõ bị từ chối.
+- AC-FE11-012: Với tài khoản Thủ thư `ACTIVE` hoặc `LOCKED` và phiên bản hiệu lực `expectedUpdatedAt` khớp, khi Quản trị viên vô hiệu hóa thì trạng thái chuyển thành `INACTIVE` và các phiên đang hoạt động bị vô hiệu.
+- AC-FE11-013: Với tài khoản Thành viên có phiên đang hoạt động, khi Quản trị viên mở quản lý vai trò trực tiếp hoặc qua hộp thoại chỉnh sửa người dùng được quản lý và thay vai trò bằng Thủ thư, đúng một ánh xạ Thủ thư còn lại, thông tin xác thực làm mới/phiên đang hoạt động bị thu hồi, một bản kiểm toán thay thế được cam kết và yêu cầu được bảo vệ tiếp theo đòi hỏi xác thực theo vai trò mới.
+- AC-FE11-014: Với tài khoản Quản trị viên không phải là Quản trị viên hoạt động cuối cùng, khi Quản trị viên thay thế vai trò của mình bằng Thành viên thì vẫn còn lại chính xác một ánh xạ Thành viên.
+- AC-FE11-015: Với tài khoản Quản trị viên đang hoạt động cuối cùng, khi Quản trị viên cố thay vai trò Quản trị viên thì hệ thống từ chối mà không thay đổi ánh xạ hay bản kiểm toán.
+- AC-FE11-016: Với việc Quản trị viên mở bảng điều khiển, tám mục đã phê duyệt hiển thị đúng thứ tự với Rà soát tư cách thành viên sau Tất cả người dùng, các quy trình đã loại bị ẩn và quản lý danh mục mở trong Thư viện Quản trị mà không chuyển hướng sang tuyến Thủ thư.
+- AC-FE11-017: Với việc Quản trị viên mở Quyền, số lượng vai trò và ma trận quyền được hiển thị bằng dữ liệu vai trò FE11.
+- AC-FE11-018: Với việc Quản trị viên mở Nhật ký kiểm toán, các hàng nhật ký có thể được rà soát mà không làm lộ trường thông tin xác thực/mã thông báo nhạy cảm.
+- AC-FE11-019: Với việc Quản trị viên mở Quản lý yêu cầu, yêu cầu đang chờ có thể hiển thị các điều khiển thao tác đã phê duyệt, còn yêu cầu đã hoàn tất chỉ cho phép xem.
+- AC-FE11-020: Với lỗi gửi thiết lập xảy ra sau khi cam kết tạo tài khoản, tài khoản vẫn ở `INACTIVE`, không thông tin xác thực nào bị lộ và phản hồi báo cáo trạng thái an toàn `FAILED`.
+- AC-FE11-021: Với tài khoản chưa hoàn tất thiết lập đủ điều kiện và đã qua khoảng chờ, khi Quản trị viên gửi lại thiết lập thì mã thông báo đang hoạt động trước đó bị thu hồi và sự kiện FE10 mới dùng ID mã thông báo/khóa lũy đẳng mới.
+- AC-FE11-022: Với tài khoản đang hoạt động, bị khóa, không hoạt động do tự đăng ký, đã hoàn tất thiết lập hoặc chưa qua khoảng chờ, khi Quản trị viên yêu cầu gửi lại thiết lập thì hệ thống từ chối mà không tạo thông tin xác thực.
+- AC-FE11-023: Với việc Quản trị viên gửi cập nhật trường công việc Thủ thư hoặc yêu cầu vô hiệu hóa bằng `expectedUpdatedAt` hiệu lực cũ, khi bản ghi người dùng hiện tại đã thay đổi thì hệ thống trả về `409 STALE_USER_STATE` và không lưu trường đã gửi, thay đổi vòng đời, thu hồi thông tin xác thực hay bản kiểm toán thành công.
+- AC-FE11-024: Với việc Quản trị viên mở yêu cầu đang chờ, mỗi mã vạch được yêu cầu được ghép với trạng thái bản sao vật lý hiện tại; sau xung đột phê duyệt, trạng thái đã làm mới vẫn đúng sự thật và thao tác từ chối kèm lý do hợp lệ vẫn khả dụng.
+- AC-FE11-025: Khi Quản trị viên mở Bảng điều khiển, năm thẻ tóm tắt và ba biểu đồ đã phê duyệt vẫn hiển thị; số Thành viên đang hoạt động khớp `Users -> UserRoles -> Roles`; số tác giả khớp tác giả danh mục đang hoạt động; danh sách mượn nhiều nhất loại trừ chi tiết `REQUESTED` chưa phê duyệt; biểu đồ trả trong ngày dùng ngày FE07 của ngày nghiệp vụ hiện tại tại Việt Nam; và chọn thẻ mở mô-đun tương ứng với bộ lọc áp dụng.
+- AC-FE11-026: Với các tài khoản mang vai trò Quản trị viên, Thủ thư và Thành viên, khi từng tài khoản yêu cầu quản lý siêu dữ liệu Quản trị viên thì chỉ Quản trị viên tới được dịch vụ siêu dữ liệu; Thủ thư chỉ giữ quyền đọc lựa chọn đang hoạt động riêng của FE05.
+
+---
+
+## 9. Trường hợp biên và xử lý lỗi
+
+| ID | Trường hợp biên / Lỗi | Hành vi hệ thống dự kiến |
 | -- | ----------------- | ------------------------ |
-| EC-FE11-001 | Acting Admin is missing, inactive, or no longer has Admin role | Revalidate inside create/resend/Librarian-work-update/deactivation/role transactions; return `404 ADMIN_NOT_FOUND` or `403 ADMIN_REQUIRED` before mutation. |
-| EC-FE11-002 | Target user ID does not exist | Return not found error. |
-| EC-FE11-003 | Email contains SQL injection payload | Sanitize input and validate email format; reject if invalid. |
-| EC-FE11-004 | Email address with special characters | Validate email format strictly according to RFC standards. |
-| EC-FE11-005 | Password setup value longer than 255 characters | FE02 rejects the setup request with a field validation error; FE11 never receives or stores the password. |
-| EC-FE11-006 | Attempting to deactivate self (admin) | Reject the action. |
-| EC-FE11-007 | Concurrent Librarian work-field update/deactivation of the same user | Compare `expectedUpdatedAt` with `COALESCE(UpdatedAt, CreatedAt)`; reject a mismatch with `409 STALE_USER_STATE`, persist no field/lifecycle/credential change, and write no success audit. |
-| EC-FE11-008 | Database update fails during user creation | Roll back transaction; return error to user. |
-| EC-FE11-009 | Invalidating sessions for deactivated user fails | Roll back status, `deactivatedAt`, and audit changes; return a safe error and keep the account active. |
-| EC-FE11-010 | Role does not exist when assigning | Return not found error. |
-| EC-FE11-011 | User already has the role being assigned | Reject with message: "User already has this role." |
-| EC-FE11-012 | Attempting to revoke non-existent role | Return not found error. |
-| EC-FE11-013 | Mutation would create zero or multiple roles | Reject or roll back; successful state must contain exactly one mapping. |
-| EC-FE11-014 | Admin submits any existing-user personal field, including the unchanged current email | Reject the complete request with `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; do not silently ignore the forbidden field or process other submitted fields. |
-| EC-FE11-015 | Librarian-specific field is too long or invalid | Reject the update and return a validation error. |
-| EC-FE11-016 | Removed admin sidebar item is requested directly | Return `404 Not Found`; do not expose or redirect to a removed workflow. |
-| EC-FE11-017 | Completed request action attempted from admin request view | Reject action and keep request unchanged. |
-| EC-FE11-018 | Audit log detail contains sensitive token/password fields | Redact those fields before response/display. |
-| EC-FE11-019 | Setup provider delivery fails after source transaction commits | Keep account `INACTIVE`; return safe `FAILED`; allow Admin resend after cooldown. |
-| EC-FE11-020 | Setup resend requested for self-registered or completed account | Reject with `ACCOUNT_SETUP_NOT_ELIGIBLE`; create no token/notification. |
-| EC-FE11-021 | Setup resend requested within 60 seconds | Reject with `ACCOUNT_SETUP_RESEND_COOLDOWN`; include safe retry timing only. |
-| EC-FE11-022 | Deactivation targets an `INACTIVE` account whose `deactivatedAt` is null | Reject with `409 ACCOUNT_PENDING_ACTIVATION`; Phase 1 does not convert pending activation into deactivated state. |
+| EC-FE11-001 | Quản trị viên thực hiện thao tác không tồn tại, không hoạt động hoặc không còn giữ vai trò Quản trị viên | Xác thực lại bên trong các giao dịch tạo/gửi lại/cập nhật công việc Thủ thư/vô hiệu hóa/vai trò; trả về `404 ADMIN_NOT_FOUND` hoặc `403 ADMIN_REQUIRED` trước khi thay đổi dữ liệu. |
+| EC-FE11-002 | ID người dùng mục tiêu không tồn tại | Trả về lỗi không tìm thấy. |
+| EC-FE11-003 | Email chứa payload SQL injection | Làm sạch đầu vào và xác thực định dạng email; từ chối nếu không hợp lệ. |
+| EC-FE11-004 | Địa chỉ email có ký tự đặc biệt | Xác thực nghiêm ngặt định dạng email theo tiêu chuẩn RFC. |
+| EC-FE11-005 | Giá trị thiết lập mật khẩu dài hơn 255 ký tự | FE02 từ chối yêu cầu thiết lập do lỗi xác thực trường; FE11 không bao giờ nhận hoặc lưu trữ mật khẩu. |
+| EC-FE11-006 | Cố gắng tự vô hiệu hóa (quản trị viên) | Từ chối hành động. |
+| EC-FE11-007 | Cùng một người dùng bị cập nhật trường công việc Thủ thư/vô hiệu hóa đồng thời | So sánh `expectedUpdatedAt` với `COALESCE(UpdatedAt, CreatedAt)`; nếu không khớp, từ chối bằng `409 STALE_USER_STATE`, không lưu thay đổi trường/vòng đời/thông tin xác thực và không ghi nhật ký kiểm toán thành công. |
+| EC-FE11-008 | Cập nhật cơ sở dữ liệu thất bại trong quá trình tạo người dùng | Rollback giao dịch; trả lỗi cho người dùng. |
+| EC-FE11-009 | Vô hiệu hóa phiên của người dùng bị vô hiệu hóa thất bại | Rollback trạng thái, `deactivatedAt` và thay đổi nhật ký kiểm toán; trả về lỗi an toàn và giữ tài khoản hoạt động. |
+| EC-FE11-010 | Vai trò không tồn tại khi gán | Trả về lỗi không tìm thấy. |
+| EC-FE11-011 | Người dùng đã có vai trò đang được gán | Từ chối bằng thông báo: "Người dùng đã có vai trò này." |
+| EC-FE11-012 | Cố gắng thu hồi vai trò không tồn tại | Trả về lỗi không tìm thấy. |
+| EC-FE11-013 | Thay đổi sẽ tạo ra không có hoặc có nhiều vai trò | Từ chối hoặc rollback; trạng thái thành công phải chứa chính xác một ánh xạ. |
+| EC-FE11-014 | Quản trị viên gửi bất kỳ trường cá nhân nào của người dùng hiện tại, kể cả email hiện tại không đổi | Từ chối toàn bộ yêu cầu bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; không âm thầm bỏ qua trường bị cấm hoặc xử lý các trường khác đã gửi. |
+| EC-FE11-015 | Trường dành riêng cho thủ thư quá dài hoặc không hợp lệ | Từ chối cập nhật và trả về lỗi xác thực. |
+| EC-FE11-016 | Mục đã bị xóa khỏi thanh bên quản trị được yêu cầu trực tiếp | Trả về `404 Not Found`; không hiển thị hoặc chuyển hướng tới quy trình đã bị xóa. |
+| EC-FE11-017 | Cố thực hiện hành động trên yêu cầu đã hoàn tất từ giao diện yêu cầu của quản trị viên | Từ chối hành động và giữ nguyên yêu cầu. |
+| EC-FE11-018 | Chi tiết nhật ký kiểm toán chứa các trường token/password nhạy cảm | Che các trường đó trước khi phản hồi/hiển thị. |
+| EC-FE11-019 | Nhà cung cấp phân phối thiết lập thất bại sau khi giao dịch nguồn đã commit | Giữ tài khoản `INACTIVE`; trả về `FAILED` an toàn; cho phép Quản trị viên gửi lại sau thời gian chờ. |
+| EC-FE11-020 | Yêu cầu gửi lại thiết lập cho tài khoản tự đăng ký hoặc đã hoàn tất thiết lập | Từ chối bằng `ACCOUNT_SETUP_NOT_ELIGIBLE`; không tạo token/thông báo. |
+| EC-FE11-021 | Yêu cầu gửi lại thiết lập trong vòng 60 giây | Từ chối bằng `ACCOUNT_SETUP_RESEND_COOLDOWN`; chỉ cung cấp thông tin thời điểm thử lại an toàn. |
+| EC-FE11-022 | Vô hiệu hóa tài khoản `INACTIVE` có `deactivatedAt` là null | Từ chối bằng `409 ACCOUNT_PENDING_ACTIVATION`; Giai đoạn 1 không chuyển trạng thái đang chờ kích hoạt thành trạng thái đã vô hiệu hóa. |
 
 ---
 
-## 10. Data Requirements
+## 10. Yêu cầu về dữ liệu
 
-### 10.1 Entities Involved
+### 10.1 Các thực thể liên quan
 
-| Entity | Purpose in this feature |
+| Thực thể | Mục đích trong tính năng này |
 | ------ | ----------------------- |
-| Users | Stores user account data: email, password hash, name, phone, address, status, timestamps. |
-| Roles | Defines available roles: Member, Librarian, Admin. |
-| UserRoles | Stores exactly one role mapping per user; `UX_UserRoles_UserId` enforces uniqueness by UserId. |
-| AuthTokens / session records | Required server-side mechanism for invalidating active refresh/session credentials during deactivation and role-sensitive account changes. |
-| AuditLogs | Records all user management actions. |
+| Users | Lưu dữ liệu tài khoản người dùng: email, mã băm mật khẩu, tên, điện thoại, địa chỉ, trạng thái và dấu thời gian. |
+| Roles | Định nghĩa các vai trò hiện có: Thành viên, Thủ thư, Quản trị viên. |
+| UserRoles | Lưu chính xác một ánh xạ vai trò cho mỗi người dùng; `UX_UserRoles_UserId` thực thi tính duy nhất theo UserId. |
+| AuthTokens / bản ghi phiên | Cơ chế phía máy chủ bắt buộc để vô hiệu hóa thông tin xác thực phiên/refresh đang hoạt động khi vô hiệu hóa và khi có thay đổi tài khoản nhạy cảm với vai trò. |
+| AuditLogs | Ghi lại tất cả các hành động quản lý người dùng. |
 
-### 10.2 Data Fields
+### 10.2 Các trường dữ liệu
 
-| Field | Type | Required | Validation / Notes |
+| Trường | Kiểu | Bắt buộc | Xác thực / Ghi chú |
 | ----- | ---- | -------- | ------------------ |
-| userId | integer | Yes | Primary key, auto-increment. |
-| email | string | Yes | Unique, valid email format, max 255 chars. FE11 may set it only at account creation; future existing-account changes require an approved FE02 verified-email flow. |
-| username | string | No | Optional alternative login field. |
-| passwordHash | string | Yes | bcrypt hash, never plaintext. Before setup, store an unusable bcrypt hash of a server-generated random value that is immediately discarded; fixed literal placeholders are forbidden. |
-| fullName | string | Yes | User's display name, trimmed, maximum 100 characters to match FE03 and `UserProfiles.FullName`; after creation it is user-owned through FE03. |
-| phoneNumber | string | No | User's phone number; after creation it is user-owned through FE03. |
-| address | string | No | User's address; after creation it is user-owned through FE03. |
-| department | string | No | Nullable `UserProfiles.Department`, trimmed, maximum 100 characters; FE11 Admin management only and returned only for a current Librarian role. |
-| specialization | string | No | Nullable `UserProfiles.Specialization`, trimmed, maximum 100 characters; FE11 Admin management only and returned only for a current Librarian role. |
-| status | enum | Yes | Values: `ACTIVE`, `INACTIVE`, `LOCKED`, matching the current Users table constraint. |
-| createdAt | datetime | Yes | Account creation timestamp. |
-| updatedAt | datetime | Yes | FE11 response/concurrency value is non-null `COALESCE(Users.UpdatedAt, Users.CreatedAt)`; storage `Users.UpdatedAt` remains nullable for legacy rows. |
-| lastLoginAt | datetime | No | Last successful login timestamp. |
-| lastPasswordChangedAt | datetime | No | Last password change timestamp. |
-| deactivatedAt | datetime | No | Server timestamp set when an existing account is deactivated; null for active or pending-setup accounts. |
-| setupTokenId | integer | Conditional | Persisted `AuthTokens.TokenId` for token type `ACCOUNT_SETUP`; used for source traceability and idempotency. |
-| setupTokenHash | string | Conditional | Cryptographic hash only; raw token is never persisted. |
-| setupTokenExpiresAt | datetime | Conditional | Expires 24 hours after issuance. |
-| setupTokenUsedAt | datetime | No | Set by FE02 when password setup completes successfully. |
-| setupTokenRevokedAt | datetime | No | Set when FE11 resends setup or otherwise revokes an incomplete credential. |
-| lockedUntil | datetime | No | Timestamp when account will auto-unlock (if locked). |
+| userId | integer | Có | Khóa chính, tự tăng. |
+| email | string | Có | Duy nhất, đúng định dạng email, tối đa 255 ký tự. FE11 chỉ được đặt trường này khi tạo tài khoản; mọi thay đổi tài khoản hiện có trong tương lai phải đi qua luồng email đã xác minh và được phê duyệt của FE02. |
+| username | string | Không | Trường đăng nhập thay thế, không bắt buộc. |
+| passwordHash | string | Có | Mã băm bcrypt, không bao giờ là văn bản thuần. Trước khi thiết lập, lưu mã băm bcrypt không thể sử dụng của một giá trị ngẫu nhiên do máy chủ tạo rồi loại bỏ ngay; cấm dùng giá trị placeholder cố định. |
+| fullName | string | Có | Tên hiển thị của người dùng, đã trim, tối đa 100 ký tự để khớp FE03 và `UserProfiles.FullName`; sau khi tạo, trường này thuộc quyền sở hữu của người dùng thông qua FE03. |
+| phoneNumber | string | Không | Số điện thoại của người dùng; sau khi tạo, trường này thuộc quyền sở hữu của người dùng thông qua FE03. |
+| address | string | Không | Địa chỉ của người dùng; sau khi tạo, trường này thuộc quyền sở hữu của người dùng thông qua FE03. |
+| department | string | Không | `UserProfiles.Department` có thể null, đã trim, tối đa 100 ký tự; chỉ Quản trị viên FE11 quản lý và chỉ trả về cho vai trò Thủ thư hiện tại. |
+| specialization | string | Không | `UserProfiles.Specialization` có thể null, đã trim, tối đa 100 ký tự; chỉ Quản trị viên FE11 quản lý và chỉ trả về cho vai trò Thủ thư hiện tại. |
+| status | enum | Có | Các giá trị: `ACTIVE`, `INACTIVE`, `LOCKED`, khớp với ràng buộc hiện tại của bảng Users. |
+| createdAt | datetime | Có | Dấu thời gian tạo tài khoản. |
+| updatedAt | datetime | Có | Giá trị phản hồi/đồng thời của FE11 là `COALESCE(Users.UpdatedAt, Users.CreatedAt)` không null; `Users.UpdatedAt` trong lưu trữ vẫn có thể null đối với các hàng cũ. |
+| lastLoginAt | datetime | Không | Dấu thời gian đăng nhập thành công gần nhất. |
+| lastPasswordChangedAt | datetime | Không | Dấu thời gian đổi mật khẩu gần nhất. |
+| deactivatedAt | datetime | Không | Dấu thời gian máy chủ đặt khi tài khoản hiện có bị vô hiệu hóa; null với tài khoản đang hoạt động hoặc đang chờ thiết lập. |
+| setupTokenId | integer | Có điều kiện | `AuthTokens.TokenId` được lưu cho loại token `ACCOUNT_SETUP`; dùng để truy vết nguồn và bảo đảm idempotency. |
+| setupTokenHash | string | Có điều kiện | Chỉ lưu mã băm mật mã; token thô không bao giờ được lưu. |
+| setupTokenExpiresAt | datetime | Có điều kiện | Hết hạn 24 giờ sau khi phát hành. |
+| setupTokenUsedAt | datetime | Không | Được FE02 đặt khi thiết lập mật khẩu hoàn tất thành công. |
+| setupTokenRevokedAt | datetime | Không | Được đặt khi FE11 gửi lại thiết lập hoặc thu hồi thông tin xác thực chưa hoàn tất. |
+| lockedUntil | datetime | Không | Dấu thời gian tài khoản sẽ tự động mở khóa (nếu đang bị khóa). |
 
-### 10.3 Safe User Management DTO
+### 10.3 DTO quản lý người dùng an toàn
 
-`UserManagementView` is the only user representation returned by FE11 list, detail, create, and Librarian-work-update endpoints. Inclusion in this read DTO does not grant Admin mutation ownership.
+`UserManagementView` là biểu diễn người dùng duy nhất được các endpoint danh sách, chi tiết, tạo và cập nhật công việc Thủ thư của FE11 trả về. Việc một trường xuất hiện trong DTO đọc này không trao cho Quản trị viên quyền thay đổi trường đó.
 
-| Included field | Rule |
+| Trường được bao gồm | Quy tắc |
 | -------------- | ---- |
-| `userId`, `email`, `username`, `fullName`, `phoneNumber`, `address`, `status` | Return only to an authenticated Admin. |
-| `roles` | Return role IDs/names from `UserRoles`; never infer roles from client input. |
-| `createdAt`, `updatedAt`, `lastLoginAt` | Return as server-generated timestamps; `updatedAt` is the non-null `COALESCE(Users.UpdatedAt, Users.CreatedAt)` optimistic-concurrency value. |
-| `department`, `specialization` | Return only when applicable to a Librarian account. |
-| `relatedSummary` | Required on detail responses only: `activeBorrowingCount`, `unpaidFineTotal`, `openReservationCount`; each field is zero when no matching source data exists. |
+| `userId`, `email`, `username`, `fullName`, `phoneNumber`, `address`, `status` | Chỉ trả lại cho Quản trị viên đã được xác thực. |
+| `roles` | Trả về ID/tên vai trò từ `UserRoles`; không bao giờ suy ra vai trò từ đầu vào phía client. |
+| `createdAt`, `updatedAt`, `lastLoginAt` | Trả về dưới dạng dấu thời gian do máy chủ tạo; `updatedAt` là giá trị đồng thời lạc quan `COALESCE(Users.UpdatedAt, Users.CreatedAt)` không null. |
+| `department`, `specialization` | Chỉ trả lại khi áp dụng cho tài khoản Thủ thư. |
+| `relatedSummary` | Chỉ bắt buộc trong phản hồi chi tiết: `activeBorrowingCount`, `unpaidFineTotal`, `openReservationCount`; mỗi trường bằng không khi không có dữ liệu nguồn tương ứng. |
 
-The DTO must exclude `passwordHash`, raw passwords, raw or hashed auth tokens, token IDs used as credentials, refresh/session identifiers, setup/reset links, provider payloads, and secret audit metadata. Adding another field requires a reviewed FE11 spec change.
+DTO phải loại trừ `passwordHash`, mật khẩu thô, token xác thực thô hoặc đã băm, ID token dùng làm thông tin xác thực, mã định danh refresh/session, liên kết setup/reset, payload nhà cung cấp và siêu dữ liệu kiểm toán bí mật. Muốn thêm trường khác phải có thay đổi đặc tả FE11 đã được duyệt.
 
 ---
 
-## 11. API / Interface Contract
+## 11. Hợp đồng API / Giao diện
 
-> The endpoints and request/response shapes below are the canonical Phase 1 contract for this feature.
+> Các endpoint và cấu trúc request/response dưới đây là hợp đồng chuẩn của Giai đoạn 1 cho tính năng này.
 
-| Method | Endpoint | Actor | Request | Response | Notes |
+| Phương thức | Endpoint | Actor | Yêu cầu | Phản hồi | Ghi chú |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/users` | Admin | Query: `page=1, limit=20, status?, role?, search?` | Paginated `UserManagementView[]` | `page >= 1`, `limit = 1..100`, `search` is trimmed and 1..200 characters when supplied; invalid values are rejected. Order is `CreatedAt DESC, UserId DESC`; only the safe DTO is returned. |
-| GET | `/api/users/{userId}` | Admin | - | `UserManagementView` with required `relatedSummary` | Includes only the three approved aggregate fields with deterministic zero defaults. |
-| POST | `/api/users` | Admin | `{ email: string, username?: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | `201 { userId, email, status: "INACTIVE", roles, setupDeliveryStatus, message }` | Boundary-validates input; source transaction revalidates active Admin and uniqueness, then requests FE10 delivery only after commit; never returns password/token/link. |
-| PUT | `/api/users/{userId}` | Admin | `{ expectedUpdatedAt: datetime, department?: string, specialization?: string }` | Updated `UserManagementView`; stale state: `409 { code: "STALE_USER_STATE" }` | Current Librarian targets only. `fullName`, `phone`, `address`, `email`, or unknown fields cause atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; a stale allowed request causes `409 STALE_USER_STATE`. |
-| PATCH | `/api/users/{userId}/status` | Admin | `{ status: "INACTIVE", expectedUpdatedAt: datetime }` | Updated `UserManagementView` | Only `ACTIVE`/`LOCKED` transition. Pending activation returns `409 ACCOUNT_PENDING_ACTIVATION`; already-deactivated state is idempotent. |
-| PUT | `/api/users/{userId}/role` | Admin | `{ roleId: number }` | Authoritative user with exactly one role | Atomically replace the current role; current-role selection is a no-op. |
-| POST | `/api/users/{userId}/resend-setup` | Admin | `{}` | `200 { userId, status: "INACTIVE", setupDeliveryStatus, message }` | Source transaction revalidates the active Admin before target history; eligible incomplete account only; revokes prior active token and enforces 60-second cooldown. |
-| GET | `/api/admin/dashboard` | Admin | - | Dashboard summary/cards/chart data | Read-only aggregation; detailed reports belong to FE12. |
-| GET | `/api/admin/permissions` | Admin | - | Role summary and permission matrix | Read-only matrix; role replacement is performed from All Users. |
-| GET | `/api/admin/audit-logs` | Admin | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Audit log list | Redacts sensitive fields. |
-| GET | `/api/admin/requests` | Admin | Query: `page?, limit?, q?, status?, from?, to?` | Exactly `{ data, pagination }` | Reads FE07 request data for Admin review UI using the canonical contract below. |
-| GET | `/api/admin/requests/{requestId}` | Admin | - | Request detail | Completed requests are view-only. |
-| GET | `/api/admin/library/{resource}` | Admin | Path `resource`: `authors`, `publishers`, or `categories`; query `q?` | `{ data: MetadataRecord[] }` | Returns persisted `id`, `name`, `status`, and `createdAt`; Librarian uses FE05 `/api/books/metadata` instead. |
-| POST | `/api/admin/library/{resource}` | Admin | `{ name }` | `201 { data: MetadataRecord }` | Creates an active reference record; rejected for every non-Admin role. |
-| PUT | `/api/admin/library/{resource}/{id}` | Admin | `{ name }` | `{ data }` | Updates the reference name without changing role or book ownership. |
-| PATCH | `/api/admin/library/{resource}/{id}/deactivate` | Admin | - | `{ deactivated: true, data: { id, status: "INACTIVE" } }` | Soft-deactivates the reference; existing book relationships are preserved. |
+| GET | `/api/users` | Quản trị viên | Query: `page=1, limit=20, status?, role?, search?` | `UserManagementView[]` có phân trang | `page >= 1`, `limit = 1..100`, `search` được trim và dài 1..200 ký tự khi cung cấp; giá trị không hợp lệ bị từ chối. Sắp xếp theo `CreatedAt DESC, UserId DESC`; chỉ trả về DTO an toàn. |
+| GET | `/api/users/{userId}` | Quản trị viên | - | `UserManagementView` có `relatedSummary` bắt buộc | Chỉ gồm ba trường tổng hợp đã được phê duyệt, với giá trị mặc định bằng không mang tính xác định. |
+| POST | `/api/users` | Quản trị viên | `{ email: string, username?: string, fullName: string, type: "member"\|"librarian", phone?: string, address?: string, department?: string, specialization?: string }` | `201 { userId, email, status: "INACTIVE", roles, setupDeliveryStatus, message }` | Xác thực đầu vào tại biên; giao dịch nguồn xác thực lại Quản trị viên đang hoạt động và tính duy nhất, rồi chỉ yêu cầu FE10 phân phối sau khi commit; không bao giờ trả về mật khẩu/token/liên kết. |
+| PUT | `/api/users/{userId}` | Quản trị viên | `{ expectedUpdatedAt: datetime, department?: string, specialization?: string }` | `UserManagementView` đã cập nhật; trạng thái cũ: `409 { code: "STALE_USER_STATE" }` | Chỉ áp dụng cho mục tiêu đang là Thủ thư. `fullName`, `phone`, `address`, `email` hoặc trường không xác định làm toàn bộ yêu cầu bị từ chối bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; yêu cầu hợp lệ nhưng dùng trạng thái cũ gây ra `409 STALE_USER_STATE`. |
+| PATCH | `/api/users/{userId}/status` | Quản trị viên | `{ status: "INACTIVE", expectedUpdatedAt: datetime }` | `UserManagementView` đã cập nhật | Chỉ cho phép chuyển từ `ACTIVE`/`LOCKED`. Tài khoản đang chờ kích hoạt trả về `409 ACCOUNT_PENDING_ACTIVATION`; trạng thái đã vô hiệu hóa có tính idempotent. |
+| PUT | `/api/users/{userId}/role` | Quản trị viên | `{ roleId: number }` | Người dùng chuẩn xác với chính xác một vai trò | Thay thế nguyên tử vai trò hiện tại; chọn lại vai trò hiện tại là thao tác không làm thay đổi dữ liệu. |
+| POST | `/api/users/{userId}/resend-setup` | Quản trị viên | `{}` | `200 { userId, status: "INACTIVE", setupDeliveryStatus, message }` | Giao dịch nguồn xác thực lại Quản trị viên đang hoạt động trước khi đọc lịch sử mục tiêu; chỉ tài khoản chưa hoàn tất đủ điều kiện; thu hồi token đang hoạt động trước đó và thực thi thời gian chờ 60 giây. |
+| GET | `/api/admin/dashboard` | Quản trị viên | - | Dữ liệu tóm tắt/thẻ/biểu đồ của dashboard | Tổng hợp chỉ đọc; báo cáo chi tiết thuộc FE12. |
+| GET | `/api/admin/permissions` | Quản trị viên | - | Tóm tắt vai trò và ma trận quyền | Ma trận chỉ đọc; việc thay thế vai trò được thực hiện từ Tất cả người dùng. |
+| GET | `/api/admin/audit-logs` | Quản trị viên | Query: `q?, action?, actorId?, from?, to?, page?, limit?` | Danh sách nhật ký kiểm toán | Che các trường nhạy cảm. |
+| GET | `/api/admin/requests` | Quản trị viên | Query: `page?, limit?, q?, status?, from?, to?` | Chính xác `{ data, pagination }` | Đọc dữ liệu yêu cầu FE07 cho UI duyệt của Quản trị viên theo hợp đồng chuẩn bên dưới. |
+| GET | `/api/admin/requests/{requestId}` | Quản trị viên | - | Chi tiết yêu cầu | Yêu cầu đã hoàn tất chỉ được xem. |
+| GET | `/api/admin/library/{resource}` | Quản trị viên | Tham số đường dẫn `resource`: `authors`, `publishers` hoặc `categories`; query `q?` | `{ data: MetadataRecord[] }` | Trả về `id`, `name`, `status` và `createdAt` đã lưu; Thủ thư dùng FE05 `/api/books/metadata` thay thế. |
+| POST | `/api/admin/library/{resource}` | Quản trị viên | `{ name }` | `201 { data: MetadataRecord }` | Tạo một bản ghi tham chiếu đang hoạt động; bị từ chối đối với mọi vai trò không phải Quản trị viên. |
+| PUT | `/api/admin/library/{resource}/{id}` | Quản trị viên | `{ name }` | `{ data }` | Cập nhật tên tham chiếu mà không thay đổi vai trò hoặc quyền sở hữu sách. |
+| PATCH | `/api/admin/library/{resource}/{id}/deactivate` | Quản trị viên | - | `{ deactivated: true, data: { id, status: "INACTIVE" } }` | Vô hiệu hóa mềm bản ghi tham chiếu; giữ nguyên các quan hệ sách hiện có. |
 
-### 11.1 Canonical Admin Request Read Contract
+### 11.1 Hợp đồng đọc chuẩn cho yêu cầu của Quản trị viên
 
-- `page` defaults to 1; `limit` defaults to 20 and is bounded to 1..100.
-- `q` is trimmed 1..100 when supplied; `status` is one of `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED`, or `CANCELLED`; `from`/`to` are inclusive `YYYY-MM-DD` values with `from <= to`.
-- Authentication and Admin authorization run before detailed validation. Supported values come from validated data, not raw query/params.
-- List rows are ordered `RequestDate DESC, RequestId DESC` and contain only `requestId`, `requestDate`, `status`, safe `member`, `itemCount`, ordered `bookTitles`, and unique first-occurrence `categories`.
-- Pagination applies to distinct request headers before joining details; count/data use the same filter scope. Valid commas in titles/categories are not reconstructed by splitting comma-delimited SQL text.
-- Detail returns only `requestId`, `requestDate`, `status`, `createdAt`, `updatedAt`, safe `member`, safe `items`, and `lifecycle`. Invalid IDs return `400 VALIDATION_ERROR`; missing requests return `404 BORROW_REQUEST_NOT_FOUND`.
-- FE11 reads through the FE07 request repository boundary. Only FE07 owns `/api/borrow-requests/{requestId}/approve` and `/reject`; no Admin mutation aliases are added, and non-`PENDING` direct mutations return `409 BORROW_REQUEST_NOT_PENDING` without success writes/audit.
-
----
-
-## 12. Non-functional Requirements
-
-### 12.1 Security
-
-- NFR-FE11-SEC-001: All user management endpoints must require authentication and Admin role.
-- NFR-FE11-SEC-002: Role-based access control must be enforced on the server.
-- NFR-FE11-SEC-003: Password setup completion must use FE02 bcrypt hashing rules (cost >= 10).
-- NFR-FE11-SEC-004: All FE11-owned inputs must be allowlisted, validated, and sanitized on the server: account-creation fields (`email`, `fullName`, optional `phone`/`address`), Librarian work fields (`department`, `specialization`), lifecycle concurrency values, and role IDs. Existing-user personal fields must be rejected rather than sanitized and applied.
-- NFR-FE11-SEC-005: SQL injection must be prevented using parameterized queries.
-- NFR-FE11-SEC-006: Admin cannot view other admin's password hash or sensitive details beyond necessary.
-- NFR-FE11-SEC-007: Email field must be case-insensitive for uniqueness checks.
-
-### 12.2 Transaction Integrity
-
-- NFR-FE11-TXN-001: Creating a user must be atomic: active-Admin revalidation, authoritative uniqueness checks, user record, profile, default role, hashed setup token, and audit log must succeed together or roll back.
-- NFR-FE11-TXN-002: Deactivating a user must be atomic: user status, `deactivatedAt`, credential invalidation, and audit log must succeed together or roll back.
-- NFR-FE11-TXN-003: Role assignment must be atomic: UserRoles update and audit log must succeed together or roll back.
-- NFR-FE11-TXN-004: FE10 setup delivery runs after the FE11 source transaction; provider/requester failure must not roll back the account or token and must return only safe delivery status.
-- NFR-FE11-TXN-005: Setup resend acting-Admin revalidation, token revocation, new token creation, and audit logging must commit or roll back together.
-- NFR-FE11-TXN-006: Role replacement must lock the affected `UserRoles` row and active Admin-role count before mutation; concurrent operations must serialize so each account has exactly one role and at least one active Admin always remains.
-
-### 12.3 Performance
-
-- NFR-FE11-PERF-001: User-list queries must apply pagination before materializing rows and must not load the full user table into application memory.
-- NFR-FE11-PERF-002: User lookup by email or user ID must use the corresponding database key or unique index.
-- NFR-FE11-PERF-003: Role lookup must use the `UserRoles`/`Roles` keys and must not perform an unbounded scan for each returned user.
-
-### 12.4 Logging and Audit
-
-- NFR-FE11-LOG-001: Create, effective managed-profile update, deactivate, and effective role replacement actions must write audit log entries; rejected and no-op role changes must not write a success audit.
-- NFR-FE11-LOG-002: Audit log must include: action type, admin ID, target user ID, timestamp, and details of changes.
-
-### 12.5 Usability
-
-- NFR-FE11-UX-001: Validation errors must be clear and explain what went wrong (e.g., "Email already exists", "Password too weak").
-- NFR-FE11-UX-002: Confirmation dialogs must appear before destructive actions (deactivate or replacing an Admin role).
-- NFR-FE11-UX-003: User list must display these columns: email, name, status, roles, last login, and created date.
-- NFR-FE11-UX-004: The Admin sidebar account email shall stay on one line with ellipsis and a full-value tooltip, and Admin data exports shall use valid `.docx` files rather than CSV downloads. Exported tables shall use landscape pages, fixed proportional column widths, compact readable text, localized statuses, and short Vietnamese dates.
+- `page` mặc định là 1; `limit` mặc định là 20 và được giới hạn ở 1..100.
+- `q` được trim và dài 1..100 ký tự khi cung cấp; `status` là một trong `PENDING`, `APPROVED`, `REJECTED`, `COMPLETED` hoặc `CANCELLED`; `from`/`to` là các giá trị `YYYY-MM-DD` tính cả hai đầu và phải thỏa `from <= to`.
+- Xác thực danh tính và phân quyền Quản trị viên chạy trước xác thực chi tiết. Giá trị được hỗ trợ phải lấy từ dữ liệu đã xác thực, không lấy từ query/params thô.
+- Các dòng danh sách được sắp xếp theo `RequestDate DESC, RequestId DESC` và chỉ chứa `requestId`, `requestDate`, `status`, `member` an toàn, `itemCount`, `bookTitles` có thứ tự và `categories` duy nhất theo lần xuất hiện đầu tiên.
+- Phân trang áp dụng cho các header yêu cầu riêng biệt trước khi join chi tiết; count/data dùng cùng phạm vi bộ lọc. Dấu phẩy hợp lệ trong tiêu đề/danh mục không được tái tạo bằng cách tách chuỗi SQL phân cách bằng dấu phẩy.
+- Chi tiết chỉ trả về `requestId`, `requestDate`, `status`, `createdAt`, `updatedAt`, `member` an toàn, `items` an toàn và `lifecycle`. ID không hợp lệ trả về `400 VALIDATION_ERROR`; yêu cầu không tồn tại trả về `404 BORROW_REQUEST_NOT_FOUND`.
+- FE11 đọc thông qua ranh giới repository yêu cầu của FE07. Chỉ FE07 sở hữu `/api/borrow-requests/{requestId}/approve` và `/reject`; không thêm alias thay đổi dữ liệu nào cho Quản trị viên, và thao tác trực tiếp trên yêu cầu không ở trạng thái `PENDING` trả về `409 BORROW_REQUEST_NOT_PENDING` mà không ghi dữ liệu/nhật ký kiểm toán thành công.
 
 ---
 
-## 13. Out of Scope
+## 12. Yêu cầu phi chức năng
 
-This feature does not include:
+### 12.1 Bảo mật
 
-- Admin editing of an existing user's `fullName`, `phone`, or `address`; those self-service changes belong to FE03.
-- Existing-account email change; any future capability belongs to a verified FE02 flow and is outside Phase 1.
-- Password reset by users themselves (that belongs to FE02 Authentication).
-- Admin-initiated password reset for existing users unless explicitly added by FE02/FE11 later.
-- Account unlock after failed login lockout unless explicitly added by FE02/FE11 later.
-- Reactivating deactivated accounts unless explicitly approved as a separate flow later.
-- Permanent user deletion (only deactivation is supported).
-- User import/bulk operations via CSV.
-- Role-based activity reports.
-- User registration by self-service (that belongs to FE02).
-- LDAP/Active Directory user sync.
-- Single sign-on (SSO) integration.
+- NFR-FE11-SEC-001: Tất cả endpoint quản lý người dùng phải yêu cầu xác thực và vai trò Quản trị viên.
+- NFR-FE11-SEC-002: Kiểm soát truy cập dựa trên vai trò phải được thực thi trên máy chủ.
+- NFR-FE11-SEC-003: Hoàn tất thiết lập mật khẩu phải dùng quy tắc băm bcrypt của FE02 (cost >= 10).
+- NFR-FE11-SEC-004: Mọi đầu vào thuộc quyền sở hữu FE11 phải được đưa vào danh sách cho phép, xác thực và làm sạch trên máy chủ: các trường tạo tài khoản (`email`, `fullName`, `phone`/`address` tùy chọn), các trường công việc Thủ thư (`department`, `specialization`), giá trị đồng thời vòng đời và ID vai trò. Các trường cá nhân của người dùng hiện có phải bị từ chối, không được làm sạch rồi áp dụng.
+- NFR-FE11-SEC-005: Phải ngăn SQL injection bằng truy vấn tham số hóa.
+- NFR-FE11-SEC-006: Quản trị viên không được xem mã băm mật khẩu hoặc chi tiết nhạy cảm không cần thiết của quản trị viên khác.
+- NFR-FE11-SEC-007: Phải so sánh trường email không phân biệt hoa thường khi kiểm tra tính duy nhất.
+
+### 12.2 Tính toàn vẹn giao dịch
+
+- NFR-FE11-TXN-001: Tạo người dùng phải có tính nguyên tử: xác thực lại Quản trị viên đang hoạt động, kiểm tra tính duy nhất có thẩm quyền, bản ghi người dùng, hồ sơ, vai trò mặc định, token thiết lập đã băm và nhật ký kiểm toán phải cùng thành công hoặc cùng rollback.
+- NFR-FE11-TXN-002: Vô hiệu hóa người dùng phải có tính nguyên tử: trạng thái người dùng, `deactivatedAt`, vô hiệu hóa thông tin xác thực và nhật ký kiểm toán phải cùng thành công hoặc cùng rollback.
+- NFR-FE11-TXN-003: Gán vai trò phải có tính nguyên tử: cập nhật UserRoles và nhật ký kiểm toán phải cùng thành công hoặc cùng rollback.
+- NFR-FE11-TXN-004: FE10 phân phối thiết lập sau giao dịch nguồn FE11; lỗi provider/requester không được rollback tài khoản hoặc token và chỉ được trả về trạng thái phân phối an toàn.
+- NFR-FE11-TXN-005: Việc xác thực lại Quản trị viên thực hiện gửi lại thiết lập, thu hồi token, tạo token mới và ghi nhật ký kiểm toán phải cùng commit hoặc cùng rollback.
+- NFR-FE11-TXN-006: Thay thế vai trò phải khóa hàng `UserRoles` bị ảnh hưởng và số lượng vai trò Quản trị viên đang hoạt động trước khi thay đổi; các thao tác đồng thời phải được tuần tự hóa để mỗi tài khoản có chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động.
+
+### 12.3 Hiệu năng
+
+- NFR-FE11-PERF-001: Truy vấn danh sách người dùng phải áp dụng phân trang trước khi hiện thực hóa các hàng và không được tải toàn bộ bảng người dùng vào bộ nhớ ứng dụng.
+- NFR-FE11-PERF-002: Tra cứu người dùng theo email hoặc ID người dùng phải dùng khóa cơ sở dữ liệu hoặc chỉ mục duy nhất tương ứng.
+- NFR-FE11-PERF-003: Tra cứu vai trò phải dùng các khóa `UserRoles`/`Roles` và không được quét không giới hạn cho từng người dùng được trả về.
+
+### 12.4 Ghi nhật ký và kiểm toán
+
+- NFR-FE11-LOG-001: Các hành động tạo, cập nhật hồ sơ được quản lý có hiệu lực, vô hiệu hóa và thay thế vai trò có hiệu lực phải ghi nhật ký kiểm toán; thay đổi vai trò bị từ chối hoặc không làm thay đổi dữ liệu không được ghi nhật ký kiểm toán thành công.
+- NFR-FE11-LOG-002: Nhật ký kiểm toán phải gồm: loại hành động, ID quản trị viên, ID người dùng mục tiêu, dấu thời gian và chi tiết thay đổi.
+
+### 12.5 Khả năng sử dụng
+
+- NFR-FE11-UX-001: Lỗi xác thực phải rõ ràng và giải thích nguyên nhân (ví dụ: "Email đã tồn tại", "Mật khẩu quá yếu").
+- NFR-FE11-UX-002: Phải hiển thị hộp thoại xác nhận trước các hành động có tính phá hủy (vô hiệu hóa hoặc thay thế vai trò Quản trị viên).
+- NFR-FE11-UX-003: Danh sách người dùng phải hiển thị các cột: email, tên, trạng thái, vai trò, lần đăng nhập gần nhất và ngày tạo.
+- NFR-FE11-UX-004: Email tài khoản trong thanh bên Quản trị viên phải nằm trên một dòng, có dấu ba chấm và tooltip chứa đầy đủ giá trị; dữ liệu xuất của Quản trị viên phải dùng tệp `.docx` hợp lệ thay vì tải CSV. Bảng xuất phải dùng trang ngang, độ rộng cột tỷ lệ cố định, văn bản gọn dễ đọc, trạng thái đã bản địa hóa và ngày tiếng Việt dạng ngắn.
 
 ---
 
-## 14. Dependencies
+## 13. Ngoài phạm vi
 
-| Dependency | Type | Notes |
+Tính năng này không bao gồm:
+
+- Quản trị viên chỉnh sửa `fullName`, `phone` hoặc `address` của người dùng hiện tại; những thay đổi tự phục vụ đó thuộc về FE03.
+- Thay đổi email tài khoản hiện tại; mọi khả năng trong tương lai đều thuộc về luồng FE02 đã được xác minh và nằm ngoài Giai đoạn 1.
+- Người dùng tự đặt lại mật khẩu (thuộc Xác thực FE02).
+- Đặt lại mật khẩu do quản trị viên thực hiện cho người dùng hiện tại trừ khi được FE02/FE11 thêm rõ ràng sau đó.
+- Mở khóa tài khoản sau khi khóa đăng nhập không thành công trừ khi được FE02/FE11 thêm rõ ràng sau đó.
+- Kích hoạt lại các tài khoản đã bị vô hiệu hóa trừ khi được phê duyệt rõ ràng dưới dạng một luồng riêng biệt sau này.
+- Xóa người dùng vĩnh viễn (chỉ hỗ trợ hủy kích hoạt).
+- Thao tác import/hàng loạt người dùng qua CSV.
+- Báo cáo hoạt động dựa trên vai trò.
+- Người dùng tự đăng ký (thuộc FE02).
+- Đồng bộ hóa người dùng Thư mục LDAP/Active.
+- Tích hợp đăng nhập một lần (SSO).
+
+---
+
+## 14. Phụ thuộc
+
+| Phụ thuộc | Loại | Ghi chú |
 | ---------- | ---- | ----- |
-| FE02 Authentication | Internal | User/role info is used for access control; any future existing-account email change must be verified and owned by FE02. |
-| FE03 User Profile | Internal | FE03 owns authenticated self-service changes to `fullName`, `phone`, and `address`; FE11 may read but must not mutate those fields after creation. |
-| FE04 Membership Management | Internal UI integration | FE11 exposes the Admin shell entry; FE04 owns the embedded membership list/review data, mutations, authorization, audit, and result notification. |
-| FE10 Notification Management | Internal | Only the requester bound to `FE11` renders and delivers canonical `ACCOUNT_SETUP` links using safe `AuthToken` source metadata. |
-| SQL Server database | Technical | Stores FE11 source state; Wave A must synchronize `Users.Email`, `Users.DeactivatedAt`, `UserProfiles.Department`, `UserProfiles.Specialization`, `Notifications.RecipientEmail`, and deterministic `UX_Users_Email` through the approved idempotent migration. |
+| Xác thực FE02 | Nội bộ | Thông tin người dùng/vai trò được dùng để kiểm soát truy cập; mọi thay đổi email tài khoản hiện có trong tương lai đều phải do FE02 xác minh và sở hữu. |
+| Hồ sơ người dùng FE03 | Nội bộ | FE03 sở hữu các thay đổi tự phục vụ đã được xác thực đối với `fullName`, `phone` và `address`; FE11 có thể đọc nhưng không được thay đổi các trường đó sau khi tạo. |
+| Quản lý thành viên FE04 | Tích hợp UI nội bộ | FE11 hiển thị mục trong shell Quản trị viên; FE04 sở hữu dữ liệu danh sách/duyệt thành viên được nhúng, các thao tác thay đổi, phân quyền, kiểm toán và thông báo kết quả. |
+| Quản lý thông báo FE10 | Nội bộ | Chỉ requester gắn với `FE11` mới kết xuất và phân phối các liên kết `ACCOUNT_SETUP` chuẩn bằng siêu dữ liệu nguồn `AuthToken` an toàn. |
+| Cơ sở dữ liệu SQL Server | Kỹ thuật | Lưu trạng thái nguồn FE11; Wave A phải đồng bộ `Users.Email`, `Users.DeactivatedAt`, `UserProfiles.Department`, `UserProfiles.Specialization`, `Notifications.RecipientEmail` và `UX_Users_Email` xác định thông qua migration tạm thời đã được phê duyệt. |
 
 ---
 
-## 15. Resolved Questions
+## 15. Câu hỏi đã được giải quyết
 
-| ID | Approved Decision | Source | Status |
+| ID | Quyết định đã phê duyệt | Nguồn | Trạng thái |
 | -- | ----------------- | ------ | ------ |
-| Q-FE11-001 | Admins cannot deactivate themselves. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-002 | Prevent deactivation of users with active borrowings. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-005 | FE11 always requests one-time setup-link delivery through FE10 after source commit; configured deployments use the provider adapter and tests use a mock. Delivery may safely return `FAILED`. | Review packet 2026-06-10; ADR-005 refinement 2026-07-15 | APPROVED |
-| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | Review packet 2026-06-10 | APPROVED |
-| Q-FE11-010 | Admin-created account delivery may safely fail after source commit; the account remains `INACTIVE` with its setup token and can be resent through the approved flow. | User correction 2026-06-21; ADR-005 refinement 2026-07-15 | APPROVED |
-| Q-FE11-011 | Admin sidebar includes Home, Dashboard, Library, Borrowing Management, Request Management, All Users, Membership Review, and Audit Logs. Membership Review embeds FE04 after All Users; Permissions remains removed while Manage Roles stays in All Users; Confirm Payment and Confirm Borrow remain removed. | User corrections 2026-07-22 | APPROVED |
-| Q-FE11-012 | Admin Reports content is consolidated into Dashboard for this prototype; detailed reporting remains FE12. | User correction 2026-06-30 | APPROVED |
-| Q-FE11-013 | Admin Request Management is read-only for completed requests and action-enabled only for pending/chờ xác nhận requests. | User correction 2026-06-30 | APPROVED |
-| Q-FE11-026 | Admin Library actions stay inside the Admin console. The embedded book workspace reuses FE05 rather than navigating to `/librarian/books` or duplicating book mutation APIs. | User correction 2026-07-22 | APPROVED |
-| Q-FE11-014 | Admin-created accounts start `INACTIVE` and become `ACTIVE` only after valid FE02 password setup completion. | Nhat confirmation 2026-07-15 | APPROVED |
-| Q-FE11-015 | FE11 issues `ACCOUNT_SETUP`; FE10 delivers it only through the requester bound to `FE11`; FE02 consumes it and activates the account. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
-| Q-FE11-016 | Admin-only resend revokes the prior setup credential, creates a new token/event/key, and enforces a 60-second server cooldown. | Nhat confirmation 2026-07-15; ADR-005 | APPROVED |
-| Q-FE11-017 | FE11 responses use the explicit `UserManagementView` allowlist; unspecified or credential-bearing fields are excluded. | Spec normalization 2026-07-17 | APPROVED |
-| Q-FE11-018 | Librarian work-field updates and deactivation use `UpdatedAt` optimistic concurrency; stale requests return `409 STALE_USER_STATE`. | Spec normalization 2026-07-17; personal-data ownership revision 2026-07-22 | APPROVED |
-| Q-FE11-019 | Deactivation uses `INACTIVE` plus `deactivatedAt`, invalidates credentials atomically, and has no Phase 1 reactivation flow. | Cross-feature lifecycle normalization 2026-07-17 | APPROVED |
-| Q-FE11-020 | Admin role replacement serializes the affected mapping and active Admin count so each account keeps exactly one role and at least one active Admin remains. | Single-role normalization 2026-07-27 | APPROVED |
-| Q-FE11-021 | Managed-user optimistic concurrency exposes and compares non-null `COALESCE(Users.UpdatedAt, Users.CreatedAt)` without a backfill migration. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
-| Q-FE11-022 | `fullName` remains maximum 100 and becomes FE03 user-owned after creation; nullable `department` and `specialization` are maximum 100 and are the only existing-user profile fields FE11 Admin may change for current Librarian targets. | FE11 Finalization Batch approval 2026-07-19; personal-data ownership revision 2026-07-22 | APPROVED |
-| Q-FE11-023 | `INACTIVE` with null `deactivatedAt` is pending activation and deactivation returns `409 ACCOUNT_PENDING_ACTIVATION`; only non-null `deactivatedAt` is idempotently deactivated. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
-| Q-FE11-024 | FE11 create and setup resend revalidate the active acting Admin inside each source transaction; create duplicate email is transaction-authoritative and safe. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
-| Q-FE11-025 | Admin request reads use `page`, `limit`, `q`, `status`, `from`, `to`, exact `{ data, pagination }`, and a dedicated safe detail endpoint; FE07 remains the only mutation owner. | FE11 Finalization Batch approval 2026-07-19 | APPROVED |
-| Q-FE11-027 | Admin may view but must not edit an existing user's `fullName`, `phone`, `address`, or `email`. FE03 owns self-service personal-profile changes; existing-account email change requires a future verified FE02 flow; FE11 may update only `department` and `specialization` for current Librarians. | User approval 2026-07-22 | APPROVED |
-| Q-FE11-028 | Supersedes Q-FE11-027 for managed-profile editing: Admin may update `fullName`, `phone`, and `address` for every managed role; FE03 uses the same persisted fields; email stays read-only under FE02 verification ownership; department/specialization are removed from the FE11 Admin UI and update contract. | User approval 2026-07-25 | APPROVED |
+| Q-FE11-001 | Quản trị viên không thể tự vô hiệu hóa. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-002 | Ngăn vô hiệu hóa người dùng có lượt mượn đang hoạt động. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-003 | Thiết lập mật khẩu dùng cùng quy tắc độ phức tạp mật khẩu của FE02. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-004 | Email không phân biệt hoa thường khi đăng nhập và kiểm tra tính duy nhất. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-005 | FE11 luôn yêu cầu FE10 phân phối liên kết thiết lập dùng một lần sau khi nguồn commit; bản triển khai đã cấu hình dùng adapter nhà cung cấp và kiểm thử dùng mock. Phân phối có thể trả về `FAILED` một cách an toàn. | Gói đánh giá 2026-06-10; tinh chỉnh ADR-005 2026-07-15 | APPROVED |
+| Q-FE11-006 | Không xóa vĩnh viễn dữ liệu người dùng đã vô hiệu hóa trong Giai đoạn 1. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-007 | Không có phân cấp vai trò trong Giai đoạn 1; các vai trò ngang hàng. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-008 | Quản trị viên không thể xem các trường tài khoản nhạy cảm như mã băm mật khẩu, token đặt lại và token refresh. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-009 | Thông báo vô hiệu hóa người dùng là công việc tùy chọn/tương lai; Giai đoạn 1 không bắt buộc thông báo. | Gói đánh giá 2026-06-10 | APPROVED |
+| Q-FE11-010 | Phân phối tài khoản do quản trị viên tạo có thể thất bại an toàn sau khi nguồn commit; tài khoản vẫn `INACTIVE` cùng token thiết lập và có thể được gửi lại qua luồng đã phê duyệt. | Hiệu chỉnh của người dùng 2026-06-21; tinh chỉnh ADR-005 2026-07-15 | APPROVED |
+| Q-FE11-011 | Thanh bên quản trị bao gồm Trang chủ, Trang tổng quan, Thư viện, Quản lý khoản vay, Quản lý yêu cầu, Tất cả người dùng, Đánh giá tư cách thành viên và Nhật ký kiểm tra. Đánh giá tư cách thành viên nhúng FE04 sau Tất cả người dùng; Quyền vẫn bị xóa trong khi Quản lý vai trò vẫn ở Tất cả người dùng; Xác nhận thanh toán và Xác nhận vay vẫn bị xóa. | Chỉnh sửa của người dùng 2026-07-22 | APPROVED |
+| Q-FE11-012 | Nội dung Báo cáo của quản trị viên được hợp nhất vào Trang tổng quan cho nguyên mẫu này; báo cáo chi tiết vẫn là FE12. | Chỉnh sửa của người dùng 2026-06-30 | APPROVED |
+| Q-FE11-013 | Quản lý yêu cầu của Quản trị viên chỉ đọc với yêu cầu đã hoàn tất và chỉ cho phép hành động với yêu cầu đang chờ/chờ xác nhận. | Hiệu chỉnh của người dùng 2026-06-30 | APPROVED |
+| Q-FE11-026 | Các tác vụ Thư viện của Quản trị viên vẫn nằm trong giao diện Quản trị viên. Không gian làm việc sách được nhúng tái sử dụng FE05 thay vì điều hướng đến `/librarian/books` hoặc sao chép API thay đổi sách. | Hiệu chỉnh của người dùng 2026-07-22 | APPROVED |
+| Q-FE11-014 | Tài khoản do quản trị viên tạo bắt đầu ở `INACTIVE` và chỉ trở thành `ACTIVE` sau khi hoàn tất hợp lệ thiết lập mật khẩu FE02. | Xác nhận của Nhat 2026-07-15 | APPROVED |
+| Q-FE11-015 | FE11 phát hành `ACCOUNT_SETUP`; FE10 chỉ phân phối qua requester gắn với `FE11`; FE02 tiêu thụ token và kích hoạt tài khoản. | Xác nhận của Nhat 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-016 | Thao tác gửi lại chỉ dành cho Quản trị viên sẽ thu hồi thông tin xác thực thiết lập trước, tạo token/event/key mới và thực thi thời gian chờ máy chủ 60 giây. | Xác nhận của Nhat 2026-07-15; ADR-005 | APPROVED |
+| Q-FE11-017 | Phản hồi FE11 sử dụng danh sách cho phép `UserManagementView` rõ ràng; các trường không được chỉ định hoặc mang thông tin xác thực sẽ bị loại trừ. | Chuẩn hóa đặc tả 2026-07-17 | APPROVED |
+| Q-FE11-018 | Cập nhật trường công việc Thủ thư và vô hiệu hóa dùng đồng thời lạc quan `UpdatedAt`; yêu cầu dùng trạng thái cũ trả về `409 STALE_USER_STATE`. | Chuẩn hóa đặc tả 2026-07-17; sửa đổi quyền sở hữu dữ liệu cá nhân 2026-07-22 | APPROVED |
+| Q-FE11-019 | Vô hiệu hóa dùng `INACTIVE` cùng `deactivatedAt`, vô hiệu hóa thông tin xác thực một cách nguyên tử và không có luồng kích hoạt lại trong Giai đoạn 1. | Chuẩn hóa vòng đời liên tính năng 2026-07-17 | APPROVED |
+| Q-FE11-020 | Thay thế vai trò Quản trị viên tuần tự hóa ánh xạ bị ảnh hưởng và số Quản trị viên đang hoạt động, để mỗi tài khoản giữ chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động. | Chuẩn hóa một vai trò 2026-07-27 | APPROVED |
+| Q-FE11-021 | Đồng thời lạc quan của người dùng được quản lý hiển thị và so sánh `COALESCE(Users.UpdatedAt, Users.CreatedAt)` không null mà không cần migration điền bù. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
+| Q-FE11-022 | `fullName` vẫn tối đa 100 ký tự và trở thành trường do người dùng sở hữu qua FE03 sau khi tạo; `department` và `specialization` có thể null, tối đa 100 ký tự và là các trường hồ sơ người dùng hiện có duy nhất mà Quản trị viên FE11 có thể thay đổi cho mục tiêu đang là Thủ thư. | Phê duyệt Lô hoàn thiện FE11 2026-07-19; sửa đổi quyền sở hữu dữ liệu cá nhân 2026-07-22 | APPROVED |
+| Q-FE11-023 | `INACTIVE` với `deactivatedAt` null nghĩa là đang chờ kích hoạt và thao tác vô hiệu hóa trả về `409 ACCOUNT_PENDING_ACTIVATION`; chỉ `deactivatedAt` khác null mới là đã vô hiệu hóa theo cách idempotent. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
+| Q-FE11-024 | Tạo tài khoản và gửi lại thiết lập trong FE11 đều xác thực lại Quản trị viên thực hiện đang hoạt động bên trong từng giao dịch nguồn; kiểm tra email trùng khi tạo có thẩm quyền ở giao dịch và an toàn. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
+| Q-FE11-025 | Các thao tác đọc yêu cầu của Quản trị viên dùng chính xác `page`, `limit`, `q`, `status`, `from`, `to`, `{ data, pagination }` và một endpoint chi tiết an toàn chuyên biệt; FE07 vẫn là chủ sở hữu duy nhất của thao tác thay đổi. | Phê duyệt Lô hoàn thiện FE11 2026-07-19 | APPROVED |
+| Q-FE11-027 | Quản trị viên có thể xem nhưng không được sửa `fullName`, `phone`, `address` hoặc `email` của người dùng hiện có. FE03 sở hữu thay đổi hồ sơ cá nhân tự phục vụ; đổi email tài khoản hiện có cần luồng FE02 đã xác minh trong tương lai; FE11 chỉ có thể cập nhật `department` và `specialization` cho Thủ thư hiện tại. | Phê duyệt của người dùng 2026-07-22 | APPROVED |
+| Q-FE11-028 | Thay thế Q-FE11-027 đối với chỉnh sửa hồ sơ được quản lý: Quản trị viên có thể cập nhật `fullName`, `phone` và `address` cho mọi vai trò được quản lý; FE03 dùng cùng các trường lưu trữ; email vẫn chỉ đọc dưới quyền sở hữu xác minh của FE02; department/specialization bị loại khỏi UI và hợp đồng cập nhật của Quản trị viên FE11. | Phê duyệt của người dùng 2026-07-25 | APPROVED |
 
 ---
 
-## 15.1 Approved Design Decisions
+## 15.1 Các quyết định thiết kế đã được phê duyệt
 
-The following decisions were approved in the Phase 1 review packet on 2026-06-10 and are now part of this spec.
+Các quyết định sau đã được phê duyệt trong gói đánh giá Giai đoạn 1 vào 2026-06-10 và hiện là một phần của đặc tả này.
 
-| Decision | Approved Answer | Status |
+| Quyết định | Câu trả lời được phê duyệt | Trạng thái |
 | -------- | --------------- | ------ |
-| Q-FE11-001 | Admins cannot deactivate themselves. | APPROVED |
-| Q-FE11-002 | Prevent deactivation of users with active borrowings. | APPROVED |
-| Q-FE11-003 | Password setup uses the same FE02 password complexity rule. | APPROVED |
-| Q-FE11-004 | Email is case-insensitive for login and uniqueness. | APPROVED |
-| Q-FE11-005 | FE11 requests setup-link delivery through FE10 after source commit; tests use a provider mock and safe failure is allowed. | APPROVED |
-| Q-FE11-006 | Do not permanently delete deactivated user data in Phase 1. | APPROVED |
-| Q-FE11-007 | No role hierarchy in Phase 1; roles are flat. | APPROVED |
-| Q-FE11-008 | Admin cannot view sensitive account fields such as password hash, reset tokens, refresh tokens. | APPROVED |
-| Q-FE11-009 | User deactivation notification is optional/future work; no mandatory Phase 1 notification. | APPROVED |
-| Q-FE11-014 | Admin-created accounts start `INACTIVE` until FE02 completes setup. | APPROVED |
-| Q-FE11-015 | FE11 issues setup tokens, FE10 delivers `ACCOUNT_SETUP`, and FE02 consumes/activates. | APPROVED |
-| Q-FE11-016 | Setup resend is Admin-only, rotates the token/event/key, and uses a 60-second cooldown. | APPROVED |
-| Q-FE11-017 | FE11 exposes only the allowlisted `UserManagementView` DTO. | APPROVED |
-| Q-FE11-018 | Stale Librarian work-field updates and deactivation requests are rejected by `UpdatedAt` optimistic concurrency with `409 STALE_USER_STATE`. | APPROVED |
-| Q-FE11-019 | Deactivation uses `INACTIVE` plus `deactivatedAt`, invalidates credentials atomically, and has no Phase 1 reactivation flow. | APPROVED |
-| Q-FE11-020 | Admin role replacement serializes the affected mapping and active Admin count so each account keeps exactly one role and at least one active Admin remains. | APPROVED |
-| Q-FE11-021 | Managed-user concurrency uses non-null `COALESCE(UpdatedAt, CreatedAt)`. | APPROVED |
-| Q-FE11-022 | `fullName` is FE03 user-owned after creation; FE11 owns only the 100-character `department` and `specialization` Librarian work fields. | APPROVED |
-| Q-FE11-023 | Pending activation is not an idempotent deactivation state. | APPROVED |
-| Q-FE11-024 | Create/resend revalidate the active acting Admin transactionally and map duplicate email safely. | APPROVED |
-| Q-FE11-025 | Admin request list/detail reads use the canonical finalization contract while FE07 owns mutations. | APPROVED |
-| Q-FE11-027 | Personal fields are read-only in FE11; FE03 owns self-service profile changes, FE02 owns any future verified email change, and FE11 Admin owns only Librarian work fields. | APPROVED |
-| Q-FE11-028 | Admin and FE03 share canonical `fullName`/`phone`/`address` persistence; email remains FE02-verified/read-only; FE11 removes department/specialization editing. Supersedes Q-FE11-027. | APPROVED |
+| Q-FE11-001 | Quản trị viên không thể tự vô hiệu hóa. | APPROVED |
+| Q-FE11-002 | Ngăn vô hiệu hóa người dùng có lượt mượn đang hoạt động. | APPROVED |
+| Q-FE11-003 | Thiết lập mật khẩu dùng cùng quy tắc độ phức tạp mật khẩu của FE02. | APPROVED |
+| Q-FE11-004 | Email không phân biệt hoa thường khi đăng nhập và kiểm tra tính duy nhất. | APPROVED |
+| Q-FE11-005 | FE11 yêu cầu FE10 phân phối liên kết thiết lập sau khi nguồn commit; kiểm thử dùng mock nhà cung cấp và cho phép thất bại an toàn. | APPROVED |
+| Q-FE11-006 | Không xóa vĩnh viễn dữ liệu người dùng đã vô hiệu hóa trong Giai đoạn 1. | APPROVED |
+| Q-FE11-007 | Không có phân cấp vai trò trong Giai đoạn 1; các vai trò ngang hàng. | APPROVED |
+| Q-FE11-008 | Quản trị viên không thể xem các trường tài khoản nhạy cảm như mã băm mật khẩu, token đặt lại và token refresh. | APPROVED |
+| Q-FE11-009 | Thông báo vô hiệu hóa người dùng là công việc tùy chọn/tương lai; Giai đoạn 1 không bắt buộc thông báo. | APPROVED |
+| Q-FE11-014 | Tài khoản do quản trị viên tạo bắt đầu ở `INACTIVE` cho đến khi FE02 hoàn tất thiết lập. | APPROVED |
+| Q-FE11-015 | FE11 phát hành token thiết lập, FE10 phân phối `ACCOUNT_SETUP` và FE02 tiêu thụ/kích hoạt. | APPROVED |
+| Q-FE11-016 | Gửi lại thiết lập chỉ dành cho Quản trị viên, xoay token/event/key và dùng thời gian chờ 60 giây. | APPROVED |
+| Q-FE11-017 | FE11 chỉ cung cấp DTO `UserManagementView` trong danh sách cho phép. | APPROVED |
+| Q-FE11-018 | Yêu cầu cập nhật trường công việc Thủ thư hoặc vô hiệu hóa dùng trạng thái cũ bị cơ chế đồng thời lạc quan `UpdatedAt` từ chối bằng `409 STALE_USER_STATE`. | APPROVED |
+| Q-FE11-019 | Vô hiệu hóa dùng `INACTIVE` cùng `deactivatedAt`, vô hiệu hóa thông tin xác thực một cách nguyên tử và không có luồng kích hoạt lại trong Giai đoạn 1. | APPROVED |
+| Q-FE11-020 | Thay thế vai trò Quản trị viên tuần tự hóa ánh xạ bị ảnh hưởng và số Quản trị viên đang hoạt động, để mỗi tài khoản giữ chính xác một vai trò và luôn còn ít nhất một Quản trị viên đang hoạt động. | APPROVED |
+| Q-FE11-021 | Cơ chế đồng thời của người dùng được quản lý dùng `COALESCE(UpdatedAt, CreatedAt)` không null. | APPROVED |
+| Q-FE11-022 | `fullName` thuộc quyền sở hữu của người dùng qua FE03 sau khi tạo; FE11 chỉ sở hữu các trường công việc Thủ thư `department` và `specialization` dài 100 ký tự. | APPROVED |
+| Q-FE11-023 | Đang chờ kích hoạt không phải là trạng thái vô hiệu hóa có tính idempotent. | APPROVED |
+| Q-FE11-024 | Tạo/gửi lại xác thực lại Quản trị viên đang hoạt động trong giao dịch và ánh xạ email trùng một cách an toàn. | APPROVED |
+| Q-FE11-025 | Thao tác đọc danh sách/chi tiết yêu cầu của Quản trị viên dùng hợp đồng hoàn thiện chuẩn, còn FE07 sở hữu các thao tác thay đổi. | APPROVED |
+| Q-FE11-027 | Các trường cá nhân chỉ đọc trong FE11; FE03 sở hữu thay đổi hồ sơ tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai và Quản trị viên FE11 chỉ sở hữu các trường công việc Thủ thư. | APPROVED |
+| Q-FE11-028 | Quản trị viên và FE03 cùng dùng cơ chế lưu trữ chuẩn cho `fullName`/`phone`/`address`; email vẫn do FE02 xác minh/chỉ đọc; FE11 loại bỏ chỉnh sửa department/specialization. Thay thế Q-FE11-027. | APPROVED |
 
 ---
 
-## 16. Traceability Matrix
+## 16. Ma trận truy vết
 
-### FE11 Acceptance Criteria to Requirements to Tests
+### Từ tiêu chí chấp nhận FE11 đến yêu cầu và kiểm thử
 
-| AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
+| ID AC | Tiêu chí chấp nhận | FR liên quan | BR liên quan | Trường hợp thử nghiệm | Trạng thái |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
-| AC-FE11-001 | Admin accesses user list -> safe paginated list uses defaults/bounds, stable order, status/role filters, and trimmed search | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
-| AC-FE11-002 | Admin accesses user detail -> safe UserManagementView and approved summaries are returned with sensitive fields excluded | FR-FE11-002 | BR-FE11-001, BR-FE11-018, BR-FE11-026 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
-| AC-FE11-003 | Valid user data -> inactive user/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | Existing FE11-S01..S07 source/delivery evidence plus pending FE11-LIFE02 actor/route hardening | PARTIAL |
-| AC-FE11-004 | Admin submits an existing-user personal field -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; UI remains read-only | FR-FE11-004, FR-FE11-007 | BR-FE11-014 | FE11-PDO01..PDO04 personal ownership UI/API/service/repository cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
-| AC-FE11-005 | Duplicate email submitted when creating user -> system rejects with error message | FR-FE11-005 | BR-FE11-004 | FE11-LIFE02 account-setup transaction/service/route cases | Not Started |
-| AC-FE11-006 | Admin creates user -> no password/token/link is shown; account stays inactive until FE02 setup completes | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-007 | ACTIVE/LOCKED user deactivated by admin -> status changes to INACTIVE; pending activation is rejected | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | FE11-LIFE04 atomic deactivation cases | Not Started |
-| AC-FE11-008 | Admin attempts any existing-user email change -> system rejects it regardless of uniqueness | FR-FE11-020 | BR-FE11-014 | FT53 reallocated; FE11-PDO01..PDO04 | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
-| AC-FE11-009 | User with active session deactivated by admin -> session invalidated | FR-FE11-008 | BR-FE11-006 | FE11-LIFE04 refresh-credential rollback cases | Not Started |
-| AC-FE11-010 | Valid librarian data -> inactive librarian/role/setup token/audit commit and one safe setup delivery is requested | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Existing FE11-S01..S07 source/delivery evidence plus pending FE11-LIFE02 fields/actor hardening | PARTIAL |
-| AC-FE11-011 | Admin updates only Librarian `department`/`specialization` -> effective changes save and advance UpdatedAt; personal/unknown fields are rejected | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | FE11-LIFE02/LIFE03 plus FE11-PDO02/PDO03 boundary cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
-| AC-FE11-012 | Active librarian account deactivated by admin -> status changes to INACTIVE and sessions are invalidated | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | FE11-LIFE04 Librarian deactivation cases | Not Started |
-| AC-FE11-013 | Member role is replaced by Librarian -> exactly one mapping and audit commit | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
-| AC-FE11-014 | Non-final Admin is replaced by Member -> exactly one mapping remains | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
-| AC-FE11-015 | Last active Admin role replacement -> rejected without mutation | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | FE11-SR01 tests and bounded validation records | IMPLEMENTED; human review pending |
-| AC-FE11-016 | Admin console shows the exact eight approved sections with Membership Review after All Users, hides removed workflows, and keeps catalog management inside Admin | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
-| AC-FE11-017 | Permissions view displays role counts and read-only permission matrix from FE11 data | FR-FE11-032 | BR-FE11-017 | Planned permissions-view integration case | Not Started |
-| AC-FE11-018 | Audit-log view is a read-only paginated list without search/filter controls and redacts sensitive fields | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |
-| AC-FE11-019 | Pending requests expose only approved actions; completed requests remain view-only | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | READY FOR REVIEW |
-| AC-FE11-020 | Setup delivery failure leaves committed account inactive and exposes no credential | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-021 | Eligible Admin resend rotates setup token/event/key after cooldown | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Existing FE11-S01..S07 rotation/delivery evidence plus pending FE11-LIFE02 actor revalidation | PARTIAL |
-| AC-FE11-022 | Ineligible/cooldown-limited resend is rejected without credential creation | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
-| AC-FE11-023 | Stale expectedUpdatedAt for Librarian work-field update/deactivation -> 409 STALE_USER_STATE and no mutation/success audit persists | FR-FE11-023 | BR-FE11-027 | FE11-LIFE03/LIFE04 stale mutation cases | Not Started |
-| AC-FE11-025 | Dashboard preserves five cards/three charts, uses canonical owners, and cards open the matching filtered module | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | LOCAL AUTOMATED; HUMAN REVIEW PENDING |
-| AC-FE11-026 | Only Admin reaches author/publisher/category management; Librarian keeps FE05 read-only choices | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/bookRoutes.test.js` | COMPLETE (LOCAL AUTOMATED); HUMAN REVIEW PENDING |
+| AC-FE11-001 | Quản trị viên truy cập danh sách người dùng -> danh sách phân trang an toàn dùng giá trị mặc định/giới hạn, thứ tự ổn định, bộ lọc trạng thái/vai trò và nội dung tìm kiếm đã trim | FR-FE11-001 | BR-FE11-001, BR-FE11-010 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
+| AC-FE11-002 | Quản trị viên truy cập chi tiết người dùng -> trả về UserManagementView an toàn và các bản tóm tắt đã phê duyệt, loại trừ trường nhạy cảm | FR-FE11-002 | BR-FE11-001, BR-FE11-018, BR-FE11-026 | FE11-U01..U06; fe11-safe-user-list-detail-validation-2026-07-18.md | COMPLETE (B7) |
+| AC-FE11-003 | Dữ liệu người dùng hợp lệ -> commit người dùng không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-003 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố tác nhân/tuyến FE11-LIFE02 đang chờ | PARTIAL |
+| AC-FE11-004 | Quản trị viên gửi trường cá nhân của người dùng hiện có -> từ chối nguyên tử bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN`; UI vẫn chỉ đọc | FR-FE11-004, FR-FE11-007 | BR-FE11-014 | Các trường hợp quyền sở hữu dữ liệu cá nhân UI/API/service/repository FE11-PDO01..PDO04 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-005 | Gửi email trùng khi tạo người dùng -> hệ thống từ chối kèm thông báo lỗi | FR-FE11-005 | BR-FE11-004 | Các trường hợp giao dịch/service/tuyến thiết lập tài khoản FE11-LIFE02 | Chưa bắt đầu |
+| AC-FE11-006 | Quản trị viên tạo người dùng -> không hiển thị mật khẩu/token/liên kết; tài khoản vẫn không hoạt động đến khi hoàn tất thiết lập FE02 | FR-FE11-006 | BR-FE11-005, BR-FE11-013, BR-FE11-023 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
+| AC-FE11-007 | Người dùng ACTIVE/LOCKED bị quản trị viên vô hiệu hóa -> trạng thái thay đổi thành INACTIVE; đang chờ kích hoạt bị từ chối | FR-FE11-008 | BR-FE11-003, BR-FE11-006, BR-FE11-010 | Trường hợp vô hiệu hóa nguyên tử FE11-LIFE04 | Chưa bắt đầu |
+| AC-FE11-008 | Quản trị viên cố thay đổi email của người dùng hiện có -> hệ thống từ chối bất kể tính duy nhất | FR-FE11-020 | BR-FE11-014 | FT53 được phân bổ lại; FE11-PDO01..PDO04 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-009 | Người dùng có phiên hoạt động bị quản trị viên vô hiệu hóa -> phiên bị vô hiệu | FR-FE11-008 | BR-FE11-006 | Các trường hợp rollback thông tin xác thực refresh FE11-LIFE04 | Chưa bắt đầu |
+| AC-FE11-010 | Dữ liệu thủ thư hợp lệ -> commit thủ thư không hoạt động/vai trò/token thiết lập/nhật ký kiểm toán và yêu cầu một lần phân phối thiết lập an toàn | FR-FE11-009 | BR-FE11-002, BR-FE11-004, BR-FE11-005, BR-FE11-007, BR-FE11-015, BR-FE11-021..024 | Bằng chứng nguồn/phân phối FE11-S01..S07 hiện có cùng phần gia cố trường/tác nhân FE11-LIFE02 đang chờ | PARTIAL |
+| AC-FE11-011 | Quản trị viên chỉ cập nhật `department`/`specialization` của Thủ thư -> lưu thay đổi có hiệu lực và tăng UpdatedAt; từ chối trường cá nhân/không xác định | FR-FE11-010 | BR-FE11-010, BR-FE11-014, BR-FE11-015, BR-FE11-027 | Các trường hợp biên FE11-LIFE02/LIFE03 cùng FE11-PDO02/PDO03 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-012 | Tài khoản thủ thư đang hoạt động bị quản trị viên vô hiệu hóa -> trạng thái đổi thành INACTIVE và các phiên bị vô hiệu | FR-FE11-011 | BR-FE11-003, BR-FE11-006, BR-FE11-010, BR-FE11-015 | Các trường hợp vô hiệu hóa Thủ thư FE11-LIFE04 | Chưa bắt đầu |
+| AC-FE11-013 | Vai trò Thành viên được thay bằng Thủ thư -> commit chính xác một ánh xạ và nhật ký kiểm toán | FR-FE11-012 | BR-FE11-007, BR-FE11-008, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
+| AC-FE11-014 | Quản trị viên không phải người cuối cùng được thay bằng Thành viên -> vẫn còn chính xác một ánh xạ | FR-FE11-013 | BR-FE11-007, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
+| AC-FE11-015 | Thay thế vai trò của Quản trị viên đang hoạt động cuối cùng -> bị từ chối, không thay đổi dữ liệu | FR-FE11-014 | BR-FE11-009, BR-FE11-010 | Kiểm thử FE11-SR01 và bản ghi xác thực có giới hạn | ĐÃ TRIỂN KHAI; đang chờ con người đánh giá |
+| AC-FE11-016 | Giao diện Quản trị viên hiển thị chính xác tám phần đã phê duyệt, Đánh giá tư cách thành viên đứng sau Tất cả người dùng, ẩn quy trình đã xóa và giữ quản lý danh mục trong khu vực Quản trị viên | FR-FE11-030 | BR-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (MÃ NGUỒN/TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT THÍCH ỨNG/AZURE/CON NGƯỜI ĐANG CHỜ |
+| AC-FE11-017 | Giao diện quyền hiển thị số lượng vai trò và ma trận quyền chỉ đọc từ dữ liệu FE11 | FR-FE11-032 | BR-FE11-017 | Trường hợp tích hợp giao diện quyền theo kế hoạch | Chưa bắt đầu |
+| AC-FE11-018 | Giao diện nhật ký kiểm toán là danh sách chỉ đọc có phân trang, không có điều khiển tìm kiếm/lọc và che các trường nhạy cảm | FR-FE11-033 | BR-FE11-018, BR-FE11-026 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; lô hiệu chỉnh 2026-07-22 | COMPLETE |
+| AC-FE11-019 | Yêu cầu đang chờ xử lý chỉ hiển thị các hành động đã được phê duyệt; yêu cầu đã hoàn thành vẫn ở chế độ chỉ xem | FR-FE11-034, FR-FE11-035 | BR-FE11-019 | FE11-REQ02/REQ03; fe11-finalization-wave-b-validation-2026-07-19.md | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
+| AC-FE11-020 | Lỗi phân phối thiết lập khiến tài khoản đã cam kết không hoạt động và không hiển thị thông tin xác thực | FR-FE11-037 | BR-FE11-023, BR-FE11-024 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
+| AC-FE11-021 | Quản trị viên đủ điều kiện gửi lại sẽ xoay token/event/key thiết lập sau thời gian chờ | FR-FE11-036 | BR-FE11-021, BR-FE11-022, BR-FE11-025 | Bằng chứng xoay/phân phối FE11-S01..S07 hiện có cùng phần xác thực lại actor FE11-LIFE02 đang chờ | PARTIAL |
+| AC-FE11-022 | Gửi lại không đủ điều kiện/bị giới hạn thời gian chờ sẽ bị từ chối mà không tạo thông tin xác thực | FR-FE11-038 | BR-FE11-023, BR-FE11-025 | FE11-S01..S07; auth-account-setup-boundary-validation-review-2026-07-15.md | COMPLETE (B7) |
+| AC-FE11-023 | expectedUpdatedAt cũ khi cập nhật trường công việc Thủ thư/vô hiệu hóa -> 409 STALE_USER_STATE và không lưu thay đổi/nhật ký kiểm toán thành công | FR-FE11-023 | BR-FE11-027 | Các trường hợp thay đổi dùng trạng thái cũ FE11-LIFE03/LIFE04 | Chưa bắt đầu |
+| AC-FE11-025 | Dashboard giữ nguyên năm thẻ/ba biểu đồ, dùng đúng chủ sở hữu chuẩn và các thẻ mở mô-đun đã lọc tương ứng | FR-FE11-031 | BR-FE11-020, BR-FE11-032 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
+| AC-FE11-026 | Chỉ Quản trị viên truy cập quản lý tác giả/nhà xuất bản/danh mục; Thủ thư vẫn dùng lựa chọn chỉ đọc của FE05 | FR-FE11-043 | BR-FE11-033 | `backend/tests/adminLibraryRoleBoundary.test.js`; `backend/tests/bookRoutes.test.js` | COMPLETE (TỰ ĐỘNG CỤC BỘ); CON NGƯỜI ĐANG ĐÁNH GIÁ |
 
-### FE11 Unwanted-Behavior Requirements to Sources to Tests
+### Từ yêu cầu hành vi không mong muốn FE11 đến nguồn và kiểm thử
 
-| FR ID | Unwanted Behavior | Related BR | Related EC / AF / Q | Test Case | Status |
+| ID FR | Hành vi không mong muốn | BR liên quan | Liên quan EC / AF / Q | Trường hợp thử nghiệm | Trạng thái |
 | ----- | ----------------- | ---------- | ------------------- | --------- | ------ |
-| FR-FE11-015 | Non-admin attempts to access user management -> rejected with authorization error | BR-FE11-001, BR-FE11-011, BR-FE11-012 | - | FE11-U01..U06 and FE11-R01..R05 Admin-first route authorization | COMPLETE (B7) |
-| FR-FE11-016 | Action targets a non-existent user ID -> not-found error | BR-FE11-010 | EC-FE11-002 | Existing detail/role evidence plus FE11-LIFE03/LIFE04 work-update/deactivation cases | PARTIAL |
-| FR-FE11-017 | Acting admin ID does not exist -> not-found error, no action | BR-FE11-001 | EC-FE11-001 | Existing role evidence plus FE11-LIFE02..LIFE04 create/resend/work-update/deactivation cases | PARTIAL |
-| FR-FE11-018 | Admin attempts to deactivate own account -> rejected | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | FE11-LIFE04 self-deactivation case | Not Started |
-| FR-FE11-019 | Deactivate user with active borrowings -> blocked, reports count | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | FE11-LIFE04 borrowing guard case | Not Started |
-| FR-FE11-020 | Admin attempts any existing-account email change -> atomic `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` | BR-FE11-014 | AF-FE11-004 | FE11-PDO02/PDO03 API/service/repository cases | COMPLETE (LOCAL AUTOMATED); BROWSER/HUMAN PENDING |
-| FR-FE11-021 | Malformed / injection / oversized account-creation email -> sanitized and rejected | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | FE11-LIFE01/LIFE02 boundary and width cases | Not Started |
-| FR-FE11-022 | DB error during user creation -> rollback, no partial record | BR-FE11-010 | EC-FE11-008 | FE11-S01..S07 account-creation rollback coverage | COMPLETE (B7) |
-| FR-FE11-023 | Stale work-update/deactivation expectedUpdatedAt -> 409 STALE_USER_STATE with no partial update | BR-FE11-027 | EC-FE11-007 | FE11-LIFE03/LIFE04 effective-version cases | Not Started |
-| FR-FE11-024 | Assign a non-existent role -> not-found error, mapping unchanged | BR-FE11-007 | EC-FE11-010 | FE11-R01..R05 deterministic role outcome coverage | COMPLETE (B7) |
-| FR-FE11-025 | Assign a role the user already holds -> rejected | BR-FE11-008 | EC-FE11-011 | FE11-R01..R05 deterministic role outcome coverage | COMPLETE (B7) |
-| FR-FE11-026 | Revoke a role the user does not hold -> not-found error | BR-FE11-007 | EC-FE11-012 | FE11-R01..R05 deterministic role outcome coverage | COMPLETE (B7) |
-| FR-FE11-027 | Revocation would leave user with no role -> rejected | BR-FE11-007 | EC-FE11-013 | FE11-R01..R05 deterministic role outcome coverage | COMPLETE (B7) |
-| FR-FE11-028 | Librarian-specific field too long/invalid -> rejected with validation error | BR-FE11-015 | EC-FE11-015 | FE11-LIFE02/LIFE03 Librarian validation cases | Not Started |
-| FR-FE11-029 | Password setup token expired/already used -> rejected, login not activated | BR-FE11-013 | section 10.2 token fields | FE11-S01..S07 invalid, expired, used, revoked, and ineligible setup-token coverage | COMPLETE (B7) |
-| FR-FE11-030 | Approved eight-entry Admin shell is displayed, removed items are hidden, Membership Review follows All Users, and Admin Library actions stay in Admin | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (LOCAL SOURCE/AUTOMATED); RESPONSIVE BROWSER/AZURE/HUMAN PENDING |
-| FR-FE11-031 | Admin dashboard displays canonical role/workflow summaries and opens owning filtered modules | BR-FE11-020, BR-FE11-032 | Q-FE11-012, MF-FE11-010 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | LOCAL AUTOMATED; HUMAN REVIEW PENDING |
-| FR-FE11-032 | Permissions role summary and matrix are displayed | BR-FE11-017 | MF-FE11-011 | Planned permissions-view integration case | Not Started |
-| FR-FE11-033 | Audit logs are a paginated read-only list without UI search/filter controls and are redacted | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; 2026-07-22 corrective batch | COMPLETE |
-| FR-FE11-034 | Request Management list/detail supports search/filter/export/view | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02; Wave B validation | READY FOR REVIEW |
-| FR-FE11-035 | Completed request actions are disabled/rejected | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; Wave B validation | READY FOR REVIEW |
-| FR-FE11-037 | FE10 setup delivery failure preserves inactive source state and returns safe status | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FE11-S01..S07 safe delivery failure and resend eligibility/cooldown coverage | COMPLETE (B7) |
-| FR-FE11-038 | Ineligible or cooldown-limited setup resend creates no credential | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S01..S07 safe delivery failure and resend eligibility/cooldown coverage | COMPLETE (B7) |
+| FR-FE11-015 | Người không phải Quản trị viên cố truy cập quản lý người dùng -> bị từ chối với lỗi phân quyền | BR-FE11-001, BR-FE11-011, BR-FE11-012 | - | FE11-U01..U06 và FE11-R01..R05 phân quyền Quản trị viên trước tiên ở tuyến | COMPLETE (B7) |
+| FR-FE11-016 | Hành động nhắm tới ID người dùng không tồn tại -> lỗi không tìm thấy | BR-FE11-010 | EC-FE11-002 | Bằng chứng chi tiết/vai trò hiện có cùng các trường hợp cập nhật công việc/vô hiệu hóa FE11-LIFE03/LIFE04 | PARTIAL |
+| FR-FE11-017 | ID Quản trị viên thực hiện không tồn tại -> lỗi không tìm thấy, không hành động | BR-FE11-001 | EC-FE11-001 | Bằng chứng vai trò hiện có cùng các trường hợp tạo/gửi lại/cập nhật công việc/vô hiệu hóa FE11-LIFE02..LIFE04 | PARTIAL |
+| FR-FE11-018 | Quản trị viên cố vô hiệu hóa tài khoản của mình -> bị từ chối | BR-FE11-003 | Q-FE11-001, EC-FE11-006 | Trường hợp tự vô hiệu hóa FE11-LIFE04 | Chưa bắt đầu |
+| FR-FE11-019 | Vô hiệu hóa người dùng có lượt mượn đang hoạt động -> bị chặn, báo cáo số lượng | BR-FE11-003 | AF-FE11-002, Q-FE11-002 | Trường hợp bảo vệ lượt mượn FE11-LIFE04 | Chưa bắt đầu |
+| FR-FE11-020 | Quản trị viên cố thay đổi email của tài khoản hiện có -> từ chối nguyên tử bằng `403 PERSONAL_PROFILE_ADMIN_FORBIDDEN` | BR-FE11-014 | AF-FE11-004 | Các trường hợp API/service/repository FE11-PDO02/PDO03 | COMPLETE (TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT/CON NGƯỜI ĐANG CHỜ |
+| FR-FE11-021 | Email tạo tài khoản sai định dạng/chứa payload injection/quá dài -> được làm sạch và bị từ chối | BR-FE11-004 | EC-FE11-003, EC-FE11-004 | Các trường hợp biên và độ dài FE11-LIFE01/LIFE02 | Chưa bắt đầu |
+| FR-FE11-022 | Lỗi DB khi tạo người dùng -> rollback, không có bản ghi một phần | BR-FE11-010 | EC-FE11-008 | Phạm vi rollback khi tạo tài khoản FE11-S01..S07 | COMPLETE (B7) |
+| FR-FE11-023 | expectedUpdatedAt cũ khi cập nhật công việc/vô hiệu hóa -> 409 STALE_USER_STATE, không cập nhật một phần | BR-FE11-027 | EC-FE11-007 | Các trường hợp phiên bản có hiệu lực FE11-LIFE03/LIFE04 | Chưa bắt đầu |
+| FR-FE11-024 | Gán vai trò không tồn tại -> lỗi không tìm thấy, ánh xạ không đổi | BR-FE11-007 | EC-FE11-010 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
+| FR-FE11-025 | Gán vai trò người dùng đã giữ -> bị từ chối | BR-FE11-008 | EC-FE11-011 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
+| FR-FE11-026 | Thu hồi vai trò người dùng không giữ -> lỗi không tìm thấy | BR-FE11-007 | EC-FE11-012 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
+| FR-FE11-027 | Thu hồi sẽ khiến người dùng không còn vai trò -> bị từ chối | BR-FE11-007 | EC-FE11-013 | FE11-R01..R05 bao phủ kết quả vai trò xác định | COMPLETE (B7) |
+| FR-FE11-028 | Trường dành riêng cho Thủ thư quá dài/không hợp lệ -> bị từ chối với lỗi xác thực | BR-FE11-015 | EC-FE11-015 | Các trường hợp xác thực Thủ thư FE11-LIFE02/LIFE03 | Chưa bắt đầu |
+| FR-FE11-029 | Token thiết lập mật khẩu đã hết hạn/đã dùng -> bị từ chối, đăng nhập không được kích hoạt | BR-FE11-013 | phần trường token 10.2 | FE11-S01..S07 bao phủ token thiết lập không hợp lệ, hết hạn, đã dùng, đã thu hồi và không đủ điều kiện | COMPLETE (B7) |
+| FR-FE11-030 | Hiển thị khung Quản trị viên gồm tám mục đã phê duyệt, ẩn mục đã xóa, Đánh giá tư cách thành viên đứng sau Tất cả người dùng và các hành động Thư viện của Quản trị viên vẫn ở khu vực Quản trị viên | BR-FE11-016 | Q-FE11-011, Q-FE11-026, EC-FE11-016 | `frontend/test/userManagementFrontend.test.js`, `frontend/test/adminConsoleStructure.test.js`, `frontend/test/membershipFrontend.test.js` | COMPLETE (MÃ NGUỒN/TỰ ĐỘNG CỤC BỘ); TRÌNH DUYỆT THÍCH ỨNG/AZURE/CON NGƯỜI ĐANG CHỜ |
+| FR-FE11-031 | Dashboard Quản trị viên hiển thị bản tóm tắt vai trò/quy trình chuẩn và mở các mô-đun đã lọc của đúng chủ sở hữu | BR-FE11-020, BR-FE11-032 | Q-FE11-012, MF-FE11-010 | `backend/tests/adminDashboardRepository.test.js`, `frontend/test/adminConsoleStructure.test.js` | TỰ ĐỘNG CỤC BỘ; CON NGƯỜI ĐANG ĐÁNH GIÁ |
+| FR-FE11-032 | Hiển thị tóm tắt vai trò và ma trận quyền | BR-FE11-017 | MF-FE11-011 | Trường hợp tích hợp giao diện quyền theo kế hoạch | Chưa bắt đầu |
+| FR-FE11-033 | Nhật ký kiểm toán là danh sách chỉ đọc có phân trang, không có điều khiển tìm kiếm/lọc trên UI và đã che dữ liệu nhạy cảm | BR-FE11-018, BR-FE11-026 | EC-FE11-018 | FE11-AUD01; `frontend/test/userManagementFrontend.test.js`; lô hiệu chỉnh 2026-07-22 | COMPLETE |
+| FR-FE11-034 | Danh sách/chi tiết Quản lý yêu cầu hỗ trợ tìm kiếm/lọc/xuất/xem | BR-FE11-019 | MF-FE11-013 | FE11-REQ01/REQ02; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
+| FR-FE11-035 | Hành động trên yêu cầu đã hoàn tất bị vô hiệu hóa/từ chối | BR-FE11-019 | Q-FE11-013, EC-FE11-017 | FE11-REQ03; xác thực Wave B | SẴN SÀNG ĐỂ ĐÁNH GIÁ |
+| FR-FE11-037 | Lỗi phân phối thiết lập FE10 giữ nguyên trạng thái nguồn không hoạt động và trả về trạng thái an toàn | BR-FE11-023, BR-FE11-024 | EC-FE11-019, Q-FE11-015 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
+| FR-FE11-038 | Gửi lại thiết lập không đủ điều kiện hoặc bị giới hạn thời gian chờ không tạo thông tin xác thực | BR-FE11-025 | EC-FE11-020, EC-FE11-021, Q-FE11-016 | FE11-S01..S07 bao phủ lỗi phân phối an toàn và điều kiện/thời gian chờ gửi lại | COMPLETE (B7) |
 
-### Coverage Summary (FE11)
+### Tóm tắt độ bao phủ (FE11)
 
-- **Total AC**: 26 (AC-FE11-001 to AC-FE11-026).
-- **Total FR**: 43 (FR-FE11-001 to FR-FE11-043).
-- **Total BR**: 33 (BR-FE11-001 to BR-FE11-033).
-- **Assignment tests**: FT50 to FT58 remain the external baseline; focused account-setup service/integration tests are mandatory before implementation can close.
+- **Tổng số AC**: 26 (AC-FE11-001 đến AC-FE11-026).
+- **Tổng số FR**: 43 (FR-FE11-001 đến FR-FE11-043).
+- **Tổng số BR**: 33 (BR-FE11-001 đến BR-FE11-033).
+- **Kiểm thử theo bài tập**: FT50 đến FT58 vẫn là đường cơ sở bên ngoài; bắt buộc có kiểm thử service/tích hợp tập trung cho thiết lập tài khoản trước khi có thể kết thúc triển khai.
 
-### External Assignment Traceability (Excel UC IDs)
+### Truy vết bài tập bên ngoài (ID UC trong Excel)
 
-| Assignment UC ID | Excel Use Case | Related Main Flow / Requirement | Related Test |
+| ID UC bài tập | Use Case trong Excel | Luồng chính / Yêu cầu liên quan | Kiểm thử liên quan |
 | ---------------- | -------------- | ------------------------------- | ------------ |
-| UC49 | View User List | MF-FE11-001; FR-FE11-001 | FT50 |
-| UC50 | View User Information | MF-FE11-002; FR-FE11-002 | FT51 |
-| UC51 | Create User Account | MF-FE11-003; FR-FE11-003, FR-FE11-005, FR-FE11-006 | FT52 |
-| UC52 | Update User Information | Reallocated: FE03 owns user self-service personal changes; FE11 enforces the Admin read-only boundary through MF-FE11-004, FR-FE11-004, FR-FE11-007, FR-FE11-020 | FT53 reallocated; FE11-PDO01..PDO04 |
-| UC53 | Deactivate User Account | MF-FE11-005; FR-FE11-008 | FT54 |
-| UC54 | Create Librarian Account | MF-FE11-006; FR-FE11-009 | FT55 |
-| UC55 | Update Librarian Work Information | MF-FE11-007; FR-FE11-010 (`department`, `specialization` only) | FT56; FE11-PDO02/PDO03 |
-| UC56 | Deactivate Librarian Account | MF-FE11-008; FR-FE11-011 | FT57 |
-| UC57 | Manage Roles | MF-FE11-009; FR-FE11-012 to FR-FE11-014 | FT58 |
+| UC49 | Xem danh sách người dùng | MF-FE11-001; FR-FE11-001 | FT50 |
+| UC50 | Xem thông tin người dùng | MF-FE11-002; FR-FE11-002 | FT51 |
+| UC51 | Tạo tài khoản người dùng | MF-FE11-003; FR-FE11-003, FR-FE11-005, FR-FE11-006 | FT52 |
+| UC52 | Cập nhật thông tin người dùng | Được phân bổ lại: FE03 sở hữu thay đổi cá nhân tự phục vụ của người dùng; FE11 thực thi ranh giới chỉ đọc của Quản trị viên qua MF-FE11-004, FR-FE11-004, FR-FE11-007, FR-FE11-020 | FT53 được phân bổ lại; FE11-PDO01..PDO04 |
+| UC53 | Vô hiệu hóa tài khoản người dùng | MF-FE11-005; FR-FE11-008 | FT54 |
+| UC54 | Tạo tài khoản thủ thư | MF-FE11-006; FR-FE11-009 | FT55 |
+| UC55 | Cập nhật thông tin công việc Thủ thư | MF-FE11-007; FR-FE11-010 (chỉ `department`, `specialization`) | FT56; FE11-PDO02/PDO03 |
+| UC56 | Vô hiệu hóa tài khoản thủ thư | MF-FE11-008; FR-FE11-011 | FT57 |
+| UC57 | Quản lý vai trò | MF-FE11-009; FR-FE11-012 đến FR-FE11-014 | FT58 |
 
 ---
 
-## 17. Review Checklist
+## 17. Danh sách kiểm tra rà soát
 
-All decisions in section 15.1 were approved in the Phase 1 review packet on 2026-06-10.
+Tất cả quyết định trong phần 15.1 đã được phê duyệt trong gói đánh giá Giai đoạn 1 vào 2026-06-10.
 
-Phase 1 approval checklist (completed on 2026-06-10):
+Danh sách kiểm tra phê duyệt Giai đoạn 1 (hoàn tất vào 2026-06-10):
 
-- [x] Approved decisions recorded: All proposed decisions in Section 15.1 (admin self-deactivation, active borrowings handling, email case-insensitivity, deactivated data retention, role hierarchy, deactivation notification) are explicitly approved by Team/Owner.
-- [x] Security decisions (Q-FE11-005: token-based password setup, Q-FE11-008: admin never sees password hashes or tokens) are reviewed and approved by Security/Architect.
-- [x] Q-FE11-009 (deactivation notification) is explicitly marked "Out of Scope Phase 1" or moved to future planning.
-- [x] Password complexity requirements are approved.
-- [x] Admin deactivation policy is clarified.
-- [x] Email case-sensitivity for uniqueness is decided.
-- [x] Flat mutually exclusive roles and exactly-one-role account cardinality are confirmed.
-- [x] User data retention policy after deactivation is defined.
-- [x] Database schema for Users, Roles, UserRoles, and nullable `Users.DeactivatedAt` is confirmed by the merged FE11 finalization migration and Phase 2 exit evidence.
-- [x] API contract is approved in this SPEC.md or copied to a dedicated shared API contract file if the team reintroduces one.
-- [x] FE02, FE03 dependencies are checked for conflicts.
-- [x] Personal-data ownership is approved: FE03 owns self-service `fullName`/`phone`/`address`, FE02 owns any future verified email change, and FE11 Admin owns only current-Librarian `department`/`specialization` updates.
-- [x] Every acceptance criterion can become a test.
-- [x] Security requirements (bcrypt cost, SQL injection prevention) are reviewed.
-## 2026-07-22 admin-console correction
+- [x] Đã ghi nhận các quyết định được phê duyệt: tất cả quyết định đề xuất trong Phần 15.1 (Quản trị viên tự vô hiệu hóa, xử lý lượt mượn đang hoạt động, email không phân biệt hoa thường, lưu giữ dữ liệu đã vô hiệu hóa, phân cấp vai trò, thông báo vô hiệu hóa) đều được Nhóm/Chủ sở hữu phê duyệt rõ ràng.
+- [x] Các quyết định bảo mật (Q-FE11-005: thiết lập mật khẩu dựa trên token, Q-FE11-008: Quản trị viên không bao giờ thấy mã băm mật khẩu hoặc token) được Bảo mật/Kiến trúc sư rà soát và phê duyệt.
+- [x] Q-FE11-009 (thông báo vô hiệu hóa) được đánh dấu rõ là "Ngoài phạm vi Giai đoạn 1" hoặc chuyển sang kế hoạch tương lai.
+- [x] Yêu cầu độ phức tạp của mật khẩu được phê duyệt.
+- [x] Chính sách vô hiệu hóa Quản trị viên được làm rõ.
+- [x] Phân biệt chữ hoa chữ thường cho tính duy nhất của email được quyết định.
+- [x] Đã xác nhận các vai trò ngang hàng, loại trừ lẫn nhau và mỗi tài khoản có chính xác một vai trò.
+- [x] Chính sách lưu giữ dữ liệu người dùng sau khi hủy kích hoạt được xác định.
+- [x] Lược đồ cơ sở dữ liệu cho Users, Roles, UserRoles và `Users.DeactivatedAt` có thể null được xác nhận bằng migration hoàn thiện FE11 đã merge và bằng chứng thoát Giai đoạn 2.
+- [x] Hợp đồng API được phê duyệt trong SPEC.md này hoặc được sao chép sang tệp hợp đồng API dùng chung chuyên biệt nếu nhóm tạo lại tệp đó.
+- [x] Các phần phụ thuộc FE02, FE03 được kiểm tra xung đột.
+- [x] Quyền sở hữu dữ liệu cá nhân đã được phê duyệt: FE03 sở hữu `fullName`/`phone`/`address` tự phục vụ, FE02 sở hữu mọi thay đổi email đã xác minh trong tương lai và Quản trị viên FE11 chỉ sở hữu cập nhật `department`/`specialization` của Thủ thư hiện tại.
+- [x] Mọi tiêu chí chấp nhận đều có thể trở thành một bài kiểm tra.
+- [x] Các yêu cầu bảo mật (chi phí bcrypt, ngăn chặn tiêm SQL) đã được xem xét.
+## Hiệu chỉnh giao diện quản trị 2026-07-22
 
-- Admin Console reuses the shared `app-shell`, top header, responsive sidebar, brand treatment, and navigation primitives used by Member and Librarian pages.
-- Audit Logs renders the paginated read-only activity list directly; no search or filter controls are shown in the Admin UI.
-- Admin User Management is view/create/role/deactivate oriented in this prototype; edit-user-information buttons are hidden from both rows and the detail drawer while the protected backend update contract remains available for compatibility.
-- The Audit Logs table displays Action, Actor, Target, IP, and Time only. Safe detail projection remains a backend security boundary but is not rendered as an extra table column.
-- Wide Admin tables scroll inside their own content region and must not force the whole console behind horizontal page scrolling.
+- Giao diện Quản trị viên tái sử dụng `app-shell`, header trên cùng, thanh bên thích ứng, cách thể hiện thương hiệu và thành phần điều hướng dùng chung với trang Thành viên và Thủ thư.
+- Nhật ký kiểm toán hiển thị trực tiếp danh sách hoạt động chỉ đọc có phân trang; UI Quản trị viên không hiển thị điều khiển tìm kiếm hoặc lọc.
+- Quản lý người dùng của Quản trị viên trong nguyên mẫu này tập trung vào xem/tạo/vai trò/vô hiệu hóa; nút sửa thông tin người dùng bị ẩn ở cả dòng và ngăn chi tiết, trong khi hợp đồng cập nhật backend được bảo vệ vẫn tồn tại để tương thích.
+- Bảng Nhật ký kiểm toán chỉ hiển thị Hành động, Tác nhân, Mục tiêu, IP và Thời gian. Phép chiếu chi tiết an toàn vẫn là ranh giới bảo mật backend nhưng không được hiển thị thành cột bổ sung.
+- Bảng Quản trị viên rộng được cuộn trong vùng nội dung riêng và không được buộc toàn bộ giao diện cuộn ngang.
