@@ -71,6 +71,23 @@ const BOOK_ERROR_MESSAGES = {
   INVALID_BOOK_STATUS_TRANSITION: 'Trạng thái sách vừa thay đổi. Vui lòng tải lại dữ liệu và thử lại.',
 };
 
+// @spec NFR-FE09-SEC-003, BR-FE09-011..015 — fine-specific error codes mapped to Vietnamese copy.
+const FINE_ERROR_MESSAGES = {
+  STAFF_ROLE_REQUIRED: 'Chỉ thủ thư hoặc quản trị viên mới được thực hiện thao tác tiền phạt này.',
+  ROLE_REQUIRED: 'Tài khoản hiện tại không có quyền thực hiện thao tác tiền phạt này.',
+  FINE_NOT_FOUND: 'Không tìm thấy phiếu phạt. Vui lòng tải lại danh sách.',
+  BORROW_DETAIL_NOT_FOUND: 'Không tìm thấy chi tiết mượn cho mã đã nhập. Hãy kiểm tra lại mã.',
+  BORROW_DETAIL_NOT_OVERDUE: 'Lượt mượn không quá hạn nên không tạo phiếu phạt.',
+  FINE_ALREADY_EXISTS: 'Đã có phiếu phạt chưa thanh toán cho chi tiết mượn này, không tạo trùng.',
+  FINE_NOT_COLLECTIBLE: 'Phiếu phạt đã được xử lý (đã thu/đã miễn/đã hủy) nên không thể ghi nhận thu tiền lại.',
+  FINE_NOT_PAYABLE: 'Phiếu phạt đã thanh toán hoặc ở trạng thái cuối, không thể đánh dấu lại.',
+  FINE_NOT_RESOLVABLE: 'Phiếu phạt đã ở trạng thái cuối (đã thanh toán/đã miễn/đã hủy), không thể miễn hoặc hủy.',
+  REASON_REQUIRED: 'Lý do miễn/hủy là bắt buộc.',
+  REASON_TOO_LONG: 'Lý do miễn/hủy không được vượt quá 500 ký tự.',
+  INVALID_PAYMENT_METHOD: 'Phương thức thanh toán không hợp lệ.',
+  FINE_AMOUNT_INVALID: 'Số tiền phạt không hợp lệ.',
+};
+
 const INVENTORY_ERROR_MESSAGES = {
   STALE_COPY_STATE: 'Dữ liệu bản sao đã thay đổi. Vui lòng tải lại rồi thử lại.',
   RESERVATION_STATE_CONFLICT: 'Bản sao đang thuộc hàng đợi giữ chỗ. Hãy xử lý qua FE08 trước.',
@@ -153,6 +170,16 @@ export function getInventoryErrorMessage(error, fallback = 'Không thể xử l�
   if (code === 'UNAUTHORIZED' || error.response?.status === 401) return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
   if (INVENTORY_ERROR_MESSAGES[code]) return INVENTORY_ERROR_MESSAGES[code];
   if (error.response?.status === 403) return 'Tài khoản hiện tại không có quyền quản lý kho sách.';
+  return fallback;
+}
+
+// @spec NFR-FE09-SEC-003 — fine-specific error resolver for calculate/collect/paid/waive/cancel.
+export function getFineErrorMessage(error, fallback = 'Không thể xử lý phiếu phạt.') {
+  if (!error.response) return 'Không kết nối được backend. Vui lòng kiểm tra kết nối và thử lại.';
+  const code = error.response?.data?.error?.code;
+  if (code === 'UNAUTHORIZED' || error.response?.status === 401) return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn. Vui lòng đăng nhập lại.';
+  if (FINE_ERROR_MESSAGES[code]) return FINE_ERROR_MESSAGES[code];
+  if (error.response?.status === 403) return 'Tài khoản hiện tại không có quyền thực hiện thao tác tiền phạt này.';
   return fallback;
 }
 

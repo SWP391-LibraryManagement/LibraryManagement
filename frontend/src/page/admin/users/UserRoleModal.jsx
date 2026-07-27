@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { RoleBadge } from './UserBadges';
 
@@ -7,6 +7,7 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
   const [selectedRole, setSelectedRole] = useState(() => user.roles?.[0] || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const formRef = useRef(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -15,6 +16,20 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [user]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape' && !saving) onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previouslyFocused = document.activeElement;
+    const firstField = formRef.current?.querySelector('input,select,textarea,button');
+    firstField?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [onClose, saving]);
 
   async function handleSave(event) {
     event.preventDefault();
@@ -45,6 +60,7 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
   return (
     <div className="admin-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <form
+        ref={formRef}
         className="admin-modal admin-modal--compact"
         role="dialog"
         aria-modal="true"
@@ -53,7 +69,7 @@ export function UserRoleModal({ user, roles, savingBlocked, onClose, onSave }) {
         onSubmit={handleSave}
       >
         <header className="admin-modal__header">
-          <div><p>Vai trò FE11</p><h2 id="admin-user-role-title">Quản lý vai trò</h2></div>
+          <div><p>Phân quyền người dùng</p><h2 id="admin-user-role-title">Quản lý vai trò</h2></div>
           <button type="button" disabled={saving} onClick={onClose} aria-label="Đóng"><X aria-hidden="true" /></button>
         </header>
         <div className="admin-modal__body admin-modal__body--single">

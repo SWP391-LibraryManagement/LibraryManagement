@@ -77,7 +77,7 @@ export default function AdminConsolePage() {
           <p>Các nghiệp vụ hiện tại vẫn hoạt động trên màn hình Admin cũ trong giai đoạn chuyển đổi.</p>
         </section>
       )}
-      {toast ? <div className={`admin-toast admin-toast--${toast.type}`} role="status">{toast.message}</div> : null}
+      {toast ? <div className={`admin-toast admin-toast--${toast.type}`} role={toast.type === 'error' ? 'alert' : 'status'}>{toast.message}</div> : null}
     </AdminShell>
   );
 }

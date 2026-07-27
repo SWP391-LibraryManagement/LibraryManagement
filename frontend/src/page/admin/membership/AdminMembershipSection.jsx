@@ -140,7 +140,7 @@ export function AdminMembershipSection({ onToast }) {
   return (
     <section className="admin-membership">
       <AdminPageHeader
-        eyebrow="FE04 · Hội viên"
+        eyebrow="Hội viên"
         title="Duyệt hội viên"
         refreshing={loading}
         onRefresh={() => loadApplications({ announce: true })}

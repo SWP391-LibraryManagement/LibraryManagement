@@ -24,7 +24,9 @@ import {
   Route,
 } from 'lucide-react';
 import { publicBrowseApi, resolveLibraryAssetUrl } from '../api/libraryFeatureApi';
+import { Pagination } from '../component/shared/OperationalPatterns';
 import { fetchHeaderProfile } from '../api/profileApi';
+import { createLatestRequestGuard } from '../utils/latestRequestGuard';
 import { getHomeBookAction } from '../utils/homeBookActions';
 import { getRoleLabel } from '../utils/uiLabels';
 
@@ -153,8 +155,20 @@ const FooterPolicyDialog = ({ policy, onClose }) => {
 };
 
 // -- Book Information Panel (sidebar-style) --
-const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, detailLoading, onClose, onViewDetails, onAction }) => (
-  <div style={{
+const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, detailLoading, onClose, onViewDetails, onAction }) => {
+  const panelRef = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previouslyFocused = document.activeElement;
+    panelRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) previouslyFocused.focus();
+    };
+  }, [onClose]);
+  return (
+  <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Thông tin sách" tabIndex={-1} style={{
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, zIndex: 300,
     background: '#FFF', boxShadow: '-8px 0 40px rgba(78,52,46,0.12)',
     display: 'flex', flexDirection: 'column', overflowY: 'auto',
@@ -163,8 +177,8 @@ const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, deta
       <span style={{ color: '#FAF7F2', fontFamily: 'var(--heading)', fontSize: 17, fontWeight: 600 }}>
         Thông tin sách
       </span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4A882' }}>
-        <X size={20} />
+      <button onClick={onClose} aria-label="Đóng thông tin sách" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4A882' }}>
+        <X size={20} aria-hidden="true" />
       </button>
     </div>
 
@@ -247,16 +261,34 @@ const BookInfoPanel = ({ book, action, canViewAvailability, showRoleAction, deta
       </button>
     </div>
   </div>
-);
+  );
+};
 
 // -- Modal chi tiết sách --
-const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, onClose, onBack, onAction }) => (
+const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, onClose, onBack, onAction }) => {
+  const modalRef = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previouslyFocused = document.activeElement;
+    modalRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) previouslyFocused.focus();
+    };
+  }, [onClose]);
+  return (
   <div style={{
     position: 'fixed', inset: 0, zIndex: 400,
     background: 'rgba(44,26,14,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 24,
   }} onClick={onClose}>
     <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Chi tiết sách"
+      tabIndex={-1}
       style={{
         background: '#FAF7F2', borderRadius: 16, maxWidth: 780, width: '100%',
         maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(44,26,14,0.3)',
@@ -266,15 +298,15 @@ const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, o
       {/* Header */}
       <div style={{ background: '#4E342E', padding: '18px 28px', borderRadius: '16px 16px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#C4A882', borderRadius: 6, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-            <ChevronLeft size={14} /> Quay lại
+          <button onClick={onBack} aria-label="Quay lại thông tin sách" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#C4A882', borderRadius: 6, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+            <ChevronLeft size={14} aria-hidden="true" /> Quay lại
           </button>
           <span style={{ color: '#FAF7F2', fontFamily: 'var(--heading)', fontSize: 18, fontWeight: 600 }}>
             Chi tiết sách
           </span>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4A882' }}>
-          <X size={20} />
+        <button onClick={onClose} aria-label="Đóng chi tiết sách" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4A882' }}>
+          <X size={20} aria-hidden="true" />
         </button>
       </div>
 
@@ -356,8 +388,9 @@ const BookDetailsModal = ({ book, action, canViewAvailability, showRoleAction, o
         </div>
       </div>
     </div>
-  </div>
-);
+   </div>
+  );
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -388,7 +421,11 @@ const HomePage = () => {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const [showAll, setShowAll] = useState(false);
+  const [bookPage, setBookPage] = useState(1);
+  const [bookPagination, setBookPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+  const searchGuard = useRef(createLatestRequestGuard());
   const displayName = headerProfile?.fullName || authUser?.email || 'Tài khoản';
   const storedRoles = authUser?.roles || [];
   const primaryRole = ['ADMIN', 'LIBRARIAN', 'MEMBER'].find((role) => storedRoles.includes(role));
@@ -396,9 +433,9 @@ const HomePage = () => {
   const canViewAvailability = ['ADMIN', 'LIBRARIAN'].includes(primaryRole);
   const showRoleBookAction = canViewAvailability || primaryRole === 'MEMBER';
   const roleLabel = getRoleLabel(primaryRole);
-  const showMemberAccountActions = roleLabel === 'Thành viên';
-  const showAdminConsoleAction = roleLabel === 'Quản trị viên';
-  const showLibrarianConsoleAction = roleLabel === 'Thủ thư';
+  const showMemberAccountActions = primaryRole === 'MEMBER';
+  const showAdminConsoleAction = primaryRole === 'ADMIN';
+  const showLibrarianConsoleAction = primaryRole === 'LIBRARIAN';
   const selectedBookAction = selectedBook
     ? getHomeBookAction({ book: selectedBook, isLoggedIn, roles: authUser?.roles || [] })
     : null;
@@ -441,10 +478,14 @@ const HomePage = () => {
     return () => observer.disconnect();
   }, []);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+  const showToast = (msg, type = 'info') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ message: msg, type });
+    const duration = type === 'error' ? 7000 : type === 'warning' ? 6000 : 3200;
+    toastTimerRef.current = setTimeout(() => setToast(null), duration);
   };
+
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -542,7 +583,7 @@ const HomePage = () => {
         setLoadingBooks(true);
         setBookError('');
 
-        const booksResult = await publicBrowseApi.list();
+        const booksResult = await publicBrowseApi.list({ page: 1, limit: 20 });
 
         if (!Array.isArray(booksResult.data)) {
           throw new Error(booksResult.error?.message || 'Không thể tải danh sách sách');
@@ -550,8 +591,9 @@ const HomePage = () => {
 
         setBooks(booksResult.data || []);
         setCategories([]);
+        setBookPage(Number(booksResult.pagination?.page || 1));
+        setBookPagination(booksResult.pagination || { page: 1, limit: 20, total: booksResult.data.length, totalPages: 1 });
       } catch (error) {
-        console.error('Fetch home data error:', error);
         setBookError(error.message || 'Đã xảy ra lỗi khi tải dữ liệu từ database');
       } finally {
         setLoadingBooks(false);
@@ -626,6 +668,7 @@ const HomePage = () => {
   // @spec FR-FE01-002, FR-FE01-003, FR-FE01-007, FR-FE01-011
   const handleSearch = async () => {
     const keyword = searchQuery.trim();
+    const token = searchGuard.current.begin();
 
     if (!keyword) {
       setActiveSearch('');
@@ -634,20 +677,24 @@ const HomePage = () => {
       try {
         setSearchingBooks(true);
         setBookError('');
-        const result = await publicBrowseApi.list();
+        const result = await publicBrowseApi.list({ page: 1, limit: 20 });
+
+        if (!searchGuard.current.isLatest(token)) return;
 
         if (!Array.isArray(result.data)) {
           throw new Error(result.error?.message || 'Không thể tải danh sách sách.');
         }
 
         setBooks(result.data || []);
+        setBookPage(Number(result.pagination?.page || 1));
+        setBookPagination(result.pagination || { page: 1, limit: 20, total: result.data.length, totalPages: 1 });
         setActiveCategory('Tất cả');
         setShowAll(true);
         scrollTo('section-books');
       } catch (error) {
-        setBookError(error.message || 'Không thể tải danh sách sách.');
+        if (searchGuard.current.isLatest(token)) setBookError(error.message || 'Không thể tải danh sách sách.');
       } finally {
-        setSearchingBooks(false);
+        if (searchGuard.current.isLatest(token)) setSearchingBooks(false);
       }
       return;
     }
@@ -664,17 +711,44 @@ const HomePage = () => {
 
       const result = await publicBrowseApi.list({ q: keyword });
 
+      if (!searchGuard.current.isLatest(token)) return;
+
       if (!Array.isArray(result.data)) {
         throw new Error(result.error?.message || 'Không thể tìm kiếm sách.');
       }
 
       setSearchResults(result.data || []);
     } catch (error) {
-      console.error('Search books error:', error);
-      setSearchResults([]);
-      setSearchError(error.message || 'Đã xảy ra lỗi khi tìm kiếm sách.');
+      if (searchGuard.current.isLatest(token)) {
+        setSearchResults([]);
+        setSearchError(error.message || 'Đã xảy ra lỗi khi tìm kiếm sách.');
+      }
     } finally {
-      setSearchingBooks(false);
+      if (searchGuard.current.isLatest(token)) setSearchingBooks(false);
+    }
+  };
+
+  // @spec BR-FE01-005, NFR-FE01-PERF-001 — server-side pagination for public browse list.
+  const loadBookPage = async (nextPage) => {
+    const token = searchGuard.current.begin();
+    try {
+      setSearchingBooks(true);
+      setBookError('');
+      const result = await publicBrowseApi.list({ page: nextPage, limit: 20 });
+      if (!searchGuard.current.isLatest(token)) return;
+      if (!Array.isArray(result.data)) {
+        throw new Error(result.error?.message || 'Không thể tải danh sách sách.');
+      }
+      setBooks(result.data || []);
+      setBookPage(Number(result.pagination?.page || nextPage));
+      setBookPagination(result.pagination || { page: nextPage, limit: 20, total: result.data.length, totalPages: 1 });
+      setActiveCategory('Tất cả');
+      setShowAll(true);
+      scrollTo('section-books');
+    } catch (error) {
+      if (searchGuard.current.isLatest(token)) setBookError(error.message || 'Không thể tải danh sách sách.');
+    } finally {
+      if (searchGuard.current.isLatest(token)) setSearchingBooks(false);
     }
   };
 
@@ -831,6 +905,10 @@ const HomePage = () => {
         <div
           id="home-mobile-menu"
           className="home-mobile-menu"
+          role="menu"
+          aria-label="Menu điều hướng di động"
+          tabIndex={-1}
+          onKeyDown={(event) => { if (event.key === 'Escape') setMenuOpen(false); }}
           style={{
             position: 'sticky', top: 64, zIndex: 190, background: '#FFFDF8',
             borderBottom: '1px solid rgba(78,52,46,0.12)', padding: '14px 20px 18px',
@@ -908,12 +986,13 @@ const HomePage = () => {
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="Tìm theo tên sách hoặc tác giả..."
+              aria-label="Tìm kiếm sách theo tên hoặc tác giả"
               style={{
                 flex: 1, padding: '13px 0', border: 'none', outline: 'none',
                 fontSize: 14, color: '#2C1A0E', background: 'transparent', fontFamily: 'var(--sans)',
               }}
             />
-            <button className="home-hero-search-button" onClick={handleSearch} style={{
+            <button className="home-hero-search-button" onClick={handleSearch} aria-label="Tìm kiếm sách" style={{
               padding: '0 22px', background: '#C78A3B', border: 'none', color: '#FFF',
               cursor: 'pointer', fontWeight: 700, fontSize: 13, transition: 'background 0.2s',
             }}
@@ -1127,6 +1206,15 @@ const HomePage = () => {
             </div>
           ))}
         </div>
+        {showAll && bookPagination.totalPages > 1 && (
+          <Pagination
+            currentPage={bookPage}
+            totalPages={bookPagination.totalPages}
+            onPageChange={loadBookPage}
+            summary={`Trang ${bookPage}/${bookPagination.totalPages} • ${bookPagination.total} sách`}
+            ariaLabel="Phân trang danh sách sách công khai"
+          />
+        )}
       </section>
 
       {/* @spec FR-FE01-017 */}
@@ -1343,6 +1431,9 @@ const HomePage = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="logout-confirm-title"
+            tabIndex={-1}
+            autoFocus
+            onKeyDown={(event) => { if (event.key === 'Escape') setShowLogoutConfirm(false); }}
             onClick={(event) => event.stopPropagation()}
             style={{ width: 'min(420px, 100%)', background: '#FAF7F2', borderRadius: 14, boxShadow: '0 24px 80px rgba(30,18,10,0.32)', overflow: 'hidden' }}
           >
@@ -1403,15 +1494,15 @@ const HomePage = () => {
 
       {/* -- TOAST -- */}
       {toast && (
-        <div style={{
+        <div role={toast.type === 'error' ? 'alert' : 'status'} style={{
           position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 800, background: '#2C1A0E', color: '#FAF7F2',
+          zIndex: 800, background: toast.type === 'error' ? '#7F1D1D' : toast.type === 'warning' ? '#92400E' : '#2C1A0E', color: '#FAF7F2',
           borderRadius: 10, padding: '13px 24px', fontSize: 13, fontWeight: 600,
           boxShadow: '0 8px 32px rgba(0,0,0,0.25)', whiteSpace: 'nowrap',
           display: 'flex', alignItems: 'center', gap: 10,
           animation: 'fadeIn 0.2s ease',
         }}>
-          <span style={{ color: '#C78A3B' }}>✓</span> {toast}
+          <span style={{ color: toast.type === 'error' ? '#FCA5A5' : toast.type === 'warning' ? '#FCD34D' : '#C78A3B' }}>{toast.type === 'error' ? '!' : toast.type === 'warning' ? '⚠' : '✓'}</span> {toast.message}
         </div>
       )}
 

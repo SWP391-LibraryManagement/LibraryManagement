@@ -49,7 +49,7 @@ export function AdminMembershipReviewModal({
       >
         <header className="admin-modal__header">
           <div>
-            <p>FE04 · Xét duyệt hội viên</p>
+            <p>Xét duyệt hội viên</p>
             <h2 id="admin-membership-review-title">
               Đơn #{application.applicationId}
             </h2>

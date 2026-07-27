@@ -30,6 +30,15 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('vi-VN').format(new Date(value));
 }
 
+function formatDateTime(value) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+
+const FINE_REASON_LABELS = {
+  OVERDUE: 'Quá hạn trả sách',
+};
+
 // @spec FR-FE09-019, AC-FE09-017
 export default function MemberFinesPage() {
   const [page, setPage] = useState(1);
@@ -106,13 +115,13 @@ export default function MemberFinesPage() {
               <td data-label="Sách"><strong>{fine.bookTitle || `Chi tiết mượn #${fine.borrowDetailId}`}</strong></td>
               <td data-label="Hạn trả">{formatDate(fine.dueDate)}</td>
               <td data-label="Ngày trả">{formatDate(fine.returnDate)}</td>
-              <td data-label="Lý do">{fine.reason || 'Quá hạn trả sách'}</td>
+              <td data-label="Lý do">{FINE_REASON_LABELS[fine.reason] || fine.reason || 'Quá hạn trả sách'}</td>
               <td data-label="Quá hạn">{Number(fine.overdueDays || 0)} ngày</td>
               <td data-label="Số tiền"><strong>{formatCurrency(fine.amount)}</strong></td>
               <td data-label="Trạng thái">
                 <Badge status={fine.status}>{getStatusLabel(fine.status)}</Badge>
                 {fine.status === 'PAID' && fine.paidAt && (
-                  <div className="field-hint">Đã ghi nhận ngày {formatDate(fine.paidAt)}</div>
+                  <div className="field-hint">Đã ghi nhận ngày {formatDateTime(fine.paidAt)}</div>
                 )}
               </td>
               <td data-label="Mã mượn">#{fine.borrowDetailId}</td>

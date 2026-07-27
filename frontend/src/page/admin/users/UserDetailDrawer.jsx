@@ -1,4 +1,5 @@
-import { Banknote, BookCopy, Calendar, ClipboardList, Mail, Pencil, Phone, PowerOff, Shield, X } from 'lucide-react';
+import { Banknote, BookCopy, Calendar, ClipboardList, Mail, Pencil, Phone, PowerOff, Send, Shield, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import { AdminActionButton } from '../components/AdminActionButton';
 import { RoleBadge, StatusBadge } from './UserBadges';
@@ -12,10 +13,27 @@ function formatCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeactivate }) {
+export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeactivate, onResendSetup, resending = false, detailLoading = false, canDeactivate = false, deactivateHint = '' }) {
+  const closeBtnRef = useRef(null);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previouslyFocused = document.activeElement;
+    closeBtnRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [onClose]);
+
+  const canResendSetup = user.status === 'INACTIVE';
+
   return (
-    <aside className="admin-user-drawer" aria-label="Chi tiết người dùng">
-      <button className="admin-user-drawer__close" type="button" onClick={onClose} aria-label="Đóng chi tiết">
+    <aside className="admin-user-drawer" role="dialog" aria-modal="true" aria-label="Chi tiết người dùng" tabIndex={-1}>
+      <button ref={closeBtnRef} className="admin-user-drawer__close" type="button" onClick={onClose} aria-label="Đóng chi tiết">
         <X aria-hidden="true" />
       </button>
       <div className={`admin-user-avatar admin-user-avatar--large admin-user-avatar--${getPrimaryRole(user).toLowerCase()}`}>
@@ -33,6 +51,9 @@ export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeact
         <p><Phone aria-hidden="true" /><span>{user.phoneNumber || '-'}</span></p>
         <p><span>{user.address || '-'}</span></p>
         <p><Calendar aria-hidden="true" /><span>Ngày tạo {formatAdminDate(user.createdAt)}</span></p>
+        <p><Calendar aria-hidden="true" /><span>Cập nhật lần cuối {formatAdminDate(user.updatedAt)}</span></p>
+        <p><Calendar aria-hidden="true" /><span>Đăng nhập lần cuối {formatAdminDate(user.lastLoginAt)}</span></p>
+        <p className="muted"><span>Mã người dùng #{user.userId}</span></p>
       </div>
 
       <div className="admin-user-related">
@@ -44,12 +65,22 @@ export function UserDetailDrawer({ user, onClose, onEdit, onManageRoles, onDeact
       <div className="admin-user-drawer__actions">
         <AdminActionButton icon={Pencil} label="Chỉnh sửa" onClick={() => onEdit(user)} />
         <AdminActionButton icon={Shield} label="Phân quyền" onClick={() => onManageRoles(user)} />
+        {canResendSetup ? (
+          <AdminActionButton
+            icon={Send}
+            label={resending ? 'Đang gửi...' : 'Gửi lại email thiết lập'}
+            tone="primary"
+            disabled={resending || detailLoading}
+            title="Gửi lại email thiết lập mật khẩu cho tài khoản chưa hoàn tất bước thiết lập."
+            onClick={() => onResendSetup(user)}
+          />
+        ) : null}
         <AdminActionButton
           icon={PowerOff}
           label="Vô hiệu hóa"
           tone="danger"
-          disabled={!['ACTIVE', 'LOCKED'].includes(user.status)}
-          title={!['ACTIVE', 'LOCKED'].includes(user.status) ? 'Tài khoản này đã ngừng hoạt động.' : undefined}
+          disabled={!canDeactivate}
+          title={deactivateHint || undefined}
           onClick={() => onDeactivate(user)}
         />
       </div>
