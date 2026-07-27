@@ -1,49 +1,49 @@
-# FE01-FE12 Full Reconciliation Human Acceptance Packet - 2026-07-19
+# Gói chấp nhận bởi con người cho đối soát đầy đủ FE01-FE12 - 2026-07-19
 
-Status: COMPLETE - H3 APPROVED, MERGED, POST-MERGE MAIN CI PASS
+Trạng thái: COMPLETE - H3 ĐÃ PHÊ DUYỆT, ĐÃ MERGE, CI MAIN SAU MERGE ĐÃ PASS
 
-Branch: `feat/full-reconciliation`
+Nhánh: `feat/full-reconciliation`
 
-Draft PR: #40
+PR nháp: #40
 
-Recorded implementation/evidence head: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
+Đầu nhánh triển khai/bằng chứng đã ghi: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 
-Recorded CI: `29685337907` - PASS
+CI đã ghi: `29685337907` - PASS
 
-Latest implementation head checked: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
+Đầu nhánh triển khai mới nhất đã kiểm tra: `d820ab75d0c4042bd8a7317b054e72518faaeffd`
 
-Latest implementation CI: `29685337907` - PASS
+CI triển khai mới nhất: `29685337907` - PASS
 
-Docs-only evidence follow-up: head `c9aa4ba`, CI `29685476077` - PASS
+Theo dõi bằng chứng chỉ gồm tài liệu: đầu nhánh `c9aa4ba`, CI `29685476077` - PASS
 
-H3 evidence head: `24680ffe9052f35298cbef4a2555bcb39e333824`, CI `29685838610` - PASS
+Đầu nhánh bằng chứng H3: `24680ffe9052f35298cbef4a2555bcb39e333824`, CI `29685838610` - PASS
 
-Merge commit: `1555111e895a1850da5daee7ade3453479c3a82b`
+Commit merge: `1555111e895a1850da5daee7ade3453479c3a82b`
 
-Post-merge `main` CI: `29685953839` - PASS
+CI `main` sau merge: `29685953839` - PASS
 
-## Purpose
+## Mục đích
 
-This packet separates automated validation from the human decisions required by the Constitution,
-Fast-Track Hybrid delivery rules, and the project Definition of Done. It is not acceptance evidence
-until a named reviewer records an explicit decision.
+Gói này tách xác thực tự động khỏi các quyết định bởi con người được Hiến chương,
+quy tắc bàn giao Hybrid Fast-Track và Định nghĩa Hoàn tất của dự án yêu cầu. Đây chưa phải bằng chứng chấp nhận
+cho đến khi một người rà soát được nêu tên ghi lại quyết định rõ ràng.
 
-## Automated Evidence Available To The Reviewer
+## Bằng chứng tự động dành cho người rà soát
 
-| Gate | Evidence |
+| Cổng | Bằng chứng |
 | --- | --- |
-| Backend regression | 53/53 suites, 905/905 tests |
-| Backend coverage | 92.68% statements, 81.66% branches, 96.59% functions, 92.61% lines |
-| Frontend regression | 149/149 tests |
-| Frontend quality | lint PASS; production build PASS with the known non-blocking chunk warning |
-| System integration | 10/10 tests |
-| Live SQL | baseline PASS; five migrations twice; 9/9 suites, 69/69 tests; FE06 `10/10`; `DB_CLEAN`, `LOGIN_CLEAN` |
-| Browser/L4 | FE08 focused 1/1 and full FE08/FE09/FE11/system suite 4/4 on isolated ports `4185/3101` |
-| Traceability | FE01-FE12 all 100%; FE08 29/29; enforcement PASS |
-| Safety | dependency, secret, scope, OpenAPI, import, and diff-hygiene checks PASS |
-| Pull request | PR #40 passed final CI `29685838610`, merged as `1555111`, and exact post-merge `main` CI `29685953839` passed. |
+| Hồi quy backend | 53/53 bộ, 905/905 kiểm thử |
+| Độ bao phủ backend | 92.68% câu lệnh, 81.66% nhánh, 96.59% hàm, 92.61% dòng |
+| Hồi quy frontend | 149/149 kiểm thử |
+| Chất lượng frontend | lint PASS; bản dựng production PASS cùng cảnh báo phân đoạn đã biết và không gây chặn |
+| Tích hợp hệ thống | 10/10 kiểm thử |
+| SQL trực tiếp | đường cơ sở PASS; năm lần di chuyển chạy hai lần; 9/9 bộ, 69/69 kiểm thử; FE06 `10/10`; `DB_CLEAN`, `LOGIN_CLEAN` |
+| Trình duyệt/L4 | FE08 tập trung 1/1 và toàn bộ bộ FE08/FE09/FE11/hệ thống 4/4 trên các cổng cô lập `4185/3101` |
+| Truy vết | toàn bộ FE01-FE12 đạt 100%; FE08 đạt 29/29; thực thi PASS |
+| An toàn | kiểm tra phần phụ thuộc, bí mật, phạm vi, OpenAPI, nhập và vệ sinh phần khác biệt PASS |
+| Pull request | PR #40 đạt CI cuối `29685838610`, được merge thành `1555111` và CI `main` chính xác sau merge `29685953839` đã đạt. |
 
-Authoritative consolidated evidence:
+Bằng chứng hợp nhất có thẩm quyền:
 
 - `.sdd/reviews/full-reconciliation-validation-2026-07-19.md`
 - `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`
@@ -53,85 +53,85 @@ Authoritative consolidated evidence:
 - `.sdd/reviews/fe11-finalization-wave-a-validation-2026-07-19.md`
 - `.sdd/reviews/fe11-finalization-wave-b-validation-2026-07-19.md`
 
-## Decision Gate A - FE08 Reservation Candidate Contract
+## Cổng Quyết định A - Hợp đồng ứng viên đặt chỗ FE08
 
-`TD-028` is resolved for agent-side implementation and validation. The approved member-only
-candidate contract now replaces `DEMO_RESERVABLE` with a SQL-backed safe projection:
+`TD-028` được giải quyết cho triển khai và xác thực phía tác nhân. Hợp đồng ứng viên chỉ dành cho thành viên
+đã phê duyệt giờ thay `DEMO_RESERVABLE` bằng phép chiếu an toàn dựa trên SQL:
 
-- FE08 requires physical `CopyId` for reservation creation.
-- FE01 public browse exposes only high-level availability and hides physical copy identifiers.
-- FE06 direct copy reads are Librarian/Admin-only.
+- FE08 yêu cầu `CopyId` vật lý để tạo đặt chỗ.
+- Duyệt công khai FE01 chỉ hiển thị khả dụng cấp cao và ẩn định danh bản sao vật lý.
+- Lượt đọc bản sao trực tiếp FE06 chỉ dành cho Thủ thư/Quản trị viên.
 
-No implementation may invent or widen this cross-feature contract without explicit human approval.
-The requestor approved Option A and the written design as follows:
+Không phần triển khai nào được bịa đặt hay mở rộng hợp đồng liên tính năng này nếu không có phê duyệt rõ ràng từ con người.
+Người yêu cầu đã phê duyệt Phương án A và thiết kế bằng văn bản như sau:
 
-Reviewer: Human requestor (chat approval)
+Người rà soát: Người yêu cầu là con người (phê duyệt qua trò chuyện)
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Decision: APPROVED - Option A
+Quyết định: APPROVED - Phương án A
 
-Approved contract reference or notes: `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md`; member-only `GET /api/reservations/candidates`, six-field redacted rows, server-owned search/pagination, and authoritative `POST /api/reservations { copyId }`.
+Tham chiếu hoặc ghi chú hợp đồng đã phê duyệt: `docs/superpowers/specs/2026-07-19-fe08-reservation-candidate-catalog-design.md`; `GET /api/reservations/candidates` chỉ dành cho thành viên, hàng sáu trường đã che dữ liệu, tìm kiếm/phân trang do máy chủ sở hữu và `POST /api/reservations { copyId }` có thẩm quyền.
 
-## Governance Exception - Post-Hoc H2 Ordering
+## Ngoại lệ quản trị - Thứ tự H2 hậu kiểm
 
-The first reconciliation implementation/evidence commits and draft PR publication occurred before the complete H2 diff review required by the Fast-Track Hybrid rules. This packet records that ordering violation explicitly instead of treating the earlier publication as valid H2 evidence.
+Các commit triển khai/bằng chứng đối soát đầu tiên và việc công bố PR nháp diễn ra trước lần rà soát phần khác biệt H2 đầy đủ theo quy tắc Hybrid Fast-Track. Gói này ghi rõ vi phạm thứ tự đó thay vì coi lần công bố trước là bằng chứng H2 hợp lệ.
 
-- Exception scope: commits through published head `199fa36` and draft PR #40 creation.
-- Corrective action: keep all current P1 fixes uncommitted, run a fresh full-diff H2 review and all required validation, then commit/push only the reviewed final diff.
-- Current corrective state: fresh full-diff H2 review and required non-SQL validation pass; the reviewed diff and mechanical H3 evidence closeout merged through PR #40, with post-merge `main` CI passing.
-- Authority boundary: this exception record does not waive H2 findings, approve merge, or substitute for H3.
-- H3 condition: the reviewer must evaluate the final pushed head and its new CI run, not the earlier green heads.
+- Phạm vi ngoại lệ: các commit đến đầu nhánh đã công bố `199fa36` và việc tạo PR nháp #40.
+- Hành động khắc phục: giữ mọi bản sửa P1 hiện tại chưa commit, chạy lần rà soát H2 toàn bộ phần khác biệt mới cùng mọi xác thực bắt buộc, rồi chỉ commit/push phần khác biệt cuối đã rà soát.
+- Trạng thái khắc phục hiện tại: lần rà soát H2 toàn bộ phần khác biệt mới và xác thực không dùng SQL bắt buộc đã đạt; phần khác biệt đã rà soát và phần hoàn tất bằng chứng H3 cơ học được merge qua PR #40, với CI `main` sau merge đạt.
+- Ranh giới thẩm quyền: bản ghi ngoại lệ này không miễn phát hiện H2, phê duyệt merge hay thay thế H3.
+- Điều kiện H3: người rà soát phải đánh giá đầu nhánh được push cuối cùng cùng lần chạy CI mới của nó, không phải các đầu nhánh xanh trước đó.
 
-## Human Product Walkthrough
+## Quy trình duyệt sản phẩm bởi con người
 
-Use synthetic data only. Do not expose credentials, tokens, connection strings, raw OTPs,
-notification bodies, or real personal data.
+Chỉ dùng dữ liệu tổng hợp. Không làm lộ thông tin xác thực, token, chuỗi kết nối, OTP thô,
+nội dung thông báo hay dữ liệu cá nhân thật.
 
-- [x] FE01 public browse/search/detail shows current public-safe availability and no protected copy or user data.
-- [x] FE02 registration, canonical OTP verification/reset, login, inactive-account generic error, refresh, logout, account setup, and deployed HTTPS enforcement behave as specified.
-- [x] FE03 profile read/update/avatar boundaries preserve read-only and validation rules.
-- [x] FE04 membership application/review reflects canonical server state and role boundaries.
-- [x] FE05 book management uses server pagination, versioned mutations, reasons, and derived availability.
-- [x] FE06 inventory uses server state, `If-Match`, transition reasons, conflict guidance, and transactional audit behavior.
-- [x] FE07 borrowing request, approval, return, renewal, eligibility, and history preserve the approved lock/order and safety rules.
-- [x] FE08 member/staff reservation lifecycle matches `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED`, and `EXPIRED`; candidate selection is reviewed only after Decision Gate A is implemented.
-- [x] FE09 fine search/filter/pagination is server-controlled; calculation, full collection, and terminal resolutions remain traceable.
-- [x] FE10 sensitive OTP delivery, reservation/membership notifications, failure handling, and audit metadata expose no raw secrets.
-- [x] FE11 Admin navigation, users, roles, lifecycle, permissions, Audit Logs, and Request Management match the approved contracts.
-- [x] FE12 reports remain deterministic, server-backed, role-protected, and read-only.
-- [x] Desktop and mobile layouts have no blocking overflow, inaccessible controls, or misleading success state.
-- [x] Cleanup leaves no unexplained synthetic SQL state, database/login, credential file, or background process.
+- [x] Duyệt/tìm kiếm/chi tiết công khai FE01 hiển thị khả dụng an toàn công khai hiện tại và không có dữ liệu bản sao hay người dùng được bảo vệ.
+- [x] Đăng ký, xác minh/đặt lại OTP chuẩn, đăng nhập, lỗi chung cho tài khoản không hoạt động, làm mới, đăng xuất, thiết lập tài khoản và thực thi HTTPS đã triển khai của FE02 hoạt động đúng đặc tả.
+- [x] Ranh giới đọc/cập nhật/ảnh đại diện hồ sơ FE03 giữ quy tắc chỉ đọc và xác thực.
+- [x] Nộp/rà soát đơn thành viên FE04 phản ánh trạng thái máy chủ chuẩn và ranh giới vai trò.
+- [x] Quản lý sách FE05 dùng phân trang máy chủ, chỉnh sửa có phiên bản, lý do và khả dụng suy ra.
+- [x] Kho FE06 dùng trạng thái máy chủ, `If-Match`, lý do chuyển tiếp, hướng dẫn xung đột và hành vi kiểm toán có giao dịch.
+- [x] Yêu cầu mượn, phê duyệt, trả, gia hạn, điều kiện và lịch sử FE07 giữ quy tắc khóa/thứ tự cùng an toàn đã phê duyệt.
+- [x] Vòng đời đặt chỗ của thành viên/nhân viên FE08 khớp `ACTIVE`, `NOTIFIED`, `FULFILLED`, `CANCELLED` và `EXPIRED`; lựa chọn ứng viên chỉ được rà soát sau khi Cổng Quyết định A được triển khai.
+- [x] Tìm kiếm/lọc/phân trang tiền phạt FE09 do máy chủ kiểm soát; việc tính, thu toàn bộ và xử lý cuối vẫn có thể truy vết.
+- [x] Gửi OTP nhạy cảm, thông báo đặt chỗ/thành viên, xử lý lỗi và siêu dữ liệu kiểm toán FE10 không làm lộ bí mật thô.
+- [x] Điều hướng Quản trị viên, người dùng, vai trò, vòng đời, quyền, Nhật ký Kiểm toán và Quản lý Yêu cầu FE11 khớp các hợp đồng đã phê duyệt.
+- [x] Báo cáo FE12 vẫn xác định, dựa trên máy chủ, được bảo vệ theo vai trò và chỉ đọc.
+- [x] Bố cục máy tính và di động không có hiện tượng tràn gây chặn, điều khiển không thể truy cập hay trạng thái thành công gây hiểu lầm.
+- [x] Dọn dẹp không để lại trạng thái SQL tổng hợp, cơ sở dữ liệu/đăng nhập, tệp thông tin xác thực hay tiến trình nền không giải thích được.
 
-## Decision Gate B - Final Integration / H3
+## Cổng Quyết định B - Tích hợp cuối cùng / H3
 
-This gate may be approved only after Decision Gate A is implemented, its focused/full checks pass,
-PR #40 remains clean on the final head, and the reviewer completes the walkthrough above.
+Cổng này chỉ có thể được phê duyệt sau khi Cổng Quyết định A được triển khai, các kiểm tra tập trung/đầy đủ của nó đạt,
+PR #40 vẫn sạch trên đầu nhánh cuối và người rà soát hoàn tất quy trình duyệt bên trên.
 
-Reviewer: Human requestor (chat approval)
+Người rà soát: Người yêu cầu là con người (phê duyệt qua trò chuyện)
 
-Date: 2026-07-19
+Ngày: 2026-07-19
 
-Decision: APPROVE MERGE
+Quyết định: PHÊ DUYỆT MERGE
 
-Reviewed PR head: `165da3f9d8221cc68d6a2e708e022beac8a2ff27`
+Đầu nhánh PR đã rà soát: `165da3f9d8221cc68d6a2e708e022beac8a2ff27`
 
-Reviewed CI run: `29685574438` - PASS
+Lần chạy CI đã rà soát: `29685574438` - PASS
 
-Notes: The requestor replied `duyệt` after the agent presented the complete FE01-FE12 walkthrough boundary, final PR head, and green CI. This recorded H3 merge approval; the mandatory post-merge `main` CI is now recorded below.
+Ghi chú: Người yêu cầu trả lời `duyệt` sau khi tác nhân trình bày ranh giới quy trình duyệt FE01-FE12 đầy đủ, đầu nhánh PR cuối cùng và CI xanh. Nội dung này ghi nhận phê duyệt merge H3; CI `main` bắt buộc sau merge giờ được ghi bên dưới.
 
-Mechanical closeout boundary: this evidence-only approval commit changed no product behavior, was authorized by H3, and passed PR CI before merge.
+Ranh giới hoàn tất cơ học: commit phê duyệt chỉ gồm bằng chứng này không thay đổi hành vi sản phẩm, được H3 cho phép và đã đạt CI PR trước khi merge.
 
-## Post-Merge Closeout
+## Hoàn tất sau merge
 
-- Final PR head: `24680ffe9052f35298cbef4a2555bcb39e333824`.
-- Final PR CI: `29685838610` - PASS.
-- Merge commit: `1555111e895a1850da5daee7ade3453479c3a82b`.
-- Post-merge `main` CI: `29685953839` - PASS.
-- Persistent GitHub evidence: PR #40 post-merge closeout comment `issuecomment-5015618240`.
-- No product diff exists between the approved PR head and the merged `main` content.
+- Đầu nhánh PR cuối cùng: `24680ffe9052f35298cbef4a2555bcb39e333824`.
+- CI PR cuối cùng: `29685838610` - PASS.
+- Commit merge: `1555111e895a1850da5daee7ade3453479c3a82b`.
+- CI `main` sau merge: `29685953839` - PASS.
+- Bằng chứng GitHub lâu dài: bình luận hoàn tất sau merge của PR #40 `issuecomment-5015618240`.
+- Không tồn tại phần khác biệt sản phẩm giữa đầu nhánh PR đã phê duyệt và nội dung `main` đã merge.
 
-## Completion Rule
+## Quy tắc hoàn tất
 
-Both decision gates are approved, PR #40 is merged, and the required post-merge `main` CI evidence
-is recorded. The FE01-FE12 reconciliation completion rule is satisfied.
+Cả hai cổng quyết định đều được phê duyệt, PR #40 đã merge và bằng chứng CI `main` bắt buộc sau merge
+được ghi nhận. Quy tắc hoàn tất đối soát FE01-FE12 đã được đáp ứng.
