@@ -1,7 +1,8 @@
 # TASKS.md - FE10 Notification Management
 
 Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
-Implementation State: IMPLEMENTED - H3/MERGE PENDING
+Implementation State: COMPLETE
+Delivery Gate: H3/MERGE PENDING
 
 Current v0.5.0 detail: FE10-I01..I08, the migration-hash remediation, and the
 bounded H3 round-one remediation are H2-approved and published on PR #75 head
