@@ -1,6 +1,6 @@
 # FE02 Test Plan - Authentication
 
-Version: 0.3.13
+Version: 0.3.14
 Status: RECONCILIATION IN PROGRESS - BASELINE EVIDENCE RECORDED; GAPS OPEN
 Last Updated: 2026-07-27
 
@@ -61,17 +61,16 @@ Registration, email verification, login, token refresh/logout, current-user look
 - Focused transport evidence: `backend/tests/httpsEnforcement.test.js` passes `3/3`.
 - FE02-T043 records a historical snapshot of 924/924 full backend tests and 209/209 full frontend tests; the historical FE02/FE10 focused slice passed 170/170 before later auth regressions were added. These counts are not current verification results for the open reconciliation.
 - Traceability: all 27 FE02 FR IDs have `@spec` coverage (**100%**) under `npm run trace:enforce`.
+- Performance evidence: `npm.cmd run phase3:performance` on 2026-07-27 passes NFR-FE02-PERF-001/004 in the documented local deterministic environment: 30 valid-login samples at p95 `61.46 ms` and 50 `/api/auth/me` samples at p95 `1.52 ms`, with bcrypt cost 10; the harness tests pass 3/3 and its SQL/network limitations remain documented.
 
 ## 6. Gaps
 
 - Configured Jest global coverage thresholds pass for statements, branches, functions, and lines.
 - Human acceptance, PR integration, and exact post-merge `main` CI passed for the injected FE10 delivery boundary; real SMTP delivery was later observed PASS in live run `c6e0c46421f0`.
 - Record or link the dedicated H3 integration closeout for FE02-T043.
-- Record repeatable evidence for NFR-FE02-PERF-001 and NFR-FE02-PERF-004, or approve a documented exception (FE02-T048).
 
 Gap ownership:
 
-- FE02-T048: login/token-validation performance evidence.
 - FE02-T049: H3 link and human reconciliation approval.
 
 ## 7. Required Commands / Evidence Before Merge

@@ -16,9 +16,9 @@
 > `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > are authoritative for current implementation state. Section 16 records the
 > current acceptance evidence and the remaining repository conformance gaps.
-> Contract reconciliation remains `OPEN` until FE02-T048 performance evidence
-> and the FE02-T049 human/H3 closeout are completed or explicitly approved for
-> deferral.
+> Contract reconciliation remains `OPEN` until the FE02-T049 human/H3 closeout
+> is completed or explicitly approved for deferral. FE02-T048 performance
+> evidence is recorded in the feature tasks and test plan.
 
 > Source of truth for FE02 Authentication. Version 0.6.9 aligns the change-password paths, protected-request checks, frontend session recovery, transaction boundaries, and existing FE02 planning artifacts with `CONTEXT.md` without changing approved business behavior. The login-hardening commit is already integrated into `main`; a dedicated H3 closeout for FE02-T043 was not found and remains a governance-evidence gap. This spec is intentionally detailed because FE02 is the foundation of all access control and security in the system.
 >
@@ -683,8 +683,10 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 ### Current Conformance Gaps (2026-07-27)
 
 - CG-FE02-003: FE02-T043 is integrated into `main`, but a dedicated H3 closeout record for that slice was not found in the feature/review documents.
-- CG-FE02-005: NFR-FE02-PERF-001 and NFR-FE02-PERF-004 define measurable login and token-validation targets, but no repeatable performance evidence or approved exception is linked.
 
+### Resolved Conformance Gaps (2026-07-27)
+
+- CG-FE02-005: Resolved by FE02-T048. The documented deterministic performance harness measures 30 valid-login samples and 50 `/api/auth/me` samples with bcrypt cost 10; the 2026-07-27 rerun records p95 `61.46 ms` and `1.52 ms`, respectively, within NFR-FE02-PERF-001/004.
 
 ### External Assignment Traceability (Excel UC IDs)
 

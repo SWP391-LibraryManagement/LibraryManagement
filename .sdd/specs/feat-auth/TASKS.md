@@ -2,7 +2,7 @@
 
 Status: RECONCILIATION IN PROGRESS - CONTEXT GAPS TRACKED
 Implementation State: PARTIAL
-Baseline Note: Approved implementation baseline complete; reconciliation tasks FE02-T048 and FE02-T049 remain open.
+Baseline Note: Approved implementation baseline complete; reconciliation task FE02-T049 remains open for H3 linkage and human approval.
 Date: 2026-07-23
 Owner: Dat
 
@@ -199,10 +199,11 @@ This evidence closes the Authentication/OTP UX task group only. The separate FE0
   - DoD: repository/deployment defaults use 30 minutes and focused tests prove the exact duration after five qualifying failures in the rolling 15-minute window.
   - Evidence: `backend/.env.example` and `backend/src/config/env.js` default to 30 minutes; `envConfig.test.js` and `authRoutes.test.js` verify the default and exact `lockedUntil` duration.
 
-- [ ] **FE02-T048 - Record performance evidence or an approved exception.**
+- [x] **FE02-T048 - Record performance evidence or an approved exception.**
   - Maps to: NFR-FE02-PERF-001, NFR-FE02-PERF-004; CG-FE02-005.
   - Dependencies: FE02-T044.
   - DoD: repeatable measurements demonstrate valid login under 1 second and token validation under 50 ms at p95, or a reviewer-approved exception updates the contract.
+  - Evidence: `npm.cmd run phase3:performance` uses the documented local deterministic in-memory environment, bcrypt cost 10, 30 warmed valid-login samples, and 50 warmed `/api/auth/me` samples. The 2026-07-27 rerun records login p95 `61.46 ms` and session-validation p95 `1.52 ms`; `node --test tests/performance/phase3-performance.test.js` passes 3/3. Boundaries remain explicit in `docs/performance/phase3-performance-report-2026-07-19.md`.
 
 - [x] **FE02-T050 - Enforce current account state on protected requests.**
   - Maps to: FR-FE02-008, FR-FE02-009; AC-FE02-009, AC-FE02-010; CG-FE02-006.

@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE02 Authentication
 
+## 2026-07-27 - Link repeatable FE02 performance evidence
+
+- Closed FE02-T048 using the existing deterministic performance harness: valid login p95 `61.46 ms` against `< 1,000 ms`, and `/api/auth/me` p95 `1.52 ms` against `< 50 ms`, with bcrypt cost 10.
+- Recorded the 30/50-sample environment, 3/3 harness test result, and explicit SQL/network limitations in SPEC, PLAN, TASKS, TEST_PLAN v0.3.14, and the performance report.
+- FE02 remains `PARTIAL` only for FE02-T049: dedicated FE02-T043 H3 linkage and human reconciliation approval.
+
 ## 2026-07-27 - Close concurrent registration and login-state races
 
 - Mapped concurrent unique-email registration conflicts to the approved `409 EMAIL_ALREADY_REGISTERED` response.

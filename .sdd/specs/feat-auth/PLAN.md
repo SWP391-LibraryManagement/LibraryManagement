@@ -228,7 +228,6 @@ change-password OTP coverage, current account-state checks, exact rolling-window
 lockout behavior, secure OTP generation, transaction rollback evidence, the
 terminal deactivation guard for atomic email verification, deterministic concurrent
 duplicate registration, and current-state login writes are closed.
-Reconciliation remains open until:
-
-1. Record evidence for the valid-login and token-validation performance targets.
-2. Link the FE02-T043 H3 closeout and complete human review of SPEC v0.6.16.
+Reconciliation remains open until the FE02-T043 H3 closeout is linked and
+human review of SPEC v0.6.16 is complete. The valid-login and token-validation
+performance targets have repeatable local evidence under FE02-T048.
