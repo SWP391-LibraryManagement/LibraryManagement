@@ -105,10 +105,10 @@ Append this current-revision note before the first horizontal rule:
 > The user approved the design and written contract on 2026-07-27.
 ```
 
-Add this approved decision after `Q-FE10-009`:
+Add this approved decision after the existing `Q-FE10-012`:
 
 ```markdown
-| Q-FE10-010 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
+| Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
 ```
 
 Extend the relevant delivery/attempt text with:
@@ -226,7 +226,7 @@ Prepend:
 Run:
 
 ```powershell
-rg -n "0\\.4\\.5|Q-FE10-010|FE10-S1[2-6]|NOTIFICATION_WORKER|best-effort" `
+rg -n "0\\.4\\.5|Q-FE10-013|FE10-S1[2-6]|NOTIFICATION_WORKER|best-effort" `
   .sdd/specs/feat-notification-management `
   docs/superpowers/specs/2026-07-27-staging-email-delivery-remediation-design.md
 git diff --check
