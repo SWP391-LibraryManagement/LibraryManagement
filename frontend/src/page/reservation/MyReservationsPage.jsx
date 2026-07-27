@@ -11,7 +11,13 @@ import { publicBrowseApi, reservationApi } from '../../api/libraryFeatureApi';
 import AppLayout from '../../component/layout/AppLayout';
 import { Toast, useToast, ConfirmAction, Badge, DataNotice, EmptyState } from '../../component/shared/Feedback';
 import { DataTable, DataToolbar } from '../../component/shared/OperationalPatterns';
-import { fmtDate, isOpenMemberReservationStatus, mapReservation } from '../../utils/libraryFeatureViewModels';
+import {
+  fmtDate,
+  isOpenMemberReservationStatus,
+  mapReservation,
+  memberReservationBadgeStatus,
+  splitMemberReservations,
+} from '../../utils/libraryFeatureViewModels';
 import { getStatusLabel } from '../../utils/uiLabels';
 
 const CANDIDATE_PAGE_SIZE = 20;
@@ -42,6 +48,9 @@ export default function MyReservationsPage() {
       .filter((item) => isOpenMemberReservationStatus(item.rawStatus))
       .map((item) => Number(item.copyId))
   );
+  // @spec FR-FE08-032
+  const { current: currentReservations, history: reservationHistory } =
+    splitMemberReservations(reservations);
 
   async function loadReservations() {
     setLoading(true);
@@ -185,8 +194,14 @@ export default function MyReservationsPage() {
         {candidateError && <DataNotice type="error" title="Không thể tải sách có thể đặt chỗ">{candidateError}</DataNotice>}
         <div className="queue-list">
           {!candidateLoading && candidates.map((candidate) => {
-            const alreadyReserved = candidate.hasActiveReservation
+            const currentReservation = currentReservations.find(
+              (item) => Number(item.copyId) === Number(candidate.copyId)
+            );
+            const alreadyReserved = candidate.hasActiveReservation || Boolean(currentReservation)
               || activeReservedCopyIds.has(Number(candidate.copyId));
+            const reservationActionLabel = currentReservation?.rawStatus === 'NOTIFIED'
+              ? 'Đến lượt bạn'
+              : alreadyReserved ? 'Đang đặt chỗ' : 'Đặt chỗ';
             return (
             <div className="queue-item" key={candidate.copyId}>
               <span className="book-spine" style={{ background: 'linear-gradient(135deg,#a87532,#7b5528)' }} />
@@ -194,7 +209,7 @@ export default function MyReservationsPage() {
               <span className="badge badge-waiting">
                 {candidate.activeReservationCount} người đang chờ • {candidate.copyStatus === 'RESERVED' ? 'Đang được giữ' : 'Đang được mượn'}
               </span>
-              <button className="btn btn-primary btn-sm" disabled={alreadyReserved} onClick={() => reserve(candidate)}><Bookmark size={14} /> {alreadyReserved ? 'Đã đặt chỗ' : 'Đặt chỗ'}</button>
+              <button className="btn btn-primary btn-sm" disabled={alreadyReserved} onClick={() => reserve(candidate)}><Bookmark size={14} /> {reservationActionLabel}</button>
             </div>
             );
           })}
@@ -210,16 +225,16 @@ export default function MyReservationsPage() {
       </div>
 
       <div className="lib-card member-reservation-list">
-        <h3 className="lib-card-title">Đặt chỗ của tôi</h3>
+        <h3 className="lib-card-title">Đặt chỗ đang hoạt động</h3>
         <DataTable
-          caption="Danh sách đặt chỗ của tôi"
+          caption="Danh sách đặt chỗ đang hoạt động của tôi"
           headers={['Sách', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
           loading={loading}
           loadingRows={3}
-          isEmpty={reservations.length === 0}
-          emptyState={<EmptyState icon={Bookmark} title="Bạn chưa có đặt chỗ" />}
+          isEmpty={currentReservations.length === 0}
+          emptyState={<EmptyState icon={Bookmark} title="Bạn không có đặt chỗ đang hoạt động" />}
         >
-          {reservations.map((item) => (
+          {currentReservations.map((item) => (
             <tr key={item.id}>
               <td data-label="Sách"><div className="stack-sm"><strong>{item.title}</strong><span className="muted" style={{ fontSize: 13 }}>{item.author}</span></div></td>
               <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
@@ -230,10 +245,32 @@ export default function MyReservationsPage() {
                     ? <span className="muted">-</span>
                     : <span className="row-flex" style={{ gap: 6 }}><Clock size={15} /> #{item.queue}</span>}
               </td>
-              <td data-label="Trạng thái"><Badge status={item.status}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
+              <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge>{item.status === 'Ready to pick up' && item.deadline && <div className="field-hint">Lấy trước {fmtDate(item.deadline)}</div>}</td>
               <td data-label="Thao tác" style={{ textAlign: 'right' }}>
                 {isOpenMemberReservationStatus(item.rawStatus) && <button className="btn btn-outline btn-sm" onClick={() => setCancelTarget(item)}><X size={14} /> Hủy</button>}
               </td>
+            </tr>
+          ))}
+        </DataTable>
+      </div>
+
+      <div className="lib-card member-reservation-list">
+        <h3 className="lib-card-title">Lịch sử đặt chỗ</h3>
+        <DataTable
+          caption="Lịch sử đặt chỗ của tôi"
+          headers={['Sách', 'Ngày đặt', 'Vị trí hàng đợi', 'Trạng thái', { label: 'Thao tác', align: 'right' }]}
+          loading={loading}
+          loadingRows={3}
+          isEmpty={reservationHistory.length === 0}
+          emptyState={<EmptyState icon={Clock} title="Bạn chưa có lịch sử đặt chỗ" />}
+        >
+          {reservationHistory.map((item) => (
+            <tr key={item.id}>
+              <td data-label="Sách"><div className="stack-sm"><strong>{item.title}</strong><span className="muted" style={{ fontSize: 13 }}>{item.author}</span></div></td>
+              <td data-label="Ngày đặt">{fmtDate(item.reservedDate)}</td>
+              <td data-label="Vị trí hàng đợi"><span className="muted">-</span></td>
+              <td data-label="Trạng thái"><Badge status={memberReservationBadgeStatus(item.rawStatus)}>{getStatusLabel(item.status)}</Badge></td>
+              <td data-label="Thao tác" style={{ textAlign: 'right' }}><span className="muted">-</span></td>
             </tr>
           ))}
         </DataTable>

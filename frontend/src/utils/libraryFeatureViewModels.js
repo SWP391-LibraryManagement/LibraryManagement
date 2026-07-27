@@ -167,6 +167,23 @@ export function isOpenMemberReservationStatus(status) {
   return ['ACTIVE', 'NOTIFIED'].includes(String(status || '').toUpperCase());
 }
 
+export function splitMemberReservations(reservations = []) {
+  return {
+    current: reservations.filter((item) => isOpenMemberReservationStatus(item.rawStatus)),
+    history: reservations.filter((item) => !isOpenMemberReservationStatus(item.rawStatus)),
+  };
+}
+
+export function memberReservationBadgeStatus(status) {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'NOTIFIED') return 'ready';
+  if (normalized === 'ACTIVE') return 'waiting';
+  if (normalized === 'FULFILLED') return 'completed';
+  if (normalized === 'CANCELLED') return 'cancelled';
+  if (normalized === 'EXPIRED') return 'expired';
+  return 'default';
+}
+
 export function mapReservation(reservation) {
   return {
     id: `RS-${reservation.reservationId}`,
