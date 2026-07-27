@@ -1,8 +1,8 @@
 ﻿# FE03 Test Plan - User Profile
 
-Version: 0.2.3
+Version: 0.2.4
 Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Last Updated: 2026-07-19
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-user-profile/SPEC.md`
 Feature IDs: `BR-FE03-*`, `FR-FE03-*`, `AC-FE03-*`
@@ -20,6 +20,7 @@ Authenticated user profile viewing, allowed profile updates, and avatar upload b
 - Phone/email/display field normalization if implemented.
 - Avatar file validation: allowed type, size, missing file, storage path safety.
 - Rule that profile update cannot change role, membership status, password, or protected account fields.
+- Member sidebar omits the duplicate profile item/group while the shared avatar/account menu still opens `/profile`.
 
 ## 3. API / Integration Test Targets
 

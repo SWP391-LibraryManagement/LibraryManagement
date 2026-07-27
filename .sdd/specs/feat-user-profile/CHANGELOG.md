@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE03 User Profile
 
+## 2026-07-27 - Member profile navigation deduplication
+
+- Removed the duplicate `Thông tin cá nhân` destination and empty `Tài khoản` group from the Member sidebar.
+- Preserved Member access to `/profile` through the shared avatar/account menu in the top bar.
+- Updated App Shell regression coverage and FE03 usability documentation.
+
 ## 2026-07-20 - Vietnamese UI localization and typography
 
 - Localized frontend-generated labels, states, accessibility names, and safe error feedback for this feature.

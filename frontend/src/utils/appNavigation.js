@@ -41,7 +41,7 @@ export const APP_NAV_GROUPS = [
         key: 'profile',
         label: 'Thông tin cá nhân',
         path: '/profile',
-        excludedRoles: ['LIBRARIAN'],
+        excludedRoles: ['MEMBER', 'LIBRARIAN'],
       },
     ],
   },
