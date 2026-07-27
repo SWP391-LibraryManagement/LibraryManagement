@@ -2,7 +2,7 @@
 
 # Version: 0.5.0
 
-# Status: DRAFT - NOTIFICATION INBOX WRITTEN REVIEW REQUIRED 2026-07-27
+# Status: V0.5.0 WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
 
 # Owner: Nhat
 
@@ -43,6 +43,12 @@
 > manual endpoint and manual-only retry policy remain unchanged. On the staging
 > F1 plan this schedule is explicitly best-effort because Always On is disabled.
 > The user approved the design and written contract on 2026-07-27.
+>
+> Revision v0.5.0 adds the personal notification inbox contract. The user
+> approved the section-by-section design and the consolidated written SPEC on
+> 2026-07-27. That approval authorizes PLAN/TASKS preparation only; product
+> implementation remains `NOT_STARTED` until the implementation plan is
+> reviewed and the repository's implementation gates are opened.
 >
 > Revision v0.5.0 proposes the user-approved personal notification inbox
 > expansion documented in
@@ -612,7 +618,7 @@ This feature does not include:
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
-| Q-FE10-002 | The original Phase 1 inbox deferral is superseded by v0.5.0: every authenticated role receives a personal view of existing non-sensitive notification records; delivery remains `EMAIL` and no second channel/record is created. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-002 | The original Phase 1 inbox deferral is superseded by v0.5.0: every authenticated role receives a personal view of existing non-sensitive notification records; delivery remains `EMAIL` and no second channel/record is created. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
 | Q-FE10-003 | Required templates: verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, membership result. | Review packet 2026-06-10; G1/G7 approval 2026-07-13; ADR-005 2026-07-15 | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-005 | Retry manually only for failed non-sensitive queued records on the same record/history; sensitive auth requires source reissue and returns `REISSUE_REQUIRED`. | G5/G6 approval 2026-07-13 | APPROVED |
@@ -624,11 +630,11 @@ This feature does not include:
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`; callers must send both canonical fields. | Source contract normalization 2026-07-17 | APPROVED |
 | Q-FE10-012 | Does FE10 sanitize an unsafe stored template definition or reject it? | Nhat, 2026-07-27 | APPROVED: reject the stored definition before rendering/persistence/delivery; continue escaping or sanitizing runtime values. |
 | Q-FE10-013 | Staging uses an opt-in in-process SYSTEM worker with a 60-second default interval and batch size 20. It runs once after startup, prevents overlapping local passes, processes only non-sensitive `PENDING` rows, and stops with the HTTP server. The existing staff endpoint remains protected and `FAILED` retry remains manual. F1 sleep pauses the worker. | User approval and written design 2026-07-27 | APPROVED |
-| Q-FE10-014 | All authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` accounts may use the same personal inbox and may see only rows for their own `UserId`; no global staff log is added. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
-| Q-FE10-015 | Every eligible non-sensitive notification appears through current email processing and the web inbox; source features do not choose channels. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
-| Q-FE10-016 | Clicking an item marks it read and navigates to a backend-derived allowlisted route; read failure remains non-blocking. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
-| Q-FE10-017 | Notification history is retained and paginated with no delete/archive operation. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
-| Q-FE10-018 | Existing eligible rows are backfilled as read, while only new eligible rows after migration begin unread. | User-approved inbox design 2026-07-27 | DESIGN APPROVED; WRITTEN REVIEW PENDING |
+| Q-FE10-014 | All authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` accounts may use the same personal inbox and may see only rows for their own `UserId`; no global staff log is added. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
+| Q-FE10-015 | Every eligible non-sensitive notification appears through current email processing and the web inbox; source features do not choose channels. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
+| Q-FE10-016 | Clicking an item marks it read and navigates to a backend-derived allowlisted route; read failure remains non-blocking. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
+| Q-FE10-017 | Notification history is retained and paginated with no delete/archive operation. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
+| Q-FE10-018 | Existing eligible rows are backfilled as read, while only new eligible rows after migration begin unread. | User-approved inbox design and written SPEC 2026-07-27 | APPROVED |
 
 ---
 
@@ -639,7 +645,7 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Decision | Approved Answer | Status |
 | -------- | --------------- | ------ |
 | Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | APPROVED |
-| Q-FE10-002 | v0.5.0 supersedes the inbox deferral with a personal projection of existing eligible non-sensitive records; delivery remains email-only. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-002 | v0.5.0 supersedes the inbox deferral with a personal projection of existing eligible non-sensitive records; delivery remains email-only. | APPROVED 2026-07-27 |
 | Q-FE10-003 | Required templates include verification, password reset, account setup, due reminder, overdue notice, fine notice, reservation ready, and membership result. | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | APPROVED |
 | Q-FE10-005 | Retry only failed non-sensitive queued records; sensitive auth requires source reissue. | APPROVED |
@@ -662,11 +668,11 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | Q-FE10-010 | Phase 1 statuses are `PENDING`, `PROCESSING`, `SENT`, and `FAILED`; `PROCESSING` is durable before provider I/O and is never automatically reclaimed. | APPROVED; revised 2026-07-23 |
 | Q-FE10-011 | FE04 uses `GENERAL_SYSTEM -> MEMBERSHIP_RESULT`; FE08 uses `RESERVATION_AVAILABLE -> RESERVATION_READY`. | APPROVED |
 | Q-FE10-012 | Unsafe stored template definitions are rejected before rendering/persistence/delivery; runtime values remain escaped/sanitized. | APPROVED 2026-07-27 |
-| Q-FE10-014 | Every authenticated login role has the same own-record-only inbox boundary; no global staff log. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
-| Q-FE10-015 | Eligible non-sensitive events appear in email processing and the web inbox without duplicate records or caller-selected channels. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
-| Q-FE10-016 | Click marks read and follows a backend allowlisted route; read failure does not block navigation. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
-| Q-FE10-017 | History is retained and paginated; delete/archive remains out of scope. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
-| Q-FE10-018 | Migration backfills historical eligible rows as read. | DESIGN APPROVED; WRITTEN REVIEW PENDING 2026-07-27 |
+| Q-FE10-014 | Every authenticated login role has the same own-record-only inbox boundary; no global staff log. | APPROVED 2026-07-27 |
+| Q-FE10-015 | Eligible non-sensitive events appear in email processing and the web inbox without duplicate records or caller-selected channels. | APPROVED 2026-07-27 |
+| Q-FE10-016 | Click marks read and follows a backend allowlisted route; read failure does not block navigation. | APPROVED 2026-07-27 |
+| Q-FE10-017 | History is retained and paginated; delete/archive remains out of scope. | APPROVED 2026-07-27 |
+| Q-FE10-018 | Migration backfills historical eligible rows as read. | APPROVED 2026-07-27 |
 
 ---
 
@@ -684,16 +690,16 @@ The initial decisions were approved in the Phase 1 review packet on 2026-06-10. 
 | AC-FE10-008 | Duplicate key replays the same record across all statuses with minimal `200` DTO | FR-FE10-008 | BR-FE10-006, BR-FE10-013 | FT46 to FT49 | FE10-H08 | Approved for implementation |
 | AC-FE10-009 | Failure is safe/non-blocking; FE02 reissues a new OTP/token event, non-sensitive `FAILED` retry reuses history, and uncertain `PROCESSING` is never resent | FR-FE10-007 | BR-FE10-004, BR-FE10-008, BR-FE10-012, BR-FE10-013 | `backend/tests/notificationRoutes.test.js` provider/transition/retry cases | FE10-H03, FE10-H08, FE10-S04, FE10-S10 | Automated evidence; H2 review pending |
 | AC-FE10-010 | FE11-bound account setup sends synchronously with safe source metadata and no persisted setup credential/content | FR-FE10-010 | BR-FE10-002, BR-FE10-004 to BR-FE10-008, BR-FE10-010 to BR-FE10-013 | FT52, FT55 | FE10-S06 to FE10-S08 | Approved for implementation |
-| AC-FE10-011 | Authenticated personal list returns only owned eligible non-sensitive safe DTOs with SQL filters, newest-first ordering, and pagination | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | New inbox route/service/repository and browser cases | Planning required after written review | Draft v0.5.0 |
-| AC-FE10-012 | Unread count includes only the authenticated user's eligible unread records | FR-FE10-012 | BR-FE10-014 to BR-FE10-016, BR-FE10-020 | New count ownership/sensitivity cases | Planning required after written review | Draft v0.5.0 |
-| AC-FE10-013 | Mark-one is own-record-only, sensitive-safe, idempotent, and independent of email delivery | FR-FE10-013 | BR-FE10-014 to BR-FE10-016 | New IDOR/read-state route and SQL cases | Planning required after written review | Draft v0.5.0 |
-| AC-FE10-014 | Mark-all changes only current-user eligible unread rows with one timestamp and replay returns zero | FR-FE10-014 | BR-FE10-014 to BR-FE10-016 | New bulk-read concurrency/ownership cases | Planning required after written review | Draft v0.5.0 |
-| AC-FE10-015 | Eligible items receive only the canonical backend allowlisted relative action path | FR-FE10-015 | BR-FE10-017 | New action-map allowlist/open-redirect cases | Planning required after written review | Draft v0.5.0 |
-| AC-FE10-016 | Bell, preview, inbox filters/pagination, read actions, safe states, and non-blocking navigation match the API contract | FR-FE10-016 | BR-FE10-014 to BR-FE10-018 | Frontend component plus three-role browser E2E | Planning required after written review | Draft v0.5.0 |
+| AC-FE10-011 | Authenticated personal list returns only owned eligible non-sensitive safe DTOs with SQL filters, newest-first ordering, and pagination | FR-FE10-011 | BR-FE10-014, BR-FE10-015, BR-FE10-020 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-012 | Unread count includes only the authenticated user's eligible unread records | FR-FE10-012 | BR-FE10-014 to BR-FE10-016, BR-FE10-020 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-013 | Mark-one is own-record-only, sensitive-safe, idempotent, and independent of email delivery | FR-FE10-013 | BR-FE10-014 to BR-FE10-016 | FE10-I02, FE10-I03, FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-014 | Mark-all changes only current-user eligible unread rows with one timestamp and replay returns zero | FR-FE10-014 | BR-FE10-014 to BR-FE10-016 | FE10-I02, FE10-I03, FE10-I06 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-015 | Eligible items receive only the canonical backend allowlisted relative action path | FR-FE10-015 | BR-FE10-017 | FE10-I02, FE10-I03, FE10-I05 | Planned; implementation not started | Approved v0.5.0 |
+| AC-FE10-016 | Bell, preview, inbox filters/pagination, read actions, safe states, and non-blocking navigation match the API contract | FR-FE10-016 | BR-FE10-014 to BR-FE10-018 | FE10-I04 to FE10-I07 | Planned; implementation not started | Approved v0.5.0 |
 
 ### Coverage Summary
 
-- Total AC: 16 (AC-FE10-001 to AC-FE10-016) - all mapped; AC-FE10-011 to AC-FE10-016 await written review and implementation planning.
+- Total AC: 16 (AC-FE10-001 to AC-FE10-016) - all mapped; AC-FE10-011 to AC-FE10-016 have an approved written contract and planned FE10-I01..I08 implementation slices, but remain unimplemented.
 - Total FR: 16 (FR-FE10-001 to FR-FE10-016) - all mapped.
 - Total BR: 20 (BR-FE10-001 to BR-FE10-020) - all mapped.
 - Assignment tests remain FT46 to FT49. Hardening implementation is traced to FE10-H02 through FE10-H08 and validated by FE10-H09.

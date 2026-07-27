@@ -1,6 +1,6 @@
 # TASKS.md - FE10 Notification Management
 
-Status: V0.5.0 NOTIFICATION INBOX SPEC REVIEW PENDING
+Status: V0.5.0 WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
 Implementation State: NOT_STARTED
 
 Prior v0.4.5 Implementation State: COMPLETE
@@ -10,9 +10,10 @@ Owner: Nhat
 Updated: 2026-07-27
 
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
-remains complete. Draft SPEC v0.5.0 adds a personal notification inbox whose
-implementation has not started. New PLAN/TASKS decomposition is intentionally
-blocked until the written v0.5.0 SPEC and design file receive human review.
+remains complete. The user approved the v0.5.0 personal inbox design and
+written SPEC on 2026-07-27. FE10-I01..I08 now decompose the implementation;
+product implementation remains `NOT_STARTED` until the detailed plan receives
+human review.
 
 ---
 
@@ -63,9 +64,9 @@ blocked until the written v0.5.0 SPEC and design file receive human review.
 - In-app notification screens.
 - Retry management UI.
 
-Draft v0.5.0 proposes moving the personal inbox/read-state item into a new
-reviewed slice. This historical checklist does not authorize or claim that
-implementation.
+Approved v0.5.0 moves the personal inbox/read-state item into the new
+FE10-I01..I08 slice below. This historical checklist does not claim that the
+new implementation is complete.
 
 ## 6. FE10 Hardening Tasks - B4 Decomposition
 
@@ -394,3 +395,108 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
   queue aggregate was `0|0|15|0`, attempt/provider aggregate was `15|15`,
   sensitive/unsafe aggregate was `21|0`, SYSTEM/no-op audit aggregate was
   `1|0`, and task-created firewall rules remaining were zero.
+
+## 15. V0.5.0 Personal Notification Inbox Tasks
+
+Detailed steps, RED/GREEN commands, and commit boundaries are in
+`docs/superpowers/plans/2026-07-27-fe10-personal-notification-inbox.md`.
+
+### FE10-I01 Add The Additive Read-State Migration
+
+- [ ] Status: NOT_STARTED
+- Maps to: BR-FE10-016, BR-FE10-019, BR-FE10-020; AC-FE10-011 to AC-FE10-014.
+- Files: canonical SQL, Notification model, new idempotent migration, migration
+  contract tests.
+- DoD: `ReadAt DATETIME2 NULL`, historical eligible rows backfilled to
+  `CreatedAt`, supporting index present, sensitive/userless rows excluded, and
+  two executions produce the same postcondition.
+
+### FE10-I02 Add Own-Record Repository And Safe Projection
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I01.
+- Maps to: BR-FE10-014 to BR-FE10-017, BR-FE10-020; AC-FE10-011 to AC-FE10-015.
+- Files: notification repository, inbox projection/action utility, in-memory
+  repository, focused repository/unit tests.
+- DoD: list/count/read SQL filters by current `UserId` and the exact eligible
+  allowlist before materialization; pagination is SQL-side; read mutations are
+  idempotent and do not alter delivery state; the DTO/action path is fixed and
+  contains no sensitive or delivery metadata.
+
+### FE10-I03 Expose The Authenticated Personal Inbox API
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I02.
+- Maps to: FR-FE10-011 to FR-FE10-015; AC-FE10-011 to AC-FE10-015.
+- Files: notification validators, service, controller, routes, OpenAPI, route
+  tests.
+- DoD: list, unread-count, mark-one, and mark-all routes accept all three login
+  roles, reject unauthenticated/unsupported roles, validate filters, return
+  safe DTOs, and make missing/sensitive/other-user IDs indistinguishable `404`.
+
+### FE10-I04 Add The Frontend Client And Shared Inbox Context
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I03.
+- Maps to: FR-FE10-016; AC-FE10-012, AC-FE10-013, AC-FE10-016.
+- Files: shared frontend API, error mapping, notification view model/context,
+  App provider wiring, frontend tests.
+- DoD: count loads only for authenticated sessions, refreshes on focus,
+  successful mutations, and a non-overlapping 60-second interval; click-read
+  failure emits a safe warning while allowlisted navigation still proceeds.
+
+### FE10-I05 Add The Authenticated Shell Bell And Preview
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I04.
+- Maps to: FR-FE10-015, FR-FE10-016; AC-FE10-015, AC-FE10-016.
+- Files: Header, notification bell component, app-shell styles, frontend tests.
+- DoD: every authenticated role sees the bell, unread badge caps at `99+`, the
+  popover loads at most five newest unread items with explicit loading/empty/
+  error states, and `Xem tất cả` opens `/notifications`.
+
+### FE10-I06 Add The Personal Notification Page
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I04.
+- Maps to: FR-FE10-011, FR-FE10-013, FR-FE10-014, FR-FE10-016;
+  AC-FE10-011, AC-FE10-013, AC-FE10-014, AC-FE10-016.
+- Files: authenticated route guard, App route, notification page, app-shell
+  styles, frontend tests.
+- DoD: all/unread/read filters, 20-item pagination, loading/empty/error/read
+  states, mark-all, and item actions match the API; no delete/archive/global-log
+  control exists.
+
+### FE10-I07 Prove Cross-Feature And Browser Behavior
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I03, FE10-I05, FE10-I06.
+- Maps to: AC-FE10-011 to AC-FE10-016.
+- Files: FE04/FE07/FE08 integration tests, FE10 Playwright E2E, test support
+  harness, FE10 TEST_PLAN.
+- DoD: one source event produces one email-backed record visible to its owner;
+  sensitive and cross-user rows never appear; MEMBER/LIBRARIAN/ADMIN browser
+  flows pass including non-blocking read failure.
+
+### FE10-I08 Pass H2, Azure Staging, H3, And Merge Gates
+
+- [ ] Status: NOT_STARTED
+- Depends on: FE10-I01..I07.
+- Maps to: all v0.5.0 BR/FR/AC entries.
+- Files: OpenAPI, architecture/integration map, user manual, Azure staging
+  guide/workflow tests, FE10 PLAN/TASKS/CHANGELOG, review evidence.
+- DoD: focused/full backend and frontend gates, lint/build, deployment/system,
+  traceability, security/secret/diff scans, two-run migration, and browser E2E
+  pass; H2 approves the candidate; backend/migration then frontend deploy and
+  staging smoke pass; H3 approves exact head before merge.
+
+### V0.5.0 Traceability
+
+| Acceptance | Planned slices |
+| --- | --- |
+| AC-FE10-011 | FE10-I01, FE10-I02, FE10-I03, FE10-I06, FE10-I07, FE10-I08 |
+| AC-FE10-012 | FE10-I01, FE10-I02, FE10-I03, FE10-I04, FE10-I07, FE10-I08 |
+| AC-FE10-013 | FE10-I01, FE10-I02, FE10-I03, FE10-I04, FE10-I06, FE10-I07, FE10-I08 |
+| AC-FE10-014 | FE10-I01, FE10-I02, FE10-I03, FE10-I06, FE10-I07, FE10-I08 |
+| AC-FE10-015 | FE10-I02, FE10-I03, FE10-I05, FE10-I07, FE10-I08 |
+| AC-FE10-016 | FE10-I04, FE10-I05, FE10-I06, FE10-I07, FE10-I08 |

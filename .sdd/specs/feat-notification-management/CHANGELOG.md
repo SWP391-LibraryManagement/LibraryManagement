@@ -1,6 +1,10 @@
 # CHANGELOG.md - FE10 Notification Management
 
-## 2026-07-27 - Draft personal notification inbox expansion (v0.5.0)
+## 2026-07-27 - Approved personal notification inbox expansion (v0.5.0)
+
+- Recorded the user's approval of the consolidated written design and SPEC.
+- Authorized detailed PLAN/TASKS preparation; product implementation remains
+  blocked until the implementation plan is reviewed.
 
 - Proposed one personal inbox for every authenticated `MEMBER`, `LIBRARIAN`,
   and `ADMIN`, restricted to the actor's own non-sensitive records.

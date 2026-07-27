@@ -1,8 +1,10 @@
 # FE10 Notification Inbox Expansion Design
 
-**Status:** DESIGN APPROVED - WRITTEN REVIEW PENDING
+**Status:** DESIGN AND WRITTEN SPEC APPROVED - IMPLEMENTATION PLAN REVIEW PENDING
 
 **Design approved:** 2026-07-27
+
+**Written review approved:** 2026-07-27
 
 **Approver:** User in the active task
 
