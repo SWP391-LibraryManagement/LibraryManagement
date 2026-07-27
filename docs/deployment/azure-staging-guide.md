@@ -222,10 +222,13 @@ skip the readiness check. The preferred repair path is:
 2. Select `Run workflow`; do not use `Re-run jobs` on the failed deployment.
 3. Confirm `Apply reviewed library metadata migration` and the subsequent smoke test both pass.
 
-The repair workflow has only a manual `workflow_dispatch` trigger. It invokes
-`npm run migrate:library-metadata` inside the Linux App Service through its Kudu command endpoint.
+The repair workflow has only a manual `workflow_dispatch` trigger. It invokes the bounded
+`scripts/migrateLibraryMetadata.js` runner inside the Linux App Service through its Kudu command
+endpoint.
 The command therefore uses the App Service database settings and network path; the publish-profile
-secret is kept in the workflow environment and is not printed.
+secret is kept in the workflow environment and is not printed. If the remote command fails, the
+workflow reports its exit code and a length-limited diagnostic with publish credentials and common
+connection-string password forms redacted.
 
 The regular `Deploy staging` workflow also retains its default-off
 `apply_library_metadata_migration` manual input. Normal post-CI staging deployments never apply SQL.

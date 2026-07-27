@@ -8,6 +8,8 @@
   App Service; automatic post-CI deployments still never mutate schema.
 - Added a dedicated `Repair staging metadata schema` manual workflow to prevent failed-job reruns
   from silently retaining the default `false` migration input.
+- Made the App Service runner call the bounded Node script directly and surface a length-limited,
+  credential-redacted diagnostic when the remote command fails.
 - Extended staging smoke to fail before acceptance when the deployed metadata schema is older than the repository contract.
 - Preserved Admin-only metadata mutation and Librarian/Admin active-choice reads without widening roles.
 

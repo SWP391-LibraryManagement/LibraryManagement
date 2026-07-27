@@ -39,9 +39,11 @@ test('applies the migration only after an explicit manual workflow choice', () =
 });
 
 test('runs the bounded command in the deployed Linux App Service directory without logging credentials', () => {
-  assert.match(operatorScript, /command = 'npm run migrate:library-metadata'/);
+  assert.match(operatorScript, /command = 'node scripts\/migrateLibraryMetadata\.js'/);
   assert.match(operatorScript, /dir = '\/home\/site\/wwwroot'/);
   assert.match(operatorScript, /\/api\/command/);
+  assert.match(operatorScript, /Protect-CommandDiagnostic/);
+  assert.match(operatorScript, /\[REDACTED\]/);
   assert.doesNotMatch(operatorScript, /Write-(Host|Output).*credential/i);
 });
 

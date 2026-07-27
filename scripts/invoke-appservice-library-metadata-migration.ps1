@@ -3,6 +3,35 @@ param()
 
 $ErrorActionPreference = 'Stop'
 
+function Protect-CommandDiagnostic {
+  param(
+    [AllowEmptyString()]
+    [string]$Text,
+    [string[]]$Secrets
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Text)) {
+    return 'No diagnostic output was returned by App Service.'
+  }
+
+  $safeText = $Text
+  foreach ($secret in $Secrets) {
+    if (-not [string]::IsNullOrWhiteSpace($secret)) {
+      $safeText = $safeText.Replace($secret, '[REDACTED]')
+    }
+  }
+
+  $safeText = $safeText `
+    -replace '(?i)(password|pwd)\s*=\s*[^;\s]+', '$1=[REDACTED]' `
+    -replace '(?i)(authorization:\s*(basic|bearer))\s+\S+', '$1 [REDACTED]'
+
+  if ($safeText.Length -gt 3000) {
+    $safeText = $safeText.Substring($safeText.Length - 3000)
+  }
+
+  return $safeText.Trim()
+}
+
 if ([string]::IsNullOrWhiteSpace($env:AZURE_WEBAPP_PUBLISH_PROFILE)) {
   throw 'AZURE_WEBAPP_PUBLISH_PROFILE is required.'
 }
@@ -32,7 +61,7 @@ try {
   $basicToken = [Convert]::ToBase64String($credentialBytes)
 
   $requestBody = @{
-    command = 'npm run migrate:library-metadata'
+    command = 'node scripts/migrateLibraryMetadata.js'
     dir = '/home/site/wwwroot'
   } | ConvertTo-Json
 
@@ -52,7 +81,17 @@ try {
 }
 
 if ($null -eq $response.ExitCode -or [int]$response.ExitCode -ne 0) {
-  throw 'The reviewed metadata migration command failed inside App Service.'
+  $combinedDiagnostic = @(
+    [string]$response.Output
+    [string]$response.Error
+  ) -join [Environment]::NewLine
+  $safeDiagnostic = Protect-CommandDiagnostic `
+    -Text $combinedDiagnostic `
+    -Secrets @([string]$profile.userName, [string]$profile.userPWD)
+  $exitCode = if ($null -eq $response.ExitCode) { 'missing' } else { [string]$response.ExitCode }
+
+  throw "The reviewed metadata migration command failed inside App Service "
+    + "(exit code: $exitCode).`n$safeDiagnostic"
 }
 
 Write-Output 'The reviewed library metadata migration completed inside App Service.'
