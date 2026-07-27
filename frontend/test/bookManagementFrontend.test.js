@@ -102,12 +102,16 @@ test('book update exposes catalog status without sending status through metadata
 });
 
 // @spec FR-FE05-029, AC-FE05-020
-test('single-book status update reloads the unfiltered canonical list', async () => {
+test('single-book status update preserves the current canonical list context', async () => {
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.ok((page.match(/setAppliedStatusFilter\(''\)/g) || []).length >= 2);
-  assert.ok((page.match(/loadBooks\(\{ status: '', pageNumber: 1 \}\)/g) || []).length >= 2);
+  assert.ok((page.match(/status: appliedStatusFilter/g) || []).length >= 2);
+  assert.ok((page.match(/categoryId: appliedCategoryFilter/g) || []).length >= 2);
+  assert.ok((page.match(/q: appliedSearchQuery/g) || []).length >= 2);
+  assert.ok((page.match(/pageNumber: page/g) || []).length >= 2);
+  assert.doesNotMatch(page, /setAppliedStatusFilter\(''\)/);
+  assert.doesNotMatch(page, /loadBooks\(\{ status: '', pageNumber: 1 \}\)/);
   assert.doesNotMatch(page, /setAppliedStatusFilter\(targetStatus\)/);
 });
 

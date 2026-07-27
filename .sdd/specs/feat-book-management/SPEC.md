@@ -1,6 +1,6 @@
 # SPEC.md - FE05 Book Management
 
-# Version: 0.6.9
+# Version: 0.6.10
 
 # Status: APPROVED - BASELINE 2026-07-17
 
@@ -238,7 +238,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE05-026: IF `pages` is not an integer from 1 to 10,000, or `rating` is outside 0.0 to 5.0 or has more than one decimal place during create/update, the system shall reject the request with field-level validation and change no record. (Source: EC-FE05-017, Section 10.2)
 - FR-FE05-027: WHEN Librarian/Admin creates or updates a book with `multipart/form-data`, the system shall read the JSON book metadata from `metadata`, validate and store the optional `cover` image under a server-generated path, persist that path as `Books.CoverUrl`, and return it through staff/public book reads.
 - FR-FE05-028: IF the supplied cover is missing its required multipart metadata, exceeds 2 MB, has an unsupported or mismatched type/signature, or the associated book mutation fails, the system shall reject or compensate the operation without replacing the committed cover path or retaining an uncommitted managed file.
-- FR-FE05-029: WHEN either staff status-change entry point changes one book between `ACTIVE` and `INACTIVE`, the frontend shall clear the status filter and reload page 1 of the canonical mixed-status management list so the UI does not make the unaffected books appear to have received the same status.
+- FR-FE05-029: WHEN either staff status-change entry point changes one book between `ACTIVE` and `INACTIVE`, the frontend shall preserve the currently applied search, category, status, and page context and reload that canonical server list. It shall not change the list filter as a side effect of mutating one `bookId`; therefore a changed book may leave the visible list when its new status no longer matches the current filter.
 - FR-FE05-030: WHEN an authenticated Librarian/Admin requests `/api/books/metadata`, the system shall return only active category/author/publisher choices; Guest/Member requests shall be rejected and no reference record shall be mutated.
 - FR-FE05-031: WHEN backend startup begins, the system shall apply the reviewed metadata compatibility migration before listening and verify the canonical metadata columns; IF migration or verification fails, the backend shall not listen. WHEN readiness is checked through `/health/ready`, the system shall perform a read-only verification and return HTTP `503` with a safe `not_ready` result for any later schema drift or database failure.
 - FR-FE05-032: WHEN Librarian/Admin views the management list, the `Trạng thái catalog` column shall render canonical `Books.Status` rather than the independently derived FE06 copy availability, so the result of an activate/deactivate command is visible on the updated book.
@@ -266,10 +266,10 @@ Use these stable IDs for tasks and tests.
 - AC-FE05-017: Given invalid `pages` or `rating`, when staff creates or updates a book, then FE05 returns field-level validation and preserves the book, copy, workflow, and audit state.
 - AC-FE05-018: Given Librarian/Admin selects a valid local JPG/PNG/WebP cover in either book form, when the form is reviewed and submitted, then the UI previews the selected image, sends multipart metadata plus `cover`, and the returned managed cover renders in staff and public views.
 - AC-FE05-019: Given an invalid cover or a stale/database/audit failure after a replacement file is staged, when create/update finishes, then the committed book/cover remains unchanged and the uncommitted managed file is removed.
-- AC-FE05-020: Given staff changes one book's status through either supported entry point, when the command succeeds, then only the addressed `bookId` is mutated, the status filter resets to all statuses, and the canonical page-1 reload does not present a target-status-only list as though every book had changed.
+- AC-FE05-020: Given staff changes one book's status through either supported entry point, when the command succeeds, then only the addressed `bookId` is mutated, the currently applied search/category/status/page context remains unchanged, and that same canonical server list is reloaded.
 - AC-FE05-021: Given active and inactive reference records exist, when Librarian/Admin loads a book form, then only active choices are returned; Guest/Member cannot access the endpoint.
 - AC-FE05-022: Given a legacy deployed database is missing a canonical metadata column, when the backend starts, then it applies the packaged reviewed migration before listening; after successful postcondition verification, readiness returns HTTP `200` and all three Admin metadata lists load persisted data. If reconciliation fails, the backend does not listen and deployment verification fails.
-- AC-FE05-023: Given the canonical mixed-status management list is loaded after one book changes status, when rows render, then each status cell reflects that row's `Books.Status`; the selected book shows its committed target status and unaffected rows retain their server-owned statuses.
+- AC-FE05-023: Given a management list is reloaded after one book changes status, when rows render, then each visible status cell reflects that row's `Books.Status`; unaffected rows retain their server-owned statuses and the frontend does not relabel them from the selected book's result.
 
 ---
 

@@ -14,7 +14,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Maintain the reconciled FE05 catalog against the approved v0.6.9 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, unfiltered post-mutation list reconciliation, canonical catalog-status rendering, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.10 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for reviewed packaged compatibility migrations, schema-aware deployment readiness, CI-gated continuous staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, context-preserving post-mutation list reconciliation, canonical catalog-status rendering, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 

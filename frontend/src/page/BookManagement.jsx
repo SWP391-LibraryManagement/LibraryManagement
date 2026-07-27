@@ -561,12 +561,16 @@ export default function BookManagement() {
             : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
         }),
       });
-      // @spec FR-FE05-029 - show the canonical mixed-status list after one-book mutation.
-      setStatusFilter('');
-      setAppliedStatusFilter('');
-      setPage(1);
-      const nextBooks = await loadBooks({ status: '', pageNumber: 1 });
-      setDetailBook(nextBooks.find((book) => Number(book.id) === Number(bookId)) || result.book);
+      // @spec FR-FE05-029 - preserve the current list context after mutating one book.
+      const nextBooks = await loadBooks({
+        status: appliedStatusFilter,
+        categoryId: appliedCategoryFilter,
+        q: appliedSearchQuery,
+        pageNumber: page,
+      });
+      const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(bookId));
+      if (!refreshedBook) setSelectedBookId('');
+      setDetailBook(refreshedBook || result.book);
       showToast(activating
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
         : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
@@ -604,11 +608,13 @@ export default function BookManagement() {
           body,
         });
       }
-      // @spec FR-FE05-029 - show the canonical mixed-status list after one-book mutation.
-      setStatusFilter('');
-      setAppliedStatusFilter('');
-      setPage(1);
-      const nextBooks = await loadBooks({ status: '', pageNumber: 1 });
+      // @spec FR-FE05-029 - preserve the current list context after mutating one book.
+      const nextBooks = await loadBooks({
+        status: appliedStatusFilter,
+        categoryId: appliedCategoryFilter,
+        q: appliedSearchQuery,
+        pageNumber: page,
+      });
       const refreshedBook = nextBooks.find((book) => Number(book.id) === Number(selectedBook.id));
       if (!refreshedBook) {
         setSelectedBookId('');

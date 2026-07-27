@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-28 - Preserve filters after a one-book status update
+
+- Stopped status commands from clearing the current filter and unexpectedly revealing previously hidden inactive books.
+- Reloaded the same canonical search/category/status/page context after mutating the selected `bookId`.
+- Kept each visible row bound to its own server-owned `Books.Status`.
+
 ## 2026-07-28 - Allow approved feature compatibility migrations at startup
 
 - Preserved FE05 catalog readiness while allowing the startup gate to apply the separately approved FE02 auth-token constraint migration.
