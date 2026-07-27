@@ -16,6 +16,8 @@ test('FE01 search uses the canonical public envelope and approved query', async 
   assert.match(source, /publicBrowseApi\.list\(\{ q: keyword \}\)/);
   assert.match(source, /Array\.isArray\(result\.data\)/);
   assert.match(source, /keyword\.length > 200/);
+  assert.match(source, /Tìm theo tên sách hoặc tác giả/);
+  assert.doesNotMatch(source, /ISBN|book\.isbn/);
 });
 
 test('FE01 blank search reloads the default catalog without an error toast', async () => {
@@ -44,6 +46,7 @@ test('FE01 renders canonical public fields and removes fake local borrowing', as
   assert.match(source, /book\.authorName \|\| 'Không rõ tác giả'/);
   assert.match(source, /book\.categoryName \|\| 'Chưa phân loại'/);
   assert.match(source, /book\.availabilityStatus === 'AVAILABLE'/);
+  assert.doesNotMatch(source, /ISBN|book\.isbn/);
   assert.match(source, /Không khả dụng/);
   assert.doesNotMatch(source, /ĐÃ MƯỢN/);
   assert.doesNotMatch(source, /BorrowModal/);

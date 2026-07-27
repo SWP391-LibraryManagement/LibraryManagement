@@ -25,7 +25,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Maps to: BR-FE05-001 through BR-FE05-018; FR-FE05-001 through FR-FE05-026; AC-FE05-001 through AC-FE05-017.
   - Files: create `backend/tests/bookRoutes.test.js`, create `backend/tests/helpers/inMemoryBookRepositories.js`, `backend/tests/bookAvailabilityRepository.test.js`, create `backend/tests/sql/bookConcurrency.sqltest.js`, `frontend/test/bookManagementFrontend.test.js`.
   - Dependency: none.
-  - RED: cover public/staff visibility, query policy, metadata validation, RBAC, derived availability, prohibited copy mutation, current/stale/missing `If-Match`, reason validation, status-only transitions, and audit rollback.
+  - RED: cover public/staff visibility, public ISBN exclusion/title-author search, staff ISBN visibility/search, query policy, metadata validation, RBAC, derived availability, prohibited copy mutation, current/stale/missing `If-Match`, reason validation, status-only transitions, and audit rollback.
   - Verify RED: focused commands fail only on missing v0.5.0 behavior, including the current `/availability` prototype expectations.
   - DoD: every AC has an assertion and concurrent/rollback tests inspect unchanged book, copy, workflow, and audit state.
 
@@ -49,7 +49,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Maps to: BR-FE05-001, BR-FE05-008, BR-FE05-009, BR-FE05-011 through BR-FE05-013, BR-FE05-017; FR-FE05-001 through FR-FE05-004, FR-FE05-009, FR-FE05-010, FR-FE05-014, FR-FE05-017, FR-FE05-019, FR-FE05-020, FR-FE05-024; AC-FE05-001 through AC-FE05-004, AC-FE05-011, AC-FE05-015; NFR-FE05-PERF-001/002.
   - Files: `backend/src/services/bookService.js`, `backend/src/repositories/bookRepository.js`, `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`.
   - Dependency: FE05-T003.
-  - GREEN: public reads hide inactive books and return safe fields; staff reads include status/version; availability is `AVAILABLE` only for active books with at least one available copy and otherwise `UNAVAILABLE`.
+  - GREEN: public reads hide inactive books, exclude ISBN, and match q only against title/author; staff reads retain ISBN/status/version and ISBN search; availability is `AVAILABLE` only for active books with at least one available copy and otherwise `UNAVAILABLE`.
   - Verify: focused route/repository tests pass filters, stable sorting/pagination, public detail `404`, staff inactive detail, and all copy-state aggregations.
   - DoD: no read path writes or caches FE05-owned availability state.
 

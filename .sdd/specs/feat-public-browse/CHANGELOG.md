@@ -1,5 +1,11 @@
 # CHANGELOG.md - FE01 Public / Browse
 
+## 2026-07-27 - Public ISBN boundary
+
+- Removed ISBN from Guest/Member HomePage search copy, book cards, detail UI, public API DTO, and OpenAPI schema.
+- Confirmed public `q` searches title/author only, while authenticated Librarian/Admin FE05 management reads and search retain ISBN.
+- Updated FE01 requirements, acceptance criteria, tasks, and test strategy to connect the public boundary to FE05 and FE11 single-role authorization.
+
 ## 2026-07-27 - Homepage header simplification
 
 - Removed the `Khám phá sách`, audience service, `Về thư viện`, and `Hỗ trợ` groups from the desktop header and mobile header menu at the request of the product owner.

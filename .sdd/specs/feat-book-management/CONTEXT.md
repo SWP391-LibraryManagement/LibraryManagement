@@ -1,12 +1,12 @@
 # CONTEXT.md - FE05 Book Management
 
-# Version: 0.2.0
+# Version: 0.2.1
 
 # Status: APPROVED - BASELINE 2026-07-17
 
 # Owner: Dung
 
-# Last Updated: 2026-07-16
+# Last Updated: 2026-07-27
 
 # Feature folder: `.sdd/specs/feat-book-management/`
 
@@ -32,8 +32,8 @@ The typical library workflow:
 
 1. A librarian adds a new book into the library catalog.
 2. The system validates required information and uniqueness constraints (e.g., ISBN).
-3. The book becomes available for searching and viewing.
-4. Guests and members can search for books and view details.
+3. The book becomes available for public title/author search and staff management search.
+4. Guests and Members search/view public metadata without ISBN; Librarian/Admin may search/view ISBN in FE05 management.
 5. Librarians can update book information when necessary.
 6. Librarians may deactivate books that are no longer available or should not appear in circulation.
 7. Inventory Management maintains the physical copies associated with each book.
@@ -45,9 +45,8 @@ The typical library workflow:
 
 FE05 includes:
 
-- Search books.
-- View book details.
-- View book list.
+- Guest/Member title/author search and public detail without ISBN.
+- Librarian/Admin management search, detail, and list including ISBN.
 - Add new books.
 - Update book information.
 - Deactivate books.
@@ -76,6 +75,7 @@ The current SQL design includes:
 Implementation reconciliation points:
 
 - ISBN uniqueness constraints must be enforced.
+- ISBN is excluded from FE01 Guest/Member projection and public q matching; it remains visible/searchable after FE11 authorizes the account's single Librarian/Admin role.
 - The current SQL supports one author per book; multiple authors would require a later schema change.
 - Status-based deactivation must be used instead of physical deletion.
 - Current SQL includes `Books.Status = ACTIVE|INACTIVE`; FE05 deactivation/reactivation changes only this field and leaves FE06 copy state untouched.
@@ -151,6 +151,7 @@ These decisions are reflected in `SPEC.md` v0.5.0 and must be reconciled against
 | Q-FE05-006 | Cover images are stored as URL/path text, not binary database content. | Review packet 2026-06-10 | APPROVED |
 | Q-FE05-007 | Deactivation hides the book from public catalog even when copies are borrowed or reserved; history and copy records remain unchanged. | User correction 2026-06-21 | APPROVED |
 | Q-FE05-008 | Staff use dedicated deactivate/reactivate commands for `Books.Status`; metadata update does not change status, and public browse hides `INACTIVE` books. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |
+| Q-FE05-009 | Guest/Member public search matches title/author only and public DTOs exclude ISBN; authenticated Librarian/Admin FE05 management retains ISBN search/display. | Product-owner correction 2026-07-27 | APPROVED |
 
 ---
 

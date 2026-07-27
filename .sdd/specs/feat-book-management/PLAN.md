@@ -4,7 +4,7 @@ Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
 
 Owner: Dung
 
-Updated: 2026-07-23
+Updated: 2026-07-27
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
@@ -36,7 +36,7 @@ Maintain the reconciled FE05 catalog against the approved v0.6.2 contract: deter
 | Public and staff lists use deterministic pagination/sort policy | Approved filters, endpoint shapes, and validation are implemented and tested. |
 | Create/update/deactivate/reactivate plus audit are atomic | Repository transaction and rollback coverage prove mutation/audit atomicity. |
 | Public availability is read-only `AVAILABLE`/`UNAVAILABLE` | Frontend renders derived availability without classifying all unavailable rows as borrowed. |
-| Public and staff endpoints have distinct visibility | Staff list uses `/api/admin/books`; public reads remain separate and safe. |
+| Public and staff endpoints have distinct visibility | Guest/Member search is title/author-only and public DTOs exclude ISBN; staff list/detail retains searchable ISBN after Librarian/Admin authorization. |
 | FE11 Admin Console must not duplicate FE05 mutations | `UserManagement` keeps the Library table read-only; canonical `BookManagement` owns create/update/deactivate/reactivate. |
 
 ## 4. Scope
@@ -78,9 +78,9 @@ Maintain the reconciled FE05 catalog against the approved v0.6.2 contract: deter
 
 | Method | Endpoint | Required behavior |
 | --- | --- | --- |
-| `GET` | `/api/books` | Public-safe active books; deterministic filters, pagination, sort, and derived availability. |
-| `GET` | `/api/books/{bookId}` | Public receives active detail or `404`; staff may receive `ACTIVE` or `INACTIVE` detail with management fields. |
-| `GET` | `/api/admin/books` | Librarian/Admin paginated management list including active/inactive records. |
+| `GET` | `/api/books` | Public-safe active books without ISBN; q matches title/author only; deterministic filters, pagination, sort, and derived availability. |
+| `GET` | `/api/books/{bookId}` | Guest/Member receive active detail without ISBN or `404`; authorized staff may receive `ACTIVE` or `INACTIVE` detail including ISBN and other management fields. |
+| `GET` | `/api/admin/books` | Librarian/Admin paginated management list including active/inactive records and ISBN search/display. |
 | `GET` | `/api/books/metadata` | Librarian/Admin active category/author/publisher choices; read-only for Librarians. |
 | `POST` | `/api/books` | Librarian/Admin creates an `ACTIVE` book and receives its version. |
 | `PUT` | `/api/books/{bookId}` | Librarian/Admin metadata-only update with `If-Match`; never changes status or copies. |

@@ -8,7 +8,6 @@ import {
   X,
   Calendar,
   User,
-  Tag,
   ChevronLeft,
   Phone,
   Mail,
@@ -201,7 +200,6 @@ const BookInfoPanel = ({ book, action, canViewAvailability, detailLoading, onClo
       {/* Info rows */}
       {[
         { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
-        { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
       ].map(({ icon: Icon, label, value }) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0E8D8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -343,7 +341,6 @@ const BookDetailsModal = ({ book, action, canViewAvailability, onClose, onBack, 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
               { icon: Calendar, label: 'Năm xuất bản', value: book.publishYear || 'Chưa cập nhật' },
-              { icon: Tag, label: 'ISBN', value: book.isbn || 'Chưa cập nhật' },
               { icon: User, label: 'Tác giả', value: book.authorName || 'Không rõ tác giả' },
               { icon: BookOpen, label: 'Thể loại', value: getCategoryLabel(book.categoryName || 'Chưa phân loại') },
             ].map(({ icon: Icon, label, value }) => (
@@ -909,7 +906,7 @@ const HomePage = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Tìm theo tên sách, tác giả hoặc ISBN..."
+              placeholder="Tìm theo tên sách hoặc tác giả..."
               style={{
                 flex: 1, padding: '13px 0', border: 'none', outline: 'none',
                 fontSize: 14, color: '#2C1A0E', background: 'transparent', fontFamily: 'var(--sans)',
@@ -1178,7 +1175,7 @@ const HomePage = () => {
         </div>
         <div className="home-journey-steps">
           {[
-            { number: '01', title: 'Khám phá đầu sách', desc: 'Tìm theo tên, tác giả hoặc ISBN và mở thông tin công khai của đầu sách.' },
+            { number: '01', title: 'Khám phá đầu sách', desc: 'Tìm theo tên sách hoặc tác giả và mở thông tin công khai của đầu sách.' },
             { number: '02', title: 'Chọn luồng phù hợp', desc: 'Đăng nhập để mượn sách; hệ thống tự áp dụng đúng quyền và hạn mức hội viên.' },
             { number: '03', title: 'Theo dõi xuyên suốt', desc: 'Quản lý yêu cầu, lịch sử mượn, đặt trước và các khoản phí tại khu vực cá nhân.' },
           ].map((step) => (

@@ -1,12 +1,12 @@
 # SPEC.md - FE01 Public / Browse
 
-# Version: 0.3.8
+# Version: 0.3.9
 
 # Status: APPROVED - BASELINE 2026-07-17; RESPONSIVE ADDENDUM H3-APPROVED, MERGED PR #59; HOMEPAGE POLISH IMPLEMENTED LOCALLY, HUMAN ACCEPTANCE PENDING
 
 # Owner: Dung
 
-# Last Updated: 2026-07-26
+# Last Updated: 2026-07-27
 
 # Feature ID: FE01
 
@@ -92,7 +92,7 @@ The public library experience is available at `/home` for Guest and Admin throug
 The feature can only start when:
 
 - PRE-FE01-001: Public catalog data exists in `Books`.
-- PRE-FE01-002: Searchable book metadata is available: a title and the required `BookId`; ISBN is included when present.
+- PRE-FE01-002: Searchable public metadata is available: a title, author name when present, and the required `BookId`; ISBN remains FE05 staff metadata and is excluded from FE01 search and responses.
 - PRE-FE01-003: Public endpoints are available without authentication.
 - PRE-FE01-004: Returned fields are restricted to public-safe catalog data.
 - PRE-FE01-005: Pagination defaults are defined for search results.
@@ -185,7 +185,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE01-001: Public browse is read-only.
 - BR-FE01-002: Guests may view the home page without authentication.
 - BR-FE01-003: Guests may search only public-visible books.
-- BR-FE01-004: Guests may view only public-safe book fields.
+- BR-FE01-004: Guest and Member public list/detail responses exclude ISBN and all staff-only metadata; Librarian/Admin may access ISBN only through the server-authorized FE05 management projection.
 - BR-FE01-005: Public search must support pagination.
 - BR-FE01-006: Public search accepts only `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`. `q` is trimmed, must be 1..200 characters when supplied, and matches title or author name case-insensitively; ID filters must be positive integers.
 - BR-FE01-007: Missing or hidden books must not expose internal database details.
@@ -207,8 +207,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-001: When a guest opens the home page, the system shall display the public home page without requiring login.
 - FR-FE01-002: When a guest searches books with valid BR-FE01-006 criteria, the system shall return public-visible matching books using only the approved query fields.
 - FR-FE01-003: If no public books match the search criteria, then the system shall return an empty result with a clear message.
-- FR-FE01-004: When a guest views book information, the system shall return only public-safe summary fields.
-- FR-FE01-005: When a guest views book details, the system shall return public-safe detailed book fields.
+- FR-FE01-004: When a Guest or Member views book information, the system shall return only public-safe summary fields and shall not return ISBN.
+- FR-FE01-005: When a Guest or Member views book details, the system shall return public-safe detailed book fields and shall not return ISBN; an authenticated Librarian/Admin may receive ISBN only from the FE05 staff projection.
 - FR-FE01-006: If a requested book does not exist or is not public-visible, then the system shall return a not-found response.
 - FR-FE01-007: When search page or limit values are invalid, the system shall reject them with a validation response and shall not silently normalize them.
 - FR-FE01-008: The system shall derive availability using approved inventory status rules rather than hardcoded values whenever it selects an owning route or presents the status to Librarian/Admin.
@@ -216,8 +216,8 @@ Use these stable IDs for tasks and tests.
 - FR-FE01-010: If a book has no available copies, Librarian/Admin HomePage may display `Không khả dụng`; Guest/Member HomePage shall omit the status without exposing copy barcodes, locations, or borrower data.
 - FR-FE01-011: When search text is empty or omitted, the system shall return the default public browse page using `page=1`, `limit=20`, and `Title ASC, BookId ASC`.
 - FR-FE01-012: If a book ID is not a positive integer, the system shall return a validation error; if the positive ID is missing or hidden, the system shall return not found.
-- FR-FE01-013: When optional author, category, publisher, cover, or ISBN data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
-- FR-FE01-014: When an authenticated account has both a staff role and `MEMBER`, the public home page shall expose FE05/FE06 staff actions rather than FE07/FE08 member-only actions.
+- FR-FE01-013: When optional author, category, publisher, or cover data is missing, the system shall keep the public-visible book in the response and return `null` for the missing field.
+- FR-FE01-014: When an authenticated account opens HomePage, the system shall use its single FE11 role: `MEMBER` routes to FE07/FE08 member workflows, while `LIBRARIAN` or `ADMIN` routes to FE05/FE06 staff workflows.
 - FR-FE01-015: The public footer shall present compact responsive contact information, keep phone/email readable without avoidable desktop wrapping, and open readable, dismissible information for Privacy, Terms, and browser storage controls without navigating to an empty link.
 - FR-FE01-016: The public home header shall show library branding and account actions without the former `Khám phá sách`, audience service, `Về thư viện`, or `Hỗ trợ` navigation groups; role continuation actions shall remain connected to registered owning routes through the account's single role.
 - FR-FE01-017: The home page shall provide additional catalog-topic, library-journey, and role-aware continuation sections whose actions reuse current public filters and owning feature routes.
@@ -230,8 +230,8 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-001: Given a guest, when the guest opens the home page, then the system displays public search/browse entry points and recent public books when catalog data exists; featured-book content is not required in Phase 1.
 - AC-FE01-002: Given public-visible books exist, when the guest searches by keyword, then matching books are returned.
 - AC-FE01-003: Given no books match the keyword, when the guest searches, then an empty result message is shown.
-- AC-FE01-004: Given a valid public book, when the guest views book information, then summary metadata is shown.
-- AC-FE01-005: Given a valid public book, when the guest views book details from HomePage, then detailed public metadata is shown without an availability label.
+- AC-FE01-004: Given a valid public book, when a Guest or Member views book information, then summary metadata is shown without ISBN.
+- AC-FE01-005: Given a valid public book, when a Guest or Member views book details from HomePage, then detailed public metadata is shown without ISBN or an availability label.
 - AC-FE01-006: Given an invalid book ID, when the guest opens details, then a not-found response is returned.
 - AC-FE01-007: Given a deactivated/hidden book, when the guest searches or opens details, then the book is not exposed publicly.
 - AC-FE01-008: Given a public request, when the system responds, then no protected user, borrowing, reservation, fine, or audit data is included.
@@ -240,7 +240,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE01-011: Given invalid `page` or `limit`, when the guest searches, then the system returns a validation response and does not query with normalized values.
 - AC-FE01-012: Given a non-numeric or non-positive book ID, when details are requested, then a validation response is returned; a well-formed missing/hidden ID returns not found.
 - AC-FE01-013: Given a public-visible book with missing optional metadata, when it is listed or opened, then the book remains present and each missing field is returned as `null` for safe UI fallback.
-- AC-FE01-014: Given an account with `MEMBER` plus `LIBRARIAN` or `ADMIN`, when the account opens a public book action, then an available book routes to FE05 management and an unavailable book routes to FE06 inventory inspection.
+- AC-FE01-014: Given an account whose single role is `LIBRARIAN` or `ADMIN`, when the account opens a public book action, then an available book routes to FE05 management and an unavailable book routes to FE06 inventory inspection; a `MEMBER` routes only to member-owned workflows.
 - AC-FE01-015: Given a user on the public home page, when the footer is displayed, then phone, email, and address remain readable at the supported width; selecting Privacy, Terms, or Cookie opens matching information in an accessible dialog that can be closed by its controls, backdrop, or Escape key.
 - AC-FE01-016: Given a Guest, Member, Librarian, or Admin on the public home page, when the header is displayed, then none of the four removed navigation groups is rendered on desktop or mobile, while branding, account actions, and role continuation destinations remain available.
 - AC-FE01-017: Given a Guest, Member, Librarian, or Admin viewing the extended home page, when the user selects a topic or role continuation action, then the catalog is filtered or the user is routed to an existing screen valid for that audience without simulated data or success.
@@ -260,7 +260,7 @@ Use these stable IDs for tasks and tests.
 | EC-FE01-006 | Book is hidden/deactivated | Do not expose the book publicly. |
 | EC-FE01-007 | Book has no cover image | Show default/no-cover state. |
 | EC-FE01-008 | Book has no available copies | Hide the HomePage status from Guest/Member; show `Không khả dụng` only to Librarian/Admin. |
-| EC-FE01-009 | Optional category/author/publisher/cover/ISBN metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. |
+| EC-FE01-009 | Optional category/author/publisher/cover metadata missing | Keep the public-visible book, return `null` for the missing field, and let the UI show a safe fallback. ISBN is never part of the public projection. |
 | EC-FE01-010 | Database query fails | Return safe generic error without stack trace. |
 | EC-FE01-011 | Copy status changed shortly before public request | Return the latest committed availability summary from the database. |
 | EC-FE01-012 | Account role is Admin or Librarian | Do not route the account to a Member-only mutation screen. |
@@ -285,7 +285,6 @@ Use these stable IDs for tasks and tests.
 | ----- | ---- | -------- | ------------------ |
 | bookId | integer | Yes for detail | Positive integer. Invalid format returns validation error; a missing/hidden referenced book returns not found. |
 | title | string | Yes | Public summary and detail display. |
-| isbn | string | No | Public when present, according to approved Q-FE01-004. |
 | categoryName | string | No | Public filter/display field; return `null` when unavailable. |
 | authorName | string | No | Public filter/display field; return `null` when unavailable. |
 | publisherName | string | No | Public display field; return `null` when unavailable. |
@@ -303,8 +302,8 @@ Use these stable IDs for tasks and tests.
 
 | Method | Endpoint | Actor | Request | Response | Notes |
 | ------ | -------- | ----- | ------- | -------- | ----- |
-| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | Top-level keys are exactly `data` and `pagination`; `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. Authentication does not widen this list response. |
-| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Public book detail for Guest/Member; authenticated management detail for Librarian/Admin | Public callers receive only the FE01 safe projection. Staff-only fields may be returned only after server-side FE11 role authorization for FE05 management; inactive records remain hidden from Guest/Member. |
+| GET | `/api/books` | Guest/Member/Librarian/Admin | Query: `q?, categoryId?, authorId?, publisherId?, page=1, limit=20` | `{ data: PublicBookSummary[], pagination: { page, limit, total, totalPages } }` | `q` matches title/author only. Public summaries exclude ISBN; authentication does not widen this list response. Top-level keys are exactly `data` and `pagination`; `page>=1`, `limit=1..100`; invalid values are rejected before query; empty `q` returns default browse results. |
+| GET | `/api/books/{bookId}` | Guest/Member/Librarian/Admin | - | Public book detail for Guest/Member; authenticated management detail for Librarian/Admin | Guest/Member receive the FE01 safe projection without ISBN. ISBN and other staff-only fields may be returned only after server-side FE11 single-role authorization for FE05 management; inactive records remain hidden from Guest/Member. |
 
 ---
 
@@ -313,7 +312,7 @@ Use these stable IDs for tasks and tests.
 ### 12.1 Security
 
 - NFR-FE01-SEC-001: Public endpoints must validate all query and route parameters.
-- NFR-FE01-SEC-002: Public responses must not include protected user, borrowing, reservation, fine, audit, or staff-only inventory data.
+- NFR-FE01-SEC-002: Guest/Member public responses must not include ISBN, protected user, borrowing, reservation, fine, audit, or staff-only inventory data.
 - NFR-FE01-SEC-003: Public endpoints must not expose stack traces or SQL/database errors.
 - NFR-FE01-SEC-004: Public display content must be sanitized or escaped to prevent script injection.
 
@@ -372,7 +371,7 @@ This feature does not include:
 | Q-FE01-001 | Hide inactive/deactivated books from all public search/detail views. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-002 | HomePage availability labels are staff-only: Guest/Member do not see `Còn sách`, `Không khả dụng`, or revealing action labels; Librarian/Admin may see the high-level state. The canonical FE01 response retains `availabilityStatus` for current action routing and no exact copy count is exposed. | User correction 2026-07-25 (supersedes review packet 2026-06-10 presentation decision) | APPROVED |
 | Q-FE01-003 | Phase 1 public query fields are exactly `q`, `categoryId`, `authorId`, `publisherId`, `page`, and `limit`; `q` matches title or author name case-insensitively. | Review packet 2026-06-10; filter normalization 2026-07-17 | APPROVED |
-| Q-FE01-004 | A non-null ISBN is visible to guests; a missing ISBN is returned as `null`. | Review packet 2026-06-10; normalization 2026-07-17 | APPROVED |
+| Q-FE01-004 | ISBN is excluded from Guest/Member HomePage search, public list, and public detail. It remains FE05 management metadata visible/searchable only to authenticated Librarian/Admin users. | Product-owner correction 2026-07-27 (supersedes review packet 2026-06-10) | APPROVED |
 | Q-FE01-005 | Home page displays navigation/search and recent books; featured books are optional/out of scope unless manually configured. | Review packet 2026-06-10 | APPROVED |
 | Q-FE01-006 | Phase 1 canonical public endpoints are `/api/books` and `/api/books/{bookId}`; `/api/public/*` aliases are out of scope and are not part of the API contract. | User correction 2026-06-21; endpoint normalization 2026-07-17 | APPROVED |
 | Q-FE01-007 | `/home`, public search, and public detail use the latest FE06-owned `BookCopies.Status` summary after FE06/FE07/FE08 transitions; FE01/FE05 remain read-only for copy state. | Nhat approval after cross-feature audit 2026-07-15 | APPROVED |

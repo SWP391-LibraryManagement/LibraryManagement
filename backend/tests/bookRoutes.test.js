@@ -253,13 +253,13 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     const memberResponse = await request(app)
       .get('/api/books?q=Sapiens')
       .set('Authorization', authHeader(member.accessToken));
+    const isbnOnlyResponse = await request(app).get('/api/books?q=9780132350884');
 
     expect(guestResponse.status).toBe(200);
     expect(listItems(guestResponse.body).map((book) => book.title)).toEqual(['Clean Code']);
     expect(Object.keys(listItems(guestResponse.body)[0])).toEqual([
       'bookId',
       'title',
-      'isbn',
       'categoryName',
       'authorName',
       'publisherName',
@@ -270,6 +270,9 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     ]);
     expect(memberResponse.status).toBe(200);
     expect(listItems(memberResponse.body).map((book) => book.title)).toEqual(['Sapiens']);
+    expect(isbnOnlyResponse.status).toBe(200);
+    expect(listItems(isbnOnlyResponse.body)).toEqual([]);
+    expect(JSON.stringify([guestResponse.body, memberResponse.body])).not.toContain('isbn');
     expect(JSON.stringify([guestResponse.body, memberResponse.body])).not.toContain('Inactive Catalog Record');
     expect(JSON.stringify([guestResponse.body, memberResponse.body])).not.toContain('availableCopies');
     expect(JSON.stringify([guestResponse.body, memberResponse.body])).not.toContain('totalCopies');
@@ -301,7 +304,6 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     expect(Object.keys(responseBook(publicActive.body))).toEqual([
       'bookId',
       'title',
-      'isbn',
       'categoryName',
       'authorName',
       'publisherName',
@@ -311,6 +313,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       'availabilityStatus',
     ]);
     const serialized = JSON.stringify(publicActive.body);
+    expect(serialized).not.toContain('isbn');
     expect(serialized).not.toContain('book-v1');
     expect(serialized).not.toContain('staff-only acquisition note');
 
@@ -322,6 +325,7 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     expect(staffInactive.status).toBe(200);
     expect(responseBook(staffInactive.body)).toMatchObject({
       id: 3,
+      isbn: '9780000000003',
       status: 'INACTIVE',
       availabilityStatus: 'UNAVAILABLE',
       version: 'book-v3',
@@ -357,7 +361,6 @@ describe('FE05 book management v0.5.1 RED contract', () => {
     const expected = {
       bookId: 41,
       title: 'Sparse Public Book',
-      isbn: null,
       categoryName: null,
       authorName: null,
       publisherName: null,
@@ -395,7 +398,18 @@ describe('FE05 book management v0.5.1 RED contract', () => {
       'ACTIVE',
       'INACTIVE',
     ]);
+    expect(listItems(response.body).every((book) => Object.hasOwn(book, 'isbn'))).toBe(true);
     expect(pageMeta(response.body)).toMatchObject({ page: 1, limit: 20 });
+
+    const isbnSearch = await request(app)
+      .get('/api/admin/books?q=9780132350884')
+      .set('Authorization', authHeader(staff.accessToken));
+    expect(isbnSearch.status).toBe(200);
+    expect(listItems(isbnSearch.body)).toHaveLength(1);
+    expect(listItems(isbnSearch.body)[0]).toMatchObject({
+      title: 'Clean Code',
+      isbn: '9780132350884',
+    });
   });
 
   // @spec AC-FE05-009, BR-FE05-002 through BR-FE05-004, FR-FE05-015

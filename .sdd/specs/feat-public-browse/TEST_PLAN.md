@@ -1,8 +1,8 @@
 ﻿# FE01 Test Plan - Public / Browse
 
-Version: 0.3.7
+Version: 0.3.8
 Status: COMPLETE - BASELINE EVIDENCE RECORDED; LOCAL HOMEPAGE POLISH VALIDATED
-Last Updated: 2026-07-26
+Last Updated: 2026-07-27
 
 Source Spec: `.sdd/specs/feat-public-browse/SPEC.md`
 Feature IDs: `BR-FE01-*`, `FR-FE01-*`, `AC-FE01-*`
@@ -17,6 +17,8 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 ## 2. Unit Test Targets
 
 - Search q and positive-ID filter validation.
+- Public q matches title/author only; searching by ISBN does not return a match.
+- Guest/Member list, detail, and HomePage never expose ISBN.
 - Public visibility rule: users see only active/public catalog data.
 - Empty search/default pagination and no-result handling.
 - Stable `Title ASC, BookId ASC` ordering and page/limit bounds.
@@ -32,6 +34,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 
 - `GET /api/books` with canonical q/ID filters and pagination.
 - `GET /api/books/{bookId}` with public-safe active detail.
+- Guest/Member responses omit ISBN while an authorized Librarian/Admin detail retains the FE05 ISBN field.
 - Invalid book ID, invalid filters, invalid page/limit, and overlong q.
 - Missing book and inactive/deactivated book hidden from public response.
 - Null optional metadata preserved in list/detail responses.
@@ -42,7 +45,7 @@ Public browse/search/detail behavior for guests and authenticated users viewing 
 
 - Guest opens the home/catalog view.
 - Guest searches with empty, valid, invalid, and no-result criteria.
-- Guest opens an active book detail and sees public-safe metadata without an availability label.
+- Guest opens an active book detail and sees public-safe metadata without ISBN or an availability label.
 - Guest opens a missing or inactive detail and sees a safe not-found state.
 - Guest and Member see safe null/no-cover fallbacks without availability disclosure.
 - Librarian/Admin see the approved `Còn sách` or `Không khả dụng` high-level state.

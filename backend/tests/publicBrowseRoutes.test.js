@@ -93,7 +93,6 @@ describe('FE01 public browse contract', () => {
     expect(Object.keys(publicBookSchema.properties)).toEqual([
       'bookId',
       'title',
-      'isbn',
       'categoryName',
       'authorName',
       'publisherName',

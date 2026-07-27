@@ -751,7 +751,6 @@ components:
       properties:
         bookId: { type: integer, minimum: 1 }
         title: { type: string }
-        isbn: { type: string, maxLength: 20, nullable: true }
         categoryName: { type: string, nullable: true }
         authorName: { type: string, nullable: true }
         publisherName: { type: string, nullable: true }

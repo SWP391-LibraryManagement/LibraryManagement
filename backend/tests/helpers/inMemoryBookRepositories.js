@@ -124,17 +124,22 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
     });
   }
 
-  function filterBooks(source, filters = {}) {
+  function filterBooks(source, filters = {}, { publicOnly = false } = {}) {
     const q = String(filters.q || '').toLowerCase();
     return source.filter((book) => {
       if (q) {
-        const searchable = [
-          book.title,
-          book.isbn,
-          metadataName(authors, book.authorId),
-          metadataName(categories, book.categoryId),
-          metadataName(publishers, book.publisherId),
-        ].join(' ').toLowerCase();
+        const searchable = (publicOnly
+          ? [
+            book.title,
+            metadataName(authors, book.authorId),
+          ]
+          : [
+            book.title,
+            book.isbn,
+            metadataName(authors, book.authorId),
+            metadataName(categories, book.categoryId),
+            metadataName(publishers, book.publisherId),
+          ]).join(' ').toLowerCase();
         if (!searchable.includes(q)) return false;
       }
       if (filters.status && book.status !== filters.status) return false;
@@ -204,7 +209,7 @@ function makeInMemoryBookDependencies(authDependencies, initialState = {}) {
     async getHomeBooks(filters = {}) {
       control.homeCalls.push(clone(filters));
       const filtered = sortBooks(
-        filterBooks(books.filter((book) => book.status === 'ACTIVE'), filters),
+        filterBooks(books.filter((book) => book.status === 'ACTIVE'), filters, { publicOnly: true }),
         filters
       );
       return paginate(filtered, filters);

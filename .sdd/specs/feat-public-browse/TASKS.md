@@ -26,7 +26,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
   - Maps to: BR-FE01-001 through BR-FE01-014; FR-FE01-001 through FR-FE01-013; AC-FE01-001 through AC-FE01-013; NFR-FE01-SEC-001 through NFR-FE01-SEC-004; NFR-FE01-PERF-001/002.
   - Files: create `backend/tests/publicBrowseRoutes.test.js`, create `backend/tests/publicBrowseRepository.test.js`, create `backend/tests/sql/publicBrowseAvailability.sqltest.js`, create `frontend/test/publicBrowseFrontend.test.js`.
   - Dependency: FE05 owner confirms the shared public response envelope and FE06 owner confirms the availability fixture contract.
-  - RED: assert unauthenticated `GET /api/books` and `GET /api/books/{bookId}`, exact query-field allowlist, q length 1..200, positive ID filters, page/limit bounds, stable order, empty search defaults, inactive/not-found behavior, public-safe fields, null optional metadata, latest availability, and no FE01 mutation.
+  - RED: assert unauthenticated `GET /api/books` and `GET /api/books/{bookId}`, exact query-field allowlist, title/author-only q matching, q length 1..200, positive ID filters, page/limit bounds, stable order, empty search defaults, inactive/not-found behavior, public-safe fields without ISBN, null optional metadata, latest availability, and no FE01 mutation.
   - Verify RED: focused commands fail only on the missing v0.3.1 public behavior or missing dedicated test fixtures, not on malformed test setup.
   - DoD: every BR/FR/AC is represented by an assertion or an explicit integration test mapping, including SQL latest-commit availability and frontend unavailable/null states.
 
@@ -50,7 +50,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; PR #59 merged the respo
   - Maps to: BR-FE01-004, BR-FE01-007, BR-FE01-010, BR-FE01-014; FR-FE01-004 through FR-FE01-006, FR-FE01-010/013; AC-FE01-004 through AC-FE01-008, AC-FE01-012/013; NFR-FE01-SEC-002/003/004.
   - Files: `backend/src/controllers/bookController.js`, `backend/src/services/bookService.js`, `backend/src/repositories/bookRepository.js`, `backend/src/docs/openapi.yaml`, `backend/tests/publicBrowseRoutes.test.js`.
   - Dependency: FE01-T002 and FE01-T003.
-  - GREEN: return only title, ISBN, category/author/publisher names, publish year, description, cover URL, and `AVAILABLE`/`UNAVAILABLE`; return `null` for missing optional metadata; return safe `404` for missing/inactive books; sanitize or escape public display content and hide status, barcodes, locations, borrower data, reservation data, fines, and audit data.
+  - GREEN: return only title, category/author/publisher names, publish year, description, cover URL, and `AVAILABLE`/`UNAVAILABLE`; exclude ISBN from Guest/Member list/detail while preserving it in the authorized FE05 staff projection; return `null` for missing optional public metadata; return safe `404` for missing/inactive books; sanitize or escape public display content and hide status, barcodes, locations, borrower data, reservation data, fines, and audit data.
   - Verify: route tests assert exact public field allowlists, null preservation, hidden-book behavior, malformed-versus-missing ID behavior, and generic database failure responses.
   - DoD: no public response contains internal copy counts, staff fields, protected records, SQL details, or stack traces.
 
