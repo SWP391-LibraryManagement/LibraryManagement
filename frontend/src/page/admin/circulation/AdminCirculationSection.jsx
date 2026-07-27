@@ -30,7 +30,7 @@ function ReturnModal({ borrowing, saving, condition, onConditionChange, onClose,
   return (
     <div className="admin-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <div className="admin-modal admin-modal--compact" role="dialog" aria-modal="true" aria-labelledby="admin-return-title" onMouseDown={(event) => event.stopPropagation()}>
-        <header className="admin-modal__header"><div><p>FE07 · Trả sách</p><h2 id="admin-return-title">Xác nhận trả sách</h2></div><button type="button" disabled={saving} onClick={onClose} aria-label="Đóng"><X aria-hidden="true" /></button></header>
+        <header className="admin-modal__header"><div><p>Trả sách</p><h2 id="admin-return-title">Xác nhận trả sách</h2></div><button type="button" disabled={saving} onClick={onClose} aria-label="Đóng"><X aria-hidden="true" /></button></header>
         <div className="admin-modal__body admin-modal__body--single admin-request-detail"><p><strong>Thành viên</strong><span>{borrowing.memberName}</span></p><p><strong>Sách</strong><span>{borrowing.bookTitle} ({borrowing.barcode})</span></p><label className="admin-field"><span>Tình trạng sách</span><select value={condition} onChange={(event) => onConditionChange(event.target.value)}><option value="NORMAL">Bình thường</option><option value="DAMAGED">Hư hỏng</option><option value="LOST">Mất sách</option></select></label></div>
         <footer className="admin-modal__actions"><button type="button" disabled={saving} onClick={onClose}>Hủy</button><button className="admin-modal__primary" type="button" disabled={saving} onClick={onSubmit}>{saving ? 'Đang xử lý...' : 'Ghi nhận trả sách'}</button></footer>
       </div>
@@ -124,7 +124,7 @@ export function AdminCirculationSection({
 
   return (
     <section className="admin-circulation">
-      <AdminPageHeader eyebrow="FE07 · Vận hành mượn trả" title="Quản lý mượn trả" refreshing={loading} onRefresh={() => loadBorrowings({ announce: true })} primaryAction={<AdminActionButton icon={BookCopy} label="Xử lý yêu cầu" tone="primary" onClick={onOpenRequests} />} />
+      <AdminPageHeader eyebrow="Vận hành mượn trả" title="Quản lý mượn trả" refreshing={loading} onRefresh={() => loadBorrowings({ announce: true })} primaryAction={<AdminActionButton icon={BookCopy} label="Xử lý yêu cầu" tone="primary" onClick={onOpenRequests} />} />
       <div className="admin-section-status" aria-live="polite"><span>{updatedAt ? `Cập nhật lần cuối lúc ${updatedAt.toLocaleTimeString('vi-VN')}` : 'Chưa tải dữ liệu mượn trả.'}</span>{error ? <strong className="admin-text-error">{error}</strong> : null}</div>
       <AdminFilterBar actions={<><AdminActionButton icon={Search} label="Tìm kiếm" tone="primary" disabled={loading} onClick={() => setAppliedFilters({ ...filters })} /><AdminActionButton icon={FileDown} label="Xuất DOCX" disabled={loading || borrowings.length === 0} onClick={() => downloadDocx('borrowings.docx', 'Danh sách mượn trả', borrowings, BORROWING_DOCX_COLUMNS)} /></>}>
         <label className="admin-field admin-field--search"><span>Tìm giao dịch</span><input value={filters.q} placeholder="Thành viên, sách hoặc barcode" onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))} /></label>

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { RoleBadge } from './UserBadges';
 import { validateUserForm } from './userPresentation';
@@ -17,6 +17,21 @@ export function UserEditorModal({ mode, user, onClose, onSubmit, onManageRole })
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previouslyFocused = document.activeElement;
+    const firstField = formRef.current?.querySelector('input,select,textarea');
+    firstField?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [onClose]);
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -40,8 +55,9 @@ export function UserEditorModal({ mode, user, onClose, onSubmit, onManageRole })
   }
 
   return (
-    <div className="admin-modal-backdrop" onMouseDown={onClose}>
+    <div className="admin-modal-backdrop" onMouseDown={() => { if (!saving) onClose(); }}>
       <form
+        ref={formRef}
         className="admin-modal"
         role="dialog"
         aria-modal="true"
@@ -52,7 +68,7 @@ export function UserEditorModal({ mode, user, onClose, onSubmit, onManageRole })
       >
         <header className="admin-modal__header">
           <div>
-            <p>{isEdit ? 'Chỉnh sửa thông tin' : 'Tạo tài khoản FE11'}</p>
+            <p>{isEdit ? 'Chỉnh sửa thông tin' : 'Tạo tài khoản mới'}</p>
             <h2 id="admin-user-editor-title">{isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng'}</h2>
           </div>
           <button type="button" disabled={saving} onClick={onClose} aria-label="Đóng">

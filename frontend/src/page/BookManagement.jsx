@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -7,9 +7,12 @@ import {
   Save,
   Search,
   Trash2,
+  X,
 } from 'lucide-react';
 import { getBookErrorMessage } from '../api/apiErrorMessages';
 import { authorizedRequest, resolveLibraryAssetUrl } from '../api/libraryFeatureApi';
+import { ConfirmAction } from '../component/shared/Feedback';
+import { createLatestRequestGuard } from '../utils/latestRequestGuard';
 import { getStatusLabel } from '../utils/uiLabels';
 
 const DEFAULT_FORM = {
@@ -123,9 +126,10 @@ function Toast({ toast, onClose }) {
   if (!toast) return null;
 
   return (
-    <button className={`bm-toast ${toast.type}`} onClick={onClose}>
-      {toast.type === 'error' ? <AlertTriangle size={17} /> : <Check size={17} />}
+    <button className={`bm-toast ${toast.type}`} role={toast.type === 'error' ? 'alert' : 'status'} aria-label={toast.type === 'error' ? 'Thông báo lỗi' : 'Thông báo'} onClick={onClose}>
+      {toast.type === 'error' ? <AlertTriangle size={17} aria-hidden="true" /> : <Check size={17} aria-hidden="true" />}
       <span>{toast.message}</span>
+      <X size={14} aria-hidden="true" />
     </button>
   );
 }
@@ -290,6 +294,9 @@ export default function BookManagement() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [pendingStatusFromUpdate, setPendingStatusFromUpdate] = useState(null);
+  const requestGuard = useRef(createLatestRequestGuard());
 
   const selectedBook = useMemo(
     () => books.find((book) => Number(book.id) === Number(selectedBookId)) || null,
@@ -298,7 +305,8 @@ export default function BookManagement() {
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3200);
+    const duration = type === 'error' ? 7000 : type === 'warning' ? 6000 : 3200;
+    setTimeout(() => setToast(null), duration);
   };
 
   const loadMetadata = async () => {
@@ -326,7 +334,9 @@ export default function BookManagement() {
     if (q) params.set('q', q);
     if (status) params.set('status', status);
     if (categoryId) params.set('categoryId', categoryId);
+    const token = requestGuard.current.begin();
     const result = await apiRequest(`/admin/books?${params.toString()}`);
+    if (!requestGuard.current.isLatest(token)) return [];
     const nextBooks = result.items || [];
     const pagination = result.pagination || {};
     setTotalItems(Number(pagination.total) || nextBooks.length);
@@ -516,26 +526,19 @@ export default function BookManagement() {
         body: makeBookFormData(updateForm),
       });
       if (statusChanged) {
+        // @spec NFR-FE05-UX-002 — terminal status transition needs confirmation.
         const activating = updateForm.status === 'ACTIVE';
-        result = await apiRequest(`/books/${selectedBookId}/${activating ? 'reactivate' : 'deactivate'}`, {
-          method: 'PATCH',
-          headers: { 'If-Match': result.book.version },
-          body: JSON.stringify({
-            reason: activating
-              ? 'Kích hoạt lại từ biểu mẫu cập nhật thông tin sách.'
-              : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
-          }),
+        setPendingStatusFromUpdate({
+          bookId: selectedBookId,
+          bookTitle: result.book.title || selectedBook.title,
+          activating,
+          version: result.book.version,
+          targetStatus: updateForm.status,
         });
+        setDetailBook(result.book);
+        return;
       }
-      // @spec FR-FE05-029 - keep the updated book visible by reconciling the active status filter.
-      if (statusChanged) {
-        setStatusFilter(updateForm.status);
-        setAppliedStatusFilter(updateForm.status);
-        setPage(1);
-      }
-      const nextBooks = await loadBooks(statusChanged
-        ? { status: updateForm.status, pageNumber: 1 }
-        : undefined);
+      const nextBooks = await loadBooks();
       setDetailBook(nextBooks.find((book) => Number(book.id) === Number(selectedBookId)) || result.book);
       showToast('Đã cập nhật thông tin sách và tải lại trạng thái chuẩn.');
     } catch (error) {
@@ -544,6 +547,37 @@ export default function BookManagement() {
       setSaving(false);
     }
   };
+
+  async function confirmStatusFromUpdate() {
+    if (!pendingStatusFromUpdate) return;
+    const { bookId, activating, version, targetStatus } = pendingStatusFromUpdate;
+    try {
+      setSaving(true);
+      const result = await apiRequest(`/books/${bookId}/${activating ? 'reactivate' : 'deactivate'}`, {
+        method: 'PATCH',
+        headers: { 'If-Match': version },
+        body: JSON.stringify({
+          reason: activating
+            ? 'Kích hoạt lại từ biểu mẫu cập nhật thông tin sách.'
+            : 'Ngừng hoạt động từ biểu mẫu cập nhật thông tin sách.',
+        }),
+      });
+      // @spec FR-FE05-029 - keep the updated book visible by reconciling the active status filter.
+      setStatusFilter(targetStatus);
+      setAppliedStatusFilter(targetStatus);
+      setPage(1);
+      const nextBooks = await loadBooks({ status: targetStatus, pageNumber: 1 });
+      setDetailBook(nextBooks.find((book) => Number(book.id) === Number(bookId)) || result.book);
+      showToast(activating
+        ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
+        : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+      setPendingStatusFromUpdate(null);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const handleStatusChange = async () => {
     if (!selectedBook) {
@@ -582,6 +616,7 @@ export default function BookManagement() {
       showToast(selectedBook.status === 'INACTIVE'
         ? 'Đã kích hoạt lại sách và tải lại trạng thái chuẩn.'
         : 'Đã ngừng hoạt động sách. Sách không còn hiển thị trong tra cứu công khai.');
+      setPendingStatusChange(null);
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -692,6 +727,38 @@ export default function BookManagement() {
   return (
     <div className="bm-module">
       <Toast toast={toast} onClose={() => setToast(null)} />
+      {pendingStatusChange && (
+        <ConfirmAction
+          title={pendingStatusChange.status === 'INACTIVE' ? 'Kích hoạt lại sách' : 'Ngừng hoạt động sách'}
+          eyebrow="Thay đổi trạng thái catalog"
+          tone={pendingStatusChange.status === 'INACTIVE' ? 'primary' : 'danger'}
+          pending={saving}
+          cancelLabel="Hủy bỏ"
+          confirmLabel={pendingStatusChange.status === 'INACTIVE' ? 'Xác nhận kích hoạt lại' : 'Xác nhận ngừng hoạt động'}
+          onCancel={() => setPendingStatusChange(null)}
+          onConfirm={handleStatusChange}
+        >
+          {pendingStatusChange.status === 'INACTIVE'
+            ? <>Bạn sắp kích hoạt lại <strong>{pendingStatusChange.title}</strong>. Bản sao và lịch sử mượn trả sẽ giữ nguyên.</>
+            : <>Bạn sắp ngừng hoạt động <strong>{pendingStatusChange.title}</strong>. Sách sẽ ẩn khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.</>}
+        </ConfirmAction>
+      )}
+      {pendingStatusFromUpdate && (
+        <ConfirmAction
+          title={pendingStatusFromUpdate.activating ? 'Kích hoạt lại sách' : 'Ngừng hoạt động sách'}
+          eyebrow="Xác nhận thay đổi trạng thái từ biểu mẫu cập nhật"
+          tone={pendingStatusFromUpdate.activating ? 'primary' : 'danger'}
+          pending={saving}
+          cancelLabel="Bỏ qua thay đổi trạng thái"
+          confirmLabel={pendingStatusFromUpdate.activating ? 'Xác nhận kích hoạt lại' : 'Xác nhận ngừng hoạt động'}
+          onCancel={() => { setPendingStatusFromUpdate(null); showToast('Đã cập nhật thông tin sách. Bỏ qua thay đổi trạng thái.'); }}
+          onConfirm={confirmStatusFromUpdate}
+        >
+          {pendingStatusFromUpdate.activating
+            ? <>Thông tin của <strong>{pendingStatusFromUpdate.bookTitle}</strong> đã được lưu. Xác nhận để kích hoạt lại (bản sao và lịch sử giữ nguyên)?</>
+            : <>Thông tin của <strong>{pendingStatusFromUpdate.bookTitle}</strong> đã được lưu. Xác nhận để ngừng hoạt động (sách ẩn khỏi tra cứu công khai, vẫn giữ bản ghi kiểm toán)?</>}
+        </ConfirmAction>
+      )}
       <main className="bm-main">
         <div className="bm-top-actions">
           <button className="bm-soft" onClick={handleRefreshList} disabled={loading}>
@@ -711,8 +778,8 @@ export default function BookManagement() {
             <div><p>Tra cứu nhanh</p><h2>Tìm kiếm sách</h2></div>
           </div>
           <form className="bm-search-row" onSubmit={handleSearch}>
-             <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={200} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." />
-            <button className="bm-primary" type="submit"><Search size={17} />Tìm kiếm</button>
+             <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={200} placeholder="Tìm theo tên sách, ISBN, tác giả hoặc danh mục..." aria-label="Tìm kiếm sách theo tên, ISBN, tác giả" />
+            <button className="bm-primary" type="submit" aria-label="Tìm kiếm sách"><Search size={17} aria-hidden="true" />Tìm kiếm</button>
           </form>
           {appliedSearchQuery && <p className="bm-applied-filter">Đang tìm: <strong>{appliedSearchQuery}</strong></p>}
         </section>
@@ -721,16 +788,16 @@ export default function BookManagement() {
           <div className="bm-panel-head">
             <div><p>Danh mục quản lý</p><h2>Danh sách sách</h2></div>
             <div className="bm-filters">
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Lọc danh sách sách theo trạng thái">
                 <option value="">Tất cả trạng thái</option>
                 <option value="ACTIVE">{getStatusLabel('ACTIVE')}</option>
                 <option value="INACTIVE">{getStatusLabel('INACTIVE')}</option>
               </select>
-              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Lọc danh sách sách theo danh mục">
                 <option value="">Tất cả danh mục</option>
                 {metadata.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
-              <button type="button" className="bm-soft" onClick={handleApplyFilters} disabled={loading}>Áp dụng</button>
+              <button type="button" className="bm-soft" onClick={handleApplyFilters} disabled={loading} aria-label="Áp dụng bộ lọc danh sách sách">Áp dụng</button>
             </div>
           </div>
            {renderBookTable(books, (page - 1) * 20)}
@@ -790,8 +857,8 @@ export default function BookManagement() {
                 <p>{selectedBook.status === 'INACTIVE'
                   ? 'Kích hoạt lại chỉ đổi trạng thái catalog; bản sao và lịch sử vẫn giữ nguyên.'
                   : 'Ngừng hoạt động sẽ ẩn sách khỏi trang chủ và danh sách công khai nhưng vẫn giữ bản ghi phục vụ lịch sử và kiểm toán.'}</p>
-                <button className="bm-danger" onClick={handleStatusChange} disabled={saving}>
-                  <Trash2 size={17} />
+                <button className="bm-danger" onClick={() => setPendingStatusChange(selectedBook)} disabled={saving}>
+                  <Trash2 size={17} aria-hidden="true" />
                   {selectedBook.status === 'INACTIVE' ? 'Kích hoạt lại' : 'Ngừng hoạt động'}
                 </button>
               </div>
@@ -804,23 +871,6 @@ export default function BookManagement() {
 
       <style>{`
         .bm-module { --bm-accent: #b67a2a; --bm-accent-dark: #8a581d; --bm-border: #e6d5bb; --bm-soft-bg: #f7efe2; color: #2b2118; font-family: var(--sans); }
-        .bm-shell { min-height: 100vh; background: #f6f7fb; color: #172033; display: flex; font-family: var(--sans); }
-        .bm-sidebar { width: 286px; min-height: 100vh; position: sticky; top: 0; align-self: flex-start; background: #14202e; color: #e5edf7; padding: 22px 16px; display: flex; flex-direction: column; gap: 20px; }
-        .bm-brand { display: flex; gap: 12px; align-items: center; padding: 6px 8px 12px; }
-        .bm-brand > div { width: 42px; height: 42px; display: grid; place-items: center; background: #2aa198; color: #fff; border-radius: 8px; }
-        .bm-brand strong, .bm-brand span { display: block; }
-        .bm-brand strong { font-size: 17px; }
-        .bm-brand span { color: #9fb0c5; font-size: 12px; margin-top: 3px; }
-        .bm-main-nav, .bm-other-nav, .bm-session { display: flex; flex-direction: column; gap: 8px; }
-        .bm-main-nav > span { color: #9fb0c5; font-size: 12px; font-weight: 800; text-transform: uppercase; padding: 0 12px 2px; }
-        .bm-main-nav button, .bm-other-nav button, .bm-session button { min-height: 44px; border-radius: 8px; border: 0; background: transparent; color: #d7e1ee; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-size: 14px; text-align: left; }
-        .bm-main-nav button span { flex: 1; }
-        .bm-main-nav button:hover, .bm-other-nav button:hover, .bm-session button:hover, .bm-main-nav button.active { background: #243244; color: #fff; }
-        .bm-main-nav button.active { box-shadow: inset 3px 0 0 #2aa198; }
-        .bm-other-nav, .bm-session { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
-        .bm-session { margin-top: auto; }
-        .bm-session span { color: #9fb0c5; font-size: 12px; }
-        .bm-session strong { color: #fff; font-size: 13px; overflow-wrap: anywhere; }
         .bm-main { flex: 1; padding: 0; min-width: 0; display: grid; gap: 18px; }
         .bm-top-actions { display: flex; justify-content: flex-end; margin-top: -66px; margin-bottom: 22px; min-height: 44px; align-items: center; }
         .bm-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
@@ -890,10 +940,6 @@ export default function BookManagement() {
         .bm-toast.error { background: #b91c1c; }
         @media (max-width: 900px) {
           .bm-top-actions { margin-top: 0; margin-bottom: 0; }
-          .bm-shell { flex-direction: column; }
-          .bm-sidebar { width: 100%; min-height: auto; position: static; }
-          .bm-main-nav, .bm-other-nav, .bm-session { flex-direction: row; flex-wrap: wrap; }
-          .bm-main-nav > span { width: 100%; }
           .bm-main { padding: 0; }
           .bm-header, .bm-panel-head { flex-direction: column; }
           .bm-summary, .bm-form, .bm-detail-grid, .bm-search-row, .bm-two-column { grid-template-columns: 1fr; }

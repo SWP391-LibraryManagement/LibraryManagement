@@ -62,7 +62,7 @@ function App() {
       <Route path="/homepage" element={<HomePage />} />
 
       <Route path="/admin/users" element={<UserManagement />} />
-      <Route path="/librarian/fines" element={<FineManagement />} />
+      <Route path="/librarian/fines" element={<BorrowingRouteGuard audience="staff"><FineManagement /></BorrowingRouteGuard>} />
       <Route path="/librarian/inventory" element={<InventoryPage />} />
       <Route path="/librarian/books" element={<BookManagementPage />} />
 

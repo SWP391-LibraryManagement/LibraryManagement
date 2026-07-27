@@ -30,7 +30,7 @@ export default function InventoryPage() {
       active="inventory-management"
       title="Quản lí kho"
       subtitle="Theo dõi đầu sách, bản sao vật lý, barcode, vị trí và trạng thái lưu thông."
-      actions={<span className="stat-chip"><Inventory2Icon fontSize="small" /> FE06</span>}
+      actions={<span className="stat-chip"><Inventory2Icon fontSize="small" /> Kho sách</span>}
     >
       <InventoryManagement />
     </AppLayout>

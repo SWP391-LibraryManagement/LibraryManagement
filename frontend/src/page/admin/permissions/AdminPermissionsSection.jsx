@@ -157,6 +157,7 @@ export function AdminPermissionsSection() {
             <header><h2>Mức bao phủ chức năng</h2><p>Số quy tắc cho phép theo từng nhóm nghiệp vụ.</p></header>
             <div className="admin-table-scroll">
               <table className="admin-permission-table admin-permission-table--compact">
+                <caption>Mức bao phủ chức năng theo vai trò</caption>
                 <thead><tr><th>Chức năng</th>{permissionPolicy.roles.map((role) => <th key={role.roleName}>{getRoleLabel(role.roleName)}</th>)}</tr></thead>
                 <tbody>{moduleCoverage.map((module) => (
                   <tr key={module.moduleKey}><td>{getModuleLabel(module)}</td>{permissionPolicy.roles.map((role) => <td key={role.roleName}>{module.counts[role.roleName] || 0} quy tắc</td>)}</tr>
@@ -166,9 +167,10 @@ export function AdminPermissionsSection() {
           </section>
 
           <section>
-            <header><h2>Chi tiết quyền</h2><p>Quyết định Có/Không được lấy trực tiếp từ chính sách FE11.</p></header>
+            <header><h2>Chi tiết quyền</h2><p>Quyết định Có/Không được lấy trực tiếp từ chính sách phân quyền.</p></header>
             <div className="admin-table-scroll">
               <table className="admin-permission-table">
+                <caption>Chi tiết quyền theo vai trò</caption>
                 <thead><tr><th>Quyền</th>{permissionPolicy.roles.map((role) => <th key={role.roleName}>{getRoleLabel(role.roleName)}</th>)}</tr></thead>
                 <tbody>{permissionPolicy.permissions.map((permission) => (
                   <tr key={permission.permissionKey}>
