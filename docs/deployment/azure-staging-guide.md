@@ -198,7 +198,7 @@ SELECT
   ) THEN 1 ELSE 0 END AS NotificationProcessingAllowed;
 ```
 
-Expected database: `LibraryManagementStaging`, table count `20`, and each listed reconciliation
+Expected database: `LibraryManagementStaging`, table count `21`, and each listed reconciliation
 column length `8`; `NotificationProcessingAllowed` must be `1`. CI must not execute this schema
 automatically.
 
@@ -303,18 +303,21 @@ Download the backend publish profile from App Service and paste it directly into
 Paste the Static Web Apps deployment token directly into the second. Enable required reviewer
 approval for the environment when the repository plan supports it.
 
-## Automatic Deployment After Merge
+## Manual Deployment With Startup Reconciliation
 
-The staging workflow runs automatically for every push to `main` (including a pull-request merge):
+The staging workflow is manual-only:
 
 1. Merge the approved change into `main`.
-2. GitHub Actions starts `Deploy staging` automatically.
-3. Approve the `staging` Environment when prompted, if environment approval is enabled.
-4. Confirm quality, backend deploy, frontend deploy, and smoke jobs all pass.
+2. Wait for the exact `main` CI run to pass.
+3. Apply any required operator-owned migrations other than the packaged metadata compatibility
+   migration.
+4. Open `Deploy staging` in GitHub Actions and select **Run workflow** for `main`.
+5. Approve the `staging` Environment when prompted, if environment approval is enabled.
+6. Confirm backend startup applied the packaged metadata migration and `/health/ready` returns `200`.
+7. Confirm backend deploy, frontend deploy, and the fail-closed smoke job all pass.
 
-`workflow_dispatch` remains enabled for a manual rerun from GitHub Actions when needed.
-
-No deployment should run if the quality gate fails.
+A push or merge must not start a staging deployment. Do not run the manual workflow while CI is
+failing or known operator-owned migrations remain unapplied.
 
 After changing App Service settings, allow the F1 instance to warm up before
 judging the smoke result. A first request may return `503` while the application

@@ -29,10 +29,12 @@ BEGIN TRY
         ALTER TABLE dbo.Categories ADD CreatedAt DATETIME NOT NULL
             CONSTRAINT DF_Categories_CreatedAt DEFAULT GETDATE() WITH VALUES;
 
-    IF EXISTS (SELECT 1 FROM dbo.Authors WHERE Status NOT IN (N'ACTIVE', N'INACTIVE'))
-       OR EXISTS (SELECT 1 FROM dbo.Publishers WHERE Status NOT IN (N'ACTIVE', N'INACTIVE'))
-       OR EXISTS (SELECT 1 FROM dbo.Categories WHERE Status NOT IN (N'ACTIVE', N'INACTIVE'))
-        THROW 51001, 'Library metadata contains an unsupported status.', 1;
+    EXEC sys.sp_executesql N'
+        IF EXISTS (SELECT 1 FROM dbo.Authors WHERE Status NOT IN (N''ACTIVE'', N''INACTIVE''))
+           OR EXISTS (SELECT 1 FROM dbo.Publishers WHERE Status NOT IN (N''ACTIVE'', N''INACTIVE''))
+           OR EXISTS (SELECT 1 FROM dbo.Categories WHERE Status NOT IN (N''ACTIVE'', N''INACTIVE''))
+            THROW 51001, ''Library metadata contains an unsupported status.'', 1;
+    ';
 
     COMMIT TRANSACTION;
 END TRY
