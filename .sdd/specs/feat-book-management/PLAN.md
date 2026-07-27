@@ -14,11 +14,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 
 ## 1. Goal
 
-Maintain the reconciled FE05 catalog against the approved v0.6.6 contract: deterministic public/staff queries, active reference-data reads, schema-aware deployment readiness, an operator-applied reviewed SQL migration, manual-only staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
+Maintain the reconciled FE05 catalog against the approved v0.6.7 contract: deterministic public/staff queries, active reference-data reads, a pre-listen startup gate for the reviewed metadata compatibility migration, schema-aware deployment readiness, manual-only staging deployment, validated managed covers, atomic audited mutations, optimistic concurrency, explicit deactivate/reactivate commands, and read-only derived availability from FE06 copy state.
 
 ## 2. Source Documents
 
-- `.sdd/specs/feat-book-management/SPEC.md` v0.6.2.
+- `.sdd/specs/feat-book-management/SPEC.md` v0.6.7.
 - `.sdd/specs/feat-book-management/CONTEXT.md` v0.2.0.
 - `.sdd/specs/feat-book-management/TEST_PLAN.md`.
 - `.sdd/rfcs/ADR-002-database-design.md`.
@@ -69,6 +69,7 @@ Maintain the reconciled FE05 catalog against the approved v0.6.6 contract: deter
 | HTTP boundary | `backend/src/app.js`, `backend/src/routes/bookRoutes.js`, `backend/src/controllers/bookController.js`, create `backend/src/validators/bookValidators.js` | Public/protected routes, `If-Match`, query/body validation, and safe errors. |
 | Business rules | `backend/src/services/bookService.js` | Deterministic filters, metadata validation, status commands, and derived availability contract. |
 | Persistence | `backend/src/repositories/bookRepository.js`, `backend/src/repositories/auditLogRepository.js` | Parameterized queries, copy-state aggregation, rowversion comparison, and atomic audited writes. |
+| Deployment compatibility | `backend/src/services/schemaReadinessService.js`, `backend/src/startApplication.js`, `.github/workflows/deploy-staging.yml`, `database/migrations/2026-07-22-library-metadata-compatibility.sql` | Package and apply the reviewed metadata migration before listen, verify the postcondition, and keep readiness read-only. |
 | Models/docs | `backend/src/models/Book.js`, `backend/src/docs/openapi.yaml` | Rowversion metadata and approved API request/response/error schemas. |
 | Backend tests | create `backend/tests/bookRoutes.test.js`, `backend/tests/bookAvailabilityRepository.test.js`, create `backend/tests/sql/bookConcurrency.sqltest.js`, create `backend/tests/helpers/inMemoryBookRepositories.js` | Public/staff behavior, validation, ownership, rollback, and stale-write evidence. |
 | Frontend | `frontend/src/page/BookManagement.jsx`, `frontend/src/api/libraryFeatureApi.js` | Approved endpoint shapes, version propagation, confirmation reasons, and read-only availability. |
@@ -142,7 +143,7 @@ FE05 read contracts must be stable before FE06/FE07 consume parent-book status a
 | FE05 backend | `npm.cmd --prefix backend test -- --runTestsByPath tests/bookRoutes.test.js tests/bookAvailabilityRepository.test.js` | Public/staff, validation, ownership, and derived-availability tests pass. |
 | FE05 SQL concurrency | `npm.cmd --prefix backend test -- --runTestsByPath tests/sql/bookConcurrency.sqltest.js` | Stale mutation and audit rollback cases pass when SQL test configuration is available. |
 | FE05 frontend | `node --test frontend/test/bookManagementFrontend.test.js` | No copy mutation, correct unavailable label, version, and status-command checks pass. |
-| Deployment readiness | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingWorkflowPolicy.test.js` | Staging smoke rejects a legacy metadata schema; staging deploy remains manual-only and never applies SQL. |
+| Deployment readiness | `node --test tests/deployment/smokeStaging.test.js tests/deployment/stagingWorkflowPolicy.test.js` plus focused backend startup tests | The backend applies the packaged reviewed metadata migration before listening, verifies its postcondition, and smoke rejects any remaining schema drift; staging deploy remains manual-only. |
 | Traceability | `npm.cmd run trace:enforce` | FE05 changed implementation files satisfy the repository threshold. |
 | Diff hygiene | `git diff --check` | No whitespace errors. |
 

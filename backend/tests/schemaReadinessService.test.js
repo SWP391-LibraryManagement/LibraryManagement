@@ -7,6 +7,8 @@ jest.mock('../src/config/db', () => ({
 
 const {
   checkCatalogMetadataSchema,
+  ensureCatalogMetadataSchema,
+  loadCatalogMetadataMigration,
 } = require('../src/services/schemaReadinessService');
 
 describe('catalog metadata schema readiness', () => {
@@ -31,5 +33,37 @@ describe('catalog metadata schema readiness', () => {
     mockQuery.mockResolvedValueOnce({ recordset: [{ isReady: 0 }] });
 
     await expect(checkCatalogMetadataSchema()).resolves.toBe(false);
+  });
+
+  test('loads the reviewed compatibility migration from the repository', () => {
+    const migration = loadCatalogMetadataMigration();
+
+    expect(migration).toContain("ALTER TABLE dbo.Authors ADD Status");
+    expect(migration).toContain("ALTER TABLE dbo.Publishers ADD CreatedAt");
+    expect(migration).toContain("ALTER TABLE dbo.Categories ADD Status");
+    expect(migration).toContain('SET XACT_ABORT ON');
+  });
+
+  test('applies the reviewed migration and verifies its postcondition', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ isReady: 1 }] });
+
+    await expect(ensureCatalogMetadataSchema({
+      migrationSql: '-- reviewed migration',
+    })).resolves.toBe(true);
+
+    expect(mockQuery.mock.calls[0][0]).toBe('-- reviewed migration');
+    expect(mockQuery.mock.calls[1][0]).toContain("COL_LENGTH(N'dbo.Authors', N'Status')");
+  });
+
+  test('fails startup when the migration postcondition is not satisfied', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ isReady: 0 }] });
+
+    await expect(ensureCatalogMetadataSchema({
+      migrationSql: '-- reviewed migration',
+    })).rejects.toThrow(/not ready after compatibility migration/i);
   });
 });

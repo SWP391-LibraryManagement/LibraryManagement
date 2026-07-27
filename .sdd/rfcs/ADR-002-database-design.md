@@ -54,9 +54,13 @@ Before implementation, check `database/Librarymanagement.sql` against these appr
 - Do not silently change database schema.
 - Any schema change affecting behavior must update the related `SPEC.md` or ADR before implementation.
 - For Phase 1, SQL scripts may be used instead of a migration framework, but every schema revision must be reviewable.
-- CI and staging deployment workflows must not execute schema changes. An authorized operator
-  applies each reviewed SQL migration directly through an approved database administration path
-  and verifies its postcondition before manually deploying staging.
+- CI must not connect to the database or execute schema changes. Staging deployment remains manual.
+  Migrations are normally applied by an authorized operator through an approved database
+  administration path. The sole Phase 1 startup exception is
+  `2026-07-22-library-metadata-compatibility.sql`: the backend applies this reviewed,
+  transactional, idempotent compatibility script before listening because the legacy staging
+  schema otherwise makes the Admin metadata APIs unusable. Startup verifies the postcondition and
+  fails closed; `/health/ready` remains read-only.
 - Seed data must not include real personal data, passwords, tokens, or secrets.
 
 ## FE11 Single-Role Account Decision
@@ -191,6 +195,6 @@ Before Week 5 implementation starts:
 
 Some pre-baseline staging databases contain `Authors`, `Publishers`, and `Categories` without the canonical `Status` and `CreatedAt` columns. The Admin library repository already relies on those fields for list/export/deactivation, so code-only deployment can produce `INTERNAL_ERROR` even when the frontend bundle is current.
 
-The reviewable, transactional, idempotent reconciliation script is `database/migrations/2026-07-22-library-metadata-compatibility.sql`. It adds only missing columns with canonical defaults, preserves existing rows, validates supported status values, and must be applied to an existing environment before deploying repository code that reads those columns.
+The reviewable, transactional, idempotent reconciliation script is `database/migrations/2026-07-22-library-metadata-compatibility.sql`. It adds only missing columns with canonical defaults, preserves existing rows, and validates supported status values. The deployment package includes this exact file, and backend startup applies it and verifies the resulting columns before opening the HTTP listener. A failure leaves the application unavailable rather than serving broken Admin metadata APIs.
 
 The same staging review found that older `BorrowRequests` tables can predate the canonical approval/rejection timestamps. `database/migrations/2026-07-22-borrow-request-workflow-columns.sql` idempotently adds missing `ApprovedAt`, `RejectedAt`, `ProcessedAt`, and `UpdatedAt` columns so the FE07 approve/reject transactions can execute on an upgraded database.

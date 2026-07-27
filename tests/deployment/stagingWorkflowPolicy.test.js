@@ -9,11 +9,15 @@ const workflow = fs.readFileSync(
   'utf8'
 );
 
-test('staging deployment is manual-only and never mutates the database schema', () => {
+test('staging deployment is manual-only and packages the reviewed startup migration', () => {
   assert.match(workflow, /on:\s+workflow_dispatch:/);
   assert.doesNotMatch(workflow, /\b(workflow_run|push|schedule):/);
   assert.doesNotMatch(workflow, /apply_library_metadata_migration/);
   assert.doesNotMatch(workflow, /migrateLibraryMetadata|migration-runtime|invoke-appservice/);
+  assert.match(
+    workflow,
+    /Copy-Item database\/migrations\/2026-07-22-library-metadata-compatibility\.sql deploy\/backend\/database\/migrations\//
+  );
 });
 
 test('manual staging deployment still requires the fail-closed smoke check', () => {

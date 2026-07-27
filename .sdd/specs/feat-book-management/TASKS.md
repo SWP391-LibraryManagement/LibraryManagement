@@ -95,7 +95,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | BR-FE05-014 through BR-FE05-018 | FE05-T002, FE05-T003, FE05-T005, FE05-T006 |
 | BR-FE05-019, BR-FE05-020 | FE05-T009 |
 | BR-FE05-021 | FE05-T012 |
-| BR-FE05-022 | FE05-T013, FE05-T014 |
+| BR-FE05-022 | FE05-T013, FE05-T014, FE05-T015 |
 | FR-FE05-001 through FR-FE05-004 | FE05-T003, FE05-T004 |
 | FR-FE05-005 through FR-FE05-010 | FE05-T004, FE05-T005, FE05-T006 |
 | FR-FE05-011 through FR-FE05-017 | FE05-T003, FE05-T005 |
@@ -104,7 +104,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | FR-FE05-027, FR-FE05-028 | FE05-T009 |
 | FR-FE05-029 | FE05-T011 |
 | FR-FE05-030 | FE05-T012 |
-| FR-FE05-031 | FE05-T013, FE05-T014 |
+| FR-FE05-031 | FE05-T013, FE05-T014, FE05-T015 |
 | AC-FE05-001 through AC-FE05-004 | FE05-T004 |
 | AC-FE05-005 through AC-FE05-007 | FE05-T005 |
 | AC-FE05-008 through AC-FE05-010 | FE05-T005, FE05-T006 |
@@ -113,7 +113,7 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
 | AC-FE05-018, AC-FE05-019 | FE05-T009 |
 | AC-FE05-020 | FE05-T011 |
 | AC-FE05-021 | FE05-T012 |
-| AC-FE05-022 | FE05-T013, FE05-T014 |
+| AC-FE05-022 | FE05-T013, FE05-T014, FE05-T015 |
 
 ## Completion Gate
 
@@ -164,3 +164,8 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - Remove the `Repair staging metadata schema` workflow, Kudu runner, bundled migration runtime, operator npm command, and their dedicated tests/review evidence.
   - Make `Deploy staging` manual-only so normal pushes run CI without automatically producing a known-failing staging deployment.
   - Preserve the reviewed SQL migration, read-only readiness endpoint, Admin/Librarian role boundaries, and fail-closed staging smoke.
+- [x] **FE05-T015 - Reconcile legacy metadata schema in the backend startup runtime.**
+  - Maps to: BR-FE05-022, FR-FE05-031, AC-FE05-022, NFR-FE05-DEP-001.
+  - Package the reviewed metadata compatibility SQL with the backend and apply it transactionally before the HTTP listener starts.
+  - Verify the postcondition, refuse to listen on failure, keep `/health/ready` read-only, and retain the manual-only staging workflow.
+  - Cover migration loading/application, startup ordering/failure, deployment packaging, smoke behavior, and existing Admin/Librarian role boundaries.

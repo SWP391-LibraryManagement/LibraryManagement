@@ -8,8 +8,10 @@ require('dotenv').config({
 const { createApp } = require('./app');
 const env = require('./config/env');
 const { defaultNotificationService } = require('./services/notificationService');
+const { defaultSchemaReadinessService } = require('./services/schemaReadinessService');
 const { createNotificationWorker } = require('./services/notificationWorker');
 const { createServerRuntime } = require('./serverRuntime');
+const { startApplication } = require('./startApplication');
 
 const app = createApp();
 const processor = defaultNotificationService.createSystemNotificationProcessor();
@@ -26,7 +28,13 @@ const runtime = createServerRuntime({
 });
 
 if (require.main === module) {
-  runtime.start();
+  void startApplication({
+    runtime,
+    schemaReadinessService: defaultSchemaReadinessService,
+  }).catch((error) => {
+    console.error(`Backend startup failed: ${error.message}`);
+    process.exitCode = 1;
+  });
 }
 
 module.exports = app;

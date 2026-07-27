@@ -1,5 +1,14 @@
 # CHANGELOG.md - FE05 Book Management
 
+## 2026-07-27 - Run reviewed metadata compatibility migration at backend startup
+
+- Packaged the reviewed transactional metadata migration with the backend deployment.
+- Added a pre-listen startup gate that applies the idempotent migration, verifies its postcondition,
+  and refuses to serve a partially compatible catalog when reconciliation fails.
+- Kept `/health/ready` read-only, staging deployment manual-only, smoke fail-closed, and the existing
+  Admin-only mutation plus Librarian/Admin active-reference role boundaries.
+- Avoided the removed Kudu/`Repair staging metadata schema` path and its isolated Node runtime.
+
 ## 2026-07-27 - Remove failed Kudu staging repair workflow
 
 - Removed `Repair staging metadata schema`, its Kudu/Node runner, bundled runtime, npm command,

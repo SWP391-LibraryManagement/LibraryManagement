@@ -164,7 +164,10 @@ Before executing:
    Book Management will return the safe `INTERNAL_ERROR`/`Không thể xử lý yêu cầu` response when
    `Books.RowVersion` or the metadata `Status` columns are absent. FE10 delivery requests cannot
    enter the durable `PROCESSING` state until the notification status constraint is upgraded.
-   Deploying backend/frontend code does not apply these SQL migrations automatically.
+   Most SQL migrations remain operator-applied. The one documented exception is
+   `2026-07-22-library-metadata-compatibility.sql`: the backend package carries this reviewed,
+   idempotent script and applies it before opening the HTTP listener so legacy author, publisher,
+   and category tables cannot leave the deployed Admin Library page broken.
 
 ```text
 database/migrations/2026-07-19-fe04-membership-concurrency.sql
@@ -202,17 +205,17 @@ automatically.
 7. Remove the exact temporary operator firewall rule immediately after the reviewed migration and
    read-only checks. Staging must not be used to prove migration idempotence.
 
-If the deploy workflow reports `API schema readiness check failed with HTTP 503`, do not remove or
-skip the readiness check. An authorized operator must connect through Azure SQL Query Editor, SSMS,
-or an operator machine whose exact temporary IP is allowlisted and apply
-`database/migrations/2026-07-22-library-metadata-compatibility.sql` directly to
-`LibraryManagementStaging`. Remove any temporary firewall rule immediately afterward.
+If deployment cannot start or reports `API schema readiness check failed with HTTP 503`, do not
+remove or skip the readiness check. Inspect App Service startup logs for the safe
+`Backend startup failed` message. Confirm that the configured application database principal can
+alter `Authors`, `Publishers`, and `Categories`; the startup gate must add only the missing
+`Status`/`CreatedAt` columns through the packaged reviewed migration. Do not expose Azure SQL to
+GitHub-hosted runner IP ranges or widen the firewall.
 
-Then verify `GET /health/ready` returns HTTP `200` with
-`checks.catalogMetadata = "ok"` and manually run the `Deploy staging` workflow. The staging
-workflow is `workflow_dispatch` only: pushes run CI but do not automatically deploy staging or
-execute SQL. Do not expose Azure SQL to GitHub-hosted runner IP ranges or widen the firewall to
-make the check pass.
+After startup succeeds, verify `GET /health/ready` returns HTTP `200` with
+`checks.catalogMetadata = "ok"`. The staging workflow remains `workflow_dispatch` only: pushes run
+CI but do not automatically deploy staging. The workflow itself does not connect to SQL or execute
+SQL; schema reconciliation runs inside the configured backend application identity before listen.
 
 ## Configure App Service Runtime Settings
 
@@ -335,7 +338,9 @@ anonymous rejection from `/api/auth/me`.
 
 - Backend: redeploy the last known-good commit or use App Service deployment history.
 - Frontend: rerun the workflow from the last known-good commit.
-- Database: CI performs no schema mutation, so database rollback remains an explicit operator action.
+- Database: CI performs no schema mutation. The backend startup exception only adds the canonical
+  metadata compatibility columns through the reviewed idempotent script; any database rollback
+  remains an explicit operator action.
 - Smoke failure: do not mark staging accepted; inspect App Service logs and GitHub job output without
   printing secret settings.
 
