@@ -267,11 +267,24 @@ function makeInMemoryMembershipDependencies(authState, options = {}) {
       return mapApplication(applications.find((application) => application.applicationId === Number(applicationId)));
     },
 
-    async listApplications({ status, page = 1, limit = 20 } = {}) {
+    async listApplications({ q = '', status, page = 1, limit = 20 } = {}) {
       const safePage = Math.max(Number(page) || 1, 1);
       const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+      const search = String(q).trim().toLowerCase();
       const filtered = applications
         .filter((application) => !status || application.status === status)
+        .filter((application) => {
+          if (!search) return true;
+          const user = getUser(application.userId);
+          return [
+            application.applicationId,
+            application.userId,
+            user?.email,
+            user?.username,
+            user?.fullName,
+            user?.phone,
+          ].filter(Boolean).join(' ').toLowerCase().includes(search);
+        })
         .sort(compareApplications);
       const offset = (safePage - 1) * safeLimit;
       return {

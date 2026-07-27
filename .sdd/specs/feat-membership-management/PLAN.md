@@ -4,11 +4,11 @@ Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
 
 Owner: Dat
 
-Updated: 2026-07-23
+Updated: 2026-07-25
 
 Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
 
-Extension State: Admin Console Membership Review product/source-test scope is implemented under `FE04-ADM01..ADM03`; responsive browser, Azure Staging, and human acceptance remain open under `FE04-ADM04..ADM05`.
+Extension State: Admin Console Membership Review product/source-test scope is implemented under `FE04-ADM01..ADM04`; the focused browser scenario reaches its assertions but the configured Windows webServer teardown does not exit cleanly. Azure Staging, H2, and human acceptance remain open under `FE04-ADM05`.
 
 > **For implementation agents:** Execute `TASKS.md` in order. Every behavior task starts with a failing focused test, adds the smallest implementation that satisfies the approved spec, and ends with the listed verification gate.
 
@@ -54,9 +54,9 @@ The drift table below records the pre-reconciliation baseline. It is retained fo
 - Mutable SQL concurrency/rollback execution, human acceptance, and FE07/FE08
   integration confirmation were historical pre-exit gates; the recorded Phase 2
   exit evidence supersedes this checkpoint.
-- The approved Admin Console extension remains separate from the completed core
-  scope: `FR-FE04-014` is still implementation-pending, so current source
-  traceability is `13/14 FR` until `FE04-ADM01..FE04-ADM05` close.
+- The approved Admin Console extension is separate from the completed core
+  scope and is implemented locally; release validation remains open for browser
+  process exit, Azure Staging, H2, and human acceptance.
 
 ## 4. Scope
 

@@ -1,10 +1,20 @@
 # CHANGELOG.md - FE04 Membership Management
 
+## 2026-07-25 - FE04 status recheck
+
+- Rechecked the current FE04 source, focused tests, traceability, and extension tasks; no new contract/code drift was found.
+- Kept browser clean-exit, Azure Staging, H2, and human acceptance as open release evidence rather than marking FE04 fully released.
+
+## 2026-07-24 - FE04 contract/code status reconciliation
+
+- Synchronized the approved FE04 documents with the current Admin Console implementation: local source coverage is `14/14 FR`, the frontend suite is `219/219`, and the focused FE04 backend suite is `30/30`.
+- Recorded the authenticated FE04 browser scenario and its remaining Windows webServer teardown limitation separately from the still-open Azure Staging, H2, and human acceptance gates.
+
 ## 2026-07-23 - Admin Console membership review implemented locally
 
 - Embedded FE04 review in the FE11 Admin Console while retaining FE04 ownership of list filters, pagination, approve/reject mutations, authorization, audit, notification, and the existing `/membership` workspace.
 - Added pending-only decisions, required 1..500-character rejection reason, authoritative reload after decisions/conflicts, and non-blocking feedback for committed decisions whose FE10 delivery failed.
-- Added responsive table/card source contracts and recorded the full frontend 215/215, lint, and production build passes; authenticated responsive browser, Azure Staging, and human acceptance remain open.
+- Added responsive table/card source contracts and recorded the full frontend 219/219, lint, and production build passes; authenticated responsive browser, Azure Staging, and human acceptance remain open.
 
 ## 2026-07-22 - Admin Console membership review integration approved
 

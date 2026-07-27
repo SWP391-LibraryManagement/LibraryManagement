@@ -2,7 +2,7 @@
 
 Version: 0.2.1
 Status: COMPLETE - CORE PHASE 2 SCOPE; ADMIN EXTENSION PENDING
-Last Updated: 2026-07-19
+Last Updated: 2026-07-25
 
 Source Spec: `.sdd/specs/feat-membership-management/SPEC.md`
 Feature IDs: `BR-FE04-*`, `FR-FE04-*`, `AC-FE04-*`
@@ -48,15 +48,17 @@ Membership application, approval/rejection, membership status, and integration w
   truthful errors, server-side search, mutation refresh, and rejection bounds.
 - Full backend: 38 suites / 619 tests pass. Coverage: 92.51% statements, 82.46% branches, 97.10%
   functions, 92.44% lines.
-- Full frontend: 122/122 tests pass; ESLint and Vite production build pass.
-- Backend import health, FE04 traceability 12/12, and `git diff --check` pass.
+- Current focused backend: 30/30 tests pass for FE04 routes and system wiring.
+- Current full frontend: 219/219 tests pass; ESLint and Vite production build pass.
+- Current FE04 traceability: 14/14 FR; `git diff --check` passes.
 
 ## 6. Gaps
 
 - Disposable SQL Server evidence is complete: the FE04 migration ran twice, all six mutable cases passed, and database/login cleanup is recorded in `.sdd/reviews/full-reconciliation-live-sql-validation-2026-07-19.md`.
 - Fan FE04 into the same post-FE11 schema baseline as FE10/FE02 and rerun cross-feature tests.
-- Capture browser acceptance for registered applicant, Librarian/Admin review, failure state, and
-  rejected re-application.
+- `tests/e2e/fe04-admin-membership-review.spec.js` covers registered applicant setup, Admin
+  rejection, member re-application, approval, and responsive overflow checks; the configured
+  Windows Playwright webServer teardown still times out before a clean process exit.
 - Dat/FE07/FE08 owners and the final human reviewer must confirm eligibility and system fit.
 
 ## 7. Required Commands / Evidence Before Merge
@@ -73,7 +75,7 @@ git diff --check
 
 ## 8. Admin Console Membership Review Integration Targets
 
-Local source/automated state (2026-07-23): implemented and covered by the full frontend 215/215 pass. The responsive authenticated browser, Azure Staging, and human gates below remain open.
+Local source/automated state (2026-07-24): implemented and covered by the full frontend 219/219 pass plus focused FE04 backend 30/30. The responsive authenticated browser has assertion coverage but its Windows process exit, Azure Staging, and human gates below remain open.
 
 - Exact eight-entry Admin navigation with Membership Review after All Users and without Permissions.
 - Canonical FE04 list params `q`, `status`, `page`, `limit=10`; no `/api/admin/membership` alias.

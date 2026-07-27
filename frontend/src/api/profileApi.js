@@ -64,15 +64,33 @@ function redirectToLogin() {
   if (typeof window !== 'undefined') window.location.assign('/login');
 }
 
-function getErrorMessage(error, fallback = 'KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ cÃ¡ nhÃ¢n.') {
+const PROFILE_ERROR_MESSAGES = {
+  INVALID_AVATAR_FILE_TYPE: 'Ảnh đại diện phải là file JPG, JPEG, PNG hoặc WebP.',
+  AVATAR_FILE_TOO_LARGE: 'Ảnh đại diện không được vượt quá 2 MB.',
+  AVATAR_FILE_REQUIRED: 'Vui lòng chọn ảnh đại diện.',
+};
+
+function getErrorMessage(error, fallback = 'Không thể tải hồ sơ cá nhân.') {
   if (!error.response) {
-    return 'KhÃ´ng káº¿t ná»‘i Ä‘Æ°á»£c backend. HÃ£y kiá»ƒm tra server API Ä‘ang cháº¡y á»Ÿ http://localhost:3000.';
+    return 'Không kết nối được backend. Hãy kiểm tra server API đang chạy ở http://localhost:3000.';
   }
 
   if (error.response.status === 401) {
-    return 'Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ xem há»“ sÆ¡.';
+    return 'Vui lòng đăng nhập để xem hồ sơ.';
   }
 
+  const apiError = error.response?.data?.error;
+  const details = apiError?.details;
+  if (error.response.status === 400 && Array.isArray(details)) {
+    const messages = details.map((detail) => detail?.message).filter(Boolean);
+    if (messages.length) return messages.join(' ');
+  }
+
+  if (apiError?.code === 'PROTECTED_FIELD_SUBMITTED' && Array.isArray(details?.fields)) {
+    return `Không thể cập nhật các trường: ${details.fields.join(', ')}.`;
+  }
+
+  if (PROFILE_ERROR_MESSAGES[apiError?.code]) return PROFILE_ERROR_MESSAGES[apiError.code];
   return fallback;
 }
 
@@ -119,7 +137,7 @@ function buildProfileUpdatePayload(profile) {
 }
 
 export async function fetchMyProfile() {
-  return normalizeProfile(await authorizedRequest({ method: 'get', url: '/profile/me' }, 'KhÃ´ng thá»ƒ táº£i há»“ sÆ¡ cÃ¡ nhÃ¢n.'));
+  return normalizeProfile(await authorizedRequest({ method: 'get', url: '/profile/me' }, 'Không thể tải hồ sơ cá nhân.'));
 }
 
 export async function fetchHeaderProfile() {
@@ -136,7 +154,7 @@ export async function updateMyProfile(profile) {
     method: 'put',
     url: '/profile/me',
     data: buildProfileUpdatePayload(profile),
-  }, 'KhÃ´ng thá»ƒ cáº­p nháº­t há»“ sÆ¡ cÃ¡ nhÃ¢n.'));
+  }, 'Không thể cập nhật hồ sơ cá nhân.'));
 }
 
 export async function uploadMyAvatar(file) {
@@ -147,7 +165,7 @@ export async function uploadMyAvatar(file) {
     url: '/profile/me/avatar',
     data: formData,
     headers: { 'Content-Type': 'multipart/form-data' },
-  }, 'KhÃ´ng thá»ƒ táº£i áº£nh Ä‘áº¡i diá»‡n lÃªn.'));
+  }, 'Không thể tải ảnh đại diện lên.'));
 }
 
 export async function requestChangePasswordOtp({ currentPassword, newPassword, confirmNewPassword }) {

@@ -2,7 +2,7 @@
 
 Status: PHASE 1 BASELINE; FE11 FINALIZATION GOVERNANCE ACTIVE
 Date: 2026-06-10
-Last Updated: 2026-07-19
+Last Updated: 2026-07-27
 
 ## Scope
 
@@ -25,7 +25,7 @@ Feature specs remain the source of truth. If this contract conflicts with an app
 - Protected endpoints require `Authorization: Bearer <accessToken>`.
 - Server-side validation is mandatory.
 - Server-side authorization is mandatory for protected actions.
-- Error responses must not expose stack traces, password hashes, raw tokens, SQL details, or whether an email exists.
+- Error responses must not expose stack traces, password hashes, raw tokens, or SQL details. Login must not reveal account existence for unknown identifiers or incorrect passwords; the FE02 pending-verification response is allowed only after correct password proof.
 
 ## Response Envelope
 
@@ -51,7 +51,7 @@ Common HTTP status codes:
 | 201 | Created |
 | 400 | Validation error |
 | 401 | Missing, invalid, or expired authentication |
-| 403 | Authenticated but not authorized |
+| 403 | Authenticated but not authorized, or correct credentials require email verification before a session can be issued |
 | 404 | Resource not found |
 | 409 | Conflict with unique/status rule |
 | 429 | Rate limit or too many failed login attempts |
@@ -94,6 +94,7 @@ Notes:
 
 - Creates inactive/unverified user according to FE02.
 - Sends or records mock verification email through FE10 integration when available.
+- Duplicate email requests, including concurrent unique-index races, return `409 EMAIL_ALREADY_REGISTERED` with no additional user or verification-token state.
 
 ### POST `/api/auth/verify-email`
 
@@ -124,6 +125,8 @@ Response `200`:
 }
 ```
 
+Only an eligible pending self-registration account can be activated. OTP and legacy-token requests for a deactivated or otherwise ineligible account fail without consuming the credential.
+
 ### POST `/api/auth/resend-verification`
 
 Actor: Guest
@@ -147,7 +150,7 @@ Response `200`:
 Notes:
 
 - Response must avoid email enumeration.
-- A successful resend invalidates the previous active verification credential.
+- A successful resend is limited to an eligible pending self-registration account and invalidates its previous active verification credential; deactivated and admin-created setup accounts retain the generic response without a new verification token.
 - The frontend applies a visible 60-second cooldown after a successful resend and disables duplicate requests while one is pending.
 
 ### POST `/api/auth/login`
@@ -176,11 +179,26 @@ Response `200`:
 }
 ```
 
+Response `403` after correct password proof for an eligible pending self-registration account:
+
+```json
+{
+  "error": {
+    "code": "EMAIL_VERIFICATION_REQUIRED",
+    "message": "Email verification is required before login.",
+    "details": {
+      "email": "user@example.test"
+    }
+  }
+}
+```
+
 Notes:
 
 - Access token expires after 15 minutes.
 - Refresh token expires after 7 days.
-- Inactive or locked users cannot log in.
+- Pending self-registration receives the 403 recovery response and no session; the client opens `/verify-email` with the registered email.
+- Unknown identifiers, wrong passwords, deactivated accounts, admin-created setup accounts, and locked users do not receive the pending-verification signal.
 - Failed login must be auditable and rate-limited.
 
 ### POST `/api/auth/refresh-token`
@@ -200,13 +218,14 @@ Response `200`:
 ```json
 {
   "accessToken": "new-jwt-access-token",
+  "refreshToken": "refresh-token",
   "expiresIn": 900
 }
 ```
 
 ### POST `/api/auth/logout`
 
-Actor: Authenticated
+Actor: Client presenting a refresh token
 
 Request:
 

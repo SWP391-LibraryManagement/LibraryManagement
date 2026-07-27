@@ -99,6 +99,18 @@ function validateProfileUpdate(input = {}, clock = () => new Date()) {
     );
   }
 
+  const details = Object.keys(input)
+    .filter((field) => input[field] !== null && typeof input[field] !== 'string')
+    .map((field) => ({
+      field,
+      code: `${field.toUpperCase()}_INVALID_TYPE`,
+      message: `${field} phải là chuỗi.`,
+    }));
+
+  if (details.length > 0) {
+    throw errors.badRequest('INVALID_PROFILE_DATA', 'Dữ liệu cập nhật hồ sơ không hợp lệ.', details);
+  }
+
   const updates = {
     fullName: cleanString(input.fullName),
     address: cleanString(input.address),
@@ -111,7 +123,6 @@ function validateProfileUpdate(input = {}, clock = () => new Date()) {
     if (input[key] === undefined) updates[key] = undefined;
   }
 
-  const details = [];
   validateLength(updates.fullName, 100, 'fullName', 'Full name', details);
   validateLength(updates.address, 255, 'address', 'Address', details);
   validatePhone(updates.phone, details);
@@ -173,7 +184,11 @@ function toSafeProfileDto(record) {
 
 /** Lấy danh sách field thực sự thay đổi so với dữ liệu cũ */
 function changedFields(before, updates) {
-  return Object.keys(updates).filter((f) => updates[f] !== undefined && updates[f] !== before?.[f]);
+  return Object.keys(updates).filter((field) => {
+    if (updates[field] === undefined) return false;
+    const previous = field === 'dateOfBirth' ? toDateOnly(before?.[field]) : before?.[field] ?? null;
+    return updates[field] !== previous;
+  });
 }
 
 function buildAuditEntry(userId, context, fields) {
@@ -248,8 +263,8 @@ function createProfileService({
 
   // @spec FR-FE03-004 BR-FE03-017 FR-FE03-010
   async function updateMyProfile(userId, input, context = {}) {
-    const existing = await getExistingProfile(userId);
     const updates = validateProfileUpdate(input, clock);
+    const existing = await getExistingProfile(userId);
     const fields = changedFields(existing, updates);
     if (fields.length === 0) return toSafeProfileDto(existing);
 
@@ -264,8 +279,8 @@ function createProfileService({
 
   // @spec FR-FE03-008 BR-FE03-017 FR-FE03-010 AC-FE03-014
   async function updateMyAvatar(userId, file, context = {}) {
-    const existing = await getExistingProfile(userId);
     validateAvatarUpload(file);
+    const existing = await getExistingProfile(userId);
     requireAuditRepository();
 
     const avatarUrl = await avatarStorage.saveAvatarFile({

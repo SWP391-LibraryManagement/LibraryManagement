@@ -39,7 +39,8 @@ test('BookCopies schema exposes SQL rowversion for opaque If-Match concurrency',
   expect(bookCopiesTableSource()).toMatch(/\bVersion\s+(?:ROWVERSION|TIMESTAMP)\b/i);
   expect(bookCopiesTableSource()).not.toMatch(/\bRowVersion\s+(?:ROWVERSION|TIMESTAMP)\b/i);
   expect(modelSource).toMatch(/name:\s*'Version'[\s\S]*type:\s*'ROWVERSION'/i);
-  expect(repositorySource).toMatch(/\bbc\.Version\s+AS\s+CopyVersion\b/i);
+  expect(repositorySource).toMatch(/bc\.\$\{versionColumn\}\s+AS\s+CopyVersion/i);
+  expect(repositorySource).toMatch(/name\s+IN\s+\(N'Version',\s+N'RowVersion'\)/i);
   expect(migrationSource).toMatch(/COL_LENGTH\('BookCopies',\s*'Version'\)\s+IS\s+NULL/i);
   expect(repositorySource).toMatch(/\bversion\b/i);
 });

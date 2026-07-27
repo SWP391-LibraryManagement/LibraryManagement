@@ -6,6 +6,7 @@ const { createReservationService } = require('../../src/services/reservationServ
 const { createFineManagementService } = require('../../src/services/fineManagementService');
 const { createNotificationService } = require('../../src/services/notificationService');
 const { createReportService } = require('../../src/services/reportService');
+const { createMembershipService } = require('../../src/services/membershipService');
 const errors = require('../../src/utils/safeErrors');
 const { makeInMemoryAuthDependencies } = require('./inMemoryAuthRepositories');
 const { makeInMemoryBorrowingDependencies } = require('./inMemoryBorrowingRepositories');
@@ -13,6 +14,7 @@ const { makeInMemoryReservationDependencies } = require('./inMemoryReservationRe
 const { makeInMemoryFineDependencies } = require('./inMemoryFineRepositories');
 const { makeInMemoryNotificationDependencies } = require('./inMemoryNotificationRepositories');
 const { makeInMemoryReportDependencies } = require('./inMemoryReportRepositories');
+const { makeInMemoryMembershipDependencies } = require('./inMemoryMembershipRepositories');
 
 const FIXED_NOW = new Date('2026-07-14T00:00:00.000Z');
 
@@ -273,6 +275,9 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     authDependencies.state,
     borrowingDependencies.state
   );
+  const membershipDependencies = makeInMemoryMembershipDependencies(
+    authDependencies.state
+  );
 
   const authService = createAuthService(authDependencies);
   const notificationService = createNotificationService({
@@ -320,6 +325,11 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     borrowingDependencies
   );
   const userManagementService = createSystemUserManagementService(authDependencies.state);
+  const membershipService = createMembershipService({
+    membershipRepository: membershipDependencies.membershipRepository,
+    auditLogRepository: authDependencies.auditLogRepository,
+    notificationRequester: notificationService.createSourceNotificationRequester('FE04'),
+  });
   const services = {
     authService,
     borrowingService,
@@ -330,6 +340,7 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     profileService,
     adminService,
     userManagementService,
+    membershipService,
   };
   const dependencies = {
     authDependencies,
@@ -338,6 +349,7 @@ function makeSystemIntegrationApp({ borrowingNotificationError = null } = {}) {
     fineDependencies,
     notificationDependencies,
     reportDependencies,
+    membershipDependencies,
   };
 
   return {

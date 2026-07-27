@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const profilePagePath = new URL('../src/component/userProfile/UserProfile.jsx', import.meta.url);
 const profileApiPath = new URL('../src/api/profileApi.js', import.meta.url);
+const profileHeaderPath = new URL('../src/component/userProfile/ProfileHeader.jsx', import.meta.url);
 
 test('FE03 profile PUT excludes the read-only avatarUrl field', async () => {
   const source = await readFile(profileApiPath, 'utf8');
@@ -48,4 +49,24 @@ test('FE03 avatar picker keeps the approved type and 2 MB feedback', async () =>
   assert.match(source, /JPG, JPEG, PNG hoặc WebP/);
   assert.match(source, /không được vượt quá 2 MB/);
   assert.match(source, /const MAX_AVATAR_SIZE = 2 \* 1024 \* 1024/);
+});
+
+test('FE03 profile header does not present FE04 membership state', async () => {
+  const source = await readFile(profileHeaderPath, 'utf8');
+
+  assert.doesNotMatch(source, /membershipStatus/);
+  assert.doesNotMatch(source, /Chờ duyệt/);
+});
+
+test('FE03 API presents readable field-level and avatar validation errors', async () => {
+  const source = await readFile(profileApiPath, 'utf8');
+
+  assert.match(source, /const apiError = error\.response\?\.data\?\.error/);
+  assert.match(source, /apiError\?\.details/);
+  assert.match(source, /PROTECTED_FIELD_SUBMITTED/);
+  assert.match(source, /INVALID_AVATAR_FILE_TYPE/);
+  assert.match(source, /AVATAR_FILE_TOO_LARGE/);
+  assert.match(source, /Không thể tải hồ sơ cá nhân/);
+  assert.match(source, /Không thể cập nhật hồ sơ cá nhân/);
+  assert.match(source, /Không thể tải ảnh đại diện lên/);
 });

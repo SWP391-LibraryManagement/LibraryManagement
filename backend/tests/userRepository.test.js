@@ -1,6 +1,7 @@
 jest.mock('../src/config/db', () => ({
   sql: {
     Int: 'Int',
+    DateTime: 'DateTime',
     NVarChar: (size) => `NVarChar(${size})`,
   },
   getPool: jest.fn(),
@@ -29,6 +30,54 @@ function useRecordset(recordset) {
 }
 
 beforeEach(() => getPool.mockReset());
+
+test('authentication lookup maps the FE11 deactivation marker', async () => {
+  const deactivatedAt = new Date('2026-07-27T08:00:00.000Z');
+  useRecordset([{
+    UserId: 9,
+    Username: 'deactivated.user',
+    Email: 'deactivated@example.test',
+    PasswordHash: 'hash',
+    Status: 'INACTIVE',
+    EmailVerifiedAt: null,
+    DeactivatedAt: deactivatedAt,
+  }]);
+
+  await expect(userRepository.findByEmailOrUsername('deactivated@example.test')).resolves.toMatchObject({
+    userId: 9,
+    deactivatedAt,
+  });
+});
+
+test('email activation update cannot overwrite deactivation', async () => {
+  const capture = useRecordset([]);
+
+  await userRepository.markEmailVerified(9);
+
+  expect(capture.inputs.UserId).toBe(9);
+  expect(capture.query).toContain("Status = 'INACTIVE'");
+  expect(capture.query).toContain('DeactivatedAt IS NULL');
+});
+
+test('successful login update applies only to a currently active account', async () => {
+  const capture = useRecordset([{ Applied: true }]);
+
+  await expect(userRepository.resetFailedLoginsAndSetLastLogin(9)).resolves.toBe(true);
+
+  expect(capture.query).toContain("Status = 'ACTIVE'");
+  expect(capture.query).toContain('DeactivatedAt IS NULL');
+});
+
+test('auto-unlock applies only to the expired lock observed by the login attempt', async () => {
+  const now = new Date('2026-07-27T08:00:00.000Z');
+  const capture = useRecordset([{ Applied: true }]);
+
+  await expect(userRepository.unlockExpiredAccount(9, now)).resolves.toBe(true);
+
+  expect(capture.inputs.Now).toBe(now);
+  expect(capture.query).toContain("Status = 'LOCKED'");
+  expect(capture.query).toContain('LockedUntil <= @Now');
+});
 
 test('listManagedUsers returns only the approved base DTO', async () => {
   useRecordset([{

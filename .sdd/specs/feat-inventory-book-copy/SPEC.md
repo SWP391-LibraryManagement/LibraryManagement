@@ -514,6 +514,7 @@ The status notes in this matrix are the historical verification snapshot retaine
 | FR-FE06-022 | UC27, UC28 | Route and live SQL locked parent rechecks | Automated pass; owner/H3 pending |
 | FR-FE06-023 | UC27 | Route reason trim/bounds cases | Automated pass; owner/H3 pending |
 | FR-FE06-024 | UC25 | Route invalid pagination/no-query cases | Automated pass; owner/H3 pending |
+| FR-FE06-025 | UC25 | Route combined search/filter/counts and frontend load-error state | Automated pass; owner/H3 pending |
 | AC-FE06-001 | UC25 | Route exact page/count envelope | Automated pass; owner/H3 pending |
 | AC-FE06-002 | UC26 | Route safe copy/barcode lookup | Automated pass; owner/H3 pending |
 | AC-FE06-003 | UC26 | Route unknown barcode `404` | Automated pass; owner/H3 pending |
@@ -528,6 +529,7 @@ The status notes in this matrix are the historical verification snapshot retaine
 | AC-FE06-012 | UC27, UC28 | Route stale/missing `If-Match` cases | Automated pass; owner/H3 pending |
 | AC-FE06-013 | UC27 | Route reason 1..500 cases | Automated pass; owner/H3 pending |
 | AC-FE06-014 | UC25 | Route exact pagination policy cases | Automated pass; owner/H3 pending |
+| AC-FE06-015 | UC25 | Route combined filters/counts and frontend load-error state | Automated pass; owner/H3 pending |
 
 ---
 

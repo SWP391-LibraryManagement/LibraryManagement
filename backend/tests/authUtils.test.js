@@ -1,5 +1,8 @@
 process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
 
+const crypto = require('crypto');
+const jwt = require('../src/node_modules/jsonwebtoken');
+const { generateOtp } = require('../src/services/authService');
 const { validatePasswordPolicy } = require('../src/utils/passwordPolicy');
 const {
   generateRandomToken,
@@ -31,6 +34,14 @@ describe('FE02 auth utilities', () => {
     expect(hashToken(token)).toBe(hashToken(token));
   });
 
+  test('OTP generation uses secure randomness and preserves leading zeroes', () => {
+    const randomInt = jest.spyOn(crypto, 'randomInt').mockReturnValueOnce(42);
+
+    expect(generateOtp()).toBe('000042');
+    expect(randomInt).toHaveBeenCalledWith(0, 1_000_000);
+    randomInt.mockRestore();
+  });
+
   test('JWT access token can be signed and verified', () => {
     const token = signAccessToken({
       userId: 123,
@@ -43,5 +54,13 @@ describe('FE02 auth utilities', () => {
 
     expect(payload.sub).toBe('123');
     expect(payload.roles).toEqual(['MEMBER']);
+  });
+
+  test('JWT verification uses the approved 30-second clock tolerance', () => {
+    const verify = jest.spyOn(jwt, 'verify').mockReturnValueOnce({ sub: '123' });
+
+    expect(verifyAccessToken('token')).toEqual({ sub: '123' });
+    expect(verify).toHaveBeenCalledWith('token', process.env.JWT_SECRET, { clockTolerance: 30 });
+    verify.mockRestore();
   });
 });

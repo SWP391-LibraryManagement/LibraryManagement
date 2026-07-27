@@ -605,8 +605,8 @@ describe('FE04 membership management', () => {
       .set('Authorization', authHeader(applicant.accessToken))
       .send({});
 
-    expect(response.status).toBe(403);
-    expect(response.body.error.code).toBe('USER_ACCOUNT_INACTIVE');
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('INVALID_TOKEN');
   });
 
   // @spec AC-FE04-007 AC-FE04-011

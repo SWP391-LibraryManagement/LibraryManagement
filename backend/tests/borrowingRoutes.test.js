@@ -1381,8 +1381,8 @@ describe('FE07 borrowing management', () => {
       .set('Authorization', authHeader(inactiveMember.accessToken))
       .send({ copyIds: [1] });
 
-    expect(inactiveResponse.status).toBe(403);
-    expect(inactiveResponse.body.error.code).toBe('MEMBER_ACCOUNT_INACTIVE');
+    expect(inactiveResponse.status).toBe(401);
+    expect(inactiveResponse.body.error.code).toBe('INVALID_TOKEN');
     expect(borrowingDependencies.state.borrowRequests).toHaveLength(0);
 
     const unapprovedMember = await createVerifiedUser({

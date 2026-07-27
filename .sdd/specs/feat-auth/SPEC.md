@@ -1,12 +1,12 @@
 # SPEC.md - FE02 Authentication
 
-# Version: 0.6.11
+# Version: 0.6.16
 
 # Status: APPROVED BASELINE 2026-07-17 - CONTRACT RECONCILIATION PENDING HUMAN REVIEW
 
 # Owner: Dat
 
-# Last Updated: 2026-07-23
+# Last Updated: 2026-07-27
 
 # Feature ID: FE02
 
@@ -16,11 +16,11 @@
 > `TASKS.md` and `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`
 > are authoritative for current implementation state. Section 16 records the
 > current acceptance evidence and the remaining repository conformance gaps.
-> Contract reconciliation remains `OPEN` until FE02-T045, FE02-T046, FE02-T050,
-> FE02-T052, and the FE02-T049 human/H3 closeout are completed or explicitly
-> approved for deferral.
+> Contract reconciliation remains `OPEN` until the FE02-T049 human/H3 closeout
+> is completed or explicitly approved for deferral. FE02-T048 performance
+> evidence is recorded in the feature tasks and test plan.
 
-> Source of truth for FE02 Authentication. Version 0.6.9 aligns the change-password paths, protected-request checks, frontend session recovery, transaction boundaries, and existing FE02 planning artifacts with `CONTEXT.md` without changing approved business behavior. The login-hardening commit is already integrated into `main`; a dedicated H3 closeout for FE02-T043 was not found and remains a governance-evidence gap. This spec is intentionally detailed because FE02 is the foundation of all access control and security in the system.
+> Source of truth for FE02 Authentication. Version 0.6.16 aligns the change-password paths, protected-request checks, frontend session recovery, transaction boundaries, and existing FE02 planning artifacts with `CONTEXT.md` without changing approved business behavior. The login-hardening commit is already integrated into `main`; a dedicated H3 closeout for FE02-T043 was not found and remains a governance-evidence gap. This spec is intentionally detailed because FE02 is the foundation of all access control and security in the system.
 >
 > Decisions in this spec were reviewed and approved on 2026-06-10. See `.sdd/reviews/open-questions-resolution-packet-2026-06-10.md`.
 >
@@ -105,8 +105,8 @@ The feature can only start when:
 ### MF-FE02-002: Email Verification (Registration)
 
 1. User enters the six-digit verification OTP together with the registered email. Legacy verification-link tokens remain accepted for compatibility.
-2. The system validates the OTP or legacy token (format, expiration, matches user record).
-3. If valid, the system sets user status to `ACTIVE`.
+2. The system validates the OTP or legacy token (format, expiration, matches an eligible pending self-registration account).
+3. If valid and the account has not been deactivated, the system sets user status to `ACTIVE`.
 4. The system invalidates the OTP/token.
 5. The system shows success message and redirects to login.
 
@@ -116,11 +116,12 @@ The feature can only start when:
 2. User enters email/username and password.
 3. The system looks up the user by email/username.
 4. The system verifies the password against the stored hash.
-5. The system checks user status (must be `ACTIVE`, not `INACTIVE` or `LOCKED`).
-6. If valid, the system creates a session/token with expiration.
-7. The system stores or returns the session/token to the client.
-8. The system writes an audit log: login success.
-9. The system redirects user to the home page or member dashboard.
+5. If the password is correct for a self-registered account still awaiting email verification, the system returns `403 EMAIL_VERIFICATION_REQUIRED` with the registered email, issues no session, and the client opens `/verify-email`.
+6. Otherwise, the system checks user status (must be `ACTIVE`, not `INACTIVE` or `LOCKED`).
+7. If valid, the system creates a session/token with expiration.
+8. The system stores or returns the session/token to the client.
+9. The system writes an audit log: login success.
+10. The system redirects user to the home page or member dashboard.
 
 ### MF-FE02-004: Failed Login Attempt
 
@@ -247,7 +248,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-004: A registered user account must be verified via email before being activated.
 - BR-FE02-005: A user password must be hashed with bcrypt (cost ≥ 10) before storage.
 - BR-FE02-006: A user password verification must compare plaintext input against the stored hash, not store or transmit plaintext.
-- BR-FE02-007: Login must not reveal whether a user email is registered (prevent user enumeration).
+- BR-FE02-007: Unknown identifiers and incorrect passwords must receive the same generic login rejection. Only after correct password proof may an eligible self-registration account receive the verification-required recovery response defined by BR-FE02-028.
 - BR-FE02-008: For a known account, 5 consecutive failed password attempts within a rolling 15-minute window trigger the account lock. IP-wide login rate limiting is not implemented in the current code baseline.
 - BR-FE02-009: When the failed-attempt threshold is reached, the system must set `status = LOCKED`, set `lockedUntil` to exactly 30 minutes after the locking event, and reject login until automatic lock expiry. Phase 1 has no admin-unlock action.
 - BR-FE02-010: JWT access tokens expire after 15 minutes and refresh tokens expire after 7 days.
@@ -268,6 +269,7 @@ Use these stable IDs for tasks and tests.
 - BR-FE02-025: Password-reset OTP/token processing must never activate an ordinary inactive account; only a valid `ACCOUNT_SETUP` token may activate an admin-created setup account.
 - BR-FE02-026: A successful direct or OTP-confirmed password change updates the stored password hash and audit trail. `CHANGE_PASSWORD_OTP` remains purpose-bound and directly delivered by FE02; the current code baseline does not revoke other active refresh/session credentials.
 - BR-FE02-027: A self-registration email-verification OTP expires exactly 15 minutes after issuance; resend revokes the prior active verification OTP and issues a new 15-minute credential.
+- BR-FE02-028: An `INACTIVE`, unverified account with self-registration `EMAIL_VERIFY` history and no `ACCOUNT_SETUP` history may resume verification only after correct password proof. Login must issue no session, return `403 EMAIL_VERIFICATION_REQUIRED` with the registered email, and direct the client to `/verify-email`; deactivated and admin-created setup accounts are ineligible.
 
 ---
 
@@ -275,10 +277,10 @@ Use these stable IDs for tasks and tests.
 
 - FR-FE02-001: When a guest submits valid registration data, the system shall create a new user with `INACTIVE` status.
 - FR-FE02-002: When a user is registered, FE02 shall create a six-digit verification OTP with a 15-minute expiry, store only its hash, and submit one FE02-bound `ACCOUNT_VERIFICATION` notification request containing the token ID and required template data; legacy verification tokens remain accepted for compatibility.
-- FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, the system shall activate the user account and invalidate the OTP/token.
-- FR-FE02-004: When a user submits login form with valid credentials and active account, the system shall create a session/token and return it to the client.
+- FR-FE02-003: When a user submits a valid verification OTP and email, or a valid legacy verification token, for an eligible pending self-registration account, the system shall atomically activate the account, invalidate the OTP/token, and record the verification audit; a deactivated account shall remain inactive and the credential shall remain unconsumed.
+- FR-FE02-004: When a user submits login form with valid credentials and the persisted account remains `ACTIVE` when the login transaction commits, the system shall create a session/token and return it to the client.
 - FR-FE02-005: When a user submits login form with invalid email or password, the system shall reject the request and not reveal whether the email exists.
-- FR-FE02-006: When a known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the system shall set `LOCKED`, set `lockedUntil` to 30 minutes after the locking event, and reject further login attempts until unlock.
+- FR-FE02-006: When a currently `ACTIVE` known account reaches 5 consecutive failed password attempts within a rolling 15-minute window, the system shall atomically set `LOCKED`, set `lockedUntil` to 30 minutes after the locking event, and reject further login attempts until unlock; failed-login writes shall not overwrite a concurrent terminal account-state change.
 - FR-FE02-007: When a user requests logout, the system shall invalidate the session/token immediately.
 - FR-FE02-008: When a user makes a protected request, the system shall validate the access token, current `ACTIVE` user state, linked active refresh/session credential, expiry, and current server-side roles before allowing the request.
 - FR-FE02-009: When an access token or its linked refresh/session credential is missing, invalid, expired, revoked, belongs to another user, or the current user is no longer `ACTIVE`, the system shall return 401 Unauthorized before processing the protected operation.
@@ -293,7 +295,7 @@ Use these stable IDs for tasks and tests.
 
 The following requirements formalize the error-handling and abnormal-condition branches already described in Sections 5 (Alternative Flows), 6 (Business Rules), and 9 (Edge Cases). Each is expressed in EARS Unwanted syntax (`IF ...` / `WHERE ...`) and traces back to a source AF/EC/BR.
 
-- FR-FE02-015: IF a guest submits registration data with an email that is already registered, the system shall reject the registration and return the message "Email is already registered. Please login or use forgot password." without creating a new user record. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
+- FR-FE02-015: IF a guest submits registration data with an email that is already registered, including when a concurrent insert wins after the duplicate pre-check, the system shall reject the registration and return the message "Email is already registered. Please login or use forgot password." without creating a new user record. (Source: AF-FE02-001, EC-FE02-003, BR-FE02-001)
 - FR-FE02-016: IF a user submits an email verification OTP/token that is expired, malformed, or does not match any user record, the system shall reject activation, keep the account `INACTIVE`, and offer to resend a new verification email. (Source: AF-FE02-002, BR-FE02-004)
 - FR-FE02-017: IF a user attempts to log in to an account whose status is `LOCKED`, the system shall reject the login and return the account-lock message instructing the user to reset their password or wait until `lockedUntil` elapses. (Source: AF-FE02-003, BR-FE02-009)
 - FR-FE02-018: IF a user submits a password-reset or account-setup credential that has already been used, expired, or does not match an eligible user, the system shall reject the request and return a safe invalid-code message without changing any password. (Source: AF-FE02-005, BR-FE02-014)
@@ -304,18 +306,19 @@ The following requirements formalize the error-handling and abnormal-condition b
 - FR-FE02-024: When a user submits a valid FE11 `ACCOUNT_SETUP` token and compliant password, FE02 shall atomically complete setup and activate the account according to MF-FE02-010.
 - FR-FE02-025: IF an `ACCOUNT_SETUP` token is invalid, expired, used, revoked, belongs to an ineligible account, or loses a concurrent completion race, FE02 shall reject setup without changing password, account state, token state, or audit success state.
 - FR-FE02-026: When a client submits a valid unexpired refresh token without an access token, FE02 shall issue a new 15-minute access token and return the submitted refresh token unchanged; an expired, used, or revoked refresh token returns `401 Unauthorized`.
+- FR-FE02-027: When correct credentials identify a self-registered account still awaiting email verification, FE02 shall reject token issuance with `403 EMAIL_VERIFICATION_REQUIRED` containing the registered email and the client shall navigate to `/verify-email`; this branch shall not apply to deactivated or `ACCOUNT_SETUP` accounts.
 
 ---
 
 ## 8. Acceptance Criteria
 
 - AC-FE02-001: Given valid registration data and unique email, when a guest registers, then the system creates an inactive user, persists a verification OTP hash with an exact 15-minute expiry, submits one FE02-bound notification request, and FE10 synchronously attempts provider delivery, recording `SENT` or `FAILED`; successful provider acceptance sends one verification OTP email.
-- AC-FE02-002: Given a valid six-digit verification OTP and registered email, when the user submits them, then the account is activated and the user can login; a valid legacy verification token produces the same result.
+- AC-FE02-002: Given a valid verification credential for an eligible pending self-registration account, when the user submits it, then activation, credential consumption, and the verification audit commit together and the user can login; OTP and legacy-token verification reject a deactivated account without consuming the credential.
 - AC-FE02-003: Given an expired verification OTP/token, when the user submits it, then the system rejects it and offers to resend.
 - AC-FE02-004: Given valid email and password and active account, when user logs in, then the system returns a valid session/token.
 - AC-FE02-005: Given invalid email, when user logs in, then the system returns error without revealing email existence.
 - AC-FE02-006: Given valid email but invalid password, when user logs in, then the system returns error and increments failed attempt counter.
-- AC-FE02-007: Given inactive account, when user logs in, then the system rejects login.
+- AC-FE02-007: Given an inactive account that is not eligible for self-registration recovery, when the user logs in, then the system rejects login without exposing verification state.
 - AC-FE02-008: Given locked account, when user logs in, then the system rejects login with account lock message.
 - AC-FE02-009: Given a valid access token linked to an active refresh/session credential for a current `ACTIVE` user, when the user makes a protected request, then current server-side roles are loaded and the request is allowed.
 - AC-FE02-010: Given an invalid/expired access token, an invalid/expired/revoked/wrong-user linked refresh/session credential, or a current user whose status is not `ACTIVE`, when a protected request is made, then the system returns 401 Unauthorized before business processing.
@@ -334,6 +337,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 - AC-FE02-023: Given a protected operation, when authorization is evaluated, then the server uses the user's current `UserRoles` assignments and does not trust a client-supplied role.
 - AC-FE02-024: Given an authentication endpoint is reached over plain HTTP in a deployed environment, when the request arrives, then it is redirected to HTTPS or rejected before credentials or tokens are processed.
 - AC-FE02-025: Given a valid refresh token and no access token, when the client requests refresh, then the system returns a 15-minute access token and the same refresh token.
+- AC-FE02-026: Given correct credentials for a self-registered account whose email remains unverified, when the user logs in, then no token is issued and the client opens `/verify-email` with the registered email; wrong passwords, deactivated accounts, and admin-created setup accounts do not enter this flow.
 
 ---
 
@@ -343,7 +347,7 @@ The following requirements formalize the error-handling and abnormal-condition b
 | -- | ----------------- | ------------------------ |
 | EC-FE02-001 | Registration with SQL injection payload in email | Sanitize input and reject as invalid email format. |
 | EC-FE02-002 | Registration with password longer than 255 characters | Reject with a field validation error and create no account. |
-| EC-FE02-003 | Duplicate registration attempt with same email within seconds | Reject with "Email already registered" message. |
+| EC-FE02-003 | Duplicate registration attempt with the same email, including concurrent requests that race after the duplicate pre-check | Reject with `409 EMAIL_ALREADY_REGISTERED` and the approved message; create no additional user/token/delivery state. |
 | EC-FE02-004 | User registration with email containing spaces or special chars | Validate email format strictly. |
 | EC-FE02-005 | Login attempt with SQL injection in username field | Use parameterized queries; reject as invalid. |
 | EC-FE02-006 | User locks their own account by exceeding failed login attempts | Provide password reset or wait until `lockedUntil`; Phase 1 has no admin-unlock action. |
@@ -353,11 +357,12 @@ The following requirements formalize the error-handling and abnormal-condition b
 | EC-FE02-010 | Password hash update fails in database | Roll back transaction; return error to user. |
 | EC-FE02-011 | Token generation library fails | Return 500 error; log incident; offer user to try again. |
 | EC-FE02-012 | User claims email was compromised and requests immediate logout of all sessions | Phase 1 has no global logout-all or admin token-revocation flow; current sessions must be revoked individually or expire. |
-| EC-FE02-013 | Concurrent login attempts from same user | Allow both successful sessions and issue separate refresh credentials. |
+| EC-FE02-013 | Concurrent login/account-state changes for the same user | Allow separate sessions only while the persisted account remains eligible; do not create a session or overwrite a newer inactive/locked state. |
 | EC-FE02-014 | Client sends malformed JWT token | Return 401 Unauthorized. |
 | EC-FE02-015 | Clock skew between server and client token validation | Use a fixed 30-second validation tolerance. |
 | EC-FE02-016 | Two setup-completion requests use the same token concurrently | Exactly one transaction succeeds; the other receives a safe invalid/used credential error. |
 | EC-FE02-017 | Password-reset credential targets an inactive account | Reject reset; do not activate. Account activation requires `ACCOUNT_SETUP`. |
+| EC-FE02-018 | User closes registration before completing email verification, then later submits correct login credentials | Return `403 EMAIL_VERIFICATION_REQUIRED` without a session and open `/verify-email` with the registered email. |
 
 ---
 
@@ -369,8 +374,9 @@ The following requirements formalize the error-handling and abnormal-condition b
 | ------ | ----------------------- |
 | Users | Stores user account, email, password hash, status, and metadata. |
 | Roles | Defines role names (Member, Librarian, Admin) and descriptions. |
-| UserRoles | Stores exactly one role mapping per user; `UX_UserRoles_UserId` prevents multiple account roles. |
-| AuthTokens | Stores hashes and lifecycle metadata for verification OTPs, password-reset credentials, account-setup credentials, refresh tokens, and compatibility-only change-password OTPs. |
+| UserRoles | Maps users to roles. |
+| AuthTokens | Stores hashes and lifecycle metadata for verification OTPs, password-reset credentials, account-setup credentials, refresh tokens, and change-password OTPs. |
+| LoginFailureAttempts | Stores timestamped known-account login failures used by the rolling 15-minute lock window. |
 | AuditLogs | Records all authentication events. |
 
 ### 10.2 Data Fields
@@ -464,10 +470,10 @@ stateDiagram-v2
 | ------ | -------- | ----- | ------- | -------- | ----- |
 | POST | `/api/auth/register` | Guest | `{ email: string, username?: string, password: string, confirmPassword: string, fullName?: string, phoneNumber?: string }` | `{ userId: number, email: string, message: "Verification email sent" }` | Sends a six-digit verification OTP. |
 | POST | `/api/auth/verify-email` | Guest | `{ email: string, otp: string }` or `{ token: string }` | `{ message: "Account verified. You can now login." }` | Primary OTP flow plus legacy token compatibility. |
-| POST | `/api/auth/resend-verification` | Guest | `{ email: string }` | `{ message: "Verification email sent" }` | Resends verification email. |
-| POST | `/api/auth/login` | Guest | `{ email: string, password: string }` | `{ userId: number, accessToken: string, refreshToken: string, accessTokenExpiresIn: 900, refreshTokenExpiresIn: 604800 }` | The legacy `email` field accepts an email address or username; returns JWT access and refresh credentials. |
-| POST | `/api/auth/logout` | Authenticated access token or client presenting a valid refresh token | `{ refreshToken?: string }` | `{ message: "Logged out" }` | At least one valid access/refresh credential is required; the current refresh/session credential is revoked. |
-| POST | `/api/auth/refresh-token` | Client presenting a valid refresh token | `{ refreshToken: string }` | `{ accessToken: string, refreshToken: string, accessTokenExpiresIn: 900, refreshTokenExpiresIn: 604800 }` | Does not require an access token; returns a new access token and the same submitted refresh token. |
+| POST | `/api/auth/resend-verification` | Guest | `{ email: string }` | `{ message: "Verification email sent" }` | Resends only for an eligible pending self-registration account; other states retain the same public response. |
+| POST | `/api/auth/login` | Guest | `{ email: string, password: string }` | Success: `{ userId: number, email: string, roles: string[], accessToken: string, refreshToken: string, expiresIn: 900 }`; pending verification: `403 { error: { code: "EMAIL_VERIFICATION_REQUIRED", message: string, details: { email: string } } }` | The legacy `email` field accepts an email address or username. The 403 recovery response is returned only after correct password proof for an eligible self-registration account and never creates a session. |
+| POST | `/api/auth/logout` | Client presenting a refresh token | `{ refreshToken: string }` | `{ message: "Logged out" }` | Revokes the submitted active refresh credential; an unknown/already-revoked credential remains an idempotent safe logout. |
+| POST | `/api/auth/refresh-token` | Client presenting a valid refresh token | `{ refreshToken: string }` | `{ accessToken: string, refreshToken: string, expiresIn: 900 }` | Does not require an access token; returns a new access token and the same submitted refresh token. |
 | POST | `/api/auth/change-password` | Authenticated | `{ currentPassword: string, newPassword: string }` | `{ message: "Password changed" }` | Requires current password verification. |
 | POST | `/api/auth/change-password/request-otp` | Authenticated | `{ currentPassword: string, newPassword: string, confirmNewPassword: string }` | `{ message: string, maskedEmail: string }` | Verifies the current password and sends a six-digit `CHANGE_PASSWORD_OTP` directly through FE02. |
 | POST | `/api/auth/change-password/confirm` | Authenticated | `{ otp: string, newPassword: string }` | `{ message: string }` | Consumes the authenticated user's valid six-digit `CHANGE_PASSWORD_OTP`. |
@@ -490,7 +496,7 @@ stateDiagram-v2
 - NFR-FE02-SEC-007: Verification and reset tokens must be cryptographically secure (high entropy).
 - NFR-FE02-SEC-008: Verification OTPs and password-reset OTPs expire after 15 minutes; admin-created account setup tokens expire after 24 hours.
 - NFR-FE02-SEC-009: Password reset must require email verification; old password verification alone is insufficient.
-- NFR-FE02-SEC-010: Login responses must not reveal whether email is registered (prevent user enumeration).
+- NFR-FE02-SEC-010: Unknown identifiers and incorrect passwords must not reveal whether an email is registered. The registered email may be returned only after correct password proof for the BR-FE02-028 recovery branch.
 - NFR-FE02-SEC-011: All inputs (email, password, token) must be validated and sanitized on the server.
 - NFR-FE02-SEC-012: SQL injection must be prevented using parameterized queries.
 - NFR-FE02-SEC-013: Cross-site request forgery (CSRF) protection must be implemented if using session cookies.
@@ -530,7 +536,7 @@ stateDiagram-v2
 - NFR-FE02-UX-005: Registration shall show account-details and email-verification steps, preserve non-secret values after recoverable failures, and focus the OTP input when verification begins.
 - NFR-FE02-UX-006: The frontend shall prevent duplicate resend requests while pending and apply a visible 60-second cooldown after a successful verification or reset OTP resend.
 - NFR-FE02-UX-007: OTP controls shall accept exactly six digits and use a masked destination email in user-facing copy.
-- NFR-FE02-UX-008: The login frontend shall reject blank or whitespace-only identifiers, blank passwords, and identifier/password values longer than 255 characters before submission; it shall render field-level Vietnamese feedback and map stable safe API error codes without exposing raw backend messages or distinguishing unknown from inactive accounts.
+- NFR-FE02-UX-008: The login frontend shall reject blank or whitespace-only identifiers, blank passwords, and identifier/password values longer than 255 characters before submission; it shall render field-level Vietnamese feedback and map stable safe API error codes without exposing raw backend messages. Unknown identifiers and incorrect passwords remain indistinguishable; only the password-proven BR-FE02-028 branch may identify pending email verification.
 - NFR-FE02-UX-009: Each protected frontend request shall use the selected local/session storage, retry at most once after a 401 by exchanging the stored refresh credential, persist the replacement access token in the same storage, and clear both storages plus redirect to login when recovery fails.
 
 ---
@@ -626,18 +632,18 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC ID | Acceptance Criterion | Related FR | Related BR | Test Case | Status |
 | ----- | -------------------- | ---------- | ---------- | --------- | ------ |
 | AC-FE02-001 | Guest registers with valid data and unique email -> system creates INACTIVE user, persists the 15-minute OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one verification OTP email | FR-FE02-001, FR-FE02-002, FR-FE02-022 | BR-FE02-001, BR-FE02-003, BR-FE02-004, BR-FE02-020, BR-FE02-021, BR-FE02-027 | FT05 | Accepted; automated evidence recorded |
-| AC-FE02-002 | Valid verification OTP/email or legacy token submitted -> account activated, user can login | FR-FE02-003 | BR-FE02-004 | FT05 | Accepted; automated evidence recorded |
+| AC-FE02-002 | Valid verification OTP/email or legacy token for an eligible account -> activation/token consumption/audit commit; deactivated account remains inactive | FR-FE02-003 | BR-FE02-004 | `backend/tests/authRoutes.test.js` eligible and deactivated verification regressions | Accepted; automated evidence recorded |
 | AC-FE02-003 | Expired verification OTP/token submitted -> system rejects, offers resend | FR-FE02-003, FR-FE02-016 | BR-FE02-004 | FT05 | Accepted; automated evidence recorded |
 | AC-FE02-004 | Valid email/password/active account at login -> system returns session/token | FR-FE02-004 | BR-FE02-001, BR-FE02-005, BR-FE02-010 | FT06 | Accepted; automated evidence recorded |
 | AC-FE02-005 | Invalid email at login -> system returns error without revealing email existence | FR-FE02-005 | BR-FE02-007 | FT07 | Accepted; automated evidence recorded |
 | AC-FE02-006 | Valid email but invalid password at login -> error returned, failed attempt counter incremented | FR-FE02-005, FR-FE02-006 | BR-FE02-007, BR-FE02-008 | FT07 | Accepted; automated evidence recorded |
 | AC-FE02-007 | Inactive account login attempt -> system rejects login | FR-FE02-005 | BR-FE02-002 | FT07 | Accepted; automated evidence recorded |
 | AC-FE02-008 | Locked account login attempt -> system rejects with lock message | FR-FE02-005, FR-FE02-006 | BR-FE02-008, BR-FE02-009 | FT07 | Accepted; exact 30-minute default and duration regression recorded |
-| AC-FE02-009 | Valid access token linked to an active session for a current ACTIVE user -> current server-side roles loaded and request allowed | FR-FE02-008 | BR-FE02-012, BR-FE02-015 | Session-link evidence exists; explicit current-status regression not found | Partial evidence; current-status gap open |
-| AC-FE02-010 | Invalid/expired token, invalid linked session, or non-ACTIVE current user -> 401 before business processing | FR-FE02-008, FR-FE02-009 | BR-FE02-010, BR-FE02-012 | Invalid token/session evidence exists; explicit non-ACTIVE regression not found | Partial evidence; current-status gap open |
+| AC-FE02-009 | Valid access token linked to an active session for a current ACTIVE user -> current server-side roles loaded and request allowed | FR-FE02-008 | BR-FE02-012, BR-FE02-015 | `backend/tests/authRoutes.test.js` linked-session and current-role regressions | Accepted; automated evidence recorded |
+| AC-FE02-010 | Invalid/expired token, invalid linked session, or non-ACTIVE current user -> 401 before business processing | FR-FE02-008, FR-FE02-009 | BR-FE02-010, BR-FE02-012 | `backend/tests/authRoutes.test.js` invalid session plus post-issuance `INACTIVE`/`LOCKED` regressions | Accepted; automated evidence recorded |
 | AC-FE02-011 | Authenticated user logs out -> session/token invalidated | FR-FE02-007 | BR-FE02-011 | FT08 | Accepted; automated evidence recorded |
-| AC-FE02-012 | Authenticated user completes the direct path or valid OTP-confirmation path -> system updates password without revoking other sessions | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006, BR-FE02-026 | Direct-path FT09 accepted; dedicated OTP-path regression not found | Partial evidence; OTP gap open |
-| AC-FE02-013 | Incorrect current password or invalid/expired/used/wrong-user change-password OTP -> system rejects without updating password | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-026 | Direct-path FT09 accepted; dedicated OTP-path regression not found | Partial evidence; OTP gap open |
+| AC-FE02-012 | Authenticated user completes the direct path or valid OTP-confirmation path -> system updates password without revoking other sessions | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-006, BR-FE02-026 | `backend/tests/authRoutes.test.js` direct and OTP-confirmation success regressions | Accepted; automated evidence recorded |
+| AC-FE02-013 | Incorrect current password or invalid/expired/used/wrong-user change-password OTP -> system rejects without updating password | FR-FE02-010 | BR-FE02-018, BR-FE02-019, BR-FE02-026 | `backend/tests/authRoutes.test.js` direct and OTP rejection regressions | Accepted; automated evidence recorded |
 | AC-FE02-014 | Guest requests password reset with valid active registered email -> system persists the OTP hash, submits one FE02-bound request, and FE10 attempts provider delivery with `SENT`/`FAILED` outcome; successful acceptance sends one reset OTP email | FR-FE02-011, FR-FE02-022 | BR-FE02-013, BR-FE02-014, BR-FE02-016, BR-FE02-020, BR-FE02-021 | FT10 | Accepted; automated evidence recorded |
 | AC-FE02-015 | Guest requests password reset with invalid email -> system returns success message (no enumeration) | FR-FE02-011 | BR-FE02-007, BR-FE02-016 | FT10 | Accepted; automated evidence recorded |
 | AC-FE02-016 | Valid reset OTP/legacy reset token updates an eligible ACTIVE account and never activates INACTIVE or unlocks LOCKED | FR-FE02-012 | BR-FE02-006, BR-FE02-013, BR-FE02-014, BR-FE02-025 | FT11 | Accepted; automated evidence recorded |
@@ -647,9 +653,10 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | AC-FE02-020 | Valid FE11 setup token completes password setup and atomically activates the account | FR-FE02-024 | BR-FE02-023, BR-FE02-024 | FT11 | Accepted; automated evidence recorded |
 | AC-FE02-021 | Invalid/expired/used/revoked/ineligible/concurrent setup token cannot partially activate | FR-FE02-025 | BR-FE02-024, BR-FE02-025 | FT11 | Accepted; automated evidence recorded |
 | AC-FE02-022 | Guest self-registration assigns exactly the Member role through UserRoles | FR-FE02-013 | BR-FE02-003, BR-FE02-015, Q-FE02-014 | `backend/tests/authRoutes.test.js` register -> verify -> login -> `/me` role assertion | Accepted; automated evidence recorded |
-| AC-FE02-023 | Protected authorization uses current server-side UserRoles and rejects client role claims | FR-FE02-014 | BR-FE02-015 | Explicit AC-specific regression not found | Evidence gap |
+| AC-FE02-023 | Protected authorization uses current server-side UserRoles and rejects client role claims | FR-FE02-014 | BR-FE02-015 | `backend/tests/authRoutes.test.js` changes persisted roles after token issuance | Accepted; automated evidence recorded |
 | AC-FE02-024 | Deployed HTTP authentication request is redirected or rejected before credential processing | NFR-FE02-SEC-003 | BR-FE02-017 | `backend/tests/httpsEnforcement.test.js` (3/3) plus Phase 2 deployment acceptance | Accepted; automated and deployment evidence recorded |
 | AC-FE02-025 | Refresh-token exchange returns a new access token and the same refresh token without requiring an access token | FR-FE02-026 | BR-FE02-010 | `backend/tests/authRoutes.test.js` refresh-token cases | Accepted; automated evidence recorded |
+| AC-FE02-026 | Correct credentials for pending self-registration return verification-required and route the client to `/verify-email`; ineligible inactive states remain generic | FR-FE02-027 | BR-FE02-004, BR-FE02-007, BR-FE02-025, BR-FE02-028 | `backend/tests/authRoutes.test.js`; `frontend/test/verificationRecoveryFrontend.test.js` | Accepted; automated evidence recorded |
 
 ### FE02 Unwanted Functional Requirements to Sources to Tests
 
@@ -667,30 +674,28 @@ The following decisions were approved in the Phase 1 review packet on 2026-06-10
 | FR-FE02-026 | Use a valid refresh token to issue a new access token and reject expired/used/revoked refresh credentials | Q-FE02-002, Q-FE02-016 | BR-FE02-010 | `backend/tests/authRoutes.test.js` refresh-token cases | Accepted; automated evidence recorded |
 
 ### Coverage Summary (FE02)
-- **Total AC**: 25 (AC-FE02-001 to AC-FE02-025) - all mapped.
-- **Total FR**: 26 (FR-FE02-001 to FR-FE02-026) - all mapped.
+- **Total AC**: 26 (AC-FE02-001 to AC-FE02-026) - all mapped.
+- **Total FR**: 27 (FR-FE02-001 to FR-FE02-027) - all mapped.
 - **EARS Unwanted FR**: 9 (FR-FE02-015 to FR-FE02-021, FR-FE02-023, FR-FE02-025) = 36% of total FR.
-- **Total BR**: 27 (BR-FE02-001 to BR-FE02-027) - all BR mapped directly or through AC/NFR traceability.
+- **Total BR**: 28 (BR-FE02-001 to BR-FE02-028) - all BR mapped directly or through AC/NFR traceability.
 - **Total Tests**: 7 (FT05 to FT11) - aligned with assignment sheet
 
-### Current Conformance Gaps (2026-07-23)
+### Current Conformance Gaps (2026-07-27)
 
-- CG-FE02-002: AC-FE02-023 has implementation and test-plan coverage claims, but no explicit regression proving that client role claims cannot override current server-side `UserRoles` was found.
 - CG-FE02-003: FE02-T043 is integrated into `main`, but a dedicated H3 closeout record for that slice was not found in the feature/review documents.
-- CG-FE02-004: The implemented `change-password/request-otp` and `change-password/confirm` routes now have an aligned contract, but dedicated backend integration regressions for valid, expired, used, and wrong-user `CHANGE_PASSWORD_OTP` behavior were not found.
-- CG-FE02-005: NFR-FE02-PERF-001 and NFR-FE02-PERF-004 define measurable login and token-validation targets, but no repeatable performance evidence or approved exception is linked.
-- CG-FE02-006: Access-token validation checks the linked refresh/session credential and reloads roles, but it does not reject a current user whose persisted status is no longer `ACTIVE`; no regression covers deactivation/lock after token issuance.
-- CG-FE02-008: Several authentication mutations update user/token state and write required audit records in separate operations while audit failures are logged and suppressed; atomicity required by NFR-FE02-TXN-001 to NFR-FE02-TXN-004 is not fully demonstrated.
 
+### Resolved Conformance Gaps (2026-07-27)
+
+- CG-FE02-005: Resolved by FE02-T048. The documented deterministic performance harness measures 30 valid-login samples and 50 `/api/auth/me` samples with bcrypt cost 10; the 2026-07-27 rerun records p95 `61.46 ms` and `1.52 ms`, respectively, within NFR-FE02-PERF-001/004.
 
 ### External Assignment Traceability (Excel UC IDs)
 
 | Assignment UC ID | Excel Use Case | Related Main Flow / Requirement | Related Test |
 | ---------------- | -------------- | ------------------------------- | ------------ |
 | UC05 | Register Account | MF-FE02-001, MF-FE02-002; FR-FE02-001 to FR-FE02-003 | FT05 |
-| UC06 | Login | MF-FE02-003, MF-FE02-004, MF-FE02-009; FR-FE02-004 to FR-FE02-006, FR-FE02-008, FR-FE02-009 | FT06, FT07 |
+| UC06 | Login | MF-FE02-003, MF-FE02-004, MF-FE02-009; FR-FE02-004 to FR-FE02-006, FR-FE02-008, FR-FE02-009, FR-FE02-027 | FT06, FT07; interrupted-registration regressions |
 | UC07 | Logout | MF-FE02-005; FR-FE02-007 | FT08 |
-| UC08 | Change Password | MF-FE02-006; FR-FE02-010 | FT09 direct path; OTP-path evidence open |
+| UC08 | Change Password | MF-FE02-006; FR-FE02-010 | FT09 direct path and dedicated OTP regressions |
 | UC09 | Forgot Password | MF-FE02-007; FR-FE02-011 | FT10 |
 | UC10 | Reset Password | MF-FE02-008; FR-FE02-012 | FT11 |
 
@@ -719,10 +724,10 @@ Phase 1 approval checklist (completed on 2026-06-10):
 2026-07-23 reconciliation checks:
 
 - [x] Align repository and deployment defaults with the approved exact 30-minute lockout contract.
-- [ ] Add explicit AC-FE02-023 regression evidence for server-side `UserRoles` authorization.
+- [x] Add explicit AC-FE02-023 regression evidence for server-side `UserRoles` authorization.
 - [ ] Record or link the dedicated FE02-T043 H3 integration closeout.
-- [ ] Add dedicated `CHANGE_PASSWORD_OTP` request/confirm regression evidence for AC-FE02-012 and AC-FE02-013.
-- [ ] Reject protected requests when the current persisted user is no longer `ACTIVE`, with linked-session regression evidence.
+- [x] Add dedicated `CHANGE_PASSWORD_OTP` request/confirm regression evidence for AC-FE02-012 and AC-FE02-013.
+- [x] Reject protected requests when the current persisted user is no longer `ACTIVE`, with linked-session regression evidence.
 - [x] Align FE02 protected frontend requests with the approved one-retry and failed-recovery clearing contract.
-- [ ] Demonstrate required user/token/audit atomicity or record an approved bounded exception.
-- [ ] Human-review and approve the version 0.6.11 contract reconciliation.
+- [x] Demonstrate required user/token/audit atomicity or record an approved bounded exception.
+- [ ] Human-review and approve the version 0.6.16 contract reconciliation.
