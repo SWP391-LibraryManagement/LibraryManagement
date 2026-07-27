@@ -9,8 +9,8 @@
   recursive secret-like key rejection and `safePayload` redaction rules.
 - Reconciled the previous ambiguity between EC-FE10-010 rejection and
   NFR-FE10-SEC-005 sanitization wording.
-- Marked the written revision ready for human SPEC review; no code or tests are
-  claimed by this entry.
+- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
+  preparation only; no code or tests are claimed by this entry.
 
 ## 2026-07-23 - Make queued delivery ownership and claiming deterministic
 

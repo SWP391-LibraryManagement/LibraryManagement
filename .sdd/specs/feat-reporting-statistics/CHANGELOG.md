@@ -12,8 +12,8 @@
   behavior.
 - Added the previously implicit `membershipStatus` and `location` query fields
   to the data-field contract.
-- Marked the written revision ready for human SPEC review; no code or tests are
-  claimed by this entry.
+- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
+  preparation only; no code or tests are claimed by this entry.
 
 ## 2026-07-23 - Move detail pagination into SQL snapshots
 

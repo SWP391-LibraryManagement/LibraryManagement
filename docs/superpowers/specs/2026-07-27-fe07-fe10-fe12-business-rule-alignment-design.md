@@ -1,10 +1,12 @@
 # FE07/FE10/FE12 Business-Rule Alignment Design
 
-**Status:** WRITTEN SPEC REVIEW REQUIRED
+**Status:** APPROVED - WRITTEN SPEC 2026-07-27
 
 **Design approved in discussion:** 2026-07-27
 
 **Written-spec approver:** Nhat (SPEC owner and project business approver)
+
+**Written-spec approved:** 2026-07-27
 
 **Delivery method:** Hybrid, Full depth for Core rules
 
@@ -36,9 +38,9 @@ frontend workflow is added.
 | Source ID | Source and location | Revision/date | Evidence it can prove | Authority level | Owner | Conflicts |
 | --- | --- | --- | --- | --- | --- | --- |
 | S-001 | User decisions in the active task | 2026-07-27 | Approved choices for FE07 authorization/time/transaction data, FE10 rejection policy, FE12 allowlists, and FE08 scope | Highest for this bounded slice | Nhat | None after approval |
-| S-002 | `.sdd/constitution.md`, `.sdd/shared_context.md`, `.sdd/constraints/*.md` | Current branch at `ef141a6` | Project law, actors, stack, spec-first order, server authorization, validation, and safety | Project-wide approved baseline | Team | None |
-| S-003 | FE07/FE10/FE12 `SPEC.md` files | Current branch at `ef141a6` | Existing stable BR/FR/AC/API contracts | Feature baseline | Nhat | Ambiguities listed in Section 3 |
-| S-004 | Current FE07/FE10/FE12 implementation and tests | Current branch at `ef141a6` | Observed behavior and reproducible defects only | Observational, not normative | Engineering team | Conflicts with approved decisions |
+| S-002 | `.sdd/constitution.md`, `.sdd/shared_context.md`, `.sdd/constraints/*.md` | Current branch at `3220f10` | Project law, actors, stack, spec-first order, server authorization, validation, and safety | Project-wide approved baseline | Team | None |
+| S-003 | FE07/FE10/FE12 `SPEC.md` files | Written revisions in `3220f10`, approved 2026-07-27 | Stable BR/FR/AC/API contracts for this batch | Feature baseline | Nhat | None |
+| S-004 | Current FE07/FE10/FE12 implementation and tests | Product baseline before `3220f10` | Observed behavior and reproducible defects only | Observational, not normative | Engineering team | Conflicts with approved decisions |
 | S-005 | `docs/superpowers/specs/2026-07-23-fe07-fe08-fe10-fe12-final-verification-remediation-design.md` | Approved 2026-07-23 | Existing transaction, timezone, notification, and report parity boundaries | Approved prior design | Nhat | Does not resolve the five new gaps |
 
 ## 3. Evidence And Conflict Classification
@@ -154,12 +156,13 @@ BD -> BR/FR/AC -> PLAN -> TASK -> code @spec tag -> RED/GREEN test -> runtime ev
 
 ## 10. Quality Gates
 
-The highest passed gate is G1. G2 and G3 are ready but remain pending until the
-written design and three feature SPEC revisions are reviewed and approved.
+The highest passed gate is G3. Nhat approved the written design and the FE07,
+FE10, and FE12 SPEC revisions on 2026-07-27. G4 remains pending until the
+PLAN/TASKS artifacts are reviewed and approved.
 
 | Slice ID | G0 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | Blocker | Owner | Next evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SL-001 to SL-006 | passed | passed | ready | ready | not-started | not-started | not-started | not-started | Written SPEC review | Nhat | Approve updated design and feature SPECs |
+| SL-001 to SL-006 | passed | passed | passed | passed | ready | not-started | not-started | not-started | PLAN/TASKS review | Nhat | Approve the implementation plan and feature tasks |
 
 `G4` through `G7` are intentionally not started. Green historical tests are
 baseline evidence only and do not prove these corrected rules.
@@ -178,15 +181,15 @@ baseline evidence only and do not prove these corrected rules.
 
 ## 12. Execution Boundary
 
-Allowed now:
+Allowed after written-SPEC approval:
 
-- Update this design, the three feature `SPEC.md` files, and their changelogs.
-- Run read-only consistency checks and documentation diff checks.
-- Commit the documentation-only written-spec revision on the current branch.
+- Write and review the consolidated implementation plan and the bounded
+  FE07/FE08/FE10/FE12 PLAN/TASKS updates.
+- Run read-only consistency, traceability, and documentation diff checks.
+- Commit the documentation-only PLAN/TASKS revision on the current branch.
 
-Blocked until the written SPEC is reviewed and approved:
+Blocked until the PLAN/TASKS artifacts are reviewed and approved:
 
-- Writing `PLAN.md` or `TASKS.md`.
 - Adding RED tests.
 - Changing production code, API documentation, fixtures, or test doubles.
 - Running mutable SQL, pushing, opening a PR, or claiming completion.

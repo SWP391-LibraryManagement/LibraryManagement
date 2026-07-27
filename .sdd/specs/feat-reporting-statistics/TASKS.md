@@ -1,13 +1,15 @@
 # TASKS.md - FE12 Reporting & Statistics
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: READY FOR REVIEW - V0.2.0 QUERY ALLOWLIST
+Implementation State: PARTIAL
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. FE12-N11 is activated
+by the approved v0.2.0 SPEC but awaits PLAN/TASKS approval before RED tests or
+implementation.
 
 ---
 
@@ -162,3 +164,13 @@ Detailed automated evidence is recorded in
   - RED: user `q` failed to match ID/status/membership/role and SQL wildcard patterns, inactive historical approvals disappeared from growth metrics, and fixture order leaked into detail rows.
   - GREEN: the in-memory repository matches production parameterized SQL `LIKE` search including `%`, `_`, bracket ranges, and negated classes over approved fields, plus historical `ApprovedAt` and `UserId ASC` semantics; traceability remains `16/11/11`.
   - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found the valid SQL `LIKE` closing-bracket parity edge plus bounded cross-feature evidence gaps. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+
+## 11. V0.2.0 Query-Allowlist Boundary
+
+- [ ] **FE12-N11 - Reject unsupported report query keys before execution.**
+  - Maps to: BD-005, BR-FE12-008, FR-FE12-005, AC-FE12-005, EC-FE12-011, NFR-FE12-SEC-004.
+  - RED: `?bogus=runtime-secret-value` returns `200` and reaches the selected report method.
+  - GREEN: endpoint-specific exact-key middleware returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution and never echoes the unknown value.
+  - Files: `backend/tests/reportRoutes.test.js`, `backend/src/validators/reportValidators.js`.
+  - Preservation: existing approved value validators, read-only report behavior, audit privacy, SQL parameterization, empty-ID semantics, pagination, and ordering remain unchanged.
+  - Gate: focused/full FE12 tests, real HTTP runtime evidence, traceability, and diff hygiene pass; leave product changes uncommitted until Nhat grants H2.

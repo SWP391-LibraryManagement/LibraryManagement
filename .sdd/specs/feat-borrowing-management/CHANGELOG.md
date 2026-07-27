@@ -11,8 +11,8 @@
   `Asia/Ho_Chi_Minh` business-date helpers without host-local `Date` arithmetic.
 - Corrected the stale FE04 edge-case wording: lack of FE04 approval selects the
   three-copy daily tier and is not itself a borrowing rejection.
-- Marked the written revision ready for human SPEC review; no code or tests are
-  claimed by this entry.
+- Nhat approved the written SPEC on 2026-07-27, authorizing PLAN/TASKS
+  preparation only; no code or tests are claimed by this entry.
 
 ## 2026-07-23 - Reconcile approval and return transaction invariants
 

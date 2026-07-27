@@ -1,12 +1,14 @@
 # PLAN.md - FE08 Reservation Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: READY FOR REVIEW - FE07/FE10 REGRESSION BOUNDARY
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. FE08 has no new product
+rule in the 2026-07-27 batch; its review-ready task verifies the unchanged FE07
+reservation-priority and FE10 requester handoffs after the Core fixes.
 
 ---
 
@@ -180,3 +182,13 @@ Not included:
    keep promoted reservation DTOs unchanged.
 6. Verify repository transaction ordering, service/route behavior, frontend
    confirmation content, and full regression before H2.
+
+## 10. 2026-07-27 Regression-Only Boundary
+
+1. Do not change FE08 production code, schema, API, lifecycle, or queue policy.
+2. Re-run the focused reservation requester test proving FE08 constructs the
+   canonical `RESERVATION_AVAILABLE -> RESERVATION_READY` FE10 request.
+3. Re-run `SIT-003` proving queue hold plus notification creation and `SIT-004`
+   proving FE08 priority still blocks FE07 renewal without mutation.
+4. Treat any FE08 failure as a blocker requiring a new diagnosis/spec decision;
+   do not broaden this batch silently.

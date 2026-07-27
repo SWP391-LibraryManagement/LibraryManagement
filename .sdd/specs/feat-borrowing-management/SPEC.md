@@ -2,7 +2,7 @@
 
 # Version: 0.7.5
 
-# Status: READY FOR REVIEW - RULE ALIGNMENT 2026-07-27
+# Status: APPROVED - RULE ALIGNMENT 2026-07-27
 
 # Owner: Nhat
 
@@ -27,8 +27,9 @@
 > Revision v0.7.5 makes staff authorization role-order independent for
 > multi-role renewal actors, requires return responses/audits to use the
 > transaction-locked due date, and forbids host-local renewal date arithmetic.
-> This written revision does not claim implementation until its PLAN/TASKS,
-> RED-GREEN evidence, and acceptance gates are completed.
+> Nhat approved this written revision on 2026-07-27. Approval authorizes
+> PLAN/TASKS preparation only; implementation remains unclaimed until
+> RED-GREEN evidence and acceptance gates are completed.
 
 ---
 
@@ -743,4 +744,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Lock staff-role precedence for multi-role cross-member renewal without bypassing loan-owner eligibility.
 - [x] Lock return response and audit calculations to the authoritative transaction result.
 - [x] Lock renewal comparison and extension to shared `Asia/Ho_Chi_Minh` helpers.
-- [ ] Human-review and approve the written v0.7.5 SPEC before PLAN/TASKS or implementation.
+- [x] Nhat human-reviewed and approved the written v0.7.5 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.

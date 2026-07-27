@@ -2,7 +2,7 @@
 
 # Version: 0.2.0
 
-# Status: READY FOR REVIEW - QUERY ALLOWLIST 2026-07-27
+# Status: APPROVED - QUERY ALLOWLIST 2026-07-27
 
 # Owner: Nhat
 
@@ -27,8 +27,9 @@
 > Revision v0.2.0 makes each endpoint's query allowlist an enforced boundary:
 > any unknown key returns safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before
 > report service or repository execution.
-> This written revision does not claim implementation until its PLAN/TASKS,
-> RED-GREEN evidence, and acceptance gates are completed.
+> Nhat approved this written revision on 2026-07-27. Approval authorizes
+> PLAN/TASKS preparation only; implementation remains unclaimed until
+> RED-GREEN evidence and acceptance gates are completed.
 
 ---
 
@@ -442,4 +443,4 @@ Phase 1 approval checklist (completed on 2026-06-10):
 - [x] Define an exact query allowlist for each report endpoint.
 - [x] Define safe `400 UNSUPPORTED_REPORT_QUERY_PARAMETER` before service/repository execution.
 - [x] Preserve approved value validation, unknown-ID empty reports, parameterized SQL, and read-only behavior.
-- [ ] Human-review and approve the written v0.2.0 SPEC before PLAN/TASKS or implementation.
+- [x] Nhat human-reviewed and approved the written v0.2.0 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.

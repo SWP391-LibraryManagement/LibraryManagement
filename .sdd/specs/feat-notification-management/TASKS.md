@@ -1,11 +1,15 @@
 # TASKS.md - FE10 Notification Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: READY FOR REVIEW - V0.4.4 TEMPLATE SAFETY
+Implementation State: PARTIAL
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
+
+Workflow State: The approved Phase 2/G1-G12 baseline remains complete.
+FE10-S11 is activated by the approved v0.4.4 SPEC but awaits PLAN/TASKS
+approval before RED tests or implementation.
 
 ---
 
@@ -282,3 +286,15 @@ The completed FE10-T and FE10-H tasks above remain historical evidence. ADR-004 
 - RED evidence: missing internal source references, terminal-transition persistence failures, duplicate replay while uncertain, and claim/finalization concurrency failed against the previous `PENDING`-through-provider implementation.
 - GREEN contract: sensitive acceptance and queued claim persist `PROCESSING` before provider I/O; guarded terminal transitions use new short transactions; uncertain rows are not reclaimed or retried; manual retry returns safe `DELIVERY_STATE_UNCERTAIN`.
 - Verification evidence: focused FE10 tests, the migration twice on a named disposable local SQL database, full repository checks, security/diff review, and cleanup are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed; the reviewed migration was applied once to staging. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned bounded round-two completeness findings only. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+
+## 13. Stored Template Definition Safety
+
+### FE10-S11 Reject Unsafe Stored Template Definitions
+
+- [ ] Status: PLAN READY FOR REVIEW; IMPLEMENTATION NOT STARTED
+- Maps to: BD-004, BR-FE10-010, FR-FE10-005/009, AC-FE10-006, EC-FE10-010, NFR-FE10-SEC-005.
+- RED: unsafe stored subject/body definitions are silently sanitized and accepted.
+- GREEN: `validateStoredTemplateDefinition(template)` rejects raw HTML tags, inline event-handler attributes, and `javascript:` URLs with safe `400 UNSAFE_TEMPLATE_DEFINITION` before render/persist/provider work.
+- Preservation: runtime values remain escaped/sanitized; secret-like key rejection, `safePayload` redaction, source ownership, idempotency, DTOs, and durable delivery state remain unchanged.
+- Files: `backend/tests/notificationRoutes.test.js`, `backend/src/services/notificationService.js`.
+- Gate: focused/full FE10 tests and security review pass; leave product changes uncommitted until Nhat grants H2.

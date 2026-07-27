@@ -2,7 +2,7 @@
 
 # Version: 0.4.4
 
-# Status: READY FOR REVIEW - TEMPLATE SAFETY 2026-07-27
+# Status: APPROVED - TEMPLATE SAFETY 2026-07-27
 
 # Owner: Nhat
 
@@ -31,8 +31,9 @@
 > Revision v0.4.4 separates trusted template-definition validation from runtime
 > value escaping: unsafe stored markup is rejected before rendering,
 > persistence, or delivery; runtime values remain escaped/sanitized.
-> This written revision does not claim implementation until its PLAN/TASKS,
-> RED-GREEN evidence, and acceptance gates are completed.
+> Nhat approved this written revision on 2026-07-27. Approval authorizes
+> PLAN/TASKS preparation only; implementation remains unclaimed until
+> RED-GREEN evidence and acceptance gates are completed.
 
 ---
 
@@ -552,4 +553,4 @@ Hardening contract checklist (approved by Nhat on 2026-07-13):
 - [x] Separate stored template-definition rejection from runtime-value escaping.
 - [x] Preserve canonical pair, secret-like key, safe-payload, minimal DTO, and source-ownership rules.
 - [x] Require safe rejection before rendering, notification/attempt persistence, or provider delivery.
-- [ ] Human-review and approve the written v0.4.4 SPEC before PLAN/TASKS or implementation.
+- [x] Nhat human-reviewed and approved the written v0.4.4 SPEC on 2026-07-27; PLAN/TASKS may proceed, while implementation remains blocked pending plan approval.

@@ -1,13 +1,15 @@
 # TASKS.md - FE07 Borrowing Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: READY FOR REVIEW - V0.7.5 RULE ALIGNMENT
+Implementation State: PARTIAL
 
 Owner: Nhat
 
-Updated: 2026-07-22
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. FE07-T047 through
+FE07-T050 are activated by the approved v0.7.5 SPEC but await PLAN/TASKS
+approval before RED tests or implementation.
 
 ---
 
@@ -265,3 +267,25 @@ This closeout remains historical evidence for the earlier approved baseline. It 
   - RED: under `TZ=UTC`, a Vietnam-date return crosses the expected overdue day; a detail whose physical copy is not `BORROWED` must return `BORROW_STATE_CONFLICT`.
   - GREEN: return/renewal use `libraryBusinessTime`; in-memory and SQL doubles share the physical-copy invariant; SQL expectations use current `MEMBER` role eligibility and explicit conflict outcomes.
   - Verification: focused FE07 tests are green under `TZ=UTC`; disposable SQL and full regression are green. The initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review returned the bounded round-two completeness findings. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+
+## 2026-07-27 v0.7.5 rule-alignment batch
+
+- [ ] **FE07-T047 - Enforce multi-role staff renewal authorization.**
+  - Maps to: BD-001, BR-FE07-003, FR-FE07-009, AC-FE07-009.
+  - RED: a `MEMBER + LIBRARIAN` actor renewing another member's eligible detail receives `403 BORROW_DETAIL_OWNER_REQUIRED`.
+  - GREEN: check `LIBRARIAN`/`ADMIN` scope before applying member ownership; preserve member-only denial and all loan-owner eligibility checks.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`.
+- [ ] **FE07-T048 - Return the authoritative transaction snapshot.**
+  - Maps to: BD-002, BR-FE07-014/016, FR-FE07-007/008, AC-FE07-008.
+  - RED: a due-date change between preflight and the repository lock produces stale response/audit overdue data.
+  - GREEN: SQL and in-memory return repositories build audit evidence from the locked due date and committed return date; the service builds `fineCandidate` from that same evidence.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/tests/borrowingRepository.test.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`.
+- [ ] **FE07-T049 - Use shared renewal calendar arithmetic.**
+  - Maps to: BD-003, BR-FE07-015/018, FR-FE07-009/020, NFR-FE07-TIME-001.
+  - RED: the same due date extends differently under `TZ=UTC` and `TZ=America/New_York`.
+  - GREEN: service extension and every renewal-overdue comparison use `libraryBusinessTime` helpers; no host-local `setDate`, `getDate`, or `setHours` remains in the affected renewal path.
+  - Files: `backend/tests/borrowingRoutes.test.js`, `backend/src/services/borrowingService.js`, `backend/src/repositories/borrowingRepository.js`, `backend/tests/helpers/inMemoryBorrowingRepositories.js`.
+- [ ] **FE07-T050 - Complete FE07 verification and evidence.**
+  - Maps to: AT-001, AT-002, AT-003 and the v0.7.5 plan gates.
+  - Evidence: focused route/repository tests, UTC/New York timezone matrix, optional named-disposable SQL test, full backend regression, traceability, diff hygiene, L2/L3 review, and local runtime acceptance.
+  - Gate: leave product changes uncommitted until Nhat reviews the complete diff and grants H2.

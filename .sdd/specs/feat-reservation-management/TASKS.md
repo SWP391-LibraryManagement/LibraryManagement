@@ -1,13 +1,15 @@
 # TASKS.md - FE08 Reservation Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
-Implementation State: COMPLETE
+Status: READY FOR REVIEW - FE07/FE10 REGRESSION BOUNDARY
+Implementation State: PARTIAL
 
 Owner: Nhat
 
-Updated: 2026-07-19
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. FE08-T041 is a pending
+regression-only task activated by the approved FE07/FE10 boundary; no FE08
+product behavior is authorized to change.
 
 ---
 
@@ -209,3 +211,11 @@ Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact po
   - RED: repository tests require audit-before-commit for create/cancel/hold/expire; service/route tests require rollback, safe post-commit warning, and serialization of expiration-promotion warnings; frontend tests reject cached-member confirmation.
   - GREEN: lifecycle audit writes participate in mutation transactions; notification failure remains post-commit; unavailable failure-audit returns singular `process-queue.notificationWarning` or one safe `expire-holds.notificationWarnings[]` item per affected promotion; staff confirmation contains only copy context plus server re-selection explanation.
   - Verification: the initial H2 and H2 addendum passed; commit `97aca62` and PR CI run `30014066260` passed. Fresh H2 then approved remediation commit `b931e00`, and PR CI run `30019439505` passed. The repeated H3 review found missing multi-warning regression depth, the singular warning OpenAPI gap, closing-bracket parity, and stale evidence. Fresh H2 approved the round-two package on 2026-07-23 and authorized its reviewed commit/push; updated PR CI and repeated H3 remain mandatory before merge.
+
+## 9. 2026-07-27 FE07/FE10 regression boundary
+
+- [ ] **FE08-T041 - Verify unchanged FE07 and FE10 handoffs.**
+  - Maps to: BD-006, SL-006, AT-006 and existing FR-FE08-008/024.
+  - Scope: regression evidence only; no FE08 production or contract change.
+  - Evidence: focused FE08 canonical requester test, `SIT-003` queue/notification flow, `SIT-004` FE07 renewal-priority flow, and the FE08 browser candidate acceptance remain green.
+  - Failure rule: stop and diagnose; any new FE08 rule requires a separate SPEC revision.

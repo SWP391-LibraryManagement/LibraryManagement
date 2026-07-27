@@ -1,12 +1,14 @@
 # PLAN.md - FE07 Borrowing Management
 
-Status: COMPLETE - PHASE 2 EXIT EVIDENCE RECORDED
+Status: READY FOR REVIEW - V0.7.5 RULE ALIGNMENT
 
 Owner: Nhat
 
-Updated: 2026-07-22
+Updated: 2026-07-27
 
-Workflow State: COMPLETE for the approved Phase 2 scope; H3, merge, and exact post-merge `main` CI are recorded in `.sdd/reviews/phase2-full-exit-validation-2026-07-19.md`. Pending/open gate statements retained below are historical execution snapshots superseded by that evidence.
+Workflow State: The Phase 2 baseline remains complete. The approved v0.7.5
+rule-alignment SPEC is now mapped to a review-ready plan; RED tests and
+implementation remain blocked until this PLAN/TASKS revision is approved.
 
 ---
 
@@ -200,3 +202,28 @@ Not included:
    concurrent return conflict outcomes.
 5. Run focused tests under `TZ=UTC`, then run mutable SQL only on a named
    disposable local database before full verification and H2.
+
+## 9. V0.7.5 Rule-Alignment Plan
+
+The detailed executable plan is
+`docs/superpowers/plans/2026-07-27-fe07-fe10-fe12-business-rule-alignment.md`.
+
+1. Add a RED route regression proving a `MEMBER + LIBRARIAN` actor can renew
+   another member's eligible detail while a member-only actor remains
+   owner-scoped.
+2. Make staff-role authorization take precedence only for renewal ownership;
+   all eligibility checks continue to use the loan owner.
+3. Add a RED return regression that changes the due date between service
+   preflight and the repository lock, then require response and audit metadata
+   to use the locked transaction snapshot.
+4. Extend the SQL and in-memory repository return contract with authoritative
+   `userId`, `requestId`, `copyId`, `dueDate`, `returnDate`, and `overdueDays`
+   evidence without exposing the internal evidence in the public DTO.
+5. Add a renewal regression that passes under both `TZ=UTC` and
+   `TZ=America/New_York`; remove host-local date arithmetic from service,
+   SQL-repository checks, and in-memory parity checks.
+6. Run focused FE07 route/repository tests first. Run mutable SQL only when
+   `DB_NAME` is a named disposable local database and
+   `FE07_SQL_TEST_ALLOW_MUTATION=true`.
+7. Keep the implementation diff uncommitted until L1-L4 evidence is complete
+   and Nhat grants H2.
