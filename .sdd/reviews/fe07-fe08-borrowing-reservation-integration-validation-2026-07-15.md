@@ -1,64 +1,64 @@
-# FE07-FE08 Borrowing Reservation Integration Validation
+# Xác thực tích hợp Mượn và Đặt trước FE07-FE08
 
-Date: 2026-07-15
+Ngày: 2026-07-15
 
-Status: HUMAN REVIEW CONFIRMED - READY FOR INTEGRATION DECISION
+Trạng thái: ĐÃ XÁC NHẬN ĐÁNH GIÁ CỦA CON NGƯỜI - SẴN SÀNG CHO QUYẾT ĐỊNH TÍCH HỢP
 
-Branch: `fix/fe08-borrowing-reservation-integration`
+Nhánh: `fix/fe08-borrowing-reservation-integration`
 
-## Purpose
+## Mục đích
 
-Record the validation evidence and Nhat's completed human review for the
-approved FE07 borrowing and FE08 reservation integration. This slice keeps FE07
-responsible for borrow create/approval and FE08 responsible for queue processing
-while enforcing reservation priority across both features.
+Ghi nhận bằng chứng xác thực và đánh giá của con người đã hoàn thành của Nhat cho
+phần tích hợp mượn FE07 và đặt trước FE08 đã phê duyệt. Lát cắt này giữ FE07
+chịu trách nhiệm tạo/phê duyệt mượn và FE08 chịu trách nhiệm xử lý hàng đợi
+trong khi thực thi ưu tiên đặt trước xuyên cả hai tính năng.
 
-## Validated Behavior
+## Hành vi đã xác thực
 
-| Boundary | Result | Evidence |
+| Ranh giới | Kết quả | Bằng chứng |
 | --- | --- | --- |
-| Ordinary borrowing | PASS | An `ACTIVE` reservation queue blocks normal FE07 create and approval with the documented priority conflict. |
-| Notified owner handoff | PASS | The owner of the matching `NOTIFIED` reservation may borrow its `RESERVED` copy. |
-| Atomic fulfillment | PASS | FE07 approval updates the borrow request, details, copy, matching reservation, and audit records in one transaction; the reservation becomes `FULFILLED`. |
-| Concurrency | PASS | Copy/reservation transitions use the shared `BookCopies -> Reservations` lock order. |
-| Queue ownership | PASS | FE08 queue processing remains manual; no endpoint, table, column, or automatic job was added. |
-| Error contract | PASS | Reservation-priority conflicts are exposed through stable backend/OpenAPI and Vietnamese frontend messages. |
+| Mượn thông thường | PASS | Hàng đợi đặt trước `ACTIVE` chặn việc tạo và phê duyệt FE07 thông thường bằng xung đột ưu tiên đã ghi tài liệu. |
+| Bàn giao cho chủ sở hữu đã được thông báo | PASS | Chủ sở hữu của lượt đặt trước `NOTIFIED` khớp có thể mượn bản sao `RESERVED` của lượt đó. |
+| Hoàn tất nguyên tử | PASS | Phê duyệt FE07 cập nhật yêu cầu mượn, chi tiết, bản sao, lượt đặt trước khớp và bản ghi kiểm toán trong một giao dịch; lượt đặt trước trở thành `FULFILLED`. |
+| Đồng thời | PASS | Chuyển trạng thái bản sao/đặt trước dùng thứ tự khóa `BookCopies -> Reservations` dùng chung. |
+| Quyền sở hữu hàng đợi | PASS | Xử lý hàng đợi FE08 vẫn thủ công; không thêm endpoint, bảng, cột hoặc công việc tự động. |
+| Hợp đồng lỗi | PASS | Xung đột ưu tiên đặt trước được cung cấp qua backend/OpenAPI ổn định và thông báo frontend tiếng Việt. |
 
-## Automated Evidence
+## Bằng chứng tự động
 
-| Check | Result | Freshness |
+| Kiểm tra | Kết quả | Độ mới |
 | --- | --- | --- |
-| Focused FE07/FE08 backend gate | PASS - 92/92 | Recorded earlier on this branch after implementation. |
-| Backend full suite | PASS - 321/321 | Recorded earlier on this branch after implementation. |
-| Frontend tests | PASS - 73/73 | Recorded earlier on this branch; no frontend code changed afterward. |
-| Frontend lint | PASS | Recorded earlier on this branch; no frontend code changed afterward. |
-| Frontend production build | PASS | Recorded earlier on this branch; only the non-blocking Vite chunk-size warning remained. |
-| Azure SQL concurrency suite | PASS - 20/20 | Recorded on staging; no SQL or production repository code changed after this result. No deadlock occurred and test seed cleanup returned 0 rows. |
-| Error-message contract | PASS - 7/7 | Recorded earlier on this branch. |
-| OpenAPI contract | PASS - 5/5 | Recorded earlier on this branch. |
-| Fixture regression suites | PASS - 2 suites, 21/21 | Fresh after commit `16fa2ed`; covers `systemIntegration.test.js` and `integration.test.js`. |
-| Traceability enforcement | PASS | Fresh: FE07 24/25 FR tags (96%), FE08 23/26 FR tags (88%), 0 implemented features below 70%. |
-| Branch diff check | PASS | Fresh: `git diff main...HEAD --check` exited 0. |
+| Cổng backend FE07/FE08 trọng tâm | PASS - 92/92 | Được ghi nhận trước đó trên nhánh này sau triển khai. |
+| Toàn bộ bộ backend | PASS - 321/321 | Được ghi nhận trước đó trên nhánh này sau triển khai. |
+| Kiểm thử frontend | PASS - 73/73 | Được ghi nhận trước đó trên nhánh này; không có mã frontend nào thay đổi sau đó. |
+| Lint frontend | PASS | Được ghi nhận trước đó trên nhánh này; không có mã frontend nào thay đổi sau đó. |
+| Bản dựng frontend production | PASS | Được ghi nhận trước đó trên nhánh này; chỉ còn cảnh báo kích thước khối Vite không chặn. |
+| Bộ đồng thời Azure SQL | PASS - 20/20 | Được ghi nhận trên staging; không có mã SQL hoặc kho dữ liệu production nào thay đổi sau kết quả này. Không xảy ra bế tắc và việc dọn dữ liệu mồi kiểm thử trả về 0 hàng. |
+| Hợp đồng thông báo lỗi | PASS - 7/7 | Được ghi nhận trước đó trên nhánh này. |
+| Hợp đồng OpenAPI | PASS - 5/5 | Được ghi nhận trước đó trên nhánh này. |
+| Các bộ hồi quy dữ liệu cố định | PASS - 2 bộ, 21/21 | Mới sau commit `16fa2ed`; bao phủ `systemIntegration.test.js` và `integration.test.js`. |
+| Thực thi truy vết | PASS | Mới: FE07 có 24/25 thẻ FR (96%), FE08 có 23/26 thẻ FR (88%), 0 tính năng đã triển khai dưới 70%. |
+| Kiểm tra diff nhánh | PASS | Mới: `git diff main...HEAD --check` thoát với mã 0. |
 
-## Fixture Remediation
+## Khắc phục dữ liệu cố định
 
-The integration and system-integration harnesses use separate in-memory FE07
-and FE08 stores to model one SQL database. After FE08 holds a copy, the harness
-now synchronizes both the copy status and the reservation-owner claim into the
-FE07 store. This keeps the fixture faithful to production behavior and prevents
-a false `RESERVATION_STATE_CONFLICT` during the cross-feature scenario.
+Các bộ kiểm thử tích hợp và tích hợp hệ thống dùng nơi lưu FE07 trong bộ nhớ riêng
+và nơi lưu FE08 để mô hình hóa một cơ sở dữ liệu SQL. Sau khi FE08 giữ một bản sao, bộ kiểm thử
+hiện đồng bộ cả trạng thái bản sao và xác nhận chủ sở hữu đặt trước vào nơi lưu
+FE07. Điều này giữ dữ liệu cố định trung thực với hành vi production và ngăn
+`RESERVATION_STATE_CONFLICT` giả trong kịch bản xuyên tính năng.
 
 Commit: `16fa2ed test: sync reservation claims in integration harness`
 
-## Scope Control
+## Kiểm soát phạm vi
 
-- `git diff main...HEAD -- database frontend/src/page frontend/src/component backend/src/routes` is empty.
-- No database schema, endpoint, route, frontend page, or frontend component was added.
-- Product changes are limited to FE07/FE08 specs, borrowing/reservation repositories and service behavior, OpenAPI/error contracts, and focused tests.
-- FE07 return-driven queue automation, FE10 delivery workers, automatic hold expiration, and server-side reservation pagination remain outside this slice.
-- No secrets or staging credentials are included in the branch.
+- `git diff main...HEAD -- database frontend/src/page frontend/src/component backend/src/routes` không có kết quả.
+- Không thêm lược đồ cơ sở dữ liệu, endpoint, tuyến, trang frontend hoặc thành phần frontend.
+- Thay đổi sản phẩm được giới hạn ở đặc tả FE07/FE08, kho dữ liệu và hành vi dịch vụ mượn/đặt trước, hợp đồng OpenAPI/lỗi và kiểm thử trọng tâm.
+- Tự động hóa hàng đợi do trả FE07 kích hoạt, tiến trình gửi FE10, tự động hết hạn giữ chỗ và phân trang đặt trước phía máy chủ vẫn nằm ngoài lát cắt này.
+- Nhánh không chứa bí mật hoặc thông tin xác thực staging.
 
-## Commits In Review Scope
+## Các commit trong phạm vi đánh giá
 
 - `c7a4e83 docs: define borrowing reservation integration`
 - `2694778 docs: align reservation transaction lock order`
@@ -71,23 +71,23 @@ Commit: `16fa2ed test: sync reservation claims in integration harness`
 - `16fa2ed test: sync reservation claims in integration harness`
 - `cf08c0e docs: validate borrowing reservation integration`
 
-## Human Review Checklist
+## Danh sách kiểm tra của con người
 
-- [x] Confirm FE07 create blocks ordinary borrowing when an `ACTIVE` queue exists.
-- [x] Confirm only the matching `NOTIFIED` owner may borrow a held `RESERVED` copy.
-- [x] Confirm approval atomically changes the matching reservation to `FULFILLED`.
-- [x] Confirm the `BookCopies -> Reservations` lock order is consistent in hold, cancellation, expiration, and fulfillment paths.
-- [x] Confirm queue processing remains manual and the out-of-scope list is unchanged.
-- [x] Confirm error/OpenAPI messages clearly explain reservation priority conflicts.
-- [x] Approve or request changes before any push or merge.
+- [x] Xác nhận việc tạo FE07 chặn mượn thông thường khi có hàng đợi `ACTIVE`.
+- [x] Xác nhận chỉ chủ sở hữu `NOTIFIED` khớp mới có thể mượn bản sao `RESERVED` đang được giữ.
+- [x] Xác nhận phê duyệt thay đổi nguyên tử lượt đặt trước khớp thành `FULFILLED`.
+- [x] Xác nhận thứ tự khóa `BookCopies -> Reservations` nhất quán trong các đường dẫn giữ, hủy, hết hạn và hoàn tất.
+- [x] Xác nhận xử lý hàng đợi vẫn thủ công và danh sách ngoài phạm vi không đổi.
+- [x] Xác nhận thông báo lỗi/OpenAPI giải thích rõ xung đột ưu tiên đặt trước.
+- [x] Phê duyệt hoặc yêu cầu thay đổi trước mọi thao tác đẩy hoặc hợp nhất.
 
-Nhat explicitly confirmed `đã review` in this Codex task on 2026-07-15. This
-closes the required human review gate; it does not authorize push or merge by
-itself.
+Nhat đã xác nhận rõ `đã review` trong tác vụ Codex này vào 2026-07-15. Việc này
+đóng cổng đánh giá bắt buộc của con người; nó không tự cho phép đẩy hoặc
+hợp nhất.
 
-## Remaining Gate
+## Cổng còn lại
 
-Choose the integration path for the reviewed branch. No push, pull request, or
-merge has been performed.
+Chọn đường dẫn tích hợp cho nhánh đã đánh giá. Chưa thực hiện đẩy, yêu cầu kéo hoặc
+hợp nhất.
 
-Verdict: **Automated validation and human review complete; ready for integration decision.**
+Kết luận: **Xác thực tự động và đánh giá của con người hoàn thành; sẵn sàng cho quyết định tích hợp.**
