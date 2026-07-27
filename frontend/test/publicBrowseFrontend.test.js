@@ -4,7 +4,7 @@ import test from 'node:test';
 
 test('FE01 HomePage reads the canonical public envelope without category endpoint', async () => {
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
-  assert.match(source, /publicBrowseApi\.list\(\)/);
+  assert.match(source, /publicBrowseApi\.list\(/);
   assert.match(source, /Array\.isArray\(booksResult\.data\)/);
   assert.doesNotMatch(source, /\/books\/categories/);
   assert.doesNotMatch(source, /booksResult\.success/);
@@ -24,7 +24,7 @@ test('FE01 blank search reloads the default catalog without an error toast', asy
   const source = await readFile(new URL('../src/page/HomePage.jsx', import.meta.url), 'utf8');
   const blankBranch = source.match(/if \(!keyword\) \{([\s\S]*?)\n[ ]{4}\}/)?.[1] || '';
 
-  assert.match(blankBranch, /await publicBrowseApi\.list\(\)/);
+  assert.match(blankBranch, /await publicBrowseApi\.list\(/);
   assert.match(blankBranch, /setBooks\(result\.data \|\| \[\]\)/);
   assert.match(blankBranch, /setActiveSearch\(''\)/);
   assert.match(blankBranch, /setActiveCategory\('Tất cả'\)/);

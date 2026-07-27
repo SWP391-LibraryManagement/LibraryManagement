@@ -21,7 +21,7 @@ test('role labels are Vietnamese presentation values', () => {
 });
 
 test('status labels accept raw enums and existing semantic view tokens', () => {
-  assert.equal(getStatusLabel('AVAILABLE'), 'Có sẵn');
+  assert.equal(getStatusLabel('AVAILABLE'), 'Còn sách');
   assert.equal(getStatusLabel('Borrowed'), 'Đang mượn');
   assert.equal(getStatusLabel('Ready to pick up'), 'Sẵn sàng nhận');
   assert.equal(getStatusLabel('CANCELLED'), 'Đã hủy');
@@ -71,7 +71,7 @@ test('shared shell and recovery surfaces use Vietnamese copy', async () => {
   const recovery = await readFile(new URL('../src/component/forgotpassword/BackgroundPanel.jsx', import.meta.url), 'utf8');
 
   assert.match(navigation, /label: 'Thư viện'/);
-  assert.match(navigation, /label: 'Home'/);
+  assert.match(navigation, /label: 'Trang chủ'/);
   assert.match(layout, /libraryHomeLabel/);
   assert.match(feedback, /aria-label="Đóng"/);
   assert.match(recovery, /Chào mừng trở lại/);

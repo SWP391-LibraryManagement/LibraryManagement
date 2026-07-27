@@ -106,8 +106,8 @@ test('status update reloads the list with the new status so the edited book stay
   const { page } = await sources();
 
   assert.match(page, /const statusChanged = updateForm\.status !== selectedBook\.status/);
-  assert.match(page, /setAppliedStatusFilter\(updateForm\.status\)/);
-  assert.match(page, /loadBooks\(statusChanged[\s\S]*status: updateForm\.status[\s\S]*pageNumber: 1/);
+  assert.match(page, /setAppliedStatusFilter\(targetStatus\)/);
+  assert.match(page, /loadBooks\(\{ status: targetStatus, pageNumber: 1 \}\)/);
 });
 
 // @spec BR-FE05-019, FR-FE05-027, AC-FE05-018, NFR-FE05-UX-003
