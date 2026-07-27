@@ -1,20 +1,19 @@
 # PLAN.md - FE10 Notification Management
 
-Status: H3 GOVERNANCE REMEDIATION - FRESH H2 PENDING
+Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
 
 Owner: Nhat
 
-Updated: 2026-07-27
+Updated: 2026-07-28
 
 Approval: G1-G7 approved 2026-07-13; G8-G10/ADR-004 and G11/ADR-005 approved 2026-07-15; G12 FE04 boundary approved by Nhat on 2026-07-17
 
-Workflow State: The approved Phase 2/G1-G12 baseline remains complete. Nhat
-approved the v0.4.4 PLAN/TASKS and the integrated `8d0059b` H2 addendum on
-2026-07-27. The reviewed result was committed as `f346ae0`, pushed to draft
-PR #63, and CI run `30244750250` passed. The first H3 review confirmed
-idempotent replay complies with `AC-FE10-008`/`EC-FE10-008` and found no FE10
-code or business-rule defect. The documentation-only governance remediation
-remains uncommitted pending fresh H2 and repeated H3.
+Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
+remains complete. The user approved the v0.5.0 personal notification inbox
+design and consolidated written SPEC on 2026-07-27. The user approved the new
+implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
+Product implementation remains `NOT_STARTED` until the governance activation
+PR reaches `main` as required by Fast-Track Hybrid.
 
 ---
 
@@ -288,3 +287,53 @@ Approved design:
    Express app export or starting timers on module import.
 6. Keep generated implementation uncommitted until focused/full validation,
    secret scans, staging-safe checks, and H2 review pass.
+
+## 15. V0.5.0 Personal Notification Inbox
+
+Detailed executable plan:
+`docs/superpowers/plans/2026-07-27-fe10-personal-notification-inbox.md`.
+
+### 15.1 Goal And Architecture
+
+Expose one own-record-only inbox for authenticated `MEMBER`, `LIBRARIAN`, and
+`ADMIN` accounts by adding nullable `Notifications.ReadAt`. Reuse each existing
+eligible non-sensitive notification row for both email processing and inbox
+display; do not create another channel, table, duplicate event, staff-wide log,
+delete operation, or archive state.
+
+The implementation sequence is additive and backend-first:
+
+1. add and verify the repeatable Azure SQL-compatible migration and canonical
+   model/schema;
+2. add SQL-filtered own-user repository operations and a fixed server-side
+   safe projection/action map;
+3. add authenticated list, count, mark-one, and mark-all APIs;
+4. add the shared frontend client/context, unread polling, bell preview, and
+   `/notifications` page;
+5. prove FE04/FE07/FE08 fan-in, three-role browser behavior, migration
+   repeatability, documentation fan-out, and Azure staging rollout.
+
+### 15.2 Ordered TDD Slices
+
+| Slice | Outcome | Primary acceptance |
+| --- | --- | --- |
+| FE10-I01 | `ReadAt` migration, backfill, index, canonical schema/model | AC-FE10-011 to AC-FE10-014 |
+| FE10-I02 | SQL-owned list/count/read operations and safe action projection | AC-FE10-011 to AC-FE10-015 |
+| FE10-I03 | Authenticated API, validation, IDOR-safe `404`, OpenAPI | AC-FE10-011 to AC-FE10-015 |
+| FE10-I04 | Frontend API client and shared inbox context | AC-FE10-012, AC-FE10-013, AC-FE10-016 |
+| FE10-I05 | Shell bell, `99+` badge, five-unread preview, safe navigation | AC-FE10-015, AC-FE10-016 |
+| FE10-I06 | `/notifications` filters, pagination, read state, mark-all | AC-FE10-011, AC-FE10-014, AC-FE10-016 |
+| FE10-I07 | FE04/FE07/FE08 fan-in plus MEMBER/LIBRARIAN/ADMIN E2E | AC-FE10-011 to AC-FE10-016 |
+| FE10-I08 | Full gates, docs, migration proof, backend-first Azure staging | AC-FE10-011 to AC-FE10-016 |
+
+### 15.3 Review And Release Gates
+
+- Plan approval opens implementation only; each slice still follows RED,
+  GREEN, focused verification, review, and a bounded commit.
+- The migration must pass twice against a disposable SQL Server database before
+  H2 and before staging use.
+- Backend API and migration deploy before frontend. The old frontend remains
+  compatible throughout that checkpoint.
+- H2 reviews the complete local candidate. H3 rechecks specification,
+  ownership, sensitive exclusion, migration safety, and staging evidence before
+  merge.

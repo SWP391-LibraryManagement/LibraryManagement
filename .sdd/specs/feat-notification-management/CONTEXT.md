@@ -1,12 +1,12 @@
 # CONTEXT.md - FE10 Notification Management
 
-# Version: 0.2.0
+# Version: 0.3.0
 
-# Status: APPROVED - BASELINE 2026-07-17
+# Status: V0.5.0 H1 APPROVED - GOVERNANCE ACTIVATION PENDING MERGE
 
 # Owner: Nhat
 
-# Last Updated: 2026-07-15
+# Last Updated: 2026-07-28
 
 # Feature folder: `.sdd/specs/feat-notification-management/`
 
@@ -16,15 +16,20 @@
 
 Notification Management exists to deliver system messages to users at the right time and through approved channels.
 
-This feature must keep four things consistent:
+This feature must keep these concerns consistent:
 
 - Notification requests created by other features.
 - Notification content rendered from approved templates.
-- Delivery status for email and in-app notifications.
+- Delivery status for email notifications.
+- Own-user personal notification inbox visibility and read state for eligible
+  non-sensitive notification records on the web.
 - Safe delivery records for failed or skipped delivery attempts.
 - Construction-bound ownership for FE02 OTP, FE04 membership-result, and FE11 account-setup delivery.
 
-FE10 is a Standard Spec feature because it supports many workflows, but it should not own the business decision of when an account, reservation, loan, or fine changes state.
+FE10 historically used a Standard Spec. Revision v0.5.0 is treated as Full Spec
+because it adds schema, authenticated own-record APIs, and server-side
+authorization while preserving the rule that FE10 does not decide when an
+account, reservation, loan, or fine changes state.
 
 ---
 
@@ -36,10 +41,14 @@ The typical library notification workflow:
 2. The source feature sends FE10 a notification request with recipient, type, channel, template key, and template data.
 3. FE10 validates the request and checks recipient/channel availability.
 4. FE10 renders the message from an approved template.
-5. FE10 creates a notification record with status `PENDING`.
-6. FE10 sends the email or creates an in-app notification.
-7. FE10 updates status to `SENT`, `DELIVERED`, `FAILED`, or `SKIPPED` depending on the channel and result.
-8. If sending fails, FE10 records a safe failure reason.
+5. FE10 persists accepted sensitive delivery as `PROCESSING` before provider
+   I/O, while queued non-sensitive delivery starts as `PENDING`.
+6. Eligible non-sensitive records are visible in the recipient's personal web
+   inbox without creating a second record or delivery channel.
+7. The worker sends queued email and updates the independent delivery status;
+   personal read state changes only through the authenticated inbox API.
+8. If sending fails, FE10 records a safe failure reason without removing the
+   inbox record or rolling back the source business event.
 
 ---
 
@@ -49,7 +58,10 @@ FE10 includes:
 
 - Receiving notification requests from approved construction-bound internal features.
 - Sending account verification, password reset, reservation, due date, overdue, and fine notifications.
-- Creating in-app notifications.
+- Projecting eligible non-sensitive records into the authenticated recipient's
+  personal web inbox without creating another notification or channel.
+- Tracking nullable `ReadAt` independently from email delivery and deriving
+  safe business navigation from a fixed backend allowlist.
 - Sending email notifications through a configured provider adapter or injected mock provider.
 - Using approved notification templates and required template variables.
 - Tracking notification status and failed delivery reasons.
@@ -63,9 +75,9 @@ FE10 does not include:
 - Approving borrow/return workflows. That belongs to FE07 Borrowing Management.
 - SMS, push notification, or marketing campaign delivery.
 - Online payment notifications.
-- User notification inbox/list UI.
-- Marking in-app notifications as read.
-- Admin/librarian notification log screens.
+- A second `IN_APP` delivery channel or duplicate inbox table/record.
+- Global Admin/Librarian notification-log screens.
+- Notification delete, archive, retention-cleanup, or preference management.
 - Manual retry management screens.
 - Template editor UI.
 - Real external email-provider credentials in source code.
@@ -74,12 +86,17 @@ FE10 does not include:
 
 ## 4. Current Data Model Notes
 
-The approved SQL design is implemented in `database/Librarymanagement.sql` for:
+The existing SQL design is implemented in `database/Librarymanagement.sql`;
+the approved v0.5.0 extension adds the personal read-state contract:
 
 - `NotificationTemplates` with canonical template code, subject, body, status, and timestamps.
-- `Notifications` with type/template, recipient, delivery status, safe source metadata, all-status idempotency key, redacted payload, attempt count, and safe failure summary.
+- `Notifications` with type/template, recipient, delivery status, safe source
+  metadata, all-status idempotency key, redacted payload, attempt count, safe
+  failure summary, and the v0.5.0-planned nullable `ReadAt` field.
 - `NotificationAttempts` with attempt timestamp/status, safe error message, and provider message ID.
-- `UserNotificationPreferences` remains future work because notification preferences and in-app state are outside the current FE10 slice.
+- `UserNotificationPreferences` remains future work. The approved personal web
+  inbox reuses `Notifications` and does not require a preference or projection
+  table.
 
 Potential issues to review:
 
@@ -89,7 +106,9 @@ Potential issues to review:
 - Staff HTTP callers cannot submit sensitive auth notifications; only FE02 may submit verification/reset, only FE04 may submit membership result, and only FE11 may submit account setup through their bound requesters.
 - FE10 should be idempotent enough to avoid duplicate messages for the same source event.
 - Failed sends should not roll back already-completed business transactions in FE02/FE07/FE08/FE09.
-- In-app notification read/unread state is out of the current assignment scope unless the team adds it later.
+- Personal inbox queries must filter by authenticated `UserId` and the exact
+  eligible non-sensitive allowlist before rows materialize; sensitive and
+  userless rows never enter list, count, or read operations.
 
 The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation blockers above; future-scope items remain explicitly deferred.
 
@@ -147,20 +166,25 @@ The approved SPEC and FE10-H01 through FE10-H09 resolved the implementation bloc
 | ID | Approved Decision | Source | Status |
 | -- | ----------------- | ------ | ------ |
 | Q-FE10-001 | Phase 1 required channel is email through a configured provider adapter; tests use an injected mock provider. | Review packet 2026-06-10; ADR-004 approval 2026-07-15 | APPROVED |
-| Q-FE10-002 | In-app notification is optional/future work in Phase 1. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-002 | A separate `IN_APP` delivery channel remains future work. The v0.5.0 web inbox is an additional presentation of the existing eligible email-backed record, not a new channel. | Review packet 2026-06-10; v0.5.0 design approval 2026-07-27 | APPROVED |
 | Q-FE10-003 | Required canonical templates cover verification, password reset, account setup, reservation ready, due reminder, overdue notice, fine notice, and membership result. | Review packet 2026-06-10; normalization through 2026-07-17 | APPROVED |
 | Q-FE10-004 | Store notification send attempts and status. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-005 | Retry failed sends manually only in Phase 1. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-006 | Notification failure must not block source business flow. | Review packet 2026-06-10 | APPROVED |
 | Q-FE10-008 | FE11-owned `ACCOUNT_SETUP` is delivered only through the FE11-bound requester and persists no raw setup token/link. | ADR-005; Nhat approval 2026-07-15 | APPROVED |
 | Q-FE10-007 | System/Scheduler may trigger notifications internally; not a login role. | Review packet 2026-06-10 | APPROVED |
+| Q-FE10-014 | Every authenticated `MEMBER`, `LIBRARIAN`, and `ADMIN` receives an own-record-only personal inbox for eligible non-sensitive notifications; global staff logs remain out of scope. | v0.5.0 design and written SPEC approval 2026-07-27 | APPROVED |
 
 ---
 
 ## 10. Current Hardening Status
 
-- `SPEC.md` version 0.4.1 incorporates ADR-004 OTP ownership, ADR-005 account setup, and the FE04 membership-result source boundary.
-- FE10-H01 through FE10-H09 remain completed historical work; the new FE10-S01 through FE10-S05 follow-up is specification-ready and awaits implementation review.
+- `SPEC.md` v0.5.0, the personal inbox design, and FE10-I01..I08 plan are
+  H1-approved. Product implementation remains `NOT_STARTED` until the
+  governance activation reaches `main`.
+- FE10-H01 through FE10-H09 and FE10-S01 through FE10-S16 remain completed
+  historical delivery work; FE10-I01 through FE10-I08 are the new bounded
+  personal inbox tasks.
 - Use environment variables or deployment configuration for email provider credentials.
 - Do not log raw tokens, full reset links, or provider secrets.
 - Keep FE10 APIs role-protected and server-side validated.

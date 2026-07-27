@@ -1,5 +1,40 @@
 # CHANGELOG.md - FE10 Notification Management
 
+## 2026-07-28 - H1 plan approval and governance activation
+
+- Recorded the user's approval of the detailed FE10-I01..I08 implementation
+  plan as H1.
+- Kept product implementation `NOT_STARTED` until this governance activation
+  reaches `main`, matching the repository Fast-Track gate.
+- Pre-H3 review removed stale draft-era approval text, restored the v0.5.0
+  acceptance-matrix test/task columns, synchronized active feature/agent/test
+  context, and recorded the latest non-overlapping `main` rebase baseline. This
+  remediation changes no approved behavior or product implementation state.
+
+## 2026-07-27 - Approved personal notification inbox expansion (v0.5.0)
+
+- Recorded the user's approval of the consolidated written design and SPEC.
+- Authorized detailed PLAN/TASKS preparation; product implementation remains
+  blocked until the implementation plan is reviewed.
+
+- Proposed one personal inbox for every authenticated `MEMBER`, `LIBRARIAN`,
+  and `ADMIN`, restricted to the actor's own non-sensitive records.
+- Reused each existing eligible email notification as the web inbox record;
+  no `IN_APP` delivery channel or duplicate notification is introduced.
+- Specified nullable `ReadAt`, historical eligible-row backfill, personal list
+  and unread-count APIs, idempotent mark-one/mark-all operations, safe DTOs, and
+  backend-derived allowlisted navigation.
+- Added the authenticated bell, five-item preview, `/notifications` page,
+  all/unread/read filters, pagination, polling, and non-blocking read-failure
+  behavior to the proposed contract.
+- Kept sensitive authentication/setup records, global staff logs, delete/
+  archive, WebSocket/push, retry UI, and caller-supplied URLs out of scope.
+- User approved the interactive design decisions and consolidated written
+  design/SPEC on 2026-07-27; the detailed plan was approved on 2026-07-28.
+- Marked the active v0.5.0 implementation state `NOT_STARTED` while retaining
+  the completed v0.4.5 task history, so traceability remains report-only until
+  the written contract is approved and new tasks are activated.
+
 ## 2026-07-27 - Implement staging email delivery remediation locally
 
 - Added the transactional, repeatable `ACCOUNT_SETUP` template update-or-insert
