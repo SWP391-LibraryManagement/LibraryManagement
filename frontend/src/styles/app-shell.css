@@ -429,6 +429,8 @@
 .return-condition { margin-bottom: 14px; }
 .return-condition .select { width: 100%; }
 .return-submit { justify-content: center; width: 100%; margin-top: 16px; }
+.return-actions { display: grid; gap: 10px; margin-top: 16px; }
+.return-actions .return-submit { margin-top: 0; }
 
 /* ---- Pagination ---------------------------------------------------------- */
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
@@ -505,7 +507,7 @@
 /* ---- Reservation management -------------------------------------------- */
 .reservation-header-actions { flex-wrap: wrap; justify-content: flex-end; }
 .reservation-workspace { display: grid; gap: 16px; }
-.reservation-tabs {
+.reservation-tabs-bar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -514,6 +516,11 @@
   border-radius: var(--lib-radius);
   background: rgba(255, 253, 248, .82);
   box-shadow: var(--lib-shadow);
+}
+.reservation-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .reservation-tabs .tab { margin: 0; }
 .reservation-updated { margin-left: auto; padding: 0 6px; font-size: 13px; }
@@ -926,6 +933,7 @@
   .return-detail-heading > .badge { grid-column: 2; width: fit-content; }
   .reservation-header-actions,
   .reservation-header-actions .btn { width: 100%; justify-content: center; }
+  .reservation-tabs-bar { flex-direction: column; align-items: stretch; }
   .reservation-tabs { align-items: stretch; flex-direction: column; }
   .reservation-tabs .tab { justify-content: center; }
   .reservation-updated { margin-left: 0; text-align: center; }

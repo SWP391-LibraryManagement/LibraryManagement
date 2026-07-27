@@ -1,7 +1,40 @@
+const LIBRARY_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+// @spec NFR-FE07-TIME-001 — parse date-only (YYYY-MM-DD) as UTC midnight để tránh lệch host timezone.
+function parseDateOnly(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  return Date.UTC(Number(year), Number(month) - 1, Number(day));
+}
+
+function libraryTodayEpoch(now = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: LIBRARY_TIME_ZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now).filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, value]),
+  );
+  return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
+}
+
+// @spec NFR-FE07-TIME-001 — định dạng ngày theo Asia/Ho_Chi_Minh để giữ nguyên ngày bất kể host timezone.
 export function fmtDate(value) {
   if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('vi-VN');
+  const dateOnlyEpoch = parseDateOnly(value);
+  if (dateOnlyEpoch !== null) {
+    const formatted = new Intl.DateTimeFormat('vi-VN', {
+      timeZone: LIBRARY_TIME_ZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(dateOnlyEpoch));
+    return formatted;
+  }
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime()) ? '—' : fallback.toLocaleDateString('vi-VN');
 }
 
 export function vnd(value) {
@@ -28,13 +61,12 @@ export function statusToUi(status, { notifiedAt, expiresAt } = {}) {
   return status || 'Unknown';
 }
 
+// @spec NFR-FE07-TIME-001 — so sánh theo business date của thư viện, không dùng host-local midnight.
 export function isPast(dateValue) {
   if (!dateValue) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const date = new Date(dateValue);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
+  const epoch = parseDateOnly(dateValue);
+  if (epoch === null) return false;
+  return epoch < libraryTodayEpoch();
 }
 
 function firstDetail(request) {

@@ -180,7 +180,7 @@ export default function MyReservationsPage() {
     if (!cancelTarget || cancelling) return;
     setCancelling(true);
     try {
-      await reservationApi.cancel(cancelTarget.reservationId, 'Cancelled by member from UI');
+      await reservationApi.cancel(cancelTarget.reservationId, 'Thành viên hủy đặt chỗ từ giao diện.');
       await Promise.all([
         loadReservations(),
         loadCandidates(search, candidatePagination.page),

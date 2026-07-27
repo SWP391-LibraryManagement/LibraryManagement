@@ -1,6 +1,6 @@
 # SPEC.md - FE09 Fine Management
 
-# Version: 0.4.4
+# Version: 0.4.5
 
 # Status: REVISION IMPLEMENTED - HUMAN REVIEW PENDING 2026-07-28
 
@@ -214,6 +214,7 @@ Use these stable IDs for tasks and tests.
 - FR-FE09-017: When calculating a fine, the system shall derive overdue days from the `Asia/Ho_Chi_Minh` business date and stored due/return dates.
 - FR-FE09-018: The Librarian/Admin fine workspace shall preserve the selected fine across list, calculation, collection, and paid-reconciliation steps. A newly calculated overdue fine shall become the selected `UNPAID` fine for collection, and payment steps shall reject entry unless an `UNPAID` fine is selected, including when that selected fine is outside the currently rendered server page.
 - FR-FE09-019: WHEN a single-role Member views “Tiền phạt của tôi”, the system shall return only that Member's fines with the related book, `borrowDetailId`, due date, return date, amount, reason, status, and paid timestamp; the frontend shall explain that positive `UNPAID` fines block FE07 borrowing/renewal, link to borrowing history for reconciliation, remain read-only, and keep the internal `borrowDetailId` out of the Member table presentation.
+- FR-FE09-020: WHEN Librarian/Admin requests fine creation from an overdue loan selected in the FE07 return workspace, FE09 shall accept only the canonical `borrowDetailId`, derive dates/overdue days/amount on the server, create or recalculate the canonical `UNPAID` overdue fine without duplication, and return an existing terminal fine unchanged.
 
 ---
 
@@ -236,6 +237,7 @@ Use these stable IDs for tasks and tests.
 - AC-FE09-015: Given a fine calculation at a timezone boundary, when the server business date is evaluated, then overdue days use `Asia/Ho_Chi_Minh` consistently.
 - AC-FE09-016: Given a Librarian/Admin calculates or selects an unpaid fine, when moving to collection or paid reconciliation, then the same fine ID, member, borrowing context, and amount remain selected; after success, the returned canonical `PAID` fine is shown and FE07/FE12 consume the resolved state.
 - AC-FE09-017: Given Guest, Librarian, Admin, and Member actors, when they access `/api/fines/me`, then Guest receives `401`, Librarian/Admin receive `403 ROLE_REQUIRED`, and only Member receives their own borrowing-linked fine records; Member sees no calculate, collect, paid, waive, cancel action, or visible `Mã mượn` field.
+- AC-FE09-018: Given Librarian/Admin selects an overdue active loan in FE07, when `Tạo phiếu phạt` is chosen, then FE09 calculates from stored borrowing data using the selected `borrowDetailId`, creates or recalculates at most one active overdue fine, and the frontend reports the returned state without submitting an amount.
 
 ---
 
@@ -525,6 +527,7 @@ This feature does not include:
 | AC-FE09-015 | UC42 | Ho Chi Minh business date is deterministic | Ready for review |
 | AC-FE09-016 | UC41-UC44 | Calculate/select -> collect/paid preserves one canonical fine | Ready for review |
 | AC-FE09-017 | UC41-UC44 | Guest/staff own-list denial and read-only Member fine page | Automated pass; human review pending |
+| FR-FE09-020; AC-FE09-018 | UC42 | FE07 overdue selection to FE09 server calculation frontend contract | Automated pass; human review pending |
 
 ---
 

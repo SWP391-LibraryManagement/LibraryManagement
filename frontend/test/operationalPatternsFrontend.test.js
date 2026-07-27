@@ -54,3 +54,29 @@ test('staff navigation includes separate Books, Inventory and Fines pages', asyn
   assert.equal(navigation.getActiveNavigationKey('/librarian/books'), 'book-management');
   assert.equal(navigation.getActiveNavigationKey('/librarian/fines'), 'fine-management');
 });
+
+// @spec NFR-FE08-UX-004 — toast queue FIFO để warning không thay thế success đang hiển thị.
+test('useToast exposes a FIFO queue so a later toast waits for the current one', async () => {
+  const feedback = await readFile(new URL('../src/component/shared/Feedback.jsx', import.meta.url), 'utf8');
+
+  // Queue state shape
+  assert.match(feedback, /const \[queue, setQueue\] = useState\(\[\]\)/);
+  // show() appends to queue (FIFO order preserved)
+  assert.match(feedback, /setQueue\(\(current\) => \[\.\.\.current, \{ message, type \}\]\)/);
+  // clear() advances the queue (removes head, not reset to null)
+  assert.match(feedback, /setQueue\(\(current\) => current\.slice\(1\)\)/);
+  // Exposed toast is the queue head, falling back to null when empty
+  assert.match(feedback, /const toast = queue\[0\] \|\| null/);
+  // Spec tag present so traceability is anchored
+  assert.match(feedback, /@spec NFR-FE08-UX-004/);
+});
+
+test('Toast component auto-closes via the current toast reference and keeps the close button accessible', async () => {
+  const feedback = await readFile(new URL('../src/component/shared/Feedback.jsx', import.meta.url), 'utf8');
+
+  // useEffect keyed on `toast` + `onClose` so the timer resets when the queue advances
+  assert.match(feedback, /useEffect\(\(\) => \{[\s\S]*?const duration = TOAST_DURATION[\s\S]*?setTimeout\(onClose, duration\)/);
+  assert.match(feedback, /\}, \[toast, onClose\]\)/);
+  // Icon-only close button exposes an accessible label
+  assert.match(feedback, /aria-label="Đóng thông báo"/);
+});

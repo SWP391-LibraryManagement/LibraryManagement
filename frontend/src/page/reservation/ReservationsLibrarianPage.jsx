@@ -182,6 +182,22 @@ export default function ReservationsLibrarianPage() {
 
   const hasActiveFilters = Boolean(search) || bookFilter !== 'ALL' || statusFilter !== 'ALL';
 
+  // @spec NFR-FE08-A11Y-001 — arrow-key navigation giữa các tab theo ARIA tab pattern.
+  function handleTabKeyDown(event) {
+    const TAB_KEYS = ['list', 'queue'];
+    const currentIndex = TAB_KEYS.indexOf(view);
+    let nextIndex = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % TAB_KEYS.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + TAB_KEYS.length) % TAB_KEYS.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = TAB_KEYS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextKey = TAB_KEYS[nextIndex];
+    setView(nextKey);
+    document.getElementById(`reservation-tab-${nextKey}`)?.focus();
+  }
+
   async function confirmNotify() {
     if (!notifyTarget || notifying) return;
     setNotifying(true);
@@ -259,27 +275,33 @@ export default function ReservationsLibrarianPage() {
       )}
 
       <section className="reservation-workspace">
-        <div className="reservation-tabs" role="tablist" aria-label="Chế độ xem đặt chỗ">
-          <button
-            className={`tab${view === 'list' ? ' active' : ''}`}
-            onClick={() => setView('list')}
-            role="tab"
-            id="reservation-tab-list"
-            aria-selected={view === 'list'}
-            aria-controls="reservation-tabpanel"
-          >
-            <CalendarClock size={15} /> Tất cả đặt chỗ
-          </button>
-          <button
-            className={`tab${view === 'queue' ? ' active' : ''}`}
-            onClick={() => setView('queue')}
-            role="tab"
-            id="reservation-tab-queue"
-            aria-selected={view === 'queue'}
-            aria-controls="reservation-tabpanel"
-          >
-            <PackageCheck size={15} /> Hàng đợi theo sách
-          </button>
+        <div className="reservation-tabs-bar">
+          <div className="reservation-tabs" role="tablist" aria-label="Chế độ xem đặt chỗ">
+            <button
+              className={`tab${view === 'list' ? ' active' : ''}`}
+              onClick={() => setView('list')}
+              onKeyDown={handleTabKeyDown}
+              role="tab"
+              id="reservation-tab-list"
+              aria-selected={view === 'list'}
+              aria-controls="reservation-tabpanel"
+              tabIndex={view === 'list' ? 0 : -1}
+            >
+              <CalendarClock size={15} /> Tất cả đặt chỗ
+            </button>
+            <button
+              className={`tab${view === 'queue' ? ' active' : ''}`}
+              onClick={() => setView('queue')}
+              onKeyDown={handleTabKeyDown}
+              role="tab"
+              id="reservation-tab-queue"
+              aria-selected={view === 'queue'}
+              aria-controls="reservation-tabpanel"
+              tabIndex={view === 'queue' ? 0 : -1}
+            >
+              <PackageCheck size={15} /> Hàng đợi theo sách
+            </button>
+          </div>
           <span className="reservation-updated muted">
             {lastUpdated ? `Cập nhật lúc ${lastUpdated}` : 'Chưa tải dữ liệu'}
           </span>
@@ -374,7 +396,7 @@ export default function ReservationsLibrarianPage() {
             <div className="queue-list">
               {queue.map((item, index) => (
                 <div className={`queue-item${index === 0 ? ' head' : ''}`} key={item.id}>
-                  <span className="queue-pos">{index + 1}</span>
+                  <span className="queue-pos">{item.queue ?? '—'}</span>
                   <div className="stack-sm reservation-queue-member">
                     <strong>{item.member}</strong>
                     <span className="muted">{item.id} • {item.barcode} • đặt ngày {fmtDate(item.reservedDate)}</span>
