@@ -5,13 +5,13 @@
 - H3 round-one base: `main@a5fcbb989d730923548a67a789a1447b180de2a9`
 - H3 round-one head: `28c4f80ca6e249b7802caf854f9fa42cb4840158`
 - Current H1-approved base: `main@a240705fbd486304464b073cbd3caec77a1fa135`
-- Current rebased committed head: `883157124edf295f12683548754a881383431664`
-- Status: **AZURE STAGING PASS; H3 ROUND ONE FAILED; REMEDIATION IN PROGRESS**
+- Deployed runtime remediation head: `3f9f23a0bc8705590a977e31b03b05a6d2845628`
+- Status: **EXACT-HEAD CI/AZURE PASS; H3 ROUND TWO PENDING**
 
 This record closes no gate early. It reconciles the exact Azure evidence and
-the first H3 outcome required by the approved FE10-I08 plan. A later section
-must record the new exact head, CI, Azure deployment, repeated H3 decision,
-merge, and post-merge runs only after each event occurs.
+the first H3 outcome required by the approved FE10-I08 plan. Section 5 records
+the remediation head, CI, Azure deployment, and bounded live verification.
+Repeated H3, merge, and post-merge runs are recorded only after they occur.
 
 ## 1. Reviewed Candidate And Approval Chain
 
@@ -114,10 +114,11 @@ Azure schema preparation, diff hygiene, and contradiction, unfinished-marker,
 and conflict scans. These results authorize only preparation of the new H2
 candidate.
 
-The later automatic deployment of `main@a240705` means Azure staging no longer
-serves the unmerged PR #75 candidate. Historical run `30307855616` remains valid
-for head `28c4f80`, but the rebased remediation must receive fresh H2, be
-published at a new exact head, and be redeployed before repeated H3.
+The later automatic deployment of `main@a240705` temporarily meant Azure
+staging no longer served the unmerged PR #75 candidate. Historical run
+`30307855616` remains valid for head `28c4f80`; that condition was subsequently
+closed by H2 round 4, publication of `3f9f23a`, and exact-head Azure deployment
+`30313949983`.
 
 Fresh complete local gates after the approved `main@a240705` rebase passed:
 backend 69/69 suites and 1084/1084 tests with configured coverage; frontend
@@ -126,13 +127,33 @@ backend 69/69 suites and 1084/1084 tests with configured coverage; frontend
 and diff hygiene. The lower backend count is the expected result of upstream
 removing obsolete FE11 edit-action tests, not a skipped FE10 test.
 
-## 5. Remaining Mandatory Gates
+## 5. Runtime Exact-Head Evidence
 
-1. Produce a fresh H2 remediation fingerprint and obtain explicit H2 approval.
-2. Commit/push the approved remediation and wait for exact-head PR CI.
-3. Redeploy that exact head to Azure staging and repeat Azure SQL/API/browser
-   verification and cleanup.
-4. Repeat separate Standards and Spec H3 review on the exact deployed head.
-5. Obtain explicit H3 approval before merge.
-6. Merge PR #75, then verify exact post-merge `main` CI and automatic Azure
+- H2 round 4 fingerprint
+  `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`
+  was explicitly approved.
+- The approved remediation was committed and pushed as PR #75 head
+  `3f9f23a0bc8705590a977e31b03b05a6d2845628`.
+- Exact-head CI `30313721511` passed.
+- Manual Azure staging deployment `30313949983` passed preflight, backend,
+  frontend, and smoke jobs.
+- `https://www.thuvienhub.io.vn` returned `200`; backend health and readiness
+  returned `ok`; anonymous `GET /api/notifications/mine` returned protected
+  `401` with the exact approved CORS origin.
+- Direct read-only Azure SQL verification found exactly one nullable `ReadAt`
+  column and exactly one `IX_Notifications_User_ReadAt_CreatedAt` index.
+  Temporary probe rows and temporary exact-IP firewall rules were removed.
+- Historical three-role own-record/sensitive-exclusion/read-replay evidence on
+  `28c4f80` remains applicable to the unchanged FE10 backend contract. Exact
+  remediation-head local Chromium covers the changed page-state and stacking
+  behavior; the deployed frontend was additionally observed on the Azure
+  domain rather than localhost.
+
+## 6. Remaining Mandatory Gates
+
+1. Obtain H2 approval for the bounded evidence-only lifecycle closeout, publish
+   it, and make the resulting latest PR head pass exact-head CI/Azure gates.
+2. Repeat separate Standards and Spec H3 review on that exact latest head.
+3. Obtain explicit H3 approval before merge.
+4. Merge PR #75, then verify exact post-merge `main` CI and automatic Azure
    staging deployment before claiming completion.

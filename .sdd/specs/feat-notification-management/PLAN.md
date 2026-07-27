@@ -12,20 +12,17 @@ Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline
 remains complete. The user approved the v0.5.0 personal notification inbox
 design and consolidated written SPEC on 2026-07-27. The user approved the new
 implementation plan and FE10-I01..I08 task decomposition as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
-the cross-platform migration-hash remediation are H2-approved on PR #75 head
-`28c4f80`. Exact-head CI `30306805399` and Azure staging deployment
-`30307855616` passed, followed by three-role API/browser and Azure SQL cleanup
-verification. H3 round one against `main@a5fcbb9...28c4f80` found an omitted
-ADR update, stale lifecycle documentation, two bounded inbox page state defects,
-and a reported popover stacking defect. Their local TDD/documentation
-remediation requires fresh H2, exact-head CI/Azure redeployment, repeated H3,
-merge, and post-merge CI/deployment.
-The user subsequently approved non-overlapping drift through `main@12faead`;
-the branch rebased cleanly and retains an uncommitted remediation candidate.
-Azure currently serves that newer `main`, not the unmerged PR candidate.
-Fresh local gates passed on the rebased candidate; H2, publication, exact-head
-CI/Azure redeployment, repeated H3, merge, and post-merge evidence remain open.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08,
+the cross-platform migration-hash remediation, and the bounded H3 round-one
+remediation are H2-approved and published as PR #75 runtime head `3f9f23a`, rebased
+cleanly on the user-approved `main@a240705` baseline. Exact-head CI
+`30313721511` and Azure staging deployment `30313949983` passed. Public
+HTTPS/CORS, protected-route, Azure SQL schema/index, and cleanup checks also
+passed. The round-one ADR, lifecycle-documentation, page-state, and popover
+stacking findings are implemented; repeated H3, explicit H3 approval, merge,
+and post-merge CI/deployment remain open.
+An H2-reviewed evidence-only closeout commit may sit above the deployed runtime
+head; the resulting latest PR head must pass exact-head gates before H3.
 
 ---
 

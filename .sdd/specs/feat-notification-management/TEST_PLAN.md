@@ -167,6 +167,9 @@ npm.cmd run trace:enforce
   `30307855616`, and three-role live verification passed.
 - H3 round one failed on ADR/current-state and bounded UI-state/stacking
   findings. Focused UI remediation and the complete local matrix are GREEN on
-  H1-approved `main@a240705`; the remediation still requires a fresh H2
-  fingerprint, exact-head CI/Azure redeployment, repeated H3, merge, and exact
-  post-merge CI/deployment.
+  H1-approved `main@a240705`. H2 round 4 approved the published runtime
+  remediation head `3f9f23a`; exact-head CI `30313721511`, Azure deployment `30313949983`,
+  public transport/protected-route checks, Azure SQL schema/index verification,
+  and cleanup passed. Repeated H3, merge, and exact post-merge CI/deployment
+  remain pending. An H2-reviewed evidence-only closeout commit may sit above
+  the runtime head; the resulting latest PR head must pass exact-head gates.

@@ -1,14 +1,13 @@
 # TASKS.md - FE10 Notification Management
 
 Status: V0.5.0 AZURE STAGING VERIFIED - H3 REMEDIATION IN PROGRESS
-Implementation State: PARTIAL
+Implementation State: IMPLEMENTED - H3/MERGE PENDING
 
-Current v0.5.0 detail: FE10-I01..I08 and the migration-hash remediation are
-H2-approved on PR #75 head `28c4f80`; exact-head CI `30306805399` and Azure
-staging deployment `30307855616` passed. H3 round one found bounded
-ADR/source-of-truth and inbox UI-state/stacking defects. Their local
-remediation is rebased cleanly on H1-approved `main@a240705` and requires fresh
-H2, exact-head CI/Azure redeployment, and repeated H3 before merge.
+Current v0.5.0 detail: FE10-I01..I08, the migration-hash remediation, and the
+bounded H3 round-one remediation are H2-approved and published on PR #75 head
+as runtime head `3f9f23a`, rebased cleanly on H1-approved `main@a240705`. Exact-head CI
+`30313721511` and Azure staging deployment `30313949983` passed. Repeated H3,
+explicit H3 approval, merge, and post-merge CI/deployment remain pending.
 
 Prior v0.4.5 Implementation State: COMPLETE
 
@@ -19,11 +18,13 @@ Updated: 2026-07-28
 Workflow State: The approved Phase 2/G1-G12 and v0.4.5 delivery baseline below
 remains complete. The user approved the v0.5.0 personal inbox design and
 written SPEC on 2026-07-27, then approved FE10-I01..I08 as H1 on 2026-07-28.
-Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 are
-published on PR #75 head `28c4f80`; PR CI, two-run Azure migration, exact-head
-redeploy, and live three-role verification pass. H3 round-one remediation,
-fresh H2/CI/Azure redeploy, repeated H3, merge, and post-merge gates remain
-open.
+Governance PR #70 reached `main` as `25c09ec`. FE10-I01 through FE10-I08 and
+the round-one remediation are published as PR #75 runtime head `3f9f23a`; H2 round 4,
+exact-head CI, Azure deployment, public transport/protected-route checks,
+Azure SQL schema verification, and cleanup pass. Repeated H3, explicit H3
+approval, merge, and post-merge gates remain open.
+The bounded evidence-only lifecycle closeout must be H2-approved and the
+resulting latest PR head must pass exact-head gates before repeated H3.
 
 ---
 
@@ -534,8 +535,7 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 - H3 round one found missing ADR/current-state reconciliation, stale item state
   after a successful no-navigation read, mark-all incorrectly disabled by the
   current filtered page, and a browser-reported popover stacking defect. The
-  local TDD/documentation fixes require a fresh H2 fingerprint and exact-head
-  Azure redeployment before repeated H3.
+  bounded TDD/documentation fixes close those implementation findings.
 - H1 approved the later non-overlapping drift through `main@12faead`. The
   incoming commits delete retired `document/` artifacts only; the branch
   rebased without conflict. Current Azure staging serves that `main`, so the
@@ -551,7 +551,12 @@ Detailed steps, RED/GREEN commands, and commit boundaries are in
 - Fresh matrix on `main@a240705` passed: backend 69/69 suites and 1084/1084
   tests; frontend 259/259 plus lint/build; deployment 20/20; system 10/10;
   traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11; audits, Azure
-  schema preparation, and diff hygiene. A new fingerprint/H2 remains.
+  schema preparation, and diff hygiene.
+- H2 round 4 approved fingerprint `f41dbf50...`; the remediation was committed
+  and pushed as PR #75 head `3f9f23a`. Exact-head CI `30313721511`, Azure
+  deployment `30313949983`, public transport/protected-route checks, Azure SQL
+  schema/index verification, and cleanup passed. Repeated H3, explicit H3
+  approval, merge, and post-merge CI/deployment remain mandatory.
 
 ### V0.5.0 Traceability
 

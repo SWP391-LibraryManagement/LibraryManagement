@@ -2,6 +2,13 @@
 
 ## 2026-07-28 - Remediate FE10 inbox H3 round-one findings
 
+- H2 round 4 approved fingerprint
+  `f41dbf50680d9c5601ae00d3c53651a7bb782ff81724ca641ef49b7cd88844e4`.
+  The remediation is published as PR #75 runtime head `3f9f23a`; exact-head CI
+  `30313721511` and Azure staging `30313949983` passed. Public transport,
+  protected inbox routing, Azure SQL schema/index, and cleanup checks passed.
+  A bounded evidence-only closeout and latest-head gates remain before repeated
+  H3, explicit H3 approval, merge, and post-merge gates.
 - User approved H1 drift reconciliation through `main@a5fcbb9`. PR #75 head
   `28c4f80` remained clean/mergeable; exact-head CI `30306805399` and Azure
   staging deployment `30307855616` passed.
@@ -22,9 +29,9 @@
   context. Focused RED/GREEN coverage now fixes the two page-state defects and
   elevates the topbar only while the popover is open. The popover keeps its
   approved size and sits above every current layout layer.
-- The bounded remediation remains local pending complete verification, a fresh
-  H2 fingerprint, exact-head CI/Azure redeployment, repeated H3, merge, and
-  post-merge CI/deployment.
+- At this earlier checkpoint the bounded remediation remained local; H2 round
+  4, publication as `3f9f23a`, exact-head CI, and Azure redeployment have since
+  closed those intermediate gates.
 - Fresh complete gates on the rebased candidate passed: backend 69/69 suites
   and 1116/1116 tests; frontend 259/259 plus lint/build; deployment 20/20;
   system 10/10; traceability state 3/3 and FE10 14/16 (88%); Chromium 11/11;
